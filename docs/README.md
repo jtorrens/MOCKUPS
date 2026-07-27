@@ -30,7 +30,7 @@ document. Do not fill a gap from the historical archive.
   manifest.
 - `src/Mockups.Persistence.Sqlite.Core/CurrentSqliteSchema.cs`: current physical
   SQLite schema.
-- `src/Mockups.Persistence.Sqlite/SqliteProjectEngine.Validation.cs`: executable
+- `src/Mockups.Persistence.Sqlite/SqliteCurrentDatabaseValidator.cs`: executable
   current-database validation.
 
 Only files outside `docs/old` may define current behavior.

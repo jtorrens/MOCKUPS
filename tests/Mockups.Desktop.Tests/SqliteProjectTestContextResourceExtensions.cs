@@ -5,15 +5,15 @@ using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.Data;
 
-internal static class SqliteProjectEngineResourceTestExtensions
+internal static class SqliteProjectTestContextResourceExtensions
 {
     internal static ActorSettings GetActorSettings(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string actorId) =>
         engine.Resources.GetActorSettings(actorId);
 
     internal static void UpdateActorField(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         string actorId,
         string fieldId,
@@ -21,33 +21,33 @@ internal static class SqliteProjectEngineResourceTestExtensions
         engine.Resources.UpdateActorField(actorId, fieldId, value);
 
     internal static string GetActorFieldValue(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string actorId, string fieldId) =>
         engine.Resources.GetActorFieldValue(actorId, fieldId);
 
     internal static IReadOnlyList<FieldOption> GetActorOptions(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string projectId) =>
         engine.Resources.GetActorOptions(projectId);
 
     internal static IReadOnlyList<FieldOption> GetRequiredActorOptions(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         string projectId) =>
         engine.Resources.GetRequiredActorOptions(projectId);
 
     internal static DevicePreviewMetrics GetDevicePreviewMetrics(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string deviceId) =>
         engine.Resources.GetDevicePreviewMetrics(deviceId);
 
     internal static DeviceSettings GetDeviceSettings(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string deviceId) =>
         engine.Resources.GetDeviceSettings(deviceId);
 
     internal static void UpdateDeviceField(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         string deviceId,
         string fieldId,
@@ -55,24 +55,24 @@ internal static class SqliteProjectEngineResourceTestExtensions
         engine.Resources.UpdateDeviceField(deviceId, fieldId, value);
 
     internal static string GetDeviceMetricFieldValue(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         string deviceId,
         string fieldId) =>
         engine.Resources.GetDeviceMetricFieldValue(deviceId, fieldId);
 
     internal static IReadOnlyList<FieldOption> GetDeviceOptions(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string projectId) =>
         engine.Resources.GetDeviceOptions(projectId);
 
     internal static PaletteColorSettings GetPaletteColorSettings(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string colorId) =>
         engine.Resources.GetPaletteColorSettings(colorId);
 
     internal static void UpdatePaletteColorField(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         string colorId,
         string fieldId,
@@ -80,53 +80,53 @@ internal static class SqliteProjectEngineResourceTestExtensions
         engine.Resources.UpdatePaletteColorField(colorId, fieldId, value);
 
     internal static IReadOnlyList<FieldOption> GetPaletteColorOptions(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         string projectId) =>
         engine.Resources.GetPaletteColorOptions(projectId);
 
     internal static IReadOnlyDictionary<string, string> GetPaletteColorMap(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         string projectId) =>
         engine.Resources.GetPaletteColorMap(projectId);
 
     internal static IReadOnlyDictionary<string, bool> GetPaletteNeutralMap(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         string projectId) =>
         engine.Resources.GetPaletteNeutralMap(projectId);
 
     internal static IReadOnlyList<FieldOption> GetThemeOptions(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string projectId) =>
         engine.Resources.GetThemeOptions(projectId);
 
     internal static IReadOnlyList<ThemeTokenOption> GetThemeTokenOptions(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         string projectId,
         string themeId) =>
         engine.Resources.GetThemeTokenOptions(projectId, themeId);
 
     internal static ThemeSettings GetThemeSettings(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string themeId) =>
         engine.Resources.GetThemeSettings(themeId);
 
     internal static string GetModuleInstanceThemeTokensJson(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         string moduleInstanceId) =>
         engine.Resources.GetModuleInstanceThemeTokensJson(moduleInstanceId);
 
     internal static string GetThemeFieldValue(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string themeId, string fieldId) =>
         engine.Resources.GetThemeFieldValue(themeId, fieldId);
 
     internal static void UpdateThemeField(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         string themeId,
         string fieldId,
@@ -134,39 +134,39 @@ internal static class SqliteProjectEngineResourceTestExtensions
         engine.Resources.UpdateThemeField(themeId, fieldId, value);
 
     internal static IReadOnlyList<FieldOption> GetProductionFontOptions(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         string projectId,
         string? category = null) =>
         engine.Resources.GetProductionFontOptions(projectId, category);
 
     internal static IReadOnlyList<ProductionFontFace> GetProductionFontFaces(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         string projectId) =>
         engine.Resources.GetProductionFontFaces(projectId);
 
     internal static ProjectTreeNode ImportProductionFont(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         ProjectTreeNode fontsRoot,
         IReadOnlyList<string> selectedFilePaths) =>
         engine.Resources.ImportProductionFont(fontsRoot, selectedFilePaths);
 
     internal static ProductionFontSettings GetProductionFontSettings(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string fontId) =>
         engine.Resources.GetProductionFontSettings(fontId);
 
     internal static string GetProductionFontFieldValue(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         string fontId,
         string fieldId) =>
         engine.Resources.GetProductionFontFieldValue(fontId, fieldId);
 
     internal static void UpdateProductionFontField(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         string fontId,
         string fieldId,
@@ -174,71 +174,71 @@ internal static class SqliteProjectEngineResourceTestExtensions
         engine.Resources.UpdateProductionFontField(fontId, fieldId, value);
 
     internal static IReadOnlyList<FieldOption> GetIconThemeOptions(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         string projectId) =>
         engine.Resources.GetIconThemeOptions(projectId);
 
     internal static IconThemeSettings GetIconThemeSettings(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string iconThemeId) =>
         engine.Resources.GetIconThemeSettings(iconThemeId);
 
     internal static string GetIconThemeFieldValue(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         string iconThemeId,
         string fieldId) =>
         engine.Resources.GetIconThemeFieldValue(iconThemeId, fieldId);
 
     internal static IReadOnlyList<IconThemeToken> GetIconThemeTokens(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         string iconThemeId) =>
         engine.Resources.GetIconThemeTokens(iconThemeId);
 
     internal static IReadOnlyList<FieldOption> GetIconTokenOptions(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         string projectId,
         string? currentToken = null) =>
         engine.Resources.GetIconTokenOptions(projectId, currentToken);
 
     internal static string ResolveIconThemeAssetPath(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         string iconThemeId,
         string file) =>
         engine.Resources.ResolveIconThemeAssetPath(iconThemeId, file);
 
     internal static IconThemeRefreshResult RefreshIconThemeSets(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         ProjectTreeNode iconThemesRoot) =>
         engine.Resources.RefreshIconThemeSets(iconThemesRoot);
 
     internal static IconThemeRefreshResult RefreshIconThemeSetsForTheme(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         string iconThemeId) =>
         engine.Resources.RefreshIconThemeSetsForTheme(iconThemeId);
 
     internal static void DeleteIconThemeToken(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         string iconThemeId,
         string token) =>
         engine.Resources.DeleteIconThemeToken(iconThemeId, token);
 
     internal static IconThemeTokenSvg ReadIconThemeTokenSvg(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         string iconThemeId,
         string token) =>
         engine.Resources.ReadIconThemeTokenSvg(iconThemeId, token);
 
     internal static IconThemeReplaceSvgResult ReplaceIconThemeTokenSvg(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         string iconThemeId,
         string token,
@@ -249,7 +249,7 @@ internal static class SqliteProjectEngineResourceTestExtensions
             svgText);
 
     internal static IconThemeWriteAllSvgResult WriteIconThemeTokenSvgToAllSets(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         string iconThemeId,
         string token,
@@ -262,7 +262,7 @@ internal static class SqliteProjectEngineResourceTestExtensions
             description);
 
     internal static IconThemeReplaceSvgResult ReplaceIconThemeTokenSvgFromFile(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         string iconThemeId,
         string token,
@@ -273,14 +273,14 @@ internal static class SqliteProjectEngineResourceTestExtensions
             sourcePath);
 
     internal static IconThemeSearchResult SearchIconThemeSources(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         string query,
         CancellationToken cancellationToken = default) =>
         engine.Resources.SearchIconThemeSources(query, cancellationToken);
 
     internal static IconThemeGenerateResult GenerateIconThemeToken(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         string iconThemeId,
         string token,
@@ -298,4 +298,3 @@ internal static class SqliteProjectEngineResourceTestExtensions
             materialSource,
             cancellationToken);
 }
-

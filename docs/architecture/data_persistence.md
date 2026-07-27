@@ -108,9 +108,13 @@ or the temporary composition assembly. The compiler therefore rejects a
 Design repository that tries to call a Production or Resources implementation,
 and the same rule applies in every direction. `Mockups.Persistence.Sqlite`
 composes those projects with read-only startup validation and explicit
-cross-owner application stores. Its internal `SqliteProjectEngine` implements
-no Application interface. UI packages are unavailable to every persistence
-assembly.
+cross-owner application stores. `SqliteProjectSessionFactory` constructs the
+graph in local variables and publishes only the named session ports; there is
+no universal project engine object or Application interface implementation.
+UI packages are unavailable to every persistence assembly.
+Persistence integration tests may compose raw owners through the test-only
+`SqliteProjectTestContext`; that fixture is compiled in the test assembly and
+is not a production capability or a session dependency.
 `Mockups.Desktop.Host` is the only executable composition project allowed to
 see both Desktop and Persistence.Sqlite. It opens a composition-only
 `SqliteProjectSession` and passes its named ports into Desktop. SQL packages
@@ -137,40 +141,34 @@ present on their runtime adapter types.
 Component documents, Component fields, record fields, core fields, Screen
 collections, child creation and node commands are composed from the exact
 Design, Production, Resources, Usage and context owners they require. None is
-implemented by or recoverable through `SqliteProjectEngine`.
+implemented by or recoverable through a universal persistence object.
 `SqliteEditorNavigationStore` owns the complete read-only tree projection.
 Navigation receives only that store's tree-loading function behind its exact
-membrane; a consumer cannot cast the function or adapter back to either the
-store or the engine. `SqliteProjectEngine` contains no tree read or node
-command method and no Design, Production or Resources owner pass-through
-method.
+membrane; a consumer cannot cast the function or adapter back to the store.
 All Component document and field overloads belong to
-`SqliteComponentDocumentStore`; the project engine contains no parallel
+`SqliteComponentDocumentStore`; composition contains no parallel
 Component document implementation.
 Component reference catalogs, Runtime contract reads and reference validation
 are consumed directly from `SqliteDesignOwner` through their focused session
-adapters; the project engine exposes no mirror query surface.
+adapters; composition exposes no mirror query surface.
 Component Variant commands are owned by `SqliteEditorNodeCommandStore` and
-reference details by `SqliteComponentDocumentStore`; the project engine has no
-parallel Variant command implementation.
+reference details by `SqliteComponentDocumentStore`.
 Module Variant fields and selection use the focused record store, lifecycle
 commands use the node-command store, and effective Runtime reads use the
-Production owner. The project engine contains no Module Variant facade.
+Production owner.
 Module Instance Runtime writes belong to
 `SqliteRuntimeInputInstanceStore`, collection lifecycle to
 `SqliteModuleInstanceCollectionStore`, scalar fields to
 `SqliteRecordClassFieldStore`, and animation/read models to the Production
-owner. The session composes one Runtime Input store instance and the project
-engine exposes no Module Instance operation.
+owner. The session composes one Runtime Input store instance.
 Shot scalar writes and derived owner-device reads belong to
 `SqliteRecordClassFieldStore`. Default database path discovery belongs to
-`SqlitePersistence`. `SqliteProjectEngine` declares no public member: it is an
-internal construction helper only. Read-only startup validation belongs
+`SqlitePersistence`. Read-only startup validation belongs
 exclusively to `SqliteCurrentDatabaseValidator`, which receives the shared
 context plus the three already constructed owners, opens its own validation
 connection and rejects a missing, empty or non-current database without
-repairing it. The project engine contains no validation method or persistence
-contract rule.
+repairing it. `SqliteProjectSessionFactory` invokes validation before it
+publishes the session.
 
 Preview reads are also separated by owner. Generic authored Preview input does
 not inherit Actor, Component Preview or Module Instance timeline access, and
@@ -179,15 +177,12 @@ declares every read capability it coordinates. Component Preview and Variant
 history route directly to Design; Actor, Icon Theme and Theme-token reads route
 directly to Resources.
 Generic Preview composes Production Shot/Screen identity, Design authored
-documents and Resources visual data explicitly; `SqliteProjectEngine` does not
-implement the Preview input port.
+documents and Resources visual data explicitly.
 Dictionary context likewise composes authored Component data from Design with
-Theme, palette and Icon Theme data from Resources; the project engine does not
-implement the Dictionary port.
+Theme, palette and Icon Theme data from Resources.
 
 Editor presentation context also routes directly to Resources. It exposes only
-Project, Theme and Production Font presentation reads and does not pass through
-the project engine.
+Project, Theme and Production Font presentation reads.
 
 Module Instance row, slot, contract and Runtime Preview reads route directly to
 Production. Effective Theme-token resolution is not part of that timeline
@@ -221,8 +216,7 @@ because creating its immutable job snapshot requires the prepared Preview,
 Actor, Component, timeline and Theme reads declared by that contract. It is
 not presented as a general Production-navigation store.
 The SQLite implementation composes those exact owner ports plus the Production
-Output plan; `SqliteProjectEngine` does not implement Render Snapshot or
-timeline merely to satisfy Render Queue.
+Output plan without creating a general persistence aggregate.
 
 Workspace coordination consumes `IEditorNavigationDataSource`; Preview,
 dictionary, document, Usage and Render consumers receive their

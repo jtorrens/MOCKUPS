@@ -214,28 +214,29 @@ only to normative documentation, where prose is the contract being validated.
 
 That structural suite also requires:
 
-- the internal SQLite project engine implements no Application interface,
-  declares no public member or database-validation method; read-only startup
-  contract checks belong to the internal `SqliteCurrentDatabaseValidator`,
-  which exposes no public surface or Application interface;
+- the production persistence assembly contains no `SqliteProjectEngine` or
+  other universal project object; `SqliteProjectSessionFactory` has no public
+  surface or Application interface and publishes only the focused session
+  ports;
+- read-only startup contract checks belong to the internal
+  `SqliteCurrentDatabaseValidator`, which exposes no public surface or
+  Application interface;
 - every session capability exposes exactly the public methods declared by its
   own port;
-- the internal SQLite project engine has no tree-loading method; test fixtures
-  reach navigation through the focused navigation owner;
+- test fixtures reach navigation through the focused navigation owner;
 - Design, Production and Resources reads and writes cannot reappear as
-  project-engine forwarding methods;
+  composition forwarding methods;
 - Component document and embedded-boundary overloads exist only on their
-  focused store, never on the project engine;
+  focused store;
 - Component reference catalogs, Runtime contracts and reference validation
-  cannot reappear as project-engine forwarding queries;
+  cannot reappear as composition forwarding queries;
 - Component Variant commands and reference details cannot reappear on the
-  project engine;
+  session or its factory;
 - Module Variant fields, selection, lifecycle commands and effective Runtime
-  reads cannot reappear as a project-engine facade;
+  reads cannot reappear as a composition facade;
 - Module Instance Runtime writes, collection lifecycle, scalar fields,
-  animation and read models cannot reappear as project-engine operations;
-- the internal project engine declares zero public members; Shot fields and
-  default path discovery remain on their focused owners;
+  animation and read models cannot reappear as composition operations;
+- Shot fields and default path discovery remain on their focused owners;
 - exact manifest owner files, categories and declared embeds;
 - exact Component and Module registry parity;
 - registries whose factory entries are direct owner calls without business

@@ -174,8 +174,8 @@ Read-only database startup validation is a separate composition-owned
 capability implemented by `SqliteCurrentDatabaseValidator`. It may read through
 the three focused persistence owners to verify cross-owner invariants, but it
 publishes no repository capability and performs no write, repair or migration.
-`SqliteProjectEngine` only constructs the session graph and invokes that
-validator before publishing the session.
+`SqliteProjectSessionFactory` constructs the session graph in local variables,
+invokes that validator and publishes only the named session ports.
 Component configuration-field writes, strict snapshot replacement and exact
 embedded-slot reference validation execute in Design as well. Embedded
 boundary writes for Component Classes, Component Variants, Modules and Module
@@ -187,7 +187,7 @@ combines Design-owned Component choices with Resource-owned palette or font
 choices, then passes that data into Design. The composition-only
 `ComponentFieldOptionResolver` is the single owner of that cross-owner
 aggregation and receives only two option-specific contracts;
-`SqliteProjectEngine` contains no option-selection policy.
+the session factory contains no option-selection policy.
 Component Class, Variant,
 inherited embedded and Runtime Override field-value projection now executes
 in Design. Composition only routes the authored owner and supplies the
@@ -214,13 +214,14 @@ receives its narrow contract; Resources still cannot see the Production
 implementation. These owner projects can see
 Contracts and Core, but cannot reference the composition assembly or one
 another. `Mockups.Persistence.Sqlite` owns composition, read-only validation
-and explicit cross-owner stores. Its internal project engine implements no
-Application interface and cannot be supplied to Desktop as a capability.
+and explicit cross-owner stores. Its internal session factory implements no
+Application interface, retains no universal project object and cannot be
+supplied to Desktop as a capability.
 `SqlitePersistence` returns a composition-only `SqliteProjectSession`; the
 session has no data methods and each exposed port is a distinct adapter that
-cannot be cast to an unrelated port or to the internal project engine.
+cannot be cast to an unrelated port or a persistence owner.
 The read-only editor tree is built by `SqliteEditorNavigationStore`; the
-project engine has no navigation method.
+factory passes only its exact tree-loading function to the navigation membrane.
 Persistence may reference Application and
 Domain and only persistence projects may reference SQLite packages. They
 cannot reference Avalonia or Desktop. Each SQLite context owns its write
@@ -240,9 +241,7 @@ application operations move to focused owners as their contracts are
 decomposed. Retired area-wide adapters are deleted rather than retained as
 unused forwarding code.
 Generic Preview is a focused read composition over Production, Design and
-Resources; the project engine does not implement its Application port.
-Dictionary context is a separate Design/Resources composition and is not an
-Application port implemented by the project engine.
+Resources. Dictionary context is a separate Design/Resources composition.
 The Desktop integration tests compare every session adapter's declared public
 methods with its Application port, including inherited contracts. An adapter
 cannot retain public sibling methods after its port is narrowed.
@@ -266,7 +265,7 @@ the Runtime collection editor receives payload writes, animation writes and
 Theme-token reads as three distinct dependencies.
 
 Cross-owner Runtime Input Instance mutation is implemented by the focused
-`SqliteRuntimeInputInstanceStore`, not by the project engine contract. It
+`SqliteRuntimeInputInstanceStore`. It
 coordinates Production contract validation with the exact same-Project Actor
 set from Resources while exposing only Runtime payload mutation capability.
 
@@ -286,7 +285,8 @@ Render Queue is the sole Desktop consumer of the aggregate
 `RenderSnapshots`; there is no alias that presents the same broad read surface
 as a generic Production-navigation dependency. Its SQLite membrane composes
 the focused Preview, Actor, Component, timeline, Theme and Production Output
-owners; the project engine is not the Render Snapshot target.
+owners; the session factory passes that focused membrane as the Render Snapshot
+target.
 
 `Mockups.Desktop.Host` is the executable composition boundary and the only
 production project allowed to reference both Desktop and Persistence.Sqlite.

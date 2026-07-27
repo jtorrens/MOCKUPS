@@ -6,63 +6,57 @@ namespace Mockups.DesktopEditorShell.Data;
 public sealed class SqliteProjectSession
 {
     internal SqliteProjectSession(
-        SqliteProjectEngine engine,
-        IEditorLayoutStore layouts)
+        IProjectPathResolver projectPaths,
+        IEditorNavigationDataSource navigation,
+        ICoreFieldStore coreFields,
+        IRecordClassFieldStore recordFields,
+        IComponentClassFieldStore componentFields,
+        IVariantHistoryStore variantHistory,
+        IPreviewInputRepository preview,
+        IComponentPreviewInputRepository componentPreview,
+        IModuleInstanceTimelineStore timeline,
+        IModuleInstanceThemeTokenQuery moduleInstanceThemes,
+        IDictionaryFieldContextRepository dictionary,
+        IEditorChildStore children,
+        IEditorNodeCommandStore nodeCommands,
+        IRenderSnapshotDataSource renderSnapshots,
+        IEditorPresentationContextRepository presentation,
+        IModuleInstanceCollectionStore moduleInstances,
+        IIconThemeAssetStore iconThemes,
+        IThemeTokenQuery themeTokens,
+        IComponentDocumentStore components,
+        IRuntimeInputOwnerStore runtimeInputOwners,
+        IRuntimeInputInstanceStore runtimeInputInstances,
+        IModuleInstanceAnimationStore animation,
+        IReferenceUsageQuery referenceUsage,
+        IEditorLayoutStore layouts,
+        IActorPreviewRepository actorPreview)
     {
-        ProjectPaths = engine.ProjectPaths;
-        Navigation = new SqliteEditorNavigationPort(
-            engine.Navigation.LoadProjectTree);
-        CoreFields = new SqliteCoreFieldPort(engine.CoreFields);
-        RecordFields =
-            new SqliteRecordClassFieldPort(engine.RecordFields);
-        ComponentFields =
-            new SqliteComponentClassFieldPort(
-                engine.ComponentDocuments);
-        VariantHistory =
-            new SqliteVariantHistoryPort(engine.Design);
-        Preview = engine.PreviewInputs;
-        ComponentPreview =
-            new SqliteComponentPreviewInputPort(engine.Design);
-        Timeline =
-            new SqliteModuleInstanceTimelinePort(engine.Production);
-        ModuleInstanceThemes =
-            new SqliteModuleInstanceThemeTokenPort(
-                engine.Resources);
-        Dictionary = engine.DictionaryContext;
-        Children = new SqliteEditorChildPort(engine.Children);
-        NodeCommands =
-            new SqliteEditorNodeCommandPort(engine.NodeCommands);
-        RenderSnapshots =
-            new SqliteRenderSnapshotPort(
-                engine.PreviewInputs,
-                engine.Resources,
-                engine.Design,
-                engine.Production,
-                engine.Resources,
-                engine.Production);
-        Presentation =
-            new SqliteEditorPresentationPort(engine.Resources);
-        ModuleInstances =
-            new SqliteModuleInstanceCollectionPort(
-                engine.ModuleInstanceCollection);
-        IconThemes =
-            new SqliteIconThemeAssetPort(engine.Resources);
-        ThemeTokens = new SqliteThemeTokenPort(engine.Resources);
-        Components =
-            new SqliteComponentDocumentPort(
-                engine.ComponentDocuments);
-        RuntimeInputOwners =
-            new SqliteRuntimeInputOwnerPort(engine.Design);
-        RuntimeInputInstances =
-            new SqliteRuntimeInputInstancePort(
-                engine.RuntimeInputInstances);
-        Animation =
-            new SqliteModuleInstanceAnimationPort(
-                engine.Production);
-        ReferenceUsage =
-            new SqliteReferenceUsagePort(engine.ReferenceUsages);
-        Layouts = new SqliteEditorLayoutPort(layouts);
-        ActorPreview = new SqliteActorPreviewPort(engine.Resources);
+        ProjectPaths = projectPaths;
+        Navigation = navigation;
+        CoreFields = coreFields;
+        RecordFields = recordFields;
+        ComponentFields = componentFields;
+        VariantHistory = variantHistory;
+        Preview = preview;
+        ComponentPreview = componentPreview;
+        Timeline = timeline;
+        ModuleInstanceThemes = moduleInstanceThemes;
+        Dictionary = dictionary;
+        Children = children;
+        NodeCommands = nodeCommands;
+        RenderSnapshots = renderSnapshots;
+        Presentation = presentation;
+        ModuleInstances = moduleInstances;
+        IconThemes = iconThemes;
+        ThemeTokens = themeTokens;
+        Components = components;
+        RuntimeInputOwners = runtimeInputOwners;
+        RuntimeInputInstances = runtimeInputInstances;
+        Animation = animation;
+        ReferenceUsage = referenceUsage;
+        Layouts = layouts;
+        ActorPreview = actorPreview;
     }
 
     public IProjectPathResolver ProjectPaths { get; }

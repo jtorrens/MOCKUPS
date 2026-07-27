@@ -3,32 +3,32 @@ using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.Data;
 
-internal static class SqliteProjectEngineModuleInstanceTestExtensions
+internal static class SqliteProjectTestContextModuleInstanceExtensions
 {
     internal static ModuleInstanceSettings GetModuleInstanceSettings(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string moduleInstanceId) =>
         engine.Production.GetModuleInstanceSettings(moduleInstanceId);
 
     internal static string GetModuleInstanceModuleName(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string moduleInstanceId) =>
         engine.Production.GetModuleInstanceModuleName(moduleInstanceId);
 
     internal static string GetModuleInstanceTransitionType(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string moduleInstanceId) =>
         engine.Production.GetModuleInstanceTransitionType(
             moduleInstanceId);
 
     internal static string GetModuleInstanceRuntimePreviewJson(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string moduleInstanceId) =>
         engine.Production.GetModuleInstanceRuntimePreviewJson(
             moduleInstanceId);
 
     internal static void UpdateModuleInstanceRuntimeValue(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string moduleInstanceId,
         string jsonKey,
         JsonNode? value) =>
@@ -38,7 +38,7 @@ internal static class SqliteProjectEngineModuleInstanceTestExtensions
             value);
 
     internal static void UpdateModuleInstanceAnimationJson(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string moduleInstanceId,
         string animationJson) =>
         engine.Production.UpdateModuleInstanceAnimationJson(
@@ -46,7 +46,7 @@ internal static class SqliteProjectEngineModuleInstanceTestExtensions
             animationJson);
 
     internal static void UpdateModuleInstanceRuntimeCollectionValue(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string moduleInstanceId,
         string collectionJsonKey,
         string itemId,
@@ -61,7 +61,7 @@ internal static class SqliteProjectEngineModuleInstanceTestExtensions
                 value);
 
     internal static void UpdateModuleInstanceRuntimeCollectionValues(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string moduleInstanceId,
         string collectionJsonKey,
         string itemId,
@@ -74,7 +74,7 @@ internal static class SqliteProjectEngineModuleInstanceTestExtensions
                 values);
 
     internal static void AddModuleInstanceRuntimeCollectionItem(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string moduleInstanceId,
         string collectionJsonKey,
         JsonObject item) =>
@@ -85,7 +85,7 @@ internal static class SqliteProjectEngineModuleInstanceTestExtensions
                 item);
 
     internal static void InsertModuleInstanceRuntimeCollectionItemAfter(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string moduleInstanceId,
         string collectionJsonKey,
         string afterItemId,
@@ -98,7 +98,7 @@ internal static class SqliteProjectEngineModuleInstanceTestExtensions
                 item);
 
     internal static void DuplicateModuleInstanceRuntimeCollectionItem(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string moduleInstanceId,
         string collectionJsonKey,
         string itemId,
@@ -113,7 +113,7 @@ internal static class SqliteProjectEngineModuleInstanceTestExtensions
                 targetIdMappings);
 
     internal static void DeleteModuleInstanceRuntimeCollectionItem(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string moduleInstanceId,
         string collectionJsonKey,
         string itemId) =>
@@ -124,7 +124,7 @@ internal static class SqliteProjectEngineModuleInstanceTestExtensions
                 itemId);
 
     internal static void MoveModuleInstanceRuntimeCollectionItem(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string moduleInstanceId,
         string collectionJsonKey,
         string itemId,
@@ -138,18 +138,18 @@ internal static class SqliteProjectEngineModuleInstanceTestExtensions
 
     internal static IReadOnlyList<ModuleInstanceSlot>
         GetShotModuleInstanceSlots(
-            this SqliteProjectEngine engine,
+            this SqliteProjectTestContext engine,
             string shotId) =>
         engine.Production.GetShotModuleInstanceSlots(shotId);
 
     internal static IReadOnlyList<ShotModuleChoice>
         GetAvailableShotModules(
-            this SqliteProjectEngine engine,
+            this SqliteProjectTestContext engine,
             string shotId) =>
         engine.ModuleInstanceCollection.GetAvailableShotModules(shotId);
 
     internal static ProjectTreeNode AddModuleInstance(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         ProjectTreeNode shot,
         ShotModuleInstanceDraft draft) =>
         engine.ModuleInstanceCollection.AddModuleInstance(
@@ -157,13 +157,13 @@ internal static class SqliteProjectEngineModuleInstanceTestExtensions
             draft);
 
     internal static ProjectTreeNode RenameModuleInstance(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         ProjectTreeNode node,
         string name) =>
         engine.CoreFields.RenameDirectNode(node, name);
 
     internal static void MoveModuleInstance(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string moduleInstanceId,
         int offset) =>
         engine.ModuleInstanceCollection.MoveModuleInstance(
@@ -171,7 +171,7 @@ internal static class SqliteProjectEngineModuleInstanceTestExtensions
             offset);
 
     internal static void UpdateModuleInstanceField(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string moduleInstanceId,
         string fieldId,
         string value) =>

@@ -2,25 +2,25 @@ using Mockups.DesktopEditorShell.EditorShell;
 
 namespace Mockups.DesktopEditorShell.Data;
 
-internal static class SqliteProjectEngineTestExtensions
+internal static class SqliteProjectTestContextExtensions
 {
     internal static IReadOnlyList<ProjectTreeNode> LoadProjectTree(
-        this SqliteProjectEngine engine) =>
+        this SqliteProjectTestContext engine) =>
         engine.Navigation.LoadProjectTree();
 
     internal static ProjectTreeNode AddChild(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         ProjectTreeNode parent) =>
         engine.Children.AddChild(parent);
 
     internal static ProjectTreeNode AddImportedDevice(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         ProjectTreeNode devicesRoot,
         DeviceImportDraft device) =>
         engine.Children.AddImportedDevice(devicesRoot, device);
 
     internal static ProjectTreeNode AddShot(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         ProjectTreeNode episode,
         string actorId,
         int shotNumber) =>
@@ -30,44 +30,44 @@ internal static class SqliteProjectEngineTestExtensions
             shotNumber);
 
     internal static ProjectTreeNode AddTheme(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         ProjectTreeNode themesRoot,
         string family) =>
         engine.Children.AddTheme(themesRoot, family);
 
     internal static int SuggestShotNumber(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string episodeId) =>
         engine.Children.SuggestShotNumber(episodeId);
 
     internal static ProjectTreeNode Duplicate(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         ProjectTreeNode node) =>
         engine.NodeCommands.Duplicate(node);
 
     internal static void Delete(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         ProjectTreeNode node) =>
         engine.NodeCommands.Delete(node);
 
     internal static void UpdateNode(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         ProjectTreeNode node) =>
         engine.CoreFields.UpdateNode(node);
 
     internal static ProjectTreeNode RenameDirectNode(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         ProjectTreeNode node,
         string name) =>
         engine.CoreFields.RenameDirectNode(node, name);
 
     internal static AppSettings GetAppSettings(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string appId) =>
         engine.Design.GetAppSettings(appId);
 
     internal static void UpdateAppField(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string appId,
         string fieldId,
         string value) =>
@@ -77,7 +77,7 @@ internal static class SqliteProjectEngineTestExtensions
             value);
 
     internal static string GetAppConfigFieldValue(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string appId,
         string fieldId) =>
         engine.Design.GetAppConfigFieldValue(
@@ -85,7 +85,7 @@ internal static class SqliteProjectEngineTestExtensions
             fieldId);
 
     internal static string GetAppMetadataFieldValue(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string appId,
         string fieldId) =>
         engine.Design.GetAppMetadataFieldValue(
@@ -93,12 +93,12 @@ internal static class SqliteProjectEngineTestExtensions
             fieldId);
 
     internal static ModuleSettings GetModuleSettings(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string moduleId) =>
         engine.Design.GetModuleSettings(moduleId);
 
     internal static void UpdateModuleDesignPreviewJson(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string moduleId,
         string designPreviewJson) =>
         engine.Design.UpdateModuleDesignPreviewJson(
@@ -106,12 +106,12 @@ internal static class SqliteProjectEngineTestExtensions
             designPreviewJson);
 
     internal static AppSettings GetModuleAppSettings(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string moduleId) =>
         engine.Design.GetModuleAppSettings(moduleId);
 
     internal static string GetModuleConfigFieldValue(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string moduleId,
         string fieldId) =>
         engine.Design.GetModuleConfigFieldValue(
@@ -119,7 +119,7 @@ internal static class SqliteProjectEngineTestExtensions
             fieldId);
 
     internal static void UpdateModuleField(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string moduleId,
         string fieldId,
         string value) =>
@@ -129,7 +129,7 @@ internal static class SqliteProjectEngineTestExtensions
             value);
 
     internal static void UpdateShotField(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string shotId,
         string fieldId,
         string value) =>
@@ -139,27 +139,27 @@ internal static class SqliteProjectEngineTestExtensions
             value);
 
     internal static string GetShotOwnerDeviceName(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string shotId) =>
         engine.RecordFields.GetShotOwnerDeviceName(shotId);
 
     internal static ShotSettings GetShotSettings(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string shotId) =>
         engine.Production.GetShotSettings(shotId);
 
     internal static string GetShotRenderName(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string shotId) =>
         engine.Production.GetShotRenderName(shotId);
 
     internal static ProjectSettings GetProjectSettings(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string projectId) =>
         engine.Production.GetProjectSettings(projectId);
 
     internal static void UpdateProjectField(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string projectId,
         string fieldId,
         string value) =>
@@ -169,12 +169,12 @@ internal static class SqliteProjectEngineTestExtensions
             value);
 
     internal static EpisodeSettings GetEpisodeSettings(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string episodeId) =>
         engine.Production.GetEpisodeSettings(episodeId);
 
     internal static void UpdateEpisodeField(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string episodeId,
         string fieldId,
         string value) =>
@@ -184,7 +184,7 @@ internal static class SqliteProjectEngineTestExtensions
             value);
 
     internal static ProductionOutputShotPlan GetProductionOutputShotPlan(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string shotId) =>
         engine.Production.GetProductionOutputShotPlan(shotId);
 }

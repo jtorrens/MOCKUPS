@@ -3,22 +3,22 @@ using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.Data;
 
-internal static class SqliteProjectEngineComponentTestExtensions
+internal static class SqliteProjectTestContextComponentExtensions
 {
     internal static ComponentClassSettings GetComponentClassSettings(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string componentClassId) =>
         engine.ComponentDocuments.GetComponentClassSettings(
             componentClassId);
 
     internal static ComponentClassSettings GetComponentVariantSettings(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         ProjectTreeNode variantNode) =>
         engine.ComponentDocuments.GetComponentVariantSettings(
             variantNode);
 
     internal static void UpdateComponentClassDesignPreviewJson(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string componentClassId,
         string designPreviewJson) =>
         engine.Design.UpdateComponentClassDesignPreviewJson(
@@ -26,7 +26,7 @@ internal static class SqliteProjectEngineComponentTestExtensions
             designPreviewJson);
 
     internal static FieldValue CreateComponentClassFieldValue(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string componentClassId,
         string fieldId) =>
         engine.ComponentDocuments.CreateComponentClassFieldValue(
@@ -34,7 +34,7 @@ internal static class SqliteProjectEngineComponentTestExtensions
             fieldId);
 
     internal static FieldValue CreateComponentVariantFieldValue(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         ProjectTreeNode variantNode,
         string fieldId) =>
         engine.ComponentDocuments.CreateComponentVariantFieldValue(
@@ -42,7 +42,7 @@ internal static class SqliteProjectEngineComponentTestExtensions
             fieldId);
 
     internal static FieldValue CreateRuntimeComponentOverrideFieldValue(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string projectId,
         string baseConfigJson,
         JsonObject overrides,
@@ -55,7 +55,7 @@ internal static class SqliteProjectEngineComponentTestExtensions
                 fieldId);
 
     internal static FieldValue CreateRuntimeComponentOverrideFieldValue(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string projectId,
         string baseConfigJson,
         JsonObject overrides,
@@ -70,7 +70,7 @@ internal static class SqliteProjectEngineComponentTestExtensions
                 fieldId);
 
     internal static void UpdateRuntimeComponentOverride(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         JsonObject overrides,
         string fieldId,
         string value) =>
@@ -80,7 +80,7 @@ internal static class SqliteProjectEngineComponentTestExtensions
             value);
 
     internal static void UpdateRuntimeComponentOverride(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         JsonObject overrides,
         IReadOnlyList<EmbeddedComponentSlotDefinition> slots,
         string fieldId,
@@ -92,7 +92,7 @@ internal static class SqliteProjectEngineComponentTestExtensions
             value);
 
     internal static void UpdateComponentClassField(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string componentClassId,
         string fieldId,
         string value) =>
@@ -102,7 +102,7 @@ internal static class SqliteProjectEngineComponentTestExtensions
             value);
 
     internal static void UpdateComponentVariantField(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         ProjectTreeNode variantNode,
         string fieldId,
         string value) =>
@@ -112,7 +112,7 @@ internal static class SqliteProjectEngineComponentTestExtensions
             value);
 
     internal static FieldValue CreateEmbeddedComponentFieldValue(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string componentClassId,
         string slotFieldId,
         string embeddedComponentType,
@@ -124,7 +124,7 @@ internal static class SqliteProjectEngineComponentTestExtensions
             embeddedFieldId);
 
     internal static FieldValue CreateEmbeddedComponentFieldValue(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string componentClassId,
         IReadOnlyList<EmbeddedComponentSlotDefinition> slots,
         string embeddedFieldId) =>
@@ -134,7 +134,7 @@ internal static class SqliteProjectEngineComponentTestExtensions
             embeddedFieldId);
 
     internal static FieldValue CreateEmbeddedComponentFieldValue(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         ProjectTreeNode ownerNode,
         IReadOnlyList<EmbeddedComponentSlotDefinition> slots,
         string embeddedFieldId) =>
@@ -144,7 +144,7 @@ internal static class SqliteProjectEngineComponentTestExtensions
             embeddedFieldId);
 
     internal static void UpdateEmbeddedComponentField(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string componentClassId,
         string slotFieldId,
         string embeddedComponentType,
@@ -158,7 +158,7 @@ internal static class SqliteProjectEngineComponentTestExtensions
             value);
 
     internal static void UpdateEmbeddedComponentField(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string componentClassId,
         IReadOnlyList<EmbeddedComponentSlotDefinition> slots,
         string embeddedFieldId,
@@ -170,7 +170,7 @@ internal static class SqliteProjectEngineComponentTestExtensions
             value);
 
     internal static void UpdateEmbeddedComponentField(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         ProjectTreeNode ownerNode,
         IReadOnlyList<EmbeddedComponentSlotDefinition> slots,
         string embeddedFieldId,
@@ -182,24 +182,24 @@ internal static class SqliteProjectEngineComponentTestExtensions
             value);
 
     internal static ProjectTreeNode SaveComponentVariant(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         ProjectTreeNode sourceNode,
         string name) =>
         engine.NodeCommands.SaveComponentVariant(sourceNode, name);
 
     internal static ProjectTreeNode RenameComponentVariant(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         ProjectTreeNode node,
         string name) =>
         engine.Design.RenameComponentVariant(node, name);
 
     internal static ProjectTreeNode ToggleComponentVariantLock(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         ProjectTreeNode node) =>
         engine.NodeCommands.ToggleComponentVariantLock(node);
 
     internal static void ReplaceComponentVariantConfig(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         ProjectTreeNode node,
         string configJson) =>
         engine.NodeCommands.ReplaceComponentVariantConfig(
@@ -208,7 +208,7 @@ internal static class SqliteProjectEngineComponentTestExtensions
 
     internal static IReadOnlyList<ComponentVariantReferenceUsage>
         GetComponentVariantReferenceUsageDetails(
-            this SqliteProjectEngine engine,
+            this SqliteProjectTestContext engine,
             ProjectTreeNode node) =>
         engine.ComponentDocuments
             .GetComponentVariantReferenceUsageDetails(node);

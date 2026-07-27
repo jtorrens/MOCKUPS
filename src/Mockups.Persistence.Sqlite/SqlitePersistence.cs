@@ -20,9 +20,7 @@ public static class SqlitePersistence
         try
         {
             var context = new SqliteProjectContext(databasePath);
-            return new SqliteProjectSession(
-                new SqliteProjectEngine(context),
-                new SqliteEditorLayoutStore(context));
+            return SqliteProjectSessionFactory.Create(context);
         }
         catch (FileNotFoundException)
         {

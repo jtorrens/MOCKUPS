@@ -3,10 +3,10 @@ using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.Data;
 
-internal static class SqliteProjectEngineComponentReferenceTestExtensions
+internal static class SqliteProjectTestContextComponentReferenceExtensions
 {
     internal static IReadOnlyList<EmbeddedComponentUsage> GetEmbeddedComponentUsages(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         string projectId,
         string componentType,
@@ -17,7 +17,7 @@ internal static class SqliteProjectEngineComponentReferenceTestExtensions
             excludedComponentClassId);
 
     internal static string GetEmbeddedComponentVariantName(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         string componentClassId,
         IReadOnlyList<EmbeddedComponentSlotDefinition> slots) =>
@@ -26,7 +26,7 @@ internal static class SqliteProjectEngineComponentReferenceTestExtensions
             slots);
 
     internal static string GetEmbeddedComponentVariantName(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         ProjectTreeNode ownerNode,
         IReadOnlyList<EmbeddedComponentSlotDefinition> slots) =>
@@ -35,12 +35,12 @@ internal static class SqliteProjectEngineComponentReferenceTestExtensions
             slots);
 
     internal static string GetComponentClassBaseConfigsJson(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
         string projectId) =>
         engine.Design.GetComponentClassBaseConfigsJson(projectId);
 
     internal static string ValidateComponentVariantReferencesForPreview(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         string projectId,
         string configJson) =>
@@ -49,7 +49,7 @@ internal static class SqliteProjectEngineComponentReferenceTestExtensions
             configJson);
 
     internal static IReadOnlyList<FieldOption> GetComponentClassOptionsByType(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         string projectId,
         string componentType,
@@ -61,7 +61,7 @@ internal static class SqliteProjectEngineComponentReferenceTestExtensions
 
     internal static IReadOnlyList<FieldOption>
         GetComponentVariantReferenceOptionsByType(
-            this SqliteProjectEngine engine,
+            this SqliteProjectTestContext engine,
             string projectId,
             string componentType,
             bool includeNone = false) =>
@@ -72,18 +72,18 @@ internal static class SqliteProjectEngineComponentReferenceTestExtensions
 
     internal static IReadOnlyList<FieldOption>
         GetStatusBarComponentVariantOptions(
-            this SqliteProjectEngine engine,
+            this SqliteProjectTestContext engine,
             string projectId) =>
         engine.Design.GetStatusBarComponentVariantOptions(projectId);
 
     internal static IReadOnlyList<FieldOption>
         GetNavigationBarComponentVariantOptions(
-            this SqliteProjectEngine engine,
+            this SqliteProjectTestContext engine,
             string projectId) =>
         engine.Design.GetNavigationBarComponentVariantOptions(projectId);
 
     internal static IReadOnlyList<FieldOption> GetComponentVariantReferenceOptions(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         string projectId,
         string componentTypeSelector,
@@ -94,13 +94,13 @@ internal static class SqliteProjectEngineComponentReferenceTestExtensions
             includeNone);
 
     internal static JsonObject GetComponentVariantRuntimeInputs(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         string variantReference) =>
         engine.Design.GetComponentVariantRuntimeInputs(variantReference);
 
     internal static JsonObject GetComponentVariantRuntimeContract(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         string variantReference) =>
         engine.Design.GetComponentVariantRuntimeContract(
@@ -108,33 +108,33 @@ internal static class SqliteProjectEngineComponentReferenceTestExtensions
 
     internal static IReadOnlyList<ComponentInputBindingDefinition>
         GetComponentVariantRuntimeInputBindings(
-            this SqliteProjectEngine engine,
+            this SqliteProjectTestContext engine,
             string variantReference) =>
         engine.Design.GetComponentVariantRuntimeInputBindings(
             variantReference);
 
     internal static IReadOnlyList<RuntimeInputCollectionDefinition>
         GetComponentVariantRuntimeCollections(
-            this SqliteProjectEngine engine,
+            this SqliteProjectTestContext engine,
             string variantReference) =>
         engine.Design.GetComponentVariantRuntimeCollections(
             variantReference);
 
     internal static JsonObject GetComponentVariantConfig(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         string variantReference) =>
         engine.Design.GetComponentVariantConfig(variantReference);
 
     internal static ComponentVariantSelectionSettings
         GetComponentVariantSelectionSettings(
-            this SqliteProjectEngine engine,
+            this SqliteProjectTestContext engine,
             string variantReference) =>
         engine.Design.GetComponentVariantSelectionSettings(
             variantReference);
 
     internal static string GetRuntimeComponentVariantName(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         string variantReference,
         JsonObject overrides,
@@ -145,7 +145,7 @@ internal static class SqliteProjectEngineComponentReferenceTestExtensions
             slots);
 
     internal static string ValidateComponentVariantReferenceValue(
-        this SqliteProjectEngine engine,
+        this SqliteProjectTestContext engine,
 
         string projectId,
         string componentType,
