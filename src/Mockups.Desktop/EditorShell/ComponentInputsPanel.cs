@@ -231,6 +231,63 @@ internal sealed class ComponentPreviewInputSession
             && _actionSnapshots.ContainsKey(ActionSnapshotKey(actionId));
     }
 
+    public bool CanStepActionFrame(string actionId, int delta)
+    {
+        if (delta is not (-1 or 1)
+            || IsPreparingPlayback
+            || _actions.FirstOrDefault((candidate) => candidate.Id == actionId) is not { } action)
+        {
+            return false;
+        }
+
+        var frame = CurrentPlaybackFrame(action);
+        return delta < 0
+            ? frame > 0
+            : frame < DurationFrames(action);
+    }
+
+    public bool StepActionFrame(
+        string actionId,
+        int delta,
+        string? targetValue = null)
+    {
+        if (delta is not (-1 or 1))
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(delta),
+                delta,
+                "Design Preview action frame steps must be -1 or 1.");
+        }
+        var action = _actions.FirstOrDefault((candidate) => candidate.Id == actionId);
+        if (action is null || !CanStepActionFrame(actionId, delta))
+        {
+            return false;
+        }
+
+        var frame = CurrentPlaybackFrame(action);
+        var hasSnapshot = _actionSnapshots.ContainsKey(ActionSnapshotKey(action.Id));
+        CaptureActionSnapshot(action);
+        StopPlayback(clearPlayingState: true);
+        if (!hasSnapshot)
+        {
+            ApplyActionTarget(action, targetValue);
+        }
+        _activeActionId = action.Id;
+        _playbackSecondsByActionId.Remove(action.Id);
+        _values[ActionTimeKey(action)] = PlaybackTimeStorageValue(
+            action,
+            (frame + delta) / (double)Math.Max(1, _playbackFrameRate));
+        _values[ActionStateKey(action)] = "true";
+        foreach (var key in ActivatedPlaybackInputKeys(action))
+        {
+            _values[key] = "true";
+        }
+        SyncDeactivatedPlaybackInputs(action);
+        _heldFinalActionId = action.Id;
+        _refreshPreview();
+        return true;
+    }
+
     public bool RestoreAction(string actionId)
     {
         var action = _actions.FirstOrDefault((candidate) => candidate.Id == actionId);

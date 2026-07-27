@@ -182,9 +182,15 @@ internal sealed class DesignPreviewPayloadDataSource
 
     public DesignPreviewModuleSource LoadModuleVariant(ProjectTreeNode node)
     {
+        if (!VariantReferenceId.TryParse(
+                node.Id,
+                out var moduleId,
+                out _))
+        {
+            throw new InvalidOperationException(
+                $"Invalid Module Variant reference '{node.Id}'.");
+        }
         var settings = _database.GetModuleVariantSettings(node);
-        var moduleId = node.Parent?.Id
-            ?? throw new InvalidOperationException("Module variant has no parent module.");
         return ModuleSource(settings, node.Name, moduleId);
     }
 

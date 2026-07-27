@@ -1,3 +1,4 @@
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Text.Json.Nodes;
@@ -56,9 +57,15 @@ internal sealed class RuntimeInputOwnerDocumentStore
 
         if (node.Kind == ProjectTreeNodeKind.ModuleVariant)
         {
+            if (!VariantReferenceId.TryParse(
+                    node.Id,
+                    out var moduleId,
+                    out _))
+            {
+                throw new InvalidOperationException(
+                    $"Invalid Module Variant reference '{node.Id}'.");
+            }
             var settings = _database.GetModuleVariantSettings(node);
-            var moduleId = node.Parent?.Id
-                ?? throw new InvalidOperationException("Module variant has no parent module.");
             return new RuntimeInputOwnerDocumentSource(
                 settings.ConfigJson,
                 settings.DesignPreviewJson,
@@ -67,15 +74,23 @@ internal sealed class RuntimeInputOwnerDocumentStore
                 moduleId);
         }
 
-        if (node.Kind == ProjectTreeNodeKind.ComponentVariant && node.Parent is not null)
+        if (node.Kind == ProjectTreeNodeKind.ComponentVariant)
         {
+            if (!VariantReferenceId.TryParse(
+                    node.Id,
+                    out var componentClassId,
+                    out _))
+            {
+                throw new InvalidOperationException(
+                    $"Invalid Component Variant reference '{node.Id}'.");
+            }
             var settings = _database.GetComponentVariantSettings(node);
             return new RuntimeInputOwnerDocumentSource(
                 settings.ConfigJson,
                 settings.DesignPreviewJson,
                 false,
                 RuntimeInputDesignPreviewOwnerKind.ComponentClass,
-                node.Parent.Id);
+                componentClassId);
         }
 
         if (node.Kind == ProjectTreeNodeKind.ModuleInstance)

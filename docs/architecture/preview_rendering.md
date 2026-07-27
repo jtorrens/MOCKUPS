@@ -198,6 +198,11 @@ Design and Production Preview keep only temporary presentation state:
 - preparation result cache;
 - panel split and local controls.
 
+A locked Design Preview retains its exact stable owner identity. Component and
+Module Variants remain full `ownerId::variant::variantId` references while the
+editor selection changes; Preview never manufactures a parentless Variant node
+or infers its owner from the new selection.
+
 Design Test Values are captured as one immutable, scope-keyed snapshot before
 Preview preparation leaves the visual context. Scalar values and structured
 collection documents travel together in that snapshot. Preview rendering and

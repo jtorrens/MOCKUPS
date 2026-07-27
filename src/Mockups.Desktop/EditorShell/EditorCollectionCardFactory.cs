@@ -40,6 +40,8 @@ internal sealed class EditorCollectionCardFactory : IDisposable
     private readonly Action<string, string?> _triggerPreviewAction;
     private readonly Action<string> _restorePreviewAction;
     private readonly Func<string, bool> _canRestorePreviewAction;
+    private readonly Action<string, int, string?> _stepPreviewAction;
+    private readonly Func<string, int, bool> _canStepPreviewAction;
     private readonly Action<string, string> _setPreviewTestValue;
     private readonly Action<string, string, IReadOnlyDictionary<string, JsonNode?>>
         _setPreviewCollectionItemValues;
@@ -79,6 +81,8 @@ internal sealed class EditorCollectionCardFactory : IDisposable
         Action<string, string?> triggerPreviewAction,
         Action<string> restorePreviewAction,
         Func<string, bool> canRestorePreviewAction,
+        Action<string, int, string?> stepPreviewAction,
+        Func<string, int, bool> canStepPreviewAction,
         Action<string, string> setPreviewTestValue,
         Action<string, string, IReadOnlyDictionary<string, JsonNode?>>
             setPreviewCollectionItemValues,
@@ -115,6 +119,8 @@ internal sealed class EditorCollectionCardFactory : IDisposable
         _triggerPreviewAction = triggerPreviewAction;
         _restorePreviewAction = restorePreviewAction;
         _canRestorePreviewAction = canRestorePreviewAction;
+        _stepPreviewAction = stepPreviewAction;
+        _canStepPreviewAction = canStepPreviewAction;
         _setPreviewTestValue = setPreviewTestValue;
         _setPreviewCollectionItemValues = setPreviewCollectionItemValues;
         _setPreviewCollectionTestItems = setPreviewCollectionTestItems;
@@ -341,6 +347,8 @@ internal sealed class EditorCollectionCardFactory : IDisposable
             _triggerPreviewAction,
             _restorePreviewAction,
             _canRestorePreviewAction,
+            _stepPreviewAction,
+            _canStepPreviewAction,
             _setPreviewTestValue,
             _setPreviewCollectionItemValues,
             _setPreviewCollectionTestItems,

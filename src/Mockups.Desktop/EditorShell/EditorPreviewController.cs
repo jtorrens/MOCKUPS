@@ -1757,6 +1757,25 @@ internal sealed class EditorPreviewController : IDisposable
         return _designInputsPanel.CanRestoreAction(actionId);
     }
 
+    public bool CanStepDesignPreviewAction(string actionId, int delta)
+    {
+        return _designInputsPanel.CanStepActionFrame(actionId, delta);
+    }
+
+    public void StepDesignPreviewAction(
+        string actionId,
+        int delta,
+        string? targetValue = null)
+    {
+        if (_designInputsPanel.StepActionFrame(actionId, delta, targetValue))
+        {
+            return;
+        }
+
+        Refresh();
+        _designInputsPanel.StepActionFrame(actionId, delta, targetValue);
+    }
+
     public void RestoreDesignPreviewAction(string actionId)
     {
         if (_designInputsPanel.RestoreAction(actionId)) return;

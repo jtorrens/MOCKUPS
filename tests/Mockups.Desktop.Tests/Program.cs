@@ -162,6 +162,7 @@ var tests = new (string Name, Action Run)[]
     ("real Preview shell layout remains usable at 1040 and 1440", PreviewShellVisualTreeIsResponsive),
     ("List Item and List expose their runtime model in the real editor", ListRuntimeEditorVisualTreeExposesDynamicSetsAndState),
     ("Conversation Module exposes its Test Values Runtime in the real editor", ConversationModuleEditorVisualTreeExposesTestValues),
+    ("pinned Module Variant Preview survives changing editor selection", PinnedModuleVariantPreviewSurvivesEditorSelection),
     ("Chat List Module exposes its fixed List boundary and exact Runtime in the real editor", ChatListModuleEditorVisualTreeExposesExactListRuntime),
     ("Design Preview transient snapshots remain immutable across later edits", DesignPreviewTransientSnapshotsRemainImmutable),
     ("List Runtime updates follow stable item identity after reorder", ListRuntimeUpdatesFollowStableIdentityAfterReorder),
@@ -5915,6 +5916,83 @@ static void ObsoleteInteractivePreviewRenderResultsAreDiscarded()
         isPlaybackUpdate: true));
 }
 
+static void PinnedModuleVariantPreviewSurvivesEditorSelection()
+{
+    var source = ParityDatabasePath();
+    var temporary = Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        $".mockups-headless-pinned-preview-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        using var session = HeadlessUnitTestSession.StartNew(
+            typeof(HeadlessTestApplication));
+        session.Dispatch(
+            () =>
+            {
+                var window = DesktopHost.CreateWindow(temporary);
+                window.Width = 3000;
+                window.Height = 900;
+                window.Show();
+                Dispatcher.UIThread.RunJobs();
+
+                var nodes = WindowSession(window).TreeRoots
+                    .SelectMany(DescendantsAndSelf)
+                    .ToList();
+                var conversation = nodes.Single((node) =>
+                    node.Kind == ProjectTreeNodeKind.Module
+                    && node.Id == "module_core_chat");
+                var other = nodes.First((node) =>
+                    node.Kind == ProjectTreeNodeKind.ComponentClass);
+                var selectNode = typeof(MainWindow).GetMethod(
+                    "SelectNodeById",
+                    BindingFlags.Instance | BindingFlags.NonPublic,
+                    binder: null,
+                    types: [typeof(string)],
+                    modifiers: null)
+                    ?? throw new InvalidOperationException(
+                        "Missing MainWindow node selection boundary.");
+                True((bool)(selectNode.Invoke(
+                    window,
+                    [conversation.Id]) ?? false));
+                Dispatcher.UIThread.RunJobs();
+
+                var pinned = Required(WindowSession(window).SelectedNode);
+                Equal(ProjectTreeNodeKind.ModuleVariant, pinned.Kind);
+                var lockButton = Required(
+                    window.FindControl<Button>(
+                        "PreviewContextLockButton"));
+                var messages = Required(
+                    window.FindControl<TextBox>(
+                        "ShellMessagesTextBox"));
+                True(lockButton.IsEnabled);
+                lockButton.RaiseEvent(
+                    new RoutedEventArgs(Button.ClickEvent));
+                Dispatcher.UIThread.RunJobs();
+                True(!(messages.Text ?? "").Contains(
+                    "Module variant has no parent module",
+                    StringComparison.Ordinal));
+
+                True((bool)(selectNode.Invoke(
+                    window,
+                    [other.Id]) ?? false));
+                Dispatcher.UIThread.RunJobs();
+                True(WindowSession(window).SelectedNode?.Id != pinned.Id);
+                True(!(messages.Text ?? "").Contains(
+                    "Module variant has no parent module",
+                    StringComparison.Ordinal));
+
+                window.Hide();
+            },
+            CancellationToken.None).GetAwaiter().GetResult();
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
 void ManifestOwnersRenderCommittedFixturesAndModulesAdvanceTime()
 {
     var source = ParityDatabasePath();
@@ -9539,6 +9617,36 @@ static void ConversationPlayMessagesAdvancesRootOwnerFrame()
             .ToList();
         True(frames.Count > 40);
         Equal(frames.Count - 1, interactivePayload.LocalFrame);
+        True(inputSession.CanStepActionFrame(action.Id, -1));
+        True(!inputSession.CanStepActionFrame(action.Id, 1));
+        True(inputSession.StepActionFrame(action.Id, -1));
+        Equal(frames.Count - 2, inputSession.CurrentPreviewFrame);
+        var previousFramePayload = inputSession.ApplyInputs(
+            payload,
+            "light",
+            module.ProjectId);
+        Equal(frames.Count - 2, previousFramePayload.LocalFrame);
+        Equal(true, JsonPath.RequiredBoolean(
+            JsonPath.ParseRequiredObject(
+                previousFramePayload.DesignPreviewJson,
+                "Conversation previous frame"),
+            "conversationPlayback",
+            "Conversation previous frame"));
+        True(inputSession.StepActionFrame(action.Id, 1));
+        Equal(frames.Count - 1, inputSession.CurrentPreviewFrame);
+        True(!inputSession.StepActionFrame(action.Id, 1));
+        True(inputSession.RestoreAction(action.Id));
+        var restoredPayload = inputSession.ApplyInputs(
+            payload,
+            "light",
+            module.ProjectId);
+        Equal(frames.Count - 1, restoredPayload.LocalFrame);
+        Equal(false, JsonPath.RequiredBoolean(
+            JsonPath.ParseRequiredObject(
+                restoredPayload.DesignPreviewJson,
+                "Conversation restored frame"),
+            "conversationPlayback",
+            "Conversation restored frame"));
         Equal(0, frames[0].LocalFrame);
         Equal(40, frames[40].LocalFrame);
         Equal(40, JsonPath.RequiredInteger(
@@ -11136,6 +11244,7 @@ var isolatedUiTests = new HashSet<string>(StringComparer.Ordinal)
     "real Preview shell layout remains usable at 1040 and 1440",
     "List Item and List expose their runtime model in the real editor",
     "Conversation Module exposes its Test Values Runtime in the real editor",
+    "pinned Module Variant Preview survives changing editor selection",
     "Chat List Module exposes its fixed List boundary and exact Runtime in the real editor",
 };
 var exhaustiveTests = new HashSet<string>(StringComparer.Ordinal)
@@ -12696,11 +12805,14 @@ static void RuntimeActionControlsReactivateAfterPlaybackAndReattachment()
     {
         var playbackState = new PreviewPlaybackState();
         var canRestore = false;
+        var currentFrame = 0;
         var control = new RuntimeTestActionControl(
             "Test Action",
             (_) => { },
             () => { },
             () => canRestore,
+            (_, delta) => currentFrame = Math.Clamp(currentFrame + delta, 0, 1),
+            (delta) => delta < 0 ? currentFrame > 0 : currentFrame < 1,
             playbackState);
         var window = new Window
         {
@@ -12717,19 +12829,31 @@ static void RuntimeActionControlsReactivateAfterPlaybackAndReattachment()
 
         var play = ActionButton("Play Test Action");
         var restore = ActionButton("Restore Test Action");
+        var previous = ActionButton("Previous frame · Test Action");
+        var next = ActionButton("Next frame · Test Action");
         True(play.IsEnabled);
         True(!restore.IsEnabled);
+        True(!previous.IsEnabled);
+        True(next.IsEnabled);
 
         playbackState.SetBusy(true);
         Dispatcher.UIThread.RunJobs();
         True(!play.IsEnabled);
         True(!restore.IsEnabled);
+        True(!previous.IsEnabled);
+        True(!next.IsEnabled);
 
         canRestore = true;
         playbackState.SetBusy(false);
         Dispatcher.UIThread.RunJobs();
         True(play.IsEnabled);
         True(restore.IsEnabled);
+        True(!previous.IsEnabled);
+        True(next.IsEnabled);
+
+        next.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        True(previous.IsEnabled);
+        True(!next.IsEnabled);
 
         window.Content = null;
         Dispatcher.UIThread.RunJobs();
@@ -12742,6 +12866,8 @@ static void RuntimeActionControlsReactivateAfterPlaybackAndReattachment()
         Dispatcher.UIThread.RunJobs();
         True(play.IsEnabled);
         True(restore.IsEnabled);
+        True(previous.IsEnabled);
+        True(!next.IsEnabled);
         window.Close();
     }, CancellationToken.None).GetAwaiter().GetResult();
 }

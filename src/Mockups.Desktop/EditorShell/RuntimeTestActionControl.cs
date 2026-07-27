@@ -14,7 +14,10 @@ internal sealed class RuntimeTestActionControl : Border
 {
     private readonly Button _playButton;
     private readonly Button _restoreButton;
+    private readonly Button _previousFrameButton;
+    private readonly Button _nextFrameButton;
     private readonly Func<bool> _canRestore;
+    private readonly Func<int, bool> _canStep;
     private readonly PreviewPlaybackState _playbackState;
     private readonly IReadOnlyList<FieldOption> _targetOptions;
     private readonly string _initialTargetValue;
@@ -27,11 +30,14 @@ internal sealed class RuntimeTestActionControl : Border
         Action<string?> play,
         Action restore,
         Func<bool> canRestore,
+        Action<string?, int> step,
+        Func<int, bool> canStep,
         PreviewPlaybackState playbackState,
         IReadOnlyList<FieldOption>? targetOptions = null,
         string currentTargetValue = "")
     {
         _canRestore = canRestore;
+        _canStep = canStep;
         _playbackState = playbackState;
         _targetOptions = targetOptions ?? [];
         _initialTargetValue = currentTargetValue;
@@ -45,7 +51,7 @@ internal sealed class RuntimeTestActionControl : Border
         var hasTargetOptions = targetOptions is { Count: > 0 };
         var layout = new Grid
         {
-            ColumnDefinitions = new ColumnDefinitions("Auto,Auto,Auto"),
+            ColumnDefinitions = new ColumnDefinitions("Auto,Auto,Auto,Auto,Auto"),
             ColumnSpacing = 6,
             VerticalAlignment = VerticalAlignment.Center,
         };
@@ -97,6 +103,30 @@ internal sealed class RuntimeTestActionControl : Border
         };
         Grid.SetColumn(_restoreButton, 2);
         layout.Children.Add(_restoreButton);
+
+        _previousFrameButton = CreateButton(
+            EditorIcons.TimelinePreviousFrame,
+            $"Previous frame · {label}");
+        _previousFrameButton.Click += (_, args) =>
+        {
+            args.Handled = true;
+            step(_targetCombo?.SelectedItem?.Value, -1);
+            RefreshState();
+        };
+        Grid.SetColumn(_previousFrameButton, 3);
+        layout.Children.Add(_previousFrameButton);
+
+        _nextFrameButton = CreateButton(
+            EditorIcons.TimelineNextFrame,
+            $"Next frame · {label}");
+        _nextFrameButton.Click += (_, args) =>
+        {
+            args.Handled = true;
+            step(_targetCombo?.SelectedItem?.Value, 1);
+            RefreshState();
+        };
+        Grid.SetColumn(_nextFrameButton, 4);
+        layout.Children.Add(_nextFrameButton);
         Child = layout;
 
         PreviewPlaybackStateBinding.Attach(this, _playbackState, OnPlaybackStateChanged);
@@ -139,5 +169,7 @@ internal sealed class RuntimeTestActionControl : Border
     {
         _playButton.IsEnabled = !_playbackState.IsBusy;
         _restoreButton.IsEnabled = !_playbackState.IsBusy && _canRestore();
+        _previousFrameButton.IsEnabled = !_playbackState.IsBusy && _canStep(-1);
+        _nextFrameButton.IsEnabled = !_playbackState.IsBusy && _canStep(1);
     }
 }
