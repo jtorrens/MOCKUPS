@@ -3,27 +3,24 @@ using Mockups.DesktopEditorShell.EditorShell;
 
 namespace Mockups.DesktopEditorShell.Data;
 
-internal sealed class SqliteRecordClassFieldStore :
-    IRecordClassFieldStore
+internal sealed partial class SqliteProductionRecordFieldStore :
+    IProductionRecordFieldStore
 {
     private readonly SqliteProjectContext _context;
-    private readonly SqliteDesignOwner _design;
     private readonly SqliteProductionOwner _production;
+    private readonly SqliteDesignOwner _design;
     private readonly SqliteResourceOwner _resources;
-    private readonly SqliteCoreFieldStore _coreFields;
 
-    internal SqliteRecordClassFieldStore(
+    internal SqliteProductionRecordFieldStore(
         SqliteProjectContext context,
-        SqliteDesignOwner design,
         SqliteProductionOwner production,
-        SqliteResourceOwner resources,
-        SqliteCoreFieldStore coreFields)
+        SqliteDesignOwner design,
+        SqliteResourceOwner resources)
     {
         _context = context;
-        _design = design;
         _production = production;
+        _design = design;
         _resources = resources;
-        _coreFields = coreFields;
     }
 
     public ProjectSettings GetProjectSettings(string projectId) =>
@@ -94,6 +91,39 @@ internal sealed class SqliteRecordClassFieldStore :
                 $"Missing Device '{actor.DefaultDeviceId}'.");
     }
 
+    public string GetModuleInstanceVariantReference(
+        string moduleInstanceId) =>
+        _production.GetModuleInstanceVariantReference(
+            moduleInstanceId);
+
+    public void UpdateModuleInstanceField(
+        string moduleInstanceId,
+        string fieldId,
+        string value)
+    {
+        using var connection = _context.OpenConnection();
+        _production.UpdateModuleInstanceField(
+            connection,
+            moduleInstanceId,
+            fieldId,
+            value,
+            ModuleInstanceProjectActorIds(
+                connection,
+                moduleInstanceId));
+    }
+}
+
+internal sealed partial class SqliteDesignRecordFieldStore :
+    IDesignRecordFieldStore
+{
+    private readonly SqliteDesignOwner _design;
+
+    internal SqliteDesignRecordFieldStore(
+        SqliteDesignOwner design)
+    {
+        _design = design;
+    }
+
     public AppSettings GetAppSettings(string appId) =>
         _design.GetAppSettings(appId);
 
@@ -145,26 +175,20 @@ internal sealed class SqliteRecordClassFieldStore :
         string fieldId,
         string value) =>
         _design.UpdateModuleVariantField(node, fieldId, value);
+}
 
-    public string GetModuleInstanceVariantReference(
-        string moduleInstanceId) =>
-        _production.GetModuleInstanceVariantReference(
-            moduleInstanceId);
+internal sealed class SqliteResourceRecordFieldStore :
+    IResourceRecordFieldStore
+{
+    private readonly SqliteResourceOwner _resources;
+    private readonly SqliteCoreFieldStore _coreFields;
 
-    public void UpdateModuleInstanceField(
-        string moduleInstanceId,
-        string fieldId,
-        string value)
+    internal SqliteResourceRecordFieldStore(
+        SqliteResourceOwner resources,
+        SqliteCoreFieldStore coreFields)
     {
-        using var connection = _context.OpenConnection();
-        _production.UpdateModuleInstanceField(
-            connection,
-            moduleInstanceId,
-            fieldId,
-            value,
-            ModuleInstanceProjectActorIds(
-                connection,
-                moduleInstanceId));
+        _resources = resources;
+        _coreFields = coreFields;
     }
 
     public PaletteColorSettings GetPaletteColorSettings(
@@ -266,6 +290,14 @@ internal sealed class SqliteRecordClassFieldStore :
             fieldId,
             value);
 
+    public ProjectTreeNode RenamePaletteColor(
+        ProjectTreeNode node,
+        string name) =>
+        _coreFields.RenameDirectNode(node, name);
+}
+
+internal sealed partial class SqliteDesignRecordFieldStore
+{
     public IReadOnlyList<FieldOption>
         GetComponentVariantReferenceOptionsByType(
             string projectId,
@@ -283,12 +315,10 @@ internal sealed class SqliteRecordClassFieldStore :
     public IReadOnlyList<FieldOption>
         GetNavigationBarComponentVariantOptions(string projectId) =>
         _design.GetNavigationBarComponentVariantOptions(projectId);
+}
 
-    public ProjectTreeNode RenameDirectNode(
-        ProjectTreeNode node,
-        string name) =>
-        _coreFields.RenameDirectNode(node, name);
-
+internal sealed partial class SqliteProductionRecordFieldStore
+{
     private IReadOnlySet<string> ModuleInstanceProjectActorIds(
         SqliteConnection connection,
         string moduleInstanceId)

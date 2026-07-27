@@ -1557,7 +1557,9 @@ static void ResourceScalarReadsRejectWrongShapes()
         var database = new SqliteProjectTestContext(temporary);
         var context = new SqliteProjectContext(temporary);
         var fields = new RecordClassFieldValueService(
-            RecordFields(database),
+            ProductionRecordFields(database),
+            DesignRecordFields(database),
+            ResourceRecordFields(database),
             database.Production,
             database.Resources);
         var nodes = Descendants(database.LoadProjectTree()).ToList();
@@ -3259,6 +3261,22 @@ static void SqliteSessionExposesDistinctFocusedPorts()
         persistenceAssembly.GetType(
             "Mockups.DesktopEditorShell.Data.SqliteProjectEngine")
         is null);
+    True(
+        persistenceAssembly.GetType(
+            "Mockups.DesktopEditorShell.Data.SqliteRecordClassFieldStore")
+        is null);
+    SequenceEqual(
+        new[] { typeof(IProductionRecordFieldStore) },
+        typeof(SqliteProductionRecordFieldStore)
+            .GetInterfaces());
+    SequenceEqual(
+        new[] { typeof(IDesignRecordFieldStore) },
+        typeof(SqliteDesignRecordFieldStore)
+            .GetInterfaces());
+    SequenceEqual(
+        new[] { typeof(IResourceRecordFieldStore) },
+        typeof(SqliteResourceRecordFieldStore)
+            .GetInterfaces());
     True(typeof(SqliteProjectSessionFactory).IsNotPublic);
     Equal(
         0,
@@ -3302,7 +3320,12 @@ static void SqliteSessionExposesDistinctFocusedPorts()
         (project.ProjectPaths, typeof(IProjectPathResolver)),
         (project.Navigation, typeof(IEditorNavigationDataSource)),
         (project.CoreFields, typeof(ICoreFieldStore)),
-        (project.RecordFields, typeof(IRecordClassFieldStore)),
+        (project.ProductionRecordFields,
+            typeof(IProductionRecordFieldStore)),
+        (project.DesignRecordFields,
+            typeof(IDesignRecordFieldStore)),
+        (project.ResourceRecordFields,
+            typeof(IResourceRecordFieldStore)),
         (project.ComponentFields, typeof(IComponentClassFieldStore)),
         (project.VariantHistory, typeof(IVariantHistoryStore)),
         (project.Preview, typeof(IPreviewInputRepository)),
@@ -3386,7 +3409,21 @@ static void SqliteSessionExposesDistinctFocusedPorts()
     True(project.Timeline is not IPreviewInputRepository);
     True(project.Timeline is not IModuleInstanceThemeTokenQuery);
     True(project.ModuleInstanceThemes is not IModuleInstanceTimelineStore);
-    True(project.Layouts is not IRecordClassFieldStore);
+    True(project.Layouts is not IProductionRecordFieldStore);
+    True(project.Layouts is not IDesignRecordFieldStore);
+    True(project.Layouts is not IResourceRecordFieldStore);
+    True(project.ProductionRecordFields is not
+        IDesignRecordFieldStore);
+    True(project.ProductionRecordFields is not
+        IResourceRecordFieldStore);
+    True(project.DesignRecordFields is not
+        IProductionRecordFieldStore);
+    True(project.DesignRecordFields is not
+        IResourceRecordFieldStore);
+    True(project.ResourceRecordFields is not
+        IProductionRecordFieldStore);
+    True(project.ResourceRecordFields is not
+        IDesignRecordFieldStore);
     True(project.Presentation is not IPreviewInputRepository);
     True(project.ActorPreview is not IEditorNodeCommandStore);
     True(project.Children is not IEditorNodeCommandStore);
@@ -3983,9 +4020,20 @@ static IEditorNodeCommandStore NodeCommands(
     SqliteProjectTestContext database) =>
     new SqliteEditorNodeCommandPort(database.NodeCommands);
 
-static IRecordClassFieldStore RecordFields(
+static IProductionRecordFieldStore ProductionRecordFields(
     SqliteProjectTestContext database) =>
-    new SqliteRecordClassFieldPort(database.RecordFields);
+    new SqliteProductionRecordFieldPort(
+        database.ProductionRecordFields);
+
+static IDesignRecordFieldStore DesignRecordFields(
+    SqliteProjectTestContext database) =>
+    new SqliteDesignRecordFieldPort(
+        database.DesignRecordFields);
+
+static IResourceRecordFieldStore ResourceRecordFields(
+    SqliteProjectTestContext database) =>
+    new SqliteResourceRecordFieldPort(
+        database.ResourceRecordFields);
 
 static void PreviewResourceSelectionHasOneSessionRule()
 {
@@ -5153,7 +5201,9 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
 
             var database = new SqliteProjectTestContext(temporary);
             var fieldValues = new RecordClassFieldValueService(
-                RecordFields(database),
+                ProductionRecordFields(database),
+                DesignRecordFields(database),
+                ResourceRecordFields(database),
                 database.Production,
                 database.Resources);
             var projectId = treeRoots
@@ -12913,7 +12963,9 @@ static void LockScreenComposesRuntimeStack()
         var lockScreenInstance = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance
             && database.GetModuleInstanceSettings(node.Id).ModuleId == module.Id);
         var values = new RecordClassFieldValueService(
-            RecordFields(database),
+            ProductionRecordFields(database),
+            DesignRecordFields(database),
+            ResourceRecordFields(database),
             database.Production,
             database.Resources);
         True(values.CreateFieldValue(lockScreenInstance, "moduleInstance.durationFrames").Definition.IsEditable);

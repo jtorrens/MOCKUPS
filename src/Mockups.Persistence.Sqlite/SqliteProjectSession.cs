@@ -9,7 +9,9 @@ public sealed class SqliteProjectSession
         IProjectPathResolver projectPaths,
         IEditorNavigationDataSource navigation,
         ICoreFieldStore coreFields,
-        IRecordClassFieldStore recordFields,
+        IProductionRecordFieldStore productionRecordFields,
+        IDesignRecordFieldStore designRecordFields,
+        IResourceRecordFieldStore resourceRecordFields,
         IComponentClassFieldStore componentFields,
         IVariantHistoryStore variantHistory,
         IPreviewInputRepository preview,
@@ -35,7 +37,9 @@ public sealed class SqliteProjectSession
         ProjectPaths = projectPaths;
         Navigation = navigation;
         CoreFields = coreFields;
-        RecordFields = recordFields;
+        ProductionRecordFields = productionRecordFields;
+        DesignRecordFields = designRecordFields;
+        ResourceRecordFields = resourceRecordFields;
         ComponentFields = componentFields;
         VariantHistory = variantHistory;
         Preview = preview;
@@ -65,7 +69,20 @@ public sealed class SqliteProjectSession
 
     public ICoreFieldStore CoreFields { get; }
 
-    public IRecordClassFieldStore RecordFields { get; }
+    public IProductionRecordFieldStore ProductionRecordFields
+    {
+        get;
+    }
+
+    public IDesignRecordFieldStore DesignRecordFields
+    {
+        get;
+    }
+
+    public IResourceRecordFieldStore ResourceRecordFields
+    {
+        get;
+    }
 
     public IComponentClassFieldStore ComponentFields { get; }
 

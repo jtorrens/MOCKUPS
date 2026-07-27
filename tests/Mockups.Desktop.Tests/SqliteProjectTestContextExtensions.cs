@@ -133,7 +133,7 @@ internal static class SqliteProjectTestContextExtensions
         string shotId,
         string fieldId,
         string value) =>
-        engine.RecordFields.UpdateShotField(
+        engine.ProductionRecordFields.UpdateShotField(
             shotId,
             fieldId,
             value);
@@ -141,7 +141,7 @@ internal static class SqliteProjectTestContextExtensions
     internal static string GetShotOwnerDeviceName(
         this SqliteProjectTestContext engine,
         string shotId) =>
-        engine.RecordFields.GetShotOwnerDeviceName(shotId);
+        engine.ProductionRecordFields.GetShotOwnerDeviceName(shotId);
 
     internal static ShotSettings GetShotSettings(
         this SqliteProjectTestContext engine,

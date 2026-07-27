@@ -57,12 +57,19 @@ internal static class SqliteProjectSessionFactory
             resources,
             referenceUsages,
             coreFields);
-        var recordFields = new SqliteRecordClassFieldStore(
-            context,
-            design,
-            production,
-            resources,
-            coreFields);
+        var productionRecordFields =
+            new SqliteProductionRecordFieldStore(
+                context,
+                production,
+                design,
+                resources);
+        var designRecordFields =
+            new SqliteDesignRecordFieldStore(
+                design);
+        var resourceRecordFields =
+            new SqliteResourceRecordFieldStore(
+                resources,
+                coreFields);
         var navigation = new SqliteEditorNavigationStore(
             context,
             design,
@@ -88,7 +95,12 @@ internal static class SqliteProjectSessionFactory
             new SqliteEditorNavigationPort(
                 navigation.LoadProjectTree),
             new SqliteCoreFieldPort(coreFields),
-            new SqliteRecordClassFieldPort(recordFields),
+            new SqliteProductionRecordFieldPort(
+                productionRecordFields),
+            new SqliteDesignRecordFieldPort(
+                designRecordFields),
+            new SqliteResourceRecordFieldPort(
+                resourceRecordFields),
             new SqliteComponentClassFieldPort(
                 componentDocuments),
             new SqliteVariantHistoryPort(design),

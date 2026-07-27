@@ -247,6 +247,8 @@ That structural suite also requires:
   Application interface;
 - every session capability exposes exactly the public methods declared by its
   own port;
+- Production, Design and Resource record-field adapters are pairwise
+  non-castable and expose only their owner-specific contract;
 - test fixtures reach navigation through the focused navigation owner;
 - Design, Production and Resources reads and writes cannot reappear as
   composition forwarding methods;
@@ -258,9 +260,10 @@ That structural suite also requires:
   session or its factory;
 - Module Variant fields, selection, lifecycle commands and effective Runtime
   reads cannot reappear as a composition facade;
-- Module Instance Runtime writes, collection lifecycle, scalar fields,
+- Module Instance Runtime writes, collection lifecycle, Production scalar fields,
   animation and read models cannot reappear as composition operations;
-- Shot fields and default path discovery remain on their focused owners;
+- Shot fields, Design scalar fields, Resource scalar fields and default path
+  discovery remain on their focused owners;
 - exact manifest owner files, categories and declared embeds;
 - exact Component and Module registry parity;
 - registries whose factory entries are direct owner calls without business

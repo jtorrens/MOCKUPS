@@ -7,7 +7,7 @@ internal static class SqliteProjectTestContextModuleVariantExtensions
     internal static ModuleSettings GetModuleVariantSettings(
         this SqliteProjectTestContext engine,
         ProjectTreeNode variantNode) =>
-        engine.RecordFields.GetModuleVariantSettings(variantNode);
+        engine.DesignRecordFields.GetModuleVariantSettings(variantNode);
 
     internal static ModuleSettings GetModuleInstanceVariantSettings(
         this SqliteProjectTestContext engine,
@@ -24,7 +24,7 @@ internal static class SqliteProjectTestContextModuleVariantExtensions
     internal static string GetModuleInstanceVariantReference(
         this SqliteProjectTestContext engine,
         string moduleInstanceId) =>
-        engine.RecordFields.GetModuleInstanceVariantReference(
+        engine.ProductionRecordFields.GetModuleInstanceVariantReference(
             moduleInstanceId);
 
     internal static string GetModuleInstanceVariantName(
@@ -36,13 +36,13 @@ internal static class SqliteProjectTestContextModuleVariantExtensions
     internal static IReadOnlyList<FieldOption> GetModuleVariantOptions(
         this SqliteProjectTestContext engine,
         string moduleId) =>
-        engine.RecordFields.GetModuleVariantOptions(moduleId);
+        engine.DesignRecordFields.GetModuleVariantOptions(moduleId);
 
     internal static void UpdateModuleInstanceVariant(
         this SqliteProjectTestContext engine,
         string moduleInstanceId,
         string reference) =>
-        engine.RecordFields.UpdateModuleInstanceField(
+        engine.ProductionRecordFields.UpdateModuleInstanceField(
             moduleInstanceId,
             "moduleInstance.variant",
             reference);
@@ -82,7 +82,7 @@ internal static class SqliteProjectTestContextModuleVariantExtensions
         ProjectTreeNode node,
         string fieldId,
         string value) =>
-        engine.RecordFields.UpdateModuleVariantField(
+        engine.DesignRecordFields.UpdateModuleVariantField(
             node,
             fieldId,
             value);
@@ -91,7 +91,7 @@ internal static class SqliteProjectTestContextModuleVariantExtensions
         this SqliteProjectTestContext engine,
         ProjectTreeNode node,
         string fieldId) =>
-        engine.RecordFields.GetModuleVariantConfigFieldValue(
+        engine.DesignRecordFields.GetModuleVariantConfigFieldValue(
             node,
             fieldId);
 }

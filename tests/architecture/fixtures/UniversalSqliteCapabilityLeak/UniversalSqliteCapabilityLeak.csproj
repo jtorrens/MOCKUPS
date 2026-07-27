@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../../../../src/Mockups.Application.PersistencePorts/Mockups.Application.PersistencePorts.csproj" />
     <ProjectReference Include="../../../../src/Mockups.Persistence.Sqlite/Mockups.Persistence.Sqlite.csproj" />
   </ItemGroup>
 </Project>

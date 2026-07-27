@@ -67,12 +67,19 @@ internal sealed class SqliteProjectTestContext
             Resources,
             _referenceUsages,
             CoreFields);
-        RecordFields = new SqliteRecordClassFieldStore(
-            context,
-            Design,
-            Production,
-            Resources,
-            CoreFields);
+        ProductionRecordFields =
+            new SqliteProductionRecordFieldStore(
+                context,
+                Production,
+                Design,
+                Resources);
+        DesignRecordFields =
+            new SqliteDesignRecordFieldStore(
+                Design);
+        ResourceRecordFields =
+            new SqliteResourceRecordFieldStore(
+                Resources,
+                CoreFields);
         Navigation = new SqliteEditorNavigationStore(
             context,
             Design,
@@ -131,7 +138,20 @@ internal sealed class SqliteProjectTestContext
 
     internal SqliteEditorNodeCommandStore NodeCommands { get; }
 
-    internal IRecordClassFieldStore RecordFields { get; }
+    internal IProductionRecordFieldStore ProductionRecordFields
+    {
+        get;
+    }
+
+    internal IDesignRecordFieldStore DesignRecordFields
+    {
+        get;
+    }
+
+    internal IResourceRecordFieldStore ResourceRecordFields
+    {
+        get;
+    }
 
     internal SqliteEditorNavigationStore Navigation { get; }
 

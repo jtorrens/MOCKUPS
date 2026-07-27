@@ -141,10 +141,11 @@ Every public session capability is tested against its declared interface:
 the concrete adapter may expose no additional public method. This applies
 equally to Preview and Dictionary, whose retired sibling capabilities are not
 present on their runtime adapter types.
-Component documents, Component fields, record fields, core fields, Screen
-collections, child creation and node commands are composed from the exact
-Design, Production, Resources, Usage and context owners they require. None is
-implemented by or recoverable through a universal persistence object.
+Component documents, Component fields, Production record fields, Design record
+fields, Resource record fields, core fields, Screen collections, child creation
+and node commands are composed from the exact owners they require. Each record
+field capability has a distinct adapter and cannot be cast to either sibling.
+None is implemented by or recoverable through a universal persistence object.
 `SqliteEditorNavigationStore` owns the complete read-only tree projection.
 Navigation receives only that store's tree-loading function behind its exact
 membrane; a consumer cannot cast the function or adapter back to the store.
@@ -162,10 +163,13 @@ Production owner.
 Module Instance Runtime writes belong to
 `SqliteRuntimeInputInstanceStore`, collection lifecycle to
 `SqliteModuleInstanceCollectionStore`, scalar fields to
-`SqliteRecordClassFieldStore`, and animation/read models to the Production
+`SqliteProductionRecordFieldStore`, and animation/read models to the Production
 owner. The session composes one Runtime Input store instance.
 Shot scalar writes and derived owner-device reads belong to
-`SqliteRecordClassFieldStore`. Default database path discovery belongs to
+`SqliteProductionRecordFieldStore`. App and Module scalar fields belong to
+`SqliteDesignRecordFieldStore`; Palette, Device, Actor, Theme, Icon Theme and
+Production Font scalar fields belong to `SqliteResourceRecordFieldStore`.
+Default database path discovery belongs to
 `SqlitePersistence`. Read-only startup validation belongs
 exclusively to `SqliteCurrentDatabaseValidator`, which receives the shared
 context plus the three already constructed owners, opens its own validation
@@ -237,8 +241,6 @@ classification, collection-key semantics or stable-id projection rules.
 `ActorPreview` is composed directly from `SqliteResourceOwner`. Its Production
 theme-context validation arrives through an internal contract declared outside
 the Production implementation, so Resources cannot call Production code.
-The temporary aggregate delegates resource operations to that owner while
-older cross-domain ports are separated incrementally.
 
 Focused repositories own table SQL, row mapping and prepared complete writes:
 

@@ -175,7 +175,7 @@ internal static class SqliteProjectTestContextModuleInstanceExtensions
         string moduleInstanceId,
         string fieldId,
         string value) =>
-        engine.RecordFields.UpdateModuleInstanceField(
+        engine.ProductionRecordFields.UpdateModuleInstanceField(
             moduleInstanceId,
             fieldId,
             value);

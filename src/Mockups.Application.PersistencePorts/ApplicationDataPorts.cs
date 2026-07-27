@@ -30,7 +30,7 @@ public interface ICoreFieldStore
     void UpdateNode(EditorShell.ProjectTreeNode node);
 }
 
-public interface IRecordClassFieldStore
+public interface IProductionRecordFieldStore
 {
     ProjectSettings GetProjectSettings(string projectId);
     void UpdateProjectField(string projectId, string fieldId, string value);
@@ -40,6 +40,15 @@ public interface IRecordClassFieldStore
     void UpdateShotField(string shotId, string fieldId, string value);
     string GetShotRenderName(string shotId);
     string GetShotOwnerDeviceName(string shotId);
+    string GetModuleInstanceVariantReference(string moduleInstanceId);
+    void UpdateModuleInstanceField(
+        string moduleInstanceId,
+        string fieldId,
+        string value);
+}
+
+public interface IDesignRecordFieldStore
+{
     AppSettings GetAppSettings(string appId);
     void UpdateAppField(string appId, string fieldId, string value);
     string GetAppConfigFieldValue(string appId, string fieldId);
@@ -58,11 +67,19 @@ public interface IRecordClassFieldStore
         EditorShell.ProjectTreeNode node,
         string fieldId,
         string value);
-    string GetModuleInstanceVariantReference(string moduleInstanceId);
-    void UpdateModuleInstanceField(
-        string moduleInstanceId,
-        string fieldId,
-        string value);
+    IReadOnlyList<EditorShell.FieldOption>
+        GetComponentVariantReferenceOptionsByType(
+            string projectId,
+            string componentType,
+            bool includeNone = false);
+    IReadOnlyList<EditorShell.FieldOption>
+        GetStatusBarComponentVariantOptions(string projectId);
+    IReadOnlyList<EditorShell.FieldOption>
+        GetNavigationBarComponentVariantOptions(string projectId);
+}
+
+public interface IResourceRecordFieldStore
+{
     PaletteColorSettings GetPaletteColorSettings(string colorId);
     IReadOnlyList<EditorShell.FieldOption> GetPaletteColorOptions(
         string projectId);
@@ -94,16 +111,7 @@ public interface IRecordClassFieldStore
         string fontId,
         string fieldId,
         string value);
-    IReadOnlyList<EditorShell.FieldOption>
-        GetComponentVariantReferenceOptionsByType(
-            string projectId,
-            string componentType,
-            bool includeNone = false);
-    IReadOnlyList<EditorShell.FieldOption>
-        GetStatusBarComponentVariantOptions(string projectId);
-    IReadOnlyList<EditorShell.FieldOption>
-        GetNavigationBarComponentVariantOptions(string projectId);
-    EditorShell.ProjectTreeNode RenameDirectNode(
+    EditorShell.ProjectTreeNode RenamePaletteColor(
         EditorShell.ProjectTreeNode node,
         string name);
 }

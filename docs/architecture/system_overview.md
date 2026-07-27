@@ -262,17 +262,19 @@ cannot reference Avalonia or Desktop. Each SQLite context owns its write
 coordination; opening an unrelated database never shares a process-global
 write lock.
 
-The session exposes child creation, node commands, Module Instance collections,
-Icon Theme assets, Theme tokens, Component documents, Runtime Input owner and
-instance writes, animation and Reference Usage as separate capabilities. The
+The session exposes Production, Design and Resource record fields, child
+creation, node commands, Module Instance collections, Icon Theme assets, Theme
+tokens, Component documents, Runtime Input owner and instance writes, animation
+and Reference Usage as separate capabilities. Record-field adapters are
+pairwise non-castable. The
 desktop composition passes those capabilities independently; it has no
 dialog-, header- or collection-wide persistence store. Actor Preview is backed
 directly by the Resources owner. Component Preview and Variant History are
 backed directly by the Design owner. Generic Preview input, Component Preview,
 Module Instance timeline, Actor Preview and dictionary context are independent
-ports; no one of them can be cast to another. Remaining cross-domain
-application operations move to focused owners as their contracts are
-decomposed. Retired area-wide adapters are deleted rather than retained as
+ports; no one of them can be cast to another. Cross-domain application
+operations use explicit focused composition services. Retired area-wide
+adapters are deleted rather than retained as
 unused forwarding code.
 Generic Preview is a focused read composition over Production, Design and
 Resources. Dictionary context is a separate Design/Resources composition.

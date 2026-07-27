@@ -9,18 +9,24 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class RecordClassFieldValueService
 {
-    private readonly IRecordClassFieldStore _database;
+    private readonly IProductionRecordFieldStore _production;
+    private readonly IDesignRecordFieldStore _design;
+    private readonly IResourceRecordFieldStore _resources;
     private readonly IModuleInstanceTimelineStore _timeline;
     private readonly ProductionOutputRootStore _productionOutputRoots;
     private readonly ModuleInstanceTimelineDataSource _timelineDataSource;
 
     public RecordClassFieldValueService(
-        IRecordClassFieldStore database,
+        IProductionRecordFieldStore production,
+        IDesignRecordFieldStore design,
+        IResourceRecordFieldStore resources,
         IModuleInstanceTimelineStore timeline,
         IModuleInstanceThemeTokenQuery moduleInstanceThemes,
         ProductionOutputRootStore? productionOutputRoots = null)
     {
-        _database = database;
+        _production = production;
+        _design = design;
+        _resources = resources;
         _timeline = timeline;
         _productionOutputRoots =
             productionOutputRoots ?? new ProductionOutputRootStore();
@@ -79,7 +85,7 @@ internal sealed class RecordClassFieldValueService
             ProjectTreeNodeKind.Module => ModuleFieldOptions(node.Id, field),
             ProjectTreeNodeKind.ModuleVariant => ModuleFieldOptions(node.Parent?.Id ?? "", field),
             ProjectTreeNodeKind.ModuleInstance => field.Id == "moduleInstance.variant"
-                ? _database.GetModuleVariantOptions(
+                ? _design.GetModuleVariantOptions(
                     _timeline.GetModuleInstanceSettings(node.Id).ModuleId)
                 : field.Options,
             ProjectTreeNodeKind.Shot => ShotFieldOptions(node.Id, field),
@@ -89,7 +95,7 @@ internal sealed class RecordClassFieldValueService
 
         if (node.Kind == ProjectTreeNodeKind.Shot && field.Id == "shot.fps")
         {
-            var settings = _database.GetShotSettings(node.Id);
+            var settings = _production.GetShotSettings(node.Id);
             var inheritedValue = settings.ProjectDefaultFps.ToString();
             return new FieldValue(
                 new FieldDefinition(
@@ -150,7 +156,7 @@ internal sealed class RecordClassFieldValueService
         if (node.Kind == ProjectTreeNodeKind.ModuleVariant && node.IsLocked) return;
         if (node.Kind == ProjectTreeNodeKind.PaletteColor && fieldId == "palette.token")
         {
-            var renamed = _database.RenameDirectNode(node, value);
+            var renamed = _resources.RenamePaletteColor(node, value);
             node.Name = renamed.Name;
             return;
         }
@@ -166,40 +172,40 @@ internal sealed class RecordClassFieldValueService
                 {
                     return;
                 }
-                _database.UpdateProjectField(node.Id, fieldId, value);
+                _production.UpdateProjectField(node.Id, fieldId, value);
                 return;
             case ProjectTreeNodeKind.App when fieldId.StartsWith("app.", StringComparison.Ordinal):
-                _database.UpdateAppField(node.Id, fieldId, value);
+                _design.UpdateAppField(node.Id, fieldId, value);
                 return;
             case ProjectTreeNodeKind.Module when fieldId.StartsWith("module.", StringComparison.Ordinal):
-                _database.UpdateModuleField(node.Id, fieldId, value);
+                _design.UpdateModuleField(node.Id, fieldId, value);
                 return;
             case ProjectTreeNodeKind.ModuleVariant when fieldId.StartsWith("module.", StringComparison.Ordinal):
-                _database.UpdateModuleVariantField(node, fieldId, value);
+                _design.UpdateModuleVariantField(node, fieldId, value);
                 return;
             case ProjectTreeNodeKind.ModuleInstance when fieldId.StartsWith("moduleInstance.", StringComparison.Ordinal):
-                _database.UpdateModuleInstanceField(node.Id, fieldId, value);
+                _production.UpdateModuleInstanceField(node.Id, fieldId, value);
                 return;
             case ProjectTreeNodeKind.Episode when fieldId.StartsWith("episode.", StringComparison.Ordinal):
-                _database.UpdateEpisodeField(node.Id, fieldId, value);
+                _production.UpdateEpisodeField(node.Id, fieldId, value);
                 return;
             case ProjectTreeNodeKind.Shot when fieldId.StartsWith("shot.", StringComparison.Ordinal):
-                _database.UpdateShotField(node.Id, fieldId, value);
+                _production.UpdateShotField(node.Id, fieldId, value);
                 return;
             case ProjectTreeNodeKind.PaletteColor when fieldId.StartsWith("palette.", StringComparison.Ordinal):
-                _database.UpdatePaletteColorField(node.Id, fieldId, value);
+                _resources.UpdatePaletteColorField(node.Id, fieldId, value);
                 return;
             case ProjectTreeNodeKind.Device when fieldId.StartsWith("device.", StringComparison.Ordinal):
-                _database.UpdateDeviceField(node.Id, fieldId, value);
+                _resources.UpdateDeviceField(node.Id, fieldId, value);
                 return;
             case ProjectTreeNodeKind.Theme when fieldId.StartsWith("theme.", StringComparison.Ordinal):
-                _database.UpdateThemeField(node.Id, fieldId, value);
+                _resources.UpdateThemeField(node.Id, fieldId, value);
                 return;
             case ProjectTreeNodeKind.Actor when fieldId.StartsWith("actor.", StringComparison.Ordinal):
-                _database.UpdateActorField(node.Id, fieldId, value);
+                _resources.UpdateActorField(node.Id, fieldId, value);
                 return;
             case ProjectTreeNodeKind.ProductionFont when fieldId.StartsWith("font.", StringComparison.Ordinal):
-                _database.UpdateProductionFontField(node.Id, fieldId, value);
+                _resources.UpdateProductionFontField(node.Id, fieldId, value);
                 return;
             case ProjectTreeNodeKind.IconTheme when fieldId.StartsWith("iconTheme.", StringComparison.Ordinal):
                 return;
@@ -210,7 +216,7 @@ internal sealed class RecordClassFieldValueService
 
     private string ProjectFieldValue(string projectId, string fieldId)
     {
-        var settings = _database.GetProjectSettings(projectId);
+        var settings = _production.GetProjectSettings(projectId);
         return fieldId switch
         {
             "project.slug" => settings.Slug,
@@ -247,7 +253,7 @@ internal sealed class RecordClassFieldValueService
 
     private string EpisodeFieldValue(string episodeId, string fieldId)
     {
-        var settings = _database.GetEpisodeSettings(episodeId);
+        var settings = _production.GetEpisodeSettings(episodeId);
         return fieldId switch
         {
             "episode.slug" => settings.Slug,
@@ -258,31 +264,31 @@ internal sealed class RecordClassFieldValueService
 
     private string ModuleFieldValue(string moduleId, string fieldId)
     {
-        var settings = _database.GetModuleSettings(moduleId);
+        var settings = _design.GetModuleSettings(moduleId);
         return fieldId switch
         {
             "module.recordClassId" => settings.RecordClassId,
             "module.sortOrder" => settings.SortOrder.ToString(),
             "module.metadata" => settings.MetadataJson,
             "module.appearanceMode" =>
-                _database.GetModuleConfigFieldValue(moduleId, fieldId),
+                _design.GetModuleConfigFieldValue(moduleId, fieldId),
             _ when fieldId.StartsWith("module.", StringComparison.Ordinal) =>
-                _database.GetModuleConfigFieldValue(moduleId, fieldId),
+                _design.GetModuleConfigFieldValue(moduleId, fieldId),
             _ => throw new InvalidOperationException($"Unknown module field '{fieldId}'."),
         };
     }
 
     private string ModuleVariantFieldValue(ProjectTreeNode node, string fieldId)
     {
-        var settings = _database.GetModuleVariantSettings(node);
+        var settings = _design.GetModuleVariantSettings(node);
         return fieldId switch
         {
             "module.recordClassId" => settings.RecordClassId,
             "module.sortOrder" => settings.SortOrder.ToString(),
             "module.metadata" => settings.MetadataJson,
-            "module.appearanceMode" => _database.GetModuleVariantConfigFieldValue(node, fieldId),
+            "module.appearanceMode" => _design.GetModuleVariantConfigFieldValue(node, fieldId),
             _ when fieldId.StartsWith("module.", StringComparison.Ordinal) =>
-                _database.GetModuleVariantConfigFieldValue(node, fieldId),
+                _design.GetModuleVariantConfigFieldValue(node, fieldId),
             _ => throw new InvalidOperationException($"Unknown module variant field '{fieldId}'."),
         };
     }
@@ -295,7 +301,7 @@ internal sealed class RecordClassFieldValueService
         {
             "moduleInstance.module" =>
                 _timeline.GetModuleInstanceModuleName(moduleInstanceId),
-            "moduleInstance.variant" => _database.GetModuleInstanceVariantReference(moduleInstanceId),
+            "moduleInstance.variant" => _production.GetModuleInstanceVariantReference(moduleInstanceId),
             "moduleInstance.sortOrder" => settings.SortOrder.ToString(),
             "moduleInstance.durationFrames" => ModuleInstanceTimeline.DurationFrames(_timelineDataSource, moduleInstanceId).ToString(),
             "moduleInstance.transition" =>
@@ -307,7 +313,7 @@ internal sealed class RecordClassFieldValueService
 
     private string ShotFieldValue(string shotId, string fieldId)
     {
-        var settings = _database.GetShotSettings(shotId);
+        var settings = _production.GetShotSettings(shotId);
         return fieldId switch
         {
             "shot.slug" => settings.Slug,
@@ -316,8 +322,8 @@ internal sealed class RecordClassFieldValueService
             "shot.durationFrames" => ModuleInstanceTimeline.ShotDurationFrames(_timelineDataSource, shotId).ToString(),
             "shot.fps" => settings.Fps.ToString(),
             "shot.ownerActorId" => settings.OwnerActorId,
-            "shot.ownerDevice" => _database.GetShotOwnerDeviceName(shotId),
-            "shot.renderName" => _database.GetShotRenderName(shotId),
+            "shot.ownerDevice" => _production.GetShotOwnerDeviceName(shotId),
+            "shot.renderName" => _production.GetShotRenderName(shotId),
             "shot.canvas" => settings.CanvasJson,
             "shot.metadata" => settings.MetadataJson,
             _ => throw new InvalidOperationException($"Unknown shot field '{fieldId}'."),
@@ -326,29 +332,29 @@ internal sealed class RecordClassFieldValueService
 
     private string AppFieldValue(string appId, string fieldId)
     {
-        var settings = _database.GetAppSettings(appId);
+        var settings = _design.GetAppSettings(appId);
         return fieldId switch
         {
             "app.bundleKey" => settings.BundleKey,
             "app.appType" => settings.AppType,
             "app.config" => settings.ConfigJson,
             "app.metadata" => settings.MetadataJson,
-            "app.wallpaper.kind" => _database.GetAppConfigFieldValue(appId, fieldId),
-            "app.wallpaper.opacity" => _database.GetAppConfigFieldValue(appId, fieldId),
-            "app.wallpaper.color" => _database.GetAppConfigFieldValue(appId, fieldId),
-            "app.wallpaper.images.light.filePath" => _database.GetAppConfigFieldValue(appId, fieldId),
-            "app.wallpaper.images.dark.filePath" => _database.GetAppConfigFieldValue(appId, fieldId),
-            "app.note" => _database.GetAppMetadataFieldValue(appId, fieldId),
-            "app.icon.filePath" => _database.GetAppMetadataFieldValue(appId, fieldId),
-            "app.icon.scale" => _database.GetAppMetadataFieldValue(appId, fieldId),
-            "app.icon.offset" => _database.GetAppMetadataFieldValue(appId, fieldId),
+            "app.wallpaper.kind" => _design.GetAppConfigFieldValue(appId, fieldId),
+            "app.wallpaper.opacity" => _design.GetAppConfigFieldValue(appId, fieldId),
+            "app.wallpaper.color" => _design.GetAppConfigFieldValue(appId, fieldId),
+            "app.wallpaper.images.light.filePath" => _design.GetAppConfigFieldValue(appId, fieldId),
+            "app.wallpaper.images.dark.filePath" => _design.GetAppConfigFieldValue(appId, fieldId),
+            "app.note" => _design.GetAppMetadataFieldValue(appId, fieldId),
+            "app.icon.filePath" => _design.GetAppMetadataFieldValue(appId, fieldId),
+            "app.icon.scale" => _design.GetAppMetadataFieldValue(appId, fieldId),
+            "app.icon.offset" => _design.GetAppMetadataFieldValue(appId, fieldId),
             _ => throw new InvalidOperationException($"Unknown app field '{fieldId}'."),
         };
     }
 
     private string PaletteColorFieldValue(string colorId, string fieldId)
     {
-        var settings = _database.GetPaletteColorSettings(colorId);
+        var settings = _resources.GetPaletteColorSettings(colorId);
         return fieldId switch
         {
             "palette.token" => settings.Token,
@@ -364,34 +370,34 @@ internal sealed class RecordClassFieldValueService
 
     private string DeviceFieldValue(string deviceId, string fieldId)
     {
-        var settings = _database.GetDeviceSettings(deviceId);
+        var settings = _resources.GetDeviceSettings(deviceId);
         return fieldId switch
         {
             "device.manufacturer" => settings.Manufacturer,
             "device.model" => settings.Model,
             "device.osFamily" => settings.OsFamily,
-            _ => _database.GetDeviceMetricFieldValue(deviceId, fieldId),
+            _ => _resources.GetDeviceMetricFieldValue(deviceId, fieldId),
         };
     }
 
     private string ActorFieldValue(string actorId, string fieldId)
     {
-        return _database.GetActorFieldValue(actorId, fieldId);
+        return _resources.GetActorFieldValue(actorId, fieldId);
     }
 
     private string ThemeFieldValue(string themeId, string fieldId)
     {
-        return _database.GetThemeFieldValue(themeId, fieldId);
+        return _resources.GetThemeFieldValue(themeId, fieldId);
     }
 
     private string ProductionFontFieldValue(string fontId, string fieldId)
     {
-        return _database.GetProductionFontFieldValue(fontId, fieldId);
+        return _resources.GetProductionFontFieldValue(fontId, fieldId);
     }
 
     private string IconThemeFieldValue(string iconThemeId, string fieldId)
     {
-        return _database.GetIconThemeFieldValue(iconThemeId, fieldId);
+        return _resources.GetIconThemeFieldValue(iconThemeId, fieldId);
     }
 
     private static IReadOnlyList<FieldOption>? ProductionFontFieldOptions(RecordClassFieldDescriptor field)
@@ -421,28 +427,31 @@ internal sealed class RecordClassFieldValueService
                 new FieldOption("solid", "Solid"),
                 new FieldOption("image", "Image"),
             ],
-            "app.wallpaper.color" => _database.GetPaletteColorOptions(_database.GetAppSettings(appId).ProjectId),
+            "app.wallpaper.color" => _resources.GetPaletteColorOptions(
+                _design.GetAppSettings(appId).ProjectId),
             _ => field.Options,
         };
     }
 
     private IReadOnlyList<FieldOption>? ShotFieldOptions(string shotId, RecordClassFieldDescriptor field)
     {
-        var settings = _database.GetShotSettings(shotId);
+        var settings = _production.GetShotSettings(shotId);
         return field.Id switch
         {
-            "shot.ownerActorId" => _database.GetRequiredActorOptions(settings.ProjectId),
+            "shot.ownerActorId" => _resources.GetRequiredActorOptions(settings.ProjectId),
             _ => field.Options,
         };
     }
 
     private IReadOnlyList<FieldOption>? ModuleFieldOptions(string moduleId, RecordClassFieldDescriptor field)
     {
-        var settings = _database.GetModuleSettings(moduleId);
+        var settings = _design.GetModuleSettings(moduleId);
         if (field.ValueKind is ValueKind.ComponentVariant or ValueKind.ComponentVariantSlot
             && !string.IsNullOrWhiteSpace(field.ComponentVariantType))
         {
-            return _database.GetComponentVariantReferenceOptionsByType(settings.ProjectId, field.ComponentVariantType);
+            return _design.GetComponentVariantReferenceOptionsByType(
+                settings.ProjectId,
+                field.ComponentVariantType);
         }
 
         return field.Options;
@@ -450,7 +459,7 @@ internal sealed class RecordClassFieldValueService
 
     private IReadOnlyList<FieldOption>? ThemeFieldOptions(string themeId, RecordClassFieldDescriptor field)
     {
-        var settings = _database.GetThemeSettings(themeId);
+        var settings = _resources.GetThemeSettings(themeId);
         return field.Id switch
         {
             "theme.family" =>
@@ -459,17 +468,17 @@ internal sealed class RecordClassFieldValueService
                 new FieldOption("android", "Android"),
                 new FieldOption("custom", "Custom"),
             ],
-            "theme.iconThemeId" => _database.GetIconThemeOptions(settings.ProjectId),
-            "theme.statusBarId" => _database.GetStatusBarComponentVariantOptions(settings.ProjectId),
-            "theme.navigationBarId" => _database.GetNavigationBarComponentVariantOptions(settings.ProjectId),
+            "theme.iconThemeId" => _resources.GetIconThemeOptions(settings.ProjectId),
+            "theme.statusBarId" => _design.GetStatusBarComponentVariantOptions(settings.ProjectId),
+            "theme.navigationBarId" => _design.GetNavigationBarComponentVariantOptions(settings.ProjectId),
             "theme.defaultMode" =>
             [
                 new FieldOption("light", "Light"),
                 new FieldOption("dark", "Dark"),
             ],
-            "theme.typography.fontFamilyId" => _database.GetProductionFontOptions(settings.ProjectId, "text"),
-            "theme.typography.systemFontFamilyId" => _database.GetProductionFontOptions(settings.ProjectId, "text"),
-            "theme.typography.emojiFontFamilyId" => _database.GetProductionFontOptions(settings.ProjectId, "emoji"),
+            "theme.typography.fontFamilyId" => _resources.GetProductionFontOptions(settings.ProjectId, "text"),
+            "theme.typography.systemFontFamilyId" => _resources.GetProductionFontOptions(settings.ProjectId, "text"),
+            "theme.typography.emojiFontFamilyId" => _resources.GetProductionFontOptions(settings.ProjectId, "emoji"),
             "theme.typography.weight" =>
             [
                 new FieldOption("100", "100"),
@@ -493,20 +502,20 @@ internal sealed class RecordClassFieldValueService
                 new FieldOption("image", "Image"),
             ],
             _ => field.ValueKind is ValueKind.PaletteColorToken or ValueKind.PaletteColorPair or ValueKind.PaletteColorAlphaPair
-                ? _database.GetPaletteColorOptions(settings.ProjectId)
+                ? _resources.GetPaletteColorOptions(settings.ProjectId)
                 : field.Options,
         };
     }
 
     private IReadOnlyList<FieldOption>? ActorFieldOptions(string actorId, RecordClassFieldDescriptor field)
     {
-        var settings = _database.GetActorSettings(actorId);
+        var settings = _resources.GetActorSettings(actorId);
         return field.Id switch
         {
-            "actor.defaultDeviceId" => _database.GetDeviceOptions(settings.ProjectId),
-            "actor.defaultThemeId" => _database.GetThemeOptions(settings.ProjectId),
+            "actor.defaultDeviceId" => _resources.GetDeviceOptions(settings.ProjectId),
+            "actor.defaultThemeId" => _resources.GetThemeOptions(settings.ProjectId),
             _ => field.ValueKind is ValueKind.PaletteColorToken or ValueKind.PaletteColorPair or ValueKind.PaletteColorAlphaPair
-                ? _database.GetPaletteColorOptions(settings.ProjectId)
+                ? _resources.GetPaletteColorOptions(settings.ProjectId)
                 : field.Options,
         };
     }
