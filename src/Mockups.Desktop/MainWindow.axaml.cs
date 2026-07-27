@@ -18,10 +18,6 @@ public partial class MainWindow : SukiWindow
     private const string PreviewUtilityAuthoringDataId = "authoring-data";
     private const string PreviewUtilitySetupId = "setup";
     private const string PreviewUtilityControlsId = "controls";
-    private readonly CoreFieldValueService _coreFieldValues;
-    private readonly RecordClassFieldValueService _recordClassFieldValues;
-    private readonly ComponentClassFieldValueService _componentClassFieldValues;
-    private readonly IEditorInlinePreviewController _inlinePreviews;
     private readonly EditorCollectionCardFactory _collectionCards;
     private readonly EditorPreviewController _previewController;
     private readonly IEditorShellMessageSink _messages;
@@ -29,15 +25,8 @@ public partial class MainWindow : SukiWindow
     private readonly EditorNodeCommandController _nodeCommands;
     private readonly EditorShellStateService _shellState;
     private readonly EditorNavigationRenderer _navigationRenderer;
-    private readonly ProductionShotContextService _productionShotContext;
-    private readonly EditorFieldPostCommitEffects _fieldPostCommitEffects;
-    private readonly EditorPathBrowser _pathBrowser;
-    private readonly EditorDomainDialogService _domainDialogs;
-    private readonly EditorDictionaryFieldServices _dictionaryFieldServices;
     private readonly EditorViewStateController _editorViewState;
     private readonly EditorSessionUiState _editorSessionUiState = new();
-    private readonly EditorFieldValueRouter _fieldValues;
-    private readonly EditorLayoutCardFactory _layoutCards;
     private readonly EditorContentController _editorContent;
     private readonly EditorEmbeddedEditorController _embeddedEditors;
     private readonly EditorEmbeddedUsageNavigator _embeddedUsageNavigator;
@@ -46,7 +35,6 @@ public partial class MainWindow : SukiWindow
     private readonly EditorVariantHistoryService _variantHistory;
     private readonly EditorProductionNavigationActions _productionNavigationActions;
     private readonly EditorTreeExpansionState _treeExpansion = new();
-    private readonly EditorFieldCommitCoordinator _fieldCommitCoordinator;
     private readonly EditorActiveFieldControls _activeFieldControls = new();
     private readonly EditorWorkspaceCoordinator _workspaceCoordinator;
     private bool _isUpdatingProductionPicker;
@@ -69,16 +57,19 @@ public partial class MainWindow : SukiWindow
     {
         var data = application.Data;
         _variantHistory = application.VariantHistory;
-        _coreFieldValues = application.CoreFieldValues;
-        _recordClassFieldValues = application.RecordClassFieldValues;
-        _componentClassFieldValues = application.ComponentClassFieldValues;
-        _productionShotContext = application.ProductionShotContext;
+        var coreFieldValues = application.CoreFieldValues;
+        var recordClassFieldValues =
+            application.RecordClassFieldValues;
+        var componentClassFieldValues =
+            application.ComponentClassFieldValues;
+        var productionShotContext =
+            application.ProductionShotContext;
         _workspaceCoordinator = application.WorkspaceCoordinator;
-        _fieldCommitCoordinator = new EditorFieldCommitCoordinator(
+        var fieldCommitCoordinator = new EditorFieldCommitCoordinator(
             application.Operations);
         InitializeComponent();
         _themeController = new EditorThemeController(this, RootShell, RefreshShellTheme);
-        _inlinePreviews = EditorInlinePreviewControllerFactory.Create(
+        var inlinePreviews = EditorInlinePreviewControllerFactory.Create(
             data.ActorPreview,
             data.ProjectPaths,
             () => _themeController.IsDark);
@@ -147,12 +138,12 @@ public partial class MainWindow : SukiWindow
             _nodeCommands.RenameNode,
             _nodeCommands.DeleteNode,
             _nodeCommands.ToggleVariantLock,
-            _productionShotContext.CanExposeChildren,
-            _productionShotContext.IsNavigationNodeEnabled,
+            productionShotContext.CanExposeChildren,
+            productionShotContext.IsNavigationNodeEnabled,
             () => _previewController.ActiveNavigationNodeId,
             _productionNavigationActions.NodeAction);
         _previewController.PlaybackState.Changed += RefreshPreviewNavigationState;
-        _fieldPostCommitEffects = new EditorFieldPostCommitEffects(
+        var fieldPostCommitEffects = new EditorFieldPostCommitEffects(
             data.Presentation,
             application.Operations,
             () => _previewController.SelectedDeviceId,
@@ -161,12 +152,12 @@ public partial class MainWindow : SukiWindow
             RefreshPreviewDevice,
             RefreshPreviewOptions,
             RefreshProductionPicker);
-        _pathBrowser = new EditorPathBrowser(
+        var pathBrowser = new EditorPathBrowser(
             StorageProvider,
             data.Presentation,
             data.ProjectPaths,
             () => Session.SelectedNode);
-        _domainDialogs = new EditorDomainDialogService(
+        var domainDialogs = new EditorDomainDialogService(
             this,
             data.ModuleInstances,
             data.IconThemes,
@@ -174,33 +165,33 @@ public partial class MainWindow : SukiWindow
             application.Operations,
             () => _themeController.IsDark,
             _nodeCommands.ShowInfoDialog,
-            _pathBrowser.BrowseSvgFile,
+            pathBrowser.BrowseSvgFile,
             ReloadAndSelect);
-        _dictionaryFieldServices = new EditorDictionaryFieldServices(
+        var dictionaryFieldServices = new EditorDictionaryFieldServices(
             data.Dictionary,
             data.Preview,
             data.Timeline,
             data.ModuleInstanceThemes,
             data.ActorPreview,
             data.ProjectPaths,
-            _pathBrowser,
-            _domainDialogs,
+            pathBrowser,
+            domainDialogs,
             application.Operations,
             () => _previewController.SelectedThemeId,
             _previewController.SetDesignPreviewTestValue);
         _embeddedEditors = new EditorEmbeddedEditorController(ShowEmbeddedContext, _messages);
-        _fieldValues = new EditorFieldValueRouter(
-            _coreFieldValues,
-            _recordClassFieldValues,
-            _componentClassFieldValues,
-            _inlinePreviews,
-            _fieldPostCommitEffects);
-        _layoutCards = new EditorLayoutCardFactory(
-            _fieldValues,
-            _componentClassFieldValues,
-            _inlinePreviews,
-            _dictionaryFieldServices,
-            _fieldCommitCoordinator,
+        var fieldValues = new EditorFieldValueRouter(
+            coreFieldValues,
+            recordClassFieldValues,
+            componentClassFieldValues,
+            inlinePreviews,
+            fieldPostCommitEffects);
+        var layoutCards = new EditorLayoutCardFactory(
+            fieldValues,
+            componentClassFieldValues,
+            inlinePreviews,
+            dictionaryFieldServices,
+            fieldCommitCoordinator,
             _activeFieldControls,
             _messages,
             _embeddedEditors.Open,
@@ -262,10 +253,10 @@ public partial class MainWindow : SukiWindow
             application.Operations,
             () => _themeController.IsDark,
             _nodeCommands.ShowInfoDialog,
-            _domainDialogs,
+            domainDialogs,
             ReloadAndSelect,
             RefreshPreviewDevice,
-            _dictionaryFieldServices,
+            dictionaryFieldServices,
             _previewController.TriggerDesignPreviewAction,
             _previewController.RestoreDesignPreviewAction,
             _previewController.CanRestoreDesignPreviewAction,
@@ -284,17 +275,17 @@ public partial class MainWindow : SukiWindow
         _editorContent = new EditorContentController(
             new EditorContentPreparationService(
                 data.Layouts,
-                _fieldValues,
-                _componentClassFieldValues,
-                _dictionaryFieldServices,
+                fieldValues,
+                componentClassFieldValues,
+                dictionaryFieldServices,
                 headerPreparation,
                 application.Operations),
             EditorCardsPanel,
             () => Math.Max(1, EditorScrollViewer.Bounds.Width - EditorScrollViewer.Padding.Left - EditorScrollViewer.Padding.Right),
             EditorScrollViewer,
             _activeFieldControls,
-            _inlinePreviews,
-            _layoutCards,
+            inlinePreviews,
+            layoutCards,
             _collectionCards,
             _productionNavigationActions.EditorCards);
         PreviewUtilityTabs.SelectionChanged += (_, args) =>

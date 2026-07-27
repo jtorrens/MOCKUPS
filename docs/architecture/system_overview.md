@@ -181,6 +181,10 @@ that same prepared transition. `EditorHeaderController` owns only visual
 breadcrumb, context-strip and action composition; it has no persistence port.
 The loading header uses tree identity, and the prepared header replaces it only
 for the exact current owner.
+`MainWindow` retains only shell-owned controllers and visual session state.
+Field owners, dictionary services, domain dialogs and operation adapters are
+construction-local dependencies retained by their focused controllers, not
+parallel window state.
 
 `Mockups.Application.PersistencePorts` owns the synchronous persistence-facing
 port contracts. It references Application models and Domain value objects but

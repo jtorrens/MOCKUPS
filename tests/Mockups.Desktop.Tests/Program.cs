@@ -139,6 +139,7 @@ var tests = new (string Name, Action Run)[]
     ("SQLite contexts retain independent Project roots", SqliteContextsRetainIndependentProjectRoots),
     ("SQLite session exposes distinct focused application ports", SqliteSessionExposesDistinctFocusedPorts),
     ("visual persistence writers require operation coordination", VisualPersistenceWritersRequireOperationCoordination),
+    ("MainWindow retains only shell-owned services", MainWindowRetainsOnlyShellServices),
     ("post-commit presentation reads run through operation coordination", PostCommitPresentationReadsUseOperationCoordination),
     ("Preview authoring preparation is task-based cancellable and snapshot-owned", PreviewAuthoringPreparationUsesOperationBoundary),
     ("Variant history reads persistence through the operation boundary", VariantHistoryReadsThroughOperationBoundary),
@@ -3512,6 +3513,37 @@ static void VisualPersistenceWritersRequireOperationCoordination()
         True(method is not null);
         True(typeof(Task).IsAssignableFrom(method!.ReturnType));
     }
+}
+
+static void MainWindowRetainsOnlyShellServices()
+{
+    var retainedTypes = typeof(MainWindow)
+        .GetFields(
+            BindingFlags.Instance
+            | BindingFlags.NonPublic)
+        .Select((field) => field.FieldType)
+        .ToHashSet();
+    foreach (var constructionOnlyType in new[]
+             {
+                 typeof(CoreFieldValueService),
+                 typeof(RecordClassFieldValueService),
+                 typeof(ComponentClassFieldValueService),
+                 typeof(IEditorInlinePreviewController),
+                 typeof(ProductionShotContextService),
+                 typeof(EditorFieldPostCommitEffects),
+                 typeof(EditorPathBrowser),
+                 typeof(EditorDomainDialogService),
+                 typeof(EditorDictionaryFieldServices),
+                 typeof(EditorFieldValueRouter),
+                 typeof(EditorLayoutCardFactory),
+                 typeof(EditorFieldCommitCoordinator),
+             })
+    {
+        True(!retainedTypes.Contains(constructionOnlyType));
+    }
+
+    True(retainedTypes.Contains(
+        typeof(EditorWorkspaceCoordinator)));
 }
 
 static void PostCommitPresentationReadsUseOperationCoordination()
