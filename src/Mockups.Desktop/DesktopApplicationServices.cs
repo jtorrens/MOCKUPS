@@ -47,9 +47,12 @@ internal sealed record DesktopApplicationServices(
         DesktopApplicationDataPorts data)
     {
         var productionOutputRoots = new ProductionOutputRootStore();
+        var operations = new EditorOperationCoordinator();
         return new(
             data,
-            new EditorVariantHistoryService(data.VariantHistory),
+            new EditorVariantHistoryService(
+                data.VariantHistory,
+                operations),
             new CoreFieldValueService(data.CoreFields),
             new RecordClassFieldValueService(
                 data.RecordFields,
@@ -62,7 +65,7 @@ internal sealed record DesktopApplicationServices(
                     data.Preview,
                     data.ActorPreview)),
             new EditorWorkspaceCoordinator(data.Navigation),
-            new EditorOperationCoordinator(),
+            operations,
             productionOutputRoots);
     }
 }

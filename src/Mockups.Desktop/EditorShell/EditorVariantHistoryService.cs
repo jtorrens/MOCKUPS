@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Nodes;
+using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -16,30 +17,46 @@ internal sealed class EditorVariantHistoryService
 {
     private const int MaxSnapshotsPerVariant = 10;
     private readonly IVariantHistoryStore _database;
+    private readonly EditorOperationCoordinator _operations;
     private readonly Dictionary<string, string> _activeEntryConfigJsonByVariant = new(StringComparer.Ordinal);
     private readonly Dictionary<string, List<EditorVariantHistorySnapshot>> _snapshotsByVariant = new(StringComparer.Ordinal);
     private int _sequence;
 
-    public EditorVariantHistoryService(IVariantHistoryStore database)
+    public EditorVariantHistoryService(
+        IVariantHistoryStore database,
+        EditorOperationCoordinator operations)
     {
         _database = database;
+        _operations = operations;
     }
 
-    public void TrackTransition(ProjectTreeNode? previousNode, ProjectTreeNode nextNode)
+    public async Task TrackTransitionAsync(
+        ProjectTreeNode? previousNode,
+        ProjectTreeNode nextNode)
     {
         if (previousNode?.Id == nextNode.Id)
         {
             return;
         }
 
+        var configs = await _operations.ExecuteAsync(
+            () => (
+                Previous: previousNode?.Kind is ProjectTreeNodeKind.ComponentVariant
+                    or ProjectTreeNodeKind.ModuleVariant
+                        ? VariantConfig(previousNode)
+                        : null,
+                Next: nextNode.Kind is ProjectTreeNodeKind.ComponentVariant
+                    or ProjectTreeNodeKind.ModuleVariant
+                        ? VariantConfig(nextNode)
+                        : null));
         if (previousNode?.Kind is ProjectTreeNodeKind.ComponentVariant or ProjectTreeNodeKind.ModuleVariant)
         {
-            Leave(previousNode, VariantConfig(previousNode));
+            Leave(previousNode, configs.Previous!);
         }
 
         if (nextNode.Kind is ProjectTreeNodeKind.ComponentVariant or ProjectTreeNodeKind.ModuleVariant)
         {
-            Enter(nextNode, VariantConfig(nextNode));
+            Enter(nextNode, configs.Next!);
         }
     }
 

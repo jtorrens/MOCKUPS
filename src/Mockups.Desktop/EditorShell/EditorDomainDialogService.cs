@@ -128,11 +128,17 @@ internal sealed class EditorDomainDialogService
 
     public Task<string?> ShowIconTokenPicker(string iconThemeId, string currentValue, bool allowMultiple)
     {
-        return new IconTokenPickerDialog(_owner, _iconThemes).Show(iconThemeId, currentValue, allowMultiple);
+        return new IconTokenPickerDialog(
+            _owner,
+            _iconThemes,
+            _operations).Show(iconThemeId, currentValue, allowMultiple);
     }
 
     public Task<string?> ShowThemeTokenPicker(string projectId, string currentValue, IReadOnlyList<FieldOption>? allowedOptions)
     {
-        return new ThemeTokenPickerDialog(_owner, _themeTokens).Show(projectId, currentValue, allowedOptions);
+        return new ThemeTokenPickerDialog(
+            _owner,
+            _themeTokens,
+            _operations).Show(projectId, currentValue, allowedOptions);
     }
 }

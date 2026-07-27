@@ -16,11 +16,16 @@ internal sealed class ThemeTokenPickerDialog
 {
     private readonly Window _owner;
     private readonly IThemeTokenQuery _database;
+    private readonly EditorOperationCoordinator _operations;
 
-    public ThemeTokenPickerDialog(Window owner, IThemeTokenQuery database)
+    public ThemeTokenPickerDialog(
+        Window owner,
+        IThemeTokenQuery database,
+        EditorOperationCoordinator operations)
     {
         _owner = owner;
         _database = database;
+        _operations = operations;
     }
 
     public async Task<string?> Show(string projectId, string currentValue, IReadOnlyList<FieldOption>? allowedOptions)
@@ -28,9 +33,21 @@ internal sealed class ThemeTokenPickerDialog
         var allowedTokens = allowedOptions is { Count: > 0 }
             ? allowedOptions.Select((option) => option.Value).ToHashSet(StringComparer.Ordinal)
             : null;
-        var themes = _database.GetThemeOptions(projectId)
-            .Where((option) => !string.IsNullOrWhiteSpace(option.Value))
-            .ToList();
+        var startup = await _operations.ExecuteAsync(
+            () =>
+            {
+                var themes = _database.GetThemeOptions(projectId)
+                    .Where((option) => !string.IsNullOrWhiteSpace(option.Value))
+                    .ToList();
+                var tokens = themes.ToDictionary(
+                    (theme) => theme.Value,
+                    (theme) => _database.GetThemeTokenOptions(
+                        projectId,
+                        theme.Value),
+                    StringComparer.Ordinal);
+                return (Themes: themes, Tokens: tokens);
+            });
+        var themes = startup.Themes;
         var selectedThemeId = themes.FirstOrDefault()?.Value ?? "";
         var draft = currentValue;
         var query = "";
@@ -87,7 +104,7 @@ internal sealed class ThemeTokenPickerDialog
                 return;
             }
 
-            var options = _database.GetThemeTokenOptions(projectId, selectedThemeId)
+            var options = startup.Tokens[selectedThemeId]
                 .Where((option) => allowedTokens is null || allowedTokens.Contains(option.Token))
                 .Where((option) => EditorSearchMatcher.Matches(
                     query,

@@ -539,16 +539,9 @@ public partial class MainWindow : SukiWindow
         var node = transition.Current.SelectedNode
             ?? throw new InvalidOperationException(
                 "A root editor transition requires a selected node.");
-        try
-        {
-            _variantHistory.TrackTransition(
-                transition.Previous.SelectedNode,
-                node);
-        }
-        catch (Exception exception)
-        {
-            _messages.Warning("Variant history", exception.Message);
-        }
+        _ = TrackVariantTransitionAsync(
+            transition.Previous.SelectedNode,
+            node);
         _treeExpansion.ExpandAncestors(node);
         _previewController.BeginSelectionTransition();
         var editorNode = EditorNodeSelectionState.EditorNodeForSelection(node);
@@ -571,6 +564,26 @@ public partial class MainWindow : SukiWindow
             _workspaceCoordinator.IsCurrent(
                 revision,
                 selectedNodeId));
+    }
+
+    private async Task TrackVariantTransitionAsync(
+        ProjectTreeNode? previousNode,
+        ProjectTreeNode nextNode)
+    {
+        try
+        {
+            await _variantHistory.TrackTransitionAsync(
+                previousNode,
+                nextNode);
+        }
+        catch (OperationCanceledException)
+        {
+            // Closing the session cancels queued history reads.
+        }
+        catch (Exception exception)
+        {
+            _messages.Warning("Variant history", exception.Message);
+        }
     }
 
     private void RefreshPreviewAuthoringSurface(ProjectTreeNode node)

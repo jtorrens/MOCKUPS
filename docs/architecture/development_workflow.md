@@ -253,6 +253,11 @@ work remains synchronous behind that boundary, while control updates,
 navigation and error presentation resume on the visual context only after
 completion. Runtime collection actions expose task-returning callbacks, so a
 visual action cannot report completion before its queued document write.
+Token pickers load their persistence snapshot before visual filtering.
+Potentially expensive Icon SVG preview batches are cancellable and revisioned;
+text and selection callbacks never open SQLite themselves.
+Variant navigation schedules its history read on the same serialized boundary;
+the immediate editor transition does not wait for synchronous persistence.
 
 The visual editor is a single-instance workstation application. The Host owns
 the operating-system lease. A second launch exits before constructing Avalonia,

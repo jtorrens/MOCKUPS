@@ -139,6 +139,7 @@ var tests = new (string Name, Action Run)[]
     ("SQLite contexts retain independent Project roots", SqliteContextsRetainIndependentProjectRoots),
     ("SQLite session exposes distinct focused application ports", SqliteSessionExposesDistinctFocusedPorts),
     ("visual persistence writers require operation coordination", VisualPersistenceWritersRequireOperationCoordination),
+    ("Variant history reads persistence through the operation boundary", VariantHistoryReadsThroughOperationBoundary),
     ("Preview resource selection has one session rule", PreviewResourceSelectionHasOneSessionRule),
     ("editor view state follows the exact record class across records", EditorViewStateFollowsRecordClass),
     ("editor view state round-trips per class and clamps scroll", EditorViewStateRoundTripsPerClass),
@@ -3282,6 +3283,7 @@ static void VisualPersistenceWritersRequireOperationCoordination()
     foreach (var writerType in new[]
              {
                  typeof(EditorFieldCommitCoordinator),
+                 typeof(EditorVariantHistoryService),
                  typeof(EditorAddChildWorkflow),
                  typeof(EditorNodeCommandController),
                  typeof(EditorDomainDialogService),
@@ -3292,6 +3294,8 @@ static void VisualPersistenceWritersRequireOperationCoordination()
                  typeof(IconThemeTokensCollectionEditor),
                  typeof(IconThemeSearchDialog),
                  typeof(IconThemeSvgReplaceDialog),
+                 typeof(IconTokenPickerDialog),
+                 typeof(ThemeTokenPickerDialog),
                  typeof(RuntimeInputsCollectionEditor),
                  typeof(RuntimeInputInstanceDocumentStore),
                  typeof(RuntimeInputOwnerDocumentStore),
@@ -3336,6 +3340,47 @@ static void VisualPersistenceWritersRequireOperationCoordination()
         True(method is not null);
         True(typeof(Task).IsAssignableFrom(method!.ReturnType));
     }
+}
+
+static void VariantHistoryReadsThroughOperationBoundary()
+{
+    var owner = new ProjectTreeNode(
+        ProjectTreeNodeKind.ComponentClass,
+        "component.history",
+        "History",
+        "",
+        "component.history");
+    var first = new ProjectTreeNode(
+        ProjectTreeNodeKind.ComponentVariant,
+        "component.history::variant::first",
+        "First",
+        "",
+        "component.variant",
+        owner);
+    var second = new ProjectTreeNode(
+        ProjectTreeNodeKind.ComponentVariant,
+        "component.history::variant::second",
+        "Second",
+        "",
+        "component.variant",
+        owner);
+    var store = new RecordingVariantHistoryStore();
+    store.ConfigByVariant[first.Id] = """{"value":"initial"}""";
+    store.ConfigByVariant[second.Id] = """{"value":"second"}""";
+    using var operations = new EditorOperationCoordinator();
+    var history = new EditorVariantHistoryService(
+        store,
+        operations);
+    var callingThread = Environment.CurrentManagedThreadId;
+
+    history.TrackTransitionAsync(null, first).GetAwaiter().GetResult();
+    store.ConfigByVariant[first.Id] = """{"value":"changed"}""";
+    history.TrackTransitionAsync(first, second).GetAwaiter().GetResult();
+
+    var snapshot = history.Snapshots(first).Single();
+    Equal("""{"value":"changed"}""", snapshot.ConfigJson);
+    True(store.ReadThreadIds.Count >= 3);
+    True(store.ReadThreadIds.All((threadId) => threadId != callingThread));
 }
 
 static string MethodSignature(MethodInfo method) =>
@@ -12614,6 +12659,41 @@ internal sealed class RecordingMessageSink : IEditorShellMessageSink
     public void Error(string area, Exception exception) { }
 
     public void Error(string area, string message) { }
+}
+
+internal sealed class RecordingVariantHistoryStore : IVariantHistoryStore
+{
+    public Dictionary<string, string> ConfigByVariant { get; } =
+        new(StringComparer.Ordinal);
+    public List<int> ReadThreadIds { get; } = [];
+
+    public ComponentClassSettings GetComponentVariantSettings(
+        ProjectTreeNode variantNode)
+    {
+        ReadThreadIds.Add(Environment.CurrentManagedThreadId);
+        return new ComponentClassSettings(
+            "project",
+            "history",
+            "component.history",
+            variantNode.Name,
+            "",
+            ConfigByVariant[variantNode.Id],
+            "{}",
+            "{}");
+    }
+
+    public ModuleSettings GetModuleVariantSettings(
+        ProjectTreeNode variantNode)
+    {
+        ReadThreadIds.Add(Environment.CurrentManagedThreadId);
+        return new ModuleSettings(
+            "project",
+            "module.history",
+            0,
+            ConfigByVariant[variantNode.Id],
+            "{}",
+            "{}");
+    }
 }
 
 internal sealed class AppearanceFailingRenderExecutor(

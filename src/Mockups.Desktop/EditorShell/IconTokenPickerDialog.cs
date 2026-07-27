@@ -11,6 +11,7 @@ using SukiUI.Controls;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -19,24 +20,36 @@ internal sealed class IconTokenPickerDialog
 {
     private readonly Window _owner;
     private readonly IIconThemeAssetStore _database;
+    private readonly EditorOperationCoordinator _operations;
 
-    public IconTokenPickerDialog(Window owner, IIconThemeAssetStore database)
+    public IconTokenPickerDialog(
+        Window owner,
+        IIconThemeAssetStore database,
+        EditorOperationCoordinator operations)
     {
         _owner = owner;
         _database = database;
+        _operations = operations;
     }
 
     public async Task<string?> Show(string iconThemeId, string currentValue, bool allowMultiple)
     {
+        var themeTokens = string.IsNullOrWhiteSpace(iconThemeId)
+            ? []
+            : await _operations.ExecuteAsync(
+                () => _database.GetIconThemeTokens(iconThemeId));
         var selected = currentValue
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .ToList();
         var selectedSet = selected.ToHashSet(StringComparer.Ordinal);
-        var selectedThemeId = iconThemeId;
         string query = "";
         string? result = null;
         var visibleButtons = new Dictionary<string, Button>(StringComparer.Ordinal);
-        var tokensByTheme = new Dictionary<string, IReadOnlyList<IconThemeToken>>(StringComparer.Ordinal);
+        var svgByToken = new Dictionary<string, string>(StringComparer.Ordinal);
+        using var dialogLifetime = new CancellationTokenSource();
+        var dialogCancellation = dialogLifetime.Token;
+        CancellationTokenSource? previewRefresh = null;
+        var listRevision = 0;
         const int visibleResultLimit = 160;
 
         var dialog = new SukiWindow
@@ -125,25 +138,27 @@ internal sealed class IconTokenPickerDialog
 
         void RefreshList()
         {
+            previewRefresh?.Cancel();
+            previewRefresh?.Dispose();
+            previewRefresh = CancellationTokenSource.CreateLinkedTokenSource(
+                dialogCancellation);
+            var refreshCancellation = previewRefresh.Token;
+            var revision = ++listRevision;
             listPanel.Children.Clear();
             visibleButtons.Clear();
             RefreshSelectedText();
-            if (string.IsNullOrWhiteSpace(selectedThemeId))
+            if (string.IsNullOrWhiteSpace(iconThemeId))
             {
                 listPanel.Children.Add(new TextBlock { Text = "The active Theme has no Icon Set reference.", Opacity = 0.72 });
                 return;
             }
 
-            if (!tokensByTheme.TryGetValue(selectedThemeId, out var themeTokens))
-            {
-                themeTokens = _database.GetIconThemeTokens(selectedThemeId);
-                tokensByTheme[selectedThemeId] = themeTokens;
-            }
             var matches = themeTokens
                 .Where((token) => EditorSearchMatcher.Matches(query, token.Token, token.Category, token.File))
                 .OrderBy((token) => token.Token, StringComparer.Ordinal)
                 .ToList();
             var tokens = matches.Take(visibleResultLimit).ToList();
+            var previewHosts = new Dictionary<string, Border>(StringComparer.Ordinal);
 
             foreach (var token in tokens)
             {
@@ -158,8 +173,14 @@ internal sealed class IconTokenPickerDialog
                     Width = 72,
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Center,
-                    Child = SvgIconPreview.CreateIconThemePreview(_database, selectedThemeId, token.File, 24),
+                    Child = svgByToken.TryGetValue(token.Token, out var svg)
+                        ? SvgIconPreview.CreateFromSvg(svg, 24)
+                        : EditorIcons.Create(EditorIcons.Icon, 24),
                 };
+                if (!svgByToken.ContainsKey(token.Token))
+                {
+                    previewHosts[token.Token] = iconZone;
+                }
                 content.Children.Add(iconZone);
                 var textZone = new StackPanel
                 {
@@ -215,6 +236,13 @@ internal sealed class IconTokenPickerDialog
                     Margin = new Thickness(8),
                     Opacity = 0.72,
                 });
+            }
+            if (previewHosts.Count > 0)
+            {
+                _ = LoadPreviewsAsync(
+                    previewHosts,
+                    revision,
+                    refreshCancellation);
             }
 
             listPanel.InvalidateMeasure();
@@ -299,8 +327,59 @@ internal sealed class IconTokenPickerDialog
 
         RefreshList();
         await dialog.ShowDialog(_owner);
+        dialogLifetime.Cancel();
+        previewRefresh?.Cancel();
+        previewRefresh?.Dispose();
         searchTimer.Stop();
         return result;
+
+        async Task LoadPreviewsAsync(
+            IReadOnlyDictionary<string, Border> previewHosts,
+            int revision,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                var previews = await _operations.ExecuteAsync(
+                    () =>
+                    {
+                        var result = new Dictionary<string, string>(
+                            StringComparer.Ordinal);
+                        foreach (var token in previewHosts.Keys)
+                        {
+                            cancellationToken.ThrowIfCancellationRequested();
+                            try
+                            {
+                                result[token] = _database.ReadIconThemeTokenSvg(
+                                    iconThemeId,
+                                    token).SvgText;
+                            }
+                            catch
+                            {
+                                // A missing asset keeps the generic placeholder.
+                            }
+                        }
+                        return result;
+                    },
+                    cancellationToken);
+                foreach (var (token, svg) in previews)
+                {
+                    svgByToken[token] = svg;
+                }
+                if (revision != listRevision) return;
+                foreach (var (token, host) in previewHosts)
+                {
+                    if (svgByToken.TryGetValue(token, out var svg))
+                    {
+                        host.Child = SvgIconPreview.CreateFromSvg(svg, 24);
+                    }
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Closing the dialog cancels queued preview reads.
+            }
+        }
 
         void ScheduleRefresh(bool immediate)
         {

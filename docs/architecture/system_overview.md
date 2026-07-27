@@ -152,6 +152,11 @@ mutations, Runtime Input scalar and collection mutations, Module Instance
 animation writes, Design Preview default promotion and Icon Theme refresh,
 generation, replacement and deletion. Mutable Runtime documents are copied
 before submission so queued work observes the exact authored snapshot.
+On-demand Theme Token and Icon Token dialog reads use the same boundary.
+Search and selection filter immutable in-memory snapshots; cancellable Icon
+SVG batches discard results from an obsolete dialog revision.
+Variant history also resolves the exact departing and arriving Variant
+documents through the coordinator before updating its session-only snapshots.
 
 `Mockups.Application.PersistencePorts` owns the synchronous persistence-facing
 port contracts. It references Application models and Domain value objects but
