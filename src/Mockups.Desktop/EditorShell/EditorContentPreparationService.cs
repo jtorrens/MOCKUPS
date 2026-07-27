@@ -13,12 +13,14 @@ internal sealed record EditorPreparedLayoutCard(
 
 internal sealed record EditorPreparedRootContent(
     IReadOnlyList<EditorPreparedLayoutCard> Cards,
-    EditorDictionaryContextSnapshot DictionaryContext);
+    EditorDictionaryContextSnapshot DictionaryContext,
+    EditorPreparedHeader Header);
 
 internal sealed record EditorPreparedEmbeddedContent(
     EditorPreparedLayoutCard? OwnerCard,
     IReadOnlyList<EditorPreparedLayoutCard> Cards,
-    EditorDictionaryContextSnapshot DictionaryContext);
+    EditorDictionaryContextSnapshot DictionaryContext,
+    EditorPreparedHeader Header);
 
 internal sealed class EditorContentPreparationService : IDisposable
 {
@@ -26,6 +28,7 @@ internal sealed class EditorContentPreparationService : IDisposable
     private readonly EditorFieldValueRouter _fieldValues;
     private readonly ComponentClassFieldValueService _componentFields;
     private readonly EditorDictionaryFieldServices _dictionaryFields;
+    private readonly EditorHeaderPreparationService _header;
     private readonly EditorOperationCoordinator _operations;
     private CancellationTokenSource? _activePreparation;
     private bool _disposed;
@@ -35,12 +38,14 @@ internal sealed class EditorContentPreparationService : IDisposable
         EditorFieldValueRouter fieldValues,
         ComponentClassFieldValueService componentFields,
         EditorDictionaryFieldServices dictionaryFields,
+        EditorHeaderPreparationService header,
         EditorOperationCoordinator operations)
     {
         _layouts = layouts;
         _fieldValues = fieldValues;
         _componentFields = componentFields;
         _dictionaryFields = dictionaryFields;
+        _header = header;
         _operations = operations;
     }
 
@@ -71,6 +76,9 @@ internal sealed class EditorContentPreparationService : IDisposable
                         dataNode,
                         selectedThemeId,
                         allFields,
+                        cancellationToken),
+                    _header.PrepareRoot(
+                        dataNode,
                         cancellationToken));
             },
             cancellationToken);
@@ -127,6 +135,9 @@ internal sealed class EditorContentPreparationService : IDisposable
                             : MergeFields(
                                 ownerCard.Fields,
                                 embeddedFields),
+                        cancellationToken),
+                    _header.PrepareEmbedded(
+                        context,
                         cancellationToken));
             },
             cancellationToken);

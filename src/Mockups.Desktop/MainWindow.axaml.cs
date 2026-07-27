@@ -224,14 +224,16 @@ public partial class MainWindow : SukiWindow
             SelectReferenceNodeInWorkspaceAsync,
             _embeddedUsageNavigator.NavigateToEmbeddedUsage,
             _messages);
+        var headerPreparation =
+            new EditorHeaderPreparationService(
+                data.Components,
+                data.Preview,
+                data.Timeline,
+                data.ModuleInstanceThemes);
         _editorHeader = new EditorHeaderController(
             EditorBreadcrumbPanel,
             EditorContextStripHost,
             EditorHeaderActionsPanel,
-            data.Components,
-            data.Preview,
-            data.Timeline,
-            data.ModuleInstanceThemes,
             () => Session.SelectedNode,
             _workspaceCoordinator.PreferredVariantNode,
             _workspaceCoordinator.PreferredModuleVariantNode,
@@ -284,6 +286,7 @@ public partial class MainWindow : SukiWindow
                 _fieldValues,
                 _componentClassFieldValues,
                 _dictionaryFieldServices,
+                headerPreparation,
                 application.Operations),
             EditorCardsPanel,
             () => Math.Max(1, EditorScrollViewer.Bounds.Width - EditorScrollViewer.Padding.Left - EditorScrollViewer.Padding.Right),
@@ -572,7 +575,9 @@ public partial class MainWindow : SukiWindow
                 restoreState);
         }
         RefreshPreviewAuthoringSurface(node);
-        SetEditorRootTitle(editorNode.Name);
+        _editorHeader.SetRootTitle(
+            editorNode.Name,
+            EditorPreparedHeader.Loading(node.Id));
         transaction?.Checkpoint("after-editor-swap");
 
         if (rebuildTree)
@@ -612,6 +617,9 @@ public partial class MainWindow : SukiWindow
                 layoutNode,
                 dataNode,
                 prepared);
+            _editorHeader.SetRootTitle(
+                layoutNode.Name,
+                prepared.Header);
             RestoreRootEditorViewState(
                 dataNode,
                 restoreState);
@@ -721,7 +729,10 @@ public partial class MainWindow : SukiWindow
         _ = PrepareEmbeddedEditorAsync(
             embedded,
             transition.Current.Revision);
-        SetEditorEmbeddedTitle(embedded);
+        _editorHeader.SetEmbeddedTitle(
+            embedded,
+            EditorPreparedHeader.Loading(
+                embedded.OwnerNode.Id));
         RefreshPreviewDevice();
         ApplyUiTextScale();
     }
@@ -750,6 +761,9 @@ public partial class MainWindow : SukiWindow
             _editorContent.CommitEmbedded(
                 current,
                 prepared);
+            _editorHeader.SetEmbeddedTitle(
+                current,
+                prepared.Header);
             if (restoreState is not null)
             {
                 _editorViewState.RestoreState(
@@ -855,7 +869,10 @@ public partial class MainWindow : SukiWindow
                 embeddedContext,
                 transition.Current.Revision,
                 viewState);
-            SetEditorEmbeddedTitle(embeddedContext);
+            _editorHeader.SetEmbeddedTitle(
+                embeddedContext,
+                EditorPreparedHeader.Loading(
+                    embeddedContext.OwnerNode.Id));
             RefreshPreviewDevice();
         }
         else
@@ -877,12 +894,7 @@ public partial class MainWindow : SukiWindow
 
     private void SetEditorRootTitle(string title)
     {
-        _editorHeader.SetRootTitle(title);
-    }
-
-    private void SetEditorEmbeddedTitle(EditorEmbeddedContext context)
-    {
-        _editorHeader.SetEmbeddedTitle(context);
+        _editorHeader.RefreshRootTitle(title);
     }
 
     private async void ReloadAndSelect(ProjectTreeNode node)

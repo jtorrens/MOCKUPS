@@ -46,6 +46,9 @@ It includes:
   coordination, field and dictionary snapshot-only visual card construction
   and a headless rapid selection test proving that only the latest owner
   reaches the visual state;
+- compiled header-constructor enforcement proving that breadcrumb and
+  context-strip rendering cannot receive Component, Preview or timeline
+  persistence ports and requires an exact prepared header;
 - UI-independent `EditorWorkspaceCoordinator` tests compiled against
   Application alone, covering workspace selection memory, invalid/deleted
   selections, Production removal, embedded-context rebasing, worker-thread

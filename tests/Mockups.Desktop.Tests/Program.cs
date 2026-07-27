@@ -3470,6 +3470,44 @@ static void EditorVisualCardsRequirePreparedFieldSnapshots()
         .Any((parameter) =>
             parameter.ParameterType == typeof(IEditorLayoutStore)));
 
+    var headerConstructorParameters =
+        typeof(EditorHeaderController)
+            .GetConstructors(
+                BindingFlags.Instance
+                | BindingFlags.Public
+                | BindingFlags.NonPublic)
+            .SelectMany((constructor) =>
+                constructor.GetParameters())
+            .Select((parameter) =>
+                parameter.ParameterType)
+            .ToHashSet();
+    True(!headerConstructorParameters.Contains(
+        typeof(IComponentDocumentStore)));
+    True(!headerConstructorParameters.Contains(
+        typeof(IPreviewInputRepository)));
+    True(!headerConstructorParameters.Contains(
+        typeof(IModuleInstanceTimelineStore)));
+    True(!headerConstructorParameters.Contains(
+        typeof(IModuleInstanceThemeTokenQuery)));
+    foreach (var methodName in new[]
+             {
+                 "SetRootTitle",
+                 "SetEmbeddedTitle",
+             })
+    {
+        var method = typeof(EditorHeaderController)
+            .GetMethod(
+                methodName,
+                BindingFlags.Instance
+                | BindingFlags.Public
+                | BindingFlags.NonPublic)
+            ?? throw new InvalidOperationException(
+                $"Missing prepared header method '{methodName}'.");
+        True(method.GetParameters().Any((parameter) =>
+            parameter.ParameterType
+            == typeof(EditorPreparedHeader)));
+    }
+
     var preparedServices = typeof(EditorDictionaryFieldServices)
         .GetMethod(
             "ForPreparedNode",

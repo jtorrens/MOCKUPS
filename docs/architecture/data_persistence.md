@@ -395,6 +395,9 @@ loading every concrete owner. The visual card factory consumes those snapshots
 and performs no layout, field-value, resource-option or active Runtime-contract
 persistence read during control construction. Selection revision and exact
 owner checks prevent obsolete preparations from reaching the visual state.
+Production Screen header presentation and embedded breadcrumb Variant names
+join the same prepared result. The visual header controller receives that
+result and holds no repository or persistence-facing port.
 Cancellation or failure cannot publish a partial desktop session.
 
 A schema, vocabulary, field or identifier change requires one explicit

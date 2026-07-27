@@ -16,8 +16,6 @@ internal sealed class EditorHeaderController
     private readonly Panel _breadcrumbPanel;
     private readonly Panel _contextStripHost;
     private readonly Panel _actionsPanel;
-    private readonly EmbeddedComponentDocumentStore _embeddedDocuments;
-    private readonly ProductionScreenPresentationDataSource _screenPresentation;
     private readonly Func<ProjectTreeNode?> _selectedNode;
     private readonly Func<ProjectTreeNode, ProjectTreeNode> _preferredVariantNode;
     private readonly Func<ProjectTreeNode, ProjectTreeNode> _preferredModuleVariantNode;
@@ -29,15 +27,12 @@ internal sealed class EditorHeaderController
     private readonly Func<ProjectTreeNode, IReadOnlyList<EditorVariantHistorySnapshot>> _variantHistory;
     private readonly Func<ProjectTreeNode, EditorVariantHistorySnapshot, Task> _restoreVariantSnapshot;
     private readonly EditorActiveFieldControls _activeFieldControls;
+    private EditorPreparedHeader? _prepared;
 
     public EditorHeaderController(
         Panel breadcrumbPanel,
         Panel contextStripHost,
         Panel actionsPanel,
-        IComponentDocumentStore components,
-        IPreviewInputRepository preview,
-        IModuleInstanceTimelineStore timeline,
-        IModuleInstanceThemeTokenQuery moduleInstanceThemes,
         Func<ProjectTreeNode?> selectedNode,
         Func<ProjectTreeNode, ProjectTreeNode> preferredVariantNode,
         Func<ProjectTreeNode, ProjectTreeNode> preferredModuleVariantNode,
@@ -53,12 +48,6 @@ internal sealed class EditorHeaderController
         _breadcrumbPanel = breadcrumbPanel;
         _contextStripHost = contextStripHost;
         _actionsPanel = actionsPanel;
-        _embeddedDocuments = new EmbeddedComponentDocumentStore(components);
-        _screenPresentation =
-            new ProductionScreenPresentationDataSource(
-                preview,
-                timeline,
-                moduleInstanceThemes);
         _selectedNode = selectedNode;
         _preferredVariantNode = preferredVariantNode;
         _preferredModuleVariantNode = preferredModuleVariantNode;
@@ -72,9 +61,20 @@ internal sealed class EditorHeaderController
         _activeFieldControls = activeFieldControls;
     }
 
-    public void SetRootTitle(string title)
+    public void SetRootTitle(
+        string title,
+        EditorPreparedHeader prepared)
     {
         var selected = _selectedNode();
+        if (selected is not null
+            && !prepared.OwnerId.Equals(
+                selected.Id,
+                StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"Prepared header owner '{prepared.OwnerId}' does not match selected owner '{selected.Id}'.");
+        }
+        _prepared = prepared;
         var productionPath = ProductionPath(selected);
         var breadcrumbItems = VariantPath(selected)
             ?? productionPath
@@ -91,7 +91,22 @@ internal sealed class EditorHeaderController
                     : [new EditorBreadcrumbItem(title)],
             CreateStructureButtonForSelectedComponent());
         SetHeaderActions(CreateHeaderActionsForSelectedComponent());
-        SetContextStrip(ContextMetadataForSelection());
+        SetContextStrip(ContextMetadataForSelection(prepared));
+    }
+
+    public void RefreshRootTitle(string title)
+    {
+        var selected = _selectedNode();
+        SetRootTitle(
+            title,
+            selected is not null
+                && _prepared is { } prepared
+                && prepared.OwnerId.Equals(
+                    selected.Id,
+                    StringComparison.Ordinal)
+                    ? prepared
+                    : EditorPreparedHeader.Loading(
+                        selected?.Id ?? ""));
     }
 
     private static List<EditorBreadcrumbItem>? VariantPath(ProjectTreeNode? selected)
@@ -128,20 +143,29 @@ internal sealed class EditorHeaderController
         return result;
     }
 
-    public void SetEmbeddedTitle(EditorEmbeddedContext context)
+    public void SetEmbeddedTitle(
+        EditorEmbeddedContext context,
+        EditorPreparedHeader prepared)
     {
-        var activeVariantName = _embeddedDocuments.ActiveVariantName(context);
+        if (!prepared.OwnerId.Equals(
+                context.OwnerNode.Id,
+                StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"Prepared header owner '{prepared.OwnerId}' does not match embedded owner '{context.OwnerNode.Id}'.");
+        }
+        _prepared = prepared;
         var items = new List<EditorBreadcrumbItem>
         {
             new(context.OwnerNode.Name, () => _returnToEmbeddedOwner(context.OwnerNode)),
         };
         if (context.RuntimeSource is not null)
         {
-            var rootVariantName = _embeddedDocuments.ActiveVariantName(context.Ancestor(0));
             items.Add(context.Slots.Count == 0
-                ? new EditorBreadcrumbItem($"Component: {rootVariantName}")
+                ? new EditorBreadcrumbItem(
+                    $"Component: {prepared.RootVariantName}")
                 : new EditorBreadcrumbItem(
-                    $"Component: {rootVariantName}",
+                    $"Component: {prepared.RootVariantName}",
                     () => _showEmbeddedContext(context.Ancestor(0))));
         }
         for (var index = 0; index < context.Slots.Count; index++)
@@ -167,10 +191,14 @@ internal sealed class EditorHeaderController
                 ? null
                 : EditorStructureButton.Create(async () => await _embeddedUsageNavigator.ShowForEmbedded(context.OwnerNode, context.Slot)));
         SetHeaderActions(null);
-        SetContextStrip(ContextMetadataForEmbedded(context, activeVariantName));
+        SetContextStrip(
+            ContextMetadataForEmbedded(
+                context,
+                prepared.ActiveVariantName));
     }
 
-    private EditorContextStripMetadata? ContextMetadataForSelection()
+    private EditorContextStripMetadata? ContextMetadataForSelection(
+        EditorPreparedHeader prepared)
     {
         var selected = _selectedNode();
         if (selected is null) return null;
@@ -186,7 +214,10 @@ internal sealed class EditorHeaderController
             ProjectTreeNodeKind.ComponentClass =>
                 new[] { new EditorContextIdentity("Component", selected.Name) },
             ProjectTreeNodeKind.Module => [new EditorContextIdentity("Module", selected.Name)],
-            ProjectTreeNodeKind.ModuleInstance => ScreenContextIdentities(selected.Id),
+            ProjectTreeNodeKind.ModuleInstance =>
+                ScreenContextIdentities(
+                    selected,
+                    prepared.Screen),
             ProjectTreeNodeKind.App => [new EditorContextIdentity("App", selected.Name)],
             _ => [new EditorContextIdentity(EditorUiText.IdentifierLabel(selected.Kind.ToString()), selected.Name)],
         };
@@ -200,9 +231,20 @@ internal sealed class EditorHeaderController
             statusNode.IsLocked);
     }
 
-    private IReadOnlyList<EditorContextIdentity> ScreenContextIdentities(string moduleInstanceId)
+    private static IReadOnlyList<EditorContextIdentity>
+        ScreenContextIdentities(
+            ProjectTreeNode selected,
+            ProductionScreenPresentationSource? context)
     {
-        var context = _screenPresentation.Load(moduleInstanceId);
+        if (context is null)
+        {
+            return
+            [
+                new EditorContextIdentity(
+                    "Screen",
+                    selected.Name),
+            ];
+        }
         return
         [
             new EditorContextIdentity("Module", context.Module),

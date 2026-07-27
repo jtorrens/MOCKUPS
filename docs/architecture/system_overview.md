@@ -173,6 +173,11 @@ preparation, and `MainWindow` commits the prepared cards only while the exact
 workspace revision and owner remain current. Opening Overrides for a newly
 selected alternative Variant performs its missing selection read through the
 same operation boundary before opening the embedded editor.
+Production Screen context and embedded Variant breadcrumb names are part of
+that same prepared transition. `EditorHeaderController` owns only visual
+breadcrumb, context-strip and action composition; it has no persistence port.
+The loading header uses tree identity, and the prepared header replaces it only
+for the exact current owner.
 
 `Mockups.Application.PersistencePorts` owns the synchronous persistence-facing
 port contracts. It references Application models and Domain value objects but
