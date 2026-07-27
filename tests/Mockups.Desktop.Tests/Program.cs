@@ -3165,6 +3165,14 @@ static void SqliteSessionExposesDistinctFocusedPorts()
                  "RenameComponentVariant",
                  "ToggleComponentVariantLock",
                  "ReplaceComponentVariantConfig",
+                 "GetModuleVariantSettings",
+                 "GetModuleInstanceVariantSettings",
+                 "UpdateModuleInstanceVariant",
+                 "SaveModuleVariant",
+                 "RenameModuleVariant",
+                 "DeleteModuleVariant",
+                 "ToggleModuleVariantLock",
+                 "ReplaceModuleVariantConfig",
              })
     {
         True(

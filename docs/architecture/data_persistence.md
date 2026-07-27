@@ -153,6 +153,9 @@ adapters; the project engine exposes no mirror query surface.
 Component Variant commands are owned by `SqliteEditorNodeCommandStore` and
 reference details by `SqliteComponentDocumentStore`; the project engine has no
 parallel Variant command implementation.
+Module Variant fields and selection use the focused record store, lifecycle
+commands use the node-command store, and effective Runtime reads use the
+Production owner. The project engine contains no Module Variant facade.
 
 Preview reads are also separated by owner. Generic authored Preview input does
 not inherit Actor, Component Preview or Module Instance timeline access, and

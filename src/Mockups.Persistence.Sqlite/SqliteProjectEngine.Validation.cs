@@ -601,7 +601,9 @@ internal sealed partial class SqliteProjectEngine
             while (reader.Read())
             {
                 var moduleId = reader.GetString(0);
-                var variants = ModuleVariants(reader.GetString(1), $"Module '{moduleId}'");
+                var variants = SqliteDesignOwner.ModuleVariants(
+                    reader.GetString(1),
+                    $"Module '{moduleId}'");
                 var ids = variants.Select((variant) => variant.Id).ToHashSet(StringComparer.Ordinal);
                 if (ids.Count != variants.Count || !ids.Contains(VariantEnvelopeContract.DefaultId))
                 {

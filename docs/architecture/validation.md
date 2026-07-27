@@ -227,6 +227,8 @@ That structural suite also requires:
   cannot reappear as project-engine forwarding queries;
 - Component Variant commands and reference details cannot reappear on the
   project engine;
+- Module Variant fields, selection, lifecycle commands and effective Runtime
+  reads cannot reappear as a project-engine facade;
 - exact manifest owner files, categories and declared embeds;
 - exact Component and Module registry parity;
 - registries whose factory entries are direct owner calls without business
