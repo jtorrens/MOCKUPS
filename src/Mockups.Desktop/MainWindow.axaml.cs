@@ -263,6 +263,7 @@ public partial class MainWindow : SukiWindow
             ReloadAndSelect,
             RefreshPreviewDevice,
             dictionaryFieldServices,
+            _messages,
             _previewController.TriggerDesignPreviewAction,
             _previewController.RestoreDesignPreviewAction,
             _previewController.CanRestoreDesignPreviewAction,

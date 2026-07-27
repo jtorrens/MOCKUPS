@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text.Json.Nodes;
+using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -18,6 +19,7 @@ internal sealed class ModuleInstanceAnimationEditor
     private readonly ModuleInstanceAnimationDocumentStore _animationDocuments;
     private readonly RuntimeInputOptionsDataSource _runtimeInputOptions;
     private readonly EditorDictionaryFieldServices _dictionaryServices;
+    private readonly IEditorShellMessageSink _messages;
     private readonly Action _onChanged;
     private readonly EditorSessionUiState _sessionUiState;
     private readonly Func<int> _shotFrame;
@@ -42,6 +44,7 @@ internal sealed class ModuleInstanceAnimationEditor
         IActorPreviewRepository actors,
         EditorOperationCoordinator operations,
         EditorDictionaryFieldServices dictionaryServices,
+        IEditorShellMessageSink messages,
         Action onChanged,
         EditorSessionUiState sessionUiState,
         Func<int> shotFrame,
@@ -62,6 +65,7 @@ internal sealed class ModuleInstanceAnimationEditor
         _runtimeInputOptions =
             new RuntimeInputOptionsDataSource(dictionary, actors);
         _dictionaryServices = dictionaryServices;
+        _messages = messages;
         _onChanged = onChanged;
         _sessionUiState = sessionUiState;
         _shotFrame = shotFrame;
@@ -239,6 +243,14 @@ internal sealed class ModuleInstanceAnimationEditor
         var actualScreenDuration = preparedSnapshot.DurationFrames;
         var durationPolicy = RuntimeDurationContract.Policy(effectiveContractJson);
         var currentAnimation = animation;
+        var commands =
+            new ModuleInstanceAnimationCommandCoordinator(
+                preparedSnapshot.Source.AnimationJson,
+                (candidateJson) =>
+                    _animationDocuments
+                        .SaveAnimationSnapshotAsync(
+                            node.Id,
+                            candidateJson));
         int MaximumAuthoredScreenFrame() => targets
             .SelectMany((candidate) => (candidate.Track?.Keyframes ?? [])
                 .Where((keyframe) => keyframe.Enabled)
@@ -362,15 +374,38 @@ internal sealed class ModuleInstanceAnimationEditor
             });
         }
 
-        async void SaveAndRefresh()
+        async Task SaveAndRefresh(
+            Func<ModuleInstanceAnimationDocument, bool>
+                mutation)
         {
             var selectedKey = TargetKey(selected);
             var authoringHorizon = timelineDuration;
-            preparedSnapshot =
-                await _animationDocuments
-                    .SaveAnimationSnapshotAsync(
-                        node.Id,
-                        document.ToJson());
+            var result = await commands.ExecuteAsync(
+                mutation);
+            document =
+                new ModuleInstanceAnimationDocument(
+                    result.ConfirmedAnimationJson);
+            if (!result.Succeeded)
+            {
+                currentAnimation =
+                    DesignPreviewTestValues.Parse(
+                        result.ConfirmedAnimationJson);
+                RefreshTargetBindings(
+                    selectedKey);
+                _messages.Error(
+                    "Save animation",
+                    result.Error
+                    ?? new InvalidOperationException(
+                        "Animation persistence failed."));
+                RefreshVisuals();
+                return;
+            }
+            if (result.Snapshot is null)
+            {
+                return;
+            }
+
+            preparedSnapshot = result.Snapshot;
             _preparedAnimationSnapshot =
                 preparedSnapshot;
             currentAnimation = DesignPreviewTestValues.Parse(
@@ -379,7 +414,25 @@ internal sealed class ModuleInstanceAnimationEditor
                 preparedSnapshot.ScreenStartFrame;
             actualScreenDuration =
                 preparedSnapshot.DurationFrames;
-            var refreshedTargets = readScopeTargets(currentAnimation)
+            RefreshTargetBindings(
+                selectedKey);
+            maximumAuthoredScreenFrame = MaximumAuthoredScreenFrame();
+            calculatedAuthoringDuration = CalculatedAuthoringDuration(maximumAuthoredScreenFrame);
+            hasOutOfRangeKeyframes = maximumAuthoredScreenFrame >= actualScreenDuration;
+            timelineDuration = durationPolicy == RuntimeDurationPolicy.Explicit
+                ? Math.Max(actualScreenDuration, authoringHorizon)
+                : Math.Max(calculatedAuthoringDuration, authoringHorizon);
+            currentFrame = Math.Clamp(currentFrame, 0, timelineDuration - 1);
+            slider.Maximum = timelineDuration - 1;
+            _onChanged();
+            RefreshVisuals();
+        }
+
+        void RefreshTargetBindings(
+            string selectedKey)
+        {
+            var refreshedTargets =
+                readScopeTargets(currentAnimation)
                 .ToDictionary((candidate) => (candidate.FieldId, candidate.TargetId));
             for (var index = 0; index < targets.Count; index++)
             {
@@ -395,16 +448,6 @@ internal sealed class ModuleInstanceAnimationEditor
             }
             selected = targets.FirstOrDefault((candidate) => TargetKey(candidate) == selectedKey)
                 ?? targets[0];
-            maximumAuthoredScreenFrame = MaximumAuthoredScreenFrame();
-            calculatedAuthoringDuration = CalculatedAuthoringDuration(maximumAuthoredScreenFrame);
-            hasOutOfRangeKeyframes = maximumAuthoredScreenFrame >= actualScreenDuration;
-            timelineDuration = durationPolicy == RuntimeDurationPolicy.Explicit
-                ? Math.Max(actualScreenDuration, authoringHorizon)
-                : Math.Max(calculatedAuthoringDuration, authoringHorizon);
-            currentFrame = Math.Clamp(currentFrame, 0, timelineDuration - 1);
-            slider.Maximum = timelineDuration - 1;
-            _onChanged();
-            RefreshVisuals();
         }
 
         void RefreshVisuals()
@@ -444,15 +487,13 @@ internal sealed class ModuleInstanceAnimationEditor
                 SetFrame,
                 PreviewDraggedFrame,
                 (target, keyframe, destinationFrame) =>
-                {
-                    if (!document.TryMoveKeyframe(
-                        target.Track!.FieldId,
-                        target.Track.TargetId,
-                        keyframe.Frame,
-                        destinationFrame)) return false;
-                    SaveAndRefresh();
-                    return true;
-                });
+                    SaveAndRefresh(
+                        (candidate) =>
+                            candidate.TryMoveKeyframe(
+                                target.Track!.FieldId,
+                                target.Track.TargetId,
+                                keyframe.Frame,
+                                destinationFrame)));
             trackList.Children.Clear();
             foreach (var target in targets)
             {
@@ -589,7 +630,9 @@ internal sealed class ModuleInstanceAnimationEditor
         ResolvedAnimationTarget selected,
         int ownerFrame,
         Action<int> setFrame,
-        Action saveAndReload)
+        Func<
+            Func<ModuleInstanceAnimationDocument, bool>,
+            Task> saveMutation)
     {
         if (selected.Target is null)
             return new TextBlock { Text = "El target de este track ya no existe.", Foreground = EditorAnimationVisuals.ActiveTrackBrush };
@@ -603,12 +646,18 @@ internal sealed class ModuleInstanceAnimationEditor
             };
             activate.Click += (_, _) =>
             {
-                document.AddTrack(
-                    target.FieldId,
-                    target.TargetId,
-                    ValueNode(target.Input.ValueKind, target.BaseValue),
-                    target.Input.Animation!.Interpolations.First());
-                saveAndReload();
+                _ = saveMutation((candidate) =>
+                {
+                    candidate.AddTrack(
+                        target.FieldId,
+                        target.TargetId,
+                        ValueNode(
+                            target.Input.ValueKind,
+                            target.BaseValue),
+                        target.Input.Animation!
+                            .Interpolations.First());
+                    return true;
+                });
             };
             return activate;
         }
@@ -684,21 +733,32 @@ internal sealed class ModuleInstanceAnimationEditor
             DictionaryServices(node));
         void SaveValue(string value, string interpolation)
         {
-            document.UpsertKeyframe(
-                target.FieldId,
-                target.TargetId,
-                localFrame,
-                ValueNode(target.Input.ValueKind, value),
-                interpolation);
-            saveAndReload();
+            _ = saveMutation((candidate) =>
+            {
+                candidate.UpsertKeyframe(
+                    target.FieldId,
+                    target.TargetId,
+                    localFrame,
+                    ValueNode(
+                        target.Input.ValueKind,
+                        value),
+                    interpolation);
+                return true;
+            });
         }
         keyframeButton.Click += (_, _) =>
         {
             if (exact is null) SaveValue(valueControl.Value, interpolationControl.Value);
             else if (localFrame > 0)
             {
-                document.RemoveKeyframe(target.FieldId, target.TargetId, localFrame);
-                saveAndReload();
+                _ = saveMutation((candidate) =>
+                {
+                    candidate.RemoveKeyframe(
+                        target.FieldId,
+                        target.TargetId,
+                        localFrame);
+                    return true;
+                });
             }
         };
         keyframeButton.IsEnabled = localFrame >= 0 && (exact is null || localFrame > 0);
@@ -717,7 +777,9 @@ internal sealed class ModuleInstanceAnimationEditor
         ModuleInstanceAnimationDocument document,
         string targetId,
         int naturalDuration,
-        Action saveAndReload)
+        Func<
+            Func<ModuleInstanceAnimationDocument, bool>,
+            Task> saveMutation)
     {
         var stored = document.TargetDurationFrames(targetId);
         var enabled = stored is not null;
@@ -730,8 +792,15 @@ internal sealed class ModuleInstanceAnimationEditor
         toggle.PropertyChanged += (_, change) =>
         {
             if (change.Property != ToggleSwitch.IsCheckedProperty) return;
-            document.SetTargetDurationFrames(targetId, toggle.IsChecked == true ? naturalDuration : null);
-            saveAndReload();
+            _ = saveMutation((candidate) =>
+            {
+                candidate.SetTargetDurationFrames(
+                    targetId,
+                    toggle.IsChecked == true
+                        ? naturalDuration
+                        : null);
+                return true;
+            });
         };
         var switchRow = new Grid
         {
@@ -768,8 +837,13 @@ internal sealed class ModuleInstanceAnimationEditor
             control.ValueCommitted += (_, value) =>
             {
                 if (!int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var duration)) return;
-                document.SetTargetDurationFrames(targetId, Math.Max(1, duration));
-                saveAndReload();
+                _ = saveMutation((candidate) =>
+                {
+                    candidate.SetTargetDurationFrames(
+                        targetId,
+                        Math.Max(1, duration));
+                    return true;
+                });
             };
             panel.Children.Add(control);
             panel.Children.Add(new TextBlock
@@ -790,7 +864,11 @@ internal sealed class ModuleInstanceAnimationEditor
         int timelineDuration,
         Action<int> setFrame,
         Action<int> previewFrame,
-        Func<ResolvedAnimationTarget, AnimationKeyframeView, int, bool> moveKeyframe)
+        Func<
+            ResolvedAnimationTarget,
+            AnimationKeyframeView,
+            int,
+            Task> moveKeyframe)
     {
         var canvas = new Canvas
         {
@@ -977,7 +1055,14 @@ internal sealed class ModuleInstanceAnimationEditor
                             setFrame(ownerKeyframe);
                             return;
                         }
-                        if (validDestination && moveKeyframe(target, keyframe, candidateLocalFrame)) return;
+                        if (validDestination)
+                        {
+                            _ = moveKeyframe(
+                                target,
+                                keyframe,
+                                candidateLocalFrame);
+                            return;
+                        }
                         Restore();
                     };
                     marker.PointerCaptureLost += (_, _) =>

@@ -213,6 +213,10 @@ payload edit must declare both capabilities.
 `IModuleInstanceAnimationStore` owns only animation writes and does not inherit
 timeline reads. Animation authoring declares the Production timeline
 capability independently for its prepared snapshot.
+The visual animation owner submits serialized semantic commands. A command is
+applied to the latest confirmed document only when it reaches the front of the
+queue; persistence success supplies the next confirmed snapshot and failure
+leaves the prior snapshot current.
 
 The SQLite implementation of Runtime Input Instance writes is a focused
 cross-owner application store. It receives the SQLite context plus Design,

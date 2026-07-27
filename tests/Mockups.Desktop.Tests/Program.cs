@@ -91,6 +91,8 @@ var tests = new (string Name, Action Run)[]
     ("Preview visual context boundary preserves options metrics and media root read-only", PreviewVisualContextBoundaryPreservesResolvedResources),
     ("Production Preview session boundary preserves Shot and Screen data read-only", ProductionPreviewSessionBoundaryPreservesCurrentData),
     ("Module Instance animation store preserves current documents and explicit writes", ModuleInstanceAnimationStorePreservesCurrentDocuments),
+    ("failed animation commands restore the last confirmed document", FailedAnimationCommandRestoresConfirmedDocument),
+    ("rapid animation commands serialize against the latest confirmed document", RapidAnimationCommandsUseLatestConfirmedDocument),
     ("Theme repository preserves current documents and lifecycle", ThemeRepositoryPreservesFacadeContract),
     ("Production Font repository preserves current rows and lifecycle", ProductionFontRepositoryPreservesFacadeContract),
     ("Production Font file documents reject filtered or inferred values", ProductionFontFileDocumentsAreStrict),
@@ -8284,6 +8286,128 @@ static void ModuleInstanceAnimationStorePreservesCurrentDocuments()
     {
         File.Delete(temporary);
     }
+}
+
+static void FailedAnimationCommandRestoresConfirmedDocument()
+{
+    const string confirmed =
+        """{"schemaVersion":2,"tracks":[]}""";
+    var coordinator =
+        new ModuleInstanceAnimationCommandCoordinator(
+            confirmed,
+            (_) => Task.FromException<
+                ModuleInstanceAnimationSnapshot>(
+                new InvalidOperationException(
+                    "persistence failed")));
+
+    var result = coordinator.ExecuteAsync(
+            (candidate) =>
+            {
+                candidate.SetTargetDurationFrames(
+                    "target-a",
+                    12);
+                return true;
+            })
+        .GetAwaiter()
+        .GetResult();
+
+    True(!result.Succeeded);
+    Equal(
+        confirmed,
+        result.ConfirmedAnimationJson);
+    True(new ModuleInstanceAnimationDocument(
+            result.ConfirmedAnimationJson)
+        .TargetDurationFrames(
+            "target-a") is null);
+    True(result.Error is InvalidOperationException);
+}
+
+static void RapidAnimationCommandsUseLatestConfirmedDocument()
+{
+    const string confirmed =
+        """{"schemaVersion":2,"tracks":[]}""";
+    var firstStarted =
+        new TaskCompletionSource(
+            TaskCreationOptions
+                .RunContinuationsAsynchronously);
+    var releaseFirst =
+        new TaskCompletionSource(
+            TaskCreationOptions
+                .RunContinuationsAsynchronously);
+    var saved = new List<string>();
+    var coordinator =
+        new ModuleInstanceAnimationCommandCoordinator(
+            confirmed,
+            async (candidateJson) =>
+            {
+                saved.Add(candidateJson);
+                if (saved.Count == 1)
+                {
+                    firstStarted.SetResult();
+                    await releaseFirst.Task;
+                }
+                return new ModuleInstanceAnimationSnapshot(
+                    "screen-a",
+                    new ModuleInstanceAnimationSource(
+                        "{}",
+                        candidateJson,
+                        "{}",
+                        "{}",
+                        "{}"),
+                    0,
+                    100);
+            });
+
+    var first = coordinator.ExecuteAsync(
+        (candidate) =>
+        {
+            candidate.SetTargetDurationFrames(
+                "target-a",
+                12);
+            return true;
+        });
+    True(firstStarted.Task.Wait(
+        TimeSpan.FromSeconds(5)));
+    var second = coordinator.ExecuteAsync(
+        (candidate) =>
+        {
+            candidate.SetTargetDurationFrames(
+                "target-b",
+                24);
+            return true;
+        });
+    Thread.Sleep(50);
+    Equal(
+        1,
+        saved.Count);
+    releaseFirst.SetResult();
+    Task.WhenAll(first, second)
+        .GetAwaiter()
+        .GetResult();
+
+    Equal(
+        2,
+        saved.Count);
+    var firstDocument =
+        new ModuleInstanceAnimationDocument(
+            saved[0]);
+    Equal(
+        12,
+        firstDocument.TargetDurationFrames(
+            "target-a"));
+    True(firstDocument.TargetDurationFrames(
+        "target-b") is null);
+    var secondDocument =
+        new ModuleInstanceAnimationDocument(
+            saved[1]);
+    Equal(
+        12,
+        secondDocument.TargetDurationFrames(
+            "target-a"));
+    Equal(
+        24,
+        secondDocument.TargetDurationFrames(
+            "target-b"));
 }
 
 static void ThemeRepositoryPreservesFacadeContract()

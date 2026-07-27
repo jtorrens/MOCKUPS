@@ -36,6 +36,7 @@ internal sealed class EditorCollectionCardFactory : IDisposable
     private readonly Action<ProjectTreeNode> _reloadAndSelect;
     private readonly Action _onChanged;
     private readonly EditorDictionaryFieldServices _dictionaryServices;
+    private readonly IEditorShellMessageSink _messages;
     private readonly Action<string, string?> _triggerPreviewAction;
     private readonly Action<string> _restorePreviewAction;
     private readonly Func<string, bool> _canRestorePreviewAction;
@@ -74,6 +75,7 @@ internal sealed class EditorCollectionCardFactory : IDisposable
         Action<ProjectTreeNode> reloadAndSelect,
         Action onChanged,
         EditorDictionaryFieldServices dictionaryServices,
+        IEditorShellMessageSink messages,
         Action<string, string?> triggerPreviewAction,
         Action<string> restorePreviewAction,
         Func<string, bool> canRestorePreviewAction,
@@ -109,6 +111,7 @@ internal sealed class EditorCollectionCardFactory : IDisposable
         _reloadAndSelect = reloadAndSelect;
         _onChanged = onChanged;
         _dictionaryServices = dictionaryServices;
+        _messages = messages;
         _triggerPreviewAction = triggerPreviewAction;
         _restorePreviewAction = restorePreviewAction;
         _canRestorePreviewAction = canRestorePreviewAction;
@@ -311,6 +314,7 @@ internal sealed class EditorCollectionCardFactory : IDisposable
             _actors,
             _operations,
             _dictionaryServices,
+            _messages,
             _onChanged,
             _sessionUiState,
             _shotFrame,

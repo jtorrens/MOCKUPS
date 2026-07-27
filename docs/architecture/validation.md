@@ -89,7 +89,9 @@ It includes:
   registry/dictionary/config/slot verification, including the explicit source
   Variant path used by derived nested Runtime collections;
 - macOS display-aware launcher ownership and command tests;
-- Preview and desktop animation tests;
+- Preview and desktop animation tests, including failed and rapid desktop
+  commands that prove rollback to the confirmed document and ordered
+  composition over the latest successful snapshot;
 - headless Avalonia Preview shell visual-tree layout at 1040 and 1440 px,
   including real measure/arrange, panel bounds, tab headers, responsive Setup
   reflow and workspace restoration;

@@ -65,6 +65,14 @@ snapshot for another Screen and perform no synchronous persistence read while
 creating or refreshing their visual surface. A committed animation write
 returns the replacement snapshot through the same boundary.
 
+Animation edits are serialized semantic commands over the last confirmed
+snapshot. Each command creates its candidate only after the previous command
+has succeeded or failed. Success replaces the complete prepared snapshot;
+failure restores the confirmed document and reports the error in the editor.
+The visual timeline never treats an unawaited write as committed and rapid
+keyframe, track or retime commands cannot overwrite one another from a shared
+stale JSON copy.
+
 Production Preview navigation separately receives a Project-wide immutable
 timeline catalog. Shot controls use its ordered Screen ranges and absolute
 keyframe frames; visual callbacks do not reload a Screen, walk persisted slots
