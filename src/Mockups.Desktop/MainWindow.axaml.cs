@@ -53,6 +53,7 @@ public partial class MainWindow : SukiWindow
     private string _previewUtilityTabStateKey = "";
     private bool _isUpdatingPreviewUtilityTab;
     private string _renderedPreviewNavigationNodeId = "";
+    private (string NodeId, string CardId)? _pendingEditorCardExpansion;
     private EditorSessionState Session => _workspaceCoordinator.State;
 
     [Obsolete("MainWindow must be created by Mockups.Desktop.Host.")]
@@ -277,7 +278,11 @@ public partial class MainWindow : SukiWindow
             _previewController.ToggleProductionPlayback,
             _editorSessionUiState);
         _editorContent = new EditorContentController(
-            data.Layouts,
+            new EditorContentPreparationService(
+                data.Layouts,
+                _fieldValues,
+                _componentClassFieldValues,
+                application.Operations),
             EditorCardsPanel,
             () => Math.Max(1, EditorScrollViewer.Bounds.Width - EditorScrollViewer.Padding.Left - EditorScrollViewer.Padding.Right),
             EditorScrollViewer,
@@ -349,6 +354,7 @@ public partial class MainWindow : SukiWindow
         {
             _shellState.Save(CreateSessionHistoryState());
             _productionNavigationActions.Dispose();
+            _editorContent.Dispose();
             application.Operations.Dispose();
             _workspaceCoordinator.Dispose();
             _previewController.Dispose();
@@ -534,7 +540,8 @@ public partial class MainWindow : SukiWindow
     private void RenderRootSelection(
         EditorSessionTransition transition,
         bool rebuildTree,
-        EditorShellContextTransaction? transaction = null)
+        EditorShellContextTransaction? transaction = null,
+        EditorViewState? restoreState = null)
     {
         var node = transition.Current.SelectedNode
             ?? throw new InvalidOperationException(
@@ -546,11 +553,25 @@ public partial class MainWindow : SukiWindow
         _previewController.BeginSelectionTransition();
         var editorNode = EditorNodeSelectionState.EditorNodeForSelection(node);
         transaction?.Checkpoint("before-editor-candidate");
-        _editorContent.Build(editorNode, node);
+        if (_editorContent.TryBuildSpecial(node))
+        {
+            RestoreRootEditorViewState(
+                node,
+                restoreState);
+            ApplyPendingEditorCardExpansion(node.Id);
+        }
+        else
+        {
+            _editorContent.ShowLoading();
+            _ = PrepareRootEditorAsync(
+                editorNode,
+                node,
+                transition.Current.Revision,
+                restoreState);
+        }
         RefreshPreviewAuthoringSurface(node);
         SetEditorRootTitle(editorNode.Name);
         transaction?.Checkpoint("after-editor-swap");
-        _editorViewState.Restore(node, _editorContent.Cards);
 
         if (rebuildTree)
         {
@@ -563,7 +584,69 @@ public partial class MainWindow : SukiWindow
         _previewController.ScheduleSelectionRefresh(() =>
             _workspaceCoordinator.IsCurrent(
                 revision,
-                selectedNodeId));
+            selectedNodeId));
+    }
+
+    private async Task PrepareRootEditorAsync(
+        ProjectTreeNode layoutNode,
+        ProjectTreeNode dataNode,
+        long revision,
+        EditorViewState? restoreState)
+    {
+        try
+        {
+            var prepared = await _editorContent.PrepareRootAsync(
+                layoutNode,
+                dataNode);
+            if (!_workspaceCoordinator.IsCurrent(
+                    revision,
+                    dataNode.Id)
+                || Session.EmbeddedEditor is not null)
+            {
+                return;
+            }
+
+            _editorContent.CommitRoot(
+                layoutNode,
+                dataNode,
+                prepared);
+            RestoreRootEditorViewState(
+                dataNode,
+                restoreState);
+            ApplyPendingEditorCardExpansion(dataNode.Id);
+            ApplyUiTextScale();
+        }
+        catch (OperationCanceledException)
+        {
+            // A newer root or embedded editor owns the visual surface.
+        }
+        catch (Exception exception)
+        {
+            if (_workspaceCoordinator.IsCurrent(
+                    revision,
+                    dataNode.Id))
+            {
+                _messages.Error(
+                    "Prepare editor",
+                    exception);
+            }
+        }
+    }
+
+    private void RestoreRootEditorViewState(
+        ProjectTreeNode node,
+        EditorViewState? restoreState)
+    {
+        if (restoreState is not null)
+        {
+            _editorViewState.RestoreState(
+                restoreState,
+                _editorContent.Cards);
+            return;
+        }
+        _editorViewState.Restore(
+            node,
+            _editorContent.Cards);
     }
 
     private async Task TrackVariantTransitionAsync(
@@ -632,13 +715,66 @@ public partial class MainWindow : SukiWindow
         var embedded = transition.Current.EmbeddedEditor
             ?? throw new InvalidOperationException(
                 "The embedded editor transition did not retain its context.");
-        _editorContent.BuildEmbedded(embedded);
+        _editorContent.ShowLoading();
+        _ = PrepareEmbeddedEditorAsync(
+            embedded,
+            transition.Current.Revision);
         SetEditorEmbeddedTitle(embedded);
-        _editorViewState.Restore(
-            embedded.RecordClassId,
-            _editorContent.Cards);
         RefreshPreviewDevice();
         ApplyUiTextScale();
+    }
+
+    private async Task PrepareEmbeddedEditorAsync(
+        EditorEmbeddedContext context,
+        long revision,
+        EditorViewState? restoreState = null)
+    {
+        try
+        {
+            var prepared = await _editorContent.PrepareEmbeddedAsync(
+                context);
+            if (Session.Revision != revision
+                || Session.EmbeddedEditor is not { } current
+                || !current.OwnerNode.Id.Equals(
+                    context.OwnerNode.Id,
+                    StringComparison.Ordinal)
+                || !current.RecordClassId.Equals(
+                    context.RecordClassId,
+                    StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _editorContent.CommitEmbedded(
+                current,
+                prepared);
+            if (restoreState is not null)
+            {
+                _editorViewState.RestoreState(
+                    restoreState,
+                    _editorContent.Cards);
+            }
+            else
+            {
+                _editorViewState.Restore(
+                    current.RecordClassId,
+                    _editorContent.Cards);
+            }
+            ApplyUiTextScale();
+        }
+        catch (OperationCanceledException)
+        {
+            // A newer root or embedded editor owns the visual surface.
+        }
+        catch (Exception exception)
+        {
+            if (Session.Revision == revision)
+            {
+                _messages.Error(
+                    "Prepare embedded editor",
+                    exception);
+            }
+        }
     }
 
     private void CaptureActiveEditorViewState()
@@ -712,15 +848,20 @@ public partial class MainWindow : SukiWindow
 
         if (transition.Current.EmbeddedEditor is { } embeddedContext)
         {
-            _editorContent.BuildEmbedded(embeddedContext);
+            _editorContent.ShowLoading();
+            _ = PrepareEmbeddedEditorAsync(
+                embeddedContext,
+                transition.Current.Revision,
+                viewState);
             SetEditorEmbeddedTitle(embeddedContext);
             RefreshPreviewDevice();
-            _editorViewState.RestoreState(viewState, _editorContent.Cards);
         }
         else
         {
-            RenderRootSelection(transition, rebuildTree: false);
-            _editorViewState.RestoreState(viewState, _editorContent.Cards);
+            RenderRootSelection(
+                transition,
+                rebuildTree: false,
+                restoreState: viewState);
         }
 
         RefreshPreviewOptions();
@@ -1016,13 +1157,31 @@ public partial class MainWindow : SukiWindow
         if (production is null) return;
 
         ShowNode(production);
+        _pendingEditorCardExpansion = (
+            production.Id,
+            cardSessionStateId);
+        ApplyPendingEditorCardExpansion(
+            production.Id);
+    }
+
+    private void ApplyPendingEditorCardExpansion(string nodeId)
+    {
+        if (_pendingEditorCardExpansion is not { } pending
+            || !pending.NodeId.Equals(
+                nodeId,
+                StringComparison.Ordinal))
+        {
+            return;
+        }
+
         var card = _editorContent.Cards.FirstOrDefault((candidate) =>
             candidate.SessionStateId.Equals(
-                cardSessionStateId,
+                pending.CardId,
                 StringComparison.Ordinal));
         if (card is not null)
         {
             card.IsExpanded = true;
+            _pendingEditorCardExpansion = null;
         }
     }
 

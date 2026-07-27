@@ -141,6 +141,8 @@ var tests = new (string Name, Action Run)[]
     ("visual persistence writers require operation coordination", VisualPersistenceWritersRequireOperationCoordination),
     ("Variant history reads persistence through the operation boundary", VariantHistoryReadsThroughOperationBoundary),
     ("collapsed editor cards defer their snapshot until expansion", CollapsedEditorCardsDeferSnapshots),
+    ("editor visual cards require prepared field snapshots", EditorVisualCardsRequirePreparedFieldSnapshots),
+    ("rapid visual selection commits only the latest prepared editor", RapidVisualSelectionCommitsLatestPreparedEditor),
     ("Preview resource selection has one session rule", PreviewResourceSelectionHasOneSessionRule),
     ("editor view state follows the exact record class across records", EditorViewStateFollowsRecordClass),
     ("editor view state round-trips per class and clamps scroll", EditorViewStateRoundTripsPerClass),
@@ -3285,6 +3287,7 @@ static void VisualPersistenceWritersRequireOperationCoordination()
              {
                  typeof(EditorFieldCommitCoordinator),
                  typeof(EditorVariantHistoryService),
+                 typeof(EditorContentPreparationService),
                  typeof(EditorAddChildWorkflow),
                  typeof(EditorNodeCommandController),
                  typeof(EditorDomainDialogService),
@@ -3423,6 +3426,111 @@ static void CollapsedEditorCardsDeferSnapshots()
             Equal(1, loadCount);
         },
         CancellationToken.None);
+}
+
+static void EditorVisualCardsRequirePreparedFieldSnapshots()
+{
+    var preparedFieldType =
+        typeof(IReadOnlyDictionary<string, FieldValue>);
+    foreach (var methodName in new[]
+             {
+                 "CreateDirectFieldControl",
+                 "CreateEmbeddedFieldControl",
+             })
+    {
+        var methods = typeof(EditorLayoutCardFactory).GetMethods(
+                BindingFlags.Instance
+                | BindingFlags.NonPublic)
+            .Where((method) =>
+                method.Name.Equals(
+                    methodName,
+                    StringComparison.Ordinal))
+            .ToList();
+        Equal(1, methods.Count);
+        True(methods[0].GetParameters().Any((parameter) =>
+            parameter.ParameterType == typeof(FieldValue)));
+        True(methods[0].GetParameters().Any((parameter) =>
+            parameter.ParameterType == preparedFieldType));
+        True(!methods[0].GetParameters().Any((parameter) =>
+            parameter.Name?.Equals(
+                "fieldId",
+                StringComparison.Ordinal) == true));
+    }
+
+    True(!typeof(EditorContentController)
+        .GetConstructors(
+            BindingFlags.Instance
+            | BindingFlags.Public
+            | BindingFlags.NonPublic)
+        .SelectMany((constructor) => constructor.GetParameters())
+        .Any((parameter) =>
+            parameter.ParameterType == typeof(IEditorLayoutStore)));
+}
+
+static void RapidVisualSelectionCommitsLatestPreparedEditor()
+{
+    var source = ParityDatabasePath();
+    var temporary = Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        $".mockups-prepared-editor-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        using var session = HeadlessUnitTestSession.StartNew(
+            typeof(HeadlessTestApplication));
+        session.Dispatch(
+            () =>
+            {
+                var window = DesktopHost.CreateWindow(temporary);
+                window.Show();
+                var roots = WindowSession(window).TreeRoots;
+                var first = Descendants(roots)
+                    .First((node) =>
+                        node.Kind == ProjectTreeNodeKind.Theme);
+                var latest = Descendants(roots)
+                    .First((node) =>
+                        node.Kind == ProjectTreeNodeKind.Actor);
+                var selectNode = typeof(MainWindow).GetMethod(
+                    "SelectNodeById",
+                    BindingFlags.Instance
+                    | BindingFlags.NonPublic,
+                    binder: null,
+                    types: [typeof(string)],
+                    modifiers: null)
+                    ?? throw new InvalidOperationException(
+                        "Missing MainWindow node selection boundary.");
+                var content = typeof(MainWindow)
+                    .GetField(
+                        "_editorContent",
+                        BindingFlags.Instance
+                        | BindingFlags.NonPublic)
+                    ?.GetValue(window) as EditorContentController
+                    ?? throw new InvalidOperationException(
+                        "Missing prepared editor content owner.");
+
+                True((bool)selectNode.Invoke(window, [first.Id])!);
+                True((bool)selectNode.Invoke(window, [latest.Id])!);
+                var committed = SpinWait.SpinUntil(
+                    () =>
+                    {
+                        Dispatcher.UIThread.RunJobs();
+                        return content.CommittedOwnerId.Equals(
+                            latest.Id,
+                            StringComparison.Ordinal);
+                    },
+                    TimeSpan.FromSeconds(10));
+                True(committed);
+                Equal(latest.Id, WindowSession(window).SelectedNode?.Id);
+                Equal(latest.Id, content.CommittedOwnerId);
+                window.Close();
+            },
+            CancellationToken.None);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
 }
 
 static string MethodSignature(MethodInfo method) =>
@@ -9390,6 +9498,7 @@ static void ForwardActionsUseSharedPresentation()
 var isolatedUiTests = new HashSet<string>(StringComparer.Ordinal)
 {
     "collapsed editor cards defer their snapshot until expansion",
+    "rapid visual selection commits only the latest prepared editor",
     "real Preview shell layout remains usable at 1040 and 1440",
     "List Item and List expose their runtime model in the real editor",
     "Chat List Module exposes its fixed List boundary and exact Runtime in the real editor",

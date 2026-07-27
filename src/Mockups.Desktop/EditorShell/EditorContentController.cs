@@ -1,15 +1,15 @@
 using Avalonia.Controls;
-using Mockups.DesktopEditorShell.Data;
 using SukiUI.Controls;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal sealed class EditorContentController
+internal sealed class EditorContentController : IDisposable
 {
-    private readonly IEditorLayoutStore _database;
+    private readonly EditorContentPreparationService _preparation;
     private readonly EditorCardHostController _cardHost;
     private readonly EditorActiveFieldControls _activeFieldControls;
     private readonly IEditorInlinePreviewController _inlinePreviews;
@@ -19,7 +19,7 @@ internal sealed class EditorContentController
         _specialCards;
 
     public EditorContentController(
-        IEditorLayoutStore database,
+        EditorContentPreparationService preparation,
         Panel host,
         Func<double>? availableWidth,
         Control? widthObserver,
@@ -29,7 +29,7 @@ internal sealed class EditorContentController
         EditorCollectionCardFactory collectionCards,
         Func<ProjectTreeNode, IReadOnlyList<InstantEditorCard>?>? specialCards = null)
     {
-        _database = database;
+        _preparation = preparation;
         _cardHost = new EditorCardHostController(host, availableWidth, widthObserver);
         _activeFieldControls = activeFieldControls;
         _inlinePreviews = inlinePreviews;
@@ -39,73 +39,109 @@ internal sealed class EditorContentController
     }
 
     public IReadOnlyList<InstantEditorCard> Cards => _cardHost.Cards;
+    public string CommittedOwnerId { get; private set; } = "";
 
-    public void Build(ProjectTreeNode layoutNode, ProjectTreeNode dataNode)
+    public bool TryBuildSpecial(ProjectTreeNode dataNode)
     {
-        ResetRegistries();
         if (_specialCards(dataNode) is { } specialCards)
         {
+            _preparation.Cancel();
+            ResetRegistries();
             _cardHost.Replace(specialCards, resetExpansion: false);
-            return;
+            CommittedOwnerId = dataNode.Id;
+            return true;
         }
-        var layout = _database.LoadEditorLayout(layoutNode.RecordClassId);
-        var cards = layout.Cards
-            .Where((card) => card.Visible)
-            .OrderBy((card) => card.Order)
-            .ThenBy((card) => card.Label)
-            .Select((layoutCard) => _layoutCards.Create(
+
+        return false;
+    }
+
+    public void ShowLoading()
+    {
+        ResetRegistries();
+        CommittedOwnerId = "";
+        _cardHost.Replace(
+        [
+            new InstantEditorCard(
+                EditorCardHeader.Create(
+                    "Editor",
+                    "Preparing data",
+                    EditorIcons.Create(
+                        EditorIcons.Structure,
+                        18)),
+                new Border
+                {
+                    Padding = EditorUiDensity.CardThickness(10),
+                    Child = new TextBlock
+                    {
+                        Text = "Loading editor data…",
+                        Opacity = 0.72,
+                    },
+                },
+                isExpanded: true)
+            {
+                SessionStateId = "editor:loading",
+            },
+        ], resetExpansion: false);
+    }
+
+    public Task<EditorPreparedRootContent> PrepareRootAsync(
+        ProjectTreeNode layoutNode,
+        ProjectTreeNode dataNode) =>
+        _preparation.PrepareRootAsync(
+            layoutNode,
+            dataNode);
+
+    public void CommitRoot(
+        ProjectTreeNode layoutNode,
+        ProjectTreeNode dataNode,
+        EditorPreparedRootContent prepared)
+    {
+        ResetRegistries();
+        var cards = prepared.Cards
+            .Select((card) => _layoutCards.Create(
                 dataNode,
-                layoutCard,
-                layoutNode.RecordClassId))
+                card.Layout,
+                layoutNode.RecordClassId,
+                card.Fields))
             .Concat(_collectionCards.Create(dataNode))
             .ToList();
         _cardHost.Replace(cards);
+        CommittedOwnerId = dataNode.Id;
     }
 
-    public void BuildEmbedded(EditorEmbeddedContext context)
+    public Task<EditorPreparedEmbeddedContent> PrepareEmbeddedAsync(
+        EditorEmbeddedContext context) =>
+        _preparation.PrepareEmbeddedAsync(context);
+
+    public void CommitEmbedded(
+        EditorEmbeddedContext context,
+        EditorPreparedEmbeddedContent prepared)
     {
         ResetRegistries();
         var cards = new List<InstantEditorCard>();
         var ownerLayoutRecordClassId = OwnerLayoutRecordClassId(context.OwnerNode);
 
-        if (!context.IsRuntimeRoot
-            && EmbeddedOwnerSettingsCatalog.TryGet(context.Slot.FieldId, out var ownerSettings))
+        if (prepared.OwnerCard is { } ownerCard)
         {
-            cards.Add(_layoutCards.Create(context.OwnerNode, new EditorLayoutCard
-            {
-                Id = $"{context.Slot.FieldId}.ownerSettings",
-                Label = ownerSettings.Label,
-                Subtitle = ownerSettings.Subtitle,
-                Icon = ownerSettings.Icon,
-                Order = 0,
-                Visible = true,
-                DefaultOpen = false,
-                Groups =
-                [
-                    new EditorLayoutGroup
-                    {
-                        Id = "content",
-                        Label = "Content",
-                        Order = 0,
-                        Visible = true,
-                        Fields = ownerSettings.FieldIds
-                            .Select((fieldId, index) => new EditorLayoutField { Id = fieldId, Order = index, Visible = true })
-                            .ToList(),
-                    },
-                ],
-            }, ownerLayoutRecordClassId));
+            cards.Add(_layoutCards.Create(
+                context.OwnerNode,
+                ownerCard.Layout,
+                ownerLayoutRecordClassId,
+                ownerCard.Fields));
         }
 
-        var layout = _database.LoadEditorLayout(context.RecordClassId);
-        foreach (var layoutCard in layout.Cards
-                     .Where((card) => card.Visible && EditorLayoutCardFactory.EmbeddedCardHasFields(card))
-                     .OrderBy((card) => card.Order)
-                     .ThenBy((card) => card.Label))
+        foreach (var card in prepared.Cards)
         {
-            cards.Add(_layoutCards.CreateEmbedded(context, layoutCard));
+            cards.Add(_layoutCards.CreateEmbedded(
+                context,
+                card.Layout,
+                card.Fields));
         }
         _cardHost.Replace(cards);
+        CommittedOwnerId = context.OwnerNode.Id;
     }
+
+    public void Dispose() => _preparation.Dispose();
 
     internal static string OwnerLayoutRecordClassId(ProjectTreeNode ownerNode) =>
         ownerNode.Kind is ProjectTreeNodeKind.ComponentVariant or ProjectTreeNodeKind.ModuleVariant

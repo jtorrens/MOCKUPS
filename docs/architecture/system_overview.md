@@ -161,6 +161,13 @@ Collapsed persistence-backed cards do not query while the editor selection is
 being painted. Usage, ordered Screens and Icon Tokens load an immutable
 snapshot through the coordinator on first expansion, render controls only
 after completion and cancel detached cards.
+Root and embedded editor content follows the same separation before its first
+paint. `EditorContentPreparationService` loads the editor layout and resolves
+every field value on the operation coordinator's worker. The visual card
+factory accepts only that prepared field snapshot; it cannot initiate the
+layout or field-value read while constructing Avalonia controls. A newer
+selection cancels the prior preparation, and `MainWindow` commits the prepared
+cards only while the exact workspace revision and owner remain current.
 
 `Mockups.Application.PersistencePorts` owns the synchronous persistence-facing
 port contracts. It references Application models and Domain value objects but

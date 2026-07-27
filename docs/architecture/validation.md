@@ -42,6 +42,9 @@ It includes:
 - UI-independent editor-operation coordination, covering worker execution,
   submission ordering and cancellation of queued work at session disposal,
   plus compiled constructor enforcement for every visual persistence writer;
+- prepared root and embedded editor content, including compiled operation
+  coordination, snapshot-only visual card construction and a headless rapid
+  selection test proving that only the latest owner reaches the visual state;
 - UI-independent `EditorWorkspaceCoordinator` tests compiled against
   Application alone, covering workspace selection memory, invalid/deleted
   selections, Production removal, embedded-context rebasing, worker-thread
@@ -256,6 +259,8 @@ The same constructor rule covers persistence-backed resource pickers, preventing
 new synchronous token queries from being wired directly into visual callbacks.
 Headless UI coverage verifies that deferred cards perform no load while
 collapsed and load exactly once across repeated expansion.
+It also reverses the selected record while editor preparation is in flight and
+requires the committed card owner to match the latest session revision.
 The C# startup validator and persistence tests own the complete staged SQLite
 contract. Scaffolding read-only, collision, materialization and integration
 behavior belongs to executable tests over temporary workspaces and databases;

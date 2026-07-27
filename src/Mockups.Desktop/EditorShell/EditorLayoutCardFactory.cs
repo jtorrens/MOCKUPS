@@ -70,7 +70,8 @@ internal sealed class EditorLayoutCardFactory
     public InstantEditorCard Create(
         ProjectTreeNode node,
         EditorLayoutCard layoutCard,
-        string editorStateKey)
+        string editorStateKey,
+        IReadOnlyDictionary<string, FieldValue> preparedFields)
     {
         var body = new StackPanel
         {
@@ -96,7 +97,10 @@ internal sealed class EditorLayoutCardFactory
 
             foreach (var layoutField in group.VisibleFields)
             {
-                var control = CreateDirectFieldControl(node, layoutField.Id);
+                var control = CreateDirectFieldControl(
+                    node,
+                    preparedFields[layoutField.Id],
+                    preparedFields);
                 controls.Add(control);
                 groupControls.Add(control);
                 groupPanel.Children.Add(control);
@@ -158,7 +162,8 @@ internal sealed class EditorLayoutCardFactory
 
     public InstantEditorCard CreateEmbedded(
         EditorEmbeddedContext context,
-        EditorLayoutCard layoutCard)
+        EditorLayoutCard layoutCard,
+        IReadOnlyDictionary<string, FieldValue> preparedFields)
     {
         var body = new StackPanel
         {
@@ -184,7 +189,10 @@ internal sealed class EditorLayoutCardFactory
                          .Where((field) => field.Id.StartsWith("component.", StringComparison.Ordinal)
                              && !field.Id.Equals("component.type", StringComparison.Ordinal)))
             {
-                var control = CreateEmbeddedFieldControl(context, layoutField.Id);
+                var control = CreateEmbeddedFieldControl(
+                    context,
+                    preparedFields[layoutField.Id],
+                    preparedFields);
                 controls.Add(control);
                 groupControls.Add(control);
                 groupPanel.Children.Add(control);
@@ -246,9 +254,9 @@ internal sealed class EditorLayoutCardFactory
 
     internal DictionaryFieldControl CreateDirectFieldControl(
         ProjectTreeNode node,
-        string fieldId)
+        FieldValue field,
+        IReadOnlyDictionary<string, FieldValue> preparedFields)
     {
-        var field = _fieldValues.Create(node, fieldId);
         var supportsEmbeddedOverrides = node.Kind is ProjectTreeNodeKind.ComponentClass
             or ProjectTreeNodeKind.ComponentVariant
             or ProjectTreeNodeKind.Module
@@ -256,7 +264,11 @@ internal sealed class EditorLayoutCardFactory
         var hasEmbeddedSlot = EmbeddedComponentSlotCatalog.TryGet(field.Definition.Id, out _);
         var services = _dictionaryFieldServices.ForNode(
             node,
-            (id) => _activeFieldControls.ValueOrStored(id, (storedId) => _fieldValues.CurrentStoredValue(node, storedId)),
+            (id) => _activeFieldControls.ValueOrStored(
+                id,
+                (storedId) => PreparedStoredValue(
+                    preparedFields,
+                    storedId)),
             _openComponentVariantReference,
             supportsEmbeddedOverrides && hasEmbeddedSlot ? (id) => _openEmbeddedComponentEditor(node, id) : null,
             supportsEmbeddedOverrides ? (definition, input) => _openEmbeddedComponentSlotEditor(node, ComponentInputSlot(definition, input)) : null,
@@ -292,13 +304,16 @@ internal sealed class EditorLayoutCardFactory
 
     internal DictionaryFieldControl CreateEmbeddedFieldControl(
         EditorEmbeddedContext context,
-        string fieldId)
+        FieldValue field,
+        IReadOnlyDictionary<string, FieldValue> preparedFields)
     {
-        var field = _componentClassFieldValues.CreateEmbeddedFieldValue(context, fieldId);
         var services = _dictionaryFieldServices.ForNode(
             context.OwnerNode,
-            (id) => _activeFieldControls.ValueOrStored(id, (storedId) =>
-                _componentClassFieldValues.CreateEmbeddedFieldValue(context, storedId).Value),
+            (id) => _activeFieldControls.ValueOrStored(
+                id,
+                (storedId) => PreparedStoredValue(
+                    preparedFields,
+                    storedId)),
             _openComponentVariantReference,
             (id) => _openNestedEmbeddedComponentEditor(context, id),
             (definition, input) => _openNestedEmbeddedComponentSlotEditor(context, ComponentInputSlot(definition, input)),
@@ -343,6 +358,20 @@ internal sealed class EditorLayoutCardFactory
             }
         };
         return control;
+    }
+
+    private static string PreparedStoredValue(
+        IReadOnlyDictionary<string, FieldValue> preparedFields,
+        string fieldId)
+    {
+        if (!preparedFields.TryGetValue(fieldId, out var field))
+        {
+            throw new InvalidOperationException(
+                $"Field '{fieldId}' was not included in the prepared editor snapshot.");
+        }
+        return field.IsInherited
+            ? field.Definition.InheritedStorageValue
+            : field.Value;
     }
 
     private static EmbeddedComponentSlotDefinition ComponentInputSlot(

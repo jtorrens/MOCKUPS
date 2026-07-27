@@ -387,6 +387,12 @@ only after the current database, Preview bundle and initial immutable tree
 snapshot validate. Later tree refreshes execute the synchronous repository read
 on the Application coordinator's controlled worker. Revision checks discard a
 result when selection, workspace intent or shutdown has made it obsolete.
+Editor layouts and the complete root or embedded field-value set are likewise
+resolved on the session operation worker into a prepared immutable snapshot.
+The visual card factory consumes that snapshot and performs no layout or
+field-value persistence read during control construction. Selection revision
+and exact owner checks prevent obsolete preparations from reaching the visual
+state.
 Cancellation or failure cannot publish a partial desktop session.
 
 A schema, vocabulary, field or identifier change requires one explicit
