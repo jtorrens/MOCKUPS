@@ -221,6 +221,8 @@ That structural suite also requires:
   reach navigation through the focused navigation owner;
 - Design, Production and Resources reads and writes cannot reappear as
   project-engine forwarding methods;
+- Component document and embedded-boundary overloads exist only on their
+  focused store, never on the project engine;
 - exact manifest owner files, categories and declared embeds;
 - exact Component and Module registry parity;
 - registries whose factory entries are direct owner calls without business

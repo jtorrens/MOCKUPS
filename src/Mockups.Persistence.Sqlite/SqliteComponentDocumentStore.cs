@@ -157,6 +157,21 @@ internal sealed class SqliteComponentDocumentStore
         string projectId,
         string baseConfigJson,
         JsonObject overrides,
+        string fieldId)
+    {
+        var descriptor = ComponentClassFieldCatalog.Get(fieldId);
+        var options = _fieldOptions.Resolve(projectId, descriptor);
+        return _design.CreateRuntimeComponentOverrideFieldValue(
+            baseConfigJson,
+            overrides,
+            descriptor,
+            options);
+    }
+
+    internal FieldValue CreateRuntimeComponentOverrideFieldValue(
+        string projectId,
+        string baseConfigJson,
+        JsonObject overrides,
         IReadOnlyList<EmbeddedComponentSlotDefinition> slots,
         string fieldId)
     {
@@ -171,6 +186,78 @@ internal sealed class SqliteComponentDocumentStore
             options);
     }
 
+    internal FieldValue CreateEmbeddedComponentFieldValue(
+        string componentClassId,
+        string slotFieldId,
+        string embeddedComponentType,
+        string embeddedFieldId)
+    {
+        var settings =
+            _design.GetComponentClassSettings(componentClassId);
+        var descriptor =
+            ComponentClassFieldCatalog.Get(embeddedFieldId);
+        var options = _fieldOptions.Resolve(
+            settings.ProjectId,
+            descriptor);
+        return _design.CreateEmbeddedComponentFieldValue(
+            settings,
+            slotFieldId,
+            embeddedComponentType,
+            descriptor,
+            options);
+    }
+
+    internal FieldValue CreateEmbeddedComponentFieldValue(
+        string componentClassId,
+        IReadOnlyList<EmbeddedComponentSlotDefinition> slots,
+        string embeddedFieldId)
+    {
+        if (slots.Count == 0)
+        {
+            throw new InvalidOperationException(
+                $"Embedded component field '{embeddedFieldId}' needs at least one slot.");
+        }
+
+        var settings =
+            _design.GetComponentClassSettings(componentClassId);
+        var descriptor =
+            ComponentClassFieldCatalog.Get(embeddedFieldId);
+        var options = _fieldOptions.Resolve(
+            settings.ProjectId,
+            descriptor);
+        return _design.CreateEmbeddedComponentFieldValue(
+            ProjectTreeNodeKind.ComponentClass,
+            settings.ProjectId,
+            settings.ConfigJson,
+            slots,
+            descriptor,
+            options);
+    }
+
+    internal void UpdateEmbeddedComponentField(
+        string componentClassId,
+        string slotFieldId,
+        string embeddedComponentType,
+        string embeddedFieldId,
+        string value) =>
+        _design.UpdateEmbeddedComponentField(
+            componentClassId,
+            slotFieldId,
+            embeddedComponentType,
+            embeddedFieldId,
+            value);
+
+    internal void UpdateEmbeddedComponentField(
+        string componentClassId,
+        IReadOnlyList<EmbeddedComponentSlotDefinition> slots,
+        string embeddedFieldId,
+        string value) =>
+        _design.UpdateEmbeddedComponentField(
+            componentClassId,
+            slots,
+            embeddedFieldId,
+            value);
+
     internal void UpdateEmbeddedComponentField(
         ProjectTreeNode ownerNode,
         IReadOnlyList<EmbeddedComponentSlotDefinition> slots,
@@ -180,6 +267,15 @@ internal sealed class SqliteComponentDocumentStore
             ownerNode,
             slots,
             embeddedFieldId,
+            value);
+
+    internal void UpdateRuntimeComponentOverride(
+        JsonObject overrides,
+        string fieldId,
+        string value) =>
+        _design.UpdateRuntimeComponentOverride(
+            overrides,
+            fieldId,
             value);
 
     internal void UpdateRuntimeComponentOverride(

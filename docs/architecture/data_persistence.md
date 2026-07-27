@@ -144,6 +144,9 @@ membrane; a consumer cannot cast the function or adapter back to either the
 store or the engine. `SqliteProjectEngine` contains no tree read or node
 command method and no Design, Production or Resources owner pass-through
 method.
+All Component document and field overloads belong to
+`SqliteComponentDocumentStore`; the project engine contains no parallel
+Component document implementation.
 
 Preview reads are also separated by owner. Generic authored Preview input does
 not inherit Actor, Component Preview or Module Instance timeline access, and

@@ -3150,6 +3150,12 @@ static void SqliteSessionExposesDistinctFocusedPorts()
                  "UpdateThemeField",
                  "GetProductionFontSettings",
                  "GetIconThemeSettings",
+                 "GetComponentClassSettings",
+                 "GetComponentVariantSettings",
+                 "CreateComponentClassFieldValue",
+                 "CreateEmbeddedComponentFieldValue",
+                 "UpdateEmbeddedComponentField",
+                 "UpdateRuntimeComponentOverride",
              })
     {
         True(
