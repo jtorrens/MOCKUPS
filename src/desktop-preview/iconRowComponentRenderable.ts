@@ -55,7 +55,7 @@ export function iconRowComponentToRenderableAt(
     cursor += (iconRow.orientation === "vertical" ? size.height : size.width) + metrics.gap;
     return buttonComponentToRenderableAt(payload, item.button, buttonBox);
   });
-  return { id: iconRow.id, type: "group", frame: 0, box, style: { overflow: "visible" }, children };
+  return { id: iconRow.id, type: "group", frame: 0, box, style: { overflow: "hidden" }, children };
 }
 
 export function iconRowAssignedSize(
@@ -79,12 +79,7 @@ function distributedItemSizes(
   }
   const mainSize = iconRow.orientation === "vertical" ? box.height : box.width;
   const gaps = Math.max(0, metrics.sizes.length - 1) * metrics.gap;
-  const available = mainSize - gaps;
-  if (available <= 0) {
-    throw new Error(
-      "component.iconRow Fill parent requires an assigned main axis larger than its gaps",
-    );
-  }
+  const available = Math.max(0, mainSize - gaps);
   const itemMainSize = available / metrics.sizes.length;
   return metrics.sizes.map((size) => iconRow.orientation === "vertical"
     ? { width: size.width, height: itemMainSize }

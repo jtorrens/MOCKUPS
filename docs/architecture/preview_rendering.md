@@ -133,6 +133,14 @@ owner. If a change appears to require branching on a Component type in a
 generic bridge or renderer, the responsibility belongs in the owner or a
 parameterized generic primitive.
 
+Editable size controls and their contracts reject invalid or non-positive
+dimensions. Resolvers repeat that validation for every non-visual source,
+including Production and nested Runtime documents. Once geometry is resolved,
+a renderable does not treat a child exceeding its assigned frame as an error:
+it preserves fixed or intrinsic child dimensions and marks the bounded owner
+viewport for clipping. The generic renderer only paints those boxes and the
+resolved overflow policy.
+
 ## Bridge
 
 The bridge translates only standard resolved values:

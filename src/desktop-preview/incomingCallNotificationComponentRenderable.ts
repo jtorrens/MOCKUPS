@@ -37,14 +37,9 @@ export function incomingCallNotificationComponentToRenderable(
   const inner: RenderableBox = {
     x: box.x + paddingX,
     y: box.y + paddingY,
-    width: box.width - paddingX * 2,
-    height: box.height - paddingY * 2,
+    width: Math.max(0, box.width - paddingX * 2),
+    height: Math.max(0, box.height - paddingY * 2),
   };
-  if (inner.width <= 0 || inner.height <= 0) {
-    throw new Error(
-      "component.incomingCallNotification size must exceed its Variant padding",
-    );
-  }
 
   const avatarSize = notification.avatar.size * scale;
   const avatarBox = placeChild(
@@ -70,8 +65,17 @@ export function incomingCallNotificationComponentToRenderable(
     style: { overflow: "visible" },
     children: [
       surfaceComponentToRenderableAt(payload, notification.surface, box),
-      avatarComponentToRenderableAt(payload, notification.avatar, avatarBox),
-      iconRowComponentToRenderableAt(payload, notification.iconRow, iconRowBox),
+      {
+        id: `${notification.id}.content`,
+        type: "group",
+        frame: 0,
+        box,
+        style: { overflow: "hidden" },
+        children: [
+          avatarComponentToRenderableAt(payload, notification.avatar, avatarBox),
+          iconRowComponentToRenderableAt(payload, notification.iconRow, iconRowBox),
+        ],
+      },
     ],
   };
 

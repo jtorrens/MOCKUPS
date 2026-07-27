@@ -112,7 +112,8 @@ Bar customize their selected Text Box slot through local Overrides.
 Incoming Call Notification owns one bounded Surface frame and two fixed child
 boundaries: Avatar and Icon Row. Surface is the frame and is not an independently
 placed content layer. Avatar and Icon Row each own an exact Variant, local
-Overrides and independent Variant-authored placement.
+Overrides and independent Variant-authored placement. The bounded frame clips
+either child when its valid resolved size exceeds the available content area.
 
 Runtime exposes Avatar's exact Actor and internal Label subtext inputs plus
 Icon Row's exact Button Runtime rows. There is no separate notification Label
@@ -138,8 +139,10 @@ List Item `width` and `height` are Runtime Inputs. The content box subtracts
 the Variant padding. In automatic mode Avatar is a square whose side equals
 the content-box height. Icon Row consumes its intrinsic width unless fixed,
 and Label receives the remaining width unless fixed. Visible children follow
-Variant order with one gap between adjacent children. A child that cannot fit
-fails explicitly; clipping is not a layout fallback.
+Variant order with one gap between adjacent children. Fixed children retain
+their resolved width and height when they exceed the Runtime frame. The List
+Item content viewport clips that overflow in both axes; its renderable never
+rejects a valid positive child size merely because it does not fit.
 
 Runtime owns numbered Content Set rows, a positive numeric `activeSet` and the
 current item state. Each row contains the exact Runtime contracts of Avatar,
@@ -215,7 +218,9 @@ scope.
 
 A Component Stack owns ordered stable slots. Each slot references a concrete
 Component Variant and local Overrides. Placement and sizing belong to the slot
-or its declared component boundary, not to its index.
+or its declared component boundary, not to its index. A content-sized slot
+retains its intrinsic size inside a fill viewport; the viewport clips overflow
+instead of shrinking the slot to make it fit.
 
 ### Collection Stack
 

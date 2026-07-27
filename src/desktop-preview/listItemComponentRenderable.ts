@@ -39,7 +39,7 @@ export function listItemComponentToRenderable(
     type: "group",
     frame: 0,
     box,
-    style: { overflow: "visible" },
+    style: { overflow: "hidden" },
     transform: { opacity: listItem.elementsOpacity },
     children: elements,
   };
@@ -48,7 +48,7 @@ export function listItemComponentToRenderable(
     type: "group",
     frame: 0,
     box,
-    style: { overflow: "hidden" },
+    style: { overflow: "visible" },
     children: [
       surfaceComponentToRenderableAt(payload, listItem.surface, box),
       elementsGroup,
@@ -68,12 +68,9 @@ function flowElements(
   const inner = {
     x: box.x + paddingX,
     y: box.y + paddingY,
-    width: box.width - paddingX * 2,
-    height: box.height - paddingY * 2,
+    width: Math.max(0, box.width - paddingX * 2),
+    height: Math.max(0, box.height - paddingY * 2),
   };
-  if (inner.width <= 0 || inner.height <= 0) {
-    throw new Error("component.listItem Runtime size must exceed its Variant padding");
-  }
 
   const measured = listItem.elements.map((element) => ({
     element,
@@ -87,23 +84,13 @@ function flowElements(
   const gaps = Math.max(0, measured.length - 1) * gap;
   const fixedWidth = measured.reduce((sum, entry) =>
     sum + (entry.size.width < 0 ? 0 : entry.size.width), 0);
-  const remaining = inner.width - gaps - fixedWidth;
-  if (remaining < 0) {
-    throw new Error(
-      "component.listItem components, padding and gaps exceed the Runtime width",
-    );
-  }
+  const remaining = Math.max(0, inner.width - gaps - fixedWidth);
   if (fillLabels.length === 1) {
     fillLabels[0]!.size.width = remaining;
   }
 
   let cursor = inner.x;
   return measured.map(({ element, size }) => {
-    if (size.width <= 0 || size.height <= 0 || size.height > inner.height) {
-      throw new Error(
-        `component.listItem '${element.componentType}' does not fit inside the Runtime height`,
-      );
-    }
     const elementBox = {
       x: cursor,
       y: alignedY(inner.y, inner.height, size.height, element.verticalAlignment),

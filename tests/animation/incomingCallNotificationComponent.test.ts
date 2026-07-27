@@ -184,19 +184,23 @@ test("Incoming Call Notification places Avatar and Icon Row independently inside
     resolveIncomingCallNotificationComponent(androidSource),
   );
 
-  assert.equal(ios.children?.length, 3);
-  assert.equal(android.children?.length, 3);
+  assert.equal(ios.children?.length, 2);
+  assert.equal(android.children?.length, 2);
   assert.deepEqual(ios.children?.[0]?.children?.[0]?.box, ios.box);
   assert.deepEqual(android.children?.[0]?.children?.[0]?.box, android.box);
-  const iosAvatar = ios.children?.[1]?.children?.[0]?.box!;
-  const iosActions = ios.children?.[2]?.box!;
+  const iosContent = ios.children?.[1];
+  const androidContent = android.children?.[1];
+  assert.equal(iosContent?.style?.overflow, "hidden");
+  assert.equal(androidContent?.style?.overflow, "hidden");
+  const iosAvatar = iosContent?.children?.[0]?.children?.[0]?.box!;
+  const iosActions = iosContent?.children?.[1]?.box!;
   assert.ok(iosAvatar.x < iosActions.x);
   assert.equal(
     Math.round(iosAvatar.y + iosAvatar.height / 2),
     Math.round(iosActions.y + iosActions.height / 2),
   );
-  const androidAvatar = android.children?.[1]?.children?.[0]?.box!;
-  const androidActions = android.children?.[2]?.box!;
+  const androidAvatar = androidContent?.children?.[0]?.children?.[0]?.box!;
+  const androidActions = androidContent?.children?.[1]?.box!;
   assert.ok(androidAvatar.y < androidActions.y);
   assert.ok(androidActions.x + androidActions.width <= android.box!.x + android.box!.width);
   const leftInset = androidActions.x - android.box!.x;
@@ -204,9 +208,24 @@ test("Incoming Call Notification places Avatar and Icon Row independently inside
     android.box!.x + android.box!.width - androidActions.x - androidActions.width;
   assert.ok(leftInset > 0);
   assert.equal(leftInset, rightInset);
-  const androidButtons = android.children?.[2]?.children ?? [];
+  const androidButtons = androidContent?.children?.[1]?.children ?? [];
   assert.equal(androidButtons.length, 2);
   assert.equal(androidButtons[0]!.box!.width, androidButtons[1]!.box!.width);
+});
+
+test("Incoming Call Notification clips fixed children instead of rejecting a smaller assigned frame", () => {
+  const source = fixture();
+  const assigned = { x: 10, y: 20, width: 24, height: 24 };
+  const node = incomingCallNotificationComponentToRenderable(
+    source,
+    resolveIncomingCallNotificationComponent(source),
+    assigned,
+  );
+
+  assert.deepEqual(node.box, assigned);
+  assert.equal(node.style?.overflow, "visible");
+  assert.equal(node.children?.length, 2);
+  assert.equal(node.children?.[1]?.style?.overflow, "hidden");
 });
 
 test("Icon Row Fill parent distributes only its orientation axis", () => {
@@ -224,6 +243,16 @@ test("Icon Row Fill parent distributes only its orientation axis", () => {
   assert.equal(
     horizontalButtons[0]!.box!.height,
     horizontalIntrinsic.sizes[0]!.height,
+  );
+  const clipped = iconRowComponentToRenderableAt(
+    source,
+    row,
+    { x: 10, y: 20, width: 1, height: horizontalIntrinsic.height },
+  );
+  assert.equal(clipped.style?.overflow, "hidden");
+  assert.deepEqual(
+    clipped.children?.map((button) => button.box?.width),
+    [0, 0],
   );
 
   const verticalRow = { ...row, orientation: "vertical" as const };

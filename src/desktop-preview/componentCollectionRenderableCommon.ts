@@ -101,14 +101,10 @@ function renderMeasuredFlow(
         ? current.fixedGapBefore
         : totalWeight > 0 ? reflowSpace * current.item.gapBeforeWeight / totalWeight : 0;
     }
-    const remainingHeight = Math.max(0, parentBox.y + parentBox.height - endGap - cursorY);
     const assignedHeight = resolveAssignedNode && options.sizingMode === "fill"
-      ? Math.min(
-          current.item.mainSizeMode === "fill"
-            ? fillItemHeight ?? current.box.height
-            : current.box.height,
-          remainingHeight,
-        )
+      ? current.item.mainSizeMode === "fill"
+        ? fillItemHeight ?? current.box.height
+        : current.box.height
       : current.box.height;
     const slotBox: RenderableBox = {
       x: parentBox.x,
@@ -126,7 +122,12 @@ function renderMeasuredFlow(
       ? applyPresenceMotion(payload, current.item, translated, parentBox)
       : translated;
   });
-  return collectionGroup(options.id, parentBox, children);
+  return collectionGroup(
+    options.id,
+    parentBox,
+    children,
+    options.sizingMode === "fill",
+  );
 }
 
 export function renderComponentCollectionStacked(
@@ -170,7 +171,12 @@ export function renderComponentCollectionStacked(
       ? applyPresenceMotion(payload, current.item, decorated, parentBox)
       : decorated;
   }).reverse();
-  return collectionGroup(options.id, parentBox, children);
+  return collectionGroup(
+    options.id,
+    parentBox,
+    children,
+    options.sizingMode === "fill",
+  );
 }
 
 export function interpolateComponentCollectionReflow(
@@ -309,13 +315,18 @@ function alignedX(parent: RenderableBox, child: RenderableBox, alignment: Compon
   return parent.x + (parent.width - child.width) / 2;
 }
 
-function collectionGroup(id: string, box: RenderableBox, children: RenderableNode[]): RenderableNode {
+function collectionGroup(
+  id: string,
+  box: RenderableBox,
+  children: RenderableNode[],
+  clip: boolean,
+): RenderableNode {
   return {
     id,
     type: "group",
     frame: 0,
     box,
-    style: { overflow: "visible" },
+    style: { overflow: clip ? "hidden" : "visible" },
     children,
   };
 }

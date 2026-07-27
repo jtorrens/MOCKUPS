@@ -127,6 +127,8 @@ test("List Item renderable keeps Surface outside the element opacity group", () 
   assert.equal(node.children?.length, 2);
   assert.equal(node.children?.[0]?.id, "component.listItem.normal.surface");
   assert.equal(node.children?.[1]?.id, "component.listItem.elements");
+  assert.equal(node.style?.overflow, "visible");
+  assert.equal(node.children?.[1]?.style?.overflow, "hidden");
   assert.equal(node.children?.[1]?.transform?.opacity, 1);
   assert.equal(node.children?.[1]?.children?.length, 3);
 });
@@ -144,28 +146,56 @@ test("List Item flows visible children through padding and gap with an auto Avat
   ]);
 });
 
-test("List Item rejects a Runtime width that cannot contain its Variant flow", () => {
+test("List Item clips fixed children that exceed its Runtime width", () => {
   const source = fixture("calls");
   const preview = JSON.parse(source.designPreviewJson) as { width: number };
   preview.width = 100;
   source.designPreviewJson = JSON.stringify(preview);
   const contract = resolveListItemComponent(source);
-
-  assert.throws(
-    () => listItemComponentToRenderable(source, contract),
-    /components, padding and gaps exceed the Runtime width/,
+  const node = listItemComponentToRenderable(
+    source,
+    contract,
+    { x: 0, y: 0, width: 100, height: 84 },
   );
+  const elements = node.children?.[1];
+  const iconRow = elements?.children?.[2];
+
+  assert.equal(elements?.style?.overflow, "hidden");
+  assert.ok(iconRow?.box);
+  assert.ok(iconRow.box.x + iconRow.box.width > node.box!.x + node.box!.width);
 });
 
-test("List Item still rejects a final Runtime height consumed by its Variant padding", () => {
+test("List Item clips fixed children that exceed its Runtime height", () => {
+  const source = fixture("calls");
+  const preview = JSON.parse(source.designPreviewJson) as { height: number };
+  preview.height = 40;
+  source.designPreviewJson = JSON.stringify(preview);
+  const contract = resolveListItemComponent(source);
+  const node = listItemComponentToRenderable(
+    source,
+    contract,
+    { x: 0, y: 0, width: 360, height: 40 },
+  );
+  const elements = node.children?.[1];
+  const iconRow = elements?.children?.[2];
+
+  assert.equal(elements?.style?.overflow, "hidden");
+  assert.ok(iconRow?.box);
+  assert.ok(iconRow.box.y < node.box!.y);
+  assert.ok(iconRow.box.y + iconRow.box.height > node.box!.y + node.box!.height);
+});
+
+test("List Item resolves an empty content box without moving size validation into rendering", () => {
   const source = fixture("calls");
   const preview = JSON.parse(source.designPreviewJson) as { height: number };
   preview.height = 7;
   source.designPreviewJson = JSON.stringify(preview);
   const contract = resolveListItemComponent(source);
 
-  assert.throws(
-    () => listItemComponentToRenderable(source, contract),
-    /Runtime size must exceed its Variant padding/,
-  );
+  assert.doesNotThrow(() =>
+    listItemComponentToRenderable(
+      source,
+      contract,
+      { x: 0, y: 0, width: 360, height: 7 },
+    ));
 });

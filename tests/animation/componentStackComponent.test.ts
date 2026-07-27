@@ -436,7 +436,7 @@ test("each Component Stack state resolves its own placement inside the assigned 
   assert.equal(slot?.children?.[1]?.box?.y, 0);
 });
 
-test("independent slots keep their occupied flow space when a later slot changes state", () => {
+test("independent content slots retain intrinsic overflow when a later slot changes state", () => {
   const source = payload([alternative("clock", "stub::variant::clock", false)]);
   const preview = JSON.parse(source.designPreviewJson ?? "{}") as { items: Record<string, unknown>[] };
   preview.items = [
@@ -500,8 +500,9 @@ test("independent slots keep their occupied flow space when a later slot changes
 
   const clockSlot = renderable.children?.[0]?.box;
   const passwordSlot = renderable.children?.[1]?.box;
+  assert.equal(renderable.style?.overflow, "hidden");
   assert.deepEqual(clockSlot, { x: 0, y: 0, width: 360, height: 80 });
-  assert.deepEqual(passwordSlot, { x: 0, y: 100, width: 360, height: 620 });
+  assert.deepEqual(passwordSlot, { x: 0, y: 100, width: 360, height: 720 });
 });
 
 test("Component Stack fill slots receive the space left between content slots", () => {
@@ -561,4 +562,29 @@ test("Component Stack fill slots receive the space left between content slots", 
     { x: 0, y: 56, width: 360, height: 608 },
     { x: 0, y: 664, width: 360, height: 56 },
   ]);
+});
+
+test("Component Stack fill viewport clips an intrinsic content slot without shrinking it", () => {
+  const source = payload([alternative("oversized", "stub::variant::oversized", false)]);
+  const preview = JSON.parse(source.designPreviewJson ?? "{}") as {
+    items: Array<Record<string, unknown>>;
+  };
+  preview.items[0]!.sizeMode = "content";
+  source.designPreviewJson = JSON.stringify(preview);
+  const resolved = resolveComponentStackComponent(source);
+  const renderable = componentStackComponentToRenderable(
+    source,
+    resolved,
+    (child, assignedBox) => ({
+      id: JSON.parse(child.designPreviewJson).id as string,
+      type: "group",
+      frame: 0,
+      box: assignedBox ?? { x: 0, y: 0, width: 360, height: 800 },
+      children: [],
+    }),
+  );
+
+  assert.equal(renderable.style?.overflow, "hidden");
+  assert.equal(renderable.box?.height, 720);
+  assert.equal(renderable.children?.[0]?.box?.height, 800);
 });
