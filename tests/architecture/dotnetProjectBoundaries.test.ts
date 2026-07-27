@@ -690,7 +690,7 @@ test("SQLite contracts, Core and owner projects expose only their declared persi
   assert.equal(designReferences.has("Mockups.Persistence.Sqlite.Resources"), false);
 });
 
-test("Desktop explicitly sees UI, Application, temporary persistence ports and Domain but cannot compile against SQLite", () => {
+test("Desktop explicitly sees UI, Application persistence ports and Domain but cannot compile against SQLite", () => {
   const desktop = evaluate(
     "src/Mockups.Desktop/Mockups.DesktopEditorShell.csproj",
   );

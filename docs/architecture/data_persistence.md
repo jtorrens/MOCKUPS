@@ -49,8 +49,8 @@ focused repository contracts. `Mockups.Persistence.Sqlite.Design` owns App,
 Module, Component Class and editor-layout persistence. `SqliteDesignOwner`
 constructs its definition repositories; composition no longer constructs
 those implementations directly. App configuration and metadata operations
-execute in that Design owner and are exposed through temporary delegations
-while the broad application ports are decomposed. Module definition reads,
+execute in that Design owner and are exposed through the focused
+`IDesignRecordFieldStore` capability. Module definition reads,
 strict configuration projection, field writes, Variant mutation and
 session-only Default Variant editing state follow the same owner. Component
 Variant references written into Module configuration are validated inside
@@ -104,7 +104,7 @@ after a cross-owner write that can affect the timeline.
 Theme, Device, Actor, Production Font and Icon Theme persistence plus their
 resource-specific field, token and asset operations.
 The three owner assemblies reference Contracts and Core, never another owner
-or the temporary composition assembly. The compiler therefore rejects a
+or the composition assembly. The compiler therefore rejects a
 Design repository that tries to call a Production or Resources implementation,
 and the same rule applies in every direction. `Mockups.Persistence.Sqlite`
 composes those projects with read-only startup validation and explicit
@@ -261,11 +261,11 @@ There is no universal persistence facade. `SqlitePersistence` validates one
 current database and returns its session descriptor. `EditorLayouts` is backed
 directly by `Mockups.Persistence.Sqlite.Design`. Repository implementations
 already live in their Design, Production or Resources owner. The internal
-engine remains a composition and validation helper during incremental source
-movement, but it implements zero Application interfaces and cannot be passed
-to Desktop as a store. New SQL, connection construction, table mapping or
-write synchronization belongs in the focused assembly and repository that
-own the table.
+composition assembly retains only explicit cross-owner stores, adapters and
+read-only validation. There is no internal universal engine, and no
+composition object can be passed to Desktop as a store. New SQL, connection
+construction, table mapping or write synchronization belongs in the focused
+assembly and repository that own the table.
 
 Every `SqliteProjectContext` owns its own write gate. Focused repositories route
 writes through that exact context, and a compound write holds the same gate for

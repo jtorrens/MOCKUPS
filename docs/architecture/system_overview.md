@@ -199,10 +199,10 @@ properties. App configuration and metadata reads and edits already execute
 inside this owner. Module definition reads, strict configuration projection,
 field writes and Variant authoring execute there as well, including exact
 Component Variant reference validation and session-only Default Variant
-editing state. The temporary composition layer performs only the cross-owner
+editing state. The composition layer performs only the cross-owner
 Production usage check before asking Design to delete a Module Variant.
 Component Class settings, Variant catalogs and Variant lifecycle mutations
-also execute in Design. The temporary composition layer performs the
+also execute in Design. The composition layer performs the
 cross-domain Usage check before asking Design to delete a Component Variant.
 Read-only database startup validation is a separate composition-owned
 capability implemented by `SqliteCurrentDatabaseValidator`. It may read through
@@ -215,7 +215,7 @@ embedded-slot reference validation execute in Design as well. Embedded
 boundary writes for Component Classes, Component Variants, Modules and Module
 Variants now execute in that same Design owner. Component reference lookup,
 embedded Variant traversal, complete Preview base-config projection and
-Variant Runtime Input projection also execute in Design. The temporary
+Variant Runtime Input projection also execute in Design. The
 composition layer resolves the field-option list when one dictionary field
 combines Design-owned Component choices with Resource-owned palette or font
 choices, then passes that data into Design. The composition-only
