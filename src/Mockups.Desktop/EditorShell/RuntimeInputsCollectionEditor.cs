@@ -29,7 +29,8 @@ internal sealed record RuntimeInputSurface(
     IReadOnlyList<ComponentInputDefinition> Inputs,
     IReadOnlyList<RuntimeInputCollectionDefinition> Collections,
     IReadOnlyList<ComponentPreviewActionDefinition> Actions,
-    EditorDictionaryContextSnapshot? DictionaryContext = null);
+    EditorDictionaryContextSnapshot? DictionaryContext = null,
+    ModuleInstanceAnimationSnapshot? AnimationSnapshot = null);
 
 internal sealed class RuntimeInputsCollectionEditor
 {
@@ -61,6 +62,7 @@ internal sealed class RuntimeInputsCollectionEditor
     private Action _testValuesChanged = () => { };
     private EditorDictionaryContextSnapshot?
         _preparedDictionaryContext;
+    private string? _preparedAnimationJson;
     private IRuntimeInputOptionsDataSource ActiveInputOptions =>
         _preparedDictionaryContext is null
             ? _runtimeInputOptions
@@ -149,12 +151,6 @@ internal sealed class RuntimeInputsCollectionEditor
         return CreateRuntimeContractCard(surface);
     }
 
-    public Control CreateProductionScreenPayloadSurface(ProjectTreeNode node)
-    {
-        return CreateProductionScreenPayloadSurface(
-            LoadSurface(node));
-    }
-
     public Control CreateProductionScreenPayloadSurface(
         RuntimeInputSurface surface)
     {
@@ -177,12 +173,6 @@ internal sealed class RuntimeInputsCollectionEditor
                 surface.Collections,
                 surface.Actions),
         };
-    }
-
-    public Control? CreateDesignTestValuesSurface(ProjectTreeNode node)
-    {
-        return CreateDesignTestValuesSurface(
-            LoadSurface(node));
     }
 
     public Control? CreateDesignTestValuesSurface(
@@ -248,14 +238,23 @@ internal sealed class RuntimeInputsCollectionEditor
             inputs,
             collections,
             actions);
+        var dictionaryContext =
+            _dictionaryServices.PrepareRuntimeContext(
+                node,
+                selectedThemeId,
+                surface,
+                cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+        var animationSnapshot = owner.IsInstance
+            ? _animationEditor?.PrepareSnapshot(node)
+                ?? throw new InvalidOperationException(
+                    $"Production Screen '{node.Id}' requires its animation snapshot owner.")
+            : null;
+        cancellationToken.ThrowIfCancellationRequested();
         return surface with
         {
-            DictionaryContext =
-                _dictionaryServices.PrepareRuntimeContext(
-                    node,
-                    selectedThemeId,
-                    surface,
-                    cancellationToken),
+            DictionaryContext = dictionaryContext,
+            AnimationSnapshot = animationSnapshot,
         };
     }
 
@@ -264,8 +263,11 @@ internal sealed class RuntimeInputsCollectionEditor
     {
         _preparedDictionaryContext =
             surface.DictionaryContext;
-        _animationEditor?.UsePreparedDictionaryContext(
-            surface.DictionaryContext);
+        _preparedAnimationJson =
+            surface.AnimationSnapshot?.Source.AnimationJson;
+        _animationEditor?.UsePreparedContext(
+            surface.DictionaryContext,
+            surface.AnimationSnapshot);
     }
 
     private InstantEditorCard CreateRuntimeContractCard(RuntimeInputSurface surface)
@@ -1969,9 +1971,12 @@ internal sealed class RuntimeInputsCollectionEditor
                 ? async (targetIds) =>
                 {
                     var document = new ModuleInstanceAnimationDocument(
-                        _instanceDocuments.AnimationJson(owner.Node.Id));
+                        PreparedAnimationJson(owner));
                     foreach (var targetId in targetIds) document.RemoveTarget(targetId);
-                    await _instanceDocuments.SaveAnimationJsonAsync(owner.Node.Id, document.ToJson());
+                    _preparedAnimationJson =
+                        await _instanceDocuments.SaveAnimationJsonAsync(
+                            owner.Node.Id,
+                            document.ToJson());
                     _onChanged();
                 }
                 : null,
@@ -1979,9 +1984,12 @@ internal sealed class RuntimeInputsCollectionEditor
                 ? async (targetIds) =>
                 {
                     var document = new ModuleInstanceAnimationDocument(
-                        _instanceDocuments.AnimationJson(owner.Node.Id));
+                        PreparedAnimationJson(owner));
                     document.DuplicateTargets(targetIds);
-                    await _instanceDocuments.SaveAnimationJsonAsync(owner.Node.Id, document.ToJson());
+                    _preparedAnimationJson =
+                        await _instanceDocuments.SaveAnimationJsonAsync(
+                            owner.Node.Id,
+                            document.ToJson());
                     _onChanged();
                 }
                 : null,
@@ -2179,7 +2187,7 @@ internal sealed class RuntimeInputsCollectionEditor
     {
         if (!owner.IsInstance || input.Animation is null) return control;
         var document = new ModuleInstanceAnimationDocument(
-            _instanceDocuments.AnimationJson(owner.Node.Id));
+            PreparedAnimationJson(owner));
         var active = document.HasTrack(input.Id, targetId);
         var baseValue = control.Value;
         var toggle = new Button
@@ -2218,7 +2226,10 @@ internal sealed class RuntimeInputsCollectionEditor
                 targetId,
                 DesignPreviewTestValues.ValueNode(input, control.Value) ?? JsonValue.Create(control.Value)!,
                 input.Animation.Interpolations.First());
-            await _instanceDocuments.SaveAnimationJsonAsync(owner.Node.Id, document.ToJson());
+            _preparedAnimationJson =
+                await _instanceDocuments.SaveAnimationJsonAsync(
+                    owner.Node.Id,
+                    document.ToJson());
             if (_reloadAndSelect is not null) _reloadAndSelect(owner.Node);
             else _onChanged();
         };
@@ -2238,6 +2249,19 @@ internal sealed class RuntimeInputsCollectionEditor
             PreviewPlaybackStateBinding.Attach(row, _playbackState, RefreshResolvedValue);
         }
         return row;
+    }
+
+    private string PreparedAnimationJson(
+        RuntimeInputOwner owner)
+    {
+        if (!owner.IsInstance)
+        {
+            throw new InvalidOperationException(
+                $"Definition '{owner.Node.Id}' has no persisted animation document.");
+        }
+        return _preparedAnimationJson
+            ?? throw new InvalidOperationException(
+                $"Production Screen '{owner.Node.Id}' requires its prepared animation document.");
     }
 
     private EditorInternalNavigationSection CreateTestValueCollectionGroupSubcard(

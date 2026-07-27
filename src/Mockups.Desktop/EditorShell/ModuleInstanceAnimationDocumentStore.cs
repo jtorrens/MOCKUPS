@@ -10,6 +10,12 @@ internal sealed record ModuleInstanceAnimationSource(
     string ThemeTokensJson,
     string EffectiveContractJson);
 
+internal sealed record ModuleInstanceAnimationSnapshot(
+    string ModuleInstanceId,
+    ModuleInstanceAnimationSource Source,
+    int ScreenStartFrame,
+    int DurationFrames);
+
 internal sealed class ModuleInstanceAnimationDocumentStore
 {
     private readonly IModuleInstanceAnimationStore _database;
@@ -41,6 +47,22 @@ internal sealed class ModuleInstanceAnimationDocumentStore
             timeline.EffectiveContractJson);
     }
 
+    public ModuleInstanceAnimationSnapshot LoadSnapshot(
+        string moduleInstanceId)
+    {
+        return new ModuleInstanceAnimationSnapshot(
+            moduleInstanceId,
+            Load(moduleInstanceId),
+            ModuleInstanceTimeline.ScreenStartFrame(
+                _timelineDataSource,
+                moduleInstanceId),
+            System.Math.Max(
+                1,
+                ModuleInstanceTimeline.DurationFrames(
+                    _timelineDataSource,
+                    moduleInstanceId)));
+    }
+
     public Task<string> SaveAnimationJsonAsync(
         string moduleInstanceId,
         string animationJson) =>
@@ -52,5 +74,18 @@ internal sealed class ModuleInstanceAnimationDocumentStore
                     animationJson);
                 return _timelineDataSource.Load(
                     moduleInstanceId).AnimationJson;
+            });
+
+    public Task<ModuleInstanceAnimationSnapshot>
+        SaveAnimationSnapshotAsync(
+            string moduleInstanceId,
+            string animationJson) =>
+        _operations.ExecuteAsync(
+            () =>
+            {
+                _database.UpdateModuleInstanceAnimationJson(
+                    moduleInstanceId,
+                    animationJson);
+                return LoadSnapshot(moduleInstanceId);
             });
 }

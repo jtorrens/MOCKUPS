@@ -57,6 +57,14 @@ The common owner timeline derives:
 
 An editor never stores absolute Shot frames in a child-owned keyframe.
 
+Production Screen animation authoring receives one immutable prepared snapshot
+containing the exact animation document, Screen origin and current duration.
+Persistence and timeline reads run through the session operation coordinator
+before visual construction. Animation controls consume that snapshot, reject a
+snapshot for another Screen and perform no synchronous persistence read while
+creating or refreshing their visual surface. A committed animation write
+returns the replacement snapshot through the same boundary.
+
 ## Duration policies
 
 A Module declares one Screen duration policy:

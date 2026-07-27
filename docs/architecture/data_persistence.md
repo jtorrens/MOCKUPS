@@ -393,10 +393,13 @@ Editor layouts, the complete root or embedded field-value set and their
 declared dictionary context are likewise resolved on the session operation
 worker into a prepared immutable snapshot. The dictionary context follows
 exact field metadata and active Variant references, rather than scanning or
-loading every concrete owner. The visual card factory consumes those snapshots
-and performs no layout, field-value, resource-option or active Runtime-contract
-persistence read during control construction. Selection revision and exact
-owner checks prevent obsolete preparations from reaching the visual state.
+loading every concrete owner. Production Screen authoring adds its exact
+animation document, Screen origin and current duration to that prepared
+snapshot. The visual card factory and animation controls consume those
+snapshots and perform no layout, field-value, resource-option, active
+Runtime-contract, animation or timeline persistence read during control
+construction. Selection revision and exact owner checks prevent obsolete
+preparations from reaching the visual state.
 Production Screen header presentation and embedded breadcrumb Variant names
 join the same prepared result. The visual header controller receives that
 result and holds no repository or persistence-facing port.

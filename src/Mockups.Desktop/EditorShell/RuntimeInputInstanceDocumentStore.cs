@@ -147,11 +147,6 @@ internal sealed class RuntimeInputInstanceDocumentStore
                 valuesSnapshot));
     }
 
-    public string AnimationJson(string moduleInstanceId)
-    {
-        return _animationDocuments.Load(moduleInstanceId).AnimationJson;
-    }
-
     public Task<string> SaveAnimationJsonAsync(
         string moduleInstanceId,
         string animationJson)

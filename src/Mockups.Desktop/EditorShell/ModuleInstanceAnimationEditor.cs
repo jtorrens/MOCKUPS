@@ -15,7 +15,6 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class ModuleInstanceAnimationEditor
 {
-    private readonly ModuleInstanceTimelineDataSource _timelineDataSource;
     private readonly ModuleInstanceAnimationDocumentStore _animationDocuments;
     private readonly RuntimeInputOptionsDataSource _runtimeInputOptions;
     private readonly EditorDictionaryFieldServices _dictionaryServices;
@@ -27,6 +26,8 @@ internal sealed class ModuleInstanceAnimationEditor
     private readonly Action _togglePlayback;
     private EditorDictionaryContextSnapshot?
         _preparedDictionaryContext;
+    private ModuleInstanceAnimationSnapshot?
+        _preparedAnimationSnapshot;
     private IRuntimeInputOptionsDataSource ActiveInputOptions =>
         _preparedDictionaryContext is null
             ? _runtimeInputOptions
@@ -47,14 +48,14 @@ internal sealed class ModuleInstanceAnimationEditor
         PreviewPlaybackState playbackState,
         Action togglePlayback)
     {
-        _timelineDataSource =
+        var timelineDataSource =
             new ModuleInstanceTimelineDataSource(
                 animation,
                 moduleInstanceThemes);
         _animationDocuments = new ModuleInstanceAnimationDocumentStore(
             animation,
             moduleInstanceThemes,
-            _timelineDataSource,
+            timelineDataSource,
             operations);
         _runtimeInputOptions =
             new RuntimeInputOptionsDataSource(dictionary, actors);
@@ -67,10 +68,18 @@ internal sealed class ModuleInstanceAnimationEditor
         _togglePlayback = togglePlayback;
     }
 
-    public void UsePreparedDictionaryContext(
-        EditorDictionaryContextSnapshot? context)
+    public ModuleInstanceAnimationSnapshot PrepareSnapshot(
+        ProjectTreeNode node)
     {
-        _preparedDictionaryContext = context;
+        return _animationDocuments.LoadSnapshot(node.Id);
+    }
+
+    public void UsePreparedContext(
+        EditorDictionaryContextSnapshot? dictionaryContext,
+        ModuleInstanceAnimationSnapshot? animationSnapshot)
+    {
+        _preparedDictionaryContext = dictionaryContext;
+        _preparedAnimationSnapshot = animationSnapshot;
     }
 
     public AnimationTargetEditorContent CreateTargetContent(ProjectTreeNode node, string targetId)
@@ -88,13 +97,14 @@ internal sealed class ModuleInstanceAnimationEditor
         string targetId,
         string baseValue)
     {
-        var source = _animationDocuments.Load(node.Id);
+        var snapshot = PreparedSnapshot(node);
+        var source = snapshot.Source;
         var preview = DesignPreviewTestValues.Parse(source.RuntimePreviewJson);
         var animation = DesignPreviewTestValues.Parse(source.AnimationJson);
         var track = new ModuleInstanceAnimationDocument(animation.ToJsonString()).Track(input.Id, targetId);
         if (track is null) return baseValue;
         var themeTokens = DesignPreviewTestValues.Parse(source.ThemeTokensJson);
-        var screenFrame = _shotFrame() - ModuleInstanceTimeline.ScreenStartFrame(_timelineDataSource, node.Id);
+        var screenFrame = _shotFrame() - snapshot.ScreenStartFrame;
         var ownerFrame = RuntimeAnimationFrameOrigin.OwnerLocalFrame(
             preview,
             preview,
@@ -120,7 +130,8 @@ internal sealed class ModuleInstanceAnimationEditor
         ProjectTreeNode node,
         RuntimeInputCollectionDefinition collection)
     {
-        var preview = DesignPreviewTestValues.Parse(_animationDocuments.Load(node.Id).RuntimePreviewJson);
+        var preview = DesignPreviewTestValues.Parse(
+            PreparedSnapshot(node).Source.RuntimePreviewJson);
         var items = DesignPreviewTestValues.CollectionItems(preview, collection).ToList();
         var itemLabels = items
             .Select((item, index) => new
@@ -155,12 +166,12 @@ internal sealed class ModuleInstanceAnimationEditor
         string? durationTargetId,
         Func<AnimationTarget, AnimationTarget>? decorateTarget = null)
     {
-        var source = _animationDocuments.Load(node.Id);
+        var snapshot = PreparedSnapshot(node);
+        var source = snapshot.Source;
         var preview = DesignPreviewTestValues.Parse(source.RuntimePreviewJson);
         var config = DesignPreviewTestValues.Parse(source.VariantConfigJson);
         var animation = DesignPreviewTestValues.Parse(source.AnimationJson);
         var themeTokens = DesignPreviewTestValues.Parse(source.ThemeTokensJson);
-        var screenStartFrame = ModuleInstanceTimeline.ScreenStartFrame(_timelineDataSource, node.Id);
         List<AnimationTarget> ReadScopeTargets(JsonObject currentAnimation) => ReadTargets(
                 preview,
                 config,
@@ -203,6 +214,7 @@ internal sealed class ModuleInstanceAnimationEditor
                 animation,
                 themeTokens,
                 source.EffectiveContractJson,
+                snapshot,
                 ReadScopeTargets));
         }
         return new AnimationTargetEditorContent(content, activeTrackCount);
@@ -218,10 +230,11 @@ internal sealed class ModuleInstanceAnimationEditor
         JsonObject animation,
         JsonObject themeTokens,
         string effectiveContractJson,
+        ModuleInstanceAnimationSnapshot preparedSnapshot,
         Func<JsonObject, List<AnimationTarget>> readScopeTargets)
     {
-        var screenStartFrame = ModuleInstanceTimeline.ScreenStartFrame(_timelineDataSource, node.Id);
-        var actualScreenDuration = Math.Max(1, ModuleInstanceTimeline.DurationFrames(_timelineDataSource, node.Id));
+        var screenStartFrame = preparedSnapshot.ScreenStartFrame;
+        var actualScreenDuration = preparedSnapshot.DurationFrames;
         var durationPolicy = RuntimeDurationContract.Policy(effectiveContractJson);
         var currentAnimation = animation;
         int MaximumAuthoredScreenFrame() => targets
@@ -351,10 +364,19 @@ internal sealed class ModuleInstanceAnimationEditor
         {
             var selectedKey = TargetKey(selected);
             var authoringHorizon = timelineDuration;
+            preparedSnapshot =
+                await _animationDocuments
+                    .SaveAnimationSnapshotAsync(
+                        node.Id,
+                        document.ToJson());
+            _preparedAnimationSnapshot =
+                preparedSnapshot;
             currentAnimation = DesignPreviewTestValues.Parse(
-                await _animationDocuments.SaveAnimationJsonAsync(node.Id, document.ToJson()));
-            screenStartFrame = ModuleInstanceTimeline.ScreenStartFrame(_timelineDataSource, node.Id);
-            actualScreenDuration = Math.Max(1, ModuleInstanceTimeline.DurationFrames(_timelineDataSource, node.Id));
+                preparedSnapshot.Source.AnimationJson);
+            screenStartFrame =
+                preparedSnapshot.ScreenStartFrame;
+            actualScreenDuration =
+                preparedSnapshot.DurationFrames;
             var refreshedTargets = readScopeTargets(currentAnimation)
                 .ToDictionary((candidate) => (candidate.FieldId, candidate.TargetId));
             for (var index = 0; index < targets.Count; index++)
@@ -1072,6 +1094,21 @@ internal sealed class ModuleInstanceAnimationEditor
                 node,
                 _preparedDictionaryContext,
                 (_) => "");
+    }
+
+    private ModuleInstanceAnimationSnapshot PreparedSnapshot(
+        ProjectTreeNode node)
+    {
+        if (_preparedAnimationSnapshot is not { } snapshot
+            || !snapshot.ModuleInstanceId.Equals(
+                node.Id,
+                StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"Animation editor for '{node.Id}' requires its prepared snapshot.");
+        }
+
+        return snapshot;
     }
 
     private static JsonNode ValueNode(ValueKind kind, string value) =>

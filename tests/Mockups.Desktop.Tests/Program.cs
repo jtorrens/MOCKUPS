@@ -3437,6 +3437,7 @@ static void VisualPersistenceWritersRequireOperationCoordination()
                  (typeof(RuntimeInputInstanceDocumentStore), "SaveAnimationJsonAsync"),
                  (typeof(RuntimeInputOwnerDocumentStore), "SaveDesignPreviewJsonAsync"),
                  (typeof(ModuleInstanceAnimationDocumentStore), "SaveAnimationJsonAsync"),
+                 (typeof(ModuleInstanceAnimationDocumentStore), "SaveAnimationSnapshotAsync"),
                  (typeof(EditorFieldPostCommitEffects), "ApplyAsync"),
              })
     {
@@ -3538,6 +3539,10 @@ static void PreviewAuthoringPreparationUsesOperationBoundary()
         .GetProperty("DictionaryContext")?
         .PropertyType
         == typeof(EditorDictionaryContextSnapshot));
+    True(typeof(RuntimeInputSurface)
+        .GetProperty("AnimationSnapshot")?
+        .PropertyType
+        == typeof(ModuleInstanceAnimationSnapshot));
     True(typeof(IRuntimeInputOptionsDataSource)
         .IsAssignableFrom(
             typeof(PreparedRuntimeInputOptionsDataSource)));
@@ -3559,15 +3564,26 @@ static void PreviewAuthoringPreparationUsesOperationBoundary()
     var preparedAnimationContext =
         typeof(ModuleInstanceAnimationEditor)
             .GetMethod(
-                "UsePreparedDictionaryContext",
+                "UsePreparedContext",
                 BindingFlags.Instance
                 | BindingFlags.Public
                 | BindingFlags.NonPublic)
         ?? throw new InvalidOperationException(
-            "Missing prepared animation dictionary context.");
-    True(preparedAnimationContext.GetParameters()
-        .Single().ParameterType
-        == typeof(EditorDictionaryContextSnapshot));
+            "Missing prepared animation context.");
+    SequenceEqual(
+        new[]
+        {
+            typeof(EditorDictionaryContextSnapshot),
+            typeof(ModuleInstanceAnimationSnapshot),
+        },
+        preparedAnimationContext.GetParameters()
+            .Select((parameter) => parameter.ParameterType));
+    True(typeof(RuntimeInputInstanceDocumentStore)
+        .GetMethod(
+            "AnimationJson",
+            BindingFlags.Instance
+            | BindingFlags.Public
+            | BindingFlags.NonPublic) is null);
 
     var shellMethod = typeof(MainWindow)
         .GetMethod(
@@ -7272,7 +7288,9 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
         var screen = Descendants(database.LoadProjectTree())
             .First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance
                 && database.GetModuleInstanceVariantSettings(node.Id).RecordClassId == "module.core.chat");
-        var animationJson = database.GetModuleInstanceSettings(screen.Id).AnimationJson;
+        var animationJson =
+            database.GetModuleInstanceSettings(
+                screen.Id).AnimationJson;
         var messagePrototype = JsonPath.ParseRequiredObject(
             database.GetModuleInstanceSettings(screen.Id).ContentJson,
             "Conversation test content")["messages"]?[0]?.DeepClone().AsObject()
@@ -7287,7 +7305,6 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
             return message;
         }
 
-        Equal(animationJson, store.AnimationJson(screen.Id));
         var afterReads = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, afterReads);
 
@@ -7576,13 +7593,27 @@ static void ModuleInstanceAnimationStorePreservesCurrentDocuments()
             .First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance);
         var instance = database.GetModuleInstanceSettings(screen.Id);
         var variant = database.GetModuleInstanceVariantSettings(screen.Id);
-        var source = store.Load(screen.Id);
+        var snapshot = store.LoadSnapshot(screen.Id);
+        var source = snapshot.Source;
 
+        Equal(screen.Id, snapshot.ModuleInstanceId);
         Equal(variant.ConfigJson, source.VariantConfigJson);
         Equal(instance.AnimationJson, source.AnimationJson);
         Equal(database.GetModuleInstanceRuntimePreviewJson(screen.Id), source.RuntimePreviewJson);
         Equal(database.GetModuleInstanceThemeTokensJson(screen.Id), source.ThemeTokensJson);
         Equal(database.GetModuleInstanceEffectiveContractJson(screen.Id), source.EffectiveContractJson);
+        Equal(
+            ModuleInstanceTimeline.ScreenStartFrame(
+                timelineDataSource,
+                screen.Id),
+            snapshot.ScreenStartFrame);
+        Equal(
+            Math.Max(
+                1,
+                ModuleInstanceTimeline.DurationFrames(
+                    timelineDataSource,
+                    screen.Id)),
+            snapshot.DurationFrames);
         var currentAnimation = ModuleInstanceAnimationDocumentContract.Parse(
             source.AnimationJson,
             $"Module Instance '{screen.Id}' animation_json");
@@ -7598,10 +7629,13 @@ static void ModuleInstanceAnimationStorePreservesCurrentDocuments()
         var afterReads = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, afterReads);
 
-        var persisted = store.SaveAnimationJsonAsync(
+        var persisted = store.SaveAnimationSnapshotAsync(
             screen.Id,
             source.AnimationJson).GetAwaiter().GetResult();
-        Equal(source.AnimationJson, persisted);
+        Equal(screen.Id, persisted.ModuleInstanceId);
+        Equal(source.AnimationJson, persisted.Source.AnimationJson);
+        Equal(snapshot.ScreenStartFrame, persisted.ScreenStartFrame);
+        Equal(snapshot.DurationFrames, persisted.DurationFrames);
         Equal(source.AnimationJson, database.GetModuleInstanceSettings(screen.Id).AnimationJson);
     }
     finally

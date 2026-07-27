@@ -260,6 +260,9 @@ tests. The manifest-wide desktop test renders every committed Variant fixture.
 Compiled Desktop tests require every visual persistence writer, including
 Runtime Input and Module Instance animation stores, to receive the session
 operation coordinator and expose task-returning mutation methods.
+They also require Production Screen preparation to carry the animation source,
+Screen origin and duration together, and verify that the visual Runtime Input
+store exposes no synchronous animation read path.
 The same constructor rule covers persistence-backed resource pickers, preventing
 new synchronous token queries from being wired directly into visual callbacks.
 Headless UI coverage verifies that deferred cards perform no load while

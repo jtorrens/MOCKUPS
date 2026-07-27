@@ -186,36 +186,6 @@ internal sealed class EditorCollectionCardFactory : IDisposable
         return cards;
     }
 
-    public EditorPreviewAuthoringSurface? CreatePreviewAuthoringSurface(
-        ProjectTreeNode node,
-        EditorWorkspace workspace)
-    {
-        if (workspace == EditorWorkspace.Production)
-        {
-            if (node.Kind != ProjectTreeNodeKind.ModuleInstance)
-            {
-                return null;
-            }
-
-            var content = CreateRuntimeInputsEditor(CreateModuleInstanceAnimationEditor())
-                .CreateProductionScreenPayloadSurface(node);
-            return new EditorPreviewAuthoringSurface("Screen Payload", content);
-        }
-
-        if (node.Kind is not ProjectTreeNodeKind.ComponentVariant
-            and not ProjectTreeNodeKind.ModuleVariant
-            and not ProjectTreeNodeKind.Module)
-        {
-            return null;
-        }
-
-        var designContent = CreateRuntimeInputsEditor(animationEditor: null)
-            .CreateDesignTestValuesSurface(node);
-        return designContent is null
-            ? null
-            : new EditorPreviewAuthoringSurface("Test Values", designContent);
-    }
-
     public async Task<EditorPreparedPreviewAuthoringSurface?>
         PreparePreviewAuthoringSurfaceAsync(
             ProjectTreeNode node,
