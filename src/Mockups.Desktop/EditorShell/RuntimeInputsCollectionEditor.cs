@@ -28,7 +28,8 @@ internal sealed record RuntimeInputSurface(
     JsonObject Preview,
     IReadOnlyList<ComponentInputDefinition> Inputs,
     IReadOnlyList<RuntimeInputCollectionDefinition> Collections,
-    IReadOnlyList<ComponentPreviewActionDefinition> Actions);
+    IReadOnlyList<ComponentPreviewActionDefinition> Actions,
+    EditorDictionaryContextSnapshot? DictionaryContext = null);
 
 internal sealed class RuntimeInputsCollectionEditor
 {
@@ -58,6 +59,13 @@ internal sealed class RuntimeInputsCollectionEditor
     private readonly Func<string, bool> _navigateToNode;
     private readonly Action<EditorEmbeddedContext> _openEmbeddedContext;
     private Action _testValuesChanged = () => { };
+    private EditorDictionaryContextSnapshot?
+        _preparedDictionaryContext;
+    private IRuntimeInputOptionsDataSource ActiveInputOptions =>
+        _preparedDictionaryContext is null
+            ? _runtimeInputOptions
+            : new PreparedRuntimeInputOptionsDataSource(
+                _preparedDictionaryContext);
 
     public RuntimeInputsCollectionEditor(
         IComponentPreviewInputRepository componentPreview,
@@ -131,6 +139,7 @@ internal sealed class RuntimeInputsCollectionEditor
     public InstantEditorCard Create(ProjectTreeNode node)
     {
         var surface = LoadSurface(node);
+        UsePreparedContext(surface);
         if (surface.Owner.IsInstance)
         {
             throw new InvalidOperationException(
@@ -149,6 +158,7 @@ internal sealed class RuntimeInputsCollectionEditor
     public Control CreateProductionScreenPayloadSurface(
         RuntimeInputSurface surface)
     {
+        UsePreparedContext(surface);
         if (!surface.Owner.IsInstance)
         {
             throw new InvalidOperationException(
@@ -178,6 +188,7 @@ internal sealed class RuntimeInputsCollectionEditor
     public Control? CreateDesignTestValuesSurface(
         RuntimeInputSurface surface)
     {
+        UsePreparedContext(surface);
         if (surface.Owner.IsInstance)
         {
             return null;
@@ -200,6 +211,7 @@ internal sealed class RuntimeInputsCollectionEditor
     public RuntimeInputSurface PrepareSurface(
         ProjectTreeNode node,
         ComponentPreviewTransientState transientState,
+        string? selectedThemeId,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -230,12 +242,30 @@ internal sealed class RuntimeInputsCollectionEditor
             preview,
             _previewInputData.ComponentVariantRuntimeContract);
         cancellationToken.ThrowIfCancellationRequested();
-        return new RuntimeInputSurface(
+        var surface = new RuntimeInputSurface(
             owner,
             preview,
             inputs,
             collections,
             actions);
+        return surface with
+        {
+            DictionaryContext =
+                _dictionaryServices.PrepareRuntimeContext(
+                    node,
+                    selectedThemeId,
+                    surface,
+                    cancellationToken),
+        };
+    }
+
+    private void UsePreparedContext(
+        RuntimeInputSurface surface)
+    {
+        _preparedDictionaryContext =
+            surface.DictionaryContext;
+        _animationEditor?.UsePreparedDictionaryContext(
+            surface.DictionaryContext);
     }
 
     private InstantEditorCard CreateRuntimeContractCard(RuntimeInputSurface surface)
@@ -374,7 +404,7 @@ internal sealed class RuntimeInputsCollectionEditor
             };
             void RefreshSaveState()
             {
-                var current = _applyTransientTestValues(owner.Node, DesignPreviewTestValues.Parse(owner.DesignPreviewJson));
+                var current = preview.DeepClone().AsObject();
                 var baseline = DesignPreviewTestValues.Parse(owner.DesignPreviewJson);
                 var currentInputs = RuntimeInputDefinitionReader.ReadInputs(current, config: DesignPreviewTestValues.Parse(owner.ConfigJson));
                 var currentCollections = RuntimeInputDefinitionReader.ReadCollections(current, DesignPreviewTestValues.Parse(owner.ConfigJson));
@@ -388,7 +418,7 @@ internal sealed class RuntimeInputsCollectionEditor
             saveDefaults.Click += async (_, args) =>
             {
                 args.Handled = true;
-                var current = _applyTransientTestValues(owner.Node, DesignPreviewTestValues.Parse(owner.DesignPreviewJson));
+                var current = preview.DeepClone().AsObject();
                 var differences = DesignPreviewTestValues.Differences(current, DesignPreviewTestValues.Parse(owner.DesignPreviewJson), inputs, collections);
                 if (differences.Count == 0 || !await _confirmSaveDefaults(owner.Node.Name, differences.Select((difference) => difference.Label).ToList())) return;
                 DesignPreviewTestValues.PromoteToDefaults(current, inputs, collections);
@@ -647,20 +677,20 @@ internal sealed class RuntimeInputsCollectionEditor
     {
         var value = DesignPreviewTestValues.Value(preview, input);
         var definition = RuntimeInputFieldDefinitionFactory.Create(
-            _runtimeInputOptions,
+            ActiveInputOptions,
             owner.Node,
             input);
         if (!string.IsNullOrWhiteSpace(input.OptionsSourceCollectionJsonKey))
         {
             definition = definition with
             {
-                Options = RuntimeInputDynamicOptions.Resolve(_runtimeInputOptions, input, preview),
+                Options = RuntimeInputDynamicOptions.Resolve(ActiveInputOptions, input, preview),
             };
         }
         var control = new DictionaryFieldControl(
             new FieldValue(definition, value),
-            _dictionaryServices.ForNode(
-                owner.Node,
+            DictionaryServices(
+                owner,
                 (_) => "",
                 openComponentVariantReference: (reference) =>
                 {
@@ -671,6 +701,13 @@ internal sealed class RuntimeInputsCollectionEditor
         control.IsEnabled = RuntimeInputIsEnabled(preview, DesignPreviewTestValues.Parse(owner.ConfigJson), input);
         control.ValueChanged += (_, next) =>
         {
+            if (!owner.IsInstance)
+            {
+                DesignPreviewTestValues.SetValue(
+                    preview,
+                    input,
+                    next);
+            }
             _setPreviewTestValue(input.JsonKey, next);
             _testValuesChanged();
         };
@@ -1257,10 +1294,10 @@ internal sealed class RuntimeInputsCollectionEditor
     {
         var control = new DictionaryFieldControl(
             new FieldValue(
-                RuntimeInputFieldDefinitionFactory.Create(_runtimeInputOptions, owner.Node, input),
+                RuntimeInputFieldDefinitionFactory.Create(ActiveInputOptions, owner.Node, input),
                 DesignPreviewTestValues.Value(runtimeContract, input)),
-            _dictionaryServices.ForNode(
-                owner.Node,
+            DictionaryServices(
+                owner,
                 (_) => "",
                 openComponentVariantReference: (reference) =>
                 {
@@ -1650,7 +1687,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 || !string.IsNullOrWhiteSpace(componentVariantReference)))
         {
             var componentConfig = string.IsNullOrWhiteSpace(collection.ItemRuntimeContractJsonKey)
-                ? _previewInputData.ComponentVariantConfig(componentVariantReference)
+                ? ComponentVariantConfig(componentVariantReference)
                 : new JsonObject();
             nestedInputs = RuntimeInputDefinitionReader.ReadInputs(itemRuntimeContract, componentConfig).ToList();
             var nestedActions = actions.Where((action) =>
@@ -1783,7 +1820,7 @@ internal sealed class RuntimeInputsCollectionEditor
             var value = field.DefaultValue;
             if (field.ValueKind == ValueKind.ComponentVariant && string.IsNullOrWhiteSpace(value))
             {
-                var options = RuntimeInputFieldDefinitionFactory.Create(_runtimeInputOptions, owner.Node, field).Options ?? [];
+                var options = RuntimeInputFieldDefinitionFactory.Create(ActiveInputOptions, owner.Node, field).Options ?? [];
                 value = ComponentVariantOptionContract.SelectsComponentClass(field.ComponentType)
                     ? ""
                     : ComponentVariantOptionContract.RequireFixedBoundary(
@@ -1812,7 +1849,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 item,
                 collection,
                 config,
-                _previewInputData.ComponentVariantConfig);
+                ComponentVariantConfig);
             item[collection.ItemRuntimeContractJsonKey] =
                 _ownerDocuments.ComponentVariantRuntimeInputs(reference);
         }
@@ -1906,7 +1943,7 @@ internal sealed class RuntimeInputsCollectionEditor
             && componentItems is not null
             && item[componentItems.OverridesJsonKey] is JsonObject currentOverrides
             && ComponentOverrideCount(currentOverrides) > 0;
-        var services = _dictionaryServices.ForNode(owner.Node, (fieldId) =>
+        var services = DictionaryServices(owner, (fieldId) =>
         {
             var source = collection.Fields.FirstOrDefault((candidate) => candidate.Id == fieldId);
             return source is null ? "" : DesignPreviewTestValues.CollectionValue(item, source);
@@ -1950,13 +1987,13 @@ internal sealed class RuntimeInputsCollectionEditor
                 : null,
         };
         var definition = RuntimeInputFieldDefinitionFactory.Create(
-            _runtimeInputOptions,
+            ActiveInputOptions,
             owner.Node,
             input,
             CollectionFieldAvailability.AllowsEmpty(item, input));
         if (!string.IsNullOrWhiteSpace(input.OptionsSourceCollectionJsonKey))
         {
-            definition = definition with { Options = RuntimeInputDynamicOptions.Resolve(_runtimeInputOptions, input, item) };
+            definition = definition with { Options = RuntimeInputDynamicOptions.Resolve(ActiveInputOptions, input, item) };
         }
         var control = new DictionaryFieldControl(
             new FieldValue(
@@ -2058,10 +2095,10 @@ internal sealed class RuntimeInputsCollectionEditor
     {
         var control = new DictionaryFieldControl(
             new FieldValue(
-                RuntimeInputFieldDefinitionFactory.Create(_runtimeInputOptions, owner.Node, input),
+                RuntimeInputFieldDefinitionFactory.Create(ActiveInputOptions, owner.Node, input),
                 DesignPreviewTestValues.Value(componentInputs, input)),
-            _dictionaryServices.ForNode(
-                owner.Node,
+            DictionaryServices(
+                owner,
                 (_) => "",
                 openComponentVariantReference: (reference) =>
                 {
@@ -2300,7 +2337,7 @@ internal sealed class RuntimeInputsCollectionEditor
             ? null
             : inputs.FirstOrDefault((input) => input.JsonKey == action.TargetInputId);
         var targetOptions = action.TargetMode == ComponentPreviewActionTargetMode.Option
-            ? action.TargetOptions.Count > 0 ? action.TargetOptions : RuntimeInputDynamicOptions.Resolve(_runtimeInputOptions, targetInput, values)
+            ? action.TargetOptions.Count > 0 ? action.TargetOptions : RuntimeInputDynamicOptions.Resolve(ActiveInputOptions, targetInput, values)
             : null;
         var currentTargetValue = targetInput is null
             ? ""
@@ -2338,6 +2375,49 @@ internal sealed class RuntimeInputsCollectionEditor
                 ? (_) => Task.CompletedTask
                 : (json) => _ownerDocuments.SaveDesignPreviewJsonAsync(source, json),
             source.IsInstance);
+    }
+
+    private JsonObject ComponentVariantConfig(
+        string variantReference)
+    {
+        if (_preparedDictionaryContext is not null
+            && _preparedDictionaryContext.TryVariantSelection(
+                variantReference,
+                out var selection))
+        {
+            return DesignPreviewTestValues.Parse(
+                selection.ConfigJson);
+        }
+        return _previewInputData.ComponentVariantConfig(
+            variantReference);
+    }
+
+    private DictionaryFieldServices DictionaryServices(
+        RuntimeInputOwner owner,
+        Func<string, string> getFieldValue,
+        Func<string, Task>? openComponentVariantReference = null,
+        Func<string, Task>? openEmbeddedComponent = null,
+        Func<FieldDefinition, ComponentInputBindingDefinition, Task>?
+            openComponentInputBinding = null,
+        Action<EditorEmbeddedContext>?
+            openRuntimeComponentOverrides = null)
+    {
+        return _preparedDictionaryContext is null
+            ? _dictionaryServices.ForNode(
+                owner.Node,
+                getFieldValue,
+                openComponentVariantReference,
+                openEmbeddedComponent,
+                openComponentInputBinding,
+                openRuntimeComponentOverrides)
+            : _dictionaryServices.ForPreparedNode(
+                owner.Node,
+                _preparedDictionaryContext,
+                getFieldValue,
+                openComponentVariantReference,
+                openEmbeddedComponent,
+                openComponentInputBinding,
+                openRuntimeComponentOverrides);
     }
 
     private static ProjectTreeNode ProjectAncestor(ProjectTreeNode node)

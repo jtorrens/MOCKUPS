@@ -8,7 +8,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal static class RuntimeInputDynamicOptions
 {
     public static IReadOnlyList<FieldOption>? Resolve(
-        RuntimeInputOptionsDataSource optionsDataSource,
+        IRuntimeInputOptionsDataSource optionsDataSource,
         ComponentInputDefinition? input,
         JsonObject values)
     {

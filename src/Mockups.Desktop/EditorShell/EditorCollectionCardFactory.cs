@@ -240,10 +240,13 @@ internal sealed class EditorCollectionCardFactory : IDisposable
                 isProduction
                     ? CreateModuleInstanceAnimationEditor()
                     : null);
+            var selectedThemeId =
+                _dictionaryServices.CaptureSelectedThemeId();
             var surface = await _operations.ExecuteAsync(
                 () => editor.PrepareSurface(
                     node,
                     transientState,
+                    selectedThemeId,
                     cancellationToken),
                 cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();

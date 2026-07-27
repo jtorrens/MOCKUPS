@@ -107,6 +107,13 @@ internal sealed class DictionaryFieldContextDataSource
         return _database.GetComponentVariantRuntimeCollections(variantReference);
     }
 
+    public string RuntimeComponentVariantName(
+        string variantReference) =>
+        _database.GetRuntimeComponentVariantName(
+            variantReference,
+            new JsonObject(),
+            []);
+
     public DictionaryComponentVariantSelectionSource ComponentVariantSelection(string variantReference)
     {
         var selected = _database.GetComponentVariantSelectionSettings(variantReference);

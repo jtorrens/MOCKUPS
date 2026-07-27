@@ -25,6 +25,13 @@ internal sealed class ModuleInstanceAnimationEditor
     private readonly Action<int> _setShotFrame;
     private readonly PreviewPlaybackState _playbackState;
     private readonly Action _togglePlayback;
+    private EditorDictionaryContextSnapshot?
+        _preparedDictionaryContext;
+    private IRuntimeInputOptionsDataSource ActiveInputOptions =>
+        _preparedDictionaryContext is null
+            ? _runtimeInputOptions
+            : new PreparedRuntimeInputOptionsDataSource(
+                _preparedDictionaryContext);
 
     public ModuleInstanceAnimationEditor(
         IModuleInstanceAnimationStore animation,
@@ -58,6 +65,12 @@ internal sealed class ModuleInstanceAnimationEditor
         _setShotFrame = setShotFrame;
         _playbackState = playbackState;
         _togglePlayback = togglePlayback;
+    }
+
+    public void UsePreparedDictionaryContext(
+        EditorDictionaryContextSnapshot? context)
+    {
+        _preparedDictionaryContext = context;
     }
 
     public AnimationTargetEditorContent CreateTargetContent(ProjectTreeNode node, string targetId)
@@ -629,8 +642,8 @@ internal sealed class ModuleInstanceAnimationEditor
             ValueNode(target.Input.ValueKind, target.BaseValue),
             target.Input.ValueKind);
         var valueControl = new DictionaryFieldControl(
-            new FieldValue(RuntimeInputFieldDefinitionFactory.Create(_runtimeInputOptions, node, target.Input), displayedValue),
-            _dictionaryServices.ForNode(node, (_) => ""));
+            new FieldValue(RuntimeInputFieldDefinitionFactory.Create(ActiveInputOptions, node, target.Input), displayedValue),
+            DictionaryServices(node));
         var animation = target.Input.Animation!;
         var selectedInterpolation = exact?.Interpolation ?? animation.Interpolations.First();
         var interpolationControl = new DictionaryFieldControl(
@@ -644,7 +657,7 @@ internal sealed class ModuleInstanceAnimationEditor
                         .Select((value) => new FieldOption(value, InterpolationLabel(value)))
                         .ToList()),
                 selectedInterpolation),
-            _dictionaryServices.ForNode(node, (_) => ""));
+            DictionaryServices(node));
         void SaveValue(string value, string interpolation)
         {
             document.UpsertKeyframe(
@@ -727,7 +740,7 @@ internal sealed class ModuleInstanceAnimationEditor
                 Unit: "frames");
             var control = new DictionaryFieldControl(
                 new FieldValue(definition, stored!.Value.ToString(CultureInfo.InvariantCulture)),
-                _dictionaryServices.ForNode(node, (_) => ""));
+                DictionaryServices(node));
             control.ValueCommitted += (_, value) =>
             {
                 if (!int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var duration)) return;
@@ -1005,7 +1018,7 @@ internal sealed class ModuleInstanceAnimationEditor
                 {
                     var targetInput = string.IsNullOrWhiteSpace(input.OptionsSourceCollectionJsonKey)
                         ? input
-                        : input with { Options = RuntimeInputDynamicOptions.Resolve(_runtimeInputOptions, input, item) };
+                        : input with { Options = RuntimeInputDynamicOptions.Resolve(ActiveInputOptions, input, item) };
                     result.Add(new AnimationTarget(
                         targetInput.Id,
                         targetId,
@@ -1046,6 +1059,19 @@ internal sealed class ModuleInstanceAnimationEditor
             }
         }
         return result;
+    }
+
+    private DictionaryFieldServices DictionaryServices(
+        ProjectTreeNode node)
+    {
+        return _preparedDictionaryContext is null
+            ? _dictionaryServices.ForNode(
+                node,
+                (_) => "")
+            : _dictionaryServices.ForPreparedNode(
+                node,
+                _preparedDictionaryContext,
+                (_) => "");
     }
 
     private static JsonNode ValueNode(ValueKind kind, string value) =>

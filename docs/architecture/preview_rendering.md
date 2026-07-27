@@ -197,8 +197,11 @@ the Test Values authoring surface must consume the same captured revision; they
 must not read each other's mutable controls or keep parallel copies of the
 active authored context. Preview-authoring document reads, transient
 reconciliation and Runtime contract discovery run behind the session operation
-coordinator. The visual shell shows the shared loading state and constructs
-controls only for the prepared result whose selection revision is still
+coordinator. That preparation recursively follows declared embedded Runtime
+contracts and closes their dictionary options, resources and exact Component
+Variant references. It does not discover dependencies by names or visual
+position. The visual shell shows the shared loading state and constructs
+controls only from the prepared result whose selection revision is still
 current.
 
 Production payload remains owned by the Screen. Repeated Play with unchanged

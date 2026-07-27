@@ -27,7 +27,6 @@ internal sealed class EditorDictionaryContextPreparer
         IReadOnlyDictionary<string, FieldValue> fields,
         CancellationToken cancellationToken)
     {
-        var projectId = ProjectAncestor(node).Id;
         var requirements = new DictionaryContextRequirements();
         foreach (var field in fields.Values)
         {
@@ -36,7 +35,45 @@ internal sealed class EditorDictionaryContextPreparer
                 field.Value,
                 fields);
         }
+        return Prepare(
+            node,
+            selectedThemeId,
+            requirements,
+            cancellationToken);
+    }
 
+    public EditorDictionaryContextSnapshot PrepareRuntimeContext(
+        ProjectTreeNode node,
+        string? selectedThemeId,
+        RuntimeInputSurface surface,
+        CancellationToken cancellationToken)
+    {
+        var requirements = new DictionaryContextRequirements();
+        foreach (var input in surface.Inputs)
+        {
+            requirements.Add(input);
+        }
+        foreach (var collection in surface.Collections)
+        {
+            requirements.Add(collection);
+        }
+        requirements.AddVariantReferences(surface.Preview);
+        requirements.AddEmbeddedRuntimeContracts(
+            surface.Preview);
+        return Prepare(
+            node,
+            selectedThemeId,
+            requirements,
+            cancellationToken);
+    }
+
+    private EditorDictionaryContextSnapshot Prepare(
+        ProjectTreeNode node,
+        string? selectedThemeId,
+        DictionaryContextRequirements requirements,
+        CancellationToken cancellationToken)
+    {
+        var projectId = ProjectAncestor(node).Id;
         var componentOptions =
             new Dictionary<string, IReadOnlyList<FieldOption>>(
                 StringComparer.Ordinal);
@@ -188,6 +225,26 @@ internal sealed class EditorDictionaryContextPreparer
                 node,
                 selectedThemeId)
             : new JsonObject();
+        var variantNames =
+            new Dictionary<string, string>(
+                StringComparer.Ordinal);
+        foreach (var reference in requirements
+            .VariantReferences
+            .Where((reference) =>
+                VariantReferenceId.TryParse(
+                    reference,
+                    out _,
+                    out _))
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(
+                (reference) => reference,
+                StringComparer.Ordinal))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            variantNames[reference] =
+                _contextData.RuntimeComponentVariantName(
+                    reference);
+        }
         cancellationToken.ThrowIfCancellationRequested();
         return new EditorDictionaryContextSnapshot(
             projectId,
@@ -211,6 +268,8 @@ internal sealed class EditorDictionaryContextPreparer
             runtimeCollections.ToFrozenDictionary(
                 StringComparer.Ordinal),
             selections.ToFrozenDictionary(
+                StringComparer.Ordinal),
+            variantNames.ToFrozenDictionary(
                 StringComparer.Ordinal));
     }
 
@@ -285,12 +344,37 @@ internal sealed class EditorDictionaryContextPreparer
                 input.ValueKind,
                 input.ComponentType,
                 fullRuntime: false);
+            if (input.ValueKind == ValueKind.IconSlots)
+            {
+                ComponentTypes.Add("button");
+            }
             if (input.ValueKind == ValueKind.RecordReference
                 && !string.IsNullOrWhiteSpace(input.TableId))
             {
                 RecordOptions.Add(new(
                     input.TableId,
                     false));
+            }
+        }
+
+        public void Add(
+            ComponentInputDefinition input)
+        {
+            Add(input.ValueKind, input.BehaviorTiming);
+            AddComponentType(
+                input.ValueKind,
+                input.ComponentType,
+                fullRuntime: false);
+            if (input.ValueKind == ValueKind.RecordReference
+                && !string.IsNullOrWhiteSpace(input.TableId))
+            {
+                RecordOptions.Add(new(
+                    input.TableId,
+                    input.AllowEmpty));
+            }
+            if (input.StructuredCollection is { } collection)
+            {
+                Add(collection);
             }
         }
 
@@ -332,7 +416,7 @@ internal sealed class EditorDictionaryContextPreparer
             }
         }
 
-        private void AddVariantReferences(JsonNode? node)
+        public void AddVariantReferences(JsonNode? node)
         {
             if (node is JsonValue value
                 && value.TryGetValue<string>(out var text))
@@ -354,6 +438,50 @@ internal sealed class EditorDictionaryContextPreparer
                 {
                     AddVariantReferences(child);
                 }
+            }
+        }
+
+        public void AddEmbeddedRuntimeContracts(
+            JsonNode? node)
+        {
+            if (node is JsonArray array)
+            {
+                foreach (var child in array)
+                {
+                    AddEmbeddedRuntimeContracts(child);
+                }
+                return;
+            }
+            if (node is not JsonObject valueObject)
+            {
+                return;
+            }
+
+            if (valueObject["inputs"] is JsonArray)
+            {
+                foreach (var input in
+                         RuntimeInputDefinitionReader.ReadInputs(
+                             valueObject,
+                             new JsonObject()))
+                {
+                    Add(input);
+                }
+            }
+            if (valueObject["collections"] is JsonArray)
+            {
+                foreach (var collection in
+                         RuntimeInputDefinitionReader
+                             .ReadCollections(
+                                 valueObject,
+                                 new JsonObject(),
+                                 includeHidden: true))
+                {
+                    Add(collection);
+                }
+            }
+            foreach (var child in valueObject)
+            {
+                AddEmbeddedRuntimeContracts(child.Value);
             }
         }
 

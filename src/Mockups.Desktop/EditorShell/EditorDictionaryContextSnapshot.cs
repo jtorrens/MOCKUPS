@@ -32,7 +32,9 @@ internal sealed record EditorDictionaryContextSnapshot(
     IReadOnlyDictionary<
         string,
         DictionaryComponentVariantSelectionSource>
-        ComponentVariantSelections)
+        ComponentVariantSelections,
+    IReadOnlyDictionary<string, string>
+        ComponentVariantNames)
 {
     public JsonObject ThemeTokens() =>
         DesignPreviewTestValues.Parse(ThemeTokensJson);
@@ -99,6 +101,15 @@ internal sealed record EditorDictionaryContextSnapshot(
         ComponentVariantSelections.TryGetValue(
             variantReference,
             out selection!);
+
+    public string VariantName(string variantReference) =>
+        ComponentVariantNames.TryGetValue(
+            variantReference,
+            out var name)
+            ? name
+            : throw MissingVariantContext(
+                variantReference,
+                "Display name");
 
     private static InvalidOperationException MissingVariantContext(
         string variantReference,

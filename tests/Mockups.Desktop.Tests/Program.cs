@@ -3529,6 +3529,44 @@ static void PreviewAuthoringPreparationUsesOperationBoundary()
         == typeof(ComponentPreviewTransientState)));
     True(surfaceMethod.GetParameters().Any((parameter) =>
         parameter.ParameterType == typeof(CancellationToken)));
+    True(surfaceMethod.GetParameters().Any((parameter) =>
+        parameter.Name?.Equals(
+            "selectedThemeId",
+            StringComparison.Ordinal) == true));
+    True(typeof(RuntimeInputSurface)
+        .GetProperty("DictionaryContext")?
+        .PropertyType
+        == typeof(EditorDictionaryContextSnapshot));
+    True(typeof(IRuntimeInputOptionsDataSource)
+        .IsAssignableFrom(
+            typeof(PreparedRuntimeInputOptionsDataSource)));
+    var contextMethod = typeof(EditorDictionaryFieldServices)
+        .GetMethod(
+            "PrepareRuntimeContext",
+            BindingFlags.Instance
+            | BindingFlags.Public
+            | BindingFlags.NonPublic)
+        ?? throw new InvalidOperationException(
+            "Missing prepared Runtime dictionary context.");
+    Equal(
+        typeof(EditorDictionaryContextSnapshot),
+        contextMethod.ReturnType);
+    True(contextMethod.GetParameters().Any((parameter) =>
+        parameter.ParameterType
+        == typeof(RuntimeInputSurface)));
+
+    var preparedAnimationContext =
+        typeof(ModuleInstanceAnimationEditor)
+            .GetMethod(
+                "UsePreparedDictionaryContext",
+                BindingFlags.Instance
+                | BindingFlags.Public
+                | BindingFlags.NonPublic)
+        ?? throw new InvalidOperationException(
+            "Missing prepared animation dictionary context.");
+    True(preparedAnimationContext.GetParameters()
+        .Single().ParameterType
+        == typeof(EditorDictionaryContextSnapshot));
 
     var shellMethod = typeof(MainWindow)
         .GetMethod(

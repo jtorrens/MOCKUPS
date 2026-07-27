@@ -5,7 +5,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal static class RuntimeInputFieldDefinitionFactory
 {
     public static FieldDefinition Create(
-        RuntimeInputOptionsDataSource optionsDataSource,
+        IRuntimeInputOptionsDataSource optionsDataSource,
         ProjectTreeNode node,
         ComponentInputDefinition input,
         bool? allowEmpty = null)
