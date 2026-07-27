@@ -12875,6 +12875,9 @@ static void RuntimeActionControlsReactivateAfterPlaybackAndReattachment()
         var frameInput = control.GetVisualDescendants()
             .OfType<NumericUpDown>()
             .Single();
+        var frameTextBox = frameInput.GetVisualDescendants()
+            .OfType<TextBox>()
+            .Single();
         True(play.IsEnabled);
         True(restore.IsEnabled);
         True(previous.IsEnabled);
@@ -12895,6 +12898,13 @@ static void RuntimeActionControlsReactivateAfterPlaybackAndReattachment()
         True(next.IsEnabled);
         Equal(0m, frameInput.Value ?? -1);
         Equal(10m, frameInput.Maximum);
+        Equal(EditorUiDensity.TextAwareWidth(42), frameInput.Width);
+        Equal(
+            EditorNumericUpDownBehavior.CompactHorizontalPadding,
+            frameTextBox.Padding.Left);
+        Equal(
+            EditorNumericUpDownBehavior.CompactHorizontalPadding,
+            frameTextBox.Padding.Right);
 
         frameInput.Value = 4;
         Dispatcher.UIThread.RunJobs();

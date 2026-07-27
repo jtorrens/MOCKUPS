@@ -128,9 +128,9 @@ internal sealed class RuntimeTestActionControl : Border
         Grid.SetColumn(_previousFrameButton, 3);
         layout.Children.Add(_previousFrameButton);
 
-        _frameInput = EditorNumericUpDownBehavior.Configure(new NumericUpDown
+        _frameInput = EditorNumericUpDownBehavior.ConfigureCompact(new NumericUpDown
         {
-            Width = 52,
+            Width = EditorUiDensity.TextAwareWidth(42),
             Height = 28,
             Minimum = 0,
             Maximum = 0,
