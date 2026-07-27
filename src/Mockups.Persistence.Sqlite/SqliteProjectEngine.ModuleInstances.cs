@@ -212,7 +212,8 @@ internal sealed partial class SqliteProjectEngine
         ShotModuleInstanceDraft draft)
     {
         using var connection = OpenConnection();
-        var moduleSettings = GetModuleSettings(draft.Module.Id);
+        var moduleSettings =
+            _designOwner.GetModuleSettings(draft.Module.Id);
         return _productionOwner.AddModuleInstance(
             connection,
             shot,

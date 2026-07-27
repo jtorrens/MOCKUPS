@@ -197,7 +197,7 @@ internal sealed partial class SqliteProjectEngine
             or ProjectTreeNodeKind.ModuleVariant)
         {
             moduleSettings = ownerNode.Kind == ProjectTreeNodeKind.Module
-                ? GetModuleSettings(ownerNode.Id)
+                ? _designOwner.GetModuleSettings(ownerNode.Id)
                 : GetModuleVariantSettings(ownerNode);
         }
         else if (ownerNode.Kind == ProjectTreeNodeKind.ComponentVariant)

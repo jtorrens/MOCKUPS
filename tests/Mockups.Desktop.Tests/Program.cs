@@ -3132,6 +3132,25 @@ static void SqliteSessionExposesDistinctFocusedPorts()
             BindingFlags.Instance
             | BindingFlags.Public
             | BindingFlags.NonPublic) is null);
+    foreach (var retiredMethod in new[]
+             {
+                 "GetAppSettings",
+                 "UpdateAppField",
+                 "GetModuleSettings",
+                 "UpdateModuleField",
+                 "GetProjectSettings",
+                 "UpdateProjectField",
+                 "GetShotSettings",
+                 "GetProductionOutputShotPlan",
+             })
+    {
+        True(
+            typeof(SqliteProjectEngine).GetMethod(
+                retiredMethod,
+                BindingFlags.Instance
+                | BindingFlags.Public
+                | BindingFlags.NonPublic) is null);
+    }
     var project = SqlitePersistence.OpenCurrent(
         ParityDatabasePath());
     (object Port, Type Contract)[] capabilities =
