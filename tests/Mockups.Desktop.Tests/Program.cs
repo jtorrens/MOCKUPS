@@ -146,6 +146,7 @@ var tests = new (string Name, Action Run)[]
     ("editor visual cards require prepared field snapshots", EditorVisualCardsRequirePreparedFieldSnapshots),
     ("rapid visual selection commits only the latest prepared editor", RapidVisualSelectionCommitsLatestPreparedEditor),
     ("obsolete Preview authoring preparation cannot replace the latest selection", ObsoletePreviewAuthoringPreparationCannotCommit),
+    ("obsolete interactive Preview render results are discarded", ObsoleteInteractivePreviewRenderResultsAreDiscarded),
     ("Preview resource selection has one session rule", PreviewResourceSelectionHasOneSessionRule),
     ("editor view state follows the exact record class across records", EditorViewStateFollowsRecordClass),
     ("editor view state round-trips per class and clamps scroll", EditorViewStateRoundTripsPerClass),
@@ -5309,6 +5310,22 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
     {
         File.Delete(temporary);
     }
+}
+
+static void ObsoleteInteractivePreviewRenderResultsAreDiscarded()
+{
+    True(DesignWebPreviewPane.ShouldDiscardRenderedUpdate(
+        sequence: 4,
+        latestSequence: 5,
+        isPlaybackUpdate: false));
+    True(!DesignWebPreviewPane.ShouldDiscardRenderedUpdate(
+        sequence: 5,
+        latestSequence: 5,
+        isPlaybackUpdate: false));
+    True(!DesignWebPreviewPane.ShouldDiscardRenderedUpdate(
+        sequence: 4,
+        latestSequence: 5,
+        isPlaybackUpdate: true));
 }
 
 void ManifestOwnersRenderCommittedFixturesAndModulesAdvanceTime()

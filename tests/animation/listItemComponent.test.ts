@@ -156,3 +156,16 @@ test("List Item rejects a Runtime width that cannot contain its Variant flow", (
     /components, padding and gaps exceed the Runtime width/,
   );
 });
+
+test("List Item still rejects a final Runtime height consumed by its Variant padding", () => {
+  const source = fixture("calls");
+  const preview = JSON.parse(source.designPreviewJson) as { height: number };
+  preview.height = 7;
+  source.designPreviewJson = JSON.stringify(preview);
+  const contract = resolveListItemComponent(source);
+
+  assert.throws(
+    () => listItemComponentToRenderable(source, contract),
+    /Runtime size must exceed its Variant padding/,
+  );
+});

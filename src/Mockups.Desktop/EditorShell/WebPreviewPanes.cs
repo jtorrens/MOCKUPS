@@ -2062,6 +2062,23 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 "Preview unavailable. See Messages.");
         }
 
+        if (ShouldDiscardRenderedUpdate(
+                update.Sequence,
+                Volatile.Read(ref _latestUpdateSequence),
+                update.IsPlaybackUpdate))
+        {
+            PreviewDebugLog.Write(
+                "preview.webview.update",
+                ("route", "discarded"),
+                ("reason", renderError is null
+                    ? "newer-pending"
+                    : "newer-pending-after-render-error"),
+                ("component", update.Payload.ComponentType),
+                ("name", update.Payload.Name),
+                ("ms", stopwatch.Elapsed.TotalMilliseconds));
+            return;
+        }
+
         if (renderError is not null)
         {
             update.Messages.Error("Design preview", renderError);
@@ -2092,19 +2109,6 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 "The first result could not be generated. Check Messages and try again.",
                 "Reintentar",
                 "__preview_retry__"), update);
-            return;
-        }
-
-        if (!update.IsPlaybackUpdate
-            && update.Sequence != Volatile.Read(ref _latestUpdateSequence))
-        {
-            PreviewDebugLog.Write(
-                "preview.webview.update",
-                ("route", "discarded"),
-                ("reason", "newer-pending"),
-                ("component", update.Payload.ComponentType),
-                ("name", update.Payload.Name),
-                ("ms", stopwatch.Elapsed.TotalMilliseconds));
             return;
         }
 
@@ -2215,6 +2219,14 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             isAnimationOnlyUpdate,
             UsedDomPatch: false,
             renderError is not null));
+    }
+
+    internal static bool ShouldDiscardRenderedUpdate(
+        long sequence,
+        long latestSequence,
+        bool isPlaybackUpdate)
+    {
+        return !isPlaybackUpdate && sequence != latestSequence;
     }
 
     private void LoadContextState(PreviewContextState state, DesignPreviewUpdate update)

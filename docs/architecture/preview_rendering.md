@@ -204,6 +204,12 @@ position. The visual shell shows the shared loading state and constructs
 controls only from the prepared result whose selection revision is still
 current.
 
+Interactive render requests follow the same revision rule. After the external
+renderer returns, the Preview host checks the request sequence before either
+committing the result or publishing its error. A result or error superseded by
+a newer interactive request is discarded; an invalid latest request still
+reports the strict owner error and retains the last valid Preview.
+
 Production payload remains owned by the Screen. Repeated Play with unchanged
 inputs reuses the prepared HTML. Isolated Design actions use the same exact
 reuse rule: the controller retains prepared frames only while their
