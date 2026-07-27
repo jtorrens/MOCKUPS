@@ -160,6 +160,7 @@ var tests = new (string Name, Action Run)[]
     ("Preview shell remains usable at 1040 and 1440 widths", PreviewShellLayoutIsResponsive),
     ("real Preview shell layout remains usable at 1040 and 1440", PreviewShellVisualTreeIsResponsive),
     ("List Item and List expose their runtime model in the real editor", ListRuntimeEditorVisualTreeExposesDynamicSetsAndState),
+    ("Conversation Module exposes its Test Values Runtime in the real editor", ConversationModuleEditorVisualTreeExposesTestValues),
     ("Chat List Module exposes its fixed List boundary and exact Runtime in the real editor", ChatListModuleEditorVisualTreeExposesExactListRuntime),
     ("Design Preview transient snapshots remain immutable across later edits", DesignPreviewTransientSnapshotsRemainImmutable),
     ("List Runtime updates follow stable item identity after reorder", ListRuntimeUpdatesFollowStableIdentityAfterReorder),
@@ -5806,6 +5807,97 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
     }
 }
 
+static void ConversationModuleEditorVisualTreeExposesTestValues()
+{
+    var source = ParityDatabasePath();
+    var temporary = Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        $".mockups-headless-conversation-editor-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        using var session = HeadlessUnitTestSession.StartNew(
+            typeof(HeadlessTestApplication));
+        session.Dispatch(
+            () =>
+            {
+                var window = DesktopHost.CreateWindow(temporary);
+                window.Width = 3000;
+                window.Height = 900;
+                window.Show();
+                Dispatcher.UIThread.RunJobs();
+
+                var conversation = WindowSession(window).TreeRoots
+                    .SelectMany(DescendantsAndSelf)
+                    .Single((node) =>
+                        node.Kind == ProjectTreeNodeKind.Module
+                        && node.Id == "module_core_chat");
+                var selectNode = typeof(MainWindow).GetMethod(
+                    "SelectNodeById",
+                    BindingFlags.Instance | BindingFlags.NonPublic,
+                    binder: null,
+                    types: [typeof(string)],
+                    modifiers: null)
+                    ?? throw new InvalidOperationException(
+                        "Missing MainWindow node selection boundary.");
+                True((bool)(selectNode.Invoke(
+                    window,
+                    [conversation.Id]) ?? false));
+
+                var selected = Required(
+                    WindowSession(window).SelectedNode);
+                Equal(
+                    ProjectTreeNodeKind.ModuleVariant,
+                    selected.Kind);
+                True(selected.Id.EndsWith(
+                    "::variant::default",
+                    StringComparison.Ordinal));
+
+                var tab = Required(
+                    window.FindControl<TabItem>(
+                        "PreviewAuthoringDataTab"));
+                var host = Required(
+                    window.FindControl<ContentControl>(
+                        "PreviewAuthoringDataHost"));
+                var messages = Required(
+                    window.FindControl<TextBox>(
+                        "ShellMessagesTextBox"));
+                True(SpinWait.SpinUntil(
+                    () =>
+                    {
+                        Dispatcher.UIThread.RunJobs();
+                        return tab.IsVisible
+                            && host.Content is Control;
+                    },
+                    TimeSpan.FromSeconds(10)),
+                    "Conversation Test Values did not become visible. "
+                    + messages.Text);
+                Equal("Test Values", tab.Header as string);
+
+                var runtime = Required(host.Content as Control);
+                var fieldIds = runtime
+                    .GetVisualDescendants()
+                    .OfType<DictionaryFieldControl>()
+                    .Select((field) => field.FieldId)
+                    .ToHashSet(StringComparer.Ordinal);
+                True(fieldIds.Contains("conversationType"));
+                True(fieldIds.Contains("actor"));
+                True(fieldIds.Contains("headerSubtitle"));
+                True(runtime.GetVisualDescendants()
+                    .OfType<TextBlock>()
+                    .Any((text) => text.Text == "Messages"));
+
+                window.Hide();
+            },
+            CancellationToken.None).GetAwaiter().GetResult();
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
 static void ObsoleteInteractivePreviewRenderResultsAreDiscarded()
 {
     True(DesignWebPreviewPane.ShouldDiscardRenderedUpdate(
@@ -10964,6 +11056,7 @@ var isolatedUiTests = new HashSet<string>(StringComparer.Ordinal)
     "obsolete Preview authoring preparation cannot replace the latest selection",
     "real Preview shell layout remains usable at 1040 and 1440",
     "List Item and List expose their runtime model in the real editor",
+    "Conversation Module exposes its Test Values Runtime in the real editor",
     "Chat List Module exposes its fixed List boundary and exact Runtime in the real editor",
 };
 var exhaustiveTests = new HashSet<string>(StringComparer.Ordinal)

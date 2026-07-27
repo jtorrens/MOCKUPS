@@ -365,13 +365,7 @@ internal sealed class EditorDictionaryContextPreparer
                 input.ValueKind,
                 input.ComponentType,
                 fullRuntime: false);
-            if (input.ValueKind == ValueKind.RecordReference
-                && !string.IsNullOrWhiteSpace(input.TableId))
-            {
-                RecordOptions.Add(new(
-                    input.TableId,
-                    input.AllowEmpty));
-            }
+            AddRecordOptions(input);
             if (input.StructuredCollection is { } collection)
             {
                 Add(collection);
@@ -389,15 +383,7 @@ internal sealed class EditorDictionaryContextPreparer
                     input.ComponentType,
                     fullRuntime:
                         collection.ComponentItems is not null);
-                if (input.ValueKind
-                        == ValueKind.RecordReference
-                    && !string.IsNullOrWhiteSpace(
-                        input.TableId))
-                {
-                    RecordOptions.Add(new(
-                        input.TableId,
-                        input.AllowEmpty));
-                }
+                AddRecordOptions(input);
                 if (input.StructuredCollection is { } nested)
                 {
                     Add(nested);
@@ -510,6 +496,32 @@ internal sealed class EditorDictionaryContextPreparer
             }
             AddVariantReference(field.Value);
             AddVariantReferences(field.Value);
+        }
+
+        private void AddRecordOptions(
+            ComponentInputDefinition input)
+        {
+            if (input.ValueKind != ValueKind.RecordReference
+                || string.IsNullOrWhiteSpace(input.TableId))
+            {
+                return;
+            }
+            if (!string.IsNullOrWhiteSpace(
+                    input.AllowEmptyWhenItemJsonKey)
+                && input.AllowEmptyWhenItemValues
+                    is { Count: > 0 })
+            {
+                RecordOptions.Add(new(
+                    input.TableId,
+                    false));
+                RecordOptions.Add(new(
+                    input.TableId,
+                    true));
+                return;
+            }
+            RecordOptions.Add(new(
+                input.TableId,
+                input.AllowEmpty));
         }
 
         private void Add(
