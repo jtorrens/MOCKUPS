@@ -40,7 +40,8 @@ It includes:
   second database gate is held and serialized concurrent writes inside one
   database context;
 - UI-independent editor-operation coordination, covering worker execution,
-  submission ordering and cancellation of queued work at session disposal;
+  submission ordering and cancellation of queued work at session disposal,
+  plus compiled constructor enforcement for every visual persistence writer;
 - UI-independent `EditorWorkspaceCoordinator` tests compiled against
   Application alone, covering workspace selection memory, invalid/deleted
   selections, Production removal, embedded-context rebasing, worker-thread

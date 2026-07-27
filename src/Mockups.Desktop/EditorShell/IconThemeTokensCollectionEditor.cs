@@ -13,6 +13,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class IconThemeTokensCollectionEditor
 {
     private readonly IIconThemeAssetStore _database;
+    private readonly EditorOperationCoordinator _operations;
     private readonly bool _isDark;
     private readonly Func<string, string, Task> _showInfo;
     private readonly Func<string, Task<bool>> _confirmDelete;
@@ -22,6 +23,7 @@ internal sealed class IconThemeTokensCollectionEditor
 
     public IconThemeTokensCollectionEditor(
         IIconThemeAssetStore database,
+        EditorOperationCoordinator operations,
         bool isDark,
         Func<string, string, Task> showInfo,
         Func<string, Task<bool>> confirmDelete,
@@ -30,6 +32,7 @@ internal sealed class IconThemeTokensCollectionEditor
         Action<ProjectTreeNode> reloadAndSelect)
     {
         _database = database;
+        _operations = operations;
         _isDark = isDark;
         _showInfo = showInfo;
         _confirmDelete = confirmDelete;
@@ -112,7 +115,9 @@ internal sealed class IconThemeTokensCollectionEditor
         {
             try
             {
-                var result = _database.RefreshIconThemeSetsForTheme(node.Id);
+                var result = await _operations.ExecuteAsync(
+                    () => _database.RefreshIconThemeSetsForTheme(
+                        node.Id));
                 await _showInfo("Refresh complete", $"Refreshed {result.CommonTokenCount} common token(s) across {result.ThemeCount} icon set(s). Omitted {result.OmittedTokenCount} token(s).");
                 _reloadAndSelect(node);
             }
@@ -251,7 +256,10 @@ internal sealed class IconThemeTokensCollectionEditor
 
             try
             {
-                _database.DeleteIconThemeToken(node.Id, token.Token);
+                await _operations.ExecuteAsync(
+                    () => _database.DeleteIconThemeToken(
+                        node.Id,
+                        token.Token));
                 _reloadAndSelect(node);
             }
             catch (Exception exception)

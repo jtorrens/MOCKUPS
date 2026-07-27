@@ -21,24 +21,30 @@ internal sealed class IconThemeSvgReplaceDialog
     private const double DefaultStrokeWidth = 0;
     private readonly Window _owner;
     private readonly IIconThemeAssetStore _database;
+    private readonly EditorOperationCoordinator _operations;
     private readonly Func<Task<string?>> _browseSvgFile;
     private readonly Action<ProjectTreeNode> _reloadAndSelect;
 
     public IconThemeSvgReplaceDialog(
         Window owner,
         IIconThemeAssetStore database,
+        EditorOperationCoordinator operations,
         Func<Task<string?>> browseSvgFile,
         Action<ProjectTreeNode> reloadAndSelect)
     {
         _owner = owner;
         _database = database;
+        _operations = operations;
         _browseSvgFile = browseSvgFile;
         _reloadAndSelect = reloadAndSelect;
     }
 
     public async Task Show(ProjectTreeNode node, string token)
     {
-        var original = _database.ReadIconThemeTokenSvg(node.Id, token);
+        var original = await _operations.ExecuteAsync(
+            () => _database.ReadIconThemeTokenSvg(
+                node.Id,
+                token));
         var dialog = new SukiWindow
         {
             Title = $"Replace SVG for \"{token}\"",
@@ -284,11 +290,12 @@ internal sealed class IconThemeSvgReplaceDialog
                     var confirmed = await ConfirmSaveToAllIconSets(dialog, choice.Token);
                     if (!confirmed) return;
 
-                    _database.WriteIconThemeTokenSvgToAllSets(
-                        node.Id,
-                        choice.Token,
-                        svgText,
-                        $"Derived from {token} with {SelectedMode()} transform.");
+                    await _operations.ExecuteAsync(
+                        () => _database.WriteIconThemeTokenSvgToAllSets(
+                            node.Id,
+                            choice.Token,
+                            svgText,
+                            $"Derived from {token} with {SelectedMode()} transform."));
                     _reloadAndSelect(node);
                     return;
                 }
@@ -319,11 +326,15 @@ internal sealed class IconThemeSvgReplaceDialog
                 SetError(exception.Message);
             }
         };
-        acceptButton.Click += (_, _) =>
+        acceptButton.Click += async (_, _) =>
         {
             try
             {
-                _database.ReplaceIconThemeTokenSvg(node.Id, token, transformedSvg);
+                await _operations.ExecuteAsync(
+                    () => _database.ReplaceIconThemeTokenSvg(
+                        node.Id,
+                        token,
+                        transformedSvg));
                 _reloadAndSelect(node);
                 dialog.Close();
             }

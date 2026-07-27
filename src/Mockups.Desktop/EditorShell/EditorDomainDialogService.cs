@@ -108,12 +108,22 @@ internal sealed class EditorDomainDialogService
 
     public Task ShowIconThemeSearch(ProjectTreeNode node)
     {
-        return new IconThemeSearchDialog(_owner, _iconThemes, _showInfo, _reloadAndSelect).Show(node);
+        return new IconThemeSearchDialog(
+            _owner,
+            _iconThemes,
+            _operations,
+            _showInfo,
+            _reloadAndSelect).Show(node);
     }
 
     public Task ShowIconThemeSvgReplace(ProjectTreeNode node, string token)
     {
-        return new IconThemeSvgReplaceDialog(_owner, _iconThemes, _browseSvgFile, _reloadAndSelect).Show(node, token);
+        return new IconThemeSvgReplaceDialog(
+            _owner,
+            _iconThemes,
+            _operations,
+            _browseSvgFile,
+            _reloadAndSelect).Show(node, token);
     }
 
     public Task<string?> ShowIconTokenPicker(string iconThemeId, string currentValue, bool allowMultiple)

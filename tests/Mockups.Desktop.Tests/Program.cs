@@ -138,6 +138,7 @@ var tests = new (string Name, Action Run)[]
     ("Preview references share Project media path resolution", PreviewReferencesShareProjectMediaPathResolution),
     ("SQLite contexts retain independent Project roots", SqliteContextsRetainIndependentProjectRoots),
     ("SQLite session exposes distinct focused application ports", SqliteSessionExposesDistinctFocusedPorts),
+    ("visual persistence writers require operation coordination", VisualPersistenceWritersRequireOperationCoordination),
     ("Preview resource selection has one session rule", PreviewResourceSelectionHasOneSessionRule),
     ("editor view state follows the exact record class across records", EditorViewStateFollowsRecordClass),
     ("editor view state round-trips per class and clamps scroll", EditorViewStateRoundTripsPerClass),
@@ -3274,6 +3275,38 @@ static void SqliteSessionExposesDistinctFocusedPorts()
     True(project.Animation is not IRuntimeInputInstanceStore);
     True(project.ReferenceUsage is not IRuntimeInputOwnerStore);
     True(project.ReferenceUsage is not IEditorNodeCommandStore);
+}
+
+static void VisualPersistenceWritersRequireOperationCoordination()
+{
+    foreach (var writerType in new[]
+             {
+                 typeof(EditorFieldCommitCoordinator),
+                 typeof(EditorAddChildWorkflow),
+                 typeof(EditorNodeCommandController),
+                 typeof(EditorDomainDialogService),
+                 typeof(EditorCollectionCardFactory),
+                 typeof(ShotCreationDialog),
+                 typeof(ShotModulePickerDialog),
+                 typeof(ShotModuleInstancesCollectionEditor),
+                 typeof(IconThemeTokensCollectionEditor),
+                 typeof(IconThemeSearchDialog),
+                 typeof(IconThemeSvgReplaceDialog),
+             })
+    {
+        var constructors = writerType.GetConstructors(
+            BindingFlags.Instance
+            | BindingFlags.Public
+            | BindingFlags.NonPublic);
+        True(constructors.Length > 0);
+        True(
+            constructors.All(
+                (constructor) => constructor.GetParameters()
+                    .Any(
+                        (parameter) =>
+                            parameter.ParameterType
+                            == typeof(EditorOperationCoordinator))));
+    }
 }
 
 static string MethodSignature(MethodInfo method) =>

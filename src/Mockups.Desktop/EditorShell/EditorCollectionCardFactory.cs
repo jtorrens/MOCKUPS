@@ -23,6 +23,7 @@ internal sealed class EditorCollectionCardFactory
     private readonly IModuleInstanceAnimationStore _animation;
     private readonly IModuleInstanceThemeTokenQuery _moduleInstanceThemes;
     private readonly IReferenceUsageQuery _referenceUsage;
+    private readonly EditorOperationCoordinator _operations;
     private readonly Func<bool> _isDark;
     private readonly Func<string, string, Task> _showInfo;
     private readonly EditorDomainDialogService _domainDialogs;
@@ -59,6 +60,7 @@ internal sealed class EditorCollectionCardFactory
         IModuleInstanceAnimationStore animation,
         IModuleInstanceThemeTokenQuery moduleInstanceThemes,
         IReferenceUsageQuery referenceUsage,
+        EditorOperationCoordinator operations,
         Func<bool> isDark,
         Func<string, string, Task> showInfo,
         EditorDomainDialogService domainDialogs,
@@ -94,6 +96,7 @@ internal sealed class EditorCollectionCardFactory
         _animation = animation;
         _moduleInstanceThemes = moduleInstanceThemes;
         _referenceUsage = referenceUsage;
+        _operations = operations;
         _isDark = isDark;
         _showInfo = showInfo;
         _domainDialogs = domainDialogs;
@@ -126,6 +129,7 @@ internal sealed class EditorCollectionCardFactory
             [
                 new IconThemeTokensCollectionEditor(
                     _iconThemes,
+                    _operations,
                     _isDark(),
                     _showInfo,
                     _domainDialogs.ConfirmIconTokenDelete,
@@ -155,6 +159,7 @@ internal sealed class EditorCollectionCardFactory
                 _moduleInstances,
                 _timeline,
                 _moduleInstanceThemes,
+                _operations,
                 _onChanged,
                 _reloadAndSelect,
                 _domainDialogs.DefineModuleInstanceForShot,

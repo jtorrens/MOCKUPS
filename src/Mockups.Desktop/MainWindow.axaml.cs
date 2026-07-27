@@ -253,6 +253,7 @@ public partial class MainWindow : SukiWindow
             data.Animation,
             data.ModuleInstanceThemes,
             data.ReferenceUsage,
+            application.Operations,
             () => _themeController.IsDark,
             _nodeCommands.ShowInfoDialog,
             _domainDialogs,

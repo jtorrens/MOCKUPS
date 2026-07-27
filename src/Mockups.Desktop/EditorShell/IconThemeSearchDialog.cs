@@ -16,17 +16,20 @@ internal sealed class IconThemeSearchDialog
 {
     private readonly Window _owner;
     private readonly IIconThemeAssetStore _database;
+    private readonly EditorOperationCoordinator _operations;
     private readonly Func<string, string, Task> _showInfo;
     private readonly Action<ProjectTreeNode> _reloadAndSelect;
 
     public IconThemeSearchDialog(
         Window owner,
         IIconThemeAssetStore database,
+        EditorOperationCoordinator operations,
         Func<string, string, Task> showInfo,
         Action<ProjectTreeNode> reloadAndSelect)
     {
         _owner = owner;
         _database = database;
+        _operations = operations;
         _showInfo = showInfo;
         _reloadAndSelect = reloadAndSelect;
     }
@@ -114,7 +117,7 @@ internal sealed class IconThemeSearchDialog
             PreviewDebugLog.Write("icon.search.start", ("query", query));
             try
             {
-                var result = await Task.Run(
+                var result = await _operations.ExecuteAsync(
                     () => _database.SearchIconThemeSources(query, cancellation.Token),
                     cancellation.Token);
                 if (cancellation.IsCancellationRequested || isDialogClosed)
@@ -173,14 +176,15 @@ internal sealed class IconThemeSearchDialog
                     return;
                 }
 
-                var result = await Task.Run(() => _database.GenerateIconThemeToken(
-                    node.Id,
-                    TokenFromText(token),
-                    TokenFromText(category),
-                    description,
-                    lucide.SourceName,
-                    material.SourceName,
-                    cancellation.Token),
+                var result = await _operations.ExecuteAsync(
+                    () => _database.GenerateIconThemeToken(
+                        node.Id,
+                        TokenFromText(token),
+                        TokenFromText(category),
+                        description,
+                        lucide.SourceName,
+                        material.SourceName,
+                        cancellation.Token),
                     cancellation.Token);
                 if (cancellation.IsCancellationRequested || isDialogClosed)
                 {

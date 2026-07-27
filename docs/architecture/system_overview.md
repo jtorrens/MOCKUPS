@@ -146,7 +146,9 @@ Avalonia or `Microsoft.Data.Sqlite`.
 ordinary editor persistence. It serializes submitted operations, runs their
 synchronous repository work on a controlled worker and cancels queued work
 when the session closes. Visual controls apply successful results only after
-the worker completes; UI effects never execute inside that worker.
+the worker completes; UI effects never execute inside that worker. This
+includes scalar field commits, node lifecycle commands, Screen collection
+mutations and Icon Theme refresh, generation, replacement and deletion.
 
 `Mockups.Application.PersistencePorts` owns the synchronous persistence-facing
 port contracts. It references Application models and Domain value objects but

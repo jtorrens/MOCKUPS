@@ -13,6 +13,7 @@ internal sealed class ShotModuleInstancesCollectionEditor
 {
     private readonly IModuleInstanceCollectionStore _database;
     private readonly IModuleInstanceTimelineStore _timeline;
+    private readonly EditorOperationCoordinator _operations;
     private readonly Action _onChanged;
     private readonly Action<ProjectTreeNode> _reloadAndSelect;
     private readonly Func<string, Task<ShotModuleInstanceDraft?>> _defineModuleInstance;
@@ -25,6 +26,7 @@ internal sealed class ShotModuleInstancesCollectionEditor
         IModuleInstanceCollectionStore database,
         IModuleInstanceTimelineStore timeline,
         IModuleInstanceThemeTokenQuery moduleInstanceThemes,
+        EditorOperationCoordinator operations,
         Action onChanged,
         Action<ProjectTreeNode> reloadAndSelect,
         Func<string, Task<ShotModuleInstanceDraft?>> defineModuleInstance,
@@ -34,6 +36,7 @@ internal sealed class ShotModuleInstancesCollectionEditor
     {
         _database = database;
         _timeline = timeline;
+        _operations = operations;
         _onChanged = onChanged;
         _reloadAndSelect = reloadAndSelect;
         _defineModuleInstance = defineModuleInstance;
@@ -72,7 +75,8 @@ internal sealed class ShotModuleInstancesCollectionEditor
         {
             var draft = await _defineModuleInstance(shot.Id);
             if (draft is null) return;
-            var added = _database.AddModuleInstance(shot, draft);
+            var added = await _operations.ExecuteAsync(
+                () => _database.AddModuleInstance(shot, draft));
             _onChanged();
             _reloadAndSelect(added);
         };
@@ -137,9 +141,11 @@ internal sealed class ShotModuleInstancesCollectionEditor
         Grid.SetColumn(row.Children[^1], 3);
 
         var duplicate = EditorCollectionItemControls.CreateDuplicateButton($"Duplicate {slot.Name}");
-        duplicate.Click += (_, _) =>
+        duplicate.Click += async (_, _) =>
         {
-            var copy = _database.Duplicate(ScreenNode(shot, slot));
+            var copy = await _operations.ExecuteAsync(
+                () => _database.Duplicate(
+                    ScreenNode(shot, slot)));
             _onChanged();
             _reloadAndSelect(copy);
         };
@@ -151,7 +157,8 @@ internal sealed class ShotModuleInstancesCollectionEditor
         {
             var instance = ScreenNode(shot, slot);
             if (!await _confirmDelete(instance)) return;
-            _database.Delete(instance);
+            await _operations.ExecuteAsync(
+                () => _database.Delete(instance));
             _onChanged();
             _reloadAndSelect(shot);
         };
@@ -163,9 +170,12 @@ internal sealed class ShotModuleInstancesCollectionEditor
         Button MoveButton(bool up, bool disabled, int offset)
         {
             var button = EditorCollectionItemControls.CreateMoveButton(up, enabled: !disabled);
-            button.Click += (_, _) =>
+            button.Click += async (_, _) =>
             {
-                _database.MoveModuleInstance(slot.Id, offset);
+                await _operations.ExecuteAsync(
+                    () => _database.MoveModuleInstance(
+                        slot.Id,
+                        offset));
                 _onChanged();
                 _reloadAndSelect(shot);
             };

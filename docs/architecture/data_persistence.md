@@ -268,8 +268,9 @@ the complete explicit transaction. No process-global SQLite write lock exists:
 two different database files do not serialize one another, while concurrent
 writes inside one context remain ordered.
 
-Desktop field commits and tree lifecycle commands cross one session-owned
-asynchronous operation boundary before reaching these synchronous repositories.
+Desktop field commits, tree lifecycle commands, Screen collection mutations
+and Icon Theme resource writes cross one session-owned asynchronous operation
+boundary before reaching these synchronous repositories.
 The boundary preserves submission order, performs the database work on a
 controlled worker and is canceled during window shutdown. Repositories remain
 synchronous transaction owners; they do not capture Avalonia controls or
