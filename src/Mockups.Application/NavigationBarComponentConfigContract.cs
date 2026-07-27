@@ -6,7 +6,7 @@ using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.Data;
 
-internal static class NavigationBarComponentConfigContract
+public static class NavigationBarComponentConfigContract
 {
     public const string ComponentType = "navigation_bar";
 

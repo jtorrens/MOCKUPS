@@ -142,6 +142,11 @@ contract; it does not reimplement those semantics.
 Application may reference Domain and has no package
 capabilities. In particular, its project cannot compile a reference to
 Avalonia or `Microsoft.Data.Sqlite`.
+Application exposes current Status Bar and Navigation Bar config validation as
+public storage-independent contracts. Core, Production and Resources therefore
+need no friend access to Application internals. Design retains the one
+production friend edge required by its generated internal scaffold/config
+catalog, and composition retains its explicit assembly boundary.
 `EditorOperationCoordinator` is the session-owned execution boundary for
 ordinary editor persistence. It serializes submitted operations, runs their
 synchronous repository work on a controlled worker and cancels queued work

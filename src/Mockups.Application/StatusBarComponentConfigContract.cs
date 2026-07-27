@@ -6,7 +6,7 @@ using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.Data;
 
-internal static class StatusBarComponentConfigContract
+public static class StatusBarComponentConfigContract
 {
     public const string ComponentType = "status_bar";
 

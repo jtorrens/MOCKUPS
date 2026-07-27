@@ -235,13 +235,25 @@ assembly references, custom analyzers, external compiled source, custom SDKs
 and project-local MSBuild imports, and compiles negative fixture projects that
 must fail when a consumer tries to use a transitive Domain or SQLite
 capability. An Application-only fixture must also fail when it attempts to use
-the separately compiled synchronous persistence ports. The Preview suite parses every
+the separately compiled synchronous persistence ports.
+
+The .NET graph has one canonical exact matrix for every production project's
+project and package references, plus one resolved-assembly matrix for
+capabilities whose absence must be proven after MSBuild resolution. Layer-
+specific prose tests do not repeat those same edges. The four negative compile
+fixtures remain independent because they prove that forbidden source cannot
+compile rather than merely restating the positive graph.
+
+The Preview suite parses every
 static, exported, import-assignment, `require` and dynamic TypeScript import
 recursively with TypeScript module resolution, rejects computed module loads,
 then derives permitted concrete owner edges from the current manifest.
 Pipeline validation parses its ordered command stages and compares the exact
 declared owner sequence. It does not accept a command merely because an
-expected substring appears somewhere in it. The shared validation context has
+expected substring appears somewhere in it. Retired-contract validation names
+only removed roots and executable entrypoints. Individual implementation
+filenames are not architecture boundaries; project graphs, import graphs and
+focused behavior tests own those rules. The shared validation context has
 no implementation-source blacklist API; remaining text-presence checks belong
 only to normative documentation, where prose is the contract being validated.
 

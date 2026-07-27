@@ -205,10 +205,7 @@ const expectedFriends = new Map([
       "Mockups.Application.Tests",
       "Mockups.DesktopEditorShell.AnimationTests",
       "Mockups.Persistence.Sqlite",
-      "Mockups.Persistence.Sqlite.Core",
       "Mockups.Persistence.Sqlite.Design",
-      "Mockups.Persistence.Sqlite.Production",
-      "Mockups.Persistence.Sqlite.Resources",
     ],
   ],
   [
@@ -282,6 +279,63 @@ const expectedExternalResources = new Map([
   ["src/Mockups.Persistence.Sqlite.Design/Mockups.Persistence.Sqlite.Design.csproj", []],
   ["src/Mockups.Persistence.Sqlite.Production/Mockups.Persistence.Sqlite.Production.csproj", []],
   ["src/Mockups.Persistence.Sqlite.Resources/Mockups.Persistence.Sqlite.Resources.csproj", []],
+]);
+
+const expectedResolvedAssemblies = new Map([
+  [
+    "src/Mockups.Persistence.Sqlite.Design/Mockups.Persistence.Sqlite.Design.csproj",
+    {
+      required: [],
+      forbidden: [
+        "Mockups.Persistence.Sqlite",
+        "Mockups.Persistence.Sqlite.Production",
+        "Mockups.Persistence.Sqlite.Resources",
+      ],
+    },
+  ],
+  [
+    "src/Mockups.Persistence.Sqlite.Production/Mockups.Persistence.Sqlite.Production.csproj",
+    {
+      required: [],
+      forbidden: [
+        "Mockups.Persistence.Sqlite",
+        "Mockups.Persistence.Sqlite.Design",
+        "Mockups.Persistence.Sqlite.Resources",
+      ],
+    },
+  ],
+  [
+    "src/Mockups.Persistence.Sqlite.Resources/Mockups.Persistence.Sqlite.Resources.csproj",
+    {
+      required: [],
+      forbidden: [
+        "Mockups.Persistence.Sqlite",
+        "Mockups.Persistence.Sqlite.Design",
+        "Mockups.Persistence.Sqlite.Production",
+      ],
+    },
+  ],
+  [
+    "src/Mockups.Desktop/Mockups.DesktopEditorShell.csproj",
+    {
+      required: ["Mockups.Domain"],
+      forbidden: [
+        "Mockups.Persistence.Sqlite",
+        "Microsoft.Data.Sqlite",
+      ],
+    },
+  ],
+  [
+    "src/Mockups.Desktop.Host/Mockups.Desktop.Host.csproj",
+    {
+      required: [],
+      forbidden: [
+        "Mockups.Domain",
+        "Microsoft.Data.Sqlite",
+        "SQLitePCLRaw.core",
+      ],
+    },
+  ],
 ]);
 
 function projectFiles(directory: string): string[] {
@@ -532,37 +586,6 @@ test("production projects expose only allowlisted physical compilation channels"
   }
 });
 
-test("Domain compiles without project or package capabilities", () => {
-  const domain = evaluate("src/Mockups.Domain/Mockups.Domain.csproj");
-  assert.deepEqual(domain.Items.ProjectReference, []);
-  assert.deepEqual(domain.Items.PackageReference, []);
-});
-
-test("Application can see Domain but has no UI or persistence package capabilities", () => {
-  const application = evaluate("src/Mockups.Application/Mockups.Application.csproj");
-  assert.deepEqual(
-    application.Items.ProjectReference.map((item) => repositoryPath(item.FullPath ?? item.Identity)),
-    ["src/Mockups.Domain/Mockups.Domain.csproj"],
-  );
-  assert.deepEqual(application.Items.PackageReference, []);
-});
-
-test("persistence-facing ports are a separate package-free capability", () => {
-  const ports = evaluate(
-    "src/Mockups.Application.PersistencePorts/Mockups.Application.PersistencePorts.csproj",
-  );
-  assert.deepEqual(
-    ports.Items.ProjectReference
-      .map((item) => repositoryPath(item.FullPath ?? item.Identity))
-      .sort(),
-    [
-      "src/Mockups.Application/Mockups.Application.csproj",
-      "src/Mockups.Domain/Mockups.Domain.csproj",
-    ],
-  );
-  assert.deepEqual(ports.Items.PackageReference, []);
-});
-
 test("workspace coordinator tests compile against Application alone", () => {
   const tests = evaluate(
     "tests/Mockups.Application.Tests/Mockups.Application.Tests.csproj",
@@ -575,172 +598,28 @@ test("workspace coordinator tests compile against Application alone", () => {
   assert.deepEqual(tests.Items.PackageReference, []);
 });
 
-test("Persistence can see Application and Domain but has no UI package capabilities", () => {
-  const persistence = evaluate(
-    "src/Mockups.Persistence.Sqlite/Mockups.Persistence.Sqlite.csproj",
-  );
-  assert.deepEqual(
-    persistence.Items.ProjectReference
-      .map((item) => repositoryPath(item.FullPath ?? item.Identity))
-      .sort(),
-    [
-      "src/Mockups.Application.PersistencePorts/Mockups.Application.PersistencePorts.csproj",
-      "src/Mockups.Application/Mockups.Application.csproj",
-      "src/Mockups.Domain/Mockups.Domain.csproj",
-      "src/Mockups.Persistence.Sqlite.Contracts/Mockups.Persistence.Sqlite.Contracts.csproj",
-      "src/Mockups.Persistence.Sqlite.Core/Mockups.Persistence.Sqlite.Core.csproj",
-      "src/Mockups.Persistence.Sqlite.Design/Mockups.Persistence.Sqlite.Design.csproj",
-      "src/Mockups.Persistence.Sqlite.Production/Mockups.Persistence.Sqlite.Production.csproj",
-      "src/Mockups.Persistence.Sqlite.Resources/Mockups.Persistence.Sqlite.Resources.csproj",
-    ],
-  );
-  assert.deepEqual(
-    persistence.Items.PackageReference.map((item) => item.Identity).sort(),
-    ["Microsoft.Data.Sqlite", "SQLitePCLRaw.bundle_e_sqlite3"],
-  );
-});
-
-test("SQLite contracts, Core and owner projects expose only their declared persistence capabilities", () => {
-  const contracts = evaluate(
-    "src/Mockups.Persistence.Sqlite.Contracts/Mockups.Persistence.Sqlite.Contracts.csproj",
-  );
-  assert.deepEqual(
-    contracts.Items.ProjectReference
-      .map((item) => repositoryPath(item.FullPath ?? item.Identity))
-      .sort(),
-    [
-      "src/Mockups.Application.PersistencePorts/Mockups.Application.PersistencePorts.csproj",
-      "src/Mockups.Application/Mockups.Application.csproj",
-      "src/Mockups.Domain/Mockups.Domain.csproj",
-    ],
-  );
-  const core = evaluate(
-    "src/Mockups.Persistence.Sqlite.Core/Mockups.Persistence.Sqlite.Core.csproj",
-  );
-  assert.deepEqual(
-    core.Items.ProjectReference
-      .map((item) => repositoryPath(item.FullPath ?? item.Identity)),
-    [
-      "src/Mockups.Application/Mockups.Application.csproj",
-      "src/Mockups.Domain/Mockups.Domain.csproj",
-    ],
-  );
-  assert.deepEqual(
-    core.Items.PackageReference.map((item) => item.Identity).sort(),
-    ["Microsoft.Data.Sqlite", "SQLitePCLRaw.bundle_e_sqlite3"],
-  );
-
-  const design = evaluate(
-    "src/Mockups.Persistence.Sqlite.Design/Mockups.Persistence.Sqlite.Design.csproj",
-  );
-  assert.deepEqual(
-    design.Items.ProjectReference
-      .map((item) => repositoryPath(item.FullPath ?? item.Identity))
-      .sort(),
-    [
-      "src/Mockups.Application.PersistencePorts/Mockups.Application.PersistencePorts.csproj",
-      "src/Mockups.Application/Mockups.Application.csproj",
-      "src/Mockups.Domain/Mockups.Domain.csproj",
-      "src/Mockups.Persistence.Sqlite.Contracts/Mockups.Persistence.Sqlite.Contracts.csproj",
-      "src/Mockups.Persistence.Sqlite.Core/Mockups.Persistence.Sqlite.Core.csproj",
-    ],
-  );
-  assert.deepEqual(
-    design.Items.PackageReference.map((item) => item.Identity),
-    ["Microsoft.Data.Sqlite", "SQLitePCLRaw.bundle_e_sqlite3"],
-  );
-
-  for (const owner of ["Production", "Resources"]) {
-    const projectPath =
-      `src/Mockups.Persistence.Sqlite.${owner}/Mockups.Persistence.Sqlite.${owner}.csproj`;
-    const evaluated = evaluate(projectPath);
-    assert.deepEqual(
-      evaluated.Items.ProjectReference
-        .map((item) => repositoryPath(item.FullPath ?? item.Identity))
-        .sort(),
-      [
-        "src/Mockups.Application.PersistencePorts/Mockups.Application.PersistencePorts.csproj",
-        "src/Mockups.Application/Mockups.Application.csproj",
-        "src/Mockups.Domain/Mockups.Domain.csproj",
-        "src/Mockups.Persistence.Sqlite.Contracts/Mockups.Persistence.Sqlite.Contracts.csproj",
-        "src/Mockups.Persistence.Sqlite.Core/Mockups.Persistence.Sqlite.Core.csproj",
-      ],
-    );
-    assert.deepEqual(
-      evaluated.Items.PackageReference.map((item) => item.Identity).sort(),
-      ["Microsoft.Data.Sqlite", "SQLitePCLRaw.bundle_e_sqlite3"],
-    );
-    const references = resolvedReferenceNames(projectPath);
-    assert.equal(references.has("Mockups.Persistence.Sqlite"), false);
-    for (const otherOwner of ["Design", "Production", "Resources"]) {
-      if (otherOwner === owner) continue;
+test("resolved compiler assemblies preserve the exact physical owner boundaries", () => {
+  for (const [
+    projectPath,
+    expectation,
+  ] of expectedResolvedAssemblies) {
+    const references =
+      resolvedReferenceNames(projectPath);
+    for (const required of expectation.required) {
       assert.equal(
-        references.has(`Mockups.Persistence.Sqlite.${otherOwner}`),
+        references.has(required),
+        true,
+        `${projectPath} is missing required assembly ${required}`,
+      );
+    }
+    for (const forbidden of expectation.forbidden) {
+      assert.equal(
+        references.has(forbidden),
         false,
-        `${owner} acquired the ${otherOwner} implementation capability`,
+        `${projectPath} acquired forbidden assembly ${forbidden}`,
       );
     }
   }
-
-  const designReferences = resolvedReferenceNames(
-    "src/Mockups.Persistence.Sqlite.Design/Mockups.Persistence.Sqlite.Design.csproj",
-  );
-  assert.equal(designReferences.has("Mockups.Persistence.Sqlite"), false);
-  assert.equal(designReferences.has("Mockups.Persistence.Sqlite.Production"), false);
-  assert.equal(designReferences.has("Mockups.Persistence.Sqlite.Resources"), false);
-});
-
-test("Desktop explicitly sees UI, Application persistence ports and Domain but cannot compile against SQLite", () => {
-  const desktop = evaluate(
-    "src/Mockups.Desktop/Mockups.DesktopEditorShell.csproj",
-  );
-  assert.deepEqual(
-    desktop.Items.ProjectReference
-      .map((item) => repositoryPath(item.FullPath ?? item.Identity))
-      .sort(),
-    [
-      "src/Mockups.Application.PersistencePorts/Mockups.Application.PersistencePorts.csproj",
-      "src/Mockups.Application/Mockups.Application.csproj",
-      "src/Mockups.Domain/Mockups.Domain.csproj",
-    ],
-  );
-  assert.equal(
-    desktop.Items.PackageReference
-      .some((item) => item.Identity.includes("Sqlite")),
-    false,
-  );
-  const references = resolvedReferenceNames(
-    "src/Mockups.Desktop/Mockups.DesktopEditorShell.csproj",
-  );
-  assert.equal(references.has("Mockups.Domain"), true);
-  assert.equal(
-    references.has("Mockups.Persistence.Sqlite"),
-    false,
-  );
-  assert.equal(references.has("Microsoft.Data.Sqlite"), false);
-});
-
-test("the executable Host composes Desktop and Persistence without inheriting their compile capabilities", () => {
-  const host = evaluate(
-    "src/Mockups.Desktop.Host/Mockups.Desktop.Host.csproj",
-  );
-  assert.deepEqual(
-    host.Items.ProjectReference
-      .map((item) => repositoryPath(item.FullPath ?? item.Identity))
-      .sort(),
-    [
-      "src/Mockups.Application.PersistencePorts/Mockups.Application.PersistencePorts.csproj",
-      "src/Mockups.Application/Mockups.Application.csproj",
-      "src/Mockups.Desktop/Mockups.DesktopEditorShell.csproj",
-      "src/Mockups.Persistence.Sqlite/Mockups.Persistence.Sqlite.csproj",
-    ],
-  );
-  const references = resolvedReferenceNames(
-    "src/Mockups.Desktop.Host/Mockups.Desktop.Host.csproj",
-  );
-  assert.equal(references.has("Mockups.Domain"), false);
-  assert.equal(references.has("Microsoft.Data.Sqlite"), false);
-  assert.equal(references.has("SQLitePCLRaw.core"), false);
 });
 
 test("an Application-only consumer cannot compile against Domain", () => {

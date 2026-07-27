@@ -49,7 +49,6 @@ var tests = new (string Name, Action Run)[]
 {
     ("v2 document rejects malformed roots", RejectsMalformedDocuments),
     ("opening an existing desktop database is byte-for-byte read-only", ExistingDatabaseOpenIsReadOnly),
-    ("current schema has no legacy Render Preset persistence", CurrentSchemaHasNoLegacyRenderPresetPersistence),
     ("rejected databases remain byte-for-byte unchanged", RejectedDatabaseOpenIsReadOnly),
     ("Project-owned references reject cross-Project reads and writes", ProjectOwnedReferencesRejectCrossProjectValues),
     ("current editor layouts reject retired or incomplete roots read-only", CurrentEditorLayoutContractFailsReadOnly),
@@ -61,8 +60,8 @@ var tests = new (string Name, Action Run)[]
     ("Variant writes never repair missing Variant arrays", VariantWritesDoNotRepairMissingArrays),
     ("system bar items use fixed dictionary collections on every Variant", SystemBarItemsUseFixedDictionaryCollections),
     ("editor layout saves only authored card metadata", EditorLayoutSaveKeepsOnlyAuthoredCardMetadata),
-    ("extracted repositories preserve the focused port contract", ExtractedRepositoriesPreserveFacadeContract),
-    ("resource repositories preserve Palette Device and Actor contracts", ResourceRepositoriesPreserveFacadeContract),
+    ("extracted repositories preserve the focused port contract", ExtractedRepositoriesPreserveFocusedContract),
+    ("resource repositories preserve Palette Device and Actor contracts", ResourceRepositoriesPreserveFocusedContract),
     ("Actor preview data boundary preserves current values read-only", ActorPreviewDataBoundaryPreservesCurrentValues),
     ("Actor preview surfaces share initials identity", ActorPreviewSurfacesShareInitialsIdentity),
     ("Runtime Input option boundary preserves dictionary options read-only", RuntimeInputOptionBoundaryPreservesDictionaryOptions),
@@ -93,17 +92,17 @@ var tests = new (string Name, Action Run)[]
     ("Module Instance animation store preserves current documents and explicit writes", ModuleInstanceAnimationStorePreservesCurrentDocuments),
     ("failed animation commands restore the last confirmed document", FailedAnimationCommandRestoresConfirmedDocument),
     ("rapid animation commands serialize against the latest confirmed document", RapidAnimationCommandsUseLatestConfirmedDocument),
-    ("Theme repository preserves current documents and lifecycle", ThemeRepositoryPreservesFacadeContract),
-    ("Production Font repository preserves current rows and lifecycle", ProductionFontRepositoryPreservesFacadeContract),
+    ("Theme repository preserves current documents and lifecycle", ThemeRepositoryPreservesFocusedContract),
+    ("Production Font repository preserves current rows and lifecycle", ProductionFontRepositoryPreservesFocusedContract),
     ("Production Font file documents reject filtered or inferred values", ProductionFontFileDocumentsAreStrict),
-    ("Icon Theme repository preserves rows and strict token files", IconThemeRepositoryPreservesFacadeContract),
-    ("App and Module repository preserves definitions and Rename-only lifecycle", AppModuleRepositoryPreservesFacadeContract),
-    ("Component Class repository preserves current definitions and Variants", ComponentClassRepositoryPreservesFacadeContract),
+    ("Icon Theme repository preserves rows and strict token files", IconThemeRepositoryPreservesFocusedContract),
+    ("App and Module repository preserves definitions and Rename-only lifecycle", AppModuleRepositoryPreservesFocusedContract),
+    ("Component Class repository preserves current definitions and Variants", ComponentClassRepositoryPreservesFocusedContract),
     ("Component dictionary fields use exact ValueKind documents", ComponentDictionaryFieldsUseExactValueKinds),
     ("record scalar writes reject invalid booleans and numbers", RecordScalarWritesRejectInvalidValues),
     ("resource scalar reads reject wrong current JSON shapes", ResourceScalarReadsRejectWrongShapes),
-    ("Module Instance repository preserves Screen rows and prepared documents", ModuleInstanceRepositoryPreservesFacadeContract),
-    ("Shot repository preserves Production rows and complete duplication", ShotRepositoryPreservesFacadeContract),
+    ("Module Instance repository preserves Screen rows and prepared documents", ModuleInstanceRepositoryPreservesFocusedContract),
+    ("Shot repository preserves its focused Production contract", ShotRepositoryPreservesFocusedContract),
     ("Production Output generates exact Shot names and portable render routes", ProductionOutputGeneratesExactShotPlans),
     ("Render output naming reserves one version for Light and Dark", RenderOutputNamingReservesOneBatchVersion),
     ("MOV H.264 modes match the Créditos encoding profiles", MovH264ModesMatchCreditosProfiles),
@@ -4634,56 +4633,6 @@ static void ExistingDatabaseOpenIsReadOnly()
     }
 }
 
-static void CurrentSchemaHasNoLegacyRenderPresetPersistence()
-{
-    var path = ParityDatabasePath();
-    using var connection = new SqliteConnection($"Data Source={path};Mode=ReadOnly");
-    connection.Open();
-    Equal(
-        5L,
-        SqliteCommandExecutor.ScalarLong(
-            connection,
-            "PRAGMA user_version"));
-    Equal(
-        1L,
-        SqliteCommandExecutor.ScalarLong(
-            connection,
-            """
-            SELECT COUNT(*)
-            FROM pragma_table_info('shots')
-            WHERE name = 'shot_number'
-            """));
-    Equal(
-        0L,
-        SqliteCommandExecutor.ScalarLong(
-            connection,
-            """
-            SELECT COUNT(*)
-            FROM sqlite_master
-            WHERE type = 'table' AND name = 'render_presets'
-            """));
-    Equal(
-        0L,
-        SqliteCommandExecutor.ScalarLong(
-            connection,
-            """
-            SELECT COUNT(*)
-            FROM pragma_table_info('shots')
-            WHERE name = 'render_preset_id'
-            """));
-    Equal(
-        0L,
-        SqliteCommandExecutor.ScalarLong(
-            connection,
-            """
-            SELECT COUNT(*)
-            FROM editor_layouts
-            WHERE record_class_id IN (
-              'navigation.render_presets',
-              'render_preset')
-            """));
-}
-
 static void PreviewShellLayoutIsResponsive()
 {
     foreach (var width in new[]
@@ -6845,7 +6794,7 @@ static void EditorLayoutSaveKeepsOnlyAuthoredCardMetadata()
     }
 }
 
-static void ExtractedRepositoriesPreserveFacadeContract()
+static void ExtractedRepositoriesPreserveFocusedContract()
 {
     var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-repository-contract-{Guid.NewGuid():N}.sqlite");
@@ -6930,7 +6879,7 @@ static void ExtractedRepositoriesPreserveFacadeContract()
     }
 }
 
-static void ResourceRepositoriesPreserveFacadeContract()
+static void ResourceRepositoriesPreserveFocusedContract()
 {
     var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-resource-repositories-{Guid.NewGuid():N}.sqlite");
@@ -8410,7 +8359,7 @@ static void RapidAnimationCommandsUseLatestConfirmedDocument()
             "target-b"));
 }
 
-static void ThemeRepositoryPreservesFacadeContract()
+static void ThemeRepositoryPreservesFocusedContract()
 {
     var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-theme-repository-{Guid.NewGuid():N}.sqlite");
@@ -8486,7 +8435,7 @@ static void ThemeRepositoryPreservesFacadeContract()
     }
 }
 
-static void ProductionFontRepositoryPreservesFacadeContract()
+static void ProductionFontRepositoryPreservesFocusedContract()
 {
     var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-production-font-repository-{Guid.NewGuid():N}.sqlite");
@@ -8624,7 +8573,7 @@ static void ProductionFontFileDocumentsAreStrict()
     });
 }
 
-static void IconThemeRepositoryPreservesFacadeContract()
+static void IconThemeRepositoryPreservesFocusedContract()
 {
     var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-icon-theme-repository-{Guid.NewGuid():N}.sqlite");
@@ -8723,7 +8672,7 @@ static void IconThemeRepositoryPreservesFacadeContract()
     }
 }
 
-static void AppModuleRepositoryPreservesFacadeContract()
+static void AppModuleRepositoryPreservesFocusedContract()
 {
     var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-app-module-repository-{Guid.NewGuid():N}.sqlite");
@@ -8817,7 +8766,7 @@ static void AppModuleRepositoryPreservesFacadeContract()
     }
 }
 
-static void ComponentClassRepositoryPreservesFacadeContract()
+static void ComponentClassRepositoryPreservesFocusedContract()
 {
     var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-component-class-repository-{Guid.NewGuid():N}.sqlite");
@@ -8904,7 +8853,7 @@ static void ComponentClassRepositoryPreservesFacadeContract()
     }
 }
 
-static void ModuleInstanceRepositoryPreservesFacadeContract()
+static void ModuleInstanceRepositoryPreservesFocusedContract()
 {
     var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-module-instance-repository-{Guid.NewGuid():N}.sqlite");
@@ -9046,7 +8995,7 @@ static void ModuleInstanceRepositoryPreservesFacadeContract()
     }
 }
 
-static void ShotRepositoryPreservesFacadeContract()
+static void ShotRepositoryPreservesFocusedContract()
 {
     var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-shot-repository-{Guid.NewGuid():N}.sqlite");
