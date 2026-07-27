@@ -43,8 +43,9 @@ It includes:
   submission ordering and cancellation of queued work at session disposal,
   plus compiled constructor enforcement for every visual persistence writer;
 - prepared root and embedded editor content, including compiled operation
-  coordination, snapshot-only visual card construction and a headless rapid
-  selection test proving that only the latest owner reaches the visual state;
+  coordination, field and dictionary snapshot-only visual card construction
+  and a headless rapid selection test proving that only the latest owner
+  reaches the visual state;
 - UI-independent `EditorWorkspaceCoordinator` tests compiled against
   Application alone, covering workspace selection memory, invalid/deleted
   selections, Production removal, embedded-context rebasing, worker-thread

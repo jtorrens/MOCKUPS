@@ -12,17 +12,20 @@ internal sealed record EditorPreparedLayoutCard(
     IReadOnlyDictionary<string, FieldValue> Fields);
 
 internal sealed record EditorPreparedRootContent(
-    IReadOnlyList<EditorPreparedLayoutCard> Cards);
+    IReadOnlyList<EditorPreparedLayoutCard> Cards,
+    EditorDictionaryContextSnapshot DictionaryContext);
 
 internal sealed record EditorPreparedEmbeddedContent(
     EditorPreparedLayoutCard? OwnerCard,
-    IReadOnlyList<EditorPreparedLayoutCard> Cards);
+    IReadOnlyList<EditorPreparedLayoutCard> Cards,
+    EditorDictionaryContextSnapshot DictionaryContext);
 
 internal sealed class EditorContentPreparationService : IDisposable
 {
     private readonly IEditorLayoutStore _layouts;
     private readonly EditorFieldValueRouter _fieldValues;
     private readonly ComponentClassFieldValueService _componentFields;
+    private readonly EditorDictionaryFieldServices _dictionaryFields;
     private readonly EditorOperationCoordinator _operations;
     private CancellationTokenSource? _activePreparation;
     private bool _disposed;
@@ -31,11 +34,13 @@ internal sealed class EditorContentPreparationService : IDisposable
         IEditorLayoutStore layouts,
         EditorFieldValueRouter fieldValues,
         ComponentClassFieldValueService componentFields,
+        EditorDictionaryFieldServices dictionaryFields,
         EditorOperationCoordinator operations)
     {
         _layouts = layouts;
         _fieldValues = fieldValues;
         _componentFields = componentFields;
+        _dictionaryFields = dictionaryFields;
         _operations = operations;
     }
 
@@ -43,6 +48,8 @@ internal sealed class EditorContentPreparationService : IDisposable
         ProjectTreeNode layoutNode,
         ProjectTreeNode dataNode)
     {
+        var selectedThemeId =
+            _dictionaryFields.CaptureSelectedThemeId();
         var cancellationToken = BeginPreparation();
         return _operations.ExecuteAsync(
             () =>
@@ -58,7 +65,13 @@ internal sealed class EditorContentPreparationService : IDisposable
                         card,
                         allFields))
                     .ToList();
-                return new EditorPreparedRootContent(cards);
+                return new EditorPreparedRootContent(
+                    cards,
+                    _dictionaryFields.PrepareContext(
+                        dataNode,
+                        selectedThemeId,
+                        allFields,
+                        cancellationToken));
             },
             cancellationToken);
     }
@@ -66,6 +79,8 @@ internal sealed class EditorContentPreparationService : IDisposable
     public Task<EditorPreparedEmbeddedContent> PrepareEmbeddedAsync(
         EditorEmbeddedContext context)
     {
+        var selectedThemeId =
+            _dictionaryFields.CaptureSelectedThemeId();
         var cancellationToken = BeginPreparation();
         return _operations.ExecuteAsync(
             () =>
@@ -103,7 +118,16 @@ internal sealed class EditorContentPreparationService : IDisposable
                     .ToList();
                 return new EditorPreparedEmbeddedContent(
                     ownerCard,
-                    cards);
+                    cards,
+                    _dictionaryFields.PrepareContext(
+                        context.OwnerNode,
+                        selectedThemeId,
+                        ownerCard is null
+                            ? embeddedFields
+                            : MergeFields(
+                                ownerCard.Fields,
+                                embeddedFields),
+                        cancellationToken));
             },
             cancellationToken);
     }
@@ -177,6 +201,20 @@ internal sealed class EditorContentPreparationService : IDisposable
             .Where((card) => card.Visible)
             .OrderBy((card) => card.Order)
             .ThenBy((card) => card.Label);
+
+    private static IReadOnlyDictionary<string, FieldValue> MergeFields(
+        IReadOnlyDictionary<string, FieldValue> first,
+        IReadOnlyDictionary<string, FieldValue> second)
+    {
+        var fields = new Dictionary<string, FieldValue>(
+            first,
+            StringComparer.Ordinal);
+        foreach (var (fieldId, field) in second)
+        {
+            fields[fieldId] = field;
+        }
+        return fields;
+    }
 
     private static IEnumerable<string> AllFieldIds(
         EditorLayoutCard card) =>

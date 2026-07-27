@@ -71,6 +71,7 @@ internal sealed class EditorLayoutCardFactory
         ProjectTreeNode node,
         EditorLayoutCard layoutCard,
         string editorStateKey,
+        EditorDictionaryContextSnapshot dictionaryContext,
         IReadOnlyDictionary<string, FieldValue> preparedFields)
     {
         var body = new StackPanel
@@ -100,6 +101,7 @@ internal sealed class EditorLayoutCardFactory
                 var control = CreateDirectFieldControl(
                     node,
                     preparedFields[layoutField.Id],
+                    dictionaryContext,
                     preparedFields);
                 controls.Add(control);
                 groupControls.Add(control);
@@ -163,6 +165,7 @@ internal sealed class EditorLayoutCardFactory
     public InstantEditorCard CreateEmbedded(
         EditorEmbeddedContext context,
         EditorLayoutCard layoutCard,
+        EditorDictionaryContextSnapshot dictionaryContext,
         IReadOnlyDictionary<string, FieldValue> preparedFields)
     {
         var body = new StackPanel
@@ -192,6 +195,7 @@ internal sealed class EditorLayoutCardFactory
                 var control = CreateEmbeddedFieldControl(
                     context,
                     preparedFields[layoutField.Id],
+                    dictionaryContext,
                     preparedFields);
                 controls.Add(control);
                 groupControls.Add(control);
@@ -255,6 +259,7 @@ internal sealed class EditorLayoutCardFactory
     internal DictionaryFieldControl CreateDirectFieldControl(
         ProjectTreeNode node,
         FieldValue field,
+        EditorDictionaryContextSnapshot dictionaryContext,
         IReadOnlyDictionary<string, FieldValue> preparedFields)
     {
         var supportsEmbeddedOverrides = node.Kind is ProjectTreeNodeKind.ComponentClass
@@ -262,8 +267,9 @@ internal sealed class EditorLayoutCardFactory
             or ProjectTreeNodeKind.Module
             or ProjectTreeNodeKind.ModuleVariant;
         var hasEmbeddedSlot = EmbeddedComponentSlotCatalog.TryGet(field.Definition.Id, out _);
-        var services = _dictionaryFieldServices.ForNode(
+        var services = _dictionaryFieldServices.ForPreparedNode(
             node,
+            dictionaryContext,
             (id) => _activeFieldControls.ValueOrStored(
                 id,
                 (storedId) => PreparedStoredValue(
@@ -305,10 +311,12 @@ internal sealed class EditorLayoutCardFactory
     internal DictionaryFieldControl CreateEmbeddedFieldControl(
         EditorEmbeddedContext context,
         FieldValue field,
+        EditorDictionaryContextSnapshot dictionaryContext,
         IReadOnlyDictionary<string, FieldValue> preparedFields)
     {
-        var services = _dictionaryFieldServices.ForNode(
+        var services = _dictionaryFieldServices.ForPreparedNode(
             context.OwnerNode,
+            dictionaryContext,
             (id) => _activeFieldControls.ValueOrStored(
                 id,
                 (storedId) => PreparedStoredValue(

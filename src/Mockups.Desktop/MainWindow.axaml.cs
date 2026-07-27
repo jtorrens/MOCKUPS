@@ -183,6 +183,7 @@ public partial class MainWindow : SukiWindow
             data.ProjectPaths,
             _pathBrowser,
             _domainDialogs,
+            application.Operations,
             () => _previewController.SelectedThemeId,
             _previewController.SetDesignPreviewTestValue);
         _embeddedEditors = new EditorEmbeddedEditorController(ShowEmbeddedContext, _messages);
@@ -282,6 +283,7 @@ public partial class MainWindow : SukiWindow
                 data.Layouts,
                 _fieldValues,
                 _componentClassFieldValues,
+                _dictionaryFieldServices,
                 application.Operations),
             EditorCardsPanel,
             () => Math.Max(1, EditorScrollViewer.Bounds.Width - EditorScrollViewer.Padding.Left - EditorScrollViewer.Padding.Right),

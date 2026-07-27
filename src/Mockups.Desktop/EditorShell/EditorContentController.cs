@@ -102,6 +102,7 @@ internal sealed class EditorContentController : IDisposable
                 dataNode,
                 card.Layout,
                 layoutNode.RecordClassId,
+                prepared.DictionaryContext,
                 card.Fields))
             .Concat(_collectionCards.Create(dataNode))
             .ToList();
@@ -127,6 +128,7 @@ internal sealed class EditorContentController : IDisposable
                 context.OwnerNode,
                 ownerCard.Layout,
                 ownerLayoutRecordClassId,
+                prepared.DictionaryContext,
                 ownerCard.Fields));
         }
 
@@ -135,6 +137,7 @@ internal sealed class EditorContentController : IDisposable
             cards.Add(_layoutCards.CreateEmbedded(
                 context,
                 card.Layout,
+                prepared.DictionaryContext,
                 card.Fields));
         }
         _cardHost.Replace(cards);

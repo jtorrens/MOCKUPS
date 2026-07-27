@@ -64,6 +64,22 @@ internal sealed class DictionaryFieldContextDataSource
         return icon is null ? null : _database.ResolveIconThemeAssetPath(iconThemeId, icon.File);
     }
 
+    public IReadOnlyDictionary<string, string?> IconTokenAssetPaths(
+        string iconThemeId)
+    {
+        if (string.IsNullOrWhiteSpace(iconThemeId))
+        {
+            return new Dictionary<string, string?>(StringComparer.Ordinal);
+        }
+        return _database.GetIconThemeTokens(iconThemeId)
+            .ToDictionary(
+                (icon) => icon.Token,
+                (icon) => (string?)_database.ResolveIconThemeAssetPath(
+                    iconThemeId,
+                    icon.File),
+                StringComparer.Ordinal);
+    }
+
     public IReadOnlyList<FieldOption> PaletteColorOptions(string projectId)
     {
         return _database.GetPaletteColorOptions(projectId);

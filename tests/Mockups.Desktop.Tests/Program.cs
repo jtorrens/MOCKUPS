@@ -3288,6 +3288,7 @@ static void VisualPersistenceWritersRequireOperationCoordination()
                  typeof(EditorFieldCommitCoordinator),
                  typeof(EditorVariantHistoryService),
                  typeof(EditorContentPreparationService),
+                 typeof(EditorDictionaryFieldServices),
                  typeof(EditorAddChildWorkflow),
                  typeof(EditorNodeCommandController),
                  typeof(EditorDomainDialogService),
@@ -3451,6 +3452,9 @@ static void EditorVisualCardsRequirePreparedFieldSnapshots()
             parameter.ParameterType == typeof(FieldValue)));
         True(methods[0].GetParameters().Any((parameter) =>
             parameter.ParameterType == preparedFieldType));
+        True(methods[0].GetParameters().Any((parameter) =>
+            parameter.ParameterType
+            == typeof(EditorDictionaryContextSnapshot)));
         True(!methods[0].GetParameters().Any((parameter) =>
             parameter.Name?.Equals(
                 "fieldId",
@@ -3465,6 +3469,18 @@ static void EditorVisualCardsRequirePreparedFieldSnapshots()
         .SelectMany((constructor) => constructor.GetParameters())
         .Any((parameter) =>
             parameter.ParameterType == typeof(IEditorLayoutStore)));
+
+    var preparedServices = typeof(EditorDictionaryFieldServices)
+        .GetMethod(
+            "ForPreparedNode",
+            BindingFlags.Instance
+            | BindingFlags.Public
+            | BindingFlags.NonPublic)
+        ?? throw new InvalidOperationException(
+            "Missing prepared dictionary-context boundary.");
+    True(preparedServices.GetParameters().Any((parameter) =>
+        parameter.ParameterType
+        == typeof(EditorDictionaryContextSnapshot)));
 }
 
 static void RapidVisualSelectionCommitsLatestPreparedEditor()
@@ -4666,6 +4682,26 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
             Check(
                 selected.Id.EndsWith("::variant::default", StringComparison.Ordinal),
                 $"Chat List selection resolved to unexpected Variant '{selected.Id}'.");
+            var editorContent = typeof(MainWindow)
+                .GetField(
+                    "_editorContent",
+                    BindingFlags.Instance
+                    | BindingFlags.NonPublic)
+                ?.GetValue(window) as EditorContentController
+                ?? throw new InvalidOperationException(
+                    "Missing prepared editor content owner.");
+            Check(
+                SpinWait.SpinUntil(
+                    () =>
+                    {
+                        Dispatcher.UIThread.RunJobs();
+                        return editorContent.CommittedOwnerId.Equals(
+                            selected.Id,
+                            StringComparison.Ordinal);
+                    },
+                    TimeSpan.FromSeconds(10)),
+                "Chat List editor preparation did not commit its selected owner. "
+                + Required(window.FindControl<TextBox>("ShellMessagesTextBox")).Text);
 
             var database = new SqliteProjectTestContext(temporary);
             var fieldValues = new RecordClassFieldValueService(

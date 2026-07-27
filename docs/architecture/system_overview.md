@@ -162,12 +162,17 @@ being painted. Usage, ordered Screens and Icon Tokens load an immutable
 snapshot through the coordinator on first expansion, render controls only
 after completion and cancel detached cards.
 Root and embedded editor content follows the same separation before its first
-paint. `EditorContentPreparationService` loads the editor layout and resolves
-every field value on the operation coordinator's worker. The visual card
-factory accepts only that prepared field snapshot; it cannot initiate the
-layout or field-value read while constructing Avalonia controls. A newer
-selection cancels the prior preparation, and `MainWindow` commits the prepared
-cards only while the exact workspace revision and owner remain current.
+paint. `EditorContentPreparationService` loads the editor layout, resolves
+every field value and closes the declared dictionary-context dependencies on
+the operation coordinator's worker. That context contains only the capabilities
+demanded by those fields: theme and icon data, resource options and the active
+nested Runtime contracts. The visual card factory accepts only the prepared
+field and dictionary snapshots; it cannot initiate those reads while
+constructing Avalonia controls. A newer selection cancels the prior
+preparation, and `MainWindow` commits the prepared cards only while the exact
+workspace revision and owner remain current. Opening Overrides for a newly
+selected alternative Variant performs its missing selection read through the
+same operation boundary before opening the embedded editor.
 
 `Mockups.Application.PersistencePorts` owns the synchronous persistence-facing
 port contracts. It references Application models and Domain value objects but

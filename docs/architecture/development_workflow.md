@@ -262,11 +262,13 @@ Collapsed cards whose content depends on persistence use the shared deferred
 card loader. Their first expansion owns one cancellable snapshot read; later
 collapse/expand cycles reuse that snapshot until the editor is rebuilt.
 Initial root and embedded editor construction also starts with a cancellable
-prepared snapshot. Layout and field-value reads execute on the session
-operation worker. Avalonia controls are created only after the result returns
-to the visual context and only if the selection revision is still current.
-Rapid selection therefore cannot publish the cards prepared for an older
-record.
+prepared snapshot. Layout, field-value and declared dictionary-context reads
+execute on the session operation worker. The context closes nested Runtime
+dependencies from exact field declarations and active references; it does not
+eagerly resolve every available Component Variant. Avalonia controls are
+created only after the result returns to the visual context and only if the
+selection revision is still current. Rapid selection therefore cannot publish
+the cards prepared for an older record.
 
 The visual editor is a single-instance workstation application. The Host owns
 the operating-system lease. A second launch exits before constructing Avalonia,
