@@ -152,6 +152,9 @@ mutations, Runtime Input scalar and collection mutations, Module Instance
 animation writes, Design Preview default promotion and Icon Theme refresh,
 generation, replacement and deletion. Mutable Runtime documents are copied
 before submission so queued work observes the exact authored snapshot.
+Theme navigation notes and Production Font file counts needed after a field
+commit are also read on that worker; only the prepared text and visual refresh
+effects return to the UI context.
 On-demand Theme Token and Icon Token dialog reads use the same boundary.
 Search and selection filter immutable in-memory snapshots; cancellable Icon
 SVG batches discard results from an obsolete dialog revision.

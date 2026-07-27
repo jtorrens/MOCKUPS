@@ -1,12 +1,14 @@
 using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class EditorFieldPostCommitEffects
 {
     private readonly EditorPresentationContextDataSource _contextData;
+    private readonly EditorOperationCoordinator _operations;
     private readonly Func<string?> _selectedPreviewDeviceId;
     private readonly Action<string> _setEditorTitle;
     private readonly Action _rebuildNavigation;
@@ -16,6 +18,7 @@ internal sealed class EditorFieldPostCommitEffects
 
     public EditorFieldPostCommitEffects(
         IEditorPresentationContextRepository database,
+        EditorOperationCoordinator operations,
         Func<string?> selectedPreviewDeviceId,
         Action<string> setEditorTitle,
         Action rebuildNavigation,
@@ -24,6 +27,7 @@ internal sealed class EditorFieldPostCommitEffects
         Action refreshProductionNavigation)
     {
         _contextData = new EditorPresentationContextDataSource(database);
+        _operations = operations;
         _selectedPreviewDeviceId = selectedPreviewDeviceId;
         _setEditorTitle = setEditorTitle;
         _rebuildNavigation = rebuildNavigation;
@@ -32,7 +36,31 @@ internal sealed class EditorFieldPostCommitEffects
         _refreshProductionNavigation = refreshProductionNavigation;
     }
 
-    public void Apply(ProjectTreeNode node, string fieldId, string value)
+    public async Task ApplyAsync(
+        ProjectTreeNode node,
+        string fieldId,
+        string value)
+    {
+        var prepared = RequiresPersistenceRead(
+            node,
+            fieldId)
+            ? await _operations.ExecuteAsync(
+                () => Prepare(
+                    node,
+                    fieldId))
+            : EditorPostCommitReadSnapshot.Empty;
+        ApplyVisual(
+            node,
+            fieldId,
+            value,
+            prepared);
+    }
+
+    private void ApplyVisual(
+        ProjectTreeNode node,
+        string fieldId,
+        string value,
+        EditorPostCommitReadSnapshot prepared)
     {
         if (fieldId == "core.name")
         {
@@ -82,7 +110,9 @@ internal sealed class EditorFieldPostCommitEffects
         if (node.Kind == ProjectTreeNodeKind.Theme &&
             fieldId is "theme.family" or "theme.iconThemeId" or "theme.statusBarId" or "theme.navigationBarId")
         {
-            var settings = _contextData.ThemeNavigation(node.Id);
+            var settings = prepared.Theme
+                ?? throw new InvalidOperationException(
+                    "Theme post-commit context was not prepared.");
             var linkedCount = new[] { settings.IconThemeId, settings.StatusBarId, settings.NavigationBarId }
                 .Count((id) => !string.IsNullOrWhiteSpace(id));
             node.Notes = $"{settings.Family} · {linkedCount}/3 refs";
@@ -92,14 +122,57 @@ internal sealed class EditorFieldPostCommitEffects
 
         if (node.Kind == ProjectTreeNodeKind.ProductionFont && fieldId == "font.category")
         {
-            var fileCount = _contextData
-                .ProductionFontFiles(node.Id)
-                .Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries)
-                .Length;
-            node.Notes = $"{value} · {fileCount} files";
+            node.Notes =
+                $"{value} · {prepared.ProductionFontFileCount} files";
             _rebuildNavigation();
             return;
         }
 
+    }
+
+    private EditorPostCommitReadSnapshot Prepare(
+        ProjectTreeNode node,
+        string fieldId)
+    {
+        if (node.Kind == ProjectTreeNodeKind.Theme)
+        {
+            return new EditorPostCommitReadSnapshot(
+                _contextData.ThemeNavigation(node.Id),
+                0);
+        }
+        if (node.Kind == ProjectTreeNodeKind.ProductionFont
+            && fieldId == "font.category")
+        {
+            var fileCount = _contextData
+                .ProductionFontFiles(node.Id)
+                .Split(
+                    Environment.NewLine,
+                    StringSplitOptions.RemoveEmptyEntries)
+                .Length;
+            return new EditorPostCommitReadSnapshot(
+                null,
+                fileCount);
+        }
+        return EditorPostCommitReadSnapshot.Empty;
+    }
+
+    private static bool RequiresPersistenceRead(
+        ProjectTreeNode node,
+        string fieldId) =>
+        node.Kind == ProjectTreeNodeKind.Theme
+            && fieldId is
+                "theme.family"
+                or "theme.iconThemeId"
+                or "theme.statusBarId"
+                or "theme.navigationBarId"
+        || node.Kind == ProjectTreeNodeKind.ProductionFont
+            && fieldId == "font.category";
+
+    private sealed record EditorPostCommitReadSnapshot(
+        EditorThemeNavigationSource? Theme,
+        int ProductionFontFileCount)
+    {
+        public static EditorPostCommitReadSnapshot Empty { get; } =
+            new(null, 0);
     }
 }

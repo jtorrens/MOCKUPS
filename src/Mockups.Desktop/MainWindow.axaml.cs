@@ -153,6 +153,7 @@ public partial class MainWindow : SukiWindow
         _previewController.PlaybackState.Changed += RefreshPreviewNavigationState;
         _fieldPostCommitEffects = new EditorFieldPostCommitEffects(
             data.Presentation,
+            application.Operations,
             () => _previewController.SelectedDeviceId,
             SetEditorRootTitle,
             RebuildNavigationCards,

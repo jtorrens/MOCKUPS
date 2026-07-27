@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -80,7 +81,7 @@ internal sealed class EditorFieldValueRouter
         }
     }
 
-    public void ApplyPostCommitEffects(
+    public Task ApplyPostCommitEffectsAsync(
         ProjectTreeNode node,
         string fieldId,
         string value)
@@ -88,7 +89,11 @@ internal sealed class EditorFieldValueRouter
         if (_recordClassFields.CanHandle(node.Kind, fieldId)
             || _coreFields.CanHandle(fieldId))
         {
-            _postCommitEffects.Apply(node, fieldId, value);
+            return _postCommitEffects.ApplyAsync(
+                node,
+                fieldId,
+                value);
         }
+        return Task.CompletedTask;
     }
 }

@@ -278,6 +278,8 @@ The boundary preserves submission order, performs the database work on a
 controlled worker and is canceled during window shutdown. Repositories remain
 synchronous transaction owners; they do not capture Avalonia controls or
 dispatch UI effects.
+Presentation reads required after Theme or Production Font commits also cross
+that boundary; repository values are never requested by the visual callback.
 
 The context also creates one immutable `IProjectPathResolver` from its database
 location. That resolver travels explicitly with the desktop session and is the

@@ -139,6 +139,7 @@ var tests = new (string Name, Action Run)[]
     ("SQLite contexts retain independent Project roots", SqliteContextsRetainIndependentProjectRoots),
     ("SQLite session exposes distinct focused application ports", SqliteSessionExposesDistinctFocusedPorts),
     ("visual persistence writers require operation coordination", VisualPersistenceWritersRequireOperationCoordination),
+    ("post-commit presentation reads run through operation coordination", PostCommitPresentationReadsUseOperationCoordination),
     ("Variant history reads persistence through the operation boundary", VariantHistoryReadsThroughOperationBoundary),
     ("collapsed editor cards defer their snapshot until expansion", CollapsedEditorCardsDeferSnapshots),
     ("editor visual cards require prepared field snapshots", EditorVisualCardsRequirePreparedFieldSnapshots),
@@ -3286,6 +3287,7 @@ static void VisualPersistenceWritersRequireOperationCoordination()
     foreach (var writerType in new[]
              {
                  typeof(EditorFieldCommitCoordinator),
+                 typeof(EditorFieldPostCommitEffects),
                  typeof(EditorVariantHistoryService),
                  typeof(EditorContentPreparationService),
                  typeof(EditorDictionaryFieldServices),
@@ -3336,6 +3338,7 @@ static void VisualPersistenceWritersRequireOperationCoordination()
                  (typeof(RuntimeInputInstanceDocumentStore), "SaveAnimationJsonAsync"),
                  (typeof(RuntimeInputOwnerDocumentStore), "SaveDesignPreviewJsonAsync"),
                  (typeof(ModuleInstanceAnimationDocumentStore), "SaveAnimationJsonAsync"),
+                 (typeof(EditorFieldPostCommitEffects), "ApplyAsync"),
              })
     {
         var method = writerType.GetMethod(
@@ -3346,6 +3349,55 @@ static void VisualPersistenceWritersRequireOperationCoordination()
         True(method is not null);
         True(typeof(Task).IsAssignableFrom(method!.ReturnType));
     }
+}
+
+static void PostCommitPresentationReadsUseOperationCoordination()
+{
+    var repository =
+        new RecordingPresentationContextRepository();
+    using var operations = new EditorOperationCoordinator();
+    var navigationRefreshes = 0;
+    var effects = new EditorFieldPostCommitEffects(
+        repository,
+        operations,
+        () => null,
+        (_) => { },
+        () => navigationRefreshes++,
+        () => { },
+        () => { },
+        () => { });
+    var callerThread = Environment.CurrentManagedThreadId;
+    var theme = new ProjectTreeNode(
+        ProjectTreeNodeKind.Theme,
+        "theme_test",
+        "Theme",
+        "",
+        "theme");
+    effects.ApplyAsync(
+            theme,
+            "theme.family",
+            "Editorial")
+        .GetAwaiter()
+        .GetResult();
+    Equal("Editorial · 2/3 refs", theme.Notes);
+
+    var font = new ProjectTreeNode(
+        ProjectTreeNodeKind.ProductionFont,
+        "font_test",
+        "Font",
+        "",
+        "productionFont");
+    effects.ApplyAsync(
+            font,
+            "font.category",
+            "Display")
+        .GetAwaiter()
+        .GetResult();
+    Equal("Display · 2 files", font.Notes);
+    Equal(2, navigationRefreshes);
+    True(repository.ReadThreadIds.Count == 2);
+    True(repository.ReadThreadIds.All((threadId) =>
+        threadId != callerThread));
 }
 
 static void VariantHistoryReadsThroughOperationBoundary()
@@ -12885,6 +12937,40 @@ internal sealed class RecordingMessageSink : IEditorShellMessageSink
     public void Error(string area, Exception exception) { }
 
     public void Error(string area, string message) { }
+}
+
+internal sealed class RecordingPresentationContextRepository :
+    IEditorPresentationContextRepository
+{
+    public List<int> ReadThreadIds { get; } = [];
+
+    public ProjectSettings GetProjectSettings(string projectId) =>
+        throw new InvalidOperationException(
+            "Project settings are not part of this test.");
+
+    public ThemeSettings GetThemeSettings(string themeId)
+    {
+        ReadThreadIds.Add(
+            Environment.CurrentManagedThreadId);
+        return new ThemeSettings(
+            "project",
+            "Theme",
+            "Editorial",
+            "icons",
+            "status",
+            "",
+            "{}",
+            "{}");
+    }
+
+    public string GetProductionFontFieldValue(
+        string fontId,
+        string fieldId)
+    {
+        ReadThreadIds.Add(
+            Environment.CurrentManagedThreadId);
+        return "regular.ttf\nbold.ttf";
+    }
 }
 
 internal sealed class RecordingVariantHistoryStore : IVariantHistoryStore

@@ -41,7 +41,8 @@ It includes:
   database context;
 - UI-independent editor-operation coordination, covering worker execution,
   submission ordering and cancellation of queued work at session disposal,
-  plus compiled constructor enforcement for every visual persistence writer;
+  plus compiled constructor enforcement for every visual persistence writer
+  and post-commit presentation reader;
 - prepared root and embedded editor content, including compiled operation
   coordination, field and dictionary snapshot-only visual card construction
   and a headless rapid selection test proving that only the latest owner

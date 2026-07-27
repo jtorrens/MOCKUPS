@@ -253,6 +253,8 @@ work remains synchronous behind that boundary, while control updates,
 navigation and error presentation resume on the visual context only after
 completion. Runtime collection actions expose task-returning callbacks, so a
 visual action cannot report completion before its queued document write.
+Post-commit Theme and Production Font presentation reads use that same
+boundary before navigation notes are refreshed.
 Token pickers load their persistence snapshot before visual filtering.
 Potentially expensive Icon SVG preview batches are cancellable and revisioned;
 text and selection callbacks never open SQLite themselves.

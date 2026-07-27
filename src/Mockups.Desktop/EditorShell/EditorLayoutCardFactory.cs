@@ -291,7 +291,7 @@ internal sealed class EditorLayoutCardFactory
                     (draftValue) => _fieldValues.ToStorageValue(node, field.Definition.Id, draftValue),
                     () => _fieldValues.CurrentStoredValue(node, field.Definition.Id),
                     (storedValue) => _fieldValues.Persist(node, field.Definition.Id, storedValue));
-                _fieldValues.ApplyPostCommitEffects(
+                await _fieldValues.ApplyPostCommitEffectsAsync(
                     node,
                     field.Definition.Id,
                     control.Value);
