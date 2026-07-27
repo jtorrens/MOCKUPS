@@ -26,6 +26,9 @@ internal sealed class EditorHeaderController
     private readonly Func<ProjectTreeNode, Task> _saveVariant;
     private readonly Func<ProjectTreeNode, IReadOnlyList<EditorVariantHistorySnapshot>> _variantHistory;
     private readonly Func<ProjectTreeNode, EditorVariantHistorySnapshot, Task> _restoreVariantSnapshot;
+    private readonly Func<EditorDesignNavigationAvailability>
+        _designNavigationAvailability;
+    private readonly Action<int> _navigateDesignHistory;
     private readonly EditorActiveFieldControls _activeFieldControls;
     private EditorPreparedHeader? _prepared;
 
@@ -43,6 +46,9 @@ internal sealed class EditorHeaderController
         Func<ProjectTreeNode, Task> saveVariant,
         Func<ProjectTreeNode, IReadOnlyList<EditorVariantHistorySnapshot>> variantHistory,
         Func<ProjectTreeNode, EditorVariantHistorySnapshot, Task> restoreVariantSnapshot,
+        Func<EditorDesignNavigationAvailability>
+            designNavigationAvailability,
+        Action<int> navigateDesignHistory,
         EditorActiveFieldControls activeFieldControls)
     {
         _breadcrumbPanel = breadcrumbPanel;
@@ -58,6 +64,10 @@ internal sealed class EditorHeaderController
         _saveVariant = saveVariant;
         _variantHistory = variantHistory;
         _restoreVariantSnapshot = restoreVariantSnapshot;
+        _designNavigationAvailability =
+            designNavigationAvailability;
+        _navigateDesignHistory =
+            navigateDesignHistory;
         _activeFieldControls = activeFieldControls;
     }
 
@@ -190,7 +200,8 @@ internal sealed class EditorHeaderController
             context.RuntimeSource is not null
                 ? null
                 : EditorStructureButton.Create(async () => await _embeddedUsageNavigator.ShowForEmbedded(context.OwnerNode, context.Slot)));
-        SetHeaderActions(null);
+        SetHeaderActions(
+            CreateDesignNavigationButtons());
         SetContextStrip(
             ContextMetadataForEmbedded(
                 context,
@@ -344,6 +355,7 @@ internal sealed class EditorHeaderController
                 {
                     CreateHistoryComboBox(moduleVariant),
                     CreateNewVariantButton(moduleVariant),
+                    CreateDesignNavigationButtons(),
                 },
             };
         }
@@ -370,8 +382,68 @@ internal sealed class EditorHeaderController
             {
                 CreateHistoryComboBox(variantSourceNode),
                 CreateNewVariantButton(variantSourceNode),
+                CreateDesignNavigationButtons(),
             },
         };
+    }
+
+    private Control CreateDesignNavigationButtons()
+    {
+        var availability =
+            _designNavigationAvailability();
+        return new StackPanel
+        {
+            Orientation =
+                Orientation.Horizontal,
+            Spacing = 2,
+            Children =
+            {
+                CreateDesignNavigationButton(
+                    EditorIcons.Back,
+                    "Back",
+                    availability.CanGoBack,
+                    -1),
+                CreateDesignNavigationButton(
+                    EditorIcons.Forward,
+                    "Forward",
+                    availability.CanGoForward,
+                    1),
+            },
+        };
+    }
+
+    private Button CreateDesignNavigationButton(
+        string icon,
+        string label,
+        bool isEnabled,
+        int direction)
+    {
+        var button = new Button
+        {
+            Content = EditorIcons.Create(
+                icon,
+                15),
+            Width = 34,
+            Height = 34,
+            Padding = new Thickness(0),
+            Background = Brushes.Transparent,
+            BorderBrush = Brushes.Transparent,
+            IsEnabled = isEnabled,
+            Opacity = isEnabled ? 1 : 0.38,
+            VerticalAlignment =
+                VerticalAlignment.Center,
+        };
+        ToolTip.SetTip(
+            button,
+            isEnabled
+                ? $"{label} in Design editor history"
+                : $"No {label.ToLowerInvariant()} Design editor history");
+        EditorAccessibility.Describe(
+            button,
+            $"{label} in Design editor history");
+        button.Click += (_, _) =>
+            _navigateDesignHistory(direction);
+        return button;
     }
 
     private Control CreateHistoryComboBox(ProjectTreeNode node)

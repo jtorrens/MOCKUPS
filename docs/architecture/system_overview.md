@@ -373,8 +373,12 @@ crosses domains.
 
 `EditorWorkspaceCoordinator` is the single owner of the loaded tree, current
 workspace, active Production, selected node, embedded editor context, remembered
-workspace and Variant selections, Preview transition revision and obsolete
-tree-load cancellation. A reload first produces an uncommitted tree candidate.
+workspace and Variant selections, session-only Design editor back/forward
+history, Preview transition revision and obsolete tree-load cancellation.
+Design history records exact Component or Module selections and their embedded
+context. It restores through coordinator transitions, skips deleted owners and
+discards its forward branch after a new navigation; it is never persisted.
+A reload first produces an uncommitted tree candidate.
 The Desktop transition owner prepares the matching visual context and complete
 Production Preview catalog against that candidate, then commits both snapshots
 without an asynchronous gap before selection is rendered. Failure,

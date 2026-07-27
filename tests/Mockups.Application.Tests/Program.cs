@@ -12,6 +12,10 @@ var tests = new (string Name, Action Run)[]
     ("typed reference navigation changes workspace and exact Production", ReferenceNavigationChangesWorkspace),
     ("invalid node selection leaves the session unchanged", InvalidSelectionIsRejected),
     ("active editor refresh rebases embedded context to the new tree", ActiveEditorRefreshRebasesEmbeddedContext),
+    ("Design navigation history restores exact visited owners", DesignNavigationHistoryRestoresVisitedOwners),
+    ("Design navigation history unwinds embedded breadcrumbs", DesignNavigationHistoryUnwindsEmbeddedBreadcrumbs),
+    ("new Design navigation truncates forward history", NewDesignNavigationTruncatesForwardHistory),
+    ("Design navigation history skips deleted owners", DesignNavigationHistorySkipsDeletedOwners),
     ("a newer tree load cancels and rejects the older result", NewerTreeLoadRejectsOlderResult),
     ("prepared tree data remains invisible until its dependent state can commit", PreparedTreeRemainsInvisibleUntilCommit),
     ("async tree reads run on a worker before committing immutable state", AsyncTreeReadRunsOnWorker),
@@ -507,6 +511,182 @@ static void ActiveEditorRefreshRebasesEmbeddedContext()
     Equal(coordinator.State.SelectedNode, refreshed.OwnerNode);
 }
 
+static void DesignNavigationHistoryRestoresVisitedOwners()
+{
+    var source =
+        new MutableNavigationDataSource(
+            CreateDesignHistoryTree());
+    using var coordinator =
+        new EditorWorkspaceCoordinator(source);
+    coordinator.ReloadTree();
+
+    Equal(
+        "component-a::variant::default",
+        coordinator.State.SelectedNode?.Id);
+    True(coordinator.TrySelectNodeById(
+        "component-icon-row::variant::default",
+        "icon-row",
+        out _));
+    True(coordinator.TrySelectNodeById(
+        "component-button::variant::default",
+        "button",
+        out _));
+    Equal(
+        new EditorDesignNavigationAvailability(
+            CanGoBack: true,
+            CanGoForward: false),
+        coordinator.DesignNavigationAvailability);
+
+    True(coordinator.TryNavigateDesignHistory(
+        -1,
+        out var iconRow));
+    Equal(
+        "component-icon-row::variant::default",
+        iconRow.Current.SelectedNode?.Id);
+    True(coordinator.TryNavigateDesignHistory(
+        -1,
+        out var textBox));
+    Equal(
+        "component-a::variant::default",
+        textBox.Current.SelectedNode?.Id);
+    True(coordinator.TryNavigateDesignHistory(
+        1,
+        out var forward));
+    Equal(
+        "component-icon-row::variant::default",
+        forward.Current.SelectedNode?.Id);
+}
+
+static void DesignNavigationHistoryUnwindsEmbeddedBreadcrumbs()
+{
+    var source =
+        new MutableNavigationDataSource(
+            CreateDesignHistoryTree());
+    using var coordinator =
+        new EditorWorkspaceCoordinator(source);
+    coordinator.ReloadTree();
+    var owner = Required(
+        coordinator.State.SelectedNode);
+    var leftIconRow =
+        new EmbeddedComponentSlotDefinition(
+            "component.textBox.leftIconRow.editor",
+            "iconRow",
+            "Left icon row",
+            "component.iconRow",
+            ["textBox", "leftIconRowSlot"]);
+    var button =
+        new EmbeddedComponentSlotDefinition(
+            "component.iconRow.button.editor",
+            "button",
+            "Button",
+            "component.button",
+            ["iconRow", "buttonSlot"]);
+    var iconRowContext =
+        new EditorEmbeddedContext(
+            owner,
+            [leftIconRow]);
+    coordinator.ShowEmbeddedEditor(
+        iconRowContext);
+    coordinator.ShowEmbeddedEditor(
+        iconRowContext.Nested(button));
+    True(coordinator.TrySelectNodeById(
+        "component-button::variant::default",
+        "button-class",
+        out _));
+
+    True(coordinator.TryNavigateDesignHistory(
+        -1,
+        out var nested));
+    SequenceEqual(
+        [
+            leftIconRow.FieldId,
+            button.FieldId,
+        ],
+        Required(
+                nested.Current.EmbeddedEditor)
+            .Slots.Select(
+                (slot) => slot.FieldId));
+    True(coordinator.TryNavigateDesignHistory(
+        -1,
+        out var parent));
+    SequenceEqual(
+        [leftIconRow.FieldId],
+        Required(
+                parent.Current.EmbeddedEditor)
+            .Slots.Select(
+                (slot) => slot.FieldId));
+    True(coordinator.TryNavigateDesignHistory(
+        -1,
+        out var root));
+    True(root.Current.EmbeddedEditor is null);
+    Equal(
+        owner.Id,
+        root.Current.SelectedNode?.Id);
+}
+
+static void NewDesignNavigationTruncatesForwardHistory()
+{
+    var source =
+        new MutableNavigationDataSource(
+            CreateDesignHistoryTree());
+    using var coordinator =
+        new EditorWorkspaceCoordinator(source);
+    coordinator.ReloadTree();
+    True(coordinator.TrySelectNodeById(
+        "component-icon-row::variant::default",
+        "icon-row",
+        out _));
+    True(coordinator.TrySelectNodeById(
+        "component-button::variant::default",
+        "button",
+        out _));
+    True(coordinator.TryNavigateDesignHistory(
+        -1,
+        out _));
+    True(coordinator.TrySelectNodeById(
+        "component-a::variant::alternate",
+        "alternate",
+        out _));
+
+    Equal(
+        new EditorDesignNavigationAvailability(
+            CanGoBack: true,
+            CanGoForward: false),
+        coordinator.DesignNavigationAvailability);
+    True(!coordinator.TryNavigateDesignHistory(
+        1,
+        out _));
+}
+
+static void DesignNavigationHistorySkipsDeletedOwners()
+{
+    var source =
+        new MutableNavigationDataSource(
+            CreateDesignHistoryTree());
+    using var coordinator =
+        new EditorWorkspaceCoordinator(source);
+    coordinator.ReloadTree();
+    True(coordinator.TrySelectNodeById(
+        "component-icon-row::variant::default",
+        "icon-row",
+        out _));
+    True(coordinator.TrySelectNodeById(
+        "component-button::variant::default",
+        "button",
+        out _));
+
+    source.Tree =
+        CreateDesignHistoryTree(
+            includeIconRow: false);
+    coordinator.ReloadTree();
+    True(coordinator.TryNavigateDesignHistory(
+        -1,
+        out var transition));
+    Equal(
+        "component-a::variant::default",
+        transition.Current.SelectedNode?.Id);
+}
+
 static void NewerTreeLoadRejectsOlderResult()
 {
     var source = new MutableNavigationDataSource(CreateTree());
@@ -728,6 +908,52 @@ static IReadOnlyList<ProjectTreeNode> CreateTree(
     bool includeAlternateVariant = true) =>
     [CreateProject("project-a", includeAlternateVariant)];
 
+static IReadOnlyList<ProjectTreeNode>
+    CreateDesignHistoryTree(
+        bool includeIconRow = true)
+{
+    var project =
+        CreateProject("project-a");
+    var apps = project.Children.Single(
+        (node) =>
+            node.Kind
+            == ProjectTreeNodeKind.AppsRoot);
+    if (includeIconRow)
+    {
+        AddHistoryComponent(
+            apps,
+            "component-icon-row",
+            "Icon Row",
+            "component.iconRow");
+    }
+    AddHistoryComponent(
+        apps,
+        "component-button",
+        "Button",
+        "component.button");
+    return [project];
+}
+
+static void AddHistoryComponent(
+    ProjectTreeNode parent,
+    string id,
+    string name,
+    string recordClassId)
+{
+    var component = Node(
+        ProjectTreeNodeKind.ComponentClass,
+        id,
+        name,
+        recordClassId);
+    parent.AddChild(component);
+    component.AddChild(Node(
+        ProjectTreeNodeKind.ComponentVariant,
+        $"{id}::variant::default",
+        "Default",
+        "component.variant",
+        isProtected: true));
+}
+
 static ProjectTreeNode CreateProject(
     string id,
     bool includeAlternateVariant = true)
@@ -813,6 +1039,17 @@ static void Equal<T>(T expected, T actual)
     {
         throw new InvalidOperationException(
             $"Expected '{expected}', got '{actual}'.");
+    }
+}
+
+static void SequenceEqual<T>(
+    IEnumerable<T> expected,
+    IEnumerable<T> actual)
+{
+    if (!expected.SequenceEqual(actual))
+    {
+        throw new InvalidOperationException(
+            "Expected sequences to be equal.");
     }
 }
 

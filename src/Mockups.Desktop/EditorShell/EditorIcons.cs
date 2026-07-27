@@ -26,6 +26,8 @@ internal static class EditorIcons
     public const string Play = "play";
     public const string Pause = "pause";
     public const string Folder = "folder";
+    public const string Back = "back";
+    public const string Forward = "forward";
     public const string Left = "left";
     public const string Right = "right";
     public const string Up = "up";
@@ -324,6 +326,8 @@ internal static class EditorIcons
             Play => "components/Play.svg",
             Pause => "components/Pause.svg",
             Folder => "components/Folder.svg",
+            Back => "system_arrow_left.svg",
+            Forward => "system_arrow_right.svg",
             Left => "components/Move left.svg",
             Right => "components/Move right.svg",
             TimelinePreviousInstance => "components/Previous Screen.svg",
@@ -433,6 +437,8 @@ internal static class EditorIcons
             TimelineKeyframe => "M12 2L22 12L12 22L2 12Z",
             TimelineKeyframeEmpty => "M12 2L22 12L12 22L2 12Z M12 6L6 12L12 18L18 12Z",
             Folder => "M3 6H10L12 8H21V19H3Z M3 6V19",
+            Back => "M17 4L7 12L17 20L19 18L11 12L19 6Z",
+            Forward => "M7 4L17 12L7 20L5 18L13 12L5 6Z",
             Up => "M4 15L12 7L20 15L18 17L12 11L6 17Z",
             Down => "M4 9L6 7L12 13L18 7L20 9L12 17Z",
 

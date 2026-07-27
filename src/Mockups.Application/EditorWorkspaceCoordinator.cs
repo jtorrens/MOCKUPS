@@ -61,11 +61,15 @@ public sealed class EditorTreeLoadPreparation
 
 public sealed class EditorWorkspaceCoordinator : IDisposable
 {
+    private const int MaximumDesignNavigationEntries = 100;
     private readonly object _stateGate = new();
     private readonly IEditorNavigationDataSource _navigation;
     private readonly EditorNodeSelectionState _nodeSelection = new();
+    private readonly List<EditorDesignNavigationLocation>
+        _designNavigationHistory = [];
     private EditorSessionState _state = EditorSessionState.Empty;
     private EditorTreeLoadOperation? _activeTreeLoad;
+    private int _designNavigationIndex = -1;
     private long _nextTreeLoadId;
     private bool _disposed;
 
@@ -91,6 +95,20 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
             {
                 return !_disposed
                     && _activeTreeLoad is not null;
+            }
+        }
+    }
+
+    public EditorDesignNavigationAvailability
+        DesignNavigationAvailability
+    {
+        get
+        {
+            lock (_stateGate)
+            {
+                return new EditorDesignNavigationAvailability(
+                    CanNavigateDesignHistory(-1),
+                    CanNavigateDesignHistory(1));
             }
         }
     }
@@ -300,6 +318,8 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
                 _nodeSelection.Snapshot(),
                 Preview(operation.Workspace, selected, revision),
                 revision);
+            RecordDesignNavigation(
+                _state);
             var effects = EditorSessionEffects.Navigation
                 | EditorSessionEffects.Editor
                 | EditorSessionEffects.PreviewSelection
@@ -402,6 +422,8 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
                 _nodeSelection.Snapshot(),
                 Preview(previous.Workspace, selectable, revision),
                 revision);
+            RecordDesignNavigation(
+                _state);
             transition = new EditorSessionTransition(
                 source,
                 previous,
@@ -479,6 +501,8 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
                 _nodeSelection.Snapshot(),
                 Preview(workspace, selectable, revision),
                 revision);
+            RecordDesignNavigation(
+                _state);
             var effects = EditorSessionEffects.Navigation
                 | EditorSessionEffects.Editor
                 | EditorSessionEffects.PreviewSelection;
@@ -594,12 +618,100 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
                 _nodeSelection.Snapshot(),
                 Preview(previous.Workspace, owner, revision),
                 revision);
+            RecordDesignNavigation(
+                _state);
             return new EditorSessionTransition(
                 source,
                 previous,
                 _state,
                 EditorSessionEffects.Editor
                     | EditorSessionEffects.PreviewSelection);
+        }
+    }
+
+    public bool TryNavigateDesignHistory(
+        int direction,
+        out EditorSessionTransition transition)
+    {
+        if (direction is not (-1 or 1))
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(direction),
+                direction,
+                "Design navigation history accepts only -1 or 1.");
+        }
+
+        lock (_stateGate)
+        {
+            ThrowIfDisposed();
+            for (var candidateIndex =
+                     _designNavigationIndex + direction;
+                 candidateIndex >= 0
+                 && candidateIndex
+                    < _designNavigationHistory.Count;
+                 candidateIndex += direction)
+            {
+                var location =
+                    _designNavigationHistory[candidateIndex];
+                if (!TryResolveDesignNavigation(
+                        location,
+                        out var node,
+                        out var embedded))
+                {
+                    continue;
+                }
+
+                InvalidateActiveTreeLoad();
+                var previous = _state;
+                _nodeSelection.RememberVariantSelection(
+                    node);
+                var workspaceSelections =
+                    Copy(previous.WorkspaceSelections);
+                workspaceSelections[EditorWorkspace.Design] =
+                    node.Id;
+                var revision = previous.Revision + 1;
+                _state = new EditorSessionState(
+                    previous.TreeRoots,
+                    EditorWorkspace.Design,
+                    previous.ProductionId,
+                    node,
+                    embedded,
+                    workspaceSelections,
+                    _nodeSelection.Snapshot(),
+                    Preview(
+                        EditorWorkspace.Design,
+                        node,
+                        revision),
+                    revision);
+                _designNavigationHistory[candidateIndex] =
+                    DesignNavigationLocation(
+                        _state)!;
+                _designNavigationIndex = candidateIndex;
+                var effects =
+                    EditorSessionEffects.Navigation
+                    | EditorSessionEffects.Editor
+                    | EditorSessionEffects.PreviewSelection;
+                if (previous.Workspace
+                    != EditorWorkspace.Design)
+                {
+                    effects |=
+                        EditorSessionEffects.Workspace;
+                }
+                transition = new EditorSessionTransition(
+                    direction < 0
+                        ? "design-history-back"
+                        : "design-history-forward",
+                    previous,
+                    _state,
+                    effects);
+                return true;
+            }
+
+            transition = Unchanged(
+                direction < 0
+                    ? "design-history-back"
+                    : "design-history-forward");
+            return false;
         }
     }
 
@@ -812,6 +924,155 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
         long revision) =>
         new(workspace, selected?.Id, revision);
 
+    private void RecordDesignNavigation(
+        EditorSessionState state)
+    {
+        var location =
+            DesignNavigationLocation(
+                state);
+        if (location is null)
+        {
+            return;
+        }
+        if (_designNavigationIndex >= 0
+            && SameDesignNavigationLocation(
+                _designNavigationHistory[
+                    _designNavigationIndex],
+                location))
+        {
+            _designNavigationHistory[
+                _designNavigationIndex] =
+                location;
+            return;
+        }
+
+        if (_designNavigationIndex
+            < _designNavigationHistory.Count - 1)
+        {
+            _designNavigationHistory.RemoveRange(
+                _designNavigationIndex + 1,
+                _designNavigationHistory.Count
+                    - _designNavigationIndex - 1);
+        }
+        _designNavigationHistory.Add(
+            location);
+        _designNavigationIndex =
+            _designNavigationHistory.Count - 1;
+        if (_designNavigationHistory.Count
+            <= MaximumDesignNavigationEntries)
+        {
+            return;
+        }
+        _designNavigationHistory.RemoveAt(0);
+        _designNavigationIndex--;
+    }
+
+    private bool CanNavigateDesignHistory(
+        int direction)
+    {
+        for (var candidateIndex =
+                 _designNavigationIndex + direction;
+             candidateIndex >= 0
+             && candidateIndex
+                < _designNavigationHistory.Count;
+             candidateIndex += direction)
+        {
+            if (TryResolveDesignNavigation(
+                    _designNavigationHistory[
+                        candidateIndex],
+                    out _,
+                    out _))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private bool TryResolveDesignNavigation(
+        EditorDesignNavigationLocation location,
+        out ProjectTreeNode node,
+        out EditorEmbeddedContext? embedded)
+    {
+        var resolved =
+            EditorWorkspaceNavigation.FindNode(
+                _state.TreeRoots,
+                EditorWorkspace.Design,
+                location.NodeId);
+        if (resolved is null
+            || !EditorNodeSelectionState
+                .CanSelectTreeNode(resolved)
+            || !IsDesignNavigationOwner(resolved))
+        {
+            node = null!;
+            embedded = null;
+            return false;
+        }
+
+        node = resolved;
+        embedded = location.Embedded is null
+            ? null
+            : location.Embedded with
+            {
+                OwnerNode = resolved,
+            };
+        return embedded is null
+            || embedded.OwnerNode.Id.Equals(
+                node.Id,
+                StringComparison.Ordinal);
+    }
+
+    private static EditorDesignNavigationLocation?
+        DesignNavigationLocation(
+            EditorSessionState state)
+    {
+        return state is
+            {
+                Workspace: EditorWorkspace.Design,
+                SelectedNode: { } selected,
+            }
+            && IsDesignNavigationOwner(selected)
+                ? new EditorDesignNavigationLocation(
+                    selected.Id,
+                    state.EmbeddedEditor)
+                : null;
+    }
+
+    private static bool IsDesignNavigationOwner(
+        ProjectTreeNode node) =>
+        node.Kind is
+            ProjectTreeNodeKind.ComponentClass
+            or ProjectTreeNodeKind.ComponentVariant
+            or ProjectTreeNodeKind.Module
+            or ProjectTreeNodeKind.ModuleVariant;
+
+    private static bool SameDesignNavigationLocation(
+        EditorDesignNavigationLocation left,
+        EditorDesignNavigationLocation right)
+    {
+        if (!left.NodeId.Equals(
+                right.NodeId,
+                StringComparison.Ordinal))
+        {
+            return false;
+        }
+        if (left.Embedded is null
+            || right.Embedded is null)
+        {
+            return left.Embedded is null
+                && right.Embedded is null;
+        }
+        return left.Embedded.Slots
+                .Select((slot) => slot.FieldId)
+                .SequenceEqual(
+                    right.Embedded.Slots.Select(
+                        (slot) => slot.FieldId),
+                    StringComparer.Ordinal)
+            && ReferenceEquals(
+                left.Embedded.RuntimeSource,
+                right.Embedded.RuntimeSource);
+    }
+
     private void InvalidateActiveTreeLoad()
     {
         if (_activeTreeLoad is null) return;
@@ -835,4 +1096,8 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
     }
+
+    private sealed record EditorDesignNavigationLocation(
+        string NodeId,
+        EditorEmbeddedContext? Embedded);
 }

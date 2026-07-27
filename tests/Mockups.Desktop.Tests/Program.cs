@@ -4550,6 +4550,16 @@ static void EditorViewStateSurvivesRealNavigation()
                 }
             }
 
+            Button HistoryButton(
+                string name) =>
+                window.GetVisualDescendants()
+                    .OfType<Button>()
+                    .Single((button) =>
+                        Avalonia.Automation
+                            .AutomationProperties
+                            .GetName(button)
+                        == name);
+
             var button = Component("component.button");
             var avatar = Component("component.avatar");
             Select(button);
@@ -4606,6 +4616,55 @@ static void EditorViewStateSurvivesRealNavigation()
                 throw new InvalidOperationException("Owner breadcrumb did not restore the expanded card.");
             }
             EqualOffset(avatarOffset, "Owner breadcrumb navigation");
+
+            var back = HistoryButton(
+                "Back in Design editor history");
+            var forward = HistoryButton(
+                "Forward in Design editor history");
+            True(back.IsEnabled);
+            True(!forward.IsEnabled);
+            back.RaiseEvent(
+                new RoutedEventArgs(
+                    Button.ClickEvent));
+            Layout();
+            var restoredEmbedded =
+                Required(
+                    WindowSession(window)
+                        .EmbeddedEditor);
+            Equal(
+                labelContext.Slot.FieldId,
+                restoredEmbedded.Slot.FieldId);
+            labelCard = editorContent.Cards.Single(
+                (card) =>
+                    card.SessionStateId
+                    == "embedded:label");
+            True(labelCard.IsExpanded);
+            EqualOffset(
+                labelOffset,
+                "Design history embedded navigation");
+
+            forward = HistoryButton(
+                "Forward in Design editor history");
+            True(forward.IsEnabled);
+            forward.RaiseEvent(
+                new RoutedEventArgs(
+                    Button.ClickEvent));
+            Layout();
+            True(
+                WindowSession(window)
+                    .EmbeddedEditor is null);
+            Equal(
+                ownerNode.Id,
+                WindowSession(window)
+                    .SelectedNode?.Id);
+            avatarCard = editorContent.Cards.Single(
+                (card) =>
+                    card.SessionStateId
+                    == "layout:avatar");
+            True(avatarCard.IsExpanded);
+            EqualOffset(
+                avatarOffset,
+                "Design history forward navigation");
 
             window.Hide();
         }, CancellationToken.None).GetAwaiter().GetResult();

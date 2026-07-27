@@ -78,7 +78,9 @@ It includes:
   Application alone, covering workspace selection memory, invalid/deleted
   selections, Production removal, embedded-context rebasing, worker-thread
   execution, public async-only loading, rapid workspace reversal, cancellation,
-  disposal and obsolete revision rejection;
+  disposal, obsolete revision rejection and session-only Design editor
+  back/forward transitions across exact root and embedded locations, including
+  forward-branch truncation and deleted-owner skipping;
 - window-close Preview lifetime coverage, including cancellation of Design and
   Production preparation, ahead preload and playback timing plus release of
   frame-cache and external rasterizer resources;
@@ -99,7 +101,8 @@ It includes:
   reflow and workspace restoration;
 - headless Avalonia editor view-state navigation across record classes and
   embedded breadcrumb levels, including card expansion and post-layout scroll
-  restoration by exact `recordClassId`;
+  restoration by exact `recordClassId`, plus the header Back/Forward controls
+  restoring both embedded breadcrumbs and root editor view state;
 - headless Avalonia List Item/List authoring surfaces, including Variant
   selection, numeric active-set and state Runtime values, shared List item
   dimensions, General plus promoted Content Set sections, compact Avatar/Label/

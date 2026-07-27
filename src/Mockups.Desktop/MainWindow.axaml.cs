@@ -243,6 +243,9 @@ public partial class MainWindow : SukiWindow
             _nodeCommands.SaveCurrentVariant,
             _variantHistory.Snapshots,
             _nodeCommands.RestoreVariantSnapshot,
+            () => _workspaceCoordinator
+                .DesignNavigationAvailability,
+            NavigateDesignHistory,
             _activeFieldControls);
         _collectionCards = new EditorCollectionCardFactory(
             data.ModuleInstances,
@@ -980,6 +983,87 @@ public partial class MainWindow : SukiWindow
     private void ReturnToEmbeddedOwner(ProjectTreeNode ownerNode)
     {
         ShowNode(ownerNode, false, "breadcrumb");
+    }
+
+    private void NavigateDesignHistory(
+        int direction)
+    {
+        CaptureActiveEditorViewState();
+        using var transaction =
+            BeginContextTransaction(
+                direction < 0
+                    ? "design-history-back"
+                    : "design-history-forward",
+                direction.ToString());
+        if (!_workspaceCoordinator
+                .TryNavigateDesignHistory(
+                    direction,
+                    out var transition))
+        {
+            return;
+        }
+
+        ApplyPersistedContext(
+            transition);
+        if (transition.Effects.HasFlag(
+                EditorSessionEffects.Workspace))
+        {
+            _previewController
+                .SetWorkspaceWithoutRefresh(
+                    EditorWorkspace.Design);
+            UpdateWorkspaceButtons();
+        }
+        if (transition.Current.EmbeddedEditor
+            is { } embedded)
+        {
+            RenderEmbeddedHistorySelection(
+                transition,
+                embedded);
+            return;
+        }
+
+        RenderRootSelection(
+            transition,
+            rebuildTree: true,
+            transaction);
+    }
+
+    private void RenderEmbeddedHistorySelection(
+        EditorSessionTransition transition,
+        EditorEmbeddedContext embedded)
+    {
+        var node =
+            transition.Current.SelectedNode
+            ?? throw new InvalidOperationException(
+                "Embedded history requires an exact owner.");
+        _ = TrackVariantTransitionAsync(
+            transition.Previous.SelectedNode,
+            node);
+        _treeExpansion.ExpandAncestors(
+            node);
+        _previewController
+            .BeginSelectionTransition();
+        _editorContent.ShowLoading();
+        _ = PrepareEmbeddedEditorAsync(
+            embedded,
+            transition.Current.Revision);
+        _ = RefreshPreviewAuthoringSurfaceAsync(
+            node,
+            transition.Current.Revision);
+        _editorHeader.SetEmbeddedTitle(
+            embedded,
+            EditorPreparedHeader.Loading(
+                embedded.OwnerNode.Id));
+        RebuildNavigationCards();
+        ApplyUiTextScale();
+        var revision =
+            transition.Current.Revision;
+        _previewController
+            .ScheduleSelectionRefresh(
+                () => _workspaceCoordinator
+                    .IsCurrent(
+                        revision,
+                        node.Id));
     }
 
     private void SetEditorRootTitle(string title)

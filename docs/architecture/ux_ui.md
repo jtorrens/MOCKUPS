@@ -46,6 +46,14 @@ Changing between records of the same class keeps the same open card and scroll
 level. Returning to another editor restores that editor class's session point.
 This memory lasts only for the current application session.
 
+Component and Module headers expose compact Back and Forward actions after the
+Variant actions. They traverse the exact sequence of Design editor visits,
+including the selected Variant and embedded breadcrumb context. Navigation
+restores the existing card and scroll memory but does not undo authored data,
+Variants or Overrides. A new visit after moving back discards the forward
+branch, missing owners are skipped and the complete history starts empty in
+each application session.
+
 ## Cards and internal navigation
 
 Cards represent meaningful owner groups, not arbitrary nesting. Shared metadata

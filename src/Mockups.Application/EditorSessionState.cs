@@ -10,6 +10,10 @@ public sealed record PreviewSessionState(
     string? SelectedNodeId,
     long Revision);
 
+public sealed record EditorDesignNavigationAvailability(
+    bool CanGoBack,
+    bool CanGoForward);
+
 public sealed record EditorSessionState
 {
     public static EditorSessionState Empty { get; } = new(
