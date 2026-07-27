@@ -20,6 +20,7 @@ internal sealed record ProductionPreviewScreenSnapshot(
 internal sealed record ProductionPreviewShotSnapshot(
     string ShotId,
     int FrameRate,
+    ProductionShotContext Context,
     IReadOnlyList<ProductionPreviewScreenSnapshot> Screens)
 {
     public int DurationFrames =>
@@ -76,11 +77,14 @@ internal sealed class ProductionPreviewSessionDataSource
     private readonly IModuleInstanceTimelineStore _timeline;
     private readonly ModuleInstanceTimelineDataSource
         _timelineDataSource;
+    private readonly ProductionShotContextService
+        _shotContexts;
 
     public ProductionPreviewSessionDataSource(
         IPreviewInputRepository database,
         IModuleInstanceTimelineStore timeline,
-        IModuleInstanceThemeTokenQuery moduleInstanceThemes)
+        IModuleInstanceThemeTokenQuery moduleInstanceThemes,
+        IActorPreviewRepository actors)
     {
         _database = database;
         _timeline = timeline;
@@ -88,6 +92,11 @@ internal sealed class ProductionPreviewSessionDataSource
             new ModuleInstanceTimelineDataSource(
                 timeline,
                 moduleInstanceThemes);
+        _shotContexts =
+            new ProductionShotContextService(
+                new ProductionShotContextDataSource(
+                    database,
+                    actors));
     }
 
     public ProductionPreviewSessionSnapshot LoadSnapshot(
@@ -157,6 +166,8 @@ internal sealed class ProductionPreviewSessionDataSource
                     shotNode.Id,
                     _database.GetShotSettings(
                         shotNode.Id).Fps,
+                    _shotContexts.Resolve(
+                        shotNode.Id),
                     shotScreens);
             if (!shots.TryAdd(
                     shotNode.Id,

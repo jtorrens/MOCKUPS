@@ -150,7 +150,6 @@ internal sealed class EditorPreviewController : IDisposable
     private PreviewSetupLayoutMode? _previewSetupLayoutMode;
     private readonly EditorLoadingScrim _previewLoadingScrim = new();
     private readonly ProductionPreviewRuntimeResolver _productionRuntimeResolver;
-    private readonly ProductionShotContextService _productionShotContext;
     private readonly Border _previewPerformanceDot = new()
     {
         Width = 10,
@@ -307,7 +306,8 @@ internal sealed class EditorPreviewController : IDisposable
             new ProductionPreviewSessionDataSource(
                 preview,
                 timeline,
-                moduleInstanceThemes);
+                moduleInstanceThemes,
+                actors);
         _owner = owner;
         _deviceComboBox = deviceComboBox;
         _themeComboBox = themeComboBox;
@@ -327,8 +327,6 @@ internal sealed class EditorPreviewController : IDisposable
         _productionRuntimeResolver = new ProductionPreviewRuntimeResolver(
             actors,
             projectPaths);
-        _productionShotContext = new ProductionShotContextService(
-            new ProductionShotContextDataSource(preview, actors));
         _previewBusyHost.Content = _previewLoadingScrim;
         _previewBusyHost.IsVisible = false;
         _designInputsPanel = new ComponentPreviewInputSession(
@@ -3338,7 +3336,10 @@ internal sealed class EditorPreviewController : IDisposable
         var mode = "";
         if (hasShotContext)
         {
-            var inherited = _productionShotContext.Resolve(shotId);
+            var inherited =
+                PreparedProductionSession()
+                    .Shot(shotId)
+                    .Context;
             actorName = inherited.Actor;
             device = inherited.Device;
             theme = inherited.Theme;
@@ -3382,7 +3383,10 @@ internal sealed class EditorPreviewController : IDisposable
     {
         var shotId = ProductionShotId();
         if (string.IsNullOrWhiteSpace(shotId)) return null;
-        var context = _productionShotContext.Resolve(shotId);
+        var context =
+            PreparedProductionSession()
+                .Shot(shotId)
+                .Context;
         return context.IsValid
             ? null
             : new PreviewContextState(

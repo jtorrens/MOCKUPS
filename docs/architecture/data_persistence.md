@@ -409,8 +409,10 @@ refresh, playback setup and reference browsing consume that snapshot; replacing
 it is revisioned and runs through the same session operation worker.
 That operation also prepares the complete Production Preview session catalog:
 Shot frame rates, ordered Screen ranges and keyframes, and exact Screen Variant
-configs. Timeline controls and playback consume the catalog and hold no
-timeline persistence data source.
+configs. Each Shot entry includes its resolved Actor-owned Device, Theme and
+appearance context. Timeline controls, context presentation and playback
+consume the catalog and hold no timeline or Shot-context persistence data
+source.
 Cancellation or failure cannot publish a partial desktop session.
 
 A schema, vocabulary, field or identifier change requires one explicit

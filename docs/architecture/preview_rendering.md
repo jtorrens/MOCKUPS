@@ -221,9 +221,11 @@ only the latest committed snapshot without direct persistence reads.
 
 The same preparation closes the complete current Production timeline catalog:
 each Shot's frame rate, ordered Screens, exact frame ranges and keyframes, plus
-each Screen's Variant config. Production navigation, playhead controls,
-appearance selection, history subtitles and playback timing consume only that
-catalog. They never recalculate or query the timeline from visual callbacks.
+each Screen's Variant config and each Shot's exact Actor-owned Device, Theme and
+appearance context. Production navigation, context presentation, validation,
+playhead controls, appearance selection, history subtitles and playback timing
+consume only that catalog. They never recalculate or query the timeline or Shot
+context from visual callbacks.
 
 Interactive render requests follow the same revision rule. After the external
 renderer returns, the Preview host checks the request sequence before either

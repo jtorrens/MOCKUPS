@@ -52,8 +52,9 @@ It includes:
   the visual controller exposes only an operation-coordinated asynchronous
   refresh boundary;
 - prepared Production Preview session data, proving exact Shot FPS, ordered
-  Screen ranges, keyframes and Variant configs, while preventing the visual
-  controller from retaining a timeline data source;
+  Screen ranges, keyframes, Variant configs and Actor-owned Shot context, while
+  preventing the visual controller from retaining timeline or Shot-context
+  data sources;
 - compiled header-constructor enforcement proving that breadcrumb and
   context-strip rendering cannot receive Component, Preview or timeline
   persistence ports and requires an exact prepared header;

@@ -7636,6 +7636,7 @@ static void ProductionPreviewSessionBoundaryPreservesCurrentData()
         var dataSource = new ProductionPreviewSessionDataSource(
             database.PreviewInputs,
             database.Production,
+            database.Resources,
             database.Resources);
         var timelineDataSource = new ModuleInstanceTimelineDataSource(
             database.Production,
@@ -7646,6 +7647,12 @@ static void ProductionPreviewSessionBoundaryPreservesCurrentData()
         var snapshot = dataSource.LoadSnapshot(tree);
         var preparedShot = snapshot.Shot(shot.Id);
         var preparedScreen = snapshot.Screen(screen.Id);
+        var expectedContext =
+            new ProductionShotContextService(
+                new ProductionShotContextDataSource(
+                    database.PreviewInputs,
+                    database.Resources))
+                .Resolve(shot.Id);
 
         Equal(
             database.GetModuleInstanceSettings(screen.Id).ShotId,
@@ -7653,6 +7660,9 @@ static void ProductionPreviewSessionBoundaryPreservesCurrentData()
         Equal(
             database.GetShotSettings(shot.Id).Fps,
             preparedShot.FrameRate);
+        Equal(
+            expectedContext,
+            preparedShot.Context);
         Equal(
             database.GetModuleInstanceVariantSettings(screen.Id).ConfigJson,
             preparedScreen.VariantConfigJson);
@@ -7684,6 +7694,11 @@ static void ProductionPreviewSessionBoundaryPreservesCurrentData()
         True(typeof(EditorPreviewController)
             .GetField(
                 "_timelineDataSource",
+                BindingFlags.Instance
+                | BindingFlags.NonPublic) is null);
+        True(typeof(EditorPreviewController)
+            .GetField(
+                "_productionShotContext",
                 BindingFlags.Instance
                 | BindingFlags.NonPublic) is null);
 
