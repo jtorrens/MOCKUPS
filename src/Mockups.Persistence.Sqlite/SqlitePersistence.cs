@@ -55,7 +55,7 @@ public static class SqlitePersistence
                 return Path.Combine(
                     directory.FullName,
                     "data",
-                    "desktop-editor-spike.sqlite");
+                    "mockups.sqlite");
             }
 
             directory = directory.Parent;
@@ -70,6 +70,6 @@ public static class SqlitePersistence
                 "..",
                 "..",
                 "data",
-                "desktop-editor-spike.sqlite"));
+                "mockups.sqlite"));
     }
 }

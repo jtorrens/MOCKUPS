@@ -439,7 +439,7 @@ export function verifyComponentScaffoldImplementation(
   } finally {
     database.close();
   }
-  checked.push("data/desktop-editor-spike.sqlite");
+  checked.push("data/mockups.sqlite");
 
   for (const asset of spec.assets) {
     if (!existsSync(scaffoldTarget(repositoryRoot, asset))) {

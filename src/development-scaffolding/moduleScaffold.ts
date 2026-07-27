@@ -618,7 +618,7 @@ export function createModuleScaffoldPlan(
       },
       {
         owner: "persistence",
-        path: "data/desktop-editor-spike.sqlite",
+        path: "data/mockups.sqlite",
         description: "Insert the current Module and editor layout in one maintenance transaction.",
       },
     ],

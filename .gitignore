@@ -14,7 +14,7 @@ assets/*/media/
 *.db
 *.db-wal
 *.db-shm
-!data/desktop-editor-spike.sqlite
+!data/mockups.sqlite
 !data/desktop-editor-spike.schema-v1.sqlite
 src/Mockups.Desktop/data/window-state.json
 artifacts/

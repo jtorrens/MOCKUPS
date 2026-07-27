@@ -7,5 +7,5 @@ export function parityDatabasePath(repositoryRoot = process.cwd()) {
   const configured = process.env[validationDatabaseEnvironmentVariable]?.trim();
   return configured
     ? path.resolve(configured)
-    : path.join(repositoryRoot, "data", "desktop-editor-spike.sqlite");
+    : path.join(repositoryRoot, "data", "mockups.sqlite");
 }

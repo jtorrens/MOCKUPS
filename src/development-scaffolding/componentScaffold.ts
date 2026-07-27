@@ -753,7 +753,7 @@ export function createComponentScaffoldPlan(
       },
       {
         owner: "persistence",
-        path: "data/desktop-editor-spike.sqlite",
+        path: "data/mockups.sqlite",
         description: "Apply one explicit maintenance revision for the current row and editor layout.",
       },
     ],

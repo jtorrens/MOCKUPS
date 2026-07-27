@@ -16,7 +16,7 @@ The complete repository validation is:
 npm test
 ```
 
-The public gate reads `data/desktop-editor-spike.sqlite` from the Git index
+The public gate reads `data/mockups.sqlite` from the Git index
 into a disposable file and supplies that path to every database-backed check.
 It never replaces, opens for writing or validates against the workstation's
 active authoring database. Its disposable workspace exposes the repository

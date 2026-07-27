@@ -300,7 +300,7 @@ function integrationFixture() {
   ]) {
     mkdirSync(path.join(root, directory), { recursive: true });
   }
-  const database = path.join(root, "data/desktop-editor-spike.sqlite");
+  const database = path.join(root, "data/mockups.sqlite");
   copyFileSync(parityDatabasePath(repositoryRoot), database);
   for (const relativePath of [
     "src/desktop-preview/desktopPreviewManifest.json",

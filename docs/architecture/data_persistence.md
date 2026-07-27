@@ -453,7 +453,7 @@ direction and Actor ownership, are atomic.
 Desktop behavior is delivered with the corresponding current artifacts in the
 same revision:
 
-- `data/desktop-editor-spike.sqlite`;
+- `data/mockups.sqlite`;
 - affected files under `assets/FOQN_S2`;
 - affected files under `assets/system/system_icons`.
 

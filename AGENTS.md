@@ -337,7 +337,7 @@ Direction changes that clear an Actor are one atomic prepared write.
 When desktop behavior, Preview output, icons, fonts, media, wallpaper or seeded
 data changes, commit the corresponding artifacts in the same revision:
 
-- `data/desktop-editor-spike.sqlite`;
+- `data/mockups.sqlite`;
 - changed files under `assets/FOQN_S2`;
 - changed files under `assets/system/system_icons`.
 

@@ -10,7 +10,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
-export const parityPath = "data/desktop-editor-spike.sqlite";
+export const parityPath = "data/mockups.sqlite";
 
 export type StagedRepositoryValidationOptions = {
   repositoryRoot?: string;
@@ -28,7 +28,7 @@ export function runStagedRepositoryValidation(
   );
   const validationDatabase = path.join(
     temporaryDirectory,
-    "desktop-editor-spike.sqlite",
+    "mockups.sqlite",
   );
   const repositoryAssets = path.join(repositoryRoot, "assets");
   const validationAssets = path.join(temporaryDirectory, "assets");

@@ -212,7 +212,7 @@ test("Integrated scaffold artifacts are deterministic and own registry, dictiona
 
 test("Component scaffold integrates complete owners and later verifies only development-owned state", () => {
   const temporaryDirectory = mkdtempSync(path.join(os.tmpdir(), "mockups-component-integrate-"));
-  const databasePath = path.join(temporaryDirectory, "data", "desktop-editor-spike.sqlite");
+  const databasePath = path.join(temporaryDirectory, "data", "mockups.sqlite");
   try {
     prepareIntegrationFixture(temporaryDirectory, databasePath);
     const spec = validSpec();
@@ -387,7 +387,7 @@ test("Component scaffold integrates complete owners and later verifies only deve
 
 test("Component scaffold cannot integrate owners with pending semantics or mutate persistence", () => {
   const temporaryDirectory = mkdtempSync(path.join(os.tmpdir(), "mockups-component-pending-"));
-  const databasePath = path.join(temporaryDirectory, "data", "desktop-editor-spike.sqlite");
+  const databasePath = path.join(temporaryDirectory, "data", "mockups.sqlite");
   try {
     prepareIntegrationFixture(temporaryDirectory, databasePath);
     const spec = validSpec();

@@ -13444,7 +13444,7 @@ static string ParityDatabasePath()
 {
     var configured = Environment.GetEnvironmentVariable("MOCKUPS_VALIDATION_DATABASE");
     return string.IsNullOrWhiteSpace(configured)
-        ? Path.Combine(Directory.GetCurrentDirectory(), "data", "desktop-editor-spike.sqlite")
+        ? Path.Combine(Directory.GetCurrentDirectory(), "data", "mockups.sqlite")
         : Path.GetFullPath(configured);
 }
 
