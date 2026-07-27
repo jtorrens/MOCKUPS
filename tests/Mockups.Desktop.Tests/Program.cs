@@ -3598,6 +3598,16 @@ static void PreviewAuthoringPreparationUsesOperationBoundary()
         parameter.Name?.Equals(
             "selectedThemeId",
             StringComparison.Ordinal) == true));
+    True(typeof(RuntimeInputsCollectionEditor).GetMethod(
+        "Create",
+        BindingFlags.Instance
+        | BindingFlags.Public
+        | BindingFlags.NonPublic) is null);
+    True(typeof(RuntimeInputsCollectionEditor).GetMethod(
+        "LoadSurface",
+        BindingFlags.Instance
+        | BindingFlags.Public
+        | BindingFlags.NonPublic) is null);
     True(typeof(RuntimeInputSurface)
         .GetProperty("DictionaryContext")?
         .PropertyType

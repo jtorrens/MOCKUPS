@@ -48,7 +48,6 @@ internal sealed class RuntimeInputsCollectionEditor
     private readonly Action<string, string, IReadOnlyDictionary<string, JsonNode?>>
         _setPreviewCollectionItemValues;
     private readonly Action<ProjectTreeNode, string, IReadOnlyList<JsonObject>> _setPreviewCollectionTestItems;
-    private readonly Func<ProjectTreeNode, JsonObject, JsonObject> _applyTransientTestValues;
     private readonly Func<ProjectTreeNode, bool> _resetTestValues;
     private readonly Func<string, IReadOnlyList<string>, Task<bool>> _confirmSaveDefaults;
     private readonly Func<string, Task<bool>> _confirmCollectionItemDelete;
@@ -88,7 +87,6 @@ internal sealed class RuntimeInputsCollectionEditor
         Action<string, string, IReadOnlyDictionary<string, JsonNode?>>
             setPreviewCollectionItemValues,
         Action<ProjectTreeNode, string, IReadOnlyList<JsonObject>> setPreviewCollectionTestItems,
-        Func<ProjectTreeNode, JsonObject, JsonObject> applyTransientTestValues,
         Func<ProjectTreeNode, bool> resetTestValues,
         Func<string, IReadOnlyList<string>, Task<bool>> confirmSaveDefaults,
         Func<string, Task<bool>> confirmCollectionItemDelete,
@@ -125,7 +123,6 @@ internal sealed class RuntimeInputsCollectionEditor
         _setPreviewTestValue = setPreviewTestValue;
         _setPreviewCollectionItemValues = setPreviewCollectionItemValues;
         _setPreviewCollectionTestItems = setPreviewCollectionTestItems;
-        _applyTransientTestValues = applyTransientTestValues;
         _resetTestValues = resetTestValues;
         _confirmSaveDefaults = confirmSaveDefaults;
         _confirmCollectionItemDelete = confirmCollectionItemDelete;
@@ -136,19 +133,6 @@ internal sealed class RuntimeInputsCollectionEditor
         _openEmbeddedContext = openEmbeddedContext;
         _animationEditor = animationEditor;
         _reloadAndSelect = reloadAndSelect;
-    }
-
-    public InstantEditorCard Create(ProjectTreeNode node)
-    {
-        var surface = LoadSurface(node);
-        UsePreparedContext(surface);
-        if (surface.Owner.IsInstance)
-        {
-            throw new InvalidOperationException(
-                "Production Screen Payload belongs to the Preview authoring surface.");
-        }
-
-        return CreateRuntimeContractCard(surface);
     }
 
     public Control CreateProductionScreenPayloadSurface(
@@ -268,93 +252,6 @@ internal sealed class RuntimeInputsCollectionEditor
         _animationEditor?.UsePreparedContext(
             surface.DictionaryContext,
             surface.AnimationSnapshot);
-    }
-
-    private InstantEditorCard CreateRuntimeContractCard(RuntimeInputSurface surface)
-    {
-        var card = new InstantEditorCard(
-            EditorCardHeader.Create(
-                "Runtime Contract",
-                $"{EditorUiText.Count(surface.Inputs.Count, "input")} · {EditorUiText.Count(surface.Collections.Count, "collection")}",
-                EditorIcons.CreateSemantic("Runtime Contract", EditorIcons.Design, 18)),
-            new Border
-            {
-                Padding = new Thickness(10),
-                Child = CreateApiTab(surface.Owner, surface.Inputs, surface.Collections),
-            },
-            isExpanded: false)
-        {
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            SessionStateId = "collection:runtime-contract",
-        };
-        EditorGroupBlock.ApplyContentSeparator(card);
-        return card;
-    }
-
-    private RuntimeInputSurface LoadSurface(ProjectTreeNode node)
-    {
-        var owner = ResolveOwner(node);
-        var persistedPreview = DesignPreviewTestValues.Parse(owner.DesignPreviewJson);
-        var config = DesignPreviewTestValues.Parse(owner.ConfigJson);
-        var preview = RuntimeInputForwardingContract.EffectivePreview(
-            _applyTransientTestValues(owner.Node, persistedPreview),
-            config);
-        var inputs = RuntimeInputDefinitionReader.ReadInputs(preview, config);
-        var collections = RuntimeInputDefinitionReader.ReadCollections(preview, config);
-        var actions = ComponentPreviewActions.ReadWithEmbedded(
-            preview,
-            _previewInputData.ComponentVariantRuntimeContract);
-        return new RuntimeInputSurface(owner, preview, inputs, collections, actions);
-    }
-
-    private Control CreateApiTab(
-        RuntimeInputOwner owner,
-        IReadOnlyList<ComponentInputDefinition> inputs,
-        IReadOnlyList<RuntimeInputCollectionDefinition> collections)
-    {
-        var panel = new StackPanel { Spacing = 6, Margin = new Thickness(0, 8, 0, 0) };
-        if (inputs.Count == 0 && collections.Count == 0)
-        {
-            panel.Children.Add(new TextBlock { Text = "This definition exposes no runtime inputs.", Opacity = 0.68 });
-            return panel;
-        }
-
-        var visibleInputs = inputs.Where((input) => !input.ActionOnly).ToList();
-        var groups = ComponentInputGrouping.EmbeddedGroups(visibleInputs);
-        var sections = new List<EditorInternalNavigationSection>();
-        var topLevelGroupIds = ComponentInputGrouping.TopLevelGroupIds(groups).ToList();
-        var ownInputs = ComponentInputGrouping.OwnInputs(visibleInputs).ToList();
-        if (ownInputs.Count > 0)
-        {
-            var general = new StackPanel { Spacing = 6 };
-            foreach (var input in ownInputs) general.Children.Add(CreateApiInputRow(input));
-            sections.Add(new EditorInternalNavigationSection(
-                "general",
-                "General",
-                "API fields",
-                EditorIcons.General,
-                general));
-        }
-
-        foreach (var groupId in topLevelGroupIds)
-        {
-            sections.Add(CreateApiGroupSubcard(groupId, groups));
-        }
-        foreach (var collection in collections)
-        {
-            sections.Add(new EditorInternalNavigationSection(
-                collection.Id,
-                collection.Label,
-                "Collection API",
-                EditorIcons.Component,
-                CreateApiCollectionContent(collection)));
-        }
-        panel.Children.Add(CreateSessionSubcardLayout(
-            $"{owner.Node.Id}:runtime-api",
-            sections,
-            EditorSubcardLayout.VerticalCards));
-
-        return panel;
     }
 
     private Control CreateTestValuesTab(
@@ -612,64 +509,6 @@ internal sealed class RuntimeInputsCollectionEditor
             content.Children.Add(CreateTestValueControl(owner, preview, input));
         }
         return content;
-    }
-
-    private Control CreateApiInputRow(ComponentInputDefinition input)
-    {
-        return new Border
-        {
-            Padding = new Thickness(8, 6),
-            Child = new StackPanel
-            {
-                Spacing = 1,
-                Children =
-                {
-                    new TextBlock { Text = input.Label, FontWeight = Avalonia.Media.FontWeight.SemiBold },
-                    new TextBlock { Text = $"{input.ValueKind} · Payload key: {input.JsonKey}", FontSize = 11, Opacity = 0.7 },
-                },
-            },
-        };
-    }
-
-    private Control CreateApiCollectionContent(RuntimeInputCollectionDefinition collection)
-    {
-        var content = new StackPanel { Spacing = 6 };
-        content.Children.Add(new TextBlock
-        {
-            Text = $"Runtime array · Collection key: {collection.JsonKey}",
-            FontSize = 11,
-            Opacity = 0.7,
-        });
-        foreach (var field in collection.Fields)
-        {
-            content.Children.Add(CreateApiInputRow(field));
-        }
-        return content;
-    }
-
-    private EditorInternalNavigationSection CreateApiGroupSubcard(
-        string groupId,
-        IReadOnlyDictionary<string, List<ComponentInputDefinition>> groups)
-    {
-        var groupInputs = groups[groupId];
-        var content = new StackPanel { Spacing = 6 };
-        foreach (var input in groupInputs)
-        {
-            content.Children.Add(CreateApiInputRow(input));
-        }
-        var childSubcards = new List<EditorInternalNavigationSection>();
-        foreach (var childId in ComponentInputGrouping.ChildGroupIds(groupId, groups))
-        {
-            childSubcards.Add(CreateApiGroupSubcard(childId, groups));
-        }
-        return new EditorInternalNavigationSection(
-            groupId,
-            ComponentInputGrouping.GroupLabel(groupInputs),
-            "API fields",
-            EditorIcons.Component,
-            content,
-            Subcards: childSubcards,
-            SubcardLayout: EditorSubcardLayout.FlatStack);
     }
 
     private Control CreateTestValueControl(

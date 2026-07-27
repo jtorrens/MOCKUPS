@@ -43,7 +43,6 @@ internal sealed class EditorCollectionCardFactory : IDisposable
     private readonly Action<string, string, IReadOnlyDictionary<string, JsonNode?>>
         _setPreviewCollectionItemValues;
     private readonly Action<ProjectTreeNode, string, IReadOnlyList<JsonObject>> _setPreviewCollectionTestItems;
-    private readonly Func<ProjectTreeNode, JsonObject, JsonObject> _applyPreviewTransientTestValues;
     private readonly Func<ProjectTreeNode, bool> _resetPreviewTestValues;
     private readonly PreviewPlaybackState _previewPlaybackState;
     private readonly Func<string, bool> _navigateToNode;
@@ -82,7 +81,6 @@ internal sealed class EditorCollectionCardFactory : IDisposable
         Action<string, string, IReadOnlyDictionary<string, JsonNode?>>
             setPreviewCollectionItemValues,
         Action<ProjectTreeNode, string, IReadOnlyList<JsonObject>> setPreviewCollectionTestItems,
-        Func<ProjectTreeNode, JsonObject, JsonObject> applyPreviewTransientTestValues,
         Func<ProjectTreeNode, bool> resetPreviewTestValues,
         PreviewPlaybackState previewPlaybackState,
         Func<string, bool> navigateToNode,
@@ -117,7 +115,6 @@ internal sealed class EditorCollectionCardFactory : IDisposable
         _setPreviewTestValue = setPreviewTestValue;
         _setPreviewCollectionItemValues = setPreviewCollectionItemValues;
         _setPreviewCollectionTestItems = setPreviewCollectionTestItems;
-        _applyPreviewTransientTestValues = applyPreviewTransientTestValues;
         _resetPreviewTestValues = resetPreviewTestValues;
         _previewPlaybackState = previewPlaybackState;
         _navigateToNode = navigateToNode;
@@ -304,11 +301,6 @@ internal sealed class EditorCollectionCardFactory : IDisposable
         operation.Dispose();
     }
 
-    private InstantEditorCard CreateRuntimeInputsCard(ProjectTreeNode node)
-    {
-        return CreateRuntimeInputsEditor(animationEditor: null).Create(node);
-    }
-
     private ModuleInstanceAnimationEditor CreateModuleInstanceAnimationEditor()
     {
         return new ModuleInstanceAnimationEditor(
@@ -347,7 +339,6 @@ internal sealed class EditorCollectionCardFactory : IDisposable
             _setPreviewTestValue,
             _setPreviewCollectionItemValues,
             _setPreviewCollectionTestItems,
-            _applyPreviewTransientTestValues,
             _resetPreviewTestValues,
             _domainDialogs.ConfirmTestValueDefaults,
             _domainDialogs.ConfirmRuntimeCollectionItemDelete,

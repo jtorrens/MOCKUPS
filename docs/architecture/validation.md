@@ -47,6 +47,9 @@ It includes:
   coordination, field and dictionary snapshot-only visual card construction
   and a headless rapid selection test proving that only the latest owner
   reaches the visual state;
+- Preview authoring exposes no synchronous Runtime Input visual-construction
+  or fallback-load method; the cancellable prepared surface is its only
+  compiled entrypoint;
 - prepared Preview visual context, proving that Device options and metrics,
   Theme options and Project media root form one read-only snapshot, and that
   the visual controller exposes only an operation-coordinated asynchronous

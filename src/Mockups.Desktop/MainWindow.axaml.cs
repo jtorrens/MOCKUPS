@@ -272,7 +272,6 @@ public partial class MainWindow : SukiWindow
             _previewController.SetDesignPreviewTestValue,
             _previewController.SetDesignPreviewCollectionItemValues,
             _previewController.SetDesignPreviewCollectionTestItems,
-            _previewController.ApplyDesignPreviewTransientTestValues,
             _previewController.ResetDesignPreviewTestValues,
             _previewController.PlaybackState,
             SelectNodeById,

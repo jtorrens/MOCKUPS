@@ -283,7 +283,9 @@ display names. Avalonia builds the resulting Test Values or Screen Payload
 controls only from that prepared context after it returns, and commits them
 only while the exact selection revision remains current. A newer selection
 cancels the older preparation and an obsolete result cannot replace its
-authoring surface.
+authoring surface. `RuntimeInputsCollectionEditor` has no synchronous visual
+construction entrypoint or fallback loader; every authoring surface requires
+that prepared result.
 
 The same prepared result carries Production Screen presentation and embedded
 Variant names for the header. Breadcrumb rendering itself performs no
