@@ -25,18 +25,47 @@ internal sealed class ProductionPreviewPayloadPreparer
         string themeMode,
         int shotFrame)
     {
+        return
+            Prepare(
+                node,
+                themeId,
+                themeMode,
+                shotFrame,
+                CancellationToken.None)
+            ?? throw new InvalidOperationException(
+                $"Production Preview frame {shotFrame} for '{node.Id}' has no complete payload.");
+    }
+
+    public DesignPreviewPayload? Prepare(
+        ProjectTreeNode node,
+        string? themeId,
+        string themeMode,
+        int shotFrame,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken
+            .ThrowIfCancellationRequested();
         var payload =
             DesignPreviewPayloadFactory.Create(
                 _payloads,
                 node,
                 themeId,
                 themeMode,
-                shotFrame)
-            ?? throw new InvalidOperationException(
-                $"Production Preview frame {shotFrame} for '{node.Id}' has no complete payload.");
-        return _runtime.Resolve(
-            payload,
-            themeMode);
+                shotFrame);
+        cancellationToken
+            .ThrowIfCancellationRequested();
+        if (payload is null)
+        {
+            return null;
+        }
+
+        var resolved =
+            _runtime.Resolve(
+                payload,
+                themeMode);
+        cancellationToken
+            .ThrowIfCancellationRequested();
+        return resolved;
     }
 
     public IReadOnlyList<DesignPreviewPayload>
@@ -60,11 +89,14 @@ internal sealed class ProductionPreviewPayloadPreparer
             cancellationToken
                 .ThrowIfCancellationRequested();
             frames.Add(
-                PrepareRequired(
+                Prepare(
                     node,
                     themeId,
                     themeMode,
-                    frame));
+                    frame,
+                    cancellationToken)
+                ?? throw new InvalidOperationException(
+                    $"Production Preview frame {frame} for '{node.Id}' has no complete payload."));
         }
 
         return frames;

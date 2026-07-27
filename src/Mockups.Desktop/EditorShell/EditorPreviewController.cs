@@ -216,6 +216,8 @@ internal sealed class EditorPreviewController : IDisposable
     private PreviewNodeKey? _lastProductionPreviewNode;
     private PreviewNodeKey? _activeDesignPreviewNode;
     private PreviewNodeKey? _lockedDesignPreviewNode;
+    private DesignPreviewHistoryEntry?
+        _activeProductionHistoryEntry;
     private readonly List<DesignPreviewHistoryEntry> _designHistory = [];
     private readonly List<DesignPreviewHistoryEntry> _productionHistory = [];
     private EditorWorkspace _workspace = EditorWorkspace.Design;
@@ -234,6 +236,8 @@ internal sealed class EditorPreviewController : IDisposable
     private readonly PreviewPreparationCancellation _designPlaybackPreparation = new();
     private readonly PreviewPreparationCancellation
         _visualContextPreparation = new();
+    private readonly PreviewPreparationCancellation
+        _productionPayloadPreparation = new();
     private CancellationTokenSource? _aheadPreloadCancellation;
     private readonly HashSet<string> _aheadPreloadedFrameKeys = new(StringComparer.Ordinal);
     private bool _isAheadPreloading;
@@ -379,6 +383,7 @@ internal sealed class EditorPreviewController : IDisposable
         _disposed = true;
         _shotPlaybackTimer.Stop();
         _visualContextPreparation.Dispose();
+        _productionPayloadPreparation.Dispose();
         _designPlaybackPreparation.Dispose();
         _shotPlaybackPreparation.Dispose();
         _aheadPreloadCancellation?.Cancel();
@@ -416,15 +421,17 @@ internal sealed class EditorPreviewController : IDisposable
     {
         var node = ProductionContextNode();
         if (node is null) return;
-        var payload = DesignPreviewPayloadFactory.Create(
-            _previewPayloadData,
-            node,
-            _selectedThemeId,
-            _selectedMode,
-            _shotPreviewFrame);
-        if (payload is null) return;
         var key = PreviewNodeKey.From(node);
-        AddHistory(_productionHistory, key, payload.Name);
+        if (_activeProductionHistoryEntry
+                is not { } active
+            || active.Key != key)
+        {
+            return;
+        }
+        AddHistory(
+            _productionHistory,
+            key,
+            active.Name);
         RefreshDesignContextHistoryChrome();
     }
 
@@ -1276,6 +1283,7 @@ internal sealed class EditorPreviewController : IDisposable
     public void BeginSelectionTransition()
     {
         CancelPlaybackPreparation();
+        _productionPayloadPreparation.Cancel();
         if (_workspace != EditorWorkspace.Production
             || ProductionContextNode() is not { } selected)
         {
@@ -1319,77 +1327,249 @@ internal sealed class EditorPreviewController : IDisposable
 
     private void RefreshCore()
     {
+        if (_workspace == EditorWorkspace.Production)
+        {
+            _ = RefreshProductionCoreAsync();
+            return;
+        }
+
+        _productionPayloadPreparation.Cancel();
         try
         {
-            // Static preview changes (including reference images and design marks)
-            // must never inherit a playback preparation overlay.
-            if (!IsPreviewPlaybackActive && !_shotPlaybackIsPreparing)
-            {
-                HidePreviewLoading();
-            }
-            EnsureSelectedOptionsExist();
-            UpdateShotTimelineControls();
-            UpdateProductionPreviewSetup();
+            PrepareStaticPreviewRefresh();
             var invalidProductionContext = InvalidProductionContext();
             var designPayload = invalidProductionContext is null ? DesignPreviewPayloadForSelection() : null;
-            var contextState = invalidProductionContext
-                ?? (designPayload is null ? NonRenderableStateForSelection() : PreviewContextState.Renderable);
-            if (invalidProductionContext is not null)
+            if (designPayload is not null)
             {
-                _messages.Error("Production context", invalidProductionContext.Message);
+                designPayload =
+                    ProcessDesignPreviewPayload(
+                        designPayload);
             }
-            var deviceId = PreviewDeviceId(designPayload);
-            if (string.IsNullOrWhiteSpace(deviceId))
-            {
-                _messages.Warning("Preview", "No device selected.");
-                return;
-            }
-
-            var metrics = _showCanonicalFrame
-                ? CanonicalPreviewMetrics()
-                : ApplyPreviewOrientation(
-                    PreparedDeviceMetrics(deviceId));
-            var themeName = _themeComboBox.SelectedItem?.Label ?? "No theme";
-            designPayload = ProcessPreviewPayload(designPayload, "static");
-            UpdateDesignContextChrome(designPayload);
-            if (_selectedPlaybackRoute == "raster"
-                && designPayload is not null
-                && IsPreviewPlaybackActive
-                && _rasterPlaybackFrames.TryGetValue(PlaybackFrameKey(designPayload), out var rasterPath))
-            {
-                _designPreviewPane.ShowRasterFrame(rasterPath);
-                RecordAndUpdatePlaybackStatus(new DesignWebPreviewPane.DesignPreviewFrameStatus(
-                    ElapsedMilliseconds: 0,
-                    IsAnimationOnly: true,
-                    UsedDomPatch: false,
-                    RenderError: false));
-                _messages.Clear();
-                return;
-            }
-            _designPreviewPane.HideRasterFrame();
-            _designPreviewPane.Update(
-                metrics,
-                _isDark(),
-                themeName,
-                _selectedMode,
-                _selectedScale,
-                _showDesignMarks,
-                !_showCanonicalFrame,
-                CurrentReferenceState(),
+            var contextState =
+                invalidProductionContext
+                ?? (designPayload is null
+                    ? NonRenderableStateForSelection(
+                        _selectedNode(),
+                        _selectedThemeId,
+                        _selectedMode,
+                        _shotPreviewFrame,
+                        CancellationToken.None)
+                    : PreviewContextState.Renderable);
+            RenderStaticPreview(
                 designPayload,
                 contextState,
-                IsPreviewPlaybackActive,
-                _messages);
-            if (designPayload is not null && _designInputsPanel.IsPlaybackActive)
-            {
-                SchedulePlaybackAheadPreload(metrics, designPayload);
-            }
-            _messages.Clear();
+                invalidProductionContext);
         }
         catch (Exception exception)
         {
             _messages.Error("Preview", exception);
         }
+    }
+
+    private async Task RefreshProductionCoreAsync()
+    {
+        var preparation =
+            _productionPayloadPreparation.Begin();
+        var cancellationToken =
+            preparation.Token;
+        var revision =
+            Volatile.Read(
+                ref _selectionRefreshGeneration);
+        try
+        {
+            PrepareStaticPreviewRefresh();
+            var invalidProductionContext =
+                InvalidProductionContext();
+            var node =
+                invalidProductionContext is null
+                    ? ProductionPayloadNode()
+                    : null;
+            var themeId =
+                _selectedThemeId;
+            var themeMode =
+                _selectedMode;
+            var shotFrame =
+                _shotPreviewFrame;
+            var selected =
+                _selectedNode();
+            _designInputsPanel.UpdateForPayload(
+                null,
+                _projectId);
+            var prepared =
+                await _operations.ExecuteAsync(
+                    () =>
+                    {
+                        var payload =
+                            node is null
+                                ? null
+                                : _productionPayloadPreparer
+                                    .Prepare(
+                                        node,
+                                        themeId,
+                                        themeMode,
+                                        shotFrame,
+                                        cancellationToken);
+                        var contextState =
+                            invalidProductionContext
+                            ?? (payload is null
+                                ? NonRenderableStateForSelection(
+                                    selected,
+                                    themeId,
+                                    themeMode,
+                                    shotFrame,
+                                    cancellationToken)
+                                : PreviewContextState
+                                    .Renderable);
+                        return (
+                            Payload: payload,
+                            ContextState:
+                                contextState);
+                    },
+                    cancellationToken);
+            if (_disposed
+                || !_productionPayloadPreparation
+                    .IsCurrent(preparation)
+                || revision
+                    != Volatile.Read(
+                        ref _selectionRefreshGeneration))
+            {
+                return;
+            }
+
+            if (prepared.Payload is not null
+                && node is not null)
+            {
+                _lastProductionPreviewNode =
+                    PreviewNodeKey.From(node);
+                _activeDesignPreviewNode =
+                    _lastProductionPreviewNode;
+                _activeProductionHistoryEntry =
+                    new DesignPreviewHistoryEntry(
+                        _lastProductionPreviewNode,
+                        prepared.Payload.Name);
+            }
+            else
+            {
+                _activeDesignPreviewNode = null;
+                _activeProductionHistoryEntry =
+                    null;
+            }
+            RenderStaticPreview(
+                prepared.Payload,
+                prepared.ContextState,
+                invalidProductionContext);
+        }
+        catch (OperationCanceledException)
+            when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            if (_productionPayloadPreparation
+                    .IsCurrent(preparation)
+                && revision
+                    == Volatile.Read(
+                        ref _selectionRefreshGeneration))
+            {
+                _messages.Error(
+                    "Preview",
+                    exception);
+            }
+        }
+        finally
+        {
+            _productionPayloadPreparation
+                .Complete(preparation);
+        }
+    }
+
+    private void PrepareStaticPreviewRefresh()
+    {
+        // Static preview changes (including reference images and design marks)
+        // must never inherit a playback preparation overlay.
+        if (!IsPreviewPlaybackActive
+            && !_shotPlaybackIsPreparing)
+        {
+            HidePreviewLoading();
+        }
+        EnsureSelectedOptionsExist();
+        UpdateShotTimelineControls();
+        UpdateProductionPreviewSetup();
+    }
+
+    private void RenderStaticPreview(
+        DesignPreviewPayload? designPayload,
+        PreviewContextState contextState,
+        PreviewContextState? invalidProductionContext)
+    {
+        if (invalidProductionContext is not null)
+        {
+            _messages.Error(
+                "Production context",
+                invalidProductionContext.Message);
+        }
+        var deviceId =
+            PreviewDeviceId(designPayload);
+        if (string.IsNullOrWhiteSpace(deviceId))
+        {
+            _messages.Warning(
+                "Preview",
+                "No device selected.");
+            return;
+        }
+
+        var metrics =
+            _showCanonicalFrame
+                ? CanonicalPreviewMetrics()
+                : ApplyPreviewOrientation(
+                    PreparedDeviceMetrics(deviceId));
+        var themeName =
+            _themeComboBox.SelectedItem?.Label
+            ?? "No theme";
+        UpdateDesignContextChrome(
+            designPayload);
+        if (_selectedPlaybackRoute == "raster"
+            && designPayload is not null
+            && IsPreviewPlaybackActive
+            && _rasterPlaybackFrames.TryGetValue(
+                PlaybackFrameKey(designPayload),
+                out var rasterPath))
+        {
+            _designPreviewPane.ShowRasterFrame(
+                rasterPath);
+            RecordAndUpdatePlaybackStatus(
+                new DesignWebPreviewPane
+                    .DesignPreviewFrameStatus(
+                        ElapsedMilliseconds: 0,
+                        IsAnimationOnly: true,
+                        UsedDomPatch: false,
+                        RenderError: false));
+            _messages.Clear();
+            return;
+        }
+        _designPreviewPane.HideRasterFrame();
+        _designPreviewPane.Update(
+            metrics,
+            _isDark(),
+            themeName,
+            _selectedMode,
+            _selectedScale,
+            _showDesignMarks,
+            !_showCanonicalFrame,
+            CurrentReferenceState(),
+            designPayload,
+            contextState,
+            IsPreviewPlaybackActive,
+            _messages);
+        if (designPayload is not null
+            && _designInputsPanel
+                .IsPlaybackActive)
+        {
+            SchedulePlaybackAheadPreload(
+                metrics,
+                designPayload);
+        }
+        _messages.Clear();
     }
 
     public void TriggerDesignPreviewAction(string actionId, string? targetValue = null)
@@ -1516,17 +1696,34 @@ internal sealed class EditorPreviewController : IDisposable
             return true;
         }
 
-        var designPayload = DesignPreviewPayloadForSelection();
-        if (designPayload is null)
+        DesignPreviewPayload? designPayload;
+        if (cacheOwner
+            == PlaybackFrameCacheOwner.Shot)
         {
-            return true;
+            designPayload =
+                _pendingPlaybackFramesOverride?
+                    .FirstOrDefault()
+                ?? throw new InvalidOperationException(
+                    "Production playback requires prepared frame payloads.");
+        }
+        else
+        {
+            designPayload =
+                DesignPreviewPayloadForSelection();
+            if (designPayload is null)
+            {
+                return true;
+            }
+            designPayload =
+                ProcessDesignPreviewPayload(
+                    designPayload);
         }
 
         var deviceId = PreviewDeviceId(designPayload);
         if (string.IsNullOrWhiteSpace(deviceId)) return true;
         var metrics = ApplyPreviewOrientation(
             PreparedDeviceMetrics(deviceId));
-        var payload = ProcessPreviewPayload(designPayload, "playback-prepare") ?? designPayload;
+        var payload = designPayload;
         var projectFps = payload.FrameRate;
         var previewFps = PreviewPlaybackTiming.PreviewFrameRate(projectFps);
         var designRequestSignature = cacheOwner == PlaybackFrameCacheOwner.Design
@@ -2400,29 +2597,7 @@ internal sealed class EditorPreviewController : IDisposable
     {
         if (_workspace == EditorWorkspace.Production)
         {
-            var selected = _selectedNode();
-            if (selected?.Kind is not ProjectTreeNodeKind.Shot and not ProjectTreeNodeKind.ModuleInstance)
-            {
-                _activeDesignPreviewNode = null;
-                return null;
-            }
-            var productionNode = ProductionPayloadNode();
-            var productionPayload = DesignPreviewPayloadFactory.Create(
-                _previewPayloadData,
-                productionNode,
-                _selectedThemeId,
-                _selectedMode,
-                _shotPreviewFrame);
-            if (productionPayload is not null && productionNode is not null)
-            {
-                _lastProductionPreviewNode = PreviewNodeKey.From(productionNode);
-                _activeDesignPreviewNode = _lastProductionPreviewNode;
-            }
-            else
-            {
-                _activeDesignPreviewNode = null;
-            }
-            return productionPayload;
+            return null;
         }
         if (_isDesignPreviewContextLocked && _lockedDesignPreviewNode is not null)
         {
@@ -2452,10 +2627,20 @@ internal sealed class EditorPreviewController : IDisposable
 
     private const string PreviewRetryTargetId = "__preview_retry__";
 
-    private PreviewContextState NonRenderableStateForSelection()
+    private PreviewContextState NonRenderableStateForSelection(
+        ProjectTreeNode? selected,
+        string? themeId,
+        string themeMode,
+        int shotFrame,
+        CancellationToken cancellationToken)
     {
-        var selected = _selectedNode();
-        var destination = FirstRenderableDescendant(selected);
+        var destination =
+            FirstRenderableDescendant(
+                selected,
+                themeId,
+                themeMode,
+                shotFrame,
+                cancellationToken);
         if (selected?.Kind == ProjectTreeNodeKind.Episode)
         {
             return new PreviewContextState(
@@ -2475,22 +2660,35 @@ internal sealed class EditorPreviewController : IDisposable
             destination?.Id ?? "");
     }
 
-    private ProjectTreeNode? FirstRenderableDescendant(ProjectTreeNode? node)
+    private ProjectTreeNode? FirstRenderableDescendant(
+        ProjectTreeNode? node,
+        string? themeId,
+        string themeMode,
+        int shotFrame,
+        CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         if (node is null) return null;
         foreach (var child in node.Children)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (DesignPreviewPayloadFactory.Create(
                     _previewPayloadData,
                     child,
-                    _selectedThemeId,
-                    _selectedMode,
-                    _shotPreviewFrame) is not null)
+                    themeId,
+                    themeMode,
+                    shotFrame) is not null)
             {
                 return child;
             }
 
-            var nested = FirstRenderableDescendant(child);
+            var nested =
+                FirstRenderableDescendant(
+                    child,
+                    themeId,
+                    themeMode,
+                    shotFrame,
+                    cancellationToken);
             if (nested is not null) return nested;
         }
 
@@ -3137,81 +3335,16 @@ internal sealed class EditorPreviewController : IDisposable
         return (instance["context"] as JsonObject)?[key]?.GetValue<string>() ?? "";
     }
 
-    private DesignPreviewPayload? ProcessPreviewPayload(
-        DesignPreviewPayload? payload,
-        string purpose,
-        int? productionShotFrame = null)
+    private DesignPreviewPayload ProcessDesignPreviewPayload(
+        DesignPreviewPayload payload)
     {
-        if (payload is null) return null;
-        if (_workspace == EditorWorkspace.Design)
-        {
-            _designInputsPanel.UpdateForPayload(payload, _projectId);
-            return _designInputsPanel.ApplyInputs(payload, _selectedMode, _projectId);
-        }
-
-        _designInputsPanel.UpdateForPayload(null, _projectId);
-        LogProductionFrameBoundary("before-runtime", purpose, payload, productionShotFrame);
-        var localFrameBefore = ResolvedTimelineFrame(payload);
-        var resolved = _productionRuntimeResolver.Resolve(payload, _selectedMode);
-        LogProductionFrameBoundary("after-runtime", purpose, resolved, productionShotFrame);
-        var localFrameAfter = ResolvedTimelineFrame(resolved);
-        if (localFrameAfter != localFrameBefore)
-        {
-            throw new InvalidOperationException(
-                $"Production runtime resolution changed local frame from {localFrameBefore} to {localFrameAfter}.");
-        }
-        return resolved;
-    }
-
-    private void LogProductionFrameBoundary(
-        string phase,
-        string purpose,
-        DesignPreviewPayload payload,
-        int? productionShotFrame)
-    {
-        var screenId = RuntimeContextValue(payload, "moduleInstanceId");
-        var screenFrame = RuntimeContextNumber(payload, "screenFrame");
-        var currentBoundaryFrame = payload.LocalFrame;
-        var resolvedRuntimeFrame = ResolvedTimelineFrame(payload);
-        var startFrame = 0;
-        var durationFrames = 0;
-        var shotId = ProductionShotId();
-        if (!string.IsNullOrWhiteSpace(shotId) && !string.IsNullOrWhiteSpace(screenId))
-        {
-            var screen =
-                PreparedProductionSession()
-                    .Screen(screenId);
-            startFrame = screen.StartFrame;
-            durationFrames =
-                screen.DurationFrames;
-        }
-        PreviewDebugLog.Write(
-            "preview.production.frame-boundary",
-            ("phase", phase),
-            ("purpose", purpose),
-            ("shotFrame", productionShotFrame ?? _shotPreviewFrame),
-            ("screenId", screenId),
-            ("screenStartFrame", startFrame),
-            ("screenDurationFrames", durationFrames),
-            ("screenFrame", screenFrame),
-            ("currentBoundaryLocalFrame", currentBoundaryFrame),
-            ("resolvedRuntimeFrame", resolvedRuntimeFrame));
-    }
-
-    private static int RuntimeContextNumber(DesignPreviewPayload payload, string key)
-    {
-        var instance = DesignPreviewTestValues.Parse(payload.InstanceJson);
-        return (instance["context"] as JsonObject)?[key]?.GetValue<int>() ?? 0;
-    }
-
-    private static int ResolvedTimelineFrame(DesignPreviewPayload payload)
-    {
-        var preview = DesignPreviewTestValues.Parse(payload.DesignPreviewJson);
-        var key = preview["timelineFrameJsonKey"]?.GetValue<string>() ?? "";
-        return !string.IsNullOrWhiteSpace(key) && preview[key] is JsonValue value
-            && value.TryGetValue<int>(out var frame)
-                ? frame
-                : 0;
+        _designInputsPanel.UpdateForPayload(
+            payload,
+            _projectId);
+        return _designInputsPanel.ApplyInputs(
+            payload,
+            _selectedMode,
+            _projectId);
     }
 
     private void UpdateProductionPreviewSetup()

@@ -416,6 +416,11 @@ source.
 Production playback captures its request and creates every resolved payload
 frame through the session operation worker. Frame iteration and runtime record
 resolution do not execute from timer or visual callbacks.
+Interactive Production refresh also captures one exact request and prepares its
+resolved payload, renderability state and history label on that worker. The
+visual controller commits only the preparation whose cancellation owner and
+selection revision are both current. It does not repeat payload construction
+when playback consumes the prepared frame list.
 Cancellation or failure cannot publish a partial desktop session.
 
 A schema, vocabulary, field or identifier change requires one explicit

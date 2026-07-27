@@ -928,10 +928,22 @@ static void ClosingEditorCancelsPreviewLifetime()
                     as PreviewPreparationCancellation
                 ?? throw new InvalidOperationException(
                     "Missing Preview visual-context preparation lifetime.");
+            var productionPayloadPreparation =
+                typeof(EditorPreviewController)
+                    .GetField(
+                        "_productionPayloadPreparation",
+                        BindingFlags.Instance
+                        | BindingFlags.NonPublic)
+                    ?.GetValue(controller)
+                    as PreviewPreparationCancellation
+                ?? throw new InvalidOperationException(
+                    "Missing Production payload preparation lifetime.");
             var designOperation = designPreparation.Begin();
             var shotOperation = shotPreparation.Begin();
             var visualContextOperation =
                 visualContextPreparation.Begin();
+            var productionPayloadOperation =
+                productionPayloadPreparation.Begin();
             var aheadOperation = new CancellationTokenSource();
             typeof(EditorPreviewController)
                 .GetField(
@@ -952,6 +964,7 @@ static void ClosingEditorCancelsPreviewLifetime()
             True(designOperation.IsCancellationRequested);
             True(shotOperation.IsCancellationRequested);
             True(visualContextOperation.IsCancellationRequested);
+            True(productionPayloadOperation.IsCancellationRequested);
             True(aheadOperation.IsCancellationRequested);
             True(!timer.IsEnabled);
             controller.Dispose();
@@ -9683,6 +9696,28 @@ static void ProductionPayloadPreservesActorAndAnimation()
         }
 
         var playbackScreen = screens[0];
+        using (var operations =
+               new EditorOperationCoordinator())
+        {
+            var callingThread =
+                Environment.CurrentManagedThreadId;
+            var preparationThread = callingThread;
+            var interactivePayload =
+                operations.ExecuteAsync(
+                    () =>
+                    {
+                        preparationThread =
+                            Environment.CurrentManagedThreadId;
+                        return preparer.Prepare(
+                            playbackScreen,
+                            null,
+                            "light",
+                            0,
+                            CancellationToken.None);
+                    }).GetAwaiter().GetResult();
+            True(interactivePayload is not null);
+            True(preparationThread != callingThread);
+        }
         var playbackFrames =
             preparer.PrepareFrames(
                 playbackScreen,
@@ -9714,6 +9749,22 @@ static void ProductionPayloadPreservesActorAndAnimation()
                 "_productionPayloadPreparer",
                 BindingFlags.Instance
                 | BindingFlags.NonPublic) is not null);
+        True(typeof(EditorPreviewController)
+            .GetField(
+                "_productionPayloadPreparation",
+                BindingFlags.Instance
+                | BindingFlags.NonPublic) is not null);
+        var interactiveRefresh =
+            typeof(EditorPreviewController)
+                .GetMethod(
+                    "RefreshProductionCoreAsync",
+                    BindingFlags.Instance
+                    | BindingFlags.NonPublic)
+            ?? throw new InvalidOperationException(
+                "Missing asynchronous Production Preview refresh.");
+        Equal(
+            typeof(Task),
+            interactiveRefresh.ReturnType);
 
         var after = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, after);

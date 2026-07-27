@@ -243,6 +243,13 @@ Production playback payload and signature frames are created and runtime-
 resolved on the session operation worker. The visual controller captures the
 request inputs, awaits the immutable frame list and never reads persistence
 while iterating playback frames. Cancellation is checked between frames.
+Static Production refresh follows the same boundary: the selected Shot or
+Screen, Theme mode and Shot frame are captured before payload construction and
+Runtime resolution run on the worker. A newer selection, frame or setup revision
+cancels the previous preparation, and only the still-current immutable payload
+may update the Preview host or Production history. Production playback consumes
+the already prepared first frame for setup and never constructs an additional
+payload on the visual thread.
 Closing the editor disposes the Preview session owner: Design and Production
 preparation, ahead preload, playback timing, frame-cache reservations and the
 external rasterizer lifetime are canceled or released before the window
