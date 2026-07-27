@@ -42,7 +42,8 @@ It includes:
 - UI-independent editor-operation coordination, covering worker execution,
   submission ordering and cancellation of queued work at session disposal,
   plus compiled constructor enforcement for every visual persistence writer
-  and post-commit presentation reader;
+  and post-commit presentation reader, and failed Runtime Override persistence
+  retaining the confirmed document without an early Preview publication;
 - prepared root and embedded editor content, including compiled operation
   coordination, field and dictionary snapshot-only visual card construction
   and a headless rapid selection test proving that only the latest owner

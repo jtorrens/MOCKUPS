@@ -332,6 +332,30 @@ internal sealed class EditorLayoutCardFactory
         {
             try
             {
+                if (context.RuntimeSource is not null)
+                {
+                    await _componentClassFieldValues
+                        .CommitEmbeddedFieldValueAsync(
+                            context,
+                            field.Definition.Id,
+                            value);
+                    if (value
+                        == field.Definition
+                            .InheritedStorageValue)
+                    {
+                        control
+                            .AcceptInheritedValueAsDefault();
+                    }
+                    else
+                    {
+                        control
+                            .MarkCurrentValueCommitted();
+                    }
+                    _activeFieldControls.RefreshPreviews();
+                    _refreshPreview();
+                    return;
+                }
+
                 if (value == field.Definition.InheritedStorageValue)
                 {
                     await _fieldCommitCoordinator.ExecuteAsync(
@@ -362,6 +386,23 @@ internal sealed class EditorLayoutCardFactory
             }
             catch (Exception exception)
             {
+                if (context.RuntimeSource is not null)
+                {
+                    var confirmed =
+                        _componentClassFieldValues
+                            .CreateEmbeddedFieldValue(
+                                context,
+                                field.Definition.Id);
+                    control.SetValue(
+                        confirmed.IsInherited
+                            ? confirmed.Definition
+                                .InheritedStorageValue
+                            : confirmed.Value);
+                    control.MarkCurrentValueCommitted();
+                    _activeFieldControls
+                        .RefreshPreviews();
+                    _refreshPreview();
+                }
                 _messages.Error($"Embedded field {field.Definition.Id}", exception);
             }
         };

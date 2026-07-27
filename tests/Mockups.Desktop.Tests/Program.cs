@@ -81,6 +81,7 @@ var tests = new (string Name, Action Run)[]
     ("dictionary field context boundary preserves current data read-only", DictionaryFieldContextBoundaryPreservesCurrentData),
     ("Typography Style keeps only its explicit inherited sentinels", TypographyStyleKeepsOnlyExplicitSentinels),
     ("embedded Component document store preserves Variant and local Override ownership", EmbeddedComponentDocumentStorePreservesOwnership),
+    ("failed Runtime Override persistence restores the confirmed document", FailedRuntimeOverridePersistenceRestoresConfirmedDocument),
     ("editor presentation context boundary preserves current data read-only", EditorPresentationContextBoundaryPreservesCurrentData),
     ("Production Screen presentation boundary preserves exact current data read-only", ProductionScreenPresentationBoundaryPreservesCurrentData),
     ("Production active Screen presentation follows exact Shot frame ranges", ProductionActiveScreenPresentationFollowsShotFrames),
@@ -7495,24 +7496,118 @@ static void EmbeddedComponentDocumentStorePreservesOwnership()
                 selection.RecordClassId,
                 selection.ConfigJson,
                 overrides,
-                (_) => overrideChanges++));
+                (_) =>
+                {
+                    overrideChanges++;
+                    return Task.CompletedTask;
+                }));
         Equal(
             database.GetRuntimeComponentVariantName(audioVariant.Id, overrides, []),
             store.ActiveVariantName(runtimeContext));
         True(store.CreateFieldValue(runtimeContext, "component.audio.padding").IsInherited);
 
         var beforeRuntimeOverride = SHA256.HashData(File.ReadAllBytes(temporary));
-        store.CommitFieldValue(
+        store.CommitFieldValueAsync(
             runtimeContext,
             "component.audio.padding",
-            "theme.spacing.xl|theme.spacing.l");
+            "theme.spacing.xl|theme.spacing.l")
+            .GetAwaiter()
+            .GetResult();
         Equal(1, overrideChanges);
         True(!store.CreateFieldValue(runtimeContext, "component.audio.padding").IsInherited);
-        store.CommitFieldValue(runtimeContext, "component.audio.padding", "inherited");
+        store.CommitFieldValueAsync(
+                runtimeContext,
+                "component.audio.padding",
+                "inherited")
+            .GetAwaiter()
+            .GetResult();
         Equal(2, overrideChanges);
         True(store.CreateFieldValue(runtimeContext, "component.audio.padding").IsInherited);
         var afterRuntimeOverride = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(beforeRuntimeOverride, afterRuntimeOverride);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void FailedRuntimeOverridePersistenceRestoresConfirmedDocument()
+{
+    var sourcePath = ParityDatabasePath();
+    var temporary = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-runtime-override-failure-{Guid.NewGuid():N}.sqlite");
+    File.Copy(
+        sourcePath,
+        temporary,
+        overwrite: true);
+    try
+    {
+        var before =
+            SHA256.HashData(
+                File.ReadAllBytes(temporary));
+        var database =
+            new SqliteProjectTestContext(
+                temporary);
+        var store =
+            new EmbeddedComponentDocumentStore(
+                ComponentDocuments(database));
+        var nodes = Descendants(
+                database.LoadProjectTree())
+            .ToList();
+        var audioClass = nodes
+            .Where((node) =>
+                node.Kind
+                == ProjectTreeNodeKind.ComponentClass)
+            .First((node) =>
+                database.GetComponentClassSettings(
+                    node.Id).ComponentType
+                == "audio");
+        var audioVariant = audioClass.Children
+            .First((node) =>
+                node.Kind
+                == ProjectTreeNodeKind
+                    .ComponentVariant);
+        var selection =
+            database
+                .GetComponentVariantSelectionSettings(
+                    audioVariant.Id);
+        var confirmedOverrides =
+            new JsonObject();
+        var context = new EditorEmbeddedContext(
+            audioVariant,
+            [],
+            new RuntimeComponentOverrideSource(
+                selection.ProjectId,
+                audioVariant.Id,
+                selection.ComponentType,
+                selection.RecordClassId,
+                selection.ConfigJson,
+                confirmedOverrides,
+                (_) => Task.FromException(
+                    new InvalidOperationException(
+                        "persistence failed"))));
+
+        Throws<InvalidOperationException>(
+            () => store.CommitFieldValueAsync(
+                    context,
+                    "component.audio.padding",
+                    "theme.spacing.xl|theme.spacing.l")
+                .GetAwaiter()
+                .GetResult());
+
+        Equal(
+            0,
+            confirmedOverrides.Count);
+        True(store.CreateFieldValue(
+                context,
+                "component.audio.padding")
+            .IsInherited);
+        SequenceEqual(
+            before,
+            SHA256.HashData(
+                File.ReadAllBytes(temporary)));
     }
     finally
     {
@@ -12562,14 +12657,28 @@ static void ComponentStackSeedOpensAndRenders()
                 selectedComponent.RecordClassId,
                 selectedComponent.ConfigJson,
                 overrides,
-                (_) => runtimeOverrideChanges++));
+                (_) =>
+                {
+                    runtimeOverrideChanges++;
+                    return Task.CompletedTask;
+                }));
         Equal(selectedComponent.RecordClassId, runtimeContext.RecordClassId);
         Equal(selectedComponent.ComponentType, runtimeContext.ComponentType);
         True(embeddedDocuments.CreateFieldValue(runtimeContext, "component.audio.padding").IsInherited);
-        embeddedDocuments.CommitFieldValue(runtimeContext, "component.audio.padding", "theme.spacing.xl|theme.spacing.l");
+        embeddedDocuments.CommitFieldValueAsync(
+                runtimeContext,
+                "component.audio.padding",
+                "theme.spacing.xl|theme.spacing.l")
+            .GetAwaiter()
+            .GetResult();
         Equal(1, runtimeOverrideChanges);
         True(!embeddedDocuments.CreateFieldValue(runtimeContext, "component.audio.padding").IsInherited);
-        embeddedDocuments.CommitFieldValue(runtimeContext, "component.audio.padding", "inherited");
+        embeddedDocuments.CommitFieldValueAsync(
+                runtimeContext,
+                "component.audio.padding",
+                "inherited")
+            .GetAwaiter()
+            .GetResult();
         Equal(2, runtimeOverrideChanges);
         var surfaceSlot = EmbeddedComponentSlotCatalog.Get("component.audio.surface.editor");
         var badgeSlot = EmbeddedComponentSlotCatalog.Get("component.audio.badge.editor");
@@ -12597,7 +12706,7 @@ static void ComponentStackSeedOpensAndRenders()
                 avatarSelection.RecordClassId,
                 avatarSelection.ConfigJson,
                 new JsonObject(),
-                (_) => { }));
+                (_) => Task.CompletedTask));
         foreach (var avatarFieldId in EditorLayouts(database).LoadEditorLayout(avatarSelection.RecordClassId).Cards
                      .Where((card) => card.Visible)
                      .SelectMany((card) => card.VisibleGroups)

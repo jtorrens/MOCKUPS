@@ -18,7 +18,7 @@ internal sealed class IconSlotsControl : StackPanel, IDictionaryValueControl
     private readonly Func<string, bool, Task<string?>>? _showIconTokenPicker;
     private readonly Func<string, Control>? _createIconPreview;
     private readonly Func<string, Task>? _openComponentVariantReference;
-    private readonly Func<string, JsonObject, Action<JsonObject>, Task>? _openRuntimeComponentOverrides;
+    private readonly Func<string, JsonObject, Func<JsonObject, Task>, Task>? _openRuntimeComponentOverrides;
     private readonly bool _isEditable;
     private readonly FixedComponentVariantBoundary _buttonBoundary;
     private List<JsonObject> _items = [];
@@ -32,7 +32,7 @@ internal sealed class IconSlotsControl : StackPanel, IDictionaryValueControl
         Func<string, Control>? createIconPreview,
         IReadOnlyList<FieldOption> buttonVariantOptions,
         Func<string, Task>? openComponentVariantReference,
-        Func<string, JsonObject, Action<JsonObject>, Task>? openRuntimeComponentOverrides)
+        Func<string, JsonObject, Func<JsonObject, Task>, Task>? openRuntimeComponentOverrides)
     {
         _isEditable = isEditable;
         _showIconTokenPicker = showIconTokenPicker;

@@ -12,14 +12,14 @@ internal sealed class DictionaryComponentVariantSlotControl : StackPanel, IDicti
 {
     private readonly FieldDefinition _definition;
     private readonly DictionaryComponentVariantControl _variantControl;
-    private readonly Func<string, JsonObject, Action<JsonObject>, Task>? _openRuntimeComponentOverrides;
+    private readonly Func<string, JsonObject, Func<JsonObject, Task>, Task>? _openRuntimeComponentOverrides;
     private JsonObject _slot;
 
     public DictionaryComponentVariantSlotControl(
         FieldDefinition definition,
         string value,
         Func<string, Task>? openComponentVariantReference,
-        Func<string, JsonObject, Action<JsonObject>, Task>? openRuntimeComponentOverrides)
+        Func<string, JsonObject, Func<JsonObject, Task>, Task>? openRuntimeComponentOverrides)
     {
         _definition = definition;
         _openRuntimeComponentOverrides = openRuntimeComponentOverrides;
@@ -113,6 +113,7 @@ internal sealed class DictionaryComponentVariantSlotControl : StackPanel, IDicti
                 var serialized = Serialize();
                 ValueChanged?.Invoke(this, serialized);
                 ValueCommitted?.Invoke(this, serialized);
+                return Task.CompletedTask;
             });
     }
 

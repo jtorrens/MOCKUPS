@@ -106,7 +106,7 @@ internal sealed class EditorDictionaryFieldServices
         async Task OpenRuntimeOverrides(
             string variantReference,
             JsonObject overrides,
-            Action<JsonObject> changed)
+            Func<JsonObject, Task> changed)
         {
             if (openRuntimeComponentOverrides is null)
             {
@@ -213,7 +213,10 @@ internal sealed class EditorDictionaryFieldServices
                 value.PaceToken,
                 ThemeTokens());
         }
-        Task OpenRuntimeOverrides(string variantReference, JsonObject overrides, Action<JsonObject> changed)
+        Task OpenRuntimeOverrides(
+            string variantReference,
+            JsonObject overrides,
+            Func<JsonObject, Task> changed)
         {
             if (openRuntimeComponentOverrides is null) return Task.CompletedTask;
             var selected = _contextData.ComponentVariantSelection(variantReference);

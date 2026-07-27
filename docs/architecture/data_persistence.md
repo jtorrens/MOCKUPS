@@ -132,6 +132,10 @@ needs more than one capability declares each one in its constructor.
 Desktop Runtime Input and animation document stores additionally require the
 session operation coordinator. Their mutation surface is task-returning and
 captures mutable JSON values before queueing synchronous persistence work.
+Embedded Runtime Override editing follows the same complete task boundary. It
+updates a copied candidate, persists the exact stable collection-item field and
+only then replaces the visible authored snapshot. A failed write retains the
+last confirmed document.
 Persistence keeps adapters only for ports exposed by the current session;
 retired area-wide adapters are removed with their contracts.
 The Node Command membrane exposes exactly `IEditorNodeCommandStore`; it has no

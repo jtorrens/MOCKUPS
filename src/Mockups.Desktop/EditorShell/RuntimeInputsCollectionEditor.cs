@@ -1715,24 +1715,32 @@ internal sealed class RuntimeInputsCollectionEditor
             componentItems.DocumentKeys,
             $"Runtime collection '{collection.Id}' item '{ItemId(item, itemIndex)}'");
         var selected = _ownerDocuments.ComponentVariantSelection(variantReference);
-        async void ApplyOverrides(JsonObject nextOverrides)
+        async Task ApplyOverrides(JsonObject nextOverrides)
         {
-            item[componentItems.OverridesJsonKey] = nextOverrides.DeepClone();
-            _setPreviewCollectionItemValues(
-                collection.JsonKey,
-                ItemId(item, itemIndex),
-                new Dictionary<string, JsonNode?>
-                {
-                    [componentItems.OverridesJsonKey] = nextOverrides,
-                });
+            var itemId = ItemId(
+                item,
+                itemIndex);
             if (owner.IsInstance)
             {
                 await _instanceDocuments.UpdateCollectionValueAsync(
                     owner.Node.Id,
                     StorageCollectionKey(collection),
-                    ItemId(item, itemIndex),
+                    itemId,
                     componentItems.OverridesJsonKey,
                     nextOverrides);
+            }
+            item[componentItems.OverridesJsonKey] =
+                nextOverrides.DeepClone();
+            _setPreviewCollectionItemValues(
+                collection.JsonKey,
+                itemId,
+                new Dictionary<string, JsonNode?>
+                {
+                    [componentItems.OverridesJsonKey] =
+                        nextOverrides,
+                });
+            if (owner.IsInstance)
+            {
                 _onChanged();
             }
             _testValuesChanged();

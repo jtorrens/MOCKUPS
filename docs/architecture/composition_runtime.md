@@ -17,6 +17,13 @@ component type, sibling order and collection position are insufficient.
 A boundary also owns its explicit local Overrides. Overrides customize that
 one embedded use and do not mutate the referenced Variant.
 
+Editing a Runtime-owned Override produces a copied candidate document and
+returns one task for the complete write. A Production instance persists that
+candidate through its exact stable collection-item id before the editor,
+transient document or Preview publishes it. Failure keeps the last confirmed
+Overrides document and restores the field presentation; an asynchronous
+fire-and-forget callback is not a valid commit boundary.
+
 ## Runtime Inputs
 
 Runtime Inputs are declared product inputs shared by isolated Design Preview

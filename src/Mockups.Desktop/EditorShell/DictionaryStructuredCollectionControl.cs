@@ -293,6 +293,7 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                     {
                         item[componentItems.OverridesJsonKey] = next.DeepClone();
                         Publish(commit: true);
+                        return Task.CompletedTask;
                     });
                 },
             }

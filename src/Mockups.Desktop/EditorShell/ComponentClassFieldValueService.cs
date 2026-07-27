@@ -1,6 +1,7 @@
 using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -150,8 +151,23 @@ internal sealed class ComponentClassFieldValueService
     public FieldValue CreateEmbeddedFieldValue(EditorEmbeddedContext context, string embeddedFieldId) =>
         _embeddedDocuments.CreateFieldValue(context, embeddedFieldId);
 
-    public void CommitEmbeddedFieldValue(EditorEmbeddedContext context, string embeddedFieldId, string value) =>
-        _embeddedDocuments.CommitFieldValue(context, embeddedFieldId, value);
+    public Task CommitEmbeddedFieldValueAsync(
+        EditorEmbeddedContext context,
+        string embeddedFieldId,
+        string value) =>
+        _embeddedDocuments.CommitFieldValueAsync(
+            context,
+            embeddedFieldId,
+            value);
+
+    public void CommitEmbeddedFieldValue(
+        EditorEmbeddedContext context,
+        string embeddedFieldId,
+        string value) =>
+        _embeddedDocuments.CommitFieldValue(
+            context,
+            embeddedFieldId,
+            value);
 
     private static FieldValue ApplyVariantLock(ProjectTreeNode node, FieldValue fieldValue)
     {
