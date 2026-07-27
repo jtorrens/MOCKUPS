@@ -9632,6 +9632,12 @@ static void ProductionPayloadPreservesActorAndAnimation()
             database.Resources,
             database.Resources,
             database.ProjectPaths);
+        var preparer =
+            new ProductionPreviewPayloadPreparer(
+                dataSource,
+                new ProductionPreviewRuntimeResolver(
+                    database.Resources,
+                    database.ProjectPaths));
         var screens = Descendants(database.LoadProjectTree())
             .Where((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance)
             .ToList();
@@ -9646,6 +9652,15 @@ static void ProductionPayloadPreservesActorAndAnimation()
                 ? shot.OwnerActorId
                 : runtimeActorId;
             var payload = Required(DesignPreviewPayloadFactory.Create(dataSource, screen, null));
+            var prepared =
+                preparer.PrepareRequired(
+                    screen,
+                    null,
+                    "light",
+                    0);
+            Equal(payload.OwnerId, prepared.OwnerId);
+            Equal(payload.LocalFrame, prepared.LocalFrame);
+            Equal(payload.InstanceJson, prepared.InstanceJson);
             var resolvedRuntime = DesignPreviewTestValues.Parse(payload.DesignPreviewJson);
             var resolvedActor = resolvedRuntime["actor"] as JsonObject
                 ?? throw new InvalidOperationException($"Screen '{screen.Id}' has no resolved Actor.");
@@ -9666,6 +9681,39 @@ static void ProductionPayloadPreservesActorAndAnimation()
                 $"Screen '{screen.Id}' Preview context"));
             True(!payloadContext.ContainsKey("localFrame"));
         }
+
+        var playbackScreen = screens[0];
+        var playbackFrames =
+            preparer.PrepareFrames(
+                playbackScreen,
+                null,
+                "light",
+                0,
+                1,
+                CancellationToken.None);
+        Equal(2, playbackFrames.Count);
+        SequenceEqual(
+            new[] { 0, 1 },
+            playbackFrames.Select(
+                (payload) => payload.LocalFrame));
+        using (var cancellation =
+               new CancellationTokenSource())
+        {
+            cancellation.Cancel();
+            Throws<OperationCanceledException>(
+                () => preparer.PrepareFrames(
+                    playbackScreen,
+                    null,
+                    "light",
+                    0,
+                    1,
+                    cancellation.Token));
+        }
+        True(typeof(EditorPreviewController)
+            .GetField(
+                "_productionPayloadPreparer",
+                BindingFlags.Instance
+                | BindingFlags.NonPublic) is not null);
 
         var after = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, after);

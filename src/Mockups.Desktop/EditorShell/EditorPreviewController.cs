@@ -150,6 +150,8 @@ internal sealed class EditorPreviewController : IDisposable
     private PreviewSetupLayoutMode? _previewSetupLayoutMode;
     private readonly EditorLoadingScrim _previewLoadingScrim = new();
     private readonly ProductionPreviewRuntimeResolver _productionRuntimeResolver;
+    private readonly ProductionPreviewPayloadPreparer
+        _productionPayloadPreparer;
     private readonly Border _previewPerformanceDot = new()
     {
         Width = 10,
@@ -327,6 +329,10 @@ internal sealed class EditorPreviewController : IDisposable
         _productionRuntimeResolver = new ProductionPreviewRuntimeResolver(
             actors,
             projectPaths);
+        _productionPayloadPreparer =
+            new ProductionPreviewPayloadPreparer(
+                _previewPayloadData,
+                _productionRuntimeResolver);
         _previewBusyHost.Content = _previewLoadingScrim;
         _previewBusyHost.IsVisible = false;
         _designInputsPanel = new ComponentPreviewInputSession(
@@ -2795,30 +2801,18 @@ internal sealed class EditorPreviewController : IDisposable
         int endFrame,
         CancellationToken cancellationToken)
     {
-        var lastFrame = Math.Max(startFrame, endFrame);
-        var totalFrames = lastFrame - startFrame + 1;
-        var frames = new List<DesignPreviewPayload>(totalFrames);
-        for (var frame = startFrame; frame <= lastFrame; frame++)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            var payload = DesignPreviewPayloadFactory.Create(
-                _previewPayloadData,
-                payloadNode,
-                _selectedThemeId,
-                _selectedMode,
-                frame)
-                ?? throw new InvalidOperationException(
-                    $"Production playback frame {frame} has no complete Preview payload.");
-            frames.Add(ProcessPreviewPayload(payload, "shot-play-sequence", frame) ?? payload);
-            var completedFrames = frame - startFrame + 1;
-            if (completedFrames % 5 == 0 || completedFrames == totalFrames)
-            {
-                UpdatePreviewLoading(
-                    $"Resolving playback frames {completedFrames} / {totalFrames}…");
-            }
-            await YieldPreviewPreparationAsync(cancellationToken);
-        }
-        return frames;
+        var themeId = _selectedThemeId;
+        var themeMode = _selectedMode;
+        return await _operations.ExecuteAsync(
+            () => _productionPayloadPreparer
+                .PrepareFrames(
+                    payloadNode,
+                    themeId,
+                    themeMode,
+                    startFrame,
+                    endFrame,
+                    cancellationToken),
+            cancellationToken);
     }
 
     private async Task<string> ShotPlaybackRequestSignatureAsync(
@@ -2827,22 +2821,27 @@ internal sealed class EditorPreviewController : IDisposable
         int endFrame,
         CancellationToken cancellationToken)
     {
-        var payloadFingerprints = new List<string>();
-        foreach (var frame in ShotPlaybackSignatureFrames(payloadNode, startFrame, endFrame))
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            var payload = DesignPreviewPayloadFactory.Create(
-                _previewPayloadData,
+        var signatureFrames =
+            ShotPlaybackSignatureFrames(
                 payloadNode,
-                _selectedThemeId,
-                _selectedMode,
-                frame)
-                ?? throw new InvalidOperationException(
-                    $"Production playback signature frame {frame} has no complete Preview payload.");
-            var resolved = ProcessPreviewPayload(payload, "shot-play-signature", frame) ?? payload;
-            payloadFingerprints.Add($"{frame}\u001e{PlaybackPayloadFingerprint(resolved)}");
-            await YieldPreviewPreparationAsync(cancellationToken);
-        }
+                startFrame,
+                endFrame);
+        var themeId = _selectedThemeId;
+        var themeMode = _selectedMode;
+        var payloadFingerprints =
+            await _operations.ExecuteAsync(
+                () => signatureFrames
+                    .Select((frame) =>
+                        $"{frame}\u001e"
+                        + PlaybackPayloadFingerprint(
+                            _productionPayloadPreparer
+                                .PrepareRequired(
+                                    payloadNode,
+                                    themeId,
+                                    themeMode,
+                                    frame)))
+                    .ToList(),
+                cancellationToken);
 
         var signatureJson = JsonSerializer.Serialize(new
         {

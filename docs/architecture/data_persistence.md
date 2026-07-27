@@ -413,6 +413,9 @@ configs. Each Shot entry includes its resolved Actor-owned Device, Theme and
 appearance context. Timeline controls, context presentation and playback
 consume the catalog and hold no timeline or Shot-context persistence data
 source.
+Production playback captures its request and creates every resolved payload
+frame through the session operation worker. Frame iteration and runtime record
+resolution do not execute from timer or visual callbacks.
 Cancellation or failure cannot publish a partial desktop session.
 
 A schema, vocabulary, field or identifier change requires one explicit

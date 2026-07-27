@@ -28,6 +28,8 @@ internal sealed class ProductionPreviewRuntimeResolver
     public DesignPreviewPayload Resolve(DesignPreviewPayload payload, string themeMode)
     {
         var preview = ParseObject(payload.DesignPreviewJson);
+        var timelineFrameBefore =
+            ResolvedTimelineFrame(preview);
         var config = ParseObject(payload.ConfigJson);
         _nestedRecordInputResolver.Resolve(config, themeMode, payload.PaletteColors);
         var inputs = RuntimeInputDefinitionReader.ReadInputs(preview, config);
@@ -63,11 +65,34 @@ internal sealed class ProductionPreviewRuntimeResolver
 
         _nestedRecordInputResolver.Resolve(preview, themeMode, payload.PaletteColors);
 
-        return payload with
+        var resolved = payload with
         {
             ConfigJson = config.ToJsonString(),
             DesignPreviewJson = preview.ToJsonString(),
         };
+        var timelineFrameAfter =
+            ResolvedTimelineFrame(preview);
+        if (timelineFrameAfter
+            != timelineFrameBefore)
+        {
+            throw new InvalidOperationException(
+                $"Production runtime resolution changed local frame from {timelineFrameBefore} to {timelineFrameAfter}.");
+        }
+
+        return resolved;
+    }
+
+    private static int ResolvedTimelineFrame(
+        JsonObject preview)
+    {
+        var key =
+            preview["timelineFrameJsonKey"]
+                ?.GetValue<string>() ?? "";
+        return !string.IsNullOrWhiteSpace(key)
+            && preview[key] is JsonValue value
+            && value.TryGetValue<int>(out var frame)
+                ? frame
+                : 0;
     }
 
     private static JsonObject ParseObject(string json)

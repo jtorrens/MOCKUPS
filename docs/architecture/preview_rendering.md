@@ -239,6 +239,10 @@ reuse rule: the controller retains prepared frames only while their
 cryptographic request signature still matches the resolved payload, action and
 Preview setup. Completion leaves the final frame visible without discarding
 that reusable preparation. Escape cancels both preparation and playback.
+Production playback payload and signature frames are created and runtime-
+resolved on the session operation worker. The visual controller captures the
+request inputs, awaits the immutable frame list and never reads persistence
+while iterating playback frames. Cancellation is checked between frames.
 Closing the editor disposes the Preview session owner: Design and Production
 preparation, ahead preload, playback timing, frame-cache reservations and the
 external rasterizer lifetime are canceled or released before the window

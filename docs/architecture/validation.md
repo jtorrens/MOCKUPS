@@ -55,6 +55,9 @@ It includes:
   Screen ranges, keyframes, Variant configs and Actor-owned Shot context, while
   preventing the visual controller from retaining timeline or Shot-context
   data sources;
+- operation-coordinated Production playback payload preparation, covering exact
+  frame order, preserved local frames, Actor and animation documents,
+  cancellation and byte-for-byte read-only persistence;
 - compiled header-constructor enforcement proving that breadcrumb and
   context-strip rendering cannot receive Component, Preview or timeline
   persistence ports and requires an exact prepared header;
