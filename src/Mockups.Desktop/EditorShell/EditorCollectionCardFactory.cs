@@ -144,7 +144,15 @@ internal sealed class EditorCollectionCardFactory
 
         if (node.CanOpenEditor || node.Kind is ProjectTreeNodeKind.ComponentVariant or ProjectTreeNodeKind.ModuleVariant)
         {
-            cards = [.. cards, new ReferenceUsageCollectionEditor(_referenceUsage, _isDark(), _navigateToUsage).Create(node)];
+            cards =
+            [
+                .. cards,
+                new ReferenceUsageCollectionEditor(
+                    _referenceUsage,
+                    _operations,
+                    _isDark(),
+                    _navigateToUsage).Create(node),
+            ];
         }
 
         return cards;

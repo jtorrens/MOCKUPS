@@ -51,10 +51,44 @@ internal sealed class ShotModuleInstancesCollectionEditor
 
     public InstantEditorCard Create(ProjectTreeNode shot)
     {
-        var slots = _timeline.GetShotModuleInstanceSlots(shot.Id);
+        var add = EditorCollectionItemControls.CreateAddButton("Add Screen");
+        add.Click += async (_, _) =>
+        {
+            var draft = await _defineModuleInstance(shot.Id);
+            if (draft is null) return;
+            var added = await _operations.ExecuteAsync(
+                () => _database.AddModuleInstance(shot, draft));
+            _onChanged();
+            _reloadAndSelect(added);
+        };
+
+        return DeferredEditorCard.Create(
+            "Modules",
+            "Load on expand",
+            () => EditorIcons.CreateSemantic(
+                    "Modules",
+                    EditorIcons.Module,
+                    18),
+            "collection:shot-modules",
+            (cancellationToken) => _operations.ExecuteAsync(
+                () => new ShotModulesSnapshot(
+                    _timeline.GetShotModuleInstanceSlots(shot.Id),
+                    ProductionScreenPlaybackState.FrameRanges(
+                        _timelineDataSource,
+                        shot.Id)),
+                cancellationToken),
+            (snapshot) => Present(shot, snapshot),
+            add);
+    }
+
+    private DeferredEditorCardContent Present(
+        ProjectTreeNode shot,
+        ShotModulesSnapshot snapshot)
+    {
+        var slots = snapshot.Slots;
         var body = new StackPanel { Spacing = 8 };
         var activeIndicators = new Dictionary<string, Control>(StringComparer.Ordinal);
-        var frameRanges = ProductionScreenPlaybackState.FrameRanges(_timelineDataSource, shot.Id);
+        var frameRanges = snapshot.FrameRanges;
         for (var index = 0; index < slots.Count; index++)
         {
             body.Children.Add(CreateSlot(shot, slots[index], index, slots.Count, out var activeIndicator));
@@ -70,26 +104,13 @@ internal sealed class ShotModuleInstancesCollectionEditor
         }
         PreviewPlaybackStateBinding.Attach(body, _playbackState, RefreshActiveScreen);
 
-        var add = EditorCollectionItemControls.CreateAddButton("Add Screen");
-        add.Click += async (_, _) =>
-        {
-            var draft = await _defineModuleInstance(shot.Id);
-            if (draft is null) return;
-            var added = await _operations.ExecuteAsync(
-                () => _database.AddModuleInstance(shot, draft));
-            _onChanged();
-            _reloadAndSelect(added);
-        };
-
-        return new InstantEditorCard(
-            EditorCardHeader.Create("Modules", $"{EditorUiText.Count(slots.Count, "ordered slot")}", EditorIcons.CreateSemantic("Modules", EditorIcons.Module, 18)),
-            new Border { Padding = new Thickness(10), Child = body },
-            isExpanded: false,
-            headerTrailing: add)
-        {
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            SessionStateId = "collection:shot-modules",
-        };
+        return new DeferredEditorCardContent(
+            EditorUiText.Count(slots.Count, "ordered slot"),
+            new Border
+            {
+                Padding = new Thickness(10),
+                Child = body,
+            });
     }
 
     private Control CreateSlot(
@@ -193,4 +214,8 @@ internal sealed class ShotModuleInstancesCollectionEditor
             $"{slot.ModuleName} · {slot.TransitionType}",
             ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ModuleInstance),
             shot);
+
+    private sealed record ShotModulesSnapshot(
+        IReadOnlyList<ModuleInstanceSlot> Slots,
+        IReadOnlyList<ProductionScreenFrameRange> FrameRanges);
 }

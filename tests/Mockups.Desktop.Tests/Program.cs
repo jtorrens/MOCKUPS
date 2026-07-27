@@ -140,6 +140,7 @@ var tests = new (string Name, Action Run)[]
     ("SQLite session exposes distinct focused application ports", SqliteSessionExposesDistinctFocusedPorts),
     ("visual persistence writers require operation coordination", VisualPersistenceWritersRequireOperationCoordination),
     ("Variant history reads persistence through the operation boundary", VariantHistoryReadsThroughOperationBoundary),
+    ("collapsed editor cards defer their snapshot until expansion", CollapsedEditorCardsDeferSnapshots),
     ("Preview resource selection has one session rule", PreviewResourceSelectionHasOneSessionRule),
     ("editor view state follows the exact record class across records", EditorViewStateFollowsRecordClass),
     ("editor view state round-trips per class and clamps scroll", EditorViewStateRoundTripsPerClass),
@@ -3296,6 +3297,7 @@ static void VisualPersistenceWritersRequireOperationCoordination()
                  typeof(IconThemeSvgReplaceDialog),
                  typeof(IconTokenPickerDialog),
                  typeof(ThemeTokenPickerDialog),
+                 typeof(ReferenceUsageCollectionEditor),
                  typeof(RuntimeInputsCollectionEditor),
                  typeof(RuntimeInputInstanceDocumentStore),
                  typeof(RuntimeInputOwnerDocumentStore),
@@ -3381,6 +3383,46 @@ static void VariantHistoryReadsThroughOperationBoundary()
     Equal("""{"value":"changed"}""", snapshot.ConfigJson);
     True(store.ReadThreadIds.Count >= 3);
     True(store.ReadThreadIds.All((threadId) => threadId != callingThread));
+}
+
+static void CollapsedEditorCardsDeferSnapshots()
+{
+    using var session = HeadlessUnitTestSession.StartNew(
+        typeof(HeadlessTestApplication));
+    session.Dispatch(
+        () =>
+        {
+            var loadCount = 0;
+            var presented = false;
+            var card = DeferredEditorCard.Create(
+                "Deferred",
+                "Load on expand",
+                () => EditorIcons.Create(EditorIcons.Structure, 18),
+                "deferred:test",
+                (_) =>
+                {
+                    loadCount++;
+                    return Task.FromResult(42);
+                },
+                (value) =>
+                {
+                    Equal(42, value);
+                    presented = true;
+                    return new DeferredEditorCardContent(
+                        "Loaded",
+                        new TextBlock { Text = "Ready" });
+                });
+
+            Equal(0, loadCount);
+            True(!presented);
+            card.IsExpanded = true;
+            Equal(1, loadCount);
+            True(presented);
+            card.IsExpanded = false;
+            card.IsExpanded = true;
+            Equal(1, loadCount);
+        },
+        CancellationToken.None);
 }
 
 static string MethodSignature(MethodInfo method) =>
@@ -9347,6 +9389,7 @@ static void ForwardActionsUseSharedPresentation()
 
 var isolatedUiTests = new HashSet<string>(StringComparer.Ordinal)
 {
+    "collapsed editor cards defer their snapshot until expansion",
     "real Preview shell layout remains usable at 1040 and 1440",
     "List Item and List expose their runtime model in the real editor",
     "Chat List Module exposes its fixed List boundary and exact Runtime in the real editor",

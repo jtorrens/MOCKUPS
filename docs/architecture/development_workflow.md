@@ -258,6 +258,9 @@ Potentially expensive Icon SVG preview batches are cancellable and revisioned;
 text and selection callbacks never open SQLite themselves.
 Variant navigation schedules its history read on the same serialized boundary;
 the immediate editor transition does not wait for synchronous persistence.
+Collapsed cards whose content depends on persistence use the shared deferred
+card loader. Their first expansion owns one cancellable snapshot read; later
+collapse/expand cycles reuse that snapshot until the editor is rebuilt.
 
 The visual editor is a single-instance workstation application. The Host owns
 the operating-system lease. A second launch exits before constructing Avalonia,

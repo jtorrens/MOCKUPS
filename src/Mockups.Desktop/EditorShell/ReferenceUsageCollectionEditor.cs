@@ -13,22 +13,41 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class ReferenceUsageCollectionEditor
 {
     private readonly IReferenceUsageQuery _database;
+    private readonly EditorOperationCoordinator _operations;
     private readonly bool _isDark;
     private readonly Func<ReferenceUsageDetail, Task> _navigateToUsage;
 
     public ReferenceUsageCollectionEditor(
         IReferenceUsageQuery database,
+        EditorOperationCoordinator operations,
         bool isDark,
         Func<ReferenceUsageDetail, Task> navigateToUsage)
     {
         _database = database;
+        _operations = operations;
         _isDark = isDark;
         _navigateToUsage = navigateToUsage;
     }
 
     public InstantEditorCard Create(ProjectTreeNode node)
     {
-        var usages = _database.GetReferenceUsageDetails(node);
+        return DeferredEditorCard.Create(
+            "Usage",
+            "Load on expand",
+            () => EditorIcons.CreateSemantic(
+                    "Usage",
+                    EditorIcons.Structure,
+                    18),
+            "collection:usage",
+            (cancellationToken) => _operations.ExecuteAsync(
+                () => _database.GetReferenceUsageDetails(node),
+                cancellationToken),
+            Present);
+    }
+
+    private DeferredEditorCardContent Present(
+        IReadOnlyList<ReferenceUsageDetail> usages)
+    {
         var content = new StackPanel { Spacing = 10 };
         if (usages.Count == 0)
         {
@@ -44,14 +63,15 @@ internal sealed class ReferenceUsageCollectionEditor
             AddGroup(content, "Production usage", usages.Where((usage) => usage.IsProduction));
         }
 
-        return new InstantEditorCard(
-            EditorCardHeader.Create("Usage", usages.Count == 1 ? "1 reference" : $"{usages.Count} references", EditorIcons.CreateSemantic("Usage", EditorIcons.Structure, 18)),
-            new Border { Padding = EditorUiDensity.CardThickness(10), Child = content },
-            isExpanded: false)
-        {
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            SessionStateId = "collection:usage",
-        };
+        return new DeferredEditorCardContent(
+            usages.Count == 1
+                ? "1 reference"
+                : $"{usages.Count} references",
+            new Border
+            {
+                Padding = EditorUiDensity.CardThickness(10),
+                Child = content,
+            });
     }
 
     private void AddGroup(Panel host, string label, IEnumerable<ReferenceUsageDetail> usages)

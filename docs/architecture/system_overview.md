@@ -157,6 +157,10 @@ Search and selection filter immutable in-memory snapshots; cancellable Icon
 SVG batches discard results from an obsolete dialog revision.
 Variant history also resolves the exact departing and arriving Variant
 documents through the coordinator before updating its session-only snapshots.
+Collapsed persistence-backed cards do not query while the editor selection is
+being painted. Usage, ordered Screens and Icon Tokens load an immutable
+snapshot through the coordinator on first expansion, render controls only
+after completion and cancel detached cards.
 
 `Mockups.Application.PersistencePorts` owns the synchronous persistence-facing
 port contracts. It references Application models and Domain value objects but

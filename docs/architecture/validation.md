@@ -254,6 +254,8 @@ Runtime Input and Module Instance animation stores, to receive the session
 operation coordinator and expose task-returning mutation methods.
 The same constructor rule covers persistence-backed resource pickers, preventing
 new synchronous token queries from being wired directly into visual callbacks.
+Headless UI coverage verifies that deferred cards perform no load while
+collapsed and load exactly once across repeated expansion.
 The C# startup validator and persistence tests own the complete staged SQLite
 contract. Scaffolding read-only, collision, materialization and integration
 behavior belongs to executable tests over temporary workspaces and databases;

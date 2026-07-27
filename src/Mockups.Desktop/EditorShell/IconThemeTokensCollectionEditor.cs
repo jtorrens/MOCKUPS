@@ -43,13 +43,52 @@ internal sealed class IconThemeTokensCollectionEditor
 
     public InstantEditorCard Create(ProjectTreeNode node)
     {
-        var icon = EditorIcons.CreateSemantic("Icon Tokens", EditorIcons.Icon, 18);
+        return DeferredEditorCard.Create(
+            "Icon Tokens",
+            "Load on expand",
+            () => EditorIcons.CreateSemantic(
+                "Icon Tokens",
+                EditorIcons.Icon,
+                18),
+            "collection:icon-theme-tokens",
+            (cancellationToken) => _operations.ExecuteAsync(
+                () =>
+                {
+                    var tokens = _database.GetIconThemeTokens(node.Id);
+                    return tokens.Select(
+                            (token) =>
+                            {
+                                cancellationToken.ThrowIfCancellationRequested();
+                                try
+                                {
+                                    return new IconThemeTokenSnapshot(
+                                        token,
+                                        _database.ReadIconThemeTokenSvg(
+                                            node.Id,
+                                            token.Token).SvgText);
+                                }
+                                catch
+                                {
+                                    return new IconThemeTokenSnapshot(
+                                        token,
+                                        null);
+                                }
+                            })
+                        .ToList();
+                },
+                cancellationToken),
+            (tokens) => Present(node, tokens));
+    }
+
+    private DeferredEditorCardContent Present(
+        ProjectTreeNode node,
+        IReadOnlyList<IconThemeTokenSnapshot> tokens)
+    {
         var tokensPanel = new StackPanel
         {
             Spacing = 10,
         };
 
-        var tokens = _database.GetIconThemeTokens(node.Id);
         tokensPanel.Children.Add(CreateToolbar(node, tokens));
         if (tokens.Count == 0)
         {
@@ -76,21 +115,18 @@ internal sealed class IconThemeTokensCollectionEditor
             RefreshTokenRows(node, tokens, rowsPanel, emptyFilterText, "");
         }
 
-        return new InstantEditorCard(
-            EditorCardHeader.Create("Icon Tokens", $"{tokens.Count} semantic tokens", icon),
+        return new DeferredEditorCardContent(
+            $"{tokens.Count} semantic tokens",
             new Border
             {
                 Padding = new Thickness(10),
                 Child = tokensPanel,
-            },
-            isExpanded: false)
-        {
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            SessionStateId = "collection:icon-theme-tokens",
-        };
+            });
     }
 
-    private Control CreateToolbar(ProjectTreeNode node, IReadOnlyCollection<IconThemeToken> tokens)
+    private Control CreateToolbar(
+        ProjectTreeNode node,
+        IReadOnlyCollection<IconThemeTokenSnapshot> tokens)
     {
         var toolbar = new Grid
         {
@@ -144,7 +180,7 @@ internal sealed class IconThemeTokensCollectionEditor
     }
 
     private Control CreateFilterBox(
-        IReadOnlyList<IconThemeToken> tokens,
+        IReadOnlyList<IconThemeTokenSnapshot> tokens,
         StackPanel rowsPanel,
         TextBlock emptyFilterText,
         ProjectTreeNode node)
@@ -165,7 +201,7 @@ internal sealed class IconThemeTokensCollectionEditor
 
     private void RefreshTokenRows(
         ProjectTreeNode node,
-        IReadOnlyList<IconThemeToken> tokens,
+        IReadOnlyList<IconThemeTokenSnapshot> tokens,
         StackPanel rowsPanel,
         TextBlock emptyFilterText,
         string query)
@@ -174,10 +210,10 @@ internal sealed class IconThemeTokensCollectionEditor
         var visibleTokens = tokens
             .Where((token) => EditorSearchMatcher.Matches(
                 query,
-                token.Token,
-                token.Category,
-                token.File,
-                token.Description))
+                token.Token.Token,
+                token.Token.Category,
+                token.Token.File,
+                token.Token.Description))
             .ToList();
 
         foreach (var token in visibleTokens)
@@ -188,8 +224,11 @@ internal sealed class IconThemeTokensCollectionEditor
         emptyFilterText.IsVisible = visibleTokens.Count == 0;
     }
 
-    private Control CreateTokenRow(ProjectTreeNode node, IconThemeToken token)
+    private Control CreateTokenRow(
+        ProjectTreeNode node,
+        IconThemeTokenSnapshot snapshot)
     {
+        var token = snapshot.Token;
         var grid = new Grid
         {
             ColumnDefinitions = new ColumnDefinitions("34,*,90,Auto"),
@@ -197,7 +236,11 @@ internal sealed class IconThemeTokensCollectionEditor
             VerticalAlignment = VerticalAlignment.Center,
         };
 
-        var preview = SvgIconPreview.CreateIconThemePreview(_database, node.Id, token.File, 24);
+        var preview = snapshot.SvgText is null
+            ? EditorIcons.Create(EditorIcons.Icon, 24)
+            : SvgIconPreview.CreateFromSvg(
+                snapshot.SvgText,
+                24);
         Grid.SetColumn(preview, 0);
 
         var text = new StackPanel
@@ -288,4 +331,8 @@ internal sealed class IconThemeTokensCollectionEditor
             Child = grid,
         };
     }
+
+    private sealed record IconThemeTokenSnapshot(
+        IconThemeToken Token,
+        string? SvgText);
 }
