@@ -231,6 +231,8 @@ That structural suite also requires:
   reads cannot reappear as a project-engine facade;
 - Module Instance Runtime writes, collection lifecycle, scalar fields,
   animation and read models cannot reappear as project-engine operations;
+- the internal project engine declares zero public members; Shot fields and
+  default path discovery remain on their focused owners;
 - exact manifest owner files, categories and declared embeds;
 - exact Component and Module registry parity;
 - registries whose factory entries are direct owner calls without business

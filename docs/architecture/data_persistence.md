@@ -162,6 +162,10 @@ Module Instance Runtime writes belong to
 `SqliteRecordClassFieldStore`, and animation/read models to the Production
 owner. The session composes one Runtime Input store instance and the project
 engine exposes no Module Instance operation.
+Shot scalar writes and derived owner-device reads belong to
+`SqliteRecordClassFieldStore`. Default database path discovery belongs to
+`SqlitePersistence`. `SqliteProjectEngine` declares no public member: it is an
+internal construction and read-only startup-validation helper only.
 
 Preview reads are also separated by owner. Generic authored Preview input does
 not inherit Actor, Component Preview or Module Instance timeline access, and

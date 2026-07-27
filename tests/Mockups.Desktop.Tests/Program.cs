@@ -3126,6 +3126,15 @@ static void SqliteSessionExposesDistinctFocusedPorts()
     Equal(
         0,
         typeof(SqliteProjectEngine).GetInterfaces().Length);
+    Equal(
+        0,
+        typeof(SqliteProjectEngine)
+            .GetMembers(
+                BindingFlags.Public
+                | BindingFlags.Instance
+                | BindingFlags.Static
+                | BindingFlags.DeclaredOnly)
+            .Length);
     True(
         typeof(SqliteProjectEngine).GetMethod(
             "LoadProjectTree",
@@ -3180,6 +3189,8 @@ static void SqliteSessionExposesDistinctFocusedPorts()
                  "GetAvailableShotModules",
                  "AddModuleInstance",
                  "MoveModuleInstance",
+                 "UpdateShotField",
+                 "GetShotOwnerDeviceName",
              })
     {
         True(

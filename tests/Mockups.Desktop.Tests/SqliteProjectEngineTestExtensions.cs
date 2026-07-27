@@ -128,6 +128,21 @@ internal static class SqliteProjectEngineTestExtensions
             fieldId,
             value);
 
+    internal static void UpdateShotField(
+        this SqliteProjectEngine engine,
+        string shotId,
+        string fieldId,
+        string value) =>
+        engine.RecordFields.UpdateShotField(
+            shotId,
+            fieldId,
+            value);
+
+    internal static string GetShotOwnerDeviceName(
+        this SqliteProjectEngine engine,
+        string shotId) =>
+        engine.RecordFields.GetShotOwnerDeviceName(shotId);
+
     internal static ShotSettings GetShotSettings(
         this SqliteProjectEngine engine,
         string shotId) =>
