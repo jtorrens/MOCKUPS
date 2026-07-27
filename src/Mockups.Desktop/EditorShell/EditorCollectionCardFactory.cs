@@ -305,6 +305,7 @@ internal sealed class EditorCollectionCardFactory : IDisposable
     {
         return new ModuleInstanceAnimationEditor(
             _animation,
+            _timeline,
             _moduleInstanceThemes,
             _dictionary,
             _actors,

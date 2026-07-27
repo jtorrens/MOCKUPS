@@ -145,6 +145,8 @@ Component documents, Component fields, Production record fields, Design record
 fields, Resource record fields, core fields, Screen collections, child creation
 and node commands are composed from the exact owners they require. Each record
 field capability has a distinct adapter and cannot be cast to either sibling.
+Component fields and Component documents likewise use distinct non-castable
+adapters even though both route to the same Design-owned document store.
 None is implemented by or recoverable through a universal persistence object.
 `SqliteEditorNavigationStore` owns the complete read-only tree projection.
 Navigation receives only that store's tree-loading function behind its exact
@@ -204,6 +206,9 @@ editor receives collection, timeline and Theme-token ports independently.
 does not inherit `IModuleInstanceAnimationStore`; animation is an independent
 Production-owned port. Consumers that reconcile animation after a stable-id
 payload edit must declare both capabilities.
+`IModuleInstanceAnimationStore` owns only animation writes and does not inherit
+timeline reads. Animation authoring declares the Production timeline
+capability independently for its prepared snapshot.
 
 The SQLite implementation of Runtime Input Instance writes is a focused
 cross-owner application store. It receives the SQLite context plus Design,

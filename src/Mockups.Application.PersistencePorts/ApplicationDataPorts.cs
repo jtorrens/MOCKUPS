@@ -116,7 +116,7 @@ public interface IResourceRecordFieldStore
         string name);
 }
 
-public interface IComponentClassFieldStore : IComponentDocumentStore
+public interface IComponentClassFieldStore
 {
     EditorShell.FieldValue CreateComponentClassFieldValue(
         string componentClassId,
@@ -410,7 +410,7 @@ public interface IModuleInstanceThemeTokenQuery
     string GetModuleInstanceThemeTokensJson(string moduleInstanceId);
 }
 
-public interface IModuleInstanceAnimationStore : IModuleInstanceTimelineStore
+public interface IModuleInstanceAnimationStore
 {
     void UpdateModuleInstanceAnimationJson(
         string moduleInstanceId,

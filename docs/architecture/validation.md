@@ -252,6 +252,8 @@ That structural suite also requires:
   own port;
 - Production, Design and Resource record-field adapters are pairwise
   non-castable and expose only their owner-specific contract;
+- Component-field adapters cannot be cast to Component-document adapters, and
+  animation-write adapters cannot be cast to timeline-read adapters;
 - test fixtures reach navigation through the focused navigation owner;
 - Design, Production and Resources reads and writes cannot reappear as
   composition forwarding methods;

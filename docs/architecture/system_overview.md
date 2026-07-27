@@ -300,9 +300,10 @@ collection surface declares collection mutation, Production timeline and
 Resources Theme-token capabilities independently.
 
 Module Instance animation persistence is also backed directly by Production.
-Runtime Input Instance writes do not inherit animation or timeline capability;
-the Runtime collection editor receives payload writes, animation writes and
-Theme-token reads as three distinct dependencies.
+Animation writes do not inherit timeline reads, and Runtime Input Instance
+writes inherit neither capability. The Runtime collection editor receives
+payload writes, animation writes, timeline reads and Theme-token reads as four
+distinct dependencies.
 
 Cross-owner Runtime Input Instance mutation is implemented by the focused
 `SqliteRuntimeInputInstanceStore`. It

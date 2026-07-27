@@ -14,6 +14,7 @@ internal sealed class RuntimeInputInstanceDocumentStore
     public RuntimeInputInstanceDocumentStore(
         IRuntimeInputInstanceStore database,
         IModuleInstanceAnimationStore animation,
+        IModuleInstanceTimelineStore timeline,
         IModuleInstanceThemeTokenQuery themeTokens,
         EditorOperationCoordinator operations)
     {
@@ -21,9 +22,10 @@ internal sealed class RuntimeInputInstanceDocumentStore
         _operations = operations;
         _animationDocuments = new ModuleInstanceAnimationDocumentStore(
             animation,
+            timeline,
             themeTokens,
             new ModuleInstanceTimelineDataSource(
-                animation,
+                timeline,
                 themeTokens),
             operations);
     }

@@ -7,12 +7,17 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class ComponentClassFieldValueService
 {
     private readonly IComponentClassFieldStore _database;
+    private readonly IComponentDocumentStore _documents;
     private readonly EmbeddedComponentDocumentStore _embeddedDocuments;
 
-    public ComponentClassFieldValueService(IComponentClassFieldStore database)
+    public ComponentClassFieldValueService(
+        IComponentClassFieldStore database,
+        IComponentDocumentStore documents)
     {
         _database = database;
-        _embeddedDocuments = new EmbeddedComponentDocumentStore(database);
+        _documents = documents;
+        _embeddedDocuments =
+            new EmbeddedComponentDocumentStore(documents);
     }
 
     public bool CanHandle(ProjectTreeNodeKind nodeKind, string fieldId)
@@ -69,7 +74,12 @@ internal sealed class ComponentClassFieldValueService
             throw new InvalidOperationException($"Embedded component '{embeddedComponentType}' is not supported for slot '{slotFieldId}'.");
         }
 
-        return ApplyVariantLock(node, _database.CreateEmbeddedComponentFieldValue(node, [slot], embeddedFieldId));
+        return ApplyVariantLock(
+            node,
+            _documents.CreateEmbeddedComponentFieldValue(
+                node,
+                [slot],
+                embeddedFieldId));
     }
 
     public FieldValue CreateEmbeddedFieldValue(
@@ -82,7 +92,12 @@ internal sealed class ComponentClassFieldValueService
             throw new InvalidOperationException($"Embedded component field '{embeddedFieldId}' is not supported for '{node.Kind}'.");
         }
 
-        return ApplyVariantLock(node, _database.CreateEmbeddedComponentFieldValue(node, slots, embeddedFieldId));
+        return ApplyVariantLock(
+            node,
+            _documents.CreateEmbeddedComponentFieldValue(
+                node,
+                slots,
+                embeddedFieldId));
     }
 
     public void CommitEmbeddedFieldValue(
@@ -105,7 +120,11 @@ internal sealed class ComponentClassFieldValueService
 
         if (node.IsLocked) return;
 
-        _database.UpdateEmbeddedComponentField(node, [slot], embeddedFieldId, value);
+        _documents.UpdateEmbeddedComponentField(
+            node,
+            [slot],
+            embeddedFieldId,
+            value);
     }
 
     public void CommitEmbeddedFieldValue(
@@ -121,7 +140,11 @@ internal sealed class ComponentClassFieldValueService
 
         if (node.IsLocked) return;
 
-        _database.UpdateEmbeddedComponentField(node, slots, embeddedFieldId, value);
+        _documents.UpdateEmbeddedComponentField(
+            node,
+            slots,
+            embeddedFieldId,
+            value);
     }
 
     public FieldValue CreateEmbeddedFieldValue(EditorEmbeddedContext context, string embeddedFieldId) =>

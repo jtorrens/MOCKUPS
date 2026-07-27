@@ -36,6 +36,7 @@ internal sealed class ModuleInstanceAnimationEditor
 
     public ModuleInstanceAnimationEditor(
         IModuleInstanceAnimationStore animation,
+        IModuleInstanceTimelineStore timeline,
         IModuleInstanceThemeTokenQuery moduleInstanceThemes,
         IDictionaryFieldContextRepository dictionary,
         IActorPreviewRepository actors,
@@ -50,10 +51,11 @@ internal sealed class ModuleInstanceAnimationEditor
     {
         var timelineDataSource =
             new ModuleInstanceTimelineDataSource(
-                animation,
+                timeline,
                 moduleInstanceThemes);
         _animationDocuments = new ModuleInstanceAnimationDocumentStore(
             animation,
+            timeline,
             moduleInstanceThemes,
             timelineDataSource,
             operations);

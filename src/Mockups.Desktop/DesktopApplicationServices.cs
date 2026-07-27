@@ -63,7 +63,9 @@ internal sealed record DesktopApplicationServices(
                 data.Timeline,
                 data.ModuleInstanceThemes,
                 productionOutputRoots),
-            new ComponentClassFieldValueService(data.ComponentFields),
+            new ComponentClassFieldValueService(
+                data.ComponentFields,
+                data.Components),
             new ProductionShotContextService(
                 new ProductionShotContextDataSource(
                     data.Preview,

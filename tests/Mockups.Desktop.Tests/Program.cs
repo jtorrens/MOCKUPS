@@ -3434,6 +3434,7 @@ static void SqliteSessionExposesDistinctFocusedPorts()
     True(project.ModuleInstances is not IModuleInstanceTimelineStore);
     True(project.IconThemes is not IThemeTokenQuery);
     True(project.ThemeTokens is not IModuleInstanceCollectionStore);
+    True(project.ComponentFields is not IComponentDocumentStore);
     True(project.Components is not IPreviewInputRepository);
     True(project.RuntimeInputOwners is not IRuntimeInputInstanceStore);
     True(project.RuntimeInputOwners is not
@@ -3441,6 +3442,7 @@ static void SqliteSessionExposesDistinctFocusedPorts()
     True(project.RuntimeInputInstances is not
         IModuleInstanceAnimationStore);
     True(project.Animation is not IRuntimeInputInstanceStore);
+    True(project.Animation is not IModuleInstanceTimelineStore);
     True(project.ReferenceUsage is not IRuntimeInputOwnerStore);
     True(project.ReferenceUsage is not IEditorNodeCommandStore);
 }
@@ -6307,7 +6309,8 @@ static void SystemBarItemsUseFixedDictionaryCollections()
         var statusClass = nodes.Single((node) => node.Id == "component_project_foqn_s2_status_bar");
         var statusDefault = nodes.Single((node) => node.Id == $"{statusClass.Id}::variant::default");
         True(!new ComponentClassFieldValueService(
-                ComponentFields(database))
+                ComponentFields(database),
+                ComponentDocuments(database))
             .CreateFieldValue(statusDefault, statusField.Id)
             .Definition.IsEditable);
         var statusVariant = nodes.Single((node) => node.Id == $"{statusClass.Id}::variant::lock_screen");
@@ -7449,6 +7452,7 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
                 database.Production,
                 database.Resources),
             database.Production,
+            database.Production,
             database.Resources,
             operations);
         var screen = Descendants(database.LoadProjectTree())
@@ -7830,6 +7834,7 @@ static void ModuleInstanceAnimationStorePreservesCurrentDocuments()
             database.Resources);
         using var operations = new EditorOperationCoordinator();
         var store = new ModuleInstanceAnimationDocumentStore(
+            database.Production,
             database.Production,
             database.Resources,
             timelineDataSource,
@@ -10085,6 +10090,7 @@ static void ConversationMessageActorsFollowDirectionContract()
                 database.Design,
                 database.Production,
                 database.Resources),
+            database.Production,
             database.Production,
             database.Resources,
             operations);

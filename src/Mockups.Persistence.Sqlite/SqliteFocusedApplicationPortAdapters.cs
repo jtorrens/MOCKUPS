@@ -254,32 +254,6 @@ internal class SqliteModuleInstanceAnimationPort(
 {
     protected IModuleInstanceAnimationStore Target { get; } = target;
 
-    public ModuleInstanceSettings GetModuleInstanceSettings(
-        string moduleInstanceId) =>
-        Target.GetModuleInstanceSettings(moduleInstanceId);
-
-    public ModuleSettings GetModuleInstanceVariantSettings(
-        string moduleInstanceId) =>
-        Target.GetModuleInstanceVariantSettings(moduleInstanceId);
-
-    public string GetModuleInstanceModuleName(string moduleInstanceId) =>
-        Target.GetModuleInstanceModuleName(moduleInstanceId);
-
-    public string GetModuleInstanceTransitionType(string moduleInstanceId) =>
-        Target.GetModuleInstanceTransitionType(moduleInstanceId);
-
-    public string GetModuleInstanceEffectiveContractJson(
-        string moduleInstanceId) =>
-        Target.GetModuleInstanceEffectiveContractJson(moduleInstanceId);
-
-    public string GetModuleInstanceRuntimePreviewJson(
-        string moduleInstanceId) =>
-        Target.GetModuleInstanceRuntimePreviewJson(moduleInstanceId);
-
-    public IReadOnlyList<ModuleInstanceSlot> GetShotModuleInstanceSlots(
-        string shotId) =>
-        Target.GetShotModuleInstanceSlots(shotId);
-
     public void UpdateModuleInstanceAnimationJson(
         string moduleInstanceId,
         string animationJson) =>

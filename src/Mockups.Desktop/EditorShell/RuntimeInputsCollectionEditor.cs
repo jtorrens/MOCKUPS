@@ -111,6 +111,7 @@ internal sealed class RuntimeInputsCollectionEditor
             new RuntimeInputInstanceDocumentStore(
                 instanceStore,
                 animationStore,
+                timeline,
                 moduleInstanceThemes,
                 operations);
         _runtimeInputOptions =
