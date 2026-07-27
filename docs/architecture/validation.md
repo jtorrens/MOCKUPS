@@ -219,8 +219,8 @@ That structural suite also requires:
   own port;
 - the internal SQLite project engine has no tree-loading method; test fixtures
   reach navigation through the focused navigation owner;
-- Design and Production reads and writes cannot reappear as project-engine
-  forwarding methods;
+- Design, Production and Resources reads and writes cannot reappear as
+  project-engine forwarding methods;
 - exact manifest owner files, categories and declared embeds;
 - exact Component and Module registry parity;
 - registries whose factory entries are direct owner calls without business

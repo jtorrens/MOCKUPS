@@ -3142,6 +3142,14 @@ static void SqliteSessionExposesDistinctFocusedPorts()
                  "UpdateProjectField",
                  "GetShotSettings",
                  "GetProductionOutputShotPlan",
+                 "GetActorSettings",
+                 "UpdateActorField",
+                 "GetDeviceSettings",
+                 "UpdateDeviceField",
+                 "GetThemeSettings",
+                 "UpdateThemeField",
+                 "GetProductionFontSettings",
+                 "GetIconThemeSettings",
              })
     {
         True(
