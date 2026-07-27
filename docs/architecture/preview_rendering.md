@@ -253,6 +253,13 @@ cancel. Preparation closes the static payload once per exact Screen and derives
 only that Screen's frame-owned fields for its remaining frames; it does not
 repeat Theme, Actor, resource or document reads for every tick. Cancellation
 is checked between preparation frames.
+The prepared Production playback remains valid until an owning authored input
+or Preview visual setup changes explicitly. Play, pause, frame stepping,
+selection changes and playhead movement do not validate it by rebuilding
+payloads or signatures. When its exact owner and frame range still match,
+replay starts directly from the session snapshot. The Preview timeline slider
+uses the same snapshot for every value change while dragging, so each requested
+frame may replace an obsolete render before pointer release.
 Static Production refresh follows the same boundary: the selected Shot or
 Screen, Theme mode and Shot frame are captured before payload construction and
 Runtime resolution run on the worker. A newer selection, frame or setup revision

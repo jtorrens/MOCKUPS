@@ -201,6 +201,7 @@ var tests = new (string Name, Action Run)[]
     ("Runtime action controls reactivate after playback and visual-tree reattachment", RuntimeActionControlsReactivateAfterPlaybackAndReattachment),
     ("Preview preparation cancellation retains only the latest operation", PreviewPreparationCancellationRetainsLatestOperation),
     ("prepared playback reuse requires an exact current signature", PreparedPlaybackReuseRequiresExactSignature),
+    ("prepared playback owners retain their combined frame cache", PreparedPlaybackOwnersRetainCombinedFrameCache),
     ("timeline frame updates suppress their own playback feedback", TimelineFrameUpdatesSuppressOwnPlaybackFeedback),
     ("collection item reorder persists stable ids", CollectionItemReorderPersistsStableIds),
     ("new collection items become the only expanded item", NewCollectionItemBecomesOnlyExpanded),
@@ -10432,6 +10433,22 @@ static void ProductionPlaybackSelectsPreparedOwnerFrames()
         11,
         out var second));
     Equal(11, second?.LocalFrame);
+    True(prepared.Covers(
+        screen,
+        10,
+        11));
+    True(prepared.Covers(
+        screen,
+        11,
+        11));
+    True(!prepared.Covers(
+        screen,
+        9,
+        11));
+    True(!prepared.Covers(
+        screen,
+        10,
+        12));
     True(!prepared.TryGetFrame(
         screen,
         12,
@@ -10445,6 +10462,15 @@ static void ProductionPlaybackSelectsPreparedOwnerFrames()
             screen.RecordClassId),
         10,
         out _));
+    True(!prepared.Covers(
+        new ProjectTreeNode(
+            screen.Kind,
+            "screen-b",
+            "Screen B",
+            "",
+            screen.RecordClassId),
+        10,
+        11));
 
     static DesignPreviewPayload PlaybackPayloadAtFrame(
         int frame) =>
@@ -12524,6 +12550,51 @@ static void PreparedPlaybackReuseRequiresExactSignature()
     Equal(
         PreparedPlaybackReuse.None,
         PreparedPlaybackReusePolicy.Decide(null, "exact", hasFrameCacheReservation: true));
+}
+
+static void PreparedPlaybackOwnersRetainCombinedFrameCache()
+{
+    var capacity =
+        typeof(WebDesignPreviewRenderer)
+            .GetField(
+                "_frameCacheCapacity",
+                BindingFlags.Static
+                | BindingFlags.NonPublic)
+        ?? throw new InvalidOperationException(
+            "Missing Preview frame-cache capacity owner.");
+
+    Equal(
+        180,
+        (int)Required(
+            capacity.GetValue(null)));
+    using (var first =
+           WebDesignPreviewRenderer
+               .ReserveFrameCacheCapacity(
+                   181))
+    {
+        Equal(
+            181,
+            (int)Required(
+                capacity.GetValue(null)));
+        using (var second =
+               WebDesignPreviewRenderer
+                   .ReserveFrameCacheCapacity(
+                       182))
+        {
+            Equal(
+                363,
+                (int)Required(
+                    capacity.GetValue(null)));
+        }
+        Equal(
+            181,
+            (int)Required(
+                capacity.GetValue(null)));
+    }
+    Equal(
+        180,
+        (int)Required(
+            capacity.GetValue(null)));
 }
 
 static void TimelineFrameUpdatesSuppressOwnPlaybackFeedback()

@@ -401,7 +401,6 @@ internal sealed class EditorLayoutCardFactory
                     control.MarkCurrentValueCommitted();
                     _activeFieldControls
                         .RefreshPreviews();
-                    _refreshPreview();
                 }
                 _messages.Error($"Embedded field {field.Definition.Id}", exception);
             }

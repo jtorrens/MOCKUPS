@@ -137,7 +137,10 @@ internal static class WebDesignPreviewRenderer
     {
         _frameCacheCapacity = FrameCacheReservations.Count == 0
             ? DefaultFrameCacheCapacity
-            : Math.Max(DefaultFrameCacheCapacity, FrameCacheReservations.Values.Max());
+            : Math.Clamp(
+                FrameCacheReservations.Values.Sum(),
+                DefaultFrameCacheCapacity,
+                MaximumFrameCacheCapacity);
     }
 
     private static object CreateRequest(

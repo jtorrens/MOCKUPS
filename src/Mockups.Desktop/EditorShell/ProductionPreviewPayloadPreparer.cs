@@ -342,6 +342,20 @@ internal sealed record PreparedProductionPlayback(
     int StartFrame,
     IReadOnlyList<DesignPreviewPayload> Frames)
 {
+    public bool Covers(
+        ProjectTreeNode node,
+        int startFrame,
+        int endFrame)
+    {
+        return node.Kind == NodeKind
+            && node.Id.Equals(
+                NodeId,
+                StringComparison.Ordinal)
+            && startFrame >= StartFrame
+            && endFrame
+                < StartFrame + Frames.Count;
+    }
+
     public bool TryGetFrame(
         ProjectTreeNode node,
         int frame,

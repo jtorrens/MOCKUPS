@@ -274,8 +274,8 @@ internal sealed class EditorPreviewController : IDisposable
     private readonly ChromiumPreviewRasterizer _chromiumRasterizer = new();
     private string _rasterCacheDirectory = "";
     private PlaybackPerformanceRun? _playbackPerformanceRun;
-    private IDisposable? _frameCacheReservation;
-    private PlaybackFrameCacheOwner _frameCacheReservationOwner;
+    private readonly Dictionary<PlaybackFrameCacheOwner, IDisposable>
+        _frameCacheReservations = [];
     private PreparedDesignPlayback? _preparedDesignPlayback;
     private int _playbackSummaryGeneration;
     private int _shotPreviewFrame;
@@ -417,7 +417,7 @@ internal sealed class EditorPreviewController : IDisposable
         _aheadPreloadCancellation?.Dispose();
         _aheadPreloadCancellation = null;
         _aheadPreloadedFrameKeys.Clear();
-        ReleaseFrameCacheReservation();
+        ReleaseFrameCacheReservations();
         _chromiumRasterizer.Dispose();
     }
 
@@ -1106,6 +1106,7 @@ internal sealed class EditorPreviewController : IDisposable
     internal void ApplyCommittedOptions(
         PreviewOptionsPreparation preparation)
     {
+        InvalidatePreparedShotPlayback();
         ApplyVisualContextOptions(
             preparation.Visual);
         Refresh();
@@ -1265,6 +1266,7 @@ internal sealed class EditorPreviewController : IDisposable
         SelectedDeviceId = option.Value;
         if (!_isRefreshingOptions)
         {
+            InvalidatePreparedShotPlayback();
             Refresh();
         }
     }
@@ -1277,6 +1279,7 @@ internal sealed class EditorPreviewController : IDisposable
         ThemeChanged?.Invoke();
         if (!_isRefreshingOptions)
         {
+            InvalidatePreparedShotPlayback();
             Refresh();
         }
     }
@@ -1288,6 +1291,7 @@ internal sealed class EditorPreviewController : IDisposable
         _selectedMode = option.Value;
         if (!_isRefreshingOptions)
         {
+            InvalidatePreparedShotPlayback();
             Refresh();
         }
     }
@@ -1299,6 +1303,7 @@ internal sealed class EditorPreviewController : IDisposable
         _selectedOrientation = option.Value;
         if (!_isRefreshingOptions)
         {
+            InvalidatePreparedShotPlayback();
             Refresh();
         }
     }
@@ -1310,6 +1315,7 @@ internal sealed class EditorPreviewController : IDisposable
         _selectedScale = option.Value;
         if (!_isRefreshingOptions)
         {
+            InvalidatePreparedShotPlayback();
             Refresh();
         }
     }
@@ -1319,7 +1325,11 @@ internal sealed class EditorPreviewController : IDisposable
         if (_playbackRouteComboBox.SelectedItem is not { } option) return;
         _selectedPlaybackRoute = option.Value;
         _designInputsPanel.PresentEveryPlaybackFrame = _selectedPlaybackRoute == "html-all";
-        if (!_isRefreshingOptions) Refresh();
+        if (!_isRefreshingOptions)
+        {
+            InvalidatePreparedShotPlayback();
+            Refresh();
+        }
     }
 
     private void OnMarksChanged()
@@ -1327,6 +1337,7 @@ internal sealed class EditorPreviewController : IDisposable
         _showDesignMarks = _marksToggle.IsChecked == true;
         if (!_isRefreshingOptions)
         {
+            InvalidatePreparedShotPlayback();
             _ = _designPreviewPane.SetDesignMarksAsync(_showDesignMarks);
             Refresh();
         }
@@ -1337,8 +1348,15 @@ internal sealed class EditorPreviewController : IDisposable
         _showCanonicalFrame = _canonicalFrameToggle.IsChecked == true;
         if (!_isRefreshingOptions)
         {
+            InvalidatePreparedShotPlayback();
             Refresh();
         }
+    }
+
+    public void NotifyAuthoredPreviewInputsChanged()
+    {
+        InvalidatePreparedShotPlayback();
+        Refresh();
     }
 
     private async Task BrowseReferenceAsync()
@@ -1488,7 +1506,7 @@ internal sealed class EditorPreviewController : IDisposable
                 ref _selectionRefreshGeneration);
         try
         {
-            if (TryRenderPreparedProductionPlaybackFrame())
+            if (TryRenderPreparedProductionFrame())
             {
                 return;
             }
@@ -1584,11 +1602,10 @@ internal sealed class EditorPreviewController : IDisposable
         }
     }
 
-    private bool TryRenderPreparedProductionPlaybackFrame()
+    private bool TryRenderPreparedProductionFrame()
     {
         var node = ProductionPayloadNode();
-        if (!_shotPlaybackTimer.IsEnabled
-            || _preparedShotPlayback is not { } prepared
+        if (_preparedShotPlayback is not { } prepared
             || node is null
             || !prepared.TryGetFrame(
                 node,
@@ -1813,7 +1830,6 @@ internal sealed class EditorPreviewController : IDisposable
 
     private async Task<bool> PreparePlaybackFramesAsync(ComponentPreviewActionDefinition? requestedAction)
     {
-        InvalidatePreparedShotPlayback();
         var operation = _designPlaybackPreparation.Begin();
         try
         {
@@ -2297,7 +2313,7 @@ internal sealed class EditorPreviewController : IDisposable
     {
         if (_preparedShotPlayback is null && _preparedDesignPlayback is null)
         {
-            ReleaseFrameCacheReservation();
+            ReleaseFrameCacheReservations();
         }
         if (_playbackPerformanceRun is null) return;
         _playbackPerformanceRun.AcceptsPresentations = false;
@@ -2310,24 +2326,42 @@ internal sealed class EditorPreviewController : IDisposable
             TimeSpan.FromMilliseconds(750));
     }
 
-    private void ReleaseFrameCacheReservation()
+    private void ReleaseFrameCacheReservations()
     {
-        _frameCacheReservation?.Dispose();
-        _frameCacheReservation = null;
-        _frameCacheReservationOwner = PlaybackFrameCacheOwner.None;
+        foreach (var reservation in _frameCacheReservations.Values)
+        {
+            reservation.Dispose();
+        }
+        _frameCacheReservations.Clear();
+    }
+
+    private void ReleaseFrameCacheReservation(
+        PlaybackFrameCacheOwner owner)
+    {
+        if (!_frameCacheReservations.Remove(
+                owner,
+                out var reservation))
+        {
+            return;
+        }
+        reservation.Dispose();
     }
 
     private void ReserveFrameCacheCapacity(
         PlaybackFrameCacheOwner owner,
         int frameCount)
     {
-        ReleaseFrameCacheReservation();
-        _frameCacheReservation = WebDesignPreviewRenderer.ReserveFrameCacheCapacity(frameCount);
-        _frameCacheReservationOwner = owner;
+        ReleaseFrameCacheReservation(
+            owner);
+        _frameCacheReservations[owner] =
+            WebDesignPreviewRenderer
+                .ReserveFrameCacheCapacity(
+                    frameCount);
     }
 
     private bool HasFrameCacheReservation(PlaybackFrameCacheOwner owner) =>
-        _frameCacheReservation is not null && _frameCacheReservationOwner == owner;
+        _frameCacheReservations.ContainsKey(
+            owner);
 
     private void RememberPreparedDesignPlayback(
         PlaybackFrameCacheOwner owner,
@@ -2347,7 +2381,8 @@ internal sealed class EditorPreviewController : IDisposable
         }
         if (HasFrameCacheReservation(owner))
         {
-            ReleaseFrameCacheReservation();
+            ReleaseFrameCacheReservation(
+                owner);
         }
     }
 
@@ -2403,7 +2438,8 @@ internal sealed class EditorPreviewController : IDisposable
         _preparedShotPlayback = null;
         if (HasFrameCacheReservation(PlaybackFrameCacheOwner.Shot))
         {
-            ReleaseFrameCacheReservation();
+            ReleaseFrameCacheReservation(
+                PlaybackFrameCacheOwner.Shot);
         }
     }
 
@@ -2412,7 +2448,8 @@ internal sealed class EditorPreviewController : IDisposable
         _preparedDesignPlayback = null;
         if (HasFrameCacheReservation(PlaybackFrameCacheOwner.Design))
         {
-            ReleaseFrameCacheReservation();
+            ReleaseFrameCacheReservation(
+                PlaybackFrameCacheOwner.Design);
         }
     }
 
@@ -2488,7 +2525,6 @@ internal sealed class EditorPreviewController : IDisposable
 
     private enum PlaybackFrameCacheOwner
     {
-        None,
         Design,
         Shot,
     }
@@ -3037,6 +3073,23 @@ internal sealed class EditorPreviewController : IDisposable
         InvalidatePreparedDesignPlayback();
         var navigationRange = NavigationFrameRange();
         if (_shotPreviewFrame >= navigationRange.EndFrame) _shotPreviewFrame = navigationRange.StartFrame;
+        if (CanReusePreparedShotPlayback(
+                payloadNode,
+                _shotPreviewFrame,
+                navigationRange.EndFrame))
+        {
+            PreviewDebugLog.Write(
+                "preview.playback.prepared-cache-hit",
+                ("kind", payloadNode.Kind),
+                ("id", payloadNode.Id),
+                ("frames", _preparedShotPlayback!.Frames.Count),
+                ("verification", "explicit-invalidation"));
+            StartShotPlayback(
+                shotId,
+                navigationRange);
+            return;
+        }
+
         var cancellation = _shotPlaybackPreparation.Begin();
         _shotPlaybackIsPreparing = true;
         PlaybackState.SetPlaying(true);
@@ -3056,7 +3109,8 @@ internal sealed class EditorPreviewController : IDisposable
             var reuse = PreparedPlaybackReusePolicy.Decide(
                 prepared?.RequestSignature,
                 requestSignature,
-                _frameCacheReservation is not null);
+                HasFrameCacheReservation(
+                    PlaybackFrameCacheOwner.Shot));
             if (reuse == PreparedPlaybackReuse.Complete)
             {
                 preparationSucceeded = true;
@@ -3064,7 +3118,8 @@ internal sealed class EditorPreviewController : IDisposable
                     "preview.playback.prepared-cache-hit",
                     ("kind", payloadNode.Kind),
                     ("id", payloadNode.Id),
-                    ("frames", prepared!.Frames.Count));
+                    ("frames", prepared!.Frames.Count),
+                    ("verification", "signature"));
             }
             else
             {
@@ -3132,6 +3187,29 @@ internal sealed class EditorPreviewController : IDisposable
         }
         if (!preparationSucceeded) return;
 
+        StartShotPlayback(
+            shotId,
+            navigationRange);
+    }
+
+    private bool CanReusePreparedShotPlayback(
+        ProjectTreeNode node,
+        int startFrame,
+        int endFrame)
+    {
+        return _preparedShotPlayback is { } prepared
+            && prepared.Covers(
+                node,
+                startFrame,
+                endFrame)
+            && HasFrameCacheReservation(
+                PlaybackFrameCacheOwner.Shot);
+    }
+
+    private void StartShotPlayback(
+        string shotId,
+        (int StartFrame, int EndFrame, int DurationFrames) navigationRange)
+    {
         _shotPlaybackStartFrame = _shotPreviewFrame;
         _shotPlaybackStartedTimestamp = Stopwatch.GetTimestamp();
         _shotPlaybackTimer.Start();

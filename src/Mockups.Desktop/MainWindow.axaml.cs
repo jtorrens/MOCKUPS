@@ -155,7 +155,7 @@ public partial class MainWindow : SukiWindow
             () => _previewController.SelectedDeviceId,
             SetEditorRootTitle,
             RebuildNavigationCards,
-            RefreshPreviewDevice,
+            _previewController.NotifyAuthoredPreviewInputsChanged,
             RefreshPreviewOptions,
             RefreshProductionPicker);
         var pathBrowser = new EditorPathBrowser(
@@ -208,7 +208,7 @@ public partial class MainWindow : SukiWindow
             _nodeCommands.ToggleVariantLock,
             ShowEmbeddedContext,
             ScheduleActiveEditorReload,
-            RefreshPreviewDevice,
+            _previewController.NotifyAuthoredPreviewInputsChanged,
             _editorSessionUiState);
         _embeddedUsageNavigator = new EditorEmbeddedUsageNavigator(
             data.Components,
@@ -261,7 +261,7 @@ public partial class MainWindow : SukiWindow
             _nodeCommands.ShowInfoDialog,
             domainDialogs,
             ReloadAndSelect,
-            RefreshPreviewDevice,
+            _previewController.NotifyAuthoredPreviewInputsChanged,
             dictionaryFieldServices,
             _messages,
             _previewController.TriggerDesignPreviewAction,
@@ -403,7 +403,8 @@ public partial class MainWindow : SukiWindow
     {
         UpdateWorkspaceButtons();
         RebuildNavigationCards();
-        RefreshPreviewDevice();
+        _previewController
+            .NotifyAuthoredPreviewInputsChanged();
         ApplyUiTextScale();
     }
 

@@ -65,7 +65,8 @@ It includes:
 - operation-coordinated Production playback payload preparation, covering exact
   frame order, preserved local frames, Actor and animation documents,
   cancellation, byte-for-byte read-only persistence and exact owner/frame
-  lookup from the resulting immutable playback snapshot;
+  lookup and covered-range reuse from the resulting immutable playback
+  snapshot without signature recomputation;
 - operation-coordinated static Production payload preparation, covering
   worker-thread execution, latest-revision ownership, close-time cancellation
   and reuse of the already prepared playback frame rather than a visual-thread
