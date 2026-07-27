@@ -12878,6 +12878,9 @@ static void RuntimeActionControlsReactivateAfterPlaybackAndReattachment()
         var frameTextBox = frameInput.GetVisualDescendants()
             .OfType<TextBox>()
             .Single();
+        var frameSpinner = frameInput.GetVisualDescendants()
+            .OfType<Control>()
+            .Single((control) => control.Name == "PART_Spinner");
         True(play.IsEnabled);
         True(restore.IsEnabled);
         True(previous.IsEnabled);
@@ -12898,7 +12901,8 @@ static void RuntimeActionControlsReactivateAfterPlaybackAndReattachment()
         True(next.IsEnabled);
         Equal(0m, frameInput.Value ?? -1);
         Equal(10m, frameInput.Maximum);
-        Equal(EditorUiDensity.TextAwareWidth(42), frameInput.Width);
+        Equal(EditorUiDensity.TextAwareWidth(48), frameInput.Width);
+        Equal(new Thickness(0), frameSpinner.Margin);
         Equal(
             EditorNumericUpDownBehavior.CompactHorizontalPadding,
             frameTextBox.Padding.Left);

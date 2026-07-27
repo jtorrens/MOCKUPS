@@ -37,6 +37,17 @@ internal static class EditorNumericUpDownBehavior
 
     private static void ConfigureInnerTextBoxes(NumericUpDown numeric, bool compact)
     {
+        if (compact)
+        {
+            var spinner = numeric
+                .GetVisualDescendants()
+                .OfType<Control>()
+                .FirstOrDefault((control) => control.Name == "PART_Spinner");
+            if (spinner is not null)
+            {
+                spinner.Margin = new Thickness(0);
+            }
+        }
         foreach (var textBox in numeric.GetVisualDescendants().OfType<TextBox>())
         {
             EditorNumericTextStyle.Apply(textBox);

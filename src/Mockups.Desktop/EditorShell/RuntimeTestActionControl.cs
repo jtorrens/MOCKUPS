@@ -130,7 +130,7 @@ internal sealed class RuntimeTestActionControl : Border
 
         _frameInput = EditorNumericUpDownBehavior.ConfigureCompact(new NumericUpDown
         {
-            Width = EditorUiDensity.TextAwareWidth(42),
+            Width = EditorUiDensity.TextAwareWidth(48),
             Height = 28,
             Minimum = 0,
             Maximum = 0,
