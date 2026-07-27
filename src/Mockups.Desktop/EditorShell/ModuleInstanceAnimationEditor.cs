@@ -519,7 +519,6 @@ internal sealed class ModuleInstanceAnimationEditor
             }
             detailHost.Content = CreateTrackDetail(
                 node,
-                document,
                 selected,
                 (int)Math.Round(OwnerFrame(), MidpointRounding.AwayFromZero),
                 (ownerFrame) => SetFrame(selected.Target?.ScreenFrameForOwnerFrame(ownerFrame) ?? TimelineFrame()),
@@ -626,7 +625,6 @@ internal sealed class ModuleInstanceAnimationEditor
 
     private Control CreateTrackDetail(
         ProjectTreeNode node,
-        ModuleInstanceAnimationDocument document,
         ResolvedAnimationTarget selected,
         int ownerFrame,
         Action<int> setFrame,
