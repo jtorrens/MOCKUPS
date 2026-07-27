@@ -55,11 +55,7 @@ public sealed class SqliteProjectSession
             new SqliteRuntimeInputOwnerPort(engine.Design);
         RuntimeInputInstances =
             new SqliteRuntimeInputInstancePort(
-                new SqliteRuntimeInputInstanceStore(
-                    engine.Context,
-                    engine.Design,
-                    engine.Production,
-                    engine.Resources));
+                engine.RuntimeInputInstances);
         Animation =
             new SqliteModuleInstanceAnimationPort(
                 engine.Production);

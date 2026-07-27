@@ -156,6 +156,12 @@ parallel Variant command implementation.
 Module Variant fields and selection use the focused record store, lifecycle
 commands use the node-command store, and effective Runtime reads use the
 Production owner. The project engine contains no Module Variant facade.
+Module Instance Runtime writes belong to
+`SqliteRuntimeInputInstanceStore`, collection lifecycle to
+`SqliteModuleInstanceCollectionStore`, scalar fields to
+`SqliteRecordClassFieldStore`, and animation/read models to the Production
+owner. The session composes one Runtime Input store instance and the project
+engine exposes no Module Instance operation.
 
 Preview reads are also separated by owner. Generic authored Preview input does
 not inherit Actor, Component Preview or Module Instance timeline access, and

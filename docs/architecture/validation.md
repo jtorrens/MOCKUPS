@@ -229,6 +229,8 @@ That structural suite also requires:
   project engine;
 - Module Variant fields, selection, lifecycle commands and effective Runtime
   reads cannot reappear as a project-engine facade;
+- Module Instance Runtime writes, collection lifecycle, scalar fields,
+  animation and read models cannot reappear as project-engine operations;
 - exact manifest owner files, categories and declared embeds;
 - exact Component and Module registry parity;
 - registries whose factory entries are direct owner calls without business
