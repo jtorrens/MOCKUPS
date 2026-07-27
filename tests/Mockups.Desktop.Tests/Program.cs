@@ -3292,6 +3292,11 @@ static void VisualPersistenceWritersRequireOperationCoordination()
                  typeof(IconThemeTokensCollectionEditor),
                  typeof(IconThemeSearchDialog),
                  typeof(IconThemeSvgReplaceDialog),
+                 typeof(RuntimeInputsCollectionEditor),
+                 typeof(RuntimeInputInstanceDocumentStore),
+                 typeof(RuntimeInputOwnerDocumentStore),
+                 typeof(ModuleInstanceAnimationEditor),
+                 typeof(ModuleInstanceAnimationDocumentStore),
              })
     {
         var constructors = writerType.GetConstructors(
@@ -3306,6 +3311,30 @@ static void VisualPersistenceWritersRequireOperationCoordination()
                         (parameter) =>
                             parameter.ParameterType
                             == typeof(EditorOperationCoordinator))));
+    }
+
+    foreach (var (writerType, methodName) in new[]
+             {
+                 (typeof(RuntimeInputInstanceDocumentStore), "UpdateRuntimeValueAsync"),
+                 (typeof(RuntimeInputInstanceDocumentStore), "AddCollectionItemAsync"),
+                 (typeof(RuntimeInputInstanceDocumentStore), "InsertCollectionItemAfterAsync"),
+                 (typeof(RuntimeInputInstanceDocumentStore), "DuplicateCollectionItemAsync"),
+                 (typeof(RuntimeInputInstanceDocumentStore), "MoveCollectionItemAsync"),
+                 (typeof(RuntimeInputInstanceDocumentStore), "DeleteCollectionItemAsync"),
+                 (typeof(RuntimeInputInstanceDocumentStore), "UpdateCollectionValueAsync"),
+                 (typeof(RuntimeInputInstanceDocumentStore), "UpdateCollectionValuesAsync"),
+                 (typeof(RuntimeInputInstanceDocumentStore), "SaveAnimationJsonAsync"),
+                 (typeof(RuntimeInputOwnerDocumentStore), "SaveDesignPreviewJsonAsync"),
+                 (typeof(ModuleInstanceAnimationDocumentStore), "SaveAnimationJsonAsync"),
+             })
+    {
+        var method = writerType.GetMethod(
+            methodName,
+            BindingFlags.Instance
+            | BindingFlags.Public
+            | BindingFlags.NonPublic);
+        True(method is not null);
+        True(typeof(Task).IsAssignableFrom(method!.ReturnType));
     }
 }
 
@@ -6545,9 +6574,11 @@ static void RuntimeInputOwnerStorePreservesCurrentDocuments()
     {
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
         var database = new SqliteProjectTestContext(temporary);
+        using var operations = new EditorOperationCoordinator();
         var store = new RuntimeInputOwnerDocumentStore(
             database.Design,
-            database.Production);
+            database.Production,
+            operations);
         var nodes = Descendants(database.LoadProjectTree()).ToList();
         var module = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Module);
         var moduleVariant = module.Children.First((node) => node.Kind == ProjectTreeNodeKind.ModuleVariant);
@@ -6595,12 +6626,18 @@ static void RuntimeInputOwnerStorePreservesCurrentDocuments()
         var afterReads = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, afterReads);
 
-        store.SaveDesignPreviewJson(moduleSource, moduleSource.RuntimePreviewJson);
+        store.SaveDesignPreviewJsonAsync(
+            moduleSource,
+            moduleSource.RuntimePreviewJson).GetAwaiter().GetResult();
         Equal(moduleSource.RuntimePreviewJson, database.GetModuleSettings(module.Id).DesignPreviewJson);
-        store.SaveDesignPreviewJson(componentSource, componentSource.RuntimePreviewJson);
+        store.SaveDesignPreviewJsonAsync(
+            componentSource,
+            componentSource.RuntimePreviewJson).GetAwaiter().GetResult();
         Equal(componentSource.RuntimePreviewJson, database.GetComponentClassSettings(componentClass.Id).DesignPreviewJson);
         Throws<InvalidOperationException>(() =>
-            store.SaveDesignPreviewJson(instanceSource, instanceSource.RuntimePreviewJson));
+            store.SaveDesignPreviewJsonAsync(
+                instanceSource,
+                instanceSource.RuntimePreviewJson).GetAwaiter().GetResult());
     }
     finally
     {
@@ -6617,6 +6654,7 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
     {
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
         var database = new SqliteProjectTestContext(temporary);
+        using var operations = new EditorOperationCoordinator();
         var store = new RuntimeInputInstanceDocumentStore(
             new SqliteRuntimeInputInstanceStore(
                 database.Context,
@@ -6624,7 +6662,8 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
                 database.Production,
                 database.Resources),
             database.Production,
-            database.Resources);
+            database.Resources,
+            operations);
         var screen = Descendants(database.LoadProjectTree())
             .First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance
                 && database.GetModuleInstanceVariantSettings(node.Id).RecordClassId == "module.core.chat");
@@ -6649,72 +6688,110 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
 
         const string collectionKey = "messages";
         var beforeRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
-        Throws<InvalidOperationException>(() => store.UpdateRuntimeValue(
+        Throws<InvalidOperationException>(() => store.UpdateRuntimeValueAsync(
             screen.Id,
             "undeclared_scalar",
-            JsonValue.Create("value")));
-        Throws<InvalidOperationException>(() => store.UpdateRuntimeValue(
+            JsonValue.Create("value")).GetAwaiter().GetResult());
+        Throws<InvalidOperationException>(() => store.UpdateRuntimeValueAsync(
             screen.Id,
             "headerSubtitle",
-            JsonValue.Create(42)));
-        Throws<InvalidOperationException>(() => store.AddCollectionItem(
+            JsonValue.Create(42)).GetAwaiter().GetResult());
+        Throws<InvalidOperationException>(() => store.AddCollectionItemAsync(
             screen.Id,
             "undeclared_items",
-            TestMessage("undeclared", "Undeclared")));
+            TestMessage("undeclared", "Undeclared")).GetAwaiter().GetResult());
         var missingId = TestMessage("missing", "Missing");
         missingId.Remove("id");
-        Throws<InvalidOperationException>(() => store.AddCollectionItem(
+        Throws<InvalidOperationException>(() => store.AddCollectionItemAsync(
             screen.Id,
             collectionKey,
-            missingId));
+            missingId).GetAwaiter().GetResult());
         SequenceEqual(beforeRejectedWrite, SHA256.HashData(File.ReadAllBytes(temporary)));
 
-        store.UpdateRuntimeValue(screen.Id, "headerSubtitle", JsonValue.Create("value"));
-        store.AddCollectionItem(screen.Id, collectionKey, TestMessage("test_a", "A"));
-        var afterFirstItem = SHA256.HashData(File.ReadAllBytes(temporary));
-        Throws<InvalidOperationException>(() => store.AddCollectionItem(
+        store.UpdateRuntimeValueAsync(
+            screen.Id,
+            "headerSubtitle",
+            JsonValue.Create("value")).GetAwaiter().GetResult();
+        using var queuedWriteStarted = new ManualResetEventSlim();
+        using var releaseQueuedWrite = new ManualResetEventSlim();
+        var blockingWrite = operations.ExecuteAsync(
+            () =>
+            {
+                queuedWriteStarted.Set();
+                releaseQueuedWrite.Wait();
+            });
+        True(queuedWriteStarted.Wait(TimeSpan.FromSeconds(5)));
+        var queuedItem = TestMessage("test_a", "A");
+        var queuedAdd = store.AddCollectionItemAsync(
             screen.Id,
             collectionKey,
-            TestMessage("test_a", "Duplicate")));
-        Throws<InvalidOperationException>(() => store.InsertCollectionItemAfter(
+            queuedItem);
+        queuedItem["name"] = "Mutated after submission";
+        releaseQueuedWrite.Set();
+        blockingWrite.GetAwaiter().GetResult();
+        queuedAdd.GetAwaiter().GetResult();
+        var queuedContent = JsonPath.ParseRequiredObject(
+            database.GetModuleInstanceSettings(screen.Id).ContentJson,
+            $"Module Instance '{screen.Id}' queued snapshot content");
+        Equal(
+            "A",
+            queuedContent[collectionKey]?
+                .AsArray()
+                .OfType<JsonObject>()
+                .Single((item) => item["id"]?.GetValue<string>() == "test_a")["name"]?
+                .GetValue<string>()
+            ?? "");
+        var afterFirstItem = SHA256.HashData(File.ReadAllBytes(temporary));
+        Throws<InvalidOperationException>(() => store.AddCollectionItemAsync(
+            screen.Id,
+            collectionKey,
+            TestMessage("test_a", "Duplicate")).GetAwaiter().GetResult());
+        Throws<InvalidOperationException>(() => store.InsertCollectionItemAfterAsync(
             screen.Id,
             collectionKey,
             "missing_item",
-            TestMessage("test_missing_anchor", "Missing anchor")));
+            TestMessage("test_missing_anchor", "Missing anchor")).GetAwaiter().GetResult());
         SequenceEqual(afterFirstItem, SHA256.HashData(File.ReadAllBytes(temporary)));
-        store.InsertCollectionItemAfter(
+        store.InsertCollectionItemAfterAsync(
             screen.Id,
             collectionKey,
             "test_a",
-            TestMessage("test_b", "B"));
-        store.DuplicateCollectionItem(
+            TestMessage("test_b", "B")).GetAwaiter().GetResult();
+        store.DuplicateCollectionItemAsync(
             screen.Id,
             collectionKey,
             "test_a",
             TestMessage("test_c", "C"),
-            new Dictionary<string, string>());
+            new Dictionary<string, string>()).GetAwaiter().GetResult();
         var beforeRejectedField = SHA256.HashData(File.ReadAllBytes(temporary));
-        Throws<InvalidOperationException>(() => store.UpdateCollectionValue(
+        Throws<InvalidOperationException>(() => store.UpdateCollectionValueAsync(
             screen.Id,
             collectionKey,
             "test_b",
             "undeclared_field",
-            JsonValue.Create("value")));
-        Throws<InvalidOperationException>(() => store.UpdateCollectionValue(
+            JsonValue.Create("value")).GetAwaiter().GetResult());
+        Throws<InvalidOperationException>(() => store.UpdateCollectionValueAsync(
             screen.Id,
             collectionKey,
             "test_b",
             "text",
-            JsonValue.Create(42)));
+            JsonValue.Create(42)).GetAwaiter().GetResult());
         SequenceEqual(beforeRejectedField, SHA256.HashData(File.ReadAllBytes(temporary)));
-        store.UpdateCollectionValue(
+        store.UpdateCollectionValueAsync(
             screen.Id,
             collectionKey,
             "test_b",
             "text",
-            JsonValue.Create("B2"));
-        store.MoveCollectionItem(screen.Id, collectionKey, "test_c", 1);
-        store.DeleteCollectionItem(screen.Id, collectionKey, "test_a");
+            JsonValue.Create("B2")).GetAwaiter().GetResult();
+        store.MoveCollectionItemAsync(
+            screen.Id,
+            collectionKey,
+            "test_c",
+            1).GetAwaiter().GetResult();
+        store.DeleteCollectionItemAsync(
+            screen.Id,
+            collectionKey,
+            "test_a").GetAwaiter().GetResult();
 
         var content = JsonPath.ParseRequiredObject(
             database.GetModuleInstanceSettings(screen.Id).ContentJson,
@@ -6729,8 +6806,11 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
         Equal(
             "B2",
             items.OfType<JsonObject>().Single((item) => item["id"]?.GetValue<string>() == "test_b")["text"]?.GetValue<string>() ?? "");
-
-        Equal(animationJson, store.SaveAnimationJson(screen.Id, animationJson));
+        Equal(
+            animationJson,
+            store.SaveAnimationJsonAsync(
+                screen.Id,
+                animationJson).GetAwaiter().GetResult());
         Equal(animationJson, database.GetModuleInstanceSettings(screen.Id).AnimationJson);
     }
     finally
@@ -6881,7 +6961,12 @@ static void ModuleInstanceAnimationStorePreservesCurrentDocuments()
         var timelineDataSource = new ModuleInstanceTimelineDataSource(
             database.Production,
             database.Resources);
-        var store = new ModuleInstanceAnimationDocumentStore(database.Production, database.Resources, timelineDataSource);
+        using var operations = new EditorOperationCoordinator();
+        var store = new ModuleInstanceAnimationDocumentStore(
+            database.Production,
+            database.Resources,
+            timelineDataSource,
+            operations);
         var screen = Descendants(database.LoadProjectTree())
             .First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance);
         var instance = database.GetModuleInstanceSettings(screen.Id);
@@ -6908,7 +6993,9 @@ static void ModuleInstanceAnimationStorePreservesCurrentDocuments()
         var afterReads = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, afterReads);
 
-        var persisted = store.SaveAnimationJson(screen.Id, source.AnimationJson);
+        var persisted = store.SaveAnimationJsonAsync(
+            screen.Id,
+            source.AnimationJson).GetAwaiter().GetResult();
         Equal(source.AnimationJson, persisted);
         Equal(source.AnimationJson, database.GetModuleInstanceSettings(screen.Id).AnimationJson);
     }
@@ -9021,6 +9108,7 @@ static void ConversationMessageActorsFollowDirectionContract()
             JsonValue.Create("outgoing")));
         SequenceEqual(beforeRejectedWrite, SHA256.HashData(File.ReadAllBytes(temporary)));
 
+        using var operations = new EditorOperationCoordinator();
         var store = new RuntimeInputInstanceDocumentStore(
             new SqliteRuntimeInputInstanceStore(
                 database.Context,
@@ -9028,8 +9116,9 @@ static void ConversationMessageActorsFollowDirectionContract()
                 database.Production,
                 database.Resources),
             database.Production,
-            database.Resources);
-        store.UpdateCollectionValues(
+            database.Resources,
+            operations);
+        store.UpdateCollectionValuesAsync(
             screen.Id,
             "messages",
             incomingId,
@@ -9037,7 +9126,7 @@ static void ConversationMessageActorsFollowDirectionContract()
             {
                 ["direction"] = JsonValue.Create("outgoing"),
                 ["actorId"] = JsonValue.Create(""),
-            });
+            }).GetAwaiter().GetResult();
         var updated = JsonPath.ParseRequiredObject(
             database.GetModuleInstanceSettings(screen.Id).ContentJson,
             $"Screen '{screen.Id}' updated content_json");

@@ -31,6 +31,7 @@ internal sealed class ModuleInstanceAnimationEditor
         IModuleInstanceThemeTokenQuery moduleInstanceThemes,
         IDictionaryFieldContextRepository dictionary,
         IActorPreviewRepository actors,
+        EditorOperationCoordinator operations,
         EditorDictionaryFieldServices dictionaryServices,
         Action onChanged,
         EditorSessionUiState sessionUiState,
@@ -46,7 +47,8 @@ internal sealed class ModuleInstanceAnimationEditor
         _animationDocuments = new ModuleInstanceAnimationDocumentStore(
             animation,
             moduleInstanceThemes,
-            _timelineDataSource);
+            _timelineDataSource,
+            operations);
         _runtimeInputOptions =
             new RuntimeInputOptionsDataSource(dictionary, actors);
         _dictionaryServices = dictionaryServices;
@@ -332,12 +334,12 @@ internal sealed class ModuleInstanceAnimationEditor
             });
         }
 
-        void SaveAndRefresh()
+        async void SaveAndRefresh()
         {
             var selectedKey = TargetKey(selected);
             var authoringHorizon = timelineDuration;
             currentAnimation = DesignPreviewTestValues.Parse(
-                _animationDocuments.SaveAnimationJson(node.Id, document.ToJson()));
+                await _animationDocuments.SaveAnimationJsonAsync(node.Id, document.ToJson()));
             screenStartFrame = ModuleInstanceTimeline.ScreenStartFrame(_timelineDataSource, node.Id);
             actualScreenDuration = Math.Max(1, ModuleInstanceTimeline.DurationFrames(_timelineDataSource, node.Id));
             var refreshedTargets = readScopeTargets(currentAnimation)

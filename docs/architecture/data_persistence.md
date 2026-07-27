@@ -129,6 +129,9 @@ node commands, Module Instance collections, Icon Theme assets, Theme tokens,
 Runtime Input owner writes, Runtime Input instance writes, animation and
 Reference Usage use distinct adapter instances. A Desktop controller that
 needs more than one capability declares each one in its constructor.
+Desktop Runtime Input and animation document stores additionally require the
+session operation coordinator. Their mutation surface is task-returning and
+captures mutable JSON values before queueing synchronous persistence work.
 Persistence keeps adapters only for ports exposed by the current session;
 retired area-wide adapters are removed with their contracts.
 The Node Command membrane exposes exactly `IEditorNodeCommandStore`; it has no

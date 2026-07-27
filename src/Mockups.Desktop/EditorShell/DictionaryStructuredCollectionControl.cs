@@ -109,6 +109,7 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                     editor!.ActivateOnly(item, items.Count);
                     _items.Add(item);
                     Commit();
+                    return Task.CompletedTask;
                 },
                 AddAfter: (index) =>
                 {
@@ -116,8 +117,9 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                     editor!.ActivateOnly(item, items.Count);
                     _items.Insert(index + 1, item);
                     Commit();
+                    return Task.CompletedTask;
                 },
-                Duplicate: (index) =>
+                Duplicate: async (index) =>
                 {
                     var source = items[index];
                     var copy = source.DeepClone().AsObject();
@@ -128,7 +130,11 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                     var mappings = StructuredCollectionItemIdentity.RebaseNestedItems(copy, collection)
                         .ToDictionary((entry) => entry.Key, (entry) => entry.Value, StringComparer.Ordinal);
                     mappings[oldId] = newId;
-                    _services.DuplicateStructuredCollectionAnimationTargets?.Invoke(mappings);
+                    if (_services.DuplicateStructuredCollectionAnimationTargets
+                        is { } duplicateAnimationTargets)
+                    {
+                        await duplicateAnimationTargets(mappings);
+                    }
                     editor!.ActivateOnly(copy, items.Count);
                     _items.Insert(index + 1, copy);
                     Commit(runtimeContractChanged: true);
@@ -136,11 +142,12 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                 Move: (index, delta) =>
                 {
                     var target = index + delta;
-                    if (target < 0 || target >= _items.Count) return;
+                    if (target < 0 || target >= _items.Count) return Task.CompletedTask;
                     var item = _items[index];
                     _items.RemoveAt(index);
                     _items.Insert(target, item);
                     Commit();
+                    return Task.CompletedTask;
                 },
                 Delete: async (index) =>
                 {
@@ -160,8 +167,13 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                         : _services.ConfirmStructuredCollectionItemDelete is null
                           || await _services.ConfirmStructuredCollectionItemDelete(title);
                     if (!confirmed) return;
-                    _services.RemoveStructuredCollectionAnimationTargets?.Invoke(
-                        StructuredCollectionItemIdentity.TargetIds(items[index]));
+                    if (_services.RemoveStructuredCollectionAnimationTargets
+                        is { } removeAnimationTargets)
+                    {
+                        await removeAnimationTargets(
+                            StructuredCollectionItemIdentity.TargetIds(
+                                items[index]));
+                    }
                     _items.RemoveAt(index);
                     Commit(runtimeContractChanged: true);
                 }),

@@ -1,6 +1,7 @@
 using Mockups.DesktopEditorShell.Data;
 using System.Collections.Generic;
 using System.Text.Json.Nodes;
+using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -8,109 +9,142 @@ internal sealed class RuntimeInputInstanceDocumentStore
 {
     private readonly IRuntimeInputInstanceStore _database;
     private readonly ModuleInstanceAnimationDocumentStore _animationDocuments;
+    private readonly EditorOperationCoordinator _operations;
 
     public RuntimeInputInstanceDocumentStore(
         IRuntimeInputInstanceStore database,
         IModuleInstanceAnimationStore animation,
-        IModuleInstanceThemeTokenQuery themeTokens)
+        IModuleInstanceThemeTokenQuery themeTokens,
+        EditorOperationCoordinator operations)
     {
         _database = database;
+        _operations = operations;
         _animationDocuments = new ModuleInstanceAnimationDocumentStore(
             animation,
             themeTokens,
             new ModuleInstanceTimelineDataSource(
                 animation,
-                themeTokens));
+                themeTokens),
+            operations);
     }
 
-    public void UpdateRuntimeValue(string moduleInstanceId, string jsonKey, JsonNode? value)
+    public Task UpdateRuntimeValueAsync(
+        string moduleInstanceId,
+        string jsonKey,
+        JsonNode? value)
     {
-        _database.UpdateModuleInstanceRuntimeValue(moduleInstanceId, jsonKey, value);
+        var valueSnapshot = value?.DeepClone();
+        return _operations.ExecuteAsync(
+            () => _database.UpdateModuleInstanceRuntimeValue(
+                moduleInstanceId,
+                jsonKey,
+                valueSnapshot));
     }
 
-    public void AddCollectionItem(string moduleInstanceId, string collectionJsonKey, JsonObject item)
+    public Task AddCollectionItemAsync(
+        string moduleInstanceId,
+        string collectionJsonKey,
+        JsonObject item)
     {
-        _database.AddModuleInstanceRuntimeCollectionItem(moduleInstanceId, collectionJsonKey, item);
+        var itemSnapshot = item.DeepClone().AsObject();
+        return _operations.ExecuteAsync(
+            () => _database.AddModuleInstanceRuntimeCollectionItem(
+                moduleInstanceId,
+                collectionJsonKey,
+                itemSnapshot));
     }
 
-    public void InsertCollectionItemAfter(
+    public Task InsertCollectionItemAfterAsync(
         string moduleInstanceId,
         string collectionJsonKey,
         string afterItemId,
         JsonObject item)
     {
-        _database.InsertModuleInstanceRuntimeCollectionItemAfter(
-            moduleInstanceId,
-            collectionJsonKey,
-            afterItemId,
-            item);
+        var itemSnapshot = item.DeepClone().AsObject();
+        return _operations.ExecuteAsync(
+            () => _database.InsertModuleInstanceRuntimeCollectionItemAfter(
+                moduleInstanceId,
+                collectionJsonKey,
+                afterItemId,
+                itemSnapshot));
     }
 
-    public void DuplicateCollectionItem(
+    public Task DuplicateCollectionItemAsync(
         string moduleInstanceId,
         string collectionJsonKey,
         string itemId,
         JsonObject duplicate,
         IReadOnlyDictionary<string, string> targetIdMappings)
     {
-        _database.DuplicateModuleInstanceRuntimeCollectionItem(
-            moduleInstanceId,
-            collectionJsonKey,
-            itemId,
-            duplicate,
+        var duplicateSnapshot = duplicate.DeepClone().AsObject();
+        var mappingsSnapshot = new Dictionary<string, string>(
             targetIdMappings);
+        return _operations.ExecuteAsync(
+            () => _database.DuplicateModuleInstanceRuntimeCollectionItem(
+                moduleInstanceId,
+                collectionJsonKey,
+                itemId,
+                duplicateSnapshot,
+                mappingsSnapshot));
     }
 
-    public void MoveCollectionItem(
+    public Task MoveCollectionItemAsync(
         string moduleInstanceId,
         string collectionJsonKey,
         string itemId,
         int offset)
-    {
-        _database.MoveModuleInstanceRuntimeCollectionItem(
-            moduleInstanceId,
-            collectionJsonKey,
-            itemId,
-            offset);
-    }
+        => _operations.ExecuteAsync(
+            () => _database.MoveModuleInstanceRuntimeCollectionItem(
+                moduleInstanceId,
+                collectionJsonKey,
+                itemId,
+                offset));
 
-    public void DeleteCollectionItem(
+    public Task DeleteCollectionItemAsync(
         string moduleInstanceId,
         string collectionJsonKey,
         string itemId)
-    {
-        _database.DeleteModuleInstanceRuntimeCollectionItem(
-            moduleInstanceId,
-            collectionJsonKey,
-            itemId);
-    }
+        => _operations.ExecuteAsync(
+            () => _database.DeleteModuleInstanceRuntimeCollectionItem(
+                moduleInstanceId,
+                collectionJsonKey,
+                itemId));
 
-    public void UpdateCollectionValue(
+    public Task UpdateCollectionValueAsync(
         string moduleInstanceId,
         string collectionJsonKey,
         string itemId,
         string fieldJsonKey,
         JsonNode? value)
     {
-        _database.UpdateModuleInstanceRuntimeCollectionValue(
-            moduleInstanceId,
-            collectionJsonKey,
-            itemId,
-            fieldJsonKey,
-            value);
+        var valueSnapshot = value?.DeepClone();
+        return _operations.ExecuteAsync(
+            () => _database.UpdateModuleInstanceRuntimeCollectionValue(
+                moduleInstanceId,
+                collectionJsonKey,
+                itemId,
+                fieldJsonKey,
+                valueSnapshot));
     }
 
-    public void UpdateCollectionValues(
+    public Task UpdateCollectionValuesAsync(
         string moduleInstanceId,
         string collectionJsonKey,
         string itemId,
         IReadOnlyDictionary<string, JsonNode?> values)
     {
-        _database.UpdateModuleInstanceRuntimeCollectionValues(
-            moduleInstanceId,
-            collectionJsonKey,
-            itemId,
-            values);
+        var valuesSnapshot = new Dictionary<string, JsonNode?>();
+        foreach (var (key, value) in values)
+        {
+            valuesSnapshot[key] = value?.DeepClone();
+        }
+
+        return _operations.ExecuteAsync(
+            () => _database.UpdateModuleInstanceRuntimeCollectionValues(
+                moduleInstanceId,
+                collectionJsonKey,
+                itemId,
+                valuesSnapshot));
     }
 
     public string AnimationJson(string moduleInstanceId)
@@ -118,8 +152,12 @@ internal sealed class RuntimeInputInstanceDocumentStore
         return _animationDocuments.Load(moduleInstanceId).AnimationJson;
     }
 
-    public string SaveAnimationJson(string moduleInstanceId, string animationJson)
+    public Task<string> SaveAnimationJsonAsync(
+        string moduleInstanceId,
+        string animationJson)
     {
-        return _animationDocuments.SaveAnimationJson(moduleInstanceId, animationJson);
+        return _animationDocuments.SaveAnimationJsonAsync(
+            moduleInstanceId,
+            animationJson);
     }
 }

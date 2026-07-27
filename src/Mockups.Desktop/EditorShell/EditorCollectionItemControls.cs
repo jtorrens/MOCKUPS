@@ -44,9 +44,9 @@ internal static class EditorCollectionItemControls
         string itemLabel,
         int itemIndex,
         int itemCount,
-        Action<int> addAfter,
-        Action<int> duplicate,
-        Action<int, int> move,
+        Func<int, Task> addAfter,
+        Func<int, Task> duplicate,
+        Func<int, int, Task> move,
         Func<int, Task> delete)
     {
         var controls = new StackPanel
@@ -56,34 +56,34 @@ internal static class EditorCollectionItemControls
         };
         var normalizedLabel = itemLabel.ToLowerInvariant();
         var add = CreateAddButton($"Add {normalizedLabel} after this item");
-        add.Click += (_, args) =>
+        add.Click += async (_, args) =>
         {
             args.Handled = true;
-            addAfter(itemIndex);
+            await addAfter(itemIndex);
         };
         controls.Children.Add(add);
 
         var duplicateButton = CreateDuplicateButton($"Duplicate {normalizedLabel}");
-        duplicateButton.Click += (_, args) =>
+        duplicateButton.Click += async (_, args) =>
         {
             args.Handled = true;
-            duplicate(itemIndex);
+            await duplicate(itemIndex);
         };
         controls.Children.Add(duplicateButton);
 
         var moveUp = CreateMoveButton(up: true, enabled: itemIndex > 0);
-        moveUp.Click += (_, args) =>
+        moveUp.Click += async (_, args) =>
         {
             args.Handled = true;
-            move(itemIndex, -1);
+            await move(itemIndex, -1);
         };
         controls.Children.Add(moveUp);
 
         var moveDown = CreateMoveButton(up: false, enabled: itemIndex < itemCount - 1);
-        moveDown.Click += (_, args) =>
+        moveDown.Click += async (_, args) =>
         {
             args.Handled = true;
-            move(itemIndex, 1);
+            await move(itemIndex, 1);
         };
         controls.Children.Add(moveDown);
 
@@ -101,8 +101,8 @@ internal static class EditorCollectionItemControls
         string itemLabel,
         int itemCount,
         bool canEditStructure,
-        Action addFirst,
-        Action<int> addAfter)
+        Func<Task> addFirst,
+        Func<int, Task> addAfter)
     {
         var footer = new StackPanel { Spacing = 8 };
         if (itemCount == 0)
@@ -117,11 +117,11 @@ internal static class EditorCollectionItemControls
         {
             var add = CreateAddButton($"Add {itemLabel.ToLowerInvariant()}");
             add.HorizontalAlignment = HorizontalAlignment.Left;
-            add.Click += (_, args) =>
+            add.Click += async (_, args) =>
             {
                 args.Handled = true;
-                if (itemCount == 0) addFirst();
-                else addAfter(itemCount - 1);
+                if (itemCount == 0) await addFirst();
+                else await addAfter(itemCount - 1);
             };
             footer.Children.Add(add);
         }

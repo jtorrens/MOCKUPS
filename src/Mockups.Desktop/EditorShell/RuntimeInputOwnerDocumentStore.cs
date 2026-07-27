@@ -1,6 +1,7 @@
 using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Text.Json.Nodes;
+using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -28,13 +29,16 @@ internal sealed class RuntimeInputOwnerDocumentStore
 {
     private readonly IRuntimeInputOwnerStore _database;
     private readonly IModuleInstanceTimelineStore _timeline;
+    private readonly EditorOperationCoordinator _operations;
 
     public RuntimeInputOwnerDocumentStore(
         IRuntimeInputOwnerStore database,
-        IModuleInstanceTimelineStore timeline)
+        IModuleInstanceTimelineStore timeline,
+        EditorOperationCoordinator operations)
     {
         _database = database;
         _timeline = timeline;
+        _operations = operations;
     }
 
     public RuntimeInputOwnerDocumentSource Load(ProjectTreeNode node)
@@ -89,20 +93,29 @@ internal sealed class RuntimeInputOwnerDocumentStore
         throw new InvalidOperationException($"Runtime inputs are not supported by '{node.Kind}'.");
     }
 
-    public void SaveDesignPreviewJson(RuntimeInputOwnerDocumentSource source, string designPreviewJson)
-    {
-        switch (source.DesignPreviewOwnerKind)
-        {
-            case RuntimeInputDesignPreviewOwnerKind.Module:
-                _database.UpdateModuleDesignPreviewJson(source.DesignPreviewOwnerId, designPreviewJson);
-                return;
-            case RuntimeInputDesignPreviewOwnerKind.ComponentClass:
-                _database.UpdateComponentClassDesignPreviewJson(source.DesignPreviewOwnerId, designPreviewJson);
-                return;
-            default:
-                throw new InvalidOperationException("A Module Instance has no isolated Design Preview document.");
-        }
-    }
+    public Task SaveDesignPreviewJsonAsync(
+        RuntimeInputOwnerDocumentSource source,
+        string designPreviewJson) =>
+        _operations.ExecuteAsync(
+            () =>
+            {
+                switch (source.DesignPreviewOwnerKind)
+                {
+                    case RuntimeInputDesignPreviewOwnerKind.Module:
+                        _database.UpdateModuleDesignPreviewJson(
+                            source.DesignPreviewOwnerId,
+                            designPreviewJson);
+                        return;
+                    case RuntimeInputDesignPreviewOwnerKind.ComponentClass:
+                        _database.UpdateComponentClassDesignPreviewJson(
+                            source.DesignPreviewOwnerId,
+                            designPreviewJson);
+                        return;
+                    default:
+                        throw new InvalidOperationException(
+                            "A Module Instance has no isolated Design Preview document.");
+                }
+            });
 
     public JsonObject ComponentVariantRuntimeInputs(string variantReference)
     {

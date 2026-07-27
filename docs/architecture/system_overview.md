@@ -148,7 +148,10 @@ synchronous repository work on a controlled worker and cancels queued work
 when the session closes. Visual controls apply successful results only after
 the worker completes; UI effects never execute inside that worker. This
 includes scalar field commits, node lifecycle commands, Screen collection
-mutations and Icon Theme refresh, generation, replacement and deletion.
+mutations, Runtime Input scalar and collection mutations, Module Instance
+animation writes, Design Preview default promotion and Icon Theme refresh,
+generation, replacement and deletion. Mutable Runtime documents are copied
+before submission so queued work observes the exact authored snapshot.
 
 `Mockups.Application.PersistencePorts` owns the synchronous persistence-facing
 port contracts. It references Application models and Domain value objects but

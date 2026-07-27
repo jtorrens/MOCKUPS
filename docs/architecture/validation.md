@@ -249,6 +249,9 @@ Behavior is not owned by architecture validation. Strict Preview payloads,
 dictionary and Runtime Input contracts, Variant references, Overrides, timing,
 animation, UI interaction and Render Queue behavior belong to their focused
 tests. The manifest-wide desktop test renders every committed Variant fixture.
+Compiled Desktop tests require every visual persistence writer, including
+Runtime Input and Module Instance animation stores, to receive the session
+operation coordinator and expose task-returning mutation methods.
 The C# startup validator and persistence tests own the complete staged SQLite
 contract. Scaffolding read-only, collision, materialization and integration
 behavior belongs to executable tests over temporary workspaces and databases;

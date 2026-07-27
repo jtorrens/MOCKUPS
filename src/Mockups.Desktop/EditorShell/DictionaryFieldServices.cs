@@ -29,6 +29,6 @@ internal sealed record DictionaryFieldServices(
     Func<string, IReadOnlyList<string>, Task<bool>>? ConfirmDiscardForwardedRuntimeInputs = null,
     Action<string, string>? SetRuntimeTestValue = null,
     Func<ComponentInputDefinition, string, DictionaryFieldControl, Control>? DecorateStructuredCollectionField = null,
-    Action<IReadOnlyList<string>>? RemoveStructuredCollectionAnimationTargets = null,
-    Action<IReadOnlyDictionary<string, string>>? DuplicateStructuredCollectionAnimationTargets = null,
+    Func<IReadOnlyList<string>, Task>? RemoveStructuredCollectionAnimationTargets = null,
+    Func<IReadOnlyDictionary<string, string>, Task>? DuplicateStructuredCollectionAnimationTargets = null,
     EditorSessionUiState? StructuredCollectionUiState = null);

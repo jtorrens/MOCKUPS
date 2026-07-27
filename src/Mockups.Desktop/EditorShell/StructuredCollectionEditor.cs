@@ -20,10 +20,10 @@ internal sealed record StructuredCollectionItemContent(
     IReadOnlyList<EditorInternalNavigationSection> Subcards);
 
 internal sealed record StructuredCollectionActions(
-    Action AddFirst,
-    Action<int> AddAfter,
-    Action<int> Duplicate,
-    Action<int, int> Move,
+    Func<Task> AddFirst,
+    Func<int, Task> AddAfter,
+    Func<int, Task> Duplicate,
+    Func<int, int, Task> Move,
     Func<int, Task> Delete);
 
 internal sealed class StructuredCollectionEditor

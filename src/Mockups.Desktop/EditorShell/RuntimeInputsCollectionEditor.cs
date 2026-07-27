@@ -53,6 +53,7 @@ internal sealed class RuntimeInputsCollectionEditor
         IRuntimeInputInstanceStore instanceStore,
         IModuleInstanceAnimationStore animationStore,
         IModuleInstanceThemeTokenQuery moduleInstanceThemes,
+        EditorOperationCoordinator operations,
         EditorDictionaryFieldServices dictionaryServices,
         Action onChanged,
         Action<string, string?> triggerAction,
@@ -81,12 +82,14 @@ internal sealed class RuntimeInputsCollectionEditor
         _ownerDocuments =
             new RuntimeInputOwnerDocumentStore(
                 ownerStore,
-                timeline);
+                timeline,
+                operations);
         _instanceDocuments =
             new RuntimeInputInstanceDocumentStore(
                 instanceStore,
                 animationStore,
-                moduleInstanceThemes);
+                moduleInstanceThemes,
+                operations);
         _runtimeInputOptions =
             new RuntimeInputOptionsDataSource(dictionary, actors);
         _dictionaryServices = dictionaryServices;
@@ -321,7 +324,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 var differences = DesignPreviewTestValues.Differences(current, DesignPreviewTestValues.Parse(owner.DesignPreviewJson), inputs, collections);
                 if (differences.Count == 0 || !await _confirmSaveDefaults(owner.Node.Name, differences.Select((difference) => difference.Label).ToList())) return;
                 DesignPreviewTestValues.PromoteToDefaults(current, inputs, collections);
-                owner.Save(current.ToJsonString());
+                await owner.Save(current.ToJsonString());
                 _resetTestValues(owner.Node);
                 _onChanged();
             };
@@ -603,11 +606,14 @@ internal sealed class RuntimeInputsCollectionEditor
             _setPreviewTestValue(input.JsonKey, next);
             _testValuesChanged();
         };
-        control.ValueCommitted += (_, next) =>
+        control.ValueCommitted += async (_, next) =>
         {
             if (owner.IsInstance)
             {
-                _instanceDocuments.UpdateRuntimeValue(owner.Node.Id, input.JsonKey, DesignPreviewTestValues.ValueNode(input, next));
+                await _instanceDocuments.UpdateRuntimeValueAsync(
+                    owner.Node.Id,
+                    input.JsonKey,
+                    DesignPreviewTestValues.ValueNode(input, next));
                 _onChanged();
             }
             else
@@ -884,12 +890,12 @@ internal sealed class RuntimeInputsCollectionEditor
         var hiddenInputIds = (collection.ItemRuntimeHiddenInputIds ?? [])
             .ToHashSet(StringComparer.Ordinal);
 
-        void PersistRuntimeContract(bool committed)
+        async Task PersistRuntimeContract(bool committed)
         {
             item[runtimeContractJsonKey] = runtimeContract.DeepClone();
             if (owner.IsInstance && committed)
             {
-                _instanceDocuments.UpdateCollectionValue(
+                await _instanceDocuments.UpdateCollectionValueAsync(
                     owner.Node.Id,
                     StorageCollectionKey(collection),
                     itemId,
@@ -907,6 +913,7 @@ internal sealed class RuntimeInputsCollectionEditor
                     [runtimeContractJsonKey] = runtimeContract,
                 });
             _testValuesChanged();
+            await Task.CompletedTask;
         }
 
         var sections = new List<EditorInternalNavigationSection>();
@@ -1014,7 +1021,7 @@ internal sealed class RuntimeInputsCollectionEditor
         JsonObject item,
         IReadOnlyList<RuntimeInputCollectionDefinition> childCollections,
         string temporalOwnerId,
-        Action<bool> persistRuntimeContract)
+        Func<bool, Task> persistRuntimeContract)
     {
         var result = new StackPanel
         {
@@ -1069,14 +1076,14 @@ internal sealed class RuntimeInputsCollectionEditor
                         $"Runtime child item '{childItemId}' is not present in collection '{childCollection.Id}'.");
                 }
 
-                void PersistChildRuntimeContract(bool committed)
+                async Task PersistChildRuntimeContract(bool committed)
                 {
                     allChildItems[childItemIndex] = CloneObject(childItem);
                     runtimeContract[childCollection.JsonKey] = new JsonArray(
                         allChildItems
                             .Select((candidate) => (JsonNode?)CloneObject(candidate))
                             .ToArray());
-                    persistRuntimeContract(committed);
+                    await persistRuntimeContract(committed);
                 }
 
                 Control ChildContent() => CreateEmbeddedChildRuntimeContent(
@@ -1145,7 +1152,7 @@ internal sealed class RuntimeInputsCollectionEditor
         RuntimeInputCollectionDefinition collection,
         JsonObject item,
         string temporalOwnerId,
-        Action<bool> persistRuntimeContract)
+        Func<bool, Task> persistRuntimeContract)
     {
         var runtimeContract = JsonPath.RequiredObject(
             item,
@@ -1178,7 +1185,7 @@ internal sealed class RuntimeInputsCollectionEditor
         JsonObject runtimeContract,
         ComponentInputDefinition input,
         string temporalOwnerId,
-        Action<bool> persistRuntimeContract)
+        Func<bool, Task> persistRuntimeContract)
     {
         var control = new DictionaryFieldControl(
             new FieldValue(
@@ -1193,15 +1200,15 @@ internal sealed class RuntimeInputsCollectionEditor
                     return Task.CompletedTask;
                 },
                 openRuntimeComponentOverrides: _openEmbeddedContext));
-        control.ValueChanged += (_, next) =>
+        control.ValueChanged += async (_, next) =>
         {
             runtimeContract[input.JsonKey] = DesignPreviewTestValues.ValueNode(input, next);
-            persistRuntimeContract(false);
+            await persistRuntimeContract(false);
         };
-        control.ValueCommitted += (_, next) =>
+        control.ValueCommitted += async (_, next) =>
         {
             runtimeContract[input.JsonKey] = DesignPreviewTestValues.ValueNode(input, next);
-            persistRuntimeContract(true);
+            await persistRuntimeContract(true);
         };
         return DecorateAnimationToggle(owner, input, temporalOwnerId, control);
     }
@@ -1248,12 +1255,12 @@ internal sealed class RuntimeInputsCollectionEditor
         Action changed)
     {
         return new StructuredCollectionActions(
-            AddFirst: () =>
+            AddFirst: async () =>
             {
                 var item = DefaultCollectionItem(owner, collection);
                 activate(item, items.Count);
                 if (owner.IsInstance)
-                    _instanceDocuments.AddCollectionItem(
+                    await _instanceDocuments.AddCollectionItemAsync(
                         owner.Node.Id,
                         StorageCollectionKey(collection),
                         item);
@@ -1261,7 +1268,7 @@ internal sealed class RuntimeInputsCollectionEditor
                     _setPreviewCollectionTestItems(owner.Node, collection.JsonKey, [item]);
                 changed();
             },
-            AddAfter: (itemIndex) =>
+            AddAfter: async (itemIndex) =>
             {
                 var currentItem = items[itemIndex];
                 var itemId = ItemId(currentItem, itemIndex);
@@ -1269,7 +1276,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 activate(next, items.Count);
                 if (owner.IsInstance)
                 {
-                    _instanceDocuments.InsertCollectionItemAfter(
+                    await _instanceDocuments.InsertCollectionItemAfterAsync(
                         owner.Node.Id,
                         StorageCollectionKey(collection),
                         itemId,
@@ -1285,7 +1292,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 }
                 changed();
             },
-            Duplicate: (itemIndex) =>
+            Duplicate: async (itemIndex) =>
             {
                 var item = items[itemIndex];
                 var itemId = ItemId(item, itemIndex);
@@ -1299,7 +1306,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 activate(copy, items.Count);
                 if (owner.IsInstance)
                 {
-                    _instanceDocuments.DuplicateCollectionItem(
+                    await _instanceDocuments.DuplicateCollectionItemAsync(
                         owner.Node.Id,
                         StorageCollectionKey(collection),
                         itemId,
@@ -1316,12 +1323,12 @@ internal sealed class RuntimeInputsCollectionEditor
                 }
                 changed();
             },
-            Move: (itemIndex, delta) =>
+            Move: async (itemIndex, delta) =>
             {
                 var itemId = ItemId(items[itemIndex], itemIndex);
                 if (owner.IsInstance)
                 {
-                    _instanceDocuments.MoveCollectionItem(
+                    await _instanceDocuments.MoveCollectionItemAsync(
                         owner.Node.Id,
                         StorageCollectionKey(collection),
                         itemId,
@@ -1330,6 +1337,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 else
                 {
                     MoveTransientCollectionItem(owner, preview, collection, itemIndex, delta);
+                    await Task.CompletedTask;
                 }
                 changed();
             },
@@ -1347,7 +1355,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 if (!await _confirmCollectionItemDelete(label)) return;
                 if (owner.IsInstance)
                 {
-                    _instanceDocuments.DeleteCollectionItem(
+                    await _instanceDocuments.DeleteCollectionItemAsync(
                         owner.Node.Id,
                         StorageCollectionKey(collection),
                         itemId);
@@ -1760,7 +1768,7 @@ internal sealed class RuntimeInputsCollectionEditor
             componentItems.DocumentKeys,
             $"Runtime collection '{collection.Id}' item '{ItemId(item, itemIndex)}'");
         var selected = _ownerDocuments.ComponentVariantSelection(variantReference);
-        void ApplyOverrides(JsonObject nextOverrides)
+        async void ApplyOverrides(JsonObject nextOverrides)
         {
             item[componentItems.OverridesJsonKey] = nextOverrides.DeepClone();
             _setPreviewCollectionItemValues(
@@ -1772,7 +1780,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 });
             if (owner.IsInstance)
             {
-                _instanceDocuments.UpdateCollectionValue(
+                await _instanceDocuments.UpdateCollectionValueAsync(
                     owner.Node.Id,
                     StorageCollectionKey(collection),
                     ItemId(item, itemIndex),
@@ -1853,22 +1861,22 @@ internal sealed class RuntimeInputsCollectionEditor
                 ? (nestedInput, targetId, nestedControl) => DecorateAnimationToggle(owner, nestedInput, targetId, nestedControl)
                 : null,
             RemoveStructuredCollectionAnimationTargets = owner.IsInstance
-                ? (targetIds) =>
+                ? async (targetIds) =>
                 {
                     var document = new ModuleInstanceAnimationDocument(
                         _instanceDocuments.AnimationJson(owner.Node.Id));
                     foreach (var targetId in targetIds) document.RemoveTarget(targetId);
-                    _instanceDocuments.SaveAnimationJson(owner.Node.Id, document.ToJson());
+                    await _instanceDocuments.SaveAnimationJsonAsync(owner.Node.Id, document.ToJson());
                     _onChanged();
                 }
                 : null,
             DuplicateStructuredCollectionAnimationTargets = owner.IsInstance
-                ? (targetIds) =>
+                ? async (targetIds) =>
                 {
                     var document = new ModuleInstanceAnimationDocument(
                         _instanceDocuments.AnimationJson(owner.Node.Id));
                     document.DuplicateTargets(targetIds);
-                    _instanceDocuments.SaveAnimationJson(owner.Node.Id, document.ToJson());
+                    await _instanceDocuments.SaveAnimationJsonAsync(owner.Node.Id, document.ToJson());
                     _onChanged();
                 }
                 : null,
@@ -1891,7 +1899,7 @@ internal sealed class RuntimeInputsCollectionEditor
         var fieldIsActive = CollectionFieldAvailability.IsEnabled(item, input, itemIndex);
         control.IsEnabled = fieldIsActive;
         control.IsVisible = fieldIsActive;
-        control.ValueCommitted += (_, next) =>
+        control.ValueCommitted += async (_, next) =>
         {
             var itemId = item["id"] is JsonValue idValue && idValue.TryGetValue<string>(out var id)
                 ? id
@@ -1914,7 +1922,7 @@ internal sealed class RuntimeInputsCollectionEditor
             }
             if (owner.IsInstance)
             {
-                _instanceDocuments.UpdateCollectionValues(
+                await _instanceDocuments.UpdateCollectionValuesAsync(
                     owner.Node.Id,
                     StorageCollectionKey(collection),
                     itemId,
@@ -2008,7 +2016,7 @@ internal sealed class RuntimeInputsCollectionEditor
             _testValuesChanged();
         }
         control.ValueChanged += (_, next) => ApplyTransientValue(next);
-        control.ValueCommitted += (_, next) =>
+        control.ValueCommitted += async (_, next) =>
         {
             componentInputs[input.JsonKey] = DesignPreviewTestValues.ValueNode(input, next);
             var inputsJsonKey = RuntimeContractJsonKey(collection);
@@ -2016,7 +2024,7 @@ internal sealed class RuntimeInputsCollectionEditor
             var itemId = ItemId(item, itemIndex);
             if (owner.IsInstance)
             {
-                _instanceDocuments.UpdateCollectionValue(
+                await _instanceDocuments.UpdateCollectionValueAsync(
                     owner.Node.Id,
                     StorageCollectionKey(collection),
                     itemId,
@@ -2105,7 +2113,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 targetId,
                 DesignPreviewTestValues.ValueNode(input, control.Value) ?? JsonValue.Create(control.Value)!,
                 input.Animation.Interpolations.First());
-            _instanceDocuments.SaveAnimationJson(owner.Node.Id, document.ToJson());
+            await _instanceDocuments.SaveAnimationJsonAsync(owner.Node.Id, document.ToJson());
             if (_reloadAndSelect is not null) _reloadAndSelect(owner.Node);
             else _onChanged();
         };
@@ -2259,8 +2267,8 @@ internal sealed class RuntimeInputsCollectionEditor
             source.ConfigJson,
             source.RuntimePreviewJson,
             source.IsInstance
-                ? (_) => { }
-                : (json) => _ownerDocuments.SaveDesignPreviewJson(source, json),
+                ? (_) => Task.CompletedTask
+                : (json) => _ownerDocuments.SaveDesignPreviewJsonAsync(source, json),
             source.IsInstance);
     }
 
@@ -2286,7 +2294,7 @@ internal sealed class RuntimeInputsCollectionEditor
         ProjectTreeNode Node,
         string ConfigJson,
         string DesignPreviewJson,
-        Action<string> Save,
+        Func<string, Task> Save,
         bool IsInstance);
 
     private sealed record RuntimeInputSurface(
