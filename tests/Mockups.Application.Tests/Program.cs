@@ -13,6 +13,7 @@ var tests = new (string Name, Action Run)[]
     ("invalid node selection leaves the session unchanged", InvalidSelectionIsRejected),
     ("active editor refresh rebases embedded context to the new tree", ActiveEditorRefreshRebasesEmbeddedContext),
     ("a newer tree load cancels and rejects the older result", NewerTreeLoadRejectsOlderResult),
+    ("prepared tree data remains invisible until its dependent state can commit", PreparedTreeRemainsInvisibleUntilCommit),
     ("async tree reads run on a worker before committing immutable state", AsyncTreeReadRunsOnWorker),
     ("desktop consumers can compile only asynchronous tree loading", OnlyAsyncTreeLoadingIsPublic),
     ("rapid async workspace changes discard the older result", RapidAsyncWorkspaceChangeDiscardsOlderResult),
@@ -526,6 +527,44 @@ static void NewerTreeLoadRejectsOlderResult()
         "current",
         out _));
     Equal(EditorWorkspace.Production, coordinator.State.Workspace);
+}
+
+static void PreparedTreeRemainsInvisibleUntilCommit()
+{
+    var source = new MutableNavigationDataSource(CreateTree());
+    using var coordinator =
+        new EditorWorkspaceCoordinator(source);
+    coordinator.ReloadTree();
+    var previous = coordinator.State;
+    source.Tree = CreateTree(
+        includeAlternateVariant: false);
+
+    var preparation = coordinator
+        .PrepareTreeReloadAsync()
+        .GetAwaiter()
+        .GetResult()
+        ?? throw new InvalidOperationException(
+            "Expected a prepared tree candidate.");
+
+    Equal(previous, coordinator.State);
+    True(coordinator.IsCurrentTreeLoad(
+        preparation));
+    coordinator.DiscardTreeLoad(preparation);
+    Equal(previous, coordinator.State);
+    True(!coordinator.HasPendingTreeLoad);
+
+    preparation = coordinator
+        .PrepareTreeReloadAsync()
+        .GetAwaiter()
+        .GetResult()
+        ?? throw new InvalidOperationException(
+            "Expected a second prepared tree candidate.");
+    True(coordinator.TryCommitTreeLoad(
+        preparation,
+        "prepared-commit",
+        out _));
+    True(coordinator.State.Revision
+        > previous.Revision);
 }
 
 static void AsyncTreeReadRunsOnWorker()

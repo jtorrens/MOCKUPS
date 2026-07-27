@@ -225,10 +225,11 @@ each Screen's Variant config and each Shot's exact Actor-owned Device, Theme and
 appearance context. Production navigation, context presentation, validation,
 playhead controls, appearance selection, history subtitles and playback timing
 consume only that catalog. They never recalculate or query the timeline or Shot
-context from visual callbacks. A tree-changing command commits the refreshed
-catalog before selecting or rendering its new Shot or Screen. If that
-preparation is canceled or superseded, the shell does not commit the dependent
-selection against the older catalog.
+context from visual callbacks. A tree-changing command prepares the new tree
+and refreshed catalog without publishing either. It commits the catalog and
+tree revision together before selecting or rendering a new Shot or Screen. If
+that preparation fails, is canceled or is superseded, the prior tree, catalog
+and selection remain current.
 
 Interactive render requests follow the same revision rule. After the external
 renderer returns, the Preview host checks the request sequence before either

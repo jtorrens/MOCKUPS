@@ -22,6 +22,33 @@ using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
+internal sealed class PreviewOptionsPreparation : IDisposable
+{
+    internal PreviewOptionsPreparation(
+        CancellationTokenSource ownerOperation,
+        CancellationTokenSource linkedOperation,
+        PreviewVisualContextSnapshot visual,
+        ProductionPreviewSessionSnapshot production,
+        PreviewVisualContextSnapshot? previousVisual,
+        ProductionPreviewSessionSnapshot? previousProduction)
+    {
+        OwnerOperation = ownerOperation;
+        LinkedOperation = linkedOperation;
+        Visual = visual;
+        Production = production;
+        PreviousVisual = previousVisual;
+        PreviousProduction = previousProduction;
+    }
+
+    internal CancellationTokenSource OwnerOperation { get; }
+    internal CancellationTokenSource LinkedOperation { get; }
+    internal PreviewVisualContextSnapshot Visual { get; }
+    internal ProductionPreviewSessionSnapshot Production { get; }
+    internal PreviewVisualContextSnapshot? PreviousVisual { get; }
+    internal ProductionPreviewSessionSnapshot? PreviousProduction { get; }
+    public void Dispose() => LinkedOperation.Dispose();
+}
+
 internal sealed class EditorPreviewController : IDisposable
 {
     private const int LoadingPreviewFrameThreshold = 0;
@@ -975,11 +1002,27 @@ internal sealed class EditorPreviewController : IDisposable
     public async Task<bool> RefreshOptionsAsync(
         IReadOnlyList<ProjectTreeNode> treeRoots)
     {
+        var prepared = await PrepareOptionsAsync(
+            treeRoots,
+            CancellationToken.None);
+        return prepared is not null
+            && TryCommitOptions(prepared);
+    }
+
+    internal async Task<PreviewOptionsPreparation?>
+        PrepareOptionsAsync(
+            IReadOnlyList<ProjectTreeNode> treeRoots,
+        CancellationToken cancellationToken)
+    {
         var project = treeRoots.FirstOrDefault((node) => node.Kind == ProjectTreeNodeKind.Project);
-        if (project is null) return false;
+        if (project is null) return null;
 
         var preparation = _visualContextPreparation.Begin();
-        var cancellationToken = preparation.Token;
+        var linkedOperation =
+            CancellationTokenSource.CreateLinkedTokenSource(
+                preparation.Token,
+                cancellationToken);
+        PreviewOptionsPreparation? result = null;
         try
         {
             var prepared = await _operations.ExecuteAsync(
@@ -990,33 +1033,99 @@ internal sealed class EditorPreviewController : IDisposable
                     Production:
                         _productionPreviewData.LoadSnapshot(
                             treeRoots)),
-                cancellationToken);
+                linkedOperation.Token);
             if (_disposed
                 || !_visualContextPreparation.IsCurrent(
-                    preparation))
+                    preparation)
+                || linkedOperation.IsCancellationRequested)
             {
-                return false;
+                return null;
             }
 
-            _visualContextSnapshot =
-                prepared.Visual;
-            _productionSessionSnapshot =
-                prepared.Production;
-            ApplyVisualContextOptions(
-                prepared.Visual);
-            Refresh();
-            return true;
+            result = new PreviewOptionsPreparation(
+                preparation,
+                linkedOperation,
+                prepared.Visual,
+                prepared.Production,
+                _visualContextSnapshot,
+                _productionSessionSnapshot);
+            return result;
         }
         catch (OperationCanceledException)
-            when (cancellationToken.IsCancellationRequested)
+            when (linkedOperation.IsCancellationRequested)
         {
-            return false;
+            return null;
         }
         finally
         {
-            _visualContextPreparation.Complete(
+            if (result is null)
+            {
+                _visualContextPreparation.Complete(
+                    preparation);
+                linkedOperation.Dispose();
+            }
+        }
+    }
+
+    internal bool IsCurrentOptionsPreparation(
+        PreviewOptionsPreparation preparation)
+    {
+        return !_disposed
+            && !preparation.LinkedOperation
+                .IsCancellationRequested
+            && _visualContextPreparation.IsCurrent(
+                preparation.OwnerOperation);
+    }
+
+    internal bool TryCommitOptions(
+        PreviewOptionsPreparation preparation,
+        bool applyVisualState = true)
+    {
+        if (!IsCurrentOptionsPreparation(
+                preparation))
+        {
+            DiscardOptions(preparation);
+            return false;
+        }
+
+        _visualContextSnapshot =
+            preparation.Visual;
+        _productionSessionSnapshot =
+            preparation.Production;
+        _visualContextPreparation.Complete(
+            preparation.OwnerOperation);
+        preparation.Dispose();
+        if (applyVisualState)
+        {
+            ApplyCommittedOptions(
                 preparation);
         }
+        return true;
+    }
+
+    internal void ApplyCommittedOptions(
+        PreviewOptionsPreparation preparation)
+    {
+        ApplyVisualContextOptions(
+            preparation.Visual);
+        Refresh();
+    }
+
+    internal void RestoreCommittedOptions(
+        PreviewOptionsPreparation preparation)
+    {
+        _visualContextSnapshot =
+            preparation.PreviousVisual;
+        _productionSessionSnapshot =
+            preparation.PreviousProduction;
+    }
+
+    internal void DiscardOptions(
+        PreviewOptionsPreparation preparation)
+    {
+        _visualContextPreparation.Complete(
+            preparation.OwnerOperation);
+        preparation.Dispose();
     }
 
     private void ApplyVisualContextOptions(

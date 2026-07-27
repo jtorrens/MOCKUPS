@@ -42,6 +42,23 @@ public sealed class EditorTreeLoadOperation
     public CancellationToken Token { get; }
 }
 
+public sealed class EditorTreeLoadPreparation
+{
+    internal EditorTreeLoadPreparation(
+        EditorTreeLoadOperation operation,
+        IReadOnlyList<ProjectTreeNode> treeRoots)
+    {
+        Operation = operation;
+        TreeRoots = treeRoots;
+    }
+
+    internal EditorTreeLoadOperation Operation { get; }
+    public IReadOnlyList<ProjectTreeNode> TreeRoots { get; }
+    public CancellationToken Token => Operation.Token;
+    public EditorWorkspace Workspace => Operation.Workspace;
+    public EditorTreeLoadIntent Intent => Operation.Intent;
+}
+
 public sealed class EditorWorkspaceCoordinator : IDisposable
 {
     private readonly object _stateGate = new();
@@ -141,6 +158,27 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
             State.Workspace,
             source,
             intent);
+    }
+
+    public Task<EditorTreeLoadPreparation?> PrepareTreeReloadAsync(
+        EditorTreeLoadIntent intent = EditorTreeLoadIntent.Workspace)
+    {
+        return PrepareTreeLoadAsync(
+            State.Workspace,
+            intent);
+    }
+
+    public Task<EditorTreeLoadPreparation?> PrepareWorkspaceSwitchAsync(
+        EditorWorkspace workspace)
+    {
+        if (!ShouldLoadWorkspace(workspace))
+        {
+            return Task.FromResult<EditorTreeLoadPreparation?>(null);
+        }
+
+        return PrepareTreeLoadAsync(
+            workspace,
+            EditorTreeLoadIntent.Workspace);
     }
 
     internal EditorSessionTransition SwitchWorkspace(
@@ -283,6 +321,39 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
                 effects);
             return true;
         }
+    }
+
+    public bool TryCommitTreeLoad(
+        EditorTreeLoadPreparation preparation,
+        string source,
+        out EditorSessionTransition transition)
+    {
+        return TryCommitTreeLoad(
+            preparation.Operation,
+            preparation.TreeRoots,
+            source,
+            out transition);
+    }
+
+    public bool IsCurrentTreeLoad(
+        EditorTreeLoadPreparation preparation)
+    {
+        lock (_stateGate)
+        {
+            return !_disposed
+                && ReferenceEquals(
+                    _activeTreeLoad,
+                    preparation.Operation)
+                && !preparation.Token.IsCancellationRequested
+                && preparation.Operation.BaseRevision
+                    == _state.Revision;
+        }
+    }
+
+    public void DiscardTreeLoad(
+        EditorTreeLoadPreparation preparation)
+    {
+        AbandonTreeLoad(preparation.Operation);
     }
 
     public bool TrySelectNode(
@@ -602,7 +673,29 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
         string source,
         EditorTreeLoadIntent intent)
     {
-        var operation = BeginTreeLoad(workspace, intent);
+        var preparation = await PrepareTreeLoadAsync(
+            workspace,
+            intent);
+        if (preparation is null)
+        {
+            return null;
+        }
+        return TryCommitTreeLoad(
+            preparation,
+            source,
+            out var transition)
+                ? transition
+                : null;
+    }
+
+    private async Task<EditorTreeLoadPreparation?>
+        PrepareTreeLoadAsync(
+            EditorWorkspace workspace,
+            EditorTreeLoadIntent intent)
+    {
+        var operation = BeginTreeLoad(
+            workspace,
+            intent);
         try
         {
             var roots = await Task.Run(
@@ -612,13 +705,9 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
             {
                 return null;
             }
-            return TryCommitTreeLoad(
+            return new EditorTreeLoadPreparation(
                 operation,
-                roots,
-                source,
-                out var transition)
-                ? transition
-                : null;
+                roots.ToArray());
         }
         catch (OperationCanceledException)
             when (operation.Token.IsCancellationRequested)

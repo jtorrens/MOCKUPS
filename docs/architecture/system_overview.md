@@ -369,9 +369,13 @@ crosses domains.
 `EditorWorkspaceCoordinator` is the single owner of the loaded tree, current
 workspace, active Production, selected node, embedded editor context, remembered
 workspace and Variant selections, Preview transition revision and obsolete
-tree-load cancellation. Rapid workspace changes and window disposal invalidate
-the in-flight read; a late result or late failure cannot replace current UI
-state. Its state and transition tests compile without Avalonia or SQLite.
+tree-load cancellation. A reload first produces an uncommitted tree candidate.
+The Desktop transition owner prepares the matching visual context and complete
+Production Preview catalog against that candidate, then commits both snapshots
+without an asynchronous gap before selection is rendered. Failure,
+cancellation, a newer command and window disposal discard the candidate and
+retain the prior tree, catalog and selection. Its state and transition tests
+compile without Avalonia or SQLite.
 
 `MainWindow` owns window initialization, the three-panel shell, generic
 editor-card composition, Preview host wiring, generic modal hosting and

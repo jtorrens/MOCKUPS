@@ -37,6 +37,8 @@ public partial class MainWindow : SukiWindow
     private readonly EditorTreeExpansionState _treeExpansion = new();
     private readonly EditorActiveFieldControls _activeFieldControls = new();
     private readonly EditorWorkspaceCoordinator _workspaceCoordinator;
+    private readonly EditorTreePreviewTransitionCoordinator
+        _treePreviewTransitions;
     private bool _isUpdatingProductionPicker;
     private string _previewUtilityTabStateKey = "";
     private bool _isUpdatingPreviewUtilityTab;
@@ -103,6 +105,10 @@ public partial class MainWindow : SukiWindow
             () => Session.SelectedNode,
             (nodeId) => SelectNodeById(nodeId, "preview-context"),
             this);
+        _treePreviewTransitions =
+            new EditorTreePreviewTransitionCoordinator(
+                _workspaceCoordinator,
+                _previewController);
         _previewController.ThemeChanged += _activeFieldControls.RefreshPreviews;
         _nodeCommands = new EditorNodeCommandController(
             this,
@@ -427,7 +433,7 @@ public partial class MainWindow : SukiWindow
         try
         {
             var transition =
-                await _workspaceCoordinator.ReloadTreeAsync();
+                await _treePreviewTransitions.ReloadAsync();
             if (transition is null)
             {
                 return false;
@@ -911,7 +917,7 @@ public partial class MainWindow : SukiWindow
         try
         {
             transition =
-                await _workspaceCoordinator.ReloadTreeAsync(
+                await _treePreviewTransitions.ReloadAsync(
                     "field-refresh",
                     EditorTreeLoadIntent.ActiveEditor);
         }
@@ -939,7 +945,6 @@ public partial class MainWindow : SukiWindow
             {
                 RenderRootSelection(transition, rebuildTree: false);
             }
-            RefreshPreviewOptions();
             return;
         }
 
@@ -967,7 +972,6 @@ public partial class MainWindow : SukiWindow
                 restoreState: viewState);
         }
 
-        RefreshPreviewOptions();
         ApplyUiTextScale();
     }
 
@@ -986,10 +990,6 @@ public partial class MainWindow : SukiWindow
         try
         {
             if (!await LoadProjectTreeAsync())
-            {
-                return;
-            }
-            if (!await RefreshPreviewOptionsAsync())
             {
                 return;
             }
@@ -1116,7 +1116,7 @@ public partial class MainWindow : SukiWindow
         try
         {
             transition =
-                await _workspaceCoordinator.SwitchWorkspaceAsync(
+                await _treePreviewTransitions.SwitchWorkspaceAsync(
                     workspace);
         }
         catch (Exception exception)

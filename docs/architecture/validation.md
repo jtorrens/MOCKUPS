@@ -57,9 +57,10 @@ It includes:
 - prepared Production Preview session data, proving exact Shot FPS, ordered
   Screen ranges, keyframes, Variant configs and Actor-owned Shot context, while
   preventing the visual controller from retaining timeline or Shot-context
-  data sources, plus a headless create/reload/select regression proving that a
-  new Shot cannot reach Production navigation before its refreshed Preview
-  session commits;
+  data sources, plus headless create/reload/select and failed-preparation
+  regressions proving that a new Shot cannot reach Production navigation before
+  its refreshed Preview session commits and that a strict catalog failure keeps
+  the prior tree, catalog and selection;
 - operation-coordinated Production playback payload preparation, covering exact
   frame order, preserved local frames, Actor and animation documents,
   cancellation and byte-for-byte read-only persistence;

@@ -419,7 +419,10 @@ Shot frame rates, ordered Screen ranges and keyframes, and exact Screen Variant
 configs. Each Shot entry includes its resolved Actor-owned Device, Theme and
 appearance context. Timeline controls, context presentation and playback
 consume the catalog and hold no timeline or Shot-context persistence data
-source.
+source. Later tree reads remain candidates until this complete catalog and its
+visual-context snapshot succeed. The candidate tree, catalog and selection are
+then committed as one revision; a failed, canceled or obsolete preparation
+leaves every prior snapshot current.
 Production playback captures its request and creates every resolved payload
 frame through the session operation worker. Frame iteration and runtime record
 resolution do not execute from timer or visual callbacks.
