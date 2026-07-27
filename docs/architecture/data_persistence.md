@@ -403,6 +403,10 @@ preparations from reaching the visual state.
 Production Screen header presentation and embedded breadcrumb Variant names
 join the same prepared result. The visual header controller receives that
 result and holds no repository or persistence-facing port.
+Preview Setup separately prepares one immutable Project visual-context snapshot
+containing Device options and metrics, Theme options and media root. Visual
+refresh, playback setup and reference browsing consume that snapshot; replacing
+it is revisioned and runs through the same session operation worker.
 Cancellation or failure cannot publish a partial desktop session.
 
 A schema, vocabulary, field or identifier change requires one explicit

@@ -93,6 +93,7 @@ public partial class MainWindow : SukiWindow
             data.Dictionary,
             data.ActorPreview,
             data.ProjectPaths,
+            application.Operations,
             PreviewDeviceComboBox,
             PreviewThemeComboBox,
             PreviewModeComboBox,
@@ -362,9 +363,9 @@ public partial class MainWindow : SukiWindow
             _productionNavigationActions.Dispose();
             _editorContent.Dispose();
             _collectionCards.Dispose();
+            _previewController.Dispose();
             application.Operations.Dispose();
             _workspaceCoordinator.Dispose();
-            _previewController.Dispose();
         };
         _themeController.Apply();
         ApplyTreeLoadTransition(initialTransition);
@@ -393,7 +394,7 @@ public partial class MainWindow : SukiWindow
 
     private void InitializePreviewOptions()
     {
-        _previewController.Initialize(Session.TreeRoots);
+        RefreshPreviewOptions();
     }
 
     private void RefreshPreviewDevice()
@@ -409,9 +410,19 @@ public partial class MainWindow : SukiWindow
         ApplyUiTextScale();
     }
 
-    private void RefreshPreviewOptions()
+    private async void RefreshPreviewOptions()
     {
-        _previewController.RefreshOptions(Session.TreeRoots);
+        try
+        {
+            await _previewController.RefreshOptionsAsync(
+                Session.TreeRoots);
+        }
+        catch (Exception exception)
+        {
+            _messages.Error(
+                "Preview options",
+                exception);
+        }
     }
 
     private async Task<bool> LoadProjectTreeAsync()

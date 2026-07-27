@@ -212,6 +212,13 @@ position. The visual shell shows the shared loading state and constructs
 controls only from the prepared result whose selection revision is still
 current.
 
+Preview Setup resource options follow the same rule. Device options and their
+exact metrics, Theme options and the Project media root are loaded together on
+the session operation worker. The Preview controller retains only that
+immutable Project snapshot. A later Project preparation cancels the previous
+one, and visual refresh, playback preparation and reference browsing consume
+only the latest committed snapshot without direct persistence reads.
+
 Interactive render requests follow the same revision rule. After the external
 renderer returns, the Preview host checks the request sequence before either
 committing the result or publishing its error. A result or error superseded by

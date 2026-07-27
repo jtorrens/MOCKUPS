@@ -918,8 +918,20 @@ static void ClosingEditorCancelsPreviewLifetime()
                 ?.GetValue(controller) as PreviewPreparationCancellation
                 ?? throw new InvalidOperationException(
                     "Missing Production Preview preparation lifetime.");
+            var visualContextPreparation =
+                typeof(EditorPreviewController)
+                    .GetField(
+                        "_visualContextPreparation",
+                        BindingFlags.Instance
+                        | BindingFlags.NonPublic)
+                    ?.GetValue(controller)
+                    as PreviewPreparationCancellation
+                ?? throw new InvalidOperationException(
+                    "Missing Preview visual-context preparation lifetime.");
             var designOperation = designPreparation.Begin();
             var shotOperation = shotPreparation.Begin();
+            var visualContextOperation =
+                visualContextPreparation.Begin();
             var aheadOperation = new CancellationTokenSource();
             typeof(EditorPreviewController)
                 .GetField(
@@ -939,6 +951,7 @@ static void ClosingEditorCancelsPreviewLifetime()
 
             True(designOperation.IsCancellationRequested);
             True(shotOperation.IsCancellationRequested);
+            True(visualContextOperation.IsCancellationRequested);
             True(aheadOperation.IsCancellationRequested);
             True(!timer.IsEnabled);
             controller.Dispose();
@@ -4326,6 +4339,26 @@ static void PreviewShellVisualTreeIsResponsive()
             var window = DesktopHost.CreateWindow(temporary);
             window.Show();
             Dispatcher.UIThread.RunJobs();
+            var previewController =
+                typeof(MainWindow)
+                    .GetField(
+                        "_previewController",
+                        BindingFlags.Instance
+                        | BindingFlags.NonPublic)
+                    ?.GetValue(window)
+                    as EditorPreviewController
+                ?? throw new InvalidOperationException(
+                    "Missing Preview controller.");
+            var optionsTimeout = Stopwatch.StartNew();
+            while (previewController.SelectedDeviceId is null
+                   && optionsTimeout.Elapsed
+                   < TimeSpan.FromSeconds(5))
+            {
+                Dispatcher.UIThread.RunJobs();
+                Thread.Sleep(5);
+            }
+            True(previewController.SelectedDeviceId is not null);
+            Dispatcher.UIThread.RunJobs();
 
             var shell = Required(window.FindControl<Grid>("ShellColumns"));
             var navigation = Required(window.FindControl<Border>("NavigationPanelBorder"));
@@ -4418,8 +4451,31 @@ static void PreviewShellVisualTreeIsResponsive()
                     + $"(host={tabsRect.X:0.##},{tabsRect.Y:0.##},{tabsRect.Width:0.##},{tabsRect.Height:0.##}; "
                     + $"tabs={string.Join("; ", tabRects.Select((rect) => $"{rect.X:0.##},{rect.Y:0.##},{rect.Width:0.##},{rect.Height:0.##}"))})");
 
-                Equal(2, setupGrid.ColumnDefinitions.Count);
-                Equal(2, setupGrid.RowDefinitions.Count);
+                var expectedSetupLayout =
+                    PreviewPanelLayoutPolicy.SetupMode(
+                        setupGrid.Bounds.Width);
+                var expectedSetupShape =
+                    expectedSetupLayout switch
+                    {
+                        PreviewSetupLayoutMode.FourColumns =>
+                            (Columns: 4, Rows: 1),
+                        PreviewSetupLayoutMode.TwoColumns =>
+                            (Columns: 2, Rows: 2),
+                        PreviewSetupLayoutMode.OneColumn =>
+                            (Columns: 1, Rows: 4),
+                        _ => throw new InvalidOperationException(
+                            $"Unsupported Preview Setup layout '{expectedSetupLayout}'."),
+                    };
+                LayoutCheck(
+                    setupGrid.ColumnDefinitions.Count
+                        == expectedSetupShape.Columns
+                    && setupGrid.RowDefinitions.Count
+                        == expectedSetupShape.Rows,
+                    $"{size}: Preview Setup does not match its measured-width policy "
+                    + $"(width={setupGrid.Bounds.Width:0.##}, "
+                    + $"mode={expectedSetupLayout}, "
+                    + $"columns={setupGrid.ColumnDefinitions.Count}, "
+                    + $"rows={setupGrid.RowDefinitions.Count})");
                 Equal(ScrollBarVisibility.Auto, setupScroll.VerticalScrollBarVisibility);
                 Equal(ScrollBarVisibility.Disabled, setupScroll.HorizontalScrollBarVisibility);
                 LayoutCheck(
@@ -4463,8 +4519,13 @@ static void PreviewShellVisualTreeIsResponsive()
             True(Required(Required(window.FindControl<Control>("PreviewThemeComboBox")).Parent as Visual).IsVisible);
             True(Required(Required(window.FindControl<Control>("PreviewModeComboBox")).Parent as Visual).IsVisible);
             True(Required(Required(window.FindControl<Control>("PreviewOrientationComboBox")).Parent as Visual).IsVisible);
-            Equal(2, setupGrid.ColumnDefinitions.Count);
-            Equal(2, setupGrid.RowDefinitions.Count);
+            LayoutCheck(
+                setupGrid.ColumnDefinitions.Count == 2
+                && setupGrid.RowDefinitions.Count == 2,
+                "Design Preview Setup did not restore two columns after Production "
+                + $"(width={setupGrid.Bounds.Width:0.##}, "
+                + $"columns={setupGrid.ColumnDefinitions.Count}, "
+                + $"rows={setupGrid.RowDefinitions.Count})");
             Equal(selectedTab, tabs.SelectedItem);
             setupGrid.Width = double.NaN;
             setupGrid.HorizontalAlignment = HorizontalAlignment.Stretch;
@@ -7515,15 +7576,44 @@ static void PreviewVisualContextBoundaryPreservesResolvedResources()
         var tree = database.LoadProjectTree();
         var project = Descendants(tree).Single((node) => node.Kind == ProjectTreeNodeKind.Project);
         var device = Descendants(tree).First((node) => node.Kind == ProjectTreeNodeKind.Device);
+        var snapshot = dataSource.LoadSnapshot(project.Id);
 
+        Equal(project.Id, snapshot.ProjectId);
         SequenceEqual(
             database.GetDeviceOptions(project.Id).Select((option) => option.Value),
-            dataSource.DeviceOptions(project.Id).Select((option) => option.Value));
+            snapshot.DeviceOptions.Select((option) => option.Value));
         SequenceEqual(
             database.GetThemeOptions(project.Id).Select((option) => option.Value),
-            dataSource.ThemeOptions(project.Id).Select((option) => option.Value));
-        Equal(database.GetProjectSettings(project.Id).MediaRoot, dataSource.ProjectMediaRoot(project.Id));
-        Equal(database.GetDevicePreviewMetrics(device.Id), dataSource.DeviceMetrics(device.Id));
+            snapshot.ThemeOptions.Select((option) => option.Value));
+        Equal(
+            database.GetProjectSettings(project.Id).MediaRoot,
+            snapshot.MediaRoot);
+        Equal(
+            database.GetDevicePreviewMetrics(device.Id),
+            snapshot.DeviceMetrics(device.Id));
+        Throws<InvalidOperationException>(
+            () => snapshot.DeviceMetrics("missing_device"));
+
+        True(typeof(EditorPreviewController)
+            .GetConstructors(
+                BindingFlags.Instance
+                | BindingFlags.Public
+                | BindingFlags.NonPublic)
+            .All((constructor) =>
+                constructor.GetParameters().Any(
+                    (parameter) =>
+                        parameter.ParameterType
+                        == typeof(EditorOperationCoordinator))));
+        var refreshOptions =
+            typeof(EditorPreviewController).GetMethod(
+                "RefreshOptionsAsync",
+                BindingFlags.Instance
+                | BindingFlags.Public
+                | BindingFlags.NonPublic)
+            ?? throw new InvalidOperationException(
+                "Missing prepared Preview visual-context boundary.");
+        True(typeof(Task).IsAssignableFrom(
+            refreshOptions.ReturnType));
 
         var after = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, after);

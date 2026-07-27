@@ -34,6 +34,7 @@ internal sealed class EditorPreviewController : IDisposable
     private static readonly IBrush PreviewStatusSlowBrush = new SolidColorBrush(Color.Parse("#E74C3C"));
     private readonly DesignPreviewPayloadDataSource _previewPayloadData;
     private readonly PreviewVisualContextDataSource _visualContextData;
+    private readonly EditorOperationCoordinator _operations;
     private readonly ModuleInstanceTimelineDataSource _timelineDataSource;
     private readonly ProductionPreviewSessionDataSource _productionPreviewData;
     private readonly Window _owner;
@@ -219,6 +220,8 @@ internal sealed class EditorPreviewController : IDisposable
     private bool _isRefreshingOptions;
     private bool? _renderedLockState;
     private readonly PreviewPreparationCancellation _designPlaybackPreparation = new();
+    private readonly PreviewPreparationCancellation
+        _visualContextPreparation = new();
     private CancellationTokenSource? _aheadPreloadCancellation;
     private readonly HashSet<string> _aheadPreloadedFrameKeys = new(StringComparer.Ordinal);
     private bool _isAheadPreloading;
@@ -245,6 +248,8 @@ internal sealed class EditorPreviewController : IDisposable
     private IReadOnlyList<DesignPreviewPayload>? _pendingPlaybackFramesOverride;
     private string _activeProductionModuleInstanceId = "";
     private bool _disposed;
+    private PreviewVisualContextSnapshot?
+        _visualContextSnapshot;
 
     public EditorPreviewController(
         IPreviewInputRepository preview,
@@ -254,6 +259,7 @@ internal sealed class EditorPreviewController : IDisposable
         IDictionaryFieldContextRepository dictionary,
         IActorPreviewRepository actors,
         IProjectPathResolver projectPaths,
+        EditorOperationCoordinator operations,
         EditorInstantComboBox deviceComboBox,
         EditorInstantComboBox themeComboBox,
         EditorInstantComboBox modeComboBox,
@@ -274,6 +280,7 @@ internal sealed class EditorPreviewController : IDisposable
         Window owner)
     {
         _projectPaths = projectPaths;
+        _operations = operations;
         _designPreviewPane = new DesignWebPreviewPane(projectPaths);
         _previewPayloadData = new DesignPreviewPayloadDataSource(
             preview,
@@ -355,6 +362,7 @@ internal sealed class EditorPreviewController : IDisposable
 
         _disposed = true;
         _shotPlaybackTimer.Stop();
+        _visualContextPreparation.Dispose();
         _designPlaybackPreparation.Dispose();
         _shotPlaybackPreparation.Dispose();
         _aheadPreloadCancellation?.Cancel();
@@ -941,27 +949,56 @@ internal sealed class EditorPreviewController : IDisposable
 
     public string? SelectedDeviceId { get; private set; }
 
-    public void Initialize(IReadOnlyList<ProjectTreeNode> treeRoots)
-    {
-        RefreshOptions(treeRoots);
-    }
-
-    public void RefreshOptions(IReadOnlyList<ProjectTreeNode> treeRoots)
+    public async Task RefreshOptionsAsync(
+        IReadOnlyList<ProjectTreeNode> treeRoots)
     {
         var project = treeRoots.FirstOrDefault((node) => node.Kind == ProjectTreeNodeKind.Project);
         if (project is null) return;
 
-        _projectId = project.Id;
+        var preparation = _visualContextPreparation.Begin();
+        var cancellationToken = preparation.Token;
+        try
+        {
+            var snapshot = await _operations.ExecuteAsync(
+                () => _visualContextData.LoadSnapshot(
+                    project.Id),
+                cancellationToken);
+            if (_disposed
+                || !_visualContextPreparation.IsCurrent(
+                    preparation))
+            {
+                return;
+            }
+
+            _visualContextSnapshot = snapshot;
+            ApplyVisualContextOptions(snapshot);
+            Refresh();
+        }
+        catch (OperationCanceledException)
+            when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        finally
+        {
+            _visualContextPreparation.Complete(
+                preparation);
+        }
+    }
+
+    private void ApplyVisualContextOptions(
+        PreviewVisualContextSnapshot snapshot)
+    {
+        _projectId = snapshot.ProjectId;
         _isRefreshingOptions = true;
         try
         {
-            var deviceOptions = _visualContextData.DeviceOptions(project.Id);
+            var deviceOptions = snapshot.DeviceOptions;
             _deviceComboBox.ItemsSource = deviceOptions;
             var selectedDevice = PreferredResourceOption(deviceOptions, SelectedDeviceId);
             _deviceComboBox.SelectedItem = selectedDevice;
             SelectedDeviceId = selectedDevice?.Value;
 
-            var themeOptions = _visualContextData.ThemeOptions(project.Id);
+            var themeOptions = snapshot.ThemeOptions;
             _themeComboBox.ItemsSource = themeOptions;
             var selectedTheme = PreferredResourceOption(themeOptions, _selectedThemeId);
             _themeComboBox.SelectedItem = selectedTheme;
@@ -1022,8 +1059,6 @@ internal sealed class EditorPreviewController : IDisposable
         {
             _isRefreshingOptions = false;
         }
-
-        Refresh();
     }
 
     private void AttachControlEvents()
@@ -1166,7 +1201,8 @@ internal sealed class EditorPreviewController : IDisposable
     private async Task BrowseReferenceAsync()
     {
         if (string.IsNullOrWhiteSpace(_projectId)) return;
-        var mediaRoot = _visualContextData.ProjectMediaRoot(_projectId);
+        var mediaRoot = PreparedMediaRoot();
+        if (string.IsNullOrWhiteSpace(mediaRoot)) return;
         var selected = await EditorPathBrowser.BrowseMediaFile(
             _owner.StorageProvider,
             _projectPaths,
@@ -1210,7 +1246,7 @@ internal sealed class EditorPreviewController : IDisposable
         _referenceAngleSlider.Value,
         Math.Max(0, CurrentNavigationFrame() - _referenceStartPreviewFrame),
         _designInputsPanel.PlaybackFrameRate,
-        string.IsNullOrWhiteSpace(_projectId) ? "" : _visualContextData.ProjectMediaRoot(_projectId));
+        PreparedMediaRoot());
 
     public void BeginSelectionTransition()
     {
@@ -1286,7 +1322,8 @@ internal sealed class EditorPreviewController : IDisposable
 
             var metrics = _showCanonicalFrame
                 ? CanonicalPreviewMetrics()
-                : ApplyPreviewOrientation(_visualContextData.DeviceMetrics(deviceId));
+                : ApplyPreviewOrientation(
+                    PreparedDeviceMetrics(deviceId));
             var themeName = _themeComboBox.SelectedItem?.Label ?? "No theme";
             designPayload = ProcessPreviewPayload(designPayload, "static");
             UpdateDesignContextChrome(designPayload);
@@ -1462,7 +1499,8 @@ internal sealed class EditorPreviewController : IDisposable
 
         var deviceId = PreviewDeviceId(designPayload);
         if (string.IsNullOrWhiteSpace(deviceId)) return true;
-        var metrics = ApplyPreviewOrientation(_visualContextData.DeviceMetrics(deviceId));
+        var metrics = ApplyPreviewOrientation(
+            PreparedDeviceMetrics(deviceId));
         var payload = ProcessPreviewPayload(designPayload, "playback-prepare") ?? designPayload;
         var projectFps = payload.FrameRate;
         var previewFps = PreviewPlaybackTiming.PreviewFrameRate(projectFps);
@@ -3310,10 +3348,18 @@ internal sealed class EditorPreviewController : IDisposable
             return;
         }
 
-        var deviceOptions = _visualContextData.DeviceOptions(_projectId);
+        if (_visualContextSnapshot is not { } snapshot
+            || !snapshot.ProjectId.Equals(
+                _projectId,
+                StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var deviceOptions = snapshot.DeviceOptions;
         var selectedDevice = PreferredResourceOption(deviceOptions, SelectedDeviceId);
 
-        var themeOptions = _visualContextData.ThemeOptions(_projectId);
+        var themeOptions = snapshot.ThemeOptions;
         var selectedTheme = PreferredResourceOption(themeOptions, _selectedThemeId);
 
         _isRefreshingOptions = true;
@@ -3331,6 +3377,31 @@ internal sealed class EditorPreviewController : IDisposable
         {
             _isRefreshingOptions = false;
         }
+    }
+
+    private string PreparedMediaRoot()
+    {
+        return _visualContextSnapshot is { } snapshot
+            && snapshot.ProjectId.Equals(
+                _projectId,
+                StringComparison.Ordinal)
+                ? snapshot.MediaRoot
+                : "";
+    }
+
+    private DevicePreviewMetrics PreparedDeviceMetrics(
+        string deviceId)
+    {
+        if (_visualContextSnapshot is not { } snapshot
+            || !snapshot.ProjectId.Equals(
+                _projectId,
+                StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"Preview Project '{_projectId}' requires its prepared visual context.");
+        }
+
+        return snapshot.DeviceMetrics(deviceId);
     }
 
     internal static FieldOption? PreferredResourceOption(
