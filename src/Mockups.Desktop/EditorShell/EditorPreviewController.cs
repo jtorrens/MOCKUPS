@@ -284,7 +284,7 @@ internal sealed class EditorPreviewController : IDisposable
     private bool _isUpdatingShotTimeline;
     private long _selectionRefreshGeneration;
     private readonly PreviewPreparationCancellation _shotPlaybackPreparation = new();
-    private PreparedShotPlayback? _preparedShotPlayback;
+    private PreparedProductionPlayback? _preparedShotPlayback;
     private long _shotPlaybackStartedTimestamp;
     private int _shotPlaybackStartFrame;
     private bool _shotPlaybackIsPreparing;
@@ -1488,6 +1488,11 @@ internal sealed class EditorPreviewController : IDisposable
                 ref _selectionRefreshGeneration);
         try
         {
+            if (TryRenderPreparedProductionPlaybackFrame())
+            {
+                return;
+            }
+
             PrepareStaticPreviewRefresh();
             var invalidProductionContext =
                 InvalidProductionContext();
@@ -1547,24 +1552,9 @@ internal sealed class EditorPreviewController : IDisposable
                 return;
             }
 
-            if (prepared.Payload is not null
-                && node is not null)
-            {
-                _lastProductionPreviewNode =
-                    PreviewNodeKey.From(node);
-                _activeDesignPreviewNode =
-                    _lastProductionPreviewNode;
-                _activeProductionHistoryEntry =
-                    new DesignPreviewHistoryEntry(
-                        _lastProductionPreviewNode,
-                        prepared.Payload.Name);
-            }
-            else
-            {
-                _activeDesignPreviewNode = null;
-                _activeProductionHistoryEntry =
-                    null;
-            }
+            CommitProductionPreviewContext(
+                node,
+                prepared.Payload);
             RenderStaticPreview(
                 prepared.Payload,
                 prepared.ContextState,
@@ -1592,6 +1582,57 @@ internal sealed class EditorPreviewController : IDisposable
             _productionPayloadPreparation
                 .Complete(preparation);
         }
+    }
+
+    private bool TryRenderPreparedProductionPlaybackFrame()
+    {
+        var node = ProductionPayloadNode();
+        if (!_shotPlaybackTimer.IsEnabled
+            || _preparedShotPlayback is not { } prepared
+            || node is null
+            || !prepared.TryGetFrame(
+                node,
+                _shotPreviewFrame,
+                out var payload)
+            || payload is null)
+        {
+            return false;
+        }
+
+        PrepareStaticPreviewRefresh();
+        _designInputsPanel.UpdateForPayload(
+            null,
+            _projectId);
+        CommitProductionPreviewContext(
+            node,
+            payload);
+        RenderStaticPreview(
+            payload,
+            PreviewContextState.Renderable,
+            null);
+        return true;
+    }
+
+    private void CommitProductionPreviewContext(
+        ProjectTreeNode? node,
+        DesignPreviewPayload? payload)
+    {
+        if (payload is not null
+            && node is not null)
+        {
+            _lastProductionPreviewNode =
+                PreviewNodeKey.From(node);
+            _activeDesignPreviewNode =
+                _lastProductionPreviewNode;
+            _activeProductionHistoryEntry =
+                new DesignPreviewHistoryEntry(
+                    _lastProductionPreviewNode,
+                    payload.Name);
+            return;
+        }
+
+        _activeDesignPreviewNode = null;
+        _activeProductionHistoryEntry = null;
     }
 
     private void PrepareStaticPreviewRefresh()
@@ -2441,10 +2482,6 @@ internal sealed class EditorPreviewController : IDisposable
         public Queue<long> RecentPresentationTimestamps { get; } = [];
     }
 
-    private sealed record PreparedShotPlayback(
-        string RequestSignature,
-        IReadOnlyList<DesignPreviewPayload> Frames);
-
     private sealed record PreparedDesignPlayback(
         string RequestSignature,
         IReadOnlyList<DesignPreviewPayload> Frames);
@@ -3058,7 +3095,12 @@ internal sealed class EditorPreviewController : IDisposable
                     PlaybackFrameCacheOwner.Shot);
                 if (preparationSucceeded)
                 {
-                    _preparedShotPlayback = new PreparedShotPlayback(requestSignature, frames);
+                    _preparedShotPlayback = new PreparedProductionPlayback(
+                        requestSignature,
+                        payloadNode.Kind,
+                        payloadNode.Id,
+                        _shotPreviewFrame,
+                        frames);
                 }
             }
         }
@@ -3112,7 +3154,10 @@ internal sealed class EditorPreviewController : IDisposable
     {
         var themeId = _selectedThemeId;
         var themeMode = _selectedMode;
-        return await _operations.ExecuteAsync(
+        var stopwatch =
+            Stopwatch.StartNew();
+        var frames =
+            await _operations.ExecuteAsync(
             () => _productionPayloadPreparer
                 .PrepareFrames(
                     payloadNode,
@@ -3122,6 +3167,13 @@ internal sealed class EditorPreviewController : IDisposable
                     endFrame,
                     cancellationToken),
             cancellationToken);
+        PreviewDebugLog.Write(
+            "preview.playback.payloads.prepared",
+            ("kind", payloadNode.Kind),
+            ("id", payloadNode.Id),
+            ("frames", frames.Count),
+            ("ms", stopwatch.Elapsed.TotalMilliseconds));
+        return frames;
     }
 
     private async Task<string> ShotPlaybackRequestSignatureAsync(

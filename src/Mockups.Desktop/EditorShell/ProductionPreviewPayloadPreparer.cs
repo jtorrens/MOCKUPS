@@ -1,5 +1,7 @@
+using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Nodes;
 using System.Threading;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -79,6 +81,167 @@ internal sealed class ProductionPreviewPayloadPreparer
     {
         var lastFrame =
             Math.Max(startFrame, endFrame);
+        return node.Kind switch
+        {
+            ProjectTreeNodeKind.ModuleInstance =>
+                PrepareModuleInstanceFrames(
+                    node,
+                    themeId,
+                    themeMode,
+                    startFrame,
+                    lastFrame,
+                    cancellationToken),
+            ProjectTreeNodeKind.Shot =>
+                PrepareShotFrames(
+                    node,
+                    themeId,
+                    themeMode,
+                    startFrame,
+                    lastFrame,
+                    cancellationToken),
+            _ => PrepareIndependentFrames(
+                node,
+                themeId,
+                themeMode,
+                startFrame,
+                lastFrame,
+                cancellationToken),
+        };
+    }
+
+    private IReadOnlyList<DesignPreviewPayload>
+        PrepareModuleInstanceFrames(
+            ProjectTreeNode node,
+            string? themeId,
+            string themeMode,
+            int startFrame,
+            int lastFrame,
+            CancellationToken cancellationToken)
+    {
+        cancellationToken
+            .ThrowIfCancellationRequested();
+        var template =
+            Prepare(
+                node,
+                themeId,
+                themeMode,
+                startFrame,
+                cancellationToken)
+            ?? throw MissingPayload(
+                node,
+                startFrame);
+        var firstLocalFrame =
+            template.LocalFrame;
+        var frames =
+            new List<DesignPreviewPayload>(
+                lastFrame - startFrame + 1);
+        for (var frame = startFrame;
+             frame <= lastFrame;
+             frame++)
+        {
+            cancellationToken
+                .ThrowIfCancellationRequested();
+            frames.Add(
+                AtLocalFrame(
+                    template,
+                    firstLocalFrame
+                    + frame - startFrame));
+        }
+
+        return frames;
+    }
+
+    private IReadOnlyList<DesignPreviewPayload>
+        PrepareShotFrames(
+            ProjectTreeNode node,
+            string? themeId,
+            string themeMode,
+            int startFrame,
+            int lastFrame,
+            CancellationToken cancellationToken)
+    {
+        var slots =
+            _payloads.LoadShotSlots(
+                node.Id);
+        if (slots.Count == 0)
+        {
+            throw MissingPayload(
+                node,
+                startFrame);
+        }
+
+        var frames =
+            new List<DesignPreviewPayload>(
+                lastFrame - startFrame + 1);
+        var slotStartFrame = 0;
+        foreach (var slot in slots)
+        {
+            cancellationToken
+                .ThrowIfCancellationRequested();
+            var slotEndFrame =
+                slotStartFrame
+                + slot.DurationFrames - 1;
+            var overlapStart =
+                Math.Max(
+                    startFrame,
+                    slotStartFrame);
+            var overlapEnd =
+                Math.Min(
+                    lastFrame,
+                    slotEndFrame);
+            if (overlapStart <= overlapEnd)
+            {
+                var template =
+                    Prepare(
+                        node,
+                        themeId,
+                        themeMode,
+                        overlapStart,
+                        cancellationToken)
+                    ?? throw MissingPayload(
+                        node,
+                        overlapStart);
+                for (var frame = overlapStart;
+                     frame <= overlapEnd;
+                     frame++)
+                {
+                    cancellationToken
+                        .ThrowIfCancellationRequested();
+                    frames.Add(
+                        AtLocalFrame(
+                            template,
+                            frame - slotStartFrame));
+                }
+            }
+
+            slotStartFrame +=
+                slot.DurationFrames;
+            if (slotStartFrame > lastFrame)
+            {
+                break;
+            }
+        }
+
+        if (frames.Count
+            != lastFrame - startFrame + 1)
+        {
+            throw MissingPayload(
+                node,
+                startFrame + frames.Count);
+        }
+
+        return frames;
+    }
+
+    private IReadOnlyList<DesignPreviewPayload>
+        PrepareIndependentFrames(
+            ProjectTreeNode node,
+            string? themeId,
+            string themeMode,
+            int startFrame,
+            int lastFrame,
+            CancellationToken cancellationToken)
+    {
         var frames =
             new List<DesignPreviewPayload>(
                 lastFrame - startFrame + 1);
@@ -95,10 +258,106 @@ internal sealed class ProductionPreviewPayloadPreparer
                     themeMode,
                     frame,
                     cancellationToken)
-                ?? throw new InvalidOperationException(
-                    $"Production Preview frame {frame} for '{node.Id}' has no complete payload."));
+                ?? throw MissingPayload(
+                    node,
+                    frame));
         }
 
         return frames;
+    }
+
+    private static DesignPreviewPayload AtLocalFrame(
+        DesignPreviewPayload template,
+        int localFrame)
+    {
+        var frame =
+            Math.Max(
+                0,
+                localFrame);
+        var preview =
+            WithTimelineFrame(
+                template.DesignPreviewJson,
+                frame,
+                "Production Preview frame");
+        var runtimeContract =
+            WithTimelineFrame(
+                template.RuntimeContractJson,
+                frame,
+                "Production Runtime contract frame");
+        var instance =
+            JsonPath.ParseRequiredObject(
+                template.InstanceJson,
+                "Production Preview instance");
+        var context =
+            JsonPath.RequiredObject(
+                instance,
+                "context",
+                "Production Preview instance");
+        context["screenFrame"] =
+            frame;
+        return template with
+        {
+            DesignPreviewJson =
+                preview.ToJsonString(),
+            RuntimeContractJson =
+                runtimeContract.ToJsonString(),
+            InstanceJson =
+                instance.ToJsonString(),
+            LocalFrame =
+                frame,
+        };
+    }
+
+    private static JsonObject WithTimelineFrame(
+        string json,
+        int frame,
+        string owner)
+    {
+        var document =
+            JsonPath.ParseRequiredObject(
+                json,
+                owner);
+        if (document["timelineFrameJsonKey"]
+                ?.GetValue<string>()
+            is { Length: > 0 } key)
+        {
+            document[key] =
+                frame;
+        }
+
+        return document;
+    }
+
+    private static InvalidOperationException MissingPayload(
+        ProjectTreeNode node,
+        int frame) =>
+        new(
+            $"Production Preview frame {frame} for '{node.Id}' has no complete payload.");
+}
+
+internal sealed record PreparedProductionPlayback(
+    string RequestSignature,
+    ProjectTreeNodeKind NodeKind,
+    string NodeId,
+    int StartFrame,
+    IReadOnlyList<DesignPreviewPayload> Frames)
+{
+    public bool TryGetFrame(
+        ProjectTreeNode node,
+        int frame,
+        out DesignPreviewPayload? payload)
+    {
+        var frameIndex = frame - StartFrame;
+        if (node.Kind != NodeKind
+            || !node.Id.Equals(NodeId, StringComparison.Ordinal)
+            || frameIndex < 0
+            || frameIndex >= Frames.Count)
+        {
+            payload = null;
+            return false;
+        }
+
+        payload = Frames[frameIndex];
+        return true;
     }
 }

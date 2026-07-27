@@ -115,6 +115,7 @@ var tests = new (string Name, Action Run)[]
     ("Production Shot context boundary preserves explicit inherited context read-only", ProductionShotContextBoundaryPreservesInheritedContext),
     ("Preview payload rejects incomplete Production context without selector fallbacks", PreviewPayloadRejectsIncompleteProductionContext),
     ("Production payload preserves its explicit Actor and animation documents", ProductionPayloadPreservesActorAndAnimation),
+    ("Production playback selects exact owner frames from its prepared snapshot", ProductionPlaybackSelectsPreparedOwnerFrames),
     ("Preview Theme mode has one strict payload owner", PreviewThemeModeHasOneStrictPayloadOwner),
     ("animated Conversation text keeps Keyboard and Text Input Bar visible", AnimatedConversationComposerRemainsVisible),
     ("Conversation message Actors follow their exact direction contract", ConversationMessageActorsFollowDirectionContract),
@@ -10293,6 +10294,52 @@ static void ProductionPayloadPreservesActorAndAnimation()
             new[] { 0, 1 },
             playbackFrames.Select(
                 (payload) => payload.LocalFrame));
+        EqualPreparedProductionPayload(
+            preparer.PrepareRequired(
+                playbackScreen,
+                null,
+                "light",
+                1),
+            playbackFrames[1]);
+
+        var playbackShot =
+            Descendants(
+                    database.LoadProjectTree())
+                .Single(
+                    (node) =>
+                        node.Kind
+                            == ProjectTreeNodeKind.Shot
+                        && node.Id
+                            == "shot_001");
+        var shotSlots =
+            dataSource.LoadShotSlots(
+                playbackShot.Id);
+        True(shotSlots.Count >= 2);
+        var boundaryFrame =
+            shotSlots[0].DurationFrames;
+        var boundaryFrames =
+            preparer.PrepareFrames(
+                playbackShot,
+                null,
+                "light",
+                boundaryFrame - 1,
+                boundaryFrame,
+                CancellationToken.None);
+        Equal(2, boundaryFrames.Count);
+        EqualPreparedProductionPayload(
+            preparer.PrepareRequired(
+                playbackShot,
+                null,
+                "light",
+                boundaryFrame - 1),
+            boundaryFrames[0]);
+        EqualPreparedProductionPayload(
+            preparer.PrepareRequired(
+                playbackShot,
+                null,
+                "light",
+                boundaryFrame),
+            boundaryFrames[1]);
         using (var cancellation =
                new CancellationTokenSource())
         {
@@ -10335,6 +10382,89 @@ static void ProductionPayloadPreservesActorAndAnimation()
     {
         File.Delete(temporary);
     }
+
+    static void EqualPreparedProductionPayload(
+        DesignPreviewPayload expected,
+        DesignPreviewPayload actual)
+    {
+        Equal(expected.Kind, actual.Kind);
+        Equal(expected.Name, actual.Name);
+        Equal(expected.ConfigJson, actual.ConfigJson);
+        Equal(expected.DesignPreviewJson, actual.DesignPreviewJson);
+        Equal(expected.RuntimeContractJson, actual.RuntimeContractJson);
+        Equal(expected.InstanceJson, actual.InstanceJson);
+        Equal(expected.LocalFrame, actual.LocalFrame);
+        Equal(expected.OwnerId, actual.OwnerId);
+        Equal(expected.ThemeMode, actual.ThemeMode);
+        Equal(expected.DeviceId, actual.DeviceId);
+        Equal(expected.FrameRate, actual.FrameRate);
+    }
+}
+
+static void ProductionPlaybackSelectsPreparedOwnerFrames()
+{
+    var screen = new ProjectTreeNode(
+        ProjectTreeNodeKind.ModuleInstance,
+        "screen-a",
+        "Screen A",
+        "",
+        "module_instance");
+    var frames = new[]
+    {
+        PlaybackPayloadAtFrame(10),
+        PlaybackPayloadAtFrame(11),
+    };
+    var prepared =
+        new PreparedProductionPlayback(
+            "request-signature",
+            screen.Kind,
+            screen.Id,
+            10,
+            frames);
+
+    True(prepared.TryGetFrame(
+        screen,
+        10,
+        out var first));
+    Equal(10, first?.LocalFrame);
+    True(prepared.TryGetFrame(
+        screen,
+        11,
+        out var second));
+    Equal(11, second?.LocalFrame);
+    True(!prepared.TryGetFrame(
+        screen,
+        12,
+        out _));
+    True(!prepared.TryGetFrame(
+        new ProjectTreeNode(
+            screen.Kind,
+            "screen-b",
+            "Screen B",
+            "",
+            screen.RecordClassId),
+        10,
+        out _));
+
+    static DesignPreviewPayload PlaybackPayloadAtFrame(
+        int frame) =>
+        new(
+            "module",
+            "Screen A",
+            "{}",
+            "{}",
+            new Dictionary<string, string>(),
+            new Dictionary<string, bool>(),
+            "",
+            "",
+            "{}",
+            Array.Empty<ProductionFontFace>(),
+            "module.core.chat",
+            "{}",
+            "{}",
+            "light",
+            LocalFrame: frame,
+            OwnerId: "screen-a");
 }
 
 static void PreviewThemeModeHasOneStrictPayloadOwner()

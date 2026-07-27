@@ -64,7 +64,8 @@ It includes:
   the prior tree, catalog and selection;
 - operation-coordinated Production playback payload preparation, covering exact
   frame order, preserved local frames, Actor and animation documents,
-  cancellation and byte-for-byte read-only persistence;
+  cancellation, byte-for-byte read-only persistence and exact owner/frame
+  lookup from the resulting immutable playback snapshot;
 - operation-coordinated static Production payload preparation, covering
   worker-thread execution, latest-revision ownership, close-time cancellation
   and reuse of the already prepared playback frame rather than a visual-thread

@@ -246,7 +246,13 @@ that reusable preparation. Escape cancels both preparation and playback.
 Production playback payload and signature frames are created and runtime-
 resolved on the session operation worker. The visual controller captures the
 request inputs, awaits the immutable frame list and never reads persistence
-while iterating playback frames. Cancellation is checked between frames.
+while iterating playback frames. Each playback tick selects its exact payload
+from that prepared list by stable owner identity and absolute frame; it does
+not submit a second payload-preparation operation that a later tick could
+cancel. Preparation closes the static payload once per exact Screen and derives
+only that Screen's frame-owned fields for its remaining frames; it does not
+repeat Theme, Actor, resource or document reads for every tick. Cancellation
+is checked between preparation frames.
 Static Production refresh follows the same boundary: the selected Shot or
 Screen, Theme mode and Shot frame are captured before payload construction and
 Runtime resolution run on the worker. A newer selection, frame or setup revision
