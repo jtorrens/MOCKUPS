@@ -271,6 +271,13 @@ eagerly resolve every available Component Variant. Avalonia controls are
 created only after the result returns to the visual context and only if the
 selection revision is still current. Rapid selection therefore cannot publish
 the cards prepared for an older record.
+
+Design Preview uses the same rule: its temporary scalar and collection Test
+Values are first captured together as one immutable selection snapshot. Later
+Preview and Preview-authoring preparation may use that snapshot on the
+operation worker, but must commit it only while its selection revision remains
+current.
+
 The same prepared result carries Production Screen presentation and embedded
 Variant names for the header. Breadcrumb rendering itself performs no
 persistence read.

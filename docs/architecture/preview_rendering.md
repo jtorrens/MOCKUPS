@@ -190,6 +190,13 @@ Design and Production Preview keep only temporary presentation state:
 - preparation result cache;
 - panel split and local controls.
 
+Design Test Values are captured as one immutable, scope-keyed snapshot before
+Preview preparation leaves the visual context. Scalar values and structured
+collection documents travel together in that snapshot. Preview rendering and
+the Test Values authoring surface must consume the same captured revision; they
+must not read each other's mutable controls or keep parallel copies of the
+active authored context.
+
 Production payload remains owned by the Screen. Repeated Play with unchanged
 inputs reuses the prepared HTML. Isolated Design actions use the same exact
 reuse rule: the controller retains prepared frames only while their

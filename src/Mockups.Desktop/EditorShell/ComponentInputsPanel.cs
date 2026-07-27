@@ -128,10 +128,11 @@ internal sealed class ComponentPreviewInputSession
         var config = ParseJsonObject(payload.ConfigJson);
         _config = config;
         _themeTokens = ParseJsonObject(payload.ThemeTokensJson);
-        var preview = ApplyTransientTestValues(
+        var preview = ComponentPreviewTransientValues.Apply(
             ParseJsonObject(payload.DesignPreviewJson),
-            ScopeKey(payload),
-            config);
+            config,
+            CaptureTransientState(payload),
+            _previewInputData.ComponentVariantConfig);
         _runtimePreview = preview;
         var inputs = RuntimeInputDefinitionReader.ReadInputs(preview, config);
         var collections = RuntimeInputDefinitionReader.ReadCollections(preview, config);
@@ -338,16 +339,26 @@ internal sealed class ComponentPreviewInputSession
 
     public JsonObject ApplyTransientTestValues(JsonObject preview)
     {
-        return ApplyTransientTestValues(preview, _scopeKey, _config);
+        return ComponentPreviewTransientValues.Apply(
+            preview,
+            _config,
+            CaptureTransientState(_scopeKey),
+            _previewInputData.ComponentVariantConfig);
     }
 
     public JsonObject ApplyTransientTestValues(JsonObject preview, DesignPreviewPayload payload)
     {
-        return ApplyTransientTestValues(
+        return ComponentPreviewTransientValues.Apply(
             preview,
-            ScopeKey(payload),
-            ParseJsonObject(payload.ConfigJson));
+            ParseJsonObject(payload.ConfigJson),
+            CaptureTransientState(payload),
+            _previewInputData.ComponentVariantConfig);
     }
+
+    public ComponentPreviewTransientState CaptureTransientState(
+        DesignPreviewPayload payload) =>
+        CaptureTransientState(
+            ComponentPreviewTransientValues.ScopeKey(payload));
 
     public bool ResetCurrentTestValues()
     {
@@ -391,10 +402,11 @@ internal sealed class ComponentPreviewInputSession
         }
 
         var config = ParseJsonObject(payload.ConfigJson);
-        var preview = ApplyTransientTestValues(
+        var preview = ComponentPreviewTransientValues.Apply(
             ParseJsonObject(payload.DesignPreviewJson),
-            ScopeKey(payload),
-            config);
+            config,
+            CaptureTransientState(payload),
+            _previewInputData.ComponentVariantConfig);
         _nestedRecordInputResolver.Resolve(config, themeMode, payload.PaletteColors);
         _runtimePreview = preview;
         var inputs = RuntimeInputDefinitionReader.ReadInputs(preview, config);
@@ -512,91 +524,30 @@ internal sealed class ComponentPreviewInputSession
             paletteColors);
     }
 
-    private static string ScopeKey(DesignPreviewPayload payload)
-    {
-        var instanceId = ParseJsonObject(payload.InstanceJson)["context"]?["moduleInstanceId"]?.GetValue<string>() ?? "";
-        var ownerIdentity = string.IsNullOrWhiteSpace(payload.OwnerId)
-            ? $"{payload.ComponentType}:{payload.Name}"
-            : payload.OwnerId;
-        return $"{payload.Kind}:{ownerIdentity}:{instanceId}";
-    }
-
-    private JsonObject ApplyTransientTestValues(
-        JsonObject preview,
-        string scopeKey,
-        JsonObject config)
-    {
-        var envelope = preview.DeepClone().AsObject();
-        if (!string.IsNullOrWhiteSpace(scopeKey)
-            && _transientCollectionTestValuesByScope.TryGetValue(scopeKey, out var collectionTestValues))
-        {
-            envelope["testValues"] = collectionTestValues.DeepClone();
-        }
-
-        var effective = ParseJsonObject(DesignPreviewTestValues.RuntimeJson(envelope.ToJsonString()));
-        ReconcileRuntimeStructure(effective, config);
-        if (string.IsNullOrWhiteSpace(scopeKey))
-        {
-            return effective;
-        }
-
-        foreach (var input in RuntimeInputDefinitionReader.ReadInputs(effective, config))
-        {
-            var key = $"{scopeKey}:{input.JsonKey}";
-            if (_values.TryGetValue(key, out var value))
-            {
-                DesignPreviewTestValues.SetValue(effective, input, value);
-            }
-        }
-        effective = ParseJsonObject(DesignPreviewTestValues.RuntimeJson(effective.ToJsonString()));
-        ReconcileRuntimeStructure(effective, config);
-        return effective;
-    }
-
     private void ReconcileRuntimeStructure(
         JsonObject preview,
         JsonObject config)
     {
-        StructuredRuntimeCollectionProjection.Apply(preview, config);
-        foreach (var collection in RuntimeInputDefinitionReader.ReadCollections(
-                     preview,
-                     config,
-                     includeHidden: true))
-        {
-            foreach (var item in DesignPreviewTestValues.CurrentCollectionItems(
-                         preview,
-                         collection))
-            {
-                var runtimeKey = !string.IsNullOrWhiteSpace(
-                    collection.ItemRuntimeContractJsonKey)
-                    ? collection.ItemRuntimeContractJsonKey
-                    : collection.ComponentItems?.InputsJsonKey ?? "";
-                if (string.IsNullOrWhiteSpace(runtimeKey)
-                    || item[runtimeKey] is not JsonObject childRuntime)
-                {
-                    continue;
-                }
-
-                var variantReference = RuntimeCollectionItemContractOwner
-                    .ResolveItemVariantReference(
-                    item,
-                    collection,
-                    config,
-                    _previewInputData.ComponentVariantConfig);
-                if (string.IsNullOrWhiteSpace(variantReference)) continue;
-                var childConfig = _previewInputData.ComponentVariantConfig(
-                    variantReference);
-                StructuredRuntimeCollectionProjection.Apply(
-                    childRuntime,
-                    childConfig);
-            }
-        }
+        ComponentPreviewTransientValues.ReconcileRuntimeStructure(
+            preview,
+            config,
+            _previewInputData.ComponentVariantConfig);
     }
+
+    private ComponentPreviewTransientState CaptureTransientState(
+        string scopeKey) =>
+        ComponentPreviewTransientState.Capture(
+            scopeKey,
+            _values,
+            _transientCollectionTestValuesByScope);
 
     private static bool SupportsInputs(DesignPreviewPayload payload)
     {
         return payload.Kind is "componentClass" or "module" or "moduleInstance";
     }
+
+    private static string ScopeKey(DesignPreviewPayload payload) =>
+        ComponentPreviewTransientValues.ScopeKey(payload);
 
     private void EnsureValue(ComponentInputDefinition input, JsonObject preview)
     {

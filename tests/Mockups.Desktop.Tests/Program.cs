@@ -152,6 +152,7 @@ var tests = new (string Name, Action Run)[]
     ("real Preview shell layout remains usable at 1040 and 1440", PreviewShellVisualTreeIsResponsive),
     ("List Item and List expose their runtime model in the real editor", ListRuntimeEditorVisualTreeExposesDynamicSetsAndState),
     ("Chat List Module exposes its fixed List boundary and exact Runtime in the real editor", ChatListModuleEditorVisualTreeExposesExactListRuntime),
+    ("Design Preview transient snapshots remain immutable across later edits", DesignPreviewTransientSnapshotsRemainImmutable),
     ("List Runtime updates follow stable item identity after reorder", ListRuntimeUpdatesFollowStableIdentityAfterReorder),
     ("List Presence replays the same initial-to-final action and restores its origin", ListPresenceReplaysAndRestoresItsOrigin),
     ("manifest owners render their committed fixtures and Modules advance time", ManifestOwnersRenderCommittedFixturesAndModulesAdvanceTime),
@@ -320,6 +321,96 @@ static void ExactComponentVariantSlotsReplaceInheritedBoundaries()
         "theme.colors.negative",
         partialSlot["overrides"]?["surface"]?["backgroundColorToken"]?.GetValue<string>());
     Equal(0.5, partialSlot["overrides"]?["surface"]?["backgroundAlpha"]?.GetValue<double>() ?? -1);
+}
+
+static void DesignPreviewTransientSnapshotsRemainImmutable()
+{
+    var database = new SqliteProjectTestContext(ParityDatabasePath());
+    var nodes = database.LoadProjectTree()
+        .SelectMany(DescendantsAndSelf)
+        .ToList();
+    var listVariant = nodes.Single((node) =>
+        node.Kind == ProjectTreeNodeKind.ComponentVariant
+        && node.Id ==
+        "component_project_foqn_s2_list::variant::default");
+    var theme = nodes.First((node) =>
+        node.Kind == ProjectTreeNodeKind.Theme);
+    var payload = Required(
+        CreatePreviewPayload(database, listVariant, theme.Id));
+    var settings = database.GetComponentClassSettings(
+        "component_project_foqn_s2_list");
+    var session = new ComponentPreviewInputSession(
+        database.Design,
+        database.DictionaryContext,
+        database.Resources,
+        database.ProjectPaths,
+        () => { });
+    session.UpdateForPayload(payload, settings.ProjectId);
+
+    var sourcePreview = JsonPath.ParseRequiredObject(
+        payload.DesignPreviewJson,
+        "List Design Preview");
+    var sourceItems = JsonPath.RequiredArray(
+            sourcePreview,
+            "items",
+            "List Design Preview")
+        .OfType<JsonObject>()
+        .Select((item) => item.DeepClone().AsObject())
+        .ToList();
+    True(sourceItems.Count >= 2);
+
+    session.SetExternalCollectionItems(
+        payload,
+        "items",
+        [sourceItems[0]]);
+    var firstSnapshot =
+        session.CaptureTransientState(payload);
+    session.SetExternalCollectionItems(
+        payload,
+        "items",
+        [sourceItems[1]]);
+
+    var previewInputData = new ComponentPreviewInputDataSource(
+        database.Design,
+        database.Resources);
+    var firstEffective =
+        ComponentPreviewTransientValues.Apply(
+            sourcePreview,
+            JsonPath.ParseRequiredObject(
+                payload.ConfigJson,
+                "List config"),
+            firstSnapshot,
+            previewInputData.ComponentVariantConfig);
+    var currentEffective =
+        session.ApplyTransientTestValues(sourcePreview, payload);
+    var firstId = JsonPath.RequiredString(
+        sourceItems[0],
+        "id",
+        "List Runtime item 1");
+    var secondId = JsonPath.RequiredString(
+        sourceItems[1],
+        "id",
+        "List Runtime item 2");
+    Equal(
+        firstId,
+        JsonPath.RequiredString(
+            JsonPath.RequiredArray(
+                    firstEffective,
+                    "items",
+                    "Prepared List Runtime")
+                .Single()!.AsObject(),
+            "id",
+            "Prepared List Runtime item"));
+    Equal(
+        secondId,
+        JsonPath.RequiredString(
+            JsonPath.RequiredArray(
+                    currentEffective,
+                    "items",
+                    "Current List Runtime")
+                .Single()!.AsObject(),
+            "id",
+            "Current List Runtime item"));
 }
 
 static void ListRuntimeUpdatesFollowStableIdentityAfterReorder()
