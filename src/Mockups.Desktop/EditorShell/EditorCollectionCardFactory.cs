@@ -42,6 +42,9 @@ internal sealed class EditorCollectionCardFactory : IDisposable
     private readonly Func<string, bool> _canRestorePreviewAction;
     private readonly Action<string, int, string?> _stepPreviewAction;
     private readonly Func<string, int, bool> _canStepPreviewAction;
+    private readonly Action<string, int, string?> _setPreviewActionFrame;
+    private readonly Func<string, int> _currentPreviewActionFrame;
+    private readonly Func<string, int> _maximumPreviewActionFrame;
     private readonly Action<string, string> _setPreviewTestValue;
     private readonly Action<string, string, IReadOnlyDictionary<string, JsonNode?>>
         _setPreviewCollectionItemValues;
@@ -83,6 +86,9 @@ internal sealed class EditorCollectionCardFactory : IDisposable
         Func<string, bool> canRestorePreviewAction,
         Action<string, int, string?> stepPreviewAction,
         Func<string, int, bool> canStepPreviewAction,
+        Action<string, int, string?> setPreviewActionFrame,
+        Func<string, int> currentPreviewActionFrame,
+        Func<string, int> maximumPreviewActionFrame,
         Action<string, string> setPreviewTestValue,
         Action<string, string, IReadOnlyDictionary<string, JsonNode?>>
             setPreviewCollectionItemValues,
@@ -121,6 +127,9 @@ internal sealed class EditorCollectionCardFactory : IDisposable
         _canRestorePreviewAction = canRestorePreviewAction;
         _stepPreviewAction = stepPreviewAction;
         _canStepPreviewAction = canStepPreviewAction;
+        _setPreviewActionFrame = setPreviewActionFrame;
+        _currentPreviewActionFrame = currentPreviewActionFrame;
+        _maximumPreviewActionFrame = maximumPreviewActionFrame;
         _setPreviewTestValue = setPreviewTestValue;
         _setPreviewCollectionItemValues = setPreviewCollectionItemValues;
         _setPreviewCollectionTestItems = setPreviewCollectionTestItems;
@@ -349,6 +358,9 @@ internal sealed class EditorCollectionCardFactory : IDisposable
             _canRestorePreviewAction,
             _stepPreviewAction,
             _canStepPreviewAction,
+            _setPreviewActionFrame,
+            _currentPreviewActionFrame,
+            _maximumPreviewActionFrame,
             _setPreviewTestValue,
             _setPreviewCollectionItemValues,
             _setPreviewCollectionTestItems,

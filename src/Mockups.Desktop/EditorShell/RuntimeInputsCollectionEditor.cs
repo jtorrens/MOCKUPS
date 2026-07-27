@@ -46,6 +46,9 @@ internal sealed class RuntimeInputsCollectionEditor
     private readonly Func<string, bool> _canRestoreAction;
     private readonly Action<string, int, string?> _stepAction;
     private readonly Func<string, int, bool> _canStepAction;
+    private readonly Action<string, int, string?> _setActionFrame;
+    private readonly Func<string, int> _currentActionFrame;
+    private readonly Func<string, int> _maximumActionFrame;
     private readonly Action<string, string> _setPreviewTestValue;
     private readonly Action<string, string, IReadOnlyDictionary<string, JsonNode?>>
         _setPreviewCollectionItemValues;
@@ -87,6 +90,9 @@ internal sealed class RuntimeInputsCollectionEditor
         Func<string, bool> canRestoreAction,
         Action<string, int, string?> stepAction,
         Func<string, int, bool> canStepAction,
+        Action<string, int, string?> setActionFrame,
+        Func<string, int> currentActionFrame,
+        Func<string, int> maximumActionFrame,
         Action<string, string> setPreviewTestValue,
         Action<string, string, IReadOnlyDictionary<string, JsonNode?>>
             setPreviewCollectionItemValues,
@@ -127,6 +133,9 @@ internal sealed class RuntimeInputsCollectionEditor
         _canRestoreAction = canRestoreAction;
         _stepAction = stepAction;
         _canStepAction = canStepAction;
+        _setActionFrame = setActionFrame;
+        _currentActionFrame = currentActionFrame;
+        _maximumActionFrame = maximumActionFrame;
         _setPreviewTestValue = setPreviewTestValue;
         _setPreviewCollectionItemValues = setPreviewCollectionItemValues;
         _setPreviewCollectionTestItems = setPreviewCollectionTestItems;
@@ -2227,6 +2236,9 @@ internal sealed class RuntimeInputsCollectionEditor
             () => _canRestoreAction(action.Id),
             (targetValue, delta) => _stepAction(action.Id, delta, targetValue),
             (delta) => _canStepAction(action.Id, delta),
+            (targetValue, frame) => _setActionFrame(action.Id, frame, targetValue),
+            () => _currentActionFrame(action.Id),
+            () => _maximumActionFrame(action.Id),
             _playbackState,
             targetOptions,
             currentTargetValue);

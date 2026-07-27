@@ -1762,6 +1762,16 @@ internal sealed class EditorPreviewController : IDisposable
         return _designInputsPanel.CanStepActionFrame(actionId, delta);
     }
 
+    public int CurrentDesignPreviewActionFrame(string actionId)
+    {
+        return _designInputsPanel.CurrentActionFrame(actionId);
+    }
+
+    public int MaximumDesignPreviewActionFrame(string actionId)
+    {
+        return _designInputsPanel.MaximumActionFrame(actionId);
+    }
+
     public void StepDesignPreviewAction(
         string actionId,
         int delta,
@@ -1774,6 +1784,20 @@ internal sealed class EditorPreviewController : IDisposable
 
         Refresh();
         _designInputsPanel.StepActionFrame(actionId, delta, targetValue);
+    }
+
+    public void SetDesignPreviewActionFrame(
+        string actionId,
+        int frame,
+        string? targetValue = null)
+    {
+        if (_designInputsPanel.SetActionFrame(actionId, frame, targetValue))
+        {
+            return;
+        }
+
+        Refresh();
+        _designInputsPanel.SetActionFrame(actionId, frame, targetValue);
     }
 
     public void RestoreDesignPreviewAction(string actionId)

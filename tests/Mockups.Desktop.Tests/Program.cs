@@ -9638,6 +9638,18 @@ static void ConversationPlayMessagesAdvancesRootOwnerFrame()
         Equal(frames.Count - 1, inputSession.CurrentPreviewFrame);
         True(inputSession.RestoreAction(action.Id));
         Equal(0, inputSession.CurrentPreviewFrame);
+        Equal(frames.Count - 1, inputSession.MaximumActionFrame(action.Id));
+        True(inputSession.SetActionFrame(action.Id, -4));
+        Equal(0, inputSession.CurrentActionFrame(action.Id));
+        True(inputSession.SetActionFrame(action.Id, 4));
+        Equal(4, inputSession.CurrentActionFrame(action.Id));
+        Equal(4, inputSession.ApplyInputs(
+            payload,
+            "light",
+            module.ProjectId).LocalFrame);
+        True(inputSession.SetActionFrame(action.Id, frames.Count + 20));
+        Equal(frames.Count - 1, inputSession.CurrentActionFrame(action.Id));
+        True(inputSession.RestoreAction(action.Id));
         var restoredPayload = inputSession.ApplyInputs(
             payload,
             "light",
@@ -12812,12 +12824,15 @@ static void RuntimeActionControlsReactivateAfterPlaybackAndReattachment()
             (_) => { },
             () => currentFrame = 0,
             () => true,
-            (_, delta) => currentFrame = Math.Clamp(currentFrame + delta, 0, 1),
+            (_, delta) => currentFrame = Math.Clamp(currentFrame + delta, 0, 10),
             (_) => true,
+            (_, frame) => currentFrame = Math.Clamp(frame, 0, 10),
+            () => currentFrame,
+            () => 10,
             playbackState);
         var window = new Window
         {
-            Width = 320,
+            Width = 520,
             Height = 120,
             Content = control,
         };
@@ -12832,6 +12847,9 @@ static void RuntimeActionControlsReactivateAfterPlaybackAndReattachment()
         var restore = ActionButton("Restore Test Action");
         var previous = ActionButton("Previous frame · Test Action");
         var next = ActionButton("Next frame · Test Action");
+        var frameInput = control.GetVisualDescendants()
+            .OfType<NumericUpDown>()
+            .Single();
         True(play.IsEnabled);
         True(restore.IsEnabled);
         True(previous.IsEnabled);
@@ -12850,8 +12868,16 @@ static void RuntimeActionControlsReactivateAfterPlaybackAndReattachment()
         True(restore.IsEnabled);
         True(previous.IsEnabled);
         True(next.IsEnabled);
+        Equal(0m, frameInput.Value ?? -1);
+        Equal(10m, frameInput.Maximum);
+
+        frameInput.Value = 4;
+        Dispatcher.UIThread.RunJobs();
+        Equal(4, currentFrame);
 
         next.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Equal(5, currentFrame);
+        Equal(5m, frameInput.Value ?? -1);
         True(previous.IsEnabled);
         True(next.IsEnabled);
         restore.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));

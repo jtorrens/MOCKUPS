@@ -16,14 +16,20 @@ internal sealed class RuntimeTestActionControl : Border
     private readonly Button _restoreButton;
     private readonly Button _previousFrameButton;
     private readonly Button _nextFrameButton;
+    private readonly NumericUpDown _frameInput;
+    private readonly TextBlock _maximumFrameText;
     private readonly Func<bool> _canRestore;
     private readonly Func<int, bool> _canStep;
+    private readonly Action<string?, int> _setFrame;
+    private readonly Func<int> _currentFrame;
+    private readonly Func<int> _maximumFrame;
     private readonly PreviewPlaybackState _playbackState;
     private readonly IReadOnlyList<FieldOption> _targetOptions;
     private readonly string _initialTargetValue;
     private EditorInstantComboBox? _targetCombo;
     private string? _pendingTargetValue;
     private bool _wasBusy;
+    private bool _isUpdatingFrame;
 
     public RuntimeTestActionControl(
         string label,
@@ -32,12 +38,18 @@ internal sealed class RuntimeTestActionControl : Border
         Func<bool> canRestore,
         Action<string?, int> step,
         Func<int, bool> canStep,
+        Action<string?, int> setFrame,
+        Func<int> currentFrame,
+        Func<int> maximumFrame,
         PreviewPlaybackState playbackState,
         IReadOnlyList<FieldOption>? targetOptions = null,
         string currentTargetValue = "")
     {
         _canRestore = canRestore;
         _canStep = canStep;
+        _setFrame = setFrame;
+        _currentFrame = currentFrame;
+        _maximumFrame = maximumFrame;
         _playbackState = playbackState;
         _targetOptions = targetOptions ?? [];
         _initialTargetValue = currentTargetValue;
@@ -51,7 +63,7 @@ internal sealed class RuntimeTestActionControl : Border
         var hasTargetOptions = targetOptions is { Count: > 0 };
         var layout = new Grid
         {
-            ColumnDefinitions = new ColumnDefinitions("Auto,Auto,Auto,Auto,Auto"),
+            ColumnDefinitions = new ColumnDefinitions("Auto,Auto,Auto,Auto,Auto,Auto,Auto"),
             ColumnSpacing = 6,
             VerticalAlignment = VerticalAlignment.Center,
         };
@@ -116,6 +128,45 @@ internal sealed class RuntimeTestActionControl : Border
         Grid.SetColumn(_previousFrameButton, 3);
         layout.Children.Add(_previousFrameButton);
 
+        _frameInput = EditorNumericUpDownBehavior.Configure(new NumericUpDown
+        {
+            Width = 52,
+            Height = 28,
+            Minimum = 0,
+            Maximum = 0,
+            Increment = 1,
+            FormatString = "0",
+            ShowButtonSpinner = false,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+        ToolTip.SetTip(_frameInput, $"Current frame · {label}");
+        _frameInput.PropertyChanged += (_, change) =>
+        {
+            if (change.Property != NumericUpDown.ValueProperty
+                || _isUpdatingFrame
+                || _frameInput.Value is not { } value)
+            {
+                return;
+            }
+
+            _setFrame(
+                _targetCombo?.SelectedItem?.Value,
+                decimal.ToInt32(decimal.Truncate(value)));
+            RefreshState();
+        };
+        Grid.SetColumn(_frameInput, 4);
+        layout.Children.Add(_frameInput);
+
+        _maximumFrameText = new TextBlock
+        {
+            Text = "/ 0",
+            FontFamily = new FontFamily("SF Mono, Menlo, Consolas, monospace"),
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        Grid.SetColumn(_maximumFrameText, 5);
+        layout.Children.Add(_maximumFrameText);
+
         _nextFrameButton = CreateButton(
             EditorIcons.TimelineNextFrame,
             $"Next frame · {label}");
@@ -125,7 +176,7 @@ internal sealed class RuntimeTestActionControl : Border
             step(_targetCombo?.SelectedItem?.Value, 1);
             RefreshState();
         };
-        Grid.SetColumn(_nextFrameButton, 4);
+        Grid.SetColumn(_nextFrameButton, 6);
         layout.Children.Add(_nextFrameButton);
         Child = layout;
 
@@ -171,5 +222,12 @@ internal sealed class RuntimeTestActionControl : Border
         _restoreButton.IsEnabled = _canRestore();
         _previousFrameButton.IsEnabled = _canStep(-1);
         _nextFrameButton.IsEnabled = _canStep(1);
+        var maximumFrame = Math.Max(0, _maximumFrame());
+        var currentFrame = Math.Clamp(_currentFrame(), 0, maximumFrame);
+        _isUpdatingFrame = true;
+        _frameInput.Maximum = maximumFrame;
+        _frameInput.Value = currentFrame;
+        _maximumFrameText.Text = $"/ {maximumFrame}";
+        _isUpdatingFrame = false;
     }
 }

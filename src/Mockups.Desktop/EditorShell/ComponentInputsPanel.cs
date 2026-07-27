@@ -236,6 +236,20 @@ internal sealed class ComponentPreviewInputSession
             && _actions.Any((candidate) => candidate.Id == actionId);
     }
 
+    public int CurrentActionFrame(string actionId)
+    {
+        return _actions.FirstOrDefault((candidate) => candidate.Id == actionId) is { } action
+            ? CurrentPlaybackFrame(action)
+            : 0;
+    }
+
+    public int MaximumActionFrame(string actionId)
+    {
+        return _actions.FirstOrDefault((candidate) => candidate.Id == actionId) is { } action
+            ? DurationFrames(action)
+            : 0;
+    }
+
     public bool StepActionFrame(
         string actionId,
         int delta,
@@ -249,13 +263,25 @@ internal sealed class ComponentPreviewInputSession
                 "Design Preview action frame steps must be -1 or 1.");
         }
         var action = _actions.FirstOrDefault((candidate) => candidate.Id == actionId);
+        return action is not null
+            && SetActionFrame(
+                actionId,
+                CurrentPlaybackFrame(action) + delta,
+                targetValue);
+    }
+
+    public bool SetActionFrame(
+        string actionId,
+        int requestedFrame,
+        string? targetValue = null)
+    {
+        var action = _actions.FirstOrDefault((candidate) => candidate.Id == actionId);
         if (action is null || IsPreparingPlayback)
         {
             return false;
         }
 
-        var frame = CurrentPlaybackFrame(action);
-        var targetFrame = Math.Clamp(frame + delta, 0, DurationFrames(action));
+        var targetFrame = Math.Clamp(requestedFrame, 0, DurationFrames(action));
         var hasSnapshot = _actionSnapshots.ContainsKey(ActionSnapshotKey(action.Id));
         CaptureActionSnapshot(action);
         StopPlayback(clearPlayingState: true);
