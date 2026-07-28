@@ -4788,6 +4788,8 @@ static void PreviewShellVisualTreeIsResponsive()
             var controlsTab = Required(window.FindControl<TabItem>("PreviewControlsTab"));
             var setupGrid = Required(window.FindControl<Grid>("PreviewSetupGrid"));
             var setupHost = Required(window.FindControl<ContentControl>("PreviewSetupHost"));
+            var combinedControlsHost = Required(window.FindControl<ContentControl>("PreviewCombinedControlsHost"));
+            var controlsHost = Required(window.FindControl<ContentControl>("PreviewControlsHost"));
             var setupScroll = setupHost.GetVisualAncestors().OfType<ScrollViewer>().First();
 
             if (!authoringTab.IsVisible)
@@ -4849,17 +4851,22 @@ static void PreviewShellVisualTreeIsResponsive()
                     previewRect.Right <= window.ClientSize.Width + 0.5,
                     $"{size}: Preview ends outside the window ({previewRect.Right:0.##} > {window.ClientSize.Width:0.##})");
 
-                var visibleTabs = new[] { authoringTab, setupTab, controlsTab };
+                var visibleTabs = new[] { authoringTab, setupTab };
                 LayoutCheck(
                     visibleTabs.All((tab) => tab.IsVisible && tab.Bounds.Width > 0),
-                    $"{size}: one of the three Preview tabs is not visible");
+                    $"{size}: one of the two Design Preview tabs is not visible");
+                LayoutCheck(
+                    !controlsTab.IsVisible,
+                    $"{size}: Design exposes the separate Preview Controls tab");
+                Equal("Preview", setupTab.Header as string);
+                True(combinedControlsHost.Content is Control);
+                True(controlsHost.Content is null);
                 var tabRects = visibleTabs.Select((tab) => BoundsInWindow(tab, window)).ToList();
                 LayoutCheck(
                     tabRects.Max((rect) => rect.Top) - tabRects.Min((rect) => rect.Top) <= 0.5,
                     $"{size}: Preview tabs do not share one row "
                     + $"({string.Join("; ", tabRects.Select((rect) => $"{rect.X:0.##},{rect.Y:0.##},{rect.Width:0.##},{rect.Height:0.##}"))})");
                 LayoutCheck(tabRects[0].Right <= tabRects[1].Left + 0.5, $"{size}: first and second tabs overlap");
-                LayoutCheck(tabRects[1].Right <= tabRects[2].Left + 0.5, $"{size}: second and third tabs overlap");
                 var tabsRect = BoundsInWindow(tabs, window);
                 LayoutCheck(
                     tabRects.All((rect) =>
@@ -4928,6 +4935,10 @@ static void PreviewShellVisualTreeIsResponsive()
             True(!Required(Required(window.FindControl<Control>("PreviewThemeComboBox")).Parent as Visual).IsVisible);
             True(!Required(Required(window.FindControl<Control>("PreviewModeComboBox")).Parent as Visual).IsVisible);
             True(Required(Required(window.FindControl<Control>("PreviewOrientationComboBox")).Parent as Visual).IsVisible);
+            Equal("Preview Setup", setupTab.Header as string);
+            True(controlsTab.IsVisible);
+            True(combinedControlsHost.Content is null);
+            True(controlsHost.Content is Control);
             Equal(selectedTab, tabs.SelectedItem);
 
             Required(window.FindControl<Button>("DesignWorkspaceButton"))
@@ -4937,6 +4948,10 @@ static void PreviewShellVisualTreeIsResponsive()
             True(Required(Required(window.FindControl<Control>("PreviewThemeComboBox")).Parent as Visual).IsVisible);
             True(Required(Required(window.FindControl<Control>("PreviewModeComboBox")).Parent as Visual).IsVisible);
             True(Required(Required(window.FindControl<Control>("PreviewOrientationComboBox")).Parent as Visual).IsVisible);
+            Equal("Preview", setupTab.Header as string);
+            True(!controlsTab.IsVisible);
+            True(combinedControlsHost.Content is Control);
+            True(controlsHost.Content is null);
             LayoutCheck(
                 setupGrid.ColumnDefinitions.Count == 2
                 && setupGrid.RowDefinitions.Count == 2,

@@ -75,11 +75,16 @@ contract already fixes.
 
 ## Preview authoring
 
-Design places Preview authoring above the Preview in three horizontal tabs:
+Design places Preview authoring above the Preview in two horizontal tabs:
 
 - **Test Values**
-- **Preview Set Up**
-- **Preview Controls**
+- **Preview**
+
+Preview combines the visual-context setup and the generic Preview controls in
+one scrollable Design surface. Both sections retain their existing semantic
+owners and state. Production keeps Preview Setup and Preview Controls as
+separate tabs because its Screen Payload authoring and Shot transport form a
+different workspace task.
 
 The Test Values view keeps temporary-data actions and Play/Restore controls in
 a fixed upper surface. Every finite action also exposes shared previous-frame
@@ -97,12 +102,13 @@ Production places the selected Screen Payload in the corresponding Preview
 authoring area. Runtime Inputs and structured slots are edited beside the
 result they control. Persisted payload remains owned by the Screen.
 
-The three Preview utility headers remain in one horizontal row at the supported
-1040 px minimum and the 1440 px default window widths. The Preview column has a
-real minimum independent of star sizing. Preview Setup uses four columns only
-when its measured content width allows them, otherwise it reflows to two rows
-and finally one scrollable column. Splitter movement, the selected utility tab
-and session state remain intact across these layout changes.
+The visible Preview utility headers remain in one horizontal row at the
+supported 1040 px minimum and the 1440 px default window widths. The Preview
+column has a real minimum independent of star sizing. The setup section uses
+four columns only when its measured content width allows them, otherwise it
+reflows to two rows and finally one scrollable column. Splitter movement, the
+selected utility tab and session state remain intact across these layout
+changes.
 
 Preview state is visibly distinct:
 
