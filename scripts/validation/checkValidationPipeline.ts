@@ -107,6 +107,8 @@ export function checkValidationPipeline({
   }
   const desktopTestCommand =
     "dotnet run --project tests/Mockups.Desktop.Tests/Mockups.DesktopEditorShell.AnimationTests.csproj --";
+  const applicationTestCommand =
+    "dotnet run --project tests/Mockups.Application.Tests/Mockups.Application.Tests.csproj --";
   for (const group of ["core", "ui", "exhaustive"]) {
     if ((packageScripts[`animation:test:desktop:${group}`] ?? "")
       !== `${desktopTestCommand} --group ${group}`) {
@@ -118,8 +120,14 @@ export function checkValidationPipeline({
   }
   if (packageScripts["test:focus:preview"] !== "tsx --test"
       || packageScripts["test:focus:desktop"] !== desktopTestCommand
+      || packageScripts["test:focus:application"]
+        !== applicationTestCommand
       || packageScripts["animation:test:desktop:owner"]
         !== `${desktopTestCommand} --group exhaustive`
+      || packageScripts["test:changed"]
+        !== "tsx scripts/runScopedValidation.ts --level changed"
+      || packageScripts["test:revision"]
+        !== "tsx scripts/runScopedValidation.ts --level revision"
       || !sameStages(
         packageScripts["test:guard"] ?? "",
         [
@@ -130,7 +138,7 @@ export function checkValidationPipeline({
       )) {
     addViolation(
       "package.json",
-      "focused Preview, desktop and manifest-owner selectors plus the shared architecture guard must remain available",
+      "focused Preview, Application, desktop, manifest-owner and changed-revision selectors plus the shared architecture guard must remain available",
     );
   }
   if (!sameStages(

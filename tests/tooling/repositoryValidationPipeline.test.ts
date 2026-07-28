@@ -109,6 +109,58 @@ test("desktop owner selection is executable and rejects unknown manifest ids", (
   );
 });
 
+test("Application selection is exact and rejects unknown test names", () => {
+  const project =
+    "tests/Mockups.Application.Tests/Mockups.Application.Tests.csproj";
+  const selected = spawnSync(
+    "dotnet",
+    [
+      "run",
+      "--project",
+      project,
+      "--",
+      "--exact",
+      "SVG fill transforms keep direct reusable geometry",
+      "--list",
+    ],
+    {
+      cwd: process.cwd(),
+      encoding: "utf8",
+    },
+  );
+  assert.equal(selected.status, 0, selected.stderr);
+  assert.match(
+    selected.stdout,
+    /SVG fill transforms keep direct reusable geometry/u,
+  );
+  assert.doesNotMatch(
+    selected.stdout,
+    /initial tree load resolves/u,
+  );
+
+  const rejected = spawnSync(
+    "dotnet",
+    [
+      "run",
+      "--project",
+      project,
+      "--",
+      "--exact",
+      "not a real Application test",
+      "--list",
+    ],
+    {
+      cwd: process.cwd(),
+      encoding: "utf8",
+    },
+  );
+  assert.notEqual(rejected.status, 0);
+  assert.match(
+    `${rejected.stdout}\n${rejected.stderr}`,
+    /Unknown exact Application test/u,
+  );
+});
+
 test("repository validation uses staged parity in a disposable isolated root", () => {
   const fixtureRoot = mkdtempSync(
     path.join(os.tmpdir(), "mockups-validation-owner-test-"),

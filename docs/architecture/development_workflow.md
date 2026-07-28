@@ -33,6 +33,20 @@ Before adding a helper, inspect `src/Mockups.Desktop/Common` and the
 existing shared editor surfaces. Reuse or extend the owner when behavior is
 generic. A one-off exception is not an implementation shortcut.
 
+## Validation during implementation
+
+Use `npm run test:changed` during the edit loop and
+`npm run test:revision` when the coherent revision is ready. The scoped
+validator maps changed paths to their semantic test owners and reports the
+selected command and reason. It stops on an unclassified path; contributors
+must identify that path's owner and add focused coverage rather than silently
+running the complete repository suite.
+
+`npm test` remains the explicit complete integration and publication gate. It
+is not the fallback for an incomplete validation map and is not repeated after
+every small edit. Exact Application, Desktop and Preview-owner selectors are
+documented in `validation.md`.
+
 ## Central package versions
 
 Every .NET project consumes package versions from `Directory.Packages.props`.

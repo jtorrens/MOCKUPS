@@ -16,6 +16,7 @@
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx",
+    "scripts/runScopedValidation.ts",
     "scripts/validation/**/*.ts",
     "tests/architecture/**/*.ts"
   ]

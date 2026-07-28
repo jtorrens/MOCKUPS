@@ -182,7 +182,13 @@ then runs the same gate on a virtual display so tests can construct the real
 Use focused checks while iterating:
 
 ```text
+npm run test:changed
+npm run test:changed -- --list
+npm run test:revision
+npm run test:revision -- --base <git-ref>
 npm run test:focus:preview -- tests/animation/<owner>.test.ts
+npm run test:focus:application -- --exact "<Application test name>"
+npm run test:focus:application -- --filter "<stable name fragment>"
 npm run test:focus:desktop -- --exact "<desktop test name>"
 npm run test:focus:desktop -- --filter "<stable name fragment>"
 npm run animation:test:desktop:owner -- --owner "component:<manifest id>"
@@ -201,20 +207,62 @@ npm run desktop:db:validate
 git diff --check
 ```
 
-An exact desktop name or Preview owner that does not exist, an unknown selector
-or a filter that matches nothing fails explicitly. Owner selectors use the
-exact stable manifest key, such as `component:label` or
-`module:module.core.chat`; more than one `--owner` may be supplied in one run.
-A local owner change starts with its owner-specific Preview and Desktop tests
-plus the shared guard. These commands reach Preview generation through the
-Desktop project before running, so they cannot exercise stale web output.
+`test:changed` derives the iteration plan from tracked and untracked workspace
+paths. `test:revision` uses the same ownership plan for the current workspace
+revision; when the workspace is clean it compares `HEAD^` with `HEAD`, and an
+explicit `--base` selects a larger coherent revision. `--list` prints every
+selected command and its reason without running it. Repeated `--file <path>`
+arguments allow a deliberately narrower inspection when the shared workspace
+contains unrelated authoring data.
+
+The workstation's unstaged `data/mockups.sqlite` is excluded from automatic
+discovery because normal application authoring can keep it dirty and repository
+validation owns the staged parity artifact. Staging the database includes it
+automatically. During an intentional database edit,
+`--file data/mockups.sqlite` includes the active file explicitly before it is
+staged.
+
+The scoped owner is conservative about coverage but never selects `npm test`
+implicitly. A path without a declared validation owner stops immediately,
+prints every unclassified path and requires the route plus its focused checks
+to be added before validation continues. This makes validation ownership an
+explicit current contract instead of hiding a missing classification behind
+the slow complete suite. The complete suite remains a deliberate
+integration/publication command.
+
+An exact Application or Desktop name, Preview owner or filter that does not
+exist, an unknown selector or a filter that matches nothing fails explicitly.
+Owner selectors use the exact stable manifest key, such as `component:label`
+or `module:module.core.chat`; more than one `--owner` may be supplied in one
+run. A local owner change starts with its owner-specific Preview and Desktop
+tests. These commands reach Preview generation through the Desktop project
+before running, so they cannot exercise stale web output.
+
+Validation scope follows the changed owner:
+
+- a concrete Preview contract, resolver or renderable runs its matching
+  characterization files and only that manifest owner;
+- a shared Preview helper, boundary, registry, renderer or bridge runs the
+  complete Preview suite and manifest-wide render;
+- an Application or Domain change runs Application tests and the compiled
+  consumer;
+- a local Desktop behavior runs Desktop core coverage, adding native UI only
+  for shared visual-tree or XAML surfaces; exact declared regressions replace
+  the broad group when the owner has a stable mapping;
+- persistence, parity data and referenced assets add read-only database
+  validation;
+- scaffolding, tooling and architecture paths run only their focused
+  executable owners;
+- normative documentation runs contract validation; non-normative
+  documentation needs only the common diff check.
 
 The manifest-wide Desktop exhaustive process is reserved for changes that can
 affect more than one owner: manifest or registry changes, common Preview
 helpers, generic renderer or bridge changes, shared resolver contracts,
 persistence/schema/fixture changes, generated scaffolding, broad Desktop
 surfaces, phase handoff, merge or publication. `npm test` and CI keep that
-complete sweep. An unchanged successful focused gate is not repeated; any
+complete sweep, but local iteration never reaches it as a fallback. An
+unchanged successful focused gate is not repeated; any
 subsequent source, contract, database, asset or generated-file change
 invalidates the applicable result.
 

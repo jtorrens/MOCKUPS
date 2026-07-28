@@ -94,8 +94,55 @@ static void SvgFillTransformsKeepDirectReusableGeometry()
     True(retransformed.Contains("M5 5 L19 12 L5 19 Z", StringComparison.Ordinal));
 }
 
+var exactNames = ArgumentValues(args, "--exact");
+var filters = ArgumentValues(args, "--filter");
+var knownArguments = new HashSet<string>(StringComparer.Ordinal)
+{
+    "--exact",
+    "--filter",
+    "--list",
+};
+for (var index = 0; index < args.Length; index++)
+{
+    var argument = args[index];
+    if (!knownArguments.Contains(argument))
+    {
+        throw new InvalidOperationException(
+            $"Unknown Application test argument '{argument}'.");
+    }
+    if (argument != "--list") index++;
+}
+foreach (var exactName in exactNames)
+{
+    if (!tests.Any((test) =>
+        test.Name.Equals(exactName, StringComparison.Ordinal)))
+    {
+        throw new InvalidOperationException(
+            $"Unknown exact Application test '{exactName}'.");
+    }
+}
+var selectedTests = tests
+    .Where((test) =>
+        (exactNames.Count == 0 && filters.Count == 0)
+        || exactNames.Contains(test.Name, StringComparer.Ordinal)
+        || filters.Any((filter) =>
+            test.Name.Contains(
+                filter,
+                StringComparison.OrdinalIgnoreCase)))
+    .ToArray();
+if (selectedTests.Length == 0)
+{
+    throw new InvalidOperationException(
+        "Application test selection matched no tests.");
+}
+if (args.Contains("--list", StringComparer.Ordinal))
+{
+    foreach (var (name, _) in selectedTests) Console.WriteLine(name);
+    return;
+}
+
 var failures = new List<string>();
-foreach (var (name, run) in tests)
+foreach (var (name, run) in selectedTests)
 {
     try
     {
@@ -111,8 +158,35 @@ foreach (var (name, run) in tests)
 }
 
 Console.WriteLine(
-    $"Application workspace tests: {tests.Length - failures.Count}/{tests.Length} passed.");
+    $"Application workspace tests: {selectedTests.Length - failures.Count}/{selectedTests.Length} passed.");
 if (failures.Count > 0) Environment.Exit(1);
+
+static IReadOnlyList<string> ArgumentValues(
+    string[] arguments,
+    string key)
+{
+    var values = new List<string>();
+    for (var index = 0; index < arguments.Length; index++)
+    {
+        if (!arguments[index].Equals(
+            key,
+            StringComparison.Ordinal))
+        {
+            continue;
+        }
+        if (index + 1 >= arguments.Length
+            || arguments[index + 1].StartsWith(
+                "--",
+                StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"Application test argument '{key}' requires a value.");
+        }
+        values.Add(arguments[index + 1]);
+        index++;
+    }
+    return values;
+}
 
 static void EditorOperationsRunOnWorker()
 {
