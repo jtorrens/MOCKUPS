@@ -86,7 +86,9 @@ internal static class ComponentPreviewTransientValues
         ComponentPreviewTransientState state,
         Func<string, JsonObject> componentVariantConfig)
     {
-        var envelope = preview.DeepClone().AsObject();
+        var envelope = RuntimeInputForwardingContract.EffectivePreview(
+            preview,
+            config);
         if (state.HasCollectionTestValues)
         {
             envelope["testValues"] = ParseJsonObject(

@@ -212,13 +212,11 @@ internal sealed class RuntimeInputsCollectionEditor
                 owner.DesignPreviewJson);
         var config = DesignPreviewTestValues.Parse(
             owner.ConfigJson);
-        var preview = RuntimeInputForwardingContract.EffectivePreview(
-            ComponentPreviewTransientValues.Apply(
-                persistedPreview,
-                config,
-                transientState,
-                _previewInputData.ComponentVariantConfig),
-            config);
+        var preview = ComponentPreviewTransientValues.Apply(
+            persistedPreview,
+            config,
+            transientState,
+            _previewInputData.ComponentVariantConfig);
         cancellationToken.ThrowIfCancellationRequested();
         var inputs =
             RuntimeInputDefinitionReader.ReadInputs(

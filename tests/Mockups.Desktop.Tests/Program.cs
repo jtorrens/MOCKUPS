@@ -12221,9 +12221,23 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
             settings = database.GetModuleVariantSettings(moduleVariant);
             config = DesignPreviewTestValues.Parse(settings.ConfigJson);
         }
-        var effective = RuntimeInputForwardingContract.EffectivePreview(
-            DesignPreviewTestValues.Parse(settings.DesignPreviewJson),
-            config);
+        var persistedPreview =
+            DesignPreviewTestValues.Parse(settings.DesignPreviewJson);
+        var previewInputData = new ComponentPreviewInputDataSource(
+            database.Design,
+            database.Resources);
+        var effective = ComponentPreviewTransientValues.Apply(
+            persistedPreview,
+            config,
+            ComponentPreviewTransientState.Capture(
+                "",
+                new Dictionary<string, string>(),
+                new Dictionary<string, JsonObject>()),
+            previewInputData.ComponentVariantConfig);
+        True(
+            effective[
+                "forwarded_module_lockScreen_stackStates__variantSource"]
+            is JsonArray);
         var forwardedInputs = RuntimeInputDefinitionReader.ReadInputs(effective, config);
         Equal(0, forwardedInputs.Count((input) => input.Label is "Hora" or "Subtext" or "Password" or "Attempt"));
         var collections = RuntimeInputDefinitionReader.ReadCollections(effective, config);
@@ -12257,7 +12271,7 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
         Equal(passwordAttempt.Id, passwordTiming.BehaviorTiming?.SourceFieldId ?? "");
         var forwardedPasswordAction = ComponentPreviewActions.ReadWithEmbedded(
                 effective,
-                new ComponentPreviewInputDataSource(database.Design, database.Resources).ComponentVariantRuntimeContract)
+                previewInputData.ComponentVariantRuntimeContract)
             .Single((action) => action.Label == "Enter password");
         Equal(passwordTrigger.JsonKey, forwardedPasswordAction.PlayInputId);
         Equal(passwordFrame.JsonKey, forwardedPasswordAction.TimeJsonKey);
