@@ -19,6 +19,7 @@ internal sealed class DictionaryFieldControl : Grid
     private readonly bool _blockLayout;
     private readonly bool _separatedComplexLayout;
     private readonly bool _compact;
+    private readonly bool _compactStackedLayout;
     private readonly Border? _complexSeparator;
     private bool _isInherited;
     private string _value;
@@ -35,7 +36,8 @@ internal sealed class DictionaryFieldControl : Grid
         FieldValue fieldValue,
         DictionaryFieldServices? services,
         bool compact = false,
-        bool valueOnly = false)
+        bool valueOnly = false,
+        bool compactStackedLayout = false)
     {
         services ??= new DictionaryFieldServices();
         _definition = fieldValue.Definition;
@@ -46,6 +48,10 @@ internal sealed class DictionaryFieldControl : Grid
         _separatedComplexLayout = DictionaryFieldLayoutRules.UsesBlockLayout(_definition.ValueKind);
         _blockLayout = !valueOnly && _separatedComplexLayout;
         _compact = compact;
+        _compactStackedLayout =
+            compactStackedLayout
+            && !valueOnly
+            && !_separatedComplexLayout;
 
         MinWidth = 0;
         ClipToBounds = true;
@@ -54,8 +60,14 @@ internal sealed class DictionaryFieldControl : Grid
             ? new ColumnDefinitions("*")
             : _blockLayout
                 ? new ColumnDefinitions("*,Auto")
-            : DictionaryFieldLayoutRules.Columns(compact);
-        if (_separatedComplexLayout)
+                : _compactStackedLayout
+                    ? new ColumnDefinitions("*,Auto")
+                    : DictionaryFieldLayoutRules.Columns();
+        if (_compactStackedLayout)
+        {
+            RowDefinitions = new RowDefinitions("Auto,Auto");
+        }
+        else if (_separatedComplexLayout)
         {
             RowDefinitions = new RowDefinitions(valueOnly ? "Auto,Auto" : "Auto,Auto,Auto");
         }
@@ -78,7 +90,14 @@ internal sealed class DictionaryFieldControl : Grid
             TextWrapping = TextWrapping.NoWrap,
         };
         SetColumn(_label, 0);
-        if (_blockLayout) SetRow(_label, 1);
+        if (_compactStackedLayout)
+        {
+            SetColumnSpan(_label, 2);
+        }
+        else if (_blockLayout)
+        {
+            SetRow(_label, 1);
+        }
 
         _valueControl = AddValueControl(DictionaryControlRegistry.Create(
             _definition,
@@ -108,8 +127,16 @@ internal sealed class DictionaryFieldControl : Grid
         EditorAccessibility.Describe(
             _restoreButton,
             $"Restore {_definition.DisplayLabel} to its inherited value");
-        SetColumn(_restoreButton, _blockLayout ? 1 : DictionaryFieldLayoutRules.RestoreButtonColumn());
-        if (_blockLayout) SetRow(_restoreButton, 1);
+        SetColumn(
+            _restoreButton,
+            _blockLayout || _compactStackedLayout
+                ? 1
+                : DictionaryFieldLayoutRules
+                    .RestoreButtonColumn());
+        if (_blockLayout || _compactStackedLayout)
+        {
+            SetRow(_restoreButton, 1);
+        }
 
         if (_separatedComplexLayout)
         {
@@ -327,7 +354,17 @@ internal sealed class DictionaryFieldControl : Grid
                 control.IsEnabled = false;
                 control.Opacity = 0.58;
             }
-            SetColumn(control, _valueOnly || _blockLayout ? 0 : 1);
+            SetColumn(
+                control,
+                _valueOnly
+                    || _blockLayout
+                    || _compactStackedLayout
+                        ? 0
+                        : 1);
+            if (_compactStackedLayout)
+            {
+                SetRow(control, 1);
+            }
             if (_separatedComplexLayout)
             {
                 SetRow(control, _valueOnly ? 1 : 2);
@@ -377,18 +414,28 @@ internal sealed class DictionaryFieldControl : Grid
         }
 
         var labelWidth = _valueOnly || _blockLayout
+            || _compactStackedLayout
             ? 0
             : DictionaryFieldLayoutRules.ResponsiveLabelWidth(availableWidth, _compact);
-        if (!_valueOnly && !_blockLayout)
+        if (!_valueOnly
+            && !_blockLayout
+            && !_compactStackedLayout)
         {
             ColumnDefinitions[0].Width = new GridLength(labelWidth);
         }
 
         var reservedWidth = _valueOnly || _blockLayout
             ? 0
-            : labelWidth
-              + (2 * ColumnSpacing)
-              + (_restoreButton.IsVisible ? _restoreButton.Width : 0);
+            : _compactStackedLayout
+                ? ColumnSpacing
+                  + (_restoreButton.IsVisible
+                      ? _restoreButton.Width
+                      : 0)
+                : labelWidth
+                  + (2 * ColumnSpacing)
+                  + (_restoreButton.IsVisible
+                      ? _restoreButton.Width
+                      : 0);
         var valueWidth = Math.Max(0, availableWidth - reservedWidth);
         control.Width = valueWidth;
         control.MaxWidth = valueWidth;

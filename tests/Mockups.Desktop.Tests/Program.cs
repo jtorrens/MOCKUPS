@@ -4095,6 +4095,26 @@ static void FlatVariantOverridesUseRestoreSemantics()
                 True(flatFields.Count > 0);
                 True(flatFields.All((field) =>
                     field.HasLocalOverride));
+                foreach (var restore in flatFields
+                             .SelectMany((field) =>
+                                 field.GetVisualDescendants()
+                                     .OfType<Button>())
+                             .Where((button) =>
+                                 button.IsVisible
+                                 && button.Content as string == "↺"))
+                {
+                    Equal(32d, restore.Bounds.Width);
+                    var transform = restore.TransformToVisual(
+                            overridesScroll)
+                        ?? throw new InvalidOperationException(
+                            "Flat Override Restore has no viewport transform.");
+                    var right = transform.Transform(
+                        new Point(
+                            restore.Bounds.Width,
+                            0)).X;
+                    True(right
+                        <= overridesScroll.Viewport.Width + 0.5);
+                }
                 True(flatFields.Any((field) =>
                     field.FieldId
                         == "component.button.padding"));
