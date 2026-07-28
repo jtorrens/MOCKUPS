@@ -156,19 +156,21 @@
                     <Grid>
                         <ScrollViewer x:Name="EditorScrollViewer"
                                       HorizontalScrollBarVisibility="Disabled"
-                                      VerticalScrollBarVisibility="Auto"
-                                      Padding="22">
-                            <StackPanel x:Name="EditorCardsPanel"
-                                        Spacing="10"
-                                        HorizontalAlignment="Stretch" />
+                                      VerticalScrollBarVisibility="Auto">
+                            <Border Padding="22">
+                                <StackPanel x:Name="EditorCardsPanel"
+                                            Spacing="10"
+                                            HorizontalAlignment="Stretch" />
+                            </Border>
                         </ScrollViewer>
                         <ScrollViewer x:Name="EditorOverridesScrollViewer"
                                       HorizontalScrollBarVisibility="Disabled"
                                       VerticalScrollBarVisibility="Auto"
-                                      Padding="22"
                                       IsVisible="False">
-                            <StackPanel x:Name="EditorOverridesPanel"
-                                        HorizontalAlignment="Stretch" />
+                            <Border Padding="22">
+                                <StackPanel x:Name="EditorOverridesPanel"
+                                            HorizontalAlignment="Stretch" />
+                            </Border>
                         </ScrollViewer>
                     </Grid>
                     </DockPanel>

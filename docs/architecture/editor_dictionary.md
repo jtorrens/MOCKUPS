@@ -57,6 +57,11 @@ those groups through the shared responsive policy when it does not. Block
 values keep Label and Restore in their header and use the full following row
 for their registered control.
 
+Presenting or refreshing a registered control is silent. In particular, after
+Restore switches a field to its inherited value, a control notification that
+only mirrors that presented inherited value cannot create a new local
+Override.
+
 ## Specialized values
 
 ### Component Variant

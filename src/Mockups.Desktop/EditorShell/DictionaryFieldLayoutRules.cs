@@ -7,6 +7,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal static class DictionaryFieldLayoutRules
 {
     public const double MinimumLabelWidth = 72;
+    public const double RestoreActionWidth = 32;
 
     public static double MaximumLabelWidth(bool compact) => compact ? 132 : 180;
 
@@ -49,7 +50,8 @@ internal static class DictionaryFieldLayoutRules
 
     public static ColumnDefinitions Columns(bool compact = false)
     {
-        return new ColumnDefinitions($"{MaximumLabelWidth(compact)},*,32");
+        return new ColumnDefinitions(
+            $"{MaximumLabelWidth(compact)},*,{RestoreActionWidth}");
     }
 
     public static bool UsesBlockLayout(ValueKind valueKind) =>

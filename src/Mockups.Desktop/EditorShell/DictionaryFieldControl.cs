@@ -54,7 +54,8 @@ internal sealed class DictionaryFieldControl : Grid
         ColumnDefinitions = valueOnly
             ? new ColumnDefinitions("*")
             : _blockLayout
-                ? new ColumnDefinitions("*,32")
+                ? new ColumnDefinitions(
+                    $"*,{DictionaryFieldLayoutRules.RestoreActionWidth}")
                 : DictionaryFieldLayoutRules.Columns(compact);
         if (_separatedComplexLayout)
         {
@@ -103,12 +104,15 @@ internal sealed class DictionaryFieldControl : Grid
             fieldValue.IsHighlighted,
             fieldValue.IsInherited));
 
-        _restoreButton = new Button
+        _restoreButton = new DictionaryRestoreButton
         {
             Content = "↺",
-            Width = 32,
+            MinWidth = 0,
             Height = 32,
+            MinHeight = 0,
+            Margin = new Thickness(0),
             Padding = new Avalonia.Thickness(0),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment = _definition.SelectComponentClass
                 ? VerticalAlignment.Top
                 : DictionaryFieldLayoutRules.RestoreButtonVerticalAlignment(_definition.ValueKind),
@@ -279,6 +283,13 @@ internal sealed class DictionaryFieldControl : Grid
 
     private void SetLocalValue(string value)
     {
+        if (_definition.CanInherit
+            && _isInherited
+            && value == _definition.InheritedValue)
+        {
+            return;
+        }
+
         if (_definition.CanInherit && value == _definition.InheritedStorageValue)
         {
             if (_isInherited)
@@ -412,5 +423,20 @@ internal sealed class DictionaryFieldControl : Grid
             DictionaryFieldLayoutRules.ResponsiveLabelWidth(
                 availableWidth,
                 _compact));
+    }
+
+    private sealed class DictionaryRestoreButton : Button
+    {
+        public DictionaryRestoreButton()
+        {
+            ClipToBounds = true;
+        }
+
+        protected override Size MeasureOverride(Size availableSize)
+        {
+            var size = DictionaryFieldLayoutRules.RestoreActionWidth;
+            base.MeasureOverride(new Size(size, size));
+            return new Size(size, size);
+        }
     }
 }

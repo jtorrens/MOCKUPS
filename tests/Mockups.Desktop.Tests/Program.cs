@@ -3977,8 +3977,8 @@ static void FlatVariantOverridesUseRestoreSemantics()
                             EmbeddedComponentSlotCatalog.Get(
                                 "component.notification.surface.editor"),
                         ],
-                        "component.surface.backgroundAlpha",
-                        "0.42");
+                        "component.surface.backgroundColorToken",
+                        "theme.colors.card");
                 var afterLocalOverride =
                     content.PrepareOverridesAsync(
                             layoutNode,
@@ -3990,7 +3990,7 @@ static void FlatVariantOverridesUseRestoreSemantics()
                     afterLocalOverride.Count);
                 True(afterLocalOverride.Groups.Any((group) =>
                     group.OverrideFieldIds.Contains(
-                        "component.surface.backgroundAlpha",
+                        "component.surface.backgroundColorToken",
                         StringComparer.Ordinal)));
 
                 var iconRowVariant = nodes.Single((node) =>
@@ -4036,6 +4036,21 @@ static void FlatVariantOverridesUseRestoreSemantics()
                     && group.OverrideFieldIds.Contains(
                         "component.button.padding",
                         StringComparer.Ordinal)));
+
+                var listItemVariant = nodes.Single((node) =>
+                    node.Kind
+                        == ProjectTreeNodeKind.ComponentVariant
+                    && node.Parent?.RecordClassId
+                        == "component.listItem"
+                    && node.Name == "Calls");
+                var listItemProjection =
+                    content.PrepareOverridesAsync(
+                            EditorNodeSelectionState
+                                .EditorNodeForSelection(
+                                    listItemVariant),
+                            listItemVariant)
+                        .GetAwaiter()
+                        .GetResult();
 
                 window.Show();
                 var shell = Required(
@@ -4128,7 +4143,10 @@ static void FlatVariantOverridesUseRestoreSemantics()
                                  button.IsVisible
                                  && button.Content as string == "↺"))
                 {
-                    Equal(32d, restore.Bounds.Width);
+                    Equal(
+                        DictionaryFieldLayoutRules
+                            .RestoreActionWidth,
+                        restore.Bounds.Width);
                     var ownerField = restore
                         .GetVisualAncestors()
                         .OfType<DictionaryFieldControl>()
@@ -4137,13 +4155,10 @@ static void FlatVariantOverridesUseRestoreSemantics()
                         0,
                         ownerField.RowDefinitions.Count);
                     Equal(
-                        32d,
+                        DictionaryFieldLayoutRules
+                            .RestoreActionWidth,
                         ownerField.ColumnDefinitions[2]
-                            .ActualWidth);
-                    True(ownerField.ColumnDefinitions
-                            .Sum((column) => column.ActualWidth)
-                        + (2 * ownerField.ColumnSpacing)
-                        <= ownerField.Bounds.Width + 0.5);
+                            .Width.Value);
                     var fieldTransform =
                         restore.TransformToVisual(ownerField)
                         ?? throw new InvalidOperationException(
@@ -4162,8 +4177,12 @@ static void FlatVariantOverridesUseRestoreSemantics()
                         new Point(
                             restore.Bounds.Width,
                             0)).X;
-                    True(right
-                        <= overridesScroll.Viewport.Width + 0.5);
+                    if (right
+                        > overridesScroll.Viewport.Width + 0.5)
+                    {
+                        throw new InvalidOperationException(
+                            $"Restore right {right} exceeds Override viewport {overridesScroll.Viewport.Width}; owner field width {ownerField.Bounds.Width}, extent {overridesScroll.Extent.Width}.");
+                    }
                 }
                 True(flatFields.Any((field) =>
                     field.FieldId
@@ -4237,9 +4256,149 @@ static void FlatVariantOverridesUseRestoreSemantics()
                                     == "Overrides (0)");
                     },
                     TimeSpan.FromSeconds(15)));
+
+                True((bool)selectNode.Invoke(
+                    window,
+                    [listItemVariant.Id])!);
+                True(SpinWait.SpinUntil(
+                    () =>
+                    {
+                        Dispatcher.UIThread.RunJobs();
+                        return content.CommittedOwnerId.Equals(
+                                listItemVariant.Id,
+                                StringComparison.Ordinal)
+                            && peerHost.IsVisible;
+                    },
+                    TimeSpan.FromSeconds(15)));
+                peerHost.Children
+                    .OfType<ToggleButton>()
+                    .Single((button) =>
+                        button.Content as string
+                            == $"Overrides ({listItemProjection.Count})")
+                    .RaiseEvent(new RoutedEventArgs(
+                        Button.ClickEvent));
+                Dispatcher.UIThread.RunJobs();
+                var flatBackgroundAlpha = Required(
+                        window.FindControl<StackPanel>(
+                            "EditorOverridesPanel"))
+                    .GetVisualDescendants()
+                    .OfType<DictionaryFieldControl>()
+                    .Single((field) =>
+                        field.FieldId
+                            == "component.surface.backgroundAlpha");
+                string? backgroundAlphaCommit = null;
+                flatBackgroundAlpha.ValueCommitted +=
+                    (_, value) =>
+                        backgroundAlphaCommit = value;
+                var backgroundAlphaRestore =
+                    flatBackgroundAlpha.Children
+                        .OfType<Button>()
+                        .Single((button) =>
+                            button.Content as string == "↺");
+                True(backgroundAlphaRestore.IsVisible);
+                True(backgroundAlphaRestore.IsEnabled);
+                backgroundAlphaRestore.RaiseEvent(
+                    new RoutedEventArgs(
+                        Button.ClickEvent));
+                Equal(
+                    "inherited",
+                    backgroundAlphaCommit ?? "");
+                if (!SpinWait.SpinUntil(
+                    () =>
+                    {
+                        Dispatcher.UIThread.RunJobs();
+                        return database
+                            .CreateEmbeddedComponentFieldValue(
+                                listItemVariant,
+                                [
+                                    EmbeddedComponentSlotCatalog.Get(
+                                        "component.listItem.states.normal.surface"),
+                                ],
+                                "component.surface.backgroundAlpha")
+                            .IsInherited;
+                    },
+                    TimeSpan.FromSeconds(15)))
+                {
+                    throw new InvalidOperationException(
+                        $"Background alpha Restore did not persist. Node locked: {listItemVariant.IsLocked}. Message: {window.FindControl<TextBox>("ShellMessagesTextBox")?.Text}");
+                }
+                True(SpinWait.SpinUntil(
+                    () =>
+                    {
+                        Dispatcher.UIThread.RunJobs();
+                        return peerHost.Children
+                            .OfType<ToggleButton>()
+                            .Any((button) =>
+                                button.Content as string
+                                    == $"Overrides ({listItemProjection.Count - 1})");
+                    },
+                    TimeSpan.FromSeconds(15)));
+
+                var remainingListItemOverrides =
+                    listItemProjection.Count - 1;
+                while (remainingListItemOverrides > 0)
+                {
+                    var nextField = Required(
+                            window.FindControl<StackPanel>(
+                                "EditorOverridesPanel"))
+                        .GetVisualDescendants()
+                        .OfType<DictionaryFieldControl>()
+                        .First();
+                    var nextRestore = nextField.Children
+                        .OfType<Button>()
+                        .Single((button) =>
+                            button.Content as string == "↺");
+                    var priorCount =
+                        remainingListItemOverrides;
+                    nextRestore.RaiseEvent(
+                        new RoutedEventArgs(
+                            Button.ClickEvent));
+                    if (!SpinWait.SpinUntil(
+                            () =>
+                            {
+                                Dispatcher.UIThread.RunJobs();
+                                var label = peerHost.Children
+                                    .OfType<ToggleButton>()
+                                    .Select((button) =>
+                                        button.Content as string)
+                                    .FirstOrDefault((value) =>
+                                        value?.StartsWith(
+                                            "Overrides (",
+                                            StringComparison.Ordinal)
+                                        == true);
+                                if (label is null)
+                                {
+                                    return false;
+                                }
+
+                                remainingListItemOverrides =
+                                    int.Parse(
+                                        label[
+                                            "Overrides (".Length
+                                            ..^1],
+                                        CultureInfo.InvariantCulture);
+                                return remainingListItemOverrides
+                                    < priorCount;
+                            },
+                            TimeSpan.FromSeconds(15)))
+                    {
+                        throw new InvalidOperationException(
+                            $"Restore '{nextField.FieldId}' did not reduce Overrides ({priorCount}); current count is {remainingListItemOverrides}.");
+                    }
+                }
+                Equal(
+                    0,
+                    content.PrepareOverridesAsync(
+                            EditorNodeSelectionState
+                                .EditorNodeForSelection(
+                                    listItemVariant),
+                            listItemVariant)
+                        .GetAwaiter()
+                        .GetResult()
+                        .Count);
                 window.Close();
             },
-            CancellationToken.None);
+            CancellationToken.None).GetAwaiter().GetResult();
     }
     finally
     {
@@ -11665,6 +11824,7 @@ static void ForwardActionsUseSharedPresentation()
 var isolatedUiTests = new HashSet<string>(StringComparer.Ordinal)
 {
     "collapsed editor cards defer their snapshot until expansion",
+    "flat Variant Overrides include only local inherited fields",
     "rapid visual selection commits only the latest prepared editor",
     "new Shot reload prepares Preview before selection",
     "obsolete Preview authoring preparation cannot replace the latest selection",
