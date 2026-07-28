@@ -4059,6 +4059,12 @@ static void FlatVariantOverridesUseRestoreSemantics()
                             && peerHost.IsVisible;
                     },
                     TimeSpan.FromSeconds(15)));
+                var editorScroll = Required(
+                    window.FindControl<ScrollViewer>(
+                        "EditorScrollViewer"));
+                True(editorScroll.IsVisible);
+                True(editorScroll.Bounds.Height > 0);
+                True(content.Cards.Count > 0);
                 var overridesButton = peerHost.Children
                     .OfType<ToggleButton>()
                     .Single((button) =>
