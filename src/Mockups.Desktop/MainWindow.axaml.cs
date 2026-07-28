@@ -78,6 +78,12 @@ public partial class MainWindow : SukiWindow
         EditorTextBoxBehavior.Configure(ShellMessagesTextBox);
         _messages = new EditorShellMessageSink(ShellMessagesTextBox);
         _editorViewState = new EditorViewStateController(EditorScrollViewer);
+        _embeddedEditors = new EditorEmbeddedEditorController(ShowEmbeddedContext, _messages);
+        var previewAuthoringNavigator = new PreviewAuthoringNavigator(
+            () => Session.SelectedNode,
+            (nodeId) => SelectNodeById(nodeId, "preview-element"),
+            ShowEmbeddedContext,
+            _messages);
         _previewController = new EditorPreviewController(
             data.Preview,
             data.ComponentPreview,
@@ -104,6 +110,7 @@ public partial class MainWindow : SukiWindow
             () => _themeController.IsDark,
             () => Session.SelectedNode,
             (nodeId) => SelectNodeById(nodeId, "preview-context"),
+            (target) => previewAuthoringNavigator.Navigate(target),
             this);
         _treePreviewTransitions =
             new EditorTreePreviewTransitionCoordinator(
@@ -185,7 +192,6 @@ public partial class MainWindow : SukiWindow
             application.Operations,
             () => _previewController.SelectedThemeId,
             _previewController.SetDesignPreviewTestValue);
-        _embeddedEditors = new EditorEmbeddedEditorController(ShowEmbeddedContext, _messages);
         var fieldValues = new EditorFieldValueRouter(
             coreFieldValues,
             recordClassFieldValues,

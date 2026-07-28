@@ -5,6 +5,7 @@ import {
   renderScale,
 } from "./componentRenderableCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
+import { renderAuthoringSlot } from "./previewAuthoringTarget.js";
 import type {
   IconBarDesignContract,
   IconBarZone,
@@ -35,6 +36,18 @@ export function iconBarComponentToRenderableAt(
   iconBar: IconBarDesignContract,
   box: RenderableBox,
 ): RenderableNode {
+  const slotFieldIds: Record<IconBarDesignContract["state"], Record<IconBarZone, string>> = {
+    idle: {
+      left: "component.iconBar.idleLeftIconRow.editor",
+      center: "component.iconBar.idleCenterIconRow.editor",
+      right: "component.iconBar.idleRightIconRow.editor",
+    },
+    active: {
+      left: "component.iconBar.activeLeftIconRow.editor",
+      center: "component.iconBar.activeCenterIconRow.editor",
+      right: "component.iconBar.activeRightIconRow.editor",
+    },
+  };
   const edgePadding = Math.max(0, numberToken(payload, iconBar.edgePaddingToken) * renderScale(payload));
   const zones: IconBarZone[] = ["left", "center", "right"];
   const children = zones.flatMap((zone) => {
@@ -48,7 +61,11 @@ export function iconBarComponentToRenderableAt(
       width: size.width,
       height: size.height,
     };
-    return [iconRowComponentToRenderableAt(payload, row, rowBox)];
+    return [renderAuthoringSlot(
+      payload,
+      slotFieldIds[iconBar.state][zone],
+      (slotPayload) => iconRowComponentToRenderableAt(slotPayload, row, rowBox),
+    )];
   });
 
   return {

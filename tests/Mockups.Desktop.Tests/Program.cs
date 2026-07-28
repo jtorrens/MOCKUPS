@@ -160,6 +160,7 @@ var tests = new (string Name, Action Run)[]
     ("obsolete Preview authoring preparation cannot replace the latest selection", ObsoletePreviewAuthoringPreparationCannotCommit),
     ("obsolete interactive Preview render results are discarded", ObsoleteInteractivePreviewRenderResultsAreDiscarded),
     ("Preview element identification stays on the generic renderable boundary", PreviewElementIdentificationUsesRenderableIdentity),
+    ("Preview authoring navigation requires an exact owner and declared slot path", PreviewAuthoringNavigationUsesExactOwnerAndSlots),
     ("Preview resource selection has one session rule", PreviewResourceSelectionHasOneSessionRule),
     ("editor view state follows the exact record class across records", EditorViewStateFollowsRecordClass),
     ("editor view state round-trips per class and clamps scroll", EditorViewStateRoundTripsPerClass),
@@ -6675,6 +6676,12 @@ static void PreviewElementIdentificationUsesRenderableIdentity()
         "data-renderable-type",
         StringComparison.Ordinal));
     True(PreviewElementInspector.Script.Contains(
+        "data-preview-authoring-owner-id",
+        StringComparison.Ordinal));
+    True(PreviewElementInspector.Script.Contains(
+        PreviewAuthoringNavigationMessage.Prefix,
+        StringComparison.Ordinal));
+    True(PreviewElementInspector.Script.Contains(
         "window.addEventListener(\"mousemove\"",
         StringComparison.Ordinal));
     True(PreviewElementInspector.Script.Contains(
@@ -6707,6 +6714,65 @@ static void PreviewElementIdentificationUsesRenderableIdentity()
     True(!PreviewElementInspector.Script.Contains(
         "componentType",
         StringComparison.Ordinal));
+}
+
+static void PreviewAuthoringNavigationUsesExactOwnerAndSlots()
+{
+    var ownerId = "component_bubble::variant::default";
+    var owner = new ProjectTreeNode(
+        ProjectTreeNodeKind.ComponentVariant,
+        ownerId,
+        "Bubble · Default",
+        "",
+        "component.bubble");
+    ProjectTreeNode? selected = null;
+    EditorEmbeddedContext? opened = null;
+    var messages = new RecordingMessageSink();
+    var navigator = new PreviewAuthoringNavigator(
+        () => selected,
+        (nodeId) =>
+        {
+            if (!nodeId.Equals(ownerId, StringComparison.Ordinal)) return false;
+            selected = owner;
+            return true;
+        },
+        (context) => opened = context,
+        messages);
+
+    var serialized =
+        """mockups-preview-authoring:{"ownerId":"component_bubble::variant::default","slotFieldIds":["component.bubble.textBox.editor","component.textBox.rightIconRow.editor"]}""";
+    True(PreviewAuthoringNavigationMessage.TryParse(
+        serialized,
+        out var target));
+    Equal(ownerId, target.OwnerId);
+    SequenceEqual(
+        [
+            "component.bubble.textBox.editor",
+            "component.textBox.rightIconRow.editor",
+        ],
+        target.SlotFieldIds);
+    True(navigator.Navigate(target));
+    Equal(ownerId, opened?.OwnerNode.Id);
+    SequenceEqual(
+        target.SlotFieldIds,
+        opened?.Slots.Select((slot) => slot.FieldId)
+            ?? []);
+
+    selected = null;
+    opened = null;
+    True(!navigator.Navigate(
+        new PreviewAuthoringNavigationTarget(
+            ownerId,
+            ["component.unknown.editor"])));
+    True(selected is null);
+    True(opened is null);
+
+    True(!PreviewAuthoringNavigationMessage.TryParse(
+        """mockups-preview-authoring:{"ownerId":"","slotFieldIds":[]}""",
+        out _));
+    True(!PreviewAuthoringNavigationMessage.TryParse(
+        """mockups-preview-authoring:{"ownerId":"owner","slotFieldIds":[],"componentType":"bubble"}""",
+        out _));
 }
 
 static void PinnedModuleVariantPreviewSurvivesEditorSelection()

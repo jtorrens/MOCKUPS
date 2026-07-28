@@ -6,6 +6,7 @@ import {
   selectedColor,
 } from "./componentRenderableCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
+import { renderAuthoringSlot } from "./previewAuthoringTarget.js";
 import {
   measuredMultilineTextSize,
   measuredTextWidth,
@@ -338,22 +339,36 @@ export function textBoxComponentToRenderableAt(
       overflow: "visible",
     },
     children: [
-      ...(surfaceNode ? [surfaceNode] : []),
+      ...(surfaceNode
+        ? [renderAuthoringSlot(
+            payload,
+            "component.textBox.surface.editor",
+            () => surfaceNode,
+          )]
+        : []),
       ...(size.hasLeftIcons
-        ? [iconRowComponentToRenderableAt(payload, textBox.leftIconRow, {
-            x: box.x + paddingX,
-            y: iconY(size.leftIconSize.height),
-            width: size.leftIconSize.width,
-            height: size.leftIconSize.height,
-          })]
+        ? [renderAuthoringSlot(
+            payload,
+            "component.textBox.leftIconRow.editor",
+            (slotPayload) => iconRowComponentToRenderableAt(slotPayload, textBox.leftIconRow, {
+              x: box.x + paddingX,
+              y: iconY(size.leftIconSize.height),
+              width: size.leftIconSize.width,
+              height: size.leftIconSize.height,
+            }),
+          )]
         : []),
       ...(size.hasRightIcons
-        ? [iconRowComponentToRenderableAt(payload, textBox.rightIconRow, {
-            x: box.x + box.width - paddingX - size.rightIconSize.width,
-            y: iconY(size.rightIconSize.height),
-            width: size.rightIconSize.width,
-            height: size.rightIconSize.height,
-          })]
+        ? [renderAuthoringSlot(
+            payload,
+            "component.textBox.rightIconRow.editor",
+            (slotPayload) => iconRowComponentToRenderableAt(slotPayload, textBox.rightIconRow, {
+              x: box.x + box.width - paddingX - size.rightIconSize.width,
+              y: iconY(size.rightIconSize.height),
+              width: size.rightIconSize.width,
+              height: size.rightIconSize.height,
+            }),
+          )]
         : []),
       {
         id: `${textBox.id}.textClip`,

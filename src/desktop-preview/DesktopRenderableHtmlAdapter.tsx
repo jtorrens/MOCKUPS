@@ -461,6 +461,12 @@ function RenderNode({
     : parentOrigin;
   return (
     <div
+      data-preview-authoring-owner-id={node.metadata?.authoringTarget?.ownerId}
+      data-preview-authoring-slot-field-ids={
+        node.metadata?.authoringTarget
+          ? JSON.stringify(node.metadata.authoringTarget.slotFieldIds)
+          : undefined
+      }
       data-renderable-id={node.id}
       data-renderable-type={node.type}
       style={{

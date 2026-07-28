@@ -28,6 +28,7 @@ import {
   variants,
 } from "./componentRenderableCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
+import { renderAuthoringSlot } from "./previewAuthoringTarget.js";
 import {
   labelComponentToRenderableAt,
   measureLabelComponent,
@@ -205,8 +206,18 @@ export function bubbleComponentToRenderable(
   const textColor = selectedPalettePairColor(payload, stateColors.text);
   const mediaNode = media && mediaBox
     ? media.kind === "audio"
-      ? audioComponentToRenderableAt(payload, media.value, mediaBox)
-      : mediaComponentToRenderableAt(payload, media.value, mediaBox)
+      ? renderAuthoringSlot(
+          payload,
+          "component.bubble.media.audio.editor",
+          (slotPayload) => audioComponentToRenderableAt(slotPayload, media.value, mediaBox),
+        )
+      : renderAuthoringSlot(
+          payload,
+          media.value.mediaKind === "image"
+            ? "component.bubble.media.image.editor"
+            : "component.bubble.media.video.editor",
+          (slotPayload) => mediaComponentToRenderableAt(slotPayload, media.value, mediaBox),
+        )
     : undefined;
   const inlineMediaNode = media?.kind === "media" && media.value.displayState === "fullframe"
     ? undefined
@@ -224,23 +235,31 @@ export function bubbleComponentToRenderable(
       overflow: "visible",
     },
     children: [
-      surfaceComponentToRenderableAtWithColors(
+      renderAuthoringSlot(
         payload,
-        bubble.surface,
-        surfaceBox,
-        surfaceColors,
+        "component.bubble.surface.editor",
+        (slotPayload) => surfaceComponentToRenderableAtWithColors(
+          slotPayload,
+          bubble.surface,
+          surfaceBox,
+          surfaceColors,
+        ),
       ),
-      textBoxComponentToRenderableAt(
+      renderAuthoringSlot(
         payload,
-        textBoxForContent,
-        textBox,
-        {
-          surfaceVisible: false,
-          textColors: {
-            textColor,
-            placeholderColor: textColor,
+        "component.bubble.textBox.editor",
+        (slotPayload) => textBoxComponentToRenderableAt(
+          slotPayload,
+          textBoxForContent,
+          textBox,
+          {
+            surfaceVisible: false,
+            textColors: {
+              textColor,
+              placeholderColor: textColor,
+            },
           },
-        },
+        ),
       ),
       ...(inlineMediaNode ? [inlineMediaNode] : []),
       ...(statusBox
@@ -248,23 +267,31 @@ export function bubbleComponentToRenderable(
         : []),
       ...(bubble.actorLabelSlot.label && labelBox
         ? [
-            labelComponentToRenderableAt(
+            renderAuthoringSlot(
               payload,
-              bubble.actorLabelSlot.label,
-              labelBox,
-              {
-                surfaceColors: bubbleSurfaceColors(
-                  payload,
-                  stateColors.background,
-                  bubble.actorLabelSlot.label.surface.backgroundAlpha,
-                ),
-                textColor: bubble.actorLabelSlot.textColorOverride,
-              },
+              "component.bubble.actorLabel.editor",
+              (slotPayload) => labelComponentToRenderableAt(
+                slotPayload,
+                bubble.actorLabelSlot.label!,
+                labelBox,
+                {
+                  surfaceColors: bubbleSurfaceColors(
+                    payload,
+                    stateColors.background,
+                    bubble.actorLabelSlot.label!.surface.backgroundAlpha,
+                  ),
+                  textColor: bubble.actorLabelSlot.textColorOverride,
+                },
+              ),
             ),
           ]
         : []),
       ...(bubble.avatarSlot.avatar && avatarBox
-        ? [avatarComponentToRenderableAt(payload, bubble.avatarSlot.avatar, avatarBox)]
+        ? [renderAuthoringSlot(
+            payload,
+            "component.bubble.avatar.editor",
+            (slotPayload) => avatarComponentToRenderableAt(slotPayload, bubble.avatarSlot.avatar!, avatarBox),
+          )]
         : []),
     ],
   } satisfies RenderableNode;

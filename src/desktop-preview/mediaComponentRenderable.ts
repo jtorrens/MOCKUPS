@@ -12,6 +12,7 @@ import { iconBarComponentToRenderableAt } from "./iconBarComponentRenderable.js"
 import type { IconBarDesignContract } from "./iconBarComponentContract.js";
 import type { MediaDesignContract, MediaRenderBoxes } from "./mediaComponentContract.js";
 import { mediaFrameUriForPath } from "./previewAssetResolver.js";
+import { renderAuthoringSlot } from "./previewAuthoringTarget.js";
 import { labelComponentToRenderableAt, measureLabelComponent } from "./labelComponentRenderable.js";
 import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
 
@@ -51,7 +52,11 @@ function mediaComponentToRenderableForBoxes(
   media: MediaDesignContract,
   boxes: MediaRenderBoxes,
 ): RenderableNode {
-  const mediaSurfaceNode = surfaceComponentToRenderableAt(payload, media.surface, boxes.media);
+  const mediaSurfaceNode = renderAuthoringSlot(
+    payload,
+    "component.media.surface.editor",
+    (slotPayload) => surfaceComponentToRenderableAt(slotPayload, media.surface, boxes.media),
+  );
   const mediaContentNode = mediaContent(payload, media, boxes.media);
   const controlNodes = mediaControlNodes(payload, media, boxes.media);
   const children = [
@@ -336,9 +341,9 @@ function mediaControlNodes(
         overflow: "visible",
       },
       children: [
-        iconBarNode(payload, media.topIconBar, topBox),
-        iconBarNode(payload, media.centerIconBar, centerBox),
-        iconBarNode(payload, media.bottomIconBar, bottomBox),
+        iconBarNode(payload, media, "Top", media.topIconBar, topBox),
+        iconBarNode(payload, media, "Center", media.centerIconBar, centerBox),
+        iconBarNode(payload, media, "Bottom", media.bottomIconBar, bottomBox),
         ...mediaTextOverlayNodes(payload, media, mediaBox),
       ],
     },
@@ -347,10 +352,28 @@ function mediaControlNodes(
 
 function iconBarNode(
   payload: DesignPreviewPayload,
+  media: MediaDesignContract,
+  zone: "Top" | "Center" | "Bottom",
   iconBar: IconBarDesignContract,
   box: RenderableBox,
 ) {
-  return iconBarComponentToRenderableAt(payload, iconBar, box);
+  const slotFieldIds = {
+    inline: {
+      Top: "component.media.inlineTopIconBar.editor",
+      Center: "component.media.inlineCenterIconBar.editor",
+      Bottom: "component.media.inlineBottomIconBar.editor",
+    },
+    fullframe: {
+      Top: "component.media.fullScreenTopIconBar.editor",
+      Center: "component.media.fullScreenCenterIconBar.editor",
+      Bottom: "component.media.fullScreenBottomIconBar.editor",
+    },
+  } as const;
+  return renderAuthoringSlot(
+    payload,
+    slotFieldIds[media.displayState][zone],
+    (slotPayload) => iconBarComponentToRenderableAt(slotPayload, iconBar, box),
+  );
 }
 
 function insetBox(
@@ -389,6 +412,12 @@ function mediaTextOverlayNodes(
   );
 
   return [
-    labelComponentToRenderableAt(payload, overlay.label, box),
+    renderAuthoringSlot(
+      payload,
+      media.playbackState === "playing"
+        ? "component.media.playText.label.editor"
+        : "component.media.idleText.label.editor",
+      (slotPayload) => labelComponentToRenderableAt(slotPayload, overlay.label, box),
+    ),
   ];
 }

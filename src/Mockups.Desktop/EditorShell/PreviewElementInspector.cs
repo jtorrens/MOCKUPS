@@ -132,18 +132,39 @@ internal static class PreviewElementInspector
             }
 
             .preview-element-inspector-path-item {
-              display: grid;
-              grid-template-columns: minmax(0, 1fr) auto;
-              align-items: center;
-              gap: 8px;
-              min-height: 31px;
-              padding: 6px 8px;
+              display: block;
               border-radius: 7px;
               background: {{row}};
             }
 
             .preview-element-inspector-path-item.is-target {
               box-shadow: inset 3px 0 #F0B429;
+            }
+
+            .preview-element-inspector-open {
+              display: grid;
+              width: 100%;
+              grid-template-columns: minmax(0, 1fr) auto;
+              align-items: center;
+              gap: 8px;
+              min-height: 31px;
+              padding: 6px 8px;
+              border: 0;
+              border-radius: 7px;
+              background: transparent;
+              color: inherit;
+              text-align: left;
+              cursor: pointer;
+            }
+
+            .preview-element-inspector-open:hover:not(:disabled) {
+              background: {{row}};
+              box-shadow: inset 0 0 0 1px {{border}};
+            }
+
+            .preview-element-inspector-open:disabled {
+              cursor: default;
+              opacity: .58;
             }
 
             .preview-element-inspector-id {
@@ -215,6 +236,27 @@ internal static class PreviewElementInspector
           return type ? `${id} · ${type}` : id;
         }
 
+        function previewAuthoringTarget(element) {
+          let current = element;
+          while (current && current !== scaleLayer) {
+            const ownerId = current.getAttribute?.("data-preview-authoring-owner-id") ?? "";
+            const slotFieldIdsJson = current.getAttribute?.("data-preview-authoring-slot-field-ids");
+            if (ownerId && slotFieldIdsJson !== null) {
+              try {
+                const slotFieldIds = JSON.parse(slotFieldIdsJson);
+                if (Array.isArray(slotFieldIds)
+                  && slotFieldIds.every((fieldId) => typeof fieldId === "string" && fieldId.length > 0)) {
+                  return { ownerId, slotFieldIds };
+                }
+              } catch {
+                return null;
+              }
+            }
+            current = current.parentElement;
+          }
+          return null;
+        }
+
         function hidePreviewElementHover() {
           if (previewElementPinned) return;
           previewElementTarget = null;
@@ -274,6 +316,9 @@ internal static class PreviewElementInspector
             const item = document.createElement("li");
             item.className = "preview-element-inspector-path-item";
             item.classList.toggle("is-target", index === path.length - 1);
+            const open = document.createElement("button");
+            open.className = "preview-element-inspector-open";
+            open.type = "button";
             const id = document.createElement("span");
             id.className = "preview-element-inspector-id";
             id.textContent = owner.getAttribute("data-renderable-id") ?? "";
@@ -281,7 +326,28 @@ internal static class PreviewElementInspector
             const type = document.createElement("span");
             type.className = "preview-element-inspector-type";
             type.textContent = owner.getAttribute("data-renderable-type") ?? "node";
-            item.append(id, type);
+            const authoringTarget = previewAuthoringTarget(owner);
+            open.disabled = authoringTarget === null;
+            open.title = authoringTarget === null
+              ? "Sin editor asociado"
+              : "Abrir el editor que gobierna este nivel";
+            open.setAttribute(
+              "aria-label",
+              authoringTarget === null
+                ? `${id.textContent}; sin editor asociado`
+                : `Abrir editor de ${id.textContent}`,
+            );
+            if (authoringTarget !== null) {
+              open.addEventListener("click", (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                invokeCSharpAction(
+                  "mockups-preview-authoring:" + JSON.stringify(authoringTarget),
+                );
+              });
+            }
+            open.append(id, type);
+            item.append(open);
             previewElementInspectorPath.appendChild(item);
           });
           previewElementInspector.classList.add("is-visible");

@@ -1803,6 +1803,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
     private bool _isRendering;
     public event Action<DesignPreviewFrameStatus>? FrameStatusChanged;
     public event Action<string>? ContextActionRequested;
+    public event Action<PreviewAuthoringNavigationTarget>? AuthoringTargetRequested;
 
     public DesignWebPreviewPane(IProjectPathResolver projectPaths)
     {
@@ -1821,9 +1822,18 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                     return;
                 }
             }
-            const string prefix = "mockups-preview-action:";
-            if (!message.StartsWith(prefix, StringComparison.Ordinal)) return;
-            ContextActionRequested?.Invoke(message[prefix.Length..]);
+            const string actionPrefix = "mockups-preview-action:";
+            if (message.StartsWith(actionPrefix, StringComparison.Ordinal))
+            {
+                ContextActionRequested?.Invoke(message[actionPrefix.Length..]);
+                return;
+            }
+            if (PreviewAuthoringNavigationMessage.TryParse(
+                    message,
+                    out var target))
+            {
+                AuthoringTargetRequested?.Invoke(target);
+            }
         };
     }
 

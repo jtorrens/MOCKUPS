@@ -45,6 +45,10 @@ const RenderableStyleSchema = z.object({
 }).catchall(z.unknown());
 
 const RenderableMetadataSchema = z.object({
+  authoringTarget: z.object({
+    ownerId: z.string().min(1),
+    slotFieldIds: z.array(z.string().min(1)),
+  }).strict().optional(),
   fontFaces: z.array(z.object({
     family: z.string().min(1),
     uri: z.string().min(1),

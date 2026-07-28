@@ -6,6 +6,7 @@ import { DesktopRenderableHtmlAdapter } from "./DesktopRenderableHtmlAdapter.js"
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { designPreviewPayloadToRenderable } from "./designPreviewRenderableRegistry.js";
 import { fontFacesForPayload } from "./previewAssetResolver.js";
+import { withAuthoringTarget } from "./previewAuthoringTarget.js";
 import { selectedColor } from "./previewColorHelpers.js";
 import { extractRootOverlays } from "./renderableRootOverlays.js";
 
@@ -13,7 +14,7 @@ export function renderDesignPreviewRenderable(payload: DesignPreviewPayload): Re
   const child = designPreviewPayloadToRenderable(payload);
   const extracted = extractRootOverlays(child);
 
-  return RenderableNodeSchema.parse({
+  return RenderableNodeSchema.parse(withAuthoringTarget(payload, {
     id: "design_preview.surface",
     type: "surface",
     frame: 0,
@@ -30,7 +31,7 @@ export function renderDesignPreviewRenderable(payload: DesignPreviewPayload): Re
       fontFaces: fontFacesForPayload(payload),
     },
     children: [extracted.node, ...extracted.overlays],
-  });
+  }));
 }
 
 export function renderDesignPreviewMarkup(payload: DesignPreviewPayload): string {

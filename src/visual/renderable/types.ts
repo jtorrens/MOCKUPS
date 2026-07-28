@@ -37,6 +37,10 @@ export interface RenderableFontFace {
 }
 
 export interface RenderableMetadata {
+  authoringTarget?: {
+    ownerId: string;
+    slotFieldIds: string[];
+  };
   fontFaces?: RenderableFontFace[];
   fallbackText?: string;
   imageBaseSize?: number;

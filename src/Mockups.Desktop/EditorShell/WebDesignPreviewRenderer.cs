@@ -151,6 +151,9 @@ internal static class WebDesignPreviewRenderer
         return new
         {
             kind = payload.Kind,
+            authoringOwnerId = payload.Kind == "moduleInstance"
+                ? ""
+                : payload.OwnerId,
             componentType = payload.ComponentType,
             configJson = payload.ConfigJson,
             designPreviewJson = payload.DesignPreviewJson,

@@ -322,6 +322,7 @@ internal sealed class EditorPreviewController : IDisposable
         Func<bool> isDark,
         Func<ProjectTreeNode?> selectedNode,
         Func<string, bool> selectNodeById,
+        Action<PreviewAuthoringNavigationTarget> navigateAuthoringTarget,
         Window owner)
     {
         _projectPaths = projectPaths;
@@ -379,6 +380,7 @@ internal sealed class EditorPreviewController : IDisposable
             if (targetId == PreviewRetryTargetId) Refresh();
             else _selectNodeById(targetId);
         };
+        _designPreviewPane.AuthoringTargetRequested += navigateAuthoringTarget;
         _designInputsPanel.PlaybackStarted += OnPlaybackStarted;
         _designInputsPanel.PlaybackStopped += OnPlaybackStopped;
         _designInputsPanel.PlaybackBusyChanged += PlaybackState.SetBusy;

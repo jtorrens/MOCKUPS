@@ -3,15 +3,19 @@ import {
   routeComponentClassToRenderable,
 } from "./componentClassRenderableRegistry.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
+import { withAuthoringTarget } from "./previewAuthoringTarget.js";
 import { resolveRenderablePayload } from "./renderablePayloadBoundary.js";
 
 export function componentClassToRenderable(
   payload: DesignPreviewPayload,
   assignedBox?: RenderableBox,
 ): RenderableNode {
-  return routeComponentClassToRenderable(
-    resolveRenderablePayload(payload),
-    componentClassToRenderable,
-    assignedBox,
+  return withAuthoringTarget(
+    payload,
+    routeComponentClassToRenderable(
+      resolveRenderablePayload(payload),
+      componentClassToRenderable,
+      assignedBox,
+    ),
   );
 }

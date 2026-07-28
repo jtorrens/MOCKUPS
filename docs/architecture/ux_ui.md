@@ -128,9 +128,12 @@ resolution, preparation and playback.
 
 In the interactive Preview, hovering a resolved element shows its exact
 renderable identity. Right click pins that element and presents its ordered
-rendered ancestor path. This first inspection surface reports only the generic
-renderable ids and primitive types already present in the Preview document; it
-does not infer or navigate to a Component or Variant.
+rendered ancestor path. Every path level with an explicit authoring target is
+selectable. Selection opens the exact Design owner and Variant, then the exact
+nested Overrides context represented by its declared slot chain. A level
+without an explicit target is disabled and reports that it has no associated
+editor. The interaction never derives authoring context from a renderable id,
+primitive type, label, hierarchy position or visual geometry.
 
 When a finite action completes, its final frame remains visible and Play
 becomes available again. Play repeats the same initial-to-final action without

@@ -174,9 +174,16 @@ New rendering needs are expressed as generic resolved primitives.
 The interactive desktop Preview host may inspect the generic
 `data-renderable-id` and `data-renderable-type` attributes already emitted for
 resolved nodes. Hover identification and the right-click rendered path are
-host presentation only: they do not add Component or Variant interpretation to
-the renderer, bridge or shell, and they are absent from raster and Render Queue
-documents.
+host presentation only. Prepared Design payloads may additionally carry an
+exact authoring owner id and an ordered list of declared embedded-slot field
+ids. Renderable owners attach that opaque authoring target at the boundary they
+own, and the generic HTML adapter exposes it without interpreting Component
+types, Variants or Overrides. Selecting a path level sends that exact target to
+the desktop authoring navigator, which selects the owner and resolves every
+slot through `EmbeddedComponentSlotCatalog`. Missing owners, unknown slots and
+malformed targets fail; no layer infers a target from a renderable id, type,
+name, order or position. Production, raster and Render Queue documents expose
+no authoring target.
 
 ## Render Queue boundary
 
