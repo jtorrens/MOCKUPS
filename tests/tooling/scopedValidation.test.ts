@@ -3,7 +3,7 @@ import path from "node:path";
 import test from "node:test";
 
 import {
-  discoverChangedFiles,
+  excludeUnstagedWorkstationDatabase,
   planScopedValidation,
 } from "../../scripts/runScopedValidation.js";
 
@@ -74,8 +74,36 @@ test("a generated fill asset selects SVG checks without unrelated owners", () =>
   assert.equal(ids.includes("preview-all"), false);
 });
 
+test("broad Preview coverage subsumes changed focused Preview tests", () => {
+  const plan = planScopedValidation(
+    repositoryRoot,
+    [
+      "data/mockups.sqlite",
+      "tests/animation/listItemComponent.test.ts",
+    ],
+  );
+  const ids = plan.map((step) => step.id);
+  assert.equal(ids.includes("preview-all"), true);
+  assert.equal(
+    ids.some((id) => id.startsWith("preview:")),
+    false,
+  );
+});
+
 test("automatic discovery ignores only an unstaged workstation database", () => {
-  const files = discoverChangedFiles(repositoryRoot, "changed");
-  assert.equal(files.includes("data/mockups.sqlite"), false);
-  assert.equal(files.includes("scripts/runScopedValidation.ts"), true);
+  const files = [
+    "data/mockups.sqlite",
+    "src/Mockups.Desktop/MainWindow.axaml.cs",
+  ];
+  assert.deepEqual(
+    excludeUnstagedWorkstationDatabase(files, new Set()),
+    ["src/Mockups.Desktop/MainWindow.axaml.cs"],
+  );
+  assert.deepEqual(
+    excludeUnstagedWorkstationDatabase(
+      files,
+      new Set(["data/mockups.sqlite"]),
+    ),
+    files,
+  );
 });

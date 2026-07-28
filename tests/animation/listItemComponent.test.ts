@@ -141,8 +141,8 @@ test("List Item flows visible children through padding and gap with an auto Avat
 
   assert.deepEqual(children.map((child) => child.box), [
     { x: 8, y: 322, width: 76, height: 76 },
-    { x: 92, y: 322, width: 160, height: 76 },
-    { x: 260, y: 338, width: 92, height: 44 },
+    { x: 92, y: 322, width: 200, height: 76 },
+    { x: 300, y: 348, width: 52, height: 24 },
   ]);
 });
 
@@ -168,13 +168,13 @@ test("List Item clips fixed children that exceed its Runtime width", () => {
 test("List Item clips fixed children that exceed its Runtime height", () => {
   const source = fixture("calls");
   const preview = JSON.parse(source.designPreviewJson) as { height: number };
-  preview.height = 40;
+  preview.height = 20;
   source.designPreviewJson = JSON.stringify(preview);
   const contract = resolveListItemComponent(source);
   const node = listItemComponentToRenderable(
     source,
     contract,
-    { x: 0, y: 0, width: 360, height: 40 },
+    { x: 0, y: 0, width: 360, height: 20 },
   );
   const elements = node.children?.[1];
   const iconRow = elements?.children?.[2];

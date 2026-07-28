@@ -398,14 +398,6 @@ export function planScopedValidation(
       "Application or Domain behavior changed",
     ));
   }
-  for (const test of previewTests) {
-    add(npmStep(
-      `preview:${test}`,
-      "test:focus:preview",
-      `focused Preview coverage imports or names the changed owner`,
-      ["--", test],
-    ));
-  }
   if (broadPreview) {
     add(npmStep(
       "preview-all",
@@ -418,6 +410,14 @@ export function planScopedValidation(
       "shared Preview output requires every manifest fixture",
     ));
   } else {
+    for (const test of previewTests) {
+      add(npmStep(
+        `preview:${test}`,
+        "test:focus:preview",
+        "focused Preview coverage imports or names the changed owner",
+        ["--", test],
+      ));
+    }
     for (const owner of owners) {
       add(npmStep(
         `owner:${owner}`,
@@ -543,11 +543,14 @@ export function discoverChangedFiles(
       "--others",
       "--exclude-standard",
     ]),
-  ].filter((file) =>
-    file !== "data/mockups.sqlite" || staged.has(file));
-  if (level === "changed") return [...new Set(working)].sort();
+  ];
+  const scopedWorking = excludeUnstagedWorkstationDatabase(
+    working,
+    staged,
+  );
+  if (level === "changed") return [...new Set(scopedWorking)].sort();
   const revisionBase = base
-    ?? (working.length > 0 ? "HEAD" : "HEAD^");
+    ?? (scopedWorking.length > 0 ? "HEAD" : "HEAD^");
   const committed = revisionBase === "HEAD"
     ? []
     : gitLines(repositoryRoot, [
@@ -555,7 +558,15 @@ export function discoverChangedFiles(
       "--name-only",
       `${revisionBase}...HEAD`,
     ]);
-  return [...new Set([...committed, ...working])].sort();
+  return [...new Set([...committed, ...scopedWorking])].sort();
+}
+
+export function excludeUnstagedWorkstationDatabase(
+  files: readonly string[],
+  stagedFiles: ReadonlySet<string>,
+): string[] {
+  return files.filter((file) =>
+    file !== "data/mockups.sqlite" || stagedFiles.has(file));
 }
 
 function run(): void {
