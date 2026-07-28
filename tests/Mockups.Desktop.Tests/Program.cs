@@ -4038,6 +4038,18 @@ static void FlatVariantOverridesUseRestoreSemantics()
                         StringComparer.Ordinal)));
 
                 window.Show();
+                var shell = Required(
+                    window.FindControl<Grid>(
+                        "ShellColumns"));
+                shell.ColumnDefinitions[2].Width =
+                    new GridLength(260);
+                window.Measure(new Size(
+                    window.Width,
+                    window.Height));
+                window.Arrange(new Rect(
+                    window.Width,
+                    window.Height));
+                Dispatcher.UIThread.RunJobs();
                 var selectNode = typeof(MainWindow).GetMethod(
                     "SelectNodeById",
                     BindingFlags.Instance
@@ -4104,6 +4116,23 @@ static void FlatVariantOverridesUseRestoreSemantics()
                                  && button.Content as string == "↺"))
                 {
                     Equal(32d, restore.Bounds.Width);
+                    var ownerField = restore
+                        .GetVisualAncestors()
+                        .OfType<DictionaryFieldControl>()
+                        .Single();
+                    Equal(
+                        0,
+                        ownerField.RowDefinitions.Count);
+                    var fieldTransform =
+                        restore.TransformToVisual(ownerField)
+                        ?? throw new InvalidOperationException(
+                            "Flat Override Restore has no field transform.");
+                    var fieldRight = fieldTransform.Transform(
+                        new Point(
+                            restore.Bounds.Width,
+                            0)).X;
+                    True(fieldRight
+                        <= ownerField.Bounds.Width + 0.5);
                     var transform = restore.TransformToVisual(
                             overridesScroll)
                         ?? throw new InvalidOperationException(

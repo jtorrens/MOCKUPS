@@ -424,7 +424,7 @@ internal sealed class EditorLayoutCardFactory
             field,
             services,
             compact,
-            compactStackedLayout: compact);
+            compactOverrideLayout: compact);
         activeFieldControls.Register(control);
         control.ValueCommitted += async (_, value) =>
         {
