@@ -141,6 +141,11 @@ it preserves fixed or intrinsic child dimensions and marks the bounded owner
 viewport for clipping. The generic renderer only paints those boxes and the
 resolved overflow policy.
 
+Generic Surface tail geometry belongs to the Surface shape helper. Every tail
+anchors to its declared body edge and overlaps through the complete resolved
+corner radius so tail and rounded body form one seamless silhouette for every
+side, vertical position and tail style.
+
 ## Bridge
 
 The bridge translates only standard resolved values:

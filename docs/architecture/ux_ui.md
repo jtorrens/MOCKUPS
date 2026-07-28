@@ -216,6 +216,8 @@ temporary values.
 Text and numeric fields follow standard desktop selection for mouse, Wacom Pen,
 touch and keyboard. Double click selects the full numeric value. Every desktop
 slider uses the shared input behavior: native mouse, touch and keyboard remain
-intact, while primary Wacom Pen press and captured drag update continuously
-across the full track. Shared action buttons and icons are reused throughout;
-editors do not invent alternative chrome for an existing operation.
+intact, while primary Wacom Pen press owns a stable capture across the full
+track. Pen motion is latest-value coalesced to the UI frame cadence, and release
+commits the exact final position without retaining an event backlog. Shared
+action buttons and icons are reused throughout; editors do not invent
+alternative chrome for an existing operation.

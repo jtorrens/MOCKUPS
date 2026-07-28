@@ -12860,6 +12860,7 @@ static void SharedSliderBehaviorMapsPenDrag()
     var slider = EditorSliderBehavior.Configure(new Slider());
     True(EditorSliderBehavior.IsConfigured(slider));
     Equal(slider, EditorSliderBehavior.Configure(slider));
+    Equal(TimeSpan.FromMilliseconds(16), EditorSliderBehavior.PenUpdateInterval);
 
     Equal(0d, EditorSliderBehavior.ValueFromPosition(0, 10, -5, 100, vertical: false, reversed: false));
     Equal(5d, EditorSliderBehavior.ValueFromPosition(0, 10, 50, 100, vertical: false, reversed: false));
@@ -12942,6 +12943,17 @@ static void RuntimeActionControlsReactivateAfterPlaybackAndReattachment()
         Equal(14d, frameSlider.Height);
         True(EditorSliderBehavior.IsConfigured(frameSlider));
         Equal(1d, Required(control.Child as Grid).RowSpacing);
+        var frameTrack = frameSlider.GetVisualDescendants()
+            .OfType<Track>()
+            .Single();
+        Equal(
+            frameSlider.Minimum,
+            frameTrack.ValueFromPoint(
+                new Point(0, frameTrack.Bounds.Height / 2)));
+        Equal(
+            frameSlider.Maximum,
+            frameTrack.ValueFromPoint(
+                new Point(frameTrack.Bounds.Width, frameTrack.Bounds.Height / 2)));
         Equal(EditorUiDensity.TextAwareWidth(48), frameInput.Width);
         Equal(new Thickness(0), frameSpinner.Margin);
         Equal(

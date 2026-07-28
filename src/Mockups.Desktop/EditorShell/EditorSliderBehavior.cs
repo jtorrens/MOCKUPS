@@ -1,9 +1,13 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
+using Avalonia.Threading;
+using Avalonia.VisualTree;
 using System;
+using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -11,6 +15,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal static class EditorSliderBehavior
 {
     private static readonly ConditionalWeakTable<Slider, PenDragState> States = new();
+    internal static readonly TimeSpan PenUpdateInterval = TimeSpan.FromMilliseconds(16);
 
     public static Slider Configure(Slider slider)
     {
@@ -54,10 +59,16 @@ internal static class EditorSliderBehavior
     private sealed class PenDragState(Slider slider)
     {
         private readonly Slider _slider = slider;
+        private readonly DispatcherTimer _updateTimer = new()
+        {
+            Interval = PenUpdateInterval,
+        };
         private IPointer? _penPointer;
+        private double? _pendingValue;
 
         public void Attach()
         {
+            _updateTimer.Tick += (_, _) => CommitPendingValue();
             _slider.AddHandler(
                 InputElement.PointerPressedEvent,
                 (_, args) => OnPointerPressed(args),
@@ -75,9 +86,10 @@ internal static class EditorSliderBehavior
                 handledEventsToo: true);
             _slider.AddHandler(
                 InputElement.PointerCaptureLostEvent,
-                (_, _) => _penPointer = null,
+                (_, _) => OnPointerCaptureLost(),
                 RoutingStrategies.Tunnel,
                 handledEventsToo: true);
+            _slider.DetachedFromVisualTree += (_, _) => Reset();
         }
 
         private void OnPointerPressed(PointerPressedEventArgs args)
@@ -89,10 +101,12 @@ internal static class EditorSliderBehavior
             }
 
             _penPointer = args.Pointer;
-            UpdateValue(args);
-            args.Pointer.Capture(_slider);
+            QueueValue(args, commitImmediately: true);
             args.PreventGestureRecognition();
             args.Handled = true;
+            Dispatcher.UIThread.Post(
+                EnsureCapture,
+                DispatcherPriority.Input);
         }
 
         private void OnPointerMoved(PointerEventArgs args)
@@ -102,7 +116,8 @@ internal static class EditorSliderBehavior
                 return;
             }
 
-            UpdateValue(args);
+            EnsureCapture();
+            QueueValue(args, commitImmediately: false);
             args.PreventGestureRecognition();
             args.Handled = true;
         }
@@ -114,7 +129,7 @@ internal static class EditorSliderBehavior
                 return;
             }
 
-            UpdateValue(args);
+            QueueValue(args, commitImmediately: true);
             _penPointer = null;
             args.Pointer.Capture(null);
             args.Handled = true;
@@ -134,18 +149,88 @@ internal static class EditorSliderBehavior
                 && !properties.IsEraser;
         }
 
-        private void UpdateValue(PointerEventArgs args)
+        private void QueueValue(
+            PointerEventArgs args,
+            bool commitImmediately)
         {
+            _pendingValue = Snap(ValueAt(args));
+            if (commitImmediately)
+            {
+                CommitPendingValue();
+                return;
+            }
+
+            if (!_updateTimer.IsEnabled)
+            {
+                _updateTimer.Start();
+            }
+        }
+
+        private double ValueAt(PointerEventArgs args)
+        {
+            var track = _slider
+                .GetVisualDescendants()
+                .OfType<Track>()
+                .FirstOrDefault();
+            if (track is not null
+                && track.Bounds.Width > 0
+                && track.Bounds.Height > 0)
+            {
+                return track.ValueFromPoint(
+                    args.GetPosition(track));
+            }
+
             var vertical = _slider.Orientation == Orientation.Vertical;
             var position = args.GetPosition(_slider);
-            var rawValue = ValueFromPosition(
+            return ValueFromPosition(
                 _slider.Minimum,
                 _slider.Maximum,
                 vertical ? position.Y : position.X,
                 vertical ? _slider.Bounds.Height : _slider.Bounds.Width,
                 vertical,
                 _slider.IsDirectionReversed);
-            _slider.Value = Snap(rawValue);
+        }
+
+        private void CommitPendingValue()
+        {
+            if (_pendingValue is not { } value)
+            {
+                _updateTimer.Stop();
+                return;
+            }
+
+            _pendingValue = null;
+            _slider.Value = value;
+        }
+
+        private void EnsureCapture()
+        {
+            if (_penPointer is not { } pointer
+                || ReferenceEquals(pointer.Captured, _slider))
+            {
+                return;
+            }
+
+            pointer.Capture(_slider);
+        }
+
+        private void OnPointerCaptureLost()
+        {
+            if (_penPointer is null)
+            {
+                return;
+            }
+
+            Dispatcher.UIThread.Post(
+                EnsureCapture,
+                DispatcherPriority.Input);
+        }
+
+        private void Reset()
+        {
+            _penPointer = null;
+            _pendingValue = null;
+            _updateTimer.Stop();
         }
 
         private double Snap(double value)

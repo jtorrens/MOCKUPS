@@ -153,19 +153,18 @@ export function surfaceTailBox(
 ): RenderableBox {
   const width = Math.max(0, tail.width);
   const height = Math.max(0, tail.height);
-  const alignTailToBodyEdge = tail.style === "cut_corner";
+  const cornerCoverage = Math.min(
+    body.width / 2,
+    Math.max(0, tail.cornerRadius) + 1,
+  );
   const x =
     tail.side === "right"
-      ? body.x + body.width - Math.ceil(width * 0.34)
-      : body.x - Math.floor(width * 0.66);
+      ? body.x + body.width - cornerCoverage
+      : body.x + cornerCoverage - width;
   const y =
     tail.vertical === "top"
-      ? alignTailToBodyEdge
-        ? body.y
-        : body.y + Math.round(tail.cornerRadius * 0.35)
-      : alignTailToBodyEdge
-        ? body.y + body.height - height
-        : body.y + body.height - height - Math.round(tail.cornerRadius * 0.18);
+      ? body.y
+      : body.y + body.height - height;
   return { x, y, width, height };
 }
 
