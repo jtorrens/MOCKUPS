@@ -228,8 +228,9 @@ Text and numeric fields follow standard desktop selection for mouse, Wacom Pen,
 touch and keyboard. Double click selects the full numeric value. Every desktop
 slider uses the shared input behavior: native mouse, touch and keyboard remain
 intact, while primary Wacom Pen press owns a stable capture across the full
-track. Pen motion is latest-value coalesced to the UI frame cadence, and release
-commits the exact final position without retaining an event backlog. Shared
+track from the initial press. Pen motion keeps only the latest value and applies
+it at render priority, while release commits the exact final position
+synchronously without retaining an event backlog. Shared
 text input behavior suppresses native contextual editing popups, including
 those produced by compound numeric templates, while standard keyboard
 cut/copy/paste shortcuts remain available. Shared action buttons and icons are

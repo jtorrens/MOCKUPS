@@ -15,7 +15,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal static class EditorSliderBehavior
 {
     private static readonly ConditionalWeakTable<Slider, PenDragState> States = new();
-    internal static readonly TimeSpan PenUpdateInterval = TimeSpan.FromMilliseconds(16);
+    internal static readonly DispatcherPriority PenUpdatePriority = DispatcherPriority.Render;
 
     public static Slider Configure(Slider slider)
     {
@@ -59,16 +59,13 @@ internal static class EditorSliderBehavior
     private sealed class PenDragState(Slider slider)
     {
         private readonly Slider _slider = slider;
-        private readonly DispatcherTimer _updateTimer = new()
-        {
-            Interval = PenUpdateInterval,
-        };
         private IPointer? _penPointer;
         private double? _pendingValue;
+        private bool _updateQueued;
+        private int _updateGeneration;
 
         public void Attach()
         {
-            _updateTimer.Tick += (_, _) => CommitPendingValue();
             _slider.AddHandler(
                 InputElement.PointerPressedEvent,
                 (_, args) => OnPointerPressed(args),
@@ -101,12 +98,11 @@ internal static class EditorSliderBehavior
             }
 
             _penPointer = args.Pointer;
-            QueueValue(args, commitImmediately: true);
+            args.Pointer.Capture(_slider);
+            _slider.Focus();
+            CommitValue(ValueAt(args));
             args.PreventGestureRecognition();
             args.Handled = true;
-            Dispatcher.UIThread.Post(
-                EnsureCapture,
-                DispatcherPriority.Input);
         }
 
         private void OnPointerMoved(PointerEventArgs args)
@@ -116,8 +112,7 @@ internal static class EditorSliderBehavior
                 return;
             }
 
-            EnsureCapture();
-            QueueValue(args, commitImmediately: false);
+            QueueValue(args);
             args.PreventGestureRecognition();
             args.Handled = true;
         }
@@ -129,7 +124,7 @@ internal static class EditorSliderBehavior
                 return;
             }
 
-            QueueValue(args, commitImmediately: true);
+            CommitValue(ValueAt(args));
             _penPointer = null;
             args.Pointer.Capture(null);
             args.Handled = true;
@@ -149,21 +144,29 @@ internal static class EditorSliderBehavior
                 && !properties.IsEraser;
         }
 
-        private void QueueValue(
-            PointerEventArgs args,
-            bool commitImmediately)
+        private void QueueValue(PointerEventArgs args)
         {
-            _pendingValue = Snap(ValueAt(args));
-            if (commitImmediately)
+            var value = Snap(ValueAt(args));
+            _pendingValue = value;
+            if (_updateQueued)
             {
-                CommitPendingValue();
                 return;
             }
 
-            if (!_updateTimer.IsEnabled)
-            {
-                _updateTimer.Start();
-            }
+            _updateQueued = true;
+            var generation = _updateGeneration;
+            Dispatcher.UIThread.Post(
+                () =>
+                {
+                    if (generation != _updateGeneration)
+                    {
+                        return;
+                    }
+
+                    _updateQueued = false;
+                    CommitPendingValue();
+                },
+                PenUpdatePriority);
         }
 
         private double ValueAt(PointerEventArgs args)
@@ -195,23 +198,21 @@ internal static class EditorSliderBehavior
         {
             if (_pendingValue is not { } value)
             {
-                _updateTimer.Stop();
                 return;
             }
 
             _pendingValue = null;
-            _slider.Value = value;
+            _slider.SetCurrentValue(
+                RangeBase.ValueProperty,
+                value);
         }
 
-        private void EnsureCapture()
+        private void CommitValue(double value)
         {
-            if (_penPointer is not { } pointer
-                || ReferenceEquals(pointer.Captured, _slider))
-            {
-                return;
-            }
-
-            pointer.Capture(_slider);
+            CancelQueuedUpdate();
+            _slider.SetCurrentValue(
+                RangeBase.ValueProperty,
+                Snap(value));
         }
 
         private void OnPointerCaptureLost()
@@ -221,16 +222,20 @@ internal static class EditorSliderBehavior
                 return;
             }
 
-            Dispatcher.UIThread.Post(
-                EnsureCapture,
-                DispatcherPriority.Input);
+            Reset();
         }
 
         private void Reset()
         {
             _penPointer = null;
+            CancelQueuedUpdate();
+        }
+
+        private void CancelQueuedUpdate()
+        {
+            _updateGeneration++;
+            _updateQueued = false;
             _pendingValue = null;
-            _updateTimer.Stop();
         }
 
         private double Snap(double value)

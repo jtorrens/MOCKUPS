@@ -13390,7 +13390,7 @@ static void SharedSliderBehaviorMapsPenDrag()
     var slider = EditorSliderBehavior.Configure(new Slider());
     True(EditorSliderBehavior.IsConfigured(slider));
     Equal(slider, EditorSliderBehavior.Configure(slider));
-    Equal(TimeSpan.FromMilliseconds(16), EditorSliderBehavior.PenUpdateInterval);
+    Equal(DispatcherPriority.Render, EditorSliderBehavior.PenUpdatePriority);
 
     Equal(0d, EditorSliderBehavior.ValueFromPosition(0, 10, -5, 100, vertical: false, reversed: false));
     Equal(5d, EditorSliderBehavior.ValueFromPosition(0, 10, 50, 100, vertical: false, reversed: false));
