@@ -13,7 +13,10 @@ using System.Threading.Tasks;
 namespace Mockups.DesktopEditorShell.EditorShell;
 
 // Edits the ordered Button runtime collection owned by one Icon Row.
-internal sealed class IconSlotsControl : StackPanel, IDictionaryValueControl
+internal sealed class IconSlotsControl :
+    StackPanel,
+    IDictionaryValueControl,
+    IEditorAuthoringItemTarget
 {
     private readonly Func<string, bool, Task<string?>>? _showIconTokenPicker;
     private readonly Func<string, Control>? _createIconPreview;
@@ -21,19 +24,26 @@ internal sealed class IconSlotsControl : StackPanel, IDictionaryValueControl
     private readonly Func<string, JsonObject, Func<JsonObject, Task>, Task>? _openRuntimeComponentOverrides;
     private readonly bool _isEditable;
     private readonly FixedComponentVariantBoundary _buttonBoundary;
+    private readonly EditorSessionUiState? _sessionUiState;
+    private readonly string _selectionKey;
     private List<JsonObject> _items = [];
     private int _selectedIndex;
     private string _value;
 
     public IconSlotsControl(
+        string fieldId,
         string value,
         bool isEditable,
         Func<string, bool, Task<string?>>? showIconTokenPicker,
         Func<string, Control>? createIconPreview,
         IReadOnlyList<FieldOption> buttonVariantOptions,
         Func<string, Task>? openComponentVariantReference,
-        Func<string, JsonObject, Func<JsonObject, Task>, Task>? openRuntimeComponentOverrides)
+        Func<string, JsonObject, Func<JsonObject, Task>, Task>? openRuntimeComponentOverrides,
+        EditorSessionUiState? sessionUiState)
     {
+        FieldId = fieldId;
+        _selectionKey = $"{fieldId}:icon-slots";
+        _sessionUiState = sessionUiState;
         _isEditable = isEditable;
         _showIconTokenPicker = showIconTokenPicker;
         _createIconPreview = createIconPreview;
@@ -49,6 +59,7 @@ internal sealed class IconSlotsControl : StackPanel, IDictionaryValueControl
 
     public event EventHandler<string>? ValueChanged;
     public event EventHandler<string>? ValueCommitted;
+    public string FieldId { get; }
     public string Value => _value;
 
     public void SetValue(string value)
@@ -62,7 +73,22 @@ internal sealed class IconSlotsControl : StackPanel, IDictionaryValueControl
     private void Rebuild()
     {
         _items = Parse(_value);
-        _selectedIndex = _items.Count == 0 ? -1 : Math.Clamp(_selectedIndex, 0, _items.Count - 1);
+        var rememberedId = _sessionUiState?.Selection(_selectionKey);
+        var rememberedIndex = string.IsNullOrWhiteSpace(rememberedId)
+            ? -1
+            : _items.FindIndex((item) => String(item, "id", "")
+                .Equals(rememberedId, StringComparison.Ordinal));
+        _selectedIndex = _items.Count == 0
+            ? -1
+            : rememberedIndex >= 0
+                ? rememberedIndex
+                : Math.Clamp(_selectedIndex, 0, _items.Count - 1);
+        if (_selectedIndex >= 0)
+        {
+            _sessionUiState?.Select(
+                _selectionKey,
+                String(_items[_selectedIndex], "id", ""));
+        }
         Children.Clear();
         Children.Add(BuildSlotStrip());
         if (_selectedIndex >= 0) Children.Add(BuildSelectedEditor());
@@ -84,7 +110,14 @@ internal sealed class IconSlotsControl : StackPanel, IDictionaryValueControl
                 BorderBrush = new SolidColorBrush(Color.Parse(index == _selectedIndex ? "#D6A638" : "#4B5F7A")),
                 Content = SlotPreview(item),
             };
-            button.Click += (_, _) => { _selectedIndex = captured; Rebuild(); };
+            button.Click += (_, _) =>
+            {
+                _selectedIndex = captured;
+                _sessionUiState?.Select(
+                    _selectionKey,
+                    String(_items[captured], "id", ""));
+                Rebuild();
+            };
             slots.Children.Add(button);
         }
 
@@ -93,6 +126,22 @@ internal sealed class IconSlotsControl : StackPanel, IDictionaryValueControl
             return BuildFirstSlotCreator();
         }
         return new ScrollViewer { HorizontalScrollBarVisibility = ScrollBarVisibility.Auto, Content = slots };
+    }
+
+    public bool SelectItem(string itemId)
+    {
+        var index = _items.FindIndex((item) =>
+            String(item, "id", "").Equals(
+                itemId,
+                StringComparison.Ordinal));
+        if (index < 0)
+        {
+            return false;
+        }
+        _selectedIndex = index;
+        _sessionUiState?.Select(_selectionKey, itemId);
+        Rebuild();
+        return true;
     }
 
     private Control BuildFirstSlotCreator()

@@ -241,15 +241,19 @@ internal static class PreviewElementInspector
           while (current && current !== scaleLayer) {
             const ownerId = current.getAttribute?.("data-preview-authoring-owner-id") ?? "";
             const focusFieldId = current.getAttribute?.("data-preview-authoring-focus-field-id") ?? "";
+            const focusItemId = current.getAttribute?.("data-preview-authoring-focus-item-id") ?? "";
             const slotFieldIdsJson = current.getAttribute?.("data-preview-authoring-slot-field-ids");
             if (ownerId && slotFieldIdsJson !== null) {
               try {
                 const slotFieldIds = JSON.parse(slotFieldIdsJson);
                 if (Array.isArray(slotFieldIds)
                   && slotFieldIds.every((fieldId) => typeof fieldId === "string" && fieldId.length > 0)) {
-                  return focusFieldId
-                    ? { ownerId, slotFieldIds, focusFieldId }
-                    : { ownerId, slotFieldIds };
+                  return {
+                    ownerId,
+                    slotFieldIds,
+                    ...(focusFieldId ? { focusFieldId } : {}),
+                    ...(focusItemId ? { focusItemId } : {}),
+                  };
                 }
               } catch {
                 return null;

@@ -133,12 +133,18 @@ selectable. Selection opens the exact Design owner and Variant, then the exact
 nested Overrides context represented by its declared slot chain. When that
 target also declares an exact visible dictionary field, the completed editor
 transition expands the unique top-level card containing that field and brings
-it into view, including when the card was already open. This explicit focus
-supersedes pending session scroll restoration only for that navigation. A
-missing or ambiguous field-to-card match reports a warning and never falls back
-to a label, prefix, position or first match. A level without an explicit target
-is disabled and reports that it has no associated editor. The interaction
-never derives authoring context from a renderable id, primitive type, label,
+it into view, including when the card was already open. A structured field may
+also declare the exact stable item id that governs the rendered element; its
+registered dictionary control selects that item without deriving it from the
+renderable name or collection position. Full Component Variant references
+cross to that referenced Variant as the new authoring owner, while
+`ComponentVariantSlot` boundaries retain their current owner and append their
+declared local Overrides path. This explicit focus supersedes pending session
+scroll restoration only for that navigation. A missing or ambiguous
+field-to-card or field-to-item match reports a warning and never falls back to
+a label, prefix, position or first match. A level without an explicit target is
+disabled and reports that it has no associated editor. The interaction never
+derives authoring context from a renderable id, primitive type, label,
 hierarchy position or visual geometry.
 
 When a finite action completes, its final frame remains visible and Play

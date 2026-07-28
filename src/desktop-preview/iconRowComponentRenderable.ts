@@ -8,6 +8,7 @@ import {
 import { buttonComponentToRenderableAt, measureButtonComponent } from "./buttonComponentRenderable.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import type { IconRowDesignContract } from "./iconRowComponentContract.js";
+import { renderAuthoringCollectionItem } from "./previewAuthoringTarget.js";
 
 export function measureIconRowComponent(payload: DesignPreviewPayload, iconRow: IconRowDesignContract) {
   const sizes = iconRow.items.map((item) => measureButtonComponent(payload, item.button));
@@ -53,7 +54,17 @@ export function iconRowComponentToRenderableAt(
       ? { x: box.x + (box.width - size.width) * 0.5, y: box.y + cursor, width: size.width, height: size.height }
       : { x: box.x + cursor, y: box.y + (box.height - size.height) * 0.5, width: size.width, height: size.height };
     cursor += (iconRow.orientation === "vertical" ? size.height : size.width) + metrics.gap;
-    return buttonComponentToRenderableAt(payload, item.button, buttonBox);
+    return renderAuthoringCollectionItem(
+      payload,
+      "component.iconRow",
+      "component.iconRow.items",
+      item.id,
+      (itemPayload) => buttonComponentToRenderableAt(
+        itemPayload,
+        item.button,
+        buttonBox,
+      ),
+    );
   });
   return { id: iconRow.id, type: "group", frame: 0, box, style: { overflow: "hidden" }, children };
 }

@@ -47,6 +47,7 @@ const RenderableStyleSchema = z.object({
 const RenderableMetadataSchema = z.object({
   authoringTarget: z.object({
     focusFieldId: z.string().min(1).optional(),
+    focusItemId: z.string().min(1).optional(),
     ownerId: z.string().min(1),
     slotFieldIds: z.array(z.string().min(1)),
   }).strict().optional(),

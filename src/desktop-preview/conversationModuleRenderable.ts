@@ -29,6 +29,11 @@ import {
 } from "./componentRenderableCommon.js";
 import { wallpaperRenderable } from "./wallpaperRenderable.js";
 import { resolveConversationModule } from "./conversationModuleResolver.js";
+import {
+  authoringVariantPayload,
+  renderAuthoringSlot,
+  withAuthoringTarget,
+} from "./previewAuthoringTarget.js";
 import type {
   ConversationMessageContract,
   ConversationTimingContract,
@@ -65,6 +70,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
         payload,
         componentBaseConfigs,
         "status_bar",
+        "component.status_bar",
         themeStatusBarVariantReference,
         {},
       )
@@ -78,6 +84,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
         payload,
         componentBaseConfigs,
         "navigation_bar",
+        "component.navigation_bar",
         themeNavigationBarVariantReference,
         {},
       )
@@ -90,6 +97,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
         payload,
         componentBaseConfigs,
         "keyboard",
+        "component.keyboard",
         requiredString(conversation, "keyboardVariant", "module.conversation.keyboardVariant"),
         {
           text: composer.text,
@@ -103,6 +111,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
         payload,
         componentBaseConfigs,
         "textInputBar",
+        "component.textInputBar",
         requiredString(
           conversation,
           "textInputBarVariant",
@@ -222,6 +231,7 @@ function messageNodes(
     payload,
     componentBaseConfigs,
     "bubble",
+    "component.bubble",
     bubbleVariant,
     {
       state: message.state,
@@ -312,19 +322,20 @@ function childRenderable(
   payload: DesignPreviewPayload,
   componentBaseConfigs: JsonRecord,
   componentType: string,
+  childRecordClassId: string,
   variantReference: string,
   designPreviewPatch: JsonRecord,
   resolvedConfig?: JsonRecord,
 ) {
   const config = resolvedConfig
     ?? componentVariantConfig(componentBaseConfigs, componentType, variantReference);
-  return componentClassToRenderable({
+  return componentClassToRenderable(authoringVariantPayload({
     ...payload,
     kind: "componentClass",
     componentType,
     configJson: JSON.stringify(config),
     designPreviewJson: JSON.stringify(designPreviewPatch),
-  });
+  }, variantReference, childRecordClassId));
 }
 
 function headerNode(
@@ -415,15 +426,21 @@ function headerNode(
   const centerLeft = screen.x + edgePadding + leftSize.width + (leftSize.width > 0 ? rowGap : 0);
   const centerRight = screen.x + screen.width - edgePadding - rightSize.width - (rightSize.width > 0 ? rowGap : 0);
   const avatarAlignment = optionalString(conversation, "headerAvatarAlignment") || "left";
+  const avatarVariantReference = requiredString(
+    conversation,
+    "headerAvatarVariant",
+    "module.conversation.headerAvatarVariant",
+  );
+  const avatarPayload = authoringVariantPayload(
+    payload,
+    avatarVariantReference,
+    "component.avatar",
+  );
   const resolvedAvatar = resolveAvatarComponentFromRecords(
       componentVariantConfig(
         componentBaseConfigs,
         "avatar",
-        requiredString(
-          conversation,
-          "headerAvatarVariant",
-          "module.conversation.headerAvatarVariant",
-        ),
+        avatarVariantReference,
       ),
       {
         ...preview,
@@ -436,16 +453,19 @@ function headerNode(
       "module.conversation.header.avatar",
     );
   const avatarSize = resolvedAvatar.size * scale;
-  const unresolvedAvatar = avatarComponentToRenderableAt(
-    payload,
-    resolvedAvatar,
-    {
-      x: 0,
-      // Header content starts below Status Bar; only the background bleeds upward.
-      y: screen.y + offsetY + (height - avatarSize) / 2,
-      width: avatarSize,
-      height: avatarSize,
-    },
+  const unresolvedAvatar = withAuthoringTarget(
+    avatarPayload,
+    avatarComponentToRenderableAt(
+      avatarPayload,
+      resolvedAvatar,
+      {
+        x: 0,
+        // Header content starts below Status Bar; only the background bleeds upward.
+        y: screen.y + offsetY + (height - avatarSize) / 2,
+        width: avatarSize,
+        height: avatarSize,
+      },
+    ),
   );
   const avatarVisualWidth = unresolvedAvatar.box?.width ?? avatarSize;
   const avatarTargetX = avatarAlignment === "right"
@@ -457,18 +477,32 @@ function headerNode(
     x: avatarTargetX - (unresolvedAvatar.box?.x ?? 0),
     y: 0,
   });
-  const leftRowNode = iconRowComponentToRenderableAt(payload, leftRow, {
-    x: screen.x + edgePadding,
-    y: screen.y + offsetY + (height - leftSize.height) * 0.5,
-    width: leftSize.width,
-    height: leftSize.height,
-  });
-  const rightRowNode = iconRowComponentToRenderableAt(payload, rightRow, {
-    x: screen.x + screen.width - edgePadding - rightSize.width,
-    y: screen.y + offsetY + (height - rightSize.height) * 0.5,
-    width: rightSize.width,
-    height: rightSize.height,
-  });
+  const leftRowNode = renderAuthoringSlot(
+    payload,
+    "module.core.chat",
+    "module.conversation.headerLeftIconRow.editor",
+    "component.iconRow",
+    "component.iconRow.items",
+    (slotPayload) => iconRowComponentToRenderableAt(slotPayload, leftRow, {
+      x: screen.x + edgePadding,
+      y: screen.y + offsetY + (height - leftSize.height) * 0.5,
+      width: leftSize.width,
+      height: leftSize.height,
+    }),
+  );
+  const rightRowNode = renderAuthoringSlot(
+    payload,
+    "module.core.chat",
+    "module.conversation.headerRightIconRow.editor",
+    "component.iconRow",
+    "component.iconRow.items",
+    (slotPayload) => iconRowComponentToRenderableAt(slotPayload, rightRow, {
+      x: screen.x + screen.width - edgePadding - rightSize.width,
+      y: screen.y + offsetY + (height - rightSize.height) * 0.5,
+      width: rightSize.width,
+      height: rightSize.height,
+    }),
+  );
   return {
     id: "module.conversation.header",
     type: "group",

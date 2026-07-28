@@ -79,13 +79,15 @@ internal static class DictionaryControlRegistry
                 request.Services.ResolveImagePath,
                 request.Services.GetFieldValue),
             [ValueKind.IconSlots] = (request) => new IconSlotsControl(
+                request.Definition.Id,
                 request.Value,
                 request.Definition.IsEditable,
                 request.Services.ShowIconTokenPicker,
                 request.Services.CreateIconPreview,
                 request.Services.GetComponentVariantOptions?.Invoke("button") ?? [],
                 request.Services.OpenComponentVariantReference,
-                request.Services.OpenRuntimeComponentOverrides),
+                request.Services.OpenRuntimeComponentOverrides,
+                request.Services.StructuredCollectionUiState),
             [ValueKind.ComponentVariant] = (request) => new DictionaryComponentVariantControl(
                 request.Definition,
                 request.Value,

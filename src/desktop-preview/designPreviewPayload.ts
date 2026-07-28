@@ -21,6 +21,7 @@ export interface DesignPreviewPayload {
   kind: "componentClass" | "module" | "moduleInstance";
   authoringOwnerId?: string;
   authoringFocusFieldId?: string;
+  authoringFocusItemId?: string;
   authoringRecordClassId?: string;
   authoringSlotFieldIds?: string[];
   componentType: string;

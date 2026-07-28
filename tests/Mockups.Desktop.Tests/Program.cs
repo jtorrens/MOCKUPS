@@ -162,6 +162,7 @@ var tests = new (string Name, Action Run)[]
     ("Preview element identification stays on the generic renderable boundary", PreviewElementIdentificationUsesRenderableIdentity),
     ("Preview authoring navigation requires an exact owner and declared slot path", PreviewAuthoringNavigationUsesExactOwnerAndSlots),
     ("Preview authoring focus opens and reveals the exact layout card", PreviewAuthoringFocusRevealsExactCard),
+    ("Conversation Preview crosses into the exact Text Input Variant and Icon Row item", ConversationPreviewTargetsExactIconRowItem),
     ("Preview resource selection has one session rule", PreviewResourceSelectionHasOneSessionRule),
     ("editor view state follows the exact record class across records", EditorViewStateFollowsRecordClass),
     ("editor view state round-trips per class and clamps scroll", EditorViewStateRoundTripsPerClass),
@@ -6743,7 +6744,7 @@ static void PreviewAuthoringNavigationUsesExactOwnerAndSlots()
         messages);
 
     var serialized =
-        """mockups-preview-authoring:{"ownerId":"component_bubble::variant::default","slotFieldIds":["component.bubble.textBox.editor","component.textBox.rightIconRow.editor"],"focusFieldId":"component.iconRow.items"}""";
+        """mockups-preview-authoring:{"ownerId":"component_bubble::variant::default","slotFieldIds":["component.bubble.textBox.editor","component.textBox.rightIconRow.editor"],"focusFieldId":"component.iconRow.items","focusItemId":"button_attachment"}""";
     True(PreviewAuthoringNavigationMessage.TryParse(
         serialized,
         out var target));
@@ -6755,6 +6756,7 @@ static void PreviewAuthoringNavigationUsesExactOwnerAndSlots()
         ],
         target.SlotFieldIds);
     Equal("component.iconRow.items", target.FocusFieldId);
+    Equal("button_attachment", target.FocusItemId);
     True(navigator.Navigate(target));
     Equal(ownerId, opened?.OwnerNode.Id);
     SequenceEqual(
@@ -6763,6 +6765,7 @@ static void PreviewAuthoringNavigationUsesExactOwnerAndSlots()
             ?? []);
     Equal("component.iconRow", focus?.RecordClassId);
     Equal("component.iconRow.items", focus?.FieldId);
+    Equal("button_attachment", focus?.ItemId);
 
     selected = null;
     opened = null;
@@ -6778,6 +6781,9 @@ static void PreviewAuthoringNavigationUsesExactOwnerAndSlots()
         out _));
     True(!PreviewAuthoringNavigationMessage.TryParse(
         """mockups-preview-authoring:{"ownerId":"owner","slotFieldIds":[],"componentType":"bubble"}""",
+        out _));
+    True(!PreviewAuthoringNavigationMessage.TryParse(
+        """mockups-preview-authoring:{"ownerId":"owner","slotFieldIds":[],"focusItemId":"item"}""",
         out _));
 }
 
@@ -6828,9 +6834,12 @@ static void PreviewAuthoringFocusRevealsExactCard()
             new EditorPreparedLayoutCard(
                 layout,
                 new Dictionary<string, FieldValue>());
+        var itemTarget = new TestAuthoringItemTarget(
+            "component.iconRow.items",
+            ["button_other", "button_attachment"]);
         var card = new InstantEditorCard(
             new TextBlock(),
-            new Border(),
+            itemTarget,
             isExpanded: false)
         {
             SessionStateId = "embedded:iconRow",
@@ -6839,7 +6848,8 @@ static void PreviewAuthoringFocusRevealsExactCard()
             owner.Id,
             "component.iconRow",
             [slot.FieldId],
-            "component.iconRow.items"));
+            "component.iconRow.items",
+            "button_attachment"));
 
         True(focus.ApplyEmbedded(
             context,
@@ -6847,9 +6857,73 @@ static void PreviewAuthoringFocusRevealsExactCard()
             [card]));
         True(card.IsExpanded);
         True(cancelledRestore);
+        Equal("button_attachment", itemTarget.SelectedItemId);
         Equal(0, messages.Warnings.Count);
     },
     CancellationToken.None);
+}
+
+static void ConversationPreviewTargetsExactIconRowItem()
+{
+    var source = ParityDatabasePath();
+    var temporary = Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        $".mockups-conversation-authoring-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SqliteProjectTestContext(temporary);
+        var nodes = database.LoadProjectTree()
+            .SelectMany(DescendantsAndSelf)
+            .ToList();
+        var conversation = nodes.Single((node) =>
+            node.Kind == ProjectTreeNodeKind.ModuleVariant
+            && node.Id == "module_core_chat::variant::default");
+        var theme = nodes.First((node) =>
+            node.Kind == ProjectTreeNodeKind.Theme);
+        var device = nodes.First((node) =>
+            node.Kind == ProjectTreeNodeKind.Device);
+        var payload = Required(CreatePreviewPayload(
+            database,
+            conversation,
+            theme.Id,
+            timelineFrame: 60));
+        var config = JsonPath.ParseRequiredObject(
+            payload.ConfigJson,
+            "Conversation Preview config");
+        var conversationConfig = JsonPath.RequiredObject(
+            config,
+            "conversation",
+            "Conversation Preview config");
+        var textInputVariant = JsonPath.RequiredString(
+            conversationConfig,
+            "textInputBarVariant",
+            "Conversation Preview config");
+        var html = WebDesignPreviewRenderer.RenderBodyAsync(
+                database.GetDevicePreviewMetrics(device.Id),
+                false,
+                payload)
+            .GetAwaiter()
+            .GetResult();
+
+        True(html.Contains(
+            $"data-preview-authoring-owner-id=\"{textInputVariant}\"",
+            StringComparison.Ordinal));
+        True(html.Contains(
+            "data-preview-authoring-slot-field-ids=\"[&quot;component.textInput.textBox.editor&quot;,&quot;component.textBox.rightIconRow.editor&quot;]\"",
+            StringComparison.Ordinal));
+        True(html.Contains(
+            "data-preview-authoring-focus-field-id=\"component.iconRow.items\"",
+            StringComparison.Ordinal));
+        True(html.Contains(
+            "data-preview-authoring-focus-item-id=\"button_attachment\"",
+            StringComparison.Ordinal));
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
 }
 
 static void PinnedModuleVariantPreviewSurvivesEditorSelection()
@@ -15800,6 +15874,26 @@ internal sealed class RecordingMessageSink : IEditorShellMessageSink
     public void Error(string area, Exception exception) { }
 
     public void Error(string area, string message) { }
+}
+
+internal sealed class TestAuthoringItemTarget(
+    string fieldId,
+    IReadOnlyList<string> itemIds) :
+    Border,
+    IEditorAuthoringItemTarget
+{
+    public string FieldId { get; } = fieldId;
+    public string SelectedItemId { get; private set; } = "";
+
+    public bool SelectItem(string itemId)
+    {
+        if (!itemIds.Contains(itemId, StringComparer.Ordinal))
+        {
+            return false;
+        }
+        SelectedItemId = itemId;
+        return true;
+    }
 }
 
 internal sealed class RecordingPresentationContextRepository :

@@ -462,6 +462,7 @@ function RenderNode({
   return (
     <div
       data-preview-authoring-focus-field-id={node.metadata?.authoringTarget?.focusFieldId}
+      data-preview-authoring-focus-item-id={node.metadata?.authoringTarget?.focusItemId}
       data-preview-authoring-owner-id={node.metadata?.authoringTarget?.ownerId}
       data-preview-authoring-slot-field-ids={
         node.metadata?.authoringTarget

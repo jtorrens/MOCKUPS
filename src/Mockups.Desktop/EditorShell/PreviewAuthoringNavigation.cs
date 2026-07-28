@@ -8,7 +8,8 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed record PreviewAuthoringNavigationTarget(
     string OwnerId,
     IReadOnlyList<string> SlotFieldIds,
-    string FocusFieldId = "");
+    string FocusFieldId = "",
+    string FocusItemId = "");
 
 internal static class PreviewAuthoringNavigationMessage
 {
@@ -35,12 +36,13 @@ internal static class PreviewAuthoringNavigationMessage
         }
 
         if (document is null
-            || document.Count is < 2 or > 3
+            || document.Count is < 2 or > 4
             || document.Any((property) =>
                 property.Key is not
                     "ownerId"
                     and not "slotFieldIds"
-                    and not "focusFieldId")
+                    and not "focusFieldId"
+                    and not "focusItemId")
             || document["ownerId"] is not JsonValue ownerValue
             || !ownerValue.TryGetValue<string>(out var ownerId)
             || string.IsNullOrWhiteSpace(ownerId)
@@ -73,10 +75,24 @@ internal static class PreviewAuthoringNavigationMessage
             return false;
         }
 
+        var focusItemId = "";
+        if (document.TryGetPropertyValue(
+                "focusItemId",
+                out var focusItemNode)
+            && (string.IsNullOrWhiteSpace(focusFieldId)
+                || focusItemNode is not JsonValue focusItemValue
+                || !focusItemValue.TryGetValue<string>(
+                    out focusItemId)
+                || string.IsNullOrWhiteSpace(focusItemId)))
+        {
+            return false;
+        }
+
         target = new PreviewAuthoringNavigationTarget(
             ownerId,
             slotFieldIds,
-            focusFieldId);
+            focusFieldId,
+            focusItemId);
         return true;
     }
 }
@@ -134,7 +150,8 @@ internal sealed class PreviewAuthoringNavigator
                 ? slots[^1].RecordClassId
                 : owner.RecordClassId,
             target.SlotFieldIds,
-            target.FocusFieldId));
+            target.FocusFieldId,
+            target.FocusItemId));
         if (slots.Length > 0)
         {
             _showEmbeddedContext(new EditorEmbeddedContext(owner, slots));

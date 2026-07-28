@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Avalonia.VisualTree;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -8,7 +9,15 @@ internal sealed record EditorAuthoringFocusRequest(
     string OwnerId,
     string RecordClassId,
     IReadOnlyList<string> SlotFieldIds,
-    string FieldId);
+    string FieldId,
+    string ItemId = "");
+
+internal interface IEditorAuthoringItemTarget
+{
+    string FieldId { get; }
+
+    bool SelectItem(string itemId);
+}
 
 internal sealed class EditorAuthoringFocusController
 {
@@ -108,6 +117,33 @@ internal sealed class EditorAuthoringFocusController
                 "Preview element",
                 $"The editor card '{sessionStateId}' is unavailable.");
             return false;
+        }
+
+        if (!string.IsNullOrWhiteSpace(pending.ItemId))
+        {
+            var itemTargets = card
+                .GetVisualDescendants()
+                .OfType<IEditorAuthoringItemTarget>()
+                .Where((target) => target.FieldId.Equals(
+                    pending.FieldId,
+                    StringComparison.Ordinal))
+                .ToArray();
+            if (itemTargets.Length != 1)
+            {
+                _messages.Warning(
+                    "Preview element",
+                    itemTargets.Length == 0
+                        ? $"Editor field '{pending.FieldId}' cannot select an authored item."
+                        : $"More than one editor control owns '{pending.FieldId}'.");
+                return false;
+            }
+            if (!itemTargets[0].SelectItem(pending.ItemId))
+            {
+                _messages.Warning(
+                    "Preview element",
+                    $"Editor field '{pending.FieldId}' has no item '{pending.ItemId}'.");
+                return false;
+            }
         }
 
         _cancelViewRestore();

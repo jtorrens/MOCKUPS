@@ -7,6 +7,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { DesktopRenderableHtmlAdapter } from "../../src/desktop-preview/DesktopRenderableHtmlAdapter.js";
 import type { DesignPreviewPayload } from "../../src/desktop-preview/designPreviewPayload.js";
 import {
+  authoringVariantPayload,
+  renderAuthoringCollectionItem,
   renderAuthoringSlot,
   withAuthoringTarget,
 } from "../../src/desktop-preview/previewAuthoringTarget.js";
@@ -78,6 +80,61 @@ test("authoring targets preserve the exact owner and nested slot chain", () => {
   assert.match(
     markup,
     /data-preview-authoring-focus-field-id="component\.iconBar\.edgePadding"/,
+  );
+});
+
+test("full Component Variant boundaries replace the authoring owner exactly", () => {
+  const modulePayload = {
+    authoringOwnerId: "module_conversation::variant::default",
+    authoringRecordClassId: "module.conversation",
+    authoringSlotFieldIds: ["invalid.previous.slot"],
+    authoringFocusFieldId: "module.conversation.textInputBarVariant",
+  } as DesignPreviewPayload;
+  const child = authoringVariantPayload(
+    modulePayload,
+    "component_text_input::variant::chat",
+    "component.textInputBar",
+  );
+
+  assert.deepEqual(withAuthoringTarget(child, {
+    id: "component.textInputBar",
+    type: "group",
+  }).metadata?.authoringTarget, {
+    ownerId: "component_text_input::variant::chat",
+    slotFieldIds: [],
+  });
+});
+
+test("structured authoring targets preserve the exact stable item id", () => {
+  const payload = {
+    authoringOwnerId: "component_icon_row::variant::default",
+    authoringRecordClassId: "component.iconRow",
+    authoringSlotFieldIds: [] as string[],
+  } as DesignPreviewPayload;
+  const item = renderAuthoringCollectionItem(
+    payload,
+    "component.iconRow",
+    "component.iconRow.items",
+    "button_attachment",
+    () => ({
+      id: "component.button.normal",
+      type: "group",
+    }),
+  );
+  assert.deepEqual(item.metadata?.authoringTarget, {
+    focusFieldId: "component.iconRow.items",
+    focusItemId: "button_attachment",
+    ownerId: "component_icon_row::variant::default",
+    slotFieldIds: [],
+  });
+
+  const markup = renderToStaticMarkup(React.createElement(
+    DesktopRenderableHtmlAdapter,
+    { tree: item },
+  ));
+  assert.match(
+    markup,
+    /data-preview-authoring-focus-item-id="button_attachment"/,
   );
 });
 

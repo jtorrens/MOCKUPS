@@ -248,6 +248,12 @@ test("the committed Text Input Bar resolves its migrated structured Button item"
       rightIconRow?.metadata?.authoringTarget?.focusFieldId,
       "component.iconRow.items",
     );
+    const attachment = rightIconRow?.children?.find((child) =>
+      child.id.includes("button_attachment"));
+    assert.equal(
+      attachment?.metadata?.authoringTarget?.focusItemId,
+      "button_attachment",
+    );
   } finally {
     database.close();
   }
