@@ -93,7 +93,9 @@ uses the shared compact numeric density rather than the form-field padding.
 The generic action control places one compact full-width frame slider below
 that transport row. It uses the same zero-to-maximum frame range and stays
 bidirectionally synchronized with direct frame entry, stepping, Restore and
-playback.
+playback. Its host preserves the complete theme-owned thumb bounds while
+overlapping the transport row vertically, so the track has no artificial gap
+and the thumb is never clipped.
 Play, Restore and both chevrons stay available while the action exists,
 including during playback and at either endpoint. Restore holds frame zero. A
 frame step or direct frame entry stops active playback and leaves the resolved

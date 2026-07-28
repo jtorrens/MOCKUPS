@@ -182,7 +182,8 @@ internal sealed class RuntimeTestActionControl : Border
 
         _frameSlider = EditorSliderBehavior.Configure(new Slider
         {
-            Height = 14,
+            Height = 32,
+            Margin = new Thickness(0, -12, 0, -8),
             Minimum = 0,
             Maximum = 0,
             Value = 0,
@@ -217,7 +218,7 @@ internal sealed class RuntimeTestActionControl : Border
         var content = new Grid
         {
             RowDefinitions = new RowDefinitions("Auto,Auto"),
-            RowSpacing = 1,
+            RowSpacing = 0,
             Children =
             {
                 layout,

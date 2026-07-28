@@ -12940,12 +12940,38 @@ static void RuntimeActionControlsReactivateAfterPlaybackAndReattachment()
         Equal(0d, frameSlider.Value);
         Equal(10d, frameSlider.Maximum);
         Equal(1d, frameSlider.TickFrequency);
-        Equal(14d, frameSlider.Height);
+        Equal(32d, frameSlider.Height);
+        Equal(new Thickness(0, -12, 0, -8), frameSlider.Margin);
         True(EditorSliderBehavior.IsConfigured(frameSlider));
-        Equal(1d, Required(control.Child as Grid).RowSpacing);
+        var actionLayout = Required(control.Child as Grid);
+        Equal(0d, actionLayout.RowSpacing);
+        var transportRow = Required(actionLayout.Children[0] as Grid);
         var frameTrack = frameSlider.GetVisualDescendants()
             .OfType<Track>()
             .Single();
+        var frameThumb = frameSlider.GetVisualDescendants()
+            .OfType<Thumb>()
+            .Single();
+        Rect ControlBounds(Control item)
+        {
+            var origin = item.TranslatePoint(default, window)
+                ?? throw new InvalidOperationException(
+                    $"Could not translate {item.GetType().Name} bounds.");
+            return new Rect(origin, item.Bounds.Size);
+        }
+        var sliderRect = ControlBounds(frameSlider);
+        var thumbRect = ControlBounds(frameThumb);
+        var transportRect = ControlBounds(transportRow);
+        var controlRect = ControlBounds(control);
+        True(thumbRect.Top <= transportRect.Bottom + 0.5);
+        True(thumbRect.Top >= controlRect.Top - 0.5);
+        True(thumbRect.Bottom <= controlRect.Bottom + 0.5);
+        True(thumbRect.Top >= sliderRect.Top - 0.5);
+        if (thumbRect.Bottom > sliderRect.Bottom + 0.5)
+        {
+            throw new InvalidOperationException(
+                $"Preview action thumb {thumbRect} exceeds slider {sliderRect}.");
+        }
         Equal(
             frameSlider.Minimum,
             frameTrack.ValueFromPoint(
