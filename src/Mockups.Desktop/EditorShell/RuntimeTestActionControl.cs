@@ -180,7 +180,7 @@ internal sealed class RuntimeTestActionControl : Border
         Grid.SetColumn(_nextFrameButton, 6);
         layout.Children.Add(_nextFrameButton);
 
-        _frameSlider = new Slider
+        _frameSlider = EditorSliderBehavior.Configure(new Slider
         {
             Height = 14,
             Minimum = 0,
@@ -191,7 +191,7 @@ internal sealed class RuntimeTestActionControl : Border
             LargeChange = 10,
             HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment = VerticalAlignment.Center,
-        };
+        });
         ToolTip.SetTip(_frameSlider, $"Navigate frames · {label}");
         EditorAccessibility.Describe(
             _frameSlider,
@@ -217,7 +217,7 @@ internal sealed class RuntimeTestActionControl : Border
         var content = new Grid
         {
             RowDefinitions = new RowDefinitions("Auto,Auto"),
-            RowSpacing = 4,
+            RowSpacing = 1,
             Children =
             {
                 layout,

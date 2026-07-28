@@ -201,6 +201,7 @@ var tests = new (string Name, Action Run)[]
     ("legacy animation requires explicit migration", LegacyAnimationRequiresExplicitMigration),
     ("initial animatable field vocabulary is constrained", AnimatableFieldVocabularyIsConstrained),
     ("playback state publishes play, busy and frame changes", PlaybackStatePublishesChanges),
+    ("shared slider behavior maps Wacom Pen drag in every direction", SharedSliderBehaviorMapsPenDrag),
     ("Runtime action controls reactivate after playback and visual-tree reattachment", RuntimeActionControlsReactivateAfterPlaybackAndReattachment),
     ("Preview preparation cancellation retains only the latest operation", PreviewPreparationCancellationRetainsLatestOperation),
     ("prepared playback reuse requires an exact current signature", PreparedPlaybackReuseRequiresExactSignature),
@@ -12854,6 +12855,20 @@ static void PlaybackStatePublishesChanges()
     Equal(4, changes);
 }
 
+static void SharedSliderBehaviorMapsPenDrag()
+{
+    var slider = EditorSliderBehavior.Configure(new Slider());
+    True(EditorSliderBehavior.IsConfigured(slider));
+    Equal(slider, EditorSliderBehavior.Configure(slider));
+
+    Equal(0d, EditorSliderBehavior.ValueFromPosition(0, 10, -5, 100, vertical: false, reversed: false));
+    Equal(5d, EditorSliderBehavior.ValueFromPosition(0, 10, 50, 100, vertical: false, reversed: false));
+    Equal(10d, EditorSliderBehavior.ValueFromPosition(0, 10, 105, 100, vertical: false, reversed: false));
+    Equal(10d, EditorSliderBehavior.ValueFromPosition(0, 10, 0, 100, vertical: false, reversed: true));
+    Equal(0d, EditorSliderBehavior.ValueFromPosition(0, 10, 0, 100, vertical: true, reversed: true));
+    Equal(10d, EditorSliderBehavior.ValueFromPosition(0, 10, 0, 100, vertical: true, reversed: false));
+}
+
 static void RuntimeActionControlsReactivateAfterPlaybackAndReattachment()
 {
     using var session = HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApplication));
@@ -12925,6 +12940,8 @@ static void RuntimeActionControlsReactivateAfterPlaybackAndReattachment()
         Equal(10d, frameSlider.Maximum);
         Equal(1d, frameSlider.TickFrequency);
         Equal(14d, frameSlider.Height);
+        True(EditorSliderBehavior.IsConfigured(frameSlider));
+        Equal(1d, Required(control.Child as Grid).RowSpacing);
         Equal(EditorUiDensity.TextAwareWidth(48), frameInput.Width);
         Equal(new Thickness(0), frameSpinner.Margin);
         Equal(

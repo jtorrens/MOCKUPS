@@ -214,6 +214,8 @@ temporary values.
 ## Input behavior
 
 Text and numeric fields follow standard desktop selection for mouse, Wacom Pen,
-touch and keyboard. Double click selects the full numeric value. Shared action
-buttons and icons are reused throughout; editors do not invent alternative
-chrome for an existing operation.
+touch and keyboard. Double click selects the full numeric value. Every desktop
+slider uses the shared input behavior: native mouse, touch and keyboard remain
+intact, while primary Wacom Pen press and captured drag update continuously
+across the full track. Shared action buttons and icons are reused throughout;
+editors do not invent alternative chrome for an existing operation.

@@ -120,7 +120,7 @@ internal sealed class DictionaryAlphaControl : Grid, IDictionaryValueControl
 
     public static Slider CreateSlider(double value, bool isEditable)
     {
-        return new Slider
+        return EditorSliderBehavior.Configure(new Slider
         {
             Minimum = 0,
             Maximum = 1,
@@ -130,7 +130,7 @@ internal sealed class DictionaryAlphaControl : Grid, IDictionaryValueControl
             LargeChange = 0.1,
             IsEnabled = isEditable,
             VerticalAlignment = VerticalAlignment.Center,
-        };
+        });
     }
 
     public static TextBox CreateAlphaBox(double value, bool isEditable)

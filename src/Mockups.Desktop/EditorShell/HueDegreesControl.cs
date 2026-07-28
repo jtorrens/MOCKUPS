@@ -53,7 +53,7 @@ internal sealed class HueDegreesControl : Grid, IDictionaryValueControl
             },
         });
 
-        _slider = new Slider
+        _slider = EditorSliderBehavior.Configure(new Slider
         {
             Minimum = 0,
             Maximum = 360,
@@ -63,7 +63,7 @@ internal sealed class HueDegreesControl : Grid, IDictionaryValueControl
             IsEnabled = isEditable,
             VerticalAlignment = VerticalAlignment.Center,
             Background = Brushes.Transparent,
-        };
+        });
         _slider.PropertyChanged += (_, change) =>
         {
             if (change.Property != Slider.ValueProperty || _isUpdating) return;

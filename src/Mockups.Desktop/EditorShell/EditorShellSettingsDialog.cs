@@ -165,7 +165,7 @@ internal sealed class EditorShellSettingsDialog
         double maximum,
         Action<double> onChanged)
     {
-        var slider = new Slider
+        var slider = EditorSliderBehavior.Configure(new Slider
         {
             Minimum = minimum,
             Maximum = maximum,
@@ -174,7 +174,7 @@ internal sealed class EditorShellSettingsDialog
             SmallChange = 0.05,
             LargeChange = 0.1,
             VerticalAlignment = VerticalAlignment.Center,
-        };
+        });
         var box = EditorNumericTextStyle.Apply(new TextBox
         {
             Text = Format(value),

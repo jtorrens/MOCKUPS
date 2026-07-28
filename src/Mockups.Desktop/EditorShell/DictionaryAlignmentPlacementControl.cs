@@ -333,7 +333,7 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
 
     private static Slider CreateAlignSlider(double value, bool isEditable)
     {
-        return new Slider
+        return EditorSliderBehavior.Configure(new Slider
         {
             Minimum = 0,
             Maximum = 1,
@@ -343,12 +343,12 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
             LargeChange = 0.1,
             IsEnabled = isEditable,
             VerticalAlignment = VerticalAlignment.Center,
-        };
+        });
     }
 
     private static Slider CreateOffsetSlider(int value, bool isEditable)
     {
-        return new Slider
+        return EditorSliderBehavior.Configure(new Slider
         {
             Minimum = -200,
             Maximum = 200,
@@ -358,7 +358,7 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
             LargeChange = 8,
             IsEnabled = isEditable,
             VerticalAlignment = VerticalAlignment.Center,
-        };
+        });
     }
 
     private static TextBox CreateDecimalBox(double value, bool isEditable)

@@ -100,9 +100,9 @@ internal sealed class EditorPreviewController : IDisposable
         MinWidth = 88,
         MinHeight = 32,
     };
-    private readonly Slider _referenceSwipeSlider = new() { Minimum = 0, Maximum = 1, Value = 0.5, MinWidth = 72, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch };
-    private readonly Slider _referenceOpacitySlider = new() { Minimum = 0, Maximum = 1, Value = 1, MinWidth = 72, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch };
-    private readonly Slider _referenceAngleSlider = new() { Minimum = -45, Maximum = 45, Value = 0, MinWidth = 72, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch };
+    private readonly Slider _referenceSwipeSlider = EditorSliderBehavior.Configure(new Slider { Minimum = 0, Maximum = 1, Value = 0.5, MinWidth = 72, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch });
+    private readonly Slider _referenceOpacitySlider = EditorSliderBehavior.Configure(new Slider { Minimum = 0, Maximum = 1, Value = 1, MinWidth = 72, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch });
+    private readonly Slider _referenceAngleSlider = EditorSliderBehavior.Configure(new Slider { Minimum = -45, Maximum = 45, Value = 0, MinWidth = 72, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch });
     private readonly StackPanel _referenceSplitControls = new() { Spacing = 8, IsVisible = false };
     private readonly StackPanel _shotTimelineControls = new()
     {
@@ -118,7 +118,7 @@ internal sealed class EditorPreviewController : IDisposable
         IsVisible = false,
         VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
     };
-    private readonly Slider _shotFrameSlider = new()
+    private readonly Slider _shotFrameSlider = EditorSliderBehavior.Configure(new Slider
     {
         Minimum = 0,
         Maximum = 0,
@@ -126,7 +126,7 @@ internal sealed class EditorPreviewController : IDisposable
         TickFrequency = 1,
         MinWidth = 280,
         MaxWidth = 600,
-    };
+    });
     private readonly TextBlock _shotFrameText = new()
     {
         MinWidth = 70,

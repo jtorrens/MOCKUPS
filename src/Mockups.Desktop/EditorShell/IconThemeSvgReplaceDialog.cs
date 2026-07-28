@@ -201,7 +201,7 @@ internal sealed class IconThemeSvgReplaceDialog
 
         Control NumberEditor(string label, NumericUpDown numeric, double sliderMinimum, double sliderMaximum, double sliderStep, int column, int row)
         {
-            var slider = new Slider
+            var slider = EditorSliderBehavior.Configure(new Slider
             {
                 Minimum = sliderMinimum,
                 Maximum = sliderMaximum,
@@ -209,7 +209,7 @@ internal sealed class IconThemeSvgReplaceDialog
                 IsSnapToTickEnabled = false,
                 Value = Math.Clamp(Number(numeric), sliderMinimum, sliderMaximum),
                 VerticalAlignment = VerticalAlignment.Center,
-            };
+            });
             var syncing = false;
             slider.PropertyChanged += (_, change) =>
             {

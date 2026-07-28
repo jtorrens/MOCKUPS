@@ -318,14 +318,14 @@ internal sealed class ModuleInstanceAnimationEditor
             MinWidth = 96,
             Children = { frameText, authoringLimitText },
         };
-        var slider = new Slider
+        var slider = EditorSliderBehavior.Configure(new Slider
         {
             Minimum = 0,
             Maximum = timelineDuration - 1,
             Value = TimelineFrame(),
             TickFrequency = 1,
             HorizontalAlignment = HorizontalAlignment.Stretch,
-        };
+        });
         var sliderMagnet = new TimelineSliderMagnet(
             slider,
             () => targets

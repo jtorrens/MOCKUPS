@@ -33,7 +33,7 @@ internal sealed class DictionaryNumberSliderControl : Grid, IDictionaryValueCont
         ColumnSpacing = 10;
         VerticalAlignment = VerticalAlignment.Center;
 
-        _slider = new Slider
+        _slider = EditorSliderBehavior.Configure(new Slider
         {
             Minimum = (double)number.Minimum.Value,
             Maximum = (double)number.Maximum.Value,
@@ -43,7 +43,7 @@ internal sealed class DictionaryNumberSliderControl : Grid, IDictionaryValueCont
             LargeChange = (double)Math.Max(number.Increment, number.Increment * 2),
             IsEnabled = definition.IsEditable,
             VerticalAlignment = VerticalAlignment.Center,
-        };
+        });
         _box = EditorNumericTextStyle.Apply(new TextBox
         {
             Text = _value,
