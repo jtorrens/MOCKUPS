@@ -43,6 +43,20 @@ field. They are never generated from an id, label, type, hierarchy or position.
 Every Runtime Input declares a canonical `valueKind`. The registry is
 exhaustive: an unknown or unregistered kind is an error.
 
+## Field row layout
+
+A standard dictionary field is one generic three-column row: a bounded
+responsive label, a flexible value host with zero minimum width and a fixed
+Restore action. The value host receives exactly the row width left after the
+label, Restore action and column gaps; a registered control cannot enlarge the
+row or move Restore outside its viewport.
+
+Compound controls own only their internal presentation. Pair controls use the
+width assigned by the value host, keep two peer groups when it fits and stack
+those groups through the shared responsive policy when it does not. Block
+values keep Label and Restore in their header and use the full following row
+for their registered control.
+
 ## Specialized values
 
 ### Component Variant

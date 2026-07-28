@@ -423,8 +423,7 @@ internal sealed class EditorLayoutCardFactory
         var control = new DictionaryFieldControl(
             field,
             services,
-            compact,
-            compactOverrideLayout: compact);
+            compact);
         activeFieldControls.Register(control);
         control.ValueCommitted += async (_, value) =>
         {

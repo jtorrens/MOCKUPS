@@ -8,7 +8,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class DictionaryThemeTokenPairControl : Grid, IDictionaryValueControl
 {
-    private const double CompactThreshold = 380;
+    private const double MinimumPairWidth = 186;
     private readonly TextBlock _firstLabel;
     private readonly TextBlock _secondLabel;
     private readonly DictionaryThemeTokenControl _firstControl;
@@ -116,7 +116,10 @@ internal sealed class DictionaryThemeTokenPairControl : Grid, IDictionaryValueCo
 
     private void ApplyResponsiveLayout(double width)
     {
-        var compact = width > 0 && width < CompactThreshold;
+        var compact = DictionaryFieldLayoutRules.UsesStackedPairLayout(
+            width,
+            MinimumPairWidth,
+            ColumnSpacing);
         ColumnDefinitions = compact
             ? new ColumnDefinitions("57,*")
             : new ColumnDefinitions("57,*,57,*");

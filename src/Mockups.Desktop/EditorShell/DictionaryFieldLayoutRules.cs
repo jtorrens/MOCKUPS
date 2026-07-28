@@ -37,9 +37,19 @@ internal static class DictionaryFieldLayoutRules
                 + (columnGapCount * columnSpacing);
     }
 
+    public static bool UsesStackedPairLayout(
+        double availableWidth,
+        double pairMinimumWidth,
+        double pairSpacing)
+    {
+        return availableWidth > 0
+            && !double.IsInfinity(availableWidth)
+            && availableWidth < (2 * pairMinimumWidth) + pairSpacing;
+    }
+
     public static ColumnDefinitions Columns(bool compact = false)
     {
-        return new ColumnDefinitions($"{MaximumLabelWidth(compact)},*,Auto");
+        return new ColumnDefinitions($"{MaximumLabelWidth(compact)},*,32");
     }
 
     public static bool UsesBlockLayout(ValueKind valueKind) =>

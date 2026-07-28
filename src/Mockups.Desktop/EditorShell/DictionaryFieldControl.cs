@@ -19,7 +19,7 @@ internal sealed class DictionaryFieldControl : Grid
     private readonly bool _blockLayout;
     private readonly bool _separatedComplexLayout;
     private readonly bool _compact;
-    private readonly bool _compactOverrideLayout;
+    private readonly Grid? _valueHost;
     private readonly Border? _complexSeparator;
     private bool _isInherited;
     private string _value;
@@ -36,8 +36,7 @@ internal sealed class DictionaryFieldControl : Grid
         FieldValue fieldValue,
         DictionaryFieldServices? services,
         bool compact = false,
-        bool valueOnly = false,
-        bool compactOverrideLayout = false)
+        bool valueOnly = false)
     {
         services ??= new DictionaryFieldServices();
         _definition = fieldValue.Definition;
@@ -48,10 +47,6 @@ internal sealed class DictionaryFieldControl : Grid
         _separatedComplexLayout = DictionaryFieldLayoutRules.UsesBlockLayout(_definition.ValueKind);
         _blockLayout = !valueOnly && _separatedComplexLayout;
         _compact = compact;
-        _compactOverrideLayout =
-            compactOverrideLayout
-            && !valueOnly
-            && !_separatedComplexLayout;
 
         MinWidth = 0;
         ClipToBounds = true;
@@ -59,11 +54,8 @@ internal sealed class DictionaryFieldControl : Grid
         ColumnDefinitions = valueOnly
             ? new ColumnDefinitions("*")
             : _blockLayout
-                ? new ColumnDefinitions("*,Auto")
-                : _compactOverrideLayout
-                    ? new ColumnDefinitions(
-                        $"{DictionaryFieldLayoutRules.MaximumLabelWidth(compact)},*,32")
-                    : DictionaryFieldLayoutRules.Columns();
+                ? new ColumnDefinitions("*,32")
+                : DictionaryFieldLayoutRules.Columns(compact);
         if (_separatedComplexLayout)
         {
             RowDefinitions = new RowDefinitions(valueOnly ? "Auto,Auto" : "Auto,Auto,Auto");
@@ -90,6 +82,18 @@ internal sealed class DictionaryFieldControl : Grid
         if (_blockLayout)
         {
             SetRow(_label, 1);
+        }
+
+        if (!valueOnly && !_blockLayout)
+        {
+            _valueHost = new Grid
+            {
+                MinWidth = 0,
+                ClipToBounds = true,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+            };
+            SetColumn(_valueHost, 1);
+            Children.Add(_valueHost);
         }
 
         _valueControl = AddValueControl(DictionaryControlRegistry.Create(
@@ -152,7 +156,7 @@ internal sealed class DictionaryFieldControl : Grid
             Children.Add(_restoreButton);
         }
         UpdateState();
-        SizeChanged += (_, args) => ConstrainValueControlWidth(args.NewSize.Width);
+        SizeChanged += (_, args) => UpdateResponsiveLabelWidth(args.NewSize.Width);
     }
 
     public event EventHandler<string>? ValueChanged;
@@ -165,7 +169,7 @@ internal sealed class DictionaryFieldControl : Grid
     {
         if (!double.IsInfinity(availableSize.Width))
         {
-            ConstrainValueControlWidth(availableSize.Width);
+            UpdateResponsiveLabelWidth(availableSize.Width);
         }
         var measured = base.MeasureOverride(availableSize);
         var width = double.IsInfinity(availableSize.Width)
@@ -347,19 +351,25 @@ internal sealed class DictionaryFieldControl : Grid
                 control.IsEnabled = false;
                 control.Opacity = 0.58;
             }
-            SetColumn(
-                control,
-                _valueOnly
-                    || _blockLayout
-                        ? 0
-                        : 1);
+            control.MinWidth = 0;
+            control.HorizontalAlignment = HorizontalAlignment.Stretch;
             if (_separatedComplexLayout)
             {
+                SetColumn(control, 0);
                 SetRow(control, _valueOnly ? 1 : 2);
                 SetColumnSpan(control, _blockLayout ? 2 : 1);
                 control.Margin = new Thickness(0);
+                Children.Add(control);
             }
-            Children.Add(control);
+            else if (_valueHost is not null)
+            {
+                _valueHost.Children.Add(control);
+            }
+            else
+            {
+                SetColumn(control, 0);
+                Children.Add(control);
+            }
         }
 
         return valueControl;
@@ -386,44 +396,21 @@ internal sealed class DictionaryFieldControl : Grid
         }
 
         PseudoClasses.Set(":changed", !isDefault);
-        if (Bounds.Width > 0)
-        {
-            ConstrainValueControlWidth(Bounds.Width);
-        }
     }
 
-    private void ConstrainValueControlWidth(double availableWidth)
+    private void UpdateResponsiveLabelWidth(double availableWidth)
     {
-        if (_valueControl is not Control control
+        if (_valueOnly
+            || _blockLayout
             || availableWidth <= 0
             || double.IsInfinity(availableWidth))
         {
             return;
         }
 
-        var labelWidth = _valueOnly || _blockLayout
-            ? 0
-            : DictionaryFieldLayoutRules.ResponsiveLabelWidth(availableWidth, _compact);
-        if (!_valueOnly
-            && !_blockLayout)
-        {
-            ColumnDefinitions[0].Width = new GridLength(labelWidth);
-        }
-
-        var reservedWidth = _valueOnly || _blockLayout
-            ? 0
-            : labelWidth
-              + (2 * ColumnSpacing)
-              + (_restoreButton.IsVisible
-                  ? _restoreButton.Width
-                  : 0);
-        var valueWidth = Math.Max(0, availableWidth - reservedWidth);
-        if (_compactOverrideLayout)
-        {
-            control.MinWidth = 0;
-        }
-        control.Width = valueWidth;
-        control.MaxWidth = valueWidth;
-        control.HorizontalAlignment = HorizontalAlignment.Stretch;
+        ColumnDefinitions[0].Width = new GridLength(
+            DictionaryFieldLayoutRules.ResponsiveLabelWidth(
+                availableWidth,
+                _compact));
     }
 }

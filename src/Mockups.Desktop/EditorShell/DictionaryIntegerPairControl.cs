@@ -10,7 +10,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class DictionaryIntegerPairControl : Grid, IDictionaryValueControl
 {
-    private const double CompactThreshold = 320;
+    private const double MinimumPairWidth = 156;
     private static readonly TimeSpan ValidDraftCommitDelay = TimeSpan.FromMilliseconds(300);
     private readonly TextBlock _firstLabel;
     private readonly TextBlock _secondLabel;
@@ -170,7 +170,10 @@ internal sealed class DictionaryIntegerPairControl : Grid, IDictionaryValueContr
 
     private void ApplyResponsiveLayout(double width)
     {
-        var compact = width > 0 && width < CompactThreshold;
+        var compact = DictionaryFieldLayoutRules.UsesStackedPairLayout(
+            width,
+            MinimumPairWidth,
+            ColumnSpacing);
         ColumnDefinitions = compact
             ? new ColumnDefinitions("57,*")
             : new ColumnDefinitions("57,*,57,*");

@@ -4047,6 +4047,8 @@ static void FlatVariantOverridesUseRestoreSemantics()
                     window.Width,
                     window.Height));
                 window.Arrange(new Rect(
+                    0,
+                    0,
                     window.Width,
                     window.Height));
                 Dispatcher.UIThread.RunJobs();
@@ -4107,6 +4109,17 @@ static void FlatVariantOverridesUseRestoreSemantics()
                 True(flatFields.Count > 0);
                 True(flatFields.All((field) =>
                     field.HasLocalOverride));
+                var flatPadding = flatFields.Single((field) =>
+                    field.FieldId
+                        == "component.button.padding");
+                var flatPaddingPair = flatPadding
+                    .GetVisualDescendants()
+                    .OfType<DictionaryThemeTokenPairControl>()
+                    .Single();
+                Equal(2, flatPaddingPair.RowDefinitions.Count);
+                True(flatPaddingPair.Bounds.Width
+                    <= flatPadding.ColumnDefinitions[1].ActualWidth
+                        + 0.5);
                 foreach (var restore in flatFields
                              .SelectMany((field) =>
                                  field.GetVisualDescendants()
@@ -4123,6 +4136,14 @@ static void FlatVariantOverridesUseRestoreSemantics()
                     Equal(
                         0,
                         ownerField.RowDefinitions.Count);
+                    Equal(
+                        32d,
+                        ownerField.ColumnDefinitions[2]
+                            .ActualWidth);
+                    True(ownerField.ColumnDefinitions
+                            .Sum((column) => column.ActualWidth)
+                        + (2 * ownerField.ColumnSpacing)
+                        <= ownerField.Bounds.Width + 0.5);
                     var fieldTransform =
                         restore.TransformToVisual(ownerField)
                         ?? throw new InvalidOperationException(
@@ -4160,9 +4181,6 @@ static void FlatVariantOverridesUseRestoreSemantics()
                         .Count((text) =>
                             text.Text
                                 == "Buttons · Button Decline"));
-                var flatPadding = flatFields.Single((field) =>
-                    field.FieldId
-                        == "component.button.padding");
                 flatPadding.GetVisualDescendants()
                     .OfType<Button>()
                     .Single((button) =>
@@ -11625,6 +11643,14 @@ static void DictionaryFieldsRespondToCompactWidths()
         actionsMinimumWidth: 154,
         columnGapCount: 2,
         columnSpacing: 8));
+    True(DictionaryFieldLayoutRules.UsesStackedPairLayout(
+        availableWidth: 300,
+        pairMinimumWidth: 156,
+        pairSpacing: 8));
+    True(!DictionaryFieldLayoutRules.UsesStackedPairLayout(
+        availableWidth: 320,
+        pairMinimumWidth: 156,
+        pairSpacing: 8));
 }
 
 static void ForwardActionsUseSharedPresentation()
