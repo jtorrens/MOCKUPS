@@ -6834,9 +6834,28 @@ static void PreviewAuthoringFocusRevealsExactCard()
             new EditorPreparedLayoutCard(
                 layout,
                 new Dictionary<string, FieldValue>());
-        var itemTarget = new TestAuthoringItemTarget(
+        var itemUiState = new EditorSessionUiState();
+        var itemTarget = new IconSlotsControl(
             "component.iconRow.items",
-            ["button_other", "button_attachment"]);
+            """
+            [
+              {"id":"button_other","buttonVariantReference":"component_button::variant::default","state":"normal","iconToken":"other","text":"","iconSizeToken":"theme.iconSizes.m","textSizeToken":"theme.typography.sizes.s","pushTrigger":false,"pushElapsedMs":0,"buttonOverrides":{}},
+              {"id":"button_attachment","buttonVariantReference":"component_button::variant::default","state":"normal","iconToken":"chat_attach","text":"","iconSizeToken":"theme.iconSizes.m","textSizeToken":"theme.typography.sizes.s","pushTrigger":false,"pushElapsedMs":0,"buttonOverrides":{}}
+            ]
+            """,
+            isEditable: false,
+            showIconTokenPicker: null,
+            createIconPreview: null,
+            buttonVariantOptions:
+            [
+                new FieldOption(
+                    "component_button::variant::default",
+                    "Default",
+                    GroupValue: "component_button"),
+            ],
+            openComponentVariantReference: null,
+            openRuntimeComponentOverrides: null,
+            sessionUiState: itemUiState);
         var card = new InstantEditorCard(
             new TextBlock(),
             itemTarget,
@@ -6844,6 +6863,12 @@ static void PreviewAuthoringFocusRevealsExactCard()
         {
             SessionStateId = "embedded:iconRow",
         };
+        var window = new Window
+        {
+            Content = card,
+        };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
         focus.Request(new EditorAuthoringFocusRequest(
             owner.Id,
             "component.iconRow",
@@ -6857,8 +6882,12 @@ static void PreviewAuthoringFocusRevealsExactCard()
             [card]));
         True(card.IsExpanded);
         True(cancelledRestore);
-        Equal("button_attachment", itemTarget.SelectedItemId);
+        Equal(
+            "button_attachment",
+            itemUiState.Selection(
+                "component.iconRow.items:icon-slots"));
         Equal(0, messages.Warnings.Count);
+        window.Close();
     },
     CancellationToken.None);
 }
@@ -15874,26 +15903,6 @@ internal sealed class RecordingMessageSink : IEditorShellMessageSink
     public void Error(string area, Exception exception) { }
 
     public void Error(string area, string message) { }
-}
-
-internal sealed class TestAuthoringItemTarget(
-    string fieldId,
-    IReadOnlyList<string> itemIds) :
-    Border,
-    IEditorAuthoringItemTarget
-{
-    public string FieldId { get; } = fieldId;
-    public string SelectedItemId { get; private set; } = "";
-
-    public bool SelectItem(string itemId)
-    {
-        if (!itemIds.Contains(itemId, StringComparer.Ordinal))
-        {
-            return false;
-        }
-        SelectedItemId = itemId;
-        return true;
-    }
 }
 
 internal sealed class RecordingPresentationContextRepository :

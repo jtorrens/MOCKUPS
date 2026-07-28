@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Avalonia.VisualTree;
+using Avalonia.LogicalTree;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -119,10 +119,14 @@ internal sealed class EditorAuthoringFocusController
             return false;
         }
 
+        _cancelViewRestore();
+        card.IsExpanded = true;
+        DeferredBringIntoView.Request(card);
+
         if (!string.IsNullOrWhiteSpace(pending.ItemId))
         {
             var itemTargets = card
-                .GetVisualDescendants()
+                .GetLogicalDescendants()
                 .OfType<IEditorAuthoringItemTarget>()
                 .Where((target) => target.FieldId.Equals(
                     pending.FieldId,
@@ -146,9 +150,6 @@ internal sealed class EditorAuthoringFocusController
             }
         }
 
-        _cancelViewRestore();
-        card.IsExpanded = true;
-        DeferredBringIntoView.Request(card);
         return true;
     }
 }
