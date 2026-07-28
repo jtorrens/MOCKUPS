@@ -11,6 +11,7 @@ import {
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { resolveTypographyStyle } from "./previewTextHelpers.js";
 import { iconBarComponentToRenderableAt } from "./iconBarComponentRenderable.js";
+import { renderAuthoringSlot } from "./previewAuthoringTarget.js";
 import type {
   KeyboardDesignContract,
   KeyboardKeyContract,
@@ -452,11 +453,17 @@ function keyboardIconBarNodes(
     ? keyboardBox.y
     : keyboardBox.y + keyboardBox.height - iconRowsHeight;
   return [
-    iconBarComponentToRenderableAt(payload, keyboard.iconBar, {
-      x: keyboardBox.x + edgePadding,
-      y,
-      width: Math.max(1, keyboardBox.width - edgePadding * 2),
-      height: iconRowsHeight,
-    }),
+    renderAuthoringSlot(
+      payload,
+      "component.keyboard",
+      "component.keyboard.iconBar.editor",
+      "component.iconBar",
+      (slotPayload) => iconBarComponentToRenderableAt(slotPayload, keyboard.iconBar, {
+        x: keyboardBox.x + edgePadding,
+        y,
+        width: Math.max(1, keyboardBox.width - edgePadding * 2),
+        height: iconRowsHeight,
+      }),
+    ),
   ];
 }

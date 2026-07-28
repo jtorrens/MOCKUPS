@@ -54,7 +54,9 @@ function mediaComponentToRenderableForBoxes(
 ): RenderableNode {
   const mediaSurfaceNode = renderAuthoringSlot(
     payload,
+    "component.media",
     "component.media.surface.editor",
+    "component.surface",
     (slotPayload) => surfaceComponentToRenderableAt(slotPayload, media.surface, boxes.media),
   );
   const mediaContentNode = mediaContent(payload, media, boxes.media);
@@ -371,7 +373,9 @@ function iconBarNode(
   } as const;
   return renderAuthoringSlot(
     payload,
+    "component.media",
     slotFieldIds[media.displayState][zone],
+    "component.iconBar",
     (slotPayload) => iconBarComponentToRenderableAt(slotPayload, iconBar, box),
   );
 }
@@ -414,9 +418,11 @@ function mediaTextOverlayNodes(
   return [
     renderAuthoringSlot(
       payload,
+      "component.media",
       media.playbackState === "playing"
         ? "component.media.playText.label.editor"
         : "component.media.idleText.label.editor",
+      "component.label",
       (slotPayload) => labelComponentToRenderableAt(slotPayload, overlay.label, box),
     ),
   ];

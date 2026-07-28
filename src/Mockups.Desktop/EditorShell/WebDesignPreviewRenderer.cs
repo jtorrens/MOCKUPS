@@ -154,6 +154,9 @@ internal static class WebDesignPreviewRenderer
             authoringOwnerId = payload.Kind == "moduleInstance"
                 ? ""
                 : payload.OwnerId,
+            authoringRecordClassId = payload.Kind == "componentClass"
+                ? $"component.{payload.ComponentType}"
+                : payload.ComponentType,
             componentType = payload.ComponentType,
             configJson = payload.ConfigJson,
             designPreviewJson = payload.DesignPreviewJson,

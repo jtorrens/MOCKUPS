@@ -208,14 +208,18 @@ export function bubbleComponentToRenderable(
     ? media.kind === "audio"
       ? renderAuthoringSlot(
           payload,
+          "component.bubble",
           "component.bubble.media.audio.editor",
+          "component.audio",
           (slotPayload) => audioComponentToRenderableAt(slotPayload, media.value, mediaBox),
         )
       : renderAuthoringSlot(
           payload,
+          "component.bubble",
           media.value.mediaKind === "image"
             ? "component.bubble.media.image.editor"
             : "component.bubble.media.video.editor",
+          "component.media",
           (slotPayload) => mediaComponentToRenderableAt(slotPayload, media.value, mediaBox),
         )
     : undefined;
@@ -237,7 +241,9 @@ export function bubbleComponentToRenderable(
     children: [
       renderAuthoringSlot(
         payload,
+        "component.bubble",
         "component.bubble.surface.editor",
+        "component.surface",
         (slotPayload) => surfaceComponentToRenderableAtWithColors(
           slotPayload,
           bubble.surface,
@@ -247,7 +253,9 @@ export function bubbleComponentToRenderable(
       ),
       renderAuthoringSlot(
         payload,
+        "component.bubble",
         "component.bubble.textBox.editor",
+        "component.textBox",
         (slotPayload) => textBoxComponentToRenderableAt(
           slotPayload,
           textBoxForContent,
@@ -269,7 +277,9 @@ export function bubbleComponentToRenderable(
         ? [
             renderAuthoringSlot(
               payload,
+              "component.bubble",
               "component.bubble.actorLabel.editor",
+              "component.label",
               (slotPayload) => labelComponentToRenderableAt(
                 slotPayload,
                 bubble.actorLabelSlot.label!,
@@ -289,7 +299,9 @@ export function bubbleComponentToRenderable(
       ...(bubble.avatarSlot.avatar && avatarBox
         ? [renderAuthoringSlot(
             payload,
+            "component.bubble",
             "component.bubble.avatar.editor",
+            "component.avatar",
             (slotPayload) => avatarComponentToRenderableAt(slotPayload, bubble.avatarSlot.avatar!, avatarBox),
           )]
         : []),

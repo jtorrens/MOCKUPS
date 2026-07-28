@@ -342,14 +342,18 @@ export function textBoxComponentToRenderableAt(
       ...(surfaceNode
         ? [renderAuthoringSlot(
             payload,
+            "component.textBox",
             "component.textBox.surface.editor",
+            "component.surface",
             () => surfaceNode,
           )]
         : []),
       ...(size.hasLeftIcons
         ? [renderAuthoringSlot(
             payload,
+            "component.textBox",
             "component.textBox.leftIconRow.editor",
+            "component.iconRow",
             (slotPayload) => iconRowComponentToRenderableAt(slotPayload, textBox.leftIconRow, {
               x: box.x + paddingX,
               y: iconY(size.leftIconSize.height),
@@ -361,7 +365,9 @@ export function textBoxComponentToRenderableAt(
       ...(size.hasRightIcons
         ? [renderAuthoringSlot(
             payload,
+            "component.textBox",
             "component.textBox.rightIconRow.editor",
+            "component.iconRow",
             (slotPayload) => iconRowComponentToRenderableAt(slotPayload, textBox.rightIconRow, {
               x: box.x + box.width - paddingX - size.rightIconSize.width,
               y: iconY(size.rightIconSize.height),

@@ -9,6 +9,7 @@ import {
   iconBarComponentToRenderableAt,
   measureIconBarZoneComponent,
 } from "./iconBarComponentRenderable.js";
+import { renderAuthoringSlot } from "./previewAuthoringTarget.js";
 import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
 import {
   measureTextBoxComponent,
@@ -110,13 +111,39 @@ export function textInputBarComponentToRenderable(
       overflow: "visible",
     },
     children: [
-      {
-        ...surfaceComponentToRenderableAt(payload, textInput.barSurface, barBox),
-        id: `${textInput.id}.barSurface`,
-      },
-      textBoxComponentToRenderableAt(payload, resolvedTextBox, fieldBox),
+      renderAuthoringSlot(
+        payload,
+        "component.textInputBar",
+        "component.textInput.barSurface.editor",
+        "component.surface",
+        (slotPayload) => ({
+          ...surfaceComponentToRenderableAt(slotPayload, textInput.barSurface, barBox),
+          id: `${textInput.id}.barSurface`,
+        }),
+      ),
+      renderAuthoringSlot(
+        payload,
+        "component.textInputBar",
+        "component.textInput.textBox.editor",
+        "component.textBox",
+        (slotPayload) => textBoxComponentToRenderableAt(
+          slotPayload,
+          resolvedTextBox,
+          fieldBox,
+        ),
+      ),
       ...(iconBarHeight > 0
-        ? [iconBarComponentToRenderableAt(payload, textInput.iconBar, iconBarBox)]
+        ? [renderAuthoringSlot(
+            payload,
+            "component.textInputBar",
+            "component.textInput.iconBar.editor",
+            "component.iconBar",
+            (slotPayload) => iconBarComponentToRenderableAt(
+              slotPayload,
+              textInput.iconBar,
+              iconBarBox,
+            ),
+          )]
         : []),
     ],
   };

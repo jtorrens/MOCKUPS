@@ -8,6 +8,7 @@ import { fingerprintComponentToRenderableAt, measureFingerprintComponent } from 
 import { faceRecognitionComponentToRenderableAt, measureFaceRecognitionComponent } from "./faceRecognitionComponentRenderable.js";
 import { drawPasswordComponentToRenderableAt, measureDrawPasswordComponent } from "./drawPasswordComponentRenderable.js";
 import { labelComponentToRenderableAt, measureLabelComponent } from "./labelComponentRenderable.js";
+import { renderAuthoringSlot } from "./previewAuthoringTarget.js";
 import type { PasswordDesignContract } from "./passwordComponentContract.js";
 
 export function passwordComponentToRenderable(
@@ -62,7 +63,17 @@ export function passwordComponentToRenderable(
       labelComponentToRenderableAt(payload, password.label, labelBox),
       codeIndicatorComponentToRenderableAt(payload, password.indicator, indicatorBox),
       renderInput(payload, password.input, keypadBox),
-      iconBarComponentToRenderableAt(payload, password.iconBar, iconBarBox),
+      renderAuthoringSlot(
+        payload,
+        "component.password",
+        "component.password.iconBar.editor",
+        "component.iconBar",
+        (slotPayload) => iconBarComponentToRenderableAt(
+          slotPayload,
+          password.iconBar,
+          iconBarBox,
+        ),
+      ),
     ],
   };
 }

@@ -182,8 +182,12 @@ types, Variants or Overrides. Selecting a path level sends that exact target to
 the desktop authoring navigator, which selects the owner and resolves every
 slot through `EmbeddedComponentSlotCatalog`. Missing owners, unknown slots and
 malformed targets fail; no layer infers a target from a renderable id, type,
-name, order or position. Production, raster and Render Queue documents expose
-no authoring target.
+name, order or position. Each renderable boundary must also match the exact
+current authoring `recordClassId` before it may append its slot and move the
+scope to the declared child record class. A child reached without its declared
+parent therefore inherits the nearest valid target instead of publishing an
+invalid shortcut. Production, raster and Render Queue documents expose no
+authoring target.
 
 ## Render Queue boundary
 

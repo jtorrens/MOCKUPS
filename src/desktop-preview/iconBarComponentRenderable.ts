@@ -63,7 +63,9 @@ export function iconBarComponentToRenderableAt(
     };
     return [renderAuthoringSlot(
       payload,
+      "component.iconBar",
       slotFieldIds[iconBar.state][zone],
+      "component.iconRow",
       (slotPayload) => iconRowComponentToRenderableAt(slotPayload, row, rowBox),
     )];
   });

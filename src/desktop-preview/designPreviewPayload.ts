@@ -20,6 +20,7 @@ export interface DesignPreviewFontFacePayload {
 export interface DesignPreviewPayload {
   kind: "componentClass" | "module" | "moduleInstance";
   authoringOwnerId?: string;
+  authoringRecordClassId?: string;
   authoringSlotFieldIds?: string[];
   componentType: string;
   componentBaseConfigsJson: string;

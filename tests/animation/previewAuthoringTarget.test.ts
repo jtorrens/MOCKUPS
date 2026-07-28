@@ -15,17 +15,22 @@ import { RenderableNodeSchema } from "../../src/visual/renderable/schema.js";
 test("authoring targets preserve the exact owner and nested slot chain", () => {
   const payload = {
     authoringOwnerId: "component_bubble::variant::default",
+    authoringRecordClassId: "component.bubble",
     authoringSlotFieldIds: [] as string[],
   } as DesignPreviewPayload;
   const media = renderAuthoringSlot(
     payload,
+    "component.bubble",
     "component.bubble.media.image.editor",
+    "component.media",
     (mediaPayload) => ({
       id: "component.bubble.image",
       type: "group",
       children: [renderAuthoringSlot(
         mediaPayload,
+        "component.media",
         "component.media.inlineTopIconBar.editor",
+        "component.iconBar",
         () => ({
           id: "component.media.topIconBar",
           type: "group",
@@ -75,4 +80,24 @@ test("a non-authoring payload emits no navigation metadata", () => {
     { id: "production.frame", type: "group" },
   );
   assert.equal(node.metadata?.authoringTarget, undefined);
+});
+
+test("a child cannot publish a slot when its authoring parent was not crossed", () => {
+  const textInputPayload = {
+    authoringOwnerId: "component_text_input::variant::default",
+    authoringRecordClassId: "component.textInputBar",
+    authoringSlotFieldIds: [] as string[],
+  } as DesignPreviewPayload;
+  const invalidShortcut = renderAuthoringSlot(
+    textInputPayload,
+    "component.textBox",
+    "component.textBox.rightIconRow.editor",
+    "component.iconRow",
+    () => ({
+      id: "component.textBox.rightIconRow",
+      type: "group",
+    }),
+  );
+
+  assert.equal(invalidShortcut.metadata?.authoringTarget, undefined);
 });

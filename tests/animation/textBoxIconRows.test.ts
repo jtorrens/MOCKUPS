@@ -4,7 +4,8 @@ import Database from "better-sqlite3";
 
 import { resolveTextBoxComponentFromRecords } from "../../src/desktop-preview/textBoxComponentResolver.js";
 import { resolveTextInputBarComponent } from "../../src/desktop-preview/textInputBarComponentResolver.js";
-import type { DesignPreviewPayload } from "../../src/desktop-preview/designPreviewPayload.js";
+import { textInputBarComponentToRenderable } from "../../src/desktop-preview/textInputBarComponentRenderable.js";
+import { committedComponentFixture } from "./committedComponentFixture.js";
 import { parityDatabasePath } from "../../src/development-scaffolding/parityDatabasePath.js";
 
 const surfaceVariantReference = "component_surface::variant::default";
@@ -211,43 +212,14 @@ test("the committed Text Input Bar resolves its migrated structured Button item"
     }[];
     const textInputBar = rows.find((row) => row.component_type === "textInputBar");
     assert.ok(textInputBar);
-    const variants: Record<string, unknown> = {};
-    const variantTypes: Record<string, string> = {};
-    for (const row of rows) {
-      const metadata = JSON.parse(row.metadata_json) as {
-        variants: { id: string; config: Record<string, unknown> }[];
-      };
-      for (const variant of metadata.variants) {
-        const reference = `${row.id}::variant::${variant.id}`;
-        variants[reference] = variant.config;
-        variantTypes[reference] = row.component_type;
-      }
-    }
-    const payload: DesignPreviewPayload = {
-      kind: "componentClass",
-      componentType: "textInputBar",
-      componentBaseConfigsJson: JSON.stringify({ variants, variantTypes }),
-      appConfigJson: "{}",
-      instanceJson: "{}",
-      frameRate: 25,
-      localFrame: 0,
-      configJson: textInputBar.config_json,
-      designPreviewJson: textInputBar.design_preview_json,
-      runtimeContractJson: textInputBar.design_preview_json,
-      previewFrame: {
-        canvasWidth: 360,
-        canvasHeight: 720,
-        screenX: 0,
-        screenY: 0,
-        screenWidth: 360,
-        screenHeight: 720,
-        scaleToPixels: 1,
-      },
-      themeMode: "light",
-      themeTokensJson: "{}",
+    const payload = committedComponentFixture("textInputBar");
+    const authoringPayload = {
+      ...payload,
+      authoringOwnerId: `${textInputBar.id}::variant::default`,
+      authoringRecordClassId: "component.textInputBar",
+      authoringSlotFieldIds: [],
     };
-
-    const resolved = resolveTextInputBarComponent(payload);
+    const resolved = resolveTextInputBarComponent(authoringPayload);
     assert.equal(resolved.textBox.rightIconRow.items.length, 1);
     assert.equal(
       resolved.textBox.rightIconRow.items[0]?.button.iconToken,
@@ -256,6 +228,21 @@ test("the committed Text Input Bar resolves its migrated structured Button item"
     assert.equal(
       resolved.textBox.rightIconRow.items[0]?.id,
       "button_attachment",
+    );
+    const renderable = textInputBarComponentToRenderable(
+      authoringPayload,
+      resolved,
+    );
+    const rightIconRow = renderable.children
+      ?.flatMap((child) => child.children ?? [])
+      .find((child) =>
+        child.id.includes("rightIconRow"));
+    assert.deepEqual(
+      rightIconRow?.metadata?.authoringTarget?.slotFieldIds,
+      [
+        "component.textInput.textBox.editor",
+        "component.textBox.rightIconRow.editor",
+      ],
     );
   } finally {
     database.close();
