@@ -17,6 +17,7 @@ internal sealed class RuntimeTestActionControl : Border
     private readonly Button _previousFrameButton;
     private readonly Button _nextFrameButton;
     private readonly NumericUpDown _frameInput;
+    private readonly Slider _frameSlider;
     private readonly TextBlock _maximumFrameText;
     private readonly Func<bool> _canRestore;
     private readonly Func<int, bool> _canStep;
@@ -178,7 +179,53 @@ internal sealed class RuntimeTestActionControl : Border
         };
         Grid.SetColumn(_nextFrameButton, 6);
         layout.Children.Add(_nextFrameButton);
-        Child = layout;
+
+        _frameSlider = new Slider
+        {
+            Height = 14,
+            Minimum = 0,
+            Maximum = 0,
+            Value = 0,
+            TickFrequency = 1,
+            SmallChange = 1,
+            LargeChange = 10,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        ToolTip.SetTip(_frameSlider, $"Navigate frames · {label}");
+        EditorAccessibility.Describe(
+            _frameSlider,
+            $"Navigate frames · {label}",
+            "Move to an exact frame in the Preview action",
+            showToolTip: false);
+        _frameSlider.PropertyChanged += (_, change) =>
+        {
+            if (change.Property != Slider.ValueProperty
+                || _isUpdatingFrame)
+            {
+                return;
+            }
+
+            _setFrame(
+                _targetCombo?.SelectedItem?.Value,
+                Convert.ToInt32(
+                    Math.Round(
+                        _frameSlider.Value,
+                        MidpointRounding.AwayFromZero)));
+            RefreshState();
+        };
+        var content = new Grid
+        {
+            RowDefinitions = new RowDefinitions("Auto,Auto"),
+            RowSpacing = 4,
+            Children =
+            {
+                layout,
+                _frameSlider,
+            },
+        };
+        Grid.SetRow(_frameSlider, 1);
+        Child = content;
 
         PreviewPlaybackStateBinding.Attach(this, _playbackState, OnPlaybackStateChanged);
     }
@@ -227,6 +274,8 @@ internal sealed class RuntimeTestActionControl : Border
         _isUpdatingFrame = true;
         _frameInput.Maximum = maximumFrame;
         _frameInput.Value = currentFrame;
+        _frameSlider.Maximum = maximumFrame;
+        _frameSlider.Value = currentFrame;
         _maximumFrameText.Text = $"/ {maximumFrame}";
         _isUpdatingFrame = false;
     }

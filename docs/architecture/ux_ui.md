@@ -90,6 +90,10 @@ a fixed upper surface. Every finite action also exposes shared previous-frame
 and next-frame chevrons immediately after Restore. A compact numeric current
 frame and read-only maximum frame sit between the chevrons. The numeric field
 uses the shared compact numeric density rather than the form-field padding.
+The generic action control places one compact full-width frame slider below
+that transport row. It uses the same zero-to-maximum frame range and stays
+bidirectionally synchronized with direct frame entry, stepping, Restore and
+playback.
 Play, Restore and both chevrons stay available while the action exists,
 including during playback and at either endpoint. Restore holds frame zero. A
 frame step or direct frame entry stops active playback and leaves the resolved

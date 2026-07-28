@@ -5915,10 +5915,22 @@ static void ConversationModuleEditorVisualTreeExposesTestValues()
                     + "the final Preview frame. "
                     + messages.Text);
                 var readyFrameInput = Required(frameInput);
+                var frameSlider = runtime
+                    .GetVisualDescendants()
+                    .OfType<Slider>()
+                    .Single((slider) =>
+                        ToolTip.GetTip(slider) as string
+                        == "Navigate frames · Play messages");
                 True(readyFrameInput.Maximum > 0);
                 Equal(
                     readyFrameInput.Maximum,
                     readyFrameInput.Value ?? -1);
+                Equal(
+                    decimal.ToDouble(readyFrameInput.Maximum),
+                    frameSlider.Maximum);
+                Equal(
+                    decimal.ToDouble(readyFrameInput.Value ?? -1),
+                    frameSlider.Value);
 
                 window.Hide();
             },
@@ -12880,6 +12892,9 @@ static void RuntimeActionControlsReactivateAfterPlaybackAndReattachment()
         var frameInput = control.GetVisualDescendants()
             .OfType<NumericUpDown>()
             .Single();
+        var frameSlider = control.GetVisualDescendants()
+            .OfType<Slider>()
+            .Single();
         var frameTextBox = frameInput.GetVisualDescendants()
             .OfType<TextBox>()
             .Single();
@@ -12906,6 +12921,10 @@ static void RuntimeActionControlsReactivateAfterPlaybackAndReattachment()
         True(next.IsEnabled);
         Equal(0m, frameInput.Value ?? -1);
         Equal(10m, frameInput.Maximum);
+        Equal(0d, frameSlider.Value);
+        Equal(10d, frameSlider.Maximum);
+        Equal(1d, frameSlider.TickFrequency);
+        Equal(14d, frameSlider.Height);
         Equal(EditorUiDensity.TextAwareWidth(48), frameInput.Width);
         Equal(new Thickness(0), frameSpinner.Margin);
         Equal(
@@ -12919,13 +12938,20 @@ static void RuntimeActionControlsReactivateAfterPlaybackAndReattachment()
         Dispatcher.UIThread.RunJobs();
         Equal(4, currentFrame);
 
+        frameSlider.Value = 7;
+        Dispatcher.UIThread.RunJobs();
+        Equal(7, currentFrame);
+        Equal(7m, frameInput.Value ?? -1);
+
         next.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-        Equal(5, currentFrame);
-        Equal(5m, frameInput.Value ?? -1);
+        Equal(8, currentFrame);
+        Equal(8m, frameInput.Value ?? -1);
+        Equal(8d, frameSlider.Value);
         True(previous.IsEnabled);
         True(next.IsEnabled);
         restore.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         Equal(0, currentFrame);
+        Equal(0d, frameSlider.Value);
         True(previous.IsEnabled);
         True(next.IsEnabled);
 
