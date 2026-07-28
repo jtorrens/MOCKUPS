@@ -161,6 +161,7 @@ var tests = new (string Name, Action Run)[]
     ("obsolete interactive Preview render results are discarded", ObsoleteInteractivePreviewRenderResultsAreDiscarded),
     ("Preview element identification stays on the generic renderable boundary", PreviewElementIdentificationUsesRenderableIdentity),
     ("Preview authoring navigation requires an exact owner and declared slot path", PreviewAuthoringNavigationUsesExactOwnerAndSlots),
+    ("Preview authoring focus opens and reveals the exact layout card", PreviewAuthoringFocusRevealsExactCard),
     ("Preview resource selection has one session rule", PreviewResourceSelectionHasOneSessionRule),
     ("editor view state follows the exact record class across records", EditorViewStateFollowsRecordClass),
     ("editor view state round-trips per class and clamps scroll", EditorViewStateRoundTripsPerClass),
@@ -6727,6 +6728,7 @@ static void PreviewAuthoringNavigationUsesExactOwnerAndSlots()
         "component.bubble");
     ProjectTreeNode? selected = null;
     EditorEmbeddedContext? opened = null;
+    EditorAuthoringFocusRequest? focus = null;
     var messages = new RecordingMessageSink();
     var navigator = new PreviewAuthoringNavigator(
         () => selected,
@@ -6737,10 +6739,11 @@ static void PreviewAuthoringNavigationUsesExactOwnerAndSlots()
             return true;
         },
         (context) => opened = context,
+        (request) => focus = request,
         messages);
 
     var serialized =
-        """mockups-preview-authoring:{"ownerId":"component_bubble::variant::default","slotFieldIds":["component.bubble.textBox.editor","component.textBox.rightIconRow.editor"]}""";
+        """mockups-preview-authoring:{"ownerId":"component_bubble::variant::default","slotFieldIds":["component.bubble.textBox.editor","component.textBox.rightIconRow.editor"],"focusFieldId":"component.iconRow.items"}""";
     True(PreviewAuthoringNavigationMessage.TryParse(
         serialized,
         out var target));
@@ -6751,12 +6754,15 @@ static void PreviewAuthoringNavigationUsesExactOwnerAndSlots()
             "component.textBox.rightIconRow.editor",
         ],
         target.SlotFieldIds);
+    Equal("component.iconRow.items", target.FocusFieldId);
     True(navigator.Navigate(target));
     Equal(ownerId, opened?.OwnerNode.Id);
     SequenceEqual(
         target.SlotFieldIds,
         opened?.Slots.Select((slot) => slot.FieldId)
             ?? []);
+    Equal("component.iconRow", focus?.RecordClassId);
+    Equal("component.iconRow.items", focus?.FieldId);
 
     selected = null;
     opened = null;
@@ -6773,6 +6779,77 @@ static void PreviewAuthoringNavigationUsesExactOwnerAndSlots()
     True(!PreviewAuthoringNavigationMessage.TryParse(
         """mockups-preview-authoring:{"ownerId":"owner","slotFieldIds":[],"componentType":"bubble"}""",
         out _));
+}
+
+static void PreviewAuthoringFocusRevealsExactCard()
+{
+    using var session = HeadlessUnitTestSession.StartNew(
+        typeof(HeadlessTestApplication));
+    session.Dispatch(() =>
+    {
+        var cancelledRestore = false;
+        var messages = new RecordingMessageSink();
+        var focus = new EditorAuthoringFocusController(
+            () => cancelledRestore = true,
+            messages);
+        var owner = new ProjectTreeNode(
+            ProjectTreeNodeKind.ComponentVariant,
+            "component_text_box::variant::default",
+            "Text Box · Default",
+            "",
+            "component.textBox");
+        var slot = EmbeddedComponentSlotCatalog.Get(
+            "component.textBox.rightIconRow.editor");
+        var context = new EditorEmbeddedContext(owner, [slot]);
+        var layout = new EditorLayoutCard
+        {
+            Id = "iconRow",
+            Label = "Icon Row",
+            Visible = true,
+            Groups =
+            [
+                new EditorLayoutGroup
+                {
+                    Id = "buttons",
+                    Label = "Buttons",
+                    Visible = true,
+                    Fields =
+                    [
+                        new EditorLayoutField
+                        {
+                            Id = "component.iconRow.items",
+                            Visible = true,
+                        },
+                    ],
+                },
+            ],
+        };
+        var prepared =
+            new EditorPreparedLayoutCard(
+                layout,
+                new Dictionary<string, FieldValue>());
+        var card = new InstantEditorCard(
+            new TextBlock(),
+            new Border(),
+            isExpanded: false)
+        {
+            SessionStateId = "embedded:iconRow",
+        };
+        focus.Request(new EditorAuthoringFocusRequest(
+            owner.Id,
+            "component.iconRow",
+            [slot.FieldId],
+            "component.iconRow.items"));
+
+        True(focus.ApplyEmbedded(
+            context,
+            [prepared],
+            [card]));
+        True(card.IsExpanded);
+        True(cancelledRestore);
+        Equal(0, messages.Warnings.Count);
+    },
+    CancellationToken.None);
 }
 
 static void PinnedModuleVariantPreviewSurvivesEditorSelection()

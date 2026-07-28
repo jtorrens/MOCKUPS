@@ -7,7 +7,8 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed record PreviewAuthoringNavigationTarget(
     string OwnerId,
-    IReadOnlyList<string> SlotFieldIds);
+    IReadOnlyList<string> SlotFieldIds,
+    string FocusFieldId = "");
 
 internal static class PreviewAuthoringNavigationMessage
 {
@@ -34,7 +35,12 @@ internal static class PreviewAuthoringNavigationMessage
         }
 
         if (document is null
-            || document.Count != 2
+            || document.Count is < 2 or > 3
+            || document.Any((property) =>
+                property.Key is not
+                    "ownerId"
+                    and not "slotFieldIds"
+                    and not "focusFieldId")
             || document["ownerId"] is not JsonValue ownerValue
             || !ownerValue.TryGetValue<string>(out var ownerId)
             || string.IsNullOrWhiteSpace(ownerId)
@@ -55,9 +61,22 @@ internal static class PreviewAuthoringNavigationMessage
             slotFieldIds.Add(fieldId);
         }
 
+        var focusFieldId = "";
+        if (document.TryGetPropertyValue(
+                "focusFieldId",
+                out var focusNode)
+            && (focusNode is not JsonValue focusValue
+                || !focusValue.TryGetValue<string>(
+                    out focusFieldId)
+                || string.IsNullOrWhiteSpace(focusFieldId)))
+        {
+            return false;
+        }
+
         target = new PreviewAuthoringNavigationTarget(
             ownerId,
-            slotFieldIds);
+            slotFieldIds,
+            focusFieldId);
         return true;
     }
 }
@@ -67,17 +86,20 @@ internal sealed class PreviewAuthoringNavigator
     private readonly Func<ProjectTreeNode?> _selectedNode;
     private readonly Func<string, bool> _selectNodeById;
     private readonly Action<EditorEmbeddedContext> _showEmbeddedContext;
+    private readonly Action<EditorAuthoringFocusRequest> _requestFocus;
     private readonly IEditorShellMessageSink _messages;
 
     internal PreviewAuthoringNavigator(
         Func<ProjectTreeNode?> selectedNode,
         Func<string, bool> selectNodeById,
         Action<EditorEmbeddedContext> showEmbeddedContext,
+        Action<EditorAuthoringFocusRequest> requestFocus,
         IEditorShellMessageSink messages)
     {
         _selectedNode = selectedNode;
         _selectNodeById = selectNodeById;
         _showEmbeddedContext = showEmbeddedContext;
+        _requestFocus = requestFocus;
         _messages = messages;
     }
 
@@ -106,6 +128,13 @@ internal sealed class PreviewAuthoringNavigator
             return false;
         }
 
+        _requestFocus(new EditorAuthoringFocusRequest(
+            owner.Id,
+            slots.Length > 0
+                ? slots[^1].RecordClassId
+                : owner.RecordClassId,
+            target.SlotFieldIds,
+            target.FocusFieldId));
         if (slots.Length > 0)
         {
             _showEmbeddedContext(new EditorEmbeddedContext(owner, slots));

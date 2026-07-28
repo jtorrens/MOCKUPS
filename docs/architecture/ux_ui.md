@@ -130,10 +130,16 @@ In the interactive Preview, hovering a resolved element shows its exact
 renderable identity. Right click pins that element and presents its ordered
 rendered ancestor path. Every path level with an explicit authoring target is
 selectable. Selection opens the exact Design owner and Variant, then the exact
-nested Overrides context represented by its declared slot chain. A level
-without an explicit target is disabled and reports that it has no associated
-editor. The interaction never derives authoring context from a renderable id,
-primitive type, label, hierarchy position or visual geometry.
+nested Overrides context represented by its declared slot chain. When that
+target also declares an exact visible dictionary field, the completed editor
+transition expands the unique top-level card containing that field and brings
+it into view, including when the card was already open. This explicit focus
+supersedes pending session scroll restoration only for that navigation. A
+missing or ambiguous field-to-card match reports a warning and never falls back
+to a label, prefix, position or first match. A level without an explicit target
+is disabled and reports that it has no associated editor. The interaction
+never derives authoring context from a renderable id, primitive type, label,
+hierarchy position or visual geometry.
 
 When a finite action completes, its final frame remains visible and Play
 becomes available again. Play repeats the same initial-to-final action without

@@ -57,6 +57,7 @@ function mediaComponentToRenderableForBoxes(
     "component.media",
     "component.media.surface.editor",
     "component.surface",
+    "component.surface.backgroundColorToken",
     (slotPayload) => surfaceComponentToRenderableAt(slotPayload, media.surface, boxes.media),
   );
   const mediaContentNode = mediaContent(payload, media, boxes.media);
@@ -376,6 +377,7 @@ function iconBarNode(
     "component.media",
     slotFieldIds[media.displayState][zone],
     "component.iconBar",
+    "component.iconBar.edgePadding",
     (slotPayload) => iconBarComponentToRenderableAt(slotPayload, iconBar, box),
   );
 }
@@ -423,6 +425,7 @@ function mediaTextOverlayNodes(
         ? "component.media.playText.label.editor"
         : "component.media.idleText.label.editor",
       "component.label",
+      "component.label.dimensionMode",
       (slotPayload) => labelComponentToRenderableAt(slotPayload, overlay.label, box),
     ),
   ];

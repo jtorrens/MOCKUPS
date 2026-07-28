@@ -66,6 +66,7 @@ export function iconBarComponentToRenderableAt(
       "component.iconBar",
       slotFieldIds[iconBar.state][zone],
       "component.iconRow",
+      "component.iconRow.items",
       (slotPayload) => iconRowComponentToRenderableAt(slotPayload, row, rowBox),
     )];
   });

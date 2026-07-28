@@ -25,6 +25,8 @@ public partial class MainWindow : SukiWindow
     private readonly EditorShellStateService _shellState;
     private readonly EditorNavigationRenderer _navigationRenderer;
     private readonly EditorViewStateController _editorViewState;
+    private readonly EditorAuthoringFocusController
+        _authoringFocusController;
     private readonly EditorSessionUiState _editorSessionUiState = new();
     private readonly EditorContentController _editorContent;
     private readonly EditorEmbeddedEditorController _embeddedEditors;
@@ -78,11 +80,16 @@ public partial class MainWindow : SukiWindow
         EditorTextBoxBehavior.Configure(ShellMessagesTextBox);
         _messages = new EditorShellMessageSink(ShellMessagesTextBox);
         _editorViewState = new EditorViewStateController(EditorScrollViewer);
+        _authoringFocusController =
+            new EditorAuthoringFocusController(
+                _editorViewState.CancelPendingRestore,
+                _messages);
         _embeddedEditors = new EditorEmbeddedEditorController(ShowEmbeddedContext, _messages);
         var previewAuthoringNavigator = new PreviewAuthoringNavigator(
             () => Session.SelectedNode,
             (nodeId) => SelectNodeById(nodeId, "preview-element"),
             ShowEmbeddedContext,
+            _authoringFocusController.Request,
             _messages);
         _previewController = new EditorPreviewController(
             data.Preview,
@@ -669,6 +676,10 @@ public partial class MainWindow : SukiWindow
             RestoreRootEditorViewState(
                 dataNode,
                 restoreState);
+            _authoringFocusController.ApplyRoot(
+                dataNode,
+                prepared.Cards,
+                _editorContent.Cards);
             ApplyPendingEditorCardExpansion(dataNode.Id);
             ApplyUiTextScale();
         }
@@ -934,6 +945,10 @@ public partial class MainWindow : SukiWindow
                     current.RecordClassId,
                     _editorContent.Cards);
             }
+            _authoringFocusController.ApplyEmbedded(
+                current,
+                prepared.Cards,
+                _editorContent.Cards);
             ApplyUiTextScale();
         }
         catch (OperationCanceledException)

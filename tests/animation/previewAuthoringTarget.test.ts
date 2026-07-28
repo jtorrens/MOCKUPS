@@ -23,6 +23,7 @@ test("authoring targets preserve the exact owner and nested slot chain", () => {
     "component.bubble",
     "component.bubble.media.image.editor",
     "component.media",
+    "component.media.surface.editor",
     (mediaPayload) => ({
       id: "component.bubble.image",
       type: "group",
@@ -31,6 +32,7 @@ test("authoring targets preserve the exact owner and nested slot chain", () => {
         "component.media",
         "component.media.inlineTopIconBar.editor",
         "component.iconBar",
+        "component.iconBar.edgePadding",
         () => ({
           id: "component.media.topIconBar",
           type: "group",
@@ -53,6 +55,7 @@ test("authoring targets preserve the exact owner and nested slot chain", () => {
     slotFieldIds: [],
   });
   assert.deepEqual(root.children?.[0]?.children?.[0]?.metadata?.authoringTarget, {
+    focusFieldId: "component.iconBar.edgePadding",
     ownerId: "component_bubble::variant::default",
     slotFieldIds: [
       "component.bubble.media.image.editor",
@@ -71,6 +74,10 @@ test("authoring targets preserve the exact owner and nested slot chain", () => {
   assert.match(
     markup,
     /data-preview-authoring-slot-field-ids="\[&quot;component\.bubble\.media\.image\.editor&quot;,&quot;component\.media\.inlineTopIconBar\.editor&quot;\]"/,
+  );
+  assert.match(
+    markup,
+    /data-preview-authoring-focus-field-id="component\.iconBar\.edgePadding"/,
   );
 });
 
@@ -93,6 +100,7 @@ test("a child cannot publish a slot when its authoring parent was not crossed", 
     "component.textBox",
     "component.textBox.rightIconRow.editor",
     "component.iconRow",
+    "component.iconRow.items",
     () => ({
       id: "component.textBox.rightIconRow",
       type: "group",

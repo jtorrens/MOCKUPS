@@ -68,6 +68,7 @@ export function passwordComponentToRenderable(
         "component.password",
         "component.password.iconBar.editor",
         "component.iconBar",
+        "component.iconBar.edgePadding",
         (slotPayload) => iconBarComponentToRenderableAt(
           slotPayload,
           password.iconBar,

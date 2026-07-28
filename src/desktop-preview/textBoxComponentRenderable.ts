@@ -345,6 +345,7 @@ export function textBoxComponentToRenderableAt(
             "component.textBox",
             "component.textBox.surface.editor",
             "component.surface",
+            "component.surface.backgroundColorToken",
             () => surfaceNode,
           )]
         : []),
@@ -354,6 +355,7 @@ export function textBoxComponentToRenderableAt(
             "component.textBox",
             "component.textBox.leftIconRow.editor",
             "component.iconRow",
+            "component.iconRow.items",
             (slotPayload) => iconRowComponentToRenderableAt(slotPayload, textBox.leftIconRow, {
               x: box.x + paddingX,
               y: iconY(size.leftIconSize.height),
@@ -368,6 +370,7 @@ export function textBoxComponentToRenderableAt(
             "component.textBox",
             "component.textBox.rightIconRow.editor",
             "component.iconRow",
+            "component.iconRow.items",
             (slotPayload) => iconRowComponentToRenderableAt(slotPayload, textBox.rightIconRow, {
               x: box.x + box.width - paddingX - size.rightIconSize.width,
               y: iconY(size.rightIconSize.height),

@@ -244,6 +244,10 @@ test("the committed Text Input Bar resolves its migrated structured Button item"
         "component.textBox.rightIconRow.editor",
       ],
     );
+    assert.equal(
+      rightIconRow?.metadata?.authoringTarget?.focusFieldId,
+      "component.iconRow.items",
+    );
   } finally {
     database.close();
   }

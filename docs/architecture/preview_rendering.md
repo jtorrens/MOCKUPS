@@ -176,18 +176,22 @@ The interactive desktop Preview host may inspect the generic
 resolved nodes. Hover identification and the right-click rendered path are
 host presentation only. Prepared Design payloads may additionally carry an
 exact authoring owner id and an ordered list of declared embedded-slot field
-ids. Renderable owners attach that opaque authoring target at the boundary they
-own, and the generic HTML adapter exposes it without interpreting Component
-types, Variants or Overrides. Selecting a path level sends that exact target to
-the desktop authoring navigator, which selects the owner and resolves every
-slot through `EmbeddedComponentSlotCatalog`. Missing owners, unknown slots and
-malformed targets fail; no layer infers a target from a renderable id, type,
-name, order or position. Each renderable boundary must also match the exact
-current authoring `recordClassId` before it may append its slot and move the
-scope to the declared child record class. A child reached without its declared
-parent therefore inherits the nearest valid target instead of publishing an
-invalid shortcut. Production, raster and Render Queue documents expose no
-authoring target.
+ids, plus an optional exact visible dictionary field id. Renderable owners
+attach that opaque authoring target at the boundary they own, and the generic
+HTML adapter exposes it without interpreting Component types, Variants,
+Overrides or card layout. Selecting a path level sends that exact target to the
+desktop authoring navigator, which selects the owner and resolves every slot
+through `EmbeddedComponentSlotCatalog`. After the asynchronous prepared editor
+commit, the desktop resolves an optional field id through that prepared layout,
+expands the unique top-level card containing it and brings the card into view.
+Missing or ambiguous field-to-card matches warn and do not infer a replacement.
+Missing owners, unknown slots and malformed targets fail; no layer infers a
+target from a renderable id, type, name, label, prefix, order or position. Each
+renderable boundary must also match the exact current authoring
+`recordClassId` before it may append its slot and move the scope to the declared
+child record class. A child reached without its declared parent therefore
+inherits the nearest valid target instead of publishing an invalid shortcut.
+Production, raster and Render Queue documents expose no authoring target.
 
 ## Render Queue boundary
 

@@ -99,6 +99,9 @@ internal sealed class EditorViewStateController
             Math.Clamp(requested.Y, 0, Math.Max(0, extent.Height - viewport.Height)));
     }
 
+    internal void CancelPendingRestore() =>
+        CancelPendingScrollRestore();
+
     private static void ValidateStableCardIds(IReadOnlyList<InstantEditorCard> cards)
     {
         if (cards.Any((card) => string.IsNullOrWhiteSpace(card.SessionStateId)))

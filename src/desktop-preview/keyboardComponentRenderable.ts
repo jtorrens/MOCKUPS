@@ -458,6 +458,7 @@ function keyboardIconBarNodes(
       "component.keyboard",
       "component.keyboard.iconBar.editor",
       "component.iconBar",
+      "component.iconBar.edgePadding",
       (slotPayload) => iconBarComponentToRenderableAt(slotPayload, keyboard.iconBar, {
         x: keyboardBox.x + edgePadding,
         y,

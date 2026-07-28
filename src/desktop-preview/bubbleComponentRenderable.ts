@@ -211,6 +211,7 @@ export function bubbleComponentToRenderable(
           "component.bubble",
           "component.bubble.media.audio.editor",
           "component.audio",
+          "component.audio.padding",
           (slotPayload) => audioComponentToRenderableAt(slotPayload, media.value, mediaBox),
         )
       : renderAuthoringSlot(
@@ -220,6 +221,7 @@ export function bubbleComponentToRenderable(
             ? "component.bubble.media.image.editor"
             : "component.bubble.media.video.editor",
           "component.media",
+          "component.media.surface.editor",
           (slotPayload) => mediaComponentToRenderableAt(slotPayload, media.value, mediaBox),
         )
     : undefined;
@@ -244,6 +246,7 @@ export function bubbleComponentToRenderable(
         "component.bubble",
         "component.bubble.surface.editor",
         "component.surface",
+        "component.surface.backgroundColorToken",
         (slotPayload) => surfaceComponentToRenderableAtWithColors(
           slotPayload,
           bubble.surface,
@@ -256,6 +259,7 @@ export function bubbleComponentToRenderable(
         "component.bubble",
         "component.bubble.textBox.editor",
         "component.textBox",
+        "component.textBox.dimensionMode",
         (slotPayload) => textBoxComponentToRenderableAt(
           slotPayload,
           textBoxForContent,
@@ -280,6 +284,7 @@ export function bubbleComponentToRenderable(
               "component.bubble",
               "component.bubble.actorLabel.editor",
               "component.label",
+              "component.label.dimensionMode",
               (slotPayload) => labelComponentToRenderableAt(
                 slotPayload,
                 bubble.actorLabelSlot.label!,
@@ -302,6 +307,7 @@ export function bubbleComponentToRenderable(
             "component.bubble",
             "component.bubble.avatar.editor",
             "component.avatar",
+            "component.avatar.defaultSize",
             (slotPayload) => avatarComponentToRenderableAt(slotPayload, bubble.avatarSlot.avatar!, avatarBox),
           )]
         : []),

@@ -6,6 +6,7 @@ export function authoringSlotPayload(
   ownerRecordClassId: string,
   fieldId: string,
   childRecordClassId: string,
+  childFocusFieldId: string,
 ): DesignPreviewPayload {
   if (!payload.authoringOwnerId
     || payload.authoringRecordClassId !== ownerRecordClassId) {
@@ -13,6 +14,7 @@ export function authoringSlotPayload(
   }
   return {
     ...payload,
+    authoringFocusFieldId: childFocusFieldId,
     authoringRecordClassId: childRecordClassId,
     authoringSlotFieldIds: [...(payload.authoringSlotFieldIds ?? []), fieldId],
   };
@@ -28,6 +30,9 @@ export function withAuthoringTarget(
     metadata: {
       ...node.metadata,
       authoringTarget: {
+        ...(payload.authoringFocusFieldId
+          ? { focusFieldId: payload.authoringFocusFieldId }
+          : {}),
         ownerId: payload.authoringOwnerId,
         slotFieldIds: [...(payload.authoringSlotFieldIds ?? [])],
       },
@@ -40,6 +45,7 @@ export function renderAuthoringSlot(
   ownerRecordClassId: string,
   fieldId: string,
   childRecordClassId: string,
+  childFocusFieldId: string,
   render: (slotPayload: DesignPreviewPayload) => RenderableNode,
 ): RenderableNode {
   if (!payload.authoringOwnerId
@@ -51,6 +57,7 @@ export function renderAuthoringSlot(
     ownerRecordClassId,
     fieldId,
     childRecordClassId,
+    childFocusFieldId,
   );
   return withAuthoringTarget(slotPayload, render(slotPayload));
 }

@@ -38,6 +38,7 @@ export interface RenderableFontFace {
 
 export interface RenderableMetadata {
   authoringTarget?: {
+    focusFieldId?: string;
     ownerId: string;
     slotFieldIds: string[];
   };

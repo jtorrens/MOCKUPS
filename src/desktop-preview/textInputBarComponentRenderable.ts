@@ -116,6 +116,7 @@ export function textInputBarComponentToRenderable(
         "component.textInputBar",
         "component.textInput.barSurface.editor",
         "component.surface",
+        "component.surface.backgroundColorToken",
         (slotPayload) => ({
           ...surfaceComponentToRenderableAt(slotPayload, textInput.barSurface, barBox),
           id: `${textInput.id}.barSurface`,
@@ -126,6 +127,7 @@ export function textInputBarComponentToRenderable(
         "component.textInputBar",
         "component.textInput.textBox.editor",
         "component.textBox",
+        "component.textBox.dimensionMode",
         (slotPayload) => textBoxComponentToRenderableAt(
           slotPayload,
           resolvedTextBox,
@@ -138,6 +140,7 @@ export function textInputBarComponentToRenderable(
             "component.textInputBar",
             "component.textInput.iconBar.editor",
             "component.iconBar",
+            "component.iconBar.edgePadding",
             (slotPayload) => iconBarComponentToRenderableAt(
               slotPayload,
               textInput.iconBar,
