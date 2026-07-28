@@ -298,6 +298,10 @@ public partial class MainWindow : SukiWindow
             EditorCardsPanel,
             () => Math.Max(1, EditorScrollViewer.Bounds.Width - EditorScrollViewer.Padding.Left - EditorScrollViewer.Padding.Right),
             EditorScrollViewer,
+            EditorPeerViewHost,
+            EditorOverridesPanel,
+            EditorScrollViewer,
+            EditorOverridesScrollViewer,
             _activeFieldControls,
             inlinePreviews,
             layoutCards,
@@ -647,6 +651,15 @@ public partial class MainWindow : SukiWindow
             _editorHeader.SetRootTitle(
                 layoutNode.Name,
                 prepared.Header);
+            if (dataNode.Kind is
+                ProjectTreeNodeKind.ComponentVariant
+                or ProjectTreeNodeKind.ModuleVariant)
+            {
+                _ = PrepareRootOverridesAsync(
+                    layoutNode,
+                    dataNode,
+                    revision);
+            }
             RestoreRootEditorViewState(
                 dataNode,
                 restoreState);
@@ -665,6 +678,47 @@ public partial class MainWindow : SukiWindow
             {
                 _messages.Error(
                     "Prepare editor",
+                    exception);
+            }
+        }
+    }
+
+    private async Task PrepareRootOverridesAsync(
+        ProjectTreeNode layoutNode,
+        ProjectTreeNode dataNode,
+        long revision)
+    {
+        try
+        {
+            var prepared =
+                await _editorContent.PrepareOverridesAsync(
+                    layoutNode,
+                    dataNode);
+            if (!_workspaceCoordinator.IsCurrent(
+                    revision,
+                    dataNode.Id)
+                || Session.EmbeddedEditor is not null)
+            {
+                return;
+            }
+            _editorContent.CommitOverrides(
+                layoutNode,
+                dataNode,
+                prepared);
+            ApplyUiTextScale();
+        }
+        catch (OperationCanceledException)
+        {
+            // A newer root or embedded editor owns the visual surface.
+        }
+        catch (Exception exception)
+        {
+            if (_workspaceCoordinator.IsCurrent(
+                    revision,
+                    dataNode.Id))
+            {
+                _messages.Error(
+                    "Prepare flat Overrides",
                     exception);
             }
         }

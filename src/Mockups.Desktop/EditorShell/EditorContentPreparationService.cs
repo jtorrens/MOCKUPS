@@ -1,7 +1,10 @@
 using Mockups.DesktopEditorShell.Data;
+using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -15,6 +18,21 @@ internal sealed record EditorPreparedRootContent(
     IReadOnlyList<EditorPreparedLayoutCard> Cards,
     EditorDictionaryContextSnapshot DictionaryContext,
     EditorPreparedHeader Header);
+
+internal sealed record EditorPreparedOverrideGroup(
+    string Id,
+    string PathLabel,
+    EditorEmbeddedContext Context,
+    IReadOnlyDictionary<string, FieldValue> Fields,
+    IReadOnlyList<string> OverrideFieldIds);
+
+internal sealed record EditorPreparedOverrideProjection(
+    IReadOnlyList<EditorPreparedOverrideGroup> Groups,
+    EditorDictionaryContextSnapshot DictionaryContext)
+{
+    public int Count => Groups.Sum((group) =>
+        group.OverrideFieldIds.Count);
+}
 
 internal sealed record EditorPreparedEmbeddedContent(
     EditorPreparedLayoutCard? OwnerCard,
@@ -80,6 +98,38 @@ internal sealed class EditorContentPreparationService : IDisposable
                     _header.PrepareRoot(
                         dataNode,
                         cancellationToken));
+            },
+            cancellationToken);
+    }
+
+    public Task<EditorPreparedOverrideProjection> PrepareOverridesAsync(
+        ProjectTreeNode layoutNode,
+        ProjectTreeNode dataNode)
+    {
+        if (dataNode.Kind is not (
+                ProjectTreeNodeKind.ComponentVariant
+                or ProjectTreeNodeKind.ModuleVariant))
+        {
+            throw new InvalidOperationException(
+                $"Flat Overrides are not available for '{dataNode.Kind}'.");
+        }
+        var selectedThemeId =
+            _dictionaryFields.CaptureSelectedThemeId();
+        var cancellationToken = BeginPreparation();
+        return _operations.ExecuteAsync(
+            () =>
+            {
+                var layout = _layouts.LoadEditorLayout(
+                    layoutNode.RecordClassId);
+                var rootFields = PrepareDirectFields(
+                    dataNode,
+                    layout.Cards.SelectMany(AllFieldIds),
+                    cancellationToken);
+                return PrepareOverrideProjection(
+                    dataNode,
+                    selectedThemeId,
+                    rootFields,
+                    cancellationToken);
             },
             cancellationToken);
     }
@@ -205,6 +255,283 @@ internal sealed class EditorContentPreparationService : IDisposable
         }
         return fields;
     }
+
+    private EditorPreparedOverrideProjection PrepareOverrideProjection(
+        ProjectTreeNode node,
+        string? selectedThemeId,
+        IReadOnlyDictionary<string, FieldValue> rootFields,
+        CancellationToken cancellationToken)
+    {
+        var groups = new List<EditorPreparedOverrideGroup>();
+        var fieldSets =
+            new List<IReadOnlyDictionary<string, FieldValue>>
+            {
+                rootFields,
+            };
+        var iconOwners = new List<PreparedIconSlotsOwner>();
+        var visited = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var field in rootFields.Values)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (EmbeddedComponentSlotCatalog.TryGet(
+                    field.Definition.Id,
+                    out var slot))
+            {
+                PrepareOverrideContext(
+                    new EditorEmbeddedContext(node, [slot]),
+                    slot.Label,
+                    groups,
+                    fieldSets,
+                    iconOwners,
+                    visited,
+                    cancellationToken);
+            }
+            if (field.Definition.ValueKind == ValueKind.IconSlots)
+            {
+                iconOwners.Add(new PreparedIconSlotsOwner(
+                    null,
+                    field.Definition.Id,
+                    field.Value,
+                    field.Definition.DisplayLabel));
+            }
+        }
+
+        var dictionaryContext = _dictionaryFields.PrepareContext(
+            node,
+            selectedThemeId,
+            fieldSets,
+            cancellationToken);
+        foreach (var iconOwner in iconOwners)
+        {
+            PrepareIconSlotOverrides(
+                node,
+                iconOwner,
+                dictionaryContext,
+                groups,
+                fieldSets,
+                visited,
+                cancellationToken);
+        }
+
+        return new EditorPreparedOverrideProjection(
+            groups,
+            _dictionaryFields.PrepareContext(
+                node,
+                selectedThemeId,
+                fieldSets,
+                cancellationToken));
+    }
+
+    private void PrepareOverrideContext(
+        EditorEmbeddedContext context,
+        string pathLabel,
+        List<EditorPreparedOverrideGroup> groups,
+        List<IReadOnlyDictionary<string, FieldValue>> fieldSets,
+        List<PreparedIconSlotsOwner> iconOwners,
+        HashSet<string> visited,
+        CancellationToken cancellationToken)
+    {
+        var occurrenceId = OverrideOccurrenceId(context);
+        if (!visited.Add(occurrenceId))
+        {
+            return;
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        var layout = _layouts.LoadEditorLayout(
+            context.RecordClassId);
+        var fields = PrepareEmbeddedFields(
+            context,
+            layout.Cards.SelectMany(AllFieldIds),
+            cancellationToken);
+        fieldSets.Add(fields);
+        var overrideFieldIds = VisibleCards(layout)
+            .SelectMany((card) => card.VisibleGroups)
+            .SelectMany((group) => group.VisibleFields)
+            .Select((field) => field.Id)
+            .Where((fieldId) =>
+                fields.TryGetValue(fieldId, out var field)
+                && field.HasLocalOverride)
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+        if (overrideFieldIds.Count > 0)
+        {
+            groups.Add(new EditorPreparedOverrideGroup(
+                occurrenceId,
+                pathLabel,
+                context,
+                fields,
+                overrideFieldIds));
+        }
+
+        foreach (var field in fields.Values)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (EmbeddedComponentSlotCatalog.TryGet(
+                    field.Definition.Id,
+                    out var nestedSlot)
+                && (field.IsHighlighted
+                    || field.HasLocalOverride))
+            {
+                PrepareOverrideContext(
+                    context.Nested(nestedSlot),
+                    $"{pathLabel} · {nestedSlot.Label}",
+                    groups,
+                    fieldSets,
+                    iconOwners,
+                    visited,
+                    cancellationToken);
+            }
+            if (field.Definition.ValueKind == ValueKind.IconSlots
+                && field.HasLocalOverride)
+            {
+                iconOwners.Add(new PreparedIconSlotsOwner(
+                    context,
+                    field.Definition.Id,
+                    field.Value,
+                    $"{pathLabel} · {field.Definition.DisplayLabel}"));
+            }
+        }
+    }
+
+    private void PrepareIconSlotOverrides(
+        ProjectTreeNode node,
+        PreparedIconSlotsOwner owner,
+        EditorDictionaryContextSnapshot dictionaryContext,
+        List<EditorPreparedOverrideGroup> groups,
+        List<IReadOnlyDictionary<string, FieldValue>> fieldSets,
+        HashSet<string> visited,
+        CancellationToken cancellationToken)
+    {
+        var items = JsonNode.Parse(owner.Value) as JsonArray
+            ?? throw new InvalidOperationException(
+                $"Icon Slots field '{owner.FieldId}' must be an array.");
+        IconSlotsDocumentContract.Validate(
+            items,
+            $"Flat Overrides '{owner.FieldId}'");
+        foreach (var itemNode in items)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var item = itemNode!.AsObject();
+            var itemId = JsonPath.RequiredString(
+                item,
+                "id",
+                $"Flat Overrides '{owner.FieldId}'");
+            var variantReference = JsonPath.RequiredString(
+                item,
+                "buttonVariantReference",
+                $"Flat Overrides '{owner.FieldId}' Button '{itemId}'");
+            if (!dictionaryContext.TryVariantSelection(
+                    variantReference,
+                    out var selection))
+            {
+                throw new InvalidOperationException(
+                    $"Button Variant '{variantReference}' was not included in the prepared dictionary context.");
+            }
+            var overrides = JsonPath.RequiredObject(
+                    item,
+                    "buttonOverrides",
+                    $"Flat Overrides '{owner.FieldId}' Button '{itemId}'")
+                .DeepClone()
+                .AsObject();
+            var runtimeSource = new RuntimeComponentOverrideSource(
+                selection.ProjectId,
+                variantReference,
+                selection.ComponentType,
+                selection.RecordClassId,
+                selection.ConfigJson,
+                overrides,
+                (changed) => UpdateIconSlotOverridesAsync(
+                    node,
+                    owner,
+                    itemId,
+                    changed));
+            var context = new EditorEmbeddedContext(
+                node,
+                [],
+                runtimeSource);
+            var itemLabel = JsonPath.RequiredString(
+                item,
+                "text",
+                $"Flat Overrides '{owner.FieldId}' Button '{itemId}'",
+                allowEmpty: true);
+            PrepareOverrideContext(
+                context,
+                $"{owner.PathLabel} · Button "
+                    + (string.IsNullOrWhiteSpace(itemLabel)
+                        ? itemId
+                        : itemLabel),
+                groups,
+                fieldSets,
+                [],
+                visited,
+                cancellationToken);
+        }
+    }
+
+    private Task UpdateIconSlotOverridesAsync(
+        ProjectTreeNode node,
+        PreparedIconSlotsOwner owner,
+        string itemId,
+        JsonObject overrides) =>
+        _operations.ExecuteAsync(() =>
+        {
+            var current = owner.Context is null
+                ? _fieldValues.Create(node, owner.FieldId)
+                : _componentFields.CreateEmbeddedFieldValue(
+                    owner.Context,
+                    owner.FieldId);
+            var items = JsonNode.Parse(current.Value) as JsonArray
+                ?? throw new InvalidOperationException(
+                    $"Icon Slots field '{owner.FieldId}' must be an array.");
+            var item = items
+                .Select((candidate) => candidate!.AsObject())
+                .Single((candidate) => JsonPath.RequiredString(
+                        candidate,
+                        "id",
+                        $"Icon Slots field '{owner.FieldId}'")
+                    .Equals(itemId, StringComparison.Ordinal));
+            item["buttonOverrides"] = overrides.DeepClone();
+            var value = items.ToJsonString();
+            if (owner.Context is null)
+            {
+                _fieldValues.Persist(
+                    node,
+                    owner.FieldId,
+                    value);
+            }
+            else
+            {
+                _componentFields.CommitEmbeddedFieldValue(
+                    owner.Context,
+                    owner.FieldId,
+                    value);
+            }
+        });
+
+    private static string OverrideOccurrenceId(
+        EditorEmbeddedContext context)
+    {
+        var slots = string.Join(
+            "/",
+            context.Slots.Select((slot) => slot.FieldId));
+        if (context.RuntimeSource is { } runtime)
+        {
+            return $"runtime:{runtime.VariantReference}:"
+                + RuntimeHelpers.GetHashCode(runtime.Overrides)
+                + (string.IsNullOrWhiteSpace(slots)
+                    ? ""
+                    : $"/{slots}");
+        }
+        return slots;
+    }
+
+    private sealed record PreparedIconSlotsOwner(
+        EditorEmbeddedContext? Context,
+        string FieldId,
+        string Value,
+        string PathLabel);
 
     private static IEnumerable<EditorLayoutCard> VisibleCards(
         EditorLayout layout) =>

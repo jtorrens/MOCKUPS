@@ -65,6 +65,17 @@ internal sealed class EditorDictionaryFieldServices
             fields,
             cancellationToken);
 
+    public EditorDictionaryContextSnapshot PrepareContext(
+        ProjectTreeNode node,
+        string? selectedThemeId,
+        IEnumerable<IReadOnlyDictionary<string, FieldValue>> fieldSets,
+        CancellationToken cancellationToken) =>
+        _contextPreparer.Prepare(
+            node,
+            selectedThemeId,
+            fieldSets,
+            cancellationToken);
+
     public EditorDictionaryContextSnapshot PrepareRuntimeContext(
         ProjectTreeNode node,
         string? selectedThemeId,

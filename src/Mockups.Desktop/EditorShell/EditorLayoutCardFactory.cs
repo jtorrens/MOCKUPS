@@ -313,11 +313,87 @@ internal sealed class EditorLayoutCardFactory
         FieldValue field,
         EditorDictionaryContextSnapshot dictionaryContext,
         IReadOnlyDictionary<string, FieldValue> preparedFields)
+        => CreateEmbeddedFieldControlCore(
+            context,
+            field,
+            dictionaryContext,
+            preparedFields,
+            _activeFieldControls,
+            null);
+
+    public Control CreateFlatOverrideContent(
+        ProjectTreeNode node,
+        EditorPreparedOverrideProjection projection)
+    {
+        var body = new StackPanel
+        {
+            Spacing = 0,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+        if (projection.Count == 0)
+        {
+            body.Children.Add(new Border
+            {
+                Padding = EditorUiDensity.CardThickness(12),
+                Child = new TextBlock
+                {
+                    Text = "No local inherited Overrides.",
+                    Opacity = 0.72,
+                    TextWrapping = TextWrapping.Wrap,
+                },
+            });
+            return body;
+        }
+
+        foreach (var group in projection.Groups)
+        {
+            var scopedControls = new EditorActiveFieldControls();
+            foreach (var fieldId in group.OverrideFieldIds)
+            {
+                var row = new StackPanel
+                {
+                    Spacing = EditorUiDensity.Card(8),
+                    Margin = EditorUiDensity.CardThickness(0, 0, 0, 12),
+                };
+                row.Children.Add(new TextBlock
+                {
+                    Text = group.PathLabel,
+                    FontSize = 11,
+                    Opacity = 0.68,
+                    TextTrimming = TextTrimming.CharacterEllipsis,
+                });
+                row.Children.Add(CreateEmbeddedFieldControlCore(
+                    group.Context,
+                    group.Fields[fieldId],
+                    projection.DictionaryContext,
+                    group.Fields,
+                    scopedControls,
+                    () => _scheduleActiveEditorReload(node)));
+                body.Children.Add(new Border
+                {
+                    Padding = EditorUiDensity.CardThickness(0, 8, 0, 12),
+                    BorderThickness = new Thickness(0, 0, 0, 1),
+                    BorderBrush = new SolidColorBrush(
+                        Color.FromArgb(46, 128, 142, 164)),
+                    Child = row,
+                });
+            }
+        }
+        return body;
+    }
+
+    private DictionaryFieldControl CreateEmbeddedFieldControlCore(
+        EditorEmbeddedContext context,
+        FieldValue field,
+        EditorDictionaryContextSnapshot dictionaryContext,
+        IReadOnlyDictionary<string, FieldValue> preparedFields,
+        EditorActiveFieldControls activeFieldControls,
+        Action? restored)
     {
         var services = _dictionaryFieldServices.ForPreparedNode(
             context.OwnerNode,
             dictionaryContext,
-            (id) => _activeFieldControls.ValueOrStored(
+            (id) => activeFieldControls.ValueOrStored(
                 id,
                 (storedId) => PreparedStoredValue(
                     preparedFields,
@@ -327,7 +403,7 @@ internal sealed class EditorLayoutCardFactory
             (definition, input) => _openNestedEmbeddedComponentSlotEditor(context, ComponentInputSlot(definition, input)),
             _openRuntimeComponentOverrides);
         var control = new DictionaryFieldControl(field, services);
-        _activeFieldControls.Register(control);
+        activeFieldControls.Register(control);
         control.ValueCommitted += async (_, value) =>
         {
             try
@@ -345,13 +421,14 @@ internal sealed class EditorLayoutCardFactory
                     {
                         control
                             .AcceptInheritedValueAsDefault();
+                        restored?.Invoke();
                     }
                     else
                     {
                         control
                             .MarkCurrentValueCommitted();
                     }
-                    _activeFieldControls.RefreshPreviews();
+                    activeFieldControls.RefreshPreviews();
                     _refreshPreview();
                     return;
                 }
@@ -364,8 +441,9 @@ internal sealed class EditorLayoutCardFactory
                             field.Definition.Id,
                             value));
                     control.AcceptInheritedValueAsDefault();
-                    _activeFieldControls.RefreshPreviews();
+                    activeFieldControls.RefreshPreviews();
                     _refreshPreview();
+                    restored?.Invoke();
                     return;
                 }
 
@@ -381,7 +459,7 @@ internal sealed class EditorLayoutCardFactory
                             : current.Value;
                     },
                     (storedValue) => _componentClassFieldValues.CommitEmbeddedFieldValue(context, field.Definition.Id, storedValue));
-                _activeFieldControls.RefreshPreviews();
+                activeFieldControls.RefreshPreviews();
                 _refreshPreview();
             }
             catch (Exception exception)
@@ -399,7 +477,7 @@ internal sealed class EditorLayoutCardFactory
                                 .InheritedStorageValue
                             : confirmed.Value);
                     control.MarkCurrentValueCommitted();
-                    _activeFieldControls
+                    activeFieldControls
                         .RefreshPreviews();
                 }
                 _messages.Error($"Embedded field {field.Definition.Id}", exception);

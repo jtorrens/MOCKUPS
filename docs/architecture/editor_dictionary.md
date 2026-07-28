@@ -98,6 +98,25 @@ Reusable layout is declared in metadata with stable ids:
 The shell composes these presentations generically. Hierarchy depth, record
 class, labels and position do not select a layout.
 
+## Flat Variant Overrides view
+
+Component and Module Variant editors expose `Editor` and `Overrides` as peer
+views. The flat Overrides view is a projection of the current dictionary
+semantics, not a comparison between Variant snapshots:
+
+- it includes only fields whose prepared `FieldValue.HasLocalOverride` is true;
+- it follows owner-declared embedded slots recursively and preserves the
+  owning boundary path;
+- it reuses the registered dictionary control and the same Restore commit;
+- restoring a field removes it from the projection;
+- direct fields stored by the current Variant never appear, even when they
+  differ from the protected Default Variant, class scaffold or seed;
+- referenced child Variant data never appears as an Override of its parent.
+
+An Icon Row item contributes only its typed local `buttonOverrides` boundary.
+The item's selected icon, label, state and Button Variant reference remain
+direct Icon Row Variant data and are not projected.
+
 ## Session view state
 
 Card expansion, internal selection and editor scroll are session-only. State is

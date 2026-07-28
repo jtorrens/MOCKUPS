@@ -150,6 +150,7 @@ var tests = new (string Name, Action Run)[]
     ("Variant history reads persistence through the operation boundary", VariantHistoryReadsThroughOperationBoundary),
     ("collapsed editor cards defer their snapshot until expansion", CollapsedEditorCardsDeferSnapshots),
     ("editor visual cards require prepared field snapshots", EditorVisualCardsRequirePreparedFieldSnapshots),
+    ("flat Variant Overrides include only local inherited fields", FlatVariantOverridesUseRestoreSemantics),
     ("rapid visual selection commits only the latest prepared editor", RapidVisualSelectionCommitsLatestPreparedEditor),
     ("new Shot reload prepares Preview before selection", NewShotReloadPreparesPreviewBeforeSelection),
     ("failed Preview preparation keeps the prior tree catalog and selection", FailedPreviewPreparationKeepsPriorSession),
@@ -3884,6 +3885,244 @@ static void EditorVisualCardsRequirePreparedFieldSnapshots()
     True(preparedServices.GetParameters().Any((parameter) =>
         parameter.ParameterType
         == typeof(EditorDictionaryContextSnapshot)));
+}
+
+static void FlatVariantOverridesUseRestoreSemantics()
+{
+    var source = ParityDatabasePath();
+    var temporary = Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        $".mockups-flat-overrides-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        using var session = HeadlessUnitTestSession.StartNew(
+            typeof(HeadlessTestApplication));
+        session.Dispatch(
+            () =>
+            {
+                var window = DesktopHost.CreateWindow(temporary);
+                var content = typeof(MainWindow)
+                    .GetField(
+                        "_editorContent",
+                        BindingFlags.Instance
+                        | BindingFlags.NonPublic)
+                    ?.GetValue(window) as EditorContentController
+                    ?? throw new InvalidOperationException(
+                        "Missing prepared editor content owner.");
+                var database =
+                    new SqliteProjectTestContext(temporary);
+                var nodes = database.LoadProjectTree()
+                    .SelectMany(DescendantsAndSelf)
+                    .ToList();
+                foreach (var candidate in nodes.Where((node) =>
+                             node.Kind is
+                                 ProjectTreeNodeKind.ComponentVariant
+                                 or ProjectTreeNodeKind.ModuleVariant))
+                {
+                    True(content.PrepareRootAsync(
+                                EditorNodeSelectionState
+                                    .EditorNodeForSelection(
+                                        candidate),
+                                candidate)
+                            .GetAwaiter()
+                            .GetResult()
+                        is not null);
+                    True(content.PrepareOverridesAsync(
+                                EditorNodeSelectionState
+                                    .EditorNodeForSelection(
+                                        candidate),
+                                candidate)
+                            .GetAwaiter()
+                            .GetResult()
+                        is not null);
+                }
+                var variant = nodes.Single((node) =>
+                        node.Kind
+                            == ProjectTreeNodeKind.ComponentVariant
+                        && node.Parent?.RecordClassId
+                            == "component.notification");
+                variant = NodeCommands(database)
+                    .ToggleComponentVariantLock(variant);
+                var layoutNode =
+                    EditorNodeSelectionState.EditorNodeForSelection(
+                        variant);
+
+                var baseline = content.PrepareOverridesAsync(
+                        layoutNode,
+                        variant)
+                    .GetAwaiter()
+                    .GetResult();
+                database.UpdateComponentVariantField(
+                    variant,
+                    "component.notification.padding",
+                    "theme.spacing.xl|theme.spacing.l");
+                var afterDirectVariantField =
+                    content.PrepareOverridesAsync(
+                            layoutNode,
+                            variant)
+                        .GetAwaiter()
+                        .GetResult();
+                Equal(
+                    baseline.Count,
+                    afterDirectVariantField.Count);
+
+                ComponentDocuments(database)
+                    .UpdateEmbeddedComponentField(
+                        variant,
+                        [
+                            EmbeddedComponentSlotCatalog.Get(
+                                "component.notification.surface.editor"),
+                        ],
+                        "component.surface.backgroundAlpha",
+                        "0.42");
+                var afterLocalOverride =
+                    content.PrepareOverridesAsync(
+                            layoutNode,
+                            variant)
+                        .GetAwaiter()
+                        .GetResult();
+                Equal(
+                    baseline.Count + 1,
+                    afterLocalOverride.Count);
+                True(afterLocalOverride.Groups.Any((group) =>
+                    group.OverrideFieldIds.Contains(
+                        "component.surface.backgroundAlpha",
+                        StringComparer.Ordinal)));
+
+                var iconRowVariant = nodes.Single((node) =>
+                    node.Kind
+                        == ProjectTreeNodeKind.ComponentVariant
+                    && node.Parent?.RecordClassId
+                        == "component.iconRow"
+                    && node.Name
+                        == "Incoming Call · iOS");
+                var iconSlots = JsonNode.Parse(
+                        database.CreateComponentVariantFieldValue(
+                                iconRowVariant,
+                                "component.iconRow.items")
+                            .Value)
+                    ?.AsArray()
+                    ?? throw new InvalidOperationException(
+                        "Icon Row Variant requires Button items.");
+                iconSlots[0]!["buttonOverrides"] =
+                    new JsonObject
+                    {
+                        ["button"] = new JsonObject
+                        {
+                            ["padding"] =
+                                "theme.spacing.xl|theme.spacing.l",
+                        },
+                    };
+                database.UpdateComponentVariantField(
+                    iconRowVariant,
+                    "component.iconRow.items",
+                    iconSlots.ToJsonString());
+                var iconProjection = content.PrepareOverridesAsync(
+                        EditorNodeSelectionState
+                            .EditorNodeForSelection(iconRowVariant),
+                        iconRowVariant)
+                    .GetAwaiter()
+                    .GetResult();
+                True(iconProjection.Groups.Any((group) =>
+                    group.PathLabel.Contains(
+                        "Button Decline",
+                        StringComparison.Ordinal)
+                    && group.OverrideFieldIds.Contains(
+                        "component.button.padding",
+                        StringComparer.Ordinal)));
+
+                window.Show();
+                var selectNode = typeof(MainWindow).GetMethod(
+                    "SelectNodeById",
+                    BindingFlags.Instance
+                    | BindingFlags.NonPublic,
+                    binder: null,
+                    types: [typeof(string)],
+                    modifiers: null)
+                    ?? throw new InvalidOperationException(
+                        "Missing MainWindow node selection boundary.");
+                True((bool)selectNode.Invoke(
+                    window,
+                    [iconRowVariant.Id])!);
+                var peerHost = Required(
+                    window.FindControl<StackPanel>(
+                        "EditorPeerViewHost"));
+                True(SpinWait.SpinUntil(
+                    () =>
+                    {
+                        Dispatcher.UIThread.RunJobs();
+                        return content.CommittedOwnerId.Equals(
+                                iconRowVariant.Id,
+                                StringComparison.Ordinal)
+                            && peerHost.IsVisible;
+                    },
+                    TimeSpan.FromSeconds(15)));
+                var overridesButton = peerHost.Children
+                    .OfType<ToggleButton>()
+                    .Single((button) =>
+                        (button.Content as string)?.StartsWith(
+                            "Overrides (",
+                            StringComparison.Ordinal)
+                        == true);
+                overridesButton.RaiseEvent(
+                    new RoutedEventArgs(
+                        Button.ClickEvent));
+                Dispatcher.UIThread.RunJobs();
+                var flatFields = Required(
+                        window.FindControl<StackPanel>(
+                            "EditorOverridesPanel"))
+                    .GetVisualDescendants()
+                    .OfType<DictionaryFieldControl>()
+                    .ToList();
+                True(flatFields.Count > 0);
+                True(flatFields.All((field) =>
+                    field.HasLocalOverride));
+                True(flatFields.Any((field) =>
+                    field.FieldId
+                        == "component.button.padding"));
+                var flatPadding = flatFields.Single((field) =>
+                    field.FieldId
+                        == "component.button.padding");
+                flatPadding.GetVisualDescendants()
+                    .OfType<Button>()
+                    .Single((button) =>
+                        button.Content as string == "↺")
+                    .RaiseEvent(new RoutedEventArgs(
+                        Button.ClickEvent));
+                True(SpinWait.SpinUntil(
+                    () =>
+                    {
+                        Dispatcher.UIThread.RunJobs();
+                        return peerHost.Children
+                            .OfType<ToggleButton>()
+                            .Any((button) =>
+                                button.Content as string
+                                    == "Overrides (0)");
+                    },
+                    TimeSpan.FromSeconds(15)));
+                var persistedIconSlots = JsonNode.Parse(
+                        database.CreateComponentVariantFieldValue(
+                                iconRowVariant,
+                                "component.iconRow.items")
+                            .Value)
+                    ?.AsArray()
+                    ?? throw new InvalidOperationException(
+                        "Icon Row Variant requires Button items.");
+                True(persistedIconSlots[0]?[
+                        "buttonOverrides"]?[
+                        "button"]?[
+                        "padding"]
+                    is null);
+                window.Close();
+            },
+            CancellationToken.None);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
 }
 
 static void RapidVisualSelectionCommitsLatestPreparedEditor()

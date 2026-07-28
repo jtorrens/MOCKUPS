@@ -26,14 +26,28 @@ internal sealed class EditorDictionaryContextPreparer
         string? selectedThemeId,
         IReadOnlyDictionary<string, FieldValue> fields,
         CancellationToken cancellationToken)
+        => Prepare(
+            node,
+            selectedThemeId,
+            [fields],
+            cancellationToken);
+
+    public EditorDictionaryContextSnapshot Prepare(
+        ProjectTreeNode node,
+        string? selectedThemeId,
+        IEnumerable<IReadOnlyDictionary<string, FieldValue>> fieldSets,
+        CancellationToken cancellationToken)
     {
         var requirements = new DictionaryContextRequirements();
-        foreach (var field in fields.Values)
+        foreach (var fields in fieldSets)
         {
-            requirements.Add(
-                field.Definition,
-                field.Value,
-                fields);
+            foreach (var field in fields.Values)
+            {
+                requirements.Add(
+                    field.Definition,
+                    field.Value,
+                    fields);
+            }
         }
         return Prepare(
             node,
@@ -311,6 +325,7 @@ internal sealed class EditorDictionaryContextPreparer
             if (definition.ValueKind == ValueKind.IconSlots)
             {
                 ComponentTypes.Add("button");
+                AddVariantReferences(value);
             }
             foreach (var input in
                      definition.ComponentInputBindings ?? [])

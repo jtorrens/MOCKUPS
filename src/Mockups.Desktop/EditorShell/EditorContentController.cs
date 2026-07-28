@@ -1,4 +1,6 @@
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
+using Avalonia.Layout;
 using SukiUI.Controls;
 using System;
 using System.Collections.Generic;
@@ -15,14 +17,25 @@ internal sealed class EditorContentController : IDisposable
     private readonly IEditorInlinePreviewController _inlinePreviews;
     private readonly EditorLayoutCardFactory _layoutCards;
     private readonly EditorCollectionCardFactory _collectionCards;
+    private readonly Panel _peerViewHost;
+    private readonly Panel _flatOverrideHost;
+    private readonly Control _editorViewport;
+    private readonly Control _overrideViewport;
+    private readonly Dictionary<string, bool> _overrideModeByLayout =
+        new(StringComparer.Ordinal);
     private readonly Func<ProjectTreeNode, IReadOnlyList<InstantEditorCard>?>
         _specialCards;
+    private string _activeRootLayoutId = "";
 
     public EditorContentController(
         EditorContentPreparationService preparation,
         Panel host,
         Func<double>? availableWidth,
         Control? widthObserver,
+        Panel peerViewHost,
+        Panel flatOverrideHost,
+        Control editorViewport,
+        Control overrideViewport,
         EditorActiveFieldControls activeFieldControls,
         IEditorInlinePreviewController inlinePreviews,
         EditorLayoutCardFactory layoutCards,
@@ -31,6 +44,10 @@ internal sealed class EditorContentController : IDisposable
     {
         _preparation = preparation;
         _cardHost = new EditorCardHostController(host, availableWidth, widthObserver);
+        _peerViewHost = peerViewHost;
+        _flatOverrideHost = flatOverrideHost;
+        _editorViewport = editorViewport;
+        _overrideViewport = overrideViewport;
         _activeFieldControls = activeFieldControls;
         _inlinePreviews = inlinePreviews;
         _layoutCards = layoutCards;
@@ -46,6 +63,7 @@ internal sealed class EditorContentController : IDisposable
         if (_specialCards(dataNode) is { } specialCards)
         {
             _preparation.Cancel();
+            HidePeerViews();
             ResetRegistries();
             _cardHost.Replace(specialCards, resetExpansion: false);
             CommittedOwnerId = dataNode.Id;
@@ -57,6 +75,7 @@ internal sealed class EditorContentController : IDisposable
 
     public void ShowLoading()
     {
+        HidePeerViews();
         ResetRegistries();
         CommittedOwnerId = "";
         _cardHost.Replace(
@@ -107,7 +126,41 @@ internal sealed class EditorContentController : IDisposable
             .Concat(_collectionCards.Create(dataNode))
             .ToList();
         _cardHost.Replace(cards);
+        HidePeerViews();
         CommittedOwnerId = dataNode.Id;
+    }
+
+    public Task<EditorPreparedOverrideProjection>
+        PrepareOverridesAsync(
+            ProjectTreeNode layoutNode,
+            ProjectTreeNode dataNode) =>
+        _preparation.PrepareOverridesAsync(
+            layoutNode,
+            dataNode);
+
+    public void CommitOverrides(
+        ProjectTreeNode layoutNode,
+        ProjectTreeNode dataNode,
+        EditorPreparedOverrideProjection overrides)
+    {
+        if (!CommittedOwnerId.Equals(
+                dataNode.Id,
+                StringComparison.Ordinal))
+        {
+            return;
+        }
+        _activeRootLayoutId = layoutNode.RecordClassId;
+        _flatOverrideHost.Children.Clear();
+        _flatOverrideHost.Children.Add(
+            _layoutCards.CreateFlatOverrideContent(
+                dataNode,
+                overrides));
+        ShowPeerViews(
+            overrides.Count,
+            _overrideModeByLayout.TryGetValue(
+                _activeRootLayoutId,
+                out var showOverrides)
+                && showOverrides);
     }
 
     public Task<EditorPreparedEmbeddedContent> PrepareEmbeddedAsync(
@@ -118,6 +171,7 @@ internal sealed class EditorContentController : IDisposable
         EditorEmbeddedContext context,
         EditorPreparedEmbeddedContent prepared)
     {
+        HidePeerViews();
         ResetRegistries();
         var cards = new List<InstantEditorCard>();
         var ownerLayoutRecordClassId = OwnerLayoutRecordClassId(context.OwnerNode);
@@ -156,6 +210,83 @@ internal sealed class EditorContentController : IDisposable
     {
         _activeFieldControls.Clear();
         _inlinePreviews.Reset();
+    }
+
+    private void ShowPeerViews(
+        int overrideCount,
+        bool showOverrides)
+    {
+        _peerViewHost.Children.Clear();
+        var editor = PeerViewButton(
+            "Editor",
+            !showOverrides,
+            () => SelectPeerView(false));
+        var overrides = PeerViewButton(
+            $"Overrides ({overrideCount})",
+            showOverrides,
+            () => SelectPeerView(true));
+        _peerViewHost.Children.Add(editor);
+        _peerViewHost.Children.Add(overrides);
+        _peerViewHost.IsVisible = true;
+        SetPeerViewport(showOverrides);
+    }
+
+    private void SelectPeerView(bool showOverrides)
+    {
+        if (string.IsNullOrWhiteSpace(_activeRootLayoutId))
+        {
+            return;
+        }
+        _overrideModeByLayout[_activeRootLayoutId] =
+            showOverrides;
+        foreach (var toggle in
+                 _peerViewHost.Children.OfType<ToggleButton>())
+        {
+            toggle.IsChecked =
+                showOverrides
+                    ? toggle.Tag as string == "overrides"
+                    : toggle.Tag as string == "editor";
+        }
+        SetPeerViewport(showOverrides);
+    }
+
+    private void HidePeerViews()
+    {
+        _peerViewHost.Children.Clear();
+        _peerViewHost.IsVisible = false;
+        _flatOverrideHost.Children.Clear();
+        SetPeerViewport(false);
+        _activeRootLayoutId = "";
+    }
+
+    private void SetPeerViewport(bool showOverrides)
+    {
+        _editorViewport.IsVisible = !showOverrides;
+        _overrideViewport.IsVisible = showOverrides;
+    }
+
+    private static ToggleButton PeerViewButton(
+        string label,
+        bool selected,
+        Action selectedAction)
+    {
+        var id = label.StartsWith(
+            "Overrides",
+            StringComparison.Ordinal)
+                ? "overrides"
+                : "editor";
+        var button = new ToggleButton
+        {
+            Content = label,
+            Tag = id,
+            IsChecked = selected,
+            MinHeight = 30,
+            Padding = new Avalonia.Thickness(12, 4),
+            HorizontalContentAlignment =
+                HorizontalAlignment.Center,
+        };
+        button.Click += (_, _) => selectedAction();
+        return button;
     }
 
 }

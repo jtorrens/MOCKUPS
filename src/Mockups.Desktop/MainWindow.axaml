@@ -147,12 +147,26 @@
                                         VerticalAlignment="Top" />
                         </Grid>
                     </Border>
+                    <StackPanel x:Name="EditorPeerViewHost"
+                                DockPanel.Dock="Top"
+                                Margin="22,0,22,8"
+                                Orientation="Horizontal"
+                                Spacing="6"
+                                IsVisible="False" />
                     <ScrollViewer x:Name="EditorScrollViewer"
                                   HorizontalScrollBarVisibility="Disabled"
                                   VerticalScrollBarVisibility="Auto"
                                   Padding="22">
                         <StackPanel x:Name="EditorCardsPanel"
                                     Spacing="10"
+                                    HorizontalAlignment="Stretch" />
+                    </ScrollViewer>
+                    <ScrollViewer x:Name="EditorOverridesScrollViewer"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  VerticalScrollBarVisibility="Auto"
+                                  Padding="22"
+                                  IsVisible="False">
+                        <StackPanel x:Name="EditorOverridesPanel"
                                     HorizontalAlignment="Stretch" />
                     </ScrollViewer>
                     </DockPanel>
