@@ -44,7 +44,9 @@ internal sealed class DictionaryHexColorControl : Grid, IDictionaryValueControl
             Content = "Pick color",
             MinWidth = 84,
             Height = 34,
-            IsEnabled = definition.IsEditable,
+            IsEnabled =
+                definition.IsEditable
+                && HexColorPickerDialog.IsSupported,
             VerticalAlignment = VerticalAlignment.Center,
         };
         EditorAccessibility.Describe(pickerButton, $"Pick color for {definition.DisplayLabel}");
@@ -53,7 +55,9 @@ internal sealed class DictionaryHexColorControl : Grid, IDictionaryValueControl
             var owner = TopLevel.GetTopLevel(this) as Window;
             if (owner is null) return;
 
-            var color = await HexColorPickerDialog.Show(owner, definition.Label, _value);
+            var color = await HexColorPickerDialog.Show(
+                owner,
+                _value);
             if (color is null) return;
             SetValue(color);
             CommitValue();

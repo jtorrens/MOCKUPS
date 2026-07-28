@@ -41,7 +41,6 @@
 
     <Application.Styles>
         <suki:SukiTheme ThemeColor="Blue" />
-        <StyleInclude Source="avares://Avalonia.Controls.ColorPicker/Themes/Fluent/Fluent.xaml" />
         <Style Selector="Control">
             <Setter Property="Transitions" Value="{x:Null}" />
         </Style>

@@ -69,6 +69,7 @@ var tests = new (string Name, Action Run)[]
     ("fixed Component boundaries use one exact class and its Default Variant", FixedComponentBoundariesUseExactDefaultVariant),
     ("Runtime Input kind and ValueKind share one exact contract", RuntimeInputKindAndValueKindShareOneContract),
     ("Runtime Input defaults use their exact ValueKind owner", RuntimeInputDefaultsUseValueKindOwner),
+    ("system Hex color pickers preserve exact RGB values", SystemHexColorPickersPreserveRgbValues),
     ("Text Box Preview resolves Variant-owned Icon Row slots", TextBoxPreviewResolvesVariantOwnedIconRowSlots),
     ("Runtime Input readers reject filtered definition metadata", RuntimeInputDefinitionReadersAreStrict),
     ("pair fields require explicit presentation labels", PairFieldsRequireExplicitLabels),
@@ -1992,6 +1993,33 @@ static void RuntimeInputDefaultsUseValueKindOwner()
             """;
         command.ExecuteNonQuery();
     });
+}
+
+static void SystemHexColorPickersPreserveRgbValues()
+{
+    Equal(
+        "#E6E6E6",
+        HexColorPickerDialog.MacOsColorOutputToHex(
+            "59110,59110,59110\n"));
+    Equal(
+        "#123456",
+        HexColorPickerDialog.MacOsColorOutputToHex(
+            "4626,13364,22102"));
+    Throws<InvalidOperationException>(
+        () => HexColorPickerDialog
+            .MacOsColorOutputToHex(
+                "65536,0,0"));
+
+    var color = Color.Parse("#123456");
+    Equal(
+        0x00563412u,
+        HexColorPickerDialog.WindowsColorReference(
+            color));
+    Equal(
+        "#123456",
+        HexColorPickerDialog
+            .WindowsColorReferenceToHex(
+                0x00563412u));
 }
 
 static void TextBoxPreviewResolvesVariantOwnedIconRowSlots()

@@ -1,160 +1,224 @@
-using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Layout;
 using Avalonia.Media;
-using Avalonia.Styling;
 using Mockups.DesktopEditorShell.Common;
-using SukiUI.Controls;
 using System;
+using System.Diagnostics;
+using System.Globalization;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal static class HexColorPickerDialog
 {
-    public static async Task<string?> Show(Window owner, string label, string currentValue)
+    private const uint ChooseColorRgbInit = 0x00000001;
+    private const uint ChooseColorFullOpen = 0x00000002;
+    private const uint ChooseColorSolidColor = 0x00000080;
+    private const int CustomColorCount = 16;
+
+    public static bool IsSupported =>
+        OperatingSystem.IsMacOS()
+        || OperatingSystem.IsWindows();
+
+    public static Task<string?> Show(
+        Window owner,
+        string currentValue)
     {
-        var themeVariant = owner.ActualThemeVariant;
-        var isLight = themeVariant == ThemeVariant.Light;
-        var foreground = new SolidColorBrush(Color.Parse(isLight ? "#1F2937" : "#F1F5F9"));
-        var mutedForeground = new SolidColorBrush(Color.Parse(isLight ? "#667085" : "#B8C0CE"));
-        var panelBackground = new SolidColorBrush(Color.Parse(isLight ? "#FFFFFF" : "#172033"));
-        var tabBackground = new SolidColorBrush(Color.Parse(isLight ? "#F3F6FA" : "#101827"));
-        var selectedTabBackground = new SolidColorBrush(Color.Parse(isLight ? "#E7F1FF" : "#20314D"));
-        var pointerBackground = new SolidColorBrush(Color.Parse(isLight ? "#EDF4FF" : "#263B5C"));
-        var borderBrush = new SolidColorBrush(Color.Parse(isLight ? "#D0D7E2" : "#34445A"));
-        var accentBrush = EditorSukiWindowTheme.AccentBrush();
+        var color = ColorValue.Parse(currentValue);
+        if (OperatingSystem.IsMacOS())
+        {
+            return ShowMacOs(color);
+        }
+        if (OperatingSystem.IsWindows())
+        {
+            return Task.FromResult(
+                ShowWindows(owner, color));
+        }
+        throw new PlatformNotSupportedException(
+            "The system Hex color picker supports macOS and Windows.");
+    }
 
-        var colorView = new ColorView
+    internal static string MacOsColorOutputToHex(
+        string output)
+    {
+        var values = output
+            .Trim()
+            .Split(
+                ',',
+                StringSplitOptions.TrimEntries
+                | StringSplitOptions.RemoveEmptyEntries);
+        if (values.Length != 3)
         {
-            Color = ParseColor(currentValue),
-            IsAlphaEnabled = false,
-            IsAlphaVisible = false,
-            IsColorModelVisible = false,
-            IsAccentColorsVisible = true,
-            IsColorPaletteVisible = true,
-            IsColorPreviewVisible = true,
-            MinWidth = 420,
-            MinHeight = 360,
-        };
-        var actions = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            Spacing = 10,
-            HorizontalAlignment = HorizontalAlignment.Right,
-        };
-        var panel = new DockPanel
-        {
-            Margin = new Thickness(16),
-            LastChildFill = true,
-        };
-        panel.Children.Add(actions);
-        panel.Children.Add(colorView);
-        DockPanel.SetDock(actions, Dock.Bottom);
+            throw new InvalidOperationException(
+                "The macOS color picker returned an invalid RGB value.");
+        }
 
-        var window = new SukiWindow
-        {
-            Title = $"Pick {label}",
-            Width = 520,
-            Height = 560,
-            MinWidth = 520,
-            MinHeight = 560,
-            CanResize = false,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            IsMenuVisible = false,
-            BackgroundAnimationEnabled = false,
-            RequestedThemeVariant = themeVariant,
-            Content = panel,
-        };
-        EditorSukiWindowTheme.ApplyDialogChrome(window, owner);
-        ApplyColorPickerThemeResources(
-            window,
-            foreground,
-            mutedForeground,
-            panelBackground,
-            tabBackground,
-            selectedTabBackground,
-            pointerBackground,
-            borderBrush,
-            accentBrush);
-        actions.Children.Add(DialogButton("Cancel", () => null));
-        actions.Children.Add(DialogButton("OK", () => ColorToHex(colorView.Color)));
-        return await window.ShowDialog<string?>(owner);
+        return ColorValue.ToHex(
+            Color.FromRgb(
+                MacOsComponent(values[0]),
+                MacOsComponent(values[1]),
+                MacOsComponent(values[2])));
+    }
 
-        Button DialogButton(string buttonLabel, Func<string?> result)
+    internal static uint WindowsColorReference(
+        Color color) =>
+        (uint)(
+            color.R
+            | (color.G << 8)
+            | (color.B << 16));
+
+    internal static string WindowsColorReferenceToHex(
+        uint colorReference) =>
+        ColorValue.ToHex(
+            Color.FromRgb(
+                (byte)(colorReference & 0xFF),
+                (byte)((colorReference >> 8) & 0xFF),
+                (byte)((colorReference >> 16) & 0xFF)));
+
+    private static async Task<string?> ShowMacOs(
+        Color color)
+    {
+        var processStart = new ProcessStartInfo
         {
-            var button = new Button
+            FileName = "/usr/bin/osascript",
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+        };
+        processStart.ArgumentList.Add("-e");
+        processStart.ArgumentList.Add(
+            $"set pickedColor to choose color default color "
+            + $"{{{MacOsComponent(color.R)}, "
+            + $"{MacOsComponent(color.G)}, "
+            + $"{MacOsComponent(color.B)}}}");
+        processStart.ArgumentList.Add("-e");
+        processStart.ArgumentList.Add(
+            "return (item 1 of pickedColor as text) & \",\" & "
+            + "(item 2 of pickedColor as text) & \",\" & "
+            + "(item 3 of pickedColor as text)");
+
+        using var process = Process.Start(processStart)
+            ?? throw new InvalidOperationException(
+                "The macOS color picker could not be started.");
+        var outputTask =
+            process.StandardOutput.ReadToEndAsync();
+        var errorTask =
+            process.StandardError.ReadToEndAsync();
+        await process.WaitForExitAsync();
+        var output = await outputTask;
+        var error = await errorTask;
+        if (process.ExitCode == 0)
+        {
+            return MacOsColorOutputToHex(output);
+        }
+        if (error.Contains(
+                "(-128)",
+                StringComparison.Ordinal))
+        {
+            return null;
+        }
+        throw new InvalidOperationException(
+            $"The macOS color picker failed: {error.Trim()}");
+    }
+
+    private static string? ShowWindows(
+        Window owner,
+        Color color)
+    {
+        var customColors = Marshal.AllocHGlobal(
+            CustomColorCount * sizeof(uint));
+        try
+        {
+            for (var index = 0;
+                 index < CustomColorCount;
+                 index++)
             {
-                Content = buttonLabel,
-                MinWidth = 88,
-                MinHeight = 34,
+                Marshal.WriteInt32(
+                    customColors,
+                    index * sizeof(uint),
+                    unchecked((int)0x00FFFFFF));
+            }
+
+            var request = new ChooseColorRequest
+            {
+                StructSize =
+                    Marshal.SizeOf<ChooseColorRequest>(),
+                OwnerHandle =
+                    owner.TryGetPlatformHandle()?.Handle
+                    ?? nint.Zero,
+                Result = WindowsColorReference(color),
+                CustomColors = customColors,
+                Flags =
+                    ChooseColorRgbInit
+                    | ChooseColorFullOpen
+                    | ChooseColorSolidColor,
             };
-            button.Click += (_, _) => window.Close(result());
-            return button;
+            if (ChooseColor(ref request))
+            {
+                return WindowsColorReferenceToHex(
+                    request.Result);
+            }
+
+            var error = CommonDialogExtendedError();
+            if (error == 0)
+            {
+                return null;
+            }
+            throw new InvalidOperationException(
+                $"The Windows color picker failed with error {error}.");
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(customColors);
         }
     }
 
-    private static void ApplyColorPickerThemeResources(
-        Window window,
-        IBrush foreground,
-        IBrush mutedForeground,
-        IBrush panelBackground,
-        IBrush tabBackground,
-        IBrush selectedTabBackground,
-        IBrush pointerBackground,
-        IBrush borderBrush,
-        IBrush accentBrush)
+    private static int MacOsComponent(
+        byte component) =>
+        component * 257;
+
+    private static byte MacOsComponent(
+        string component)
     {
-        window.Resources["SystemControlForegroundBaseHighBrush"] = foreground;
-        window.Resources["SystemControlForegroundListLowBrush"] = mutedForeground;
-        window.Resources["SystemControlBackgroundBaseLowBrush"] = tabBackground;
-        window.Resources["SystemControlHighlightListAccentLowBrush"] = accentBrush;
-        window.Resources["ColorViewContentBackgroundBrush"] = panelBackground;
-        window.Resources["ColorViewContentBorderBrush"] = borderBrush;
-        window.Resources["ColorViewTabBorderBrush"] = borderBrush;
-        window.Resources["TabItemHeaderForegroundUnselected"] = mutedForeground;
-        window.Resources["TabItemHeaderForegroundSelected"] = foreground;
-        window.Resources["TabItemHeaderForegroundUnselectedPointerOver"] = foreground;
-        window.Resources["TabItemHeaderForegroundSelectedPointerOver"] = foreground;
-        window.Resources["TabItemHeaderForegroundUnselectedPressed"] = foreground;
-        window.Resources["TabItemHeaderForegroundSelectedPressed"] = foreground;
-        window.Resources["TabItemHeaderBackgroundUnselected"] = tabBackground;
-        window.Resources["TabItemHeaderBackgroundSelected"] = selectedTabBackground;
-        window.Resources["TabItemHeaderBackgroundUnselectedPointerOver"] = pointerBackground;
-        window.Resources["TabItemHeaderBackgroundSelectedPointerOver"] = pointerBackground;
-        window.Resources["TabItemHeaderBackgroundUnselectedPressed"] = selectedTabBackground;
-        window.Resources["TabItemHeaderBackgroundSelectedPressed"] = selectedTabBackground;
-        window.Resources["TabItemHeaderSelectedPipeFill"] = accentBrush;
-        window.Resources["ToggleButtonForeground"] = foreground;
-        window.Resources["ToggleButtonForegroundPointerOver"] = foreground;
-        window.Resources["ToggleButtonForegroundPressed"] = foreground;
-        window.Resources["ToggleButtonForegroundChecked"] = foreground;
-        window.Resources["ToggleButtonForegroundCheckedPointerOver"] = foreground;
-        window.Resources["ToggleButtonForegroundCheckedPressed"] = foreground;
-        window.Resources["ToggleButtonBackground"] = tabBackground;
-        window.Resources["ToggleButtonBackgroundPointerOver"] = pointerBackground;
-        window.Resources["ToggleButtonBackgroundPressed"] = selectedTabBackground;
-        window.Resources["ToggleButtonBackgroundChecked"] = selectedTabBackground;
-        window.Resources["ToggleButtonBackgroundCheckedPointerOver"] = pointerBackground;
-        window.Resources["ToggleButtonBackgroundCheckedPressed"] = selectedTabBackground;
-        window.Resources["ToggleButtonBorderBrush"] = borderBrush;
-        window.Resources["ToggleButtonBorderBrushPointerOver"] = accentBrush;
-        window.Resources["ToggleButtonBorderBrushPressed"] = accentBrush;
-        window.Resources["ToggleButtonBorderBrushChecked"] = accentBrush;
-        window.Resources["ToggleButtonBorderBrushCheckedPointerOver"] = accentBrush;
-        window.Resources["ToggleButtonBorderBrushCheckedPressed"] = accentBrush;
-        window.Resources["TextControlForegroundDisabled"] = foreground;
-        window.Resources["TextControlBackgroundDisabled"] = tabBackground;
-        window.Resources["TextControlBorderBrush"] = borderBrush;
+        if (!int.TryParse(
+                component,
+                NumberStyles.None,
+                CultureInfo.InvariantCulture,
+                out var value)
+            || value is < 0 or > 65535)
+        {
+            throw new InvalidOperationException(
+                "The macOS color picker returned an invalid RGB component.");
+        }
+        return (byte)Math.Clamp(
+            (value + 128) / 257,
+            0,
+            255);
     }
 
-    private static string ColorToHex(Color color)
+    [StructLayout(LayoutKind.Sequential)]
+    private struct ChooseColorRequest
     {
-        return ColorValue.ToHex(color);
+        public int StructSize;
+        public nint OwnerHandle;
+        public nint InstanceHandle;
+        public uint Result;
+        public nint CustomColors;
+        public uint Flags;
+        public nint CustomData;
+        public nint Hook;
+        public nint TemplateName;
     }
 
-    private static Color ParseColor(string value)
-    {
-        return ColorValue.Parse(value);
-    }
+    [DllImport(
+        "comdlg32.dll",
+        EntryPoint = "ChooseColorW",
+        SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool ChooseColor(
+        ref ChooseColorRequest request);
+
+    [DllImport("comdlg32.dll")]
+    private static extern uint CommonDialogExtendedError();
 }

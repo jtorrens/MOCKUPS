@@ -63,7 +63,6 @@ const expectedProjects = new Map([
       ],
       packageReferences: [
         "Avalonia",
-        "Avalonia.Controls.ColorPicker",
         "Avalonia.Controls.WebView",
         "Avalonia.Desktop",
         "Avalonia.Fonts.Inter",
