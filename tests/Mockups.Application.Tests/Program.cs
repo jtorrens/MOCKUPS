@@ -1,8 +1,11 @@
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.EditorShell;
+using System.Text.RegularExpressions;
 using System.Text.Json.Nodes;
 
 var tests = new (string Name, Action Run)[]
 {
+    ("SVG fill transforms keep direct reusable geometry", SvgFillTransformsKeepDirectReusableGeometry),
     ("initial tree load resolves a selectable Design context", InitialTreeLoadSelectsDesignContext),
     ("workspace changes restore each workspace selection", WorkspaceChangesRestoreSelection),
     ("tree refresh replaces a deleted selection with a valid fallback", DeletedSelectionFallsBack),
@@ -34,6 +37,62 @@ var tests = new (string Name, Action Run)[]
     ("editor operations preserve their submission order", EditorOperationsAreSerialized),
     ("disposing editor operations cancels queued work", DisposeCancelsQueuedEditorOperations),
 };
+
+static void SvgFillTransformsKeepDirectReusableGeometry()
+{
+    const string source =
+        """
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 5 L19 12 L5 19 Z"/>
+        </svg>
+        """;
+    var options = new SvgReplacementService.TransformOptions(
+        "fill",
+        1,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        source);
+    var filled = SvgReplacementService.Transform(source, options);
+
+    True(!filled.Contains("<mask", StringComparison.OrdinalIgnoreCase));
+    True(filled.Contains("fill=\"#000\"", StringComparison.Ordinal));
+    True(filled.Contains("stroke=\"none\"", StringComparison.Ordinal));
+    True(filled.Contains("M5 5 L19 12 L5 19 Z", StringComparison.Ordinal));
+
+    const string legacyGeneratedFill =
+        """
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <defs>
+            <mask id="mockups-fill-silhouette">
+              <rect width="24" height="24" fill="#000"/>
+              <g data-mockups-transform="fit-center-scale-rotate">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#fff" stroke="none">
+                  <path d="M5 5 L19 12 L5 19 Z"/>
+                </svg>
+              </g>
+            </mask>
+          </defs>
+          <rect width="24" height="24" fill="#000" mask="url(#mockups-fill-silhouette)"/>
+        </svg>
+        """;
+    var retransformed = SvgReplacementService.Transform(
+        legacyGeneratedFill,
+        options with { Mode = "positive" });
+
+    True(!retransformed.Contains("<mask", StringComparison.OrdinalIgnoreCase));
+    Equal(
+        1,
+        Regex.Matches(
+            retransformed,
+            "data-mockups-transform=",
+            RegexOptions.IgnoreCase).Count);
+    True(retransformed.Contains("fill=\"#000\"", StringComparison.Ordinal));
+    True(retransformed.Contains("M5 5 L19 12 L5 19 Z", StringComparison.Ordinal));
+}
 
 var failures = new List<string>();
 foreach (var (name, run) in tests)

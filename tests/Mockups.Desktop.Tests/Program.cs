@@ -98,6 +98,7 @@ var tests = new (string Name, Action Run)[]
     ("Production Font repository preserves current rows and lifecycle", ProductionFontRepositoryPreservesFocusedContract),
     ("Production Font file documents reject filtered or inferred values", ProductionFontFileDocumentsAreStrict),
     ("Icon Theme repository preserves rows and strict token files", IconThemeRepositoryPreservesFocusedContract),
+    ("generated fill SVG previews preserve their filled geometry", GeneratedFillSvgPreviewsPreserveGeometry),
     ("App and Module repository preserves definitions and Rename-only lifecycle", AppModuleRepositoryPreservesFocusedContract),
     ("Component Class repository preserves current definitions and Variants", ComponentClassRepositoryPreservesFocusedContract),
     ("Component dictionary fields use exact ValueKind documents", ComponentDictionaryFieldsUseExactValueKinds),
@@ -9641,6 +9642,48 @@ static void IconThemeRepositoryPreservesFocusedContract()
     {
         File.Delete(temporary);
     }
+}
+
+static void GeneratedFillSvgPreviewsPreserveGeometry()
+{
+    using var session = HeadlessUnitTestSession.StartNew(
+        typeof(HeadlessTestApplication));
+    session.Dispatch(
+        () =>
+        {
+            const string source =
+                """
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="5" y="3" width="5" height="18" rx="1"/>
+                  <rect x="14" y="3" width="5" height="18" rx="1"/>
+                </svg>
+                """;
+            var filled = SvgReplacementService.Transform(
+                source,
+                new SvgReplacementService.TransformOptions(
+                    "fill",
+                    1,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    source));
+            var preview = SvgIconPreview.CreateFromSvg(filled, 24);
+            var border = preview as Border
+                ?? throw new InvalidOperationException("Expected an SVG preview border.");
+            var viewbox = border.Child as Viewbox
+                ?? throw new InvalidOperationException("Expected an SVG preview Viewbox.");
+            var canvas = viewbox.Child as Canvas
+                ?? throw new InvalidOperationException("Expected an SVG preview canvas.");
+            var paths = canvas.Children.OfType<Avalonia.Controls.Shapes.Path>().ToList();
+
+            Equal(2, paths.Count);
+            True(paths.All((path) => path.Fill is not null));
+            True(paths.All((path) => path.Stroke is null));
+        },
+        CancellationToken.None);
 }
 
 static void AppModuleRepositoryPreservesFocusedContract()

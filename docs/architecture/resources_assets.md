@@ -60,6 +60,13 @@ An Icon Theme owns one current mapping document plus metadata. Every token maps
 explicitly to an asset. Icon selection, mapping validation and asset resolution
 live in the resource owner, not `MainWindow`, a generic editor or the renderer.
 
+The shared SVG transformation workflow emits a filled icon as direct filled
+geometry. It does not encode that geometry through a background mask.
+Re-editing a previously transformed SVG recovers its authored inner geometry
+before applying the next transform, so transformations do not nest or recolor
+mask semantics. Lightweight Icon Theme previews inherit presentation attributes
+through the SVG element hierarchy and never paint definition-only geometry.
+
 System UI actions use shared assets under `assets/system/system_icons`. A new
 local glyph is not introduced when the shared action already exists.
 

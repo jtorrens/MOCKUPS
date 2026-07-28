@@ -141,6 +141,12 @@ internal static class SvgIconPreview
         var hasShapes = false;
         foreach (var element in root.Descendants())
         {
+            if (element.Ancestors().Any((ancestor) =>
+                    ancestor.Name.LocalName.Equals("defs", StringComparison.OrdinalIgnoreCase)))
+            {
+                continue;
+            }
+
             var shape = CreateShape(element, root, geometry, brush);
             if (shape is null) continue;
 
@@ -283,11 +289,14 @@ internal static class SvgIconPreview
 
     private static string EffectiveAttribute(XElement element, XElement root, string name, string fallback)
     {
-        var own = Attribute(element, name);
-        if (!string.IsNullOrWhiteSpace(own)) return own;
+        foreach (var candidate in element.AncestorsAndSelf())
+        {
+            var value = Attribute(candidate, name);
+            if (!string.IsNullOrWhiteSpace(value)) return value;
+            if (candidate == root) break;
+        }
 
-        var rootValue = Attribute(root, name);
-        return string.IsNullOrWhiteSpace(rootValue) ? fallback : rootValue;
+        return fallback;
     }
 
     private static string Attribute(XElement element, string name)

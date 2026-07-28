@@ -1,7 +1,10 @@
 using System;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Xml;
+using System.Xml.Linq;
 
 namespace Mockups.DesktopEditorShell.Common;
 
@@ -68,9 +71,10 @@ public static class SvgReplacementService
     public static string Transform(string value, TransformOptions options)
     {
         var mode = NormalizeMode(options.Mode);
+        var authoredSource = ExtractAuthoredSource(value);
         var source = Parts(mode == "fill"
-            ? NormalizePaintToFillMaskWhite(value)
-            : NormalizePaintToBlack(value));
+            ? NormalizePaintToSolidFill(authoredSource, "#000")
+            : NormalizePaintToBlack(authoredSource));
         var target = string.IsNullOrWhiteSpace(options.TargetSvgText) ? source : Parts(options.TargetSvgText);
         var scale = Clamp(options.Scale, 0.05, 8);
         var rotation = Trim(options.RotationDegrees);
@@ -89,13 +93,13 @@ public static class SvgReplacementService
             $"translate({Trim(-source.Geometry.CenterX)} {Trim(-source.Geometry.CenterY)})",
         });
         var namespaces = string.IsNullOrWhiteSpace(source.NamespaceAttributes) ? "" : $" {source.NamespaceAttributes}";
-        var sourcePaint = mode == "fill" ? "#fff" : "#000";
+        const string sourcePaint = "#000";
         var presentationAttributes = strokeWidth == 0
             ? EffectivePresentationAttributes(source.Attributes, sourcePaint)
             : OverrideStrokeWidth(EffectivePresentationAttributes(source.Attributes, sourcePaint), strokeWidth);
         var sourceSvg = $"<svg{namespaces} x=\"{Trim(source.Geometry.MinX)}\" y=\"{Trim(source.Geometry.MinY)}\" width=\"{Trim(source.Geometry.Width)}\" height=\"{Trim(source.Geometry.Height)}\" viewBox=\"{source.ViewBox}\" overflow=\"visible\" color=\"{sourcePaint}\"{presentationAttributes}>\n{source.Body.Trim()}\n    </svg>";
 
-        if (mode is "negative" or "fill")
+        if (mode == "negative")
         {
             var backgroundX = Trim(target.Geometry.MinX + padding);
             var backgroundY = Trim(target.Geometry.MinY + padding);
@@ -103,21 +107,6 @@ public static class SvgReplacementService
             var backgroundHeight = Trim(fitHeight);
             var radius = Trim(Math.Min(cornerRadius, Math.Min(fitWidth / 2, fitHeight / 2)));
             var radiusAttributes = radius == "0" ? "" : $" rx=\"{radius}\" ry=\"{radius}\"";
-            if (mode == "fill")
-            {
-                return $"<svg{target.Attributes}>\n" +
-                    "  <defs>\n" +
-                    $"    <mask id=\"mockups-fill-silhouette\" maskUnits=\"userSpaceOnUse\" x=\"{backgroundX}\" y=\"{backgroundY}\" width=\"{backgroundWidth}\" height=\"{backgroundHeight}\">\n" +
-                    $"      <rect x=\"{backgroundX}\" y=\"{backgroundY}\" width=\"{backgroundWidth}\" height=\"{backgroundHeight}\" fill=\"#000\" stroke=\"none\"/>\n" +
-                    $"      <g data-mockups-transform=\"fit-center-scale-rotate\" data-mockups-fit-scale=\"{Trim(fitScale)}\" data-mockups-padding=\"{Trim(padding)}\" transform=\"{transform}\">\n" +
-                    $"        {sourceSvg}\n" +
-                    "      </g>\n" +
-                    "    </mask>\n" +
-                    "  </defs>\n" +
-                    $"  <rect x=\"{backgroundX}\" y=\"{backgroundY}\" width=\"{backgroundWidth}\" height=\"{backgroundHeight}\" fill=\"#000\" stroke=\"none\" mask=\"url(#mockups-fill-silhouette)\"/>\n" +
-                    "</svg>";
-            }
-
             return $"<svg{target.Attributes}>\n" +
                 "  <defs>\n" +
                 $"    <mask id=\"mockups-negative-cutout\" maskUnits=\"userSpaceOnUse\" x=\"{backgroundX}\" y=\"{backgroundY}\" width=\"{backgroundWidth}\" height=\"{backgroundHeight}\">\n" +
@@ -175,12 +164,17 @@ public static class SvgReplacementService
 
     public static string NormalizePaintToFillMaskWhite(string value)
     {
+        return NormalizePaintToSolidFill(value, "#fff");
+    }
+
+    private static string NormalizePaintToSolidFill(string value, string paint)
+    {
         var svgText = Validate(value);
         var normalized = RemoveNonSvgNamespacedAttributes(svgText);
         normalized = Regex.Replace(
             normalized,
             "\\sfill\\s*=\\s*(['\"])[^'\"]*\\1",
-            " fill=\"#fff\"",
+            $" fill=\"{paint}\"",
             RegexOptions.IgnoreCase);
         normalized = Regex.Replace(
             normalized,
@@ -201,7 +195,7 @@ public static class SvgReplacementService
                 var style = Regex.Replace(
                     match.Groups[2].Value,
                     "(^|;)\\s*fill\\s*:\\s*[^;]+",
-                    (styleMatch) => $"{styleMatch.Groups[1].Value}fill:#fff",
+                    (styleMatch) => $"{styleMatch.Groups[1].Value}fill:{paint}",
                     RegexOptions.IgnoreCase);
                 style = Regex.Replace(
                     style,
@@ -217,6 +211,36 @@ public static class SvgReplacementService
             },
             RegexOptions.IgnoreCase);
         return NormalizeCompoundPathFillRules(normalized);
+    }
+
+    private static string ExtractAuthoredSource(string value)
+    {
+        var svgText = Validate(value);
+        try
+        {
+            using var reader = XmlReader.Create(
+                new StringReader(svgText),
+                new XmlReaderSettings
+                {
+                    DtdProcessing = DtdProcessing.Prohibit,
+                    XmlResolver = null,
+                });
+            var root = XElement.Load(reader, LoadOptions.PreserveWhitespace);
+            var generatedSource = root
+                .Descendants()
+                .Where((element) =>
+                    element.Name.LocalName.Equals("svg", StringComparison.OrdinalIgnoreCase)
+                    && element.Parent is { } parent
+                    && parent.Name.LocalName.Equals("g", StringComparison.OrdinalIgnoreCase)
+                    && parent.Attributes().Any((attribute) =>
+                        attribute.Name.LocalName.Equals("data-mockups-transform", StringComparison.OrdinalIgnoreCase)))
+                .LastOrDefault();
+            return generatedSource?.ToString(SaveOptions.DisableFormatting) ?? svgText;
+        }
+        catch (XmlException exception)
+        {
+            throw new InvalidOperationException("SVG content could not be parsed.", exception);
+        }
     }
 
     private sealed record SvgParts(string Attributes, string Body, Geometry Geometry, string NamespaceAttributes, string ViewBox);
