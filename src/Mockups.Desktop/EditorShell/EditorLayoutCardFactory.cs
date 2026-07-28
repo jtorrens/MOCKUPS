@@ -348,36 +348,53 @@ internal sealed class EditorLayoutCardFactory
         foreach (var group in projection.Groups)
         {
             var scopedControls = new EditorActiveFieldControls();
+            var groupFields = new StackPanel
+            {
+                Spacing = EditorUiDensity.Card(12),
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+            };
             foreach (var fieldId in group.OverrideFieldIds)
             {
-                var row = new StackPanel
-                {
-                    Spacing = EditorUiDensity.Card(8),
-                    Margin = EditorUiDensity.CardThickness(0, 0, 0, 12),
-                };
-                row.Children.Add(new TextBlock
-                {
-                    Text = group.PathLabel,
-                    FontSize = 11,
-                    Opacity = 0.68,
-                    TextTrimming = TextTrimming.CharacterEllipsis,
-                });
-                row.Children.Add(CreateEmbeddedFieldControlCore(
+                groupFields.Children.Add(
+                    CreateEmbeddedFieldControlCore(
                     group.Context,
                     group.Fields[fieldId],
                     projection.DictionaryContext,
                     group.Fields,
                     scopedControls,
-                    () => _scheduleActiveEditorReload(node)));
-                body.Children.Add(new Border
-                {
-                    Padding = EditorUiDensity.CardThickness(0, 8, 0, 12),
-                    BorderThickness = new Thickness(0, 0, 0, 1),
-                    BorderBrush = new SolidColorBrush(
-                        Color.FromArgb(46, 128, 142, 164)),
-                    Child = row,
-                });
+                    () => _scheduleActiveEditorReload(node),
+                    compact: true));
             }
+            body.Children.Add(new Border
+            {
+                Padding = EditorUiDensity.CardThickness(
+                    0,
+                    10,
+                    0,
+                    16),
+                BorderThickness = new Thickness(0, 0, 0, 1),
+                BorderBrush = new SolidColorBrush(
+                    Color.FromArgb(46, 128, 142, 164)),
+                Child = new StackPanel
+                {
+                    Spacing = EditorUiDensity.Card(12),
+                    HorizontalAlignment =
+                        HorizontalAlignment.Stretch,
+                    Children =
+                    {
+                        new TextBlock
+                        {
+                            Text = group.PathLabel,
+                            FontSize = 11,
+                            FontWeight = FontWeight.SemiBold,
+                            Opacity = 0.72,
+                            TextTrimming =
+                                TextTrimming.CharacterEllipsis,
+                        },
+                        groupFields,
+                    },
+                },
+            });
         }
         return body;
     }
@@ -388,7 +405,8 @@ internal sealed class EditorLayoutCardFactory
         EditorDictionaryContextSnapshot dictionaryContext,
         IReadOnlyDictionary<string, FieldValue> preparedFields,
         EditorActiveFieldControls activeFieldControls,
-        Action? restored)
+        Action? restored,
+        bool compact = false)
     {
         var services = _dictionaryFieldServices.ForPreparedNode(
             context.OwnerNode,
@@ -402,7 +420,10 @@ internal sealed class EditorLayoutCardFactory
             (id) => _openNestedEmbeddedComponentEditor(context, id),
             (definition, input) => _openNestedEmbeddedComponentSlotEditor(context, ComponentInputSlot(definition, input)),
             _openRuntimeComponentOverrides);
-        var control = new DictionaryFieldControl(field, services);
+        var control = new DictionaryFieldControl(
+            field,
+            services,
+            compact);
         activeFieldControls.Register(control);
         control.ValueCommitted += async (_, value) =>
         {

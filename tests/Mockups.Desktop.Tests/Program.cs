@@ -3903,6 +3903,8 @@ static void FlatVariantOverridesUseRestoreSemantics()
             () =>
             {
                 var window = DesktopHost.CreateWindow(temporary);
+                window.Width = 1040;
+                window.Height = 700;
                 var content = typeof(MainWindow)
                     .GetField(
                         "_editorContent",
@@ -4013,6 +4015,8 @@ static void FlatVariantOverridesUseRestoreSemantics()
                         {
                             ["padding"] =
                                 "theme.spacing.xl|theme.spacing.l",
+                            ["contentGapToken"] =
+                                "theme.spacing.xl",
                         },
                     };
                 database.UpdateComponentVariantField(
@@ -4076,6 +4080,12 @@ static void FlatVariantOverridesUseRestoreSemantics()
                     new RoutedEventArgs(
                         Button.ClickEvent));
                 Dispatcher.UIThread.RunJobs();
+                var overridesScroll = Required(
+                    window.FindControl<ScrollViewer>(
+                        "EditorOverridesScrollViewer"));
+                True(overridesScroll.IsVisible);
+                True(overridesScroll.Extent.Width
+                    <= overridesScroll.Viewport.Width + 0.5);
                 var flatFields = Required(
                         window.FindControl<StackPanel>(
                             "EditorOverridesPanel"))
@@ -4088,6 +4098,19 @@ static void FlatVariantOverridesUseRestoreSemantics()
                 True(flatFields.Any((field) =>
                     field.FieldId
                         == "component.button.padding"));
+                True(flatFields.Any((field) =>
+                    field.FieldId
+                        == "component.button.contentGapToken"));
+                Equal(
+                    1,
+                    Required(
+                            window.FindControl<StackPanel>(
+                                "EditorOverridesPanel"))
+                        .GetVisualDescendants()
+                        .OfType<TextBlock>()
+                        .Count((text) =>
+                            text.Text
+                                == "Buttons · Button Decline"));
                 var flatPadding = flatFields.Single((field) =>
                     field.FieldId
                         == "component.button.padding");
@@ -4105,7 +4128,7 @@ static void FlatVariantOverridesUseRestoreSemantics()
                             .OfType<ToggleButton>()
                             .Any((button) =>
                                 button.Content as string
-                                    == "Overrides (0)");
+                                    == "Overrides (1)");
                     },
                     TimeSpan.FromSeconds(15)));
                 var persistedIconSlots = JsonNode.Parse(
@@ -4121,6 +4144,32 @@ static void FlatVariantOverridesUseRestoreSemantics()
                         "button"]?[
                         "padding"]
                     is null);
+                var remainingGap =
+                    Required(
+                            window.FindControl<StackPanel>(
+                                "EditorOverridesPanel"))
+                        .GetVisualDescendants()
+                        .OfType<DictionaryFieldControl>()
+                        .Single((field) =>
+                            field.FieldId
+                                == "component.button.contentGapToken");
+                remainingGap.GetVisualDescendants()
+                    .OfType<Button>()
+                    .Single((button) =>
+                        button.Content as string == "↺")
+                    .RaiseEvent(new RoutedEventArgs(
+                        Button.ClickEvent));
+                True(SpinWait.SpinUntil(
+                    () =>
+                    {
+                        Dispatcher.UIThread.RunJobs();
+                        return peerHost.Children
+                            .OfType<ToggleButton>()
+                            .Any((button) =>
+                                button.Content as string
+                                    == "Overrides (0)");
+                    },
+                    TimeSpan.FromSeconds(15)));
                 window.Close();
             },
             CancellationToken.None);

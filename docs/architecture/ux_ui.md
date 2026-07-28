@@ -195,9 +195,11 @@ position.
 Component and Module Variant editors also expose a flat `Overrides (N)` peer
 view. It shows the standard controls for every locally overridden inherited
 field owned by that Variant, across its declared embedded boundaries. It hides
-all inherited fields and all direct Variant fields. The path above each control
-identifies its owning boundary; Restore uses the normal field action and the
-row disappears after the confirmed write.
+all inherited fields and all direct Variant fields. One path header identifies
+each owning boundary. Fields with the same owner path share that header and
+form one continuous compact group. The group fits the measured Overrides
+viewport without horizontal clipping. Restore uses the normal field action and
+the row disappears after the confirmed write.
 
 ## Structured collections
 
