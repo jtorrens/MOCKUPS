@@ -159,6 +159,7 @@ var tests = new (string Name, Action Run)[]
     ("failed Preview preparation keeps the prior tree catalog and selection", FailedPreviewPreparationKeepsPriorSession),
     ("obsolete Preview authoring preparation cannot replace the latest selection", ObsoletePreviewAuthoringPreparationCannotCommit),
     ("obsolete interactive Preview render results are discarded", ObsoleteInteractivePreviewRenderResultsAreDiscarded),
+    ("Preview element identification stays on the generic renderable boundary", PreviewElementIdentificationUsesRenderableIdentity),
     ("Preview resource selection has one session rule", PreviewResourceSelectionHasOneSessionRule),
     ("editor view state follows the exact record class across records", EditorViewStateFollowsRecordClass),
     ("editor view state round-trips per class and clamps scroll", EditorViewStateRoundTripsPerClass),
@@ -6654,6 +6655,58 @@ static void ObsoleteInteractivePreviewRenderResultsAreDiscarded()
         sequence: 4,
         latestSequence: 5,
         isPlaybackUpdate: true));
+}
+
+static void PreviewElementIdentificationUsesRenderableIdentity()
+{
+    True(PreviewElementInspector.Markup.Contains(
+        "id=\"previewElementInspector\"",
+        StringComparison.Ordinal));
+    True(PreviewElementInspector.Markup.Contains(
+        "Ruta renderizada",
+        StringComparison.Ordinal));
+    True(PreviewElementInspector.Script.Contains(
+        "eventTarget.closest(\"[data-renderable-id]\")",
+        StringComparison.Ordinal));
+    True(PreviewElementInspector.Script.Contains(
+        "scaleLayer.querySelectorAll(\"[data-renderable-id]\")",
+        StringComparison.Ordinal));
+    True(PreviewElementInspector.Script.Contains(
+        "data-renderable-type",
+        StringComparison.Ordinal));
+    True(PreviewElementInspector.Script.Contains(
+        "window.addEventListener(\"mousemove\"",
+        StringComparison.Ordinal));
+    True(PreviewElementInspector.Script.Contains(
+        "window.addEventListener(\"mousedown\"",
+        StringComparison.Ordinal));
+    True(PreviewElementInspector.Script.Contains(
+        "document.oncontextmenu",
+        StringComparison.Ordinal));
+    True(PreviewElementInspector.Script.Contains(
+        "{ capture: true }",
+        StringComparison.Ordinal));
+    True(PreviewElementInspector.Script.Contains(
+        "event.stopImmediatePropagation()",
+        StringComparison.Ordinal));
+    True(PreviewElementInspector.Script.Contains(
+        "event.preventDefault()",
+        StringComparison.Ordinal));
+    True(PreviewElementInspector.Script.Contains(
+        "window.mockupsResetPreviewElementInspector",
+        StringComparison.Ordinal));
+    True(PreviewElementInspector.Css(isDark: false).Contains(
+        ".preview-element-highlight",
+        StringComparison.Ordinal));
+    True(PreviewElementInspector.Css(isDark: true).Contains(
+        ".preview-element-inspector",
+        StringComparison.Ordinal));
+    True(!PreviewElementInspector.Script.Contains(
+        "variantReference",
+        StringComparison.Ordinal));
+    True(!PreviewElementInspector.Script.Contains(
+        "componentType",
+        StringComparison.Ordinal));
 }
 
 static void PinnedModuleVariantPreviewSurvivesEditorSelection()

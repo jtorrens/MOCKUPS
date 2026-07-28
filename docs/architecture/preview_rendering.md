@@ -171,6 +171,13 @@ The web renderer paints final resolved nodes. It knows nothing about:
 
 New rendering needs are expressed as generic resolved primitives.
 
+The interactive desktop Preview host may inspect the generic
+`data-renderable-id` and `data-renderable-type` attributes already emitted for
+resolved nodes. Hover identification and the right-click rendered path are
+host presentation only: they do not add Component or Variant interpretation to
+the renderer, bridge or shell, and they are absent from raster and Render Queue
+documents.
+
 ## Render Queue boundary
 
 Render Queue reuses the same prepared Production payload and generic web

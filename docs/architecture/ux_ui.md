@@ -126,6 +126,12 @@ Preview state is visibly distinct:
 Repeated playback of unchanged input is immediate. Escape works during
 resolution, preparation and playback.
 
+In the interactive Preview, hovering a resolved element shows its exact
+renderable identity. Right click pins that element and presents its ordered
+rendered ancestor path. This first inspection surface reports only the generic
+renderable ids and primitive types already present in the Preview document; it
+does not infer or navigate to a Component or Variant.
+
 When a finite action completes, its final frame remains visible and Play
 becomes available again. Play repeats the same initial-to-final action without
 repreparing unchanged frames. Restore returns to the captured initial state.

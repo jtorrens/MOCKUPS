@@ -847,6 +847,7 @@ internal abstract class WebPreviewPane : Grid
                 .preview-non-renderable-message { margin:0; color:{{mutedText}}; font-size:14px; line-height:1.5; }
                 .preview-non-renderable-action { display:none; margin-top:20px; min-height:40px; padding:8px 16px; border:1px solid #D89A16; border-radius:10px; background:#F0B429; color:#17120A; font:700 14px inherit; cursor:pointer; }
                 .preview-non-renderable-action.is-visible { display:inline-grid; place-items:center; }
+                {{PreviewElementInspector.Css(isDark)}}
               </style>
               <style id="mockupsProductionFontStyles">{{FontStylesCss(fontStyleHtml)}}</style>
             </head>
@@ -861,6 +862,7 @@ internal abstract class WebPreviewPane : Grid
                   {{(showDeviceFrame ? "<div aria-hidden=\"true\" class=\"preview-phone-frame\" id=\"previewPhoneFrame\"></div>" : "")}}
                   {{PreviewMetaHtml(showDesignMarks, previewMode, metrics.Name, themeName, themeMode)}}
                 </section>
+                {{PreviewElementInspector.Markup}}
                 <div class="preview-context-state" id="previewContextState" role="status" aria-live="polite">
                   <span class="preview-context-state-dot" aria-hidden="true"></span>
                   <span><span class="preview-context-state-title" id="previewContextStateTitle"></span><span class="preview-context-state-message" id="previewContextStateMessage"></span></span>
@@ -1506,6 +1508,7 @@ internal abstract class WebPreviewPane : Grid
                 };
 
                 window.mockupsSetPreviewBody = (html) => {
+                  window.mockupsResetPreviewElementInspector?.();
                   const sequence = ++previewBodyPatchSequence;
                   const startedAt = performance.now();
                   const nextLayer = document.createElement("div");
@@ -1603,6 +1606,7 @@ internal abstract class WebPreviewPane : Grid
                   });
                   return sequence;
                 };
+                {{PreviewElementInspector.Script}}
                 requestAnimationFrame(calculatePreviewFit);
               </script>
             </body>
