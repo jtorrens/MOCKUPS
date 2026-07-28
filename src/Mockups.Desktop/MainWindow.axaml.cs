@@ -69,6 +69,7 @@ public partial class MainWindow : SukiWindow
         var fieldCommitCoordinator = new EditorFieldCommitCoordinator(
             application.Operations);
         InitializeComponent();
+        EditorContextMenuBehavior.Configure(this);
         _themeController = new EditorThemeController(this, RootShell, RefreshShellTheme);
         var inlinePreviews = EditorInlinePreviewControllerFactory.Create(
             data.ActorPreview,

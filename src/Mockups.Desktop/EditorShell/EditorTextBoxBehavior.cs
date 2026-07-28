@@ -5,6 +5,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -18,6 +19,7 @@ internal static class EditorTextBoxBehavior
     public static TextBox Configure(TextBox textBox)
     {
         EnsureInteractionState(textBox);
+        EditorContextMenuBehavior.Configure(textBox);
         textBox.ClearSelectionOnLostFocus = false;
         textBox.ContextFlyout = null;
         textBox.ContextMenu = null;

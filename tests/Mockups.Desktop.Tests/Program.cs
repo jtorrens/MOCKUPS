@@ -3,6 +3,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -12894,6 +12895,9 @@ static void RuntimeActionControlsReactivateAfterPlaybackAndReattachment()
             Height = 120,
             Content = control,
         };
+        EditorContextMenuBehavior.Configure(window);
+        True(EditorContextMenuBehavior.IsConfigured(window));
+        Equal(window, EditorContextMenuBehavior.Configure(window));
         window.Show();
         Dispatcher.UIThread.RunJobs();
 
@@ -12988,6 +12992,20 @@ static void RuntimeActionControlsReactivateAfterPlaybackAndReattachment()
         Equal(
             EditorNumericUpDownBehavior.CompactHorizontalPadding,
             frameTextBox.Padding.Right);
+        True(frameTextBox.ContextMenu is null);
+        True(frameTextBox.ContextFlyout is null);
+        var contextRequest = new ContextRequestedEventArgs
+        {
+            RoutedEvent = InputElement.ContextRequestedEvent,
+        };
+        frameTextBox.RaiseEvent(contextRequest);
+        True(contextRequest.Handled);
+        var controlContextRequest = new ContextRequestedEventArgs
+        {
+            RoutedEvent = InputElement.ContextRequestedEvent,
+        };
+        next.RaiseEvent(controlContextRequest);
+        True(controlContextRequest.Handled);
 
         frameInput.Value = 4;
         Dispatcher.UIThread.RunJobs();

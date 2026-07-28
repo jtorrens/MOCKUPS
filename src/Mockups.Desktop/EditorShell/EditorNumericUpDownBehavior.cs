@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using Mockups.DesktopEditorShell.Common;
 using System.Linq;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -19,6 +20,7 @@ internal static class EditorNumericUpDownBehavior
     private static NumericUpDown Configure(NumericUpDown numeric, bool compact)
     {
         EditorNumericTextStyle.Apply(numeric);
+        EditorContextMenuBehavior.Configure(numeric);
         numeric.ContextFlyout = null;
         numeric.ContextMenu = null;
         if (compact)

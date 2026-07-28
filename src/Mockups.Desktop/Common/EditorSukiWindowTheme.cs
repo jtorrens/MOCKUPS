@@ -70,6 +70,7 @@ internal static class EditorSukiWindowTheme
 
     public static void ApplyDialogChrome(SukiWindow dialog, Window? owner = null)
     {
+        EditorContextMenuBehavior.Configure(dialog);
         dialog.BackgroundStyle = SukiBackgroundStyle.Flat;
         dialog.BackgroundAnimationEnabled = false;
         dialog.BackgroundTransitionsEnabled = false;

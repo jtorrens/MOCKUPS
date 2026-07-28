@@ -221,5 +221,8 @@ slider uses the shared input behavior: native mouse, touch and keyboard remain
 intact, while primary Wacom Pen press owns a stable capture across the full
 track. Pen motion is latest-value coalesced to the UI frame cadence, and release
 commits the exact final position without retaining an event backlog. Shared
-action buttons and icons are reused throughout; editors do not invent
-alternative chrome for an existing operation.
+text input behavior suppresses native contextual editing popups, including
+those produced by compound numeric templates, while standard keyboard
+cut/copy/paste shortcuts remain available. Shared action buttons and icons are
+reused throughout; editors do not invent alternative chrome for an existing
+operation.
