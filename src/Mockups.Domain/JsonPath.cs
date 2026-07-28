@@ -356,6 +356,49 @@ public static class JsonPath
         return current.Remove(path[^1]);
     }
 
+    public static bool RemoveAndPruneEmptyObjects(
+        JsonObject root,
+        IReadOnlyList<string> path)
+    {
+        if (path.Count == 0)
+        {
+            return false;
+        }
+
+        var current = root;
+        var ancestors =
+            new List<(JsonObject Parent, string Key, JsonObject Child)>();
+        for (var index = 0; index < path.Count - 1; index++)
+        {
+            var key = path[index];
+            if (current[key] is not JsonObject child)
+            {
+                return false;
+            }
+
+            ancestors.Add((current, key, child));
+            current = child;
+        }
+
+        if (!current.Remove(path[^1]))
+        {
+            return false;
+        }
+
+        for (var index = ancestors.Count - 1; index >= 0; index--)
+        {
+            var (parent, key, child) = ancestors[index];
+            if (child.Count > 0)
+            {
+                break;
+            }
+
+            parent.Remove(key);
+        }
+
+        return true;
+    }
+
     public static void SetNumber(JsonObject root, IReadOnlyList<string> path, int value)
     {
         Set(root, path, JsonValue.Create(value)!);

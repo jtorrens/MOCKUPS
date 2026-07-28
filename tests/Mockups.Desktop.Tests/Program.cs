@@ -151,6 +151,7 @@ var tests = new (string Name, Action Run)[]
     ("collapsed editor cards defer their snapshot until expansion", CollapsedEditorCardsDeferSnapshots),
     ("editor visual cards require prepared field snapshots", EditorVisualCardsRequirePreparedFieldSnapshots),
     ("flat Variant Overrides include only local inherited fields", FlatVariantOverridesUseRestoreSemantics),
+    ("explicit Override edits reconcile only with the current inherited value", ExplicitOverrideEditsReconcileCurrentInheritedValue),
     ("rapid visual selection commits only the latest prepared editor", RapidVisualSelectionCommitsLatestPreparedEditor),
     ("new Shot reload prepares Preview before selection", NewShotReloadPreparesPreviewBeforeSelection),
     ("failed Preview preparation keeps the prior tree catalog and selection", FailedPreviewPreparationKeepsPriorSession),
@@ -4322,17 +4323,37 @@ static void FlatVariantOverridesUseRestoreSemantics()
                     throw new InvalidOperationException(
                         $"Background alpha Restore did not persist. Node locked: {listItemVariant.IsLocked}. Message: {window.FindControl<TextBox>("ShellMessagesTextBox")?.Text}");
                 }
-                True(SpinWait.SpinUntil(
-                    () =>
-                    {
-                        Dispatcher.UIThread.RunJobs();
-                        return peerHost.Children
-                            .OfType<ToggleButton>()
-                            .Any((button) =>
-                                button.Content as string
-                                    == $"Overrides ({listItemProjection.Count - 1})");
-                    },
-                    TimeSpan.FromSeconds(15)));
+                if (!SpinWait.SpinUntil(
+                        () =>
+                        {
+                            Dispatcher.UIThread.RunJobs();
+                            return peerHost.Children
+                                .OfType<ToggleButton>()
+                                .Any((button) =>
+                                    button.Content as string
+                                        == $"Overrides ({listItemProjection.Count - 1})");
+                        },
+                        TimeSpan.FromSeconds(15)))
+                {
+                    var currentProjection =
+                        content.PrepareOverridesAsync(
+                                EditorNodeSelectionState
+                                    .EditorNodeForSelection(
+                                        listItemVariant),
+                                listItemVariant)
+                            .GetAwaiter()
+                            .GetResult();
+                    var priorFields = listItemProjection.Groups
+                        .SelectMany((group) =>
+                            group.OverrideFieldIds)
+                        .ToList();
+                    var currentFields = currentProjection.Groups
+                        .SelectMany((group) =>
+                            group.OverrideFieldIds)
+                        .ToList();
+                    throw new InvalidOperationException(
+                        $"Background alpha Restore expected Overrides ({listItemProjection.Count - 1}); current peer labels: {string.Join(", ", peerHost.Children.OfType<ToggleButton>().Select((button) => button.Content as string ?? "<null>"))}; removed fields: {string.Join(", ", priorFields.Except(currentFields, StringComparer.Ordinal))}.");
+                }
 
                 var remainingListItemOverrides =
                     listItemProjection.Count - 1;
@@ -4404,6 +4425,132 @@ static void FlatVariantOverridesUseRestoreSemantics()
     {
         File.Delete(temporary);
     }
+}
+
+static void ExplicitOverrideEditsReconcileCurrentInheritedValue()
+{
+    using var session = HeadlessUnitTestSession.StartNew(
+        typeof(HeadlessTestApplication));
+    session.Dispatch(
+        () =>
+        {
+            var definition = new FieldDefinition(
+                "component.style.shadowEnabled",
+                "Shadow",
+                ValueKind.Boolean,
+                IsEditable: true,
+                DefaultValue: "false",
+                CanInherit: true,
+                InheritedValue: "false");
+            var control = new DictionaryFieldControl(
+                new FieldValue(
+                    definition,
+                    "true",
+                    IsInherited: false));
+            var pairDefinition = new FieldDefinition(
+                "component.test.size",
+                "Size",
+                ValueKind.IntegerPair,
+                IsEditable: true,
+                DefaultValue: "0|0",
+                CanInherit: true,
+                InheritedValue: "0|0",
+                PairLabels: new PairFieldLabels("W", "H"));
+            var pairControl = new DictionaryFieldControl(
+                new FieldValue(
+                    pairDefinition,
+                    "4|10",
+                    IsInherited: false));
+            var inheritedCommit = "";
+            control.ValueCommitted += (_, value) =>
+                inheritedCommit = value;
+            var inheritedPairCommit = "";
+            pairControl.ValueCommitted += (_, value) =>
+                inheritedPairCommit = value;
+            var window = new Window
+            {
+                Width = 320,
+                Height = 180,
+                Content = new StackPanel
+                {
+                    Children =
+                    {
+                        control,
+                        pairControl,
+                    },
+                },
+            };
+            window.Show();
+            Dispatcher.UIThread.RunJobs();
+
+            True(control.HasLocalOverride);
+            var toggle = control.GetVisualDescendants()
+                .OfType<ToggleSwitch>()
+                .Single();
+            toggle.IsChecked = false;
+            Dispatcher.UIThread.RunJobs();
+            Equal("inherited", inheritedCommit);
+            True(!control.HasLocalOverride);
+
+            var pairTextBoxes = pairControl
+                .GetVisualDescendants()
+                .OfType<TextBox>()
+                .ToList();
+            Equal(2, pairTextBoxes.Count);
+            pairTextBoxes[0].Text = "0";
+            pairTextBoxes[1].Text = "0";
+            Dispatcher.UIThread.RunJobs();
+            True(!pairControl.HasLocalOverride);
+            True(SpinWait.SpinUntil(
+                () =>
+                {
+                    Dispatcher.UIThread.RunJobs();
+                    return inheritedPairCommit == "inherited";
+                },
+                TimeSpan.FromSeconds(2)));
+
+            var parentChangedDefinition = definition with
+            {
+                InheritedValue = "true",
+            };
+            var preserved = new DictionaryFieldControl(
+                new FieldValue(
+                    parentChangedDefinition,
+                    "true",
+                    IsInherited: false));
+            True(preserved.HasLocalOverride);
+
+            var overrides = JsonNode.Parse(
+                    """
+                    {
+                      "style": {
+                        "shadowEnabled": true
+                      },
+                      "surface": {
+                        "backgroundAlpha": 0.5
+                      }
+                    }
+                    """)
+                ?.AsObject()
+                ?? throw new InvalidOperationException(
+                    "Missing Override pruning fixture.");
+            var database =
+                new SqliteProjectTestContext(
+                    ParityDatabasePath());
+            database.UpdateRuntimeComponentOverride(
+                overrides,
+                "component.style.shadowEnabled",
+                "inherited");
+            True(overrides["style"] is null);
+            Equal(
+                0.5,
+                overrides["surface"]?["backgroundAlpha"]
+                    ?.GetValue<double>()
+                ?? -1);
+
+            window.Close();
+        },
+        CancellationToken.None).GetAwaiter().GetResult();
 }
 
 static void RapidVisualSelectionCommitsLatestPreparedEditor()

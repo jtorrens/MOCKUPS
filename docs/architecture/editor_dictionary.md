@@ -128,6 +128,12 @@ semantics, not a comparison between Variant snapshots:
   owning boundary path;
 - it reuses the registered dictionary control and the same Restore commit;
 - restoring a field removes it from the projection;
+- an explicit control edit that returns the canonical value to the exact
+  currently inherited value commits the inherited storage value, removes the
+  local Override leaf and prunes empty objects inside that Override boundary;
+- reads never perform that comparison: if a parent Variant later changes and
+  its value happens to match an already stored Override, the Override remains
+  intact until an explicit edit or Restore removes it;
 - direct fields stored by the current Variant never appear, even when they
   differ from the protected Default Variant, class scaffold or seed;
 - referenced child Variant data never appears as an Override of its parent.

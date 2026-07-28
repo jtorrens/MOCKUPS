@@ -67,7 +67,9 @@ internal sealed partial class SqliteDesignOwner :
     private static bool RemoveJsonValue(
         JsonObject root,
         IReadOnlyList<string> path) =>
-        JsonPath.Remove(root, path);
+        JsonPath.RemoveAndPruneEmptyObjects(
+            root,
+            path);
 
     private static JsonNode NumberNode(string value) =>
         JsonPath.NumberNode(value);

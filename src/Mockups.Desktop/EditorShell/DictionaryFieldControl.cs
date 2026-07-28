@@ -290,6 +290,23 @@ internal sealed class DictionaryFieldControl : Grid
             return;
         }
 
+        if (!_isInherited && _value == value)
+        {
+            return;
+        }
+
+        if (_definition.CanInherit
+            && value == _definition.InheritedValue)
+        {
+            _isInherited = true;
+            SetDisplayedValue(_definition.InheritedValue);
+            UpdateState();
+            ValueChanged?.Invoke(
+                this,
+                _definition.InheritedStorageValue);
+            return;
+        }
+
         if (_definition.CanInherit && value == _definition.InheritedStorageValue)
         {
             if (_isInherited)
@@ -303,8 +320,6 @@ internal sealed class DictionaryFieldControl : Grid
             ValueChanged?.Invoke(this, _definition.InheritedStorageValue);
             return;
         }
-
-        if (!_isInherited && _value == value) return;
 
         _value = value;
         _isInherited = false;
