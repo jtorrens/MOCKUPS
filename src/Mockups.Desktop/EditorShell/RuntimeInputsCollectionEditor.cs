@@ -296,6 +296,13 @@ internal sealed class RuntimeInputsCollectionEditor
         };
         if (!owner.IsInstance)
         {
+            var config =
+                DesignPreviewTestValues.Parse(
+                    owner.ConfigJson);
+            JsonObject DefaultPreview() =>
+                PrepareDefaultPreview(
+                    owner.DesignPreviewJson,
+                    config);
             var reset = new Button
             {
                 MinWidth = 150,
@@ -318,9 +325,15 @@ internal sealed class RuntimeInputsCollectionEditor
             void RefreshSaveState()
             {
                 var current = preview.DeepClone().AsObject();
-                var baseline = DesignPreviewTestValues.Parse(owner.DesignPreviewJson);
-                var currentInputs = RuntimeInputDefinitionReader.ReadInputs(current, config: DesignPreviewTestValues.Parse(owner.ConfigJson));
-                var currentCollections = RuntimeInputDefinitionReader.ReadCollections(current, DesignPreviewTestValues.Parse(owner.ConfigJson));
+                var baseline = DefaultPreview();
+                var currentInputs =
+                    RuntimeInputDefinitionReader.ReadInputs(
+                        current,
+                        config);
+                var currentCollections =
+                    RuntimeInputDefinitionReader.ReadCollections(
+                        current,
+                        config);
                 var currentDifferences = DesignPreviewTestValues.Differences(current, baseline, currentInputs, currentCollections);
                 saveDefaults.IsEnabled = currentDifferences.Count > 0;
                 ToolTip.SetTip(saveDefaults, currentDifferences.Count == 0
@@ -332,7 +345,12 @@ internal sealed class RuntimeInputsCollectionEditor
             {
                 args.Handled = true;
                 var current = preview.DeepClone().AsObject();
-                var differences = DesignPreviewTestValues.Differences(current, DesignPreviewTestValues.Parse(owner.DesignPreviewJson), inputs, collections);
+                var differences =
+                    DesignPreviewTestValues.Differences(
+                        current,
+                        DefaultPreview(),
+                        inputs,
+                        collections);
                 if (differences.Count == 0 || !await _confirmSaveDefaults(owner.Node.Name, differences.Select((difference) => difference.Label).ToList())) return;
                 DesignPreviewTestValues.PromoteToDefaults(current, inputs, collections);
                 await owner.Save(current.ToJsonString());
@@ -826,6 +844,14 @@ internal sealed class RuntimeInputsCollectionEditor
         result.Children.Add(editorHost);
         return result;
     }
+
+    internal static JsonObject PrepareDefaultPreview(
+        string designPreviewJson,
+        JsonObject config) =>
+        RuntimeInputForwardingContract.EffectivePreview(
+            DesignPreviewTestValues.Parse(
+                designPreviewJson),
+            config);
 
     private Control CreatePromotedRuntimeContractContent(
         RuntimeInputOwner owner,

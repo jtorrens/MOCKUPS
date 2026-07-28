@@ -12201,6 +12201,30 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
             .Single((node) => node.Kind == ProjectTreeNodeKind.ModuleVariant
                 && node.Parent?.RecordClassId == "module.core.lockScreen"
                 && node.Name == "Default");
+        var module = moduleVariant.Parent
+            ?? throw new InvalidOperationException(
+                "Lock Screen Variant has no parent Module.");
+        var moduleSettings = database.GetModuleSettings(module.Id);
+        var moduleConfig =
+            DesignPreviewTestValues.Parse(moduleSettings.ConfigJson);
+        var previewInputData = new ComponentPreviewInputDataSource(
+            database.Design,
+            database.Resources);
+        var moduleEffective = ComponentPreviewTransientValues.Apply(
+            DesignPreviewTestValues.Parse(
+                moduleSettings.DesignPreviewJson),
+            moduleConfig,
+            ComponentPreviewTransientState.Capture(
+                ComponentPreviewTransientValues.ScopeKey(
+                    module,
+                    isInstance: false),
+                new Dictionary<string, string>(),
+                new Dictionary<string, JsonObject>()),
+            previewInputData.ComponentVariantConfig);
+        True(
+            moduleEffective[
+                "forwarded_module_lockScreen_stackStates__variantSource"]
+            is JsonArray);
         moduleVariant = NodeCommands(database)
             .ToggleModuleVariantLock(moduleVariant);
         var settings = database.GetModuleVariantSettings(moduleVariant);
@@ -12223,14 +12247,13 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
         }
         var persistedPreview =
             DesignPreviewTestValues.Parse(settings.DesignPreviewJson);
-        var previewInputData = new ComponentPreviewInputDataSource(
-            database.Design,
-            database.Resources);
         var effective = ComponentPreviewTransientValues.Apply(
             persistedPreview,
             config,
             ComponentPreviewTransientState.Capture(
-                "",
+                ComponentPreviewTransientValues.ScopeKey(
+                    moduleVariant,
+                    isInstance: false),
                 new Dictionary<string, string>(),
                 new Dictionary<string, JsonObject>()),
             previewInputData.ComponentVariantConfig);
@@ -12256,6 +12279,17 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
         Equal("slotId", stateInputs.UiParentItemIdJsonKey);
         Equal("inputs", stateInputs.ItemRuntimeContractJsonKey);
         var stateItems = DesignPreviewTestValues.CollectionItems(effective, stateInputs);
+        var baseline =
+            RuntimeInputsCollectionEditor.PrepareDefaultPreview(
+                settings.DesignPreviewJson,
+                config);
+        Equal(
+            0,
+            DesignPreviewTestValues.Differences(
+                effective,
+                baseline,
+                forwardedInputs,
+                collections).Count);
         True(stateItems.All((item) => !string.IsNullOrWhiteSpace(item["name"]?.GetValue<string>())));
         var passwordState = stateItems.Single((item) =>
             item["variantReference"]?.GetValue<string>()?.Contains("_password::variant::", StringComparison.Ordinal) == true);
