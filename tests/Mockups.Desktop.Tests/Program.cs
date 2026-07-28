@@ -4785,11 +4785,9 @@ static void PreviewShellVisualTreeIsResponsive()
             var tabs = Required(window.FindControl<TabControl>("PreviewUtilityTabs"));
             var authoringTab = Required(window.FindControl<TabItem>("PreviewAuthoringDataTab"));
             var setupTab = Required(window.FindControl<TabItem>("PreviewSetupTab"));
-            var controlsTab = Required(window.FindControl<TabItem>("PreviewControlsTab"));
             var setupGrid = Required(window.FindControl<Grid>("PreviewSetupGrid"));
             var setupHost = Required(window.FindControl<ContentControl>("PreviewSetupHost"));
             var combinedControlsHost = Required(window.FindControl<ContentControl>("PreviewCombinedControlsHost"));
-            var controlsHost = Required(window.FindControl<ContentControl>("PreviewControlsHost"));
             var setupScroll = setupHost.GetVisualAncestors().OfType<ScrollViewer>().First();
 
             if (!authoringTab.IsVisible)
@@ -4855,12 +4853,8 @@ static void PreviewShellVisualTreeIsResponsive()
                 LayoutCheck(
                     visibleTabs.All((tab) => tab.IsVisible && tab.Bounds.Width > 0),
                     $"{size}: one of the two Design Preview tabs is not visible");
-                LayoutCheck(
-                    !controlsTab.IsVisible,
-                    $"{size}: Design exposes the separate Preview Controls tab");
                 Equal("Preview", setupTab.Header as string);
                 True(combinedControlsHost.Content is Control);
-                True(controlsHost.Content is null);
                 var tabRects = visibleTabs.Select((tab) => BoundsInWindow(tab, window)).ToList();
                 LayoutCheck(
                     tabRects.Max((rect) => rect.Top) - tabRects.Min((rect) => rect.Top) <= 0.5,
@@ -4935,10 +4929,8 @@ static void PreviewShellVisualTreeIsResponsive()
             True(!Required(Required(window.FindControl<Control>("PreviewThemeComboBox")).Parent as Visual).IsVisible);
             True(!Required(Required(window.FindControl<Control>("PreviewModeComboBox")).Parent as Visual).IsVisible);
             True(Required(Required(window.FindControl<Control>("PreviewOrientationComboBox")).Parent as Visual).IsVisible);
-            Equal("Preview Setup", setupTab.Header as string);
-            True(controlsTab.IsVisible);
-            True(combinedControlsHost.Content is null);
-            True(controlsHost.Content is Control);
+            Equal("Preview", setupTab.Header as string);
+            True(combinedControlsHost.Content is Control);
             Equal(selectedTab, tabs.SelectedItem);
 
             Required(window.FindControl<Button>("DesignWorkspaceButton"))
@@ -4949,9 +4941,7 @@ static void PreviewShellVisualTreeIsResponsive()
             True(Required(Required(window.FindControl<Control>("PreviewModeComboBox")).Parent as Visual).IsVisible);
             True(Required(Required(window.FindControl<Control>("PreviewOrientationComboBox")).Parent as Visual).IsVisible);
             Equal("Preview", setupTab.Header as string);
-            True(!controlsTab.IsVisible);
             True(combinedControlsHost.Content is Control);
-            True(controlsHost.Content is null);
             LayoutCheck(
                 setupGrid.ColumnDefinitions.Count == 2
                 && setupGrid.RowDefinitions.Count == 2,

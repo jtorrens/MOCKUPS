@@ -204,7 +204,7 @@
                                                     VerticalContentAlignment="Stretch" />
                                 </TabItem>
                                 <TabItem x:Name="PreviewSetupTab"
-                                         Header="Preview Setup">
+                                         Header="Preview">
                                     <ScrollViewer HorizontalScrollBarVisibility="Disabled"
                                                   VerticalScrollBarVisibility="Auto">
                                         <StackPanel>
@@ -256,10 +256,6 @@
                                             <ContentControl x:Name="PreviewCombinedControlsHost" />
                                         </StackPanel>
                                     </ScrollViewer>
-                                </TabItem>
-                                <TabItem x:Name="PreviewControlsTab"
-                                         Header="Preview Controls">
-                                    <ContentControl x:Name="PreviewControlsHost" />
                                 </TabItem>
                             </TabControl>
                         </Border>

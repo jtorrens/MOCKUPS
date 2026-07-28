@@ -82,9 +82,8 @@ Design places Preview authoring above the Preview in two horizontal tabs:
 
 Preview combines the visual-context setup and the generic Preview controls in
 one scrollable Design surface. Both sections retain their existing semantic
-owners and state. Production keeps Preview Setup and Preview Controls as
-separate tabs because its Screen Payload authoring and Shot transport form a
-different workspace task.
+owners and state. Production uses the same combined Preview surface; its
+production context and Shot transport remain visible within that tab.
 
 The Test Values view keeps temporary-data actions and Play/Restore controls in
 a fixed upper surface. Every finite action also exposes shared previous-frame

@@ -17,7 +17,6 @@ public partial class MainWindow : SukiWindow
 {
     private const string PreviewUtilityAuthoringDataId = "authoring-data";
     private const string PreviewUtilitySetupId = "setup";
-    private const string PreviewUtilityControlsId = "controls";
     private readonly EditorCollectionCardFactory _collectionCards;
     private readonly EditorPreviewController _previewController;
     private readonly IEditorShellMessageSink _messages;
@@ -93,11 +92,7 @@ public partial class MainWindow : SukiWindow
             PreviewOrientationComboBox,
             _messages,
             PreviewSetupHost,
-            PreviewControlsHost,
             PreviewCombinedControlsHost,
-            PreviewUtilityTabs,
-            PreviewSetupTab,
-            PreviewControlsTab,
             PreviewBusyHost,
             DesignPreviewHost,
             PreviewContextTextBlock,
@@ -793,7 +788,6 @@ public partial class MainWindow : SukiWindow
         var selectedId = _editorSessionUiState.Selection(_previewUtilityTabStateKey);
         var selectedTab = selectedId switch
         {
-            PreviewUtilityControlsId => PreviewControlsTab,
             PreviewUtilitySetupId => PreviewSetupTab,
             PreviewUtilityAuthoringDataId when authoringSurface is not null => PreviewAuthoringDataTab,
             _ when authoringSurface is not null => PreviewAuthoringDataTab,
@@ -818,7 +812,6 @@ public partial class MainWindow : SukiWindow
     {
         if (ReferenceEquals(selectedTab, PreviewAuthoringDataTab)) return PreviewUtilityAuthoringDataId;
         if (ReferenceEquals(selectedTab, PreviewSetupTab)) return PreviewUtilitySetupId;
-        if (ReferenceEquals(selectedTab, PreviewControlsTab)) return PreviewUtilityControlsId;
         return null;
     }
 

@@ -163,12 +163,6 @@ internal sealed class EditorPreviewController : IDisposable
     private readonly IProjectPathResolver _projectPaths;
     private readonly ComponentPreviewInputSession _designInputsPanel;
     private readonly ContentControl _previewBusyHost;
-    private readonly ContentControl _previewControlsHost;
-    private readonly ContentControl _previewCombinedControlsHost;
-    private readonly TabControl _previewUtilityTabs;
-    private readonly TabItem _previewSetupTab;
-    private readonly TabItem _previewControlsTab;
-    private readonly Control _previewControlsContent;
     private readonly StackPanel _productionContextHost = new()
     {
         Spacing = 7,
@@ -317,11 +311,7 @@ internal sealed class EditorPreviewController : IDisposable
         EditorInstantComboBox orientationComboBox,
         IEditorShellMessageSink messages,
         ContentControl previewSetupHost,
-        ContentControl previewControlsHost,
         ContentControl previewCombinedControlsHost,
-        TabControl previewUtilityTabs,
-        TabItem previewSetupTab,
-        TabItem previewControlsTab,
         ContentControl previewBusyHost,
         ContentControl designPreviewHost,
         TextBlock designContextText,
@@ -357,11 +347,6 @@ internal sealed class EditorPreviewController : IDisposable
         _modeComboBox = modeComboBox;
         _orientationComboBox = orientationComboBox;
         _messages = messages;
-        _previewControlsHost = previewControlsHost;
-        _previewCombinedControlsHost = previewCombinedControlsHost;
-        _previewUtilityTabs = previewUtilityTabs;
-        _previewSetupTab = previewSetupTab;
-        _previewControlsTab = previewControlsTab;
         _isDark = isDark;
         _selectedNode = selectedNode;
         _selectNodeById = selectNodeById;
@@ -403,8 +388,7 @@ internal sealed class EditorPreviewController : IDisposable
         _designContextAddHistoryButton.Content = EditorIcons.Create(EditorIcons.Add, 15);
 
         WrapPreviewSetup(previewSetupHost);
-        _previewControlsContent = CreatePreviewControls();
-        ApplyPreviewUtilityWorkspace();
+        previewCombinedControlsHost.Content = CreatePreviewControls();
         designPreviewHost.Content = _designPreviewPane;
         AttachControlEvents();
         _designContextText.Cursor = new Cursor(StandardCursorType.Hand);
@@ -699,7 +683,6 @@ internal sealed class EditorPreviewController : IDisposable
     {
         if (_workspace == workspace) return;
         _workspace = workspace;
-        ApplyPreviewUtilityWorkspace();
         _designContextHistoryPopup.IsOpen = false;
         StopShotPlayback();
         if (refresh) Refresh();
@@ -961,28 +944,6 @@ internal sealed class EditorPreviewController : IDisposable
         };
         UpdateReferenceControlsVisibility();
         return content;
-    }
-
-    private void ApplyPreviewUtilityWorkspace()
-    {
-        var combinesPreview = _workspace == EditorWorkspace.Design;
-        _previewSetupTab.Header = combinesPreview
-            ? "Preview"
-            : "Preview Setup";
-        _previewControlsTab.IsVisible = !combinesPreview;
-        _previewControlsHost.Content = combinesPreview
-            ? null
-            : _previewControlsContent;
-        _previewCombinedControlsHost.Content = combinesPreview
-            ? _previewControlsContent
-            : null;
-        if (combinesPreview
-            && ReferenceEquals(
-                _previewUtilityTabs.SelectedItem,
-                _previewControlsTab))
-        {
-            _previewUtilityTabs.SelectedItem = _previewSetupTab;
-        }
     }
 
     private static Control LabeledToggle(string label, ToggleSwitch toggle)
