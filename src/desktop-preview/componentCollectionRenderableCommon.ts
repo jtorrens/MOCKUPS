@@ -5,7 +5,7 @@ import type {
   ComponentCollectionLayoutItem,
   ComponentCollectionSizingMode,
 } from "./componentCollectionContract.js";
-import { boundedCenterBox, embeddedComponentPayload, interpolateBox, interpolateRenderableGeometry, numberToken, previewScreenBox, renderScale, translateRenderableNode } from "./componentRenderableCommon.js";
+import { boundedCenterBox, embeddedVariantComponentPayload, interpolateBox, interpolateRenderableGeometry, numberToken, previewScreenBox, renderScale, translateRenderableNode } from "./componentRenderableCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { wrapExitMotionFrame, wrapMotionFrame } from "./previewMotionHelpers.js";
 
@@ -45,9 +45,10 @@ export function renderComponentCollectionFlow(
     items,
     (item) => {
       const component = item as ComponentCollectionItemContract;
-      return renderChild(embeddedComponentPayload(
+      return renderChild(embeddedVariantComponentPayload(
         { ...payload, localFrame: component.localFrame },
         component.componentType,
+        component.variantReference,
         component.config,
         component.inputs,
       ));
@@ -209,9 +210,10 @@ function measureItems(
 ): MeasuredItem[] {
   const scale = renderScale(payload);
   const intrinsic = items.map((item) => {
-    const node = renderChild(embeddedComponentPayload(
+    const node = renderChild(embeddedVariantComponentPayload(
       { ...payload, localFrame: item.localFrame },
       item.componentType,
+      item.variantReference,
       item.config,
       item.inputs,
     ));
@@ -231,9 +233,10 @@ function measureItems(
   const assignedBox = boundedCenterBox(payload, width, height);
   return items.map((item) => {
     const child = renderChild(
-      embeddedComponentPayload(
+      embeddedVariantComponentPayload(
         { ...payload, localFrame: item.localFrame },
         item.componentType,
+        item.variantReference,
         item.config,
         item.inputs,
       ),

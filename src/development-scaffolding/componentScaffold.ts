@@ -137,6 +137,7 @@ export interface ComponentScaffoldPlan {
   }>;
   manifestEntry: ComponentScaffoldSpec["manifest"] & {
     category: ComponentScaffoldCategory;
+    recordClassId: string;
   };
   registryRoute: {
     componentType: string;
@@ -759,6 +760,7 @@ export function createComponentScaffoldPlan(
     ],
     manifestEntry: {
       category: spec.component.category,
+      recordClassId: spec.component.recordClassId,
       ...spec.manifest,
     },
     registryRoute: {

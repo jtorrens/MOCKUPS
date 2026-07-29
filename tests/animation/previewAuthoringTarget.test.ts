@@ -12,6 +12,9 @@ import {
   renderAuthoringSlot,
   withAuthoringTarget,
 } from "../../src/desktop-preview/previewAuthoringTarget.js";
+import {
+  embeddedVariantComponentPayload,
+} from "../../src/desktop-preview/previewPayloadHelpers.js";
 import { RenderableNodeSchema } from "../../src/visual/renderable/schema.js";
 
 test("authoring targets preserve the exact owner and nested slot chain", () => {
@@ -103,6 +106,40 @@ test("full Component Variant boundaries replace the authoring owner exactly", ()
     ownerId: "component_text_input::variant::chat",
     slotFieldIds: [],
   });
+});
+
+test("generic embedded Variant payloads publish the exact child owner", () => {
+  const modulePayload = {
+    authoringOwnerId: "module_lock_screen::variant::default",
+    authoringRecordClassId: "module.core.lockScreen",
+    authoringSlotFieldIds: ["invalid.previous.slot"],
+    authoringFocusFieldId: "module.lockScreen.stack",
+  } as DesignPreviewPayload;
+  const child = embeddedVariantComponentPayload(
+    modulePayload,
+    "label",
+    "component_label::variant::clock",
+    {},
+    { sampleText: "00:10" },
+  );
+
+  assert.deepEqual(withAuthoringTarget(child, {
+    id: "component.label",
+    type: "group",
+  }).metadata?.authoringTarget, {
+    ownerId: "component_label::variant::clock",
+    slotFieldIds: [],
+  });
+  assert.throws(
+    () => embeddedVariantComponentPayload(
+      modulePayload,
+      "plausible",
+      "component_plausible::variant::default",
+      {},
+      {},
+    ),
+    /Unsupported embedded Component type 'plausible'/,
+  );
 });
 
 test("structured authoring targets preserve the exact stable item id", () => {

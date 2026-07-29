@@ -194,7 +194,7 @@ function validateManifestEntry(
   assert.deepEqual(
     exactKeys(entry),
     "category" in entry
-      ? ["category", "contract", "embeds", "renderable", "resolver"]
+      ? ["category", "contract", "embeds", "recordClassId", "renderable", "resolver"]
       : ["contract", "embeds", "label", "renderable", "resolver"],
     `${owner} has fields outside the current manifest contract`,
   );
@@ -357,6 +357,11 @@ test("the Preview manifest is the exact executable owner catalog", () => {
       ["atom", "component", "system"]
         .includes(entry.category),
       `${owner} has unsupported category ${entry.category}`,
+    );
+    assert.equal(
+      entry.recordClassId,
+      `component.${owner}`,
+      `${owner} has an unexpected record class`,
     );
     validateManifestEntry(owner, entry);
   }

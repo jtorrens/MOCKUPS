@@ -175,6 +175,7 @@ export function integrateComponentScaffold(
   );
   components[componentType] = {
     category: spec.component.category,
+    recordClassId: spec.component.recordClassId,
     ...spec.manifest,
   };
   addPolymorphicEmbed(components, "componentStack", componentType);
@@ -303,6 +304,7 @@ export function verifyComponentScaffoldImplementation(
   const manifestEntry = components[componentType];
   const expectedManifestEntry = {
     category: spec.component.category,
+    recordClassId: spec.component.recordClassId,
     ...spec.manifest,
   };
   if (canonicalJson(manifestEntry) !== canonicalJson(expectedManifestEntry)) {

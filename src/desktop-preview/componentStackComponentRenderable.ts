@@ -1,7 +1,7 @@
 import type { RenderableBox, RenderableNode } from "../visual/renderable/types.js";
 import type { ComponentCollectionLayoutItem } from "./componentCollectionContract.js";
 import {
-  embeddedComponentPayload,
+  embeddedVariantComponentPayload,
   placeChild,
   previewScreenBox,
   renderScale,
@@ -81,9 +81,10 @@ function renderAlternativeBase(
   assignedBox?: RenderableBox,
 ): RenderableNode {
   const component = alternative.component!;
-  const childPayload = embeddedComponentPayload(
+  const childPayload = embeddedVariantComponentPayload(
     { ...payload, localFrame: alternative.localFrame },
     component.componentType,
+    component.variantReference,
     component.config,
     component.inputs,
   );

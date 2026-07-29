@@ -34,4 +34,8 @@ export {
 } from "./previewGeometryHelpers.js";
 export { iconTokenStyle } from "./previewIconHelpers.js";
 export { shadow, surfaceVisualPadding } from "./previewSurfaceHelpers.js";
-export { embeddedComponentPayload, previewPayloadInBox } from "./previewPayloadHelpers.js";
+export {
+  embeddedComponentPayload,
+  embeddedVariantComponentPayload,
+  previewPayloadInBox,
+} from "./previewPayloadHelpers.js";

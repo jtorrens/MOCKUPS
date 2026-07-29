@@ -9,6 +9,7 @@ import {
   mergeComponentDefaults,
 } from "../../src/desktop-preview/componentPreviewDefaults.js";
 import type { DesignPreviewPayload } from "../../src/desktop-preview/designPreviewPayload.js";
+import { withAuthoringTarget } from "../../src/desktop-preview/previewAuthoringTarget.js";
 
 test("Component Variant references require the exact stable full-reference grammar", () => {
   const bases = { variants: { "stub::variant::default": {} } };
@@ -232,6 +233,40 @@ test("Component Stack uses a child Variant boundary Motion for both entry and ex
   const resolved = resolveComponentStackComponent(source);
   assert.deepEqual(resolved.slots[0]?.alternatives[0]?.enterMotion, boundaryMotion);
   assert.deepEqual(resolved.slots[0]?.alternatives[0]?.exitMotion, boundaryMotion);
+});
+
+test("Component Stack publishes each alternative's exact Component Variant owner", () => {
+  const variantReference = "component_label::variant::clock";
+  const source = payload([
+    alternative("clock", variantReference, true),
+  ]);
+  const bases = JSON.parse(source.componentBaseConfigsJson) as {
+    variantTypes: Record<string, string>;
+  };
+  bases.variantTypes[variantReference] = "label";
+  source.componentBaseConfigsJson = JSON.stringify(bases);
+  source.authoringOwnerId = "module_lock_screen::variant::default";
+  source.authoringRecordClassId = "module.core.lockScreen";
+  source.authoringSlotFieldIds = ["module.lockScreen.stack.editor"];
+
+  const renderable = componentStackComponentToRenderable(
+    source,
+    resolveComponentStackComponent(source),
+    (child) => withAuthoringTarget(child, {
+      id: "component.label",
+      type: "group",
+      frame: 0,
+      box: { x: 100, y: 100, width: 160, height: 80 },
+      children: [],
+    }),
+  );
+  assert.deepEqual(
+    renderable.children?.[0]?.children?.[0]?.metadata?.authoringTarget,
+    {
+      ownerId: variantReference,
+      slotFieldIds: [],
+    },
+  );
 });
 
 test("Component Stack rejects malformed slot, State and Overrides documents", () => {

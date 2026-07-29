@@ -6,6 +6,7 @@ import { interpolateComponentCollectionReflow } from "../../src/desktop-preview/
 import type { CollectionStackDesignContract } from "../../src/desktop-preview/collectionStackComponentContract.js";
 import { resolveCollectionStackComponent } from "../../src/desktop-preview/collectionStackComponentResolver.js";
 import type { DesignPreviewPayload } from "../../src/desktop-preview/designPreviewPayload.js";
+import { withAuthoringTarget } from "../../src/desktop-preview/previewAuthoringTarget.js";
 import type { RenderableBox, RenderableNode } from "../../src/visual/renderable/types.js";
 
 const payload: DesignPreviewPayload = {
@@ -103,6 +104,39 @@ test("Collection Stack anchors upward distribution at the end boundary", () => {
     { x: 170, y: 685, width: 20, height: 20 },
     { x: 170, y: 695, width: 20, height: 20 },
   ]);
+});
+
+test("Component collections publish every item's exact Component Variant owner", () => {
+  const variantReference = "component_label::variant::clock";
+  const source = {
+    ...payload,
+    authoringOwnerId: "module_chat_list::variant::default",
+    authoringRecordClassId: "module.core.chatList",
+    authoringSlotFieldIds: ["module.chatList.list.editor"],
+  };
+  const configured = {
+    ...contract("down"),
+    items: [{
+      ...items[0]!,
+      componentType: "label",
+      variantReference,
+    }],
+  };
+  const result = collectionStackComponentToRenderable(
+    source,
+    configured,
+    (childPayload) => withAuthoringTarget(childPayload, {
+      id: "component.label",
+      type: "group",
+      frame: 0,
+      box: { x: 0, y: 0, width: 20, height: 20 },
+      children: [],
+    }),
+  );
+  assert.deepEqual(result.children?.[0]?.metadata?.authoringTarget, {
+    ownerId: variantReference,
+    slotFieldIds: [],
+  });
 });
 
 test("Collection Stack uses the largest frame and applies deterministic depth ratios", () => {

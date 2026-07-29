@@ -3,6 +3,7 @@
   "components": {
     "label": {
       "category": "atom",
+      "recordClassId": "component.label",
       "contract": "./labelComponentContract",
       "resolver": "./labelComponentResolver",
       "renderable": "./labelComponentRenderable",
@@ -12,6 +13,7 @@
     },
     "surface": {
       "category": "atom",
+      "recordClassId": "component.surface",
       "contract": "./surfaceComponentContract",
       "resolver": "./surfaceComponentResolver",
       "renderable": "./surfaceComponentRenderable",
@@ -19,6 +21,7 @@
     },
     "cursor": {
       "category": "atom",
+      "recordClassId": "component.cursor",
       "contract": "./cursorComponentContract",
       "resolver": "./cursorComponentResolver",
       "renderable": "./cursorComponentRenderable",
@@ -26,6 +29,7 @@
     },
     "textBox": {
       "category": "atom",
+      "recordClassId": "component.textBox",
       "contract": "./textBoxComponentContract",
       "resolver": "./textBoxComponentResolver",
       "renderable": "./textBoxComponentRenderable",
@@ -37,6 +41,7 @@
     },
     "iconRow": {
       "category": "atom",
+      "recordClassId": "component.iconRow",
       "contract": "./iconRowComponentContract",
       "resolver": "./iconRowComponentResolver",
       "renderable": "./iconRowComponentRenderable",
@@ -46,6 +51,7 @@
     },
     "iconBar": {
       "category": "atom",
+      "recordClassId": "component.iconBar",
       "contract": "./iconBarComponentContract",
       "resolver": "./iconBarComponentResolver",
       "renderable": "./iconBarComponentRenderable",
@@ -55,6 +61,7 @@
     },
     "componentStack": {
       "category": "atom",
+      "recordClassId": "component.componentStack",
       "contract": "./componentStackComponentContract",
       "resolver": "./componentStackComponentResolver",
       "renderable": "./componentStackComponentRenderable",
@@ -91,6 +98,7 @@
     },
     "collectionStack": {
       "category": "atom",
+      "recordClassId": "component.collectionStack",
       "contract": "./collectionStackComponentContract",
       "resolver": "./collectionStackComponentResolver",
       "renderable": "./collectionStackComponentRenderable",
@@ -127,6 +135,7 @@
     },
     "badge": {
       "category": "atom",
+      "recordClassId": "component.badge",
       "contract": "./badgeComponentContract",
       "resolver": "./badgeComponentResolver",
       "renderable": "./badgeComponentRenderable",
@@ -134,6 +143,7 @@
     },
     "notification": {
       "category": "component",
+      "recordClassId": "component.notification",
       "contract": "./notificationComponentContract",
       "resolver": "./notificationComponentResolver",
       "renderable": "./notificationComponentRenderable",
@@ -145,6 +155,7 @@
     },
     "notifications": {
       "category": "component",
+      "recordClassId": "component.notifications",
       "contract": "./notificationsComponentContract",
       "resolver": "./notificationsComponentResolver",
       "renderable": "./notificationsComponentRenderable",
@@ -155,6 +166,7 @@
     },
     "listItem": {
       "category": "component",
+      "recordClassId": "component.listItem",
       "contract": "./listItemComponentContract",
       "resolver": "./listItemComponentResolver",
       "renderable": "./listItemComponentRenderable",
@@ -167,6 +179,7 @@
     },
     "list": {
       "category": "component",
+      "recordClassId": "component.list",
       "contract": "./listComponentContract",
       "resolver": "./listComponentResolver",
       "renderable": "./listComponentRenderable",
@@ -178,6 +191,7 @@
     },
     "codeIndicator": {
       "category": "atom",
+      "recordClassId": "component.codeIndicator",
       "contract": "./codeIndicatorComponentContract",
       "resolver": "./codeIndicatorComponentResolver",
       "renderable": "./codeIndicatorComponentRenderable",
@@ -187,6 +201,7 @@
     },
     "avatar": {
       "category": "component",
+      "recordClassId": "component.avatar",
       "contract": "./avatarComponentContract",
       "resolver": "./avatarComponentResolver",
       "renderable": "./avatarComponentRenderable",
@@ -197,6 +212,7 @@
     },
     "button": {
       "category": "atom",
+      "recordClassId": "component.button",
       "contract": "./buttonComponentContract",
       "resolver": "./buttonComponentResolver",
       "renderable": "./buttonComponentRenderable",
@@ -208,6 +224,7 @@
     },
     "audio": {
       "category": "component",
+      "recordClassId": "component.audio",
       "contract": "./audioComponentContract",
       "resolver": "./audioComponentResolver",
       "renderable": "./audioComponentRenderable",
@@ -220,6 +237,7 @@
     },
     "textInputBar": {
       "category": "system",
+      "recordClassId": "component.textInputBar",
       "contract": "./textInputBarComponentContract",
       "resolver": "./textInputBarComponentResolver",
       "renderable": "./textInputBarComponentRenderable",
@@ -231,6 +249,7 @@
     },
     "keyboard": {
       "category": "system",
+      "recordClassId": "component.keyboard",
       "contract": "./keyboardComponentContract",
       "resolver": "./keyboardComponentResolver",
       "renderable": "./keyboardComponentRenderable",
@@ -240,6 +259,7 @@
     },
     "keypad": {
       "category": "system",
+      "recordClassId": "component.keypad",
       "contract": "./keypadComponentContract",
       "resolver": "./keypadComponentResolver",
       "renderable": "./keypadComponentRenderable",
@@ -249,6 +269,7 @@
     },
     "fingerprint": {
       "category": "system",
+      "recordClassId": "component.fingerprint",
       "contract": "./fingerprintComponentContract",
       "resolver": "./fingerprintComponentResolver",
       "renderable": "./fingerprintComponentRenderable",
@@ -256,6 +277,7 @@
     },
     "faceRecognition": {
       "category": "system",
+      "recordClassId": "component.faceRecognition",
       "contract": "./faceRecognitionComponentContract",
       "resolver": "./faceRecognitionComponentResolver",
       "renderable": "./faceRecognitionComponentRenderable",
@@ -263,6 +285,7 @@
     },
     "drawPassword": {
       "category": "system",
+      "recordClassId": "component.drawPassword",
       "contract": "./drawPasswordComponentContract",
       "resolver": "./drawPasswordComponentResolver",
       "renderable": "./drawPasswordComponentRenderable",
@@ -270,6 +293,7 @@
     },
     "password": {
       "category": "system",
+      "recordClassId": "component.password",
       "contract": "./passwordComponentContract",
       "resolver": "./passwordComponentResolver",
       "renderable": "./passwordComponentRenderable",
@@ -285,6 +309,7 @@
     },
     "media": {
       "category": "component",
+      "recordClassId": "component.media",
       "contract": "./mediaComponentContract",
       "resolver": "./mediaComponentResolver",
       "renderable": "./mediaComponentRenderable",
@@ -296,6 +321,7 @@
     },
     "bubble": {
       "category": "component",
+      "recordClassId": "component.bubble",
       "contract": "./bubbleComponentContract",
       "resolver": "./bubbleComponentResolver",
       "renderable": "./bubbleComponentRenderable",
@@ -310,6 +336,7 @@
     },
     "status_bar": {
       "category": "system",
+      "recordClassId": "component.status_bar",
       "contract": "./statusBarComponentContract",
       "resolver": "./statusBarComponentResolver",
       "renderable": "./statusBarComponentRenderable",
@@ -317,6 +344,7 @@
     },
     "navigation_bar": {
       "category": "system",
+      "recordClassId": "component.navigation_bar",
       "contract": "./navigationBarComponentContract",
       "resolver": "./navigationBarComponentResolver",
       "renderable": "./navigationBarComponentRenderable",
@@ -324,6 +352,7 @@
     },
     "incomingCallNotification": {
       "category": "component",
+      "recordClassId": "component.incomingCallNotification",
       "contract": "./incomingCallNotificationComponentContract",
       "resolver": "./incomingCallNotificationComponentResolver",
       "renderable": "./incomingCallNotificationComponentRenderable",

@@ -16,6 +16,7 @@ public enum DesktopPreviewComponentCategory
 
 public sealed record DesktopPreviewComponentManifestEntry(
     [property: JsonPropertyName("category")] string Category,
+    [property: JsonPropertyName("recordClassId")] string RecordClassId,
     [property: JsonPropertyName("contract")] string Contract,
     [property: JsonPropertyName("resolver")] string Resolver,
     [property: JsonPropertyName("renderable")] string Renderable,

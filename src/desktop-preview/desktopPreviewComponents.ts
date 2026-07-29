@@ -4,6 +4,7 @@ export type DesktopPreviewComponentCategory = "system" | "atom" | "component";
 
 export interface DesktopPreviewComponentManifestEntry {
   category: DesktopPreviewComponentCategory;
+  recordClassId: string;
   contract: string;
   resolver: string;
   renderable: string;
