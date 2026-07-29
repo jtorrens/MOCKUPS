@@ -162,7 +162,7 @@ var tests = new (string Name, Action Run)[]
     ("Preview element identification stays on the generic renderable boundary", PreviewElementIdentificationUsesRenderableIdentity),
     ("Preview authoring navigation requires an exact owner and declared slot path", PreviewAuthoringNavigationUsesExactOwnerAndSlots),
     ("Preview authoring focus opens and reveals the exact layout card", PreviewAuthoringFocusRevealsExactCard),
-    ("Conversation Preview crosses into the exact Text Input Variant and Icon Row item", ConversationPreviewTargetsExactIconRowItem),
+    ("Conversation Preview crosses into its exact embedded Icon Row items", ConversationPreviewTargetsExactIconRowItems),
     ("Preview resource selection has one session rule", PreviewResourceSelectionHasOneSessionRule),
     ("editor view state follows the exact record class across records", EditorViewStateFollowsRecordClass),
     ("editor view state round-trips per class and clamps scroll", EditorViewStateRoundTripsPerClass),
@@ -6892,7 +6892,7 @@ static void PreviewAuthoringFocusRevealsExactCard()
     CancellationToken.None);
 }
 
-static void ConversationPreviewTargetsExactIconRowItem()
+static void ConversationPreviewTargetsExactIconRowItems()
 {
     var source = ParityDatabasePath();
     var temporary = Path.Combine(
@@ -6929,6 +6929,36 @@ static void ConversationPreviewTargetsExactIconRowItem()
             conversationConfig,
             "textInputBarVariant",
             "Conversation Preview config");
+        var rightSlot = JsonPath.RequiredObject(
+            conversationConfig,
+            "headerRightIconRowSlot",
+            "Conversation Preview config");
+        var rightOverrides = JsonPath.RequiredObject(
+            rightSlot,
+            "overrides",
+            "Conversation Preview right Icon Row slot");
+        var rightIconRow = JsonPath.RequiredObject(
+            rightOverrides,
+            "iconRow",
+            "Conversation Preview right Icon Row Overrides");
+        var rightItems = JsonPath.RequiredArray(
+            rightIconRow,
+            "items",
+            "Conversation Preview right Icon Row Overrides");
+        True(rightItems.Any((item) =>
+            item?["id"]?.GetValue<string>() == "button_001"));
+        var rightInputs = JsonPath.RequiredObject(
+            conversationConfig,
+            "headerRightIconRowInputs",
+            "Conversation Preview config");
+        var runtimeItems = JsonPath.RequiredArray(
+            rightInputs,
+            "items",
+            "Conversation Preview right Icon Row Inputs");
+        var videoRuntime = runtimeItems.Single((item) =>
+            item?["id"]?.GetValue<string>() == "button_001");
+        True(videoRuntime?["buttonVariantReference"] is null);
+        True(videoRuntime?["buttonOverrides"] is null);
         var html = WebDesignPreviewRenderer.RenderBodyAsync(
                 database.GetDevicePreviewMetrics(device.Id),
                 false,
@@ -6947,6 +6977,12 @@ static void ConversationPreviewTargetsExactIconRowItem()
             StringComparison.Ordinal));
         True(html.Contains(
             "data-preview-authoring-focus-item-id=\"button_attachment\"",
+            StringComparison.Ordinal));
+        True(html.Contains(
+            "data-preview-authoring-slot-field-ids=\"[&quot;module.conversation.headerRightIconRow.editor&quot;]\"",
+            StringComparison.Ordinal));
+        True(html.Contains(
+            "data-preview-authoring-focus-item-id=\"button_001\"",
             StringComparison.Ordinal));
     }
     finally

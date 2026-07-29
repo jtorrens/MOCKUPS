@@ -490,6 +490,16 @@ internal sealed class ReferenceUsageService :
                 JsonPath.String(slotNode, "variantReference", ""),
                 source,
                 slot.Label);
+            if (slotNode["overrides"] is JsonObject overrides)
+            {
+                ScanComponentConfig(
+                    overrides,
+                    source,
+                    targets,
+                    usages,
+                    componentsByReference,
+                    depth: 1);
+            }
         }
 
         ScanBindings(

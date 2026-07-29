@@ -381,6 +381,16 @@ test("Conversation Header keeps its upward bleed and can use the resolved Actor 
     ownerId: "module_core_chat::variant::default",
     slotFieldIds: ["module.conversation.headerSurface.editor"],
   });
+  const headerVideoButton = findNode(
+    conversationModuleToRenderable(source),
+    "module.conversation.header.right.button_001",
+  );
+  assert.deepEqual(headerVideoButton?.metadata?.authoringTarget, {
+    focusFieldId: "component.iconRow.items",
+    focusItemId: "button_001",
+    ownerId: "module_core_chat::variant::default",
+    slotFieldIds: ["module.conversation.headerRightIconRow.editor"],
+  });
 });
 
 function committedConversationPayload(): DesignPreviewPayload {

@@ -386,11 +386,6 @@ function headerNode(
     ),
     {
       ...leftInputs,
-      structuralItems: requiredObjectArray(
-        leftInputs,
-        "items",
-        "module.conversation.headerLeftIconRowInputs",
-      ),
       buttonInputs: iconRowButtonRuntimeDefaults(
         requiredObjectArray(
           leftInputs,
@@ -411,11 +406,6 @@ function headerNode(
     ),
     {
       ...rightInputs,
-      structuralItems: requiredObjectArray(
-        rightInputs,
-        "items",
-        "module.conversation.headerRightIconRowInputs",
-      ),
       buttonInputs: iconRowButtonRuntimeDefaults(
         requiredObjectArray(
           rightInputs,
