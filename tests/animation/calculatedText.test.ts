@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { resolveCalculatedText } from "../../src/desktop-preview/calculatedText.js";
+import { resolveLabelComponent } from "../../src/desktop-preview/labelComponentResolver.js";
+import { committedComponentFixture } from "./committedComponentFixture.js";
 
 test("calculated label text resolves count up from the owner-local frame", () => {
   assert.equal(resolveCalculatedText("04:23", "countUp", "MM:SS", 0, 25), "04:23");
@@ -46,4 +48,22 @@ test("calculated label text rejects values that do not match their explicit form
     () => resolveCalculatedText("0", "countUp", "MM", 0, 25),
     /must use a supported clock mask/,
   );
+});
+
+test("Label resolves calculated formats from its Variant instead of Runtime inputs", () => {
+  const payload = committedComponentFixture("label");
+  const preview = JSON.parse(payload.designPreviewJson) as Record<string, unknown>;
+  const config = JSON.parse(payload.configJson) as {
+    label: { textFormat: string };
+  };
+  preview.sampleText = "7";
+  preview.textMode = "countUp";
+  delete preview.textFormat;
+  config.label.textFormat = "0000";
+  payload.designPreviewJson = JSON.stringify(preview);
+  payload.configJson = JSON.stringify(config);
+  payload.localFrame = 50;
+  payload.frameRate = 25;
+
+  assert.equal(resolveLabelComponent(payload).text, "0009");
 });

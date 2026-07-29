@@ -1487,11 +1487,21 @@ static void ComponentDictionaryFieldsUseExactValueKinds()
             Component("component.surface").Id,
             "component.surface.backgroundAlpha",
             "1.5"));
+        Throws<InvalidOperationException>(() => database.UpdateComponentClassField(
+            Component("component.label").Id,
+            "component.label.textFormat",
+            "minutes"));
         SequenceEqual(beforeRejectedWrites, SHA256.HashData(File.ReadAllBytes(temporary)));
 
         var cursor = Component("component.cursor");
         database.UpdateComponentClassField(cursor.Id, "component.cursor.width", "3");
         Equal("3", database.CreateComponentClassFieldValue(cursor.Id, "component.cursor.width").Value);
+        var format = database.CreateComponentClassFieldValue(
+            Component("component.label").Id,
+            "component.label.textFormat");
+        Equal(
+            "Time: MM:SS or HH:MM:SS · Number: ###0 optional digits, 0000 zero-padded.",
+            format.Definition.HelpText);
     }
     finally
     {
@@ -12376,12 +12386,22 @@ static void LabelSubtextPlacementUsesCurrentContract()
     True(label["subtextPlacement"] is null);
     True(label["subtextVerticalPosition"] is JsonValue);
     True(label["subtextHorizontalAlign"] is JsonValue);
-    var subtextFields = EditorLayouts(database).LoadEditorLayout("component.label").Cards
+    Equal("MM:SS", label["textFormat"]?.GetValue<string>());
+    Equal("MM:SS", label["subtextFormat"]?.GetValue<string>());
+    var labelGroups = EditorLayouts(database).LoadEditorLayout("component.label").Cards
         .SelectMany((card) => card.VisibleGroups)
-        .Single((group) => group.Id == "labelSubtext")
-        .VisibleFields.OrderBy((field) => field.Order).Select((field) => field.Id).ToList();
+        .ToDictionary((group) => group.Id);
+    var textFields = labelGroups["label"].VisibleFields
+        .OrderBy((field) => field.Order)
+        .Select((field) => field.Id)
+        .ToList();
+    True(textFields.Contains("component.label.textFormat"));
+    var subtextFields = labelGroups["labelSubtext"].VisibleFields
+        .OrderBy((field) => field.Order)
+        .Select((field) => field.Id)
+        .ToList();
     SequenceEqual(
-        ["component.label.textGapToken", "component.label.reserveSubtextSpace", "component.label.subtextVerticalPosition", "component.label.subtextHorizontalAlign", "component.label.subtextColorToken", "component.label.subtextTypography"],
+        ["component.label.textGapToken", "component.label.reserveSubtextSpace", "component.label.subtextVerticalPosition", "component.label.subtextHorizontalAlign", "component.label.subtextColorToken", "component.label.subtextTypography", "component.label.subtextFormat"],
         subtextFields);
     var preview = JsonNode.Parse(settings.DesignPreviewJson)?.AsObject()
         ?? throw new InvalidOperationException("Missing current Label Runtime contract.");
@@ -12392,20 +12412,10 @@ static void LabelSubtextPlacementUsesCurrentContract()
             (input) => input["id"]?.GetValue<string>()
                 ?? throw new InvalidOperationException("Missing Label Runtime Input id."))
         ?? throw new InvalidOperationException("Missing Label Runtime Inputs.");
-    foreach (var id in new[] { "textFormat", "subtextFormat" })
-    {
-        var format = inputs[id];
-        Equal("Format", format["label"]?.GetValue<string>());
-        Equal("StringSingleLine", format["valueKind"]?.GetValue<string>());
-        Equal("MM:SS", format["defaultValue"]?.GetValue<string>());
-        Equal(
-            "Time: MM:SS or HH:MM:SS · Number: ###0 optional digits, 0000 zero-padded.",
-            format["helpText"]?.GetValue<string>());
-        True(!string.IsNullOrWhiteSpace(
-            format["valuePattern"]?.GetValue<string>()));
-    }
-    Equal("MM:SS", preview["textFormat"]?.GetValue<string>());
-    Equal("MM:SS", preview["subtextFormat"]?.GetValue<string>());
+    True(!inputs.ContainsKey("textFormat"));
+    True(!inputs.ContainsKey("subtextFormat"));
+    True(preview["textFormat"] is null);
+    True(preview["subtextFormat"] is null);
 }
 
 static void DictionaryFieldsRespondToCompactWidths()

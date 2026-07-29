@@ -42,10 +42,11 @@ Pair labels travel unchanged through embedded input bindings into the final
 field. They are never generated from an id, label, type, hierarchy or position.
 
 Concise field help travels with the same definition and is presented by the
-common dictionary field shell. A Runtime Input may declare `valuePattern` and
-`valuePatternMessage`; the common Runtime contract validates both its default
-and every authored value before persistence. An owning editor never adds a
-local validator or explanatory control for that field.
+common dictionary field shell. Scalar Runtime Input and Component Variant
+definitions may declare a value pattern and validation message; the common
+scalar pattern contract validates defaults, authored Variant values, local
+Overrides and Runtime values before persistence. An owning editor never adds
+a local validator or explanatory control for that field.
 
 Every Runtime Input declares a canonical `valueKind`. The registry is
 exhaustive: an unknown or unregistered kind is an error.

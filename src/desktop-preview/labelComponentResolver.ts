@@ -32,11 +32,9 @@ export function literalLabelPreview(sampleText: string, sampleSubtext = "") {
   return {
     sampleText,
     textMode: "literal",
-    textFormat: "MM:SS",
     textSizeMultiplier: 1,
     sampleSubtext,
     subtextMode: "literal",
-    subtextFormat: "MM:SS",
     subtextSizeMultiplier: 1,
   };
 }
@@ -127,6 +125,16 @@ export function resolveLabelComponentFromRecords(
   if (subtextHorizontalAlign !== "left" && subtextHorizontalAlign !== "center" && subtextHorizontalAlign !== "right") {
     throw new Error(`Unsupported label subtext horizontal align ${subtextHorizontalAlign}`);
   }
+  const textFormat = requiredString(
+    label,
+    "textFormat",
+    "component.label.textFormat",
+  );
+  const subtextFormat = requiredString(
+    label,
+    "subtextFormat",
+    "component.label.subtextFormat",
+  );
 
   return {
     id,
@@ -134,7 +142,7 @@ export function resolveLabelComponentFromRecords(
       preview,
       "sampleText",
       "textMode",
-      "textFormat",
+      textFormat,
       "text",
       frame,
     ),
@@ -142,7 +150,7 @@ export function resolveLabelComponentFromRecords(
       preview,
       "sampleSubtext",
       "subtextMode",
-      "subtextFormat",
+      subtextFormat,
       "subtext",
       frame,
     ),
@@ -202,17 +210,12 @@ function resolveLabelText(
   preview: Record<string, unknown>,
   valueKey: string,
   modeKey: string,
-  formatKey: string,
+  format: string,
   path: string,
   frame: { localFrame: number; frameRate: number },
 ) {
   const value = requiredText(preview, valueKey, `component.label.preview.${valueKey}`);
   const mode = requiredString(preview, modeKey, `component.label.preview.${modeKey}`);
-  const format = requiredString(
-    preview,
-    formatKey,
-    `component.label.preview.${formatKey}`,
-  );
   if (mode !== "literal" && mode !== "countUp" && mode !== "countDown") {
     throw new Error(`Unsupported label ${path} mode ${mode}`);
   }

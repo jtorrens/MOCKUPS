@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text.Json.Nodes;
-using System.Text.RegularExpressions;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -97,10 +96,7 @@ public static class RuntimeInputValueKindContract
             valueKind,
             defaultValue,
             $"{owner} defaultValue");
-        ValidateValuePattern(
-            definition,
-            parsedDefault,
-            $"{owner} defaultValue");
+        ValidateValuePattern(definition, parsedDefault, $"{owner} defaultValue");
         return parsedDefault;
     }
 
@@ -334,51 +330,15 @@ public static class RuntimeInputValueKindContract
             && patternNode.TryGetValue<string>(out var patternText)
                 ? patternText
                 : "";
-        if (string.IsNullOrWhiteSpace(pattern))
-        {
-            return;
-        }
-        if (value is not JsonValue scalar
-            || !scalar.TryGetValue<string>(out var text))
-        {
-            throw new InvalidOperationException(
-                $"{owner} uses valuePattern but is not a string.");
-        }
-
-        bool matches;
-        try
-        {
-            matches = Regex.IsMatch(
-                text,
-                pattern,
-                RegexOptions.CultureInvariant,
-                TimeSpan.FromMilliseconds(100));
-        }
-        catch (ArgumentException exception)
-        {
-            throw new InvalidOperationException(
-                $"{owner} has invalid valuePattern.",
-                exception);
-        }
-        catch (RegexMatchTimeoutException exception)
-        {
-            throw new InvalidOperationException(
-                $"{owner} valuePattern exceeded its validation limit.",
-                exception);
-        }
-        if (matches)
-        {
-            return;
-        }
-
         var message = definition["valuePatternMessage"] is JsonValue messageNode
             && messageNode.TryGetValue<string>(out var messageText)
                 ? messageText
                 : "";
-        throw new InvalidOperationException(
-            string.IsNullOrWhiteSpace(message)
-                ? $"{owner} does not match its declared valuePattern."
-                : $"{owner} {message}");
+        ScalarValuePatternContract.Validate(
+            pattern,
+            message,
+            value,
+            owner);
     }
 
     private static int ParseInteger(string value, string owner)

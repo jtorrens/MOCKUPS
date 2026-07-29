@@ -73,9 +73,8 @@ internal sealed partial class SqliteDesignOwner
                 config,
                 descriptor.JsonPath,
                 ComponentConfigJsonValue(
-                    descriptor.ValueKind,
-                    value,
-                    descriptor.Id));
+                    descriptor,
+                    value));
             CurrentComponentConfigContract.Validate(
                 settings.ComponentType,
                 config,
@@ -116,9 +115,8 @@ internal sealed partial class SqliteDesignOwner
                 config,
                 descriptor.JsonPath,
                 ComponentConfigJsonValue(
-                    descriptor.ValueKind,
-                    value,
-                    descriptor.Id));
+                    descriptor,
+                    value));
             PersistComponentVariantUpdate(
                 connection,
                 variantNode,
@@ -254,13 +252,20 @@ internal sealed partial class SqliteDesignOwner
     }
 
     internal static JsonNode ComponentConfigJsonValue(
-        ValueKind valueKind,
-        string value,
-        string fieldId) =>
-        RuntimeInputValueKindContract.ParseValue(
-            valueKind,
+        ComponentClassFieldDescriptor descriptor,
+        string value)
+    {
+        var node = RuntimeInputValueKindContract.ParseValue(
+            descriptor.ValueKind,
             value,
-            $"Component field '{fieldId}' value");
+            $"Component field '{descriptor.Id}' value");
+        ScalarValuePatternContract.Validate(
+            descriptor.ValuePattern,
+            descriptor.ValuePatternMessage,
+            node,
+            $"Component field '{descriptor.Id}' value");
+        return node;
+    }
 
     private static void SetDefaultComponentVariantConfig(
         JsonObject metadata,

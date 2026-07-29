@@ -44,9 +44,12 @@ definitions; visual sessions contain no parallel contract parser.
 
 ### Calculated text
 
-Calculated text separates direction from presentation. `literal`, `countUp`
-and `countDown` select the calculation mode; the sibling format field declares
-the exact units and minimum digit widths.
+Calculated text separates Runtime content from Variant presentation.
+`literal`, `countUp` and `countDown` select the Runtime calculation mode;
+Label Variant fields `textFormat` and `subtextFormat` declare the exact units
+and minimum digit widths. An embedded Label boundary may customize those
+formats only through its explicit local Overrides. A Production Screen does
+not receive format as an implicit Runtime Input.
 
 Current clock masks are `M:SS`, `MM:SS`, `H:MM`, `HH:MM`, `H:MM:SS` and
 `HH:MM:SS`. Current numeric masks contain zero or more optional `#` digits

@@ -44,7 +44,10 @@ internal sealed partial class SqliteDesignOwner
                     descriptor.StructuredCollection,
                 RuntimeInputComponentVariantFieldId:
                     descriptor.RuntimeInputComponentVariantFieldId,
-                Unit: descriptor.Unit),
+                Unit: descriptor.Unit,
+                HelpText: descriptor.HelpText,
+                ValuePattern: descriptor.ValuePattern,
+                ValuePatternMessage: descriptor.ValuePatternMessage),
             value,
             IsHighlighted: isHighlighted);
     }
@@ -68,6 +71,11 @@ internal sealed partial class SqliteDesignOwner
         var owner = $"Component field '{descriptor.Id}'";
         RuntimeInputValueKindContract.ValidateValue(
             descriptor.ValueKind,
+            node,
+            owner);
+        ScalarValuePatternContract.Validate(
+            descriptor.ValuePattern,
+            descriptor.ValuePatternMessage,
             node,
             owner);
         return descriptor.ValueKind switch
@@ -130,7 +138,10 @@ internal sealed partial class SqliteDesignOwner
                     descriptor.StructuredCollection,
                 RuntimeInputComponentVariantFieldId:
                     descriptor.RuntimeInputComponentVariantFieldId,
-                Unit: descriptor.Unit),
+                Unit: descriptor.Unit,
+                HelpText: descriptor.HelpText,
+                ValuePattern: descriptor.ValuePattern,
+                ValuePatternMessage: descriptor.ValuePatternMessage),
             localValue,
             IsInherited: !hasOverride);
     }
@@ -205,7 +216,10 @@ internal sealed partial class SqliteDesignOwner
                     descriptor.StructuredCollection,
                 RuntimeInputComponentVariantFieldId:
                     descriptor.RuntimeInputComponentVariantFieldId,
-                Unit: descriptor.Unit),
+                Unit: descriptor.Unit,
+                HelpText: descriptor.HelpText,
+                ValuePattern: descriptor.ValuePattern,
+                ValuePatternMessage: descriptor.ValuePatternMessage),
             localValue,
             IsInherited: !hasOverride,
             IsHighlighted: isHighlighted);
@@ -232,9 +246,8 @@ internal sealed partial class SqliteDesignOwner
             overrides,
             descriptor.JsonPath,
             ComponentConfigJsonValue(
-                descriptor.ValueKind,
-                value,
-                descriptor.Id));
+                descriptor,
+                value));
     }
 
     internal void UpdateRuntimeComponentOverride(
@@ -276,9 +289,8 @@ internal sealed partial class SqliteDesignOwner
             localOverrides,
             descriptor.JsonPath,
             ComponentConfigJsonValue(
-                descriptor.ValueKind,
-                value,
-                descriptor.Id));
+                descriptor,
+                value));
     }
 
     internal FieldValue CreateEmbeddedComponentFieldValue(
@@ -338,7 +350,10 @@ internal sealed partial class SqliteDesignOwner
                 StructuredCollection:
                     descriptor.StructuredCollection,
                 RuntimeInputComponentVariantFieldId:
-                    descriptor.RuntimeInputComponentVariantFieldId),
+                    descriptor.RuntimeInputComponentVariantFieldId,
+                HelpText: descriptor.HelpText,
+                ValuePattern: descriptor.ValuePattern,
+                ValuePatternMessage: descriptor.ValuePatternMessage),
             localValue,
             IsInherited: !hasOverride);
     }
@@ -397,7 +412,10 @@ internal sealed partial class SqliteDesignOwner
                     PairLabels: descriptor.PairLabels,
                     Number: descriptor.Number,
                     ComponentInputBindings:
-                        descriptor.ComponentInputBindings),
+                        descriptor.ComponentInputBindings,
+                    HelpText: descriptor.HelpText,
+                    ValuePattern: descriptor.ValuePattern,
+                    ValuePatternMessage: descriptor.ValuePatternMessage),
                 localValue,
                 IsInherited: !hasOverride);
         }
@@ -428,7 +446,10 @@ internal sealed partial class SqliteDesignOwner
                 StructuredCollection:
                     descriptor.StructuredCollection,
                 RuntimeInputComponentVariantFieldId:
-                    descriptor.RuntimeInputComponentVariantFieldId),
+                    descriptor.RuntimeInputComponentVariantFieldId,
+                HelpText: descriptor.HelpText,
+                ValuePattern: descriptor.ValuePattern,
+                ValuePatternMessage: descriptor.ValuePatternMessage),
             localValue,
             IsInherited: !hasOverride,
             IsHighlighted: isHighlighted);

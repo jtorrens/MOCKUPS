@@ -19,11 +19,20 @@ public sealed record ComponentClassFieldDescriptor(
     RuntimeInputCollectionDefinition? StructuredCollection = null,
     string ComponentVariantType = "",
     string RuntimeInputComponentVariantFieldId = "",
-    string Unit = "");
+    string Unit = "",
+    string HelpText = "",
+    string ValuePattern = "",
+    string ValuePatternMessage = "");
 
 public static partial class ComponentClassFieldCatalog
 {
     public const string EmptyIconSlots = "[]";
+    private const string CalculatedTextFormatHelp =
+        "Time: MM:SS or HH:MM:SS · Number: ###0 optional digits, 0000 zero-padded.";
+    private const string CalculatedTextFormatPattern =
+        "^(?:(?:M|MM):SS|(?:H|HH):MM(?::SS)?|#*0+)$";
+    private const string CalculatedTextFormatPatternMessage =
+        "must use M:SS, MM:SS, H:MM, HH:MM, H:MM:SS, HH:MM:SS or a #*0+ numeric mask.";
 
     static ComponentClassFieldCatalog()
     {
@@ -886,12 +895,30 @@ public static partial class ComponentClassFieldCatalog
         ["component.label.textColorToken"] = new("component.label.textColorToken", "Text color", ValueKind.ThemeToken, ["label", "textColorToken"], "theme.colors.textPrimary", Options: ThemeColorOptions),
         ["component.label.textTypography"] = new("component.label.textTypography", "Text typography", ValueKind.TypographyStyle, ["label", "textTypography"], TypographyStyleValue.CreateDefault("theme.typography.sizes.s")),
         ["component.label.textAlign"] = new("component.label.textAlign", "Text align", ValueKind.OptionToken, ["label", "textAlign"], "center", Options: TextAlignOptions),
+        ["component.label.textFormat"] = new(
+            "component.label.textFormat",
+            "Text format",
+            ValueKind.StringSingleLine,
+            ["label", "textFormat"],
+            "MM:SS",
+            HelpText: CalculatedTextFormatHelp,
+            ValuePattern: CalculatedTextFormatPattern,
+            ValuePatternMessage: CalculatedTextFormatPatternMessage),
         ["component.label.textGapToken"] = new("component.label.textGapToken", "Text gap", ValueKind.ThemeToken, ["label", "textGapToken"], "theme.spacing.xs", Options: SpacingTokenOptions),
         ["component.label.reserveSubtextSpace"] = new("component.label.reserveSubtextSpace", "Reserve empty subtext", ValueKind.Boolean, ["label", "reserveSubtextSpace"], "false"),
         ["component.label.subtextVerticalPosition"] = new("component.label.subtextVerticalPosition", "Vertical position", ValueKind.OptionToken, ["label", "subtextVerticalPosition"], "bottom", Options: SubtextVerticalPositionOptions),
         ["component.label.subtextHorizontalAlign"] = new("component.label.subtextHorizontalAlign", "Horizontal align", ValueKind.OptionToken, ["label", "subtextHorizontalAlign"], "center", Options: TextAlignOptions),
         ["component.label.subtextColorToken"] = new("component.label.subtextColorToken", "Subtext color", ValueKind.ThemeToken, ["label", "subtextColorToken"], "theme.colors.textSecondary", Options: ThemeColorOptions),
         ["component.label.subtextTypography"] = new("component.label.subtextTypography", "Subtext typography", ValueKind.TypographyStyle, ["label", "subtextTypography"], TypographyStyleValue.CreateDefault("theme.typography.sizes.xs")),
+        ["component.label.subtextFormat"] = new(
+            "component.label.subtextFormat",
+            "Subtext format",
+            ValueKind.StringSingleLine,
+            ["label", "subtextFormat"],
+            "MM:SS",
+            HelpText: CalculatedTextFormatHelp,
+            ValuePattern: CalculatedTextFormatPattern,
+            ValuePatternMessage: CalculatedTextFormatPatternMessage),
 
         ["component.audio.padding"] = new("component.audio.padding", "Padding", ValueKind.ThemeTokenPair, ["audio", "padding"], "theme.spacing.l|theme.spacing.m", PairLabels: new("X", "Y"), Options: SpacingTokenOptions),
         ["component.audio.surface.editor"] = new("component.audio.surface.editor", "Surface", ValueKind.ComponentVariant, ["audio", "surfaceSlot", "variantReference"], "default"),

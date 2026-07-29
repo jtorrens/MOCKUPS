@@ -205,9 +205,8 @@ internal sealed partial class SqliteDesignOwner
             overrides,
             descriptor.JsonPath,
             ComponentConfigJsonValue(
-                descriptor.ValueKind,
-                value,
-                descriptor.Id));
+                descriptor,
+                value));
     }
 
     private static JsonObject? EmbeddedOverrides(
