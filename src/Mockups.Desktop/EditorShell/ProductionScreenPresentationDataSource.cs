@@ -32,7 +32,11 @@ internal sealed class ProductionScreenPresentationDataSource
         return new ProductionScreenPresentationSource(
             _timeline.GetModuleInstanceModuleName(moduleInstanceId),
             _database.GetModuleInstanceVariantName(moduleInstanceId),
-            ModuleInstanceTimeline.DurationFrames(_timelineDataSource, moduleInstanceId),
+            ModuleInstanceTimeline
+                .ScreenRange(
+                    _timelineDataSource,
+                    moduleInstanceId)
+                .EffectiveDurationFrames,
             _timeline.GetModuleInstanceTransitionType(moduleInstanceId));
     }
 }

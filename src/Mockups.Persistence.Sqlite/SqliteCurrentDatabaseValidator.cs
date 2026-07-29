@@ -142,6 +142,10 @@ internal sealed partial class SqliteCurrentDatabaseValidator
                     $"Screen '{id}' transition_json is invalid: {exception.Message}");
             }
         }
+        RequireNoRows(
+            connection,
+            "SELECT 1 FROM module_instances WHERE action_delay_frames < 0",
+            "Screen with a negative action delay");
     }
 
     private void ValidateCurrentProductionOutput(

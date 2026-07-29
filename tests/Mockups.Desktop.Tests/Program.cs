@@ -8993,7 +8993,13 @@ static void ProductionScreenPresentationBoundaryPreservesCurrentData()
         Equal(database.GetModuleInstanceModuleName(screen.Id), source.Module);
         Equal(database.GetModuleInstanceVariantName(screen.Id), source.Variant);
         Equal(
-            ModuleInstanceTimeline.DurationFrames(new ModuleInstanceTimelineDataSource(database.Production, database.Resources), screen.Id),
+            ModuleInstanceTimeline
+                .ScreenRange(
+                    new ModuleInstanceTimelineDataSource(
+                        database.Production,
+                        database.Resources),
+                    screen.Id)
+                .EffectiveDurationFrames,
             source.DurationFrames);
         Equal(database.GetModuleInstanceTransitionType(screen.Id), source.Transition);
 
@@ -9503,11 +9509,11 @@ static void ProductionPreviewSessionBoundaryPreservesCurrentData()
                 screen.Id),
             preparedScreen.StartFrame);
         Equal(
-            Math.Max(
-                1,
-                ModuleInstanceTimeline.DurationFrames(
+            ModuleInstanceTimeline
+                .ScreenRange(
                     timelineDataSource,
-                    screen.Id)),
+                    screen.Id)
+                .EffectiveDurationFrames,
             preparedScreen.DurationFrames);
         SequenceEqual(
             ModuleInstanceTimeline.ShotKeyframeFrames(
@@ -9575,6 +9581,14 @@ static void ModuleInstanceAnimationStorePreservesCurrentDocuments()
                 timelineDataSource,
                 screen.Id),
             snapshot.ScreenStartFrame);
+        var screenRange =
+            ModuleInstanceTimeline.ScreenRange(
+                timelineDataSource,
+                screen.Id);
+        Equal(
+            screenRange.StartFrame
+                + screenRange.ActionStartFrame,
+            snapshot.ActionStartFrame);
         Equal(
             Math.Max(
                 1,
@@ -9603,6 +9617,7 @@ static void ModuleInstanceAnimationStorePreservesCurrentDocuments()
         Equal(screen.Id, persisted.ModuleInstanceId);
         Equal(source.AnimationJson, persisted.Source.AnimationJson);
         Equal(snapshot.ScreenStartFrame, persisted.ScreenStartFrame);
+        Equal(snapshot.ActionStartFrame, persisted.ActionStartFrame);
         Equal(snapshot.DurationFrames, persisted.DurationFrames);
         Equal(source.AnimationJson, database.GetModuleInstanceSettings(screen.Id).AnimationJson);
     }
@@ -9678,6 +9693,7 @@ static void RapidAnimationCommandsUseLatestConfirmedDocument()
                         "{}",
                         "{}",
                         "{}"),
+                    0,
                     0,
                     100);
             });
@@ -11892,7 +11908,8 @@ static void ProductionPayloadPreservesActorAndAnimation()
                 playbackShot.Id);
         True(shotSlots.Count >= 2);
         var boundaryFrame =
-            shotSlots[0].DurationFrames;
+            shotSlots[0]
+                .EffectiveDurationFrames;
         var boundaryFrames =
             preparer.PrepareFrames(
                 playbackShot,
@@ -12116,6 +12133,14 @@ static void ShotScreenTransitionsReuseBoundaryMotion()
             incoming.Id,
             "moduleInstance.transition",
             incomingMotion);
+        database.UpdateModuleInstanceField(
+            outgoing.Id,
+            "moduleInstance.actionDelayFrames",
+            "2");
+        database.UpdateModuleInstanceField(
+            incoming.Id,
+            "moduleInstance.actionDelayFrames",
+            "3");
         Throws<InvalidOperationException>(
             () => database.UpdateModuleInstanceField(
                 incoming.Id,
@@ -12147,6 +12172,19 @@ static void ShotScreenTransitionsReuseBoundaryMotion()
                 incomingMotion),
             MotionVariantValue.Parse(
                 transitionField.Value));
+        var delayField =
+            values.CreateFieldValue(
+                incomingNode,
+                "moduleInstance.actionDelayFrames");
+        Equal(
+            ValueKind.Integer,
+            delayField.Definition.ValueKind);
+        Equal(
+            "frames",
+            delayField.Definition.Unit);
+        Equal(
+            "3",
+            delayField.Value);
 
         var payloads =
             new DesignPreviewPayloadDataSource(
@@ -12161,12 +12199,53 @@ static void ShotScreenTransitionsReuseBoundaryMotion()
                 new ProductionPreviewRuntimeResolver(
                     database.Resources,
                     database.ProjectPaths));
+        var timeline =
+            new ModuleInstanceTimelineDataSource(
+                database.Production,
+                database.Resources);
+        var ranges =
+            ModuleInstanceTimeline.ScreenRanges(
+                timeline,
+                shot.Id);
+        var outgoingRange =
+            ranges.Single((range) =>
+                range.ScreenId
+                == outgoing.Id);
+        var incomingRange =
+            ranges.Single((range) =>
+                range.ScreenId
+                == incoming.Id);
+        Equal(
+            2,
+            outgoingRange.ActionStartFrame);
+        Equal(
+            outgoingRange.ActionDurationFrames
+                + 2,
+            outgoingRange.EffectiveDurationFrames);
         var boundaryFrame =
-            ModuleInstanceTimeline.DurationFrames(
-                new ModuleInstanceTimelineDataSource(
-                    database.Production,
-                    database.Resources),
-                outgoing.Id);
+            incomingRange.StartFrame;
+        Equal(
+            outgoingRange.EffectiveDurationFrames,
+            boundaryFrame);
+        var firstDelay =
+            preparer.PrepareRequired(
+                shot,
+                null,
+                "light",
+                1);
+        Equal(
+            0,
+            firstDelay.LocalFrame);
+        var firstAction =
+            preparer.PrepareRequired(
+                shot,
+                null,
+                "light",
+                outgoingRange.ActionStartFrame
+                + 1);
+        Equal(
+            1,
+            firstAction.LocalFrame);
         var first =
             preparer.PrepareRequired(
                 shot,
@@ -12211,6 +12290,14 @@ static void ShotScreenTransitionsReuseBoundaryMotion()
         Equal(
             0,
             transition.Incoming.LocalFrame);
+        Equal(
+            transition.DurationFrames
+                + 3,
+            incomingRange.ActionStartFrame);
+        Equal(
+            incomingRange.ActionDurationFrames
+                + incomingRange.ActionStartFrame,
+            incomingRange.EffectiveDurationFrames);
 
         var next =
             preparer.PrepareRequired(
@@ -12221,19 +12308,51 @@ static void ShotScreenTransitionsReuseBoundaryMotion()
         True(
             next.ScreenTransition
                 is { ElapsedMilliseconds: > 0 });
-        var settled =
+        var lastTransitionFrame =
             preparer.PrepareRequired(
                 shot,
                 null,
                 "light",
                 boundaryFrame
                 + transition.DurationFrames
-                + 1);
+                - 1);
+        True(
+            lastTransitionFrame.ScreenTransition
+                is not null);
+        Equal(
+            0,
+            lastTransitionFrame.LocalFrame);
+        var delay =
+            preparer.PrepareRequired(
+                shot,
+                null,
+                "light",
+                boundaryFrame
+                + transition.DurationFrames);
         Equal(
             "moduleInstance",
-            settled.Kind);
+            delay.Kind);
         True(
-            settled.ScreenTransition is null);
+            delay.ScreenTransition is null);
+        Equal(
+            0,
+            delay.LocalFrame);
+        var action =
+            preparer.PrepareRequired(
+                shot,
+                null,
+                "light",
+                boundaryFrame
+                + incomingRange.ActionStartFrame
+                + 1);
+        Equal(
+            1,
+            action.LocalFrame);
+        Equal(
+            ranges.Sum((range) =>
+                range.EffectiveDurationFrames),
+            database.GetShotSettings(
+                shot.Id).DurationFrames);
     }
     finally
     {
@@ -15754,15 +15873,20 @@ static void LockScreenComposesRuntimeStack()
             JsonValue.Create(true)!,
             "hold");
         database.UpdateModuleInstanceAnimationJson(lockScreenInstance.Id, instanceAnimation.ToJson());
+        var lockScreenRange =
+            ModuleInstanceTimeline.ScreenRange(
+                new ModuleInstanceTimelineDataSource(
+                    database.Production,
+                    database.Resources),
+                lockScreenInstance.Id);
         var passwordFramePayload = Required(CreatePreviewPayload(
             database,
             lockScreenInstance,
             theme.Id,
-            timelineFrame: ModuleInstanceTimeline.ScreenStartFrame(
-                new ModuleInstanceTimelineDataSource(
-                    database.Production,
-                    database.Resources),
-                lockScreenInstance.Id) + 30));
+            timelineFrame:
+                lockScreenRange.StartFrame
+                + lockScreenRange.ActionStartFrame
+                + 30));
         var passwordFrameHtml = WebDesignPreviewRenderer.RenderBodyAsync(
             database.GetDevicePreviewMetrics(device.Id),
             false,
@@ -15780,11 +15904,10 @@ static void LockScreenComposesRuntimeStack()
             database,
             lockScreenInstance,
             theme.Id,
-            timelineFrame: ModuleInstanceTimeline.ScreenStartFrame(
-                new ModuleInstanceTimelineDataSource(
-                    database.Production,
-                    database.Resources),
-                lockScreenInstance.Id) + 40));
+            timelineFrame:
+                lockScreenRange.StartFrame
+                + lockScreenRange.ActionStartFrame
+                + 40));
         var completedPasswordHtml = WebDesignPreviewRenderer.RenderBodyAsync(
             database.GetDevicePreviewMetrics(device.Id),
             false,

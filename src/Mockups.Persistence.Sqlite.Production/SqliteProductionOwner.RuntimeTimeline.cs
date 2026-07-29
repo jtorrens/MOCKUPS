@@ -47,16 +47,81 @@ internal sealed partial class SqliteProductionOwner
                 update.Duration);
         }
 
-        var durationByShot = _moduleInstanceRepository
-            .QueryAll(connection)
-            .GroupBy((instance) => instance.ShotId, StringComparer.Ordinal)
-            .ToDictionary(
-                (group) => group.Key,
-                (group) => Math.Max(
-                    1,
-                    group.Sum((instance) => instance.DurationFrames)),
+        var shots =
+            _shotRepository.QueryAll(
+                connection);
+        var durationByShot =
+            new Dictionary<string, int>(
                 StringComparer.Ordinal);
-        foreach (var shot in _shotRepository.QueryAll(connection))
+        foreach (var group in
+                 _moduleInstanceRepository
+                     .QueryAll(connection)
+                     .GroupBy(
+                         (instance) =>
+                             instance.ShotId,
+                         StringComparer.Ordinal))
+        {
+            var shot =
+                shots.Single((candidate) =>
+                    candidate.Id == group.Key);
+            var project =
+                _projectEpisodeRepository
+                    .GetProjectSettings(
+                        connection,
+                        shot.ProjectId);
+            var frameRate =
+                shot.FpsOverride
+                ?? project.DefaultFps;
+            var ordered =
+                group.OrderBy((instance) =>
+                        instance.SortOrder)
+                    .ThenBy((instance) =>
+                        instance.Name,
+                        StringComparer.Ordinal)
+                    .ThenBy((instance) =>
+                        instance.Id,
+                        StringComparer.Ordinal)
+                    .ToList();
+            var duration =
+                0;
+            for (var index = 0;
+                 index < ordered.Count;
+                 index++)
+            {
+                var current =
+                    ordered[index];
+                var transitionFrames =
+                    index == 0
+                        ? 0
+                        : ScreenTimelineTiming
+                            .TransitionFrameCount(
+                                ordered[index - 1]
+                                    .TransitionJson,
+                                current.TransitionJson,
+                                _moduleInstanceThemeContextService
+                                    .GetTokensJson(
+                                        connection,
+                                        ordered[index - 1]
+                                            .Id),
+                                _moduleInstanceThemeContextService
+                                    .GetTokensJson(
+                                        connection,
+                                        current.Id),
+                                frameRate);
+                duration +=
+                    ScreenTimelineTiming
+                        .EffectiveDurationFrames(
+                            current.DurationFrames,
+                            transitionFrames,
+                            current.ActionDelayFrames);
+            }
+            durationByShot.Add(
+                group.Key,
+                Math.Max(
+                    1,
+                    duration));
+        }
+        foreach (var shot in shots)
         {
             var duration = durationByShot.GetValueOrDefault(shot.Id, 1);
             if (duration == shot.DurationFrames)

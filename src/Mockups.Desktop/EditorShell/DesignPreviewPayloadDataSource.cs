@@ -52,7 +52,10 @@ internal sealed record DesignPreviewShotSlot(
     string Id,
     string Name,
     string ModuleName,
-    int DurationFrames,
+    int EffectiveDurationFrames,
+    int TransitionFrameCount,
+    int ActionDelayFrames,
+    int ActionDurationFrames,
     string TransitionJson);
 
 internal sealed class DesignPreviewPayloadDataSource
@@ -217,21 +220,38 @@ internal sealed class DesignPreviewPayloadDataSource
 
     public IReadOnlyList<DesignPreviewShotSlot> LoadShotSlots(string shotId)
     {
-        return _timeline.GetShotModuleInstanceSlots(shotId)
-            .Select((slot) => new DesignPreviewShotSlot(
-                slot.Id,
-                slot.Name,
-                slot.ModuleName,
-                ModuleInstanceTimeline.DurationFrames(_timelineDataSource, slot.Id),
-                slot.TransitionJson))
+        var slots =
+            _timeline.GetShotModuleInstanceSlots(
+                shotId)
+                .ToDictionary(
+                    (slot) => slot.Id,
+                    StringComparer.Ordinal);
+        return ModuleInstanceTimeline
+            .ScreenRanges(
+                _timelineDataSource,
+                shotId)
+            .Select((range) =>
+            {
+                var slot =
+                    slots[range.ScreenId];
+                return new DesignPreviewShotSlot(
+                    slot.Id,
+                    slot.Name,
+                    slot.ModuleName,
+                    range.EffectiveDurationFrames,
+                    range.TransitionFrameCount,
+                    range.ActionDelayFrames,
+                    range.ActionDurationFrames,
+                    slot.TransitionJson);
+            })
             .ToList();
     }
 
-    public int ModuleInstanceScreenFrame(string moduleInstanceId, int shotFrame)
-    {
-        var startFrame = ModuleInstanceTimeline.ScreenStartFrame(_timelineDataSource, moduleInstanceId);
-        return Math.Max(0, shotFrame - startFrame);
-    }
+    public ScreenTimelineRange ModuleInstanceScreenRange(
+        string moduleInstanceId) =>
+        ModuleInstanceTimeline.ScreenRange(
+            _timelineDataSource,
+            moduleInstanceId);
 
     public JsonObject CreateActorPreview(
         string actorId,

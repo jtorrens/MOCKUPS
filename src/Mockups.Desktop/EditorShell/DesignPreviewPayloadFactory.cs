@@ -15,6 +15,17 @@ internal sealed record ScreenTransitionPayload(
     double ElapsedMilliseconds,
     int DurationFrames);
 
+internal sealed record ScreenTimingPayload(
+    int ScreenFrame,
+    int TransitionFrameCount,
+    int ActionDelayFrames,
+    int ActionDurationFrames)
+{
+    public int ActionStartFrame =>
+        TransitionFrameCount
+        + ActionDelayFrames;
+}
+
 internal sealed record DesignPreviewPayload(
     string Kind,
     string Name,
@@ -39,6 +50,7 @@ internal sealed record DesignPreviewPayload(
     string ThemeNavigationBarVariantReference = "",
     int LocalFrame = 0,
     string OwnerId = "",
+    ScreenTimingPayload? ScreenTiming = null,
     ScreenTransitionPayload? ScreenTransition = null);
 
 internal static class DesignPreviewPayloadFactory
@@ -63,7 +75,14 @@ internal static class DesignPreviewPayloadFactory
             ProjectTreeNodeKind.ComponentVariant => FromComponentSource(dataSource.LoadComponentVariant(node), themeMode, theme),
             ProjectTreeNodeKind.Module => FromModuleSource(dataSource, dataSource.LoadModule(node), themeMode, theme),
             ProjectTreeNodeKind.ModuleVariant => FromModuleSource(dataSource, dataSource.LoadModuleVariant(node), themeMode, theme),
-            ProjectTreeNodeKind.ModuleInstance => FromModuleInstance(dataSource, node.Id, theme.DeviceId, themeMode, theme, dataSource.ModuleInstanceScreenFrame(node.Id, timelineFrame)),
+            ProjectTreeNodeKind.ModuleInstance =>
+                FromModuleInstanceAtShotFrame(
+                    dataSource,
+                    node.Id,
+                    theme.DeviceId,
+                    themeMode,
+                    theme,
+                    timelineFrame),
             ProjectTreeNodeKind.Shot => FromShot(dataSource, node, theme.DeviceId, themeMode, theme, timelineFrame),
             _ => null,
         };
@@ -190,6 +209,48 @@ internal static class DesignPreviewPayloadFactory
             LocalFrame: Math.Max(0, screenFrame ?? 0));
     }
 
+    private static DesignPreviewPayload
+        FromModuleInstanceAtShotFrame(
+            DesignPreviewPayloadDataSource dataSource,
+            string moduleInstanceId,
+            string deviceId,
+            string themeMode,
+            DesignPreviewThemeContext theme,
+            int shotFrame)
+    {
+        var range =
+            dataSource.ModuleInstanceScreenRange(
+                moduleInstanceId);
+        var screenFrame =
+            Math.Clamp(
+                shotFrame
+                - range.StartFrame,
+                0,
+                range.EffectiveDurationFrames - 1);
+        var actionFrame =
+            Math.Clamp(
+                screenFrame
+                - range.ActionStartFrame,
+                0,
+                range.ActionDurationFrames - 1);
+        return FromModuleInstance(
+            dataSource,
+            moduleInstanceId,
+            deviceId,
+            themeMode,
+            theme,
+            actionFrame)
+            with
+            {
+                ScreenTiming =
+                    new ScreenTimingPayload(
+                        screenFrame,
+                        range.TransitionFrameCount,
+                        range.ActionDelayFrames,
+                        range.ActionDurationFrames),
+            };
+    }
+
     private static DesignPreviewPayload? FromShot(
         DesignPreviewPayloadDataSource dataSource,
         ProjectTreeNode shotNode,
@@ -200,30 +261,47 @@ internal static class DesignPreviewPayloadFactory
     {
         var slots = dataSource.LoadShotSlots(shotNode.Id);
         if (slots.Count == 0) return null;
-        var boundedFrame = Math.Max(0, Math.Min(slots.Sum((slot) => slot.DurationFrames) - 1, shotFrame));
+        var boundedFrame = Math.Max(
+            0,
+            Math.Min(
+                slots.Sum((slot) =>
+                    slot.EffectiveDurationFrames) - 1,
+                shotFrame));
         var startFrame = 0;
         var activeIndex = slots.Count - 1;
         var active = slots[^1];
         for (var index = 0; index < slots.Count; index++)
         {
             var slot = slots[index];
-            if (boundedFrame < startFrame + slot.DurationFrames)
+            if (boundedFrame
+                < startFrame
+                + slot.EffectiveDurationFrames)
             {
                 active = slot;
                 activeIndex = index;
                 break;
             }
-            startFrame += slot.DurationFrames;
+            startFrame +=
+                slot.EffectiveDurationFrames;
         }
-        var localFrame =
+        var screenFrame =
             boundedFrame - startFrame;
+        var actionStartFrame =
+            active.TransitionFrameCount
+            + active.ActionDelayFrames;
+        var actionFrame =
+            Math.Clamp(
+                screenFrame
+                - actionStartFrame,
+                0,
+                active.ActionDurationFrames - 1);
         var incoming = FromModuleInstance(
             dataSource,
             active.Id,
             deviceId,
             themeMode,
             theme,
-            localFrame);
+            actionFrame);
         var shotPreview = DesignPreviewTestValues.Parse(incoming.DesignPreviewJson);
         shotPreview.Remove("actions");
         incoming = incoming with
@@ -234,8 +312,17 @@ internal static class DesignPreviewPayloadFactory
                 theme.StatusBarVariantReference,
             ThemeNavigationBarVariantReference =
                 theme.NavigationBarVariantReference,
+            ScreenTiming =
+                new ScreenTimingPayload(
+                    screenFrame,
+                    active.TransitionFrameCount,
+                    active.ActionDelayFrames,
+                    active.ActionDurationFrames),
         };
-        if (activeIndex == 0)
+        if (activeIndex == 0
+            || active.TransitionFrameCount == 0
+            || screenFrame
+                >= active.TransitionFrameCount)
         {
             return incoming;
         }
@@ -250,45 +337,13 @@ internal static class DesignPreviewPayloadFactory
             JsonPath.ParseRequiredObject(
                 active.TransitionJson,
                 $"Screen '{active.Id}' transition");
-        var themeTokens =
-            JsonPath.ParseRequiredObject(
-                theme.TokensJson,
-                "Screen transition Theme tokens");
-        var durationMilliseconds =
-            Math.Max(
-                MotionTimingDuration.ResolveMilliseconds(
-                    themeTokens,
-                    outgoingMotion,
-                    $"Screen '{outgoingSlot.Id}' exit Motion"),
-                MotionTimingDuration.ResolveMilliseconds(
-                    themeTokens,
-                    incomingMotion,
-                    $"Screen '{active.Id}' enter Motion"));
-        var durationFrames =
-            Math.Max(
-                0,
-                (int)Math.Ceiling(
-                    durationMilliseconds
-                    / 1000.0
-                    * incoming.FrameRate));
-        if (durationFrames == 0
-            || localFrame > durationFrames)
-        {
-            return incoming;
-        }
-        if (durationFrames >= active.DurationFrames)
-        {
-            throw new InvalidOperationException(
-                $"Screen '{active.Id}' transition requires {durationFrames + 1} frames but the Screen duration is {active.DurationFrames}.");
-        }
-
         var outgoing = FromModuleInstance(
             dataSource,
             outgoingSlot.Id,
             deviceId,
             themeMode,
             theme,
-            outgoingSlot.DurationFrames - 1)
+            outgoingSlot.ActionDurationFrames - 1)
             with
             {
                 ThemeStatusBarVariantReference =
@@ -304,8 +359,10 @@ internal static class DesignPreviewPayloadFactory
                 incoming,
                 outgoingMotion.ToJsonString(),
                 incomingMotion.ToJsonString(),
-                localFrame * 1000.0 / incoming.FrameRate,
-                durationFrames),
+                screenFrame
+                    * 1000.0
+                    / incoming.FrameRate,
+                active.TransitionFrameCount),
         };
     }
 

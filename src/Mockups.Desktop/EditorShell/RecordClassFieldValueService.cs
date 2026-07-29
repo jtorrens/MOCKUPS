@@ -303,7 +303,15 @@ internal sealed class RecordClassFieldValueService
                 _timeline.GetModuleInstanceModuleName(moduleInstanceId),
             "moduleInstance.variant" => _production.GetModuleInstanceVariantReference(moduleInstanceId),
             "moduleInstance.sortOrder" => settings.SortOrder.ToString(),
-            "moduleInstance.durationFrames" => ModuleInstanceTimeline.DurationFrames(_timelineDataSource, moduleInstanceId).ToString(),
+            "moduleInstance.durationFrames" =>
+                ModuleInstanceTimeline
+                    .ScreenRange(
+                        _timelineDataSource,
+                        moduleInstanceId)
+                    .EffectiveDurationFrames
+                    .ToString(),
+            "moduleInstance.actionDelayFrames" =>
+                settings.ActionDelayFrames.ToString(),
             "moduleInstance.transition" =>
                 settings.TransitionJson,
             _ => throw new InvalidOperationException($"Unknown module instance field '{fieldId}'."),

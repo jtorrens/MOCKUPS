@@ -272,6 +272,12 @@ public static class RecordClassFieldCatalog
             "moduleInstance.transition",
             "Transition",
             ValueKind.Motion),
+        ["moduleInstance.actionDelayFrames"] = new(
+            "moduleInstance.actionDelayFrames",
+            "Action delay",
+            ValueKind.Integer,
+            Number: new NumberDefinition(0, 100000, 1, 0),
+            Unit: "frames"),
         ["palette.token"] = new("palette.token", "Token", ValueKind.StringSingleLine),
         ["palette.valueHex"] = new("palette.valueHex", "Hex", ValueKind.HexColor),
         ["palette.isNeutral"] = new("palette.isNeutral", "Neutral", ValueKind.Boolean),

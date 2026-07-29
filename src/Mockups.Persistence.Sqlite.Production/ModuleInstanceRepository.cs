@@ -25,7 +25,7 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
     {
         using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT id, shot_id, app_id, module_id, name, notes, sort_order, duration_frames,
+            SELECT id, shot_id, app_id, module_id, name, notes, sort_order, duration_frames, action_delay_frames,
                    transition_json, content_json, behavior_json, animation_json, metadata_json
             FROM module_instances
             WHERE id = $id
@@ -44,7 +44,7 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
     {
         using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT id, shot_id, app_id, module_id, name, notes, sort_order, duration_frames,
+            SELECT id, shot_id, app_id, module_id, name, notes, sort_order, duration_frames, action_delay_frames,
                    transition_json, content_json, behavior_json, animation_json, metadata_json
             FROM module_instances
             ORDER BY shot_id, sort_order, name, id
@@ -56,7 +56,7 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
     {
         using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT id, shot_id, app_id, module_id, name, notes, sort_order, duration_frames,
+            SELECT id, shot_id, app_id, module_id, name, notes, sort_order, duration_frames, action_delay_frames,
                    transition_json, content_json, behavior_json, animation_json, metadata_json
             FROM module_instances
             WHERE shot_id = $shotId
@@ -94,10 +94,10 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
             """
             INSERT INTO module_instances (
               id, shot_id, app_id, module_id, name, notes, sort_order, duration_frames,
-              transition_json, content_json, behavior_json, animation_json, metadata_json)
+              action_delay_frames, transition_json, content_json, behavior_json, animation_json, metadata_json)
             VALUES (
               $id, $shotId, $appId, $moduleId, $name, $notes, $sortOrder, $durationFrames,
-              $transitionJson, $contentJson, $behaviorJson, $animationJson, $metadataJson)
+              $actionDelayFrames, $transitionJson, $contentJson, $behaviorJson, $animationJson, $metadataJson)
             """,
             ("$id", record.Id),
             ("$shotId", record.ShotId),
@@ -107,6 +107,7 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
             ("$notes", record.Notes),
             ("$sortOrder", record.SortOrder),
             ("$durationFrames", record.DurationFrames),
+            ("$actionDelayFrames", record.ActionDelayFrames),
             ("$transitionJson", record.TransitionJson),
             ("$contentJson", record.ContentJson),
             ("$behaviorJson", record.BehaviorJson),
@@ -127,9 +128,9 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
             """
             INSERT INTO module_instances (
               id, shot_id, app_id, module_id, name, notes, sort_order, duration_frames,
-              transition_json, content_json, behavior_json, animation_json, metadata_json)
+              action_delay_frames, transition_json, content_json, behavior_json, animation_json, metadata_json)
             SELECT $id, shot_id, app_id, module_id, $name, notes, $sortOrder, duration_frames,
-                   transition_json, content_json, behavior_json, animation_json, metadata_json
+                   action_delay_frames, transition_json, content_json, behavior_json, animation_json, metadata_json
             FROM module_instances
             WHERE id = $sourceId
             """,
@@ -176,6 +177,24 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
             connection,
             "UPDATE module_instances SET transition_json = $transitionJson WHERE id = $id",
             ("$transitionJson", transitionJson),
+            ("$id", moduleInstanceId));
+    }
+
+    public void UpdateActionDelay(
+        SqliteConnection connection,
+        string moduleInstanceId,
+        int actionDelayFrames)
+    {
+        if (actionDelayFrames < 0)
+        {
+            throw new InvalidOperationException(
+                $"Module instance '{moduleInstanceId}' action delay must be non-negative.");
+        }
+        _ = Get(connection, moduleInstanceId);
+        _context.Execute(
+            connection,
+            "UPDATE module_instances SET action_delay_frames = $actionDelayFrames WHERE id = $id",
+            ("$actionDelayFrames", actionDelayFrames),
             ("$id", moduleInstanceId));
     }
 
@@ -320,11 +339,12 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
             SqliteCommandExecutor.ReadString(reader, 5),
             reader.GetInt32(6),
             reader.GetInt32(7),
-            SqliteCommandExecutor.ReadString(reader, 8),
+            reader.GetInt32(8),
             SqliteCommandExecutor.ReadString(reader, 9),
             SqliteCommandExecutor.ReadString(reader, 10),
             SqliteCommandExecutor.ReadString(reader, 11),
-            SqliteCommandExecutor.ReadString(reader, 12));
+            SqliteCommandExecutor.ReadString(reader, 12),
+            SqliteCommandExecutor.ReadString(reader, 13));
         Validate(record);
         return record;
     }
@@ -334,6 +354,11 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
         if (record.DurationFrames <= 0)
         {
             throw new InvalidOperationException($"Module instance '{record.Id}' duration must be positive.");
+        }
+        if (record.ActionDelayFrames < 0)
+        {
+            throw new InvalidOperationException(
+                $"Module instance '{record.Id}' action delay must be non-negative.");
         }
         ValidateObject(record.TransitionJson, record.Id, "transition_json");
         _ = MotionVariantValue.Parse(

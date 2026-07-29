@@ -91,7 +91,13 @@ internal sealed class ShotModuleInstancesCollectionEditor
         var frameRanges = snapshot.FrameRanges;
         for (var index = 0; index < slots.Count; index++)
         {
-            body.Children.Add(CreateSlot(shot, slots[index], index, slots.Count, out var activeIndicator));
+            body.Children.Add(CreateSlot(
+                shot,
+                slots[index],
+                frameRanges[index],
+                index,
+                slots.Count,
+                out var activeIndicator));
             activeIndicators[slots[index].Id] = activeIndicator;
         }
         void RefreshActiveScreen()
@@ -116,6 +122,7 @@ internal sealed class ShotModuleInstancesCollectionEditor
     private Control CreateSlot(
         ProjectTreeNode shot,
         ModuleInstanceSlot slot,
+        ProductionScreenFrameRange frameRange,
         int index,
         int count,
         out Control activeIndicator)
@@ -146,7 +153,13 @@ internal sealed class ShotModuleInstancesCollectionEditor
                 Children =
                 {
                     new TextBlock { Text = slot.Name, FontWeight = Avalonia.Media.FontWeight.SemiBold },
-                    new TextBlock { Text = $"{slot.ModuleName} · {slot.StoredDurationFrames} frames · {slot.TransitionType}", Opacity = 0.66, FontSize = 11 },
+                    new TextBlock
+                    {
+                        Text =
+                            $"{slot.ModuleName} · {frameRange.DurationFrames} frames · {slot.TransitionType} · {slot.ActionDelayFrames} delay",
+                        Opacity = 0.66,
+                        FontSize = 11,
+                    },
                 },
             },
             HorizontalAlignment = HorizontalAlignment.Stretch,

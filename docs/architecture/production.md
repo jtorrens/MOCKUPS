@@ -169,6 +169,7 @@ A Screen is a persisted Module Instance. It owns:
 - exact App, Module and Module Variant references;
 - order within its Shot;
 - transition document;
+- non-negative action delay in frames;
 - Runtime Input payload in `content_json`;
 - behavior and animation documents;
 - duration when the Module policy is explicit;
@@ -180,7 +181,12 @@ of the incoming Screen: the previous Screen uses its Motion as an exit and the
 incoming Screen uses its Motion as an entry. Both events receive the same
 elapsed Shot interval and resolve their own Theme timing. The outgoing Screen
 is retained at its final local frame until both Motions complete. The first
-Screen has no synthetic entry and the last Screen has no synthetic exit.
+incoming frame remains frozen at local frame zero throughout that boundary.
+After both Motions complete, the Screen remains at frame zero for its authored
+action delay; only then does its internal action timeline start. The first
+Screen has no synthetic entry transition but applies its delay before its
+actions; the last Screen has no synthetic exit. The effective Screen duration
+and derived Shot duration include entry transition, delay and action duration.
 `none` with no fade remains an immediate change.
 
 Screen payload is authored in Preview because that is where its effect can be

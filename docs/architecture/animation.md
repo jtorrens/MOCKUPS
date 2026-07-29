@@ -41,8 +41,13 @@ simultaneously from one elapsed parent clock. Each Screen supplies its own
 complete reusable Motion recipe and resolves its own Theme duration and easing.
 The completion dependency is the longer of the two Motions. During that
 dependency the outgoing Screen keeps its final local frame and the incoming
-Screen advances from local frame zero. Screen durations and Shot aggregate
-duration are not rewritten to manufacture overlap.
+Screen remains frozen at local frame zero. Once both Motions complete, the
+incoming Screen consumes its non-negative action delay, still at local frame
+zero, and only then starts its internal timeline. The first Screen has no
+synthetic entry Motion but consumes its action delay before its timeline starts.
+The effective Screen extent is entry-transition frames plus action-delay frames
+plus its calculated or explicit action duration. Shot aggregate duration is the
+sum of those effective extents.
 
 The event clock and the visual Motion recipe have distinct owners. A child
 Component Variant may declare its reusable boundary Motion, while the parent
@@ -94,6 +99,10 @@ A Module declares one Screen duration policy:
 
 - `calculated`: finite actions and collections determine Screen extent;
 - `explicit`: the Module Instance frame count is authoritative.
+
+Those policies determine action duration, not the parent-owned entry interval.
+The common Screen timeline prepends the resolved entry transition and the
+authored action delay when it calculates effective Screen and Shot duration.
 
 An explicit policy declares a positive default and is edited only on the
 Screen instance. Child keyframes and composition cannot extend it silently.

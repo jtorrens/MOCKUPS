@@ -107,6 +107,12 @@ scale fields as reusable Component boundary Motion. A retired cut discriminator
 or a partial Motion is invalid current data. Production owns its read and
 write; the Shot timeline consumes the prepared value without reconstructing it
 from a label or Screen position.
+`module_instances.action_delay_frames` is the non-negative authored wait
+between completion of the Screen's entry boundary and the start of its internal
+timeline. Production owns the scalar write and resynchronizes the derived Shot
+duration after either Motion or delay changes. `duration_frames` remains the
+calculated or explicit action duration; it does not absorb transition or delay
+frames.
 `Mockups.Persistence.Sqlite.Resources` owns Palette,
 Theme, Device, Actor, Production Font and Icon Theme persistence plus their
 resource-specific field, token and asset operations.

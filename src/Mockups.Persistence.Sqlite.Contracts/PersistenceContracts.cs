@@ -129,6 +129,7 @@ internal sealed record ModuleInstanceRecord(
     string Notes,
     int SortOrder,
     int DurationFrames,
+    int ActionDelayFrames,
     string TransitionJson,
     string ContentJson,
     string BehaviorJson,
@@ -517,6 +518,11 @@ internal interface IModuleInstanceRepository
         SqliteConnection connection,
         string moduleInstanceId,
         string transitionJson);
+
+    void UpdateActionDelay(
+        SqliteConnection connection,
+        string moduleInstanceId,
+        int actionDelayFrames);
 
     void UpdateContentAndAnimation(
         SqliteConnection connection,

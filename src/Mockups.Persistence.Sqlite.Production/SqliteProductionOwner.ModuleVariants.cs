@@ -19,11 +19,14 @@ internal sealed partial class SqliteProductionOwner
             record.Notes,
             record.SortOrder,
             record.DurationFrames,
+            record.ActionDelayFrames,
             record.TransitionJson,
             record.ContentJson,
             record.BehaviorJson,
             record.AnimationJson,
-            record.MetadataJson);
+            record.MetadataJson,
+            GetShotSettings(
+                record.ShotId).Fps);
     }
 
     public string GetModuleInstanceModuleName(
@@ -66,7 +69,8 @@ internal sealed partial class SqliteProductionOwner
                 instance.TransitionJson,
                 MotionVariantValue.Parse(
                     instance.TransitionJson).Transition,
-                instance.DurationFrames))
+                instance.DurationFrames,
+                instance.ActionDelayFrames))
             .ToList();
     }
 

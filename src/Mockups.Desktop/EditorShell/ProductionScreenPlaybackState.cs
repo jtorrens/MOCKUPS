@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -13,15 +14,16 @@ internal static class ProductionScreenPlaybackState
         ModuleInstanceTimelineDataSource dataSource,
         string shotId)
     {
-        var result = new List<ProductionScreenFrameRange>();
-        var startFrame = 0;
-        foreach (var screenId in dataSource.ShotSlotIds(shotId))
-        {
-            var durationFrames = ModuleInstanceTimeline.DurationFrames(dataSource, screenId);
-            result.Add(new ProductionScreenFrameRange(screenId, startFrame, durationFrames));
-            startFrame += durationFrames;
-        }
-        return result;
+        return ModuleInstanceTimeline
+            .ScreenRanges(
+                dataSource,
+                shotId)
+            .Select((range) =>
+                new ProductionScreenFrameRange(
+                    range.ScreenId,
+                    range.StartFrame,
+                    range.EffectiveDurationFrames))
+            .ToList();
     }
 
     public static int ActiveScreenIndex(

@@ -618,6 +618,20 @@ internal sealed partial class SqliteProductionOwner
                     moduleInstanceId,
                     MotionVariantValue.Parse(
                         value).ToJsonString());
+                SynchronizeTimelineDurations(
+                    connection);
+                return;
+            case "moduleInstance.actionDelayFrames":
+                _moduleInstanceRepository.UpdateActionDelay(
+                    connection,
+                    moduleInstanceId,
+                    Math.Max(
+                        0,
+                        NumericText.Int32(
+                            value,
+                            0)));
+                SynchronizeTimelineDurations(
+                    connection);
                 return;
             default:
                 throw new InvalidOperationException(
@@ -686,6 +700,7 @@ internal sealed partial class SqliteProductionOwner
                 $"{module.Name} module instance.",
                 index,
                 initialDuration,
+                0,
                 MotionVariantValue.NoneValue.ToJsonString(),
                 "{}",
                 "{}",

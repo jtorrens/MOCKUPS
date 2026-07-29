@@ -10,6 +10,9 @@ internal sealed record ProductionPreviewScreenSnapshot(
     string ShotId,
     int StartFrame,
     int DurationFrames,
+    int TransitionFrameCount,
+    int ActionDelayFrames,
+    int ActionDurationFrames,
     string TransitionJson,
     string VariantConfigJson,
     IReadOnlyList<int> ShotKeyframeFrames)
@@ -116,11 +119,13 @@ internal sealed class ProductionPreviewSessionDataSource
         {
             var shotScreens =
                 new List<ProductionPreviewScreenSnapshot>();
-            var startFrame = 0;
-            foreach (var screenId in
-                     _timelineDataSource.ShotSlotIds(
+            foreach (var range in
+                     ModuleInstanceTimeline.ScreenRanges(
+                         _timelineDataSource,
                          shotNode.Id))
             {
+                var screenId =
+                    range.ScreenId;
                 var source =
                     _timelineDataSource.Load(screenId);
                 if (!source.ShotId.Equals(
@@ -132,16 +137,16 @@ internal sealed class ProductionPreviewSessionDataSource
                 }
 
                 var durationFrames =
-                    Math.Max(
-                        1,
-                        ModuleInstanceTimeline
-                            .DurationFrames(source));
+                    range.EffectiveDurationFrames;
                 var screen =
                     new ProductionPreviewScreenSnapshot(
                         screenId,
                         shotNode.Id,
-                        startFrame,
+                        range.StartFrame,
                         durationFrames,
+                        range.TransitionFrameCount,
+                        range.ActionDelayFrames,
+                        range.ActionDurationFrames,
                         source.TransitionJson,
                         _timeline
                             .GetModuleInstanceVariantSettings(
@@ -150,7 +155,9 @@ internal sealed class ProductionPreviewSessionDataSource
                         ModuleInstanceTimeline
                             .KeyframeFrames(source)
                             .Select((frame) =>
-                                startFrame + frame)
+                                range.StartFrame
+                                + range.ActionStartFrame
+                                + frame)
                             .ToArray());
                 shotScreens.Add(screen);
                 if (!screens.TryAdd(
@@ -160,7 +167,6 @@ internal sealed class ProductionPreviewSessionDataSource
                     throw new InvalidOperationException(
                         $"Production Preview Screen '{screenId}' is declared more than once.");
                 }
-                startFrame += durationFrames;
             }
 
             var shot =

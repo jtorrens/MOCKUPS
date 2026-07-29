@@ -234,16 +234,17 @@ resolution, and system may optionally reference an Actor.
 
 ## Animation UX
 
-The selected Screen shows a local authoring timeline while Preview retains the
-absolute Shot playhead internally. Keyframe selection and drag use one standard
-interaction. Owner, target and field identity remain visible enough to avoid
-position-based editing.
+The selected Screen shows its effective local range while Preview retains the
+absolute Shot playhead internally. Its internal keyframes remain relative to
+the action origin after transition and delay. Keyframe selection and drag use
+one standard interaction. Owner, target and field identity remain visible
+enough to avoid position-based editing.
 
 The Screen General card exposes its boundary Transition through the registered
-Motion control used by Components. Playing the Shot starts the outgoing and
-incoming Motion together at each Screen boundary. A sequential or delayed
-appearance is authored inside the selected Motion timing rather than through a
-Screen-specific overlap switch.
+Motion control used by Components and its Action delay through the registered
+integer control in frames. Playing the Shot starts the outgoing and incoming
+Motion together at each Screen boundary, holds the incoming Screen at local
+frame zero for the delay, then starts its actions.
 
 Play and Restore apply to the currently visible authoring context. Cancelling a
 drag or playback returns to the current authored frame without writing

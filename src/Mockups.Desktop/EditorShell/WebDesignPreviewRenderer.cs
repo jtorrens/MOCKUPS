@@ -185,6 +185,22 @@ internal static class WebDesignPreviewRenderer
             instanceJson = payload.InstanceJson,
             frameRate = payload.FrameRate,
             localFrame = payload.LocalFrame,
+            screenTiming =
+                payload.ScreenTiming is not { } timing
+                    ? null
+                    : new
+                    {
+                        screenFrame =
+                            timing.ScreenFrame,
+                        transitionFrameCount =
+                            timing.TransitionFrameCount,
+                        actionDelayFrames =
+                            timing.ActionDelayFrames,
+                        actionDurationFrames =
+                            timing.ActionDurationFrames,
+                        actionStartFrame =
+                            timing.ActionStartFrame,
+                    },
             screenTransition =
                 payload.ScreenTransition is not { } transition
                     ? null

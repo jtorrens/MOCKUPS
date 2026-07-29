@@ -7,12 +7,14 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed record ModuleInstanceTimelineSource(
     string ShotId,
     int PersistedDurationFrames,
+    int ActionDelayFrames,
     string TransitionJson,
     string ContentJson,
     string AnimationJson,
     string EffectiveContractJson,
     string RuntimePreviewJson,
-    string ThemeTokensJson);
+    string ThemeTokensJson,
+    int FrameRate);
 
 internal sealed class ModuleInstanceTimelineDataSource
 {
@@ -33,13 +35,15 @@ internal sealed class ModuleInstanceTimelineDataSource
         return new ModuleInstanceTimelineSource(
             instance.ShotId,
             instance.DurationFrames,
+            instance.ActionDelayFrames,
             instance.TransitionJson,
             instance.ContentJson,
             instance.AnimationJson,
             _database.GetModuleInstanceEffectiveContractJson(moduleInstanceId),
             _database.GetModuleInstanceRuntimePreviewJson(moduleInstanceId),
             _themeTokens.GetModuleInstanceThemeTokensJson(
-                moduleInstanceId));
+                moduleInstanceId),
+            instance.FrameRate);
     }
 
     public IReadOnlyList<string> ShotSlotIds(string shotId)
@@ -48,4 +52,10 @@ internal sealed class ModuleInstanceTimelineDataSource
             .Select((slot) => slot.Id)
             .ToList();
     }
+
+    public IReadOnlyList<ModuleInstanceTimelineSource> ShotSources(
+        string shotId) =>
+        ShotSlotIds(shotId)
+            .Select(Load)
+            .ToList();
 }

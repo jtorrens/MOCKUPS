@@ -61,8 +61,10 @@ The payload boundary owns:
 For a Shot frame inside a Screen boundary transition, the prepared payload also
 contains the exact outgoing and incoming Screen payloads, their complete Motion
 documents and the shared non-negative elapsed interval. The outgoing payload is
-fixed at its final owner-local frame; the incoming payload advances from local
-frame zero. The generic Screen transition resolver composes those already
+fixed at its final owner-local frame; the incoming payload is fixed at local
+frame zero. After the transition, payload preparation keeps that incoming frame
+zero through the Screen action delay and then advances its local action frame.
+The generic Screen transition resolver composes those already
 selected owners and reuses the common Motion helpers. Registries and concrete
 Module owners remain unaware of neighboring Screens.
 
@@ -265,8 +267,9 @@ one, and visual refresh, playback preparation and reference browsing consume
 only the latest committed snapshot without direct persistence reads.
 
 The same preparation closes the complete current Production timeline catalog:
-each Shot's frame rate, ordered Screens, exact frame ranges and keyframes, plus
-each Screen's transition Motion and Variant config and each Shot's exact
+each Shot's frame rate, ordered Screens, exact effective frame ranges and
+action-shifted keyframes, plus each Screen's transition Motion, action delay,
+action duration and Variant config and each Shot's exact
 Actor-owned Device, Theme and appearance context. Production navigation,
 context presentation, validation,
 playhead controls, appearance selection, history subtitles and playback timing

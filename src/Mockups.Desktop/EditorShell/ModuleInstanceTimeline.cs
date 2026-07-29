@@ -5,6 +5,24 @@ using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
+internal sealed record ScreenTimelineRange(
+    string ScreenId,
+    int StartFrame,
+    int TransitionFrameCount,
+    int ActionDelayFrames,
+    int ActionDurationFrames)
+{
+    public int ActionStartFrame =>
+        TransitionFrameCount
+        + ActionDelayFrames;
+
+    public int EffectiveDurationFrames =>
+        ScreenTimelineTiming.EffectiveDurationFrames(
+            ActionDurationFrames,
+            TransitionFrameCount,
+            ActionDelayFrames);
+}
+
 internal static class ModuleInstanceTimeline
 {
     public static int DurationFrames(ModuleInstanceTimelineDataSource dataSource, string moduleInstanceId)
@@ -26,20 +44,77 @@ internal static class ModuleInstanceTimeline
             source.ThemeTokensJson);
     }
 
-    public static int ShotDurationFrames(ModuleInstanceTimelineDataSource dataSource, string shotId) =>
-        dataSource.ShotSlotIds(shotId).Sum((slotId) => DurationFrames(dataSource, slotId));
+    public static int ShotDurationFrames(
+        ModuleInstanceTimelineDataSource dataSource,
+        string shotId) =>
+        ScreenRanges(dataSource, shotId)
+            .Sum((range) =>
+                range.EffectiveDurationFrames);
+
+    public static IReadOnlyList<ScreenTimelineRange> ScreenRanges(
+        ModuleInstanceTimelineDataSource dataSource,
+        string shotId)
+    {
+        var ids =
+            dataSource.ShotSlotIds(shotId);
+        var sources =
+            ids.Select(dataSource.Load)
+                .ToList();
+        var ranges =
+            new List<ScreenTimelineRange>(
+                sources.Count);
+        var startFrame = 0;
+        for (var index = 0;
+             index < sources.Count;
+             index++)
+        {
+            var source =
+                sources[index];
+            var transitionFrames =
+                index == 0
+                    ? 0
+                    : ScreenTimelineTiming
+                        .TransitionFrameCount(
+                            sources[index - 1]
+                                .TransitionJson,
+                            source.TransitionJson,
+                            sources[index - 1]
+                                .ThemeTokensJson,
+                            source.ThemeTokensJson,
+                            source.FrameRate);
+            var range =
+                new ScreenTimelineRange(
+                    ids[index],
+                    startFrame,
+                    transitionFrames,
+                    source.ActionDelayFrames,
+                    DurationFrames(source));
+            ranges.Add(range);
+            startFrame +=
+                range.EffectiveDurationFrames;
+        }
+        return ranges;
+    }
+
+    public static ScreenTimelineRange ScreenRange(
+        ModuleInstanceTimelineDataSource dataSource,
+        string moduleInstanceId)
+    {
+        var source =
+            dataSource.Load(
+                moduleInstanceId);
+        return ScreenRanges(
+                dataSource,
+                source.ShotId)
+            .Single((range) =>
+                range.ScreenId == moduleInstanceId);
+    }
 
     public static int ScreenStartFrame(ModuleInstanceTimelineDataSource dataSource, string moduleInstanceId)
-    {
-        var source = dataSource.Load(moduleInstanceId);
-        var start = 0;
-        foreach (var slotId in dataSource.ShotSlotIds(source.ShotId))
-        {
-            if (slotId == moduleInstanceId) return start;
-            start += DurationFrames(dataSource, slotId);
-        }
-        return 0;
-    }
+        => ScreenRange(
+            dataSource,
+            moduleInstanceId)
+            .StartFrame;
 
     public static IReadOnlyList<int> KeyframeFrames(ModuleInstanceTimelineDataSource dataSource, string moduleInstanceId)
     {
@@ -78,12 +153,21 @@ internal static class ModuleInstanceTimeline
 
     public static IReadOnlyList<int> ShotKeyframeFrames(ModuleInstanceTimelineDataSource dataSource, string shotId)
     {
-        var result = new List<int>();
-        var screenStart = 0;
-        foreach (var slotId in dataSource.ShotSlotIds(shotId))
+        var result =
+            new List<int>();
+        foreach (var range in
+                 ScreenRanges(
+                     dataSource,
+                     shotId))
         {
-            result.AddRange(KeyframeFrames(dataSource, slotId).Select((frame) => screenStart + frame));
-            screenStart += DurationFrames(dataSource, slotId);
+            result.AddRange(
+                KeyframeFrames(
+                        dataSource,
+                        range.ScreenId)
+                    .Select((frame) =>
+                        range.StartFrame
+                        + range.ActionStartFrame
+                        + frame));
         }
         return result.Distinct().Order().ToList();
     }

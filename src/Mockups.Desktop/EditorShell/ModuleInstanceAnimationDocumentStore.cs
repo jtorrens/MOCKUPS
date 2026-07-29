@@ -14,6 +14,7 @@ internal sealed record ModuleInstanceAnimationSnapshot(
     string ModuleInstanceId,
     ModuleInstanceAnimationSource Source,
     int ScreenStartFrame,
+    int ActionStartFrame,
     int DurationFrames);
 
 internal sealed class ModuleInstanceAnimationDocumentStore
@@ -54,17 +55,19 @@ internal sealed class ModuleInstanceAnimationDocumentStore
     public ModuleInstanceAnimationSnapshot LoadSnapshot(
         string moduleInstanceId)
     {
+        var range =
+            ModuleInstanceTimeline.ScreenRange(
+                _timelineDataSource,
+                moduleInstanceId);
         return new ModuleInstanceAnimationSnapshot(
             moduleInstanceId,
             Load(moduleInstanceId),
-            ModuleInstanceTimeline.ScreenStartFrame(
-                _timelineDataSource,
-                moduleInstanceId),
+            range.StartFrame,
+            range.StartFrame
+                + range.ActionStartFrame,
             System.Math.Max(
                 1,
-                ModuleInstanceTimeline.DurationFrames(
-                    _timelineDataSource,
-                    moduleInstanceId)));
+                range.ActionDurationFrames));
     }
 
     public Task<string> SaveAnimationJsonAsync(

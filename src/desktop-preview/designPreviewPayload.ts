@@ -26,6 +26,14 @@ export interface ScreenTransitionPayload {
   durationFrames: number;
 }
 
+export interface ScreenTimingPayload {
+  screenFrame: number;
+  transitionFrameCount: number;
+  actionDelayFrames: number;
+  actionDurationFrames: number;
+  actionStartFrame: number;
+}
+
 export interface DesignPreviewPayload {
   kind: "componentClass" | "module" | "moduleInstance" | "screenTransition";
   authoringOwnerId?: string;
@@ -55,5 +63,6 @@ export interface DesignPreviewPayload {
   themeTokensJson: string;
   themeStatusBarVariantReference?: string;
   themeNavigationBarVariantReference?: string;
+  screenTiming?: ScreenTimingPayload;
   screenTransition?: ScreenTransitionPayload;
 }

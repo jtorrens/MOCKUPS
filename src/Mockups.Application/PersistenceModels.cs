@@ -71,11 +71,13 @@ public sealed record ModuleInstanceSettings(
     string Notes,
     int SortOrder,
     int DurationFrames,
+    int ActionDelayFrames,
     string TransitionJson,
     string ContentJson,
     string BehaviorJson,
     string AnimationJson,
-    string MetadataJson);
+    string MetadataJson,
+    int FrameRate);
 
 public sealed record ThemeSettings(
     string ProjectId,
@@ -199,7 +201,8 @@ public sealed record ModuleInstanceSlot(
     int SortOrder,
     string TransitionJson,
     string TransitionType,
-    int StoredDurationFrames);
+    int StoredDurationFrames,
+    int ActionDelayFrames);
 
 public sealed record PaletteColorSettings(
     string Token,

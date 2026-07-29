@@ -110,7 +110,9 @@ internal sealed class ModuleInstanceAnimationEditor
         var track = new ModuleInstanceAnimationDocument(animation.ToJsonString()).Track(input.Id, targetId);
         if (track is null) return baseValue;
         var themeTokens = DesignPreviewTestValues.Parse(source.ThemeTokensJson);
-        var screenFrame = _shotFrame() - snapshot.ScreenStartFrame;
+        var screenFrame =
+            _shotFrame()
+            - snapshot.ActionStartFrame;
         var ownerFrame = RuntimeAnimationFrameOrigin.OwnerLocalFrame(
             preview,
             preview,
@@ -239,7 +241,8 @@ internal sealed class ModuleInstanceAnimationEditor
         ModuleInstanceAnimationSnapshot preparedSnapshot,
         Func<JsonObject, List<AnimationTarget>> readScopeTargets)
     {
-        var screenStartFrame = preparedSnapshot.ScreenStartFrame;
+        var screenStartFrame =
+            preparedSnapshot.ActionStartFrame;
         var actualScreenDuration = preparedSnapshot.DurationFrames;
         var durationPolicy = RuntimeDurationContract.Policy(effectiveContractJson);
         var currentAnimation = animation;
@@ -411,7 +414,7 @@ internal sealed class ModuleInstanceAnimationEditor
             currentAnimation = DesignPreviewTestValues.Parse(
                 preparedSnapshot.Source.AnimationJson);
             screenStartFrame =
-                preparedSnapshot.ScreenStartFrame;
+                preparedSnapshot.ActionStartFrame;
             actualScreenDuration =
                 preparedSnapshot.DurationFrames;
             RefreshTargetBindings(

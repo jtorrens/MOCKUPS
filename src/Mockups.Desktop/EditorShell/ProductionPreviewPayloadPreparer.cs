@@ -131,7 +131,8 @@ internal sealed class ProductionPreviewPayloadPreparer
                 node,
                 startFrame);
         var firstLocalFrame =
-            template.LocalFrame;
+            template.ScreenTiming?.ScreenFrame
+            ?? template.LocalFrame;
         var frames =
             new List<DesignPreviewPayload>(
                 lastFrame - startFrame + 1);
@@ -180,7 +181,7 @@ internal sealed class ProductionPreviewPayloadPreparer
                 .ThrowIfCancellationRequested();
             var slotEndFrame =
                 slotStartFrame
-                + slot.DurationFrames - 1;
+                + slot.EffectiveDurationFrames - 1;
             var overlapStart =
                 Math.Max(
                     startFrame,
@@ -215,7 +216,7 @@ internal sealed class ProductionPreviewPayloadPreparer
             }
 
             slotStartFrame +=
-                slot.DurationFrames;
+                slot.EffectiveDurationFrames;
             if (slotStartFrame > lastFrame)
             {
                 break;
@@ -274,20 +275,42 @@ internal sealed class ProductionPreviewPayloadPreparer
             Math.Max(
                 0,
                 localFrame);
-        if (template.ScreenTransition
-            is { } transition)
+        if (template.ScreenTiming
+            is { } timing)
         {
+            var transition =
+                template.ScreenTransition;
+            var baseIncoming =
+                (transition?.Incoming
+                    ?? template)
+                with
+                {
+                    ScreenTiming = null,
+                    ScreenTransition = null,
+                };
+            var actionFrame =
+                Math.Clamp(
+                    frame
+                    - timing.ActionStartFrame,
+                    0,
+                    timing.ActionDurationFrames - 1);
             var incoming =
                 AtLocalFrame(
-                    transition.Incoming,
-                    frame);
-            if (frame
-                > transition.DurationFrames)
+                    baseIncoming,
+                    actionFrame);
+            if (transition is null
+                || frame
+                    >= transition.DurationFrames)
             {
                 return incoming with
                 {
                     Name = template.Name,
                     OwnerId = template.OwnerId,
+                    ScreenTiming =
+                        timing with
+                        {
+                            ScreenFrame = frame,
+                        },
                 };
             }
 
@@ -300,11 +323,20 @@ internal sealed class ProductionPreviewPayloadPreparer
                 Kind = "screenTransition",
                 Name = template.Name,
                 OwnerId = template.OwnerId,
+                ScreenTiming =
+                    timing with
+                    {
+                        ScreenFrame = frame,
+                    },
                 ScreenTransition =
                     transition with
                     {
                         Outgoing = outgoing,
-                        Incoming = incoming,
+                        Incoming =
+                            incoming with
+                            {
+                                ScreenTiming = null,
+                            },
                         ElapsedMilliseconds =
                             frame
                             * 1000.0
