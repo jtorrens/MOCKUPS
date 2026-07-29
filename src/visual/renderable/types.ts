@@ -46,6 +46,8 @@ export interface RenderableMetadata {
   fontFaces?: RenderableFontFace[];
   fallbackText?: string;
   imageBaseSize?: number;
+  imageIntrinsicHeight?: number;
+  imageIntrinsicWidth?: number;
   imageOffsetX?: number;
   imageOffsetY?: number;
   imageScale?: number;

@@ -18,8 +18,15 @@ import {
   stringValue,
 } from "./previewValueHelpers.js";
 
-const videoFrameCache = new Map<string, string>();
-const lastVideoFrameByAsset = new Map<string, string>();
+interface ResolvedImageAsset {
+  uri: string;
+  width?: number;
+  height?: number;
+  error?: string;
+}
+
+const videoFrameCache = new Map<string, ResolvedImageAsset>();
+const lastVideoFrameByAsset = new Map<string, ResolvedImageAsset>();
 const videoDurationCache = new Map<string, number>();
 const videoIdentityByPath = new Map<string, string>();
 const maxVideoFrameCacheEntries = 240;
@@ -103,7 +110,7 @@ export function mediaFrameUriForPath(
   payload: DesignPreviewPayload,
   source: string,
   timeSeconds: number,
-) {
+): ResolvedImageAsset {
   const trimmed = source.trim();
   if (!trimmed) return { uri: "", error: "No media source" };
   if (/^data:image\//i.test(trimmed)) return { uri: trimmed };
@@ -169,12 +176,15 @@ function imageDataUri(fullPath: string) {
   if (!mimeType) return undefined;
 
   const data = readFileSync(fullPath);
-  return `data:${mimeType};base64,${data.toString("base64")}`;
+  return {
+    uri: `data:${mimeType};base64,${data.toString("base64")}`,
+    ...rasterImageSize(data, mimeType),
+  };
 }
 
-function localMediaFrameUri(fullPath: string, timeSeconds: number) {
+function localMediaFrameUri(fullPath: string, timeSeconds: number): ResolvedImageAsset {
   const imageUri = imageDataUri(fullPath);
-  if (imageUri) return { uri: imageUri };
+  if (imageUri) return imageUri;
 
   if (!videoMimeType(fullPath)) {
     return { uri: "", error: `Unsupported media file type: ${path.extname(fullPath)}` };
@@ -183,7 +193,7 @@ function localMediaFrameUri(fullPath: string, timeSeconds: number) {
   return videoFrameFileUri(fullPath, timeSeconds);
 }
 
-function videoFrameFileUri(fullPath: string, timeSeconds: number) {
+function videoFrameFileUri(fullPath: string, timeSeconds: number): ResolvedImageAsset {
   const assetIdentity = currentVideoAssetIdentity(fullPath);
   const normalizedTime = Math.max(0, Number.isFinite(timeSeconds) ? timeSeconds : 0);
   const duration = videoDurationSeconds(fullPath, assetIdentity);
@@ -197,9 +207,9 @@ function videoFrameFileUri(fullPath: string, timeSeconds: number) {
       requested: normalizedTime,
       effective: effectiveTime,
       duration,
-      uriChars: cached.length,
+      uriChars: cached.uri.length,
     });
-    return { uri: cached };
+    return cached;
   }
 
   try {
@@ -244,8 +254,8 @@ function videoFrameFileUri(fullPath: string, timeSeconds: number) {
       );
     }
 
-    const uri = imageDataUri(framePath);
-    if (!uri) {
+    const frame = imageDataUri(framePath);
+    if (!frame) {
       debugVideoFrame("unsupported", {
         source: fullPath,
         requested: normalizedTime,
@@ -260,8 +270,8 @@ function videoFrameFileUri(fullPath: string, timeSeconds: number) {
       );
     }
 
-    cacheVideoFrame(cacheKey, uri);
-    lastVideoFrameByAsset.set(assetIdentity, uri);
+    cacheVideoFrame(cacheKey, frame);
+    lastVideoFrameByAsset.set(assetIdentity, frame);
     debugVideoFrame(hadFrame ? "disk-hit" : "extract", {
       source: fullPath,
       requested: normalizedTime,
@@ -269,9 +279,9 @@ function videoFrameFileUri(fullPath: string, timeSeconds: number) {
       duration,
       framePath,
       bytes: fileSize(framePath),
-      uriChars: uri.length,
+      uriChars: frame.uri.length,
     });
-    return { uri };
+    return frame;
   } catch (error) {
     const message = videoFrameErrorMessage(error);
     debugVideoFrame("error", {
@@ -288,14 +298,14 @@ function videoFrameFileUri(fullPath: string, timeSeconds: number) {
   }
 }
 
-function lastVideoFrameOrError(assetIdentity: string, error: string) {
+function lastVideoFrameOrError(assetIdentity: string, error: string): ResolvedImageAsset {
   const lastFrame = lastVideoFrameByAsset.get(assetIdentity);
   debugVideoFrame(lastFrame ? "last-frame" : "missing", {
     source: assetIdentity,
     error,
-    uriChars: lastFrame?.length ?? 0,
+    uriChars: lastFrame?.uri.length ?? 0,
   });
-  return lastFrame ? { uri: lastFrame, error } : { uri: "", error };
+  return lastFrame ? { ...lastFrame, error } : { uri: "", error };
 }
 
 function videoDurationSeconds(fullPath: string, assetIdentity: string) {
@@ -404,13 +414,57 @@ function oneLine(value: string) {
   return value.replace(/\s+/g, " ").trim().slice(0, 180);
 }
 
-function cacheVideoFrame(key: string, uri: string) {
+function cacheVideoFrame(key: string, frame: ResolvedImageAsset) {
   if (videoFrameCache.size >= maxVideoFrameCacheEntries) {
     const firstKey = videoFrameCache.keys().next().value;
     if (firstKey) videoFrameCache.delete(firstKey);
   }
 
-  videoFrameCache.set(key, uri);
+  videoFrameCache.set(key, frame);
+}
+
+function rasterImageSize(data: Buffer, mimeType: string) {
+  if (mimeType === "image/png"
+    && data.length >= 24
+    && data.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) {
+    return {
+      width: data.readUInt32BE(16),
+      height: data.readUInt32BE(20),
+    };
+  }
+  if (mimeType === "image/jpeg" && data.length >= 4
+    && data[0] === 0xff && data[1] === 0xd8) {
+    let offset = 2;
+    while (offset + 9 < data.length) {
+      if (data[offset] !== 0xff) {
+        offset += 1;
+        continue;
+      }
+      while (data[offset] === 0xff) offset += 1;
+      const marker = data[offset]!;
+      offset += 1;
+      if (marker === 0xd8 || marker === 0xd9) continue;
+      if (offset + 2 > data.length) break;
+      const length = data.readUInt16BE(offset);
+      if (length < 2 || offset + length > data.length) break;
+      if (isJpegStartOfFrame(marker) && length >= 7) {
+        return {
+          width: data.readUInt16BE(offset + 5),
+          height: data.readUInt16BE(offset + 3),
+        };
+      }
+      offset += length;
+    }
+  }
+  return {};
+}
+
+function isJpegStartOfFrame(marker: number) {
+  return marker >= 0xc0
+    && marker <= 0xcf
+    && marker !== 0xc4
+    && marker !== 0xc8
+    && marker !== 0xcc;
 }
 
 function ffmpegExecutable() {

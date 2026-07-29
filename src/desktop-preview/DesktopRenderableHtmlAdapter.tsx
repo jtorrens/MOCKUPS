@@ -9,6 +9,7 @@ import {
   numberValue as commonNumberValue,
   stringValue as commonStringValue,
 } from "./previewValueHelpers.js";
+import { renderableImagePaintBox } from "./renderableImagePlacement.js";
 
 export interface DesktopRenderableHtmlAdapterProps {
   tree: RenderableNode;
@@ -304,41 +305,28 @@ function imageContent(node: RenderableNode): ReactNode {
   const uri = optionalStringValue(node.asset?.uri);
   const fallbackText = optionalStringValue(node.metadata?.fallbackText) ?? node.text ?? "";
   if (!uri) return fallbackText;
-  const imageScale = Math.max(0.01, optionalNumberValue(node.metadata?.imageScale) ?? 1);
-  const imageBaseSize = Math.max(
-    1,
-    optionalNumberValue(node.metadata?.imageBaseSize) ??
-      optionalNumberValue(node.box?.width) ??
-      1,
-  );
-  const boxWidth = Math.max(1, optionalNumberValue(node.box?.width) ?? 1);
-  const imageOffsetX =
-    ((optionalNumberValue(node.metadata?.imageOffsetX) ?? 0) / imageBaseSize) *
-    boxWidth;
-  const imageOffsetY =
-    ((optionalNumberValue(node.metadata?.imageOffsetY) ?? 0) / imageBaseSize) *
-    boxWidth;
   const hasCustomPlacement =
     node.metadata?.imageScale !== undefined ||
     node.metadata?.imageOffsetX !== undefined ||
     node.metadata?.imageOffsetY !== undefined;
+  const paintBox = renderableImagePaintBox(node);
+  const viewport = node.box;
   return (
     <img
       alt={fallbackText}
       draggable={false}
       src={uri}
-      style={hasCustomPlacement
+      style={hasCustomPlacement && paintBox && viewport
         ? {
             display: "block",
-            height: `${imageScale * 100}%`,
-            left: "50%",
+            height: paintBox.height,
+            left: paintBox.x - viewport.x,
             maxHeight: "none",
             maxWidth: "none",
-            objectFit: "cover",
+            objectFit: "fill",
             position: "absolute",
-            top: "50%",
-            transform: `translate(calc(-50% + ${imageOffsetX}px), calc(-50% + ${imageOffsetY}px))`,
-            width: `${imageScale * 100}%`,
+            top: paintBox.y - viewport.y,
+            width: paintBox.width,
           }
         : {
             display: "block",

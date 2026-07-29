@@ -341,6 +341,8 @@ test("Conversation Header keeps its upward bleed and can use the resolved Actor 
     }
   ).actor.avatar.backgroundColor;
 
+  config.conversation.headerUseActorColor = false;
+  source.configJson = JSON.stringify(config);
   const surfaceColorTree = conversationModuleToRenderable(source);
   const surfaceColorNode = findNode(
     surfaceColorTree,

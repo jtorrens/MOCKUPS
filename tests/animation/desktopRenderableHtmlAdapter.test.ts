@@ -6,6 +6,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import { DesktopRenderableHtmlAdapter } from "../../src/desktop-preview/DesktopRenderableHtmlAdapter.js";
 import { renderableToSvg } from "../../src/desktop-preview/RenderableSvgAdapter.js";
+import { renderableImagePaintBox } from "../../src/desktop-preview/renderableImagePlacement.js";
 
 test("the generic HTML adapter paints a resolved text shadow", () => {
   const markup = renderToStaticMarkup(React.createElement(DesktopRenderableHtmlAdapter, {
@@ -83,4 +84,51 @@ test("both generic renderers reject incomplete complex visual styles", () => {
     )));
     assert.throws(() => renderableToSvg(invalid as unknown as typeof base));
   }
+});
+
+test("image offset pans a cover crop without exposing the viewport", () => {
+  const image = {
+    id: "media.image",
+    type: "image" as const,
+    frame: 0,
+    box: { x: 0, y: 0, width: 100, height: 200 },
+    asset: { type: "image", uri: "data:image/jpeg;base64,AA==" },
+    style: { objectFit: "cover" },
+    metadata: {
+      imageBaseSize: 100,
+      imageIntrinsicHeight: 100,
+      imageIntrinsicWidth: 200,
+      imageOffsetX: -15,
+      imageOffsetY: 0,
+      imageScale: 1,
+    },
+  };
+  assert.deepEqual(renderableImagePaintBox(image), {
+    x: -165,
+    y: 0,
+    width: 400,
+    height: 200,
+  });
+
+  const html = renderToStaticMarkup(React.createElement(
+    DesktopRenderableHtmlAdapter,
+    { tree: image },
+  ));
+  const svg = renderableToSvg(image);
+  assert.match(html, /height:200px;left:-165px/);
+  assert.match(html, /object-fit:fill/);
+  assert.doesNotMatch(html, /translate\(calc/);
+  assert.match(svg, /x="-165" y="0" width="400" height="200"/);
+  assert.match(svg, /preserveAspectRatio="none"/);
+
+  const clamped = renderableImagePaintBox({
+    ...image,
+    metadata: {
+      ...image.metadata,
+      imageOffsetX: -999,
+    },
+  });
+  assert.ok(clamped);
+  assert.equal(clamped.x, -300);
+  assert.equal(clamped.x + clamped.width, image.box.width);
 });

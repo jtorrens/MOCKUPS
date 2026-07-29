@@ -5,6 +5,7 @@ import type { RenderableBox, RenderableFontFace, RenderableNode } from "../visua
 import { numberValue, stringValue } from "./previewValueHelpers.js";
 import { textGraphemes } from "./previewTextRevealHelpers.js";
 import { emojiRasterDataUri } from "./previewAssetResolver.js";
+import { renderableImagePaintBox } from "./renderableImagePlacement.js";
 
 /**
  * Serializes an already-resolved paint tree to SVG.
@@ -202,24 +203,25 @@ function imageMarkup(node: RenderableNode, target: "web" | "affinity"): string {
   const box = node.box;
   const uri = node.asset?.uri;
   if (!box || !uri) return "";
-  const scale = Math.max(0.01, finite(node.metadata?.imageScale) ?? 1);
-  const baseSize = Math.max(1, finite(node.metadata?.imageBaseSize) ?? box.width);
-  const offsetX = ((finite(node.metadata?.imageOffsetX) ?? 0) / baseSize) * box.width;
-  const offsetY = ((finite(node.metadata?.imageOffsetY) ?? 0) / baseSize) * box.width;
   const customPlacement = node.metadata?.imageScale !== undefined || node.metadata?.imageOffsetX !== undefined || node.metadata?.imageOffsetY !== undefined;
-  const x = customPlacement ? box.x + (box.width - box.width * scale) / 2 + offsetX : box.x;
-  const y = customPlacement ? box.y + (box.height - box.height * scale) / 2 + offsetY : box.y;
+  const paintBox = customPlacement ? renderableImagePaintBox(node) ?? box : box;
   if (target === "affinity" && /^data:image\/svg\+xml/i.test(uri)) {
-    return inlineSvgImageMarkup({ x, y, width: box.width * scale, height: box.height * scale }, uri,
-      stringValue(node.style?.objectFit, "cover") === "contain" ? "xMidYMid meet" : "xMidYMid slice");
+    return inlineSvgImageMarkup(
+      paintBox,
+      uri,
+      customPlacement ? "none" : stringValue(node.style?.objectFit, "cover") === "contain"
+        ? "xMidYMid meet"
+        : "xMidYMid slice",
+    );
   }
   return `<image ${attributes({
-    x,
-    y,
-    width: box.width * scale,
-    height: box.height * scale,
+    ...paintBox,
     href: uri,
-    preserveAspectRatio: stringValue(node.style?.objectFit, "cover") === "contain" ? "xMidYMid meet" : "xMidYMid slice",
+    preserveAspectRatio: customPlacement
+      ? "none"
+      : stringValue(node.style?.objectFit, "cover") === "contain"
+        ? "xMidYMid meet"
+        : "xMidYMid slice",
   })}/>`;
 }
 

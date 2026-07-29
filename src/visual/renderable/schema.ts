@@ -59,6 +59,8 @@ const RenderableMetadataSchema = z.object({
   }).strict()).optional(),
   fallbackText: z.string().optional(),
   imageBaseSize: z.number().optional(),
+  imageIntrinsicHeight: z.number().positive().optional(),
+  imageIntrinsicWidth: z.number().positive().optional(),
   imageOffsetX: z.number().optional(),
   imageOffsetY: z.number().optional(),
   imageScale: z.number().optional(),

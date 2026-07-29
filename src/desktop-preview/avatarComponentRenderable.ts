@@ -165,6 +165,8 @@ function avatarRenderableNode(
         metadata: {
           fallbackText: avatar.actor.initials.toUpperCase(),
           imageBaseSize: avatar.actor.avatar.baseSize,
+          imageIntrinsicHeight: avatar.actor.avatar.baseSize,
+          imageIntrinsicWidth: avatar.actor.avatar.baseSize,
           imageOffsetX: avatar.actor.avatar.offsetX,
           imageOffsetY: avatar.actor.avatar.offsetY,
           imageScale: avatar.actor.avatar.scale,

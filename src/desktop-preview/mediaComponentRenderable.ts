@@ -260,6 +260,12 @@ function mediaContent(
       },
       metadata: {
         imageBaseSize: media.viewport.width,
+        ...(frame.width && frame.height
+          ? {
+              imageIntrinsicHeight: frame.height,
+              imageIntrinsicWidth: frame.width,
+            }
+          : {}),
         imageOffsetX: media.viewport.offsetX,
         imageOffsetY: media.viewport.offsetY,
         imageScale: media.viewport.scale,
