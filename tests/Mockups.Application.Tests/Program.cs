@@ -32,6 +32,7 @@ var tests = new (string Name, Action Run)[]
     ("Runtime definitions preserve their explicit owner", RuntimeDefinitionsPreserveOwner),
     ("projected Runtime collections reconcile by stable id", ProjectedRuntimeCollectionsReconcileById),
     ("Runtime documents reject missing and parent-owned values", RuntimeDocumentsRejectInvalidOwnership),
+    ("Runtime scalar patterns validate defaults and authored values", RuntimeScalarPatternsValidateValues),
     ("Runtime contract transitions retain only current values and animation owners", RuntimeContractTransitionsRetainCurrentOwners),
     ("editor operations execute away from the caller thread", EditorOperationsRunOnWorker),
     ("editor operations preserve their submission order", EditorOperationsAreSerialized),
@@ -360,6 +361,51 @@ static void RuntimeDocumentsRejectInvalidOwnership()
                 ["variantText"] = "forbidden",
             },
             "Test owner"));
+}
+
+static void RuntimeScalarPatternsValidateValues()
+{
+    var definition = new JsonObject
+    {
+        ["id"] = "format",
+        ["label"] = "Format",
+        ["jsonKey"] = "format",
+        ["source"] = "runtime",
+        ["kind"] = "text",
+        ["valueKind"] = "StringSingleLine",
+        ["defaultValue"] = "MM:SS",
+        ["helpText"] = "Clock or numeric mask.",
+        ["valuePattern"] = "^(?:MM:SS|#*0+)$",
+        ["valuePatternMessage"] = "must be a supported mask.",
+    };
+    var contract = new JsonObject
+    {
+        ["inputs"] = new JsonArray(definition.DeepClone()),
+    };
+    var input = RuntimeInputDefinitionReader.ReadInputs(
+        contract,
+        new JsonObject()).Single();
+
+    Equal("Clock or numeric mask.", input.HelpText);
+    Equal("^(?:MM:SS|#*0+)$", input.ValuePattern);
+    RuntimeInputDocumentContract.ValidateCurrentValues(
+        contract,
+        new JsonObject { ["format"] = "###0" },
+        "Pattern test");
+    Throws<InvalidOperationException>(() =>
+        RuntimeInputDocumentContract.ValidateCurrentValues(
+            contract,
+            new JsonObject { ["format"] = "minutes" },
+            "Pattern test"));
+
+    definition["defaultValue"] = "minutes";
+    Throws<InvalidOperationException>(() =>
+        RuntimeInputDefinitionReader.ReadInputs(
+            new JsonObject
+            {
+                ["inputs"] = new JsonArray(definition.DeepClone()),
+            },
+            new JsonObject()));
 }
 
 static void RuntimeContractTransitionsRetainCurrentOwners()

@@ -42,6 +42,19 @@ Preview controls do not create fields or reinterpret their ownership.
 and collection declarations. Persistence and Desktop consume its immutable
 definitions; visual sessions contain no parallel contract parser.
 
+### Calculated text
+
+Calculated text separates direction from presentation. `literal`, `countUp`
+and `countDown` select the calculation mode; the sibling format field declares
+the exact units and minimum digit widths.
+
+Current clock masks are `M:SS`, `MM:SS`, `H:MM`, `HH:MM`, `H:MM:SS` and
+`HH:MM:SS`. Current numeric masks contain zero or more optional `#` digits
+followed by one or more required `0` digits. Width is a minimum and never
+truncates a larger value. Calculation uses owner-local elapsed seconds and
+countdown clamps at zero. A value or mask that does not match this explicit
+contract fails; Preview never infers units from punctuation or digit count.
+
 ## Explicit forwarding
 
 Forwarding crosses a named boundary only through an explicit declaration. It

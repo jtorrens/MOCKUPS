@@ -45,7 +45,10 @@ internal static class RuntimeInputFieldDefinitionFactory
             StructuredCollection: input.StructuredCollection,
             Unit: input.Unit,
             Animation: input.Animation,
-            BehaviorTiming: input.BehaviorTiming);
+            BehaviorTiming: input.BehaviorTiming,
+            HelpText: input.HelpText,
+            ValuePattern: input.ValuePattern,
+            ValuePatternMessage: input.ValuePatternMessage);
     }
 
     private static ProjectTreeNode ProjectAncestor(ProjectTreeNode node)

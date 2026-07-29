@@ -153,7 +153,10 @@ public sealed record FieldDefinition(
     string Unit = "",
     AnimationFieldDefinition? Animation = null,
     BehaviorTimingDefinition? BehaviorTiming = null,
-    MotionTimingDefinition? MotionTiming = null)
+    MotionTimingDefinition? MotionTiming = null,
+    string HelpText = "",
+    string ValuePattern = "",
+    string ValuePatternMessage = "")
 {
     public string DisplayLabel => string.IsNullOrWhiteSpace(Unit)
         ? Label

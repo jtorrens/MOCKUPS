@@ -32,9 +32,11 @@ export function literalLabelPreview(sampleText: string, sampleSubtext = "") {
   return {
     sampleText,
     textMode: "literal",
+    textFormat: "MM:SS",
     textSizeMultiplier: 1,
     sampleSubtext,
     subtextMode: "literal",
+    subtextFormat: "MM:SS",
     subtextSizeMultiplier: 1,
   };
 }
@@ -128,8 +130,22 @@ export function resolveLabelComponentFromRecords(
 
   return {
     id,
-    text: resolveLabelText(preview, "sampleText", "textMode", "text", frame),
-    subtext: resolveLabelText(preview, "sampleSubtext", "subtextMode", "subtext", frame),
+    text: resolveLabelText(
+      preview,
+      "sampleText",
+      "textMode",
+      "textFormat",
+      "text",
+      frame,
+    ),
+    subtext: resolveLabelText(
+      preview,
+      "sampleSubtext",
+      "subtextMode",
+      "subtextFormat",
+      "subtext",
+      frame,
+    ),
     textSizeMultiplier: positiveMultiplier(
       preview,
       "textSizeMultiplier",
@@ -186,15 +202,27 @@ function resolveLabelText(
   preview: Record<string, unknown>,
   valueKey: string,
   modeKey: string,
+  formatKey: string,
   path: string,
   frame: { localFrame: number; frameRate: number },
 ) {
   const value = requiredText(preview, valueKey, `component.label.preview.${valueKey}`);
   const mode = requiredString(preview, modeKey, `component.label.preview.${modeKey}`);
+  const format = requiredString(
+    preview,
+    formatKey,
+    `component.label.preview.${formatKey}`,
+  );
   if (mode !== "literal" && mode !== "countUp" && mode !== "countDown") {
     throw new Error(`Unsupported label ${path} mode ${mode}`);
   }
-  return resolveCalculatedText(value, mode as CalculatedTextMode, frame.localFrame, frame.frameRate);
+  return resolveCalculatedText(
+    value,
+    mode as CalculatedTextMode,
+    format,
+    frame.localFrame,
+    frame.frameRate,
+  );
 }
 
 function positiveMultiplier(value: Record<string, unknown>, key: string, path: string) {

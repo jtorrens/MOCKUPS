@@ -13,6 +13,7 @@ internal sealed class DictionaryFieldControl : Grid
 {
     private readonly FieldDefinition _definition;
     private readonly TextBlock _label;
+    private readonly Control _labelHost;
     private readonly IDictionaryValueControl? _valueControl;
     private readonly Button _restoreButton;
     private readonly bool _valueOnly;
@@ -79,10 +80,11 @@ internal sealed class DictionaryFieldControl : Grid
             TextTrimming = TextTrimming.CharacterEllipsis,
             TextWrapping = TextWrapping.NoWrap,
         };
-        SetColumn(_label, 0);
+        _labelHost = LabelHost(_definition, _label);
+        SetColumn(_labelHost, 0);
         if (_blockLayout)
         {
-            SetRow(_label, 1);
+            SetRow(_labelHost, 1);
         }
 
         if (!valueOnly && !_blockLayout)
@@ -156,7 +158,7 @@ internal sealed class DictionaryFieldControl : Grid
 
         if (!valueOnly)
         {
-            Children.Add(_label);
+            Children.Add(_labelHost);
             Children.Add(_restoreButton);
         }
         UpdateState();
@@ -406,6 +408,42 @@ internal sealed class DictionaryFieldControl : Grid
         if (_complexSeparator is null) return;
         _complexSeparator.Background = EditorUiVisuals.ScrollbarSeparatorBrush(
             ActualThemeVariant != ThemeVariant.Light);
+    }
+
+    private static Control LabelHost(
+        FieldDefinition definition,
+        TextBlock label)
+    {
+        if (string.IsNullOrWhiteSpace(definition.HelpText))
+        {
+            return label;
+        }
+
+        var help = new TextBlock
+        {
+            Text = definition.HelpText,
+            FontSize = 10.5,
+            Opacity = 0.68,
+            TextWrapping = TextWrapping.Wrap,
+            MinWidth = 0,
+            Margin = new Thickness(0, 2, 0, 0),
+        };
+        var host = new StackPanel
+        {
+            Spacing = 0,
+            MinWidth = 0,
+            VerticalAlignment = VerticalAlignment.Center,
+            Children =
+            {
+                label,
+                help,
+            },
+        };
+        return EditorAccessibility.Describe(
+            host,
+            definition.DisplayLabel,
+            definition.HelpText,
+            showToolTip: false);
     }
 
     private void UpdateState()

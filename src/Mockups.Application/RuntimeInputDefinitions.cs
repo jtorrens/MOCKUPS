@@ -73,7 +73,10 @@ public sealed record ComponentInputDefinition(
     string OptionsSourceValueJsonKey = "id",
     string OptionsSourceLabelJsonKey = "",
     string OptionsSourceFirstItemBadge = "",
-    bool ShowInEditor = true);
+    bool ShowInEditor = true,
+    string HelpText = "",
+    string ValuePattern = "",
+    string ValuePatternMessage = "");
 
 public sealed record RuntimeInputCollectionDefinition(
     string Id,

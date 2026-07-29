@@ -12383,6 +12383,29 @@ static void LabelSubtextPlacementUsesCurrentContract()
     SequenceEqual(
         ["component.label.textGapToken", "component.label.reserveSubtextSpace", "component.label.subtextVerticalPosition", "component.label.subtextHorizontalAlign", "component.label.subtextColorToken", "component.label.subtextTypography"],
         subtextFields);
+    var preview = JsonNode.Parse(settings.DesignPreviewJson)?.AsObject()
+        ?? throw new InvalidOperationException("Missing current Label Runtime contract.");
+    var inputs = preview["inputs"]?.AsArray()
+        .Select((node) => node?.AsObject()
+            ?? throw new InvalidOperationException("Invalid Label Runtime Input."))
+        .ToDictionary(
+            (input) => input["id"]?.GetValue<string>()
+                ?? throw new InvalidOperationException("Missing Label Runtime Input id."))
+        ?? throw new InvalidOperationException("Missing Label Runtime Inputs.");
+    foreach (var id in new[] { "textFormat", "subtextFormat" })
+    {
+        var format = inputs[id];
+        Equal("Format", format["label"]?.GetValue<string>());
+        Equal("StringSingleLine", format["valueKind"]?.GetValue<string>());
+        Equal("MM:SS", format["defaultValue"]?.GetValue<string>());
+        Equal(
+            "Time: MM:SS or HH:MM:SS · Number: ###0 optional digits, 0000 zero-padded.",
+            format["helpText"]?.GetValue<string>());
+        True(!string.IsNullOrWhiteSpace(
+            format["valuePattern"]?.GetValue<string>()));
+    }
+    Equal("MM:SS", preview["textFormat"]?.GetValue<string>());
+    Equal("MM:SS", preview["subtextFormat"]?.GetValue<string>());
 }
 
 static void DictionaryFieldsRespondToCompactWidths()
@@ -12410,6 +12433,17 @@ static void DictionaryFieldsRespondToCompactWidths()
         availableWidth: 320,
         pairMinimumWidth: 156,
         pairSpacing: 8));
+    var formatField = new DictionaryFieldControl(
+        new FieldValue(
+            new FieldDefinition(
+                "format",
+                "Format",
+                ValueKind.StringSingleLine,
+                HelpText: "Clock or numeric mask."),
+            "MM:SS"));
+    True(formatField.GetVisualDescendants()
+        .OfType<TextBlock>()
+        .Any((text) => text.Text == "Clock or numeric mask."));
 }
 
 static void ForwardActionsUseSharedPresentation()

@@ -79,6 +79,9 @@ public static class RuntimeInputDefinitionReader
                 Animation = ReadAnimationDefinition(item),
                 BehaviorTiming = ReadBehaviorTimingDefinition(item),
                 Transition = ReadInputTransitionDefinition(item),
+                HelpText = JsonString(item, "helpText"),
+                ValuePattern = JsonString(item, "valuePattern"),
+                ValuePatternMessage = JsonString(item, "valuePatternMessage"),
             };
             if (source == ComponentInputSource.Runtime && InputIsVisible(item, config))
             {
@@ -181,6 +184,9 @@ public static class RuntimeInputDefinitionReader
                     OptionsSourceValueJsonKey = JsonString(field, "optionsSourceValueJsonKey", "id"),
                     OptionsSourceLabelJsonKey = JsonString(field, "optionsSourceLabelJsonKey"),
                     OptionsSourceFirstItemBadge = JsonString(field, "optionsSourceFirstItemBadge"),
+                    HelpText = JsonString(field, "helpText"),
+                    ValuePattern = JsonString(field, "valuePattern"),
+                    ValuePatternMessage = JsonString(field, "valuePatternMessage"),
                 };
                 itemFields.Add(definition);
             }
