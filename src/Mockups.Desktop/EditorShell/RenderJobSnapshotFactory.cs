@@ -19,7 +19,14 @@ internal sealed record RenderQueueRouteOption(
 internal sealed record RenderSnapshotFreezeProgress(
     int Current,
     int Total,
-    string Appearance);
+    string Appearance,
+    string ScreenName);
+
+internal sealed record RenderPreparationScreenRange(
+    string ScreenId,
+    string ScreenName,
+    int StartFrame,
+    int DurationFrames);
 
 internal sealed record RenderBatchSnapshotPreparation(
     RenderQueueShotDraft Draft,
@@ -40,6 +47,7 @@ internal sealed record RenderQueueShotDraft(
     int ShotNumber,
     int Fps,
     int TotalFrames,
+    IReadOnlyList<RenderPreparationScreenRange> Screens,
     string SuggestedBaseName,
     string RootPath,
     string RouteStatusMessage,
@@ -87,6 +95,40 @@ internal sealed class RenderJobSnapshotFactory
                 $"Actor '{actor.DisplayName}' must define a default Device and Theme before rendering.");
         }
         var plan = _database.GetProductionOutputShotPlan(shot.Id);
+        var screenNodes = shot.Children
+            .Where((node) =>
+                node.Kind
+                == ProjectTreeNodeKind.ModuleInstance)
+            .ToDictionary(
+                (node) => node.Id,
+                StringComparer.Ordinal);
+        var timeline = new ModuleInstanceTimelineDataSource(
+            _database,
+            _database);
+        var screens = ModuleInstanceTimeline
+            .ScreenRanges(timeline, shot.Id)
+            .Select((range) =>
+            {
+                var screen = screenNodes.TryGetValue(
+                    range.ScreenId,
+                    out var exact)
+                        ? exact
+                        : throw new InvalidOperationException(
+                            $"Render preparation Screen '{range.ScreenId}' is not an exact child of Shot '{shot.Id}'.");
+                return new RenderPreparationScreenRange(
+                    range.ScreenId,
+                    screen.Name,
+                    range.StartFrame,
+                    range.EffectiveDurationFrames);
+            })
+            .ToList();
+        if (screens.Count == 0
+            || screens.Sum((screen) => screen.DurationFrames)
+                != shotSettings.DurationFrames)
+        {
+            throw new InvalidOperationException(
+                $"Render preparation Shot '{shot.Id}' has inconsistent Screen ranges.");
+        }
         var rootPath = _roots.Get(shotSettings.ProjectId) ?? "";
         var status = string.IsNullOrWhiteSpace(rootPath)
             ? "Configure this Project's local Production Output root before rendering."
@@ -101,6 +143,7 @@ internal sealed class RenderJobSnapshotFactory
             shotSettings.ShotNumber,
             shotSettings.Fps,
             shotSettings.DurationFrames,
+            screens,
             plan.TechnicalName,
             rootPath,
             status,
@@ -202,7 +245,8 @@ internal sealed class RenderJobSnapshotFactory
             progress?.Report(new RenderSnapshotFreezeProgress(
                 0,
                 draft.TotalFrames,
-                requestedAppearance));
+                requestedAppearance,
+                ScreenName(draft, 0)));
             using var manifest = store.CreateManifest(
                 requestedAppearance);
             for (var frame = 0; frame < draft.TotalFrames; frame++)
@@ -239,7 +283,8 @@ internal sealed class RenderJobSnapshotFactory
                     progress?.Report(new RenderSnapshotFreezeProgress(
                         frame + 1,
                         draft.TotalFrames,
-                        requestedAppearance));
+                        requestedAppearance,
+                        ScreenName(draft, frame)));
                     await Task.Yield();
                 }
             }
@@ -266,5 +311,17 @@ internal sealed class RenderJobSnapshotFactory
             snapshots.Add(snapshot);
         }
         return snapshots;
+    }
+
+    private static string ScreenName(
+        RenderQueueShotDraft draft,
+        int frame)
+    {
+        var screen = draft.Screens.SingleOrDefault((candidate) =>
+            frame >= candidate.StartFrame
+            && frame < candidate.StartFrame + candidate.DurationFrames);
+        return screen?.ScreenName
+            ?? throw new InvalidOperationException(
+                $"Render preparation frame {frame} has no exact Screen in Shot '{draft.Shot.Id}'.");
     }
 }

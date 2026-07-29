@@ -157,9 +157,12 @@ Monitoring is separate from batch creation. The permanent Production
 Production Output root is not configured. It groups child jobs by
 batch and owns pause/resume, cancel, retry, reveal, remove and clear-finished
 actions together with progress, error and output-path reporting. Preparation
-is indeterminate; only rasterized frames advance the determinate frame bar.
-Rows update their existing controls in place and execution updates are ordered
-monotonically, so an older notification cannot make a bar move backwards. The
+reports its exact current and total frozen frame count through the same stable
+determinate progress control used by later execution. The row names the Screen
+currently being prepared and shows prepared and remaining frame counts; these
+are preparation counts, not rendered frames. Rows update their existing
+controls in place and execution updates are ordered monotonically, so an older
+notification cannot make a bar move backwards. The
 add modal and this panel share one workstation-local queue manager.
 
 ## Screens

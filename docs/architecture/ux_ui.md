@@ -178,10 +178,11 @@ disable the form: the render worker creates it from the selected stored route
 when the job starts.
 
 Confirming the modal closes it immediately and creates visible `PREPARING`
-Light/Dark children. Preparation uses an indeterminate indicator and never
-reports its source traversal as rendered frames. Canceling either child during
-this atomic preparation cancels the complete batch; once preparation finishes,
-the children are independent queue jobs.
+Light/Dark children. Preparation uses the stable determinate job bar and shows
+the exact Screen, prepared frames and remaining frames without presenting
+those source frames as rendered output. Canceling either child during this
+atomic preparation cancels the complete batch; once preparation finishes, the
+children are independent queue jobs.
 
 Production also exposes a permanent **Render Queue** section alongside
 Episodes and Production Data. Its central panel remains accessible with an

@@ -11349,7 +11349,16 @@ static void RenderQueueProgressControlIsStable()
                 .Single((progress) =>
                     progress.Name
                         == $"RenderQueueProgress_{child.Id}");
-            True(first.IsIndeterminate);
+            True(!first.IsIndeterminate);
+            Equal(0d, first.Value);
+            var initialDetail = monitor.GetVisualDescendants()
+                .OfType<TextBlock>()
+                .Single((text) =>
+                    text.Name
+                        == $"RenderQueueProgressDetail_{child.Id}");
+            True(initialDetail.Text!.Contains(
+                "0 prepared · 10 remaining · 10 total frames",
+                StringComparison.Ordinal));
 
             var update = typeof(RenderQueueManager).GetMethod(
                 "UpdatePreparationProgress",
@@ -11363,7 +11372,8 @@ static void RenderQueueProgressControlIsStable()
                     new RenderSnapshotFreezeProgress(
                         4,
                         10,
-                        RenderQueueAppearance.Light),
+                        RenderQueueAppearance.Light,
+                        "Opening chat"),
                 ]);
             Dispatcher.UIThread.RunJobs();
             var second = monitor.GetVisualDescendants()
@@ -11372,15 +11382,39 @@ static void RenderQueueProgressControlIsStable()
                     progress.Name
                         == $"RenderQueueProgress_{child.Id}");
             True(ReferenceEquals(first, second));
-            True(second.IsIndeterminate);
+            True(!second.IsIndeterminate);
+            Equal(4d, second.Value);
             var status = monitor.GetVisualDescendants()
                 .OfType<TextBlock>()
                 .Single((text) =>
                     text.Name
                         == $"RenderQueueStatus_{child.Id}");
-            True(!status.Text!.Contains(
-                    "frames",
-                    StringComparison.Ordinal));
+            True(status.Text!.Contains(
+                "Freezing Light · Opening chat",
+                StringComparison.Ordinal));
+            var preparationDetail = monitor.GetVisualDescendants()
+                .OfType<TextBlock>()
+                .Single((text) =>
+                    text.Name
+                        == $"RenderQueueProgressDetail_{child.Id}");
+            True(preparationDetail.Text!.Contains(
+                "4 prepared · 6 remaining · 10 total frames",
+                StringComparison.Ordinal));
+            update.Invoke(
+                queue,
+                [
+                    child.BatchId,
+                    new RenderSnapshotFreezeProgress(
+                        3,
+                        10,
+                        RenderQueueAppearance.Light,
+                        "Opening chat"),
+                ]);
+            Dispatcher.UIThread.RunJobs();
+            Equal(4d, second.Value);
+            True(preparationDetail.Text!.Contains(
+                "4 prepared · 6 remaining",
+                StringComparison.Ordinal));
 
             var updateExecution = typeof(RenderQueueManager).GetMethod(
                 "UpdateProgress",
@@ -11416,6 +11450,14 @@ static void RenderQueueProgressControlIsStable()
             True(ReferenceEquals(first, rendering));
             True(!rendering.IsIndeterminate);
             Equal(4d, rendering.Value);
+            var renderingDetail = monitor.GetVisualDescendants()
+                .OfType<TextBlock>()
+                .Single((text) =>
+                    text.Name
+                        == $"RenderQueueProgressDetail_{child.Id}");
+            True(renderingDetail.Text!.Contains(
+                "4/10 frames",
+                StringComparison.Ordinal));
 
             var survivingProgress = monitor.GetVisualDescendants()
                 .OfType<ProgressBar>()
@@ -11806,6 +11848,12 @@ static void ProductionOutputGeneratesExactShotPlans()
         Equal(1, draft.Routes.Count);
         Equal(plan.RelativeDirectory, draft.Routes[0].RelativeDirectory);
         Equal("", draft.RouteStatusMessage);
+        True(draft.Screens.Count > 0);
+        Equal(
+            draft.TotalFrames,
+            draft.Screens.Sum((screen) => screen.DurationFrames));
+        True(draft.Screens.All((screen) =>
+            !string.IsNullOrWhiteSpace(screen.ScreenName)));
     }
     finally
     {

@@ -330,12 +330,15 @@ internal sealed class RenderQueueMonitorControl : StackPanel
         var status = new TextBlock
         {
             Name = $"RenderQueueStatus_{job.Id}",
-            Text =
-                $"{job.Status} · {job.Progress.Phase} · "
-                + $"{job.Progress.Current}/{job.Progress.Total} frames · "
-                + $"{job.Summary.ThemeName} · {job.Summary.DeviceName}",
             FontSize = 12,
             Opacity = 0.72,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+        };
+        var progressDetail = new TextBlock
+        {
+            Name = $"RenderQueueProgressDetail_{job.Id}",
+            FontSize = 11,
+            Opacity = 0.68,
             TextTrimming = TextTrimming.CharacterEllipsis,
         };
         var details = new StackPanel
@@ -353,6 +356,7 @@ internal sealed class RenderQueueMonitorControl : StackPanel
                     TextTrimming = TextTrimming.CharacterEllipsis,
                 },
                 status,
+                progressDetail,
                 progress,
                 new TextBlock
                 {
@@ -402,6 +406,7 @@ internal sealed class RenderQueueMonitorControl : StackPanel
         var state = new JobRowState(
             root,
             status,
+            progressDetail,
             progress,
             error,
             actions);
@@ -417,20 +422,28 @@ internal sealed class RenderQueueMonitorControl : StackPanel
         var preparing = job.Status == RenderQueueStatus.Preparing;
         row.Progress.Minimum = 0;
         row.Progress.Maximum = progressMaximum;
-        row.Progress.IsIndeterminate = preparing;
-        if (!preparing)
-        {
-            row.Progress.Value = Math.Clamp(
-                job.Progress.Current,
-                0,
-                progressMaximum);
-        }
-        row.Status.Text = preparing
-            ? $"{job.Status} · {job.Progress.Phase} · "
+        row.Progress.IsIndeterminate = false;
+        row.Progress.Value = Math.Clamp(
+            job.Progress.Current,
+            0,
+            progressMaximum);
+        row.Status.Text = $"{job.Status} · {job.Progress.Phase}";
+        var remaining = Math.Max(
+            0,
+            job.Progress.Total - job.Progress.Current);
+        row.ProgressDetail.Text = preparing
+            ? $"{job.Progress.Current} prepared · "
+                + $"{remaining} remaining · "
+                + $"{job.Progress.Total} total frames · "
                 + $"{job.Summary.ThemeName} · {job.Summary.DeviceName}"
-            : $"{job.Status} · {job.Progress.Phase} · "
-                + $"{job.Progress.Current}/{job.Progress.Total} frames · "
+            : $"{job.Progress.Current}/{job.Progress.Total} frames · "
                 + $"{job.Summary.ThemeName} · {job.Summary.DeviceName}";
+        EditorAccessibility.Describe(
+            row.Progress,
+            preparing
+                ? $"{job.Progress.Current} prepared, {remaining} remaining, {job.Progress.Total} total frames"
+                : $"{job.Progress.Current} of {job.Progress.Total} frames",
+            showToolTip: false);
         row.Error.Text = job.Error;
         row.Error.IsVisible = !string.IsNullOrWhiteSpace(job.Error);
         row.Root.Background = new SolidColorBrush(Color.Parse(
@@ -545,12 +558,14 @@ internal sealed class RenderQueueMonitorControl : StackPanel
     private sealed class JobRowState(
         Border root,
         TextBlock status,
+        TextBlock progressDetail,
         ProgressBar progress,
         TextBlock error,
         StackPanel actions)
     {
         public Border Root { get; } = root;
         public TextBlock Status { get; } = status;
+        public TextBlock ProgressDetail { get; } = progressDetail;
         public ProgressBar Progress { get; } = progress;
         public TextBlock Error { get; } = error;
         public StackPanel Actions { get; } = actions;

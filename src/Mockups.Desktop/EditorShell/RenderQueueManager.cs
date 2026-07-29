@@ -418,10 +418,23 @@ internal sealed class RenderQueueManager : IDisposable
                     == RenderQueueStatus.Preparing
                 && candidate.Snapshot is null);
             if (job is null) return;
+            var total = Math.Max(0, value.Total);
+            var current = Math.Clamp(
+                value.Current,
+                0,
+                total);
+            if (total != job.Progress.Total
+                || current < job.Progress.Current)
+            {
+                return;
+            }
             job.Progress = new RenderQueueProgress(
-                Math.Clamp(value.Current, 0, value.Total),
-                Math.Max(0, value.Total),
-                $"Freezing {DisplayAppearance(value.Appearance)}");
+                current,
+                total,
+                $"Freezing {DisplayAppearance(value.Appearance)}"
+                + (string.IsNullOrWhiteSpace(value.ScreenName)
+                    ? ""
+                    : $" · {value.ScreenName}"));
             job.UpdatedAt = DateTimeOffset.UtcNow.ToString("O");
         }
         NotifyChanged();
