@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { placeChild, screenPercentToDesignWidth } from "../../src/desktop-preview/previewGeometryHelpers.js";
+import {
+  placeChild,
+  screenPercentToDesignWidth,
+  translateRenderableNode,
+} from "../../src/desktop-preview/previewGeometryHelpers.js";
 
 const parent = { x: 10, y: 20, width: 100, height: 80 };
 const child = { width: 20, height: 10 };
@@ -46,4 +50,36 @@ test("screen percentage resolves to design width independently of preview scale"
     themeMode: "light",
     themeTokensJson: "{}",
   }, 90), 324);
+});
+
+test("a nested root overlay interpolates only its remaining parent translation", () => {
+  const overlay = {
+    id: "media.fullscreen",
+    type: "group" as const,
+    frame: 0,
+    box: { x: 20, y: 30, width: 100, height: 200 },
+    style: {
+      rootOverlay: true,
+      rootOverlayTranslationFactor: 0.25,
+    },
+    children: [{
+      id: "media.image",
+      type: "image" as const,
+      frame: 0,
+      box: { x: 20, y: 30, width: 100, height: 200 },
+    }],
+  };
+
+  const translated = translateRenderableNode(overlay, { x: 40, y: 80 });
+  assert.deepEqual(translated.box, { x: 30, y: 50, width: 100, height: 200 });
+  assert.deepEqual(
+    translated.children?.[0]?.box,
+    { x: 30, y: 50, width: 100, height: 200 },
+  );
+
+  const stable = translateRenderableNode({
+    ...overlay,
+    style: { rootOverlay: true },
+  }, { x: 40, y: 80 });
+  assert.deepEqual(stable.box, overlay.box);
 });

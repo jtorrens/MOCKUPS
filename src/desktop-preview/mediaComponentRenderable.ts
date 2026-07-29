@@ -3,8 +3,8 @@ import {
   boundedCenterBox,
   numberToken,
   placeChild,
-  previewScreenBox,
   renderScale,
+  rootPreviewScreenBox,
   scalePlacement,
 } from "./componentRenderableCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
@@ -67,6 +67,13 @@ function mediaComponentToRenderableForBoxes(
     mediaSurfaceNode,
     mediaVisualClipNode(payload, media, boxes.media, [mediaContentNode, ...controlNodes]),
   ];
+  const transitionActive = media.motionFrame.active && media.motionFrame.progress < 1;
+  const rootOverlay = media.displayState === "fullframe" || transitionActive;
+  const rootOverlayTranslationFactor = transitionActive
+    ? media.motionFrame.reverse
+      ? media.motionFrame.progress
+      : 1 - media.motionFrame.progress
+    : 0;
   const node = {
     id: media.id,
     type: "group",
@@ -74,7 +81,13 @@ function mediaComponentToRenderableForBoxes(
     box: boxes.root,
     style: {
       overflow: "visible",
-      ...(media.displayState === "fullframe" ? { rootOverlay: true, zIndex: 1000 } : {}),
+      ...(rootOverlay
+        ? {
+            rootOverlay: true,
+            rootOverlayTranslationFactor,
+            zIndex: 1000,
+          }
+        : {}),
     },
     children,
   } satisfies RenderableNode;
@@ -116,7 +129,7 @@ function mediaBoxesFromInlineBox(
     root: inlineBox,
     media: inlineBox,
   };
-  const fullframe = fullframeMediaBoxes(payload, media);
+  const fullframe = fullframeMediaBoxes(payload);
   const progress = media.motionFrame.progress;
   if (!media.motionFrame.active || progress >= 1) {
     return media.displayState === "fullframe" ? fullframe : inline;
@@ -157,17 +170,11 @@ function sizedInlineMediaBox(
 
 function fullframeMediaBoxes(
   payload: DesignPreviewPayload,
-  media: MediaDesignContract,
 ): MediaRenderBoxes {
-  const root = previewScreenBox(payload);
+  const root = rootPreviewScreenBox(payload);
   return {
     root,
-    media: fitAspect(
-      root,
-      media.fullframeOrientation === "landscape"
-        ? Math.max(root.width, root.height) / Math.min(root.width, root.height)
-        : root.width / root.height,
-    ),
+    media: root,
   };
 }
 
@@ -187,28 +194,6 @@ function interpolateBox(
 
 function lerp(start: number, end: number, amount: number) {
   return start + (end - start) * amount;
-}
-
-function fitAspect(box: RenderableBox, aspect: number): RenderableBox {
-  const safeAspect = Number.isFinite(aspect) && aspect > 0 ? aspect : 1;
-  const boxAspect = box.width / box.height;
-  if (boxAspect > safeAspect) {
-    const width = box.height * safeAspect;
-    return {
-      x: box.x + (box.width - width) / 2,
-      y: box.y,
-      width,
-      height: box.height,
-    };
-  }
-
-  const height = box.width / safeAspect;
-  return {
-    x: box.x,
-    y: box.y + (box.height - height) / 2,
-    width: box.width,
-    height,
-  };
 }
 
 function mediaBars(

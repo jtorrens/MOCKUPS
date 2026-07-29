@@ -50,6 +50,8 @@ function payload(
   return {
     kind: "moduleInstance",
     componentType: "conversation",
+    frameRate: 30,
+    localFrame,
     configJson: "{}",
     designPreviewJson: JSON.stringify({
       headerSubtitle: "base header",
@@ -297,6 +299,38 @@ test("delivery, status and full-screen fields resolve independently", () => {
   assert.equal(message.isFullScreen, true);
 });
 
+test("hold full-screen keyframes derive the owning Media Motion clock in both directions", () => {
+  const messages = [{
+    id: "m1",
+    direction: "incoming",
+    text: "image",
+    mediaType: "image",
+    isFullScreen: false,
+    fullScreenTransition: false,
+  }];
+  const tracks = [track("fullScreen", "m1", [
+    { id: "f0", frame: 0, value: false, interpolation: "hold" },
+    { id: "f1", frame: 10, value: true, interpolation: "hold" },
+    { id: "f2", frame: 20, value: false, interpolation: "hold" },
+  ])];
+  const at = (frame: number) => {
+    const resolved = resolveConversationModuleFrame(
+      payload(frame, tracks, messages),
+    ).messages as Array<Record<string, unknown>>;
+    return resolved[0]!;
+  };
+
+  assert.equal(at(9).fullScreenTransition, false);
+  assert.equal(at(10).isFullScreen, true);
+  assert.equal(at(10).fullScreenTransition, true);
+  assert.equal(at(10).motionElapsedMs, 0);
+  assert.equal(at(11).motionElapsedMs, 1000 / 30);
+  assert.equal(at(20).isFullScreen, false);
+  assert.equal(at(20).fullScreenTransition, true);
+  assert.equal(at(20).motionElapsedMs, 0);
+  assert.equal(at(21).motionElapsedMs, 1000 / 30);
+});
+
 test("non-extending delivery keyframes overlap later messages without pushing their start", () => {
   const messages = [
     { id: "first", direction: "incoming", text: "first", writeOnDurationFrames: 2, statusVisible: false },
@@ -395,6 +429,51 @@ test("Conversation Header keeps its upward bleed and can use the resolved Actor 
   });
 });
 
+test("a nested full-screen Media keeps the exact root Screen coordinates", () => {
+  const source = committedConversationPayload();
+  const runtime = JSON.parse(source.designPreviewJson) as Record<string, unknown>;
+  runtime.messages = [{
+    id: "fullscreen-image",
+    actorId: "",
+    direction: "outgoing",
+    text: "Image",
+    delayAfterPreviousFrames: 0,
+    postWriteOnHoldFrames: 0,
+    statusVisible: false,
+    statusState: "none",
+    statusText: "",
+    mediaType: "image",
+    mediaSource: "",
+    viewportSize: "240|160",
+    mediaScale: 1,
+    mediaOffset: "0|0",
+    isPlaying: false,
+    currentTimeSeconds: 0,
+    durationSeconds: 12,
+    playbackMode: "once",
+    playDurationFrames: 72,
+    isFullScreen: true,
+    fullScreenTransition: false,
+    fullframeOrientation: "portrait",
+    controlsElapsedMs: 0,
+    writeOnTiming: {
+      mode: "fixed",
+      fixedFrames: 0,
+      paceToken: "theme.motion.naturalPace.normal",
+    },
+  }];
+  source.designPreviewJson = JSON.stringify(runtime);
+  const tree = conversationModuleToRenderable(source);
+  const overlay = findRootOverlay(tree);
+  assert.ok(overlay);
+  assert.deepEqual(overlay.box, {
+    x: source.previewFrame.screenX,
+    y: source.previewFrame.screenY,
+    width: source.previewFrame.screenWidth,
+    height: source.previewFrame.screenHeight,
+  });
+});
+
 function committedConversationPayload(): DesignPreviewPayload {
   const source = committedComponentFixture("avatar", "avatar_chat_header");
   const database = new Database(
@@ -461,6 +540,15 @@ function findNode(root: RenderableNode, id: string): RenderableNode | undefined 
   if (root.id === id) return root;
   for (const child of root.children ?? []) {
     const match = findNode(child, id);
+    if (match) return match;
+  }
+  return undefined;
+}
+
+function findRootOverlay(root: RenderableNode): RenderableNode | undefined {
+  if (root.style?.rootOverlay === true) return root;
+  for (const child of root.children ?? []) {
+    const match = findRootOverlay(child);
     if (match) return match;
   }
   return undefined;

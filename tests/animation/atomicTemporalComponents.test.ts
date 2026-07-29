@@ -11,6 +11,7 @@ import { resolveFingerprintComponent } from "../../src/desktop-preview/fingerpri
 import { resolveKeyboardComponent } from "../../src/desktop-preview/keyboardComponentResolver.js";
 import { resolveKeypadComponent } from "../../src/desktop-preview/keypadComponentResolver.js";
 import { resolveMediaComponent } from "../../src/desktop-preview/mediaComponentResolver.js";
+import { mediaComponentToRenderableAt } from "../../src/desktop-preview/mediaComponentRenderable.js";
 import { resolveNotificationComponent } from "../../src/desktop-preview/notificationComponentResolver.js";
 import { committedComponentFixture } from "./committedComponentFixture.js";
 
@@ -102,6 +103,38 @@ test("Media resolves playback, controls fade and full-screen Motion before paint
   assert.equal(resolved.displayState, "fullframe");
   assert.equal(resolved.motionFrame.active, true);
   assert.ok(resolved.motionFrame.progress > 0);
+});
+
+test("Media full-screen uses the complete root Screen frame", () => {
+  const source = withInputDefaults(committedComponentFixture("media"));
+  const rootPreviewFrame = {
+    ...source.previewFrame,
+    screenX: 10,
+    screenY: 20,
+    screenWidth: 300,
+    screenHeight: 600,
+  };
+  const fullScreen = resolveMediaComponent(withValues(source, {
+    isFullScreen: true,
+    fullScreenTransition: false,
+  }));
+  const node = mediaComponentToRenderableAt(
+    { ...source, rootPreviewFrame },
+    fullScreen,
+    { x: 80, y: 140, width: 120, height: 80 },
+  );
+  assert.deepEqual(node.box, {
+    x: 10,
+    y: 20,
+    width: 300,
+    height: 600,
+  });
+  assert.deepEqual(
+    node.children?.find((child) => child.id.endsWith(".visualClip"))?.box,
+    node.box,
+  );
+  assert.equal(node.style?.rootOverlay, true);
+  assert.equal(node.style?.rootOverlayTranslationFactor, 0);
 });
 
 test("Bubble resolves write-on and embedded video state from the same owner frame", () => {

@@ -223,11 +223,23 @@ export function translateRenderableNode(
   origin: { x: number; y: number },
   boxOverride?: RenderableBox,
 ): RenderableNode {
+  const translationFactor = node.style?.rootOverlay === true
+    ? rootOverlayTranslationFactor(node.style.rootOverlayTranslationFactor)
+    : 1;
+  const effectiveOrigin = {
+    x: origin.x * translationFactor,
+    y: origin.y * translationFactor,
+  };
   return {
     ...node,
-    box: boxOverride ?? (node.box ? translateBox(node.box, origin) : undefined),
-    children: node.children?.map((child) => translateRenderableNode(child, origin)),
+    box: boxOverride ?? (node.box ? translateBox(node.box, effectiveOrigin) : undefined),
+    children: node.children?.map((child) => translateRenderableNode(child, effectiveOrigin)),
   };
+}
+
+function rootOverlayTranslationFactor(value: unknown) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(1, value));
 }
 
 export function interpolateBox(

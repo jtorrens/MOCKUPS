@@ -28,8 +28,13 @@ export function extractRootOverlays(node: RenderableNode): {
 }
 
 function stripRootOverlayMarker(node: RenderableNode): RenderableNode {
-  const { rootOverlay, ...style } = node.style ?? {};
+  const {
+    rootOverlay,
+    rootOverlayTranslationFactor,
+    ...style
+  } = node.style ?? {};
   void rootOverlay;
+  void rootOverlayTranslationFactor;
   return {
     ...node,
     style,

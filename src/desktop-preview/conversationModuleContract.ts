@@ -43,6 +43,7 @@ export interface ConversationMessageContract {
   playbackMode: "once" | "loop";
   isFullScreen: boolean;
   fullScreenTransition: boolean;
+  fullScreenMotionElapsedMs: number;
   fullframeOrientation: string;
   controlsElapsedMs: number;
   isTypingIndicator: boolean;

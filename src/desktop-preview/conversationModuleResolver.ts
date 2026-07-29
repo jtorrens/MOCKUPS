@@ -225,7 +225,20 @@ export function resolveConversationModuleFrame(
       message.isPlaying = elapsed < duration;
       message.playbackFrame = Math.min(elapsed, duration);
     }
-    message.isFullScreen = resolve("fullScreen", message.isFullScreen).value;
+    const fullScreen = resolve("fullScreen", message.isFullScreen);
+    message.isFullScreen = fullScreen.value;
+    const fullScreenChanged = fullScreen.sourceKeyframeFrame !== undefined
+      && typeof fullScreen.previousValue === "boolean"
+      && typeof fullScreen.value === "boolean"
+      && fullScreen.previousValue !== fullScreen.value;
+    if (fullScreenChanged) {
+      const ownerFrame = timeline.localFrame("fullScreen", targetId, screenFrame);
+      message.fullScreenTransition = true;
+      message.motionElapsedMs = Math.max(
+        0,
+        ownerFrame - fullScreen.sourceKeyframeFrame!,
+      ) / Math.max(1, payload.frameRate) * 1000;
+    }
     return message;
   });
   return preview;
@@ -346,6 +359,7 @@ function conversationMessages(preview: JsonRecord): ResolvedConversationMessage[
       durationSeconds: Math.max(1, optionalNumber(message, "durationSeconds", 12)),
       isFullScreen: optionalBoolean(message, "isFullScreen"),
       fullScreenTransition: optionalBoolean(message, "fullScreenTransition"),
+      fullScreenMotionElapsedMs: optionalNumber(message, "motionElapsedMs", 0),
       fullframeOrientation: optionalString(message, "fullframeOrientation") || "portrait",
       controlsElapsedMs: optionalNumber(message, "controlsElapsedMs", 0),
       isTypingIndicator: false,
