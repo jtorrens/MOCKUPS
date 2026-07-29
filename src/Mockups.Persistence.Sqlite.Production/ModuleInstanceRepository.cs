@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using Mockups.DesktopEditorShell.Common;
+using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Collections.Generic;
 
@@ -161,6 +162,23 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
             ("$id", moduleInstanceId));
     }
 
+    public void UpdateTransition(
+        SqliteConnection connection,
+        string moduleInstanceId,
+        string transitionJson)
+    {
+        _ = MotionVariantValue.Parse(
+            transitionJson);
+        _ = Get(
+            connection,
+            moduleInstanceId);
+        _context.Execute(
+            connection,
+            "UPDATE module_instances SET transition_json = $transitionJson WHERE id = $id",
+            ("$transitionJson", transitionJson),
+            ("$id", moduleInstanceId));
+    }
+
     public void UpdateContentAndAnimation(
         SqliteConnection connection,
         string moduleInstanceId,
@@ -318,6 +336,8 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
             throw new InvalidOperationException($"Module instance '{record.Id}' duration must be positive.");
         }
         ValidateObject(record.TransitionJson, record.Id, "transition_json");
+        _ = MotionVariantValue.Parse(
+            record.TransitionJson);
         ValidateObject(record.ContentJson, record.Id, "content_json");
         ValidateObject(record.BehaviorJson, record.Id, "behavior_json");
         ValidateObject(record.AnimationJson, record.Id, "animation_json");

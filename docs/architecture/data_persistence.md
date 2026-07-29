@@ -100,6 +100,13 @@ by strict owner-specific Runtime documents; this does not grant Production a
 Resources reference. Production owns calculated Screen duration resolution
 and Shot duration synchronization. Composition invokes that operation only
 after a cross-owner write that can affect the timeline.
+
+`module_instances.transition_json` is one complete current `Motion` document.
+It uses the same strict transition, direction, bounds, fade, translate and
+scale fields as reusable Component boundary Motion. A retired cut discriminator
+or a partial Motion is invalid current data. Production owns its read and
+write; the Shot timeline consumes the prepared value without reconstructing it
+from a label or Screen position.
 `Mockups.Persistence.Sqlite.Resources` owns Palette,
 Theme, Device, Actor, Production Font and Icon Theme persistence plus their
 resource-specific field, token and asset operations.

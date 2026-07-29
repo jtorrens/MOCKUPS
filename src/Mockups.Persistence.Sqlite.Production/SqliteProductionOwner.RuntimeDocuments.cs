@@ -612,6 +612,13 @@ internal sealed partial class SqliteProductionOwner
                     Math.Max(1, NumericText.Int32(value, 1)));
                 SynchronizeTimelineDurations(connection);
                 return;
+            case "moduleInstance.transition":
+                _moduleInstanceRepository.UpdateTransition(
+                    connection,
+                    moduleInstanceId,
+                    MotionVariantValue.Parse(
+                        value).ToJsonString());
+                return;
             default:
                 throw new InvalidOperationException(
                     $"Unknown module instance field '{fieldId}'.");
@@ -679,7 +686,7 @@ internal sealed partial class SqliteProductionOwner
                 $"{module.Name} module instance.",
                 index,
                 initialDuration,
-                "{\"type\":\"cut\"}",
+                MotionVariantValue.NoneValue.ToJsonString(),
                 "{}",
                 "{}",
                 DefaultModuleAnimationJson(),
@@ -700,7 +707,7 @@ internal sealed partial class SqliteProductionOwner
             ProjectTreeNodeKind.ModuleInstance,
             id,
             name,
-            $"{module.Name} · {duration} frames · Cut",
+            $"{module.Name} · {duration} frames · None",
             ProjectTreeNode.DefaultRecordClassId(
                 ProjectTreeNodeKind.ModuleInstance),
             shot);

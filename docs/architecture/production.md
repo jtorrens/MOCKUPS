@@ -174,6 +174,15 @@ A Screen is a persisted Module Instance. It owns:
 - duration when the Module policy is explicit;
 - current metadata.
 
+The transition document is one complete boundary Motion. At a boundary between
+two ordered Screens, the Shot starts both parent-owned events at the first frame
+of the incoming Screen: the previous Screen uses its Motion as an exit and the
+incoming Screen uses its Motion as an entry. Both events receive the same
+elapsed Shot interval and resolve their own Theme timing. The outgoing Screen
+is retained at its final local frame until both Motions complete. The first
+Screen has no synthetic entry and the last Screen has no synthetic exit.
+`none` with no fade remains an immediate change.
+
 Screen payload is authored in Preview because that is where its effect can be
 checked, but ownership remains with the Screen instance.
 

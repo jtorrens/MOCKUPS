@@ -3417,6 +3417,7 @@ internal sealed class EditorPreviewController : IDisposable
             payload.ThemeStatusBarVariantReference,
             payload.ThemeNavigationBarVariantReference,
             payload.LocalFrame,
+            payload.ScreenTransition,
         });
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(payloadJson)));
     }

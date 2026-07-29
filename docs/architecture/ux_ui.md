@@ -239,6 +239,12 @@ absolute Shot playhead internally. Keyframe selection and drag use one standard
 interaction. Owner, target and field identity remain visible enough to avoid
 position-based editing.
 
+The Screen General card exposes its boundary Transition through the registered
+Motion control used by Components. Playing the Shot starts the outgoing and
+incoming Motion together at each Screen boundary. A sequential or delayed
+appearance is authored inside the selected Motion timing rather than through a
+Screen-specific overlap switch.
+
 Play and Restore apply to the currently visible authoring context. Cancelling a
 drag or playback returns to the current authored frame without writing
 temporary values.

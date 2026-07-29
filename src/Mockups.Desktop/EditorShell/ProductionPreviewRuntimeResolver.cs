@@ -27,6 +27,33 @@ internal sealed class ProductionPreviewRuntimeResolver
 
     public DesignPreviewPayload Resolve(DesignPreviewPayload payload, string themeMode)
     {
+        if (payload.ScreenTransition is { } transition)
+        {
+            var outgoing =
+                Resolve(
+                    transition.Outgoing,
+                    themeMode);
+            var incoming =
+                Resolve(
+                    transition.Incoming,
+                    themeMode);
+            return payload with
+            {
+                ConfigJson = incoming.ConfigJson,
+                DesignPreviewJson =
+                    incoming.DesignPreviewJson,
+                RuntimeContractJson =
+                    incoming.RuntimeContractJson,
+                InstanceJson = incoming.InstanceJson,
+                ScreenTransition =
+                    transition with
+                    {
+                        Outgoing = outgoing,
+                        Incoming = incoming,
+                    },
+            };
+        }
+
         var preview = ParseObject(payload.DesignPreviewJson);
         var timelineFrameBefore =
             ResolvedTimelineFrame(preview);

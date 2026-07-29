@@ -118,6 +118,7 @@ var tests = new (string Name, Action Run)[]
     ("Production Shot context boundary preserves explicit inherited context read-only", ProductionShotContextBoundaryPreservesInheritedContext),
     ("Preview payload rejects incomplete Production context without selector fallbacks", PreviewPayloadRejectsIncompleteProductionContext),
     ("Production payload preserves its explicit Actor and animation documents", ProductionPayloadPreservesActorAndAnimation),
+    ("Shot Screen transitions reuse simultaneous boundary Motion", ShotScreenTransitionsReuseBoundaryMotion),
     ("Production playback selects exact owner frames from its prepared snapshot", ProductionPlaybackSelectsPreparedOwnerFrames),
     ("Conversation Play messages advances the root Module owner frame", ConversationPlayMessagesAdvancesRootOwnerFrame),
     ("Preview Theme mode has one strict payload owner", PreviewThemeModeHasOneStrictPayloadOwner),
@@ -7554,6 +7555,13 @@ static void PersistedJsonRootsAreStrict()
         command.CommandText = "UPDATE production_fonts SET files_json = '{}' WHERE id = (SELECT id FROM production_fonts LIMIT 1)";
         command.ExecuteNonQuery();
     });
+    AssertRejectedDatabaseIsReadOnly("retired-screen-cut-transition", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText =
+            """UPDATE module_instances SET transition_json = '{"type":"cut"}' WHERE id = (SELECT id FROM module_instances LIMIT 1)""";
+        command.ExecuteNonQuery();
+    });
 }
 
 static void IncompleteVariantsFailReadOnly()
@@ -9482,6 +9490,9 @@ static void ProductionPreviewSessionBoundaryPreservesCurrentData()
         Equal(
             database.GetModuleInstanceVariantSettings(screen.Id).ConfigJson,
             preparedScreen.VariantConfigJson);
+        Equal(
+            database.GetModuleInstanceSettings(screen.Id).TransitionJson,
+            preparedScreen.TransitionJson);
         SequenceEqual(
             database.GetShotModuleInstanceSlots(shot.Id).Select((slot) => slot.Id),
             preparedShot.Screens.Select(
@@ -10295,6 +10306,44 @@ static void ModuleInstanceRepositoryPreservesFocusedContract()
         True(JsonPath.ParseRequiredObject(
             database.GetModuleInstanceSettings(original.Id).ContentJson,
             "repository test content")["repositoryTest"]?.GetValue<bool>() == true);
+
+        var transition =
+            (MotionVariantValue.NoneValue with
+            {
+                Transition =
+                    MotionVariantValue.Slide,
+                Direction =
+                    MotionVariantValue.Left,
+                Fade = true,
+                Translate = true,
+            }).ToJsonString();
+        using (var connection =
+               context.OpenConnection())
+        {
+            repository.UpdateTransition(
+                connection,
+                original.Id,
+                transition);
+        }
+        Equal(
+            MotionVariantValue.Parse(
+                transition),
+            MotionVariantValue.Parse(
+                repository.Get(
+                    original.Id).TransitionJson));
+        using (var connection =
+               context.OpenConnection())
+        {
+            Throws<InvalidOperationException>(
+                () => repository.UpdateTransition(
+                    connection,
+                    original.Id,
+                    """{"type":"cut"}"""));
+            repository.UpdateTransition(
+                connection,
+                original.Id,
+                original.TransitionJson);
+        }
 
         var animation = JsonPath.ParseRequiredObject(original.AnimationJson, $"Module instance '{original.Id}' animation_json");
         animation["repositoryTest"] = true;
@@ -12017,6 +12066,180 @@ static void ProductionPlaybackSelectsPreparedOwnerFrames()
             "light",
             LocalFrame: frame,
             OwnerId: "screen-a");
+}
+
+static void ShotScreenTransitionsReuseBoundaryMotion()
+{
+    var sourcePath =
+        ParityDatabasePath();
+    var temporary =
+        Path.Combine(
+            Path.GetTempPath(),
+            $"mockups-screen-transition-{Guid.NewGuid():N}.sqlite");
+    File.Copy(
+        sourcePath,
+        temporary,
+        overwrite: true);
+    try
+    {
+        var database =
+            new SqliteProjectTestContext(
+                temporary);
+        var tree =
+            database.LoadProjectTree();
+        var shot =
+            Descendants(tree)
+                .Single((node) =>
+                    node.Kind
+                    == ProjectTreeNodeKind.Shot);
+        var slots =
+            database.GetShotModuleInstanceSlots(
+                shot.Id);
+        True(slots.Count >= 2);
+        var outgoing =
+            slots[0];
+        var incoming =
+            slots[1];
+        var outgoingMotion =
+            """
+            {"transition":"slide","direction":"left","bounds":"screen","fade":true,"translate":true,"scale":false}
+            """;
+        var incomingMotion =
+            """
+            {"transition":"slide","direction":"right","bounds":"screen","fade":true,"translate":true,"scale":false}
+            """;
+        database.UpdateModuleInstanceField(
+            outgoing.Id,
+            "moduleInstance.transition",
+            outgoingMotion);
+        database.UpdateModuleInstanceField(
+            incoming.Id,
+            "moduleInstance.transition",
+            incomingMotion);
+        Throws<InvalidOperationException>(
+            () => database.UpdateModuleInstanceField(
+                incoming.Id,
+                "moduleInstance.transition",
+                """{"type":"cut"}"""));
+
+        var values =
+            new RecordClassFieldValueService(
+                ProductionRecordFields(database),
+                DesignRecordFields(database),
+                ResourceRecordFields(database),
+                database.Production,
+                database.Resources);
+        var incomingNode =
+            Descendants(tree)
+                .Single((node) =>
+                    node.Id == incoming.Id);
+        var transitionField =
+            values.CreateFieldValue(
+                incomingNode,
+                "moduleInstance.transition");
+        Equal(
+            ValueKind.Motion,
+            transitionField.Definition.ValueKind);
+        True(
+            transitionField.Definition.IsEditable);
+        Equal(
+            MotionVariantValue.Parse(
+                incomingMotion),
+            MotionVariantValue.Parse(
+                transitionField.Value));
+
+        var payloads =
+            new DesignPreviewPayloadDataSource(
+                database.PreviewInputs,
+                database.Production,
+                database.Resources,
+                database.Resources,
+                database.ProjectPaths);
+        var preparer =
+            new ProductionPreviewPayloadPreparer(
+                payloads,
+                new ProductionPreviewRuntimeResolver(
+                    database.Resources,
+                    database.ProjectPaths));
+        var boundaryFrame =
+            ModuleInstanceTimeline.DurationFrames(
+                new ModuleInstanceTimelineDataSource(
+                    database.Production,
+                    database.Resources),
+                outgoing.Id);
+        var first =
+            preparer.PrepareRequired(
+                shot,
+                null,
+                "light",
+                boundaryFrame);
+        Equal(
+            "screenTransition",
+            first.Kind);
+        var transition =
+            first.ScreenTransition
+            ?? throw new InvalidOperationException(
+                "Missing prepared Screen transition.");
+        Equal(
+            outgoing.Id,
+            JsonPath.RequiredString(
+                JsonPath.RequiredObject(
+                    JsonPath.ParseRequiredObject(
+                        transition.Outgoing.InstanceJson,
+                        "outgoing Screen transition instance"),
+                    "context",
+                    "outgoing Screen transition instance"),
+                "moduleInstanceId",
+                "outgoing Screen transition context"));
+        Equal(
+            incoming.Id,
+            JsonPath.RequiredString(
+                JsonPath.RequiredObject(
+                    JsonPath.ParseRequiredObject(
+                        transition.Incoming.InstanceJson,
+                        "incoming Screen transition instance"),
+                    "context",
+                    "incoming Screen transition instance"),
+                "moduleInstanceId",
+                "incoming Screen transition context"));
+        Equal(
+            0d,
+            transition.ElapsedMilliseconds);
+        Equal(
+            outgoing.StoredDurationFrames - 1,
+            transition.Outgoing.LocalFrame);
+        Equal(
+            0,
+            transition.Incoming.LocalFrame);
+
+        var next =
+            preparer.PrepareRequired(
+                shot,
+                null,
+                "light",
+                boundaryFrame + 1);
+        True(
+            next.ScreenTransition
+                is { ElapsedMilliseconds: > 0 });
+        var settled =
+            preparer.PrepareRequired(
+                shot,
+                null,
+                "light",
+                boundaryFrame
+                + transition.DurationFrames
+                + 1);
+        Equal(
+            "moduleInstance",
+            settled.Kind);
+        True(
+            settled.ScreenTransition is null);
+    }
+    finally
+    {
+        File.Delete(
+            temporary);
+    }
 }
 
 static void PreviewThemeModeHasOneStrictPayloadOwner()

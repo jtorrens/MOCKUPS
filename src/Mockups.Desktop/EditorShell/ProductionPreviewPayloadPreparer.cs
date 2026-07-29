@@ -274,6 +274,47 @@ internal sealed class ProductionPreviewPayloadPreparer
             Math.Max(
                 0,
                 localFrame);
+        if (template.ScreenTransition
+            is { } transition)
+        {
+            var incoming =
+                AtLocalFrame(
+                    transition.Incoming,
+                    frame);
+            if (frame
+                > transition.DurationFrames)
+            {
+                return incoming with
+                {
+                    Name = template.Name,
+                    OwnerId = template.OwnerId,
+                };
+            }
+
+            var outgoing =
+                AtLocalFrame(
+                    transition.Outgoing,
+                    transition.Outgoing.LocalFrame);
+            return incoming with
+            {
+                Kind = "screenTransition",
+                Name = template.Name,
+                OwnerId = template.OwnerId,
+                ScreenTransition =
+                    transition with
+                    {
+                        Outgoing = outgoing,
+                        Incoming = incoming,
+                        ElapsedMilliseconds =
+                            frame
+                            * 1000.0
+                            / Math.Max(
+                                1,
+                                incoming.FrameRate),
+                    },
+            };
+        }
+
         var preview =
             WithTimelineFrame(
                 template.DesignPreviewJson,

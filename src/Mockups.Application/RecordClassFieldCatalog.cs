@@ -271,9 +271,7 @@ public static class RecordClassFieldCatalog
         ["moduleInstance.transition"] = new(
             "moduleInstance.transition",
             "Transition",
-            ValueKind.OptionToken,
-            IsEditable: false,
-            Options: [new FieldOption("cut", "Cut")]),
+            ValueKind.Motion),
         ["palette.token"] = new("palette.token", "Token", ValueKind.StringSingleLine),
         ["palette.valueHex"] = new("palette.valueHex", "Hex", ValueKind.HexColor),
         ["palette.isNeutral"] = new("palette.isNeutral", "Neutral", ValueKind.Boolean),

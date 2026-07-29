@@ -10,6 +10,7 @@ internal sealed record ProductionPreviewScreenSnapshot(
     string ShotId,
     int StartFrame,
     int DurationFrames,
+    string TransitionJson,
     string VariantConfigJson,
     IReadOnlyList<int> ShotKeyframeFrames)
 {
@@ -141,6 +142,7 @@ internal sealed class ProductionPreviewSessionDataSource
                         shotNode.Id,
                         startFrame,
                         durationFrames,
+                        source.TransitionJson,
                         _timeline
                             .GetModuleInstanceVariantSettings(
                                 screenId)

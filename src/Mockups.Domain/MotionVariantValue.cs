@@ -32,6 +32,14 @@ public sealed record MotionVariantValue(
         Translate: true,
         Scale: false);
 
+    public static MotionVariantValue NoneValue { get; } = new(
+        None,
+        Bottom,
+        Screen,
+        Fade: false,
+        Translate: false,
+        Scale: false);
+
     public static MotionVariantValue Parse(string value)
     {
         if (string.IsNullOrWhiteSpace(value))

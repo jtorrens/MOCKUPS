@@ -34,6 +34,16 @@ Every temporal entity follows one rule:
 This applies recursively to Shots, Screens, stack slots, States, structured
 collections and nested Components.
 
+An ordered Screen boundary follows that same rule without a separate transition
+timeline. The Shot owns the boundary event. On the incoming Screen's first
+frame, the outgoing Screen exit Motion and incoming Screen entry Motion start
+simultaneously from one elapsed parent clock. Each Screen supplies its own
+complete reusable Motion recipe and resolves its own Theme duration and easing.
+The completion dependency is the longer of the two Motions. During that
+dependency the outgoing Screen keeps its final local frame and the incoming
+Screen advances from local frame zero. Screen durations and Shot aggregate
+duration are not rewritten to manufacture overlap.
+
 The event clock and the visual Motion recipe have distinct owners. A child
 Component Variant may declare its reusable boundary Motion, while the parent
 still owns the appearance or disappearance event, its start frame and any
@@ -169,3 +179,9 @@ Button pressed-state duration belongs to its declared Runtime action and
 Likewise, Text Input Bar persists no Cursor blink duration. It forwards the
 resolved child frame and Cursor remains the only owner of that continuous
 state.
+
+Screen transition composition follows the same frame-data boundary. Payload
+preparation selects the two exact Screen owners and their local frames. The
+generic transition resolver applies the existing Motion timing helpers to the
+shared elapsed interval and emits two resolved layers. The HTML renderer never
+starts an animation or chooses an outgoing or incoming Screen.

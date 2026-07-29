@@ -197,6 +197,7 @@ public sealed record ModuleInstanceSlot(
     string Name,
     string ModuleName,
     int SortOrder,
+    string TransitionJson,
     string TransitionType,
     int StoredDurationFrames);
 

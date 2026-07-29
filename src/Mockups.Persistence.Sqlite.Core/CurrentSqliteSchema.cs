@@ -94,7 +94,7 @@ internal static class CurrentSqliteSchema
           notes TEXT NOT NULL DEFAULT '',
           sort_order INTEGER NOT NULL DEFAULT 0,
           duration_frames INTEGER NOT NULL DEFAULT 240,
-          transition_json TEXT NOT NULL DEFAULT '{"type":"cut"}',
+          transition_json TEXT NOT NULL DEFAULT '{"transition":"none","direction":"bottom","bounds":"screen","fade":false,"translate":false,"scale":false}',
           content_json TEXT NOT NULL DEFAULT '{}',
           behavior_json TEXT NOT NULL DEFAULT '{}',
           animation_json TEXT NOT NULL DEFAULT '{"schemaVersion":2,"tracks":[]}',

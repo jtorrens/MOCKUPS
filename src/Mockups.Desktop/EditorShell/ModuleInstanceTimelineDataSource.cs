@@ -7,6 +7,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed record ModuleInstanceTimelineSource(
     string ShotId,
     int PersistedDurationFrames,
+    string TransitionJson,
     string ContentJson,
     string AnimationJson,
     string EffectiveContractJson,
@@ -32,6 +33,7 @@ internal sealed class ModuleInstanceTimelineDataSource
         return new ModuleInstanceTimelineSource(
             instance.ShotId,
             instance.DurationFrames,
+            instance.TransitionJson,
             instance.ContentJson,
             instance.AnimationJson,
             _database.GetModuleInstanceEffectiveContractJson(moduleInstanceId),

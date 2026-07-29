@@ -103,6 +103,8 @@ internal sealed partial class SqliteCurrentDatabaseValidator
         ValidateSqliteRuntime(connection);
         ValidatePhysicalSchema(connection);
         ValidateCurrentJsonColumns(connection);
+        ValidateCurrentScreenTransitions(
+            connection);
         ValidateCurrentProductionOutput(connection);
         ValidateCurrentProductionFontFiles(connection);
         ValidateCurrentEditorLayouts(connection);
@@ -114,6 +116,32 @@ internal sealed partial class SqliteCurrentDatabaseValidator
         ValidateCurrentComponentVariants(connection);
         ValidateCurrentModuleVariantsAndAnimations(connection);
         ValidateForeignKeyIntegrity(connection);
+    }
+
+    private void ValidateCurrentScreenTransitions(
+        SqliteConnection connection)
+    {
+        using var command =
+            connection.CreateCommand();
+        command.CommandText =
+            "SELECT id, transition_json FROM module_instances";
+        using var reader =
+            command.ExecuteReader();
+        while (reader.Read())
+        {
+            var id =
+                reader.GetString(0);
+            try
+            {
+                _ = MotionVariantValue.Parse(
+                    reader.GetString(1));
+            }
+            catch (InvalidOperationException exception)
+            {
+                throw InvalidCurrentDatabase(
+                    $"Screen '{id}' transition_json is invalid: {exception.Message}");
+            }
+        }
     }
 
     private void ValidateCurrentProductionOutput(

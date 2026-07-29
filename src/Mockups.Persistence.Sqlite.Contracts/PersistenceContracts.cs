@@ -513,6 +513,11 @@ internal interface IModuleInstanceRepository
 
     void UpdateAnimation(SqliteConnection connection, string moduleInstanceId, string animationJson);
 
+    void UpdateTransition(
+        SqliteConnection connection,
+        string moduleInstanceId,
+        string transitionJson);
+
     void UpdateContentAndAnimation(
         SqliteConnection connection,
         string moduleInstanceId,

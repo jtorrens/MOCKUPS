@@ -36,9 +36,9 @@ internal sealed partial class SqliteProductionOwner
     public string GetModuleInstanceTransitionType(
         string moduleInstanceId)
     {
-        var transition = ParseJsonObject(
-            GetModuleInstanceSettings(moduleInstanceId).TransitionJson);
-        return transition["type"]?.GetValue<string>() ?? "cut";
+        return MotionVariantValue.Parse(
+            GetModuleInstanceSettings(moduleInstanceId)
+                .TransitionJson).Transition;
     }
 
     public IReadOnlyList<ModuleInstanceSlot> GetShotModuleInstanceSlots(
@@ -63,8 +63,9 @@ internal sealed partial class SqliteProductionOwner
                         : throw new InvalidOperationException(
                             $"Missing module '{instance.ModuleId}'."),
                 instance.SortOrder,
-                ParseJsonObject(instance.TransitionJson)["type"]
-                    ?.GetValue<string>() ?? "cut",
+                instance.TransitionJson,
+                MotionVariantValue.Parse(
+                    instance.TransitionJson).Transition,
                 instance.DurationFrames))
             .ToList();
     }

@@ -7,6 +7,14 @@ using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
+internal sealed record ScreenTransitionPayload(
+    DesignPreviewPayload Outgoing,
+    DesignPreviewPayload Incoming,
+    string OutgoingMotionJson,
+    string IncomingMotionJson,
+    double ElapsedMilliseconds,
+    int DurationFrames);
+
 internal sealed record DesignPreviewPayload(
     string Kind,
     string Name,
@@ -30,7 +38,8 @@ internal sealed record DesignPreviewPayload(
     string ThemeStatusBarVariantReference = "",
     string ThemeNavigationBarVariantReference = "",
     int LocalFrame = 0,
-    string OwnerId = "");
+    string OwnerId = "",
+    ScreenTransitionPayload? ScreenTransition = null);
 
 internal static class DesignPreviewPayloadFactory
 {
@@ -193,29 +202,110 @@ internal static class DesignPreviewPayloadFactory
         if (slots.Count == 0) return null;
         var boundedFrame = Math.Max(0, Math.Min(slots.Sum((slot) => slot.DurationFrames) - 1, shotFrame));
         var startFrame = 0;
+        var activeIndex = slots.Count - 1;
         var active = slots[^1];
-        foreach (var slot in slots)
+        for (var index = 0; index < slots.Count; index++)
         {
+            var slot = slots[index];
             if (boundedFrame < startFrame + slot.DurationFrames)
             {
                 active = slot;
+                activeIndex = index;
                 break;
             }
             startFrame += slot.DurationFrames;
         }
-        var payload = FromModuleInstance(
+        var localFrame =
+            boundedFrame - startFrame;
+        var incoming = FromModuleInstance(
             dataSource,
             active.Id,
             deviceId,
             themeMode,
             theme,
-            boundedFrame - startFrame);
-        var shotPreview = DesignPreviewTestValues.Parse(payload.DesignPreviewJson);
+            localFrame);
+        var shotPreview = DesignPreviewTestValues.Parse(incoming.DesignPreviewJson);
         shotPreview.Remove("actions");
-        return payload with
+        incoming = incoming with
         {
             Name = active.Name,
             DesignPreviewJson = shotPreview.ToJsonString(),
+            ThemeStatusBarVariantReference =
+                theme.StatusBarVariantReference,
+            ThemeNavigationBarVariantReference =
+                theme.NavigationBarVariantReference,
+        };
+        if (activeIndex == 0)
+        {
+            return incoming;
+        }
+
+        var outgoingSlot =
+            slots[activeIndex - 1];
+        var outgoingMotion =
+            JsonPath.ParseRequiredObject(
+                outgoingSlot.TransitionJson,
+                $"Screen '{outgoingSlot.Id}' transition");
+        var incomingMotion =
+            JsonPath.ParseRequiredObject(
+                active.TransitionJson,
+                $"Screen '{active.Id}' transition");
+        var themeTokens =
+            JsonPath.ParseRequiredObject(
+                theme.TokensJson,
+                "Screen transition Theme tokens");
+        var durationMilliseconds =
+            Math.Max(
+                MotionTimingDuration.ResolveMilliseconds(
+                    themeTokens,
+                    outgoingMotion,
+                    $"Screen '{outgoingSlot.Id}' exit Motion"),
+                MotionTimingDuration.ResolveMilliseconds(
+                    themeTokens,
+                    incomingMotion,
+                    $"Screen '{active.Id}' enter Motion"));
+        var durationFrames =
+            Math.Max(
+                0,
+                (int)Math.Ceiling(
+                    durationMilliseconds
+                    / 1000.0
+                    * incoming.FrameRate));
+        if (durationFrames == 0
+            || localFrame > durationFrames)
+        {
+            return incoming;
+        }
+        if (durationFrames >= active.DurationFrames)
+        {
+            throw new InvalidOperationException(
+                $"Screen '{active.Id}' transition requires {durationFrames + 1} frames but the Screen duration is {active.DurationFrames}.");
+        }
+
+        var outgoing = FromModuleInstance(
+            dataSource,
+            outgoingSlot.Id,
+            deviceId,
+            themeMode,
+            theme,
+            outgoingSlot.DurationFrames - 1)
+            with
+            {
+                ThemeStatusBarVariantReference =
+                    theme.StatusBarVariantReference,
+                ThemeNavigationBarVariantReference =
+                    theme.NavigationBarVariantReference,
+            };
+        return incoming with
+        {
+            Kind = "screenTransition",
+            ScreenTransition = new ScreenTransitionPayload(
+                outgoing,
+                incoming,
+                outgoingMotion.ToJsonString(),
+                incomingMotion.ToJsonString(),
+                localFrame * 1000.0 / incoming.FrameRate,
+                durationFrames),
         };
     }
 

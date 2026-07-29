@@ -17,8 +17,17 @@ export interface DesignPreviewFontFacePayload {
   style: string;
 }
 
+export interface ScreenTransitionPayload {
+  outgoing: DesignPreviewPayload;
+  incoming: DesignPreviewPayload;
+  outgoingMotionJson: string;
+  incomingMotionJson: string;
+  elapsedMilliseconds: number;
+  durationFrames: number;
+}
+
 export interface DesignPreviewPayload {
-  kind: "componentClass" | "module" | "moduleInstance";
+  kind: "componentClass" | "module" | "moduleInstance" | "screenTransition";
   authoringOwnerId?: string;
   authoringFocusFieldId?: string;
   authoringFocusItemId?: string;
@@ -46,4 +55,5 @@ export interface DesignPreviewPayload {
   themeTokensJson: string;
   themeStatusBarVariantReference?: string;
   themeNavigationBarVariantReference?: string;
+  screenTransition?: ScreenTransitionPayload;
 }

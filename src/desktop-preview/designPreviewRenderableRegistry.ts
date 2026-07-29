@@ -3,7 +3,7 @@ import { componentClassToRenderable } from "./componentRenderableBoundary.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { moduleToRenderable } from "./moduleRenderableBoundary.js";
 
-type DesignPreviewKind = DesignPreviewPayload["kind"];
+type DesignPreviewKind = Exclude<DesignPreviewPayload["kind"], "screenTransition">;
 type DesignPreviewRenderableFactory = (payload: DesignPreviewPayload) => RenderableNode;
 
 const designPreviewRenderableFactories = {
@@ -15,6 +15,9 @@ const designPreviewRenderableFactories = {
 export function designPreviewPayloadToRenderable(
   payload: DesignPreviewPayload,
 ): RenderableNode {
+  if (payload.kind === "screenTransition") {
+    throw new Error("A Screen transition must be resolved at the Preview root boundary.");
+  }
   const factory = designPreviewRenderableFactories[payload.kind];
   if (!factory) {
     throw new Error(`Unsupported design preview route '${String(payload.kind)}'.`);

@@ -58,6 +58,14 @@ The payload boundary owns:
 - complete runtime-contract temporal envelope;
 - requested Shot and Screen frame.
 
+For a Shot frame inside a Screen boundary transition, the prepared payload also
+contains the exact outgoing and incoming Screen payloads, their complete Motion
+documents and the shared non-negative elapsed interval. The outgoing payload is
+fixed at its final owner-local frame; the incoming payload advances from local
+frame zero. The generic Screen transition resolver composes those already
+selected owners and reuses the common Motion helpers. Registries and concrete
+Module owners remain unaware of neighboring Screens.
+
 `DesignPreviewPayload.ThemeMode` is authoritative when explicitly `light` or
 `dark`. Session mode applies only when the payload has no explicit effective
 mode. The renderer does not parse Module appearance settings.
@@ -258,8 +266,9 @@ only the latest committed snapshot without direct persistence reads.
 
 The same preparation closes the complete current Production timeline catalog:
 each Shot's frame rate, ordered Screens, exact frame ranges and keyframes, plus
-each Screen's Variant config and each Shot's exact Actor-owned Device, Theme and
-appearance context. Production navigation, context presentation, validation,
+each Screen's transition Motion and Variant config and each Shot's exact
+Actor-owned Device, Theme and appearance context. Production navigation,
+context presentation, validation,
 playhead controls, appearance selection, history subtitles and playback timing
 consume only that catalog. They never recalculate or query the timeline or Shot
 context from visual callbacks. A tree-changing command prepares the new tree

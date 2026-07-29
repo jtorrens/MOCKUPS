@@ -52,7 +52,8 @@ internal sealed record DesignPreviewShotSlot(
     string Id,
     string Name,
     string ModuleName,
-    int DurationFrames);
+    int DurationFrames,
+    string TransitionJson);
 
 internal sealed class DesignPreviewPayloadDataSource
 {
@@ -221,7 +222,8 @@ internal sealed class DesignPreviewPayloadDataSource
                 slot.Id,
                 slot.Name,
                 slot.ModuleName,
-                ModuleInstanceTimeline.DurationFrames(_timelineDataSource, slot.Id)))
+                ModuleInstanceTimeline.DurationFrames(_timelineDataSource, slot.Id),
+                slot.TransitionJson))
             .ToList();
     }
 

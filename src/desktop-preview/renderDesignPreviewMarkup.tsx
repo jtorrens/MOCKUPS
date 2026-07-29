@@ -8,11 +8,14 @@ import { designPreviewPayloadToRenderable } from "./designPreviewRenderableRegis
 import { fontFacesForPayload } from "./previewAssetResolver.js";
 import { withAuthoringTarget } from "./previewAuthoringTarget.js";
 import { selectedColor } from "./previewColorHelpers.js";
+import { rootPreviewScreenBox } from "./previewGeometryHelpers.js";
 import { extractRootOverlays } from "./renderableRootOverlays.js";
+import { screenTransitionLayers } from "./screenTransitionRenderable.js";
 
 export function renderDesignPreviewRenderable(payload: DesignPreviewPayload): RenderableNode {
-  const child = designPreviewPayloadToRenderable(payload);
-  const extracted = extractRootOverlays(child);
+  const children = payload.kind === "screenTransition"
+    ? screenTransitionChildren(payload)
+    : ownerChildren(payload);
 
   return RenderableNodeSchema.parse(withAuthoringTarget(payload, {
     id: "design_preview.surface",
@@ -30,7 +33,7 @@ export function renderDesignPreviewRenderable(payload: DesignPreviewPayload): Re
     metadata: {
       fontFaces: fontFacesForPayload(payload),
     },
-    children: [extracted.node, ...extracted.overlays],
+    children,
   }));
 }
 
@@ -42,4 +45,52 @@ export function renderDesignPreviewMarkup(payload: DesignPreviewPayload): string
       showBounds: payload.showMarks === true,
     }),
   );
+}
+
+function ownerChildren(payload: DesignPreviewPayload): RenderableNode[] {
+  const child = designPreviewPayloadToRenderable(payload);
+  const extracted = extractRootOverlays(child);
+  return [extracted.node, ...extracted.overlays];
+}
+
+function screenTransitionChildren(payload: DesignPreviewPayload): RenderableNode[] {
+  const transition = payload.screenTransition;
+  if (!transition) {
+    throw new Error("Screen transition payload is missing its resolved transition.");
+  }
+  const outgoing = screenLayer(
+    transition.outgoing,
+    "design_preview.screen.outgoing",
+  );
+  const incoming = screenLayer(
+    transition.incoming,
+    "design_preview.screen.incoming",
+  );
+  return screenTransitionLayers(
+    payload,
+    transition,
+    outgoing,
+    incoming,
+  );
+}
+
+function screenLayer(
+  payload: DesignPreviewPayload,
+  id: string,
+): RenderableNode {
+  const screenBox = rootPreviewScreenBox(payload);
+  return {
+    id,
+    type: "group",
+    frame: payload.localFrame,
+    box: screenBox,
+    style: {
+      overflow: "hidden",
+      backgroundColor: selectedColor(
+        payload,
+        "theme.colors.background",
+      ),
+    },
+    children: ownerChildren(payload),
+  };
 }

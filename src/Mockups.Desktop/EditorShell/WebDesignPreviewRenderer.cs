@@ -185,6 +185,28 @@ internal static class WebDesignPreviewRenderer
             instanceJson = payload.InstanceJson,
             frameRate = payload.FrameRate,
             localFrame = payload.LocalFrame,
+            screenTransition =
+                payload.ScreenTransition is not { } transition
+                    ? null
+                    : new
+                    {
+                        outgoing = CreateRequest(
+                            metrics,
+                            showMarks,
+                            transition.Outgoing),
+                        incoming = CreateRequest(
+                            metrics,
+                            showMarks,
+                            transition.Incoming),
+                        outgoingMotionJson =
+                            transition.OutgoingMotionJson,
+                        incomingMotionJson =
+                            transition.IncomingMotionJson,
+                        elapsedMilliseconds =
+                            transition.ElapsedMilliseconds,
+                        durationFrames =
+                            transition.DurationFrames,
+                    },
             previewFrame = new
             {
                 canvasWidth = metrics.CanvasWidth,

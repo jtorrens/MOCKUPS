@@ -404,11 +404,10 @@ internal sealed class SqliteEditorNavigationStore
 
     private static string ModuleTransitionLabel(string transitionJson)
     {
-        var transition = JsonPath.ParseRequiredObject(
-            transitionJson,
-            "Module Instance transition");
-        var type = transition["type"]?.GetValue<string>();
-        return string.IsNullOrWhiteSpace(type) ? "Cut" : char.ToUpperInvariant(type[0]) + type[1..];
+        var type = MotionVariantValue.Parse(
+            transitionJson).Transition;
+        return char.ToUpperInvariant(type[0])
+            + type[1..];
     }
 
     private static IReadOnlyList<DesktopPreviewComponentCategory> ComponentClassNavigationGroups()
