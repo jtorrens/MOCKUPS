@@ -5675,10 +5675,52 @@ static void PreviewShellVisualTreeIsResponsive()
                 typeof(EditorPreviewController)
                     .GetField("_shotTimelineControls", BindingFlags.Instance | BindingFlags.NonPublic)
                     ?.GetValue(previewController) as StackPanel);
-            var shotTimelineBand = Required(
+            var shotTimelineSliderRow = Required(
                 typeof(EditorPreviewController)
-                    .GetField("_shotHeaderTimelineControls", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .GetField("_shotTimelineSliderRow", BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?.GetValue(previewController) as Grid);
+            var shotFrameText = Required(
+                typeof(EditorPreviewController)
+                    .GetField("_shotFrameText", BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?.GetValue(previewController) as TextBlock);
+            var primaryControls = Required(
+                typeof(EditorPreviewController)
+                    .GetField("_previewPrimaryControls", BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?.GetValue(previewController) as Grid);
+            var productionContextHost = Required(
+                typeof(EditorPreviewController)
+                    .GetField("_productionContextHost", BindingFlags.Instance | BindingFlags.NonPublic)
                     ?.GetValue(previewController) as StackPanel);
+            var scaleComboBox = Required(
+                typeof(EditorPreviewController)
+                    .GetField("_scaleComboBox", BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?.GetValue(previewController) as EditorInstantComboBox);
+            var playbackRouteComboBox = Required(
+                typeof(EditorPreviewController)
+                    .GetField("_playbackRouteComboBox", BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?.GetValue(previewController) as EditorInstantComboBox);
+            var referenceViewComboBox = Required(
+                typeof(EditorPreviewController)
+                    .GetField("_referenceViewComboBox", BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?.GetValue(previewController) as EditorInstantComboBox);
+            var referenceSplitControls = Required(
+                typeof(EditorPreviewController)
+                    .GetField("_referenceSplitControls", BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?.GetValue(previewController) as StackPanel);
+            var orientationComboBox = Required(
+                window.FindControl<EditorInstantComboBox>("PreviewOrientationComboBox"));
+            var orientationField = Required(
+                typeof(EditorPreviewController)
+                    .GetField("_orientationField", BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?.GetValue(previewController) as Panel);
+            True(ReferenceEquals(orientationComboBox.Parent, primaryControls));
+            Equal(112d, scaleComboBox.MaxWidth);
+            Equal(190d, playbackRouteComboBox.MaxWidth);
+            referenceViewComboBox.SelectedItem = Required(
+                (referenceViewComboBox.ItemsSource as IEnumerable<FieldOption>)
+                    ?.First((option) => option.Value == "split"));
+            Dispatcher.UIThread.RunJobs();
+            True(referenceSplitControls.IsVisible);
             foreach (var productionSize in new[]
                      {
                          new Size(1040, 680),
@@ -5693,23 +5735,43 @@ static void PreviewShellVisualTreeIsResponsive()
                 Dispatcher.UIThread.RunJobs();
 
                 True(shotTimelineControls.IsVisible);
-                True(shotTimelineBand.IsVisible);
+                True(shotTimelineSliderRow.IsVisible);
                 True(double.IsPositiveInfinity(shotFrameSlider.MaxWidth));
                 var navigationRect = BoundsInWindow(shotTimelineControls, window);
-                var timelineBandRect = BoundsInWindow(shotTimelineBand, window);
+                var primaryControlsRect = BoundsInWindow(primaryControls, window);
+                var productionContextRect = BoundsInWindow(productionContextHost, window);
+                var timelineSliderRowRect = BoundsInWindow(shotTimelineSliderRow, window);
                 var sliderRect = BoundsInWindow(shotFrameSlider, window);
-                var combinedControlsRect = BoundsInWindow(combinedControlsHost, window);
+                var frameTextRect = BoundsInWindow(shotFrameText, window);
+                var orientationRect = BoundsInWindow(orientationComboBox, window);
+                var splitControlsRect = BoundsInWindow(referenceSplitControls, window);
                 LayoutCheck(
-                    timelineBandRect.Top >= navigationRect.Bottom - 0.5,
+                    Math.Abs(orientationRect.Top - primaryControlsRect.Top) <= 0.5,
+                    $"{productionSize}: Orientation is not in the compact Preview row");
+                LayoutCheck(
+                    primaryControlsRect.Top - productionContextRect.Bottom <= 16,
+                    $"{productionSize}: Production context leaves excess space before Preview controls "
+                    + $"({primaryControlsRect.Top - productionContextRect.Bottom:0.##})");
+                LayoutCheck(
+                    navigationRect.Top >= primaryControlsRect.Bottom - 0.5,
+                    $"{productionSize}: Production navigation is not below the compact Preview row");
+                LayoutCheck(
+                    timelineSliderRowRect.Top >= navigationRect.Bottom - 0.5,
                     $"{productionSize}: Production timeline is not below navigation");
                 LayoutCheck(
-                    Math.Abs(sliderRect.Left - timelineBandRect.Left) <= 0.5
-                    && Math.Abs(sliderRect.Right - timelineBandRect.Right) <= 0.5,
-                    $"{productionSize}: Production timeline slider does not fill its row");
+                    Math.Abs(sliderRect.Left - timelineSliderRowRect.Left) <= 0.5
+                    && Math.Abs(frameTextRect.Right - timelineSliderRowRect.Right) <= 0.5
+                    && sliderRect.Right <= frameTextRect.Left + 0.5,
+                    $"{productionSize}: Production slider and frame count do not share one full row");
                 LayoutCheck(
-                    sliderRect.Width >= combinedControlsRect.Width - 26,
-                    $"{productionSize}: Production timeline slider does not use the available width "
-                    + $"({sliderRect.Width:0.##} < {combinedControlsRect.Width - 26:0.##})");
+                    splitControlsRect.Top <= timelineSliderRowRect.Bottom + 0.5,
+                    $"{productionSize}: Split controls are not immediately below the timeline");
+                LayoutCheck(
+                    !combinedControlsHost
+                        .GetVisualDescendants()
+                        .OfType<TextBlock>()
+                        .Any((text) => text.Text is "Shot timeline" or "Screen local timeline"),
+                    $"{productionSize}: redundant Production timeline label is still visible");
             }
 
             Required(window.FindControl<Button>("DesignWorkspaceButton"))
@@ -5719,6 +5781,8 @@ static void PreviewShellVisualTreeIsResponsive()
             True(Required(Required(window.FindControl<Control>("PreviewThemeComboBox")).Parent as Visual).IsVisible);
             True(Required(Required(window.FindControl<Control>("PreviewModeComboBox")).Parent as Visual).IsVisible);
             True(Required(Required(window.FindControl<Control>("PreviewOrientationComboBox")).Parent as Visual).IsVisible);
+            True(!ReferenceEquals(orientationComboBox.Parent, primaryControls));
+            True(ReferenceEquals(orientationComboBox.Parent, orientationField));
             Equal("Preview", setupTab.Header as string);
             True(combinedControlsHost.Content is Control);
             LayoutCheck(

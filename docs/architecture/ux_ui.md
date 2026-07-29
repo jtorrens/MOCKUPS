@@ -84,10 +84,12 @@ Preview combines the visual-context setup and the generic Preview controls in
 one scrollable Design surface. Both sections retain their existing semantic
 owners and state. Production uses the same combined Preview surface; its
 production context and Shot transport remain visible within that tab.
-In Production, the compact Preview controls and Shot navigation form the first
-row. The local Shot or Screen frame label and its full-width timeline slider
-form a separate row directly below that navigation; the slider is never
-constrained to a fixed maximum width.
+In Production, Fit, playback route, markers, canonical frame, reference mode
+and the unlabelled Orientation selector share one compact responsive row.
+Shot navigation follows directly below. The timeline slider occupies the
+remaining width of the next row and its numeric current/maximum frame sits at
+the right; no redundant Shot/Screen timeline label is visible. When Split is
+active, its reference controls follow immediately below the slider.
 
 The Test Values view keeps temporary-data actions and Play/Restore controls in
 a fixed upper surface. Every finite action also exposes shared previous-frame

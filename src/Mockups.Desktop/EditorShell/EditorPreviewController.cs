@@ -71,12 +71,14 @@ internal sealed class EditorPreviewController : IDisposable
     private readonly EditorInstantComboBox _scaleComboBox = new()
     {
         MinWidth = 96,
+        MaxWidth = 112,
         MinHeight = 36,
         VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
     };
     private readonly EditorInstantComboBox _playbackRouteComboBox = new()
     {
-        MinWidth = 190,
+        MinWidth = 160,
+        MaxWidth = 190,
         MinHeight = 36,
         VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
     };
@@ -98,6 +100,7 @@ internal sealed class EditorPreviewController : IDisposable
     private readonly EditorInstantComboBox _referenceViewComboBox = new()
     {
         MinWidth = 88,
+        MaxWidth = 120,
         MinHeight = 32,
     };
     private readonly Slider _referenceSwipeSlider = EditorSliderBehavior.Configure(new Slider { Minimum = 0, Maximum = 1, Value = 0.5, MinWidth = 72, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch });
@@ -111,11 +114,13 @@ internal sealed class EditorPreviewController : IDisposable
         IsVisible = false,
         VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
     };
-    private readonly StackPanel _shotHeaderTimelineControls = new()
+    private readonly Grid _shotTimelineSliderRow = new()
     {
-        Spacing = 4,
+        ColumnDefinitions = new ColumnDefinitions("*,Auto"),
+        ColumnSpacing = 10,
         IsVisible = false,
         HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
+        VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
     };
     private readonly Slider _shotFrameSlider = EditorSliderBehavior.Configure(new Slider
     {
@@ -129,12 +134,6 @@ internal sealed class EditorPreviewController : IDisposable
     private readonly TextBlock _shotFrameText = new()
     {
         MinWidth = 70,
-        VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-    };
-    private readonly TextBlock _shotTimelineScopeText = new()
-    {
-        FontSize = 11,
-        Opacity = 0.72,
         VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
     };
     private readonly Button _shotPreviousSlotButton = new() { Content = EditorIcons.Create(EditorIcons.TimelinePreviousInstance, 16), Width = 34, Height = 30, Padding = new Thickness(0) };
@@ -165,14 +164,15 @@ internal sealed class EditorPreviewController : IDisposable
     private readonly StackPanel _productionContextHost = new()
     {
         Spacing = 7,
-        Margin = new Thickness(0, 0, 0, 12),
         IsVisible = false,
     };
+    private Border? _previewSetupBorder;
     private Grid? _previewSetupGrid;
+    private Grid? _previewPrimaryControls;
     private Control? _deviceField;
     private Control? _themeField;
     private Control? _modeField;
-    private Control? _orientationField;
+    private Panel? _orientationField;
     private PreviewSetupLayoutMode? _previewSetupLayoutMode;
     private readonly EditorLoadingScrim _previewLoadingScrim = new();
     private readonly ProductionPreviewRuntimeResolver _productionRuntimeResolver;
@@ -744,16 +744,17 @@ internal sealed class EditorPreviewController : IDisposable
         };
         Grid.SetColumn(_previewPerformanceDot, 1);
         content.Children.Add(_previewPerformanceDot);
-        previewSetupHost.Content = new Border
+        _previewSetupBorder = new Border
         {
             Padding = new Thickness(12),
             Child = content,
         };
+        previewSetupHost.Content = _previewSetupBorder;
         _previewSetupGrid = _deviceComboBox.Parent?.Parent as Grid;
         _deviceField = _deviceComboBox.Parent as Control;
         _themeField = _themeComboBox.Parent as Control;
         _modeField = _modeComboBox.Parent as Control;
-        _orientationField = _orientationComboBox.Parent as Control;
+        _orientationField = _orientationComboBox.Parent as Panel;
         if (_previewSetupGrid is { } setupGrid)
         {
             setupGrid.SizeChanged += (_, args) => ApplyPreviewSetupLayout(args.NewSize.Width);
@@ -801,16 +802,9 @@ internal sealed class EditorPreviewController : IDisposable
             _shotFrameSlider,
             "Navigate preview frames",
             "Navigate the shared Shot playhead used by Preview and Animation");
-        var shotTimelineHeader = new Grid
-        {
-            ColumnDefinitions = new ColumnDefinitions("*,Auto"),
-            ColumnSpacing = 8,
-        };
-        shotTimelineHeader.Children.Add(_shotTimelineScopeText);
+        _shotTimelineSliderRow.Children.Add(_shotFrameSlider);
         Grid.SetColumn(_shotFrameText, 1);
-        shotTimelineHeader.Children.Add(_shotFrameText);
-        _shotHeaderTimelineControls.Children.Add(shotTimelineHeader);
-        _shotHeaderTimelineControls.Children.Add(_shotFrameSlider);
+        _shotTimelineSliderRow.Children.Add(_shotFrameText);
         var navigationRow = new Border
         {
             HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left,
@@ -887,6 +881,7 @@ internal sealed class EditorPreviewController : IDisposable
             RowSpacing = 8,
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
         };
+        _previewPrimaryControls = primaryControls;
         controlsRow.Children.Add(primaryControls);
         var transportHost = new Border
         {
@@ -897,22 +892,41 @@ internal sealed class EditorPreviewController : IDisposable
         Grid.SetColumn(transportHost, 2);
         controlsRow.Children.Add(transportHost);
         bool? transportWraps = null;
+        bool? primaryHasOrientation = null;
         void ArrangeTransport(double availableWidth)
         {
-            var primaryNaturalWidth = primaryControlItems.Sum((control) => control.DesiredSize.Width)
-                + (primaryControls.ColumnSpacing * (primaryControlItems.Length - 1));
+            var visiblePrimaryControls = primaryControls.Children
+                .OfType<Control>()
+                .Where((control) => control.IsVisible)
+                .ToList();
+            var primaryNaturalWidth = visiblePrimaryControls.Sum((control) => control.DesiredSize.Width)
+                + (primaryControls.ColumnSpacing * Math.Max(0, visiblePrimaryControls.Count - 1));
             var requiredWidth = primaryNaturalWidth
                 + _shotTimelineControls.DesiredSize.Width
                 + (controlsRow.ColumnSpacing * 2);
             var wraps = availableWidth > 0 && availableWidth + 1 < requiredWidth;
-            if (transportWraps == wraps) return;
+            var productionOrientation =
+                ReferenceEquals(_orientationComboBox.Parent, primaryControls);
+            if (transportWraps == wraps
+                && primaryHasOrientation == productionOrientation)
+            {
+                return;
+            }
             transportWraps = wraps;
+            primaryHasOrientation = productionOrientation;
             _scaleComboBox.MinWidth = wraps ? 0 : 96;
-            _playbackRouteComboBox.MinWidth = wraps ? 0 : 190;
+            _playbackRouteComboBox.MinWidth = wraps ? 0 : 160;
             _referenceViewComboBox.MinWidth = wraps ? 0 : 88;
-            primaryControls.ColumnDefinitions = wraps
-                ? new ColumnDefinitions("*,2*,Auto,Auto,*")
-                : new ColumnDefinitions("Auto,Auto,Auto,Auto,Auto");
+            _orientationComboBox.MinWidth = productionOrientation
+                ? wraps ? 0 : 96
+                : 0;
+            primaryControls.ColumnDefinitions = productionOrientation
+                ? wraps
+                    ? new ColumnDefinitions("*,1.6*,Auto,Auto,*,*")
+                    : new ColumnDefinitions("Auto,Auto,Auto,Auto,Auto,Auto")
+                : wraps
+                    ? new ColumnDefinitions("*,2*,Auto,Auto,*")
+                    : new ColumnDefinitions("Auto,Auto,Auto,Auto,Auto");
             Grid.SetColumnSpan(primaryControls, wraps ? 3 : 1);
             primaryControls.HorizontalAlignment = wraps
                 ? Avalonia.Layout.HorizontalAlignment.Stretch
@@ -935,17 +949,25 @@ internal sealed class EditorPreviewController : IDisposable
         controlsRow.LayoutUpdated += (_, _) => ArrangeTransport(controlsRow.Bounds.Width);
         ArrangeTransport(controlsRow.Bounds.Width);
 
+        var timelineAndReference = new StackPanel
+        {
+            Spacing = 0,
+            Children =
+            {
+                _shotTimelineSliderRow,
+                _referenceSplitControls,
+            },
+        };
         var content = new Border
         {
-            Padding = new Thickness(12),
+            Padding = new Thickness(12, 0, 12, 12),
             Child = new StackPanel
             {
-                Spacing = 10,
+                Spacing = 8,
                 Children =
                 {
                     controlsRow,
-                    _shotHeaderTimelineControls,
-                    _referenceSplitControls,
+                    timelineAndReference,
                 },
             },
         };
@@ -2947,7 +2969,7 @@ internal sealed class EditorPreviewController : IDisposable
         {
             StopShotPlayback();
             _shotTimelineControls.IsVisible = false;
-            _shotHeaderTimelineControls.IsVisible = false;
+            _shotTimelineSliderRow.IsVisible = false;
             return;
         }
         var contextNode = ProductionContextNode();
@@ -2966,13 +2988,13 @@ internal sealed class EditorPreviewController : IDisposable
         _isUpdatingShotTimeline = true;
         _shotFrameSlider.Maximum = Math.Max(0, range.DurationFrames - 1);
         _shotFrameSlider.Value = displayedFrame;
-        _shotTimelineScopeText.Text = contextNode?.Kind == ProjectTreeNodeKind.ModuleInstance
+        var timelineScope = contextNode?.Kind == ProjectTreeNodeKind.ModuleInstance
             ? "Screen local timeline"
             : "Shot timeline";
         _shotFrameText.Text = $"{displayedFrame}/{Math.Max(0, range.DurationFrames - 1)}";
         EditorAccessibility.Describe(
             _shotFrameText,
-            $"{_shotTimelineScopeText.Text}, frame {displayedFrame} of {Math.Max(0, range.DurationFrames - 1)}",
+            $"{timelineScope}, frame {displayedFrame} of {Math.Max(0, range.DurationFrames - 1)}",
             showToolTip: false);
         _shotPreviousFrameButton.IsEnabled = _shotPreviewFrame > range.StartFrame;
         _shotNextFrameButton.IsEnabled = _shotPreviewFrame < range.EndFrame;
@@ -2999,7 +3021,7 @@ internal sealed class EditorPreviewController : IDisposable
         _shotPreviousSlotButton.IsEnabled = showScreenStep && activeSlotIndex > 0;
         _shotNextSlotButton.IsEnabled = showScreenStep && activeSlotIndex >= 0 && activeSlotIndex < slotCount - 1;
         _shotTimelineControls.IsVisible = true;
-        _shotHeaderTimelineControls.IsVisible = true;
+        _shotTimelineSliderRow.IsVisible = true;
         _isUpdatingShotTimeline = false;
     }
 
@@ -3656,21 +3678,19 @@ internal sealed class EditorPreviewController : IDisposable
     private void UpdateProductionPreviewSetup()
     {
         var production = _workspace == EditorWorkspace.Production;
+        if (_previewSetupBorder is { } previewSetupBorder)
+        {
+            previewSetupBorder.Padding = production
+                ? new Thickness(12, 12, 12, 0)
+                : new Thickness(12);
+        }
+        UpdateOrientationPlacement(production);
         UpdateProductionContextStrip(production);
         if (_deviceField is { } deviceField) deviceField.IsVisible = !production;
         if (_themeField is { } themeField) themeField.IsVisible = !production;
         if (_modeField is { } modeField) modeField.IsVisible = !production;
         if (_previewSetupGrid is { } setupGrid)
         {
-            if (!production && _orientationField is { Parent: Panel currentParent } orientationField)
-            {
-                if (!ReferenceEquals(currentParent, setupGrid))
-                {
-                    currentParent.Children.Remove(orientationField);
-                    orientationField.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch;
-                    setupGrid.Children.Add(orientationField);
-                }
-            }
             _previewSetupLayoutMode = null;
             ApplyPreviewSetupLayout(setupGrid.Bounds.Width);
         }
@@ -3685,6 +3705,43 @@ internal sealed class EditorPreviewController : IDisposable
         }
         _modeComboBox.IsEnabled = !forcedMode;
         ToolTip.SetTip(_modeComboBox, forcedMode ? "Mode is fixed by the active module" : null);
+    }
+
+    private void UpdateOrientationPlacement(bool production)
+    {
+        if (_previewSetupGrid is not { } setupGrid
+            || _previewPrimaryControls is not { } primaryControls
+            || _orientationField is not { } orientationField)
+        {
+            return;
+        }
+
+        if (_orientationComboBox.Parent is Panel comboParent)
+        {
+            comboParent.Children.Remove(_orientationComboBox);
+        }
+        if (orientationField.Parent is Panel fieldParent)
+        {
+            fieldParent.Children.Remove(orientationField);
+        }
+
+        if (production)
+        {
+            _orientationComboBox.MinWidth = 96;
+            _orientationComboBox.MaxWidth = 112;
+            _orientationComboBox.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch;
+            Grid.SetColumn(_orientationComboBox, 5);
+            Grid.SetRow(_orientationComboBox, 0);
+            primaryControls.Children.Add(_orientationComboBox);
+            return;
+        }
+
+        _orientationComboBox.MinWidth = 0;
+        _orientationComboBox.MaxWidth = double.PositiveInfinity;
+        _orientationComboBox.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch;
+        orientationField.Children.Add(_orientationComboBox);
+        orientationField.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch;
+        setupGrid.Children.Add(orientationField);
     }
 
     private void ApplyPreviewSetupLayout(double availableWidth)
@@ -3788,16 +3845,9 @@ internal sealed class EditorPreviewController : IDisposable
             }
             mode = EditorUiText.IdentifierLabel(mode);
         }
-        Control? orientation = null;
-        if (_orientationField is { } orientationField)
-        {
-            if (orientationField.Parent is Panel parent) parent.Children.Remove(orientationField);
-            orientation = orientationField;
-        }
         ProductionPreviewContextStrip.Render(
             _productionContextHost,
-            new ProductionPreviewContextMetadata(path, actorName, device, theme, mode, hasShotContext),
-            orientation);
+            new ProductionPreviewContextMetadata(path, actorName, device, theme, mode, hasShotContext));
     }
 
     private static IReadOnlyList<ProjectTreeNode> ProductionNodePath(ProjectTreeNode? selected)

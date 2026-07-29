@@ -20,7 +20,7 @@ internal sealed record ProductionPreviewContextMetadata(
 
 internal static class ProductionPreviewContextStrip
 {
-    public static void Render(StackPanel host, ProductionPreviewContextMetadata metadata, Control? trailing = null)
+    public static void Render(StackPanel host, ProductionPreviewContextMetadata metadata)
     {
         host.Children.Clear();
         var breadcrumb = new StackPanel
@@ -67,31 +67,8 @@ internal static class ProductionPreviewContextStrip
             context.Children.Add(Item("Theme", metadata.Theme));
             context.Children.Add(Item("Mode", metadata.Mode));
         }
-        if (trailing is null)
-        {
-            host.Children.Add(breadcrumb);
-            if (metadata.HasShotContext) host.Children.Add(context);
-            return;
-        }
-        var row = new Grid
-        {
-            ColumnDefinitions = new ColumnDefinitions("*,Auto"),
-            RowDefinitions = new RowDefinitions(metadata.HasShotContext ? "Auto,Auto" : "Auto"),
-            ColumnSpacing = 10,
-            RowSpacing = 7,
-        };
-        row.Children.Add(breadcrumb);
-        if (metadata.HasShotContext)
-        {
-            Grid.SetRow(context, 1);
-            row.Children.Add(context);
-        }
-        Grid.SetColumn(trailing, 1);
-        Grid.SetRowSpan(trailing, metadata.HasShotContext ? 2 : 1);
-        trailing.HorizontalAlignment = HorizontalAlignment.Right;
-        trailing.VerticalAlignment = VerticalAlignment.Stretch;
-        row.Children.Add(trailing);
-        host.Children.Add(row);
+        host.Children.Add(breadcrumb);
+        if (metadata.HasShotContext) host.Children.Add(context);
     }
 
     private static Control CreateCrumbButton(ProductionPreviewPathItem item)
