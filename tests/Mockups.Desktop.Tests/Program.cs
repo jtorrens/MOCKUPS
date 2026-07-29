@@ -12728,7 +12728,7 @@ static void LabelSubtextPlacementUsesCurrentContract()
     True(label["subtextPlacement"] is null);
     True(label["subtextVerticalPosition"] is JsonValue);
     True(label["subtextHorizontalAlign"] is JsonValue);
-    Equal("MM:SS", label["textFormat"]?.GetValue<string>());
+    Equal("HH:MM", label["textFormat"]?.GetValue<string>());
     Equal("MM:SS", label["subtextFormat"]?.GetValue<string>());
     var labelGroups = EditorLayouts(database).LoadEditorLayout("component.label").Cards
         .SelectMany((card) => card.VisibleGroups)
