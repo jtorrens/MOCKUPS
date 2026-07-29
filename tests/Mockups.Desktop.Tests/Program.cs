@@ -5646,6 +5646,72 @@ static void PreviewShellVisualTreeIsResponsive()
             True(combinedControlsHost.Content is Control);
             Equal(selectedTab, tabs.SelectedItem);
 
+            var productionShot = WindowSession(window).TreeRoots
+                .SelectMany(DescendantsAndSelf)
+                .First((node) => node.Kind == ProjectTreeNodeKind.Shot);
+            var selectProductionNode = typeof(MainWindow).GetMethod(
+                "SelectNodeById",
+                BindingFlags.Instance | BindingFlags.NonPublic,
+                binder: null,
+                types: [typeof(string)],
+                modifiers: null)
+                ?? throw new InvalidOperationException("Missing MainWindow node selection boundary.");
+            LayoutCheck(
+                (bool)(selectProductionNode.Invoke(window, [productionShot.Id]) ?? false),
+                "could not select a Production Shot fixture");
+            var productionSelectionTimeout = Stopwatch.StartNew();
+            while (WindowSession(window).SelectedNode?.Id != productionShot.Id
+                   && productionSelectionTimeout.Elapsed < TimeSpan.FromSeconds(5))
+            {
+                Dispatcher.UIThread.RunJobs();
+                Thread.Sleep(5);
+            }
+            Equal(productionShot.Id, WindowSession(window).SelectedNode?.Id);
+            var shotFrameSlider = Required(
+                typeof(EditorPreviewController)
+                    .GetField("_shotFrameSlider", BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?.GetValue(previewController) as Slider);
+            var shotTimelineControls = Required(
+                typeof(EditorPreviewController)
+                    .GetField("_shotTimelineControls", BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?.GetValue(previewController) as StackPanel);
+            var shotTimelineBand = Required(
+                typeof(EditorPreviewController)
+                    .GetField("_shotHeaderTimelineControls", BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?.GetValue(previewController) as StackPanel);
+            foreach (var productionSize in new[]
+                     {
+                         new Size(1040, 680),
+                         new Size(1440, 900),
+                     })
+            {
+                window.Width = productionSize.Width;
+                window.Height = productionSize.Height;
+                Dispatcher.UIThread.RunJobs();
+                window.Measure(productionSize);
+                window.Arrange(new Rect(productionSize));
+                Dispatcher.UIThread.RunJobs();
+
+                True(shotTimelineControls.IsVisible);
+                True(shotTimelineBand.IsVisible);
+                True(double.IsPositiveInfinity(shotFrameSlider.MaxWidth));
+                var navigationRect = BoundsInWindow(shotTimelineControls, window);
+                var timelineBandRect = BoundsInWindow(shotTimelineBand, window);
+                var sliderRect = BoundsInWindow(shotFrameSlider, window);
+                var combinedControlsRect = BoundsInWindow(combinedControlsHost, window);
+                LayoutCheck(
+                    timelineBandRect.Top >= navigationRect.Bottom - 0.5,
+                    $"{productionSize}: Production timeline is not below navigation");
+                LayoutCheck(
+                    Math.Abs(sliderRect.Left - timelineBandRect.Left) <= 0.5
+                    && Math.Abs(sliderRect.Right - timelineBandRect.Right) <= 0.5,
+                    $"{productionSize}: Production timeline slider does not fill its row");
+                LayoutCheck(
+                    sliderRect.Width >= combinedControlsRect.Width - 26,
+                    $"{productionSize}: Production timeline slider does not use the available width "
+                    + $"({sliderRect.Width:0.##} < {combinedControlsRect.Width - 26:0.##})");
+            }
+
             Required(window.FindControl<Button>("DesignWorkspaceButton"))
                 .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             WaitForWorkspace(EditorWorkspace.Design);

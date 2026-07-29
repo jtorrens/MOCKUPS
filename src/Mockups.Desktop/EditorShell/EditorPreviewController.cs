@@ -113,10 +113,9 @@ internal sealed class EditorPreviewController : IDisposable
     };
     private readonly StackPanel _shotHeaderTimelineControls = new()
     {
-        Orientation = Avalonia.Layout.Orientation.Horizontal,
-        Spacing = 8,
+        Spacing = 4,
         IsVisible = false,
-        VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+        HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
     };
     private readonly Slider _shotFrameSlider = EditorSliderBehavior.Configure(new Slider
     {
@@ -124,8 +123,8 @@ internal sealed class EditorPreviewController : IDisposable
         Maximum = 0,
         Value = 0,
         TickFrequency = 1,
-        MinWidth = 280,
-        MaxWidth = 600,
+        MinWidth = 0,
+        HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
     });
     private readonly TextBlock _shotFrameText = new()
     {
@@ -802,9 +801,16 @@ internal sealed class EditorPreviewController : IDisposable
             _shotFrameSlider,
             "Navigate preview frames",
             "Navigate the shared Shot playhead used by Preview and Animation");
-        _shotHeaderTimelineControls.Children.Add(_shotTimelineScopeText);
+        var shotTimelineHeader = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("*,Auto"),
+            ColumnSpacing = 8,
+        };
+        shotTimelineHeader.Children.Add(_shotTimelineScopeText);
+        Grid.SetColumn(_shotFrameText, 1);
+        shotTimelineHeader.Children.Add(_shotFrameText);
+        _shotHeaderTimelineControls.Children.Add(shotTimelineHeader);
         _shotHeaderTimelineControls.Children.Add(_shotFrameSlider);
-        _shotHeaderTimelineControls.Children.Add(_shotFrameText);
         var navigationRow = new Border
         {
             HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left,
@@ -929,17 +935,16 @@ internal sealed class EditorPreviewController : IDisposable
         controlsRow.LayoutUpdated += (_, _) => ArrangeTransport(controlsRow.Bounds.Width);
         ArrangeTransport(controlsRow.Bounds.Width);
 
-        _shotHeaderTimelineControls.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right;
         var content = new Border
         {
             Padding = new Thickness(12),
             Child = new StackPanel
             {
-                Spacing = 8,
+                Spacing = 10,
                 Children =
                 {
-                    _shotHeaderTimelineControls,
                     controlsRow,
+                    _shotHeaderTimelineControls,
                     _referenceSplitControls,
                 },
             },

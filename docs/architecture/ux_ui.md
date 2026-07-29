@@ -84,6 +84,10 @@ Preview combines the visual-context setup and the generic Preview controls in
 one scrollable Design surface. Both sections retain their existing semantic
 owners and state. Production uses the same combined Preview surface; its
 production context and Shot transport remain visible within that tab.
+In Production, the compact Preview controls and Shot navigation form the first
+row. The local Shot or Screen frame label and its full-width timeline slider
+form a separate row directly below that navigation; the slider is never
+constrained to a fixed maximum width.
 
 The Test Values view keeps temporary-data actions and Play/Restore controls in
 a fixed upper surface. Every finite action also exposes shared previous-frame
