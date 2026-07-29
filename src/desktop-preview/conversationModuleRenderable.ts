@@ -20,6 +20,7 @@ import {
   resolveIconRowComponentFromRecords,
 } from "./iconRowComponentResolver.js";
 import {
+  cssColorWithAlpha,
   numberToken,
   previewScreenBox,
   renderableVisualBounds,
@@ -38,6 +39,8 @@ import type {
   ConversationMessageContract,
   ConversationTimingContract,
 } from "./conversationModuleContract.js";
+import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
+import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -349,6 +352,11 @@ function headerNode(
   const screen = previewScreenBox(payload);
   const scale = renderScale(payload);
   const subtitle = optionalString(preview, "headerSubtitle");
+  const surfaceSlot = requiredRecord(
+    conversation,
+    "headerSurfaceSlot",
+    "module.conversation",
+  );
   const leftSlot = requiredRecord(
     conversation,
     "headerLeftIconRowSlot",
@@ -452,6 +460,48 @@ function headerNode(
       componentBaseConfigs,
       "module.conversation.header.avatar",
     );
+  const resolvedSurface = resolveSurfaceComponentAtSize(
+    embeddedComponentConfig(
+      componentBaseConfigs,
+      surfaceSlot,
+      "surface",
+      "module.conversation.headerSurfaceSlot",
+    ),
+    {
+      width: screen.width / scale,
+      height: (offsetY + height) / scale,
+    },
+    "module.conversation.header.surface",
+  );
+  const surfaceNode = renderAuthoringSlot(
+    payload,
+    "module.core.chat",
+    "module.conversation.headerSurface.editor",
+    "component.surface",
+    "component.surface.backgroundColorToken",
+    (slotPayload) => surfaceComponentToRenderableAt(
+      slotPayload,
+      resolvedSurface,
+      {
+        x: screen.x,
+        y: screen.y,
+        width: screen.width,
+        height: offsetY + height,
+      },
+      requiredBoolean(
+        conversation,
+        "headerUseActorColor",
+        "module.conversation.headerUseActorColor",
+      )
+        ? {
+            background: cssColorWithAlpha(
+              resolvedAvatar.actor.avatar.backgroundColor,
+              resolvedSurface.backgroundAlpha,
+            ),
+          }
+        : undefined,
+    ),
+  );
   const avatarSize = resolvedAvatar.size * scale;
   const unresolvedAvatar = withAuthoringTarget(
     avatarPayload,
@@ -516,20 +566,7 @@ function headerNode(
     style: {
     },
     children: [
-      {
-        id: "module.conversation.header.bleed",
-        type: "surface",
-        frame: 0,
-        box: {
-          x: screen.x,
-          y: screen.y,
-          width: screen.width,
-          height: offsetY + height,
-        },
-        style: {
-          background: selectedColor(payload, "theme.colors.surface"),
-        },
-      },
+      surfaceNode,
       avatar,
       leftRowNode,
       rightRowNode,

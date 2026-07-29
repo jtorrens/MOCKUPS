@@ -1,10 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import Database from "better-sqlite3";
 import type { DesignPreviewPayload } from "../../src/desktop-preview/designPreviewPayload.js";
+import { conversationModuleToRenderable } from "../../src/desktop-preview/conversationModuleRenderable.js";
 import {
   conversationMessageActorIdentityVisible,
   resolveConversationModuleFrame,
 } from "../../src/desktop-preview/conversationModuleResolver.js";
+import { parityDatabasePath } from "../../src/development-scaffolding/parityDatabasePath.js";
+import type { RenderableNode } from "../../src/visual/renderable/types.js";
+import { committedComponentFixture } from "./committedComponentFixture.js";
 
 function payload(
   localFrame: number,
@@ -324,3 +329,127 @@ test("animated media playing is always finite", () => {
   assert.equal(at(99).isPlaying, false);
   assert.equal(at(99).playbackFrame, 3);
 });
+
+test("Conversation Header keeps its upward bleed and can use the resolved Actor color", () => {
+  const source = committedConversationPayload();
+  const config = JSON.parse(source.configJson) as {
+    conversation: { headerUseActorColor: boolean };
+  };
+  const actorColor = (
+    JSON.parse(source.designPreviewJson) as {
+      actor: { avatar: { backgroundColor: string } };
+    }
+  ).actor.avatar.backgroundColor;
+
+  const surfaceColorTree = conversationModuleToRenderable(source);
+  const surfaceColorNode = findNode(
+    surfaceColorTree,
+    "module.conversation.header.surface",
+  );
+  const headerNode = findNode(surfaceColorTree, "module.conversation.header");
+  const statusNode = findNode(surfaceColorTree, "status_bar");
+  assert.ok(surfaceColorNode);
+  assert.ok(headerNode?.box);
+  assert.ok(statusNode?.box);
+  assert.deepEqual(surfaceColorNode.box, {
+    x: 0,
+    y: 0,
+    width: 360,
+    height: statusNode.box.height + 40,
+  });
+  assert.equal(headerNode.box.y, statusNode.box.height);
+  assert.notEqual(surfaceColorNode.style?.background, actorColor);
+
+  config.conversation.headerUseActorColor = true;
+  source.configJson = JSON.stringify(config);
+  const actorColorNode = findNode(
+    conversationModuleToRenderable(source),
+    "module.conversation.header.surface",
+  );
+  assert.ok(actorColorNode);
+  assert.equal(actorColorNode.style?.background, actorColor);
+  assert.equal(actorColorNode.style?.borderRadius, 0);
+
+  source.authoringOwnerId = "module_core_chat::variant::default";
+  source.authoringRecordClassId = "module.core.chat";
+  const authoringNode = findNode(
+    conversationModuleToRenderable(source),
+    "module.conversation.header.surface",
+  );
+  assert.deepEqual(authoringNode?.metadata?.authoringTarget, {
+    focusFieldId: "component.surface.backgroundColorToken",
+    ownerId: "module_core_chat::variant::default",
+    slotFieldIds: ["module.conversation.headerSurface.editor"],
+  });
+});
+
+function committedConversationPayload(): DesignPreviewPayload {
+  const source = committedComponentFixture("avatar", "avatar_chat_header");
+  const database = new Database(
+    parityDatabasePath(),
+    { readonly: true, fileMustExist: true },
+  );
+  try {
+    const module = database.prepare(`
+      SELECT design_preview_json, metadata_json
+      FROM modules
+      WHERE id = 'module_core_chat'
+    `).get() as {
+      design_preview_json: string;
+      metadata_json: string;
+    } | undefined;
+    assert.ok(module);
+    const metadata = JSON.parse(module.metadata_json) as {
+      variants: Array<{ id: string; config: Record<string, unknown> }>;
+    };
+    const defaultVariant = metadata.variants.find(({ id }) => id === "default");
+    assert.ok(defaultVariant);
+    const runtime = JSON.parse(module.design_preview_json) as Record<string, unknown>;
+    runtime.actor = {
+      id: "actor_header_test",
+      displayName: "Header Actor",
+      shortName: "Actor",
+      initials: "HA",
+      avatar: {
+        imageUri: "",
+        backgroundColor: "#123456",
+        textColor: "#ffffff",
+        scale: 1,
+        offsetX: 0,
+        offsetY: 0,
+        baseSize: 640,
+      },
+    };
+    runtime.messages = [];
+    runtime.keyboardVisible = false;
+    runtime.textInputVisible = false;
+    const config = structuredClone(defaultVariant.config) as {
+      conversation: Record<string, unknown>;
+    };
+    config.conversation.useAppWallpaper = false;
+    config.conversation.showNavigationBar = false;
+    config.conversation.showKeyboard = false;
+    config.conversation.showTextInputBar = false;
+    return {
+      ...source,
+      kind: "module",
+      componentType: "module.core.chat",
+      configJson: JSON.stringify(config),
+      designPreviewJson: JSON.stringify(runtime),
+      runtimeContractJson: JSON.stringify(runtime),
+      themeStatusBarVariantReference:
+        "component_project_foqn_s2_status_bar::variant::default",
+    };
+  } finally {
+    database.close();
+  }
+}
+
+function findNode(root: RenderableNode, id: string): RenderableNode | undefined {
+  if (root.id === id) return root;
+  for (const child of root.children ?? []) {
+    const match = findNode(child, id);
+    if (match) return match;
+  }
+  return undefined;
+}

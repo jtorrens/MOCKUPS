@@ -147,6 +147,16 @@ internal sealed partial class SqliteDesignOwner
                         "Module config.conversation")),
             "module.conversation.headerHeight" =>
                 RequiredNumberString(conversation!, "headerHeight"),
+            "module.conversation.headerSurface.editor" =>
+                RequiredSlotReference(
+                    conversation!,
+                    "headerSurfaceSlot"),
+            "module.conversation.headerUseActorColor" =>
+                BooleanText.Format(
+                    JsonPath.RequiredBoolean(
+                        conversation!,
+                        "headerUseActorColor",
+                        "Module config.conversation")),
             "module.conversation.headerAvatarVariant" =>
                 JsonPath.RequiredString(
                     conversation!,
@@ -450,6 +460,28 @@ internal sealed partial class SqliteDesignOwner
                     JsonPath.ParseRequiredNumberNode(
                         value,
                         fieldId));
+                break;
+            case "module.conversation.headerSurface.editor":
+                SetJsonValue(
+                    config,
+                    [
+                        "conversation",
+                        "headerSurfaceSlot",
+                        "variantReference",
+                    ],
+                    JsonValue.Create(
+                        ValidateComponentVariantReference(
+                            connection,
+                            projectId,
+                            "surface",
+                            value))!);
+                break;
+            case "module.conversation.headerUseActorColor":
+                SetJsonValue(
+                    config,
+                    ["conversation", "headerUseActorColor"],
+                    JsonValue.Create(
+                        BooleanText.ParseRequired(value, fieldId))!);
                 break;
             case "module.conversation.headerAvatarVariant":
                 SetJsonValue(

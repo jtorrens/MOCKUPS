@@ -7737,6 +7737,20 @@ static void ListComponentContractsFailReadOnly()
 
 static void ModuleConfigsUseOwnerContracts()
 {
+    AssertRejectedDatabaseIsReadOnly("conversation-module-header-surface", (connection) =>
+    {
+        MutateModuleAndDefaultVariant(
+            connection,
+            "module_core_chat",
+            (config) => config["conversation"]!.AsObject().Remove("headerSurfaceSlot"));
+    });
+    AssertRejectedDatabaseIsReadOnly("conversation-module-header-actor-color", (connection) =>
+    {
+        MutateModuleAndDefaultVariant(
+            connection,
+            "module_core_chat",
+            (config) => config["conversation"]!.AsObject().Remove("headerUseActorColor"));
+    });
     AssertRejectedDatabaseIsReadOnly("conversation-module-input-root", (connection) =>
     {
         MutateModuleAndDefaultVariant(
@@ -7776,6 +7790,10 @@ static void ModuleConfigsUseOwnerContracts()
             conversation.Id,
             "module.conversation.headerHeight",
             "many"));
+        Throws<InvalidOperationException>(() => database.UpdateModuleField(
+            conversation.Id,
+            "module.conversation.headerSurface.editor",
+            "component_project_foqn_s2_button::variant::default"));
         Throws<InvalidOperationException>(() => database.UpdateModuleVariantField(
             conversationVariant,
             "module.conversation.headerAvatarAlignment",
@@ -7785,6 +7803,21 @@ static void ModuleConfigsUseOwnerContracts()
             "module.lockScreen.stackItems",
             "{}"));
         SequenceEqual(beforeRejectedWrites, SHA256.HashData(File.ReadAllBytes(temporary)));
+
+        Equal(
+            "component_project_foqn_s2_surface::variant::default",
+            database.GetModuleConfigFieldValue(
+                conversation.Id,
+                "module.conversation.headerSurface.editor"));
+        database.UpdateModuleField(
+            conversation.Id,
+            "module.conversation.headerUseActorColor",
+            "true");
+        Equal(
+            "true",
+            database.GetModuleConfigFieldValue(
+                conversation.Id,
+                "module.conversation.headerUseActorColor"));
 
         conversationVariant = NodeCommands(database)
             .ToggleModuleVariantLock(conversationVariant);
@@ -7797,6 +7830,20 @@ static void ModuleConfigsUseOwnerContracts()
             database.GetModuleVariantConfigFieldValue(
                 conversationVariant,
                 "module.conversation.showHeader"));
+        database.UpdateModuleVariantField(
+            conversationVariant,
+            "module.conversation.headerUseActorColor",
+            "true");
+        Equal(
+            "true",
+            database.GetModuleVariantConfigFieldValue(
+                conversationVariant,
+                "module.conversation.headerUseActorColor"));
+
+        var surfaceSlot = Required(
+            EmbeddedComponentSlotCatalog.Get("module.conversation.headerSurface.editor"));
+        Equal("surface", surfaceSlot.EmbeddedComponentType);
+        Equal("component.surface", surfaceSlot.RecordClassId);
     }
     finally
     {

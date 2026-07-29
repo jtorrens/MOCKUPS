@@ -345,6 +345,7 @@
         "bubble",
         "keyboard",
         "iconRow",
+        "surface",
         "navigation_bar",
         "status_bar",
         "textInputBar"

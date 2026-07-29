@@ -19,6 +19,8 @@ internal static class ConversationModuleConfigContract
         JsonPath.RequiredBoolean(conversation, "showHeader", owner);
         JsonPath.RequiredBoolean(conversation, "useAppWallpaper", owner);
         RequireNonNegative(JsonPath.RequiredNumber(conversation, "headerHeight", owner), $"{owner}.headerHeight");
+        RequireSlot(conversation, "headerSurfaceSlot", owner);
+        JsonPath.RequiredBoolean(conversation, "headerUseActorColor", owner);
         JsonPath.RequiredString(conversation, "headerAvatarVariant", owner);
         RequireOneOf(
             JsonPath.RequiredString(conversation, "headerAvatarAlignment", owner),

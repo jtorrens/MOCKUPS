@@ -178,6 +178,15 @@ public static class RecordClassFieldCatalog
             "Header height",
             ValueKind.Integer,
             Number: new NumberDefinition(0, 240, 1, 0)),
+        ["module.conversation.headerSurface.editor"] = new(
+            "module.conversation.headerSurface.editor",
+            "Header surface",
+            ValueKind.ComponentVariant,
+            ComponentVariantType: "surface"),
+        ["module.conversation.headerUseActorColor"] = new(
+            "module.conversation.headerUseActorColor",
+            "Use actor color",
+            ValueKind.Boolean),
         ["module.conversation.headerAvatarVariant"] = new(
             "module.conversation.headerAvatarVariant",
             "Header avatar variant",

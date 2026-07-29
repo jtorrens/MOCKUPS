@@ -47,6 +47,7 @@ public static class EmbeddedComponentSlotCatalog
         new("component.listItem.states.inactive.surface", "surface", "Inactive surface", "component.surface", ["listItem", "states", "inactive", "surfaceSlot"]),
         new("component.list.collectionStack", "collectionStack", "Collection Stack", "component.collectionStack", ["list", "collectionStackSlot"]),
         new("component.list.listItem", "listItem", "List Item", "component.listItem", ["list", "listItemSlot"]),
+        new("module.conversation.headerSurface.editor", "surface", "Header surface", "component.surface", ["conversation", "headerSurfaceSlot"]),
         new("module.conversation.headerLeftIconRow.editor", "iconRow", "Left icon row", "component.iconRow", ["conversation", "headerLeftIconRowSlot"]),
         new("module.conversation.headerRightIconRow.editor", "iconRow", "Right icon row", "component.iconRow", ["conversation", "headerRightIconRowSlot"]),
         new(
