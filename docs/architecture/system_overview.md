@@ -356,6 +356,11 @@ database context, SQLite packages or the Persistence assembly.
 External raster and encoding processes are not editor instances and do not
 acquire the visual-editor lease. They consume only the Render Queue's immutable
 snapshot or generated frames and cannot open the Project database.
+Redirected text streams cross the shared `DesktopChildProcess` boundary as
+explicit UTF-8 without a byte-order mark. Standard input is redirected only
+for callers that declare it; Node-backed Preview, raster and resource tools
+therefore preserve exact Unicode text without changing FFmpeg's input
+behavior.
 
 ### SQLite and repositories
 

@@ -102,9 +102,9 @@ internal sealed class ChromiumPreviewRasterizer : IDisposable
         var workingDirectory = ResolveRepositoryRoot(script);
         var startInfo = DesktopChildProcess.CreateHiddenStartInfo(
             DesktopChildProcess.ResolveNodeExecutable(),
-            workingDirectory);
+            workingDirectory,
+            redirectStandardInput: true);
         startInfo.ArgumentList.Add(script);
-        startInfo.RedirectStandardInput = true;
         _process = Process.Start(startInfo) ?? throw new InvalidOperationException("Could not start Chromium raster worker.");
         _stderr.Clear();
         _process.ErrorDataReceived += (_, args) =>

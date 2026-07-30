@@ -3,11 +3,17 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace Mockups.DesktopEditorShell.Common;
 
 public static class DesktopChildProcess
 {
+    private static readonly Encoding Utf8WithoutBom =
+        new UTF8Encoding(
+            encoderShouldEmitUTF8Identifier: false,
+            throwOnInvalidBytes: false);
+
     public static string ResolveNodeExecutable()
     {
         var executableName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
@@ -31,17 +37,29 @@ public static class DesktopChildProcess
         return candidates.FirstOrDefault(File.Exists) ?? executableName;
     }
 
-    public static ProcessStartInfo CreateHiddenStartInfo(string fileName, string workingDirectory)
+    public static ProcessStartInfo CreateHiddenStartInfo(
+        string fileName,
+        string workingDirectory,
+        bool redirectStandardInput = false)
     {
-        return new ProcessStartInfo
+        var startInfo = new ProcessStartInfo
         {
             FileName = fileName,
             WorkingDirectory = workingDirectory,
+            RedirectStandardInput = redirectStandardInput,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
+            StandardOutputEncoding = Utf8WithoutBom,
+            StandardErrorEncoding = Utf8WithoutBom,
             UseShellExecute = false,
             CreateNoWindow = true,
             WindowStyle = ProcessWindowStyle.Hidden,
         };
+        if (redirectStandardInput)
+        {
+            startInfo.StandardInputEncoding = Utf8WithoutBom;
+        }
+
+        return startInfo;
     }
 }

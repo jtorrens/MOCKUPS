@@ -1,11 +1,13 @@
 using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.EditorShell;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Text.Json.Nodes;
 
 var tests = new (string Name, Action Run)[]
 {
     ("SVG fill transforms keep direct reusable geometry", SvgFillTransformsKeepDirectReusableGeometry),
+    ("redirected child-process text round-trips exact UTF-8", RedirectedChildProcessTextRoundTripsExactUtf8),
     ("initial tree load resolves a selectable Design context", InitialTreeLoadSelectsDesignContext),
     ("workspace changes restore each workspace selection", WorkspaceChangesRestoreSelection),
     ("tree refresh replaces a deleted selection with a valid fallback", DeletedSelectionFallsBack),
@@ -38,6 +40,54 @@ var tests = new (string Name, Action Run)[]
     ("editor operations preserve their submission order", EditorOperationsAreSerialized),
     ("disposing editor operations cancels queued work", DisposeCancelsQueuedEditorOperations),
 };
+
+static void RedirectedChildProcessTextRoundTripsExactUtf8()
+{
+    const string expected =
+        "áéíóúüñ¿¡ 😀 👨‍👩‍👧‍👦";
+    var startInfo = DesktopChildProcess.CreateHiddenStartInfo(
+        DesktopChildProcess.ResolveNodeExecutable(),
+        Directory.GetCurrentDirectory(),
+        redirectStandardInput: true);
+    startInfo.ArgumentList.Add("-e");
+    startInfo.ArgumentList.Add(
+        "let input='';"
+        + "process.stdin.setEncoding('utf8');"
+        + "process.stdin.on('data',chunk=>input+=chunk);"
+        + "process.stdin.on('end',()=>process.stdout.write(input));");
+
+    Equal(true, startInfo.RedirectStandardInput);
+    Equal("utf-8", startInfo.StandardInputEncoding?.WebName);
+    Equal("utf-8", startInfo.StandardOutputEncoding?.WebName);
+    Equal("utf-8", startInfo.StandardErrorEncoding?.WebName);
+    Equal(
+        0,
+        startInfo.StandardInputEncoding?.GetPreamble().Length);
+    var outputOnlyStartInfo =
+        DesktopChildProcess.CreateHiddenStartInfo(
+            DesktopChildProcess.ResolveNodeExecutable(),
+            Directory.GetCurrentDirectory());
+    Equal(false, outputOnlyStartInfo.RedirectStandardInput);
+    Equal(null, outputOnlyStartInfo.StandardInputEncoding);
+    Equal("utf-8", outputOnlyStartInfo.StandardOutputEncoding?.WebName);
+    Equal("utf-8", outputOnlyStartInfo.StandardErrorEncoding?.WebName);
+
+    using var process = Process.Start(startInfo)
+        ?? throw new InvalidOperationException(
+            "Could not start the UTF-8 child-process fixture.");
+    process.StandardInput.Write(expected);
+    process.StandardInput.Close();
+    var output = process.StandardOutput.ReadToEnd();
+    var error = process.StandardError.ReadToEnd();
+    process.WaitForExit();
+
+    if (process.ExitCode != 0)
+    {
+        throw new InvalidOperationException(
+            $"Node UTF-8 fixture failed: {error}");
+    }
+    Equal(expected, output);
+}
 
 static void SvgFillTransformsKeepDirectReusableGeometry()
 {

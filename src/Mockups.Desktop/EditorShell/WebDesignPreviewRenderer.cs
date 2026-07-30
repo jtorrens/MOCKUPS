@@ -494,10 +494,12 @@ internal static class WebDesignPreviewRenderer
             Restart();
             _command = command;
             _stderr.Clear();
-            var startInfo = DesktopChildProcess.CreateHiddenStartInfo(command.Executable, command.WorkingDirectory);
+            var startInfo = DesktopChildProcess.CreateHiddenStartInfo(
+                command.Executable,
+                command.WorkingDirectory,
+                redirectStandardInput: true);
             startInfo.Environment["MOCKUPS_PREVIEW_DEBUG_LOG"] = PreviewDebugLog.FilePath;
             startInfo.ArgumentList.Add(command.ServerScript);
-            startInfo.RedirectStandardInput = true;
             var process = Process.Start(startInfo)
                 ?? throw new InvalidOperationException("Could not start persistent design preview renderer.");
             PreviewDebugLog.Write(
