@@ -99,8 +99,8 @@ internal static class EditorHierarchicalNavigationRow
         var grid = new Grid
         {
             ColumnDefinitions = metadata.ShowUsageIndicator
-                ? new ColumnDefinitions("12,12,*,124")
-                : new ColumnDefinitions("28,12,*,124"),
+                ? new ColumnDefinitions("12,12,*,Auto")
+                : new ColumnDefinitions("28,12,*,Auto"),
             ColumnSpacing = 5,
             Margin = new Thickness(metadata.Depth * 18, 0, 0, 0),
         };

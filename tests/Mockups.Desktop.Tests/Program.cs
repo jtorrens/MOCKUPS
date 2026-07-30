@@ -128,6 +128,7 @@ var tests = new (string Name, Action Run)[]
     ("explicit Usage references are exact typed and shared", ExplicitReferenceUsageIsExactTypedAndShared),
     ("Usage navigation preserves workspace node and embedded context", UsageNavigationPreservesTypedContext),
     ("Production Data owns actors devices and fonts", ProductionDataOwnsConcreteResources),
+    ("selected navigation rows contain every action and chevron", SelectedNavigationRowsContainEveryAction),
     ("Production Output action reveals the project-owned configuration", ProductionOutputActionOwnsConfiguration),
     ("external Node processes share one executable resolution", ExternalNodeProcessesShareExecutableResolution),
     ("Desktop Preview startup rejects missing and stale bundle artifacts", DesktopPreviewBundleValidationIsStrict),
@@ -13630,6 +13631,80 @@ static void ProductionDataOwnsConcreteResources()
         and not ProjectTreeNodeKind.ActorsRoot));
     var themeRoot = DescendantsAndSelf(project).Single((node) => node.Kind == ProjectTreeNodeKind.ThemesRoot);
     Equal(ProjectTreeNodeKind.SystemDataRoot, Required(themeRoot.Parent).Kind);
+}
+
+static void SelectedNavigationRowsContainEveryAction()
+{
+    using var session = HeadlessUnitTestSession.StartNew(
+        typeof(HeadlessTestApplication));
+    session.Dispatch(() =>
+    {
+        var noAction = () => { };
+        var metadata = new EditorHierarchicalNavigationMetadata(
+            "shot_01",
+            0,
+            true,
+            "",
+            true,
+            false,
+            true,
+            true,
+            true,
+            "",
+            null,
+            "Shot 01 · Opening chat",
+            "Seed shot",
+            "",
+            false,
+            false,
+            false,
+            false,
+            true,
+            42,
+            new EditorNavigationRowAction("Render Shot", EditorIcons.Render, noAction),
+            null,
+            new EditorNavigationRowAction("Add Screen", EditorIcons.Add, noAction),
+            [
+                new EditorNavigationRowAction("Rename Shot", EditorIcons.Edit, noAction),
+                new EditorNavigationRowAction("Duplicate Shot", EditorIcons.Duplicate, noAction),
+                new EditorNavigationRowAction("Delete Shot", EditorIcons.Delete, noAction),
+            ]);
+        var row = (Border)EditorHierarchicalNavigationRow.Create(
+            metadata,
+            isDark: true,
+            noAction,
+            noAction);
+        var window = new Window
+        {
+            Width = 380,
+            Height = 100,
+            Content = row,
+        };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        var grid = Required(row.Child as Grid);
+        Equal(GridUnitType.Auto, grid.ColumnDefinitions[3].Width.GridUnitType);
+        var selection = grid.Children
+            .OfType<Border>()
+            .Single((candidate) =>
+                Grid.GetColumn(candidate) == 1
+                && Grid.GetColumnSpan(candidate) == 3);
+        var actions = grid.Children
+            .OfType<StackPanel>()
+            .Single((candidate) => Grid.GetColumn(candidate) == 3);
+        Equal(6, actions.Children.OfType<Button>().Count());
+        True(actions.Children[^1] is Button);
+        if (actions.Bounds.Right > selection.Bounds.Right + 0.5)
+        {
+            throw new InvalidOperationException(
+                $"Navigation actions escape the selected band "
+                + $"(actions={actions.Bounds.Right:0.##}, "
+                + $"selection={selection.Bounds.Right:0.##}).");
+        }
+
+        window.Close();
+    }, CancellationToken.None).GetAwaiter().GetResult();
 }
 
 static void RenderQueueNavigationAndSurfaceAreAlwaysAvailable()
