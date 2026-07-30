@@ -907,6 +907,7 @@ static void ClosingEditorCancelsPreviewLifetime()
     var priorWindowState = File.Exists(windowStatePath)
         ? File.ReadAllBytes(windowStatePath)
         : null;
+    File.Delete(windowStatePath);
     var temporary = Path.Combine(
         Directory.GetCurrentDirectory(),
         "data",
@@ -5481,9 +5482,9 @@ static void NavigationPanelRestoresWidthAndOpensForRoutedSelection()
             typeof(HeadlessTestApplication));
         session.Dispatch(() =>
         {
-            const double expandedWidth = 336;
+            const double requestedExpandedWidth = 336;
             var first = DesktopHost.CreateWindow(temporary);
-            first.Width = 1440;
+            first.Width = 1700;
             first.Height = 900;
             first.Show();
             Dispatcher.UIThread.RunJobs();
@@ -5503,13 +5504,27 @@ static void NavigationPanelRestoresWidthAndOpensForRoutedSelection()
                     "NavigationPanelToggleButton"));
             True(firstToggle.GetVisualAncestors().Contains(firstHost));
             firstShell.ColumnDefinitions[0].Width =
-                new GridLength(expandedWidth);
-            first.Measure(new Size(1440, 900));
-            first.Arrange(new Rect(0, 0, 1440, 900));
+                new GridLength(requestedExpandedWidth);
+            firstShell.InvalidateMeasure();
+            first.Measure(new Size(1700, 900));
+            first.Arrange(new Rect(0, 0, 1700, 900));
             Dispatcher.UIThread.RunJobs();
+            var expandedEditorWidth =
+                firstShell.ColumnDefinitions[2].ActualWidth;
+            var expandedPreviewWidth =
+                firstShell.ColumnDefinitions[4].ActualWidth;
+            var expandedWidth =
+                firstShell.ColumnDefinitions[0].ActualWidth;
+            var releasedWidth =
+                expandedWidth
+                + firstShell.ColumnDefinitions[1].ActualWidth
+                - EditorNavigationPanelController.CollapsedRailWidth;
 
             firstToggle.RaiseEvent(
                 new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            first.Measure(new Size(1700, 900));
+            first.Arrange(new Rect(0, 0, 1700, 900));
             Dispatcher.UIThread.RunJobs();
             True(!firstPanel.IsVisible);
             True(!firstSplitter.IsVisible);
@@ -5517,6 +5532,17 @@ static void NavigationPanelRestoresWidthAndOpensForRoutedSelection()
                 EditorNavigationPanelController.CollapsedRailWidth,
                 firstShell.ColumnDefinitions[0].Width.Value);
             Equal(0d, firstShell.ColumnDefinitions[1].Width.Value);
+            True(
+                Math.Abs(
+                    firstShell.ColumnDefinitions[4].ActualWidth
+                    - expandedPreviewWidth)
+                <= 0.5);
+            True(
+                Math.Abs(
+                    firstShell.ColumnDefinitions[2].ActualWidth
+                    - expandedEditorWidth
+                    - releasedWidth)
+                <= 0.5);
             first.Close();
 
             var second = DesktopHost.CreateWindow(temporary);
@@ -5532,6 +5558,20 @@ static void NavigationPanelRestoresWidthAndOpensForRoutedSelection()
                     "NavigationPanelSplitter"));
             True(!secondPanel.IsVisible);
             True(!secondSplitter.IsVisible);
+            second.Measure(new Size(1700, 900));
+            second.Arrange(new Rect(0, 0, 1700, 900));
+            Dispatcher.UIThread.RunJobs();
+            True(
+                Math.Abs(
+                    secondShell.ColumnDefinitions[4].ActualWidth
+                    - expandedPreviewWidth)
+                <= 0.5);
+            True(
+                Math.Abs(
+                    secondShell.ColumnDefinitions[2].ActualWidth
+                    - expandedEditorWidth
+                    - releasedWidth)
+                <= 0.5);
 
             var target = WindowSession(second).TreeRoots
                 .SelectMany(DescendantsAndSelf)
@@ -5551,8 +5591,8 @@ static void NavigationPanelRestoresWidthAndOpensForRoutedSelection()
                 second,
                 [target.Id, "test-route"]) ?? false));
             Dispatcher.UIThread.RunJobs();
-            second.Measure(new Size(1440, 900));
-            second.Arrange(new Rect(0, 0, 1440, 900));
+            second.Measure(new Size(1700, 900));
+            second.Arrange(new Rect(0, 0, 1700, 900));
             Dispatcher.UIThread.RunJobs();
 
             True(secondPanel.IsVisible);
@@ -5561,6 +5601,16 @@ static void NavigationPanelRestoresWidthAndOpensForRoutedSelection()
                 Math.Abs(
                     secondShell.ColumnDefinitions[0].ActualWidth
                     - expandedWidth)
+                <= 0.5);
+            True(
+                Math.Abs(
+                    secondShell.ColumnDefinitions[2].ActualWidth
+                    - expandedEditorWidth)
+                <= 0.5);
+            True(
+                Math.Abs(
+                    secondShell.ColumnDefinitions[4].ActualWidth
+                    - expandedPreviewWidth)
                 <= 0.5);
             var selected = Required(
                 WindowSession(second).SelectedNode);

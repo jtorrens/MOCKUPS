@@ -382,7 +382,9 @@ public partial class MainWindow : SukiWindow
         _shellState.Restore();
         _navigationPanel.Restore(
             _shellState.IsNavigationPanelCollapsed,
-            _shellState.NavigationPanelExpandedWidth);
+            _shellState.NavigationPanelExpandedWidth,
+            _shellState.NavigationPanelExpandedEditorWidth,
+            _shellState.NavigationPanelExpandedPreviewWidth);
         _workspaceCoordinator.Restore(new EditorSessionRestoreState(
             EditorWorkspaceNavigation.Parse(_shellState.Workspace),
             _shellState.ProductionId,

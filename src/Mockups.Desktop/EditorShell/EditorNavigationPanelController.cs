@@ -7,7 +7,9 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed record EditorNavigationPanelState(
     bool IsCollapsed,
-    double ExpandedWidth);
+    double ExpandedWidth,
+    double ExpandedEditorWidth,
+    double ExpandedPreviewWidth);
 
 internal sealed class EditorNavigationPanelController
 {
@@ -20,6 +22,12 @@ internal sealed class EditorNavigationPanelController
     private readonly Func<double> _windowWidth;
     private double _expandedWidth =
         PreviewPanelLayoutPolicy.DefaultLeftColumnWidth;
+    private double _expandedEditorWidth =
+        PreviewPanelLayoutPolicy.ForWindow(
+            PreviewPanelLayoutPolicy.DefaultWindowWidth).EditorPanelWidth;
+    private double _expandedPreviewWidth =
+        PreviewPanelLayoutPolicy.ForWindow(
+            PreviewPanelLayoutPolicy.DefaultWindowWidth).PreviewPanelWidth;
 
     public EditorNavigationPanelController(
         Grid shellColumns,
@@ -43,9 +51,13 @@ internal sealed class EditorNavigationPanelController
 
     public void Restore(
         bool isCollapsed,
-        double expandedWidth)
+        double expandedWidth,
+        double expandedEditorWidth,
+        double expandedPreviewWidth)
     {
         _expandedWidth = ValidExpandedWidth(expandedWidth);
+        _expandedEditorWidth = ValidEditorWidth(expandedEditorWidth);
+        _expandedPreviewWidth = ValidPreviewWidth(expandedPreviewWidth);
         Apply(isCollapsed, captureCurrentWidth: false);
     }
 
@@ -61,11 +73,13 @@ internal sealed class EditorNavigationPanelController
     {
         if (!IsCollapsed)
         {
-            CaptureExpandedWidth();
+            CaptureExpandedGeometry();
         }
         return new EditorNavigationPanelState(
             IsCollapsed,
-            _expandedWidth);
+            _expandedWidth,
+            _expandedEditorWidth,
+            _expandedPreviewWidth);
     }
 
     private void Toggle()
@@ -79,7 +93,7 @@ internal sealed class EditorNavigationPanelController
     {
         if (captureCurrentWidth)
         {
-            CaptureExpandedWidth();
+            CaptureExpandedGeometry();
         }
 
         IsCollapsed = isCollapsed;
@@ -92,37 +106,53 @@ internal sealed class EditorNavigationPanelController
                 new GridLength(CollapsedRailWidth);
             _shellColumns.ColumnDefinitions[1].Width =
                 new GridLength(0);
+            _shellColumns.ColumnDefinitions[2].Width =
+                new GridLength(1, GridUnitType.Star);
+            _shellColumns.ColumnDefinitions[4].MinWidth = 0;
+            _shellColumns.ColumnDefinitions[4].Width =
+                new GridLength(_expandedPreviewWidth);
         }
         else
         {
-            var editorWidth =
-                _shellColumns.ColumnDefinitions[2].ActualWidth > 0
-                    ? _shellColumns.ColumnDefinitions[2].ActualWidth
-                    : PreviewPanelLayoutPolicy.MinimumEditorColumnWidth;
-            var appliedWidth =
+            var appliedColumns =
                 PreviewPanelLayoutPolicy.ClampRestoredColumns(
                     _windowWidth(),
                     _expandedWidth,
-                    editorWidth).LeftPanelWidth;
+                    _expandedEditorWidth);
             _shellColumns.ColumnDefinitions[0].MinWidth =
                 PreviewPanelLayoutPolicy.MinimumLeftColumnWidth;
             _shellColumns.ColumnDefinitions[0].Width =
-                new GridLength(appliedWidth);
+                new GridLength(appliedColumns.LeftPanelWidth);
             _shellColumns.ColumnDefinitions[1].Width =
                 new GridLength(SplitterWidth);
+            _shellColumns.ColumnDefinitions[2].Width =
+                new GridLength(appliedColumns.EditorPanelWidth);
+            _shellColumns.ColumnDefinitions[4].MinWidth =
+                PreviewPanelLayoutPolicy.MinimumPreviewColumnWidth;
+            _shellColumns.ColumnDefinitions[4].Width =
+                new GridLength(1, GridUnitType.Star);
             _panel.IsVisible = true;
             _splitter.IsVisible = true;
         }
         RefreshTogglePresentation();
     }
 
-    private void CaptureExpandedWidth()
+    private void CaptureExpandedGeometry()
     {
-        var actualWidth =
-            _shellColumns.ColumnDefinitions[0].ActualWidth;
-        if (actualWidth > 0)
+        var leftWidth = _shellColumns.ColumnDefinitions[0].ActualWidth;
+        if (leftWidth > 0)
         {
-            _expandedWidth = ValidExpandedWidth(actualWidth);
+            _expandedWidth = ValidExpandedWidth(leftWidth);
+        }
+        var editorWidth = _shellColumns.ColumnDefinitions[2].ActualWidth;
+        if (editorWidth > 0)
+        {
+            _expandedEditorWidth = ValidEditorWidth(editorWidth);
+        }
+        var previewWidth = _shellColumns.ColumnDefinitions[4].ActualWidth;
+        if (previewWidth > 0)
+        {
+            _expandedPreviewWidth = ValidPreviewWidth(previewWidth);
         }
     }
 
@@ -133,6 +163,24 @@ internal sealed class EditorNavigationPanelController
                 PreviewPanelLayoutPolicy.MinimumLeftColumnWidth,
                 width)
             : PreviewPanelLayoutPolicy.DefaultLeftColumnWidth;
+    }
+
+    private static double ValidEditorWidth(double width)
+    {
+        return double.IsFinite(width) && width > 0
+            ? Math.Max(
+                PreviewPanelLayoutPolicy.MinimumEditorColumnWidth,
+                width)
+            : PreviewPanelLayoutPolicy.ForWindow(
+                PreviewPanelLayoutPolicy.DefaultWindowWidth).EditorPanelWidth;
+    }
+
+    private static double ValidPreviewWidth(double width)
+    {
+        return double.IsFinite(width) && width > 0
+            ? width
+            : PreviewPanelLayoutPolicy.ForWindow(
+                PreviewPanelLayoutPolicy.DefaultWindowWidth).PreviewPanelWidth;
     }
 
     private void RefreshTogglePresentation()

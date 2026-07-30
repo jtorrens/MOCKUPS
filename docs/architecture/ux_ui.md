@@ -36,8 +36,10 @@ Responsive behavior protects the current task:
   its splitter while retaining its exact expanded width;
 - the action belongs visually to the Navigation header; while collapsed, only
   its narrow left-edge recovery rail remains;
+- collapsing Navigation keeps Preview at its exact current width and gives the
+  complete released width, including the hidden splitter, to Editor;
 - restoring the panel, including after restarting the application, returns to
-  that retained width;
+  the retained Navigation, Editor and Preview widths;
 - an explicit routed navigation from Usage, Preview, an embedded reference,
   history or a newly created owner reveals the panel before selecting and
   bringing the exact tree node into view;

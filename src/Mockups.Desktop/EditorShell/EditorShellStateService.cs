@@ -27,6 +27,12 @@ internal sealed class EditorShellStateService
     public bool IsNavigationPanelCollapsed { get; private set; }
     public double NavigationPanelExpandedWidth { get; private set; } =
         PreviewPanelLayoutPolicy.DefaultLeftColumnWidth;
+    public double NavigationPanelExpandedEditorWidth { get; private set; } =
+        PreviewPanelLayoutPolicy.ForWindow(
+            PreviewPanelLayoutPolicy.DefaultWindowWidth).EditorPanelWidth;
+    public double NavigationPanelExpandedPreviewWidth { get; private set; } =
+        PreviewPanelLayoutPolicy.ForWindow(
+            PreviewPanelLayoutPolicy.DefaultWindowWidth).PreviewPanelWidth;
     public EditorSessionHistoryState SessionHistory { get; private set; } = new();
 
     public void Restore()
@@ -64,6 +70,13 @@ internal sealed class EditorShellStateService
                 _shellColumns.ColumnDefinitions[2].Width = new GridLength(columns.EditorPanelWidth);
                 _shellColumns.ColumnDefinitions[4].Width = new GridLength(1, GridUnitType.Star);
                 NavigationPanelExpandedWidth = columns.LeftPanelWidth;
+                NavigationPanelExpandedEditorWidth =
+                    columns.EditorPanelWidth;
+                NavigationPanelExpandedPreviewWidth =
+                    state.RightPanelWidth > 0
+                        ? state.RightPanelWidth
+                        : PreviewPanelLayoutPolicy.ForWindow(
+                            _window.Width).PreviewPanelWidth;
             }
 
             IsNavigationPanelCollapsed =
@@ -120,7 +133,9 @@ internal sealed class EditorShellStateService
             var navigationState = navigationPanel
                 ?? new EditorNavigationPanelState(
                     false,
-                    _shellColumns.ColumnDefinitions[0].ActualWidth);
+                    _shellColumns.ColumnDefinitions[0].ActualWidth,
+                    _shellColumns.ColumnDefinitions[2].ActualWidth,
+                    _shellColumns.ColumnDefinitions[4].ActualWidth);
             var state = new ShellWindowState
             {
                 Width = _window.Width,
@@ -128,8 +143,10 @@ internal sealed class EditorShellStateService
                 PositionX = _window.Position.X,
                 PositionY = _window.Position.Y,
                 LeftPanelWidth = navigationState.ExpandedWidth,
-                EditorPanelWidth = _shellColumns.ColumnDefinitions[2].ActualWidth,
-                RightPanelWidth = _shellColumns.ColumnDefinitions[4].ActualWidth,
+                EditorPanelWidth =
+                    navigationState.ExpandedEditorWidth,
+                RightPanelWidth =
+                    navigationState.ExpandedPreviewWidth,
                 IsNavigationPanelCollapsed =
                     navigationState.IsCollapsed,
                 IsDark = IsDark,
