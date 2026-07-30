@@ -378,6 +378,21 @@ checkout at a time. Before handing off:
 The next writing task fetches and verifies that exact state before editing.
 Parallel work is read-only or uses isolated worktrees and branches.
 
+## Collaboration: validation follows revision scope
+
+Use `npm run test:changed` while iterating and `npm run test:revision` as the
+normal final gate for a coherent local revision. The scoped planner must fail
+on an unclassified path; it never substitutes the complete suite for missing
+ownership.
+
+Do not run `npm test` merely because a local revision is ready to commit. The
+complete repository gate is required only when the revision affects a shared
+Preview boundary, manifest or registry, persistence schema or parity data,
+generated scaffolding, a cross-owner integration or phase handoff, or when
+merging or publishing a version. It also runs when the user explicitly asks
+for complete validation. A focused revision remains complete when every check
+selected by `test:revision` passes.
+
 ## Delivery
 
 After every implemented update, report:

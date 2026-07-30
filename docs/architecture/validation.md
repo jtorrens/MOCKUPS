@@ -10,6 +10,16 @@ silently restoring a second owner, implicit route or invalid persisted shape.
 
 ## Standard checks
 
+The normal final gate for one coherent local revision is:
+
+```text
+npm run test:revision
+```
+
+It derives the exact required checks from the changed semantic owners and
+fails when any path has no declared validation owner. Passing every selected
+check is a complete validation for that revision scope.
+
 The complete repository validation is:
 
 ```text
@@ -230,8 +240,10 @@ implicitly. A path without a declared validation owner stops immediately,
 prints every unclassified path and requires the route plus its focused checks
 to be added before validation continues. This makes validation ownership an
 explicit current contract instead of hiding a missing classification behind
-the slow complete suite. The complete suite remains a deliberate
-integration/publication command.
+the slow complete suite. The complete suite remains deliberate and is required
+for shared Preview boundaries, manifest or registry changes, persistence
+schema or parity data, generated scaffolding, cross-owner integrations, phase
+handoffs, merges and publication, or when explicitly requested.
 
 An exact Application or Desktop name, Preview owner or filter that does not
 exist, an unknown selector or a filter that matches nothing fails explicitly.
@@ -438,7 +450,9 @@ that reaches the same owner through a Screen payload.
 
 A revision is ready for review only when:
 
-- focused and full applicable checks pass;
+- every check selected by `npm run test:revision` passes;
+- `npm test` also passes when the revision crosses a complete-gate boundary
+  declared above;
 - `git diff --check` passes;
 - no unintended code, database or asset changes remain;
 - required parity files are included;

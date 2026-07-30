@@ -67,11 +67,22 @@ export function checkDocumentationContracts({
     "materialization never edits the manifest, registry or database",
     "Integration rejects missing assets",
     "Module contract planning",
+    "run `npm run test:revision` and",
   ]) {
     assertDocumentContains(
       "docs/architecture/development_workflow.md",
       requiredTerm,
       "the normative development workflow must retain its scaffolding boundaries",
+    );
+  }
+  for (const [document, requiredTerm] of [
+    ["AGENTS.md", "Do not run `npm test` merely because a local revision is ready to commit."],
+    ["docs/architecture/validation.md", "check is a complete validation for that revision scope."],
+  ] as const) {
+    assertDocumentContains(
+      document,
+      requiredTerm,
+      `${document} must keep validation proportional to revision scope`,
     );
   }
   for (const activeMarkdownPath of [

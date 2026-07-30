@@ -43,9 +43,13 @@ must identify that path's owner and add focused coverage rather than silently
 running the complete repository suite.
 
 `npm test` remains the explicit complete integration and publication gate. It
-is not the fallback for an incomplete validation map and is not repeated after
-every small edit. Exact Application, Desktop and Preview-owner selectors are
-documented in `validation.md`.
+is not the fallback for an incomplete validation map and is not the normal
+final step for a local revision. It runs when the revision affects a shared
+Preview boundary, manifest or registry, persistence schema or parity data,
+generated scaffolding, a cross-owner integration or phase handoff, and when
+merging or publishing a version. It also runs when complete validation is
+requested explicitly. Exact Application, Desktop and Preview-owner selectors
+are documented in `validation.md`.
 
 ## Central package versions
 
@@ -323,8 +327,8 @@ For each coherent phase:
 4. implement the smallest complete owner change;
 5. update current documentation and enforcement together;
 6. run exact owner checks and the shared architecture guard while iterating;
-7. after the intended revision stops changing, run the complete repository
-   validation once against a disposable copy of the staged parity database;
+7. after the intended revision stops changing, run `npm run test:revision` and
+   every check it selects for the exact revision scope;
 8. inspect the final diff, including parity artifacts;
 9. create a local commit;
 10. open the validated desktop application for manual review when UI behavior
@@ -332,12 +336,14 @@ For each coherent phase:
 11. push only when the user asks.
 
 Focused Preview files and exact or filtered desktop test names are iteration
-tools, not substitutes for the final gate. A manifest, shared resolver helper,
-generic renderer, persistence contract, schema, scaffold generator or parity
-change expands immediately to its owning suite. A completed full gate remains
-valid while the source, contracts, generated artifacts, assets and staged
-parity database are unchanged; do not rerun it merely to reproduce the same
-result.
+tools, not substitutes for the scope-selected revision gate. A manifest,
+shared resolver helper, generic renderer, persistence contract, schema,
+scaffold generator or parity change expands immediately to its owning suite
+and requires `npm test` before handoff. The same complete gate is required for
+a cross-owner integration, phase handoff, merge or publication. A completed
+gate remains valid while the source, contracts, generated artifacts, assets
+and staged parity database are unchanged; do not rerun it merely to reproduce
+the same result.
 
 Only one task writes tracked project code or parity data in the shared checkout
 at a time. Read-only investigation may run independently.
