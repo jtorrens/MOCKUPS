@@ -208,6 +208,14 @@ child record class. A child reached without its declared parent therefore
 inherits the nearest valid target instead of publishing an invalid shortcut.
 Production, raster and Render Queue documents expose no authoring target.
 
+The resident desktop WebView boundary normalizes `InvokeScript` results before
+Preview code consumes them. A plain result and the equivalent JSON string
+literal returned by Windows WebView2 resolve to the same text, while numeric
+and boolean results remain unchanged. DOM patch status, browser patch events,
+asset queries, raster viewport geometry and image-preload responses all use
+that one boundary; individual consumers never trim platform-specific quoting
+or compensate by increasing Preview timeouts.
+
 ## Render Queue boundary
 
 Render Queue reuses the same prepared Production payload and generic web

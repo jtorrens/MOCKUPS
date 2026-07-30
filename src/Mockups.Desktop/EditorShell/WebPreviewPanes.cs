@@ -106,7 +106,7 @@ internal abstract class WebPreviewPane : Grid
                   return JSON.stringify({ x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height });
                 })();
                 """);
-            var json = result?.ToString();
+            var json = WebViewScriptResult.Text(result);
             if (string.IsNullOrWhiteSpace(json)) return;
             var bounds = JsonNode.Parse(json)?.AsObject();
             if (bounds is null) return;
@@ -214,7 +214,7 @@ internal abstract class WebPreviewPane : Grid
                   return window.mockupsMissingPreviewAssets({{assetKeysJson}});
                 })();
                 """);
-            var missingJson = missingResult?.ToString() ?? "[]";
+            var missingJson = WebViewScriptResult.Text(missingResult);
             var missingKeys = JsonNode.Parse(string.IsNullOrWhiteSpace(missingJson) ? "[]" : missingJson) is JsonArray missingArray
                 ? missingArray.Select((node) => node?.GetValue<string>() ?? "").Where((key) => key.Length > 0).ToHashSet(StringComparer.Ordinal)
                 : assetKeys.ToHashSet(StringComparer.Ordinal);
@@ -267,7 +267,11 @@ internal abstract class WebPreviewPane : Grid
                   return window.mockupsSetPreviewFontStyles({{fontStylesJson}});
                 })();
                 """);
-            return result is not null && !string.Equals(result.ToString(), "false", StringComparison.OrdinalIgnoreCase);
+            return result is not null
+                && !string.Equals(
+                    WebViewScriptResult.Text(result),
+                    "false",
+                    StringComparison.OrdinalIgnoreCase);
         }
         catch (Exception error)
         {
@@ -336,7 +340,7 @@ internal abstract class WebPreviewPane : Grid
                       ? window.mockupsMissingPreviewAssets({{keysJson}})
                       : JSON.stringify({{keysJson}}))();
                     """);
-                var missingJson = missingResult?.ToString() ?? "[]";
+                var missingJson = WebViewScriptResult.Text(missingResult);
                 var missingKeys = JsonNode.Parse(string.IsNullOrWhiteSpace(missingJson) ? "[]" : missingJson) is JsonArray missingArray
                     ? missingArray.Select((node) => node?.GetValue<string>() ?? "").Where((key) => key.Length > 0)
                     : preloadAssetKeys;
@@ -354,7 +358,7 @@ internal abstract class WebPreviewPane : Grid
                       return window.mockupsPreloadPreviewImages({{sourcesJson}});
                     })();
                     """);
-                var requestId = result?.ToString() ?? "";
+                var requestId = WebViewScriptResult.Text(result);
                 var loaded = await WaitForPreviewImagePreloadAsync(requestId, cancellationToken);
                 loadedTotal += loaded;
                 PreviewDebugLog.Write(
@@ -406,7 +410,7 @@ internal abstract class WebPreviewPane : Grid
                   return window.mockupsPreviewImagePreloadResult({{requestJson}});
                 })();
                 """);
-            var resultJson = result?.ToString() ?? "";
+            var resultJson = WebViewScriptResult.Text(result);
             if (string.IsNullOrWhiteSpace(resultJson)) continue;
             if (JsonNode.Parse(resultJson) is not JsonObject state
                 || state["done"]?.GetValue<bool>() != true)
@@ -456,7 +460,7 @@ internal abstract class WebPreviewPane : Grid
                       ? window.mockupsPreviewPatchStatus({{patchId}})
                       : "")();
                     """);
-                status = result?.ToString() ?? "";
+                status = WebViewScriptResult.Text(result);
             }
             catch
             {
@@ -512,7 +516,7 @@ internal abstract class WebPreviewPane : Grid
                   return window.mockupsDrainPreviewPatchEvents();
                 })();
                 """);
-            var json = result?.ToString() ?? "[]";
+            var json = WebViewScriptResult.Text(result);
             if (JsonNode.Parse(string.IsNullOrWhiteSpace(json) ? "[]" : json) is not JsonArray events)
             {
                 return [];
@@ -550,7 +554,11 @@ internal abstract class WebPreviewPane : Grid
 
     private static int PatchId(object? value)
     {
-        return int.TryParse(value?.ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var patchId)
+        return int.TryParse(
+            WebViewScriptResult.Text(value),
+            NumberStyles.Integer,
+            CultureInfo.InvariantCulture,
+            out var patchId)
             ? patchId
             : 0;
     }

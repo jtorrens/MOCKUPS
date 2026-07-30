@@ -161,6 +161,7 @@ var tests = new (string Name, Action Run)[]
     ("failed Preview preparation keeps the prior tree catalog and selection", FailedPreviewPreparationKeepsPriorSession),
     ("obsolete Preview authoring preparation cannot replace the latest selection", ObsoletePreviewAuthoringPreparationCannotCommit),
     ("obsolete interactive Preview render results are discarded", ObsoleteInteractivePreviewRenderResultsAreDiscarded),
+    ("WebView script results normalize macOS and Windows encodings", WebViewScriptResultsNormalizePlatformEncodings),
     ("Preview element identification stays on the generic renderable boundary", PreviewElementIdentificationUsesRenderableIdentity),
     ("Preview authoring navigation requires an exact owner and declared slot path", PreviewAuthoringNavigationUsesExactOwnerAndSlots),
     ("Preview authoring focus opens and reveals the exact layout card", PreviewAuthoringFocusRevealsExactCard),
@@ -6988,6 +6989,28 @@ static void ObsoleteInteractivePreviewRenderResultsAreDiscarded()
         sequence: 4,
         latestSequence: 5,
         isPlaybackUpdate: true));
+}
+
+static void WebViewScriptResultsNormalizePlatformEncodings()
+{
+    Equal("", WebViewScriptResult.Text(null));
+    Equal("commit", WebViewScriptResult.Text("commit"));
+    Equal("commit", WebViewScriptResult.Text("\"commit\""));
+    Equal(
+        "[\"asset-a\",\"asset-b\"]",
+        WebViewScriptResult.Text(
+            "\"[\\\"asset-a\\\",\\\"asset-b\\\"]\""));
+    Equal(
+        "[\"asset-a\",\"asset-b\"]",
+        WebViewScriptResult.Text(
+            "[\"asset-a\",\"asset-b\"]"));
+    Equal(
+        "{\"done\":true,\"loaded\":2}",
+        WebViewScriptResult.Text(
+            "\"{\\\"done\\\":true,\\\"loaded\\\":2}\""));
+    Equal("42", WebViewScriptResult.Text(42));
+    Equal("False", WebViewScriptResult.Text(false));
+    Equal("\"incomplete", WebViewScriptResult.Text("\"incomplete"));
 }
 
 static void PreviewElementIdentificationUsesRenderableIdentity()
