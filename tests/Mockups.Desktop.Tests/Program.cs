@@ -5492,12 +5492,16 @@ static void NavigationPanelRestoresWidthAndOpensForRoutedSelection()
             var firstPanel = Required(
                 first.FindControl<Border>(
                     "NavigationPanelBorder"));
+            var firstHost = Required(
+                first.FindControl<Grid>(
+                    "NavigationPanelHost"));
             var firstSplitter = Required(
                 first.FindControl<GridSplitter>(
                     "NavigationPanelSplitter"));
             var firstToggle = Required(
                 first.FindControl<Button>(
                     "NavigationPanelToggleButton"));
+            True(firstToggle.GetVisualAncestors().Contains(firstHost));
             firstShell.ColumnDefinitions[0].Width =
                 new GridLength(expandedWidth);
             first.Measure(new Size(1440, 900));
@@ -5509,7 +5513,9 @@ static void NavigationPanelRestoresWidthAndOpensForRoutedSelection()
             Dispatcher.UIThread.RunJobs();
             True(!firstPanel.IsVisible);
             True(!firstSplitter.IsVisible);
-            Equal(0d, firstShell.ColumnDefinitions[0].Width.Value);
+            Equal(
+                EditorNavigationPanelController.CollapsedRailWidth,
+                firstShell.ColumnDefinitions[0].Width.Value);
             Equal(0d, firstShell.ColumnDefinitions[1].Width.Value);
             first.Close();
 

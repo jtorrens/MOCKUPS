@@ -11,6 +11,7 @@ internal sealed record EditorNavigationPanelState(
 
 internal sealed class EditorNavigationPanelController
 {
+    internal const double CollapsedRailWidth = 48;
     private const double SplitterWidth = 6;
     private readonly Grid _shellColumns;
     private readonly Control _panel;
@@ -88,7 +89,7 @@ internal sealed class EditorNavigationPanelController
             _splitter.IsVisible = false;
             _shellColumns.ColumnDefinitions[0].MinWidth = 0;
             _shellColumns.ColumnDefinitions[0].Width =
-                new GridLength(0);
+                new GridLength(CollapsedRailWidth);
             _shellColumns.ColumnDefinitions[1].Width =
                 new GridLength(0);
         }
@@ -141,5 +142,8 @@ internal sealed class EditorNavigationPanelController
             IsCollapsed
                 ? "Show navigation panel"
                 : "Hide navigation panel");
+        _toggleButton.Margin = IsCollapsed
+            ? new Thickness(0, 10, 8, 0)
+            : new Thickness(0, 24, 20, 0);
     }
 }

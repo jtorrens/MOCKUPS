@@ -20,16 +20,8 @@
     <Grid RowDefinitions="Auto,*">
         <Border Grid.Row="0"
                 Padding="18,12">
-            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12" VerticalAlignment="Center">
-                <Button x:Name="NavigationPanelToggleButton"
-                        Grid.Column="0"
-                        Width="36"
-                        Height="36"
-                        Padding="0"
-                        BorderThickness="0"
-                        HorizontalContentAlignment="Center"
-                        VerticalContentAlignment="Center" />
-                <StackPanel Grid.Column="1" Spacing="4">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="18" VerticalAlignment="Center">
+                <StackPanel Grid.Column="0" Spacing="4">
                     <Border x:Name="WorkspaceSwitcherBorder"
                             Width="268"
                             Height="40"
@@ -59,7 +51,7 @@
                         </Grid>
                     </Border>
                 </StackPanel>
-                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                     <Button x:Name="UsageRefreshButton"
                             Click="OnRefreshUsageClick"
                             MinHeight="36"
@@ -86,42 +78,53 @@
                 <ColumnDefinition Width="6" />
                 <ColumnDefinition Width="*" MinWidth="420" />
             </Grid.ColumnDefinitions>
-            <Border x:Name="NavigationPanelBorder"
-                    Grid.Column="0"
-                    Margin="10"
-                    MinWidth="220">
-                <suki:GlassCard>
-                    <DockPanel>
-                    <Border DockPanel.Dock="Top"
-                            Padding="18,16">
-                        <StackPanel Spacing="4">
-                            <TextBlock FontSize="11" FontWeight="SemiBold" Text="NAVIGATION" />
-                            <TextBlock x:Name="NavigationWorkspaceTextBlock" FontSize="17" FontWeight="Bold" Text="Design" />
-                            <Grid x:Name="ProductionPickerGrid"
-                                  ColumnDefinitions="Auto,*"
-                                  ColumnSpacing="6"
-                                  IsVisible="False"
-                                  Margin="0,8,0,0">
-                                <Button x:Name="ProductionActionButton"
-                                        Grid.Column="0"
-                                        Width="34"
-                                        Height="34"
-                                        Padding="0"
-                                        BorderThickness="0"
-                                        Background="Transparent"
-                                        BorderBrush="Transparent" />
-                                <editor:EditorInstantComboBox x:Name="ProductionComboBox"
-                                                              Grid.Column="1"
-                                                              MinHeight="34" />
-                            </Grid>
-                        </StackPanel>
-                    </Border>
-                    <ScrollViewer Padding="10">
-                        <StackPanel x:Name="NavigationCardsPanel" Spacing="10" />
-                    </ScrollViewer>
-                    </DockPanel>
-                </suki:GlassCard>
-            </Border>
+            <Grid x:Name="NavigationPanelHost"
+                  Grid.Column="0">
+                <Border x:Name="NavigationPanelBorder"
+                        Margin="10"
+                        MinWidth="220">
+                    <suki:GlassCard>
+                        <DockPanel>
+                        <Border DockPanel.Dock="Top"
+                                Padding="18,16">
+                            <StackPanel Spacing="4">
+                                <TextBlock FontSize="11" FontWeight="SemiBold" Text="NAVIGATION" />
+                                <TextBlock x:Name="NavigationWorkspaceTextBlock" FontSize="17" FontWeight="Bold" Text="Design" />
+                                <Grid x:Name="ProductionPickerGrid"
+                                      ColumnDefinitions="Auto,*"
+                                      ColumnSpacing="6"
+                                      IsVisible="False"
+                                      Margin="0,8,0,0">
+                                    <Button x:Name="ProductionActionButton"
+                                            Grid.Column="0"
+                                            Width="34"
+                                            Height="34"
+                                            Padding="0"
+                                            BorderThickness="0"
+                                            Background="Transparent"
+                                            BorderBrush="Transparent" />
+                                    <editor:EditorInstantComboBox x:Name="ProductionComboBox"
+                                                                  Grid.Column="1"
+                                                                  MinHeight="34" />
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                        <ScrollViewer Padding="10">
+                            <StackPanel x:Name="NavigationCardsPanel" Spacing="10" />
+                        </ScrollViewer>
+                        </DockPanel>
+                    </suki:GlassCard>
+                </Border>
+                <Button x:Name="NavigationPanelToggleButton"
+                        Width="32"
+                        Height="32"
+                        Padding="0"
+                        BorderThickness="0"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Top"
+                        HorizontalContentAlignment="Center"
+                        VerticalContentAlignment="Center" />
+            </Grid>
 
             <GridSplitter x:Name="NavigationPanelSplitter"
                           Grid.Column="1"

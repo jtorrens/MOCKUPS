@@ -34,6 +34,8 @@ Responsive behavior protects the current task:
 - dividers are resizable;
 - the top-left navigation-panel action collapses the complete left panel and
   its splitter while retaining its exact expanded width;
+- the action belongs visually to the Navigation header; while collapsed, only
+  its narrow left-edge recovery rail remains;
 - restoring the panel, including after restarting the application, returns to
   that retained width;
 - an explicit routed navigation from Usage, Preview, an embedded reference,
