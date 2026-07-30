@@ -95,6 +95,17 @@ Preview combines the visual-context setup and the generic Preview controls in
 one scrollable Design surface. Both sections retain their existing semantic
 owners and state. Production uses the same combined Preview surface; its
 production context and Shot transport remain visible within that tab.
+That complete upper Preview surface can move between its dock and one shared
+resizable tool window. The floating window is topmost and uses the same live
+controls and state in Design and Production; detaching never creates a second
+controller or a second Preview session. While detached, the main Preview
+receives the released vertical space. Closing the tool window or using its dock
+action returns the surface and its prior dock height.
+
+Floating position and size are remembered only for repeated detachments in the
+current application session. A new application session always starts docked,
+so a tool window cannot reopen outside the available displays after a monitor
+change.
 In Production, Fit, playback route, markers, canonical frame, reference mode
 and the unlabelled Orientation selector share one compact responsive row.
 Shot navigation follows directly below. The timeline slider occupies the

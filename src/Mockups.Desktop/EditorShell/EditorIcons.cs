@@ -23,6 +23,7 @@ internal static class EditorIcons
     public const string Unlock = "unlock";
     public const string Settings = "settings";
     public const string NavigationPanel = "navigation-panel";
+    public const string Open = "open";
     public const string Refresh = "refresh";
     public const string Play = "play";
     public const string Pause = "pause";
@@ -325,6 +326,7 @@ internal static class EditorIcons
             Unlock => "components/Unlock.svg",
             Settings => "components/Settings.svg",
             NavigationPanel => "system_navigation_panel.svg",
+            Open => "components/Open referenced record.svg",
             Play => "components/Play.svg",
             Pause => "components/Pause.svg",
             Folder => "components/Folder.svg",
@@ -441,6 +443,7 @@ internal static class EditorIcons
             Folder => "M3 6H10L12 8H21V19H3Z M3 6V19",
             Back => "M17 4L7 12L17 20L19 18L11 12L19 6Z",
             Forward => "M7 4L17 12L7 20L5 18L13 12L5 6Z",
+            Open => "M5 5H11V7H7V17H17V13H19V19H5Z M13 5H19V11H17V8.5L11.5 14L10 12.5L15.5 7H13Z",
             Up => "M4 15L12 7L20 15L18 17L12 11L6 17Z",
             Down => "M4 9L6 7L12 13L18 7L20 9L12 17Z",
 

@@ -25,6 +25,8 @@ public partial class MainWindow : SukiWindow
     private readonly EditorShellStateService _shellState;
     private readonly EditorNavigationPanelController
         _navigationPanel;
+    private readonly PreviewControlsDockController
+        _previewControlsDock;
     private readonly EditorNavigationRenderer _navigationRenderer;
     private readonly EditorViewStateController _editorViewState;
     private readonly EditorAuthoringFocusController
@@ -125,6 +127,17 @@ public partial class MainWindow : SukiWindow
                 "preview-context"),
             (target) => previewAuthoringNavigator.Navigate(target),
             this);
+        _previewControlsDock =
+            new PreviewControlsDockController(
+                this,
+                PreviewPanelDock,
+                PreviewHeaderSurface,
+                PreviewPanelGrid,
+                PreviewUtilitySurface,
+                PreviewPanelGrid,
+                PreviewUtilitySplitter,
+                PreviewControlsDetachButton,
+                () => _themeController.IsDark);
         _treePreviewTransitions =
             new EditorTreePreviewTransitionCoordinator(
                 _workspaceCoordinator,
@@ -416,6 +429,7 @@ public partial class MainWindow : SukiWindow
                 CreateSessionHistoryState(),
                 _navigationPanel.Snapshot());
             _productionNavigationActions.Dispose();
+            _previewControlsDock.Dispose();
             _editorContent.Dispose();
             _collectionCards.Dispose();
             _previewController.Dispose();
@@ -459,6 +473,7 @@ public partial class MainWindow : SukiWindow
 
     private void RefreshShellTheme()
     {
+        _previewControlsDock.RefreshTheme();
         UpdateWorkspaceButtons();
         RebuildNavigationCards();
         _previewController
@@ -1363,6 +1378,8 @@ public partial class MainWindow : SukiWindow
     private void ApplyUiTextScale()
     {
         EditorUiTextScale.Apply(this, _shellState.UiTextScale, DesignPreviewHost);
+        _previewControlsDock.ApplyTextScale(
+            _shellState.UiTextScale);
     }
 
     private async void SetWorkspace(EditorWorkspace workspace)

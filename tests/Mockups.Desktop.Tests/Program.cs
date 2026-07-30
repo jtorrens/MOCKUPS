@@ -171,6 +171,7 @@ var tests = new (string Name, Action Run)[]
     ("editor view state round-trips per class and clamps scroll", EditorViewStateRoundTripsPerClass),
     ("editor view state survives real editor and breadcrumb navigation", EditorViewStateSurvivesRealNavigation),
     ("Preview shell remains usable at 1040 and 1440 widths", PreviewShellLayoutIsResponsive),
+    ("Preview controls detach into one topmost session window", PreviewControlsDetachIntoTopmostSessionWindow),
     ("navigation panel restores its width and opens for routed selection", NavigationPanelRestoresWidthAndOpensForRoutedSelection),
     ("real Preview shell layout remains usable at 1040 and 1440", PreviewShellVisualTreeIsResponsive),
     ("List Item and List expose their runtime model in the real editor", ListRuntimeEditorVisualTreeExposesDynamicSetsAndState),
@@ -5644,6 +5645,127 @@ static void NavigationPanelRestoresWidthAndOpensForRoutedSelection()
     }
 }
 
+static void PreviewControlsDetachIntoTopmostSessionWindow()
+{
+    using var session = HeadlessUnitTestSession.StartNew(
+        typeof(HeadlessTestApplication));
+    session.Dispatch(() =>
+    {
+        var owner = new Window
+        {
+            Width = 1000,
+            Height = 700,
+        };
+        var root = new DockPanel();
+        var headerSurface = new Border
+        {
+            Child = new TextBlock
+            {
+                Text = "Preview",
+            },
+        };
+        DockPanel.SetDock(
+            headerSurface,
+            Dock.Top);
+        root.Children.Add(headerSurface);
+        var previewGrid = new Grid
+        {
+            RowDefinitions =
+                new RowDefinitions("240,10,*,Auto"),
+        };
+        var utilitySurface = new Border
+        {
+            MinHeight = 180,
+            Child = new TextBlock
+            {
+                Text = "Shared Preview controls",
+            },
+        };
+        previewGrid.Children.Add(utilitySurface);
+        var splitter = new GridSplitter
+        {
+            Height = 6,
+        };
+        Grid.SetRow(splitter, 1);
+        previewGrid.Children.Add(splitter);
+        var previewContent = new Border();
+        Grid.SetRow(previewContent, 2);
+        previewGrid.Children.Add(previewContent);
+        root.Children.Add(previewGrid);
+        var toggle = new Button();
+        owner.Content = root;
+        owner.Show();
+        owner.Measure(new Size(1000, 700));
+        owner.Arrange(new Rect(0, 0, 1000, 700));
+        Dispatcher.UIThread.RunJobs();
+
+        using var controller =
+            new PreviewControlsDockController(
+                owner,
+                root,
+                headerSurface,
+                previewGrid,
+                utilitySurface,
+                previewGrid,
+                splitter,
+                toggle,
+                () => true);
+        toggle.RaiseEvent(
+            new RoutedEventArgs(Button.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
+
+        True(controller.IsDetached);
+        True(!root.Children.Contains(
+            headerSurface));
+        True(!previewGrid.Children.Contains(
+            utilitySurface));
+        Equal(
+            0d,
+            previewGrid.RowDefinitions[0].Height.Value);
+        Equal(
+            0d,
+            previewGrid.RowDefinitions[1].Height.Value);
+        True(!splitter.IsVisible);
+        var floating = Required(controller.FloatingWindow);
+        True(floating.Topmost);
+        True(!floating.ShowInTaskbar);
+        True(floating.CanResize);
+        True(ReferenceEquals(
+            TopLevel.GetTopLevel(headerSurface),
+            floating));
+        True(ReferenceEquals(
+            TopLevel.GetTopLevel(utilitySurface),
+            floating));
+
+        floating.Position = new PixelPoint(420, 240);
+        floating.Close();
+        Dispatcher.UIThread.RunJobs();
+        True(!controller.IsDetached);
+        True(!floating.IsVisible);
+        True(root.Children.Contains(
+            headerSurface));
+        True(previewGrid.Children.Contains(
+            utilitySurface));
+        True(splitter.IsVisible);
+        True(
+            previewGrid.RowDefinitions[0]
+                .Height.Value > 0);
+
+        controller.Toggle();
+        Dispatcher.UIThread.RunJobs();
+        True(controller.IsDetached);
+        Equal(
+            new PixelPoint(420, 240),
+            Required(controller.FloatingWindow)
+                .Position);
+        controller.Toggle();
+        Dispatcher.UIThread.RunJobs();
+        True(!controller.IsDetached);
+
+        owner.Close();
+    }, CancellationToken.None).GetAwaiter().GetResult();
+}
+
 static void PreviewShellVisualTreeIsResponsive()
 {
     var source = ParityDatabasePath();
@@ -5750,7 +5872,8 @@ static void PreviewShellVisualTreeIsResponsive()
                 LayoutCheck(previewRect.Left >= -0.5, $"{size}: Preview starts outside the window");
                 LayoutCheck(
                     previewRect.Right <= window.ClientSize.Width + 0.5,
-                    $"{size}: Preview ends outside the window ({previewRect.Right:0.##} > {window.ClientSize.Width:0.##})");
+                    $"{size}: Preview ends outside the window ({previewRect.Right:0.##} > {window.ClientSize.Width:0.##}; "
+                    + $"columns={string.Join(",", shell.ColumnDefinitions.Select((column) => column.ActualWidth.ToString("0.##", CultureInfo.InvariantCulture)))})");
 
                 var visibleTabs = new[] { authoringTab, setupTab };
                 LayoutCheck(
@@ -13204,6 +13327,7 @@ var isolatedUiTests = new HashSet<string>(StringComparer.Ordinal)
     "rapid visual selection commits only the latest prepared editor",
     "new Shot reload prepares Preview before selection",
     "obsolete Preview authoring preparation cannot replace the latest selection",
+    "Preview controls detach into one topmost session window",
     "navigation panel restores its width and opens for routed selection",
     "real Preview shell layout remains usable at 1040 and 1440",
     "List Item and List expose their runtime model in the real editor",
