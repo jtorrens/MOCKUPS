@@ -23,6 +23,8 @@ public partial class MainWindow : SukiWindow
     private readonly EditorThemeController _themeController;
     private readonly EditorNodeCommandController _nodeCommands;
     private readonly EditorShellStateService _shellState;
+    private readonly EditorNavigationPanelController
+        _navigationPanel;
     private readonly EditorNavigationRenderer _navigationRenderer;
     private readonly EditorViewStateController _editorViewState;
     private readonly EditorAuthoringFocusController
@@ -87,7 +89,9 @@ public partial class MainWindow : SukiWindow
         _embeddedEditors = new EditorEmbeddedEditorController(ShowEmbeddedContext, _messages);
         var previewAuthoringNavigator = new PreviewAuthoringNavigator(
             () => Session.SelectedNode,
-            (nodeId) => SelectNodeById(nodeId, "preview-element"),
+            (nodeId) => NavigateToNodeById(
+                nodeId,
+                "preview-element"),
             ShowEmbeddedContext,
             _authoringFocusController.Request,
             _messages);
@@ -116,7 +120,9 @@ public partial class MainWindow : SukiWindow
             PreviewTitlePanel,
             () => _themeController.IsDark,
             () => Session.SelectedNode,
-            (nodeId) => SelectNodeById(nodeId, "preview-context"),
+            (nodeId) => NavigateToNodeById(
+                nodeId,
+                "preview-context"),
             (target) => previewAuthoringNavigator.Navigate(target),
             this);
         _treePreviewTransitions =
@@ -138,7 +144,17 @@ public partial class MainWindow : SukiWindow
             ReloadAndSelect,
             NavigateToReferenceUsage,
             _messages);
-        _shellState = new EditorShellStateService(this, ShellColumns);
+        _navigationPanel =
+            new EditorNavigationPanelController(
+                ShellColumns,
+                NavigationPanelBorder,
+                NavigationPanelSplitter,
+                NavigationPanelToggleButton,
+                () => Bounds.Width > 0
+                    ? Bounds.Width
+                    : Width);
+        _shellState =
+            new EditorShellStateService(this, ShellColumns);
         _productionNavigationActions = new EditorProductionNavigationActions(
             this,
             ProductionActionButton,
@@ -227,7 +243,9 @@ public partial class MainWindow : SukiWindow
             data.Components,
             this,
             () => _themeController.IsDark,
-            SelectNodeById,
+            (nodeId) => NavigateToNodeById(
+                nodeId,
+                "embedded-usage"),
             LoadProjectTreeAsync,
             () => Session.SelectedNode,
             _embeddedEditors.Open,
@@ -250,7 +268,11 @@ public partial class MainWindow : SukiWindow
             _workspaceCoordinator.PreferredVariantNode,
             _workspaceCoordinator.PreferredModuleVariantNode,
             _embeddedUsageNavigator,
-            ShowNode,
+            (node, rebuildTree) =>
+                ShowRoutedNode(
+                    node,
+                    rebuildTree,
+                    "editor-header"),
             ReturnToEmbeddedOwner,
             ShowEmbeddedContext,
             _nodeCommands.SaveCurrentVariant,
@@ -293,7 +315,9 @@ public partial class MainWindow : SukiWindow
             _previewController.SetDesignPreviewCollectionTestItems,
             _previewController.ResetDesignPreviewTestValues,
             _previewController.PlaybackState,
-            SelectNodeById,
+            (nodeId) => NavigateToNodeById(
+                nodeId,
+                "collection-navigation"),
             NavigateToReferenceUsage,
             ShowEmbeddedContext,
             _previewController.ProductionShotFrame,
@@ -349,11 +373,16 @@ public partial class MainWindow : SukiWindow
             },
         };
         ShellSettingsButton.Content = EditorIcons.Create(EditorIcons.Settings, 18);
+        ApplyHeaderUtilityButton(
+            NavigationPanelToggleButton);
         ApplyHeaderUtilityButton(UsageRefreshButton);
         ApplyHeaderUtilityButton(ShellSettingsButton);
         EditorAccessibility.Describe(UsageRefreshButton, "Update usage");
         EditorAccessibility.Describe(ShellSettingsButton, "Settings");
         _shellState.Restore();
+        _navigationPanel.Restore(
+            _shellState.IsNavigationPanelCollapsed,
+            _shellState.NavigationPanelExpandedWidth);
         _workspaceCoordinator.Restore(new EditorSessionRestoreState(
             EditorWorkspaceNavigation.Parse(_shellState.Workspace),
             _shellState.ProductionId,
@@ -381,7 +410,9 @@ public partial class MainWindow : SukiWindow
         EditorUiDensity.Configure(_shellState.UiTextScale, _shellState.UiCardPaddingScale);
         Closing += (_, _) =>
         {
-            _shellState.Save(CreateSessionHistoryState());
+            _shellState.Save(
+                CreateSessionHistoryState(),
+                _navigationPanel.Snapshot());
             _productionNavigationActions.Dispose();
             _editorContent.Dispose();
             _collectionCards.Dispose();
@@ -1060,7 +1091,20 @@ public partial class MainWindow : SukiWindow
 
     private void ReturnToEmbeddedOwner(ProjectTreeNode ownerNode)
     {
-        ShowNode(ownerNode, false, "breadcrumb");
+        ShowRoutedNode(
+            ownerNode,
+            rebuildTree: false,
+            source: "breadcrumb");
+    }
+
+    private void ShowRoutedNode(
+        ProjectTreeNode node,
+        bool rebuildTree,
+        string source)
+    {
+        _navigationPanel.EnsureVisible();
+        ShowNode(node, rebuildTree, source);
+        BringSelectedNavigationNodeIntoView();
     }
 
     private void NavigateDesignHistory(
@@ -1081,6 +1125,7 @@ public partial class MainWindow : SukiWindow
             return;
         }
 
+        _navigationPanel.EnsureVisible();
         ApplyPersistedContext(
             transition);
         if (transition.Effects.HasFlag(
@@ -1097,6 +1142,7 @@ public partial class MainWindow : SukiWindow
             RenderEmbeddedHistorySelection(
                 transition,
                 embedded);
+            BringSelectedNavigationNodeIntoView();
             return;
         }
 
@@ -1104,6 +1150,7 @@ public partial class MainWindow : SukiWindow
             transition,
             rebuildTree: true,
             transaction);
+        BringSelectedNavigationNodeIntoView();
     }
 
     private void RenderEmbeddedHistorySelection(
@@ -1157,7 +1204,9 @@ public partial class MainWindow : SukiWindow
             {
                 return;
             }
-            SelectNodeById(node.Id);
+            NavigateToNodeById(
+                node.Id,
+                "reload-select");
         }
         catch (Exception exception)
         {
@@ -1174,6 +1223,27 @@ public partial class MainWindow : SukiWindow
 
     private bool SelectNodeById(string nodeId, string source)
     {
+        return SelectNodeByIdCore(
+            nodeId,
+            source,
+            revealNavigation: false);
+    }
+
+    private bool NavigateToNodeById(
+        string nodeId,
+        string source)
+    {
+        return SelectNodeByIdCore(
+            nodeId,
+            source,
+            revealNavigation: true);
+    }
+
+    private bool SelectNodeByIdCore(
+        string nodeId,
+        string source,
+        bool revealNavigation)
+    {
         var node = EditorNodeSelectionState.FindNodeById(
             Session.TreeRoots,
             nodeId);
@@ -1187,10 +1257,28 @@ public partial class MainWindow : SukiWindow
             : EditorNodeSelectionState.ClosestEditableNode(node);
         selectableNode = _workspaceCoordinator.ResolveSelectionNode(
             selectableNode);
+        if (revealNavigation)
+        {
+            _navigationPanel.EnsureVisible();
+        }
         _treeExpansion.ExpandAncestors(selectableNode);
         ShowNode(selectableNode, rebuildTree: true, source);
+        if (revealNavigation)
+        {
+            BringSelectedNavigationNodeIntoView();
+        }
         ApplyUiTextScale();
         return true;
+    }
+
+    private void BringSelectedNavigationNodeIntoView()
+    {
+        if (Session.SelectedNode is { } selected)
+        {
+            _navigationRenderer.BringNodeIntoView(
+                NavigationCardsPanel,
+                selected.Id);
+        }
     }
 
     private Task NavigateToReferenceUsage(ReferenceUsageDetail usage)
@@ -1220,6 +1308,7 @@ public partial class MainWindow : SukiWindow
             return false;
         }
 
+        _navigationPanel.EnsureVisible();
         CaptureActiveEditorViewState();
         using var transaction = BeginContextTransaction(
             "reference-usage",
@@ -1247,7 +1336,9 @@ public partial class MainWindow : SukiWindow
 
     private System.Threading.Tasks.Task OpenComponentVariantReference(string variantReference)
     {
-        if (!SelectNodeById(variantReference))
+        if (!NavigateToNodeById(
+                variantReference,
+                "component-reference"))
         {
             _messages.Warning("Open component variant", $"Could not find variant '{variantReference}'.");
         }

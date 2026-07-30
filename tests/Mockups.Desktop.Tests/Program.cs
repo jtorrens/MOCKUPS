@@ -170,6 +170,7 @@ var tests = new (string Name, Action Run)[]
     ("editor view state round-trips per class and clamps scroll", EditorViewStateRoundTripsPerClass),
     ("editor view state survives real editor and breadcrumb navigation", EditorViewStateSurvivesRealNavigation),
     ("Preview shell remains usable at 1040 and 1440 widths", PreviewShellLayoutIsResponsive),
+    ("navigation panel restores its width and opens for routed selection", NavigationPanelRestoresWidthAndOpensForRoutedSelection),
     ("real Preview shell layout remains usable at 1040 and 1440", PreviewShellVisualTreeIsResponsive),
     ("List Item and List expose their runtime model in the real editor", ListRuntimeEditorVisualTreeExposesDynamicSetsAndState),
     ("Conversation Module exposes its Test Values Runtime in the real editor", ConversationModuleEditorVisualTreeExposesTestValues),
@@ -5453,6 +5454,137 @@ static void PreviewShellLayoutIsResponsive()
         + restored.EditorPanelWidth
         + PreviewPanelLayoutPolicy.MinimumPreviewColumnWidth
         <= PreviewPanelLayoutPolicy.SupportedMinimumWindowWidth - 32);
+}
+
+static void NavigationPanelRestoresWidthAndOpensForRoutedSelection()
+{
+    var source = ParityDatabasePath();
+    var windowStatePath = Path.GetFullPath(
+        Path.Combine(
+            AppContext.BaseDirectory,
+            "..",
+            "..",
+            "..",
+            "data",
+            "window-state.json"));
+    var priorWindowState = File.Exists(windowStatePath)
+        ? File.ReadAllBytes(windowStatePath)
+        : null;
+    var temporary = Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        $".mockups-navigation-panel-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        using var session = HeadlessUnitTestSession.StartNew(
+            typeof(HeadlessTestApplication));
+        session.Dispatch(() =>
+        {
+            const double expandedWidth = 336;
+            var first = DesktopHost.CreateWindow(temporary);
+            first.Width = 1440;
+            first.Height = 900;
+            first.Show();
+            Dispatcher.UIThread.RunJobs();
+            var firstShell = Required(
+                first.FindControl<Grid>("ShellColumns"));
+            var firstPanel = Required(
+                first.FindControl<Border>(
+                    "NavigationPanelBorder"));
+            var firstSplitter = Required(
+                first.FindControl<GridSplitter>(
+                    "NavigationPanelSplitter"));
+            var firstToggle = Required(
+                first.FindControl<Button>(
+                    "NavigationPanelToggleButton"));
+            firstShell.ColumnDefinitions[0].Width =
+                new GridLength(expandedWidth);
+            first.Measure(new Size(1440, 900));
+            first.Arrange(new Rect(0, 0, 1440, 900));
+            Dispatcher.UIThread.RunJobs();
+
+            firstToggle.RaiseEvent(
+                new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            True(!firstPanel.IsVisible);
+            True(!firstSplitter.IsVisible);
+            Equal(0d, firstShell.ColumnDefinitions[0].Width.Value);
+            Equal(0d, firstShell.ColumnDefinitions[1].Width.Value);
+            first.Close();
+
+            var second = DesktopHost.CreateWindow(temporary);
+            second.Show();
+            Dispatcher.UIThread.RunJobs();
+            var secondShell = Required(
+                second.FindControl<Grid>("ShellColumns"));
+            var secondPanel = Required(
+                second.FindControl<Border>(
+                    "NavigationPanelBorder"));
+            var secondSplitter = Required(
+                second.FindControl<GridSplitter>(
+                    "NavigationPanelSplitter"));
+            True(!secondPanel.IsVisible);
+            True(!secondSplitter.IsVisible);
+
+            var target = WindowSession(second).TreeRoots
+                .SelectMany(DescendantsAndSelf)
+                .First((node) =>
+                    node.Kind
+                    == ProjectTreeNodeKind.ComponentClass);
+            var navigate = typeof(MainWindow).GetMethod(
+                "NavigateToNodeById",
+                BindingFlags.Instance
+                | BindingFlags.NonPublic,
+                binder: null,
+                types: [typeof(string), typeof(string)],
+                modifiers: null)
+                ?? throw new InvalidOperationException(
+                    "Missing routed tree navigation boundary.");
+            True((bool)(navigate.Invoke(
+                second,
+                [target.Id, "test-route"]) ?? false));
+            Dispatcher.UIThread.RunJobs();
+            second.Measure(new Size(1440, 900));
+            second.Arrange(new Rect(0, 0, 1440, 900));
+            Dispatcher.UIThread.RunJobs();
+
+            True(secondPanel.IsVisible);
+            True(secondSplitter.IsVisible);
+            True(
+                Math.Abs(
+                    secondShell.ColumnDefinitions[0].ActualWidth
+                    - expandedWidth)
+                <= 0.5);
+            var selected = Required(
+                WindowSession(second).SelectedNode);
+            Equal(
+                target.Id,
+                selected.Kind
+                    == ProjectTreeNodeKind.ComponentVariant
+                    ? Required(selected.Parent).Id
+                    : selected.Id);
+            second.Close();
+        }, CancellationToken.None).GetAwaiter().GetResult();
+    }
+    finally
+    {
+        File.Delete(temporary);
+        if (priorWindowState is null)
+        {
+            File.Delete(windowStatePath);
+        }
+        else
+        {
+            Directory.CreateDirectory(
+                Path.GetDirectoryName(windowStatePath)
+                ?? throw new InvalidOperationException(
+                    "Window state path has no directory."));
+            File.WriteAllBytes(
+                windowStatePath,
+                priorWindowState);
+        }
+    }
 }
 
 static void PreviewShellVisualTreeIsResponsive()
@@ -12993,6 +13125,7 @@ var isolatedUiTests = new HashSet<string>(StringComparer.Ordinal)
     "rapid visual selection commits only the latest prepared editor",
     "new Shot reload prepares Preview before selection",
     "obsolete Preview authoring preparation cannot replace the latest selection",
+    "navigation panel restores its width and opens for routed selection",
     "real Preview shell layout remains usable at 1040 and 1440",
     "List Item and List expose their runtime model in the real editor",
     "Conversation Module exposes its Test Values Runtime in the real editor",

@@ -22,6 +22,7 @@ internal static class EditorIcons
     public const string Lock = "lock";
     public const string Unlock = "unlock";
     public const string Settings = "settings";
+    public const string NavigationPanel = "navigation-panel";
     public const string Refresh = "refresh";
     public const string Play = "play";
     public const string Pause = "pause";
@@ -323,6 +324,7 @@ internal static class EditorIcons
             Lock => "components/Lock.svg",
             Unlock => "components/Unlock.svg",
             Settings => "components/Settings.svg",
+            NavigationPanel => "system_navigation_panel.svg",
             Play => "components/Play.svg",
             Pause => "components/Pause.svg",
             Folder => "components/Folder.svg",

@@ -32,6 +32,13 @@ Each editor owns its domain fields and collections.
 Responsive behavior protects the current task:
 
 - dividers are resizable;
+- the top-left navigation-panel action collapses the complete left panel and
+  its splitter while retaining its exact expanded width;
+- restoring the panel, including after restarting the application, returns to
+  that retained width;
+- an explicit routed navigation from Usage, Preview, an embedded reference,
+  history or a newly created owner reveals the panel before selecting and
+  bringing the exact tree node into view;
 - the horizontal division between Preview authoring and Preview is resizable;
 - compact widths preserve the selected editor and Preview controls;
 - each panel owns its scroll instead of creating nested page scroll traps.

@@ -24,6 +24,9 @@ internal sealed class EditorShellStateService
     public double UiCardPaddingScale { get; private set; } = 1;
     public string Workspace { get; private set; } = "design";
     public string ProductionId { get; private set; } = "";
+    public bool IsNavigationPanelCollapsed { get; private set; }
+    public double NavigationPanelExpandedWidth { get; private set; } =
+        PreviewPanelLayoutPolicy.DefaultLeftColumnWidth;
     public EditorSessionHistoryState SessionHistory { get; private set; } = new();
 
     public void Restore()
@@ -60,8 +63,11 @@ internal sealed class EditorShellStateService
                 _shellColumns.ColumnDefinitions[0].Width = new GridLength(columns.LeftPanelWidth);
                 _shellColumns.ColumnDefinitions[2].Width = new GridLength(columns.EditorPanelWidth);
                 _shellColumns.ColumnDefinitions[4].Width = new GridLength(1, GridUnitType.Star);
+                NavigationPanelExpandedWidth = columns.LeftPanelWidth;
             }
 
+            IsNavigationPanelCollapsed =
+                state.IsNavigationPanelCollapsed ?? false;
             IsDark = state.IsDark ?? true;
             SukiColor = string.IsNullOrWhiteSpace(state.SukiColor) ? "Blue" : state.SukiColor;
             UiTextScale = ClampScale(state.UiTextScale, 1, 0.5, 1.75);
@@ -102,22 +108,30 @@ internal sealed class EditorShellStateService
         ProductionId = productionId ?? "";
     }
 
-    public void Save(EditorSessionHistoryState? sessionHistory = null)
+    public void Save(
+        EditorSessionHistoryState? sessionHistory = null,
+        EditorNavigationPanelState? navigationPanel = null)
     {
         try
         {
             var path = ShellStatePath();
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
 
+            var navigationState = navigationPanel
+                ?? new EditorNavigationPanelState(
+                    false,
+                    _shellColumns.ColumnDefinitions[0].ActualWidth);
             var state = new ShellWindowState
             {
                 Width = _window.Width,
                 Height = _window.Height,
                 PositionX = _window.Position.X,
                 PositionY = _window.Position.Y,
-                LeftPanelWidth = _shellColumns.ColumnDefinitions[0].ActualWidth,
+                LeftPanelWidth = navigationState.ExpandedWidth,
                 EditorPanelWidth = _shellColumns.ColumnDefinitions[2].ActualWidth,
                 RightPanelWidth = _shellColumns.ColumnDefinitions[4].ActualWidth,
+                IsNavigationPanelCollapsed =
+                    navigationState.IsCollapsed,
                 IsDark = IsDark,
                 SukiColor = SukiColor,
                 UiTextScale = UiTextScale,
@@ -163,6 +177,7 @@ internal sealed class EditorShellStateService
         public double LeftPanelWidth { get; init; }
         public double EditorPanelWidth { get; init; }
         public double RightPanelWidth { get; init; }
+        public bool? IsNavigationPanelCollapsed { get; init; }
         public bool? IsDark { get; init; }
         public string? SukiColor { get; init; }
         public double? UiTextScale { get; init; }

@@ -20,8 +20,16 @@
     <Grid RowDefinitions="Auto,*">
         <Border Grid.Row="0"
                 Padding="18,12">
-            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="18" VerticalAlignment="Center">
-                <StackPanel Grid.Column="0" Spacing="4">
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12" VerticalAlignment="Center">
+                <Button x:Name="NavigationPanelToggleButton"
+                        Grid.Column="0"
+                        Width="36"
+                        Height="36"
+                        Padding="0"
+                        BorderThickness="0"
+                        HorizontalContentAlignment="Center"
+                        VerticalContentAlignment="Center" />
+                <StackPanel Grid.Column="1" Spacing="4">
                     <Border x:Name="WorkspaceSwitcherBorder"
                             Width="268"
                             Height="40"
@@ -51,7 +59,7 @@
                         </Grid>
                     </Border>
                 </StackPanel>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                     <Button x:Name="UsageRefreshButton"
                             Click="OnRefreshUsageClick"
                             MinHeight="36"
@@ -115,7 +123,8 @@
                 </suki:GlassCard>
             </Border>
 
-            <GridSplitter Grid.Column="1"
+            <GridSplitter x:Name="NavigationPanelSplitter"
+                          Grid.Column="1"
                           Width="6"
                           ResizeDirection="Columns"
                           ResizeBehavior="PreviousAndNext" />
