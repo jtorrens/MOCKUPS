@@ -70,6 +70,16 @@ The common owner timeline derives:
 - absolute Preview frame projection;
 - retime projection.
 
+A serial Runtime collection may declare
+`animationTimeline.sequenceCompletionFieldIds`. When present, only completion
+from those exact declared item fields advances the next item's start. Other
+field tracks and finite actions remain on the item's local timeline and may
+extend the owner's total duration without delaying later collection items.
+Conversation uses this boundary so only the message text/write-on completion,
+followed by its hold and the next message delay, sequences message arrival;
+delivery state, media playback and full-screen actions may overlap later
+messages.
+
 An editor never stores absolute Shot frames in a child-owned keyframe.
 
 Production Screen animation authoring receives one immutable prepared snapshot

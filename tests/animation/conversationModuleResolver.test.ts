@@ -63,6 +63,7 @@ function payload(
         sourceCollectionJsonKey: "messages",
         animationTimeline: {
           sequence: "serial",
+          sequenceCompletionFieldIds: ["text"],
           preDurationFieldIds: ["delay"],
           postDurationFieldIds: ["postWriteOnHold"],
         },
@@ -223,7 +224,7 @@ test("an animated text track replaces the base write-on duration", () => {
   assert.equal(resolvedMessages[1]!.text, "second start");
 });
 
-test("a prior message extends the chain by its last keyframe or finite media end", () => {
+test("message arrival follows text completion while finite media continues independently", () => {
   const first = {
     id: "first",
     direction: "incoming",
@@ -257,11 +258,13 @@ test("a prior message extends the chain by its last keyframe or finite media end
     secondTrack,
   ];
   const resolvedText = resolveConversationModuleFrame(payload(10, textExtended, [first, second])).messages as Array<Record<string, unknown>>;
-  const resolvedMedia = resolveConversationModuleFrame(payload(12, mediaExtended, [first, second])).messages as Array<Record<string, unknown>>;
+  const beforeMediaSequence = resolveConversationModuleFrame(payload(5, mediaExtended, [first, second])).messages as Array<Record<string, unknown>>;
+  const resolvedMedia = resolveConversationModuleFrame(payload(6, mediaExtended, [first, second])).messages as Array<Record<string, unknown>>;
   // max(write 2, local end 6) + hold 1 + second delay 3 = Screen frame 10.
   assert.equal(resolvedText[1]!.text, "second start");
-  // Media is relative to text completion: text end 2 + local keyframe 1 + five finite frames,
-  // then hold 1 and the next message delay 3 place the next origin at Screen frame 12.
+  // Media remains active on the first message timeline, while text end 2 + hold 1
+  // and the next message delay 3 place the next origin at Screen frame 6.
+  assert.equal(beforeMediaSequence[1]!.text, "second base");
   assert.equal(resolvedMedia[1]!.text, "second start");
 });
 

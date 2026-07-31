@@ -212,6 +212,7 @@ var tests = new (string Name, Action Run)[]
     ("field completion dependencies reject cycles", FieldCompletionDependenciesRejectCycles),
     ("target and Screen retime preserve authored keyframes", RetimePreservesAuthoredKeyframes),
     ("non-extending fields overlap later collection items", NonExtendingFieldsOverlapLaterItems),
+    ("explicit sequence completion fields isolate independent item actions", ExplicitSequenceCompletionFieldsIsolateIndependentActions),
     ("strict validation rejects duplicate targets", StrictValidationRejectsDuplicateTargets),
     ("strict validation rejects duplicate and negative frames", StrictValidationRejectsInvalidFrames),
     ("strict validation rejects malformed entries and unsorted keyframes", StrictValidationRejectsMalformedEntriesAndOrder),
@@ -14576,6 +14577,9 @@ static void RuntimeOwnerTimelineRejectsFilteredEnvelopes()
     {
         """{"collections":[{"jsonKey":"items","animationTimeline":{"sequence":"parallel"}}]}""",
         """{"collections":[{"jsonKey":"items","animationTimeline":{"sequenceItems":"false"}}]}""",
+        """{"collections":[{"jsonKey":"items","animationTimeline":{"sequenceCompletionFieldIds":"text"}}]}""",
+        """{"collections":[{"jsonKey":"items","animationTimeline":{"sequenceCompletionFieldIds":["missing"]}}]}""",
+        """{"collections":[{"jsonKey":"items","animationTimeline":{"sequenceCompletionFieldIds":["text","text"]},"fields":[{"id":"text"}]}]}""",
         """{"collections":[{"jsonKey":"items","animationTimeline":{"ownerOrigin":null}}]}""",
         """{"collections":[{"jsonKey":"items","animationTimeline":{"ownerOrigin":{"kind":"ownerStart"}}}]}""",
         """{"collections":[{"jsonKey":"items","animationTimeline":{"ownerOrigin":{"kind":"firstMatchingValue"}}}]}""",
@@ -15016,6 +15020,47 @@ static void NonExtendingFieldsOverlapLaterItems()
     Equal(5, RuntimeAnimationFrameOrigin.ScreenFrame(contract, runtime, animation, "text", "m2"));
     Equal(32, RuntimeAnimationFrameOrigin.ScreenFrame(contract, runtime, animation, "status", "m1", 30));
     Equal(33, RuntimeAnimationFrameOrigin.DurationFrames(contract, runtime, animation, 1));
+}
+
+static void ExplicitSequenceCompletionFieldsIsolateIndependentActions()
+{
+    var contract = Object("""
+        {"collections":[{
+          "jsonKey":"messages",
+          "animationTimeline":{"sequence":"serial","sequenceCompletionFieldIds":["text"],"postDurationFieldIds":["hold"]},
+          "fields":[
+            {"id":"text","jsonKey":"text","animationTimeline":{"completion":{"baseDurationFieldId":"write","minimumEnabledKeyframes":2}}},
+            {"id":"write","jsonKey":"write"},
+            {"id":"hold","jsonKey":"hold"},
+            {"id":"play","jsonKey":"isPlaying"},
+            {"id":"duration","jsonKey":"durationFrames"}
+          ],
+          "itemActions":[{"id":"play","extendsModuleDuration":true,"playInputId":"play","durationInputId":"duration","durationEnabledInputId":"isPlaying"}]
+        }]}
+        """);
+    var runtime = Object("""
+        {"messages":[
+          {"id":"m1","text":"first","write":2,"hold":1,"isPlaying":false,"durationFrames":10},
+          {"id":"m2","text":"second","write":1,"hold":0,"isPlaying":false,"durationFrames":1}
+        ]}
+        """);
+    var animation = Object("""
+        {"schemaVersion":2,"tracks":[{"id":"play","fieldId":"play","targetId":"m1","keyframes":[
+          {"id":"p0","frame":0,"value":false},{"id":"p1","frame":1,"value":true}
+        ]}]}
+        """);
+
+    Equal(3, RuntimeAnimationFrameOrigin.ScreenFrame(
+        contract,
+        runtime,
+        animation,
+        "text",
+        "m2"));
+    Equal(11, RuntimeAnimationFrameOrigin.DurationFrames(
+        contract,
+        runtime,
+        animation,
+        1));
 }
 
 static void StrictValidationRejectsDuplicateTargets()

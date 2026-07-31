@@ -297,6 +297,17 @@ public static class RuntimeAnimationFrameOrigin
         private ItemDurations CalculateItemDurations(JsonObject collection, JsonObject item, string targetId)
         {
             var fields = Fields(collection, item);
+            var collectionTimeline = Timeline(collection);
+            HashSet<string>? sequenceCompletionFieldIds = null;
+            if (collectionTimeline.TryGetPropertyValue("sequenceCompletionFieldIds", out _))
+            {
+                sequenceCompletionFieldIds = new HashSet<string>(
+                    JsonPath.OptionalStringArray(
+                        collectionTimeline,
+                        "sequenceCompletionFieldIds",
+                        "Runtime collection animation timeline"),
+                    StringComparer.Ordinal);
+            }
             var sequenceBodyEnd = 0d;
             var spanEnd = 0d;
             foreach (var definition in fields)
@@ -308,11 +319,18 @@ public static class RuntimeAnimationFrameOrigin
                     fields,
                     new HashSet<string>(StringComparer.Ordinal)).EndExclusive;
                 spanEnd = Math.Max(spanEnd, end);
-                if (FieldTimeline(definition)["extendsOwnerDuration"]?.GetValue<bool>() != false)
+                var fieldId = JsonPath.RequiredString(
+                    definition,
+                    "id",
+                    "Runtime owner item field");
+                if (sequenceCompletionFieldIds is not null
+                        ? sequenceCompletionFieldIds.Contains(fieldId)
+                        : FieldTimeline(definition)["extendsOwnerDuration"]?.GetValue<bool>() != false)
                     sequenceBodyEnd = Math.Max(sequenceBodyEnd, end);
             }
             var actionEnd = LastFiniteActionEnd(collection, item, targetId, fields);
-            sequenceBodyEnd = Math.Max(sequenceBodyEnd, actionEnd);
+            if (sequenceCompletionFieldIds is null)
+                sequenceBodyEnd = Math.Max(sequenceBodyEnd, actionEnd);
             spanEnd = Math.Max(spanEnd, actionEnd);
             var post = StringArray(collection, "postDurationFieldIds")
                 .Sum((fieldId) => FieldValue(item, fields, fieldId));
@@ -692,11 +710,11 @@ public static class RuntimeAnimationFrameOrigin
         var collections = JsonPath.OptionalObjectArray(contract, "collections", "Runtime owner contract");
         foreach (var collection in collections)
         {
-            ValidateCollectionTimeline(collection);
             var fields = JsonPath.OptionalObjectArray(
                 collection,
                 "fields",
                 "Runtime owner collection");
+            ValidateCollectionTimeline(collection, fields);
             foreach (var field in fields)
             {
                 ValidateFieldTimeline(field);
@@ -820,7 +838,9 @@ public static class RuntimeAnimationFrameOrigin
                 "Runtime animation field animationTimeline must be an object or the explicit null sentinel.");
     }
 
-    private static void ValidateCollectionTimeline(JsonObject collection)
+    private static void ValidateCollectionTimeline(
+        JsonObject collection,
+        IReadOnlyList<JsonObject> fields)
     {
         var timeline = Timeline(collection);
         if (timeline.TryGetPropertyValue("sequence", out _)
@@ -845,6 +865,33 @@ public static class RuntimeAnimationFrameOrigin
             timeline,
             "postDurationFieldIds",
             "Runtime collection animation timeline");
+        if (timeline.TryGetPropertyValue("sequenceCompletionFieldIds", out _))
+        {
+            var sequenceFieldIds = JsonPath.OptionalStringArray(
+                timeline,
+                "sequenceCompletionFieldIds",
+                "Runtime collection animation timeline");
+            var declaredFieldIds = fields
+                .Select((field) => JsonPath.RequiredString(
+                    field,
+                    "id",
+                    "Runtime owner collection fields"))
+                .ToHashSet(StringComparer.Ordinal);
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var fieldId in sequenceFieldIds)
+            {
+                if (!seen.Add(fieldId))
+                {
+                    throw new InvalidOperationException(
+                        $"Runtime collection sequenceCompletionFieldIds contains duplicate field '{fieldId}'.");
+                }
+                if (!declaredFieldIds.Contains(fieldId))
+                {
+                    throw new InvalidOperationException(
+                        $"Runtime collection sequenceCompletionFieldIds references missing field '{fieldId}'.");
+                }
+            }
+        }
 
         var ownerOrigin = JsonPath.OptionalObject(
             timeline,

@@ -35,8 +35,8 @@ export class RuntimeOwnerTimeline {
     const collections = optionalObjectArray(contract, "collections", "runtime owner contract");
     const collectionKeys = new Set<string>();
     for (const collection of collections) {
-      validateCollectionTimeline(collection);
       const directFields = optionalObjectArray(collection, "fields", "runtime owner collection");
+      validateCollectionTimeline(collection, directFields);
       for (const field of directFields) {
         validateFieldTimeline(field);
       }
@@ -203,6 +203,18 @@ export class RuntimeOwnerTimeline {
 
   private itemDurations(collection: JsonRecord, item: JsonRecord, targetId: string) {
     const fields = itemFields(collection, item);
+    const collectionTimeline = optionalObject(
+      collection,
+      "animationTimeline",
+      "runtime owner collection animation timeline",
+    );
+    const sequenceCompletionFieldIds = Object.hasOwn(collectionTimeline, "sequenceCompletionFieldIds")
+      ? new Set(optionalStringArray(
+        collectionTimeline,
+        "sequenceCompletionFieldIds",
+        "runtime collection animation timeline",
+      ))
+      : undefined;
     let sequenceBodyEnd = 0;
     let spanEnd = 0;
     for (const definition of fields) {
@@ -214,12 +226,15 @@ export class RuntimeOwnerTimeline {
         new Set(),
       ).endExclusive;
       spanEnd = Math.max(spanEnd, end);
-      if (optionalFieldTimeline(definition, "runtime animation field timeline").extendsOwnerDuration !== false) {
+      const fieldId = requiredString(definition, "id", "runtime owner item field");
+      if (sequenceCompletionFieldIds
+        ? sequenceCompletionFieldIds.has(fieldId)
+        : optionalFieldTimeline(definition, "runtime animation field timeline").extendsOwnerDuration !== false) {
         sequenceBodyEnd = Math.max(sequenceBodyEnd, end);
       }
     }
     const actionEnd = this.lastFiniteActionEnd(collection, item, targetId, fields);
-    sequenceBodyEnd = Math.max(sequenceBodyEnd, actionEnd);
+    if (!sequenceCompletionFieldIds) sequenceBodyEnd = Math.max(sequenceBodyEnd, actionEnd);
     spanEnd = Math.max(spanEnd, actionEnd);
     const post = optionalStringArray(
       optionalObject(collection, "animationTimeline", "runtime owner collection animation timeline"),
@@ -485,7 +500,7 @@ function requiredBooleanValue(value: unknown, path: string) {
   return value;
 }
 
-function validateCollectionTimeline(collection: JsonRecord) {
+function validateCollectionTimeline(collection: JsonRecord, fields: JsonRecord[]) {
   const timeline = optionalObject(
     collection,
     "animationTimeline",
@@ -500,6 +515,25 @@ function validateCollectionTimeline(collection: JsonRecord) {
   }
   optionalStringArray(timeline, "preDurationFieldIds", "runtime collection animation timeline");
   optionalStringArray(timeline, "postDurationFieldIds", "runtime collection animation timeline");
+  if (Object.hasOwn(timeline, "sequenceCompletionFieldIds")) {
+    const sequenceFieldIds = optionalStringArray(
+      timeline,
+      "sequenceCompletionFieldIds",
+      "runtime collection animation timeline",
+    );
+    const declaredFieldIds = new Set(fields.map((field) =>
+      requiredString(field, "id", "runtime owner collection fields")));
+    const seen = new Set<string>();
+    for (const fieldId of sequenceFieldIds) {
+      if (seen.has(fieldId)) {
+        throw new Error(`runtime collection sequenceCompletionFieldIds contains duplicate field '${fieldId}'`);
+      }
+      seen.add(fieldId);
+      if (!declaredFieldIds.has(fieldId)) {
+        throw new Error(`runtime collection sequenceCompletionFieldIds references missing field '${fieldId}'`);
+      }
+    }
+  }
 
   const ownerOrigin = optionalObject(
     timeline,

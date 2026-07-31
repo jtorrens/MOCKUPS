@@ -133,6 +133,58 @@ test("finite runtime action durations require positive JSON numbers", () => {
   ));
 });
 
+test("explicit collection sequence completion fields do not delay later items with independent actions", () => {
+  const sequenceContract = {
+    collections: [{
+      jsonKey: "messages",
+      animationTimeline: {
+        sequence: "serial",
+        sequenceCompletionFieldIds: ["text"],
+        postDurationFieldIds: ["hold"],
+      },
+      fields: [
+        {
+          id: "text",
+          jsonKey: "text",
+          animationTimeline: { completion: { baseDurationFieldId: "write", minimumEnabledKeyframes: 2 } },
+        },
+        { id: "write", jsonKey: "write" },
+        { id: "hold", jsonKey: "hold" },
+        { id: "play", jsonKey: "isPlaying" },
+        { id: "duration", jsonKey: "durationFrames" },
+      ],
+      itemActions: [{
+        id: "play",
+        extendsModuleDuration: true,
+        playInputId: "play",
+        durationInputId: "duration",
+        durationEnabledInputId: "isPlaying",
+      }],
+    }],
+  };
+  const sequenceRuntime = {
+    messages: [
+      { id: "first", text: "first", write: 2, hold: 1, isPlaying: false, durationFrames: 10 },
+      { id: "second", text: "second", write: 1, hold: 0, isPlaying: false, durationFrames: 1 },
+    ],
+  };
+  const sequenceAnimation = {
+    tracks: [{
+      fieldId: "play",
+      targetId: "first",
+      keyframes: [{ frame: 0, value: false }, { frame: 1, value: true }],
+    }],
+  };
+  const timeline = new RuntimeOwnerTimeline(
+    sequenceContract,
+    sequenceRuntime,
+    sequenceAnimation,
+  );
+
+  assert.equal(timeline.itemStartFrame("second"), 3);
+  assert.equal(timeline.durationFrames, 11);
+});
+
 test("runtime owner timeline rejects filtered contract envelopes", () => {
   assert.doesNotThrow(() => new RuntimeOwnerTimeline({}, {}, {}));
   assert.doesNotThrow(() => new RuntimeOwnerTimeline({}, {}, {
@@ -291,6 +343,9 @@ test("runtime owner timeline rejects filtered contract envelopes", () => {
   const invalidTimelineContracts: Array<Record<string, unknown>> = [
     { collections: [{ jsonKey: "items", animationTimeline: { sequence: "parallel" } }] },
     { collections: [{ jsonKey: "items", animationTimeline: { sequenceItems: "false" } }] },
+    { collections: [{ jsonKey: "items", animationTimeline: { sequenceCompletionFieldIds: "text" } }] },
+    { collections: [{ jsonKey: "items", animationTimeline: { sequenceCompletionFieldIds: ["missing"] } }] },
+    { collections: [{ jsonKey: "items", animationTimeline: { sequenceCompletionFieldIds: ["text", "text"] }, fields: [{ id: "text" }] }] },
     { collections: [{ jsonKey: "items", animationTimeline: { ownerOrigin: null } }] },
     { collections: [{ jsonKey: "items", animationTimeline: { ownerOrigin: { kind: "ownerStart" } } }] },
     { collections: [{ jsonKey: "items", animationTimeline: { ownerOrigin: { kind: "firstMatchingValue" } } }] },
@@ -304,8 +359,11 @@ test("runtime owner timeline rejects filtered contract envelopes", () => {
     { inputs: [{ id: "field", animationTimeline: { completion: { baseDurationFieldId: "duration", trackOverride: "first" } } }] },
     { inputs: [{ id: "field", animationTimeline: { completion: { baseDurationFieldId: "duration", minimumEnabledKeyframes: 1 } } }] },
   ];
-  for (const invalidContract of invalidTimelineContracts) {
-    assert.throws(() => new RuntimeOwnerTimeline(invalidContract, {}, {}));
+  for (const [index, invalidContract] of invalidTimelineContracts.entries()) {
+    assert.throws(
+      () => new RuntimeOwnerTimeline(invalidContract, {}, {}),
+      `invalid timeline contract ${index}`,
+    );
   }
 
   const missingDurationField = {
