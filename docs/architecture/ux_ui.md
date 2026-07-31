@@ -156,6 +156,14 @@ block outline also becomes amber; when its detent is the playhead, the playhead
 becomes amber as well. The prototype interaction is session-only and does not
 alter authored timing.
 
+Every collection-item block starts at its resolved appearance in the Screen.
+If its collection declares pre-duration fields, that delay is drawn with the
+same subdued diagonal hatch inside the leading part of the block, and the
+item's local frame zero begins where the hatch ends. Collections without a
+declared delay use zero and therefore show no hatched segment. Moving the
+session-only block carries the delay segment with it and does not rewrite the
+item's local keyframes.
+
 A compact scale control sits at the right end of the tick band. Its visible
 center tick and pointer detent restore `1:1`, where the viewport is exactly the
 declared Screen range. Moving right zooms in; moving left zooms out and reveals

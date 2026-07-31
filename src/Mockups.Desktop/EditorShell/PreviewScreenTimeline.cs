@@ -15,6 +15,7 @@ internal sealed record PreviewScreenTimelineItem(
     string Id,
     string Label,
     int StartFrame,
+    int DelayFrames,
     int EndFrame);
 
 internal sealed record PreviewScreenTimelineCollection(
@@ -301,7 +302,7 @@ internal static class PreviewScreenTimelineSnapshotFactory
                             item,
                             "id",
                             $"Screen Timeline collection '{collection.Id}' item");
-                        var start = Math.Clamp(
+                        var ownerZero = Math.Clamp(
                             RuntimeAnimationFrameOrigin.ScreenFrameForOwnerFrame(
                                 contract,
                                 runtime,
@@ -311,6 +312,16 @@ internal static class PreviewScreenTimelineSnapshotFactory
                                 themeTokens),
                             0,
                             Math.Max(0, range.ContentDurationFrames - 1));
+                        var start = Math.Clamp(
+                            RuntimeAnimationFrameOrigin.OwnerAppearanceScreenFrame(
+                                contract,
+                                runtime,
+                                animation,
+                                itemId,
+                                themeTokens),
+                            0,
+                            ownerZero);
+                        var delayFrames = Math.Max(0, ownerZero - start);
                         var naturalDuration = RuntimeAnimationFrameOrigin.OwnerNaturalDuration(
                             contract,
                             runtime,
@@ -339,6 +350,7 @@ internal static class PreviewScreenTimelineSnapshotFactory
                             itemId,
                             label,
                             start,
+                            delayFrames,
                             end);
                     })
                     .ToList();
@@ -622,7 +634,8 @@ internal sealed class PreviewScreenTimelineSurface : Border
                     laneKey,
                     initial.StartFrame,
                     initial.EndFrame,
-                    isGeneral: false);
+                    isGeneral: false,
+                    delayFrames: item.DelayFrames);
                 var row = AddTimelineRow(
                     timeline,
                     item.Label,
@@ -672,7 +685,8 @@ internal sealed class PreviewScreenTimelineSurface : Border
         string key,
         int startFrame,
         int endFrame,
-        bool isGeneral)
+        bool isGeneral,
+        int delayFrames = 0)
     {
         var lane = new PreviewScreenTimelineLane(
             snapshot,
@@ -682,6 +696,7 @@ internal sealed class PreviewScreenTimelineSurface : Border
             startFrame,
             endFrame,
             isGeneral,
+            delayFrames,
             LaneSnapTargets);
         lane.BoundsChanged += (_, bounds) =>
         {
@@ -1090,6 +1105,7 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
     private const double ExitHandleWidth = 12;
     private readonly string _key;
     private readonly bool _isGeneral;
+    private readonly int _delayFrames;
     private readonly Func<PreviewScreenTimelineLane, IReadOnlyList<int>>
         _snapTargets;
     private int _startFrame;
@@ -1107,11 +1123,13 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
         int startFrame,
         int endFrame,
         bool isGeneral,
+        int delayFrames,
         Func<PreviewScreenTimelineLane, IReadOnlyList<int>> snapTargets)
         : base(snapshot, viewport)
     {
         _key = key;
         _isGeneral = isGeneral;
+        _delayFrames = Math.Max(0, delayFrames);
         _snapTargets = snapTargets;
         _startFrame = Math.Max(0, startFrame);
         _endFrame = Math.Max(_startFrame + 1, endFrame);
@@ -1127,6 +1145,7 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
 
     public string Key => _key;
     public int StartFrame => _startFrame;
+    public int DelayFrames => _delayFrames;
     public int EndFrame => _endFrame;
     public event EventHandler<PreviewScreenTimelineLaneBounds>? BoundsChanged;
     public event EventHandler<int?>? SnapGuideChanged;
@@ -1153,6 +1172,17 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
             block,
             4,
             4);
+        if (!_isGeneral && _delayFrames > 0)
+        {
+            var delayRight = Math.Min(right, X(_startFrame + _delayFrames));
+            PreviewScreenTimelineHatch.Draw(
+                context,
+                new Rect(
+                    left,
+                    block.Top,
+                    Math.Max(0, delayRight - left),
+                    block.Height));
+        }
         if (!_isGeneral)
         {
             context.DrawLine(
@@ -1405,10 +1435,6 @@ internal sealed class PreviewScreenTimelineZoomVisual : Control
 
 internal sealed class PreviewScreenTimelineBackdrop : PreviewScreenTimelineTrack
 {
-    private static readonly Pen HatchPen = new(
-        new SolidColorBrush(Color.FromArgb(35, 143, 152, 168)),
-        1);
-
     public PreviewScreenTimelineBackdrop(
         PreviewScreenTimelineSnapshot snapshot,
         PreviewScreenTimelineViewport viewport)
@@ -1422,8 +1448,10 @@ internal sealed class PreviewScreenTimelineBackdrop : PreviewScreenTimelineTrack
         base.Render(context);
         var zeroX = X(0);
         var endX = X(Snapshot.ContentDurationFrames);
-        DrawHatch(context, new Rect(0, 0, zeroX, Bounds.Height));
-        DrawHatch(
+        PreviewScreenTimelineHatch.Draw(
+            context,
+            new Rect(0, 0, zeroX, Bounds.Height));
+        PreviewScreenTimelineHatch.Draw(
             context,
             new Rect(
                 endX,
@@ -1432,7 +1460,15 @@ internal sealed class PreviewScreenTimelineBackdrop : PreviewScreenTimelineTrack
                 Bounds.Height));
     }
 
-    private static void DrawHatch(
+}
+
+internal static class PreviewScreenTimelineHatch
+{
+    private static readonly Pen HatchPen = new(
+        new SolidColorBrush(Color.FromArgb(35, 143, 152, 168)),
+        1);
+
+    public static void Draw(
         DrawingContext context,
         Rect region)
     {

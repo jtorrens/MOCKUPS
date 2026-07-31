@@ -33,6 +33,14 @@ persistent Screen-duration trimming is enabled, the product must explicitly
 define what happens to keyframes that would fall outside the shortened range;
 the editor must not silently choose a destructive policy.
 
+Each collection lane begins at the parent-owned appearance frame resolved by
+the common owner timeline. When that collection declares
+`preDurationFieldIds`, the interval between appearance and the item's local
+frame zero is the resolved delay and is shown as a hatched segment inside the
+same lane. Moving the prototype lane keeps that segment attached to the item;
+local keyframes remain relative to the zero immediately after it. A collection
+without `preDurationFieldIds` has a zero-length delay by the same rule.
+
 ## Temporal ownership
 
 Every temporal entity follows one rule:

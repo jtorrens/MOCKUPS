@@ -76,6 +76,14 @@ public static class RuntimeAnimationFrameOrigin
         JsonObject? themeTokens = null) =>
         Model(contract, runtime, animation, themeTokens: themeTokens).ScreenFrameForOwnerFrame(targetId, ownerFrame);
 
+    public static int OwnerAppearanceScreenFrame(
+        JsonObject contract,
+        JsonObject runtime,
+        JsonObject animation,
+        string targetId,
+        JsonObject? themeTokens = null) =>
+        Model(contract, runtime, animation, themeTokens: themeTokens).OwnerAppearanceScreenFrame(targetId);
+
     public static double FieldOwnerFrameOrigin(
         JsonObject contract,
         JsonObject runtime,
@@ -157,13 +165,17 @@ public static class RuntimeAnimationFrameOrigin
                     var fields = Fields(collection, item);
                     var pre = StringArray(collection, "preDurationFieldIds")
                         .Sum((fieldId) => FieldValue(item, fields, fieldId));
-                    var start = (sequenceItems ? cursor : ItemOwnerOrigin(collection, item)) + pre;
+                    var appearance = sequenceItems
+                        ? cursor
+                        : ItemOwnerOrigin(collection, item);
+                    var start = appearance + pre;
                     var durations = CalculateItemDurations(collection, item, targetId);
                     var effectiveSpan = TargetDuration(targetId, durations.Span);
                     var effectiveSequence = Scale(durations.Sequence, durations.Span, effectiveSpan);
                     if (!_items.TryAdd(targetId, new ItemTiming(
                         collection,
                         item,
+                        appearance,
                         start,
                         durations.Span,
                         effectiveSpan,
@@ -219,6 +231,14 @@ public static class RuntimeAnimationFrameOrigin
                 rootNatural = item.RootStart + Scale(ownerFrame, item.NaturalSpan, item.EffectiveSpan);
             }
             return Round(Scale(rootNatural, _naturalDuration, _effectiveDuration));
+        }
+
+        public int OwnerAppearanceScreenFrame(string targetId)
+        {
+            if (string.IsNullOrWhiteSpace(targetId)) return 0;
+            return _items.TryGetValue(targetId, out var item)
+                ? Round(Scale(item.RootAppearance, _naturalDuration, _effectiveDuration))
+                : 0;
         }
 
         public double FieldOwnerFrameOrigin(string fieldId, string targetId)
@@ -611,6 +631,7 @@ public static class RuntimeAnimationFrameOrigin
         private sealed record ItemTiming(
             JsonObject Collection,
             JsonObject Item,
+            double RootAppearance,
             double RootStart,
             double NaturalSpan,
             double EffectiveSpan,

@@ -14529,7 +14529,7 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
         "Item",
         []);
     var preview = Object(
-        """{"items":[{"id":"item_1"},{"id":"item_2"}]}""");
+        """{"items":[{"id":"item_1","delay":4},{"id":"item_2","delay":0}]}""");
     var contract =
         """
         {
@@ -14538,8 +14538,11 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
             "label": "Items",
             "jsonKey": "items",
             "itemLabel": "Item",
-            "fields": [],
-            "animationTimeline": {"sequenceItems": true}
+            "fields": [{"id":"delay","jsonKey":"delay"}],
+            "animationTimeline": {
+              "sequenceItems": true,
+              "preDurationFieldIds": ["delay"]
+            }
           }]
         }
         """;
@@ -14570,6 +14573,12 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
         new PreviewScreenTimelineRange(20, 100, 12));
     Equal(1, resolved.Collections.Count);
     Equal(2, resolved.Collections[0].Items.Count);
+    Equal(0, resolved.Collections[0].Items[0].StartFrame);
+    Equal(4, resolved.Collections[0].Items[0].DelayFrames);
+    Equal(5, resolved.Collections[0].Items[0].EndFrame);
+    Equal(5, resolved.Collections[0].Items[1].StartFrame);
+    Equal(0, resolved.Collections[0].Items[1].DelayFrames);
+    Equal(6, resolved.Collections[0].Items[1].EndFrame);
     True(resolved.Collections[0].Items
         .All((item) => item.StartFrame >= 0
             && item.EndFrame > item.StartFrame
@@ -15026,6 +15035,16 @@ static void TargetFieldsUseRelativeOrigins()
         """);
     Equal(2, RuntimeAnimationFrameOrigin.ScreenFrame(contract, runtime, "text", "m1"));
     Equal(10, RuntimeAnimationFrameOrigin.ScreenFrame(contract, runtime, "text", "m2"));
+    Equal(0, RuntimeAnimationFrameOrigin.OwnerAppearanceScreenFrame(
+        contract,
+        runtime,
+        new JsonObject(),
+        "m1"));
+    Equal(6, RuntimeAnimationFrameOrigin.OwnerAppearanceScreenFrame(
+        contract,
+        runtime,
+        new JsonObject(),
+        "m2"));
 }
 
 static void ParallelCollectionTargetsShareScreenOrigin()
