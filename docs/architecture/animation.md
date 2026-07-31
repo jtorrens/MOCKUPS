@@ -222,6 +222,14 @@ amber; preroll and postroll boundaries remain neutral, diagonally hatched
 regions. Collection collapse and prototype block edits are session-only and do
 not rewrite owner timing or local keyframes.
 
+The Screen Timeline viewport is independent of the Screen duration contract.
+At `1:1` it presents the declared Screen range. Session-only zoom can expand the
+viewport around the current playhead to expose item exits and, later, keyframes
+outside that range without clamping or retiming them. Collection item entry
+cannot move before Screen frame zero; its outgoing edge may exceed the declared
+Screen duration. Viewport scale never changes completion dependencies or the
+Screen's calculated or explicit duration.
+
 ## Frame-by-frame Preview
 
 Animation is resolved frame data. For every requested frame:

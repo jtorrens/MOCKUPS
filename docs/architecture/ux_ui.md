@@ -154,6 +154,15 @@ edges snap to the playhead and the boundaries of other visible blocks, showing
 one thin amber guide across the complete timeline while snapped. The prototype
 interaction is session-only and does not alter authored timing.
 
+A compact scale control sits at the right end of the tick band. Its visible
+center tick and pointer detent restore `1:1`, where the viewport is exactly the
+declared Screen range. Moving right zooms in; moving left zooms out and reveals
+additional time before and after that range. Each scale change anchors on the
+current playhead position. Scale and viewport are session-only. Collection item
+entry remains at or after Screen frame zero, while an item's outgoing edge may
+extend beyond the declared Screen range and becomes directly editable when the
+expanded viewport reveals it.
+
 The visible Preview utility headers remain in one horizontal row at the
 supported 1040 px minimum and the 1440 px default window widths. The Preview
 column has a real minimum independent of star sizing. The setup section uses

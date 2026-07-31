@@ -6186,6 +6186,11 @@ static void PreviewShellVisualTreeIsResponsive()
                 .OfType<PreviewScreenTimelineRuler>()
                 .SingleOrDefault());
             True(timelineRuler.Background is not null);
+            var timelineZoom = Required(timelineSurface
+                .GetVisualDescendants()
+                .OfType<PreviewScreenTimelineZoomControl>()
+                .SingleOrDefault());
+            Equal(0d, timelineZoom.Value);
             True(timelineSurface
                 .GetVisualDescendants()
                 .OfType<PreviewScreenTimelineLane>()
@@ -14399,7 +14404,7 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
             frameDelta: -30,
             contentDurationFrames: 100));
     Equal(
-        (80, 100),
+        (99, 119),
         PreviewScreenTimelineMath.Move(
             startFrame: 8,
             endFrame: 28,
@@ -14409,14 +14414,38 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
         9,
         PreviewScreenTimelineMath.ResizeEnd(
             startFrame: 8,
-            requestedEndFrame: -12,
-            contentDurationFrames: 100));
+            requestedEndFrame: -12));
     Equal(
-        100,
+        130,
         PreviewScreenTimelineMath.ResizeEnd(
             startFrame: 8,
-            requestedEndFrame: 130,
-            contentDurationFrames: 100));
+            requestedEndFrame: 130));
+
+    var fitViewport = PreviewScreenTimelineMath.Viewport(
+        snapshot,
+        anchorFrame: 40,
+        zoom: 0);
+    Equal(
+        new PreviewScreenTimelineViewport(-20, 111),
+        fitViewport);
+    var zoomedOutViewport = PreviewScreenTimelineMath.Viewport(
+        snapshot,
+        anchorFrame: 40,
+        zoom: -1);
+    True(zoomedOutViewport.MinimumFrame < snapshot.MinimumFrame);
+    True(zoomedOutViewport.MaximumFrame > snapshot.MaximumFrame);
+    var zoomedInViewport = PreviewScreenTimelineMath.Viewport(
+        snapshot,
+        anchorFrame: 40,
+        zoom: 1);
+    True(zoomedInViewport.MaximumFrame - zoomedInViewport.MinimumFrame
+        < snapshot.MaximumFrame - snapshot.MinimumFrame);
+    Equal(0d, PreviewScreenTimelineZoomControl.ValueAt(44, 88));
+    Equal(0d, PreviewScreenTimelineZoomControl.ValueAt(49, 88));
+    Equal(-1d, PreviewScreenTimelineZoomControl.ValueAt(0, 88));
+    Equal(1d, PreviewScreenTimelineZoomControl.ValueAt(88, 88));
+    True(PreviewScreenTimelineZoomControl.ValueAt(70, 88) > 0);
+    True(PreviewScreenTimelineZoomControl.ValueAt(18, 88) < 0);
 
     var playheadSnap = PreviewScreenTimelineMath.SnapFrame(
         x: 267,
@@ -14456,12 +14485,29 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
     var resizedToDetent = PreviewScreenTimelineMath.ResizeEndWithSnap(
         startFrame: 20,
         requestedEndFrame: 69,
-        contentDurationFrames: 100,
         laneWidth: 500,
         minimumTimelineFrame: snapshot.MinimumFrame,
         maximumTimelineFrame: snapshot.MaximumFrame,
         candidates: [70]);
     Equal((70, (int?)70), resizedToDetent);
+    var movedBeyondScreen = PreviewScreenTimelineMath.MoveWithSnap(
+        startFrame: 70,
+        endFrame: 110,
+        frameDelta: 29,
+        contentDurationFrames: 100,
+        laneWidth: 500,
+        minimumTimelineFrame: snapshot.MinimumFrame,
+        maximumTimelineFrame: snapshot.MaximumFrame,
+        candidates: []);
+    Equal((99, 139, (int?)null), movedBeyondScreen);
+    var resizedBeyondScreen = PreviewScreenTimelineMath.ResizeEndWithSnap(
+        startFrame: 20,
+        requestedEndFrame: 145,
+        laneWidth: 500,
+        minimumTimelineFrame: snapshot.MinimumFrame,
+        maximumTimelineFrame: snapshot.MaximumFrame,
+        candidates: []);
+    Equal((145, (int?)null), resizedBeyondScreen);
 
     var node = new ProjectTreeNode(
         ProjectTreeNodeKind.ModuleInstance,

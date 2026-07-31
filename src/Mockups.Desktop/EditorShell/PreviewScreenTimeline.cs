@@ -39,6 +39,10 @@ internal sealed record PreviewScreenTimelineRange(
     int ContentDurationFrames,
     int PostRollFrames);
 
+internal sealed record PreviewScreenTimelineViewport(
+    int MinimumFrame,
+    int MaximumFrame);
+
 internal static class PreviewScreenTimelineMath
 {
     public const double SnapDistancePixels = 7;
@@ -79,19 +83,15 @@ internal static class PreviewScreenTimelineMath
         int contentDurationFrames)
     {
         var duration = Math.Max(1, endFrame - startFrame);
-        var maximumStart = Math.Max(0, contentDurationFrames - duration);
+        var maximumStart = Math.Max(0, contentDurationFrames - 1);
         var nextStart = Math.Clamp(startFrame + frameDelta, 0, maximumStart);
         return (nextStart, nextStart + duration);
     }
 
     public static int ResizeEnd(
         int startFrame,
-        int requestedEndFrame,
-        int contentDurationFrames) =>
-        Math.Clamp(
-            requestedEndFrame,
-            Math.Min(contentDurationFrames, startFrame + 1),
-            contentDurationFrames);
+        int requestedEndFrame) =>
+        Math.Max(requestedEndFrame, startFrame + 1);
 
     public static (int Frame, bool IsSnapped) SnapFrame(
         double x,
@@ -134,7 +134,7 @@ internal static class PreviewScreenTimelineMath
         var desiredStart = Math.Clamp(
             startFrame + frameDelta,
             0,
-            Math.Max(0, contentDurationFrames - duration));
+            Math.Max(0, contentDurationFrames - 1));
         var desiredEnd = desiredStart + duration;
         var threshold = SnapThresholdFrames(
             laneWidth,
@@ -149,7 +149,7 @@ internal static class PreviewScreenTimelineMath
             })
             .Where((match) => Math.Abs(match.Offset) <= threshold)
             .Where((match) => desiredStart + match.Offset >= 0
-                && desiredEnd + match.Offset <= contentDurationFrames)
+                && desiredStart + match.Offset < contentDurationFrames)
             .OrderBy((match) => Math.Abs(match.Offset))
             .ThenBy((match) => match.Candidate)
             .Select((match) => new PreviewScreenTimelineSnapMatch(
@@ -177,31 +177,24 @@ internal static class PreviewScreenTimelineMath
     public static (int EndFrame, int? SnapFrame) ResizeEndWithSnap(
         int startFrame,
         double requestedEndFrame,
-        int contentDurationFrames,
         double laneWidth,
         int minimumTimelineFrame,
         int maximumTimelineFrame,
         IReadOnlyList<int> candidates)
     {
-        var desired = Math.Clamp(
-            requestedEndFrame,
-            Math.Min(contentDurationFrames, startFrame + 1),
-            contentDurationFrames);
+        var desired = Math.Max(requestedEndFrame, startFrame + 1);
         var snap = ClosestSnap(
             desired,
             SnapThresholdFrames(
                 laneWidth,
                 minimumTimelineFrame,
                 maximumTimelineFrame),
-            candidates.Where((candidate) =>
-                candidate > startFrame
-                && candidate <= contentDurationFrames));
+            candidates.Where((candidate) => candidate > startFrame));
         return snap is { } snapped
             ? (snapped, snapped)
             : (ResizeEnd(
                 startFrame,
-                (int)Math.Round(desired, MidpointRounding.AwayFromZero),
-                contentDurationFrames), null);
+                (int)Math.Round(desired, MidpointRounding.AwayFromZero)), null);
     }
 
     public static double RawFrame(
@@ -212,6 +205,42 @@ internal static class PreviewScreenTimelineMath
         minimumFrame
         + Math.Clamp(x / Math.Max(1, width), 0, 1)
         * Math.Max(0, maximumFrame - minimumFrame);
+
+    public static double UnboundedFrame(
+        double x,
+        double width,
+        int minimumFrame,
+        int maximumFrame) =>
+        minimumFrame
+        + x / Math.Max(1, width)
+        * Math.Max(0, maximumFrame - minimumFrame);
+
+    public static PreviewScreenTimelineViewport Viewport(
+        PreviewScreenTimelineSnapshot snapshot,
+        int anchorFrame,
+        double zoom)
+    {
+        var value = Math.Clamp(zoom, -1, 1);
+        if (Math.Abs(value) < 0.0001)
+            return new PreviewScreenTimelineViewport(
+                snapshot.MinimumFrame,
+                snapshot.MaximumFrame);
+        var baseSpan = Math.Max(
+            1,
+            snapshot.MaximumFrame - snapshot.MinimumFrame);
+        var scale = Math.Pow(8, value);
+        var visibleSpan = Math.Max(8, baseSpan / scale);
+        var anchorFraction = Fraction(
+            anchorFrame,
+            snapshot.MinimumFrame,
+            snapshot.MaximumFrame);
+        var minimum = anchorFrame - anchorFraction * visibleSpan;
+        return new PreviewScreenTimelineViewport(
+            (int)Math.Floor(minimum),
+            Math.Max(
+                (int)Math.Floor(minimum) + 1,
+                (int)Math.Ceiling(minimum + visibleSpan)));
+    }
 
     private static double SnapThresholdFrames(
         double width,
@@ -449,9 +478,14 @@ internal sealed class PreviewScreenTimelineSurface : Border
         _laneState = new(StringComparer.Ordinal);
     private readonly Dictionary<string, bool>
         _collapsedCollections = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, double>
+        _zoomByScreen = new(StringComparer.Ordinal);
     private readonly List<int> _keyframeFrames = [];
+    private PreviewScreenTimelineRuler? _ruler;
+    private PreviewScreenTimelineBackdrop? _backdrop;
     private PreviewScreenTimelineOverlay? _overlay;
     private PreviewScreenTimelineSnapshot? _snapshot;
+    private PreviewScreenTimelineViewport? _viewport;
     private int? _playheadSnapFrame;
     private int _frame;
 
@@ -482,7 +516,10 @@ internal sealed class PreviewScreenTimelineSurface : Border
     {
         _snapshot = null;
         _lanes.Clear();
+        _ruler = null;
+        _backdrop = null;
         _overlay = null;
+        _viewport = null;
         _playheadSnapFrame = null;
         _content.Children.Clear();
         _content.Children.Add(new TextBlock
@@ -497,7 +534,10 @@ internal sealed class PreviewScreenTimelineSurface : Border
     {
         _snapshot = null;
         _lanes.Clear();
+        _ruler = null;
+        _backdrop = null;
         _overlay = null;
+        _viewport = null;
         _playheadSnapFrame = null;
         _content.Children.Clear();
         _content.Children.Add(new EditorLoadingScrim());
@@ -510,6 +550,13 @@ internal sealed class PreviewScreenTimelineSurface : Border
     {
         _snapshot = snapshot;
         _frame = Math.Clamp(frame, snapshot.MinimumFrame, snapshot.MaximumFrame);
+        var zoom = _zoomByScreen.TryGetValue(snapshot.ScreenId, out var storedZoom)
+            ? storedZoom
+            : 0;
+        _viewport = PreviewScreenTimelineMath.Viewport(
+            snapshot,
+            _frame,
+            zoom);
         _playheadSnapFrame = null;
         _lanes.Clear();
         _content.Children.Clear();
@@ -517,19 +564,26 @@ internal sealed class PreviewScreenTimelineSurface : Border
 
         var timeline = new Grid
         {
-            ColumnDefinitions = new ColumnDefinitions($"{LabelWidth},*"),
+            ColumnDefinitions = new ColumnDefinitions($"{LabelWidth},*,96"),
             ColumnSpacing = 8,
             RowSpacing = 2,
         };
+        _ruler = new PreviewScreenTimelineRuler(
+            snapshot,
+            _viewport,
+            PlayheadSnapTargets,
+            OnPlayheadDragged);
         AddTimelineRow(
             timeline,
             "",
-            new PreviewScreenTimelineRuler(
-                snapshot,
-                PlayheadSnapTargets,
-                OnPlayheadDragged),
+            _ruler,
             28,
             FontWeight.Normal);
+        var zoomControl = new PreviewScreenTimelineZoomControl(zoom);
+        zoomControl.ValueChanged += (_, value) => SetZoom(value);
+        Grid.SetColumn(zoomControl, 2);
+        Grid.SetRow(zoomControl, 0);
+        timeline.Children.Add(zoomControl);
 
         var general = CreateLane(
             snapshot,
@@ -589,12 +643,13 @@ internal sealed class PreviewScreenTimelineSurface : Border
         }
 
         var rowCount = timeline.RowDefinitions.Count;
-        var backdrop = new PreviewScreenTimelineBackdrop(snapshot);
-        Grid.SetColumn(backdrop, 1);
-        Grid.SetRowSpan(backdrop, rowCount);
-        timeline.Children.Insert(0, backdrop);
+        _backdrop = new PreviewScreenTimelineBackdrop(snapshot, _viewport);
+        Grid.SetColumn(_backdrop, 1);
+        Grid.SetRowSpan(_backdrop, rowCount);
+        timeline.Children.Insert(0, _backdrop);
         _overlay = new PreviewScreenTimelineOverlay(
             snapshot,
+            _viewport,
             _frame,
             isPlayheadSnapped: false);
         Grid.SetColumn(_overlay, 1);
@@ -629,6 +684,8 @@ internal sealed class PreviewScreenTimelineSurface : Border
     {
         var lane = new PreviewScreenTimelineLane(
             snapshot,
+            _viewport ?? throw new InvalidOperationException(
+                "Screen Timeline viewport must be prepared before its lanes."),
             key,
             startFrame,
             endFrame,
@@ -674,6 +731,21 @@ internal sealed class PreviewScreenTimelineSurface : Border
         _overlay?.SetPlayhead(change.Frame, change.IsSnapped);
         UpdateFrameText();
         _setFrame(change.Frame);
+    }
+
+    private void SetZoom(double value)
+    {
+        if (_snapshot is null) return;
+        var zoom = Math.Abs(value) < 0.04 ? 0 : Math.Clamp(value, -1, 1);
+        _zoomByScreen[_snapshot.ScreenId] = zoom;
+        _viewport = PreviewScreenTimelineMath.Viewport(
+            _snapshot,
+            _frame,
+            zoom);
+        _ruler?.SetViewport(_viewport);
+        foreach (var lane in _lanes) lane.SetViewport(_viewport);
+        _backdrop?.SetViewport(_viewport);
+        _overlay?.SetViewport(_viewport);
     }
 
     private Control CreateTransport(
@@ -810,7 +882,7 @@ internal sealed class PreviewScreenTimelineSurface : Border
             Render(current);
             setCollapsed(current);
         };
-        Grid.SetColumnSpan(button, 2);
+        Grid.SetColumnSpan(button, 3);
         Grid.SetRow(button, rowIndex);
         timeline.Children.Add(button);
     }
@@ -869,28 +941,37 @@ internal sealed class PreviewScreenTimelineSurface : Border
 internal abstract class PreviewScreenTimelineTrack : Control
 {
     protected PreviewScreenTimelineTrack(
-        PreviewScreenTimelineSnapshot snapshot)
+        PreviewScreenTimelineSnapshot snapshot,
+        PreviewScreenTimelineViewport viewport)
     {
         Snapshot = snapshot;
+        Viewport = viewport;
         MinWidth = 180;
         HorizontalAlignment = HorizontalAlignment.Stretch;
     }
 
     protected PreviewScreenTimelineSnapshot Snapshot { get; }
+    protected PreviewScreenTimelineViewport Viewport { get; private set; }
+
+    public void SetViewport(PreviewScreenTimelineViewport viewport)
+    {
+        Viewport = viewport;
+        InvalidateVisual();
+    }
 
     protected double X(int frame) =>
         PreviewScreenTimelineMath.Fraction(
             frame,
-            Snapshot.MinimumFrame,
-            Snapshot.MaximumFrame)
+            Viewport.MinimumFrame,
+            Viewport.MaximumFrame)
         * Math.Max(1, Bounds.Width);
 
     protected double RawFrameAt(double x) =>
-        PreviewScreenTimelineMath.RawFrame(
+        PreviewScreenTimelineMath.UnboundedFrame(
             x,
             Bounds.Width,
-            Snapshot.MinimumFrame,
-            Snapshot.MaximumFrame);
+            Viewport.MinimumFrame,
+            Viewport.MaximumFrame);
 }
 
 internal sealed record PreviewScreenTimelinePlayheadChange(
@@ -899,28 +980,37 @@ internal sealed record PreviewScreenTimelinePlayheadChange(
 
 internal sealed class PreviewScreenTimelineRuler : Border
 {
-    private readonly PreviewScreenTimelineSnapshot _snapshot;
+    private PreviewScreenTimelineViewport _viewport;
+    private readonly PreviewScreenTimelineRulerTicks _ticks;
     private readonly Func<IReadOnlyList<int>> _snapTargets;
     private readonly Action<PreviewScreenTimelinePlayheadChange> _setFrame;
     private bool _dragging;
 
     public PreviewScreenTimelineRuler(
         PreviewScreenTimelineSnapshot snapshot,
+        PreviewScreenTimelineViewport viewport,
         Func<IReadOnlyList<int>> snapTargets,
         Action<PreviewScreenTimelinePlayheadChange> setFrame)
     {
-        _snapshot = snapshot;
+        _viewport = viewport;
         _snapTargets = snapTargets;
         _setFrame = setFrame;
         MinWidth = 180;
         HorizontalAlignment = HorizontalAlignment.Stretch;
         Background = Brushes.Transparent;
-        Child = new PreviewScreenTimelineRulerTicks(snapshot);
+        _ticks = new PreviewScreenTimelineRulerTicks(snapshot, viewport);
+        Child = _ticks;
         Cursor = new Cursor(StandardCursorType.SizeWestEast);
         PointerPressed += OnPointerPressed;
         PointerMoved += OnPointerMoved;
         PointerReleased += OnPointerReleased;
         PointerCaptureLost += (_, _) => _dragging = false;
+    }
+
+    public void SetViewport(PreviewScreenTimelineViewport viewport)
+    {
+        _viewport = viewport;
+        _ticks.SetViewport(viewport);
     }
 
     private void OnPointerPressed(object? sender, PointerPressedEventArgs args)
@@ -952,8 +1042,8 @@ internal sealed class PreviewScreenTimelineRuler : Border
         var change = PreviewScreenTimelineMath.SnapFrame(
             x,
             Bounds.Width,
-            _snapshot.MinimumFrame,
-            _snapshot.MaximumFrame,
+            _viewport.MinimumFrame,
+            _viewport.MaximumFrame,
             _snapTargets());
         _setFrame(new PreviewScreenTimelinePlayheadChange(
             change.Frame,
@@ -966,7 +1056,18 @@ internal sealed class PreviewScreenTimelineRulerTicks
 {
     public PreviewScreenTimelineRulerTicks(
         PreviewScreenTimelineSnapshot snapshot)
-        : base(snapshot)
+        : this(
+            snapshot,
+            new PreviewScreenTimelineViewport(
+                snapshot.MinimumFrame,
+                snapshot.MaximumFrame))
+    {
+    }
+
+    public PreviewScreenTimelineRulerTicks(
+        PreviewScreenTimelineSnapshot snapshot,
+        PreviewScreenTimelineViewport viewport)
+        : base(snapshot, viewport)
     {
         IsHitTestVisible = false;
     }
@@ -1008,12 +1109,13 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
 
     public PreviewScreenTimelineLane(
         PreviewScreenTimelineSnapshot snapshot,
+        PreviewScreenTimelineViewport viewport,
         string key,
         int startFrame,
         int endFrame,
         bool isGeneral,
         Func<PreviewScreenTimelineLane, IReadOnlyList<int>> snapTargets)
-        : base(snapshot)
+        : base(snapshot, viewport)
     {
         _key = key;
         _isGeneral = isGeneral;
@@ -1022,10 +1124,7 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
             startFrame,
             0,
             Math.Max(0, snapshot.ContentDurationFrames - 1));
-        _endFrame = Math.Clamp(
-            Math.Max(_startFrame + 1, endFrame),
-            _startFrame + 1,
-            snapshot.ContentDurationFrames);
+        _endFrame = Math.Max(_startFrame + 1, endFrame);
         if (!_isGeneral)
         {
             Cursor = new Cursor(StandardCursorType.SizeWestEast);
@@ -1099,8 +1198,8 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
                 pointerFrame - _dragStartFrame,
                 Snapshot.ContentDurationFrames,
                 Bounds.Width,
-                Snapshot.MinimumFrame,
-                Snapshot.MaximumFrame,
+                Viewport.MinimumFrame,
+                Viewport.MaximumFrame,
                 _snapTargets(this));
             _startFrame = next.StartFrame;
             _endFrame = next.EndFrame;
@@ -1111,10 +1210,9 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
             var next = PreviewScreenTimelineMath.ResizeEndWithSnap(
                 _startFrame,
                 pointerFrame,
-                Snapshot.ContentDurationFrames,
                 Bounds.Width,
-                Snapshot.MinimumFrame,
-                Snapshot.MaximumFrame,
+                Viewport.MinimumFrame,
+                Viewport.MaximumFrame,
                 _snapTargets(this));
             _endFrame = next.EndFrame;
             snapFrame = next.SnapFrame;
@@ -1168,6 +1266,147 @@ internal static class PreviewScreenTimelinePointer
     }
 }
 
+internal sealed class PreviewScreenTimelineZoomControl : Border
+{
+    private const double CenterDetentPixels = 6;
+    private readonly PreviewScreenTimelineZoomVisual _visual;
+    private bool _dragging;
+    private double _value;
+
+    public PreviewScreenTimelineZoomControl(double value)
+    {
+        Width = 88;
+        Height = 28;
+        Padding = new Thickness(4, 0);
+        Background = Brushes.Transparent;
+        Cursor = new Cursor(StandardCursorType.SizeWestEast);
+        _value = Math.Clamp(value, -1, 1);
+        _visual = new PreviewScreenTimelineZoomVisual(_value)
+        {
+            IsHitTestVisible = false,
+        };
+        Child = _visual;
+        PointerPressed += OnPointerPressed;
+        PointerMoved += OnPointerMoved;
+        PointerReleased += OnPointerReleased;
+        PointerCaptureLost += (_, _) => _dragging = false;
+        ToolTip.SetTip(this, "Timeline scale · center is 1:1");
+        EditorAccessibility.Describe(this, "Timeline scale; center is 1 to 1");
+    }
+
+    public event Action<object?, double>? ValueChanged;
+    public double Value => _value;
+
+    public static double ValueAt(double x, double width)
+    {
+        const double trackInset = 14;
+        var trackWidth = Math.Max(1, width - trackInset * 2);
+        var localX = Math.Clamp(x - trackInset, 0, trackWidth);
+        var centerX = trackWidth / 2;
+        return Math.Abs(localX - centerX) <= CenterDetentPixels
+            ? 0
+            : localX / trackWidth * 2 - 1;
+    }
+
+    private void OnPointerPressed(object? sender, PointerPressedEventArgs args)
+    {
+        if (!PreviewScreenTimelinePointer.IsPrimaryPress(this, args)) return;
+        _dragging = true;
+        args.Pointer.Capture(this);
+        SetFromPointer(args.GetPosition(this).X);
+        args.Handled = true;
+    }
+
+    private void OnPointerMoved(object? sender, PointerEventArgs args)
+    {
+        if (!_dragging) return;
+        SetFromPointer(args.GetPosition(this).X);
+        args.Handled = true;
+    }
+
+    private void OnPointerReleased(object? sender, PointerReleasedEventArgs args)
+    {
+        if (!_dragging) return;
+        SetFromPointer(args.GetPosition(this).X);
+        _dragging = false;
+        args.Pointer.Capture(null);
+        args.Handled = true;
+    }
+
+    private void SetFromPointer(double x)
+    {
+        var next = ValueAt(x, Bounds.Width);
+        if (Math.Abs(next - _value) < 0.0001) return;
+        _value = next;
+        _visual.SetValue(_value);
+        ValueChanged?.Invoke(this, _value);
+    }
+}
+
+internal sealed class PreviewScreenTimelineZoomVisual : Control
+{
+    private double _value;
+
+    public PreviewScreenTimelineZoomVisual(double value) => _value = value;
+
+    public void SetValue(double value)
+    {
+        _value = Math.Clamp(value, -1, 1);
+        InvalidateVisual();
+    }
+
+    public override void Render(DrawingContext context)
+    {
+        base.Render(context);
+        var centerY = Bounds.Height / 2 + 3;
+        var left = 10d;
+        var right = Math.Max(left + 1, Bounds.Width - 10);
+        var center = (left + right) / 2;
+        var brush = EditorAnimationVisuals.TimelineBrush;
+        context.DrawLine(
+            new Pen(brush, 1),
+            new Point(left, centerY),
+            new Point(right, centerY));
+        context.DrawLine(
+            new Pen(EditorAnimationVisuals.ActiveTrackBrush, 1.5),
+            new Point(center, centerY - 5),
+            new Point(center, centerY + 5));
+        var thumbX = left + (_value + 1) / 2 * (right - left);
+        context.DrawEllipse(
+            new SolidColorBrush(Color.Parse("#20252D")),
+            new Pen(
+                Math.Abs(_value) < 0.0001
+                    ? EditorAnimationVisuals.ActiveTrackBrush
+                    : brush,
+                2),
+            new Point(thumbX, centerY),
+            4,
+            4);
+        DrawScaleMark(context, left - 7, centerY, 3, brush);
+        DrawScaleMark(context, right + 7, centerY, 6, brush);
+    }
+
+    private static void DrawScaleMark(
+        DrawingContext context,
+        double centerX,
+        double baselineY,
+        double size,
+        IBrush brush)
+    {
+        var geometry = new StreamGeometry();
+        using (var drawing = geometry.Open())
+        {
+            drawing.BeginFigure(
+                new Point(centerX - size, baselineY + 2),
+                true);
+            drawing.LineTo(new Point(centerX, baselineY - size));
+            drawing.LineTo(new Point(centerX + size, baselineY + 2));
+            drawing.EndFigure(true);
+        }
+        context.DrawGeometry(brush, null, geometry);
+    }
+}
+
 internal sealed class PreviewScreenTimelineBackdrop : PreviewScreenTimelineTrack
 {
     private static readonly Pen HatchPen = new(
@@ -1175,8 +1414,9 @@ internal sealed class PreviewScreenTimelineBackdrop : PreviewScreenTimelineTrack
         1);
 
     public PreviewScreenTimelineBackdrop(
-        PreviewScreenTimelineSnapshot snapshot)
-        : base(snapshot)
+        PreviewScreenTimelineSnapshot snapshot,
+        PreviewScreenTimelineViewport viewport)
+        : base(snapshot, viewport)
     {
         IsHitTestVisible = false;
     }
@@ -1225,9 +1465,10 @@ internal sealed class PreviewScreenTimelineOverlay : PreviewScreenTimelineTrack
 
     public PreviewScreenTimelineOverlay(
         PreviewScreenTimelineSnapshot snapshot,
+        PreviewScreenTimelineViewport viewport,
         int frame,
         bool isPlayheadSnapped)
-        : base(snapshot)
+        : base(snapshot, viewport)
     {
         _frame = frame;
         _isPlayheadSnapped = isPlayheadSnapped;
