@@ -248,7 +248,7 @@ internal sealed class PreviewControlsDockController : IDisposable
             WindowStartupLocation = WindowStartupLocation.Manual,
             Content = _floatingHost,
         };
-        EditorSukiWindowTheme.ApplyDialogChrome(window, _owner);
+        EditorSukiWindowTheme.ApplyUtilityWindowChrome(window, _owner);
         window.Closing += (_, args) =>
         {
             if (_isDisposing)

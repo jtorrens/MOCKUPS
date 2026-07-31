@@ -102,6 +102,10 @@ controller or a second Preview session. While detached, the main Preview
 receives the released vertical space. Closing the tool window or using its dock
 action returns the surface and its prior dock height.
 
+Application modals always take precedence over that topmost utility window.
+While a modal is open, the detached Preview is lowered and disabled; closing
+the modal restores its prior topmost and interaction state.
+
 Floating position and size are remembered only for repeated detachments in the
 current application session. A new application session always starts docked,
 so a tool window cannot reopen outside the available displays after a monitor

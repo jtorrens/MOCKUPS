@@ -14,6 +14,7 @@ using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using Mockups.DesktopEditorShell.EditorShell;
 using Mockups.DesktopEditorShell.Integrations.ProductionOutput;
+using SukiUI.Controls;
 using System.Diagnostics;
 using System.Reflection;
 using System.IO;
@@ -5775,6 +5776,24 @@ static void PreviewControlsDetachIntoTopmostSessionWindow()
         True(ReferenceEquals(
             TopLevel.GetTopLevel(utilitySurface),
             floating));
+
+        var dialog = new SukiWindow
+        {
+            Width = 320,
+            Height = 180,
+        };
+        EditorSukiWindowTheme.ApplyDialogChrome(
+            dialog,
+            owner);
+        dialog.Show(owner);
+        Dispatcher.UIThread.RunJobs();
+        True(dialog.Topmost);
+        True(!floating.Topmost);
+        True(!floating.IsEnabled);
+        dialog.Close();
+        Dispatcher.UIThread.RunJobs();
+        True(floating.Topmost);
+        True(floating.IsEnabled);
 
         floating.Position = new PixelPoint(420, 240);
         floating.Close();

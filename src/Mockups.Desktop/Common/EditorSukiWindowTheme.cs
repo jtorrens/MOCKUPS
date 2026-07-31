@@ -70,6 +70,20 @@ internal static class EditorSukiWindowTheme
 
     public static void ApplyDialogChrome(SukiWindow dialog, Window? owner = null)
     {
+        ApplyWindowChrome(dialog, owner);
+        if (owner is not null)
+        {
+            EditorModalWindowPriority.Configure(dialog, owner);
+        }
+    }
+
+    public static void ApplyUtilityWindowChrome(SukiWindow window, Window? owner = null)
+    {
+        ApplyWindowChrome(window, owner);
+    }
+
+    private static void ApplyWindowChrome(SukiWindow dialog, Window? owner)
+    {
         EditorContextMenuBehavior.Configure(dialog);
         dialog.BackgroundStyle = SukiBackgroundStyle.Flat;
         dialog.BackgroundAnimationEnabled = false;
