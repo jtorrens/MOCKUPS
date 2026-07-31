@@ -163,6 +163,7 @@ var tests = new (string Name, Action Run)[]
     ("failed Preview preparation keeps the prior tree catalog and selection", FailedPreviewPreparationKeepsPriorSession),
     ("obsolete Preview authoring preparation cannot replace the latest selection", ObsoletePreviewAuthoringPreparationCannotCommit),
     ("obsolete interactive Preview render results are discarded", ObsoleteInteractivePreviewRenderResultsAreDiscarded),
+    ("resident Preview shell rejects changed device geometry", ResidentPreviewShellRejectsChangedDeviceGeometry),
     ("WebView script results normalize macOS and Windows encodings", WebViewScriptResultsNormalizePlatformEncodings),
     ("Preview element identification stays on the generic renderable boundary", PreviewElementIdentificationUsesRenderableIdentity),
     ("Preview authoring navigation requires an exact owner and declared slot path", PreviewAuthoringNavigationUsesExactOwnerAndSlots),
@@ -7171,6 +7172,49 @@ static void ObsoleteInteractivePreviewRenderResultsAreDiscarded()
         sequence: 4,
         latestSequence: 5,
         isPlaybackUpdate: true));
+}
+
+static void ResidentPreviewShellRejectsChangedDeviceGeometry()
+{
+    var wideMetrics = new DevicePreviewMetrics(
+        "iPhone 15 Pro Max",
+        430,
+        932,
+        0,
+        0,
+        430,
+        932,
+        55,
+        0,
+        0,
+        0,
+        0,
+        3);
+    var compactMetrics = wideMetrics with
+    {
+        Name = "iPhone 15 Pro",
+        CanvasWidth = 393,
+        ScreenWidth = 393,
+    };
+    var resident = new DesignPreviewShellIdentity(
+        wideMetrics,
+        IsDark: true,
+        ThemeName: "Android Theme Test",
+        ThemeMode: "light",
+        ScaleMode: "fit",
+        ShowDeviceFrame: true);
+    var sameGeometry = resident with { Metrics = wideMetrics with { } };
+    var changedGeometry = resident with { Metrics = compactMetrics };
+
+    True(DesignWebPreviewPane.CanPatchResidentShell(
+        resident,
+        sameGeometry));
+    True(!DesignWebPreviewPane.CanPatchResidentShell(
+        resident,
+        changedGeometry));
+    True(!DesignWebPreviewPane.CanPatchResidentShell(
+        resident,
+        resident with { ShowDeviceFrame = false }));
 }
 
 static void WebViewScriptResultsNormalizePlatformEncodings()

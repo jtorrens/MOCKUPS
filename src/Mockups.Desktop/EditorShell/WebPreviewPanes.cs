@@ -1798,6 +1798,14 @@ internal abstract class WebPreviewPane : Grid
     }
 }
 
+internal sealed record DesignPreviewShellIdentity(
+    DevicePreviewMetrics Metrics,
+    bool IsDark,
+    string ThemeName,
+    string ThemeMode,
+    string ScaleMode,
+    bool ShowDeviceFrame);
+
 internal sealed class DesignWebPreviewPane : WebPreviewPane
 {
     private readonly IProjectPathResolver _projectPaths;
@@ -1807,6 +1815,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
     private DesignPreviewUpdate? _lastRenderedUpdate;
     private string _lastRenderedFontStyleHtml = "";
     private bool _hasResidentDocument;
+    private DesignPreviewShellIdentity? _residentShellIdentity;
     private long _latestUpdateSequence;
     private bool _isRendering;
     public event Action<DesignPreviewFrameStatus>? FrameStatusChanged;
@@ -1906,6 +1915,13 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         bool showDesignMarks,
         DesignPreviewPayload payload)
     {
+        if (!_hasResidentDocument
+            || _residentShellIdentity is null
+            || !_residentShellIdentity.Metrics.Equals(metrics))
+        {
+            return false;
+        }
+
         var stopwatch = Stopwatch.StartNew();
         var bodyContent = await WebDesignPreviewRenderer.RenderBodyAsync(
             metrics,
@@ -2039,6 +2055,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                     "Design WebView host",
                     "Select a component variant to preview it through the desktop component route."),
                 reference: reference));
+            RememberResidentShell(update.ShellIdentity);
             _lastRenderedUpdate = update;
             PreviewDebugLog.Write(
                 "preview.webview.update",
@@ -2139,9 +2156,10 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             && (update.IsPlaybackUpdate || update.IsAnimationOnlyUpdateOf(_lastRenderedUpdate));
         var isMarksOnlyUpdate = _lastRenderedUpdate is not null
             && update.IsMarksOnlyUpdateOf(_lastRenderedUpdate);
-        var isResidentCompatible = _lastRenderedUpdate is not null
-            ? update.IsResidentShellCompatibleWith(_lastRenderedUpdate)
-            : _hasResidentDocument;
+        var isResidentCompatible = _hasResidentDocument
+            && CanPatchResidentShell(
+                _residentShellIdentity,
+                update.ShellIdentity);
         if (renderError is null && isResidentCompatible)
         {
             var fontsChanged = !string.Equals(
@@ -2223,6 +2241,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             htmlParts.FontStyleHtml,
             reference));
         _hasResidentDocument = true;
+        _residentShellIdentity = update.ShellIdentity;
         _lastRenderedUpdate = update;
         _lastRenderedFontStyleHtml = htmlParts.FontStyleHtml;
         PreviewDebugLog.Write(
@@ -2267,7 +2286,24 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 update.Reference,
                 _projectPaths),
             initialContextState: state));
+        RememberResidentShell(update.ShellIdentity with
+        {
+            ShowDeviceFrame = false,
+        });
+    }
+
+    internal static bool CanPatchResidentShell(
+        DesignPreviewShellIdentity? resident,
+        DesignPreviewShellIdentity requested)
+    {
+        return resident == requested;
+    }
+
+    private void RememberResidentShell(
+        DesignPreviewShellIdentity identity)
+    {
         _hasResidentDocument = true;
+        _residentShellIdentity = identity;
     }
 
     private async Task ShowResidentNonRenderableStateAsync(PreviewContextState state)
@@ -2401,17 +2437,13 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         bool IsPlaybackUpdate,
         IEditorShellMessageSink Messages)
     {
-        public bool IsResidentShellCompatibleWith(DesignPreviewUpdate other)
-        {
-            return Metrics.Equals(other.Metrics)
-                && IsDark == other.IsDark
-                && ThemeName == other.ThemeName
-                && ThemeMode == other.ThemeMode
-                && ScaleMode == other.ScaleMode
-                && ShowDeviceFrame == other.ShowDeviceFrame
-                && Payload is not null
-                && other.Payload is not null;
-        }
+        public DesignPreviewShellIdentity ShellIdentity => new(
+            Metrics,
+            IsDark,
+            ThemeName,
+            ThemeMode,
+            ScaleMode,
+            ShowDeviceFrame);
 
         public bool IsAnimationOnlyUpdateOf(DesignPreviewUpdate other)
         {
