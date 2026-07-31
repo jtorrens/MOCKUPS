@@ -416,9 +416,32 @@ public static class RuntimeInputDefinitionReader
                 animationTimeline,
                 "extendsOwnerDuration",
                 "Runtime Input animationTimeline");
+        var completion = animationTimeline is null
+            ? null
+            : OptionalObject(animationTimeline, "completion", "Runtime Input animationTimeline");
+        var baseDurationFieldId = completion?["baseDurationFieldId"] is null
+            ? ""
+            : JsonPath.RequiredString(
+                completion,
+                "baseDurationFieldId",
+                "Runtime Input animationTimeline completion");
+        var minimumEnabledKeyframes = completion?["minimumEnabledKeyframes"] is null
+            ? 2
+            : JsonPath.RequiredInteger(
+                completion,
+                "minimumEnabledKeyframes",
+                "Runtime Input animationTimeline completion");
         return interpolations.Count > 0
-            ? new AnimationFieldDefinition(interpolations, extendsOwnerDuration)
-            : new AnimationFieldDefinition(["hold"], extendsOwnerDuration);
+            ? new AnimationFieldDefinition(
+                interpolations,
+                extendsOwnerDuration,
+                baseDurationFieldId,
+                minimumEnabledKeyframes)
+            : new AnimationFieldDefinition(
+                ["hold"],
+                extendsOwnerDuration,
+                baseDurationFieldId,
+                minimumEnabledKeyframes);
     }
 
     private static ComponentInputTransitionDefinition? ReadInputTransitionDefinition(JsonObject input)

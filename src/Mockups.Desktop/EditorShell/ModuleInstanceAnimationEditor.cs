@@ -135,6 +135,47 @@ internal sealed class ModuleInstanceAnimationEditor
             input.ValueKind);
     }
 
+    public void AddInitialTrack(
+        ModuleInstanceAnimationDocument document,
+        ProjectTreeNode node,
+        ComponentInputDefinition input,
+        string targetId,
+        string baseValue)
+    {
+        var animationDefinition = input.Animation
+            ?? throw new InvalidOperationException($"Input '{input.Id}' is not animatable.");
+        var value = ValueNode(input.ValueKind, baseValue);
+        if (string.IsNullOrWhiteSpace(animationDefinition.BaseDurationFieldId)
+            || !animationDefinition.Interpolations.Contains("writeOn", StringComparer.Ordinal)
+            || input.ValueKind is not (ValueKind.StringSingleLine or ValueKind.StringMultiline))
+        {
+            document.AddTrack(
+                input.Id,
+                targetId,
+                value,
+                animationDefinition.Interpolations.First());
+            return;
+        }
+
+        var snapshot = PreparedSnapshot(node);
+        var source = snapshot.Source;
+        var preview = DesignPreviewTestValues.Parse(source.RuntimePreviewJson);
+        var animation = DesignPreviewTestValues.Parse(document.ToJson());
+        var themeTokens = DesignPreviewTestValues.Parse(source.ThemeTokensJson);
+        var completionFrame = RuntimeAnimationFrameOrigin.FieldReferenceDurationFrames(
+            preview,
+            preview,
+            animation,
+            input.Id,
+            targetId,
+            themeTokens);
+        document.AddWriteOnTrack(
+            input.Id,
+            targetId,
+            value,
+            completionFrame);
+    }
+
     public AnimationTargetEditorContent CreateCollectionContent(
         ProjectTreeNode node,
         RuntimeInputCollectionDefinition collection)
@@ -641,14 +682,12 @@ internal sealed class ModuleInstanceAnimationEditor
             {
                 _ = saveMutation((candidate) =>
                 {
-                    candidate.AddTrack(
-                        target.FieldId,
+                    AddInitialTrack(
+                        candidate,
+                        node,
+                        target.Input,
                         target.TargetId,
-                        ValueNode(
-                            target.Input.ValueKind,
-                            target.BaseValue),
-                        target.Input.Animation!
-                            .Interpolations.First());
+                        target.BaseValue);
                     return true;
                 });
             };
@@ -711,7 +750,9 @@ internal sealed class ModuleInstanceAnimationEditor
             new FieldValue(RuntimeInputFieldDefinitionFactory.Create(ActiveInputOptions, node, target.Input), displayedValue),
             DictionaryServices(node));
         var animation = target.Input.Animation!;
-        var selectedInterpolation = exact?.Interpolation ?? animation.Interpolations.First();
+        var selectedInterpolation = exact?.Interpolation
+            ?? next?.Interpolation
+            ?? animation.Interpolations.First();
         var interpolationControl = new DictionaryFieldControl(
             new FieldValue(
                 new FieldDefinition(
@@ -1369,6 +1410,14 @@ internal sealed class ModuleInstanceAnimationEditor
             Canvas.SetLeft(playhead, Math.Clamp(playheadX - 1, 0, width - 2));
             Canvas.SetTop(playhead, 20);
             Children.Add(playhead);
+            var head = new Polygon
+            {
+                Points = new Points { new Point(0, 0), new Point(10, 0), new Point(5, 6) },
+                Fill = EditorSukiWindowTheme.AccentBrush(),
+            };
+            Canvas.SetLeft(head, Math.Clamp(playheadX - 5, 0, width - 10));
+            Canvas.SetTop(head, 14);
+            Children.Add(head);
             var grip = new Border
             {
                 Width = 28,

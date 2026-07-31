@@ -185,6 +185,7 @@ var tests = new (string Name, Action Run)[]
     ("manifest owners render their committed fixtures and Modules advance time", ManifestOwnersRenderCommittedFixturesAndModulesAdvanceTime),
     ("Design authoring context exposes exact Variant state without a fake save mode", DesignAuthoringContextExposesExactVariantState),
     ("track activation creates frame-zero state", TrackActivationCreatesInitialKeyframe),
+    ("Write-on track activation preserves the standard action explicitly", WriteOnTrackActivationCreatesStandardAction),
     ("runtime controls resolve their value at the active owner frame", RuntimeControlsResolveActiveFrameValue),
     ("track targets persist and round-trip", TrackTargetsRoundTrip),
     ("nested collection duplication and deletion preserve animation targets", NestedCollectionTargetsFollowIdentity),
@@ -1209,6 +1210,23 @@ static void RuntimeInputDefinitionReadersAreStrict()
     var valid = RuntimeInputDefinitionReader.ReadInputs(Preview(Input()), new JsonObject()).Single();
     Equal(ComponentInputSource.Runtime, valid.Source);
     Equal(ComponentInputUiOrigin.Self, valid.UiOrigin);
+    var animated = Input();
+    animated["animatable"] = true;
+    animated["animationInterpolations"] = new JsonArray("hold", "writeOn");
+    animated["animationTimeline"] = new JsonObject
+    {
+        ["completion"] = new JsonObject
+        {
+            ["baseDurationFieldId"] = "writeOn",
+            ["minimumEnabledKeyframes"] = 2,
+        },
+    };
+    var animatedDefinition = RuntimeInputDefinitionReader
+        .ReadInputs(Preview(animated), new JsonObject())
+        .Single()
+        .Animation!;
+    Equal("writeOn", animatedDefinition.BaseDurationFieldId);
+    Equal(2, animatedDefinition.MinimumEnabledKeyframes);
     var dynamic = Input();
     dynamic["optionsSourceCollectionJsonKey"] = "contentSets";
     dynamic["optionsSourceValueJsonKey"] = "id";
@@ -14152,6 +14170,29 @@ static void TrackActivationCreatesInitialKeyframe()
     True(track.Keyframes[0].Enabled);
     document.AddTrack("subtitle", "", JsonValue.Create("duplicate")!, "linear");
     Equal(1, document.Tracks.Count);
+}
+
+static void WriteOnTrackActivationCreatesStandardAction()
+{
+    var document = EmptyDocument();
+    document.AddWriteOnTrack(
+        "text",
+        "message-1",
+        JsonValue.Create("Hello 👋")!,
+        12);
+    var track = Required(document.Track("text", "message-1"));
+    Equal(2, track.Keyframes.Count);
+    Equal(0, track.Keyframes[0].Frame);
+    Equal("", track.Keyframes[0].Value!.GetValue<string>());
+    Equal("hold", track.Keyframes[0].Interpolation);
+    Equal(12, track.Keyframes[1].Frame);
+    Equal("Hello 👋", track.Keyframes[1].Value!.GetValue<string>());
+    Equal("writeOn", track.Keyframes[1].Interpolation);
+    Equal("Hel", ModuleInstanceAnimationValueResolver.ResolveDisplayValue(
+        track,
+        6,
+        JsonValue.Create("ignored")!,
+        ValueKind.StringSingleLine));
 }
 
 static void RuntimeControlsResolveActiveFrameValue()

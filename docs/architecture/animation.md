@@ -122,6 +122,14 @@ The owning resolver determines deterministic internal cadence inside the final
 duration. Bridge and renderer receive only the resolved state for the requested
 frame.
 
+An animatable text field whose completion references a `BehaviorTiming` field
+uses that standard action while no parameter track exists. Activating its track
+converts the action to an equivalent explicit pair: protected frame zero stores
+empty text with `hold`, and the resolved completion frame stores the full text
+with `writeOn`. The track then becomes the single timing owner and the referenced
+duration field is disabled until the track is removed. This conversion changes
+no visible frame and avoids composing two independent text reveals.
+
 Contract-declared finite and base durations use the shared reference-duration
 lane. Retime is disabled when `targetDurationFrames` is absent.
 
@@ -151,7 +159,7 @@ Drag converts pointer movement into the selected Screen-local authoring scale
 and commits a valid owner-local frame.
 
 The animation playhead and the keyframe lane use the same bounded Screen-local
-scale. The active track uses full-height amber diamonds, inactive tracks use
+scale. The active track uses compact amber diamonds, inactive tracks use
 discrete circles, and any keyframe at the current playhead is blue while
 retaining its track shape. A destination keyframe owns interpolation for the
 preceding segment: `hold` preserves the source value, while `writeOn` resolves
@@ -159,6 +167,9 @@ the source-to-destination text at every intervening frame. That one resolved
 value is the value shown by both the animation editor and Preview; a concrete
 Module must not apply a second text reveal after track resolution, while its
 composer and keyboard remain visible for the resolved field-completion interval.
+Inserting a keyframe within a segment captures that exact resolved value and
+inherits the destination interpolation, preserving the segment before further
+editing.
 
 During drag:
 

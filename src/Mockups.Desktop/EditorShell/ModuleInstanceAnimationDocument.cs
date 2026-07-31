@@ -90,6 +90,26 @@ internal sealed class ModuleInstanceAnimationDocument
         _tracks.Add(track);
     }
 
+    public void AddWriteOnTrack(
+        string fieldId,
+        string targetId,
+        JsonNode finalValue,
+        int completionFrame)
+    {
+        if (completionFrame <= 0)
+        {
+            AddTrack(fieldId, targetId, finalValue, "hold");
+            return;
+        }
+        AddTrack(fieldId, targetId, JsonValue.Create("")!, "hold");
+        UpsertKeyframe(
+            fieldId,
+            targetId,
+            completionFrame,
+            finalValue,
+            "writeOn");
+    }
+
     public void RemoveTrack(string fieldId, string targetId)
     {
         var track = TrackObject(fieldId, targetId);

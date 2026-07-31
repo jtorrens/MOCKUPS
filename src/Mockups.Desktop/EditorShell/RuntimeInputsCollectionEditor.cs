@@ -538,7 +538,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 content.Children.Add(EditorGroupBlock.CreateInlineSection(input.UiSectionLabel));
                 sectionLabel = input.UiSectionLabel;
             }
-            content.Children.Add(CreateTestValueControl(owner, preview, input));
+            content.Children.Add(CreateTestValueControl(owner, preview, input, inputs));
         }
         return content;
     }
@@ -546,7 +546,8 @@ internal sealed class RuntimeInputsCollectionEditor
     private Control CreateTestValueControl(
         RuntimeInputOwner owner,
         JsonObject preview,
-        ComponentInputDefinition input)
+        ComponentInputDefinition input,
+        IReadOnlyList<ComponentInputDefinition> ownerInputs)
     {
         var value = DesignPreviewTestValues.Value(preview, input);
         var definition = RuntimeInputFieldDefinitionFactory.Create(
@@ -603,7 +604,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 _reloadAndSelect?.Invoke(owner.Node);
             }
         };
-        return DecorateAnimationToggle(owner, input, "", control);
+        return DecorateAnimationToggle(owner, input, "", control, ownerInputs);
     }
 
     private static bool RuntimeInputIsEnabled(
@@ -1947,7 +1948,7 @@ internal sealed class RuntimeInputsCollectionEditor
             }
         };
         var targetId = item["id"]?.GetValue<string>() ?? "";
-        return DecorateAnimationToggle(owner, input, targetId, control);
+        return DecorateAnimationToggle(owner, input, targetId, control, collection.Fields);
     }
 
     private static bool ApplyCollectionTransition(
@@ -2070,11 +2071,22 @@ internal sealed class RuntimeInputsCollectionEditor
         RuntimeInputOwner owner,
         ComponentInputDefinition input,
         string targetId,
-        DictionaryFieldControl control)
+        DictionaryFieldControl control,
+        IReadOnlyList<ComponentInputDefinition>? ownerInputs = null)
     {
-        if (!owner.IsInstance || input.Animation is null) return control;
+        if (!owner.IsInstance) return control;
         var document = new ModuleInstanceAnimationDocument(
             PreparedAnimationJson(owner));
+        var timingOwnedByTrack = ownerInputs?.Any((candidate) =>
+            candidate.Animation is { } animation
+            && animation.BaseDurationFieldId.Equals(input.Id, StringComparison.Ordinal)
+            && document.HasTrack(candidate.Id, targetId)) == true;
+        if (timingOwnedByTrack)
+        {
+            control.IsEnabled = false;
+            ToolTip.SetTip(control, "Duration is owned by the active animation track.");
+        }
+        if (input.Animation is null) return control;
         var active = document.HasTrack(input.Id, targetId);
         var baseValue = control.Value;
         var toggle = new Button
@@ -2107,6 +2119,15 @@ internal sealed class RuntimeInputsCollectionEditor
             {
                 if (!await _confirmAnimationDisable(input.Label)) return;
                 document.RemoveTrack(input.Id, targetId);
+            }
+            else if (_animationEditor is not null)
+            {
+                _animationEditor.AddInitialTrack(
+                    document,
+                    owner.Node,
+                    input,
+                    targetId,
+                    control.Value);
             }
             else document.AddTrack(
                 input.Id,

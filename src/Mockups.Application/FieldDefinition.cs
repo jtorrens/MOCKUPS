@@ -68,7 +68,9 @@ public sealed record RecordReferenceDefinition(string TableId);
 
 public sealed record AnimationFieldDefinition(
     IReadOnlyList<string> Interpolations,
-    bool ExtendsOwnerDuration = true);
+    bool ExtendsOwnerDuration = true,
+    string BaseDurationFieldId = "",
+    int MinimumEnabledKeyframes = 2);
 
 public sealed record BehaviorTimingDefinition(
     string SourceFieldId,

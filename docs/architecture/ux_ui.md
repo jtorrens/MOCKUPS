@@ -272,7 +272,8 @@ enough to avoid position-based editing.
 The animation authoring playhead and its keyframe lane are one compact control:
 a directly draggable, ticked frame ruler whose vertical cursor begins at the
 tick baseline and reaches the lane, with only a 2–4 px visual gap between them.
-Its visual line has a wider invisible pen/touch capture area. Both share the identical
+Its compact head terminates at the tick baseline and its visual line has a wider
+invisible pen/touch capture area. Both share the identical
 horizontal extent, excluding only the session-only `+` horizon action, so frame
 positions have one unambiguous visual meaning. The selected track is
 distinguished with compact amber diamonds; keyframes from other tracks remain
