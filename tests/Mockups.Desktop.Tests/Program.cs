@@ -14663,6 +14663,21 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
     Equal(78, emptyIntervals[0].EndKeyframeFrame);
     Equal(78, passwordIntervals[0].StartKeyframeFrame);
     Equal(141, passwordIntervals[0].EndKeyframeFrame);
+    var terminalStateInterval = new PreviewScreenTimelineInterval(
+        141,
+        200,
+        StartKeyframeFrame: 141,
+        EndKeyframeFrame: null);
+    True(PreviewScreenTimelineLane.TouchesDerivedBoundary(
+        terminalStateInterval,
+        pointerX: 500,
+        left: 300,
+        right: 500));
+    True(!PreviewScreenTimelineLane.TouchesDerivedBoundary(
+        terminalStateInterval,
+        pointerX: 420,
+        left: 300,
+        right: 500));
 }
 
 static void RuntimeControlsResolveActiveFrameValue()

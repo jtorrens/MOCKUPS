@@ -1447,6 +1447,11 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
         var right = X(selected.EndFrame);
         if (_isStateLane)
         {
+            if (TouchesDerivedBoundary(selected, x, left, right))
+            {
+                args.Handled = true;
+                return;
+            }
             _dragMode = Math.Abs(x - left) <= ExitHandleWidth && selected.StartKeyframeFrame is not null
                 ? DragMode.StateStart
                 : Math.Abs(right - x) <= ExitHandleWidth && selected.EndKeyframeFrame is not null
@@ -1467,6 +1472,16 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
         args.Pointer.Capture(this);
         args.Handled = true;
     }
+
+    internal static bool TouchesDerivedBoundary(
+        PreviewScreenTimelineInterval interval,
+        double pointerX,
+        double left,
+        double right) =>
+        interval.StartKeyframeFrame is null
+            && Math.Abs(pointerX - left) <= ExitHandleWidth
+        || interval.EndKeyframeFrame is null
+            && Math.Abs(right - pointerX) <= ExitHandleWidth;
 
     private void OnPointerMoved(object? sender, PointerEventArgs args)
     {
