@@ -17,6 +17,22 @@ Shot frame
 Frame conversion belongs to the common timeline. Editors, payload factories,
 resolvers and renderers do not reproduce the formulas.
 
+Production Preview exposes a Screen-relative Timeline over that same clock.
+Its visible range includes three contiguous zones: negative preroll for the
+incoming transition plus action delay, editable Screen content beginning at
+frame zero, and positive postroll for the outgoing transition into the next
+Screen. The playhead may traverse all three zones. General and collection-item
+lanes may be manipulated only inside the content zone; preroll and postroll are
+parent-owned playback context and use an unfilled presentation.
+
+The first Timeline surface keeps lane movement and exit trimming in session
+state only. It does not rewrite appearance origins, keyframes, Screen duration
+or persistence. Collection item lifetime defaults remain collection-contract
+owned rather than inferred from the Screen or collection name. Before
+persistent Screen-duration trimming is enabled, the product must explicitly
+define what happens to keyframes that would fall outside the shortened range;
+the editor must not silently choose a destructive policy.
+
 ## Temporal ownership
 
 Every temporal entity follows one rule:

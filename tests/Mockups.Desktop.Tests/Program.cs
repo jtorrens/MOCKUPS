@@ -189,6 +189,7 @@ var tests = new (string Name, Action Run)[]
     ("track activation creates frame-zero state", TrackActivationCreatesInitialKeyframe),
     ("Write-on track activation preserves the standard action explicitly", WriteOnTrackActivationCreatesStandardAction),
     ("animation editor isolates owner-local collection timelines", AnimationEditorIsolatesOwnerLocalCollectionTimelines),
+    ("Screen Timeline separates preroll content and postroll editing", ScreenTimelineSeparatesPlaybackAndEditingZones),
     ("runtime controls resolve their value at the active owner frame", RuntimeControlsResolveActiveFrameValue),
     ("track targets persist and round-trip", TrackTargetsRoundTrip),
     ("nested collection duplication and deletion preserve animation targets", NestedCollectionTargetsFollowIdentity),
@@ -6147,6 +6148,51 @@ static void PreviewShellVisualTreeIsResponsive()
                         .Any((text) => text.Text is "Shot timeline" or "Screen local timeline"),
                     $"{productionSize}: redundant Production timeline label is still visible");
             }
+
+            var productionScreen = productionShot.Children
+                .First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance);
+            LayoutCheck(
+                (bool)(selectProductionNode.Invoke(window, [productionScreen.Id]) ?? false),
+                "could not select a Production Screen fixture");
+            var screenSelectionTimeout = Stopwatch.StartNew();
+            while (WindowSession(window).SelectedNode?.Id != productionScreen.Id
+                   && screenSelectionTimeout.Elapsed < TimeSpan.FromSeconds(5))
+            {
+                Dispatcher.UIThread.RunJobs();
+                Thread.Sleep(5);
+            }
+            Equal(productionScreen.Id, WindowSession(window).SelectedNode?.Id);
+            var timelineTab = Required(
+                window.FindControl<TabItem>("PreviewTimelineTab"));
+            var timelineHost = Required(
+                window.FindControl<ContentControl>("PreviewTimelineHost"));
+            True(timelineTab.IsVisible);
+            tabs.SelectedItem = timelineTab;
+            Dispatcher.UIThread.RunJobs();
+            var timelineSurface = Required(
+                timelineHost.Content as PreviewScreenTimelineSurface);
+            var timelinePreparationTimeout = Stopwatch.StartNew();
+            while (!timelineSurface
+                       .GetVisualDescendants()
+                       .OfType<PreviewScreenTimelineRuler>()
+                       .Any()
+                   && timelinePreparationTimeout.Elapsed < TimeSpan.FromSeconds(5))
+            {
+                Dispatcher.UIThread.RunJobs();
+                Thread.Sleep(5);
+            }
+            True(timelineSurface
+                .GetVisualDescendants()
+                .OfType<PreviewScreenTimelineRuler>()
+                .Any());
+            True(timelineSurface
+                .GetVisualDescendants()
+                .OfType<PreviewScreenTimelineLane>()
+                .Any());
+            True(timelineSurface
+                .GetVisualDescendants()
+                .OfType<TextBlock>()
+                .Any((text) => text.Text == "General"));
 
             Required(window.FindControl<Button>("DesignWorkspaceButton"))
                 .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
@@ -14288,6 +14334,119 @@ static void AnimationEditorIsolatesOwnerLocalCollectionTimelines()
         usesOwnerTimeline: true,
         timelineFrame: 30,
         ownerFrameForScreenFrame: (_) => throw new InvalidOperationException()));
+}
+
+static void ScreenTimelineSeparatesPlaybackAndEditingZones()
+{
+    var snapshot = new PreviewScreenTimelineSnapshot(
+        "screen_001",
+        "Screen 1",
+        PreRollFrames: 20,
+        ContentDurationFrames: 100,
+        PostRollFrames: 12,
+        Collections: []);
+    Equal(-20, snapshot.MinimumFrame);
+    Equal(111, snapshot.MaximumFrame);
+    Equal(-20, PreviewScreenTimelineMath.Frame(
+        0,
+        500,
+        snapshot.MinimumFrame,
+        snapshot.MaximumFrame));
+    Equal(111, PreviewScreenTimelineMath.Frame(
+        500,
+        500,
+        snapshot.MinimumFrame,
+        snapshot.MaximumFrame));
+    True(PreviewScreenTimelineMath.Fraction(
+        0,
+        snapshot.MinimumFrame,
+        snapshot.MaximumFrame) > 0);
+
+    Equal(
+        (0, 20),
+        PreviewScreenTimelineMath.Move(
+            startFrame: 8,
+            endFrame: 28,
+            frameDelta: -30,
+            contentDurationFrames: 100));
+    Equal(
+        (80, 100),
+        PreviewScreenTimelineMath.Move(
+            startFrame: 8,
+            endFrame: 28,
+            frameDelta: 200,
+            contentDurationFrames: 100));
+    Equal(
+        9,
+        PreviewScreenTimelineMath.ResizeEnd(
+            startFrame: 8,
+            requestedEndFrame: -12,
+            contentDurationFrames: 100));
+    Equal(
+        100,
+        PreviewScreenTimelineMath.ResizeEnd(
+            startFrame: 8,
+            requestedEndFrame: 130,
+            contentDurationFrames: 100));
+
+    var node = new ProjectTreeNode(
+        ProjectTreeNodeKind.ModuleInstance,
+        "screen_001",
+        "Screen 1",
+        "",
+        "moduleInstance");
+    var collection = new RuntimeInputCollectionDefinition(
+        "items",
+        "Items",
+        "items",
+        "Item",
+        []);
+    var preview = Object(
+        """{"items":[{"id":"item_1"},{"id":"item_2"}]}""");
+    var contract =
+        """
+        {
+          "collections": [{
+            "id": "items",
+            "label": "Items",
+            "jsonKey": "items",
+            "itemLabel": "Item",
+            "fields": [],
+            "animationTimeline": {"sequenceItems": true}
+          }]
+        }
+        """;
+    var surface = new RuntimeInputSurface(
+        new RuntimeInputOwner(
+            node,
+            "{}",
+            preview.ToJsonString(),
+            (_) => Task.CompletedTask,
+            IsInstance: true),
+        preview,
+        [],
+        [collection],
+        [],
+        AnimationSnapshot: new ModuleInstanceAnimationSnapshot(
+            node.Id,
+            new ModuleInstanceAnimationSource(
+                "{}",
+                EmptyDocument().ToJson(),
+                preview.ToJsonString(),
+                "{}",
+                contract),
+            ScreenStartFrame: 0,
+            ActionStartFrame: 20,
+            DurationFrames: 100));
+    var resolved = PreviewScreenTimelineSnapshotFactory.Create(
+        surface,
+        new PreviewScreenTimelineRange(20, 100, 12));
+    Equal(1, resolved.Collections.Count);
+    Equal(2, resolved.Collections[0].Items.Count);
+    True(resolved.Collections[0].Items
+        .All((item) => item.StartFrame >= 0
+            && item.EndFrame > item.StartFrame
+            && item.EndFrame <= resolved.ContentDurationFrames));
 }
 
 static void RuntimeControlsResolveActiveFrameValue()

@@ -17,8 +17,10 @@ public partial class MainWindow : SukiWindow
 {
     private const string PreviewUtilityAuthoringDataId = "authoring-data";
     private const string PreviewUtilitySetupId = "setup";
+    private const string PreviewUtilityTimelineId = "timeline";
     private readonly EditorCollectionCardFactory _collectionCards;
     private readonly EditorPreviewController _previewController;
+    private readonly PreviewScreenTimelineController _screenTimeline;
     private readonly IEditorShellMessageSink _messages;
     private readonly EditorThemeController _themeController;
     private readonly EditorNodeCommandController _nodeCommands;
@@ -127,6 +129,13 @@ public partial class MainWindow : SukiWindow
                 "preview-context"),
             (target) => previewAuthoringNavigator.Navigate(target),
             this);
+        _screenTimeline = new PreviewScreenTimelineController(
+            PreviewTimelineHost,
+            _previewController.ProductionScreenTimelineRange,
+            _previewController.ProductionScreenTimelineFrame,
+            _previewController.SetProductionScreenTimelineFrame,
+            _previewController.ToggleProductionPlayback,
+            _previewController.PlaybackState);
         _previewControlsDock =
             new PreviewControlsDockController(
                 this,
@@ -435,6 +444,7 @@ public partial class MainWindow : SukiWindow
                 _navigationPanel.Snapshot());
             _productionNavigationActions.Dispose();
             _previewControlsDock.Dispose();
+            _screenTimeline.Dispose();
             _editorContent.Dispose();
             _collectionCards.Dispose();
             _previewController.Dispose();
@@ -840,12 +850,22 @@ public partial class MainWindow : SukiWindow
                     node,
                     workspace))
         {
+            _screenTimeline.Clear();
             _collectionCards
                 .CancelPreviewAuthoringPreparation();
             RenderPreviewAuthoringSurface(
                 node,
                 null);
             return;
+        }
+
+        if (workspace == EditorWorkspace.Production)
+        {
+            _screenTimeline.BeginScreen(node.Id);
+        }
+        else
+        {
+            _screenTimeline.Clear();
         }
 
         var header = workspace == EditorWorkspace.Production
@@ -876,6 +896,11 @@ public partial class MainWindow : SukiWindow
                 return;
             }
 
+            if (prepared is not null
+                && workspace == EditorWorkspace.Production)
+            {
+                _screenTimeline.ShowPrepared(prepared);
+            }
             RenderPreviewAuthoringSurface(
                 node,
                 prepared is null
@@ -897,6 +922,7 @@ public partial class MainWindow : SukiWindow
                 RenderPreviewAuthoringSurface(
                     node,
                     null);
+                _screenTimeline.Clear();
                 _messages.Error(
                     "Prepare Preview authoring",
                     exception);
@@ -911,9 +937,12 @@ public partial class MainWindow : SukiWindow
         _previewUtilityTabStateKey =
             $"{EditorNodeSelectionState.EditorNodeForSelection(node).RecordClassId}:preview:utility-tab";
         var selectedId = _editorSessionUiState.Selection(_previewUtilityTabStateKey);
+        var supportsTimeline = Session.Workspace == EditorWorkspace.Production
+            && node.Kind == ProjectTreeNodeKind.ModuleInstance;
         var selectedTab = selectedId switch
         {
             PreviewUtilitySetupId => PreviewSetupTab,
+            PreviewUtilityTimelineId when supportsTimeline => PreviewTimelineTab,
             PreviewUtilityAuthoringDataId when authoringSurface is not null => PreviewAuthoringDataTab,
             _ when authoringSurface is not null => PreviewAuthoringDataTab,
             _ => PreviewSetupTab,
@@ -925,6 +954,7 @@ public partial class MainWindow : SukiWindow
             PreviewAuthoringDataHost.Content = authoringSurface?.Content;
             PreviewAuthoringDataTab.Header = authoringSurface?.Header ?? "Authoring Data";
             PreviewAuthoringDataTab.IsVisible = authoringSurface is not null;
+            PreviewTimelineTab.IsVisible = supportsTimeline;
             PreviewUtilityTabs.SelectedItem = selectedTab;
         }
         finally
@@ -937,6 +967,7 @@ public partial class MainWindow : SukiWindow
     {
         if (ReferenceEquals(selectedTab, PreviewAuthoringDataTab)) return PreviewUtilityAuthoringDataId;
         if (ReferenceEquals(selectedTab, PreviewSetupTab)) return PreviewUtilitySetupId;
+        if (ReferenceEquals(selectedTab, PreviewTimelineTab)) return PreviewUtilityTimelineId;
         return null;
     }
 

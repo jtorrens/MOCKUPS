@@ -218,6 +218,40 @@ internal sealed class EditorPreviewController : IDisposable
                 screen.DurationFrames - 1));
     }
 
+    public int ProductionScreenTimelineFrame(string moduleInstanceId)
+    {
+        var screen = PreparedProductionSession().Screen(moduleInstanceId);
+        return _shotPreviewFrame
+            - screen.StartFrame
+            - screen.TransitionFrameCount
+            - screen.ActionDelayFrames;
+    }
+
+    public PreviewScreenTimelineRange ProductionScreenTimelineRange(
+        string moduleInstanceId)
+    {
+        var screen = PreparedProductionSession().Screen(moduleInstanceId);
+        return new PreviewScreenTimelineRange(
+            screen.TransitionFrameCount + screen.ActionDelayFrames,
+            screen.ActionDurationFrames,
+            ScreenPostRollFrames(moduleInstanceId));
+    }
+
+    public void SetProductionScreenTimelineFrame(
+        string moduleInstanceId,
+        int localFrame)
+    {
+        var screen = PreparedProductionSession().Screen(moduleInstanceId);
+        var minimum = -screen.TransitionFrameCount - screen.ActionDelayFrames;
+        var maximum = screen.ActionDurationFrames
+            + ScreenPostRollFrames(moduleInstanceId) - 1;
+        SetShotPreviewFrame(
+            screen.StartFrame
+            + screen.TransitionFrameCount
+            + screen.ActionDelayFrames
+            + Math.Clamp(localFrame, minimum, maximum));
+    }
+
     public int ProductionShotFrame() => _shotPreviewFrame;
 
     public void SetProductionShotFrame(int frame) => SetShotPreviewFrame(frame);
@@ -3125,11 +3159,30 @@ internal sealed class EditorPreviewController : IDisposable
         var screen =
             PreparedProductionSession()
                 .Screen(moduleInstanceId);
+        var postRollFrames = ScreenPostRollFrames(moduleInstanceId);
         return (
             screen.StartFrame,
             screen.StartFrame
-                + screen.DurationFrames - 1,
-            screen.DurationFrames);
+                + screen.DurationFrames
+                + postRollFrames - 1,
+            screen.DurationFrames
+                + postRollFrames);
+    }
+
+    private int ScreenPostRollFrames(string moduleInstanceId)
+    {
+        var screen = PreparedProductionSession().Screen(moduleInstanceId);
+        var screens = PreparedProductionSession().Shot(screen.ShotId).Screens;
+        var index = screens
+            .Select((candidate, candidateIndex) => (candidate, candidateIndex))
+            .Single((candidate) =>
+                candidate.candidate.ScreenId.Equals(
+                    moduleInstanceId,
+                    StringComparison.Ordinal))
+            .candidateIndex;
+        return index + 1 < screens.Count
+            ? screens[index + 1].TransitionFrameCount
+            : 0;
     }
 
     private void MoveAnimationKeyframe(int direction)

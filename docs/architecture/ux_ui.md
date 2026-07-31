@@ -137,7 +137,14 @@ below, so playback actions stay visible while editing long input sets.
 
 Production places the selected Screen Payload in the corresponding Preview
 authoring area. Runtime Inputs and structured slots are edited beside the
-result they control. Persisted payload remains owned by the Screen.
+result they control. Persisted payload remains owned by the Screen. A third
+**Timeline** tab appears for a Production Screen. It uses one compact transport
+above a tick ruler, then a General lane and one labelled group per Runtime
+collection with one lane per stable item. The ruler is relative to the Screen:
+entry transition and waiting appear before frame zero, content begins at zero,
+and exit transition appears as postroll. Item blocks can move horizontally and
+can be shortened only from their outgoing edge; the prototype interaction is
+session-only and does not alter authored timing.
 
 The visible Preview utility headers remain in one horizontal row at the
 supported 1040 px minimum and the 1440 px default window widths. The Preview
