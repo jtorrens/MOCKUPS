@@ -6181,10 +6181,11 @@ static void PreviewShellVisualTreeIsResponsive()
                 Dispatcher.UIThread.RunJobs();
                 Thread.Sleep(5);
             }
-            True(timelineSurface
+            var timelineRuler = Required(timelineSurface
                 .GetVisualDescendants()
                 .OfType<PreviewScreenTimelineRuler>()
-                .Any());
+                .SingleOrDefault());
+            True(timelineRuler.Background is not null);
             True(timelineSurface
                 .GetVisualDescendants()
                 .OfType<PreviewScreenTimelineLane>()
@@ -6212,6 +6213,10 @@ static void PreviewShellVisualTreeIsResponsive()
             collectionCollapse.RaiseEvent(
                 new RoutedEventArgs(Button.ClickEvent));
             Dispatcher.UIThread.RunJobs();
+            True(collectionCollapse
+                .GetVisualDescendants()
+                .OfType<TextBlock>()
+                .Any((text) => text.Text == ">"));
             True(timelineSurface
                 .GetVisualDescendants()
                 .OfType<PreviewScreenTimelineLane>()

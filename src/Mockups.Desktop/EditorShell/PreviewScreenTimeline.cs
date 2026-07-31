@@ -766,32 +766,38 @@ internal sealed class PreviewScreenTimelineSurface : Border
             Margin = new Thickness(0, 4, 0, 0),
             Padding = new Thickness(6, 2),
             HorizontalAlignment = HorizontalAlignment.Stretch,
-            HorizontalContentAlignment = HorizontalAlignment.Left,
+            HorizontalContentAlignment = HorizontalAlignment.Stretch,
             Background = new SolidColorBrush(Color.FromArgb(25, 255, 255, 255)),
             BorderBrush = Brushes.Transparent,
             BorderThickness = new Thickness(0),
         };
         void Render(bool isCollapsed)
         {
-            button.Content = new StackPanel
+            var content = new Grid
             {
-                Orientation = Orientation.Horizontal,
-                Spacing = 6,
-                Children =
-                {
-                    EditorIcons.Create(
-                        isCollapsed ? EditorIcons.Expand : EditorIcons.Collapse,
-                        11),
-                    new TextBlock
-                    {
-                        Text = label.ToUpperInvariant(),
-                        FontSize = 10,
-                        FontWeight = FontWeight.SemiBold,
-                        Opacity = 0.76,
-                        VerticalAlignment = VerticalAlignment.Center,
-                    },
-                },
+                ColumnDefinitions = new ColumnDefinitions("*,Auto"),
             };
+            content.Children.Add(new TextBlock
+            {
+                Text = label.ToUpperInvariant(),
+                FontSize = 10,
+                FontWeight = FontWeight.SemiBold,
+                Opacity = 0.76,
+                VerticalAlignment = VerticalAlignment.Center,
+            });
+            var indicator = new TextBlock
+            {
+                Text = isCollapsed ? ">" : "v",
+                Width = 22,
+                FontSize = 14,
+                FontWeight = FontWeight.SemiBold,
+                Opacity = 0.78,
+                TextAlignment = TextAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            Grid.SetColumn(indicator, 1);
+            content.Children.Add(indicator);
+            button.Content = content;
             EditorAccessibility.Describe(
                 button,
                 $"{(isCollapsed ? "Expand" : "Collapse")} Timeline collection {label}");
@@ -891,8 +897,9 @@ internal sealed record PreviewScreenTimelinePlayheadChange(
     int Frame,
     bool IsSnapped);
 
-internal sealed class PreviewScreenTimelineRuler : PreviewScreenTimelineTrack
+internal sealed class PreviewScreenTimelineRuler : Border
 {
+    private readonly PreviewScreenTimelineSnapshot _snapshot;
     private readonly Func<IReadOnlyList<int>> _snapTargets;
     private readonly Action<PreviewScreenTimelinePlayheadChange> _setFrame;
     private bool _dragging;
@@ -901,10 +908,14 @@ internal sealed class PreviewScreenTimelineRuler : PreviewScreenTimelineTrack
         PreviewScreenTimelineSnapshot snapshot,
         Func<IReadOnlyList<int>> snapTargets,
         Action<PreviewScreenTimelinePlayheadChange> setFrame)
-        : base(snapshot)
     {
+        _snapshot = snapshot;
         _snapTargets = snapTargets;
         _setFrame = setFrame;
+        MinWidth = 180;
+        HorizontalAlignment = HorizontalAlignment.Stretch;
+        Background = Brushes.Transparent;
+        Child = new PreviewScreenTimelineRulerTicks(snapshot);
         Cursor = new Cursor(StandardCursorType.SizeWestEast);
         PointerPressed += OnPointerPressed;
         PointerMoved += OnPointerMoved;
@@ -912,25 +923,9 @@ internal sealed class PreviewScreenTimelineRuler : PreviewScreenTimelineTrack
         PointerCaptureLost += (_, _) => _dragging = false;
     }
 
-    public override void Render(DrawingContext context)
-    {
-        base.Render(context);
-        var tickCount = Math.Max(2, (int)Math.Floor(Bounds.Width / 24));
-        var baselineY = Math.Max(10, Bounds.Height - 3);
-        for (var tick = 0; tick <= tickCount; tick++)
-        {
-            var x = Bounds.Width * tick / tickCount;
-            var height = tick % 5 == 0 ? 10 : 6;
-            context.DrawLine(
-                new Pen(EditorAnimationVisuals.TimelineBrush, 1),
-                new Point(x, baselineY - height),
-                new Point(x, baselineY));
-        }
-    }
-
     private void OnPointerPressed(object? sender, PointerPressedEventArgs args)
     {
-        if (!args.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
+        if (!PreviewScreenTimelinePointer.IsPrimaryPress(this, args)) return;
         _dragging = true;
         args.Pointer.Capture(this);
         SetFromPointer(args.GetPosition(this).X);
@@ -957,12 +952,39 @@ internal sealed class PreviewScreenTimelineRuler : PreviewScreenTimelineTrack
         var change = PreviewScreenTimelineMath.SnapFrame(
             x,
             Bounds.Width,
-            Snapshot.MinimumFrame,
-            Snapshot.MaximumFrame,
+            _snapshot.MinimumFrame,
+            _snapshot.MaximumFrame,
             _snapTargets());
         _setFrame(new PreviewScreenTimelinePlayheadChange(
             change.Frame,
             change.IsSnapped));
+    }
+}
+
+internal sealed class PreviewScreenTimelineRulerTicks
+    : PreviewScreenTimelineTrack
+{
+    public PreviewScreenTimelineRulerTicks(
+        PreviewScreenTimelineSnapshot snapshot)
+        : base(snapshot)
+    {
+        IsHitTestVisible = false;
+    }
+
+    public override void Render(DrawingContext context)
+    {
+        base.Render(context);
+        var tickCount = Math.Max(2, (int)Math.Floor(Bounds.Width / 24));
+        var baselineY = Math.Max(10, Bounds.Height - 3);
+        for (var tick = 0; tick <= tickCount; tick++)
+        {
+            var x = Bounds.Width * tick / tickCount;
+            var height = tick % 5 == 0 ? 10 : 6;
+            context.DrawLine(
+                new Pen(EditorAnimationVisuals.TimelineBrush, 1),
+                new Point(x, baselineY - height),
+                new Point(x, baselineY));
+        }
     }
 }
 
@@ -1049,7 +1071,7 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
 
     private void OnPointerPressed(object? sender, PointerPressedEventArgs args)
     {
-        if (!args.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
+        if (!PreviewScreenTimelinePointer.IsPrimaryPress(this, args)) return;
         var x = args.GetPosition(this).X;
         var left = X(_startFrame);
         var right = X(_endFrame);
@@ -1127,6 +1149,22 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
         None,
         Move,
         Exit,
+    }
+}
+
+internal static class PreviewScreenTimelinePointer
+{
+    public static bool IsPrimaryPress(
+        Control control,
+        PointerPressedEventArgs args)
+    {
+        var properties = args.GetCurrentPoint(control).Properties;
+        if (args.Pointer.Type != PointerType.Pen)
+            return properties.IsLeftButtonPressed;
+        return !properties.IsRightButtonPressed
+            && !properties.IsMiddleButtonPressed
+            && !properties.IsBarrelButtonPressed
+            && !properties.IsEraser;
     }
 }
 

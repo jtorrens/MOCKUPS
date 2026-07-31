@@ -141,7 +141,9 @@ result they control. Persisted payload remains owned by the Screen. A third
 **Timeline** tab appears for a Production Screen. It uses one compact transport
 above a tick ruler, then a General lane and one labelled group per Runtime
 collection with one lane per stable item. Collection groups are collapsible and
-their expansion state is session-only. The ruler is relative to the Screen:
+use the standard card affordance at the right (`>` closed, `v` open); their
+expansion state is session-only. The complete tick band is the playhead's input
+surface, while the line crossing the lanes remains visual only. The ruler is relative to the Screen:
 entry transition and waiting appear before frame zero, content begins at zero,
 and exit transition appears as postroll. Pre- and postroll use a subdued
 diagonal hatch rather than authored-boundary guides. One uninterrupted playhead
