@@ -574,25 +574,23 @@ internal sealed class ModuleInstanceAnimationEditor
             playhead.SetDuration(timelineDuration);
             RefreshVisuals();
         };
-        var sliderRow = new Grid
+        var timelineLane = new Grid
+        {
+            Height = 54,
+        };
+        timelineLane.Children.Add(playhead);
+        timelineHost.VerticalAlignment = VerticalAlignment.Bottom;
+        timelineLane.Children.Add(timelineHost);
+        var timelineControl = new Grid
         {
             ColumnDefinitions = new ColumnDefinitions("*,Auto"),
             ColumnSpacing = EditorUiDensity.Card(6),
         };
-        sliderRow.Children.Add(playhead);
+        timelineControl.Children.Add(timelineLane);
+        extendHorizonButton.VerticalAlignment = VerticalAlignment.Top;
         Grid.SetColumn(extendHorizonButton, 1);
-        sliderRow.Children.Add(extendHorizonButton);
-        root.Children.Add(sliderRow);
-        var timelineRow = new Grid
-        {
-            ColumnDefinitions = new ColumnDefinitions("*,Auto"),
-            ColumnSpacing = EditorUiDensity.Card(6),
-        };
-        timelineRow.Children.Add(timelineHost);
-        var timelineEndSpacer = new Border { Width = extendHorizonButton.Width };
-        Grid.SetColumn(timelineEndSpacer, 1);
-        timelineRow.Children.Add(timelineEndSpacer);
-        root.Children.Add(timelineRow);
+        timelineControl.Children.Add(extendHorizonButton);
+        root.Children.Add(timelineControl);
         if (durationTargetId is not null)
         {
             root.Children.Add(CreateTargetDurationEditor(
@@ -918,23 +916,30 @@ internal sealed class ModuleInstanceAnimationEditor
                         (target.Target?.OwnerFrameOrigin ?? 0) + keyframe.Frame) ?? keyframe.Frame;
                     var isActive = ReferenceEquals(target, active);
                     var isCurrent = ownerKeyframe == currentOwnerFrame;
-                    var glyph = new TextBlock
-                    {
-                        Text = isActive ? "◆" : "●",
-                        FontSize = isActive ? 20 : 8,
-                        Foreground = isCurrent
-                            ? EditorAnimationVisuals.CurrentKeyframeBrush
-                            : isActive
-                                ? EditorAnimationVisuals.ActiveTrackBrush
-                                : EditorAnimationVisuals.OtherKeyframeBrush,
-                        HorizontalAlignment = HorizontalAlignment.Center,
-                        VerticalAlignment = VerticalAlignment.Center,
-                    };
+                    var markerBrush = isCurrent
+                        ? EditorAnimationVisuals.CurrentKeyframeBrush
+                        : isActive
+                            ? EditorAnimationVisuals.ActiveTrackBrush
+                            : EditorAnimationVisuals.OtherKeyframeBrush;
+                    Control glyph = isActive
+                        ? new Polygon
+                        {
+                            Points = new Points { new Point(9, 0), new Point(18, 9), new Point(9, 18), new Point(0, 9) },
+                            Fill = markerBrush,
+                        }
+                        : new Ellipse
+                        {
+                            Width = 8,
+                            Height = 8,
+                            Fill = markerBrush,
+                            HorizontalAlignment = HorizontalAlignment.Center,
+                            VerticalAlignment = VerticalAlignment.Center,
+                        };
                     var canDrag = keyframe.Frame > 0 && target.Target is not null;
                     var marker = new Border
                     {
-                        Width = isActive ? 26 : 16,
-                        Height = 30,
+                        Width = isActive ? 18 : 12,
+                        Height = isActive ? 18 : 12,
                         Background = Brushes.Transparent,
                         Child = glyph,
                         Focusable = canDrag,
@@ -946,7 +951,7 @@ internal sealed class ModuleInstanceAnimationEditor
                         width - marker.Width,
                         ownerKeyframe / (double)markerScale * (width - marker.Width)));
                     Canvas.SetLeft(marker, originalLeft);
-                    Canvas.SetTop(marker, 0);
+                    Canvas.SetTop(marker, isActive ? 6 : 9);
                     canvas.Children.Add(marker);
                     var dragging = false;
                     var moved = false;
@@ -961,11 +966,11 @@ internal sealed class ModuleInstanceAnimationEditor
                     {
                         dragging = false;
                         Canvas.SetLeft(marker, originalLeft);
-                        glyph.Foreground = isCurrent
+                        SetMarkerBrush(glyph, isCurrent
                             ? EditorAnimationVisuals.CurrentKeyframeBrush
                             : isActive
                                 ? EditorAnimationVisuals.ActiveTrackBrush
-                                : EditorAnimationVisuals.OtherKeyframeBrush;
+                                : EditorAnimationVisuals.OtherKeyframeBrush);
                         previewFrame(ownerKeyframe);
                     }
 
@@ -1029,11 +1034,11 @@ internal sealed class ModuleInstanceAnimationEditor
                             candidateScreenFrame / (double)markerScale * laneWidth,
                             0,
                             laneWidth));
-                        glyph.Foreground = validDestination
+                        SetMarkerBrush(glyph, validDestination
                             ? EditorAnimationVisuals.CurrentKeyframeBrush
                             : isOriginalDestination
                                 ? EditorAnimationVisuals.ActiveTrackBrush
-                                : Brushes.IndianRed;
+                                : Brushes.IndianRed);
                         previewFrame(candidateScreenFrame);
                         args.Handled = true;
                     };
@@ -1079,6 +1084,19 @@ internal sealed class ModuleInstanceAnimationEditor
         }
         canvas.SizeChanged += (_, args) => Render(args.NewSize.Width);
         return canvas;
+    }
+
+    private static void SetMarkerBrush(Control marker, IBrush brush)
+    {
+        switch (marker)
+        {
+            case Polygon diamond:
+                diamond.Fill = brush;
+                break;
+            case Ellipse circle:
+                circle.Fill = brush;
+                break;
+        }
     }
 
     private static string TargetKey(ResolvedAnimationTarget target)
@@ -1255,7 +1273,7 @@ internal sealed class ModuleInstanceAnimationEditor
         {
             _frame = frame;
             _duration = duration;
-            Height = 24;
+            Height = 54;
             MinWidth = 180;
             HorizontalAlignment = HorizontalAlignment.Stretch;
             Cursor = new Cursor(StandardCursorType.SizeWestEast);
@@ -1317,37 +1335,47 @@ internal sealed class ModuleInstanceAnimationEditor
             var trackWidth = width - 14;
             var fraction = _duration <= 1 ? 0 : _frame / (double)(_duration - 1);
             Children.Clear();
-            var track = new Border
+            var baseline = new Border
             {
                 Width = trackWidth,
-                Height = 4,
-                CornerRadius = new CornerRadius(2),
+                Height = 1,
                 Background = EditorAnimationVisuals.TimelineBrush,
             };
-            Canvas.SetLeft(track, 7);
-            Canvas.SetTop(track, 10);
-            Children.Add(track);
-            var elapsed = new Border
+            Canvas.SetLeft(baseline, 7);
+            Canvas.SetTop(baseline, 20);
+            Children.Add(baseline);
+            var tickCount = Math.Max(2, (int)Math.Floor(trackWidth / 28));
+            for (var tick = 0; tick <= tickCount; tick++)
             {
-                Width = Math.Max(2, trackWidth * fraction),
-                Height = 4,
-                CornerRadius = new CornerRadius(2),
+                var major = tick % 5 == 0;
+                var mark = new Border
+                {
+                    Width = 1,
+                    Height = major ? 10 : 6,
+                    Background = EditorAnimationVisuals.TimelineBrush,
+                };
+                Canvas.SetLeft(mark, 7 + (trackWidth * tick / tickCount));
+                Canvas.SetTop(mark, 20 - mark.Height);
+                Children.Add(mark);
+            }
+            var playheadX = 7 + (trackWidth * fraction);
+            var playhead = new Border
+            {
+                Width = 2,
+                Height = Math.Max(24, Bounds.Height),
                 Background = EditorSukiWindowTheme.AccentBrush(),
             };
-            Canvas.SetLeft(elapsed, 7);
-            Canvas.SetTop(elapsed, 10);
-            Children.Add(elapsed);
-            var head = new Ellipse
+            Canvas.SetLeft(playhead, Math.Clamp(playheadX - 1, 0, width - 2));
+            Canvas.SetTop(playhead, 0);
+            Children.Add(playhead);
+            var pointer = new Polygon
             {
-                Width = 14,
-                Height = 14,
-                Fill = Brushes.White,
-                Stroke = EditorSukiWindowTheme.AccentBrush(),
-                StrokeThickness = 2,
+                Points = new Points { new Point(0, 0), new Point(10, 0), new Point(5, 6) },
+                Fill = EditorSukiWindowTheme.AccentBrush(),
             };
-            Canvas.SetLeft(head, Math.Clamp(7 + (trackWidth * fraction) - 7, 0, width - 14));
-            Canvas.SetTop(head, 5);
-            Children.Add(head);
+            Canvas.SetLeft(pointer, Math.Clamp(playheadX - 5, 0, width - 10));
+            Canvas.SetTop(pointer, 0);
+            Children.Add(pointer);
         }
     }
 }
