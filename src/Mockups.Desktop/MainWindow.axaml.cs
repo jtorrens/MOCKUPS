@@ -192,13 +192,18 @@ public partial class MainWindow : SukiWindow
             () => _previewController.ActiveNavigationNodeId,
             _productionNavigationActions.NodeAction);
         _previewController.PlaybackState.Changed += RefreshPreviewNavigationState;
+        var previewAuthoringRefresh =
+            new PreviewAuthoringRefreshCoordinator(
+                () => Session.Workspace,
+                _previewController.NotifyAuthoredPreviewInputsChanged,
+                RefreshPreviewOptions);
         var fieldPostCommitEffects = new EditorFieldPostCommitEffects(
             data.Presentation,
             application.Operations,
             () => _previewController.SelectedDeviceId,
             SetEditorRootTitle,
             RebuildNavigationCards,
-            _previewController.NotifyAuthoredPreviewInputsChanged,
+            previewAuthoringRefresh.Notify,
             RefreshPreviewOptions,
             RefreshProductionPicker);
         var pathBrowser = new EditorPathBrowser(
@@ -250,7 +255,7 @@ public partial class MainWindow : SukiWindow
             _nodeCommands.ToggleVariantLock,
             ShowEmbeddedContext,
             ScheduleActiveEditorReload,
-            _previewController.NotifyAuthoredPreviewInputsChanged,
+            previewAuthoringRefresh.Notify,
             _editorSessionUiState);
         _embeddedUsageNavigator = new EditorEmbeddedUsageNavigator(
             data.Components,
@@ -312,7 +317,7 @@ public partial class MainWindow : SukiWindow
             _nodeCommands.ShowInfoDialog,
             domainDialogs,
             ReloadAndSelect,
-            _previewController.NotifyAuthoredPreviewInputsChanged,
+            previewAuthoringRefresh.Notify,
             dictionaryFieldServices,
             _messages,
             _previewController.TriggerDesignPreviewAction,

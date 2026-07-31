@@ -288,6 +288,13 @@ tree revision together before selecting or rendering a new Shot or Screen. If
 that preparation fails, is canceled or is superseded, the prior tree, catalog
 and selection remain current.
 
+An authored Preview mutation in Production follows the same catalog boundary,
+even when the tree itself is unchanged. It invalidates prepared playback and
+prepares a replacement Production catalog before the next interactive Preview
+or Play request. This keeps the slider range, active Screen, payload frame list
+and playback duration on one committed revision after a Screen duration,
+transition, delay, animation or Runtime collection change.
+
 Interactive render requests follow the same revision rule. After the external
 renderer returns, the Preview host checks the request sequence before either
 committing the result or publishing its error. A result or error superseded by

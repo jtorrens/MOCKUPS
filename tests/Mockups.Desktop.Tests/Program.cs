@@ -150,6 +150,7 @@ var tests = new (string Name, Action Run)[]
     ("visual persistence writers require operation coordination", VisualPersistenceWritersRequireOperationCoordination),
     ("MainWindow retains only shell-owned services", MainWindowRetainsOnlyShellServices),
     ("post-commit presentation reads run through operation coordination", PostCommitPresentationReadsUseOperationCoordination),
+    ("Production authoring changes refresh the prepared session", ProductionAuthoringChangesRefreshPreparedSession),
     ("Preview authoring preparation is task-based cancellable and snapshot-owned", PreviewAuthoringPreparationUsesOperationBoundary),
     ("Variant history reads persistence through the operation boundary", VariantHistoryReadsThroughOperationBoundary),
     ("collapsed editor cards defer their snapshot until expansion", CollapsedEditorCardsDeferSnapshots),
@@ -3657,6 +3658,26 @@ static void PostCommitPresentationReadsUseOperationCoordination()
     True(repository.ReadThreadIds.Count == 2);
     True(repository.ReadThreadIds.All((threadId) =>
         threadId != callerThread));
+}
+
+static void ProductionAuthoringChangesRefreshPreparedSession()
+{
+    var workspace = EditorWorkspace.Design;
+    var previewRefreshes = 0;
+    var productionSessionRefreshes = 0;
+    var refresh = new PreviewAuthoringRefreshCoordinator(
+        () => workspace,
+        () => previewRefreshes++,
+        () => productionSessionRefreshes++);
+
+    refresh.Notify();
+    Equal(1, previewRefreshes);
+    Equal(0, productionSessionRefreshes);
+
+    workspace = EditorWorkspace.Production;
+    refresh.Notify();
+    Equal(1, previewRefreshes);
+    Equal(1, productionSessionRefreshes);
 }
 
 static void PreviewAuthoringPreparationUsesOperationBoundary()
