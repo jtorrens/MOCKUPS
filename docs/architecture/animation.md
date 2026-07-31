@@ -230,6 +230,16 @@ regions. Collection collapse and viewport zoom are session-only. Block edits
 persist through their declared collection fields or animation document and do
 not rewrite owner-local keyframes.
 
+Selecting General or one stable item lane selects that exact temporal owner.
+The complete lane receives the selected treatment and one contextual animation
+section opens below the final visible lane. That section contains only tracks
+owned by the selection. Its keyframes are projected onto Screen-relative
+positions for presentation and playhead interaction, while their persisted
+frames remain owner-local. Moving a collection lane therefore moves every
+projected keyframe with its owner without rewriting any keyframe frame. General
+uses the Screen action origin; a collection item uses its first appearance.
+Tracks belonging to another item never enter the selected section.
+
 The Screen Timeline viewport is independent of the Screen duration contract.
 At `1:1` it presents the declared Screen range. Session-only zoom can expand the
 viewport around the current playhead to expose item exits and, later, keyframes

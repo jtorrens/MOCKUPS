@@ -158,6 +158,14 @@ Releasing an editable block commits through the collection's declared timing
 field or its existing animation retime and refreshes Preview from the newly
 prepared payload.
 
+Selecting General or any item lane highlights the complete lane, including its
+label, and opens one Keyframes section after the final visible lane. The section
+reuses the standard animation track and field editor but aligns its ruler and
+markers to Screen time. Only tracks owned by the selected stable target appear.
+Their displayed positions follow the lane when it moves; the authored values
+remain relative to the lane and are not rewritten. Collapsing a collection
+whose selected lane is hidden returns the selection to General.
+
 Every serial collection-item block starts at its resolved position in the
 Screen. A declared pre-duration field is edited as a signed gap from the prior
 block's outgoing edge: positive separates, zero joins and negative overlaps.

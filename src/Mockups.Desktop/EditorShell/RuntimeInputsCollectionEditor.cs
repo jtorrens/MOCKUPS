@@ -180,6 +180,22 @@ internal sealed class RuntimeInputsCollectionEditor
         };
     }
 
+    public AnimationTargetEditorContent CreateScreenTimelineAnimationContent(
+        RuntimeInputSurface surface,
+        string targetId)
+    {
+        UsePreparedContext(surface);
+        if (!surface.Owner.IsInstance || _animationEditor is null)
+        {
+            throw new InvalidOperationException(
+                "Only a prepared Production Screen can expose Timeline animation content.");
+        }
+
+        return _animationEditor.CreateScreenTimelineTargetContent(
+            surface.Owner.Node,
+            targetId);
+    }
+
     public Control? CreateDesignTestValuesSurface(
         RuntimeInputSurface surface)
     {

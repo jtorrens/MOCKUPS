@@ -98,6 +98,18 @@ internal sealed class ModuleInstanceAnimationEditor
             targetId);
     }
 
+    public AnimationTargetEditorContent CreateScreenTimelineTargetContent(
+        ProjectTreeNode node,
+        string targetId)
+    {
+        return CreateContent(
+            node,
+            $"screen-timeline-target:{targetId}",
+            (target) => target.TargetId == targetId,
+            targetId,
+            alignToScreenTimeline: true);
+    }
+
     public string ResolveRuntimeValue(
         ProjectTreeNode node,
         ComponentInputDefinition input,
@@ -228,7 +240,8 @@ internal sealed class ModuleInstanceAnimationEditor
         ProjectTreeNode node,
         string scopeKey,
         Func<AnimationTarget, bool> includesTarget,
-        string durationTargetId)
+        string durationTargetId,
+        bool alignToScreenTimeline = false)
     {
         var snapshot = PreparedSnapshot(node);
         var source = snapshot.Source;
@@ -278,7 +291,8 @@ internal sealed class ModuleInstanceAnimationEditor
                 themeTokens,
                 source.EffectiveContractJson,
                 snapshot,
-                ReadScopeTargets));
+                ReadScopeTargets,
+                alignToScreenTimeline));
         }
         return new AnimationTargetEditorContent(content, activeTrackCount);
     }
@@ -294,14 +308,16 @@ internal sealed class ModuleInstanceAnimationEditor
         JsonObject themeTokens,
         string effectiveContractJson,
         ModuleInstanceAnimationSnapshot preparedSnapshot,
-        Func<JsonObject, List<AnimationTarget>> readScopeTargets)
+        Func<JsonObject, List<AnimationTarget>> readScopeTargets,
+        bool alignToScreenTimeline)
     {
         var screenStartFrame =
             preparedSnapshot.ActionStartFrame;
         var actualScreenDuration = preparedSnapshot.DurationFrames;
         var durationPolicy = RuntimeDurationContract.Policy(effectiveContractJson);
         var currentAnimation = animation;
-        var usesOwnerTimeline = !string.IsNullOrWhiteSpace(durationTargetId);
+        var hasTemporalOwner = !string.IsNullOrWhiteSpace(durationTargetId);
+        var usesOwnerTimeline = hasTemporalOwner && !alignToScreenTimeline;
         var commands =
             new ModuleInstanceAnimationCommandCoordinator(
                 preparedSnapshot.Source.AnimationJson,
@@ -729,7 +745,7 @@ internal sealed class ModuleInstanceAnimationEditor
         Grid.SetColumn(extendHorizonButton, 1);
         timelineControl.Children.Add(extendHorizonButton);
         root.Children.Add(timelineControl);
-        if (usesOwnerTimeline)
+        if (hasTemporalOwner)
         {
             root.Children.Add(CreateTargetDurationEditor(
                 node,

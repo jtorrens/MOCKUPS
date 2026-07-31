@@ -6203,14 +6203,31 @@ static void PreviewShellVisualTreeIsResponsive()
                 .OfType<PreviewScreenTimelineZoomControl>()
                 .SingleOrDefault());
             Equal(0d, timelineZoom.Value);
-            True(timelineSurface
+            var timelineLanes = timelineSurface
                 .GetVisualDescendants()
                 .OfType<PreviewScreenTimelineLane>()
-                .Any());
+                .ToList();
+            True(timelineLanes.Count > 0);
+            Equal(1, timelineLanes.Count((lane) => lane.IsSelected));
+            Equal("General", timelineLanes.Single((lane) => lane.IsSelected).Label);
             True(timelineSurface
                 .GetVisualDescendants()
                 .OfType<TextBlock>()
                 .Any((text) => text.Text == "General"));
+            True(timelineSurface
+                .GetVisualDescendants()
+                .OfType<TextBlock>()
+                .Any((text) => text.Text == "General · Keyframes"));
+            var itemTimelineLane = timelineLanes.First((lane) =>
+                !string.IsNullOrWhiteSpace(lane.TargetId));
+            itemTimelineLane.RequestSelection();
+            Dispatcher.UIThread.RunJobs();
+            True(itemTimelineLane.IsSelected);
+            Equal(1, timelineLanes.Count((lane) => lane.IsSelected));
+            True(timelineSurface
+                .GetVisualDescendants()
+                .OfType<TextBlock>()
+                .Any((text) => text.Text == $"{itemTimelineLane.Label} · Keyframes"));
             Equal(1, timelineSurface
                 .GetVisualDescendants()
                 .OfType<PreviewScreenTimelineOverlay>()
@@ -14391,6 +14408,7 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
         ContentDurationFrames: 100,
         PostRollFrames: 12,
         Collections: [],
+        Keyframes: [],
         Mutation: null,
         AnimationJson: EmptyDocument().ToJson());
     Equal(-20, snapshot.MinimumFrame);
@@ -14663,6 +14681,14 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
     Equal(78, emptyIntervals[0].EndKeyframeFrame);
     Equal(78, passwordIntervals[0].StartKeyframeFrame);
     Equal(141, passwordIntervals[0].EndKeyframeFrame);
+    SequenceEqual(
+        [0, 78, 141],
+        stateSnapshot.Keyframes
+            .Where((keyframe) => keyframe.TargetId == "slot")
+            .Select((keyframe) => keyframe.ScreenFrame));
+    True(stateSnapshot.Keyframes
+        .Single((keyframe) => keyframe.TargetId == "slot" && keyframe.LocalFrame == 0)
+        .IsProtected);
     var terminalStateInterval = new PreviewScreenTimelineInterval(
         141,
         200,
