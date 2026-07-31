@@ -14401,15 +14401,13 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
         PreviewScreenTimelineMath.Move(
             startFrame: 8,
             endFrame: 28,
-            frameDelta: -30,
-            contentDurationFrames: 100));
+            frameDelta: -30));
     Equal(
-        (99, 119),
+        (208, 228),
         PreviewScreenTimelineMath.Move(
             startFrame: 8,
             endFrame: 28,
-            frameDelta: 200,
-            contentDurationFrames: 100));
+            frameDelta: 200));
     Equal(
         9,
         PreviewScreenTimelineMath.ResizeEnd(
@@ -14466,7 +14464,6 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
         startFrame: 20,
         endFrame: 40,
         frameDelta: 9,
-        contentDurationFrames: 100,
         laneWidth: 500,
         minimumTimelineFrame: snapshot.MinimumFrame,
         maximumTimelineFrame: snapshot.MaximumFrame,
@@ -14476,7 +14473,6 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
         startFrame: 40,
         endFrame: 60,
         frameDelta: 9,
-        contentDurationFrames: 100,
         laneWidth: 500,
         minimumTimelineFrame: snapshot.MinimumFrame,
         maximumTimelineFrame: snapshot.MaximumFrame,
@@ -14493,13 +14489,12 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
     var movedBeyondScreen = PreviewScreenTimelineMath.MoveWithSnap(
         startFrame: 70,
         endFrame: 110,
-        frameDelta: 29,
-        contentDurationFrames: 100,
+        frameDelta: 59,
         laneWidth: 500,
         minimumTimelineFrame: snapshot.MinimumFrame,
         maximumTimelineFrame: snapshot.MaximumFrame,
         candidates: []);
-    Equal((99, 139, (int?)null), movedBeyondScreen);
+    Equal((129, 169, (int?)null), movedBeyondScreen);
     var resizedBeyondScreen = PreviewScreenTimelineMath.ResizeEndWithSnap(
         startFrame: 20,
         requestedEndFrame: 145,

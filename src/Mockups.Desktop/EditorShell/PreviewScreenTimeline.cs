@@ -79,12 +79,10 @@ internal static class PreviewScreenTimelineMath
     public static (int StartFrame, int EndFrame) Move(
         int startFrame,
         int endFrame,
-        int frameDelta,
-        int contentDurationFrames)
+        int frameDelta)
     {
         var duration = Math.Max(1, endFrame - startFrame);
-        var maximumStart = Math.Max(0, contentDurationFrames - 1);
-        var nextStart = Math.Clamp(startFrame + frameDelta, 0, maximumStart);
+        var nextStart = Math.Max(0, startFrame + frameDelta);
         return (nextStart, nextStart + duration);
     }
 
@@ -124,17 +122,13 @@ internal static class PreviewScreenTimelineMath
         int startFrame,
         int endFrame,
         double frameDelta,
-        int contentDurationFrames,
         double laneWidth,
         int minimumTimelineFrame,
         int maximumTimelineFrame,
         IReadOnlyList<int> candidates)
     {
         var duration = Math.Max(1, endFrame - startFrame);
-        var desiredStart = Math.Clamp(
-            startFrame + frameDelta,
-            0,
-            Math.Max(0, contentDurationFrames - 1));
+        var desiredStart = Math.Max(0, startFrame + frameDelta);
         var desiredEnd = desiredStart + duration;
         var threshold = SnapThresholdFrames(
             laneWidth,
@@ -148,8 +142,7 @@ internal static class PreviewScreenTimelineMath
                 (Candidate: candidate, Offset: candidate - desiredEnd),
             })
             .Where((match) => Math.Abs(match.Offset) <= threshold)
-            .Where((match) => desiredStart + match.Offset >= 0
-                && desiredStart + match.Offset < contentDurationFrames)
+            .Where((match) => desiredStart + match.Offset >= 0)
             .OrderBy((match) => Math.Abs(match.Offset))
             .ThenBy((match) => match.Candidate)
             .Select((match) => new PreviewScreenTimelineSnapMatch(
@@ -169,8 +162,7 @@ internal static class PreviewScreenTimelineMath
         var rounded = Move(
             startFrame,
             endFrame,
-            (int)Math.Round(frameDelta, MidpointRounding.AwayFromZero),
-            contentDurationFrames);
+            (int)Math.Round(frameDelta, MidpointRounding.AwayFromZero));
         return (rounded.StartFrame, rounded.EndFrame, null);
     }
 
@@ -1105,6 +1097,7 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
     private double _dragStartFrame;
     private int _dragStartValue;
     private int _dragEndValue;
+    private int? _activeSnapFrame;
     private DragMode _dragMode;
 
     public PreviewScreenTimelineLane(
@@ -1120,10 +1113,7 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
         _key = key;
         _isGeneral = isGeneral;
         _snapTargets = snapTargets;
-        _startFrame = Math.Clamp(
-            startFrame,
-            0,
-            Math.Max(0, snapshot.ContentDurationFrames - 1));
+        _startFrame = Math.Max(0, startFrame);
         _endFrame = Math.Max(_startFrame + 1, endFrame);
         if (!_isGeneral)
         {
@@ -1155,7 +1145,11 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
             _isGeneral
                 ? new SolidColorBrush(Color.FromArgb(95, 47, 128, 237))
                 : new SolidColorBrush(Color.FromArgb(150, 47, 128, 237)),
-            new Pen(EditorSukiWindowTheme.AccentBrush(), 1),
+            new Pen(
+                _activeSnapFrame is null
+                    ? EditorSukiWindowTheme.AccentBrush()
+                    : EditorAnimationVisuals.ActiveTrackBrush,
+                _activeSnapFrame is null ? 1 : 2),
             block,
             4,
             4);
@@ -1196,7 +1190,6 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
                 _dragStartValue,
                 _dragEndValue,
                 pointerFrame - _dragStartFrame,
-                Snapshot.ContentDurationFrames,
                 Bounds.Width,
                 Viewport.MinimumFrame,
                 Viewport.MaximumFrame,
@@ -1223,6 +1216,7 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
                 _startFrame,
                 _endFrame));
         SnapGuideChanged?.Invoke(this, snapFrame);
+        _activeSnapFrame = snapFrame;
         InvalidateVisual();
         args.Handled = true;
     }
@@ -1239,6 +1233,8 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
     {
         if (_dragMode == DragMode.None) return;
         _dragMode = DragMode.None;
+        _activeSnapFrame = null;
+        InvalidateVisual();
         SnapGuideChanged?.Invoke(this, null);
     }
 
@@ -1504,6 +1500,7 @@ internal sealed class PreviewScreenTimelineOverlay : PreviewScreenTimelineTrack
         }
 
         var playheadBrush = _isPlayheadSnapped
+            || _snapGuideFrame == _frame
             ? EditorAnimationVisuals.ActiveTrackBrush
             : EditorSukiWindowTheme.AccentBrush();
         var playheadX = X(_frame);
