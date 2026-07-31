@@ -225,6 +225,7 @@ function messageNodes(
   const gap = numberToken(payload, optionalString(conversation, "messageGap") || "theme.spacing.m")
     * renderScale(payload);
   const gutter = spacingPair(payload, optionalString(conversation, "screenGutter") || "theme.spacing.l|theme.spacing.l");
+  const screen = previewScreenBox(payload);
   const bubbleVariant = requiredString(
     conversation,
     "bubbleVariant",
@@ -297,10 +298,10 @@ function messageNodes(
     const { node, bounds, finalBounds } = entry;
     const message = messages[index]!;
     const offsetX = message.state === "outgoing"
-      ? payload.previewFrame.screenX + payload.previewFrame.screenWidth - gutter.x - (finalBounds.x + finalBounds.width)
+      ? screen.x + screen.width - gutter.x - (finalBounds.x + finalBounds.width)
       : message.state === "system"
-        ? payload.previewFrame.screenX + payload.previewFrame.screenWidth / 2 - (bounds.x + bounds.width / 2)
-        : payload.previewFrame.screenX + gutter.x - bounds.x;
+        ? screen.x + screen.width / 2 - (bounds.x + bounds.width / 2)
+        : screen.x + gutter.x - bounds.x;
     const translated = translateRenderableNode(node, { x: offsetX, y: y - bounds.y });
     y += finalBounds.height + gap;
     return translated;

@@ -157,7 +157,8 @@ retaining its track shape. A destination keyframe owns interpolation for the
 preceding segment: `hold` preserves the source value, while `writeOn` resolves
 the source-to-destination text at every intervening frame. That one resolved
 value is the value shown by both the animation editor and Preview; a concrete
-Module must not apply a second text reveal after track resolution.
+Module must not apply a second text reveal after track resolution, while its
+composer and keyboard remain visible for the resolved field-completion interval.
 
 During drag:
 

@@ -424,7 +424,6 @@ function composerState(
     const endFrame = startFrame + effectiveWriteOnFrames;
     const holdEndFrame = message.timelineRevealAtFrame;
     const composerVisible = message.state === "outgoing"
-      && effectiveWriteOnFrames > 0
       && frame >= startFrame
       && frame < holdEndFrame;
     if (composerVisible) {

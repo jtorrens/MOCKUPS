@@ -1277,6 +1277,7 @@ internal sealed class ModuleInstanceAnimationEditor
             MinWidth = 180;
             HorizontalAlignment = HorizontalAlignment.Stretch;
             Cursor = new Cursor(StandardCursorType.SizeWestEast);
+            Background = Brushes.Transparent;
             SizeChanged += (_, _) => Render();
             PointerPressed += (_, args) =>
             {
@@ -1362,20 +1363,21 @@ internal sealed class ModuleInstanceAnimationEditor
             var playhead = new Border
             {
                 Width = 2,
-                Height = Math.Max(24, Bounds.Height),
+                Height = Math.Max(1, Bounds.Height - 20),
                 Background = EditorSukiWindowTheme.AccentBrush(),
             };
             Canvas.SetLeft(playhead, Math.Clamp(playheadX - 1, 0, width - 2));
-            Canvas.SetTop(playhead, 0);
+            Canvas.SetTop(playhead, 20);
             Children.Add(playhead);
-            var pointer = new Polygon
+            var grip = new Border
             {
-                Points = new Points { new Point(0, 0), new Point(10, 0), new Point(5, 6) },
-                Fill = EditorSukiWindowTheme.AccentBrush(),
+                Width = 28,
+                Height = Math.Max(32, Bounds.Height),
+                Background = Brushes.Transparent,
             };
-            Canvas.SetLeft(pointer, Math.Clamp(playheadX - 5, 0, width - 10));
-            Canvas.SetTop(pointer, 0);
-            Children.Add(pointer);
+            Canvas.SetLeft(grip, Math.Clamp(playheadX - 14, 0, width - 28));
+            Canvas.SetTop(grip, 0);
+            Children.Add(grip);
         }
     }
 }
