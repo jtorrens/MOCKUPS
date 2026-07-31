@@ -387,11 +387,7 @@ internal static class PreviewScreenTimelineSnapshotFactory
                 track,
                 "fieldId",
                 "Screen Timeline animation track");
-            var targetId = JsonPath.RequiredString(
-                track,
-                "targetId",
-                "Screen Timeline animation track",
-                allowEmpty: true);
+            var targetId = track["targetId"]?.GetValue<string>() ?? "";
             if (!visibleTargetIds.Contains(targetId))
                 return [];
             return JsonPath.OptionalObjectArray(

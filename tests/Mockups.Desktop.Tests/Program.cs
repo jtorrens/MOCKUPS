@@ -14643,6 +14643,7 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
     stateAnimation.AddTrack("runtimeStateId", "slot", JsonValue.Create("empty")!, "hold");
     stateAnimation.UpsertKeyframe("runtimeStateId", "slot", 78, JsonValue.Create("password")!, "hold");
     stateAnimation.UpsertKeyframe("runtimeStateId", "slot", 141, JsonValue.Create("empty")!, "hold");
+    stateAnimation.AddTrack("screenOpacity", "", JsonValue.Create(1d)!, "hold");
     stateAnimation.AddTrack("nestedText", "nested-component", JsonValue.Create("internal")!, "hold");
     var stateSurface = new RuntimeInputSurface(
         new RuntimeInputOwner(
@@ -14692,6 +14693,10 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
         .IsProtected);
     True(stateSnapshot.Keyframes.All((keyframe) =>
         keyframe.TargetId != "nested-component"));
+    True(stateSnapshot.Keyframes.Any((keyframe) =>
+        keyframe.TargetId == ""
+        && keyframe.FieldId == "screenOpacity"
+        && keyframe.ScreenFrame == 0));
     var terminalStateInterval = new PreviewScreenTimelineInterval(
         141,
         200,
