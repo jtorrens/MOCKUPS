@@ -29,7 +29,7 @@
     "desktop:build": "npm run desktop:compile",
     "desktop:db:create": "dotnet run --project src/Mockups.Desktop.Host/Mockups.Desktop.Host.csproj -- --create-current-database",
     "desktop:db:validate": "dotnet run --project src/Mockups.Desktop.Host/Mockups.Desktop.Host.csproj -- --validate-current-database",
-    "desktop:publish:mac": "dotnet publish src/Mockups.Desktop.Host/Mockups.Desktop.Host.csproj -c Release -r osx-arm64 --self-contained true --no-incremental -o out/desktop/osx-arm64",
+    "desktop:publish:mac": "node scripts/publishMacDesktop.mjs",
     "desktop:package:mac": "npm run desktop:publish:mac && node scripts/packageMacApp.mjs",
     "desktop:open:mac": "tsx scripts/launchDesktopMac.ts --packaged",
     "desktop:launch:mac": "npm run desktop:package:mac && npm run desktop:open:mac",

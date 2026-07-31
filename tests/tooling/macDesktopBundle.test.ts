@@ -9,6 +9,9 @@ import {
   macDesktopInfoPlist,
   verifyMacDesktopBuildIdentity,
 } from "../../scripts/packageMacApp.mjs";
+import { macDesktopPublishArgs } from "../../scripts/publishMacDesktop.mjs";
+
+const repositoryRoot = process.cwd();
 
 test("macOS bundle launches the executable Desktop Host", () => {
   const plist = macDesktopInfoPlist();
@@ -53,4 +56,24 @@ test("macOS packaging rejects a published build from another commit", () => {
     () => verifyMacDesktopBuildIdentity("d9b96d97", "41d04021"),
     /does not match HEAD/u,
   );
+});
+
+test("macOS publication rebuilds the exact self-contained Release target", () => {
+  assert.deepEqual(macDesktopPublishArgs(repositoryRoot), [
+    "publish",
+    path.join(
+      repositoryRoot,
+      "src",
+      "Mockups.Desktop.Host",
+      "Mockups.Desktop.Host.csproj",
+    ),
+    "-c",
+    "Release",
+    "-r",
+    "osx-arm64",
+    "--self-contained",
+    "true",
+    "-o",
+    path.join(repositoryRoot, "out", "desktop", "osx-arm64"),
+  ]);
 });

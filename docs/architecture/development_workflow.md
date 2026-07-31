@@ -255,7 +255,8 @@ missing or invalid bundle before opening the project database.
 `desktop:mac` runs that same prepared development command under the display
 wake policy. `desktop:open:mac` opens the existing packaged bundle and fails if
 it is absent. `desktop:launch:mac` packages the current revision first.
-Mac packaging always performs a non-incremental Release publish. Before it
+Mac packaging first removes only its dedicated `out/desktop/osx-arm64`
+publication directory, then performs a complete self-contained Release publish. Before it
 replaces the `.app`, the packaging owner asks the published executable for its
 embedded short commit identity and requires an exact match with repository
 `HEAD`; a stale published binary fails packaging. The same identity appears in
