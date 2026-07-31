@@ -58,6 +58,22 @@ public static class RuntimeAnimationFrameOrigin
         JsonObject? themeTokens = null) =>
         Math.Max(1, Round(Model(contract, runtime, animation, themeTokens: themeTokens).OwnerNaturalDuration(targetId)));
 
+    public static int OwnerNaturalSequenceDuration(
+        JsonObject contract,
+        JsonObject runtime,
+        JsonObject animation,
+        string targetId,
+        JsonObject? themeTokens = null) =>
+        Math.Max(1, Round(Model(contract, runtime, animation, themeTokens: themeTokens).OwnerNaturalSequenceDuration(targetId)));
+
+    public static int OwnerSequenceEndScreenFrame(
+        JsonObject contract,
+        JsonObject runtime,
+        JsonObject animation,
+        string targetId,
+        JsonObject? themeTokens = null) =>
+        Model(contract, runtime, animation, themeTokens: themeTokens).OwnerSequenceEndScreenFrame(targetId);
+
     public static double OwnerLocalFrame(
         JsonObject contract,
         JsonObject runtime,
@@ -164,11 +180,11 @@ public static class RuntimeAnimationFrameOrigin
                         $"Runtime owner collection '{key}' item");
                     var fields = Fields(collection, item);
                     var pre = StringArray(collection, "preDurationFieldIds")
-                        .Sum((fieldId) => FieldValue(item, fields, fieldId));
+                        .Sum((fieldId) => SignedFieldValue(item, fields, fieldId));
                     var appearance = sequenceItems
                         ? cursor
                         : ItemOwnerOrigin(collection, item);
-                    var start = appearance + pre;
+                    var start = Math.Max(0, appearance + pre);
                     var durations = CalculateItemDurations(collection, item, targetId);
                     var effectiveSpan = TargetDuration(targetId, durations.Span);
                     var effectiveSequence = Scale(durations.Sequence, durations.Span, effectiveSpan);
@@ -214,6 +230,22 @@ public static class RuntimeAnimationFrameOrigin
             string.IsNullOrWhiteSpace(targetId)
                 ? _naturalDuration
                 : _items.TryGetValue(targetId, out var item) ? item.NaturalSpan : 1;
+
+        public double OwnerNaturalSequenceDuration(string targetId) =>
+            string.IsNullOrWhiteSpace(targetId)
+                ? _naturalDuration
+                : _items.TryGetValue(targetId, out var item) ? item.NaturalSequence : 1;
+
+        public int OwnerSequenceEndScreenFrame(string targetId)
+        {
+            if (string.IsNullOrWhiteSpace(targetId)) return DurationFrames;
+            return _items.TryGetValue(targetId, out var item)
+                ? Round(Scale(
+                    item.RootStart + item.EffectiveSequence,
+                    _naturalDuration,
+                    _effectiveDuration))
+                : 0;
+        }
 
         public double OwnerLocalFrame(string targetId, int screenFrame)
         {
@@ -1083,5 +1115,27 @@ public static class RuntimeAnimationFrameOrigin
         return JsonPath.RequiredNonNegativeNumber(
             owner[jsonKey],
             $"Runtime animation duration field '{fieldId}' value");
+    }
+
+    private static double SignedFieldValue(
+        JsonObject owner,
+        IReadOnlyList<JsonObject> fields,
+        string fieldId)
+    {
+        var definition = fields.FirstOrDefault((field) => Text(field["id"]) == fieldId)
+            ?? throw new InvalidOperationException(
+                $"Runtime animation offset references missing field '{fieldId}'.");
+        var jsonKey = JsonPath.RequiredString(
+            definition,
+            "jsonKey",
+            $"Runtime animation offset field '{fieldId}'");
+        var node = owner[jsonKey]
+            ?? throw new InvalidOperationException(
+                $"Runtime animation offset field '{fieldId}' value is required.");
+        if (node is JsonValue integer && integer.TryGetValue<int>(out var intValue)) return intValue;
+        if (node is JsonValue number && number.TryGetValue<double>(out var doubleValue)) return doubleValue;
+        if (node is JsonValue decimalNode && decimalNode.TryGetValue<decimal>(out var decimalValue)) return (double)decimalValue;
+        throw new InvalidOperationException(
+            $"Runtime animation offset field '{fieldId}' value must be numeric.");
     }
 }

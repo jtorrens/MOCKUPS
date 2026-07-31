@@ -208,6 +208,41 @@ internal sealed class ModuleInstanceAnimationDocument
         return true;
     }
 
+    public bool TryMoveKeyframes(
+        string fieldId,
+        string targetId,
+        IReadOnlyDictionary<int, int> frameChanges)
+    {
+        if (frameChanges.Count == 0
+            || frameChanges.Any(change => change.Key == 0 || change.Value < 0)) return false;
+        var track = TrackObject(fieldId, targetId);
+        var keyframes = track?["keyframes"] as JsonArray;
+        if (keyframes is null) return false;
+        var moving = keyframes.OfType<JsonObject>()
+            .Where(candidate => frameChanges.ContainsKey(candidate["frame"]?.GetValue<int>() ?? -1))
+            .ToList();
+        if (moving.Count != frameChanges.Count) return false;
+        var destinations = frameChanges.Values.ToList();
+        if (destinations.Distinct().Count() != destinations.Count) return false;
+        var untouchedFrames = keyframes.OfType<JsonObject>()
+            .Except(moving)
+            .Select(candidate => candidate["frame"]?.GetValue<int>() ?? 0)
+            .ToHashSet();
+        if (destinations.Any(untouchedFrames.Contains)) return false;
+        foreach (var keyframe in moving)
+        {
+            var source = keyframe["frame"]!.GetValue<int>();
+            keyframe["frame"] = frameChanges[source];
+        }
+        var ordered = keyframes.OfType<JsonObject>()
+            .OrderBy(keyframe => keyframe["frame"]?.GetValue<int>() ?? 0)
+            .ThenBy(keyframe => keyframe["id"]?.GetValue<string>() ?? "", StringComparer.Ordinal)
+            .ToList();
+        keyframes.Clear();
+        foreach (var keyframe in ordered) keyframes.Add(keyframe);
+        return true;
+    }
+
     public string ToJson() => _root.ToJsonString();
 
     private JsonObject? TrackObject(string fieldId, string targetId) =>

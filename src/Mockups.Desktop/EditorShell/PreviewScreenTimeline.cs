@@ -8,15 +8,38 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Nodes;
+using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
+
+internal sealed record PreviewScreenTimelineInterval(
+    int StartFrame,
+    int EndFrame,
+    int? StartKeyframeFrame = null,
+    int? EndKeyframeFrame = null,
+    int MinimumStartFrame = 0,
+    int MaximumEndFrame = int.MaxValue);
+
+internal sealed record PreviewScreenTimelineSerialEdit(
+    string StorageCollectionJsonKey,
+    string DelayFieldJsonKey,
+    int PreviousEndFrame,
+    int NaturalSpanFrames,
+    int NaturalSequenceFrames);
+
+internal sealed record PreviewScreenTimelineStateEdit(
+    string FieldId,
+    string TargetId,
+    Func<int, int> LocalFrameForScreenFrame);
 
 internal sealed record PreviewScreenTimelineItem(
     string Id,
     string Label,
     int StartFrame,
-    int DelayFrames,
-    int EndFrame);
+    int EndFrame,
+    IReadOnlyList<PreviewScreenTimelineInterval> Intervals,
+    PreviewScreenTimelineSerialEdit? SerialEdit = null,
+    PreviewScreenTimelineStateEdit? StateEdit = null);
 
 internal sealed record PreviewScreenTimelineCollection(
     string Id,
@@ -29,7 +52,9 @@ internal sealed record PreviewScreenTimelineSnapshot(
     int PreRollFrames,
     int ContentDurationFrames,
     int PostRollFrames,
-    IReadOnlyList<PreviewScreenTimelineCollection> Collections)
+    IReadOnlyList<PreviewScreenTimelineCollection> Collections,
+    RuntimeInputTimelineMutation? Mutation,
+    string AnimationJson)
 {
     public int MinimumFrame => -PreRollFrames;
     public int MaximumFrame => ContentDurationFrames + PostRollFrames - 1;
@@ -291,74 +316,24 @@ internal static class PreviewScreenTimelineSnapshotFactory
         var themeTokens = Parse(
             animationSnapshot.Source.ThemeTokensJson,
             "Screen Timeline Theme tokens");
+        var contractCollections = JsonPath.OptionalObjectArray(
+            contract,
+            "collections",
+            "Screen Timeline Runtime contract");
+        var tracks = JsonPath.OptionalObjectArray(
+            animation,
+            "tracks",
+            "Screen Timeline animation");
         var collections = surface.Collections
-            .Select((collection) =>
-            {
-                var items = DesignPreviewTestValues
-                    .CollectionItems(runtime, collection)
-                    .Select((item, itemIndex) =>
-                    {
-                        var itemId = JsonPath.RequiredString(
-                            item,
-                            "id",
-                            $"Screen Timeline collection '{collection.Id}' item");
-                        var ownerZero = Math.Clamp(
-                            RuntimeAnimationFrameOrigin.ScreenFrameForOwnerFrame(
-                                contract,
-                                runtime,
-                                animation,
-                                itemId,
-                                0,
-                                themeTokens),
-                            0,
-                            Math.Max(0, range.ContentDurationFrames - 1));
-                        var start = Math.Clamp(
-                            RuntimeAnimationFrameOrigin.OwnerAppearanceScreenFrame(
-                                contract,
-                                runtime,
-                                animation,
-                                itemId,
-                                themeTokens),
-                            0,
-                            ownerZero);
-                        var delayFrames = Math.Max(0, ownerZero - start);
-                        var naturalDuration = RuntimeAnimationFrameOrigin.OwnerNaturalDuration(
-                            contract,
-                            runtime,
-                            animation,
-                            itemId,
-                            themeTokens);
-                        var naturalEnd = RuntimeAnimationFrameOrigin.ScreenFrameForOwnerFrame(
-                            contract,
-                            runtime,
-                            animation,
-                            itemId,
-                            naturalDuration,
-                            themeTokens);
-                        var end = Math.Clamp(
-                            Math.Max(start + 1, naturalEnd),
-                            Math.Min(range.ContentDurationFrames, start + 1),
-                            range.ContentDurationFrames);
-                        var label = RuntimeCollectionItemPresentation.Resolve(
-                            collection,
-                            item,
-                            itemIndex,
-                            $"{collection.ItemLabel} {itemIndex + 1}",
-                            "",
-                            EditorIcons.Component).Title;
-                        return new PreviewScreenTimelineItem(
-                            itemId,
-                            label,
-                            start,
-                            delayFrames,
-                            end);
-                    })
-                    .ToList();
-                return new PreviewScreenTimelineCollection(
-                    collection.Id,
-                    collection.Label,
-                    items);
-            })
+            .Select((collection) => CreateCollection(
+                collection,
+                contractCollections,
+                tracks,
+                contract,
+                runtime,
+                animation,
+                themeTokens,
+                range.ContentDurationFrames))
             .Where((collection) => collection.Items.Count > 0)
             .ToList();
 
@@ -368,8 +343,218 @@ internal static class PreviewScreenTimelineSnapshotFactory
             range.PreRollFrames,
             Math.Max(1, range.ContentDurationFrames),
             range.PostRollFrames,
-            collections);
+            collections,
+            surface.TimelineMutation,
+            animationSnapshot.Source.AnimationJson);
     }
+
+    private static PreviewScreenTimelineCollection CreateCollection(
+        RuntimeInputCollectionDefinition collection,
+        IReadOnlyList<JsonObject> contractCollections,
+        IReadOnlyList<JsonObject> tracks,
+        JsonObject contract,
+        JsonObject runtime,
+        JsonObject animation,
+        JsonObject themeTokens,
+        int contentDurationFrames)
+    {
+        var definition = contractCollections.FirstOrDefault((candidate) =>
+            JsonPath.RequiredString(candidate, "jsonKey", "Runtime collection")
+                .Equals(collection.JsonKey, StringComparison.Ordinal))
+            ?? throw new InvalidOperationException(
+                $"Screen Timeline collection '{collection.Id}' has no effective Runtime contract definition.");
+        var timeline = definition["animationTimeline"] as JsonObject ?? new JsonObject();
+        var ownerOrigin = timeline["ownerOrigin"] as JsonObject;
+        var items = DesignPreviewTestValues.CollectionItems(runtime, collection).ToList();
+        if (ownerOrigin?["kind"]?.GetValue<string>() == "firstMatchingValue")
+        {
+            return new PreviewScreenTimelineCollection(
+                collection.Id,
+                collection.Label,
+                items.Select((item, index) => CreateStateItem(
+                    collection,
+                    item,
+                    index,
+                    ownerOrigin,
+                    tracks,
+                    contract,
+                    runtime,
+                    animation,
+                    themeTokens,
+                    contentDurationFrames)).ToList());
+        }
+
+        var sequenceItems = timeline["sequenceItems"]?.GetValue<bool>() != false;
+        var preFieldIds = JsonPath.OptionalStringArray(
+            timeline,
+            "preDurationFieldIds",
+            $"Screen Timeline collection '{collection.Id}'");
+        var previousEnd = 0;
+        var projected = new List<PreviewScreenTimelineItem>();
+        for (var index = 0; index < items.Count; index++)
+        {
+            var item = items[index];
+            var itemId = JsonPath.RequiredString(item, "id", $"Screen Timeline collection '{collection.Id}' item");
+            var start = sequenceItems
+                ? Math.Max(0, RuntimeAnimationFrameOrigin.ScreenFrameForOwnerFrame(
+                    contract, runtime, animation, itemId, 0, themeTokens))
+                : 0;
+            var end = sequenceItems
+                ? Math.Max(start + 1, RuntimeAnimationFrameOrigin.OwnerSequenceEndScreenFrame(
+                    contract, runtime, animation, itemId, themeTokens))
+                : contentDurationFrames;
+            var label = ItemLabel(collection, item, index);
+            PreviewScreenTimelineSerialEdit? serialEdit = null;
+            if (sequenceItems && preFieldIds.Count == 1)
+            {
+                var field = definition["fields"]!.AsArray().OfType<JsonObject>()
+                    .First(candidate => candidate["id"]?.GetValue<string>() == preFieldIds[0]);
+                serialEdit = new PreviewScreenTimelineSerialEdit(
+                    StorageCollectionKey(collection),
+                    JsonPath.RequiredString(field, "jsonKey", "Timeline offset field"),
+                    previousEnd,
+                    RuntimeAnimationFrameOrigin.OwnerNaturalDuration(
+                        contract, runtime, animation, itemId, themeTokens),
+                    RuntimeAnimationFrameOrigin.OwnerNaturalSequenceDuration(
+                        contract, runtime, animation, itemId, themeTokens));
+            }
+            projected.Add(new PreviewScreenTimelineItem(
+                itemId,
+                label,
+                start,
+                end,
+                [new PreviewScreenTimelineInterval(start, end)],
+                serialEdit));
+            if (sequenceItems) previousEnd = end;
+        }
+        return new PreviewScreenTimelineCollection(collection.Id, collection.Label, projected);
+    }
+
+    private static PreviewScreenTimelineItem CreateStateItem(
+        RuntimeInputCollectionDefinition collection,
+        JsonObject item,
+        int itemIndex,
+        JsonObject ownerOrigin,
+        IReadOnlyList<JsonObject> tracks,
+        JsonObject contract,
+        JsonObject runtime,
+        JsonObject animation,
+        JsonObject themeTokens,
+        int contentDurationFrames)
+    {
+        string Required(string key) => JsonPath.RequiredString(ownerOrigin, key, "State Timeline owner origin");
+        var sourceCollectionKey = Required("sourceCollectionJsonKey");
+        var sourceTargetIdKey = Required("sourceTargetIdJsonKey");
+        var sourceFieldId = Required("sourceFieldId");
+        var sourceValueKey = Required("sourceValueJsonKey");
+        var matchValueKey = Required("matchValueJsonKey");
+        var sourceTargetId = JsonPath.RequiredString(item, sourceTargetIdKey, "State Timeline item");
+        var matchValue = JsonPath.RequiredString(item, matchValueKey, "State Timeline item");
+        var sourceItem = JsonPath.OptionalObjectArray(runtime, sourceCollectionKey, "State Timeline source collection")
+            .FirstOrDefault(candidate => candidate["id"]?.GetValue<string>() == sourceTargetId)
+            ?? throw new InvalidOperationException($"State Timeline source item '{sourceTargetId}' is missing.");
+        var currentValue = sourceItem[sourceValueKey] is JsonValue stateValue
+            && stateValue.TryGetValue<string>(out var stateId)
+                ? stateId
+                : "";
+        var track = tracks.FirstOrDefault(candidate =>
+            candidate["fieldId"]?.GetValue<string>() == sourceFieldId
+            && candidate["targetId"]?.GetValue<string>() == sourceTargetId);
+        var events = (track?["keyframes"] as JsonArray)?.OfType<JsonObject>()
+            .Where(candidate => candidate["enabled"]?.GetValue<bool>() != false)
+            .Select(candidate => new
+            {
+                LocalFrame = candidate["frame"]?.GetValue<int>() ?? 0,
+                Value = candidate["value"]?.GetValue<string>() ?? "",
+            })
+            .OrderBy(candidate => candidate.LocalFrame)
+            .ToList() ?? [];
+        var intervals = new List<PreviewScreenTimelineInterval>();
+        var cursor = 0;
+        int? activeStartLocal = currentValue == matchValue ? 0 : null;
+        foreach (var stateEvent in events)
+        {
+            var screenFrame = Math.Clamp(
+                RuntimeAnimationFrameOrigin.ScreenFrame(
+                    contract, runtime, animation, sourceFieldId, sourceTargetId, stateEvent.LocalFrame, themeTokens),
+                0,
+                contentDurationFrames);
+            if (stateEvent.Value == matchValue && activeStartLocal is null)
+            {
+                cursor = screenFrame;
+                activeStartLocal = stateEvent.LocalFrame;
+            }
+            else if (stateEvent.Value != matchValue && activeStartLocal is not null)
+            {
+                intervals.Add(new PreviewScreenTimelineInterval(
+                    cursor,
+                    Math.Max(cursor, screenFrame),
+                    activeStartLocal == 0 ? null : activeStartLocal,
+                    stateEvent.LocalFrame));
+                activeStartLocal = null;
+            }
+        }
+        if (activeStartLocal is not null)
+        {
+            intervals.Add(new PreviewScreenTimelineInterval(
+                cursor,
+                contentDurationFrames,
+                activeStartLocal == 0 ? null : activeStartLocal,
+                null));
+        }
+        var selectorBoundaries = events
+            .Select(stateEvent => Math.Clamp(
+                RuntimeAnimationFrameOrigin.ScreenFrame(
+                    contract, runtime, animation, sourceFieldId, sourceTargetId, stateEvent.LocalFrame, themeTokens),
+                0,
+                contentDurationFrames))
+            .Distinct()
+            .Order()
+            .ToList();
+        intervals = intervals.Select(interval => interval with
+        {
+            MinimumStartFrame = selectorBoundaries
+                .Where(boundary => boundary < interval.StartFrame)
+                .Select(boundary => boundary + 1)
+                .DefaultIfEmpty(0)
+                .Max(),
+            MaximumEndFrame = selectorBoundaries
+                .Where(boundary => boundary > interval.EndFrame)
+                .Select(boundary => boundary - 1)
+                .DefaultIfEmpty(contentDurationFrames)
+                .Min(),
+        }).ToList();
+        int LocalFrameForScreenFrame(int screenFrame) => Math.Max(0, (int)Math.Round(
+            RuntimeAnimationFrameOrigin.OwnerLocalFrame(
+                contract, runtime, animation, sourceTargetId, screenFrame, themeTokens),
+            MidpointRounding.AwayFromZero));
+        return new PreviewScreenTimelineItem(
+            JsonPath.RequiredString(item, "id", "State Timeline item"),
+            ItemLabel(collection, item, itemIndex),
+            0,
+            contentDurationFrames,
+            intervals,
+            StateEdit: new PreviewScreenTimelineStateEdit(
+                sourceFieldId,
+                sourceTargetId,
+                LocalFrameForScreenFrame));
+    }
+
+    private static string ItemLabel(RuntimeInputCollectionDefinition collection, JsonObject item, int index) =>
+        RuntimeCollectionItemPresentation.Resolve(
+            collection,
+            item,
+            index,
+            $"{collection.ItemLabel} {index + 1}",
+            "",
+            EditorIcons.Component).Title;
+
+    private static string StorageCollectionKey(RuntimeInputCollectionDefinition collection) =>
+        !string.IsNullOrWhiteSpace(collection.StorageCollectionJsonKey)
+            ? collection.StorageCollectionJsonKey
+            : string.IsNullOrWhiteSpace(collection.SourceCollectionJsonKey)
+                ? collection.JsonKey
+                : collection.SourceCollectionJsonKey;
 
     private static JsonObject Parse(string json, string owner) =>
         JsonPath.ParseRequiredObject(json, owner);
@@ -478,8 +663,6 @@ internal sealed class PreviewScreenTimelineSurface : Border
     };
     private readonly Button _playButton;
     private readonly List<PreviewScreenTimelineLane> _lanes = [];
-    private readonly Dictionary<string, (int StartFrame, int EndFrame)>
-        _laneState = new(StringComparer.Ordinal);
     private readonly Dictionary<string, bool>
         _collapsedCollections = new(StringComparer.Ordinal);
     private readonly Dictionary<string, double>
@@ -564,11 +747,11 @@ internal sealed class PreviewScreenTimelineSurface : Border
         _playheadSnapFrame = null;
         _lanes.Clear();
         _content.Children.Clear();
-        _content.Children.Add(CreateTransport(snapshot, isPlaying));
+        _content.Children.Add(CreateTransport(snapshot, isPlaying, zoom));
 
         var timeline = new Grid
         {
-            ColumnDefinitions = new ColumnDefinitions($"{LabelWidth},*,96"),
+            ColumnDefinitions = new ColumnDefinitions($"{LabelWidth},*"),
             ColumnSpacing = 8,
             RowSpacing = 2,
         };
@@ -583,17 +766,15 @@ internal sealed class PreviewScreenTimelineSurface : Border
             _ruler,
             28,
             FontWeight.Normal);
-        var zoomControl = new PreviewScreenTimelineZoomControl(zoom);
-        zoomControl.ValueChanged += (_, value) => SetZoom(value);
-        Grid.SetColumn(zoomControl, 2);
-        Grid.SetRow(zoomControl, 0);
-        timeline.Children.Add(zoomControl);
-
         var general = CreateLane(
             snapshot,
             "general",
-            0,
-            snapshot.ContentDurationFrames,
+            new PreviewScreenTimelineItem(
+                "general",
+                "General",
+                0,
+                snapshot.ContentDurationFrames,
+                [new PreviewScreenTimelineInterval(0, snapshot.ContentDurationFrames)]),
             isGeneral: true);
         AddTimelineRow(
             timeline,
@@ -626,16 +807,11 @@ internal sealed class PreviewScreenTimelineSurface : Border
                     snapshot.ScreenId,
                     collection.Id,
                     item.Id);
-                var initial = _laneState.TryGetValue(laneKey, out var stored)
-                    ? stored
-                    : (item.StartFrame, item.EndFrame);
                 var lane = CreateLane(
                     snapshot,
                     laneKey,
-                    initial.StartFrame,
-                    initial.EndFrame,
-                    isGeneral: false,
-                    delayFrames: item.DelayFrames);
+                    item,
+                    isGeneral: false);
                 var row = AddTimelineRow(
                     timeline,
                     item.Label,
@@ -683,36 +859,80 @@ internal sealed class PreviewScreenTimelineSurface : Border
     private PreviewScreenTimelineLane CreateLane(
         PreviewScreenTimelineSnapshot snapshot,
         string key,
-        int startFrame,
-        int endFrame,
-        bool isGeneral,
-        int delayFrames = 0)
+        PreviewScreenTimelineItem item,
+        bool isGeneral)
     {
         var lane = new PreviewScreenTimelineLane(
             snapshot,
             _viewport ?? throw new InvalidOperationException(
                 "Screen Timeline viewport must be prepared before its lanes."),
             key,
-            startFrame,
-            endFrame,
+            item,
             isGeneral,
-            delayFrames,
             LaneSnapTargets);
-        lane.BoundsChanged += (_, bounds) =>
-        {
-            if (!isGeneral)
-                _laneState[key] = (bounds.StartFrame, bounds.EndFrame);
-        };
+        lane.EditCommitted += async (_, edit) => await CommitLaneEditAsync(item, edit);
         lane.SnapGuideChanged += (_, snapFrame) =>
             _overlay?.SetSnapGuide(snapFrame);
         _lanes.Add(lane);
         return lane;
     }
 
+    private async Task CommitLaneEditAsync(
+        PreviewScreenTimelineItem item,
+        PreviewScreenTimelineLaneEdit edit)
+    {
+        if (_snapshot?.Mutation is not { } mutation) return;
+        if (item.SerialEdit is { } serial)
+        {
+            if (edit.Mode == PreviewScreenTimelineLaneEditMode.Move)
+            {
+                await mutation.UpdateCollectionValuesAsync(
+                    serial.StorageCollectionJsonKey,
+                    item.Id,
+                    new Dictionary<string, JsonNode?>
+                    {
+                        [serial.DelayFieldJsonKey] = edit.StartFrame - serial.PreviousEndFrame,
+                    });
+                return;
+            }
+            if (edit.Mode == PreviewScreenTimelineLaneEditMode.Exit)
+            {
+                var displayedSequence = Math.Max(1, edit.EndFrame - edit.StartFrame);
+                var targetSpan = Math.Max(1, (int)Math.Round(
+                    displayedSequence
+                    * serial.NaturalSpanFrames
+                    / (double)Math.Max(1, serial.NaturalSequenceFrames),
+                    MidpointRounding.AwayFromZero));
+                var document = new ModuleInstanceAnimationDocument(_snapshot.AnimationJson);
+                document.SetTargetDurationFrames(item.Id, targetSpan);
+                await mutation.SaveAnimationJsonAsync(document.ToJson());
+                return;
+            }
+        }
+        if (item.StateEdit is not { } state
+            || edit.Interval is not { } original
+            || edit.UpdatedInterval is not { } updated) return;
+        var changes = new Dictionary<int, int>();
+        if (original.StartKeyframeFrame is { } startLocal
+            && updated.StartFrame != original.StartFrame)
+        {
+            changes[startLocal] = state.LocalFrameForScreenFrame(updated.StartFrame);
+        }
+        if (original.EndKeyframeFrame is { } endLocal
+            && updated.EndFrame != original.EndFrame)
+        {
+            changes[endLocal] = state.LocalFrameForScreenFrame(updated.EndFrame);
+        }
+        if (changes.Count == 0) return;
+        var animationDocument = new ModuleInstanceAnimationDocument(_snapshot.AnimationJson);
+        if (!animationDocument.TryMoveKeyframes(state.FieldId, state.TargetId, changes)) return;
+        await mutation.SaveAnimationJsonAsync(animationDocument.ToJson());
+    }
+
     private IReadOnlyList<int> PlayheadSnapTargets() =>
         _lanes
             .Where((lane) => lane.IsVisible)
-            .SelectMany((lane) => new[] { lane.StartFrame, lane.EndFrame })
+            .SelectMany((lane) => lane.SnapFrames)
             .Concat(_keyframeFrames)
             .Distinct()
             .Order()
@@ -722,7 +942,7 @@ internal sealed class PreviewScreenTimelineSurface : Border
         PreviewScreenTimelineLane active) =>
         _lanes
             .Where((lane) => !ReferenceEquals(lane, active) && lane.IsVisible)
-            .SelectMany((lane) => new[] { lane.StartFrame, lane.EndFrame })
+            .SelectMany((lane) => lane.SnapFrames)
             .Append(_frame)
             .Distinct()
             .Order()
@@ -757,7 +977,8 @@ internal sealed class PreviewScreenTimelineSurface : Border
 
     private Control CreateTransport(
         PreviewScreenTimelineSnapshot snapshot,
-        bool isPlaying)
+        bool isPlaying,
+        double zoom)
     {
         var start = EditorTimelineTransport.CreateNavigationButton(
             EditorIcons.Create(EditorIcons.TimelineFirstFrame, 15),
@@ -794,12 +1015,16 @@ internal sealed class PreviewScreenTimelineSurface : Border
             },
         };
         Grid.SetColumn(controls, 1);
+        var zoomControl = new PreviewScreenTimelineZoomControl(zoom);
+        zoomControl.ValueChanged += (_, value) => SetZoom(value);
+        Grid.SetColumn(zoomControl, 2);
         var grid = new Grid
         {
-            ColumnDefinitions = new ColumnDefinitions($"{LabelWidth},*"),
+            ColumnDefinitions = new ColumnDefinitions($"{LabelWidth},*,Auto"),
             ColumnSpacing = 8,
         };
         grid.Children.Add(controls);
+        grid.Children.Add(zoomControl);
         return grid;
     }
 
@@ -889,7 +1114,7 @@ internal sealed class PreviewScreenTimelineSurface : Border
             Render(current);
             setCollapsed(current);
         };
-        Grid.SetColumnSpan(button, 3);
+        Grid.SetColumnSpan(button, 2);
         Grid.SetRow(button, rowIndex);
         timeline.Children.Add(button);
     }
@@ -1096,23 +1321,38 @@ internal sealed class PreviewScreenTimelineRulerTicks
     }
 }
 
-internal sealed record PreviewScreenTimelineLaneBounds(
+internal enum PreviewScreenTimelineLaneEditMode
+{
+    Move,
+    Exit,
+    StateBoundary,
+    StateInterval,
+}
+
+internal sealed record PreviewScreenTimelineLaneEdit(
+    PreviewScreenTimelineLaneEditMode Mode,
     int StartFrame,
-    int EndFrame);
+    int EndFrame,
+    PreviewScreenTimelineInterval? Interval = null,
+    PreviewScreenTimelineInterval? UpdatedInterval = null);
 
 internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
 {
     private const double ExitHandleWidth = 12;
     private readonly string _key;
     private readonly bool _isGeneral;
-    private readonly int _delayFrames;
+    private readonly bool _isStateLane;
+    private readonly bool _isEditable;
     private readonly Func<PreviewScreenTimelineLane, IReadOnlyList<int>>
         _snapTargets;
+    private readonly List<PreviewScreenTimelineInterval> _intervals;
     private int _startFrame;
     private int _endFrame;
     private double _dragStartFrame;
     private int _dragStartValue;
     private int _dragEndValue;
+    private int _activeIntervalIndex = -1;
+    private PreviewScreenTimelineInterval? _dragInterval;
     private int? _activeSnapFrame;
     private DragMode _dragMode;
 
@@ -1120,20 +1360,20 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
         PreviewScreenTimelineSnapshot snapshot,
         PreviewScreenTimelineViewport viewport,
         string key,
-        int startFrame,
-        int endFrame,
+        PreviewScreenTimelineItem item,
         bool isGeneral,
-        int delayFrames,
         Func<PreviewScreenTimelineLane, IReadOnlyList<int>> snapTargets)
         : base(snapshot, viewport)
     {
         _key = key;
         _isGeneral = isGeneral;
-        _delayFrames = Math.Max(0, delayFrames);
+        _isStateLane = item.StateEdit is not null;
+        _isEditable = item.SerialEdit is not null || item.StateEdit is not null;
         _snapTargets = snapTargets;
-        _startFrame = Math.Max(0, startFrame);
-        _endFrame = Math.Max(_startFrame + 1, endFrame);
-        if (!_isGeneral)
+        _startFrame = Math.Max(0, item.StartFrame);
+        _endFrame = Math.Max(_startFrame + 1, item.EndFrame);
+        _intervals = item.Intervals.ToList();
+        if (_isEditable)
         {
             Cursor = new Cursor(StandardCursorType.SizeWestEast);
             PointerPressed += OnPointerPressed;
@@ -1145,50 +1385,53 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
 
     public string Key => _key;
     public int StartFrame => _startFrame;
-    public int DelayFrames => _delayFrames;
     public int EndFrame => _endFrame;
-    public event EventHandler<PreviewScreenTimelineLaneBounds>? BoundsChanged;
+    public IReadOnlyList<int> SnapFrames => _intervals
+        .SelectMany(interval => new[] { interval.StartFrame, interval.EndFrame })
+        .Distinct()
+        .ToList();
+    public event EventHandler<PreviewScreenTimelineLaneEdit>? EditCommitted;
     public event EventHandler<int?>? SnapGuideChanged;
 
     public override void Render(DrawingContext context)
     {
         base.Render(context);
-        var left = X(_startFrame);
-        var right = X(_endFrame);
-        var block = new Rect(
-            left,
-            3,
-            Math.Max(2, right - left),
-            Math.Max(2, Bounds.Height - 6));
-        context.DrawRectangle(
-            _isGeneral
-                ? new SolidColorBrush(Color.FromArgb(95, 47, 128, 237))
-                : new SolidColorBrush(Color.FromArgb(150, 47, 128, 237)),
-            new Pen(
-                _activeSnapFrame is null
-                    ? EditorSukiWindowTheme.AccentBrush()
-                    : EditorAnimationVisuals.ActiveTrackBrush,
-                _activeSnapFrame is null ? 1 : 2),
-            block,
-            4,
-            4);
-        if (!_isGeneral && _delayFrames > 0)
+        var height = Math.Max(2, Bounds.Height - 6);
+        if (_isStateLane)
         {
-            var delayRight = Math.Min(right, X(_startFrame + _delayFrames));
             PreviewScreenTimelineHatch.Draw(
                 context,
-                new Rect(
-                    left,
-                    block.Top,
-                    Math.Max(0, delayRight - left),
-                    block.Height));
+                new Rect(X(0), 3, Math.Max(0, X(Snapshot.ContentDurationFrames) - X(0)), height));
         }
-        if (!_isGeneral)
+        for (var index = 0; index < _intervals.Count; index++)
         {
-            context.DrawLine(
-                new Pen(Brushes.White, 2),
-                new Point(Math.Max(left, right - 5), 7),
-                new Point(Math.Max(left, right - 5), Bounds.Height - 7));
+            var interval = _intervals[index];
+            var left = X(interval.StartFrame);
+            var right = X(interval.EndFrame);
+            var block = new Rect(left, 3, Math.Max(2, right - left), height);
+            context.DrawRectangle(
+                _isGeneral
+                    ? new SolidColorBrush(Color.FromArgb(95, 47, 128, 237))
+                    : new SolidColorBrush(Color.FromArgb(150, 47, 128, 237)),
+                new Pen(
+                    _activeSnapFrame is null || index != _activeIntervalIndex
+                        ? EditorSukiWindowTheme.AccentBrush()
+                        : EditorAnimationVisuals.ActiveTrackBrush,
+                    _activeSnapFrame is null || index != _activeIntervalIndex ? 1 : 2),
+                block,
+                4,
+                4);
+            if (!_isEditable) continue;
+            if (!_isStateLane || interval.StartKeyframeFrame is not null)
+            {
+                context.DrawLine(new Pen(Brushes.White, 2),
+                    new Point(left + 4, 7), new Point(left + 4, Bounds.Height - 7));
+            }
+            if (!_isStateLane || interval.EndKeyframeFrame is not null)
+            {
+                context.DrawLine(new Pen(Brushes.White, 2),
+                    new Point(right - 4, 7), new Point(right - 4, Bounds.Height - 7));
+            }
         }
     }
 
@@ -1196,15 +1439,31 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
     {
         if (!PreviewScreenTimelinePointer.IsPrimaryPress(this, args)) return;
         var x = args.GetPosition(this).X;
-        var left = X(_startFrame);
-        var right = X(_endFrame);
-        if (x < left - 4 || x > right + 4) return;
-        _dragMode = right - x <= ExitHandleWidth
-            ? DragMode.Exit
-            : DragMode.Move;
+        _activeIntervalIndex = _intervals.FindIndex(interval =>
+            x >= X(interval.StartFrame) - 5 && x <= X(interval.EndFrame) + 5);
+        if (_activeIntervalIndex < 0) return;
+        var selected = _intervals[_activeIntervalIndex];
+        var left = X(selected.StartFrame);
+        var right = X(selected.EndFrame);
+        if (_isStateLane)
+        {
+            _dragMode = Math.Abs(x - left) <= ExitHandleWidth && selected.StartKeyframeFrame is not null
+                ? DragMode.StateStart
+                : Math.Abs(right - x) <= ExitHandleWidth && selected.EndKeyframeFrame is not null
+                    ? DragMode.StateEnd
+                    : selected.StartKeyframeFrame is not null && selected.EndKeyframeFrame is not null
+                        ? DragMode.StateMove
+                        : DragMode.None;
+        }
+        else
+        {
+            _dragMode = right - x <= ExitHandleWidth ? DragMode.Exit : DragMode.Move;
+        }
+        if (_dragMode == DragMode.None) return;
         _dragStartFrame = RawFrameAt(x);
-        _dragStartValue = _startFrame;
-        _dragEndValue = _endFrame;
+        _dragStartValue = selected.StartFrame;
+        _dragEndValue = selected.EndFrame;
+        _dragInterval = selected;
         args.Pointer.Capture(this);
         args.Handled = true;
     }
@@ -1214,7 +1473,7 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
         if (_dragMode == DragMode.None) return;
         var pointerFrame = RawFrameAt(args.GetPosition(this).X);
         int? snapFrame;
-        if (_dragMode == DragMode.Move)
+        if (_dragMode is DragMode.Move or DragMode.StateMove)
         {
             var next = PreviewScreenTimelineMath.MoveWithSnap(
                 _dragStartValue,
@@ -1226,9 +1485,24 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
                 _snapTargets(this));
             _startFrame = next.StartFrame;
             _endFrame = next.EndFrame;
+            if (_dragMode == DragMode.StateMove && _dragInterval is { } original)
+            {
+                if (_startFrame < original.MinimumStartFrame)
+                {
+                    var correction = original.MinimumStartFrame - _startFrame;
+                    _startFrame += correction;
+                    _endFrame += correction;
+                }
+                if (_endFrame > original.MaximumEndFrame)
+                {
+                    var correction = _endFrame - original.MaximumEndFrame;
+                    _startFrame -= correction;
+                    _endFrame -= correction;
+                }
+            }
             snapFrame = next.SnapFrame;
         }
-        else
+        else if (_dragMode == DragMode.Exit)
         {
             var next = PreviewScreenTimelineMath.ResizeEndWithSnap(
                 _startFrame,
@@ -1240,11 +1514,31 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
             _endFrame = next.EndFrame;
             snapFrame = next.SnapFrame;
         }
-        BoundsChanged?.Invoke(
-            this,
-            new PreviewScreenTimelineLaneBounds(
-                _startFrame,
-                _endFrame));
+        else
+        {
+            var next = PreviewScreenTimelineMath.SnapFrame(
+                args.GetPosition(this).X,
+                Bounds.Width,
+                Viewport.MinimumFrame,
+                Viewport.MaximumFrame,
+                _snapTargets(this));
+            if (_dragMode == DragMode.StateStart)
+                _startFrame = Math.Clamp(
+                    next.Frame,
+                    _dragInterval?.MinimumStartFrame ?? 0,
+                    _dragEndValue - 1);
+            else
+                _endFrame = Math.Clamp(
+                    next.Frame,
+                    _dragStartValue + 1,
+                    _dragInterval?.MaximumEndFrame ?? Snapshot.ContentDurationFrames);
+            snapFrame = next.IsSnapped ? next.Frame : null;
+        }
+        _intervals[_activeIntervalIndex] = (_dragInterval ?? _intervals[_activeIntervalIndex]) with
+        {
+            StartFrame = _startFrame,
+            EndFrame = _endFrame,
+        };
         SnapGuideChanged?.Invoke(this, snapFrame);
         _activeSnapFrame = snapFrame;
         InvalidateVisual();
@@ -1262,10 +1556,27 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
     private void EndDrag()
     {
         if (_dragMode == DragMode.None) return;
+        var mode = _dragMode;
+        var original = _dragInterval;
+        var updated = _activeIntervalIndex >= 0 ? _intervals[_activeIntervalIndex] : null;
         _dragMode = DragMode.None;
         _activeSnapFrame = null;
         InvalidateVisual();
         SnapGuideChanged?.Invoke(this, null);
+        EditCommitted?.Invoke(this, new PreviewScreenTimelineLaneEdit(
+            mode switch
+            {
+                DragMode.Move => PreviewScreenTimelineLaneEditMode.Move,
+                DragMode.Exit => PreviewScreenTimelineLaneEditMode.Exit,
+                DragMode.StateMove => PreviewScreenTimelineLaneEditMode.StateInterval,
+                _ => PreviewScreenTimelineLaneEditMode.StateBoundary,
+            },
+            _startFrame,
+            _endFrame,
+            original,
+            updated));
+        _dragInterval = null;
+        _activeIntervalIndex = -1;
     }
 
     private enum DragMode
@@ -1273,6 +1584,9 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
         None,
         Move,
         Exit,
+        StateStart,
+        StateEnd,
+        StateMove,
     }
 }
 
@@ -1301,9 +1615,9 @@ internal sealed class PreviewScreenTimelineZoomControl : Border
 
     public PreviewScreenTimelineZoomControl(double value)
     {
-        Width = 88;
-        Height = 28;
-        Padding = new Thickness(4, 0);
+        Width = 168;
+        Height = 38;
+        Padding = new Thickness(6, 0);
         Background = Brushes.Transparent;
         Cursor = new Cursor(StandardCursorType.SizeWestEast);
         _value = Math.Clamp(value, -1, 1);
@@ -1406,8 +1720,8 @@ internal sealed class PreviewScreenTimelineZoomVisual : Control
                     : brush,
                 2),
             new Point(thumbX, centerY),
-            4,
-            4);
+            5.5,
+            5.5);
         DrawScaleMark(context, left - 7, centerY, 3, brush);
         DrawScaleMark(context, right + 7, centerY, 6, brush);
     }

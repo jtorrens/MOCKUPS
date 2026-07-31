@@ -25,21 +25,20 @@ Screen. The playhead may traverse all three zones. General and collection-item
 lanes may be manipulated only inside the content zone; preroll and postroll are
 parent-owned playback context and use an unfilled presentation.
 
-The first Timeline surface keeps lane movement and exit trimming in session
-state only. It does not rewrite appearance origins, keyframes, Screen duration
-or persistence. Collection item lifetime defaults remain collection-contract
-owned rather than inferred from the Screen or collection name. Before
-persistent Screen-duration trimming is enabled, the product must explicitly
-define what happens to keyframes that would fall outside the shortened range;
-the editor must not silently choose a destructive policy.
+Timeline edits commit through the existing temporal owners. Serial collection
+movement writes the collection's declared pre-duration field; outgoing resize
+writes the existing target retime. Neither operation rewrites local keyframes.
+Collection item lifetime defaults remain collection-contract owned rather than
+inferred from the Screen or collection name. Keyframes outside a resized item
+or Screen range remain authored at their existing owner-local frames.
 
-Each collection lane begins at the parent-owned appearance frame resolved by
-the common owner timeline. When that collection declares
-`preDurationFieldIds`, the interval between appearance and the item's local
-frame zero is the resolved delay and is shown as a hatched segment inside the
-same lane. Moving the prototype lane keeps that segment attached to the item;
-local keyframes remain relative to the zero immediately after it. A collection
-without `preDurationFieldIds` has a zero-length delay by the same rule.
+Each serial collection lane begins at the parent-owned position resolved by
+the common owner timeline. A declared `preDurationFieldIds` value is the signed
+offset from the preceding item's sequence end, or from Screen frame zero for
+the first item. Positive values create a gap, zero makes the items contiguous,
+and negative values overlap them. Moving a lane writes that same field; no
+second timing document is created. Collections without a declared offset use
+zero.
 
 ## Temporal ownership
 
@@ -227,8 +226,9 @@ item boundaries and to keyframes once keyframe markers are projected into that
 surface. Item appearance blocks snap their start or outgoing edge to the
 playhead and to other visible item boundaries. Snap feedback is transient and
 amber; preroll and postroll boundaries remain neutral, diagonally hatched
-regions. Collection collapse and prototype block edits are session-only and do
-not rewrite owner timing or local keyframes.
+regions. Collection collapse and viewport zoom are session-only. Block edits
+persist through their declared collection fields or animation document and do
+not rewrite owner-local keyframes.
 
 The Screen Timeline viewport is independent of the Screen duration contract.
 At `1:1` it presents the declared Screen range. Session-only zoom can expand the
@@ -237,6 +237,18 @@ outside that range without clamping or retiming them. Collection item entry
 cannot move before Screen frame zero; its outgoing edge may exceed the declared
 Screen duration. Viewport scale never changes completion dependencies or the
 Screen's calculated or explicit duration.
+
+Parallel Stack slot lanes default to the complete Screen range. A child
+collection with `ownerOrigin.kind: firstMatchingValue` is presented as State
+lanes over that same range: active intervals are filled and inactive intervals
+are subtly hatched. Intervals are derived from the source selector track, not
+stored as additional entities. Under replace behavior, an outgoing edge and
+the following incoming edge are the same selector keyframe. Dragging either
+edge moves that keyframe; dragging a bounded active interval moves both of its
+selector boundaries while preserving its duration and without crossing its
+neighbors. The initial frame-zero boundary and the derived Screen-end boundary
+are not movable. Re-entry creates another active interval on the same lane and
+does not restart the State's internal timeline.
 
 ## Frame-by-frame Preview
 

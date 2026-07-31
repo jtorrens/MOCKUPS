@@ -30,7 +30,12 @@ internal sealed record RuntimeInputSurface(
     IReadOnlyList<RuntimeInputCollectionDefinition> Collections,
     IReadOnlyList<ComponentPreviewActionDefinition> Actions,
     EditorDictionaryContextSnapshot? DictionaryContext = null,
-    ModuleInstanceAnimationSnapshot? AnimationSnapshot = null);
+    ModuleInstanceAnimationSnapshot? AnimationSnapshot = null,
+    RuntimeInputTimelineMutation? TimelineMutation = null);
+
+internal sealed record RuntimeInputTimelineMutation(
+    Func<string, string, IReadOnlyDictionary<string, JsonNode?>, Task> UpdateCollectionValuesAsync,
+    Func<string, Task<string>> SaveAnimationJsonAsync);
 
 internal sealed class RuntimeInputsCollectionEditor
 {
@@ -248,11 +253,32 @@ internal sealed class RuntimeInputsCollectionEditor
                 ?? throw new InvalidOperationException(
                     $"Production Screen '{node.Id}' requires its animation snapshot owner.")
             : null;
+        var timelineMutation = owner.IsInstance
+            ? new RuntimeInputTimelineMutation(
+                async (collectionJsonKey, itemId, values) =>
+                {
+                    await _instanceDocuments.UpdateCollectionValuesAsync(
+                        owner.Node.Id,
+                        collectionJsonKey,
+                        itemId,
+                        values);
+                    _onChanged();
+                },
+                async (animationJson) =>
+                {
+                    var saved = await _instanceDocuments.SaveAnimationJsonAsync(
+                        owner.Node.Id,
+                        animationJson);
+                    _onChanged();
+                    return saved;
+                })
+            : null;
         cancellationToken.ThrowIfCancellationRequested();
         return surface with
         {
             DictionaryContext = dictionaryContext,
             AnimationSnapshot = animationSnapshot,
+            TimelineMutation = timelineMutation,
         };
     }
 

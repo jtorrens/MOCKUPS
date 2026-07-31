@@ -77,6 +77,41 @@ test("entity-owned keyframes use first appearance and do not restart on re-entry
   assert.equal(timeline.localFrame("text", "state-password", 40), 30);
 });
 
+test("serial collection offsets may overlap the preceding item", () => {
+  const serialContract = {
+    collections: [{
+      jsonKey: "items",
+      animationTimeline: {
+        sequenceItems: true,
+        preDurationFieldIds: ["delay"],
+        sequenceCompletionFieldIds: ["text"],
+      },
+      fields: [
+        { id: "delay", jsonKey: "delay" },
+        {
+          id: "text",
+          jsonKey: "text",
+          animationTimeline: {
+            completion: { baseDurationFieldId: "duration" },
+          },
+        },
+        { id: "duration", jsonKey: "duration" },
+      ],
+    }],
+  };
+  const timeline = new RuntimeOwnerTimeline(
+    serialContract,
+    { items: [
+      { id: "first", delay: 2, text: "One", duration: 6 },
+      { id: "second", delay: -2, text: "Two", duration: 3 },
+    ] },
+    {},
+  );
+  assert.equal(timeline.itemStartFrame("first"), 2);
+  assert.equal(timeline.itemEndFrame("first"), 8);
+  assert.equal(timeline.itemStartFrame("second"), 6);
+});
+
 test("finite runtime action durations require positive JSON numbers", () => {
   const finiteContract = {
     collections: [{

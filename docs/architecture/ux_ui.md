@@ -153,25 +153,28 @@ move horizontally and can be shortened only from their outgoing edge. Their
 edges snap to the playhead and the boundaries of other visible blocks, showing
 one thin amber guide across the complete timeline while snapped. The active
 block outline also becomes amber; when its detent is the playhead, the playhead
-becomes amber as well. The prototype interaction is session-only and does not
-alter authored timing.
+becomes amber as well. Collection collapse and zoom remain session-only.
+Releasing an editable block commits through the collection's declared timing
+field or its existing animation retime and refreshes Preview from the newly
+prepared payload.
 
-Every collection-item block starts at its resolved appearance in the Screen.
-If its collection declares pre-duration fields, that delay is drawn with the
-same subdued diagonal hatch inside the leading part of the block, and the
-item's local frame zero begins where the hatch ends. Collections without a
-declared delay use zero and therefore show no hatched segment. Moving the
-session-only block carries the delay segment with it and does not rewrite the
-item's local keyframes.
+Every serial collection-item block starts at its resolved position in the
+Screen. A declared pre-duration field is edited as a signed gap from the prior
+block's outgoing edge: positive separates, zero joins and negative overlaps.
+Collections without that declaration use zero. Stack State lanes instead span
+the Screen and show filled active intervals over a subdued hatched inactive
+range. Multiple filled intervals on one lane represent re-entry. Their shared
+In/Out boundaries edit the existing selector keyframes.
 
-A compact scale control sits at the right end of the tick band. Its visible
-center tick and pointer detent restore `1:1`, where the viewport is exactly the
-declared Screen range. Moving right zooms in; moving left zooms out and reveals
-additional time before and after that range. Each scale change anchors on the
-current playhead position. Scale and viewport are session-only. Collection item
-entry remains at or after Screen frame zero, while an item's outgoing edge may
-extend beyond the declared Screen range and becomes directly editable when the
-expanded viewport reveals it.
+A compact scale control shares the transport row and aligns to its right edge,
+leaving the ruler and lanes the complete remaining width. Its larger thumb,
+visible center tick and pointer detent restore `1:1`, where the viewport is
+exactly the declared Screen range. Moving right zooms in; moving left zooms out
+and reveals additional time before and after that range. Each scale change
+anchors on the current playhead position. Scale and viewport are session-only.
+Collection item entry remains at or after Screen frame zero, while an item's
+outgoing edge may extend beyond the declared Screen range and becomes directly
+editable when the expanded viewport reveals it.
 
 The visible Preview utility headers remain in one horizontal row at the
 supported 1040 px minimum and the 1440 px default window widths. The Preview

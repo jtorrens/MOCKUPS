@@ -62,8 +62,11 @@ export class RuntimeOwnerTimeline {
           "preDurationFieldIds",
           "runtime collection animation timeline",
         )
-          .reduce((sum, fieldId) => sum + fieldValue(item, fields, fieldId), 0);
-        const start = (sequenceItems ? cursor : this.itemOwnerOrigin(collection, item)) + pre;
+          .reduce((sum, fieldId) => sum + signedFieldValue(item, fields, fieldId), 0);
+        const start = Math.max(
+          0,
+          (sequenceItems ? cursor : this.itemOwnerOrigin(collection, item)) + pre,
+        );
         const durations = this.itemDurations(collection, item, targetId);
         const effectiveSpan = this.targetDuration(targetId, durations.span);
         const effectiveSequence = scale(durations.sequence, durations.span, effectiveSpan);
@@ -720,6 +723,17 @@ function fieldValue(owner: JsonRecord, fields: JsonRecord[], fieldId: string) {
     }
   }
   throw new Error(`Missing runtime animation duration field '${fieldId}' value`);
+}
+
+function signedFieldValue(owner: JsonRecord, fields: JsonRecord[], fieldId: string) {
+  const definition = fields.find((field) => optionalString(field, "id") === fieldId);
+  if (!definition) throw new Error(`Runtime animation offset references missing field '${fieldId}'`);
+  const jsonKey = requiredString(definition, "jsonKey", `runtime animation offset field '${fieldId}' key`);
+  const value = owner[jsonKey];
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    throw new Error(`runtime animation offset field '${fieldId}' value must be numeric`);
+  }
+  return value;
 }
 
 function enabledKeyframes(track?: JsonRecord) {

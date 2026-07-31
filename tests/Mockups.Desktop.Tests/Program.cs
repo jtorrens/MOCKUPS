@@ -14390,7 +14390,9 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
         PreRollFrames: 20,
         ContentDurationFrames: 100,
         PostRollFrames: 12,
-        Collections: []);
+        Collections: [],
+        Mutation: null,
+        AnimationJson: EmptyDocument().ToJson());
     Equal(-20, snapshot.MinimumFrame);
     Equal(111, snapshot.MaximumFrame);
     Equal(-20, PreviewScreenTimelineMath.Frame(
@@ -14573,16 +14575,94 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
         new PreviewScreenTimelineRange(20, 100, 12));
     Equal(1, resolved.Collections.Count);
     Equal(2, resolved.Collections[0].Items.Count);
-    Equal(0, resolved.Collections[0].Items[0].StartFrame);
-    Equal(4, resolved.Collections[0].Items[0].DelayFrames);
+    Equal(4, resolved.Collections[0].Items[0].StartFrame);
     Equal(5, resolved.Collections[0].Items[0].EndFrame);
     Equal(5, resolved.Collections[0].Items[1].StartFrame);
-    Equal(0, resolved.Collections[0].Items[1].DelayFrames);
     Equal(6, resolved.Collections[0].Items[1].EndFrame);
+    Equal(0, resolved.Collections[0].Items[0].SerialEdit?.PreviousEndFrame);
+    Equal(5, resolved.Collections[0].Items[1].SerialEdit?.PreviousEndFrame);
     True(resolved.Collections[0].Items
         .All((item) => item.StartFrame >= 0
             && item.EndFrame > item.StartFrame
             && item.EndFrame <= resolved.ContentDurationFrames));
+
+    var stateNode = new ProjectTreeNode(
+        ProjectTreeNodeKind.ModuleInstance,
+        "screen_states",
+        "States",
+        "",
+        "moduleInstance");
+    var stateRuntime = Object("""
+        {
+          "slots":[{"id":"slot","runtimeStateId":"empty"}],
+          "states":[
+            {"id":"empty","slotId":"slot","name":"Empty"},
+            {"id":"password","slotId":"slot","name":"Password"}
+          ]
+        }
+        """);
+    var stateContract = """
+        {
+          "collections":[
+            {
+              "id":"slots","label":"Slots","jsonKey":"slots","itemLabel":"Slot",
+              "animationTimeline":{"sequenceItems":false},
+              "fields":[{"id":"runtimeStateId","jsonKey":"runtimeStateId","animationTimeline":{"extendsOwnerDuration":false}}]
+            },
+            {
+              "id":"states","label":"States","jsonKey":"states","itemLabel":"State",
+              "fields":[{"id":"name","jsonKey":"name"},{"id":"slotId","jsonKey":"slotId"}],
+              "animationTimeline":{"sequenceItems":false,"ownerOrigin":{
+                "kind":"firstMatchingValue","sourceCollectionJsonKey":"slots",
+                "sourceTargetIdJsonKey":"slotId","sourceFieldId":"runtimeStateId",
+                "sourceValueJsonKey":"runtimeStateId","matchValueJsonKey":"id"
+              }}
+            }
+          ]
+        }
+        """;
+    var stateAnimation = EmptyDocument();
+    stateAnimation.AddTrack("runtimeStateId", "slot", JsonValue.Create("empty")!, "hold");
+    stateAnimation.UpsertKeyframe("runtimeStateId", "slot", 78, JsonValue.Create("password")!, "hold");
+    stateAnimation.UpsertKeyframe("runtimeStateId", "slot", 141, JsonValue.Create("empty")!, "hold");
+    var stateSurface = new RuntimeInputSurface(
+        new RuntimeInputOwner(
+            stateNode,
+            "{}",
+            stateRuntime.ToJsonString(),
+            (_) => Task.CompletedTask,
+            IsInstance: true),
+        stateRuntime,
+        [],
+        [new RuntimeInputCollectionDefinition(
+            "states",
+            "States",
+            "states",
+            "State",
+            [])],
+        [],
+        AnimationSnapshot: new ModuleInstanceAnimationSnapshot(
+            stateNode.Id,
+            new ModuleInstanceAnimationSource(
+                "{}",
+                stateAnimation.ToJson(),
+                stateRuntime.ToJsonString(),
+                "{}",
+                stateContract),
+            ScreenStartFrame: 0,
+            ActionStartFrame: 0,
+            DurationFrames: 200));
+    var stateSnapshot = PreviewScreenTimelineSnapshotFactory.Create(
+        stateSurface,
+        new PreviewScreenTimelineRange(0, 200, 0));
+    var emptyIntervals = stateSnapshot.Collections[0].Items[0].Intervals;
+    var passwordIntervals = stateSnapshot.Collections[0].Items[1].Intervals;
+    SequenceEqual([(0, 78), (141, 200)], emptyIntervals.Select(value => (value.StartFrame, value.EndFrame)));
+    SequenceEqual([(78, 141)], passwordIntervals.Select(value => (value.StartFrame, value.EndFrame)));
+    True(emptyIntervals[0].StartKeyframeFrame is null);
+    Equal(78, emptyIntervals[0].EndKeyframeFrame);
+    Equal(78, passwordIntervals[0].StartKeyframeFrame);
+    Equal(141, passwordIntervals[0].EndKeyframeFrame);
 }
 
 static void RuntimeControlsResolveActiveFrameValue()
@@ -14668,6 +14748,15 @@ static void KeyframeMovesPreservePayloadAndProtectFrameZero()
     True(!document.TryMoveKeyframe("value", "slot", 15, 0));
     True(!document.TryMoveKeyframe("value", "slot", 15, 20));
     True(!document.TryMoveKeyframe("value", "slot", 15, 15));
+    True(document.TryMoveKeyframes(
+        "value",
+        "slot",
+        new Dictionary<int, int> { [15] = 17, [20] = 22 }));
+    SequenceEqual([0, 17, 22], Required(document.Track("value", "slot")).Keyframes.Select(keyframe => keyframe.Frame));
+    True(!document.TryMoveKeyframes(
+        "value",
+        "slot",
+        new Dictionary<int, int> { [0] = 2 }));
 }
 
 static void KeyframeDragSnapsToScreenGrid()
@@ -15044,6 +15133,17 @@ static void TargetFieldsUseRelativeOrigins()
         contract,
         runtime,
         new JsonObject(),
+        "m2"));
+    var overlapping = Object("""
+        {"messages":[
+          {"id":"m1","delay":2,"write":3,"hold":1},
+          {"id":"m2","delay":-2,"write":2,"hold":1}
+        ]}
+        """);
+    Equal(4, RuntimeAnimationFrameOrigin.ScreenFrame(
+        contract,
+        overlapping,
+        "text",
         "m2"));
 }
 
