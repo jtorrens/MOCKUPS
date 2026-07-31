@@ -346,6 +346,17 @@ internal static class PreviewScreenTimelineSnapshotFactory
             .ToList();
         var keyframes = CreateKeyframes(
             tracks,
+            collections
+                .SelectMany((collection) => collection.Items)
+                .SelectMany((item) => new[]
+                {
+                    item.Id,
+                    item.StateEdit?.TargetId,
+                })
+                .Where((targetId) => targetId is not null)
+                .Select((targetId) => targetId!)
+                .Append("")
+                .ToHashSet(StringComparer.Ordinal),
             contract,
             runtime,
             animation,
@@ -365,6 +376,7 @@ internal static class PreviewScreenTimelineSnapshotFactory
 
     private static IReadOnlyList<PreviewScreenTimelineKeyframe> CreateKeyframes(
         IReadOnlyList<JsonObject> tracks,
+        IReadOnlySet<string> visibleTargetIds,
         JsonObject contract,
         JsonObject runtime,
         JsonObject animation,
@@ -380,6 +392,8 @@ internal static class PreviewScreenTimelineSnapshotFactory
                 "targetId",
                 "Screen Timeline animation track",
                 allowEmpty: true);
+            if (!visibleTargetIds.Contains(targetId))
+                return [];
             return JsonPath.OptionalObjectArray(
                     track,
                     "keyframes",
@@ -663,17 +677,24 @@ internal sealed class PreviewScreenTimelineController : IDisposable
     {
         var screenId = prepared.Surface.Owner.Node.Id;
         if (!_screenId.Equals(screenId, StringComparison.Ordinal)) return;
-        var snapshot = PreviewScreenTimelineSnapshotFactory.Create(
-            prepared.Surface,
-            _screenRange(screenId));
-        _surface.SetSnapshot(
-            snapshot,
-            (targetId) => prepared.Editor
-                .CreateScreenTimelineAnimationContent(
-                    prepared.Surface,
-                    targetId),
-            _screenFrame(screenId),
-            _playbackState.IsPlaying);
+        try
+        {
+            var snapshot = PreviewScreenTimelineSnapshotFactory.Create(
+                prepared.Surface,
+                _screenRange(screenId));
+            _surface.SetSnapshot(
+                snapshot,
+                (targetId) => prepared.Editor
+                    .CreateScreenTimelineAnimationContent(
+                        prepared.Surface,
+                        targetId),
+                _screenFrame(screenId),
+                _playbackState.IsPlaying);
+        }
+        catch (Exception exception)
+        {
+            _surface.ShowFailure(exception.Message);
+        }
     }
 
     public void Clear()
@@ -807,6 +828,29 @@ internal sealed class PreviewScreenTimelineSurface : Border
         _keyframeFrames.Clear();
         _content.Children.Clear();
         _content.Children.Add(new EditorLoadingScrim());
+    }
+
+    public void ShowFailure(string message)
+    {
+        _snapshot = null;
+        _lanes.Clear();
+        _ruler = null;
+        _backdrop = null;
+        _overlay = null;
+        _viewport = null;
+        _playheadSnapFrame = null;
+        _animationContent = null;
+        _selectedLane = null;
+        _rowsByLane.Clear();
+        _keyframeFrames.Clear();
+        _content.Children.Clear();
+        _content.Children.Add(new TextBlock
+        {
+            Text = $"Timeline unavailable: {message}",
+            Margin = new Thickness(6),
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = Brushes.IndianRed,
+        });
     }
 
     public void SetSnapshot(
