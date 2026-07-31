@@ -70,6 +70,11 @@ through the SVG element hierarchy and never paint definition-only geometry.
 System UI actions use shared assets under `assets/system/system_icons`. A new
 local glyph is not introduced when the shared action already exists.
 
+The provisional desktop application identity is separate from those in-product
+actions. Its 1024 px master and derived macOS bundle icon live under
+`assets/system/application`; the macOS packaging owner copies the `.icns` into
+the application bundle and declares that exact resource in `Info.plist`.
+
 ## Wallpaper
 
 Wallpaper is App configuration with explicit kind, light/dark color or image

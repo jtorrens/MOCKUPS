@@ -5,6 +5,7 @@ import test from "node:test";
 import {
   macDesktopCodeSignArgs,
   macDesktopExecutableName,
+  macDesktopIconFileName,
   macDesktopInfoPlist,
 } from "../../scripts/packageMacApp.mjs";
 
@@ -17,6 +18,16 @@ test("macOS bundle launches the executable Desktop Host", () => {
     /<key>CFBundleExecutable<\/key>\s*<string>Mockups\.Desktop\.Host<\/string>/u,
   );
   assert.doesNotMatch(plist, /Mockups\.DesktopEditorShell/u);
+});
+
+test("macOS bundle declares the provisional MOCKUPS application icon", () => {
+  const plist = macDesktopInfoPlist();
+
+  assert.equal(macDesktopIconFileName, "mockups-app-icon.icns");
+  assert.match(
+    plist,
+    /<key>CFBundleIconFile<\/key>\s*<string>mockups-app-icon\.icns<\/string>/u,
+  );
 });
 
 test("macOS bundle receives one final deep ad-hoc signature", () => {

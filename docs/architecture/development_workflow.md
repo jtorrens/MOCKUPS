@@ -255,6 +255,10 @@ missing or invalid bundle before opening the project database.
 `desktop:mac` runs that same prepared development command under the display
 wake policy. `desktop:open:mac` opens the existing packaged bundle and fails if
 it is absent. `desktop:launch:mac` packages the current revision first.
+The packaged bundle copies the application-owned `.icns` from
+`assets/system/application` into `Contents/Resources` and declares it through
+`CFBundleIconFile`; this identity remains separate from in-product system
+action icons.
 Automated macOS UI review uses one of these launchers; headless checks continue
 to use the Avalonia headless platform.
 
