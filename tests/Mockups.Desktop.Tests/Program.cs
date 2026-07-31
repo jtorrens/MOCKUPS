@@ -6193,6 +6193,30 @@ static void PreviewShellVisualTreeIsResponsive()
                 .GetVisualDescendants()
                 .OfType<TextBlock>()
                 .Any((text) => text.Text == "General"));
+            Equal(1, timelineSurface
+                .GetVisualDescendants()
+                .OfType<PreviewScreenTimelineOverlay>()
+                .Count());
+            var visibleTimelineLaneCount = timelineSurface
+                .GetVisualDescendants()
+                .OfType<PreviewScreenTimelineLane>()
+                .Count((lane) => lane.IsVisible);
+            var collectionCollapse = Required(timelineSurface
+                .GetVisualDescendants()
+                .OfType<Button>()
+                .FirstOrDefault((button) =>
+                    (Avalonia.Automation.AutomationProperties.GetName(button) ?? "")
+                    .StartsWith(
+                        "Collapse Timeline collection ",
+                        StringComparison.Ordinal)));
+            collectionCollapse.RaiseEvent(
+                new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            True(timelineSurface
+                .GetVisualDescendants()
+                .OfType<PreviewScreenTimelineLane>()
+                .Count((lane) => lane.IsVisible)
+                < visibleTimelineLaneCount);
 
             Required(window.FindControl<Button>("DesignWorkspaceButton"))
                 .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
@@ -14388,6 +14412,51 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
             startFrame: 8,
             requestedEndFrame: 130,
             contentDurationFrames: 100));
+
+    var playheadSnap = PreviewScreenTimelineMath.SnapFrame(
+        x: 267,
+        width: 500,
+        minimumFrame: snapshot.MinimumFrame,
+        maximumFrame: snapshot.MaximumFrame,
+        candidates: [50, 80]);
+    Equal((50, true), playheadSnap);
+    var freePlayhead = PreviewScreenTimelineMath.SnapFrame(
+        x: 250,
+        width: 500,
+        minimumFrame: snapshot.MinimumFrame,
+        maximumFrame: snapshot.MaximumFrame,
+        candidates: [50, 80]);
+    True(!freePlayhead.IsSnapped);
+
+    var movedToDetent = PreviewScreenTimelineMath.MoveWithSnap(
+        startFrame: 20,
+        endFrame: 40,
+        frameDelta: 9,
+        contentDurationFrames: 100,
+        laneWidth: 500,
+        minimumTimelineFrame: snapshot.MinimumFrame,
+        maximumTimelineFrame: snapshot.MaximumFrame,
+        candidates: [30]);
+    Equal((30, 50, (int?)30), movedToDetent);
+    var noFalseZeroDetent = PreviewScreenTimelineMath.MoveWithSnap(
+        startFrame: 40,
+        endFrame: 60,
+        frameDelta: 9,
+        contentDurationFrames: 100,
+        laneWidth: 500,
+        minimumTimelineFrame: snapshot.MinimumFrame,
+        maximumTimelineFrame: snapshot.MaximumFrame,
+        candidates: [0]);
+    Equal((49, 69, (int?)null), noFalseZeroDetent);
+    var resizedToDetent = PreviewScreenTimelineMath.ResizeEndWithSnap(
+        startFrame: 20,
+        requestedEndFrame: 69,
+        contentDurationFrames: 100,
+        laneWidth: 500,
+        minimumTimelineFrame: snapshot.MinimumFrame,
+        maximumTimelineFrame: snapshot.MaximumFrame,
+        candidates: [70]);
+    Equal((70, (int?)70), resizedToDetent);
 
     var node = new ProjectTreeNode(
         ProjectTreeNodeKind.ModuleInstance,

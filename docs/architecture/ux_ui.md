@@ -140,11 +140,17 @@ authoring area. Runtime Inputs and structured slots are edited beside the
 result they control. Persisted payload remains owned by the Screen. A third
 **Timeline** tab appears for a Production Screen. It uses one compact transport
 above a tick ruler, then a General lane and one labelled group per Runtime
-collection with one lane per stable item. The ruler is relative to the Screen:
+collection with one lane per stable item. Collection groups are collapsible and
+their expansion state is session-only. The ruler is relative to the Screen:
 entry transition and waiting appear before frame zero, content begins at zero,
-and exit transition appears as postroll. Item blocks can move horizontally and
-can be shortened only from their outgoing edge; the prototype interaction is
-session-only and does not alter authored timing.
+and exit transition appears as postroll. Pre- and postroll use a subdued
+diagonal hatch rather than authored-boundary guides. One uninterrupted playhead
+crosses the ruler and every visible lane. It snaps to visible lane boundaries
+and, when exposed, keyframes; a snapped playhead becomes amber. Item blocks can
+move horizontally and can be shortened only from their outgoing edge. Their
+edges snap to the playhead and the boundaries of other visible blocks, showing
+one thin amber guide across the complete timeline while snapped. The prototype
+interaction is session-only and does not alter authored timing.
 
 The visible Preview utility headers remain in one horizontal row at the
 supported 1040 px minimum and the 1440 px default window widths. The Preview

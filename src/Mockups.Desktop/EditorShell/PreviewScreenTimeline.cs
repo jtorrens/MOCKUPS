@@ -41,6 +41,8 @@ internal sealed record PreviewScreenTimelineRange(
 
 internal static class PreviewScreenTimelineMath
 {
+    public const double SnapDistancePixels = 7;
+
     public static double Fraction(
         int frame,
         int minimumFrame,
@@ -90,6 +92,157 @@ internal static class PreviewScreenTimelineMath
             requestedEndFrame,
             Math.Min(contentDurationFrames, startFrame + 1),
             contentDurationFrames);
+
+    public static (int Frame, bool IsSnapped) SnapFrame(
+        double x,
+        double width,
+        int minimumFrame,
+        int maximumFrame,
+        IReadOnlyList<int> candidates)
+    {
+        var raw = RawFrame(
+            x,
+            width,
+            minimumFrame,
+            maximumFrame);
+        var snap = ClosestSnap(
+            raw,
+            SnapThresholdFrames(
+                width,
+                minimumFrame,
+                maximumFrame),
+            candidates);
+        return snap is { } snapped
+            ? (snapped, true)
+            : (Math.Clamp(
+                (int)Math.Round(raw, MidpointRounding.AwayFromZero),
+                minimumFrame,
+                maximumFrame), false);
+    }
+
+    public static (int StartFrame, int EndFrame, int? SnapFrame) MoveWithSnap(
+        int startFrame,
+        int endFrame,
+        double frameDelta,
+        int contentDurationFrames,
+        double laneWidth,
+        int minimumTimelineFrame,
+        int maximumTimelineFrame,
+        IReadOnlyList<int> candidates)
+    {
+        var duration = Math.Max(1, endFrame - startFrame);
+        var desiredStart = Math.Clamp(
+            startFrame + frameDelta,
+            0,
+            Math.Max(0, contentDurationFrames - duration));
+        var desiredEnd = desiredStart + duration;
+        var threshold = SnapThresholdFrames(
+            laneWidth,
+            minimumTimelineFrame,
+            maximumTimelineFrame);
+        var match = candidates
+            .Distinct()
+            .SelectMany((candidate) => new[]
+            {
+                (Candidate: candidate, Offset: candidate - desiredStart),
+                (Candidate: candidate, Offset: candidate - desiredEnd),
+            })
+            .Where((match) => Math.Abs(match.Offset) <= threshold)
+            .Where((match) => desiredStart + match.Offset >= 0
+                && desiredEnd + match.Offset <= contentDurationFrames)
+            .OrderBy((match) => Math.Abs(match.Offset))
+            .ThenBy((match) => match.Candidate)
+            .Select((match) => new PreviewScreenTimelineSnapMatch(
+                match.Candidate,
+                match.Offset))
+            .FirstOrDefault();
+        if (match is not null)
+        {
+            var snappedStart = (int)Math.Round(
+                desiredStart + match.Offset,
+                MidpointRounding.AwayFromZero);
+            return (
+                snappedStart,
+                snappedStart + duration,
+                match.Candidate);
+        }
+        var rounded = Move(
+            startFrame,
+            endFrame,
+            (int)Math.Round(frameDelta, MidpointRounding.AwayFromZero),
+            contentDurationFrames);
+        return (rounded.StartFrame, rounded.EndFrame, null);
+    }
+
+    public static (int EndFrame, int? SnapFrame) ResizeEndWithSnap(
+        int startFrame,
+        double requestedEndFrame,
+        int contentDurationFrames,
+        double laneWidth,
+        int minimumTimelineFrame,
+        int maximumTimelineFrame,
+        IReadOnlyList<int> candidates)
+    {
+        var desired = Math.Clamp(
+            requestedEndFrame,
+            Math.Min(contentDurationFrames, startFrame + 1),
+            contentDurationFrames);
+        var snap = ClosestSnap(
+            desired,
+            SnapThresholdFrames(
+                laneWidth,
+                minimumTimelineFrame,
+                maximumTimelineFrame),
+            candidates.Where((candidate) =>
+                candidate > startFrame
+                && candidate <= contentDurationFrames));
+        return snap is { } snapped
+            ? (snapped, snapped)
+            : (ResizeEnd(
+                startFrame,
+                (int)Math.Round(desired, MidpointRounding.AwayFromZero),
+                contentDurationFrames), null);
+    }
+
+    public static double RawFrame(
+        double x,
+        double width,
+        int minimumFrame,
+        int maximumFrame) =>
+        minimumFrame
+        + Math.Clamp(x / Math.Max(1, width), 0, 1)
+        * Math.Max(0, maximumFrame - minimumFrame);
+
+    private static double SnapThresholdFrames(
+        double width,
+        int minimumFrame,
+        int maximumFrame) =>
+        SnapDistancePixels
+        * Math.Max(1, maximumFrame - minimumFrame)
+        / Math.Max(1, width);
+
+    private static int? ClosestSnap(
+        double rawFrame,
+        double thresholdFrames,
+        IEnumerable<int> candidates)
+    {
+        var ordered = candidates
+            .Distinct()
+            .Select((candidate) => new
+            {
+                Frame = candidate,
+                Distance = Math.Abs(candidate - rawFrame),
+            })
+            .Where((candidate) => candidate.Distance <= thresholdFrames)
+            .OrderBy((candidate) => candidate.Distance)
+            .ThenBy((candidate) => candidate.Frame)
+            .FirstOrDefault();
+        return ordered?.Frame;
+    }
+
+    private sealed record PreviewScreenTimelineSnapMatch(
+        int Candidate,
+        double Offset);
 }
 
 internal static class PreviewScreenTimelineSnapshotFactory
@@ -282,7 +435,7 @@ internal sealed class PreviewScreenTimelineSurface : Border
     private readonly Action<int> _setFrame;
     private readonly Action<int> _stepFrame;
     private readonly Action _togglePlayback;
-    private readonly StackPanel _content = new() { Spacing = 4 };
+    private readonly StackPanel _content = new() { Spacing = 2 };
     private readonly TextBlock _frameText = new()
     {
         MinWidth = 84,
@@ -292,8 +445,14 @@ internal sealed class PreviewScreenTimelineSurface : Border
     };
     private readonly Button _playButton;
     private readonly List<PreviewScreenTimelineLane> _lanes = [];
-    private PreviewScreenTimelineRuler? _ruler;
+    private readonly Dictionary<string, (int StartFrame, int EndFrame)>
+        _laneState = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, bool>
+        _collapsedCollections = new(StringComparer.Ordinal);
+    private readonly List<int> _keyframeFrames = [];
+    private PreviewScreenTimelineOverlay? _overlay;
     private PreviewScreenTimelineSnapshot? _snapshot;
+    private int? _playheadSnapFrame;
     private int _frame;
 
     public PreviewScreenTimelineSurface(
@@ -323,7 +482,8 @@ internal sealed class PreviewScreenTimelineSurface : Border
     {
         _snapshot = null;
         _lanes.Clear();
-        _ruler = null;
+        _overlay = null;
+        _playheadSnapFrame = null;
         _content.Children.Clear();
         _content.Children.Add(new TextBlock
         {
@@ -337,7 +497,8 @@ internal sealed class PreviewScreenTimelineSurface : Border
     {
         _snapshot = null;
         _lanes.Clear();
-        _ruler = null;
+        _overlay = null;
+        _playheadSnapFrame = null;
         _content.Children.Clear();
         _content.Children.Add(new EditorLoadingScrim());
     }
@@ -349,37 +510,97 @@ internal sealed class PreviewScreenTimelineSurface : Border
     {
         _snapshot = snapshot;
         _frame = Math.Clamp(frame, snapshot.MinimumFrame, snapshot.MaximumFrame);
+        _playheadSnapFrame = null;
         _lanes.Clear();
         _content.Children.Clear();
         _content.Children.Add(CreateTransport(snapshot, isPlaying));
-        _ruler = new PreviewScreenTimelineRuler(snapshot, _frame);
-        _ruler.FrameChanged += (_, nextFrame) => _setFrame(nextFrame);
-        _content.Children.Add(CreateRow("", _ruler, 48));
 
-        var general = new PreviewScreenTimelineLane(
+        var timeline = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions($"{LabelWidth},*"),
+            ColumnSpacing = 8,
+            RowSpacing = 2,
+        };
+        AddTimelineRow(
+            timeline,
+            "",
+            new PreviewScreenTimelineRuler(
+                snapshot,
+                PlayheadSnapTargets,
+                OnPlayheadDragged),
+            28,
+            FontWeight.Normal);
+
+        var general = CreateLane(
             snapshot,
-            _frame,
+            "general",
             0,
             snapshot.ContentDurationFrames,
             isGeneral: true);
-        _lanes.Add(general);
-        _content.Children.Add(CreateRow("General", general, 30));
+        AddTimelineRow(
+            timeline,
+            "General",
+            general,
+            28,
+            FontWeight.SemiBold);
 
         foreach (var collection in snapshot.Collections)
         {
-            _content.Children.Add(CreateCollectionHeader(collection.Label));
+            var collectionKey = CollectionKey(snapshot.ScreenId, collection.Id);
+            var collapsed = _collapsedCollections.TryGetValue(
+                    collectionKey,
+                    out var storedCollapsed)
+                && storedCollapsed;
+            var itemRows = new List<TimelineRow>();
+            AddCollectionHeader(
+                timeline,
+                collection.Label,
+                collapsed,
+                (nextCollapsed) =>
+                {
+                    _collapsedCollections[collectionKey] = nextCollapsed;
+                    foreach (var row in itemRows) row.SetVisible(!nextCollapsed);
+                    _overlay?.InvalidateVisual();
+                });
             foreach (var item in collection.Items)
             {
-                var lane = new PreviewScreenTimelineLane(
+                var laneKey = LaneKey(
+                    snapshot.ScreenId,
+                    collection.Id,
+                    item.Id);
+                var initial = _laneState.TryGetValue(laneKey, out var stored)
+                    ? stored
+                    : (item.StartFrame, item.EndFrame);
+                var lane = CreateLane(
                     snapshot,
-                    _frame,
-                    item.StartFrame,
-                    item.EndFrame,
+                    laneKey,
+                    initial.StartFrame,
+                    initial.EndFrame,
                     isGeneral: false);
-                _lanes.Add(lane);
-                _content.Children.Add(CreateRow(item.Label, lane, 30));
+                var row = AddTimelineRow(
+                    timeline,
+                    item.Label,
+                    lane,
+                    28,
+                    FontWeight.Normal);
+                row.SetVisible(!collapsed);
+                itemRows.Add(row);
             }
         }
+
+        var rowCount = timeline.RowDefinitions.Count;
+        var backdrop = new PreviewScreenTimelineBackdrop(snapshot);
+        Grid.SetColumn(backdrop, 1);
+        Grid.SetRowSpan(backdrop, rowCount);
+        timeline.Children.Insert(0, backdrop);
+        _overlay = new PreviewScreenTimelineOverlay(
+            snapshot,
+            _frame,
+            isPlayheadSnapped: false);
+        Grid.SetColumn(_overlay, 1);
+        Grid.SetRowSpan(_overlay, rowCount);
+        timeline.Children.Add(_overlay);
+        _content.Children.Add(timeline);
         UpdateFrameText();
         UpdatePlayButton(isPlaying);
     }
@@ -391,10 +612,68 @@ internal sealed class PreviewScreenTimelineSurface : Border
             frame,
             _snapshot.MinimumFrame,
             _snapshot.MaximumFrame);
-        _ruler?.SetFrame(_frame);
-        foreach (var lane in _lanes) lane.SetFrame(_frame);
+        if (_playheadSnapFrame != _frame) _playheadSnapFrame = null;
+        _overlay?.SetPlayhead(
+            _frame,
+            _playheadSnapFrame is not null);
         UpdateFrameText();
         UpdatePlayButton(isPlaying);
+    }
+
+    private PreviewScreenTimelineLane CreateLane(
+        PreviewScreenTimelineSnapshot snapshot,
+        string key,
+        int startFrame,
+        int endFrame,
+        bool isGeneral)
+    {
+        var lane = new PreviewScreenTimelineLane(
+            snapshot,
+            key,
+            startFrame,
+            endFrame,
+            isGeneral,
+            LaneSnapTargets);
+        lane.BoundsChanged += (_, bounds) =>
+        {
+            if (!isGeneral)
+                _laneState[key] = (bounds.StartFrame, bounds.EndFrame);
+        };
+        lane.SnapGuideChanged += (_, snapFrame) =>
+            _overlay?.SetSnapGuide(snapFrame);
+        _lanes.Add(lane);
+        return lane;
+    }
+
+    private IReadOnlyList<int> PlayheadSnapTargets() =>
+        _lanes
+            .Where((lane) => lane.IsVisible)
+            .SelectMany((lane) => new[] { lane.StartFrame, lane.EndFrame })
+            .Concat(_keyframeFrames)
+            .Distinct()
+            .Order()
+            .ToList();
+
+    private IReadOnlyList<int> LaneSnapTargets(
+        PreviewScreenTimelineLane active) =>
+        _lanes
+            .Where((lane) => !ReferenceEquals(lane, active) && lane.IsVisible)
+            .SelectMany((lane) => new[] { lane.StartFrame, lane.EndFrame })
+            .Append(_frame)
+            .Distinct()
+            .Order()
+            .ToList();
+
+    private void OnPlayheadDragged(
+        PreviewScreenTimelinePlayheadChange change)
+    {
+        _frame = change.Frame;
+        _playheadSnapFrame = change.IsSnapped
+            ? change.Frame
+            : null;
+        _overlay?.SetPlayhead(change.Frame, change.IsSnapped);
+        UpdateFrameText();
+        _setFrame(change.Frame);
     }
 
     private Control CreateTransport(
@@ -404,19 +683,19 @@ internal sealed class PreviewScreenTimelineSurface : Border
         var start = EditorTimelineTransport.CreateNavigationButton(
             EditorIcons.Create(EditorIcons.TimelineFirstFrame, 15),
             "First visible Screen Timeline frame");
-        start.Click += (_, _) => _setFrame(snapshot.MinimumFrame);
+        start.Click += (_, _) => SetTransportFrame(snapshot.MinimumFrame);
         var previous = EditorTimelineTransport.CreateNavigationButton(
             EditorIcons.Create(EditorIcons.TimelinePreviousFrame, 15),
             "Previous Screen Timeline frame");
-        previous.Click += (_, _) => _stepFrame(-1);
+        previous.Click += (_, _) => StepTransportFrame(-1);
         var next = EditorTimelineTransport.CreateNavigationButton(
             EditorIcons.Create(EditorIcons.TimelineNextFrame, 15),
             "Next Screen Timeline frame");
-        next.Click += (_, _) => _stepFrame(1);
+        next.Click += (_, _) => StepTransportFrame(1);
         var end = EditorTimelineTransport.CreateNavigationButton(
             EditorIcons.Create(EditorIcons.TimelineLastFrame, 15),
             "Last visible Screen Timeline frame");
-        end.Click += (_, _) => _setFrame(snapshot.MaximumFrame);
+        end.Click += (_, _) => SetTransportFrame(snapshot.MaximumFrame);
         UpdatePlayButton(isPlaying);
 
         var controls = new StackPanel
@@ -439,56 +718,107 @@ internal sealed class PreviewScreenTimelineSurface : Border
         var grid = new Grid
         {
             ColumnDefinitions = new ColumnDefinitions($"{LabelWidth},*"),
-            Margin = new Thickness(0, 0, 0, 2),
+            ColumnSpacing = 8,
         };
         grid.Children.Add(controls);
         return grid;
     }
 
-    private static Control CreateRow(
+    private static TimelineRow AddTimelineRow(
+        Grid timeline,
         string label,
         Control lane,
-        double height)
+        double height,
+        FontWeight fontWeight)
     {
-        var grid = new Grid
-        {
-            ColumnDefinitions = new ColumnDefinitions($"{LabelWidth},*"),
-            ColumnSpacing = 8,
-            Height = height,
-        };
-        grid.Children.Add(new TextBlock
+        var rowIndex = timeline.RowDefinitions.Count;
+        timeline.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+        var labelControl = new TextBlock
         {
             Text = label,
+            Height = height,
             Margin = new Thickness(4, 0, 0, 0),
             VerticalAlignment = VerticalAlignment.Center,
             TextTrimming = TextTrimming.CharacterEllipsis,
             FontSize = 12,
-            FontWeight = label == "General"
-                ? FontWeight.SemiBold
-                : FontWeight.Normal,
-        });
+            FontWeight = fontWeight,
+        };
+        Grid.SetRow(labelControl, rowIndex);
+        timeline.Children.Add(labelControl);
+        lane.Height = height;
         Grid.SetColumn(lane, 1);
-        grid.Children.Add(lane);
-        return grid;
+        Grid.SetRow(lane, rowIndex);
+        timeline.Children.Add(lane);
+        return new TimelineRow(labelControl, lane);
     }
 
-    private static Control CreateCollectionHeader(string label)
+    private static void AddCollectionHeader(
+        Grid timeline,
+        string label,
+        bool collapsed,
+        Action<bool> setCollapsed)
     {
-        var border = new Border
+        var rowIndex = timeline.RowDefinitions.Count;
+        timeline.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+        var button = new Button
         {
-            Margin = new Thickness(0, 5, 0, 0),
-            Padding = new Thickness(6, 4),
+            Height = 28,
+            Margin = new Thickness(0, 4, 0, 0),
+            Padding = new Thickness(6, 2),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            HorizontalContentAlignment = HorizontalAlignment.Left,
             Background = new SolidColorBrush(Color.FromArgb(25, 255, 255, 255)),
-            CornerRadius = new CornerRadius(4),
-            Child = new TextBlock
-            {
-                Text = label.ToUpperInvariant(),
-                FontSize = 10,
-                FontWeight = FontWeight.SemiBold,
-                Opacity = 0.76,
-            },
+            BorderBrush = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
         };
-        return border;
+        void Render(bool isCollapsed)
+        {
+            button.Content = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = 6,
+                Children =
+                {
+                    EditorIcons.Create(
+                        isCollapsed ? EditorIcons.Expand : EditorIcons.Collapse,
+                        11),
+                    new TextBlock
+                    {
+                        Text = label.ToUpperInvariant(),
+                        FontSize = 10,
+                        FontWeight = FontWeight.SemiBold,
+                        Opacity = 0.76,
+                        VerticalAlignment = VerticalAlignment.Center,
+                    },
+                },
+            };
+            EditorAccessibility.Describe(
+                button,
+                $"{(isCollapsed ? "Expand" : "Collapse")} Timeline collection {label}");
+        }
+        var current = collapsed;
+        Render(current);
+        button.Click += (_, _) =>
+        {
+            current = !current;
+            Render(current);
+            setCollapsed(current);
+        };
+        Grid.SetColumnSpan(button, 2);
+        Grid.SetRow(button, rowIndex);
+        timeline.Children.Add(button);
+    }
+
+    private void SetTransportFrame(int frame)
+    {
+        _playheadSnapFrame = null;
+        _setFrame(frame);
+    }
+
+    private void StepTransportFrame(int delta)
+    {
+        _playheadSnapFrame = null;
+        _stepFrame(delta);
     }
 
     private void UpdateFrameText()
@@ -508,28 +838,39 @@ internal sealed class PreviewScreenTimelineSurface : Border
             15);
         EditorTimelineTransport.ApplyPrimaryStyle(_playButton);
     }
+
+    private static string CollectionKey(
+        string screenId,
+        string collectionId) =>
+        $"{screenId}\u001f{collectionId}";
+
+    private static string LaneKey(
+        string screenId,
+        string collectionId,
+        string itemId) =>
+        $"{screenId}\u001f{collectionId}\u001f{itemId}";
+
+    private sealed record TimelineRow(Control Label, Control Lane)
+    {
+        public void SetVisible(bool isVisible)
+        {
+            Label.IsVisible = isVisible;
+            Lane.IsVisible = isVisible;
+        }
+    }
 }
 
 internal abstract class PreviewScreenTimelineTrack : Control
 {
     protected PreviewScreenTimelineTrack(
-        PreviewScreenTimelineSnapshot snapshot,
-        int frame)
+        PreviewScreenTimelineSnapshot snapshot)
     {
         Snapshot = snapshot;
-        Frame = frame;
         MinWidth = 180;
         HorizontalAlignment = HorizontalAlignment.Stretch;
     }
 
     protected PreviewScreenTimelineSnapshot Snapshot { get; }
-    protected int Frame { get; private set; }
-
-    public void SetFrame(int frame)
-    {
-        Frame = Math.Clamp(frame, Snapshot.MinimumFrame, Snapshot.MaximumFrame);
-        InvalidateVisual();
-    }
 
     protected double X(int frame) =>
         PreviewScreenTimelineMath.Fraction(
@@ -538,59 +879,32 @@ internal abstract class PreviewScreenTimelineTrack : Control
             Snapshot.MaximumFrame)
         * Math.Max(1, Bounds.Width);
 
-    protected int FrameAt(double x) =>
-        PreviewScreenTimelineMath.Frame(
+    protected double RawFrameAt(double x) =>
+        PreviewScreenTimelineMath.RawFrame(
             x,
             Bounds.Width,
             Snapshot.MinimumFrame,
             Snapshot.MaximumFrame);
-
-    protected void DrawZones(DrawingContext context)
-    {
-        var bounds = new Rect(Bounds.Size);
-        context.DrawRectangle(
-            Brushes.Transparent,
-            new Pen(EditorAnimationVisuals.TimelineBrush, 1),
-            bounds);
-        var zeroX = X(0);
-        var endX = X(Snapshot.ContentDurationFrames);
-        context.DrawRectangle(
-            new SolidColorBrush(Color.FromArgb(18, 47, 128, 237)),
-            null,
-            new Rect(
-                zeroX,
-                0,
-                Math.Max(0, endX - zeroX),
-                Bounds.Height));
-        context.DrawLine(
-            new Pen(EditorAnimationVisuals.ActiveTrackBrush, 1),
-            new Point(zeroX, 0),
-            new Point(zeroX, Bounds.Height));
-        context.DrawLine(
-            new Pen(EditorAnimationVisuals.TimelineBrush, 1),
-            new Point(endX, 0),
-            new Point(endX, Bounds.Height));
-    }
-
-    protected void DrawPlayhead(DrawingContext context)
-    {
-        var playheadX = X(Frame);
-        context.DrawLine(
-            new Pen(EditorSukiWindowTheme.AccentBrush(), 2),
-            new Point(playheadX, 0),
-            new Point(playheadX, Bounds.Height));
-    }
 }
+
+internal sealed record PreviewScreenTimelinePlayheadChange(
+    int Frame,
+    bool IsSnapped);
 
 internal sealed class PreviewScreenTimelineRuler : PreviewScreenTimelineTrack
 {
+    private readonly Func<IReadOnlyList<int>> _snapTargets;
+    private readonly Action<PreviewScreenTimelinePlayheadChange> _setFrame;
     private bool _dragging;
 
     public PreviewScreenTimelineRuler(
         PreviewScreenTimelineSnapshot snapshot,
-        int frame)
-        : base(snapshot, frame)
+        Func<IReadOnlyList<int>> snapTargets,
+        Action<PreviewScreenTimelinePlayheadChange> setFrame)
+        : base(snapshot)
     {
+        _snapTargets = snapTargets;
+        _setFrame = setFrame;
         Cursor = new Cursor(StandardCursorType.SizeWestEast);
         PointerPressed += OnPointerPressed;
         PointerMoved += OnPointerMoved;
@@ -598,18 +912,11 @@ internal sealed class PreviewScreenTimelineRuler : PreviewScreenTimelineTrack
         PointerCaptureLost += (_, _) => _dragging = false;
     }
 
-    public event EventHandler<int>? FrameChanged;
-
     public override void Render(DrawingContext context)
     {
         base.Render(context);
-        DrawZones(context);
         var tickCount = Math.Max(2, (int)Math.Floor(Bounds.Width / 24));
-        var baselineY = 22d;
-        context.DrawLine(
-            new Pen(EditorAnimationVisuals.TimelineBrush, 1),
-            new Point(0, baselineY),
-            new Point(Bounds.Width, baselineY));
+        var baselineY = Math.Max(10, Bounds.Height - 3);
         for (var tick = 0; tick <= tickCount; tick++)
         {
             var x = Bounds.Width * tick / tickCount;
@@ -619,17 +926,6 @@ internal sealed class PreviewScreenTimelineRuler : PreviewScreenTimelineTrack
                 new Point(x, baselineY - height),
                 new Point(x, baselineY));
         }
-        DrawPlayhead(context);
-        var headX = X(Frame);
-        var head = new StreamGeometry();
-        using (var geometry = head.Open())
-        {
-            geometry.BeginFigure(new Point(headX - 5, 4), true);
-            geometry.LineTo(new Point(headX + 5, 4));
-            geometry.LineTo(new Point(headX, 10));
-            geometry.EndFigure(true);
-        }
-        context.DrawGeometry(EditorSukiWindowTheme.AccentBrush(), null, head);
     }
 
     private void OnPointerPressed(object? sender, PointerPressedEventArgs args)
@@ -658,32 +954,48 @@ internal sealed class PreviewScreenTimelineRuler : PreviewScreenTimelineTrack
 
     private void SetFromPointer(double x)
     {
-        var frame = FrameAt(x);
-        SetFrame(frame);
-        FrameChanged?.Invoke(this, frame);
+        var change = PreviewScreenTimelineMath.SnapFrame(
+            x,
+            Bounds.Width,
+            Snapshot.MinimumFrame,
+            Snapshot.MaximumFrame,
+            _snapTargets());
+        _setFrame(new PreviewScreenTimelinePlayheadChange(
+            change.Frame,
+            change.IsSnapped));
     }
 }
+
+internal sealed record PreviewScreenTimelineLaneBounds(
+    int StartFrame,
+    int EndFrame);
 
 internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
 {
     private const double ExitHandleWidth = 12;
+    private readonly string _key;
     private readonly bool _isGeneral;
+    private readonly Func<PreviewScreenTimelineLane, IReadOnlyList<int>>
+        _snapTargets;
     private int _startFrame;
     private int _endFrame;
-    private int _dragStartFrame;
+    private double _dragStartFrame;
     private int _dragStartValue;
     private int _dragEndValue;
     private DragMode _dragMode;
 
     public PreviewScreenTimelineLane(
         PreviewScreenTimelineSnapshot snapshot,
-        int frame,
+        string key,
         int startFrame,
         int endFrame,
-        bool isGeneral)
-        : base(snapshot, frame)
+        bool isGeneral,
+        Func<PreviewScreenTimelineLane, IReadOnlyList<int>> snapTargets)
+        : base(snapshot)
     {
+        _key = key;
         _isGeneral = isGeneral;
+        _snapTargets = snapTargets;
         _startFrame = Math.Clamp(
             startFrame,
             0,
@@ -698,24 +1010,26 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
             PointerPressed += OnPointerPressed;
             PointerMoved += OnPointerMoved;
             PointerReleased += OnPointerReleased;
-            PointerCaptureLost += (_, _) => _dragMode = DragMode.None;
+            PointerCaptureLost += (_, _) => EndDrag();
         }
     }
 
+    public string Key => _key;
     public int StartFrame => _startFrame;
     public int EndFrame => _endFrame;
+    public event EventHandler<PreviewScreenTimelineLaneBounds>? BoundsChanged;
+    public event EventHandler<int?>? SnapGuideChanged;
 
     public override void Render(DrawingContext context)
     {
         base.Render(context);
-        DrawZones(context);
         var left = X(_startFrame);
         var right = X(_endFrame);
         var block = new Rect(
             left,
-            4,
+            3,
             Math.Max(2, right - left),
-            Math.Max(2, Bounds.Height - 8));
+            Math.Max(2, Bounds.Height - 6));
         context.DrawRectangle(
             _isGeneral
                 ? new SolidColorBrush(Color.FromArgb(95, 47, 128, 237))
@@ -728,10 +1042,9 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
         {
             context.DrawLine(
                 new Pen(Brushes.White, 2),
-                new Point(Math.Max(left, right - 5), 8),
-                new Point(Math.Max(left, right - 5), Bounds.Height - 8));
+                new Point(Math.Max(left, right - 5), 7),
+                new Point(Math.Max(left, right - 5), Bounds.Height - 7));
         }
-        DrawPlayhead(context);
     }
 
     private void OnPointerPressed(object? sender, PointerPressedEventArgs args)
@@ -744,7 +1057,7 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
         _dragMode = right - x <= ExitHandleWidth
             ? DragMode.Exit
             : DragMode.Move;
-        _dragStartFrame = FrameAt(x);
+        _dragStartFrame = RawFrameAt(x);
         _dragStartValue = _startFrame;
         _dragEndValue = _endFrame;
         args.Pointer.Capture(this);
@@ -754,22 +1067,42 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
     private void OnPointerMoved(object? sender, PointerEventArgs args)
     {
         if (_dragMode == DragMode.None) return;
-        var pointerFrame = FrameAt(args.GetPosition(this).X);
+        var pointerFrame = RawFrameAt(args.GetPosition(this).X);
+        int? snapFrame;
         if (_dragMode == DragMode.Move)
         {
-            (_startFrame, _endFrame) = PreviewScreenTimelineMath.Move(
+            var next = PreviewScreenTimelineMath.MoveWithSnap(
                 _dragStartValue,
                 _dragEndValue,
                 pointerFrame - _dragStartFrame,
-                Snapshot.ContentDurationFrames);
+                Snapshot.ContentDurationFrames,
+                Bounds.Width,
+                Snapshot.MinimumFrame,
+                Snapshot.MaximumFrame,
+                _snapTargets(this));
+            _startFrame = next.StartFrame;
+            _endFrame = next.EndFrame;
+            snapFrame = next.SnapFrame;
         }
         else
         {
-            _endFrame = PreviewScreenTimelineMath.ResizeEnd(
+            var next = PreviewScreenTimelineMath.ResizeEndWithSnap(
                 _startFrame,
                 pointerFrame,
-                Snapshot.ContentDurationFrames);
+                Snapshot.ContentDurationFrames,
+                Bounds.Width,
+                Snapshot.MinimumFrame,
+                Snapshot.MaximumFrame,
+                _snapTargets(this));
+            _endFrame = next.EndFrame;
+            snapFrame = next.SnapFrame;
         }
+        BoundsChanged?.Invoke(
+            this,
+            new PreviewScreenTimelineLaneBounds(
+                _startFrame,
+                _endFrame));
+        SnapGuideChanged?.Invoke(this, snapFrame);
         InvalidateVisual();
         args.Handled = true;
     }
@@ -777,9 +1110,16 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
     private void OnPointerReleased(object? sender, PointerReleasedEventArgs args)
     {
         if (_dragMode == DragMode.None) return;
-        _dragMode = DragMode.None;
+        EndDrag();
         args.Pointer.Capture(null);
         args.Handled = true;
+    }
+
+    private void EndDrag()
+    {
+        if (_dragMode == DragMode.None) return;
+        _dragMode = DragMode.None;
+        SnapGuideChanged?.Invoke(this, null);
     }
 
     private enum DragMode
@@ -787,5 +1127,119 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
         None,
         Move,
         Exit,
+    }
+}
+
+internal sealed class PreviewScreenTimelineBackdrop : PreviewScreenTimelineTrack
+{
+    private static readonly Pen HatchPen = new(
+        new SolidColorBrush(Color.FromArgb(35, 143, 152, 168)),
+        1);
+
+    public PreviewScreenTimelineBackdrop(
+        PreviewScreenTimelineSnapshot snapshot)
+        : base(snapshot)
+    {
+        IsHitTestVisible = false;
+    }
+
+    public override void Render(DrawingContext context)
+    {
+        base.Render(context);
+        var zeroX = X(0);
+        var endX = X(Snapshot.ContentDurationFrames);
+        DrawHatch(context, new Rect(0, 0, zeroX, Bounds.Height));
+        DrawHatch(
+            context,
+            new Rect(
+                endX,
+                0,
+                Math.Max(0, Bounds.Width - endX),
+                Bounds.Height));
+    }
+
+    private static void DrawHatch(
+        DrawingContext context,
+        Rect region)
+    {
+        if (region.Width <= 0 || region.Height <= 0) return;
+        using (context.PushClip(region))
+        {
+            const double spacing = 11;
+            for (var x = region.Left - region.Height;
+                 x < region.Right;
+                 x += spacing)
+            {
+                context.DrawLine(
+                    HatchPen,
+                    new Point(x, region.Bottom),
+                    new Point(x + region.Height, region.Top));
+            }
+        }
+    }
+}
+
+internal sealed class PreviewScreenTimelineOverlay : PreviewScreenTimelineTrack
+{
+    private int _frame;
+    private bool _isPlayheadSnapped;
+    private int? _snapGuideFrame;
+
+    public PreviewScreenTimelineOverlay(
+        PreviewScreenTimelineSnapshot snapshot,
+        int frame,
+        bool isPlayheadSnapped)
+        : base(snapshot)
+    {
+        _frame = frame;
+        _isPlayheadSnapped = isPlayheadSnapped;
+        IsHitTestVisible = false;
+    }
+
+    public void SetPlayhead(int frame, bool isSnapped)
+    {
+        _frame = Math.Clamp(
+            frame,
+            Snapshot.MinimumFrame,
+            Snapshot.MaximumFrame);
+        _isPlayheadSnapped = isSnapped;
+        InvalidateVisual();
+    }
+
+    public void SetSnapGuide(int? frame)
+    {
+        _snapGuideFrame = frame;
+        InvalidateVisual();
+    }
+
+    public override void Render(DrawingContext context)
+    {
+        base.Render(context);
+        if (_snapGuideFrame is { } guideFrame)
+        {
+            var guideX = X(guideFrame);
+            context.DrawLine(
+                new Pen(EditorAnimationVisuals.ActiveTrackBrush, 1),
+                new Point(guideX, 0),
+                new Point(guideX, Bounds.Height));
+        }
+
+        var playheadBrush = _isPlayheadSnapped
+            ? EditorAnimationVisuals.ActiveTrackBrush
+            : EditorSukiWindowTheme.AccentBrush();
+        var playheadX = X(_frame);
+        context.DrawLine(
+            new Pen(playheadBrush, 2),
+            new Point(playheadX, 0),
+            new Point(playheadX, Bounds.Height));
+        var head = new StreamGeometry();
+        using (var geometry = head.Open())
+        {
+            geometry.BeginFigure(new Point(playheadX - 5, 0), true);
+            geometry.LineTo(new Point(playheadX + 5, 0));
+            geometry.LineTo(new Point(playheadX, 6));
+            geometry.EndFigure(true);
+        }
+        context.DrawGeometry(playheadBrush, null, head);
     }
 }

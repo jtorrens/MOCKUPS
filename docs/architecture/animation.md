@@ -213,6 +213,15 @@ During drag:
 
 No drag path identifies a keyframe by visual position or collection index.
 
+Production Screen Timeline presents this same Screen-relative coordinate space
+as a compact multi-lane surface. Its single continuous playhead snaps to visible
+item boundaries and to keyframes once keyframe markers are projected into that
+surface. Item appearance blocks snap their start or outgoing edge to the
+playhead and to other visible item boundaries. Snap feedback is transient and
+amber; preroll and postroll boundaries remain neutral, diagonally hatched
+regions. Collection collapse and prototype block edits are session-only and do
+not rewrite owner timing or local keyframes.
+
 ## Frame-by-frame Preview
 
 Animation is resolved frame data. For every requested frame:
