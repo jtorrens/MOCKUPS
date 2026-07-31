@@ -255,6 +255,12 @@ missing or invalid bundle before opening the project database.
 `desktop:mac` runs that same prepared development command under the display
 wake policy. `desktop:open:mac` opens the existing packaged bundle and fails if
 it is absent. `desktop:launch:mac` packages the current revision first.
+Mac packaging always performs a non-incremental Release publish. Before it
+replaces the `.app`, the packaging owner asks the published executable for its
+embedded short commit identity and requires an exact match with repository
+`HEAD`; a stale published binary fails packaging. The same identity appears in
+the Main window title, so manual review can identify the executable without
+relying on a hand-maintained version string.
 The packaged bundle copies the application-owned `.icns` from
 `assets/system/application` into `Contents/Resources` and declares it through
 `CFBundleIconFile`; this identity remains separate from in-product system
@@ -336,7 +342,8 @@ For each coherent phase:
 8. inspect the final diff, including parity artifacts;
 9. create a local commit;
 10. open the validated desktop application for manual review when UI behavior
-   changed;
+   changed; when review targets macOS packaging, rebuild and open the exact
+   `out/desktop/MOCKUPS Editor.app` rather than a development process;
 11. push only when the user asks.
 
 Focused Preview files and exact or filtered desktop test names are iteration

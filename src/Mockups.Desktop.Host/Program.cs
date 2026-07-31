@@ -11,6 +11,12 @@ internal static class Program
     [STAThread]
     public static void Main(string[] args)
     {
+        if (args.SequenceEqual(["--build-identity"], StringComparer.Ordinal))
+        {
+            Console.WriteLine(EditorBuildIdentity.Commit);
+            return;
+        }
+
         if (CurrentDatabaseMaintenance.TryRun(args))
         {
             return;

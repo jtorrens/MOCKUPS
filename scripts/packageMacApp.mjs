@@ -56,6 +56,20 @@ export function macDesktopCodeSignArgs(appDir) {
   ];
 }
 
+export function verifyMacDesktopBuildIdentity(expected, actual) {
+  const expectedCommit = expected.trim();
+  const actualCommit = actual.trim();
+  if (!/^[0-9a-f]{8}$/u.test(expectedCommit)) {
+    throw new Error(`Expected build commit '${expectedCommit}' is invalid.`);
+  }
+  if (actualCommit !== expectedCommit) {
+    throw new Error(
+      `Published Desktop build '${actualCommit}' does not match HEAD '${expectedCommit}'.`,
+    );
+  }
+  return actualCommit;
+}
+
 export async function packageMacDesktopApp(root = repoRoot) {
   const publishDir = resolve(root, "out", "desktop", "osx-arm64");
   const appDir = resolve(root, "out", "desktop", "MOCKUPS Editor.app");
@@ -64,6 +78,10 @@ export async function packageMacDesktopApp(root = repoRoot) {
   const resourcesDir = resolve(contentsDir, "Resources");
   const infoPlistPath = resolve(contentsDir, "Info.plist");
   const executablePath = resolve(macOsDir, macDesktopExecutableName);
+  const publishedExecutablePath = resolve(
+    publishDir,
+    macDesktopExecutableName,
+  );
   const iconSourcePath = resolve(
     root,
     "assets",
@@ -72,6 +90,21 @@ export async function packageMacDesktopApp(root = repoRoot) {
     macDesktopIconFileName,
   );
   const iconBundlePath = resolve(resourcesDir, macDesktopIconFileName);
+
+  const expectedCommit = execFileSync(
+    "git",
+    ["rev-parse", "--short=8", "HEAD"],
+    { cwd: root, encoding: "utf8" },
+  );
+  const actualCommit = execFileSync(
+    publishedExecutablePath,
+    ["--build-identity"],
+    { cwd: root, encoding: "utf8" },
+  );
+  const verifiedCommit = verifyMacDesktopBuildIdentity(
+    expectedCommit,
+    actualCommit,
+  );
 
   await rm(appDir, { force: true, recursive: true });
   await mkdir(macOsDir, { recursive: true });
@@ -97,7 +130,7 @@ export async function packageMacDesktopApp(root = repoRoot) {
     { stdio: "inherit" },
   );
 
-  console.log(`Created and verified ${appDir}`);
+  console.log(`Created and verified ${appDir} at ${verifiedCommit}`);
   return appDir;
 }
 

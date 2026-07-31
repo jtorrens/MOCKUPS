@@ -150,6 +150,7 @@ var tests = new (string Name, Action Run)[]
     ("SQLite session exposes distinct focused application ports", SqliteSessionExposesDistinctFocusedPorts),
     ("visual persistence writers require operation coordination", VisualPersistenceWritersRequireOperationCoordination),
     ("MainWindow retains only shell-owned services", MainWindowRetainsOnlyShellServices),
+    ("Desktop build identity is embedded in the window title", DesktopBuildIdentityIsEmbedded),
     ("post-commit presentation reads run through operation coordination", PostCommitPresentationReadsUseOperationCoordination),
     ("Production authoring changes refresh the prepared session", ProductionAuthoringChangesRefreshPreparedSession),
     ("Preview authoring preparation is task-based cancellable and snapshot-owned", PreviewAuthoringPreparationUsesOperationBoundary),
@@ -3632,6 +3633,17 @@ static void MainWindowRetainsOnlyShellServices()
 
     True(retainedTypes.Contains(
         typeof(EditorWorkspaceCoordinator)));
+}
+
+static void DesktopBuildIdentityIsEmbedded()
+{
+    True(EditorBuildIdentity.Commit.Length == 8);
+    True(EditorBuildIdentity.Commit.All((character) =>
+        character is >= '0' and <= '9'
+        || character is >= 'a' and <= 'f'));
+    True(EditorBuildIdentity.WindowTitle.EndsWith(
+        $" · {EditorBuildIdentity.Commit}",
+        StringComparison.Ordinal));
 }
 
 static void PostCommitPresentationReadsUseOperationCoordination()

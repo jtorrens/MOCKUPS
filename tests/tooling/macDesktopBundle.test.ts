@@ -7,6 +7,7 @@ import {
   macDesktopExecutableName,
   macDesktopIconFileName,
   macDesktopInfoPlist,
+  verifyMacDesktopBuildIdentity,
 } from "../../scripts/packageMacApp.mjs";
 
 test("macOS bundle launches the executable Desktop Host", () => {
@@ -41,4 +42,15 @@ test("macOS bundle receives one final deep ad-hoc signature", () => {
     "--timestamp=none",
     appPath,
   ]);
+});
+
+test("macOS packaging rejects a published build from another commit", () => {
+  assert.equal(
+    verifyMacDesktopBuildIdentity("d9b96d97\n", "d9b96d97\n"),
+    "d9b96d97",
+  );
+  assert.throws(
+    () => verifyMacDesktopBuildIdentity("d9b96d97", "41d04021"),
+    /does not match HEAD/u,
+  );
 });
