@@ -183,38 +183,52 @@ internal sealed class ModuleInstanceAnimationEditor
         var preview = DesignPreviewTestValues.Parse(
             PreparedSnapshot(node).Source.RuntimePreviewJson);
         var items = DesignPreviewTestValues.CollectionItems(preview, collection).ToList();
-        var itemLabels = items
-            .Select((item, index) => new
+        var content = new StackPanel
+        {
+            Spacing = EditorUiDensity.Card(12),
+        };
+        var activeTrackCount = 0;
+        for (var index = 0; index < items.Count; index++)
+        {
+            var item = items[index];
+            var itemId = item["id"]?.GetValue<string>() ?? "";
+            if (string.IsNullOrWhiteSpace(itemId))
             {
-                Id = item["id"]?.GetValue<string>() ?? "",
-                Label = RuntimeCollectionItemPresentation.Resolve(
-                    collection,
-                    item,
-                    index,
-                    $"{collection.ItemLabel} {index + 1}",
-                    $"Payload item {index + 1}",
-                    EditorIcons.Component).Title,
-            })
-            .Where((item) => !string.IsNullOrWhiteSpace(item.Id))
-            .ToDictionary((item) => item.Id, (item) => item.Label, StringComparer.Ordinal);
-        var fieldIds = collection.Fields
-            .Where((input) => input.Animation is not null)
-            .Select((input) => input.Id)
-            .ToHashSet(StringComparer.Ordinal);
-        return CreateContent(
-            node,
-            $"collection:{collection.Id}",
-            (target) => itemLabels.ContainsKey(target.TargetId) && fieldIds.Contains(target.FieldId),
-            durationTargetId: null,
-            (target) => target with { Label = $"{itemLabels[target.TargetId]} · {target.Label}" });
+                continue;
+            }
+            var itemAnimation = CreateTargetContent(node, itemId);
+            if (itemAnimation.ActiveTrackCount == 0)
+            {
+                continue;
+            }
+            var label = RuntimeCollectionItemPresentation.Resolve(
+                collection,
+                item,
+                index,
+                $"{collection.ItemLabel} {index + 1}",
+                $"Payload item {index + 1}",
+                EditorIcons.Component).Title;
+            content.Children.Add(EditorGroupBlock.CreateInlineSection(label));
+            content.Children.Add(itemAnimation.Content);
+            activeTrackCount += itemAnimation.ActiveTrackCount;
+        }
+        if (activeTrackCount == 0)
+        {
+            content.Children.Add(new TextBlock
+            {
+                Text = "Activa el rombo de un Runtime Value para crear su track de animación.",
+                TextWrapping = TextWrapping.Wrap,
+                Opacity = 0.72,
+            });
+        }
+        return new AnimationTargetEditorContent(content, activeTrackCount);
     }
 
     private AnimationTargetEditorContent CreateContent(
         ProjectTreeNode node,
         string scopeKey,
         Func<AnimationTarget, bool> includesTarget,
-        string? durationTargetId,
-        Func<AnimationTarget, AnimationTarget>? decorateTarget = null)
+        string durationTargetId)
     {
         var snapshot = PreparedSnapshot(node);
         var source = snapshot.Source;
@@ -228,7 +242,6 @@ internal sealed class ModuleInstanceAnimationEditor
                 currentAnimation,
                 themeTokens)
             .Where(includesTarget)
-            .Select((target) => decorateTarget?.Invoke(target) ?? target)
             .ToList();
         var targets = ReadScopeTargets(animation);
         var targetKeys = targets
@@ -275,7 +288,7 @@ internal sealed class ModuleInstanceAnimationEditor
         ModuleInstanceAnimationDocument document,
         List<ResolvedAnimationTarget> targets,
         string scopeKey,
-        string? durationTargetId,
+        string durationTargetId,
         JsonObject preview,
         JsonObject animation,
         JsonObject themeTokens,
@@ -288,6 +301,7 @@ internal sealed class ModuleInstanceAnimationEditor
         var actualScreenDuration = preparedSnapshot.DurationFrames;
         var durationPolicy = RuntimeDurationContract.Policy(effectiveContractJson);
         var currentAnimation = animation;
+        var usesOwnerTimeline = !string.IsNullOrWhiteSpace(durationTargetId);
         var commands =
             new ModuleInstanceAnimationCommandCoordinator(
                 preparedSnapshot.Source.AnimationJson,
@@ -296,57 +310,104 @@ internal sealed class ModuleInstanceAnimationEditor
                         .SaveAnimationSnapshotAsync(
                             node.Id,
                             candidateJson));
-        int MaximumAuthoredScreenFrame() => targets
+        int TimelineFrameForScreenFrame(int screenFrame) =>
+            AnimationTimelineCoordinateSpace.TimelineFrameForScreenFrame(
+                usesOwnerTimeline,
+                screenFrame,
+                (candidateScreenFrame) => RuntimeAnimationFrameOrigin.OwnerLocalFrame(
+                    preview,
+                    preview,
+                    currentAnimation,
+                    durationTargetId,
+                    candidateScreenFrame,
+                    themeTokens));
+        int ScreenFrameForTimelineFrame(double timelineFrame) =>
+            AnimationTimelineCoordinateSpace.ScreenFrameForTimelineFrame(
+                usesOwnerTimeline,
+                timelineFrame,
+                (candidateOwnerFrame) => RuntimeAnimationFrameOrigin.ScreenFrameForOwnerFrame(
+                    preview,
+                    preview,
+                    currentAnimation,
+                    durationTargetId,
+                    candidateOwnerFrame,
+                    themeTokens));
+        int MarkerTimelineFrame(
+            ResolvedAnimationTarget candidate,
+            AnimationKeyframeView keyframe)
+        {
+            return AnimationTimelineCoordinateSpace.MarkerFrame(
+                usesOwnerTimeline,
+                candidate.Target?.OwnerFrameOrigin ?? 0,
+                keyframe.Frame,
+                candidate.Target?.ScreenFrameForOwnerFrame ?? ((_) => keyframe.Frame));
+        }
+        int MaximumAuthoredTimelineFrame() => targets
             .SelectMany((candidate) => (candidate.Track?.Keyframes ?? [])
                 .Where((keyframe) => keyframe.Enabled)
-                .Select((keyframe) => candidate.Target?.ScreenFrameForOwnerFrame(
-                    (candidate.Target?.OwnerFrameOrigin ?? 0) + keyframe.Frame) ?? keyframe.Frame))
+                .Select((keyframe) => MarkerTimelineFrame(candidate, keyframe)))
             .DefaultIfEmpty(-1)
             .Max();
-        int CalculatedAuthoringDuration(int maximumAuthoredFrame) => Math.Max(
-            Math.Max(actualScreenDuration, maximumAuthoredFrame + 1),
-            targets
-                .Where((candidate) => candidate.Target is { ReferenceDurationFrames: > 0 })
-                .Select((candidate) => candidate.Target!.ScreenFrameForOwnerFrame(
-                    candidate.Target.OwnerFrameOrigin + candidate.Target.ReferenceDurationFrames))
-                .DefaultIfEmpty(actualScreenDuration)
-                .Max());
-        var maximumAuthoredScreenFrame = MaximumAuthoredScreenFrame();
-        var calculatedAuthoringDuration = CalculatedAuthoringDuration(maximumAuthoredScreenFrame);
-        var timelineDuration = durationPolicy == RuntimeDurationPolicy.Explicit
-            ? actualScreenDuration
-            : calculatedAuthoringDuration;
-        var hasOutOfRangeKeyframes = maximumAuthoredScreenFrame >= actualScreenDuration;
-        var ownerNaturalDuration = durationTargetId is null
-            ? 1
-            : RuntimeAnimationFrameOrigin.OwnerNaturalDuration(
+        int OwnerNaturalDuration() => usesOwnerTimeline
+            ? RuntimeAnimationFrameOrigin.OwnerNaturalDuration(
                 preview,
                 preview,
-                animation,
+                currentAnimation,
                 durationTargetId,
-                themeTokens);
-        var referenceNaturalDuration = Math.Max(
-            ownerNaturalDuration,
+                themeTokens)
+            : actualScreenDuration;
+        int ReferenceNaturalDuration() => Math.Max(
+            OwnerNaturalDuration(),
             targets
                 .Where((candidate) => candidate.Target is not null)
                 .Select((candidate) => (int)Math.Ceiling(
                     candidate.Target!.OwnerFrameOrigin + candidate.Target.ReferenceDurationFrames))
                 .DefaultIfEmpty(1)
                 .Max());
-        var currentFrame = Math.Clamp(_shotFrame() - screenStartFrame, 0, timelineDuration - 1);
+        int CalculatedAuthoringDuration(int maximumAuthoredFrame)
+        {
+            var referenceDuration = usesOwnerTimeline
+                ? ReferenceNaturalDuration()
+                : targets
+                    .Where((candidate) => candidate.Target is { ReferenceDurationFrames: > 0 })
+                    .Select((candidate) => candidate.Target!.ScreenFrameForOwnerFrame(
+                        candidate.Target.OwnerFrameOrigin + candidate.Target.ReferenceDurationFrames))
+                    .DefaultIfEmpty(actualScreenDuration)
+                    .Max();
+            return Math.Max(
+                Math.Max(
+                    usesOwnerTimeline ? ReferenceNaturalDuration() : actualScreenDuration,
+                    maximumAuthoredFrame + 1),
+                referenceDuration);
+        }
+        var maximumAuthoredTimelineFrame = MaximumAuthoredTimelineFrame();
+        var calculatedAuthoringDuration = CalculatedAuthoringDuration(maximumAuthoredTimelineFrame);
+        var timelineDuration = !usesOwnerTimeline && durationPolicy == RuntimeDurationPolicy.Explicit
+            ? actualScreenDuration
+            : calculatedAuthoringDuration;
+        var naturalTimelineDuration = usesOwnerTimeline
+            ? ReferenceNaturalDuration()
+            : actualScreenDuration;
+        var hasOutOfRangeKeyframes = maximumAuthoredTimelineFrame >= naturalTimelineDuration;
+        var currentFrame = Math.Clamp(
+            TimelineFrameForScreenFrame(_shotFrame() - screenStartFrame),
+            0,
+            timelineDuration - 1);
         int TimelineFrame() => Math.Clamp(currentFrame, 0, timelineDuration - 1);
         var selectionKey = $"{node.Id}:animation-properties:{scopeKey}";
         var selectedId = _sessionUiState.Selection(selectionKey);
         var selected = targets.FirstOrDefault((target) => TargetKey(target) == selectedId)
             ?? targets.FirstOrDefault((target) => target.Track is not null)
             ?? targets.First();
-        double OwnerFrame() => RuntimeAnimationFrameOrigin.OwnerLocalFrame(
-            preview,
-            preview,
-            currentAnimation,
-            selected.Target?.TargetId ?? durationTargetId ?? "",
-            TimelineFrame(),
-            themeTokens);
+        double OwnerFrame() => usesOwnerTimeline
+            ? TimelineFrame()
+            : RuntimeAnimationFrameOrigin.OwnerLocalFrame(
+                preview,
+                preview,
+                currentAnimation,
+                selected.Target?.TargetId ?? "",
+                TimelineFrame(),
+                themeTokens);
         selectedId = TargetKey(selected);
         _sessionUiState.Select(selectionKey, selectedId);
         var root = new StackPanel { Spacing = EditorUiDensity.Card(12) };
@@ -383,25 +444,33 @@ internal sealed class ModuleInstanceAnimationEditor
         EditorTimelineTransport.ApplyPrimaryStyle(playbackButton);
         var frameUpdateGate = new TimelineFrameUpdateGate();
 
-        void SetFrame(int screenFrame)
+        void SetFrame(int timelineFrame)
         {
             frameUpdateGate.Run(() =>
             {
-                currentFrame = Math.Clamp(screenFrame, 0, timelineDuration - 1);
+                currentFrame = Math.Clamp(timelineFrame, 0, timelineDuration - 1);
                 playhead.SetFrame(TimelineFrame());
-                if (currentFrame < actualScreenDuration) _setShotFrame(screenStartFrame + currentFrame);
+                var screenFrame = ScreenFrameForTimelineFrame(currentFrame);
+                if (screenFrame < actualScreenDuration)
+                {
+                    _setShotFrame(screenStartFrame + screenFrame);
+                }
             });
             RefreshVisuals();
         }
 
-        void PreviewDraggedFrame(int screenFrame)
+        void PreviewDraggedFrame(int timelineFrame)
         {
             frameUpdateGate.Run(() =>
             {
-                currentFrame = Math.Clamp(screenFrame, 0, timelineDuration - 1);
+                currentFrame = Math.Clamp(timelineFrame, 0, timelineDuration - 1);
                 playhead.SetFrame(TimelineFrame());
-                frameText.Text = $"{TimelineFrame()}/{actualScreenDuration - 1}";
-                if (currentFrame < actualScreenDuration) _setShotFrame(screenStartFrame + currentFrame);
+                frameText.Text = $"{TimelineFrame()}/{timelineDuration - 1}";
+                var screenFrame = ScreenFrameForTimelineFrame(currentFrame);
+                if (screenFrame < actualScreenDuration)
+                {
+                    _setShotFrame(screenStartFrame + screenFrame);
+                }
             });
         }
 
@@ -447,10 +516,13 @@ internal sealed class ModuleInstanceAnimationEditor
                 preparedSnapshot.DurationFrames;
             RefreshTargetBindings(
                 selectedKey);
-            maximumAuthoredScreenFrame = MaximumAuthoredScreenFrame();
-            calculatedAuthoringDuration = CalculatedAuthoringDuration(maximumAuthoredScreenFrame);
-            hasOutOfRangeKeyframes = maximumAuthoredScreenFrame >= actualScreenDuration;
-            timelineDuration = durationPolicy == RuntimeDurationPolicy.Explicit
+            maximumAuthoredTimelineFrame = MaximumAuthoredTimelineFrame();
+            naturalTimelineDuration = usesOwnerTimeline
+                ? ReferenceNaturalDuration()
+                : actualScreenDuration;
+            calculatedAuthoringDuration = CalculatedAuthoringDuration(maximumAuthoredTimelineFrame);
+            hasOutOfRangeKeyframes = maximumAuthoredTimelineFrame >= naturalTimelineDuration;
+            timelineDuration = !usesOwnerTimeline && durationPolicy == RuntimeDurationPolicy.Explicit
                 ? Math.Max(actualScreenDuration, authoringHorizon)
                 : Math.Max(calculatedAuthoringDuration, authoringHorizon);
             currentFrame = Math.Clamp(currentFrame, 0, timelineDuration - 1);
@@ -483,27 +555,32 @@ internal sealed class ModuleInstanceAnimationEditor
 
         void RefreshVisuals()
         {
-            frameText.Text = $"{TimelineFrame()}/{actualScreenDuration - 1}";
+            frameText.Text = $"{TimelineFrame()}/{timelineDuration - 1}";
             authoringLimitText.Text = hasOutOfRangeKeyframes
-                ? $"({maximumAuthoredScreenFrame} · keyframe outside Screen)"
-                : timelineDuration > actualScreenDuration ? $"({timelineDuration - 1})" : "";
+                ? $"({maximumAuthoredTimelineFrame} · keyframe outside {(usesOwnerTimeline ? "item" : "Screen")})"
+                : timelineDuration > naturalTimelineDuration ? $"({timelineDuration - 1})" : "";
             authoringLimitText.Foreground = hasOutOfRangeKeyframes
                 ? EditorAnimationVisuals.ActiveTrackBrush
                 : null;
             var selectedLocalFrame = (int)Math.Round(OwnerFrame(), MidpointRounding.AwayFromZero) - (int)Math.Round(
                 selected.Target?.OwnerFrameOrigin ?? 0,
                 MidpointRounding.AwayFromZero);
-            var hasCurrentKeyframe = selected.Track?.Keyframes.Any(
-                (keyframe) => keyframe.Enabled && keyframe.Frame == selectedLocalFrame) == true;
+            var currentKeyframe = selected.Track?.Keyframes.FirstOrDefault(
+                (keyframe) => keyframe.Enabled && keyframe.Frame == selectedLocalFrame);
+            var hasCurrentKeyframe = currentKeyframe is not null;
             currentKeyframeButton.Content = EditorTimelineTransport.CreateKeyframeGlyph(
-                filled: hasCurrentKeyframe,
+                filled: hasCurrentKeyframe && currentKeyframe!.Frame > 0,
                 size: 16,
                 brush: hasCurrentKeyframe
                     ? EditorAnimationVisuals.CurrentKeyframeBrush
                     : EditorAnimationVisuals.InactiveTrackBrush);
             EditorAccessibility.Describe(
                 currentKeyframeButton,
-                hasCurrentKeyframe ? "Keyframe at the current frame" : "No keyframe at the current frame");
+                hasCurrentKeyframe
+                    ? currentKeyframe!.Frame == 0
+                        ? "Protected origin keyframe at the current frame"
+                        : "Keyframe at the current frame"
+                    : "No keyframe at the current frame");
             playbackButton.Content = EditorIcons.Create(
                 _playbackState.IsPlaying ? EditorIcons.Pause : EditorIcons.Play,
                 16);
@@ -515,6 +592,7 @@ internal sealed class ModuleInstanceAnimationEditor
                 selected,
                 TimelineFrame(),
                 timelineDuration,
+                usesOwnerTimeline,
                 SetFrame,
                 PreviewDraggedFrame,
                 (target, keyframe, destinationFrame) =>
@@ -538,7 +616,13 @@ internal sealed class ModuleInstanceAnimationEditor
                     Foreground = selectedTarget
                         ? EditorAnimationVisuals.ActiveTrackBrush
                         : EditorAnimationVisuals.OtherKeyframeBrush,
-                    Content = $"{(active ? "◆" : "◇")}  {target.Label}  ·  {EditorUiText.Count(target.Track?.Keyframes.Count ?? 0, "keyframe")}",
+                    Content = CreateTrackSummary(
+                        active,
+                        target.Label,
+                        target.Track?.Keyframes.Count ?? 0,
+                        selectedTarget
+                            ? EditorAnimationVisuals.ActiveTrackBrush
+                            : EditorAnimationVisuals.OtherKeyframeBrush),
                 };
                 button.Click += (_, _) =>
                 {
@@ -552,27 +636,40 @@ internal sealed class ModuleInstanceAnimationEditor
                 node,
                 selected,
                 (int)Math.Round(OwnerFrame(), MidpointRounding.AwayFromZero),
-                (ownerFrame) => SetFrame(selected.Target?.ScreenFrameForOwnerFrame(ownerFrame) ?? TimelineFrame()),
+                (ownerFrame) => SetFrame(usesOwnerTimeline
+                    ? ownerFrame
+                    : selected.Target?.ScreenFrameForOwnerFrame(ownerFrame) ?? TimelineFrame()),
                 SaveAndRefresh);
         }
 
         var firstFrameButton = EditorTimelineTransport.CreateNavigationButton(
             EditorIcons.Create(EditorIcons.TimelineFirstFrame, 16),
-            "First Screen frame");
+            usesOwnerTimeline ? "First item frame" : "First Screen frame");
         firstFrameButton.Click += (_, _) => SetFrame(0);
         var previousFrameButton = EditorTimelineTransport.CreateNavigationButton(
             EditorIcons.Create(EditorIcons.TimelinePreviousFrame, 16),
-            "Previous frame");
+            usesOwnerTimeline ? "Previous item frame" : "Previous Screen frame");
         previousFrameButton.Click += (_, _) => SetFrame(TimelineFrame() - 1);
         currentKeyframeButton.Click += (_, _) => SetFrame(TimelineFrame());
-        playbackButton.Click += (_, _) => _togglePlayback();
+        playbackButton.Click += (_, _) =>
+        {
+            if (usesOwnerTimeline && !_playbackState.IsPlaying)
+            {
+                var screenFrame = ScreenFrameForTimelineFrame(TimelineFrame());
+                if (screenFrame < actualScreenDuration)
+                {
+                    _setShotFrame(screenStartFrame + screenFrame);
+                }
+            }
+            _togglePlayback();
+        };
         var nextFrameButton = EditorTimelineTransport.CreateNavigationButton(
             EditorIcons.Create(EditorIcons.TimelineNextFrame, 16),
-            "Next frame");
+            usesOwnerTimeline ? "Next item frame" : "Next Screen frame");
         nextFrameButton.Click += (_, _) => SetFrame(TimelineFrame() + 1);
         var lastFrameButton = EditorTimelineTransport.CreateNavigationButton(
             EditorIcons.Create(EditorIcons.TimelineLastFrame, 16),
-            "Last Screen frame");
+            usesOwnerTimeline ? "Last item frame" : "Last Screen frame");
         lastFrameButton.Click += (_, _) => SetFrame(timelineDuration - 1);
         var transport = new StackPanel
         {
@@ -632,13 +729,13 @@ internal sealed class ModuleInstanceAnimationEditor
         Grid.SetColumn(extendHorizonButton, 1);
         timelineControl.Children.Add(extendHorizonButton);
         root.Children.Add(timelineControl);
-        if (durationTargetId is not null)
+        if (usesOwnerTimeline)
         {
             root.Children.Add(CreateTargetDurationEditor(
                 node,
                 document,
                 durationTargetId,
-                referenceNaturalDuration,
+                ReferenceNaturalDuration(),
                 SaveAndRefresh));
         }
         root.Children.Add(EditorGroupBlock.CreateSeparator());
@@ -649,7 +746,10 @@ internal sealed class ModuleInstanceAnimationEditor
             if (frameUpdateGate.IsActive) return;
             frameUpdateGate.Run(() =>
             {
-                currentFrame = Math.Clamp(_shotFrame() - screenStartFrame, 0, timelineDuration - 1);
+                currentFrame = Math.Clamp(
+                    TimelineFrameForScreenFrame(_shotFrame() - screenStartFrame),
+                    0,
+                    timelineDuration - 1);
                 playhead.SetFrame(TimelineFrame());
             });
             RefreshVisuals();
@@ -675,7 +775,7 @@ internal sealed class ModuleInstanceAnimationEditor
         {
             var activate = new Button
             {
-                Content = $"◇  Activate animation for {target.Label}",
+                Content = CreateAnimationActivationLabel(target.Label),
                 HorizontalAlignment = HorizontalAlignment.Left,
             };
             activate.Click += (_, _) =>
@@ -711,7 +811,7 @@ internal sealed class ModuleInstanceAnimationEditor
         var keyframeButton = new Button
         {
             Content = EditorTimelineTransport.CreateKeyframeGlyph(
-                filled: exact is not null,
+                filled: exact is not null && exact.Frame > 0,
                 size: 16,
                 brush: exact is not null
                     ? EditorAnimationVisuals.CurrentKeyframeBrush
@@ -720,7 +820,17 @@ internal sealed class ModuleInstanceAnimationEditor
             Height = 30,
             Padding = EditorUiDensity.CardThickness(0),
         };
-        EditorAccessibility.Describe(keyframeButton, exact is null ? "Create keyframe at current frame" : "Update current keyframe");
+        EditorAccessibility.Describe(
+            keyframeButton,
+            exact is null
+                ? "Create keyframe at current frame"
+                : exact.Frame == 0
+                    ? "Protected origin keyframe"
+                    : "Update current keyframe");
+        if (exact?.Frame == 0)
+        {
+            ToolTip.SetTip(keyframeButton, "Local frame 0 · Protected");
+        }
         Grid.SetColumn(keyframeButton, 1);
         header.Children.Add(keyframeButton);
         AddTransportButton(
@@ -894,8 +1004,9 @@ internal sealed class ModuleInstanceAnimationEditor
     private static Control CreateMiniTimeline(
         IReadOnlyList<ResolvedAnimationTarget> targets,
         ResolvedAnimationTarget active,
-        int currentOwnerFrame,
+        int currentTimelineFrame,
         int timelineDuration,
+        bool usesOwnerTimeline,
         Action<int> setFrame,
         Action<int> previewFrame,
         Func<
@@ -916,9 +1027,13 @@ internal sealed class ModuleInstanceAnimationEditor
             var width = Math.Max(180, availableWidth);
             canvas.Children.Clear();
             var referenceDuration = Math.Max(0, active.Target?.ReferenceDurationFrames ?? 0);
-            var referenceOrigin = active.Target?.ScreenFrameForOwnerFrame(active.Target.OwnerFrameOrigin) ?? 0;
-            var referenceEnd = active.Target?.ScreenFrameForOwnerFrame(
-                active.Target.OwnerFrameOrigin + referenceDuration) ?? referenceOrigin;
+            var referenceOrigin = usesOwnerTimeline
+                ? active.Target?.OwnerFrameOrigin ?? 0
+                : active.Target?.ScreenFrameForOwnerFrame(active.Target.OwnerFrameOrigin) ?? 0;
+            var referenceEnd = usesOwnerTimeline
+                ? referenceOrigin + referenceDuration
+                : active.Target?.ScreenFrameForOwnerFrame(
+                    active.Target.OwnerFrameOrigin + referenceDuration) ?? referenceOrigin;
             var displayDuration = timelineDuration;
             var markerScale = Math.Max(1, displayDuration - 1);
             var intervalScale = Math.Max(1, displayDuration);
@@ -953,10 +1068,17 @@ internal sealed class ModuleInstanceAnimationEditor
             {
                 foreach (var keyframe in target.Track!.Keyframes.Where((candidate) => candidate.Enabled))
                 {
-                    var ownerKeyframe = target.Target?.ScreenFrameForOwnerFrame(
-                        (target.Target?.OwnerFrameOrigin ?? 0) + keyframe.Frame) ?? keyframe.Frame;
+                    var ownerFrame = (target.Target?.OwnerFrameOrigin ?? 0) + keyframe.Frame;
+                    var timelineKeyframe = AnimationTimelineCoordinateSpace.MarkerFrame(
+                        usesOwnerTimeline,
+                        target.Target?.OwnerFrameOrigin ?? 0,
+                        keyframe.Frame,
+                        target.Target?.ScreenFrameForOwnerFrame ?? ((_) => keyframe.Frame));
+                    var screenKeyframe = target.Target?.ScreenFrameForOwnerFrame(ownerFrame)
+                        ?? timelineKeyframe;
                     var isActive = ReferenceEquals(target, active);
-                    var isCurrent = ownerKeyframe == currentOwnerFrame;
+                    var isCurrent = timelineKeyframe == currentTimelineFrame;
+                    var isProtected = keyframe.Frame == 0;
                     var markerBrush = isCurrent
                         ? EditorAnimationVisuals.CurrentKeyframeBrush
                         : isActive
@@ -966,13 +1088,17 @@ internal sealed class ModuleInstanceAnimationEditor
                         ? new Polygon
                         {
                             Points = new Points { new Point(9, 0), new Point(18, 9), new Point(9, 18), new Point(0, 9) },
-                            Fill = markerBrush,
+                            Fill = isProtected ? Brushes.Transparent : markerBrush,
+                            Stroke = isProtected ? markerBrush : null,
+                            StrokeThickness = isProtected ? 1.6 : 0,
                         }
                         : new Ellipse
                         {
                             Width = 8,
                             Height = 8,
-                            Fill = markerBrush,
+                            Fill = isProtected ? Brushes.Transparent : markerBrush,
+                            Stroke = isProtected ? markerBrush : null,
+                            StrokeThickness = isProtected ? 1.4 : 0,
                             HorizontalAlignment = HorizontalAlignment.Center,
                             VerticalAlignment = VerticalAlignment.Center,
                         };
@@ -988,9 +1114,14 @@ internal sealed class ModuleInstanceAnimationEditor
                             ? StandardCursorType.SizeWestEast
                             : StandardCursorType.Arrow),
                     };
+                    ToolTip.SetTip(
+                        marker,
+                        isProtected
+                            ? $"Local frame 0 · Screen frame {screenKeyframe} · Protected"
+                            : $"Local frame {keyframe.Frame} · Screen frame {screenKeyframe}");
                     var originalLeft = Math.Max(0, Math.Min(
                         width - marker.Width,
-                        ownerKeyframe / (double)markerScale * (width - marker.Width)));
+                        timelineKeyframe / (double)markerScale * (width - marker.Width)));
                     Canvas.SetLeft(marker, originalLeft);
                     Canvas.SetTop(marker, isActive ? 6 : 9);
                     canvas.Children.Add(marker);
@@ -999,7 +1130,7 @@ internal sealed class ModuleInstanceAnimationEditor
                     var released = false;
                     var validDestination = false;
                     var candidateLocalFrame = keyframe.Frame;
-                    var candidateScreenFrame = ownerKeyframe;
+                    var candidateTimelineFrame = timelineKeyframe;
                     var pressPosition = default(Point);
                     IPointer? capturedPointer = null;
 
@@ -1012,7 +1143,7 @@ internal sealed class ModuleInstanceAnimationEditor
                             : isActive
                                 ? EditorAnimationVisuals.ActiveTrackBrush
                                 : EditorAnimationVisuals.OtherKeyframeBrush);
-                        previewFrame(ownerKeyframe);
+                        previewFrame(timelineKeyframe);
                     }
 
                     marker.PointerPressed += (_, args) =>
@@ -1020,7 +1151,7 @@ internal sealed class ModuleInstanceAnimationEditor
                         if (!args.GetCurrentPoint(marker).Properties.IsLeftButtonPressed) return;
                         if (!canDrag)
                         {
-                            setFrame(ownerKeyframe);
+                            setFrame(timelineKeyframe);
                             args.Handled = true;
                             return;
                         }
@@ -1042,25 +1173,33 @@ internal sealed class ModuleInstanceAnimationEditor
                         moved = true;
                         var rawLeft = originalLeft + position.X - pressPosition.X;
                         var laneWidth = Math.Max(1, width - marker.Width);
-                        var rawScreenFrame = Math.Clamp(rawLeft / laneWidth * markerScale, 0, markerScale);
-                        var otherScreenFrames = targets
+                        var rawTimelineFrame = Math.Clamp(rawLeft / laneWidth * markerScale, 0, markerScale);
+                        var otherTimelineFrames = targets
                             .SelectMany((candidate) => (candidate.Track?.Keyframes ?? [])
                                 .Where((candidateKeyframe) => candidateKeyframe.Enabled
                                     && candidateKeyframe.Id != keyframe.Id)
-                                .Select((candidateKeyframe) => candidate.Target?.ScreenFrameForOwnerFrame(
-                                    (candidate.Target?.OwnerFrameOrigin ?? 0) + candidateKeyframe.Frame)
-                                    ?? candidateKeyframe.Frame))
+                                .Select((candidateKeyframe) =>
+                                    AnimationTimelineCoordinateSpace.MarkerFrame(
+                                        usesOwnerTimeline,
+                                        candidate.Target?.OwnerFrameOrigin ?? 0,
+                                        candidateKeyframe.Frame,
+                                        candidate.Target?.ScreenFrameForOwnerFrame
+                                            ?? ((_) => candidateKeyframe.Frame))))
                             .ToList();
-                        var snappedScreenFrame = TimelineKeyframeDrag.ResolveScreenFrame(
-                            rawScreenFrame,
+                        var snappedTimelineFrame = TimelineKeyframeDrag.ResolveScreenFrame(
+                            rawTimelineFrame,
                             args.KeyModifiers.HasFlag(KeyModifiers.Alt),
                             markerScale,
                             laneWidth,
-                            otherScreenFrames);
-                        var ownerFrame = target.Target?.OwnerFrameForScreenFrame(snappedScreenFrame)
-                            ?? snappedScreenFrame;
+                            otherTimelineFrames);
+                        var candidateOwnerFrame =
+                            AnimationTimelineCoordinateSpace.OwnerFrameForTimelineFrame(
+                                usesOwnerTimeline,
+                                snappedTimelineFrame,
+                                target.Target?.OwnerFrameForScreenFrame
+                                    ?? ((frame) => frame));
                         candidateLocalFrame = (int)Math.Round(
-                            ownerFrame - (target.Target?.OwnerFrameOrigin ?? 0),
+                            candidateOwnerFrame - (target.Target?.OwnerFrameOrigin ?? 0),
                             MidpointRounding.AwayFromZero);
                         var isOriginalDestination = candidateLocalFrame == keyframe.Frame;
                         var isOccupied = target.Track!.Keyframes.Any((candidate) =>
@@ -1068,11 +1207,15 @@ internal sealed class ModuleInstanceAnimationEditor
                         validDestination = candidateLocalFrame > 0
                             && !isOriginalDestination
                             && !isOccupied;
-                        candidateScreenFrame = target.Target?.ScreenFrameForOwnerFrame(
-                            (target.Target?.OwnerFrameOrigin ?? 0) + Math.Max(0, candidateLocalFrame))
-                            ?? snappedScreenFrame;
+                        candidateTimelineFrame = usesOwnerTimeline
+                            ? (int)Math.Round(
+                                (target.Target?.OwnerFrameOrigin ?? 0) + Math.Max(0, candidateLocalFrame),
+                                MidpointRounding.AwayFromZero)
+                            : target.Target?.ScreenFrameForOwnerFrame(
+                                (target.Target?.OwnerFrameOrigin ?? 0) + Math.Max(0, candidateLocalFrame))
+                                ?? snappedTimelineFrame;
                         Canvas.SetLeft(marker, Math.Clamp(
-                            candidateScreenFrame / (double)markerScale * laneWidth,
+                            candidateTimelineFrame / (double)markerScale * laneWidth,
                             0,
                             laneWidth));
                         SetMarkerBrush(glyph, validDestination
@@ -1080,7 +1223,7 @@ internal sealed class ModuleInstanceAnimationEditor
                             : isOriginalDestination
                                 ? EditorAnimationVisuals.ActiveTrackBrush
                                 : Brushes.IndianRed);
-                        previewFrame(candidateScreenFrame);
+                        previewFrame(candidateTimelineFrame);
                         args.Handled = true;
                     };
                     marker.PointerReleased += (_, args) =>
@@ -1093,7 +1236,7 @@ internal sealed class ModuleInstanceAnimationEditor
                         args.Handled = true;
                         if (!moved)
                         {
-                            setFrame(ownerKeyframe);
+                            setFrame(timelineKeyframe);
                             return;
                         }
                         if (validDestination)
@@ -1132,10 +1275,24 @@ internal sealed class ModuleInstanceAnimationEditor
         switch (marker)
         {
             case Polygon diamond:
-                diamond.Fill = brush;
+                if (diamond.StrokeThickness > 0)
+                {
+                    diamond.Stroke = brush;
+                }
+                else
+                {
+                    diamond.Fill = brush;
+                }
                 break;
             case Ellipse circle:
-                circle.Fill = brush;
+                if (circle.StrokeThickness > 0)
+                {
+                    circle.Stroke = brush;
+                }
+                else
+                {
+                    circle.Fill = brush;
+                }
                 break;
         }
     }
@@ -1262,6 +1419,56 @@ internal sealed class ModuleInstanceAnimationEditor
         "linear" => "Linear",
         _ => "Hold",
     };
+
+    private static Control CreateTrackSummary(
+        bool active,
+        string label,
+        int keyframeCount,
+        IBrush brush)
+    {
+        return new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = EditorUiDensity.Card(7),
+            VerticalAlignment = VerticalAlignment.Center,
+            Children =
+            {
+                EditorTimelineTransport.CreateAnimationActivationGlyph(
+                    active,
+                    extendsOwnerDuration: true,
+                    size: 14,
+                    brush: brush),
+                new TextBlock
+                {
+                    Text = $"{label}  ·  {EditorUiText.Count(keyframeCount, "keyframe")}",
+                    VerticalAlignment = VerticalAlignment.Center,
+                },
+            },
+        };
+    }
+
+    private static Control CreateAnimationActivationLabel(string label)
+    {
+        return new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = EditorUiDensity.Card(7),
+            VerticalAlignment = VerticalAlignment.Center,
+            Children =
+            {
+                EditorTimelineTransport.CreateAnimationActivationGlyph(
+                    filled: false,
+                    extendsOwnerDuration: true,
+                    size: 14,
+                    brush: EditorAnimationVisuals.InactiveTrackBrush),
+                new TextBlock
+                {
+                    Text = $"Activate animation for {label}",
+                    VerticalAlignment = VerticalAlignment.Center,
+                },
+            },
+        };
+    }
 
     private static void AddTransportButton(
         Grid host,

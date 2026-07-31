@@ -281,7 +281,12 @@ invisible pen/touch capture area. Both share the identical
 horizontal extent, excluding only the session-only `+` horizon action, so frame
 positions have one unambiguous visual meaning. The selected track is
 distinguished with compact amber diamonds; keyframes from other tracks remain
-small circles and the current-frame marker is blue.
+small circles and the current-frame marker is blue. These tracks always share
+the exact temporal owner: a Screen field uses the Screen ruler, while fields in
+one collection item use that item's local ruler from its first appearance.
+Different collection items never share a lane. Protected origin markers use a
+vector outline instead of a filled marker; labels never depend on Unicode glyph
+coverage.
 
 The Screen General card exposes its boundary Transition through the registered
 Motion control used by Components and its Action delay through the registered

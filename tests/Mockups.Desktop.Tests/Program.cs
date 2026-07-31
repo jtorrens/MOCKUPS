@@ -187,6 +187,7 @@ var tests = new (string Name, Action Run)[]
     ("Design authoring context exposes exact Variant state without a fake save mode", DesignAuthoringContextExposesExactVariantState),
     ("track activation creates frame-zero state", TrackActivationCreatesInitialKeyframe),
     ("Write-on track activation preserves the standard action explicitly", WriteOnTrackActivationCreatesStandardAction),
+    ("animation editor isolates owner-local collection timelines", AnimationEditorIsolatesOwnerLocalCollectionTimelines),
     ("runtime controls resolve their value at the active owner frame", RuntimeControlsResolveActiveFrameValue),
     ("track targets persist and round-trip", TrackTargetsRoundTrip),
     ("nested collection duplication and deletion preserve animation targets", NestedCollectionTargetsFollowIdentity),
@@ -14212,6 +14213,36 @@ static void WriteOnTrackActivationCreatesStandardAction()
         6,
         JsonValue.Create("ignored")!,
         ValueKind.StringSingleLine));
+}
+
+static void AnimationEditorIsolatesOwnerLocalCollectionTimelines()
+{
+    Equal(5, AnimationTimelineCoordinateSpace.TimelineFrameForScreenFrame(
+        usesOwnerTimeline: true,
+        screenFrame: 125,
+        ownerFrameForScreenFrame: (screenFrame) => screenFrame - 120));
+    Equal(125, AnimationTimelineCoordinateSpace.ScreenFrameForTimelineFrame(
+        usesOwnerTimeline: true,
+        timelineFrame: 5,
+        screenFrameForOwnerFrame: (ownerFrame) => 120 + (int)ownerFrame));
+    Equal(0, AnimationTimelineCoordinateSpace.MarkerFrame(
+        usesOwnerTimeline: true,
+        fieldOwnerFrameOrigin: 0,
+        keyframeFrame: 0,
+        screenFrameForOwnerFrame: (ownerFrame) => 120 + (int)ownerFrame));
+    Equal(30, AnimationTimelineCoordinateSpace.MarkerFrame(
+        usesOwnerTimeline: true,
+        fieldOwnerFrameOrigin: 0,
+        keyframeFrame: 30,
+        screenFrameForOwnerFrame: (ownerFrame) => 120 + (int)ownerFrame));
+    Equal(125, AnimationTimelineCoordinateSpace.TimelineFrameForScreenFrame(
+        usesOwnerTimeline: false,
+        screenFrame: 125,
+        ownerFrameForScreenFrame: (_) => throw new InvalidOperationException()));
+    Equal(30d, AnimationTimelineCoordinateSpace.OwnerFrameForTimelineFrame(
+        usesOwnerTimeline: true,
+        timelineFrame: 30,
+        ownerFrameForScreenFrame: (_) => throw new InvalidOperationException()));
 }
 
 static void RuntimeControlsResolveActiveFrameValue()
