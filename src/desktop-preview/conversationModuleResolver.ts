@@ -192,10 +192,13 @@ export function resolveConversationModuleFrame(
     message.writeOnDurationFrames = textUsesTrackCompletion
       ? 0
       : Math.max(0, textCompletionFrame - textOriginFrame);
-    message.composerWriteOnDurationFrames = Math.max(
-      0,
-      textCompletionFrame - textOriginFrame,
-    );
+    // A text track already resolves the complete value for this exact frame,
+    // including its destination keyframe's write-on segment.  The composer
+    // must display that value directly instead of applying the base write-on
+    // a second time.
+    message.composerWriteOnDurationFrames = textUsesTrackCompletion
+      ? 0
+      : Math.max(0, textCompletionFrame - textOriginFrame);
     message.writeOnFrame = naturalWriteOnFrame(
       optionalString(message, "text"),
       message.writeOnTiming,

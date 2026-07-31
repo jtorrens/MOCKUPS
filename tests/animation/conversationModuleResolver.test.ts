@@ -200,7 +200,7 @@ test("changing a message delay shifts its animation without rewriting local keyf
 
 test("an animated text track replaces the base write-on duration", () => {
   const messages = [
-    { id: "first", direction: "incoming", text: "base", delayAfterPreviousFrames: 0, writeOnDurationFrames: 10 },
+    { id: "first", direction: "outgoing", text: "base", delayAfterPreviousFrames: 0, writeOnDurationFrames: 10 },
     { id: "second", direction: "incoming", text: "second base", delayAfterPreviousFrames: 0, writeOnDurationFrames: 1 },
   ];
   const tracks = [
@@ -214,7 +214,7 @@ test("an animated text track replaces the base write-on duration", () => {
   const resolved = resolveConversationModuleFrame(payload(3, tracks, messages));
   const resolvedMessages = resolved.messages as Array<Record<string, unknown>>;
   assert.equal(resolvedMessages[0]!.writeOnDurationFrames, 0);
-  assert.equal(resolvedMessages[0]!.composerWriteOnDurationFrames, 2);
+  assert.equal(resolvedMessages[0]!.composerWriteOnDurationFrames, 0);
   assert.equal(resolvedMessages[0]!.composerWriteOnFrame, 3);
   assert.equal(
     Number(resolvedMessages[0]!.timelineEndFrame) - Number(resolvedMessages[0]!.timelineStartFrame),

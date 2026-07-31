@@ -150,6 +150,15 @@ Keyframes are selected and dragged through the shared timeline interaction.
 Drag converts pointer movement into the selected Screen-local authoring scale
 and commits a valid owner-local frame.
 
+The animation playhead and the keyframe lane use the same bounded Screen-local
+scale. The active track uses full-height amber diamonds, inactive tracks use
+discrete circles, and any keyframe at the current playhead is blue while
+retaining its track shape. A destination keyframe owns interpolation for the
+preceding segment: `hold` preserves the source value, while `writeOn` resolves
+the source-to-destination text at every intervening frame. That one resolved
+value is the value shown by both the animation editor and Preview; a concrete
+Module must not apply a second text reveal after track resolution.
+
 During drag:
 
 - the keyframe keeps its stable track and owner;

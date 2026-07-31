@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Shapes;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -321,23 +322,9 @@ internal sealed class ModuleInstanceAnimationEditor
             MinWidth = 96,
             Children = { frameText, authoringLimitText },
         };
-        var slider = EditorSliderBehavior.Configure(new Slider
-        {
-            Minimum = 0,
-            Maximum = timelineDuration - 1,
-            Value = TimelineFrame(),
-            TickFrequency = 1,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-        });
-        var sliderMagnet = new TimelineSliderMagnet(
-            slider,
-            () => targets
-                .SelectMany((target) => (target.Track?.Keyframes ?? [])
-                    .Where((keyframe) => keyframe.Enabled)
-                    .Select((keyframe) => target.Target?.ScreenFrameForOwnerFrame(
-                        (target.Target?.OwnerFrameOrigin ?? 0) + keyframe.Frame) ?? 0))
-                .Distinct()
-                .ToList());
+        var playhead = new AnimationTimelinePlayhead(
+            TimelineFrame(),
+            timelineDuration);
         var timelineHost = new ContentControl();
         var trackList = new StackPanel { Spacing = EditorUiDensity.Card(4) };
         var detailHost = new ContentControl();
@@ -360,7 +347,7 @@ internal sealed class ModuleInstanceAnimationEditor
             frameUpdateGate.Run(() =>
             {
                 currentFrame = Math.Clamp(screenFrame, 0, timelineDuration - 1);
-                slider.Value = TimelineFrame();
+                playhead.SetFrame(TimelineFrame());
                 if (currentFrame < actualScreenDuration) _setShotFrame(screenStartFrame + currentFrame);
             });
             RefreshVisuals();
@@ -371,7 +358,7 @@ internal sealed class ModuleInstanceAnimationEditor
             frameUpdateGate.Run(() =>
             {
                 currentFrame = Math.Clamp(screenFrame, 0, timelineDuration - 1);
-                slider.Value = TimelineFrame();
+                playhead.SetFrame(TimelineFrame());
                 frameText.Text = $"{TimelineFrame()}/{actualScreenDuration - 1}";
                 if (currentFrame < actualScreenDuration) _setShotFrame(screenStartFrame + currentFrame);
             });
@@ -426,7 +413,7 @@ internal sealed class ModuleInstanceAnimationEditor
                 ? Math.Max(actualScreenDuration, authoringHorizon)
                 : Math.Max(calculatedAuthoringDuration, authoringHorizon);
             currentFrame = Math.Clamp(currentFrame, 0, timelineDuration - 1);
-            slider.Maximum = timelineDuration - 1;
+            playhead.SetDuration(timelineDuration);
             _onChanged();
             RefreshVisuals();
         }
@@ -566,12 +553,10 @@ internal sealed class ModuleInstanceAnimationEditor
             },
         };
         root.Children.Add(transport);
-        slider.ValueChanged += (_, args) =>
+        playhead.FrameChanged += (_, frame) =>
         {
             if (!frameUpdateGate.IsActive)
-                SetFrame((int)Math.Round(
-                    sliderMagnet.Resolve(args.NewValue),
-                    MidpointRounding.AwayFromZero));
+                SetFrame((int)Math.Round(frame, MidpointRounding.AwayFromZero));
         };
         var extendHorizonButton = EditorTimelineTransport.CreateNavigationButton(
             new TextBlock
@@ -586,7 +571,7 @@ internal sealed class ModuleInstanceAnimationEditor
         extendHorizonButton.Click += (_, _) =>
         {
             timelineDuration += 10;
-            slider.Maximum = timelineDuration - 1;
+            playhead.SetDuration(timelineDuration);
             RefreshVisuals();
         };
         var sliderRow = new Grid
@@ -594,11 +579,20 @@ internal sealed class ModuleInstanceAnimationEditor
             ColumnDefinitions = new ColumnDefinitions("*,Auto"),
             ColumnSpacing = EditorUiDensity.Card(6),
         };
-        sliderRow.Children.Add(slider);
+        sliderRow.Children.Add(playhead);
         Grid.SetColumn(extendHorizonButton, 1);
         sliderRow.Children.Add(extendHorizonButton);
         root.Children.Add(sliderRow);
-        root.Children.Add(timelineHost);
+        var timelineRow = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("*,Auto"),
+            ColumnSpacing = EditorUiDensity.Card(6),
+        };
+        timelineRow.Children.Add(timelineHost);
+        var timelineEndSpacer = new Border { Width = extendHorizonButton.Width };
+        Grid.SetColumn(timelineEndSpacer, 1);
+        timelineRow.Children.Add(timelineEndSpacer);
+        root.Children.Add(timelineRow);
         if (durationTargetId is not null)
         {
             root.Children.Add(CreateTargetDurationEditor(
@@ -617,7 +611,7 @@ internal sealed class ModuleInstanceAnimationEditor
             frameUpdateGate.Run(() =>
             {
                 currentFrame = Math.Clamp(_shotFrame() - screenStartFrame, 0, timelineDuration - 1);
-                slider.Value = TimelineFrame();
+                playhead.SetFrame(TimelineFrame());
             });
             RefreshVisuals();
         }
@@ -923,11 +917,11 @@ internal sealed class ModuleInstanceAnimationEditor
                     var ownerKeyframe = target.Target?.ScreenFrameForOwnerFrame(
                         (target.Target?.OwnerFrameOrigin ?? 0) + keyframe.Frame) ?? keyframe.Frame;
                     var isActive = ReferenceEquals(target, active);
-                    var isCurrent = isActive && ownerKeyframe == currentOwnerFrame;
+                    var isCurrent = ownerKeyframe == currentOwnerFrame;
                     var glyph = new TextBlock
                     {
-                        Text = "◆",
-                        FontSize = 13,
+                        Text = isActive ? "◆" : "●",
+                        FontSize = isActive ? 20 : 8,
                         Foreground = isCurrent
                             ? EditorAnimationVisuals.CurrentKeyframeBrush
                             : isActive
@@ -939,8 +933,8 @@ internal sealed class ModuleInstanceAnimationEditor
                     var canDrag = keyframe.Frame > 0 && target.Target is not null;
                     var marker = new Border
                     {
-                        Width = 24,
-                        Height = 24,
+                        Width = isActive ? 26 : 16,
+                        Height = 30,
                         Background = Brushes.Transparent,
                         Child = glyph,
                         Focusable = canDrag,
@@ -949,10 +943,10 @@ internal sealed class ModuleInstanceAnimationEditor
                             : StandardCursorType.Arrow),
                     };
                     var originalLeft = Math.Max(0, Math.Min(
-                        width - 24,
-                        ownerKeyframe / (double)markerScale * (width - 24)));
+                        width - marker.Width,
+                        ownerKeyframe / (double)markerScale * (width - marker.Width)));
                     Canvas.SetLeft(marker, originalLeft);
-                    Canvas.SetTop(marker, 3);
+                    Canvas.SetTop(marker, 0);
                     canvas.Children.Add(marker);
                     var dragging = false;
                     var moved = false;
@@ -1249,6 +1243,112 @@ internal sealed class ModuleInstanceAnimationEditor
         AnimationTrackView? Track)
     {
         public string Label => Target?.Label ?? $"Missing target · {Track!.FieldId}";
+    }
+
+    private sealed class AnimationTimelinePlayhead : Canvas
+    {
+        private int _frame;
+        private int _duration;
+        private bool _dragging;
+
+        public AnimationTimelinePlayhead(int frame, int duration)
+        {
+            _frame = frame;
+            _duration = duration;
+            Height = 24;
+            MinWidth = 180;
+            HorizontalAlignment = HorizontalAlignment.Stretch;
+            Cursor = new Cursor(StandardCursorType.SizeWestEast);
+            SizeChanged += (_, _) => Render();
+            PointerPressed += (_, args) =>
+            {
+                if (!args.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
+                _dragging = true;
+                args.Pointer.Capture(this);
+                SetFromPointer(args.GetPosition(this).X);
+                args.Handled = true;
+            };
+            PointerMoved += (_, args) =>
+            {
+                if (!_dragging) return;
+                SetFromPointer(args.GetPosition(this).X);
+                args.Handled = true;
+            };
+            PointerReleased += (_, args) =>
+            {
+                if (!_dragging) return;
+                _dragging = false;
+                args.Pointer.Capture(null);
+                args.Handled = true;
+            };
+            PointerCaptureLost += (_, _) => _dragging = false;
+        }
+
+        public event Action<object?, double>? FrameChanged;
+
+        public void SetFrame(int frame)
+        {
+            _frame = Math.Clamp(frame, 0, Math.Max(0, _duration - 1));
+            Render();
+        }
+
+        public void SetDuration(int duration)
+        {
+            _duration = Math.Max(1, duration);
+            SetFrame(_frame);
+        }
+
+        private void SetFromPointer(double x)
+        {
+            var width = Math.Max(1, Bounds.Width - 14);
+            var frame = (int)Math.Round(
+                Math.Clamp((x - 7) / width, 0, 1) * Math.Max(0, _duration - 1),
+                MidpointRounding.AwayFromZero);
+            if (frame == _frame) return;
+            _frame = frame;
+            Render();
+            FrameChanged?.Invoke(this, frame);
+        }
+
+        private void Render()
+        {
+            if (Bounds.Width <= 0) return;
+            var width = Math.Max(14, Bounds.Width);
+            var trackWidth = width - 14;
+            var fraction = _duration <= 1 ? 0 : _frame / (double)(_duration - 1);
+            Children.Clear();
+            var track = new Border
+            {
+                Width = trackWidth,
+                Height = 4,
+                CornerRadius = new CornerRadius(2),
+                Background = EditorAnimationVisuals.TimelineBrush,
+            };
+            Canvas.SetLeft(track, 7);
+            Canvas.SetTop(track, 10);
+            Children.Add(track);
+            var elapsed = new Border
+            {
+                Width = Math.Max(2, trackWidth * fraction),
+                Height = 4,
+                CornerRadius = new CornerRadius(2),
+                Background = EditorSukiWindowTheme.AccentBrush(),
+            };
+            Canvas.SetLeft(elapsed, 7);
+            Canvas.SetTop(elapsed, 10);
+            Children.Add(elapsed);
+            var head = new Ellipse
+            {
+                Width = 14,
+                Height = 14,
+                Fill = Brushes.White,
+                Stroke = EditorSukiWindowTheme.AccentBrush(),
+                StrokeThickness = 2,
+            };
+            Canvas.SetLeft(head, Math.Clamp(7 + (trackWidth * fraction) - 7, 0, width - 14));
+            Canvas.SetTop(head, 5);
+            Children.Add(head);
+        }
     }
 }
 

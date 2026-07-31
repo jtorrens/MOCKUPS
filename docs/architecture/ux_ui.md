@@ -269,6 +269,12 @@ the action origin after transition and delay. Keyframe selection and drag use
 one standard interaction. Owner, target and field identity remain visible
 enough to avoid position-based editing.
 
+The animation authoring playhead is directly draggable. Its keyframe lane has
+the identical horizontal extent, excluding only the session-only `+` horizon
+action, so frame positions have one unambiguous visual meaning. The selected
+track is distinguished with amber diamonds; keyframes from other tracks remain
+small circles and the current-frame marker is blue.
+
 The Screen General card exposes its boundary Transition through the registered
 Motion control used by Components and its Action delay through the registered
 integer control in frames. Playing the Shot starts the outgoing and incoming
