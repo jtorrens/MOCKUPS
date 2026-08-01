@@ -11,11 +11,18 @@ internal sealed class EditorShellStateService
 {
     private readonly Window _window;
     private readonly Grid _shellColumns;
+    private readonly string _statePath;
 
-    public EditorShellStateService(Window window, Grid shellColumns)
+    public EditorShellStateService(
+        Window window,
+        Grid shellColumns,
+        string? statePath = null)
     {
         _window = window;
         _shellColumns = shellColumns;
+        _statePath = string.IsNullOrWhiteSpace(statePath)
+            ? DefaultShellStatePath()
+            : Path.GetFullPath(statePath);
     }
 
     public bool IsDark { get; private set; } = true;
@@ -37,7 +44,7 @@ internal sealed class EditorShellStateService
 
     public void Restore()
     {
-        var path = ShellStatePath();
+        var path = _statePath;
         if (!File.Exists(path)) return;
 
         try
@@ -127,7 +134,7 @@ internal sealed class EditorShellStateService
     {
         try
         {
-            var path = ShellStatePath();
+            var path = _statePath;
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
 
             var navigationState = navigationPanel
@@ -169,7 +176,7 @@ internal sealed class EditorShellStateService
         }
     }
 
-    private static string ShellStatePath()
+    private static string DefaultShellStatePath()
     {
         var root = AppContext.BaseDirectory;
         return Path.GetFullPath(Path.Combine(root, "..", "..", "..", "data", "window-state.json"));

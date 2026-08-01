@@ -906,18 +906,6 @@ static void SqliteWriteCoordinationIsPerContext()
 static void ClosingEditorCancelsPreviewLifetime()
 {
     var source = ParityDatabasePath();
-    var windowStatePath = Path.GetFullPath(
-        Path.Combine(
-            AppContext.BaseDirectory,
-            "..",
-            "..",
-            "..",
-            "data",
-            "window-state.json"));
-    var priorWindowState = File.Exists(windowStatePath)
-        ? File.ReadAllBytes(windowStatePath)
-        : null;
-    File.Delete(windowStatePath);
     var temporary = Path.Combine(
         Directory.GetCurrentDirectory(),
         "data",
@@ -929,7 +917,7 @@ static void ClosingEditorCancelsPreviewLifetime()
             typeof(HeadlessTestApplication));
         session.Dispatch(() =>
         {
-            var window = DesktopHost.CreateWindow(temporary);
+            var window = CreateTestWindow(temporary);
             window.Show();
             var controller = typeof(MainWindow)
                 .GetField(
@@ -1007,20 +995,6 @@ static void ClosingEditorCancelsPreviewLifetime()
     finally
     {
         File.Delete(temporary);
-        if (priorWindowState is null)
-        {
-            File.Delete(windowStatePath);
-        }
-        else
-        {
-            Directory.CreateDirectory(
-                Path.GetDirectoryName(windowStatePath)
-                ?? throw new InvalidOperationException(
-                    "Window state path has no directory."));
-            File.WriteAllBytes(
-                windowStatePath,
-                priorWindowState);
-        }
     }
 }
 
@@ -4008,7 +3982,7 @@ static void FlatVariantOverridesUseRestoreSemantics()
         session.Dispatch(
             () =>
             {
-                var window = DesktopHost.CreateWindow(temporary);
+                var window = CreateTestWindow(temporary);
                 window.Width = 1040;
                 window.Height = 700;
                 var content = typeof(MainWindow)
@@ -4673,7 +4647,7 @@ static void RapidVisualSelectionCommitsLatestPreparedEditor()
         session.Dispatch(
             () =>
             {
-                var window = DesktopHost.CreateWindow(temporary);
+                var window = CreateTestWindow(temporary);
                 window.Show();
                 var roots = WindowSession(window).TreeRoots;
                 var first = Descendants(roots)
@@ -4727,17 +4701,6 @@ static void RapidVisualSelectionCommitsLatestPreparedEditor()
 static void NewShotReloadPreparesPreviewBeforeSelection()
 {
     var source = ParityDatabasePath();
-    var windowStatePath = Path.GetFullPath(
-        Path.Combine(
-            AppContext.BaseDirectory,
-            "..",
-            "..",
-            "..",
-            "data",
-            "window-state.json"));
-    var priorWindowState = File.Exists(windowStatePath)
-        ? File.ReadAllBytes(windowStatePath)
-        : null;
     var temporary = Path.Combine(
         Directory.GetCurrentDirectory(),
         "data",
@@ -4750,7 +4713,7 @@ static void NewShotReloadPreparesPreviewBeforeSelection()
         session.Dispatch(
             () =>
             {
-                var window = DesktopHost.CreateWindow(temporary);
+                var window = CreateTestWindow(temporary);
                 window.Show();
                 var setWorkspace = typeof(MainWindow).GetMethod(
                     "SetWorkspace",
@@ -4841,37 +4804,12 @@ static void NewShotReloadPreparesPreviewBeforeSelection()
     finally
     {
         File.Delete(temporary);
-        if (priorWindowState is null)
-        {
-            File.Delete(windowStatePath);
-        }
-        else
-        {
-            Directory.CreateDirectory(
-                Path.GetDirectoryName(windowStatePath)
-                ?? throw new InvalidOperationException(
-                    "Window state path has no directory."));
-            File.WriteAllBytes(
-                windowStatePath,
-                priorWindowState);
-        }
     }
 }
 
 static void FailedPreviewPreparationKeepsPriorSession()
 {
     var source = ParityDatabasePath();
-    var windowStatePath = Path.GetFullPath(
-        Path.Combine(
-            AppContext.BaseDirectory,
-            "..",
-            "..",
-            "..",
-            "data",
-            "window-state.json"));
-    var priorWindowState = File.Exists(windowStatePath)
-        ? File.ReadAllBytes(windowStatePath)
-        : null;
     var temporary = Path.Combine(
         Directory.GetCurrentDirectory(),
         "data",
@@ -4884,7 +4822,7 @@ static void FailedPreviewPreparationKeepsPriorSession()
         session.Dispatch(
             () =>
             {
-                var window = DesktopHost.CreateWindow(
+                var window = CreateTestWindow(
                     temporary);
                 window.Show();
                 var setWorkspace = typeof(MainWindow)
@@ -5002,20 +4940,6 @@ static void FailedPreviewPreparationKeepsPriorSession()
     finally
     {
         File.Delete(temporary);
-        if (priorWindowState is null)
-        {
-            File.Delete(windowStatePath);
-        }
-        else
-        {
-            Directory.CreateDirectory(
-                Path.GetDirectoryName(windowStatePath)
-                ?? throw new InvalidOperationException(
-                    "Window state path has no directory."));
-            File.WriteAllBytes(
-                windowStatePath,
-                priorWindowState);
-        }
     }
 }
 
@@ -5034,7 +4958,7 @@ static void ObsoletePreviewAuthoringPreparationCannotCommit()
         session.Dispatch(
             () =>
             {
-                var window = DesktopHost.CreateWindow(temporary);
+                var window = CreateTestWindow(temporary);
                 window.Show();
                 var roots = WindowSession(window).TreeRoots;
                 var previewOwner = Descendants(roots)
@@ -5243,7 +5167,7 @@ static void EditorViewStateSurvivesRealNavigation()
         using var session = HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApplication));
         session.Dispatch(() =>
         {
-            var window = DesktopHost.CreateWindow(temporary);
+            var window = CreateTestWindow(temporary);
             window.Width = 1440;
             window.Height = 480;
             window.Show();
@@ -5518,17 +5442,6 @@ static void PreviewShellLayoutIsResponsive()
 static void NavigationPanelRestoresWidthAndOpensForRoutedSelection()
 {
     var source = ParityDatabasePath();
-    var windowStatePath = Path.GetFullPath(
-        Path.Combine(
-            AppContext.BaseDirectory,
-            "..",
-            "..",
-            "..",
-            "data",
-            "window-state.json"));
-    var priorWindowState = File.Exists(windowStatePath)
-        ? File.ReadAllBytes(windowStatePath)
-        : null;
     var temporary = Path.Combine(
         Directory.GetCurrentDirectory(),
         "data",
@@ -5541,7 +5454,7 @@ static void NavigationPanelRestoresWidthAndOpensForRoutedSelection()
         session.Dispatch(() =>
         {
             const double requestedExpandedWidth = 336;
-            var first = DesktopHost.CreateWindow(temporary);
+            var first = CreateTestWindow(temporary);
             first.Width = 1700;
             first.Height = 900;
             first.Show();
@@ -5603,7 +5516,7 @@ static void NavigationPanelRestoresWidthAndOpensForRoutedSelection()
                 <= 0.5);
             first.Close();
 
-            var second = DesktopHost.CreateWindow(temporary);
+            var second = CreateTestWindow(temporary);
             second.Show();
             Dispatcher.UIThread.RunJobs();
             var secondShell = Required(
@@ -5684,20 +5597,6 @@ static void NavigationPanelRestoresWidthAndOpensForRoutedSelection()
     finally
     {
         File.Delete(temporary);
-        if (priorWindowState is null)
-        {
-            File.Delete(windowStatePath);
-        }
-        else
-        {
-            Directory.CreateDirectory(
-                Path.GetDirectoryName(windowStatePath)
-                ?? throw new InvalidOperationException(
-                    "Window state path has no directory."));
-            File.WriteAllBytes(
-                windowStatePath,
-                priorWindowState);
-        }
     }
 }
 
@@ -5853,7 +5752,7 @@ static void PreviewShellVisualTreeIsResponsive()
         using var session = HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApplication));
         session.Dispatch(() =>
         {
-            var window = DesktopHost.CreateWindow(temporary);
+            var window = CreateTestWindow(temporary);
             window.Show();
             Dispatcher.UIThread.RunJobs();
             var previewController =
@@ -6369,7 +6268,7 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
         using var session = HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApplication));
         session.Dispatch(() =>
         {
-            var window = DesktopHost.CreateWindow(temporary);
+            var window = CreateTestWindow(temporary);
             window.Width = 3000;
             window.Height = 900;
             window.Show();
@@ -6871,7 +6770,7 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
         using var session = HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApplication));
         session.Dispatch(() =>
         {
-            var window = DesktopHost.CreateWindow(temporary);
+            var window = CreateTestWindow(temporary);
             window.Width = 3000;
             window.Height = 900;
             window.Show();
@@ -7197,7 +7096,7 @@ static void ConversationModuleEditorVisualTreeExposesTestValues()
         session.Dispatch(
             () =>
             {
-                var window = DesktopHost.CreateWindow(temporary);
+                var window = CreateTestWindow(temporary);
                 window.Width = 3000;
                 window.Height = 900;
                 window.Show();
@@ -7737,7 +7636,7 @@ static void PinnedModuleVariantPreviewSurvivesEditorSelection()
         session.Dispatch(
             () =>
             {
-                var window = DesktopHost.CreateWindow(temporary);
+                var window = CreateTestWindow(temporary);
                 window.Width = 3000;
                 window.Height = 900;
                 window.Show();
@@ -13721,6 +13620,7 @@ foreach (var (name, run) in selectedTests)
 {
     try
     {
+        TestWindowStateScope.Begin(name);
         run();
         Console.WriteLine($"PASS {name}");
     }
@@ -13732,6 +13632,7 @@ foreach (var (name, run) in selectedTests)
     }
 }
 
+TestWindowStateScope.Cleanup();
 Console.WriteLine(
     $"Animation desktop tests: {selectedTests.Length - failures.Count}/{selectedTests.Length} passed.");
 if (failures.Count > 0) Environment.Exit(1);
@@ -17597,6 +17498,11 @@ static string ParityDatabasePath()
         : Path.GetFullPath(configured);
 }
 
+static MainWindow CreateTestWindow(string databasePath) =>
+    DesktopHost.CreateWindow(
+        databasePath,
+        TestWindowStateScope.PathFor(databasePath));
+
 static IEditorLayoutStore EditorLayouts(
     SqliteProjectTestContext database) =>
     new SqliteEditorLayoutStore(database.Context);
@@ -17813,4 +17719,35 @@ internal static class HeadlessTestApplication
                 UseHeadlessDrawing = true,
             })
             .WithInterFont();
+}
+
+internal static class TestWindowStateScope
+{
+    private static readonly string Root = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-window-state-tests-{Guid.NewGuid():N}");
+    private static string _testName = "unscoped";
+
+    public static void Begin(string testName)
+    {
+        _testName = testName;
+    }
+
+    public static string PathFor(string databasePath)
+    {
+        Directory.CreateDirectory(Root);
+        var identity = Encoding.UTF8.GetBytes(
+            $"{_testName}|{Path.GetFullPath(databasePath)}");
+        var fileName = Convert.ToHexString(
+            SHA256.HashData(identity));
+        return Path.Combine(Root, $"{fileName}.json");
+    }
+
+    public static void Cleanup()
+    {
+        if (Directory.Exists(Root))
+        {
+            Directory.Delete(Root, recursive: true);
+        }
+    }
 }

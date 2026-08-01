@@ -47,7 +47,7 @@ public sealed class EditorApplicationSession
         _initialTreeRoots = initialTreeRoots.ToArray();
     }
 
-    public MainWindow CreateWindow()
+    public MainWindow CreateWindow(string? shellStatePath = null)
     {
         var services = Interlocked.Exchange(
                 ref _services,
@@ -61,7 +61,8 @@ public sealed class EditorApplicationSession
                 "The prepared editor session has no initial tree snapshot.");
         return new MainWindow(
             services,
-            initialTreeRoots);
+            initialTreeRoots,
+            shellStatePath);
     }
 }
 

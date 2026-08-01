@@ -62,7 +62,8 @@ public partial class MainWindow : SukiWindow
 
     internal MainWindow(
         DesktopApplicationServices application,
-        IReadOnlyList<ProjectTreeNode> initialTreeRoots)
+        IReadOnlyList<ProjectTreeNode> initialTreeRoots,
+        string? shellStatePath = null)
     {
         var data = application.Data;
         _variantHistory = application.VariantHistory;
@@ -177,7 +178,10 @@ public partial class MainWindow : SukiWindow
                     ? Bounds.Width
                     : Width);
         _shellState =
-            new EditorShellStateService(this, ShellColumns);
+            new EditorShellStateService(
+                this,
+                ShellColumns,
+                shellStatePath);
         _productionNavigationActions = new EditorProductionNavigationActions(
             this,
             ProductionActionButton,
