@@ -6257,6 +6257,37 @@ static void PreviewShellVisualTreeIsResponsive()
                 .Count((lane) => lane.IsVisible)
                 < visibleTimelineLaneCount);
 
+            var timelineSnapshot = Required(
+                typeof(PreviewScreenTimelineSurface)
+                    .GetField(
+                        "_snapshot",
+                        BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?.GetValue(timelineSurface)
+                    as PreviewScreenTimelineSnapshot);
+            var timelineAnimationContent = Required(
+                typeof(PreviewScreenTimelineSurface)
+                    .GetField(
+                        "_animationContent",
+                        BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?.GetValue(timelineSurface)
+                    as Func<string, AnimationTargetEditorContent>);
+            timelineSurface.SetSnapshot(
+                timelineSnapshot,
+                timelineAnimationContent,
+                frame: 0,
+                isPlaying: false);
+            Dispatcher.UIThread.RunJobs();
+            Equal(1, timelineSurface
+                .GetVisualDescendants()
+                .OfType<PreviewScreenTimelineRuler>()
+                .Count());
+            True(!timelineSurface
+                .GetVisualDescendants()
+                .OfType<TextBlock>()
+                .Any((text) => text.Text?.StartsWith(
+                    "Timeline unavailable:",
+                    StringComparison.Ordinal) == true));
+
             Required(window.FindControl<Button>("DesignWorkspaceButton"))
                 .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             WaitForWorkspace(EditorWorkspace.Design);

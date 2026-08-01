@@ -749,14 +749,8 @@ internal sealed class PreviewScreenTimelineSurface : Border
     private readonly Action<int> _stepFrame;
     private readonly Action _togglePlayback;
     private readonly StackPanel _content = new() { Spacing = 2 };
-    private readonly TextBlock _frameText = new()
-    {
-        MinWidth = 84,
-        VerticalAlignment = VerticalAlignment.Center,
-        FontSize = 12,
-        Opacity = 0.82,
-    };
-    private readonly Button _playButton;
+    private TextBlock? _frameText;
+    private Button? _playButton;
     private readonly List<PreviewScreenTimelineLane> _lanes = [];
     private readonly Dictionary<string, bool>
         _collapsedCollections = new(StringComparer.Ordinal);
@@ -787,11 +781,6 @@ internal sealed class PreviewScreenTimelineSurface : Border
         _stepFrame = stepFrame;
         _togglePlayback = togglePlayback;
         Padding = new Thickness(8);
-        _playButton = EditorTimelineTransport.CreateNavigationButton(
-            EditorIcons.Create(EditorIcons.Play, 15),
-            "Play or pause Screen Timeline",
-            38);
-        _playButton.Click += (_, _) => _togglePlayback();
         Child = new ScrollViewer
         {
             HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
@@ -1208,7 +1197,22 @@ internal sealed class PreviewScreenTimelineSurface : Border
             EditorIcons.Create(EditorIcons.TimelineLastFrame, 15),
             "Last visible Screen Timeline frame");
         end.Click += (_, _) => SetTransportFrame(snapshot.MaximumFrame);
+        var playButton = EditorTimelineTransport.CreateNavigationButton(
+            EditorIcons.Create(EditorIcons.Play, 15),
+            "Play or pause Screen Timeline",
+            38);
+        playButton.Click += (_, _) => _togglePlayback();
+        _playButton = playButton;
+        var frameText = new TextBlock
+        {
+            MinWidth = 84,
+            VerticalAlignment = VerticalAlignment.Center,
+            FontSize = 12,
+            Opacity = 0.82,
+        };
+        _frameText = frameText;
         UpdatePlayButton(isPlaying);
+        UpdateFrameText();
 
         var controls = new StackPanel
         {
@@ -1219,11 +1223,11 @@ internal sealed class PreviewScreenTimelineSurface : Border
             {
                 start,
                 previous,
-                _playButton,
+                playButton,
                 next,
                 end,
                 new Border { Width = 6 },
-                _frameText,
+                frameText,
             },
         };
         Grid.SetColumn(controls, 1);
@@ -1362,7 +1366,7 @@ internal sealed class PreviewScreenTimelineSurface : Border
 
     private void UpdateFrameText()
     {
-        if (_snapshot is null) return;
+        if (_snapshot is null || _frameText is null) return;
         _frameText.Text = _frame < 0
             ? $"{_frame} f · preroll"
             : _frame >= _snapshot.ContentDurationFrames
@@ -1372,6 +1376,7 @@ internal sealed class PreviewScreenTimelineSurface : Border
 
     private void UpdatePlayButton(bool isPlaying)
     {
+        if (_playButton is null) return;
         _playButton.Content = EditorIcons.Create(
             isPlaying ? EditorIcons.Pause : EditorIcons.Play,
             15);
