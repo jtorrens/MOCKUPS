@@ -452,27 +452,12 @@ internal sealed class RuntimeInputsCollectionEditor
             var ownInputs = ComponentInputGrouping.OwnInputs(visibleInputs).ToList();
             if (ownInputs.Count > 0)
             {
-                var generalSubcards = new List<EditorInternalNavigationSection>();
-                if (owner.IsInstance
-                    && _animationEditor is not null
-                    && inputs.Any((input) => input.Animation is not null))
-                {
-                    var animation = _animationEditor.CreateTargetContent(owner.Node, "");
-                    generalSubcards.Add(new EditorInternalNavigationSection(
-                        "animation",
-                        "Animation",
-                        EditorUiText.Count(animation.ActiveTrackCount, "animated property"),
-                        EditorIcons.Animation,
-                        animation.Content));
-                }
                 sections.Add(new EditorInternalNavigationSection(
                     "general",
                     "General",
                     "Runtime inputs",
                     EditorIcons.General,
                     CreateSeparatedInputContent(owner, preview, ownInputs),
-                    Subcards: generalSubcards,
-                    SubcardLayout: EditorSubcardLayout.FlatStack,
                     ShowLabel: false));
             }
             foreach (var groupId in topLevelGroupIds)
@@ -1463,33 +1448,7 @@ internal sealed class RuntimeInputsCollectionEditor
             _sessionUiState,
             canEditStructure: collection.CanEditStructure
                 && string.IsNullOrWhiteSpace(collection.StorageCollectionJsonKey));
-        var collectionEditor = editor.Create();
-        if (!owner.IsInstance
-            || _animationEditor is null
-            || !collection.AnimationPresentation.Equals("collectionFooter", StringComparison.Ordinal)
-            || !collection.Fields.Any((input) => input.Animation is not null))
-        {
-            return collectionEditor;
-        }
-
-        var animation = _animationEditor.CreateCollectionContent(owner.Node, collection);
-        return new StackPanel
-        {
-            Spacing = EditorUiDensity.Card(8),
-            Children =
-            {
-                collectionEditor,
-                CreateSessionSubcardLayout(
-                    $"{owner.Node.Id}:{collection.Id}:collection-footer",
-                    [new EditorInternalNavigationSection(
-                        "animation",
-                        "Animation",
-                        EditorUiText.Count(animation.ActiveTrackCount, "animated property"),
-                        EditorIcons.Animation,
-                        animation.Content)],
-                    EditorSubcardLayout.FlatStack),
-            },
-        };
+        return editor.Create();
     }
 
     private IReadOnlyList<EditorInternalNavigationSection> CreateChildRuntimeCollectionSubcards(
@@ -1647,20 +1606,6 @@ internal sealed class RuntimeInputsCollectionEditor
                     EditorIcons.Component,
                     nestedPanel));
             }
-        }
-        if (owner.IsInstance
-            && _animationEditor is not null
-            && ((!collection.AnimationPresentation.Equals("collectionFooter", StringComparison.Ordinal)
-                    && collection.Fields.Any((input) => input.Animation is not null))
-                || nestedInputs.Any((input) => input.Animation is not null)))
-        {
-            var animation = _animationEditor.CreateTargetContent(owner.Node, itemId);
-            groupSubcards.Add(new EditorInternalNavigationSection(
-                "animation",
-                "Animation",
-                EditorUiText.Count(animation.ActiveTrackCount, "animated property"),
-                EditorIcons.Animation,
-                animation.Content));
         }
         subcards = groupSubcards;
 

@@ -234,7 +234,11 @@ No drag path identifies a keyframe by visual position or collection index.
 Production Screen Timeline presents this same Screen-relative coordinate space
 as a compact multi-lane surface. Its single continuous playhead snaps to visible
 item boundaries and to keyframes once keyframe markers are projected into that
-surface. Item appearance blocks snap their start or outgoing edge to the
+surface. Screen Payload owns only Runtime values and the
+per-field activation glyph that creates or removes a track; it never embeds a
+second Animation detail editor. Selecting the corresponding General or item
+lane exposes the complete track and keyframe editor in Timeline.
+Item appearance blocks snap their start or outgoing edge to the
 playhead and to other visible item boundaries. Snap feedback is transient and
 amber; preroll and postroll boundaries remain neutral, diagonally hatched
 regions. Collection collapse and viewport zoom are session-only. Block edits

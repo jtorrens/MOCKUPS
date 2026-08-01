@@ -249,6 +249,13 @@
                                                             HorizontalContentAlignment="Stretch"
                                                             VerticalContentAlignment="Stretch" />
                                         </TabItem>
+                                        <TabItem x:Name="PreviewTimelineTab"
+                                                 Header="Timeline"
+                                                 IsVisible="False">
+                                            <ContentControl x:Name="PreviewTimelineHost"
+                                                            HorizontalContentAlignment="Stretch"
+                                                            VerticalContentAlignment="Stretch" />
+                                        </TabItem>
                                         <TabItem x:Name="PreviewSetupTab"
                                                  Header="Preview">
                                             <ScrollViewer HorizontalScrollBarVisibility="Disabled"
@@ -302,13 +309,6 @@
                                                     <ContentControl x:Name="PreviewCombinedControlsHost" />
                                                 </StackPanel>
                                             </ScrollViewer>
-                                        </TabItem>
-                                        <TabItem x:Name="PreviewTimelineTab"
-                                                 Header="Timeline"
-                                                 IsVisible="False">
-                                            <ContentControl x:Name="PreviewTimelineHost"
-                                                            HorizontalContentAlignment="Stretch"
-                                                            VerticalContentAlignment="Stretch" />
                                         </TabItem>
                                     </TabControl>
                         </Border>

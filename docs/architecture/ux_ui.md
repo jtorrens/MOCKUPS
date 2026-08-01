@@ -137,7 +137,11 @@ below, so playback actions stay visible while editing long input sets.
 
 Production places the selected Screen Payload in the corresponding Preview
 authoring area. Runtime Inputs and structured slots are edited beside the
-result they control. Persisted payload remains owned by the Screen. A third
+result they control. Persisted payload remains owned by the Screen. The utility
+tabs use the order **Screen Payload**, **Timeline**, **Preview**. Screen Payload
+keeps the animation activation glyph beside every animatable Runtime field, but
+contains no Animation detail sections: activating a field creates its track and
+the selected owner lane in Timeline is the only detailed animation editor. A
 **Timeline** tab appears for a Production Screen. It uses one compact transport
 above a tick ruler, then a General lane and one labelled group per Runtime
 collection with one lane per stable item. Collection groups are collapsible and

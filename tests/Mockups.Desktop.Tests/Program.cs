@@ -5883,6 +5883,7 @@ static void PreviewShellVisualTreeIsResponsive()
             var preview = Required(window.FindControl<Border>("PreviewPanelBorder"));
             var tabs = Required(window.FindControl<TabControl>("PreviewUtilityTabs"));
             var authoringTab = Required(window.FindControl<TabItem>("PreviewAuthoringDataTab"));
+            var authoringHost = Required(window.FindControl<ContentControl>("PreviewAuthoringDataHost"));
             var setupTab = Required(window.FindControl<TabItem>("PreviewSetupTab"));
             var setupGrid = Required(window.FindControl<Grid>("PreviewSetupGrid"));
             var setupHost = Required(window.FindControl<ContentControl>("PreviewSetupHost"));
@@ -6179,6 +6180,16 @@ static void PreviewShellVisualTreeIsResponsive()
             var timelineHost = Required(
                 window.FindControl<ContentControl>("PreviewTimelineHost"));
             True(timelineTab.IsVisible);
+            SequenceEqual(
+                [authoringTab, timelineTab, setupTab],
+                tabs.Items.OfType<TabItem>().ToList());
+            tabs.SelectedItem = authoringTab;
+            Dispatcher.UIThread.RunJobs();
+            var screenPayload = Required(authoringHost.Content as Control);
+            True(!screenPayload
+                .GetVisualDescendants()
+                .OfType<TextBlock>()
+                .Any((text) => text.Text == "Animation"));
             tabs.SelectedItem = timelineTab;
             Dispatcher.UIThread.RunJobs();
             var timelineSurface = Required(

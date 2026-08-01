@@ -89,15 +89,6 @@ internal sealed class ModuleInstanceAnimationEditor
         _preparedAnimationSnapshot = animationSnapshot;
     }
 
-    public AnimationTargetEditorContent CreateTargetContent(ProjectTreeNode node, string targetId)
-    {
-        return CreateContent(
-            node,
-            $"target:{targetId}",
-            (target) => target.TargetId == targetId,
-            targetId);
-    }
-
     public AnimationTargetEditorContent CreateScreenTimelineTargetContent(
         ProjectTreeNode node,
         string targetId)
@@ -186,54 +177,6 @@ internal sealed class ModuleInstanceAnimationEditor
             targetId,
             value,
             completionFrame);
-    }
-
-    public AnimationTargetEditorContent CreateCollectionContent(
-        ProjectTreeNode node,
-        RuntimeInputCollectionDefinition collection)
-    {
-        var preview = DesignPreviewTestValues.Parse(
-            PreparedSnapshot(node).Source.RuntimePreviewJson);
-        var items = DesignPreviewTestValues.CollectionItems(preview, collection).ToList();
-        var content = new StackPanel
-        {
-            Spacing = EditorUiDensity.Card(12),
-        };
-        var activeTrackCount = 0;
-        for (var index = 0; index < items.Count; index++)
-        {
-            var item = items[index];
-            var itemId = item["id"]?.GetValue<string>() ?? "";
-            if (string.IsNullOrWhiteSpace(itemId))
-            {
-                continue;
-            }
-            var itemAnimation = CreateTargetContent(node, itemId);
-            if (itemAnimation.ActiveTrackCount == 0)
-            {
-                continue;
-            }
-            var label = RuntimeCollectionItemPresentation.Resolve(
-                collection,
-                item,
-                index,
-                $"{collection.ItemLabel} {index + 1}",
-                $"Payload item {index + 1}",
-                EditorIcons.Component).Title;
-            content.Children.Add(EditorGroupBlock.CreateInlineSection(label));
-            content.Children.Add(itemAnimation.Content);
-            activeTrackCount += itemAnimation.ActiveTrackCount;
-        }
-        if (activeTrackCount == 0)
-        {
-            content.Children.Add(new TextBlock
-            {
-                Text = "Activa el rombo de un Runtime Value para crear su track de animación.",
-                TextWrapping = TextWrapping.Wrap,
-                Opacity = 0.72,
-            });
-        }
-        return new AnimationTargetEditorContent(content, activeTrackCount);
     }
 
     private AnimationTargetEditorContent CreateContent(
