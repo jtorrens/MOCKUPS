@@ -5,6 +5,7 @@ import type { DesignPreviewPayload } from "../../src/desktop-preview/designPrevi
 import { conversationModuleToRenderable } from "../../src/desktop-preview/conversationModuleRenderable.js";
 import {
   conversationMessageActorIdentityVisible,
+  resolveConversationModule,
   resolveConversationModuleFrame,
 } from "../../src/desktop-preview/conversationModuleResolver.js";
 import { parityDatabasePath } from "../../src/development-scaffolding/parityDatabasePath.js";
@@ -26,6 +27,7 @@ function payload(
         paceToken: "theme.motion.naturalPace.normal",
       },
       postWriteOnHoldFrames: 0,
+      visibleDurationFrames: 0,
       isPlaying: false,
       ...authoredMessage,
     };
@@ -40,6 +42,7 @@ function payload(
       naturalTiming: { sourceFieldId: "text", unit: "grapheme", baseFramesPerUnit: 7 },
     },
     { id: "postWriteOnHold", jsonKey: "postWriteOnHoldFrames" },
+    { id: "visibleDuration", jsonKey: "visibleDurationFrames" },
     { id: "statusVisible", jsonKey: "statusVisible", animationTimeline: { origin: { kind: "fieldCompletion", fieldId: "text", offsetFrames: 0 }, extendsOwnerDuration: false } },
     { id: "status", jsonKey: "statusState", animationTimeline: { origin: { kind: "fieldCompletion", fieldId: "text", offsetFrames: 0 }, extendsOwnerDuration: false } },
     { id: "statusText", jsonKey: "statusText", animationTimeline: { origin: { kind: "fieldCompletion", fieldId: "text", offsetFrames: 0 }, extendsOwnerDuration: false } },
@@ -66,6 +69,7 @@ function payload(
           sequenceCompletionFieldIds: ["text"],
           preDurationFieldIds: ["delay"],
           postDurationFieldIds: ["postWriteOnHold"],
+          presenceDurationFieldId: "visibleDuration",
         },
         fields,
         itemActions: [{
@@ -432,6 +436,52 @@ test("Conversation Header keeps its upward bleed and can use the resolved Actor 
   });
 });
 
+test("Conversation message presence ends explicitly without changing Screen-end persistence", () => {
+  const source = committedConversationPayload(true);
+  const runtime = JSON.parse(source.designPreviewJson) as {
+    messages: Array<Record<string, unknown>>;
+  };
+  const original = runtime.messages[0]!;
+  runtime.messages = [{
+    ...original,
+    id: "presence-message",
+    direction: "incoming",
+    delayAfterPreviousFrames: 0,
+    postWriteOnHoldFrames: 0,
+    visibleDurationFrames: 10,
+    writeOnTiming: {
+      mode: "fixed",
+      fixedFrames: 0,
+      paceToken: "theme.motion.naturalPace.normal",
+    },
+  }];
+  source.designPreviewJson = JSON.stringify(runtime);
+  source.screenTiming = {
+    screenFrame: 0,
+    transitionFrameCount: 0,
+    actionDelayFrames: 0,
+    actionDurationFrames: 100,
+    actionStartFrame: 0,
+  };
+  const at = (frame: number) => {
+    const instance = JSON.parse(source.instanceJson) as Record<string, unknown>;
+    instance.context = { screenFrame: frame };
+    source.instanceJson = JSON.stringify(instance);
+    source.localFrame = frame;
+    source.screenTiming = { ...source.screenTiming!, screenFrame: frame };
+    return resolveConversationModule(source).visibleMessages;
+  };
+  assert.equal(at(0)[0]?.presenceMotionKind, "enter");
+  assert.equal(at(9)[0]?.presenceMotionKind, "exit");
+  assert.equal(at(10).length, 0);
+
+  runtime.messages[0]!.visibleDurationFrames = 0;
+  source.designPreviewJson = JSON.stringify(runtime);
+  assert.equal(at(99).length, 1);
+  assert.equal(at(99)[0]?.presenceMotionKind, undefined);
+  assert.equal(at(100).length, 0);
+});
+
 test("a nested full-screen Media keeps the exact root Screen coordinates", () => {
   const source = committedConversationPayload();
   const runtime = JSON.parse(source.designPreviewJson) as Record<string, unknown>;
@@ -459,6 +509,7 @@ test("a nested full-screen Media keeps the exact root Screen coordinates", () =>
     fullScreenTransition: false,
     fullframeOrientation: "portrait",
     controlsElapsedMs: 0,
+    visibleDurationFrames: 0,
     writeOnTiming: {
       mode: "fixed",
       fixedFrames: 0,
@@ -477,7 +528,7 @@ test("a nested full-screen Media keeps the exact root Screen coordinates", () =>
   });
 });
 
-function committedConversationPayload(): DesignPreviewPayload {
+function committedConversationPayload(keepMessages = false): DesignPreviewPayload {
   const source = committedComponentFixture("avatar", "avatar_chat_header");
   const database = new Database(
     parityDatabasePath(),
@@ -514,7 +565,7 @@ function committedConversationPayload(): DesignPreviewPayload {
         baseSize: 640,
       },
     };
-    runtime.messages = [];
+    if (!keepMessages) runtime.messages = [];
     runtime.keyboardVisible = false;
     runtime.textInputVisible = false;
     const config = structuredClone(defaultVariant.config) as {

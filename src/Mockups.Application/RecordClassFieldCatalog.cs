@@ -237,6 +237,10 @@ public static class RecordClassFieldCatalog
             "Message gap",
             ValueKind.ThemeToken,
             Options: SpacingTokenOptions),
+        ["module.conversation.messageMotion"] = new(
+            "module.conversation.messageMotion",
+            "Messages motion",
+            ValueKind.Motion),
         ["module.conversation.messageViewportMotion"] = new(
             "module.conversation.messageViewportMotion",
             "Message viewport motion",

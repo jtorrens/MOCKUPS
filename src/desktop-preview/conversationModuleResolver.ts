@@ -28,9 +28,11 @@ import {
   textGraphemes,
 } from "./previewTextRevealHelpers.js";
 import {
+  motionTotalDurationMs,
   requiredMotionContract,
   resolveMotionFrame,
 } from "./previewMotionHelpers.js";
+import type { ComponentMotionContract } from "./previewComponentContracts.js";
 import { componentVariantConfig } from "./componentPreviewDefaults.js";
 import {
   applyRuntimeInputForwarding,
@@ -47,6 +49,11 @@ export function resolveConversationModule(
   const screenFrame = rootScreenFrame(payload);
   const resolvedMessages = conversationMessages(preview);
   const timing = conversationTiming(conversation, preview);
+  const messageMotion = requiredMotionContract(
+    conversation,
+    "messageMotion",
+    "module.conversation.messageMotion",
+  );
   const composer = composerState(resolvedMessages, screenFrame, timing);
   const conversationType = requiredString(
     preview,
@@ -56,7 +63,19 @@ export function resolveConversationModule(
   if (conversationType !== "individual" && conversationType !== "group") {
     throw new Error(`Unsupported Conversation type ${conversationType}`);
   }
-  const visible = visibleMessages(resolvedMessages, screenFrame, timing)
+  const automaticEndFrame = Math.max(
+    1,
+    payload.screenTiming?.actionDurationFrames
+      ?? optionalNumber(preview, "timelineDurationFrames", 1),
+  );
+  const visible = visibleMessages(
+    resolvedMessages,
+    screenFrame,
+    timing,
+    payload,
+    messageMotion,
+    automaticEndFrame,
+  )
     .map((message) => ({
       ...message,
       actorIdentityVisible: conversationMessageActorIdentityVisible(
@@ -140,6 +159,11 @@ export function resolveConversationModuleFrame(
   const screenFrame = rootScreenFrame(payload);
   const themeTokens = parseObject(payload.themeTokensJson);
   const timeline = new RuntimeOwnerTimeline(preview, preview, animation, themeTokens);
+  const automaticEndFrame = Math.max(
+    1,
+    payload.screenTiming?.actionDurationFrames ?? timeline.durationFrames,
+  );
+  preview.timelineDurationFrames = automaticEndFrame;
   preview.headerSubtitle = resolveParameterAnimation(
     animation,
     "headerSubtitle",
@@ -179,6 +203,8 @@ export function resolveConversationModuleFrame(
     message.text = resolvedText.value;
     message.timelineStartFrame = timeline.itemStartFrame(targetId);
     message.timelineEndFrame = timeline.itemEndFrame(targetId);
+    message.presenceEndFrame = timeline.itemPresenceEndFrame(targetId, automaticEndFrame);
+    message.hasExplicitPresenceEnd = timeline.itemHasExplicitPresenceEnd(targetId);
     const textCompletionFrame = timeline.fieldCompletionFrame("text", targetId);
     const textOriginFrame = timeline.screenFrame("text", targetId, 0);
     const textUsesTrackCompletion = timeline.usesTrackCompletion("text", targetId);
@@ -256,12 +282,18 @@ export function conversationMessageActorIdentityVisible(
 
 type ResolvedConversationMessage = Omit<
   ConversationMessageContract,
-  "actorIdentityVisible" | "playbackTimeSeconds"
+  | "actorIdentityVisible"
+  | "playbackTimeSeconds"
+  | "presenceMotion"
+  | "presenceMotionKind"
+  | "presenceMotionFrame"
 > & {
   composerWriteOnDurationFrames: number;
   composerWriteOnFrame: number;
   timelineStartFrame: number;
   timelineRevealAtFrame: number;
+  presenceEndFrame: number;
+  hasExplicitPresenceEnd: boolean;
   playbackMode: "once" | "loop";
   playbackFrame: number;
   currentTimeSeconds: number;
@@ -342,6 +374,11 @@ function conversationMessages(preview: JsonRecord): ResolvedConversationMessage[
         0,
         Math.floor(optionalNumber(message, "timelineRevealAtFrame", 0)),
       ),
+      presenceEndFrame: Math.max(
+        1,
+        Math.floor(optionalNumber(message, "presenceEndFrame", 1)),
+      ),
+      hasExplicitPresenceEnd: optionalBoolean(message, "hasExplicitPresenceEnd"),
       writeOnDurationFrames: Math.max(
         0,
         Math.floor(optionalNumber(message, "writeOnDurationFrames", 0)),
@@ -375,6 +412,9 @@ function visibleMessages(
   messages: ResolvedConversationMessage[],
   frame: number,
   timing: ConversationTimingContract,
+  payload: DesignPreviewPayload,
+  messageMotion: ComponentMotionContract,
+  automaticEndFrame: number,
 ) {
   return messages.flatMap((message) => {
     const startFrame = message.timelineStartFrame;
@@ -385,7 +425,33 @@ function visibleMessages(
     const revealEndFrame = startFrame + effectiveWriteOnFrames;
     const revealAfterWriteOn = isOutgoingMessage && timing.bubbleRevealMode === "afterWriteOn";
     const visibleAt = revealAfterWriteOn ? message.timelineRevealAtFrame : startFrame;
-    if (frame < visibleAt) return [];
+    if (frame < visibleAt || frame >= message.presenceEndFrame) return [];
+    const motionDurationFrames = Math.ceil(
+      motionTotalDurationMs(payload, messageMotion)
+        / 1000 * Math.max(1, payload.frameRate),
+    );
+    const explicitExit = message.hasExplicitPresenceEnd
+      && message.presenceEndFrame < automaticEndFrame;
+    const exitStartFrame = Math.max(visibleAt, message.presenceEndFrame - motionDurationFrames);
+    const presenceMotion = explicitExit && frame >= exitStartFrame
+      ? {
+          presenceMotionKind: "exit" as const,
+          presenceMotionFrame: resolveMotionFrame(payload, messageMotion, {
+            trigger: true,
+            elapsedMs: Math.max(0, frame - exitStartFrame)
+              / Math.max(1, payload.frameRate) * 1000,
+          }),
+        }
+      : motionDurationFrames > 0 && frame - visibleAt < motionDurationFrames
+        ? {
+            presenceMotionKind: "enter" as const,
+            presenceMotionFrame: resolveMotionFrame(payload, messageMotion, {
+              trigger: true,
+              elapsedMs: Math.max(0, frame - visibleAt)
+                / Math.max(1, payload.frameRate) * 1000,
+            }),
+          }
+        : {};
     const incomingTyping = isIncomingMessage
       && timing.incomingRevealMode === "typingIndicator"
       && frame < revealEndFrame;
@@ -407,6 +473,8 @@ function visibleMessages(
         && !revealAfterWriteOn
         && effectiveWriteOnFrames > 0,
       writeOnDurationFrames: effectiveWriteOnFrames,
+      presenceMotion: messageMotion,
+      ...presenceMotion,
     }];
   });
 }

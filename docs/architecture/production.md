@@ -234,6 +234,13 @@ track-owned write interval for composer presence even though that track
 replaces the bubble's base write-on. Text Input Bar and Keyboard therefore
 remain visible while the animated text is being authored on screen.
 
+Conversation owns one shared message Motion in its Module Variant. Each
+message has a parent-owned presence interval: its In remains the serial
+arrival derived from write-on/hold/delay, while a zero visible duration keeps
+it through the Screen end and a positive duration defines an explicit Out.
+Only an explicit pre-boundary Out runs the shared Motion in reverse. Presence
+never delays the next message and never retimes or rewrites message keyframes.
+
 ## Playback
 
 Play resolves the selected Production context and presents complete frames in

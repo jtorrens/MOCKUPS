@@ -74,6 +74,25 @@ public static class RuntimeAnimationFrameOrigin
         JsonObject? themeTokens = null) =>
         Model(contract, runtime, animation, themeTokens: themeTokens).OwnerSequenceEndScreenFrame(targetId);
 
+    public static int OwnerPresenceEndScreenFrame(
+        JsonObject contract,
+        JsonObject runtime,
+        JsonObject animation,
+        string targetId,
+        int automaticEndFrame,
+        JsonObject? themeTokens = null) =>
+        Model(contract, runtime, animation, themeTokens: themeTokens)
+            .OwnerPresenceEndScreenFrame(targetId, automaticEndFrame);
+
+    public static bool OwnerHasExplicitPresenceEnd(
+        JsonObject contract,
+        JsonObject runtime,
+        JsonObject animation,
+        string targetId,
+        JsonObject? themeTokens = null) =>
+        Model(contract, runtime, animation, themeTokens: themeTokens)
+            .OwnerHasExplicitPresenceEnd(targetId);
+
     public static double OwnerLocalFrame(
         JsonObject contract,
         JsonObject runtime,
@@ -245,6 +264,27 @@ public static class RuntimeAnimationFrameOrigin
                     _naturalDuration,
                     _effectiveDuration))
                 : 0;
+        }
+
+        public int OwnerPresenceEndScreenFrame(string targetId, int automaticEndFrame)
+        {
+            if (!_items.TryGetValue(targetId, out var item)) return 0;
+            var duration = PresenceDuration(item);
+            var start = ScreenFrameForOwnerFrame(targetId, 0);
+            if (duration is null) return OwnerSequenceEndScreenFrame(targetId);
+            return duration.Value > 0
+                ? start + Round(duration.Value)
+                : Math.Max(start + 1, automaticEndFrame);
+        }
+
+        public bool OwnerHasExplicitPresenceEnd(string targetId) =>
+            _items.TryGetValue(targetId, out var item) && PresenceDuration(item) is > 0;
+
+        private static double? PresenceDuration(ItemTiming item)
+        {
+            var durationFieldId = Text(Timeline(item.Collection)["presenceDurationFieldId"]);
+            if (string.IsNullOrWhiteSpace(durationFieldId)) return null;
+            return FieldValue(item.Item, Fields(item.Collection, item.Item), durationFieldId);
         }
 
         public double OwnerLocalFrame(string targetId, int screenFrame)

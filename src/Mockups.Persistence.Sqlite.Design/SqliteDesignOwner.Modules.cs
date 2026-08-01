@@ -236,6 +236,11 @@ internal sealed partial class SqliteDesignOwner
                     conversation!,
                     "messageGap",
                     "Module config.conversation"),
+            "module.conversation.messageMotion" =>
+                JsonPath.RequiredObject(
+                    conversation!,
+                    "messageMotion",
+                    "Module config.conversation").ToJsonString(),
             "module.conversation.messageViewportMotion" =>
                 conversation!["messageViewportMotion"]?.ToJsonString()
                     ?? (MotionVariantValue.Default with
@@ -622,6 +627,14 @@ internal sealed partial class SqliteDesignOwner
                     config,
                     ["conversation", "messageGap"],
                     JsonValue.Create(value)!);
+                break;
+            case "module.conversation.messageMotion":
+                SetJsonValue(
+                    config,
+                    ["conversation", "messageMotion"],
+                    JsonNode.Parse(
+                        MotionVariantValue.Parse(value)
+                            .ToJsonString())!);
                 break;
             case "module.conversation.messageViewportMotion":
                 SetJsonValue(

@@ -27,7 +27,9 @@ parent-owned playback context and use an unfilled presentation.
 
 Timeline edits commit through the existing temporal owners. Serial collection
 movement writes the collection's declared pre-duration field; outgoing resize
-writes the existing target retime. Neither operation rewrites local keyframes.
+writes its declared parent-owned presence-duration field. Presence duration is
+not retime and never changes the item's local clock, its sequencing completion
+or its keyframes. Neither operation rewrites local keyframes.
 Collection item lifetime defaults remain collection-contract owned rather than
 inferred from the Screen or collection name. Keyframes outside a resized item
 or Screen range remain authored at their existing owner-local frames.
@@ -39,6 +41,15 @@ the first item. Positive values create a gap, zero makes the items contiguous,
 and negative values overlap them. Moving a lane writes that same field; no
 second timing document is created. Collections without a declared offset use
 zero.
+
+A collection may declare `animationTimeline.presenceDurationFieldId`. Zero is
+the explicit automatic sentinel: the item remains present through the end of
+the Screen. A positive value is the number of Screen frames from the item's In
+to its explicit Out. The collection's shared item Motion runs forward at In and
+backward so that it completes at an explicit Out. An automatic Out coincident
+with the Screen end does not start a redundant item exit; Screen Motion owns
+that boundary. Conversation messages use this contract and share one Motion
+recipe from the Conversation Module Variant.
 
 ## Temporal ownership
 

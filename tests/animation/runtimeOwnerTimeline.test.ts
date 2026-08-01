@@ -112,6 +112,41 @@ test("serial collection offsets may overlap the preceding item", () => {
   assert.equal(timeline.itemStartFrame("second"), 6);
 });
 
+test("collection presence duration is independent from serial completion", () => {
+  const presenceContract = {
+    collections: [{
+      jsonKey: "items",
+      animationTimeline: {
+        sequenceItems: true,
+        preDurationFieldIds: ["delay"],
+        sequenceCompletionFieldIds: ["text"],
+        presenceDurationFieldId: "visibleDuration",
+      },
+      fields: [
+        { id: "delay", jsonKey: "delay" },
+        { id: "visibleDuration", jsonKey: "visibleDurationFrames" },
+        { id: "text", jsonKey: "text", animationTimeline: { completion: { baseDurationFieldId: "write" } } },
+        { id: "write", jsonKey: "writeFrames" },
+      ],
+    }],
+  };
+  const timeline = new RuntimeOwnerTimeline(
+    presenceContract,
+    { items: [
+      { id: "first", delay: 2, visibleDurationFrames: 0, text: "One", writeFrames: 6 },
+      { id: "second", delay: 3, visibleDurationFrames: 20, text: "Two", writeFrames: 4 },
+    ] },
+    {},
+  );
+  assert.equal(timeline.itemStartFrame("first"), 2);
+  assert.equal(timeline.itemEndFrame("first"), 8);
+  assert.equal(timeline.itemPresenceEndFrame("first", 100), 100);
+  assert.equal(timeline.itemStartFrame("second"), 11);
+  assert.equal(timeline.itemPresenceEndFrame("second", 100), 31);
+  assert.equal(timeline.itemHasExplicitPresenceEnd("first"), false);
+  assert.equal(timeline.itemHasExplicitPresenceEnd("second"), true);
+});
+
 test("finite runtime action durations require positive JSON numbers", () => {
   const finiteContract = {
     collections: [{

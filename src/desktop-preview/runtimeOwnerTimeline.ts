@@ -141,6 +141,36 @@ export class RuntimeOwnerTimeline {
       : 0;
   }
 
+  itemPresenceEndFrame(targetId: string, automaticEndFrame: number) {
+    const item = this.items.get(targetId);
+    if (!item) return 0;
+    const timeline = optionalObject(
+      item.collection,
+      "animationTimeline",
+      "runtime owner collection animation timeline",
+    );
+    const durationFieldId = optionalString(timeline, "presenceDurationFieldId");
+    if (!durationFieldId) return this.itemEndFrame(targetId);
+    const fields = itemFields(item.collection, item.item);
+    const duration = fieldValue(item.item, fields, durationFieldId);
+    return duration > 0
+      ? this.itemStartFrame(targetId) + round(duration)
+      : Math.max(this.itemStartFrame(targetId) + 1, automaticEndFrame);
+  }
+
+  itemHasExplicitPresenceEnd(targetId: string) {
+    const item = this.items.get(targetId);
+    if (!item) return false;
+    const timeline = optionalObject(
+      item.collection,
+      "animationTimeline",
+      "runtime owner collection animation timeline",
+    );
+    const durationFieldId = optionalString(timeline, "presenceDurationFieldId");
+    if (!durationFieldId) return false;
+    return fieldValue(item.item, itemFields(item.collection, item.item), durationFieldId) > 0;
+  }
+
   itemOwnerFrame(targetId: string, naturalOwnerFrame: number) {
     const item = this.items.get(targetId);
     if (!item) return 0;
@@ -535,6 +565,17 @@ function validateCollectionTimeline(collection: JsonRecord, fields: JsonRecord[]
       if (!declaredFieldIds.has(fieldId)) {
         throw new Error(`runtime collection sequenceCompletionFieldIds references missing field '${fieldId}'`);
       }
+    }
+  }
+
+  if (Object.hasOwn(timeline, "presenceDurationFieldId")) {
+    const presenceDurationFieldId = requiredString(
+      timeline,
+      "presenceDurationFieldId",
+      "runtime collection presence duration field",
+    );
+    if (!fields.some((field) => requiredString(field, "id", "runtime owner collection fields") === presenceDurationFieldId)) {
+      throw new Error(`runtime collection presenceDurationFieldId references missing field '${presenceDurationFieldId}'`);
     }
   }
 

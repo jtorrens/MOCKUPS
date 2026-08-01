@@ -1,4 +1,4 @@
-import type { RenderableNode } from "../visual/renderable/types.js";
+import type { RenderableBox, RenderableNode } from "../visual/renderable/types.js";
 import { avatarComponentToRenderableAt } from "./avatarComponentRenderable.js";
 import { resolveAvatarComponentFromRecords } from "./avatarComponentResolver.js";
 import { componentVariantConfig, embeddedComponentConfig } from "./componentPreviewDefaults.js";
@@ -41,6 +41,7 @@ import type {
 } from "./conversationModuleContract.js";
 import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
+import { wrapExitMotionFrame, wrapMotionFrame } from "./previewMotionHelpers.js";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -279,6 +280,12 @@ function messageNodes(
   const totalHeight = entries.reduce((sum, entry) => sum + entry.finalBounds.height, 0)
     + Math.max(0, entries.length - 1) * gap;
   const viewportHeight = Math.max(0, bottom - top);
+  const viewportBox: RenderableBox = {
+    x: screen.x,
+    y: top,
+    width: screen.width,
+    height: viewportHeight,
+  };
   const targetOverflow = Math.max(0, gap + totalHeight - viewportHeight);
   const latestAppearanceFrame = messages.reduce(
     (latest, message) => Math.max(latest, message.visibleAtFrame),
@@ -304,7 +311,26 @@ function messageNodes(
         : screen.x + gutter.x - bounds.x;
     const translated = translateRenderableNode(node, { x: offsetX, y: y - bounds.y });
     y += finalBounds.height + gap;
-    return translated;
+    if (!translated.box || !message.presenceMotionFrame || !message.presenceMotionKind) {
+      return translated;
+    }
+    return message.presenceMotionKind === "enter"
+      ? wrapMotionFrame(
+          payload,
+          translated,
+          message.presenceMotion,
+          message.presenceMotionFrame,
+          translated.box,
+          viewportBox,
+        )
+      : wrapExitMotionFrame(
+          payload,
+          translated,
+          message.presenceMotion,
+          message.presenceMotionFrame,
+          translated.box,
+          viewportBox,
+        );
   });
 }
 

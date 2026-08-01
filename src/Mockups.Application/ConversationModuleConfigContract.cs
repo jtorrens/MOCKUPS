@@ -45,10 +45,10 @@ internal static class ConversationModuleConfigContract
         JsonPath.RequiredString(conversation, "screenGutter", owner);
         JsonPath.RequiredString(conversation, "messageGap", owner);
 
+        MotionVariantValue.Parse(
+            JsonPath.RequiredObject(conversation, "messageMotion", owner).ToJsonString());
         if (conversation["messageViewportMotion"] is JsonNode motion)
-        {
             MotionVariantValue.Parse(motion.ToJsonString());
-        }
     }
 
     private static void RequireSlot(JsonObject conversation, string key, string owner)

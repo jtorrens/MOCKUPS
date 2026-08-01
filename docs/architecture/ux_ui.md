@@ -154,9 +154,9 @@ edges snap to the playhead and the boundaries of other visible blocks, showing
 one thin amber guide across the complete timeline while snapped. The active
 block outline also becomes amber; when its detent is the playhead, the playhead
 becomes amber as well. Collection collapse and zoom remain session-only.
-Releasing an editable block commits through the collection's declared timing
-field or its existing animation retime and refreshes Preview from the newly
-prepared payload.
+Releasing an editable block commits through the collection's declared offset
+or presence-duration field and refreshes Preview from the newly prepared
+payload. An outgoing-edge edit never creates or changes retime.
 
 Selecting General or any item lane highlights the complete lane, including its
 label, and opens one Keyframes section after the final visible lane. The section

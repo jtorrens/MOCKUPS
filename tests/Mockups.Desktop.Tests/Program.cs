@@ -14549,7 +14549,7 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
         "Item",
         []);
     var preview = Object(
-        """{"items":[{"id":"item_1","delay":4},{"id":"item_2","delay":0}]}""");
+        """{"items":[{"id":"item_1","delay":4,"visibleDurationFrames":0},{"id":"item_2","delay":0,"visibleDurationFrames":20}]}""");
     var contract =
         """
         {
@@ -14558,10 +14558,14 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
             "label": "Items",
             "jsonKey": "items",
             "itemLabel": "Item",
-            "fields": [{"id":"delay","jsonKey":"delay"}],
+            "fields": [
+              {"id":"delay","jsonKey":"delay"},
+              {"id":"visibleDuration","jsonKey":"visibleDurationFrames"}
+            ],
             "animationTimeline": {
               "sequenceItems": true,
-              "preDurationFieldIds": ["delay"]
+              "preDurationFieldIds": ["delay"],
+              "presenceDurationFieldId": "visibleDuration"
             }
           }]
         }
@@ -14594,9 +14598,9 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
     Equal(1, resolved.Collections.Count);
     Equal(2, resolved.Collections[0].Items.Count);
     Equal(4, resolved.Collections[0].Items[0].StartFrame);
-    Equal(5, resolved.Collections[0].Items[0].EndFrame);
+    Equal(100, resolved.Collections[0].Items[0].EndFrame);
     Equal(5, resolved.Collections[0].Items[1].StartFrame);
-    Equal(6, resolved.Collections[0].Items[1].EndFrame);
+    Equal(25, resolved.Collections[0].Items[1].EndFrame);
     Equal(0, resolved.Collections[0].Items[0].SerialEdit?.PreviousEndFrame);
     Equal(5, resolved.Collections[0].Items[1].SerialEdit?.PreviousEndFrame);
     True(resolved.Collections[0].Items

@@ -1,4 +1,8 @@
 import type { JsonRecord } from "./previewJsonHelpers.js";
+import type {
+  ComponentMotionContract,
+  ComponentMotionFrameContract,
+} from "./previewComponentContracts.js";
 
 export type ConversationIncomingRevealMode = "instant" | "writeOn" | "typingIndicator";
 export type ConversationTypingIndicatorAnimation = "none" | "pulsating" | "wave";
@@ -47,6 +51,9 @@ export interface ConversationMessageContract {
   fullframeOrientation: string;
   controlsElapsedMs: number;
   isTypingIndicator: boolean;
+  presenceMotion: ComponentMotionContract;
+  presenceMotionKind?: "enter" | "exit";
+  presenceMotionFrame?: ComponentMotionFrameContract;
 }
 
 export interface ConversationModuleContract {

@@ -23,6 +23,7 @@ internal sealed record PreviewScreenTimelineInterval(
 internal sealed record PreviewScreenTimelineSerialEdit(
     string StorageCollectionJsonKey,
     string DelayFieldJsonKey,
+    string PresenceDurationFieldJsonKey,
     int PreviousEndFrame,
     int NaturalSpanFrames,
     int NaturalSequenceFrames);
@@ -459,7 +460,12 @@ internal static class PreviewScreenTimelineSnapshotFactory
             timeline,
             "preDurationFieldIds",
             $"Screen Timeline collection '{collection.Id}'");
-        var previousEnd = 0;
+        var previousSequenceEnd = 0;
+        var presenceDurationFieldId = timeline["presenceDurationFieldId"]?.GetValue<string>() ?? "";
+        var presenceDurationField = string.IsNullOrWhiteSpace(presenceDurationFieldId)
+            ? null
+            : definition["fields"]!.AsArray().OfType<JsonObject>()
+                .Single(field => field["id"]?.GetValue<string>() == presenceDurationFieldId);
         var projected = new List<PreviewScreenTimelineItem>();
         for (var index = 0; index < items.Count; index++)
         {
@@ -469,10 +475,12 @@ internal static class PreviewScreenTimelineSnapshotFactory
                 ? Math.Max(0, RuntimeAnimationFrameOrigin.ScreenFrameForOwnerFrame(
                     contract, runtime, animation, itemId, 0, themeTokens))
                 : 0;
-            var end = sequenceItems
+            var sequenceEnd = sequenceItems
                 ? Math.Max(start + 1, RuntimeAnimationFrameOrigin.OwnerSequenceEndScreenFrame(
                     contract, runtime, animation, itemId, themeTokens))
                 : contentDurationFrames;
+            var end = RuntimeAnimationFrameOrigin.OwnerPresenceEndScreenFrame(
+                contract, runtime, animation, itemId, contentDurationFrames, themeTokens);
             var label = ItemLabel(collection, item, index);
             PreviewScreenTimelineSerialEdit? serialEdit = null;
             if (sequenceItems && preFieldIds.Count == 1)
@@ -482,7 +490,13 @@ internal static class PreviewScreenTimelineSnapshotFactory
                 serialEdit = new PreviewScreenTimelineSerialEdit(
                     StorageCollectionKey(collection),
                     JsonPath.RequiredString(field, "jsonKey", "Timeline offset field"),
-                    previousEnd,
+                    presenceDurationField is null
+                        ? ""
+                        : JsonPath.RequiredString(
+                            presenceDurationField,
+                            "jsonKey",
+                            "Timeline presence duration field"),
+                    previousSequenceEnd,
                     RuntimeAnimationFrameOrigin.OwnerNaturalDuration(
                         contract, runtime, animation, itemId, themeTokens),
                     RuntimeAnimationFrameOrigin.OwnerNaturalSequenceDuration(
@@ -495,7 +509,7 @@ internal static class PreviewScreenTimelineSnapshotFactory
                 end,
                 [new PreviewScreenTimelineInterval(start, end)],
                 serialEdit));
-            if (sequenceItems) previousEnd = end;
+            if (sequenceItems) previousSequenceEnd = sequenceEnd;
         }
         return new PreviewScreenTimelineCollection(collection.Id, collection.Label, projected);
     }
@@ -1084,6 +1098,17 @@ internal sealed class PreviewScreenTimelineSurface : Border
             }
             if (edit.Mode == PreviewScreenTimelineLaneEditMode.Exit)
             {
+                if (!string.IsNullOrWhiteSpace(serial.PresenceDurationFieldJsonKey))
+                {
+                    await mutation.UpdateCollectionValuesAsync(
+                        serial.StorageCollectionJsonKey,
+                        item.Id,
+                        new Dictionary<string, JsonNode?>
+                        {
+                            [serial.PresenceDurationFieldJsonKey] = Math.Max(1, edit.EndFrame - edit.StartFrame),
+                        });
+                    return;
+                }
                 var displayedSequence = Math.Max(1, edit.EndFrame - edit.StartFrame);
                 var targetSpan = Math.Max(1, (int)Math.Round(
                     displayedSequence
