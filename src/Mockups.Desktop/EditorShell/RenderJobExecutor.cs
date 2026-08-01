@@ -62,8 +62,12 @@ internal sealed class RenderJobExecutor : IRenderJobExecutor
                 snapshot.FrameStore.TotalFrames,
                 "Encoding MOV",
                 RenderQueueStatus.Encoding));
+            var sourceDimensions = RenderRasterDimensions.Resolve(
+                snapshot.Metrics);
             var profileArgs = RenderMovEncodingProfiles.Arguments(
-                mode.EncodingProfile);
+                mode.EncodingProfile,
+                sourceDimensions.Width,
+                sourceDimensions.Height);
             await RunFfmpegAsync(
             [
                 "-n",
@@ -176,12 +180,7 @@ internal sealed class RenderJobExecutor : IRenderJobExecutor
         IProgress<RenderQueueExecutionProgress> progress,
         CancellationToken cancellationToken)
     {
-        var width = Math.Max(
-            1,
-            (int)Math.Ceiling(snapshot.Metrics.CanvasWidth));
-        var height = Math.Max(
-            1,
-            (int)Math.Ceiling(snapshot.Metrics.CanvasHeight));
+        var dimensions = RenderRasterDimensions.Resolve(snapshot.Metrics);
         var store = new RenderSnapshotStore(
             snapshot.FrameStore.BatchRootPath,
             create: false);
@@ -213,8 +212,8 @@ internal sealed class RenderJobExecutor : IRenderJobExecutor
                 store.RegisterReferencedAssets(html);
                 await _rasterizer.RasterizeAsync(
                     html,
-                    width,
-                    height,
+                    dimensions.Width,
+                    dimensions.Height,
                     outputPath,
                     "png",
                     quality: 100,
@@ -334,11 +333,27 @@ internal sealed class RenderJobExecutor : IRenderJobExecutor
     }
 }
 
+internal static class RenderRasterDimensions
+{
+    public static (int Width, int Height) Resolve(
+        DevicePreviewMetrics metrics) =>
+        (
+            Math.Max(1, (int)Math.Ceiling(metrics.CanvasWidth)),
+            Math.Max(1, (int)Math.Ceiling(metrics.CanvasHeight))
+        );
+}
+
 internal static class RenderMovEncodingProfiles
 {
     public static IReadOnlyList<string> Arguments(
-        string encodingProfile)
+        string encodingProfile,
+        int sourceWidth,
+        int sourceHeight)
     {
+        var h264Scale = H264ScaleArguments(
+            encodingProfile,
+            sourceWidth,
+            sourceHeight);
         return encodingProfile switch
         {
             "prores_422_hq" =>
@@ -363,6 +378,7 @@ internal static class RenderMovEncodingProfiles
                 "-b:v", "8M",
                 "-maxrate", "10M",
                 "-bufsize", "16M",
+                .. h264Scale,
                 "-pix_fmt", "yuv420p",
                 "-movflags", "+faststart",
             ],
@@ -373,6 +389,7 @@ internal static class RenderMovEncodingProfiles
                 "-b:v", "20M",
                 "-maxrate", "25M",
                 "-bufsize", "40M",
+                .. h264Scale,
                 "-pix_fmt", "yuv420p",
                 "-movflags", "+faststart",
             ],
@@ -383,6 +400,7 @@ internal static class RenderMovEncodingProfiles
                 "-b:v", "40M",
                 "-maxrate", "50M",
                 "-bufsize", "80M",
+                .. h264Scale,
                 "-pix_fmt", "yuv420p",
                 "-movflags", "+faststart",
             ],
@@ -390,4 +408,57 @@ internal static class RenderMovEncodingProfiles
                 $"Unsupported MOV encoding profile '{encodingProfile}'."),
         };
     }
+
+    public static (int Width, int Height) OutputDimensions(
+        string encodingProfile,
+        int sourceWidth,
+        int sourceHeight)
+    {
+        if (sourceWidth <= 0 || sourceHeight <= 0)
+        {
+            throw new InvalidOperationException(
+                "MOV source dimensions must be positive.");
+        }
+        if (!encodingProfile.StartsWith("h264_", StringComparison.Ordinal)
+            || (sourceWidth % 2 == 0 && sourceHeight % 2 == 0))
+        {
+            return (sourceWidth, sourceHeight);
+        }
+
+        var scale = Math.Max(
+            sourceWidth % 2 == 0
+                ? 1d
+                : (sourceWidth + 1d) / sourceWidth,
+            sourceHeight % 2 == 0
+                ? 1d
+                : (sourceHeight + 1d) / sourceHeight);
+        return (
+            NearestEven(sourceWidth * scale),
+            NearestEven(sourceHeight * scale));
+    }
+
+    private static IReadOnlyList<string> H264ScaleArguments(
+        string encodingProfile,
+        int sourceWidth,
+        int sourceHeight)
+    {
+        var output = OutputDimensions(
+            encodingProfile,
+            sourceWidth,
+            sourceHeight);
+        return output == (sourceWidth, sourceHeight)
+            ? []
+            :
+            [
+                "-vf",
+                $"scale={output.Width}:{output.Height}:flags=lanczos",
+            ];
+    }
+
+    private static int NearestEven(double value) =>
+        Math.Max(
+            2,
+            2 * (int)Math.Round(
+                value / 2d,
+                MidpointRounding.AwayFromZero));
 }

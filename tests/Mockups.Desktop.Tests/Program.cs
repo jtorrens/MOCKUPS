@@ -11366,7 +11366,9 @@ static void MovH264ModesMatchCreditosProfiles()
             "-movflags", "+faststart",
         },
         RenderMovEncodingProfiles.Arguments(
-            light.EncodingProfile));
+            light.EncodingProfile,
+            1920,
+            1080));
     SequenceEqual(
         new[]
         {
@@ -11379,7 +11381,9 @@ static void MovH264ModesMatchCreditosProfiles()
             "-movflags", "+faststart",
         },
         RenderMovEncodingProfiles.Arguments(
-            standard.EncodingProfile));
+            standard.EncodingProfile,
+            1920,
+            1080));
     SequenceEqual(
         new[]
         {
@@ -11392,7 +11396,43 @@ static void MovH264ModesMatchCreditosProfiles()
             "-movflags", "+faststart",
         },
         RenderMovEncodingProfiles.Arguments(
-            high.EncodingProfile));
+            high.EncodingProfile,
+            1920,
+            1080));
+
+    Equal(
+        (1180, 2558),
+        RenderMovEncodingProfiles.OutputDimensions(
+            standard.EncodingProfile,
+            1179,
+            2556));
+    SequenceEqual(
+        new[]
+        {
+            "-c:v", "libx264",
+            "-preset", "medium",
+            "-b:v", "20M",
+            "-maxrate", "25M",
+            "-bufsize", "40M",
+            "-vf", "scale=1180:2558:flags=lanczos",
+            "-pix_fmt", "yuv420p",
+            "-movflags", "+faststart",
+        },
+        RenderMovEncodingProfiles.Arguments(
+            standard.EncodingProfile,
+            1179,
+            2556));
+    Equal(
+        (1179, 2556),
+        RenderMovEncodingProfiles.OutputDimensions(
+            "prores_4444",
+            1179,
+            2556));
+    Throws<InvalidOperationException>(() =>
+        RenderMovEncodingProfiles.OutputDimensions(
+            standard.EncodingProfile,
+            0,
+            2556));
 }
 
 static void ProductionRenderOverridesRespectScreenAppearance()

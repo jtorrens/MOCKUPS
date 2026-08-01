@@ -104,7 +104,11 @@ The add modal exposes:
 The initial output modes are MOV ProRes 422 HQ, MOV ProRes 4444 with alpha,
 MOV H.264 Light at 8 Mb/s, Standard at 20 Mb/s, High at 40 Mb/s, PNG sequence
 and EXR sequence. H.264 uses the exact Créditos `libx264` profiles with
-`yuv420p` and fast start; it never preserves alpha. No output contains audio.
+`yuv420p` and fast start; it never preserves alpha. Device raster frames retain
+their exact declared dimensions. When either dimension is odd, only the H.264
+encoding stage applies the smallest proportional Lanczos upscale whose output
+width and height are both even, satisfying the chroma-subsampling contract
+without cropping or adding a border. No output contains audio.
 
 MOCKUPS proposes:
 

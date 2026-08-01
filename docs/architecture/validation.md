@@ -144,7 +144,8 @@ proving simultaneous outgoing and incoming Motion, stable owner-local frames
   recovery, strict stored-route containment,
   no-overwrite publication, sequential child jobs, permanent Production
   monitoring with stable monotonic progress controls, job-start route
-  materialization, exact ProRes/H.264 profiles and an always-openable Shot add
+  materialization, exact ProRes/H.264 profiles, proportional even-dimension
+  normalization for odd H.264 Device rasters and an always-openable Shot add
   action;
 - explicit Conversation text tracks retaining Keyboard and Text Input Bar
   presence for the outgoing write interval;
