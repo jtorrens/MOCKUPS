@@ -97,4 +97,23 @@ internal static class PreviewPanelLayoutPolicy
         }
         return new RestoredShellColumns(leftWidth, editorWidth);
     }
+
+    public static double ClampCollapsedPreviewWidth(
+        double windowWidth,
+        double requestedPreviewWidth,
+        double collapsedRailWidth,
+        double splitterWidth)
+    {
+        var maximum = Math.Max(
+            MinimumPreviewColumnWidth,
+            windowWidth
+            - RootHorizontalPadding
+            - collapsedRailWidth
+            - splitterWidth
+            - MinimumEditorColumnWidth);
+        return Math.Clamp(
+            requestedPreviewWidth,
+            MinimumPreviewColumnWidth,
+            maximum);
+    }
 }

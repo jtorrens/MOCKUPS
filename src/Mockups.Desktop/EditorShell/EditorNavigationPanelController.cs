@@ -69,6 +69,11 @@ internal sealed class EditorNavigationPanelController
         }
     }
 
+    public void Reflow()
+    {
+        Apply(IsCollapsed, captureCurrentWidth: false);
+    }
+
     public EditorNavigationPanelState Snapshot()
     {
         if (!IsCollapsed)
@@ -110,7 +115,12 @@ internal sealed class EditorNavigationPanelController
                 new GridLength(1, GridUnitType.Star);
             _shellColumns.ColumnDefinitions[4].MinWidth = 0;
             _shellColumns.ColumnDefinitions[4].Width =
-                new GridLength(_expandedPreviewWidth);
+                new GridLength(
+                    PreviewPanelLayoutPolicy.ClampCollapsedPreviewWidth(
+                        _windowWidth(),
+                        _expandedPreviewWidth,
+                        CollapsedRailWidth,
+                        SplitterWidth));
         }
         else
         {

@@ -177,6 +177,7 @@ public partial class MainWindow : SukiWindow
                 () => Bounds.Width > 0
                     ? Bounds.Width
                     : Width);
+        SizeChanged += (_, _) => _navigationPanel.Reflow();
         _shellState =
             new EditorShellStateService(
                 this,

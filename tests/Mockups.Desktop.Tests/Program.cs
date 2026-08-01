@@ -5437,6 +5437,13 @@ static void PreviewShellLayoutIsResponsive()
         + restored.EditorPanelWidth
         + PreviewPanelLayoutPolicy.MinimumPreviewColumnWidth
         <= PreviewPanelLayoutPolicy.SupportedMinimumWindowWidth - 32);
+    Equal(
+        686d,
+        PreviewPanelLayoutPolicy.ClampCollapsedPreviewWidth(
+            PreviewPanelLayoutPolicy.SupportedMinimumWindowWidth,
+            requestedPreviewWidth: 900,
+            EditorNavigationPanelController.CollapsedRailWidth,
+            splitterWidth: 6));
 }
 
 static void NavigationPanelRestoresWidthAndOpensForRoutedSelection()
