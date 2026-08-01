@@ -149,12 +149,14 @@ internal sealed class RuntimeInputInstanceDocumentStore
                 valuesSnapshot));
     }
 
-    public Task<string> SaveAnimationJsonAsync(
+    public Task<ModuleInstanceAnimationSnapshot>
+        ExecuteAnimationMutationAsync(
         string moduleInstanceId,
-        string animationJson)
+        System.Func<ModuleInstanceAnimationDocument, bool>
+            mutation)
     {
-        return _animationDocuments.SaveAnimationJsonAsync(
+        return _animationDocuments.ExecuteMutationAsync(
             moduleInstanceId,
-            animationJson);
+            mutation);
     }
 }

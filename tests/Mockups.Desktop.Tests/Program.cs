@@ -95,6 +95,7 @@ var tests = new (string Name, Action Run)[]
     ("Module Instance animation store preserves current documents and explicit writes", ModuleInstanceAnimationStorePreservesCurrentDocuments),
     ("failed animation commands restore the last confirmed document", FailedAnimationCommandRestoresConfirmedDocument),
     ("rapid animation commands serialize against the latest confirmed document", RapidAnimationCommandsUseLatestConfirmedDocument),
+    ("independent animation surfaces rebase mutations on persisted state", IndependentAnimationSurfacesRebaseOnPersistedState),
     ("Theme repository preserves current documents and lifecycle", ThemeRepositoryPreservesFocusedContract),
     ("Production Font repository preserves current rows and lifecycle", ProductionFontRepositoryPreservesFocusedContract),
     ("Production Font file documents reject filtered or inferred values", ProductionFontFileDocumentsAreStrict),
@@ -3561,10 +3562,9 @@ static void VisualPersistenceWritersRequireOperationCoordination()
                  (typeof(RuntimeInputInstanceDocumentStore), "DeleteCollectionItemAsync"),
                  (typeof(RuntimeInputInstanceDocumentStore), "UpdateCollectionValueAsync"),
                  (typeof(RuntimeInputInstanceDocumentStore), "UpdateCollectionValuesAsync"),
-                 (typeof(RuntimeInputInstanceDocumentStore), "SaveAnimationJsonAsync"),
+                 (typeof(RuntimeInputInstanceDocumentStore), "ExecuteAnimationMutationAsync"),
                  (typeof(RuntimeInputOwnerDocumentStore), "SaveDesignPreviewJsonAsync"),
-                 (typeof(ModuleInstanceAnimationDocumentStore), "SaveAnimationJsonAsync"),
-                 (typeof(ModuleInstanceAnimationDocumentStore), "SaveAnimationSnapshotAsync"),
+                 (typeof(ModuleInstanceAnimationDocumentStore), "ExecuteMutationAsync"),
                  (typeof(EditorFieldPostCommitEffects), "ApplyAsync"),
              })
     {
@@ -9947,9 +9947,12 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
             items.OfType<JsonObject>().Single((item) => item["id"]?.GetValue<string>() == "test_b")["text"]?.GetValue<string>() ?? "");
         Equal(
             animationJson,
-            store.SaveAnimationJsonAsync(
-                screen.Id,
-                animationJson).GetAwaiter().GetResult());
+            store.ExecuteAnimationMutationAsync(
+                    screen.Id,
+                    (_) => false)
+                .GetAwaiter()
+                .GetResult()
+                .Source.AnimationJson);
         Equal(animationJson, database.GetModuleInstanceSettings(screen.Id).AnimationJson);
     }
     finally
@@ -10237,9 +10240,9 @@ static void ModuleInstanceAnimationStorePreservesCurrentDocuments()
         var afterReads = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, afterReads);
 
-        var persisted = store.SaveAnimationSnapshotAsync(
+        var persisted = store.ExecuteMutationAsync(
             screen.Id,
-            source.AnimationJson).GetAwaiter().GetResult();
+            (_) => false).GetAwaiter().GetResult();
         Equal(screen.Id, persisted.ModuleInstanceId);
         Equal(source.AnimationJson, persisted.Source.AnimationJson);
         Equal(snapshot.ScreenStartFrame, persisted.ScreenStartFrame);
@@ -10300,17 +10303,24 @@ static void RapidAnimationCommandsUseLatestConfirmedDocument()
             TaskCreationOptions
                 .RunContinuationsAsynchronously);
     var saved = new List<string>();
+    var persistedJson = confirmed;
     var coordinator =
         new ModuleInstanceAnimationCommandCoordinator(
             confirmed,
-            async (candidateJson) =>
+            async (mutation) =>
             {
+                var candidate =
+                    new ModuleInstanceAnimationDocument(
+                        persistedJson);
+                mutation(candidate);
+                var candidateJson = candidate.ToJson();
                 saved.Add(candidateJson);
                 if (saved.Count == 1)
                 {
                     firstStarted.SetResult();
                     await releaseFirst.Task;
                 }
+                persistedJson = candidateJson;
                 return new ModuleInstanceAnimationSnapshot(
                     "screen-a",
                     new ModuleInstanceAnimationSource(
@@ -10374,6 +10384,74 @@ static void RapidAnimationCommandsUseLatestConfirmedDocument()
         24,
         secondDocument.TargetDurationFrames(
             "target-b"));
+}
+
+static void IndependentAnimationSurfacesRebaseOnPersistedState()
+{
+    var source = ParityDatabasePath();
+    var temporary = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-animation-rebase-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SqliteProjectTestContext(temporary);
+        var timeline = new ModuleInstanceTimelineDataSource(
+            database.Production,
+            database.Resources);
+        using var operations = new EditorOperationCoordinator();
+        ModuleInstanceAnimationDocumentStore CreateStore() =>
+            new(
+                database.Production,
+                database.Production,
+                database.Resources,
+                timeline,
+                operations);
+        var screen = Descendants(database.LoadProjectTree())
+            .First((node) =>
+                node.Kind
+                == ProjectTreeNodeKind.ModuleInstance);
+        var firstSurface = CreateStore();
+        var secondSurface = CreateStore();
+
+        var first = firstSurface.ExecuteMutationAsync(
+            screen.Id,
+            (candidate) =>
+            {
+                candidate.SetTargetDurationFrames(
+                    "audit-surface-a",
+                    12);
+                return true;
+            });
+        var second = secondSurface.ExecuteMutationAsync(
+            screen.Id,
+            (candidate) =>
+            {
+                candidate.SetTargetDurationFrames(
+                    "audit-surface-b",
+                    24);
+                return true;
+            });
+        Task.WhenAll(first, second)
+            .GetAwaiter()
+            .GetResult();
+
+        var persisted = new ModuleInstanceAnimationDocument(
+            database.GetModuleInstanceSettings(
+                screen.Id).AnimationJson);
+        Equal(
+            12,
+            persisted.TargetDurationFrames(
+                "audit-surface-a"));
+        Equal(
+            24,
+            persisted.TargetDurationFrames(
+                "audit-surface-b"));
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
 }
 
 static void ThemeRepositoryPreservesFocusedContract()
@@ -14399,8 +14477,7 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
         PostRollFrames: 12,
         Collections: [],
         Keyframes: [],
-        Mutation: null,
-        AnimationJson: EmptyDocument().ToJson());
+        Mutation: null);
     Equal(-20, snapshot.MinimumFrame);
     Equal(111, snapshot.MaximumFrame);
     Equal(-20, PreviewScreenTimelineMath.Frame(
@@ -14593,10 +14670,31 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
     Equal(25, resolved.Collections[0].Items[1].EndFrame);
     Equal(0, resolved.Collections[0].Items[0].SerialEdit?.PreviousEndFrame);
     Equal(5, resolved.Collections[0].Items[1].SerialEdit?.PreviousEndFrame);
+    True(resolved.Collections[0].Items[0].SerialEdit?.CanResizeEnd == true);
     True(resolved.Collections[0].Items
         .All((item) => item.StartFrame >= 0
             && item.EndFrame > item.StartFrame
             && item.EndFrame <= resolved.ContentDurationFrames));
+    var derivedContract = Object(contract);
+    derivedContract["collections"]![0]!["animationTimeline"]!
+        .AsObject()
+        .Remove("presenceDurationFieldId");
+    var derivedPresence = PreviewScreenTimelineSnapshotFactory.Create(
+        surface with
+        {
+            AnimationSnapshot = surface.AnimationSnapshot! with
+            {
+                Source = surface.AnimationSnapshot.Source with
+                {
+                    EffectiveContractJson =
+                        derivedContract.ToJsonString(),
+                },
+            },
+        },
+        new PreviewScreenTimelineRange(20, 100, 12));
+    True(
+        derivedPresence.Collections[0].Items[0]
+            .SerialEdit?.CanResizeEnd == false);
 
     var stateNode = new ProjectTreeNode(
         ProjectTreeNodeKind.ModuleInstance,

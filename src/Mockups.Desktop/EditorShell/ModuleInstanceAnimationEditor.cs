@@ -264,11 +264,11 @@ internal sealed class ModuleInstanceAnimationEditor
         var commands =
             new ModuleInstanceAnimationCommandCoordinator(
                 preparedSnapshot.Source.AnimationJson,
-                (candidateJson) =>
+                (mutation) =>
                     _animationDocuments
-                        .SaveAnimationSnapshotAsync(
+                        .ExecuteMutationAsync(
                             node.Id,
-                            candidateJson));
+                            mutation));
         int TimelineFrameForScreenFrame(int screenFrame) =>
             AnimationTimelineCoordinateSpace.TimelineFrameForScreenFrame(
                 usesOwnerTimeline,

@@ -24,9 +24,12 @@ internal sealed record PreviewScreenTimelineSerialEdit(
     string StorageCollectionJsonKey,
     string DelayFieldJsonKey,
     string PresenceDurationFieldJsonKey,
-    int PreviousEndFrame,
-    int NaturalSpanFrames,
-    int NaturalSequenceFrames);
+    int PreviousEndFrame)
+{
+    public bool CanResizeEnd =>
+        !string.IsNullOrWhiteSpace(
+            PresenceDurationFieldJsonKey);
+}
 
 internal sealed record PreviewScreenTimelineStateEdit(
     string FieldId,
@@ -62,8 +65,7 @@ internal sealed record PreviewScreenTimelineSnapshot(
     int PostRollFrames,
     IReadOnlyList<PreviewScreenTimelineCollection> Collections,
     IReadOnlyList<PreviewScreenTimelineKeyframe> Keyframes,
-    RuntimeInputTimelineMutation? Mutation,
-    string AnimationJson)
+    RuntimeInputTimelineMutation? Mutation)
 {
     public int MinimumFrame => -PreRollFrames;
     public int MaximumFrame => ContentDurationFrames + PostRollFrames - 1;
@@ -371,8 +373,7 @@ internal static class PreviewScreenTimelineSnapshotFactory
             range.PostRollFrames,
             collections,
             keyframes,
-            surface.TimelineMutation,
-            animationSnapshot.Source.AnimationJson);
+            surface.TimelineMutation);
     }
 
     private static IReadOnlyList<PreviewScreenTimelineKeyframe> CreateKeyframes(
@@ -496,11 +497,7 @@ internal static class PreviewScreenTimelineSnapshotFactory
                             presenceDurationField,
                             "jsonKey",
                             "Timeline presence duration field"),
-                    previousSequenceEnd,
-                    RuntimeAnimationFrameOrigin.OwnerNaturalDuration(
-                        contract, runtime, animation, itemId, themeTokens),
-                    RuntimeAnimationFrameOrigin.OwnerNaturalSequenceDuration(
-                        contract, runtime, animation, itemId, themeTokens));
+                    previousSequenceEnd);
             }
             projected.Add(new PreviewScreenTimelineItem(
                 itemId,
@@ -1087,26 +1084,18 @@ internal sealed class PreviewScreenTimelineSurface : Border
             }
             if (edit.Mode == PreviewScreenTimelineLaneEditMode.Exit)
             {
-                if (!string.IsNullOrWhiteSpace(serial.PresenceDurationFieldJsonKey))
+                if (string.IsNullOrWhiteSpace(
+                        serial.PresenceDurationFieldJsonKey))
                 {
-                    await mutation.UpdateCollectionValuesAsync(
-                        serial.StorageCollectionJsonKey,
-                        item.Id,
-                        new Dictionary<string, JsonNode?>
-                        {
-                            [serial.PresenceDurationFieldJsonKey] = Math.Max(1, edit.EndFrame - edit.StartFrame),
-                        });
                     return;
                 }
-                var displayedSequence = Math.Max(1, edit.EndFrame - edit.StartFrame);
-                var targetSpan = Math.Max(1, (int)Math.Round(
-                    displayedSequence
-                    * serial.NaturalSpanFrames
-                    / (double)Math.Max(1, serial.NaturalSequenceFrames),
-                    MidpointRounding.AwayFromZero));
-                var document = new ModuleInstanceAnimationDocument(_snapshot.AnimationJson);
-                document.SetTargetDurationFrames(item.Id, targetSpan);
-                await mutation.SaveAnimationJsonAsync(document.ToJson());
+                await mutation.UpdateCollectionValuesAsync(
+                    serial.StorageCollectionJsonKey,
+                    item.Id,
+                    new Dictionary<string, JsonNode?>
+                    {
+                        [serial.PresenceDurationFieldJsonKey] = Math.Max(1, edit.EndFrame - edit.StartFrame),
+                    });
                 return;
             }
         }
@@ -1125,9 +1114,12 @@ internal sealed class PreviewScreenTimelineSurface : Border
             changes[endLocal] = state.LocalFrameForScreenFrame(updated.EndFrame);
         }
         if (changes.Count == 0) return;
-        var animationDocument = new ModuleInstanceAnimationDocument(_snapshot.AnimationJson);
-        if (!animationDocument.TryMoveKeyframes(state.FieldId, state.TargetId, changes)) return;
-        await mutation.SaveAnimationJsonAsync(animationDocument.ToJson());
+        await mutation.ExecuteAnimationMutationAsync(
+            (animationDocument) =>
+                animationDocument.TryMoveKeyframes(
+                    state.FieldId,
+                    state.TargetId,
+                    changes));
     }
 
     private IReadOnlyList<int> PlayheadSnapTargets() =>
@@ -1587,6 +1579,7 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
     private readonly bool _isGeneral;
     private readonly bool _isStateLane;
     private readonly bool _isEditable;
+    private readonly bool _canResizeEnd;
     private readonly bool _movesOwnerOrigin;
     private readonly int _authoredStartFrame;
     private readonly Func<PreviewScreenTimelineLane, IReadOnlyList<int>>
@@ -1619,6 +1612,8 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
         _isGeneral = isGeneral;
         _isStateLane = item.StateEdit is not null;
         _isEditable = item.SerialEdit is not null || item.StateEdit is not null;
+        _canResizeEnd = item.StateEdit is not null
+            || item.SerialEdit?.CanResizeEnd == true;
         _movesOwnerOrigin = item.SerialEdit is not null;
         _authoredStartFrame = item.StartFrame;
         _snapTargets = snapTargets;
@@ -1706,7 +1701,8 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
                 context.DrawLine(new Pen(Brushes.White, 2),
                     new Point(left + 4, 7), new Point(left + 4, Bounds.Height - 7));
             }
-            if (!_isStateLane || interval.EndKeyframeFrame is not null)
+            if ((_isStateLane && interval.EndKeyframeFrame is not null)
+                || (!_isStateLane && _canResizeEnd))
             {
                 context.DrawLine(new Pen(Brushes.White, 2),
                     new Point(right - 4, 7), new Point(right - 4, Bounds.Height - 7));
@@ -1781,7 +1777,10 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
         }
         else
         {
-            _dragMode = right - x <= ExitHandleWidth ? DragMode.Exit : DragMode.Move;
+            _dragMode = _canResizeEnd
+                && right - x <= ExitHandleWidth
+                    ? DragMode.Exit
+                    : DragMode.Move;
         }
         if (_dragMode == DragMode.None) return;
         _dragStartFrame = RawFrameAt(x);

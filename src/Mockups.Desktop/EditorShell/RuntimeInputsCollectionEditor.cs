@@ -35,7 +35,10 @@ internal sealed record RuntimeInputSurface(
 
 internal sealed record RuntimeInputTimelineMutation(
     Func<string, string, IReadOnlyDictionary<string, JsonNode?>, Task> UpdateCollectionValuesAsync,
-    Func<string, Task<string>> SaveAnimationJsonAsync);
+    Func<
+        Func<ModuleInstanceAnimationDocument, bool>,
+        Task<ModuleInstanceAnimationCommandResult>>
+        ExecuteAnimationMutationAsync);
 
 internal sealed class RuntimeInputsCollectionEditor
 {
@@ -72,6 +75,7 @@ internal sealed class RuntimeInputsCollectionEditor
     private EditorDictionaryContextSnapshot?
         _preparedDictionaryContext;
     private string? _preparedAnimationJson;
+    private RuntimeInputTimelineMutation? _preparedTimelineMutation;
     private IRuntimeInputOptionsDataSource ActiveInputOptions =>
         _preparedDictionaryContext is null
             ? _runtimeInputOptions
@@ -270,24 +274,11 @@ internal sealed class RuntimeInputsCollectionEditor
                     $"Production Screen '{node.Id}' requires its animation snapshot owner.")
             : null;
         var timelineMutation = owner.IsInstance
-            ? new RuntimeInputTimelineMutation(
-                async (collectionJsonKey, itemId, values) =>
-                {
-                    await _instanceDocuments.UpdateCollectionValuesAsync(
-                        owner.Node.Id,
-                        collectionJsonKey,
-                        itemId,
-                        values);
-                    _onChanged();
-                },
-                async (animationJson) =>
-                {
-                    var saved = await _instanceDocuments.SaveAnimationJsonAsync(
-                        owner.Node.Id,
-                        animationJson);
-                    _onChanged();
-                    return saved;
-                })
+            ? CreateTimelineMutation(
+                owner,
+                animationSnapshot
+                    ?? throw new InvalidOperationException(
+                        $"Production Screen '{node.Id}' requires its prepared animation snapshot owner."))
             : null;
         cancellationToken.ThrowIfCancellationRequested();
         return surface with
@@ -298,6 +289,39 @@ internal sealed class RuntimeInputsCollectionEditor
         };
     }
 
+    private RuntimeInputTimelineMutation CreateTimelineMutation(
+        RuntimeInputOwner owner,
+        ModuleInstanceAnimationSnapshot animationSnapshot)
+    {
+        var commands =
+            new ModuleInstanceAnimationCommandCoordinator(
+                animationSnapshot.Source.AnimationJson,
+                (mutation) =>
+                    _instanceDocuments
+                        .ExecuteAnimationMutationAsync(
+                            owner.Node.Id,
+                            mutation));
+        return new RuntimeInputTimelineMutation(
+                async (collectionJsonKey, itemId, values) =>
+                {
+                    await _instanceDocuments.UpdateCollectionValuesAsync(
+                        owner.Node.Id,
+                        collectionJsonKey,
+                        itemId,
+                        values);
+                    _onChanged();
+                },
+                async (mutation) =>
+                {
+                    var result = await commands.ExecuteAsync(mutation);
+                    if (result.Succeeded && result.Snapshot is not null)
+                    {
+                        _onChanged();
+                    }
+                    return result;
+                });
+    }
+
     private void UsePreparedContext(
         RuntimeInputSurface surface)
     {
@@ -305,6 +329,7 @@ internal sealed class RuntimeInputsCollectionEditor
             surface.DictionaryContext;
         _preparedAnimationJson =
             surface.AnimationSnapshot?.Source.AnimationJson;
+        _preparedTimelineMutation = surface.TimelineMutation;
         _animationEditor?.UsePreparedContext(
             surface.DictionaryContext,
             surface.AnimationSnapshot);
@@ -1845,27 +1870,28 @@ internal sealed class RuntimeInputsCollectionEditor
             RemoveStructuredCollectionAnimationTargets = owner.IsInstance
                 ? async (targetIds) =>
                 {
-                    var document = new ModuleInstanceAnimationDocument(
-                        PreparedAnimationJson(owner));
-                    foreach (var targetId in targetIds) document.RemoveTarget(targetId);
-                    _preparedAnimationJson =
-                        await _instanceDocuments.SaveAnimationJsonAsync(
-                            owner.Node.Id,
-                            document.ToJson());
-                    _onChanged();
+                    await ExecutePreparedAnimationMutationAsync(
+                        owner,
+                        (document) =>
+                        {
+                            foreach (var targetId in targetIds)
+                            {
+                                document.RemoveTarget(targetId);
+                            }
+                            return true;
+                        });
                 }
                 : null,
             DuplicateStructuredCollectionAnimationTargets = owner.IsInstance
                 ? async (targetIds) =>
                 {
-                    var document = new ModuleInstanceAnimationDocument(
-                        PreparedAnimationJson(owner));
-                    document.DuplicateTargets(targetIds);
-                    _preparedAnimationJson =
-                        await _instanceDocuments.SaveAnimationJsonAsync(
-                            owner.Node.Id,
-                            document.ToJson());
-                    _onChanged();
+                    await ExecutePreparedAnimationMutationAsync(
+                        owner,
+                        (document) =>
+                        {
+                            document.DuplicateTargets(targetIds);
+                            return true;
+                        });
                 }
                 : null,
         };
@@ -2105,28 +2131,44 @@ internal sealed class RuntimeInputsCollectionEditor
             if (active)
             {
                 if (!await _confirmAnimationDisable(input.Label)) return;
-                document.RemoveTrack(input.Id, targetId);
+                await ExecutePreparedAnimationMutationAsync(
+                    owner,
+                    (candidate) =>
+                    {
+                        candidate.RemoveTrack(input.Id, targetId);
+                        return true;
+                    });
             }
-            else if (_animationEditor is not null)
+            else
             {
-                _animationEditor.AddInitialTrack(
-                    document,
-                    owner.Node,
-                    input,
-                    targetId,
-                    control.Value);
+                await ExecutePreparedAnimationMutationAsync(
+                    owner,
+                    (candidate) =>
+                    {
+                        if (_animationEditor is not null)
+                        {
+                            _animationEditor.AddInitialTrack(
+                                candidate,
+                                owner.Node,
+                                input,
+                                targetId,
+                                control.Value);
+                        }
+                        else
+                        {
+                            candidate.AddTrack(
+                                input.Id,
+                                targetId,
+                                DesignPreviewTestValues.ValueNode(
+                                    input,
+                                    control.Value)
+                                    ?? JsonValue.Create(control.Value)!,
+                                input.Animation.Interpolations.First());
+                        }
+                        return true;
+                    });
             }
-            else document.AddTrack(
-                input.Id,
-                targetId,
-                DesignPreviewTestValues.ValueNode(input, control.Value) ?? JsonValue.Create(control.Value)!,
-                input.Animation.Interpolations.First());
-            _preparedAnimationJson =
-                await _instanceDocuments.SaveAnimationJsonAsync(
-                    owner.Node.Id,
-                    document.ToJson());
             if (_reloadAndSelect is not null) _reloadAndSelect(owner.Node);
-            else _onChanged();
         };
         var row = new Grid
         {
@@ -2157,6 +2199,26 @@ internal sealed class RuntimeInputsCollectionEditor
         return _preparedAnimationJson
             ?? throw new InvalidOperationException(
                 $"Production Screen '{owner.Node.Id}' requires its prepared animation document.");
+    }
+
+    private async Task ExecutePreparedAnimationMutationAsync(
+        RuntimeInputOwner owner,
+        Func<ModuleInstanceAnimationDocument, bool> mutation)
+    {
+        if (!owner.IsInstance || _preparedTimelineMutation is null)
+        {
+            throw new InvalidOperationException(
+                $"Production Screen '{owner.Node.Id}' requires its prepared animation mutation owner.");
+        }
+        var result = await _preparedTimelineMutation
+            .ExecuteAnimationMutationAsync(mutation);
+        _preparedAnimationJson = result.ConfirmedAnimationJson;
+        if (!result.Succeeded)
+        {
+            throw result.Error
+                ?? new InvalidOperationException(
+                    "Animation persistence failed.");
+        }
     }
 
     private EditorInternalNavigationSection CreateTestValueCollectionGroupSubcard(

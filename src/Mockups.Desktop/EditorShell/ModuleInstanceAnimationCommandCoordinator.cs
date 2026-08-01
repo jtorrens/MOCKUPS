@@ -12,14 +12,16 @@ internal sealed record ModuleInstanceAnimationCommandResult(
 
 internal sealed class ModuleInstanceAnimationCommandCoordinator
 {
-    private readonly Func<string,
+    private readonly Func<
+        Func<ModuleInstanceAnimationDocument, bool>,
         Task<ModuleInstanceAnimationSnapshot>> _save;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private string _confirmedAnimationJson;
 
     public ModuleInstanceAnimationCommandCoordinator(
         string confirmedAnimationJson,
-        Func<string,
+        Func<
+            Func<ModuleInstanceAnimationDocument, bool>,
             Task<ModuleInstanceAnimationSnapshot>> save)
     {
         _confirmedAnimationJson =
@@ -39,20 +41,7 @@ internal sealed class ModuleInstanceAnimationCommandCoordinator
         {
             try
             {
-                var candidate =
-                    new ModuleInstanceAnimationDocument(
-                        _confirmedAnimationJson);
-                if (!mutation(candidate))
-                {
-                    return new ModuleInstanceAnimationCommandResult(
-                        true,
-                        _confirmedAnimationJson,
-                        null,
-                        null);
-                }
-
-                var snapshot = await _save(
-                    candidate.ToJson());
+                var snapshot = await _save(mutation);
                 _confirmedAnimationJson =
                     snapshot.Source.AnimationJson;
                 return new ModuleInstanceAnimationCommandResult(

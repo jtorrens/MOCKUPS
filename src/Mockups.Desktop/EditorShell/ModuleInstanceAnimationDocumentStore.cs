@@ -70,29 +70,25 @@ internal sealed class ModuleInstanceAnimationDocumentStore
                 range.ActionDurationFrames));
     }
 
-    public Task<string> SaveAnimationJsonAsync(
-        string moduleInstanceId,
-        string animationJson) =>
-        _operations.ExecuteAsync(
-            () =>
-            {
-                _database.UpdateModuleInstanceAnimationJson(
-                    moduleInstanceId,
-                    animationJson);
-                return _timelineDataSource.Load(
-                    moduleInstanceId).AnimationJson;
-            });
-
     public Task<ModuleInstanceAnimationSnapshot>
-        SaveAnimationSnapshotAsync(
+        ExecuteMutationAsync(
             string moduleInstanceId,
-            string animationJson) =>
+            System.Func<ModuleInstanceAnimationDocument, bool>
+                mutation) =>
         _operations.ExecuteAsync(
             () =>
             {
+                var current = LoadSnapshot(moduleInstanceId);
+                var candidate =
+                    new ModuleInstanceAnimationDocument(
+                        current.Source.AnimationJson);
+                if (!mutation(candidate))
+                {
+                    return current;
+                }
                 _database.UpdateModuleInstanceAnimationJson(
                     moduleInstanceId,
-                    animationJson);
+                    candidate.ToJson());
                 return LoadSnapshot(moduleInstanceId);
             });
 }
