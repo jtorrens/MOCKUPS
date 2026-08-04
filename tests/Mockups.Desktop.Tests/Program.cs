@@ -11600,16 +11600,39 @@ static void AnimatedConversationComposerRemainsVisible()
                 == "module_instance_900f1616432d4f63a97f2a74dd647e08");
         var theme = nodes.First((node) =>
             node.Kind == ProjectTreeNodeKind.Theme);
-        var start = ModuleInstanceTimeline.ScreenStartFrame(
+        var screenRange = ModuleInstanceTimeline.ScreenRange(
             new ModuleInstanceTimelineDataSource(
                 database.Production,
                 database.Resources),
             conversation.Id);
+        var content = JsonPath.ParseRequiredObject(
+            database.GetModuleInstanceSettings(conversation.Id).ContentJson,
+            "Conversation composer fixture");
+        var firstMessage = JsonPath.RequiredArray(
+                content,
+                "messages",
+                "Conversation composer fixture")
+            .OfType<JsonObject>()
+            .First();
+        Equal(
+            "outgoing",
+            JsonPath.RequiredString(
+                firstMessage,
+                "direction",
+                "Conversation composer first message"));
+        var firstMessageStart = JsonPath.RequiredInteger(
+            firstMessage,
+            "delayAfterPreviousFrames",
+            "Conversation composer first message");
         var payload = Required(CreatePreviewPayload(
             database,
             conversation,
             theme.Id,
-            timelineFrame: start + 1));
+            timelineFrame: screenRange.StartFrame
+                + screenRange.ActionStartFrame
+                + firstMessageStart
+                + 1));
+        Equal(firstMessageStart + 1, payload.LocalFrame);
         var html = WebDesignPreviewRenderer.RenderBodyAsync(
             database.GetDevicePreviewMetrics(payload.DeviceId),
             false,
