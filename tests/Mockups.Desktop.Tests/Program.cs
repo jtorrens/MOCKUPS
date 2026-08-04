@@ -126,6 +126,7 @@ var tests = new (string Name, Action Run)[]
     ("Production playback selects exact owner frames from its prepared snapshot", ProductionPlaybackSelectsPreparedOwnerFrames),
     ("Conversation Play messages advances the root Module owner frame", ConversationPlayMessagesAdvancesRootOwnerFrame),
     ("Preview Theme mode always follows the interactive selector", PreviewThemeModeHasOneStrictPayloadOwner),
+    ("Production Preview mode context toggles Light and Dark", ProductionPreviewModeContextIsInteractive),
     ("animated Conversation text keeps Keyboard and Text Input Bar visible", AnimatedConversationComposerRemainsVisible),
     ("Conversation message Actors follow their exact direction contract", ConversationMessageActorsFollowDirectionContract),
     ("invalid Conversation message Actor documents fail read-only", InvalidConversationMessageActorsFailReadOnly),
@@ -14737,6 +14738,31 @@ static void SelectedNavigationRowsContainEveryAction()
         }
 
         window.Close();
+    }, CancellationToken.None).GetAwaiter().GetResult();
+}
+
+static void ProductionPreviewModeContextIsInteractive()
+{
+    using var session = HeadlessUnitTestSession.StartNew(
+        typeof(HeadlessTestApplication));
+    session.Dispatch(() =>
+    {
+        var toggles = 0;
+        var host = new StackPanel();
+        ProductionPreviewContextStrip.Render(
+            host,
+            new ProductionPreviewContextMetadata(
+                [],
+                "Alex",
+                "GFX",
+                "iOS Test",
+                "Light",
+                () => toggles++));
+        var context = (WrapPanel)host.Children[1];
+        var mode = context.Children.OfType<Button>().Single();
+        Equal("Mode: Light", mode.Content);
+        mode.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Equal(1, toggles);
     }, CancellationToken.None).GetAwaiter().GetResult();
 }
 

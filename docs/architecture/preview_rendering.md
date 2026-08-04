@@ -204,10 +204,15 @@ configuration.
 The interactive Preview Light/Dark selector is authoritative for every
 Component, Module, Screen and Shot shown in that host, including Modules whose
 authored `appearanceMode` is fixed. Authored Module appearance remains
-authoritative only while preparing Production render jobs. With Device
+authoritative only while preparing Production render jobs. Production Preview
+exposes this session-only selector through its Mode context control instead of
+replacing it with authored Module state. With Device
 `moduleTransparency` enabled, the interactive Device shell uses a fixed black
 matte for inspecting the masked result in either selected Theme mode; the clean
-raster document remains transparent and contains no Device-shell matte.
+raster document remains transparent and contains no Device-shell matte. The
+generic Preview canvas and Screen-transition roots omit their Theme background
+while that policy is enabled, so neither boundary can flatten the Module mask
+before it reaches the shell or raster output.
 
 The interactive desktop Preview host may inspect the generic
 `data-renderable-id` and `data-renderable-type` attributes already emitted for

@@ -3747,17 +3747,15 @@ internal sealed class EditorPreviewController : IDisposable
             _previewSetupLayoutMode = null;
             ApplyPreviewSetupLayout(setupGrid.Bounds.Width);
         }
-        var appearanceMode = production ? ActiveModuleAppearanceMode() : "inherit";
-        var forcedMode = appearanceMode is "light" or "dark";
         if (_modeComboBox.ItemsSource is IEnumerable<FieldOption> modeOptions)
         {
             _isRefreshingOptions = true;
             _modeComboBox.SelectedItem = modeOptions.FirstOrDefault((option) =>
-                option.Value == (forcedMode ? appearanceMode : _selectedMode));
+                option.Value == _selectedMode);
             _isRefreshingOptions = false;
         }
-        _modeComboBox.IsEnabled = !forcedMode;
-        ToolTip.SetTip(_modeComboBox, forcedMode ? "Mode is fixed by the active module" : null);
+        _modeComboBox.IsEnabled = true;
+        ToolTip.SetTip(_modeComboBox, null);
     }
 
     private void UpdateOrientationPlacement(bool production)
@@ -3891,16 +3889,29 @@ internal sealed class EditorPreviewController : IDisposable
             actorName = inherited.Actor;
             device = inherited.Device;
             theme = inherited.Theme;
-            mode = ActiveModuleAppearanceMode();
-            if (mode == "inherit")
-            {
-                mode = inherited.ThemeMode;
-            }
-            mode = EditorUiText.IdentifierLabel(mode);
+            mode = EditorUiText.IdentifierLabel(_selectedMode);
         }
         ProductionPreviewContextStrip.Render(
             _productionContextHost,
-            new ProductionPreviewContextMetadata(path, actorName, device, theme, mode, hasShotContext));
+            new ProductionPreviewContextMetadata(
+                path,
+                actorName,
+                device,
+                theme,
+                mode,
+                ToggleProductionPreviewMode,
+                hasShotContext));
+    }
+
+    private void ToggleProductionPreviewMode()
+    {
+        if (_modeComboBox.ItemsSource is not IEnumerable<FieldOption> modeOptions)
+        {
+            return;
+        }
+        var nextMode = _selectedMode == "light" ? "dark" : "light";
+        _modeComboBox.SelectedItem = modeOptions.FirstOrDefault((option) =>
+            option.Value == nextMode);
     }
 
     private static IReadOnlyList<ProjectTreeNode> ProductionNodePath(ProjectTreeNode? selected)
@@ -3936,31 +3947,6 @@ internal sealed class EditorPreviewController : IDisposable
                 context.Error);
     }
 
-
-    private string ActiveModuleAppearanceMode()
-    {
-        var instanceId = _selectedNode() is { Kind: ProjectTreeNodeKind.ModuleInstance } selectedInstance
-            ? selectedInstance.Id
-            : _activeProductionModuleInstanceId;
-        if (string.IsNullOrWhiteSpace(instanceId) && ProductionShotId() is { Length: > 0 } shotId)
-        {
-            instanceId =
-                ProductionScreenPlaybackState
-                    .ActiveScreenId(
-                        PreparedProductionSession()
-                            .Shot(shotId)
-                            .FrameRanges,
-                        _shotPreviewFrame);
-        }
-        if (string.IsNullOrWhiteSpace(instanceId)) return "inherit";
-        var config = DesignPreviewTestValues.Parse(
-            PreparedProductionSession()
-                .Screen(instanceId)
-                .VariantConfigJson);
-        return ModuleAppearanceModeContract.Read(
-            config,
-            $"Module Instance '{instanceId}' Variant config");
-    }
 
     private void EnsureSelectedOptionsExist()
     {

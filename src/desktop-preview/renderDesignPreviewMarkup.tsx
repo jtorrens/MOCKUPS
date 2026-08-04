@@ -28,7 +28,7 @@ export function renderDesignPreviewRenderable(payload: DesignPreviewPayload): Re
       height: payload.previewFrame.canvasHeight,
     },
     style: {
-      backgroundColor: selectedColor(payload, "theme.colors.background"),
+      backgroundColor: previewCanvasBackground(payload),
     },
     metadata: {
       fontFaces: fontFacesForPayload(payload),
@@ -86,11 +86,16 @@ function screenLayer(
     box: screenBox,
     style: {
       overflow: "hidden",
-      backgroundColor: selectedColor(
-        payload,
-        "theme.colors.background",
-      ),
+      backgroundColor: previewCanvasBackground(payload),
     },
     children: ownerChildren(payload),
   };
+}
+
+export function previewCanvasBackground(
+  payload: DesignPreviewPayload,
+): string | undefined {
+  return payload.previewFrame.moduleTransparency.enabled
+    ? undefined
+    : selectedColor(payload, "theme.colors.background");
 }

@@ -6,6 +6,7 @@ import {
   applyDeviceModuleTransparency,
   requiredDeviceModuleTransparency,
 } from "../../src/desktop-preview/deviceModuleTransparency.js";
+import { previewCanvasBackground } from "../../src/desktop-preview/renderDesignPreviewMarkup.js";
 
 const payload: DesignPreviewPayload = {
   kind: "module",
@@ -83,6 +84,10 @@ test("fixed Device module transparency separates background opacity from the glo
     afterOpacity: 0,
   });
   assert.equal(rendered.children?.some((child) => child.id === "content.motion"), true);
+});
+
+test("enabled Device module transparency leaves the Preview canvas transparent", () => {
+  assert.equal(previewCanvasBackground(payload), undefined);
 });
 
 test("variable Device module transparency measures the last pre-background pixel each frame", () => {

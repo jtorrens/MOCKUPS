@@ -16,6 +16,7 @@ internal sealed record ProductionPreviewContextMetadata(
     string Device,
     string Theme,
     string Mode,
+    Action? ToggleMode,
     bool HasShotContext = true);
 
 internal static class ProductionPreviewContextStrip
@@ -65,7 +66,10 @@ internal static class ProductionPreviewContextStrip
             context.Children.Add(Item("Actor", metadata.Actor));
             context.Children.Add(Item("Device", metadata.Device));
             context.Children.Add(Item("Theme", metadata.Theme));
-            context.Children.Add(Item("Mode", metadata.Mode));
+            context.Children.Add(InteractiveItem(
+                "Mode",
+                metadata.Mode,
+                metadata.ToggleMode));
         }
         host.Children.Add(breadcrumb);
         if (metadata.HasShotContext) host.Children.Add(context);
@@ -108,5 +112,27 @@ internal static class ProductionPreviewContextStrip
                 MaxWidth = 190,
             },
         };
+    }
+
+    private static Control InteractiveItem(
+        string label,
+        string value,
+        Action? activate)
+    {
+        var button = new Button
+        {
+            Content = $"{label}: {value}",
+            Padding = new Thickness(8, 5),
+            Margin = new Thickness(0, 0, 7, 0),
+            MinHeight = 0,
+            CornerRadius = new CornerRadius(7),
+            BorderThickness = new Thickness(1),
+            BorderBrush = new SolidColorBrush(Color.Parse("#554B525D")),
+            Background = new SolidColorBrush(Color.Parse("#18252A31")),
+            FontSize = 11,
+        };
+        button.Click += (_, _) => activate?.Invoke();
+        ToolTip.SetTip(button, "Switch Preview between Light and Dark");
+        return button;
     }
 }
