@@ -109,13 +109,35 @@ internal sealed class RenderJobExecutor : IRenderJobExecutor
         {
             if (mode.Extension == "png")
             {
+                var source = Path.Combine(temporaryRoot, "source");
+                var converted = Path.Combine(temporaryRoot, "converted");
+                Directory.CreateDirectory(source);
+                Directory.CreateDirectory(converted);
                 await RasterFramesAsync(
                     snapshot,
-                    temporaryRoot,
-                    (index) =>
-                        $"{stem}_{(index + 1).ToString($"D{snapshot.Output.FramePadding}")}.png",
+                    source,
+                    (index) => $"frame_{index:D8}.png",
                     progress,
                     cancellationToken);
+                progress.Report(new RenderQueueExecutionProgress(
+                    snapshot.FrameStore.TotalFrames,
+                    snapshot.FrameStore.TotalFrames,
+                    "Writing premultiplied PNG sequence",
+                    RenderQueueStatus.Encoding));
+                await RunFfmpegAsync(
+                [
+                    "-n",
+                    "-start_number", "0",
+                    "-i", Path.Combine(source, "frame_%08d.png"),
+                    "-vf", RenderAlphaPremultiplication.Filter,
+                    "-c:v", "png",
+                    "-start_number", "1",
+                    Path.Combine(
+                        converted,
+                        $"{stem}_%0{snapshot.Output.FramePadding}d.png"),
+                ],
+                    cancellationToken);
+                moveSource = converted;
             }
             else if (mode.Extension == "exr")
             {
@@ -139,6 +161,7 @@ internal sealed class RenderJobExecutor : IRenderJobExecutor
                     "-n",
                     "-start_number", "0",
                     "-i", Path.Combine(source, "frame_%08d.png"),
+                    "-vf", RenderAlphaPremultiplication.Filter,
                     "-c:v", "exr",
                     "-compression", "zip1",
                     "-format", "half",
@@ -283,7 +306,7 @@ internal sealed class RenderJobExecutor : IRenderJobExecutor
         }
     }
 
-    private static string ResolveFfmpegExecutable()
+    internal static string ResolveFfmpegExecutable()
     {
         var configured = Environment.GetEnvironmentVariable("MOCKUPS_FFMPEG");
         var executableName = OperatingSystem.IsWindows()
@@ -343,6 +366,12 @@ internal static class RenderRasterDimensions
         );
 }
 
+internal static class RenderAlphaPremultiplication
+{
+    public const string Filter =
+        "geq=r='r(X,Y)*alpha(X,Y)/255':g='g(X,Y)*alpha(X,Y)/255':b='b(X,Y)*alpha(X,Y)/255':a='alpha(X,Y)'";
+}
+
 internal static class RenderMovEncodingProfiles
 {
     public static IReadOnlyList<string> Arguments(
@@ -350,7 +379,7 @@ internal static class RenderMovEncodingProfiles
         int sourceWidth,
         int sourceHeight)
     {
-        var h264Scale = H264ScaleArguments(
+        var videoFilter = VideoFilter(
             encodingProfile,
             sourceWidth,
             sourceHeight);
@@ -358,6 +387,7 @@ internal static class RenderMovEncodingProfiles
         {
             "prores_422_hq" =>
             [
+                "-vf", videoFilter,
                 "-c:v", "prores_ks",
                 "-profile:v", "3",
                 "-pix_fmt", "yuv422p10le",
@@ -365,6 +395,7 @@ internal static class RenderMovEncodingProfiles
             ],
             "prores_4444" =>
             [
+                "-vf", videoFilter,
                 "-c:v", "prores_ks",
                 "-profile:v", "4",
                 "-pix_fmt", "yuva444p10le",
@@ -373,34 +404,34 @@ internal static class RenderMovEncodingProfiles
             ],
             "h264_light" =>
             [
+                "-vf", videoFilter,
                 "-c:v", "libx264",
                 "-preset", "medium",
                 "-b:v", "8M",
                 "-maxrate", "10M",
                 "-bufsize", "16M",
-                .. h264Scale,
                 "-pix_fmt", "yuv420p",
                 "-movflags", "+faststart",
             ],
             "h264_standard" =>
             [
+                "-vf", videoFilter,
                 "-c:v", "libx264",
                 "-preset", "medium",
                 "-b:v", "20M",
                 "-maxrate", "25M",
                 "-bufsize", "40M",
-                .. h264Scale,
                 "-pix_fmt", "yuv420p",
                 "-movflags", "+faststart",
             ],
             "h264_high" =>
             [
+                "-vf", videoFilter,
                 "-c:v", "libx264",
                 "-preset", "slow",
                 "-b:v", "40M",
                 "-maxrate", "50M",
                 "-bufsize", "80M",
-                .. h264Scale,
                 "-pix_fmt", "yuv420p",
                 "-movflags", "+faststart",
             ],
@@ -437,7 +468,7 @@ internal static class RenderMovEncodingProfiles
             NearestEven(sourceHeight * scale));
     }
 
-    private static IReadOnlyList<string> H264ScaleArguments(
+    private static string VideoFilter(
         string encodingProfile,
         int sourceWidth,
         int sourceHeight)
@@ -447,12 +478,8 @@ internal static class RenderMovEncodingProfiles
             sourceWidth,
             sourceHeight);
         return output == (sourceWidth, sourceHeight)
-            ? []
-            :
-            [
-                "-vf",
-                $"scale={output.Width}:{output.Height}:flags=lanczos",
-            ];
+            ? RenderAlphaPremultiplication.Filter
+            : $"{RenderAlphaPremultiplication.Filter},scale={output.Width}:{output.Height}:flags=lanczos";
     }
 
     private static int NearestEven(double value) =>

@@ -201,6 +201,14 @@ The HTML Preview and SVG/export adapters both consume the same strict vertical
 opacity-mask primitive; renderers do not calculate the fade or inspect Device
 configuration.
 
+The interactive Preview Light/Dark selector is authoritative for every
+Component, Module, Screen and Shot shown in that host, including Modules whose
+authored `appearanceMode` is fixed. Authored Module appearance remains
+authoritative only while preparing Production render jobs. With Device
+`moduleTransparency` enabled, the interactive Device shell uses a fixed black
+matte for inspecting the masked result in either selected Theme mode; the clean
+raster document remains transparent and contains no Device-shell matte.
+
 The interactive desktop Preview host may inspect the generic
 `data-renderable-id` and `data-renderable-type` attributes already emitted for
 resolved nodes. Hover identification and the right-click rendered path are
@@ -251,6 +259,8 @@ its own persistent Chromium session, reads one frozen document per request and
 then writes a MOV or image sequence. A repeated document hash reuses the
 already generated lossless raster. The renderer still knows nothing about
 queue state, output naming, Production Output paths or codecs.
+The worker's output boundary converts the straight-alpha Chromium raster to
+black-premultiplied RGB while retaining alpha in alpha-capable formats.
 
 Conversation keeps composer presence under its temporal owner. When an
 explicit `text` track replaces the base write-on, the resolved bubble text and

@@ -125,7 +125,7 @@ var tests = new (string Name, Action Run)[]
     ("Shot Screen transitions reuse simultaneous boundary Motion", ShotScreenTransitionsReuseBoundaryMotion),
     ("Production playback selects exact owner frames from its prepared snapshot", ProductionPlaybackSelectsPreparedOwnerFrames),
     ("Conversation Play messages advances the root Module owner frame", ConversationPlayMessagesAdvancesRootOwnerFrame),
-    ("Preview Theme mode has one strict payload owner", PreviewThemeModeHasOneStrictPayloadOwner),
+    ("Preview Theme mode always follows the interactive selector", PreviewThemeModeHasOneStrictPayloadOwner),
     ("animated Conversation text keeps Keyboard and Text Input Bar visible", AnimatedConversationComposerRemainsVisible),
     ("Conversation message Actors follow their exact direction contract", ConversationMessageActorsFollowDirectionContract),
     ("invalid Conversation message Actor documents fail read-only", InvalidConversationMessageActorsFailReadOnly),
@@ -8262,6 +8262,41 @@ static void DeviceMetricDocumentsAreStrict()
         command.CommandText = "UPDATE devices SET metrics_json = json_set(metrics_json, '$.moduleTransparency.paletteColor', 'missing_palette_token') WHERE id = (SELECT id FROM devices LIMIT 1)";
         command.ExecuteNonQuery();
     });
+
+    var metrics = new DevicePreviewMetrics(
+        "Device",
+        100,
+        200,
+        0,
+        0,
+        100,
+        200,
+        0,
+        0,
+        0,
+        0,
+        0,
+        DeviceModuleTransparencyOverride.Disabled);
+    Equal("#F7F9FC", WebPreviewPane.DeviceScreenBackground(metrics, "light"));
+    Equal("#101827", WebPreviewPane.DeviceScreenBackground(metrics, "dark"));
+    var transparency = new DeviceModuleTransparencyOverride(
+        true,
+        "variable",
+        "palette.background",
+        0.5,
+        0,
+        100,
+        0);
+    Equal(
+        "#000000",
+        WebPreviewPane.DeviceScreenBackground(
+            metrics with { ModuleTransparency = transparency },
+            "light"));
+    Equal(
+        "#000000",
+        WebPreviewPane.DeviceScreenBackground(
+            metrics with { ModuleTransparency = transparency },
+            "dark"));
 }
 
 static void IncompleteVariantsFailReadOnly()
@@ -11488,6 +11523,7 @@ static void MovH264ModesMatchCreditosProfiles()
     SequenceEqual(
         new[]
         {
+            "-vf", RenderAlphaPremultiplication.Filter,
             "-c:v", "libx264",
             "-preset", "medium",
             "-b:v", "8M",
@@ -11503,6 +11539,7 @@ static void MovH264ModesMatchCreditosProfiles()
     SequenceEqual(
         new[]
         {
+            "-vf", RenderAlphaPremultiplication.Filter,
             "-c:v", "libx264",
             "-preset", "medium",
             "-b:v", "20M",
@@ -11518,6 +11555,7 @@ static void MovH264ModesMatchCreditosProfiles()
     SequenceEqual(
         new[]
         {
+            "-vf", RenderAlphaPremultiplication.Filter,
             "-c:v", "libx264",
             "-preset", "slow",
             "-b:v", "40M",
@@ -11540,12 +11578,12 @@ static void MovH264ModesMatchCreditosProfiles()
     SequenceEqual(
         new[]
         {
+            "-vf", $"{RenderAlphaPremultiplication.Filter},scale=1180:2558:flags=lanczos",
             "-c:v", "libx264",
             "-preset", "medium",
             "-b:v", "20M",
             "-maxrate", "25M",
             "-bufsize", "40M",
-            "-vf", "scale=1180:2558:flags=lanczos",
             "-pix_fmt", "yuv420p",
             "-movflags", "+faststart",
         },
@@ -12428,7 +12466,7 @@ static void RenderExecutorPublishesCleanPngSequence()
                       <body style="margin:0">
                         <div
                           data-renderable-id="design_preview.surface"
-                          style="width:64px;height:64px;background:#ff3366">
+                          style="width:64px;height:64px;background:rgba(255,0,0,.5)">
                         </div>
                       </body>
                     </html>
@@ -12439,7 +12477,7 @@ static void RenderExecutorPublishesCleanPngSequence()
                       <body style="margin:0">
                         <div
                           data-renderable-id="design_preview.surface"
-                          style="width:64px;height:64px;background:#ff3366">
+                          style="width:64px;height:64px;background:rgba(255,0,0,.5)">
                         </div>
                       </body>
                     </html>
@@ -12476,6 +12514,9 @@ static void RenderExecutorPublishesCleanPngSequence()
                 SHA256.HashData(File.ReadAllBytes(frames[0]))),
             Convert.ToHexString(
                 SHA256.HashData(File.ReadAllBytes(frames[1]))));
+        SequenceEqual(
+            new byte[] { 128, 0, 0, 128 },
+            ReadFirstRgbaPixel(frames[0]));
         Equal(
             1,
             Directory.GetFiles(
@@ -12493,6 +12534,37 @@ static void RenderExecutorPublishesCleanPngSequence()
     {
         Directory.Delete(root, recursive: true);
     }
+}
+
+static byte[] ReadFirstRgbaPixel(string path)
+{
+    var start = DesktopChildProcess.CreateHiddenStartInfo(
+        RenderJobExecutor.ResolveFfmpegExecutable(),
+        Directory.GetCurrentDirectory());
+    foreach (var argument in new[]
+             {
+                 "-v", "error",
+                 "-i", path,
+                 "-frames:v", "1",
+                 "-f", "rawvideo",
+                 "-pix_fmt", "rgba",
+                 "pipe:1",
+             })
+    {
+        start.ArgumentList.Add(argument);
+    }
+    using var process = Process.Start(start)
+        ?? throw new InvalidOperationException("FFmpeg pixel probe could not start.");
+    using var pixels = new MemoryStream();
+    var stderr = process.StandardError.ReadToEndAsync();
+    process.StandardOutput.BaseStream.CopyTo(pixels);
+    process.WaitForExit();
+    var error = stderr.GetAwaiter().GetResult();
+    if (process.ExitCode != 0)
+    {
+        throw new InvalidOperationException(error);
+    }
+    return pixels.ToArray()[..4];
 }
 
 static void ShotActorContextIsExplicit()
@@ -13556,7 +13628,7 @@ static void PreviewThemeModeHasOneStrictPayloadOwner()
             "Forced Light");
         database.UpdateModuleVariantField(lightVariant, "module.appearanceMode", "light");
         Equal(
-            "light",
+            "dark",
             Required(DesignPreviewPayloadFactory.Create(
                 dataSource,
                 lightVariant,
@@ -13568,7 +13640,7 @@ static void PreviewThemeModeHasOneStrictPayloadOwner()
             "Forced Dark");
         database.UpdateModuleVariantField(darkVariant, "module.appearanceMode", "dark");
         Equal(
-            "dark",
+            "light",
             Required(DesignPreviewPayloadFactory.Create(
                 dataSource,
                 darkVariant,

@@ -82,6 +82,9 @@ mask remains fully opaque from the Device top through the resolved start and
 fades to zero over `gradientHeight`. The variable offset changes the start
 before this mask is constructed; it never moves either painted layer. No
 legacy `opacity` or fade keys, aliases or missing-object defaults are accepted.
+The interactive Device Preview presents an enabled policy over a fixed black
+matte regardless of the selected Theme mode. That matte is Preview chrome, not
+an authored Dark appearance and not part of the clean raster document.
 
 ## Production Fonts
 
@@ -133,6 +136,10 @@ the queue-owned local store once per content hash. Light/Dark children share
 that batch asset store. The worker registers a referenced asset only when its
 current frame first needs it and therefore does not reinterpret current font,
 icon, media or wallpaper records after enqueue.
+Before publication, RGB is multiplied by the raster alpha against black while
+the alpha channel remains unchanged. PNG, EXR and ProRes 4444 therefore carry
+premultiplied alpha; non-alpha MOV profiles retain the corresponding black
+composite when they discard alpha.
 
 ## Asset delivery
 

@@ -117,7 +117,11 @@ and EXR sequence. H.264 uses the exact Créditos `libx264` profiles with
 their exact declared dimensions. When either dimension is odd, only the H.264
 encoding stage applies the smallest proportional Lanczos upscale whose output
 width and height are both even, satisfying the chroma-subsampling contract
-without cropping or adding a border. No output contains audio.
+without cropping or adding a border. The worker premultiplies RGB against black
+by the clean raster alpha before every output conversion. PNG, EXR and ProRes
+4444 preserve that alpha channel; ProRes 422 and H.264 discard alpha after the
+same premultiplication and therefore represent transparent pixels over black.
+No output contains audio.
 
 MOCKUPS proposes:
 

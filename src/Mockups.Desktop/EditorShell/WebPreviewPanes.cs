@@ -592,7 +592,7 @@ internal abstract class WebPreviewPane : Grid
             ? "linear-gradient(155deg, rgba(18,30,48,.88), rgba(34,51,73,.72))"
             : "linear-gradient(155deg, rgba(241,246,252,.96), rgba(222,232,244,.82))";
         var frameBorder = isDark ? "#111827" : "#263142";
-        var screenBackground = themeMode == "dark" ? "#101827" : "#F7F9FC";
+        var screenBackground = DeviceScreenBackground(metrics, themeMode);
         var initialContextVisible = initialContextState is not null;
         var initialActionVisible = initialContextState?.HasAction == true;
         var initialAction = initialActionVisible
@@ -1621,6 +1621,15 @@ internal abstract class WebPreviewPane : Grid
             </html>
             """;
     }
+
+    internal static string DeviceScreenBackground(
+        DevicePreviewMetrics metrics,
+        string themeMode) =>
+        metrics.ModuleTransparency.Enabled
+            ? "#000000"
+            : themeMode == "dark"
+                ? "#101827"
+                : "#F7F9FC";
 
     protected static string Placeholder(string title, string text)
     {

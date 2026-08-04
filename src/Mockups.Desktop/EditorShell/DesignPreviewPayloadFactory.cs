@@ -82,8 +82,16 @@ internal static class DesignPreviewPayloadFactory
                     theme.DeviceId,
                     themeMode,
                     theme,
-                    timelineFrame),
-            ProjectTreeNodeKind.Shot => FromShot(dataSource, node, theme.DeviceId, themeMode, theme, timelineFrame),
+                    timelineFrame,
+                    respectAuthoredAppearance: false),
+            ProjectTreeNodeKind.Shot => FromShot(
+                dataSource,
+                node,
+                theme.DeviceId,
+                themeMode,
+                theme,
+                timelineFrame,
+                respectAuthoredAppearance: false),
             _ => null,
         };
         return payload is null
@@ -124,7 +132,8 @@ internal static class DesignPreviewPayloadFactory
                 requestedThemeMode,
                 $"Shot '{shot.Id}' render appearance"),
             theme,
-            shotFrame)
+            shotFrame,
+            respectAuthoredAppearance: true)
             ?? throw new InvalidOperationException(
                 $"Shot '{shot.Name}' has no Screens to render.");
         return payload with
@@ -143,13 +152,15 @@ internal static class DesignPreviewPayloadFactory
         string deviceId,
         string themeMode,
         DesignPreviewThemeContext theme,
-        int? screenFrame = null)
+        int? screenFrame,
+        bool respectAuthoredAppearance)
     {
         var instance = dataSource.LoadModuleInstance(moduleInstanceId);
         var effectiveThemeMode = ResolveEffectiveThemeMode(
             instance.ConfigJson,
             themeMode,
-            $"Module Instance '{moduleInstanceId}' Variant config");
+            $"Module Instance '{moduleInstanceId}' Variant config",
+            respectAuthoredAppearance);
         var runtimePreview = DesignPreviewTestValues.Parse(DesignPreviewTestValues.RuntimeJson(
             instance.RuntimePreviewJson));
         if (screenFrame is not null
@@ -216,7 +227,8 @@ internal static class DesignPreviewPayloadFactory
             string deviceId,
             string themeMode,
             DesignPreviewThemeContext theme,
-            int shotFrame)
+            int shotFrame,
+            bool respectAuthoredAppearance)
     {
         var range =
             dataSource.ModuleInstanceScreenRange(
@@ -239,7 +251,8 @@ internal static class DesignPreviewPayloadFactory
             deviceId,
             themeMode,
             theme,
-            actionFrame)
+            actionFrame,
+            respectAuthoredAppearance)
             with
             {
                 ScreenTiming =
@@ -257,7 +270,8 @@ internal static class DesignPreviewPayloadFactory
         string deviceId,
         string themeMode,
         DesignPreviewThemeContext theme,
-        int shotFrame)
+        int shotFrame,
+        bool respectAuthoredAppearance)
     {
         var slots = dataSource.LoadShotSlots(shotNode.Id);
         if (slots.Count == 0) return null;
@@ -301,7 +315,8 @@ internal static class DesignPreviewPayloadFactory
             deviceId,
             themeMode,
             theme,
-            actionFrame);
+            actionFrame,
+            respectAuthoredAppearance);
         var shotPreview = DesignPreviewTestValues.Parse(incoming.DesignPreviewJson);
         shotPreview.Remove("actions");
         incoming = incoming with
@@ -343,7 +358,8 @@ internal static class DesignPreviewPayloadFactory
             deviceId,
             themeMode,
             theme,
-            outgoingSlot.ActionDurationFrames - 1)
+            outgoingSlot.ActionDurationFrames - 1,
+            respectAuthoredAppearance)
             with
             {
                 ThemeStatusBarVariantReference =
@@ -375,7 +391,8 @@ internal static class DesignPreviewPayloadFactory
         var effectiveThemeMode = ResolveEffectiveThemeMode(
             settings.ConfigJson,
             themeMode,
-            $"Module '{settings.RecordClassId}' Variant config");
+            $"Module '{settings.RecordClassId}' Variant config",
+            respectAuthoredAppearance: false);
         var config = DesignPreviewTestValues.Parse(settings.ConfigJson);
         var effectivePreview = RuntimeInputForwardingContract.EffectivePreview(
             DesignPreviewTestValues.Parse(settings.DesignPreviewJson),
@@ -412,10 +429,15 @@ internal static class DesignPreviewPayloadFactory
     private static string ResolveEffectiveThemeMode(
         string configJson,
         string selectedThemeMode,
-        string owner)
+        string owner,
+        bool respectAuthoredAppearance)
     {
         var config = JsonPath.ParseRequiredObject(configJson, owner);
-        return ModuleAppearanceModeContract.Resolve(config, selectedThemeMode, owner);
+        return respectAuthoredAppearance
+            ? ModuleAppearanceModeContract.Resolve(config, selectedThemeMode, owner)
+            : ModuleAppearanceModeContract.RequireResolved(
+                selectedThemeMode,
+                $"{owner} Preview Theme mode");
     }
 
     private static DesignPreviewPayload FromComponentSource(
