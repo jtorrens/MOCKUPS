@@ -227,7 +227,8 @@ public partial class MainWindow : SukiWindow
             StorageProvider,
             data.Presentation,
             data.ProjectPaths,
-            () => Session.SelectedNode);
+            () => Session.SelectedNode,
+            _nodeCommands.ShowInfoDialog);
         var domainDialogs = new EditorDomainDialogService(
             this,
             data.ModuleInstances,

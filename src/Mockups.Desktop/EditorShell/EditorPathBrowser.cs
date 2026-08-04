@@ -14,39 +14,52 @@ internal sealed class EditorPathBrowser
     private readonly EditorPresentationContextDataSource _contextData;
     private readonly IProjectPathResolver _projectPaths;
     private readonly Func<ProjectTreeNode?> _selectedNode;
+    private readonly Func<string, string, Task> _showInfo;
 
     public EditorPathBrowser(
         IStorageProvider storageProvider,
         IEditorPresentationContextRepository database,
         IProjectPathResolver projectPaths,
-        Func<ProjectTreeNode?> selectedNode)
+        Func<ProjectTreeNode?> selectedNode,
+        Func<string, string, Task> showInfo)
     {
         _storageProvider = storageProvider;
         _contextData = new EditorPresentationContextDataSource(database);
         _projectPaths = projectPaths;
         _selectedNode = selectedNode;
+        _showInfo = showInfo;
     }
 
-    public Task<string?> BrowsePath(string currentPath, ValueKind valueKind)
+    public async Task<string?> BrowsePath(string currentPath, ValueKind valueKind)
     {
-        return valueKind switch
+        try
         {
-            ValueKind.ImageFilePath => BrowseImageFile(
-                _storageProvider,
-                _projectPaths,
-                currentPath,
-                SelectedProjectMediaRoot()),
-            ValueKind.MediaFilePath => BrowseMediaFile(
-                _storageProvider,
-                _projectPaths,
-                currentPath,
-                SelectedProjectMediaRoot()),
-            ValueKind.VideoFilePath => BrowseProjectVideoFile(
-                _storageProvider,
-                _projectPaths,
-                currentPath),
-            _ => BrowseDirectory(currentPath),
-        };
+            return await (valueKind switch
+            {
+                ValueKind.ImageFilePath => BrowseImageFile(
+                    _storageProvider,
+                    _projectPaths,
+                    currentPath,
+                    SelectedProjectMediaRoot()),
+                ValueKind.MediaFilePath => BrowseMediaFile(
+                    _storageProvider,
+                    _projectPaths,
+                    currentPath,
+                    SelectedProjectMediaRoot()),
+                ValueKind.VideoFilePath => BrowseProjectVideoFile(
+                    _storageProvider,
+                    _projectPaths,
+                    currentPath),
+                _ => BrowseDirectory(currentPath),
+            });
+        }
+        catch (Exception exception) when (valueKind == ValueKind.VideoFilePath)
+        {
+            await _showInfo(
+                "Reference video not associated",
+                $"The selected video could not be associated with this Shot. {exception.Message}");
+            return null;
+        }
     }
 
     public async Task<string?> BrowseSvgFile()
@@ -238,14 +251,35 @@ internal sealed class EditorPathBrowser
 
         var files = await storageProvider.OpenFilePickerAsync(options);
         if (files.Count == 0) return null;
+        var selectedPath = files[0].Path.LocalPath;
+        if (!File.Exists(selectedPath))
+        {
+            throw new InvalidOperationException(
+                "The selected file no longer exists or is not available.");
+        }
+        if (Path.GetExtension(selectedPath).ToLowerInvariant()
+            is not (".mp4" or ".mov" or ".m4v" or ".webm"))
+        {
+            throw new InvalidOperationException(
+                "Choose an MP4, MOV, M4V or WebM video file.");
+        }
+        return ReferenceVideoStoragePath(
+            projectPaths,
+            selectedPath);
+    }
+
+    internal static string ReferenceVideoStoragePath(
+        IProjectPathResolver projectPaths,
+        string selectedPath)
+    {
         var relative = Path.GetRelativePath(
             projectPaths.ProjectRoot,
-            files[0].Path.LocalPath);
+            selectedPath);
         if (Path.IsPathFullyQualified(relative)
             || relative.Replace('\\', '/').Split('/').Any(
                 (segment) => segment == ".."))
         {
-            return null;
+            return Path.GetFullPath(selectedPath);
         }
         return projectPaths.NormalizeRelativePath(relative);
     }

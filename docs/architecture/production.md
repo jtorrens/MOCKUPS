@@ -47,8 +47,8 @@ An Episode owns ordered Shots. A Shot owns:
 - frame rate and current canvas metadata;
 - ordered Screens;
 - aggregate duration;
-- one optional Project-relative reference video document with an In frame and
-  stable video-relative text markers.
+- one optional reference video document, Project-relative when possible and
+  otherwise absolute, with an In frame and stable video-relative text markers.
 
 Shot creation requires an Actor selection and an explicit positive Shot
 number. The Shot editor never offers an empty owner. The Actor may be changed

@@ -31,7 +31,7 @@ public sealed record ShotReferenceVideoDocument(
             ["sourcePath", "inFrame", "markers"],
             owner);
         var sourcePath = RequiredString(root, "sourcePath", owner);
-        RequirePortableRelativePath(sourcePath, owner);
+        RequireSupportedSourcePath(sourcePath, owner);
         var inFrame = RequiredNonNegativeInteger(root, "inFrame", owner);
         var markersNode = root["markers"] as JsonArray
             ?? throw new InvalidOperationException(
@@ -97,17 +97,17 @@ public sealed record ShotReferenceVideoDocument(
             .Order()
             .ToArray();
 
-    private static void RequirePortableRelativePath(
+    private static void RequireSupportedSourcePath(
         string path,
         string owner)
     {
         if (string.IsNullOrWhiteSpace(path)) return;
-        if (Path.IsPathFullyQualified(path)
-            || path.Replace('\\', '/').Split('/').Any(
+        if (!Path.IsPathFullyQualified(path)
+            && path.Replace('\\', '/').Split('/').Any(
                 (segment) => segment == ".."))
         {
             throw new InvalidOperationException(
-                $"{owner}.sourcePath must be relative to the Project root.");
+                $"{owner}.sourcePath must be absolute or remain inside the Project root.");
         }
         if (Path.GetExtension(path).ToLowerInvariant()
             is not (".mp4" or ".mov" or ".m4v" or ".webm"))

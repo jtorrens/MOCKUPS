@@ -151,6 +151,7 @@ var tests = new (string Name, Action Run)[]
     ("fixed structural Runtime collections reconcile by stable ids", FixedStructuralRuntimeCollectionsReconcileByStableIds),
     ("Incoming Call exposes exact Avatar and Icon Row Runtime boundaries", IncomingCallExposesExactChildRuntimeBoundaries),
     ("Preview references share Project media path resolution", PreviewReferencesShareProjectMediaPathResolution),
+    ("Shot reference picker stores relative and absolute video paths", ShotReferencePickerStoresRelativeAndAbsolutePaths),
     ("SQLite contexts retain independent Project roots", SqliteContextsRetainIndependentProjectRoots),
     ("SQLite session exposes distinct focused application ports", SqliteSessionExposesDistinctFocusedPorts),
     ("visual persistence writers require operation coordination", VisualPersistenceWritersRequireOperationCoordination),
@@ -3295,6 +3296,25 @@ static void PreviewReferencesShareProjectMediaPathResolution()
 
     var absolute = Path.GetFullPath(Path.Combine(mediaRoot, "absolute.png"));
     Equal(absolute, projectPaths.ResolveLocalPath(absolute, mediaRoot));
+}
+
+static void ShotReferencePickerStoresRelativeAndAbsolutePaths()
+{
+    var projectRoot = Path.GetFullPath(Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-reference-project-{Guid.NewGuid():N}"));
+    var projectPaths = new ProjectPathResolver(projectRoot);
+    var inside = Path.Combine(projectRoot, "references", "inside.mov");
+    var outside = Path.GetFullPath(Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-reference-outside-{Guid.NewGuid():N}.mov"));
+
+    Equal(
+        "references/inside.mov",
+        EditorPathBrowser.ReferenceVideoStoragePath(projectPaths, inside));
+    Equal(
+        outside,
+        EditorPathBrowser.ReferenceVideoStoragePath(projectPaths, outside));
 }
 
 static void SqliteContextsRetainIndependentProjectRoots()
@@ -11547,22 +11567,26 @@ static void ShotReferenceVideoDocumentsAreStrict()
     Equal(document.SourcePath, parsed.SourcePath);
     Equal(document.InFrame, parsed.InFrame);
     SequenceEqual([12, 48], parsed.ShotMarkerFrames(100));
+    var absolute = ShotReferenceVideoDocument.ParseRequired(
+        "{\"sourcePath\":\"/absolute/reference.mov\",\"inFrame\":0,\"markers\":[]}",
+        "Absolute reference");
+    Equal("/absolute/reference.mov", absolute.SourcePath);
     Throws<InvalidOperationException>(() =>
         ShotReferenceVideoDocument.ParseRequired(
-            "{\"sourcePath\":\"/absolute/reference.mov\",\"inFrame\":0,\"markers\":[]}",
-            "Absolute reference"));
+            "{\"sourcePath\":\"../outside/reference.mov\",\"inFrame\":0,\"markers\":[]}",
+            "Escaping relative reference"));
     Throws<InvalidOperationException>(() =>
         ShotReferenceVideoDocument.ParseRequired(
             "{\"sourcePath\":\"reference.mov\",\"inFrame\":0,\"markers\":[{\"id\":\"same\",\"videoFrame\":1,\"text\":\"A\"},{\"id\":\"same\",\"videoFrame\":2,\"text\":\"B\"}]}",
             "Duplicate marker reference"));
     AssertRejectedDatabaseIsReadOnly(
-        "shot-reference-absolute-path",
+        "shot-reference-escaping-relative-path",
         (connection) =>
         {
             using var command = connection.CreateCommand();
             command.CommandText = """
                 UPDATE shots
-                SET reference_video_json = '{"sourcePath":"/absolute/reference.mov","inFrame":0,"markers":[]}'
+                SET reference_video_json = '{"sourcePath":"../outside/reference.mov","inFrame":0,"markers":[]}'
                 WHERE id = 'shot_001'
                 """;
             command.ExecuteNonQuery();

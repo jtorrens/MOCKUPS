@@ -125,6 +125,10 @@ actions. Its marker strip supports stable-marker selection and drag; the lower
 text area edits the selected marker and the delete action removes it. The same
 markers appear as amber ticks on the Shot slider and the selected Screen ruler.
 Reference playback follows Production Play only while the window is visible.
+Cancelling the reference picker is silent. A selected video that cannot be
+associated reports an explanatory modal message and preserves the prior value.
+Opening an authored reference whose file is missing or unavailable reports an
+explicit error message while the window retains its `Sin media` presentation.
 
 The Test Values view keeps temporary-data actions and Play/Restore controls in
 a fixed upper surface. Every finite action also exposes shared previous-frame

@@ -433,6 +433,7 @@ internal sealed class EditorPreviewController : IDisposable
         _referenceVideoController = new ShotReferenceVideoController(
             owner,
             projectPaths,
+            messages,
             CommitReferenceVideoAsync);
         _deviceComboBox = deviceComboBox;
         _themeComboBox = themeComboBox;

@@ -16,11 +16,12 @@ dictionary controls and resource workflows receive that resolver explicitly;
 they never read or configure a process-global Project root. Two contexts keep
 independent roots even when they coexist in one process.
 
-A Shot reference video is a portable path relative to that Project root, not
-an absolute workstation path and not a Preview Split reference. The authoring
-picker accepts only supported video files inside the current root. A missing
-file leaves the authored reference intact and produces the explicit `Sin
-media` presentation instead of falling back across Projects or roots.
+A Shot reference video is not a Preview Split reference. The authoring picker
+stores a portable relative path when the selected supported video is inside
+the current Project root and its absolute workstation path when it is outside
+that root. Relative paths may not escape the Project root. A missing file
+leaves the authored reference intact and produces the explicit `Sin media`
+presentation instead of falling back across Projects or roots.
 
 ## Palette and Themes
 

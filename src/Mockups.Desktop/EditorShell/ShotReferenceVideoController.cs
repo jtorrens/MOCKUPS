@@ -21,6 +21,7 @@ internal sealed class ShotReferenceVideoController : IDisposable
 {
     private readonly Window _owner;
     private readonly IProjectPathResolver _projectPaths;
+    private readonly IEditorShellMessageSink _messages;
     private readonly Func<string, ShotReferenceVideoDocument, Task> _commit;
     private readonly NativeWebView _video = new()
     {
@@ -70,10 +71,12 @@ internal sealed class ShotReferenceVideoController : IDisposable
     public ShotReferenceVideoController(
         Window owner,
         IProjectPathResolver projectPaths,
+        IEditorShellMessageSink messages,
         Func<string, ShotReferenceVideoDocument, Task> commit)
     {
         _owner = owner;
         _projectPaths = projectPaths;
+        _messages = messages;
         _commit = commit;
         _markerStrip.SizeChanged += (_, _) => RebuildMarkers();
         EditorTextBoxBehavior.AttachDeferredCommit(
@@ -131,6 +134,17 @@ internal sealed class ShotReferenceVideoController : IDisposable
         }
 
         var window = EnsureWindow();
+        if (!string.IsNullOrWhiteSpace(_document.SourcePath))
+        {
+            var localPath = _projectPaths.ResolveProjectPath(
+                _document.SourcePath);
+            if (!File.Exists(localPath))
+            {
+                _messages.Error(
+                    "Reference video",
+                    $"The associated video cannot be loaded because the file does not exist or is unavailable: {localPath}");
+            }
+        }
         EnsureSourceLoaded(force: true);
         window.Show(_owner);
         _metadataTimer.Start();
