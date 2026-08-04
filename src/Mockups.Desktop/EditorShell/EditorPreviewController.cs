@@ -1027,8 +1027,6 @@ internal sealed class EditorPreviewController : IDisposable
 
     private static Control LabeledToggle(string label, ToggleSwitch toggle)
     {
-        toggle.OnContent = "On";
-        toggle.OffContent = "Off";
         return new StackPanel
         {
             Orientation = Avalonia.Layout.Orientation.Horizontal,

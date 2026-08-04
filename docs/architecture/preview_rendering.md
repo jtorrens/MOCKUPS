@@ -222,9 +222,8 @@ white/gray-on-black channel view. Neither control changes payloads, Device or
 Theme data, frozen render documents or Render Queue output. When either
 inspection is active, Preview uses the HTML route for presentation even if the
 playback preference is raster, because the native raster surface is not an
-authoring output transform. Preview utility switches expose their native
-`On`/`Off` content so session state remains visually explicit in every shell
-theme.
+authoring output transform. Preview utility switches remain compact controls
+without additional textual state content.
 
 The interactive desktop Preview host may inspect the generic
 `data-renderable-id` and `data-renderable-type` attributes already emitted for

@@ -5989,8 +5989,8 @@ static void PreviewShellVisualTreeIsResponsive()
                 .ToList();
             Equal(4, previewToggles.Count);
             True(previewToggles.All((toggle) =>
-                Equals("On", toggle.OnContent)
-                && Equals("Off", toggle.OffContent)));
+                toggle.OnContent is null
+                && toggle.OffContent is null));
             var productionContextHost = Required(
                 typeof(EditorPreviewController)
                     .GetField("_productionContextHost", BindingFlags.Instance | BindingFlags.NonPublic)
