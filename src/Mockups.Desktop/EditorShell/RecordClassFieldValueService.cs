@@ -90,6 +90,7 @@ internal sealed class RecordClassFieldValueService
                 : field.Options,
             ProjectTreeNodeKind.Shot => ShotFieldOptions(node.Id, field),
             ProjectTreeNodeKind.ProductionFont => ProductionFontFieldOptions(field),
+            ProjectTreeNodeKind.Device => DeviceFieldOptions(node.Id, field),
             _ => field.Options,
         };
 
@@ -436,6 +437,24 @@ internal sealed class RecordClassFieldValueService
             ],
             "app.wallpaper.color" => _resources.GetPaletteColorOptions(
                 _design.GetAppSettings(appId).ProjectId),
+            _ => field.Options,
+        };
+    }
+
+    private IReadOnlyList<FieldOption>? DeviceFieldOptions(
+        string deviceId,
+        RecordClassFieldDescriptor field)
+    {
+        var settings = _resources.GetDeviceSettings(deviceId);
+        return field.Id switch
+        {
+            "device.metrics.moduleTransparency.mode" =>
+            [
+                new FieldOption("fixed", "Fixed"),
+                new FieldOption("variable", "Variable · content bottom"),
+            ],
+            "device.metrics.moduleTransparency.paletteColor" =>
+                _resources.GetPaletteColorOptions(settings.ProjectId),
             _ => field.Options,
         };
     }

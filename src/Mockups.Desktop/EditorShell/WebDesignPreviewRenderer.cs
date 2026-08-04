@@ -231,6 +231,16 @@ internal static class WebDesignPreviewRenderer
                 screenY = metrics.ScreenY,
                 screenWidth = metrics.ScreenWidth,
                 screenHeight = metrics.ScreenHeight,
+                moduleTransparency = new
+                {
+                    enabled = metrics.ModuleTransparency.Enabled,
+                    mode = metrics.ModuleTransparency.Mode,
+                    paletteColor = metrics.ModuleTransparency.PaletteColor,
+                    opacity = metrics.ModuleTransparency.Opacity,
+                    fixedStart = metrics.ModuleTransparency.FixedStart,
+                    gradientHeight = metrics.ModuleTransparency.GradientHeight,
+                    variableOffset = metrics.ModuleTransparency.VariableOffset,
+                },
             },
         };
     }

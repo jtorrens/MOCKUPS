@@ -1,7 +1,12 @@
 import { RenderableNodeSchema } from "../visual/renderable/schema.js";
 import { fileURLToPath } from "node:url";
 import * as fontkit from "fontkit";
-import type { RenderableBox, RenderableFontFace, RenderableNode } from "../visual/renderable/types.js";
+import type {
+  RenderableBox,
+  RenderableFontFace,
+  RenderableNode,
+  RenderableOpacityMask,
+} from "../visual/renderable/types.js";
 import { numberValue, stringValue } from "./previewValueHelpers.js";
 import { textGraphemes } from "./previewTextRevealHelpers.js";
 import { emojiRasterDataUri } from "./previewAssetResolver.js";
@@ -53,7 +58,19 @@ function renderNode(node: RenderableNode, context: SvgRenderContext): string {
   const content = primitiveMarkup(node, context, svgId);
   const children = (node.children ?? []).map((child) => renderNode(child, context)).join("\n");
   const clippedChildren = clipChildrenMarkup(node, svgId, children);
-  return `<g ${attributes}>${content}${clippedChildren ? `\n${clippedChildren}` : ""}</g>`;
+  const paint = `${content}${clippedChildren ? `\n${clippedChildren}` : ""}`;
+  return `<g ${attributes}>${opacityMaskMarkup(node, svgId, paint)}</g>`;
+}
+
+function opacityMaskMarkup(node: RenderableNode, svgId: string, paint: string) {
+  const value = node.style?.opacityMask;
+  if (!value || typeof value !== "object" || Array.isArray(value)) return paint;
+  const mask = value as unknown as RenderableOpacityMask;
+  const box = node.box;
+  if (!box || mask.axis !== "vertical") return paint;
+  const gradientId = `opacity-gradient-${safeId(svgId)}`;
+  const maskId = `opacity-mask-${safeId(svgId)}`;
+  return `<defs><linearGradient id="${gradientId}" x1="0" y1="${number(mask.start)}" x2="0" y2="${number(mask.end)}" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="white" stop-opacity="${number(mask.beforeOpacity)}"/><stop offset="1" stop-color="white" stop-opacity="${number(mask.afterOpacity)}"/></linearGradient><mask id="${maskId}" maskUnits="userSpaceOnUse" x="${number(box.x)}" y="${number(box.y)}" width="${number(box.width)}" height="${number(box.height)}"><rect ${attributes({ x: box.x, y: box.y, width: box.width, height: box.height, fill: `url(#${gradientId})` })}/></mask></defs><g mask="url(#${maskId})">${paint}</g>`;
 }
 
 function clipChildrenMarkup(node: RenderableNode, svgId: string, children: string) {

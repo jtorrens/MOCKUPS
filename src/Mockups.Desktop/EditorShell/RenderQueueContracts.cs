@@ -160,7 +160,7 @@ internal sealed record RenderJobSnapshot(
     RenderOutputTarget Output)
 {
     public const string CurrentSchema = "mockups_render_job_snapshot";
-    public const int CurrentVersion = 3;
+    public const int CurrentVersion = 4;
 
     public void Validate()
     {

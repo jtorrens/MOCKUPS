@@ -163,5 +163,6 @@ function background(payload: DesignPreviewPayload): RenderableNode {
     style: {
       background: selectedColor(payload, "theme.colors.background"),
     },
+    metadata: { paintRole: "moduleBackground" },
   };
 }

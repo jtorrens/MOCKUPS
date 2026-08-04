@@ -27,7 +27,8 @@ internal sealed partial class SqliteResourceOwner
             values.CornerRadiusCoefficient,
             values.DesignSafeMarginCoefficient,
             values.StatusBarHeight,
-            values.SafeAreaBottom);
+            values.SafeAreaBottom,
+            values.ModuleTransparency);
     }
 
     public DeviceSettings GetDeviceSettings(string deviceId)
@@ -54,6 +55,23 @@ internal sealed partial class SqliteResourceOwner
             "device.metrics.cornerRadius" => JsonPath.RequiredNumberString(metrics, ["cornerRadius"], context),
             "device.metrics.safeArea.bottom" => JsonPath.RequiredNumberString(metrics, ["safeArea", "bottom"], context),
             "device.metrics.statusBar.height" => JsonPath.RequiredNumberString(metrics, ["statusBar", "height"], context),
+            "device.metrics.moduleTransparency.enabled" => BooleanText.Format(
+                JsonPath.RequiredBoolean(
+                    JsonPath.RequiredObject(metrics, "moduleTransparency", context),
+                    "enabled",
+                    context)),
+            "device.metrics.moduleTransparency.mode" => JsonPath.RequiredString(
+                JsonPath.RequiredObject(metrics, "moduleTransparency", context),
+                "mode",
+                context),
+            "device.metrics.moduleTransparency.paletteColor" => JsonPath.RequiredString(
+                JsonPath.RequiredObject(metrics, "moduleTransparency", context),
+                "paletteColor",
+                context),
+            "device.metrics.moduleTransparency.opacity" => JsonPath.RequiredNumberString(metrics, ["moduleTransparency", "opacity"], context),
+            "device.metrics.moduleTransparency.fixedStart" => JsonPath.RequiredNumberString(metrics, ["moduleTransparency", "fixedStart"], context),
+            "device.metrics.moduleTransparency.gradientHeight" => JsonPath.RequiredNumberString(metrics, ["moduleTransparency", "gradientHeight"], context),
+            "device.metrics.moduleTransparency.variableOffset" => JsonPath.RequiredNumberString(metrics, ["moduleTransparency", "variableOffset"], context),
             _ => throw new InvalidOperationException($"Unknown device metrics field '{fieldId}'."),
         };
     }

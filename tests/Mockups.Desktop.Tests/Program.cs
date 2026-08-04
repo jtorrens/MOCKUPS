@@ -7246,7 +7246,8 @@ static void ResidentPreviewShellRejectsChangedDeviceGeometry()
         0,
         0,
         0,
-        0);
+        0,
+        DeviceModuleTransparencyOverride.Disabled);
     var compactMetrics = wideMetrics with
     {
         Name = "iPhone 15 Pro",
@@ -8221,6 +8222,24 @@ static void DeviceMetricDocumentsAreStrict()
             """;
         command.ExecuteNonQuery();
     });
+    AssertRejectedDatabaseIsReadOnly("incomplete-device-module-transparency", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "UPDATE devices SET metrics_json = json_remove(metrics_json, '$.moduleTransparency.gradientHeight') WHERE id = (SELECT id FROM devices LIMIT 1)";
+        command.ExecuteNonQuery();
+    });
+    AssertRejectedDatabaseIsReadOnly("legacy-device-wallpaper-fade", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "UPDATE devices SET metrics_json = json_set(metrics_json, '$.wallpaperFade', json('{}')) WHERE id = (SELECT id FROM devices LIMIT 1)";
+        command.ExecuteNonQuery();
+    });
+    AssertRejectedDatabaseIsReadOnly("missing-device-module-transparency-palette", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "UPDATE devices SET metrics_json = json_set(metrics_json, '$.moduleTransparency.paletteColor', 'missing_palette_token') WHERE id = (SELECT id FROM devices LIMIT 1)";
+        command.ExecuteNonQuery();
+    });
 }
 
 static void IncompleteVariantsFailReadOnly()
@@ -8941,6 +8960,13 @@ static void ResourceRepositoriesPreserveFocusedContract()
                 "device.metrics.cornerRadius",
                 "device.metrics.safeArea.bottom",
                 "device.metrics.statusBar.height",
+                "device.metrics.moduleTransparency.enabled",
+                "device.metrics.moduleTransparency.mode",
+                "device.metrics.moduleTransparency.paletteColor",
+                "device.metrics.moduleTransparency.opacity",
+                "device.metrics.moduleTransparency.fixedStart",
+                "device.metrics.moduleTransparency.gradientHeight",
+                "device.metrics.moduleTransparency.variableOffset",
             },
             EditorLayouts(database).LoadEditorLayout(device.RecordClassId).Cards
                 .SelectMany((card) => card.VisibleGroups)
@@ -8984,6 +9010,12 @@ static void ResourceRepositoriesPreserveFocusedContract()
         deviceRepository.UpdateField(device.Id, "device.metrics.screen.size", "100|200");
         Equal("100|200", database.GetDeviceMetricFieldValue(device.Id, "device.metrics.screen.size"));
         database.UpdateDeviceField(device.Id, "device.metrics.screen.size", originalScreenSize);
+        deviceRepository.UpdateField(device.Id, "device.metrics.moduleTransparency.enabled", "true");
+        Equal("true", database.GetDeviceMetricFieldValue(device.Id, "device.metrics.moduleTransparency.enabled"));
+        deviceRepository.UpdateField(device.Id, "device.metrics.moduleTransparency.variableOffset", "-12.5");
+        Equal("-12.5", database.GetDeviceMetricFieldValue(device.Id, "device.metrics.moduleTransparency.variableOffset"));
+        database.UpdateDeviceField(device.Id, "device.metrics.moduleTransparency.enabled", "false");
+        database.UpdateDeviceField(device.Id, "device.metrics.moduleTransparency.variableOffset", "0");
         Equal(originalDevice, deviceRepository.GetSettings(device.Id));
 
         var importedDraft = DeviceImportMapper.ToDraft(new DeviceCatalogDetails(
@@ -11815,7 +11847,8 @@ static void RenderQueueChildrenAreIndependent()
             0,
             0,
             0,
-            0);
+            0,
+            DeviceModuleTransparencyOverride.Disabled);
         RenderOutputTarget Output(string appearance) =>
             new(
                 "production",
@@ -12347,7 +12380,8 @@ static void RenderExecutorPublishesCleanPngSequence()
                 0,
                 0,
                 0,
-                0),
+                0,
+                DeviceModuleTransparencyOverride.Disabled),
             25,
             StoreRenderFrames(
                 Path.Combine(
@@ -14256,6 +14290,15 @@ static void ExplicitReferenceUsageIsExactTypedAndShared()
             database.ReferenceUsages.GetReferenceUsageDetails(blue);
         True(blueUsages.Count > 0);
         True(blueUsages.All((usage) => usage.SourceKind != ProjectTreeNodeKind.Project));
+
+        var moduleTransparencyColor = nodes.Single((node) =>
+            node.Kind == ProjectTreeNodeKind.PaletteColor
+            && node.Name == "gray_000");
+        True(database.ReferenceUsages
+            .GetReferenceUsageDetails(moduleTransparencyColor)
+            .Any((usage) => usage.SourceKind == ProjectTreeNodeKind.Device
+                && usage.Scope == ReferenceUsageScope.Production
+                && usage.Field == "Module transparency · Background"));
 
     }
     finally

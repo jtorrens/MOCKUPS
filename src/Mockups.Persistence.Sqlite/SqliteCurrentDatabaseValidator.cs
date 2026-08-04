@@ -122,17 +122,31 @@ internal sealed partial class SqliteCurrentDatabaseValidator
     private void ValidateCurrentDeviceMetrics(SqliteConnection connection)
     {
         using var command = connection.CreateCommand();
-        command.CommandText = "SELECT id, metrics_json FROM devices";
+        command.CommandText =
+            """
+            SELECT d.id, d.metrics_json, p.id
+            FROM devices d
+            LEFT JOIN palette_colors p
+              ON p.project_id = d.project_id
+             AND p.token = json_extract(
+                 d.metrics_json,
+                 '$.moduleTransparency.paletteColor')
+            """;
         using var reader = command.ExecuteReader();
         while (reader.Read())
         {
             var id = reader.GetString(0);
             try
             {
-                _ = DeviceMetricRules.PreviewValues(
+                var values = DeviceMetricRules.PreviewValues(
                     JsonPath.ParseRequiredObject(
                         reader.GetString(1),
                         $"Device '{id}' metrics_json"));
+                if (reader.IsDBNull(2))
+                {
+                    throw new InvalidOperationException(
+                        $"moduleTransparency.paletteColor '{values.ModuleTransparency.PaletteColor}' must reference a Palette color in the same Project.");
+                }
             }
             catch (InvalidOperationException exception)
             {

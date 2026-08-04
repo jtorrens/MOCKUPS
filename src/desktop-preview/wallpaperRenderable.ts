@@ -42,6 +42,7 @@ export function wallpaperRenderable(
           box,
           asset: { type: "image", uri: frame.uri },
           style: { objectFit: "cover", opacity },
+          metadata: { paintRole: "moduleBackground" },
         };
       }
     }
@@ -58,6 +59,7 @@ export function wallpaperRenderable(
     frame: 0,
     box,
     style: { background: selectedPaletteColor(payload, colorToken, opacity) },
+    metadata: { paintRole: "moduleBackground" },
   };
 }
 

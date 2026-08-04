@@ -36,6 +36,14 @@ export interface RenderableFontFace {
   style?: string;
 }
 
+export interface RenderableOpacityMask {
+  axis: "vertical";
+  start: number;
+  end: number;
+  beforeOpacity: number;
+  afterOpacity: number;
+}
+
 export interface RenderableMetadata {
   authoringTarget?: {
     focusFieldId?: string;
@@ -56,6 +64,7 @@ export interface RenderableMetadata {
     width: number;
     opacity?: number;
   };
+  paintRole?: "moduleBackground";
 }
 
 export interface RenderableNode {

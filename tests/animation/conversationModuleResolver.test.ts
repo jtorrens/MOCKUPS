@@ -85,7 +85,15 @@ function payload(
       context: { screenFrame: localFrame },
       animation: { schemaVersion: 2, tracks },
     }),
-    previewFrame: { canvasWidth: 1, canvasHeight: 1, screenX: 0, screenY: 0, screenWidth: 1, screenHeight: 1 },
+    previewFrame: {
+      canvasWidth: 1,
+      canvasHeight: 1,
+      screenX: 0,
+      screenY: 0,
+      screenWidth: 1,
+      screenHeight: 1,
+      moduleTransparency: { enabled: false, mode: "fixed", paletteColor: "gray_000", opacity: 1, fixedStart: 0, gradientHeight: 1, variableOffset: 0 },
+    },
     themeMode: "dark",
     themeTokensJson: "{}",
   };

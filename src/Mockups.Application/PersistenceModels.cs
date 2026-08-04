@@ -214,6 +214,7 @@ public sealed record PaletteColorSettings(
     string Note);
 
 public sealed record DeviceSettings(
+    string ProjectId,
     string Name,
     string Manufacturer,
     string Model,

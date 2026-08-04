@@ -46,7 +46,16 @@ A Device owns one strict current metrics document:
   "screen": { "x": 0, "y": 0, "width": 1179, "height": 2556 },
   "cornerRadius": 151,
   "safeArea": { "bottom": 93 },
-  "statusBar": { "height": 161 }
+  "statusBar": { "height": 161 },
+  "moduleTransparency": {
+    "enabled": false,
+    "mode": "fixed",
+    "paletteColor": "gray_000",
+    "opacity": 1,
+    "fixedStart": 1278,
+    "gradientHeight": 639,
+    "variableOffset": 0
+  }
 }
 ```
 
@@ -58,6 +67,18 @@ unit metadata. The domain owns validation and projection; Preview consumes
 only Canvas and Screen geometry plus the declared visual coefficients.
 Repository, tree and shell expose the record without embedding
 device-specific layout rules.
+
+`moduleTransparency` is the Device-owned global Module wallpaper override and
+is required even when disabled. Its Palette token resolves in the same Project
+and is tracked as an exact resource reference. Values are authored in Device
+units. `fixed` uses `fixedStart`; `variable` resolves its start on every frame
+from the last visible pixel of the complete Module foreground before any
+substitute background or opacity mask exists, then adds `variableOffset`.
+From the Device top through that start the complete Module composite has the
+configured `opacity`; over `gradientHeight` it fades to zero. The original
+wallpaper is absent, and the opaque Palette surface below the foreground is
+part of the composite receiving that same mask. No legacy fade keys, aliases
+or missing-object defaults are accepted.
 
 ## Production Fonts
 
@@ -97,6 +118,9 @@ the application bundle and declares that exact resource in `Info.plist`.
 Wallpaper is App configuration with explicit kind, light/dark color or image
 references and alpha. Alpha affects the complete wallpaper visual, including
 an image. Resolution happens before Preview rendering.
+
+An enabled Device `moduleTransparency` policy supersedes this App or Actor
+wallpaper for every Module. Components do not interpret that policy.
 
 ## Render output resources
 

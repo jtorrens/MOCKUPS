@@ -188,6 +188,7 @@ function payload(alternatives: Record<string, unknown>[], frame = 0): DesignPrev
       screenY: 0,
       screenWidth: 360,
       screenHeight: 720,
+      moduleTransparency: { enabled: false, mode: "fixed", paletteColor: "gray_000", opacity: 1, fixedStart: 0, gradientHeight: 1, variableOffset: 0 },
     },
     themeMode: "light",
     themeTokensJson: JSON.stringify({

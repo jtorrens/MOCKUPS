@@ -3,6 +3,7 @@ using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.Data;
 
@@ -63,6 +64,30 @@ internal sealed class DeviceRepository : IDeviceRepository
                 break;
             case "device.metrics.statusBar.height":
                 JsonPath.Set(metrics, ["statusBar", "height"], JsonPath.NumberNode(value));
+                break;
+            case "device.metrics.moduleTransparency.enabled":
+                JsonPath.Set(
+                    metrics,
+                    ["moduleTransparency", "enabled"],
+                    JsonValue.Create(BooleanText.ParseRequired(value, fieldId))!);
+                break;
+            case "device.metrics.moduleTransparency.mode":
+                JsonPath.Set(metrics, ["moduleTransparency", "mode"], JsonValue.Create(value)!);
+                break;
+            case "device.metrics.moduleTransparency.paletteColor":
+                JsonPath.Set(metrics, ["moduleTransparency", "paletteColor"], JsonValue.Create(value)!);
+                break;
+            case "device.metrics.moduleTransparency.opacity":
+                JsonPath.Set(metrics, ["moduleTransparency", "opacity"], JsonPath.NumberNode(value));
+                break;
+            case "device.metrics.moduleTransparency.fixedStart":
+                JsonPath.Set(metrics, ["moduleTransparency", "fixedStart"], JsonPath.NumberNode(value));
+                break;
+            case "device.metrics.moduleTransparency.gradientHeight":
+                JsonPath.Set(metrics, ["moduleTransparency", "gradientHeight"], JsonPath.NumberNode(value));
+                break;
+            case "device.metrics.moduleTransparency.variableOffset":
+                JsonPath.Set(metrics, ["moduleTransparency", "variableOffset"], JsonPath.NumberNode(value));
                 break;
             default:
                 throw new InvalidOperationException($"Unknown device metrics field '{fieldId}'.");
@@ -196,7 +221,7 @@ internal sealed class DeviceRepository : IDeviceRepository
     private static DeviceSettings GetSettings(SqliteConnection connection, string deviceId)
     {
         using var command = connection.CreateCommand();
-        command.CommandText = "SELECT name, manufacturer, model, os_family, metrics_json FROM devices WHERE id = $id";
+        command.CommandText = "SELECT project_id, name, manufacturer, model, os_family, metrics_json FROM devices WHERE id = $id";
         command.Parameters.AddWithValue("$id", deviceId);
         using var reader = command.ExecuteReader();
         if (!reader.Read())
@@ -206,10 +231,11 @@ internal sealed class DeviceRepository : IDeviceRepository
 
         var settings = new DeviceSettings(
             reader.GetString(0),
-            SqliteCommandExecutor.ReadString(reader, 1),
+            reader.GetString(1),
             SqliteCommandExecutor.ReadString(reader, 2),
             SqliteCommandExecutor.ReadString(reader, 3),
-            reader.GetString(4));
+            SqliteCommandExecutor.ReadString(reader, 4),
+            reader.GetString(5));
         _ = DeviceMetricRules.PreviewValues(
             JsonPath.ParseRequiredObject(settings.MetricsJson, $"Device '{deviceId}' metrics_json"));
         return settings;

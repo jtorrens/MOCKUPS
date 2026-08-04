@@ -169,6 +169,17 @@ The bridge translates only standard resolved values:
 Device scaling derives from the required positive Screen width. Preview has no
 pixel-ratio or scale fallback and does not receive retired Device metrics.
 
+After a Module owner has resolved its complete renderable tree, the shared
+Module boundary applies the Device `moduleTransparency` policy. Wallpaper and
+fallback background nodes identify themselves only through the generic
+`moduleBackground` paint role. When the policy is enabled, that boundary
+removes those nodes, measures the bottommost visible foreground paint in the
+current frame after transforms and clipping, inserts the resolved Palette
+surface, and attaches one vertical opacity mask to the complete Module root.
+Fixed mode uses the authored Device coordinate directly; variable mode adds
+the signed offset to that pre-background measurement. Neither route branches
+on Module identity.
+
 It contains no Component-specific layout or business rules.
 
 ## Renderer
@@ -183,6 +194,10 @@ The web renderer paints final resolved nodes. It knows nothing about:
 - per-Component layout or timing.
 
 New rendering needs are expressed as generic resolved primitives.
+
+The HTML Preview and SVG/export adapters both consume the same strict vertical
+opacity-mask primitive; renderers do not calculate the fade or inspect Device
+configuration.
 
 The interactive desktop Preview host may inspect the generic
 `data-renderable-id` and `data-renderable-type` attributes already emitted for

@@ -4,6 +4,7 @@ import {
   renderableNodeTypes,
   type RenderableBox,
   type RenderableNode,
+  type RenderableOpacityMask,
 } from "../visual/renderable/types.js";
 import {
   numberValue as commonNumberValue,
@@ -206,6 +207,11 @@ function nodeStyle(
   const borderWidth = optionalNumberValue(style.borderWidth);
   const maskImage = optionalStringValue(style.maskImage);
   const webkitMaskImage = optionalStringValue(style.WebkitMaskImage);
+  const opacityMaskImage = node.box
+    ? opacityMaskCss(style.opacityMask, node.box)
+    : undefined;
+  const effectiveMaskImage = opacityMaskImage ?? maskImage;
+  const effectiveWebkitMaskImage = opacityMaskImage ?? webkitMaskImage;
   const paddingX = optionalNumberValue(style.paddingX);
   const paddingY = optionalNumberValue(style.paddingY);
   const display = optionalStringValue(style.display);
@@ -248,10 +254,10 @@ function nodeStyle(
       ? `${optionalNumberValue(style.lineHeight)}px`
       : undefined,
     marginTop: optionalNumberValue(style.marginTop),
-    maskImage,
-    maskPosition: maskImage ? "center" : undefined,
-    maskRepeat: maskImage ? "no-repeat" : undefined,
-    maskSize: maskImage ? "contain" : undefined,
+    maskImage: effectiveMaskImage,
+    maskPosition: opacityMaskImage ? "0 0" : effectiveMaskImage ? "center" : undefined,
+    maskRepeat: effectiveMaskImage ? "no-repeat" : undefined,
+    maskSize: opacityMaskImage ? "100% 100%" : effectiveMaskImage ? "contain" : undefined,
     opacity: optionalNumberValue(node.transform?.opacity) ?? optionalNumberValue(style.opacity),
     overflow: optionalStringValue(style.overflow) as CSSProperties["overflow"],
     paddingBottom: paddingY,
@@ -263,14 +269,23 @@ function nodeStyle(
     overflowWrap: optionalStringValue(style.overflowWrap) as CSSProperties["overflowWrap"],
     transform: nodeTransform(node),
     transformOrigin: nodeTransform(node) ? "center center" : undefined,
-    WebkitMaskImage: webkitMaskImage,
-    WebkitMaskPosition: webkitMaskImage ? "center" : undefined,
-    WebkitMaskRepeat: webkitMaskImage ? "no-repeat" : undefined,
-    WebkitMaskSize: webkitMaskImage ? "contain" : undefined,
+    WebkitMaskImage: effectiveWebkitMaskImage,
+    WebkitMaskPosition: opacityMaskImage ? "0 0" : effectiveWebkitMaskImage ? "center" : undefined,
+    WebkitMaskRepeat: effectiveWebkitMaskImage ? "no-repeat" : undefined,
+    WebkitMaskSize: opacityMaskImage ? "100% 100%" : effectiveWebkitMaskImage ? "contain" : undefined,
     whiteSpace: optionalStringValue(style.whiteSpace) as CSSProperties["whiteSpace"],
     width,
     zIndex: optionalNumberValue(style.zIndex),
   };
+}
+
+function opacityMaskCss(value: unknown, box: RenderableBox) {
+  if (!isRecord(value)) return undefined;
+  const mask = value as unknown as RenderableOpacityMask;
+  if (mask.axis !== "vertical") return undefined;
+  const start = mask.start - box.y;
+  const end = mask.end - box.y;
+  return `linear-gradient(to bottom, rgba(255,255,255,${mask.beforeOpacity}) ${start}px, rgba(255,255,255,${mask.afterOpacity}) ${end}px)`;
 }
 
 function pathContent(node: RenderableNode): ReactNode {

@@ -76,6 +76,7 @@ test("both generic renderers reject incomplete complex visual styles", () => {
     { shadow: [] },
     { textShadow: { offsetX: 1, offsetY: 2, blur: 3 } },
     { surfaceRelief: { angleDeg: -45, extension: 1, spread: 0 } },
+    { opacityMask: { axis: "vertical", start: 10, end: 20, beforeOpacity: 1 } },
   ]) {
     const invalid = { ...base, style };
     assert.throws(() => renderToStaticMarkup(React.createElement(
@@ -84,6 +85,38 @@ test("both generic renderers reject incomplete complex visual styles", () => {
     )));
     assert.throws(() => renderableToSvg(invalid as unknown as typeof base));
   }
+});
+
+test("both generic renderers paint one resolved vertical opacity mask", () => {
+  const tree = {
+    id: "masked.module",
+    type: "group" as const,
+    box: { x: 0, y: 20, width: 120, height: 180 },
+    style: {
+      opacityMask: {
+        axis: "vertical" as const,
+        start: 80,
+        end: 140,
+        beforeOpacity: 0.65,
+        afterOpacity: 0,
+      },
+    },
+    children: [{
+      id: "module.content",
+      type: "surface" as const,
+      box: { x: 0, y: 20, width: 120, height: 180 },
+      style: { background: "#FFFFFF" },
+    }],
+  };
+  const html = renderToStaticMarkup(React.createElement(
+    DesktopRenderableHtmlAdapter,
+    { tree },
+  ));
+  const svg = renderableToSvg(tree);
+  assert.match(html, /linear-gradient\(to bottom, rgba\(255,255,255,0\.65\) 60px, rgba\(255,255,255,0\) 120px\)/);
+  assert.match(svg, /y1="80"[^>]*y2="140"/);
+  assert.match(svg, /stop-opacity="0\.65"/);
+  assert.match(svg, /mask="url\(#opacity-mask-masked\.module\)"/);
 });
 
 test("image offset pans a cover crop without exposing the viewport", () => {

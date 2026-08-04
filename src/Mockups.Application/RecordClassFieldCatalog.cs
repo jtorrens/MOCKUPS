@@ -311,6 +311,40 @@ public static class RecordClassFieldCatalog
             "Status bar height",
             ValueKind.Integer,
             Number: new NumberDefinition(0, 100000, 1, 0)),
+        ["device.metrics.moduleTransparency.enabled"] = new(
+            "device.metrics.moduleTransparency.enabled",
+            "Override module wallpaper",
+            ValueKind.Boolean),
+        ["device.metrics.moduleTransparency.mode"] = new(
+            "device.metrics.moduleTransparency.mode",
+            "Start mode",
+            ValueKind.OptionToken),
+        ["device.metrics.moduleTransparency.paletteColor"] = new(
+            "device.metrics.moduleTransparency.paletteColor",
+            "Background color",
+            ValueKind.PaletteColorToken),
+        ["device.metrics.moduleTransparency.opacity"] = new(
+            "device.metrics.moduleTransparency.opacity",
+            "Module opacity",
+            ValueKind.Alpha),
+        ["device.metrics.moduleTransparency.fixedStart"] = new(
+            "device.metrics.moduleTransparency.fixedStart",
+            "Fixed gradient start",
+            ValueKind.Decimal,
+            Number: new NumberDefinition(0, 100000, 0.1m, 3),
+            Unit: "device px"),
+        ["device.metrics.moduleTransparency.gradientHeight"] = new(
+            "device.metrics.moduleTransparency.gradientHeight",
+            "Gradient height",
+            ValueKind.Decimal,
+            Number: new NumberDefinition(0.001m, 100000, 0.1m, 3),
+            Unit: "device px"),
+        ["device.metrics.moduleTransparency.variableOffset"] = new(
+            "device.metrics.moduleTransparency.variableOffset",
+            "Variable start offset",
+            ValueKind.Decimal,
+            Number: new NumberDefinition(-100000, 100000, 0.1m, 3),
+            Unit: "device px"),
 
         ["theme.family"] = new("theme.family", "Family", ValueKind.OptionToken),
         ["theme.iconThemeId"] = new(

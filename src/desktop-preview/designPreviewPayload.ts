@@ -5,6 +5,17 @@ export interface PreviewFramePayload {
   screenY: number;
   screenWidth: number;
   screenHeight: number;
+  moduleTransparency: DeviceModuleTransparencyPayload;
+}
+
+export interface DeviceModuleTransparencyPayload {
+  enabled: boolean;
+  mode: "fixed" | "variable";
+  paletteColor: string;
+  opacity: number;
+  fixedStart: number;
+  gradientHeight: number;
+  variableOffset: number;
 }
 
 export interface DesignPreviewFontFacePayload {

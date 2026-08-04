@@ -2890,7 +2890,8 @@ internal sealed class EditorPreviewController : IDisposable
             0,
             0,
             0,
-            0);
+            0,
+            DeviceModuleTransparencyOverride.Disabled);
     }
 
     private DesignPreviewPayload? DesignPreviewPayloadForSelection()

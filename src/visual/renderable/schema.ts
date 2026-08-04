@@ -42,6 +42,15 @@ const RenderableStyleSchema = z.object({
   shadow: RenderableShadowSchema.optional(),
   textShadow: RenderableShadowSchema.optional(),
   surfaceRelief: RenderableSurfaceReliefSchema.optional(),
+  opacityMask: z.object({
+    axis: z.literal("vertical"),
+    start: z.number(),
+    end: z.number(),
+    beforeOpacity: z.number().min(0).max(1),
+    afterOpacity: z.number().min(0).max(1),
+  }).strict().refine((value) => value.end > value.start, {
+    message: "Renderable opacity mask end must be greater than start.",
+  }).optional(),
 }).catchall(z.unknown());
 
 const RenderableMetadataSchema = z.object({
@@ -69,6 +78,7 @@ const RenderableMetadataSchema = z.object({
     width: z.number().positive(),
     opacity: z.number().min(0).max(1).optional(),
   }).strict().optional(),
+  paintRole: z.literal("moduleBackground").optional(),
 }).strict();
 
 export const RenderableNodeSchema: z.ZodType<RenderableNode> = z.lazy(() =>

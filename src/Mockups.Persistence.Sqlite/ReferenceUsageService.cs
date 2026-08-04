@@ -127,6 +127,7 @@ internal sealed class ReferenceUsageService :
         var usages = new List<ReferenceUsageRecord>();
 
         AddRelationalReferences(connection, targets, usages);
+        AddDeviceReferences(connection, targets, usages);
         AddThemeReferences(connection, targets, usages);
         AddActorReferences(connection, targets, usages);
         AddAppReferences(connection, targets, usages);
@@ -308,6 +309,37 @@ internal sealed class ReferenceUsageService :
             {
                 AddJsonString(usages, targets, ProjectTreeNodeKind.ProductionFont, tokens, declaration.Path, source, declaration.Label);
             }
+        }
+    }
+
+    private static void AddDeviceReferences(
+        SqliteConnection connection,
+        TargetCatalog targets,
+        ICollection<ReferenceUsageRecord> usages)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT id, name, metrics_json, project_id FROM devices";
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            var source = new SourceContext(
+                reader.GetString(0),
+                ProjectTreeNodeKind.Device,
+                "Device",
+                reader.GetString(1),
+                ReferenceUsageScope.Production,
+                reader.GetString(3));
+            var metrics = JsonPath.ParseRequiredObject(
+                ReadString(reader, 2),
+                $"Device '{source.NodeId}' metrics_json");
+            AddJsonString(
+                usages,
+                targets,
+                ProjectTreeNodeKind.PaletteColor,
+                metrics,
+                ["moduleTransparency", "paletteColor"],
+                source,
+                "Module transparency · Background");
         }
     }
 

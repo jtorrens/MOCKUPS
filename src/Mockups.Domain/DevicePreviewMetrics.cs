@@ -12,4 +12,24 @@ public sealed record DevicePreviewMetrics(
     double CornerRadiusCoefficient,
     double DesignSafeMarginCoefficient,
     double StatusBarHeight,
-    double SafeAreaBottom);
+    double SafeAreaBottom,
+    DeviceModuleTransparencyOverride ModuleTransparency);
+
+public sealed record DeviceModuleTransparencyOverride(
+    bool Enabled,
+    string Mode,
+    string PaletteColor,
+    double Opacity,
+    double FixedStart,
+    double GradientHeight,
+    double VariableOffset)
+{
+    public static DeviceModuleTransparencyOverride Disabled { get; } = new(
+        false,
+        "fixed",
+        "gray_000",
+        1,
+        0,
+        1,
+        0);
+}

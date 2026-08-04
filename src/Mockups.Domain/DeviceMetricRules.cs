@@ -17,7 +17,8 @@ public sealed record DevicePreviewMetricValues(
     double CornerRadiusCoefficient,
     double DesignSafeMarginCoefficient,
     double StatusBarHeight,
-    double SafeAreaBottom);
+    double SafeAreaBottom,
+    DeviceModuleTransparencyOverride ModuleTransparency);
 
 public static class DeviceMetricRules
 {
@@ -47,6 +48,16 @@ public static class DeviceMetricRules
             ["cornerRadius"] = cornerRadius ?? CornerRadius(width),
             ["safeArea"] = new JsonObject { ["bottom"] = bottomInset },
             ["statusBar"] = new JsonObject { ["height"] = statusBarHeight },
+            ["moduleTransparency"] = new JsonObject
+            {
+                ["enabled"] = false,
+                ["mode"] = "fixed",
+                ["paletteColor"] = "gray_000",
+                ["opacity"] = 1,
+                ["fixedStart"] = Math.Round(height * 0.5),
+                ["gradientHeight"] = Math.Max(1, Math.Round(height * 0.25)),
+                ["variableOffset"] = 0,
+            },
         };
 
         if (cornerRadiusCoefficient is > 0 and <= 0.5)
@@ -72,13 +83,22 @@ public static class DeviceMetricRules
     {
         RequireExactKeys(
             metrics,
-            ["canvas", "screen", "cornerRadius", "safeArea", "statusBar"],
+            ["canvas", "screen", "cornerRadius", "safeArea", "statusBar", "moduleTransparency"],
             ["frame", "designGuides"],
             "Device metrics");
         RequireExactKeys(JsonPath.RequiredObject(metrics, "canvas", "Device metrics"), ["width", "height"], [], "Device metrics.canvas");
         RequireExactKeys(JsonPath.RequiredObject(metrics, "screen", "Device metrics"), ["x", "y", "width", "height"], [], "Device metrics.screen");
         RequireExactKeys(JsonPath.RequiredObject(metrics, "safeArea", "Device metrics"), ["bottom"], [], "Device metrics.safeArea");
         RequireExactKeys(JsonPath.RequiredObject(metrics, "statusBar", "Device metrics"), ["height"], [], "Device metrics.statusBar");
+        var moduleTransparency = JsonPath.RequiredObject(
+            metrics,
+            "moduleTransparency",
+            "Device metrics");
+        RequireExactKeys(
+            moduleTransparency,
+            ["enabled", "mode", "paletteColor", "opacity", "fixedStart", "gradientHeight", "variableOffset"],
+            [],
+            "Device metrics.moduleTransparency");
         if (JsonPath.OptionalObject(metrics, "frame", "Device metrics") is { } frame)
         {
             RequireExactKeys(frame, ["cornerRadiusCoefficient"], [], "Device metrics.frame");
@@ -99,6 +119,40 @@ public static class DeviceMetricRules
         var designSafeMarginCoefficient = OptionalCoefficient(metrics, ["designGuides", "safeMarginCoefficient"]) ?? 0;
         var statusBarHeight = RequiredNonNegativeNumber(metrics, ["statusBar", "height"]);
         var safeAreaBottom = RequiredNonNegativeNumber(metrics, ["safeArea", "bottom"]);
+        var moduleTransparencyEnabled = JsonPath.RequiredBoolean(
+            moduleTransparency,
+            "enabled",
+            "Device metrics.moduleTransparency");
+        var moduleTransparencyMode = JsonPath.RequiredString(
+            moduleTransparency,
+            "mode",
+            "Device metrics.moduleTransparency");
+        if (moduleTransparencyMode is not ("fixed" or "variable"))
+        {
+            throw new InvalidOperationException(
+                "Device metrics.moduleTransparency.mode must be 'fixed' or 'variable'.");
+        }
+        var moduleTransparencyPaletteColor = JsonPath.RequiredString(
+            moduleTransparency,
+            "paletteColor",
+            "Device metrics.moduleTransparency");
+        var moduleTransparencyOpacity = RequiredNumber(
+            metrics,
+            ["moduleTransparency", "opacity"]);
+        if (moduleTransparencyOpacity is < 0 or > 1)
+        {
+            throw new InvalidOperationException(
+                "Device metrics.moduleTransparency.opacity must be between 0 and 1.");
+        }
+        var moduleTransparencyFixedStart = RequiredNonNegativeNumber(
+            metrics,
+            ["moduleTransparency", "fixedStart"]);
+        var moduleTransparencyGradientHeight = RequiredPositiveNumber(
+            metrics,
+            ["moduleTransparency", "gradientHeight"]);
+        var moduleTransparencyVariableOffset = RequiredNumber(
+            metrics,
+            ["moduleTransparency", "variableOffset"]);
 
         return new DevicePreviewMetricValues(
             canvasWidth,
@@ -111,7 +165,15 @@ public static class DeviceMetricRules
             cornerRadiusCoefficient,
             designSafeMarginCoefficient,
             statusBarHeight,
-            safeAreaBottom);
+            safeAreaBottom,
+            new DeviceModuleTransparencyOverride(
+                moduleTransparencyEnabled,
+                moduleTransparencyMode,
+                moduleTransparencyPaletteColor,
+                moduleTransparencyOpacity,
+                moduleTransparencyFixedStart,
+                moduleTransparencyGradientHeight,
+                moduleTransparencyVariableOffset));
     }
 
     private static void RequireExactKeys(
