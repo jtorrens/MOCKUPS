@@ -5985,12 +5985,22 @@ static void PreviewShellVisualTreeIsResponsive()
                     ?.GetValue(previewController) as Grid);
             var previewToggles = primaryControls
                 .GetVisualDescendants()
-                .OfType<ToggleSwitch>()
+                .OfType<EditorCompactToggleSwitch>()
                 .ToList();
             Equal(4, previewToggles.Count);
-            True(previewToggles.All((toggle) =>
-                toggle.OnContent is null
-                && toggle.OffContent is null));
+            var visualToggle = new EditorCompactToggleSwitch();
+            True(!visualToggle.ShowsCheckedState);
+            visualToggle.IsChecked = true;
+            True(visualToggle.ShowsCheckedState);
+            visualToggle.IsChecked = false;
+            True(!visualToggle.ShowsCheckedState);
+            foreach (var isPlaying in new[] { false, true })
+            {
+                var icon = Required(
+                    EditorPreviewController.ShotPlaybackIcon(isPlaying)
+                        as PathIcon);
+                True(ReferenceEquals(Brushes.White, icon.Foreground));
+            }
             var productionContextHost = Required(
                 typeof(EditorPreviewController)
                     .GetField("_productionContextHost", BindingFlags.Instance | BindingFlags.NonPublic)

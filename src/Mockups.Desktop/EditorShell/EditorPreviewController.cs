@@ -82,22 +82,22 @@ internal sealed class EditorPreviewController : IDisposable
         MinHeight = 36,
         VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
     };
-    private readonly ToggleSwitch _marksToggle = new()
+    private readonly EditorCompactToggleSwitch _marksToggle = new()
     {
         IsChecked = false,
         VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
     };
-    private readonly ToggleSwitch _canonicalFrameToggle = new()
+    private readonly EditorCompactToggleSwitch _canonicalFrameToggle = new()
     {
         IsChecked = false,
         VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
     };
-    private readonly ToggleSwitch _transparencyGridToggle = new()
+    private readonly EditorCompactToggleSwitch _transparencyGridToggle = new()
     {
         IsChecked = false,
         VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
     };
-    private readonly ToggleSwitch _alphaOnlyToggle = new()
+    private readonly EditorCompactToggleSwitch _alphaOnlyToggle = new()
     {
         IsChecked = false,
         VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
@@ -150,7 +150,7 @@ internal sealed class EditorPreviewController : IDisposable
     private readonly Button _shotPreviousKeyframeButton = new() { Content = EditorTimelineTransport.CreateKeyframeStepIcon(next: false), Width = 38, Height = 30, Padding = new Thickness(0) };
     private readonly Button _shotAbsoluteStartButton = new() { Content = EditorIcons.Create(EditorIcons.TimelineShotStart, 16), Width = 34, Height = 30, Padding = new Thickness(0) };
     private readonly Button _shotPreviousFrameButton = new() { Content = EditorIcons.Create(EditorIcons.TimelinePreviousFrame, 16), Width = 34, Height = 30, Padding = new Thickness(0) };
-    private readonly Button _shotPlayButton = new() { Content = EditorIcons.Create(EditorIcons.Play, 16), Width = 42, Height = 30, Padding = new Thickness(0) };
+    private readonly Button _shotPlayButton = new() { Content = ShotPlaybackIcon(isPlaying: false), Width = 42, Height = 30, Padding = new Thickness(0) };
     private readonly Button _shotNextFrameButton = new() { Content = EditorIcons.Create(EditorIcons.TimelineNextFrame, 16), Width = 34, Height = 30, Padding = new Thickness(0) };
     private readonly Button _shotNextKeyframeButton = new() { Content = EditorTimelineTransport.CreateKeyframeStepIcon(next: true), Width = 38, Height = 30, Padding = new Thickness(0) };
     private readonly Button _shotNextSlotButton = new() { Content = EditorIcons.Create(EditorIcons.TimelineNextInstance, 16), Width = 34, Height = 30, Padding = new Thickness(0) };
@@ -1025,7 +1025,7 @@ internal sealed class EditorPreviewController : IDisposable
         return content;
     }
 
-    private static Control LabeledToggle(string label, ToggleSwitch toggle)
+    private static Control LabeledToggle(string label, EditorCompactToggleSwitch toggle)
     {
         return new StackPanel
         {
@@ -1038,6 +1038,15 @@ internal sealed class EditorPreviewController : IDisposable
                 toggle,
             },
         };
+    }
+
+    internal static Control ShotPlaybackIcon(bool isPlaying)
+    {
+        var icon = EditorIcons.Create(
+            isPlaying ? EditorIcons.Pause : EditorIcons.Play,
+            16);
+        EditorIcons.ApplyBrush(icon, Brushes.White);
+        return icon;
     }
 
     private static Control TimelineButtonGroup(params Button[] buttons)
@@ -1327,28 +1336,28 @@ internal sealed class EditorPreviewController : IDisposable
         };
         _marksToggle.PropertyChanged += (_, change) =>
         {
-            if (change.Property == ToggleSwitch.IsCheckedProperty)
+            if (change.Property == ToggleButton.IsCheckedProperty)
             {
                 OnMarksChanged();
             }
         };
         _canonicalFrameToggle.PropertyChanged += (_, change) =>
         {
-            if (change.Property == ToggleSwitch.IsCheckedProperty)
+            if (change.Property == ToggleButton.IsCheckedProperty)
             {
                 OnCanonicalFrameChanged();
             }
         };
         _transparencyGridToggle.PropertyChanged += (_, change) =>
         {
-            if (change.Property == ToggleSwitch.IsCheckedProperty)
+            if (change.Property == ToggleButton.IsCheckedProperty)
             {
                 OnTransparencyInspectionChanged();
             }
         };
         _alphaOnlyToggle.PropertyChanged += (_, change) =>
         {
-            if (change.Property == ToggleSwitch.IsCheckedProperty)
+            if (change.Property == ToggleButton.IsCheckedProperty)
             {
                 OnTransparencyInspectionChanged();
             }
@@ -3398,7 +3407,7 @@ internal sealed class EditorPreviewController : IDisposable
         _shotPlaybackStartFrame = _shotPreviewFrame;
         _shotPlaybackStartedTimestamp = Stopwatch.GetTimestamp();
         _shotPlaybackTimer.Start();
-        _shotPlayButton.Content = EditorIcons.Create(EditorIcons.Pause, 16);
+        _shotPlayButton.Content = ShotPlaybackIcon(isPlaying: true);
         OnPlaybackStarted(new ComponentPreviewInputSession.PlaybackRunInfo(
             navigationRange.EndFrame - _shotPlaybackStartFrame + 1,
             Math.Max(
@@ -3598,7 +3607,7 @@ internal sealed class EditorPreviewController : IDisposable
         if (wasPlaying) _shotPlaybackTimer.Stop();
         _shotPlaybackStartedTimestamp = 0;
         PlaybackState.SetPlaying(false);
-        _shotPlayButton.Content = EditorIcons.Create(EditorIcons.Play, 16);
+        _shotPlayButton.Content = ShotPlaybackIcon(isPlaying: false);
         if (wasPlaying)
         {
             OnPlaybackStopped(new ComponentPreviewInputSession.PlaybackRunInfo(

@@ -223,7 +223,10 @@ Theme data, frozen render documents or Render Queue output. When either
 inspection is active, Preview uses the HTML route for presentation even if the
 playback preference is raster, because the native raster surface is not an
 authoring output transform. Preview utility switches remain compact controls
-without additional textual state content.
+without additional textual state content. Their track color and thumb position
+are painted directly from `IsChecked`, independent of the active shell theme's
+native switch template. The Production transport paints its Play and Pause
+glyphs explicitly in white over the accent action surface.
 
 The interactive desktop Preview host may inspect the generic
 `data-renderable-id` and `data-renderable-type` attributes already emitted for
