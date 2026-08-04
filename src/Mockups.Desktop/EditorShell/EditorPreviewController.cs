@@ -287,6 +287,7 @@ internal sealed class EditorPreviewController : IDisposable
         var session = PreparedProductionSession();
         var screen = session.Screen(moduleInstanceId);
         var shot = session.Shot(screen.ShotId);
+        if (shot.ReferenceVideo.InFrame is not { } inFrame) return [];
         var actionOrigin = screen.StartFrame
             + screen.TransitionFrameCount
             + screen.ActionDelayFrames;
@@ -294,7 +295,7 @@ internal sealed class EditorPreviewController : IDisposable
             .Select((marker) => new PreviewScreenTimelineReferenceMarker(
                 marker.Id,
                 marker.VideoFrame
-                    - shot.ReferenceVideo.InFrame
+                    - inFrame
                     - actionOrigin,
                 marker.Text))
             .Where((marker) =>
@@ -434,7 +435,9 @@ internal sealed class EditorPreviewController : IDisposable
             owner,
             projectPaths,
             messages,
-            CommitReferenceVideoAsync);
+            CommitReferenceVideoAsync,
+            SetProductionShotFrame,
+            ToggleProductionPlayback);
         _deviceComboBox = deviceComboBox;
         _themeComboBox = themeComboBox;
         _modeComboBox = modeComboBox;
@@ -3234,10 +3237,10 @@ internal sealed class EditorPreviewController : IDisposable
         }
         var range = NavigationFrameRange();
         var width = _shotReferenceMarkerOverlay.Bounds.Width;
-        if (width <= 0) return;
+        if (width <= 0 || shot.ReferenceVideo.InFrame is not { } inFrame) return;
         foreach (var marker in shot.ReferenceVideo.Markers)
         {
-            var shotFrame = marker.VideoFrame - shot.ReferenceVideo.InFrame;
+            var shotFrame = marker.VideoFrame - inFrame;
             if (shotFrame < range.StartFrame || shotFrame > range.EndFrame) continue;
             var tick = new Border
             {

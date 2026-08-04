@@ -152,6 +152,7 @@ var tests = new (string Name, Action Run)[]
     ("Incoming Call exposes exact Avatar and Icon Row Runtime boundaries", IncomingCallExposesExactChildRuntimeBoundaries),
     ("Preview references share Project media path resolution", PreviewReferencesShareProjectMediaPathResolution),
     ("Shot reference picker stores relative and absolute video paths", ShotReferencePickerStoresRelativeAndAbsolutePaths),
+    ("Shot reference video source streams exact local byte ranges", ShotReferenceVideoSourceStreamsByteRanges),
     ("SQLite contexts retain independent Project roots", SqliteContextsRetainIndependentProjectRoots),
     ("SQLite session exposes distinct focused application ports", SqliteSessionExposesDistinctFocusedPorts),
     ("visual persistence writers require operation coordination", VisualPersistenceWritersRequireOperationCoordination),
@@ -3315,6 +3316,35 @@ static void ShotReferencePickerStoresRelativeAndAbsolutePaths()
     Equal(
         outside,
         EditorPathBrowser.ReferenceVideoStoragePath(projectPaths, outside));
+}
+
+static void ShotReferenceVideoSourceStreamsByteRanges()
+{
+    var path = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-reference-stream-{Guid.NewGuid():N}.mov");
+    File.WriteAllBytes(path, [0, 1, 2, 3, 4, 5, 6, 7]);
+    try
+    {
+        using var source = new ReferenceVideoHttpSource();
+        using var client = new HttpClient();
+        using var request = new HttpRequestMessage(
+            HttpMethod.Get,
+            source.Use(path));
+        request.Headers.TryAddWithoutValidation("Range", "bytes=2-5");
+        using var response = client.Send(request);
+        Equal(HttpStatusCode.PartialContent, response.StatusCode);
+        Equal("bytes", response.Headers.AcceptRanges.Single());
+        Equal("bytes 2-5/8", response.Content.Headers.ContentRange?.ToString());
+        SequenceEqual(
+            new byte[] { 2, 3, 4, 5 },
+            response.Content.ReadAsByteArrayAsync().GetAwaiter().GetResult());
+        Equal("video/quicktime", response.Content.Headers.ContentType?.MediaType);
+    }
+    finally
+    {
+        File.Delete(path);
+    }
 }
 
 static void SqliteContextsRetainIndependentProjectRoots()
@@ -11471,6 +11501,20 @@ static void ShotRepositoryPreservesFocusedContract()
         Equal(
             "assets/FOQN_S2/reference.mov",
             database.GetShotSettings(original.Id).ReferenceVideo.SourcePath);
+        Equal(12, database.GetShotSettings(original.Id).ReferenceVideo.InFrame);
+        Equal(1, database.GetShotSettings(original.Id).ReferenceVideo.Markers.Count);
+        using (var connection = context.OpenConnection())
+        {
+            repository.UpdateField(
+                connection,
+                original.Id,
+                "shot.referenceVideoPath",
+                "/external/replacement.mov");
+        }
+        var replacedReference = database.GetShotSettings(original.Id).ReferenceVideo;
+        Equal("/external/replacement.mov", replacedReference.SourcePath);
+        True(replacedReference.InFrame is null);
+        Equal(0, replacedReference.Markers.Count);
         using (var connection = context.OpenConnection())
         {
             repository.ClearFpsOverride(connection, original.Id);
@@ -11567,6 +11611,11 @@ static void ShotReferenceVideoDocumentsAreStrict()
     Equal(document.SourcePath, parsed.SourcePath);
     Equal(document.InFrame, parsed.InFrame);
     SequenceEqual([12, 48], parsed.ShotMarkerFrames(100));
+    var unmarked = ShotReferenceVideoDocument.ParseRequired(
+        "{\"sourcePath\":\"reference.mov\",\"inFrame\":null,\"markers\":[{\"id\":\"marker_a\",\"videoFrame\":24,\"text\":\"Beat\"}]}",
+        "Unmarked reference");
+    True(unmarked.InFrame is null);
+    SequenceEqual([], unmarked.ShotMarkerFrames(100));
     var absolute = ShotReferenceVideoDocument.ParseRequired(
         "{\"sourcePath\":\"/absolute/reference.mov\",\"inFrame\":0,\"markers\":[]}",
         "Absolute reference");

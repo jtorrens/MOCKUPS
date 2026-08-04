@@ -13,11 +13,11 @@ public sealed record ShotReferenceVideoMarker(
 
 public sealed record ShotReferenceVideoDocument(
     string SourcePath,
-    int InFrame,
+    int? InFrame,
     IReadOnlyList<ShotReferenceVideoMarker> Markers)
 {
     public static ShotReferenceVideoDocument Empty { get; } =
-        new("", 0, []);
+        new("", null, []);
 
     public static ShotReferenceVideoDocument ParseRequired(
         string json,
@@ -32,7 +32,7 @@ public sealed record ShotReferenceVideoDocument(
             owner);
         var sourcePath = RequiredString(root, "sourcePath", owner);
         RequireSupportedSourcePath(sourcePath, owner);
-        var inFrame = RequiredNonNegativeInteger(root, "inFrame", owner);
+        var inFrame = OptionalNonNegativeInteger(root, "inFrame", owner);
         var markersNode = root["markers"] as JsonArray
             ?? throw new InvalidOperationException(
                 $"{owner}.markers must be a current JSON array.");
@@ -90,8 +90,11 @@ public sealed record ShotReferenceVideoDocument(
     }
 
     public IReadOnlyList<int> ShotMarkerFrames(int shotDurationFrames) =>
+        InFrame is not { } inFrame
+            ? []
+            :
         Markers
-            .Select((marker) => marker.VideoFrame - InFrame)
+            .Select((marker) => marker.VideoFrame - inFrame)
             .Where((frame) => frame >= 0 && frame < shotDurationFrames)
             .Distinct()
             .Order()
@@ -140,6 +143,15 @@ public sealed record ShotReferenceVideoDocument(
                 $"{context}.{property} must be a non-negative integer.");
         }
         return number;
+    }
+
+    private static int? OptionalNonNegativeInteger(
+        JsonObject owner,
+        string property,
+        string context)
+    {
+        if (owner[property] is null) return null;
+        return RequiredNonNegativeInteger(owner, property, context);
     }
 
     private static void RequireExactProperties(

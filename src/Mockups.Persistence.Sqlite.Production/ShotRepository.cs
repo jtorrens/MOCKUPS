@@ -191,7 +191,12 @@ internal sealed class ShotRepository : IShotRepository
                 ? ShotReferenceVideoDocument.ParseRequired(
                     value,
                     $"Shot '{shotId}' reference video")
-                : referenceRecord.ReferenceVideo() with { SourcePath = value };
+                : referenceRecord.ReferenceVideo() with
+                {
+                    SourcePath = value,
+                    InFrame = null,
+                    Markers = [],
+                };
             _context.Execute(
                 connection,
                 "UPDATE shots SET reference_video_json = $value WHERE id = $id",

@@ -57,7 +57,7 @@ internal static class CurrentSqliteSchema
           canvas_json TEXT NOT NULL DEFAULT '{}',
           metadata_json TEXT NOT NULL DEFAULT '{}',
           shot_number INTEGER NOT NULL DEFAULT 1 CHECK(shot_number > 0),
-          reference_video_json TEXT NOT NULL DEFAULT '{"sourcePath":"","inFrame":0,"markers":[]}'
+          reference_video_json TEXT NOT NULL DEFAULT '{"sourcePath":"","inFrame":null,"markers":[]}'
         );
 
         CREATE UNIQUE INDEX IF NOT EXISTS idx_shots_episode_number
@@ -190,7 +190,7 @@ internal static class CurrentSqliteSchema
           layout_json TEXT NOT NULL
         );
 
-        PRAGMA user_version = 8;
+        PRAGMA user_version = 9;
         """;
 
 }

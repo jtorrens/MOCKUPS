@@ -123,8 +123,14 @@ associates the video through the registered `VideoFilePath` Browse control.
 The reference window starts muted and provides Audio, Set In and marker
 actions. Its marker strip supports stable-marker selection and drag; the lower
 text area edits the selected marker and the delete action removes it. The same
-markers appear as amber ticks on the Shot slider and the selected Screen ruler.
-Reference playback follows Production Play only while the window is visible.
+markers appear as amber ticks on the Shot slider and the selected Screen ruler
+after In is marked. The video surface exposes no browser-native controls. Its
+shared compact navigator owns previous frame, Play/Pause, next frame, a video
+frame slider and current/total frame count. Until In, that navigator remains
+independent so the author can seek and play to choose the exact frame. After
+`Set In`, the same controls route to the shared Shot playhead and the window
+labels the synchronized frame. Replacing the associated video clears its prior
+In and markers.
 Cancelling the reference picker is silent. A selected video that cannot be
 associated reports an explanatory modal message and preserves the prior value.
 Opening an authored reference whose file is missing or unavailable reports an

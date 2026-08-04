@@ -72,9 +72,10 @@ It includes:
   regressions proving that a new Shot cannot reach Production navigation before
   its refreshed Preview session commits and that a strict catalog failure keeps
   the prior tree, catalog and selection;
-- strict Shot reference-video documents, including Project-relative video
-  paths, In projection, stable video-time markers and focused repository
-  round trips;
+- strict Shot reference-video documents, including relative and absolute video
+  paths, nullable In projection, source-change reset, stable video-time markers
+  and focused repository round trips, plus loopback byte-range streaming for
+  large seekable local sources;
 - operation-coordinated Production playback payload preparation, covering exact
   frame order, preserved local frames, Actor and animation documents,
   cancellation, byte-for-byte read-only persistence and exact owner/frame

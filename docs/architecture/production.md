@@ -48,7 +48,8 @@ An Episode owns ordered Shots. A Shot owns:
 - ordered Screens;
 - aggregate duration;
 - one optional reference video document, Project-relative when possible and
-  otherwise absolute, with an In frame and stable video-relative text markers.
+  otherwise absolute, with an optional In frame and stable video-relative text
+  markers.
 
 Shot creation requires an Actor selection and an explicit positive Shot
 number. The Shot editor never offers an empty owner. The Actor may be changed
@@ -274,15 +275,19 @@ Restore returns temporary playback state to the current authored frame.
 Escape cancels preparation as well as active playback. Cancellation does not
 mutate the Screen payload or animation document.
 
-The Shot reference video is independent of Preview's Split reference. Its
-video frame at In coincides with absolute Shot frame zero, so the shared
+The Shot reference video is independent of Preview's Split reference. Before
+In is marked, its native controls own an independent reference playhead so the
+author can locate the intended frame. `Set In` persists that current video
+frame; it coincides with absolute Shot frame zero from then on, so the shared
 playhead resolves `video frame = In + Shot frame` across every ordered Screen.
 The video is interpreted at the Shot FPS. When that frame is outside the media
 duration, the reference window presents `Sin media`. While the window is
-visible, Production Play starts the reference player from the same shared
-frame and pause, stepping and scrubbing project that playhead back into it.
+visible after In, Production Play starts the reference player from the same
+shared frame and pause, stepping and scrubbing project that playhead back into
+it. Replacing the source clears In and its video-owned markers.
 
-Reference markers remain owned by video time. Changing In moves their Shot and
-Screen Timeline projection without rewriting their stored frames. Markers may
+Reference markers remain owned by video time. Before In they stay editable in
+the reference window but have no Shot or Screen Timeline projection. Setting or
+changing In projects them without rewriting their stored frames. Markers may
 exist before Screens or outside the current Shot duration; only markers inside
 the visible timeline range are painted.

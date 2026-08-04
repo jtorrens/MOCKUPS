@@ -17,11 +17,12 @@ Shot frame
 Frame conversion belongs to the common timeline. Editors, payload factories,
 resolvers and renderers do not reproduce the formulas.
 
-Shot reference video uses that same absolute clock. Its persisted In and
-markers remain video-relative Project-FPS frames; the common Production
-timeline projects them to Shot and Screen ruler frames. The floating player
-may drop visual frames to follow the shared playhead, but it never becomes a
-second timing owner.
+Shot reference video joins that same absolute clock only after its nullable In
+is marked. Before In, the floating player's own native playhead locates the
+reference frame. Persisted In and markers remain video-relative Project-FPS
+frames; the common Production timeline then projects them to Shot and Screen
+ruler frames. The floating player may drop visual frames to follow the shared
+playhead, but it never becomes a second timing owner after synchronization.
 
 Production Preview exposes a Screen-relative Timeline over that same clock.
 Its visible range includes three contiguous zones: negative preroll for the

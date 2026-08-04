@@ -28,10 +28,11 @@ Blank, missing and cross-Project override references are invalid current data.
 inside its Episode. `shots.slug` stores its generated Shot code. The Project
 stores the portable Production Output naming and route contract.
 `shots.reference_video_json` is one required current Shot-owned object. It
-stores a Project-root-relative video path, a non-negative Project-FPS In frame
-and stable video-relative markers with non-negative frames and explicit text.
-An empty path represents no associated reference. Absolute paths and parent
-traversal are invalid current data.
+stores a Project-relative or absolute video path, a nullable non-negative
+Project-FPS In frame and stable video-relative markers with non-negative frames
+and explicit text. `null` means the In has not been marked yet; integer zero is
+a real In at video frame zero. An empty path represents no associated reference.
+Relative parent traversal is invalid current data.
 Definition references are also restricted: authored Production data must be
 updated explicitly before its referenced definition can be removed.
 

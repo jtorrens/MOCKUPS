@@ -23,6 +23,12 @@ that root. Relative paths may not escape the Project root. A missing file
 leaves the authored reference intact and produces the explicit `Sin media`
 presentation instead of falling back across Projects or roots.
 
+The desktop reference window exposes the resolved local video only through a
+loopback, process-owned, read-only HTTP source with byte-range support. This
+keeps large MOV/MP4 files streamable and seekable by the native WebView without
+copying them into Preview data, embedding them as data URIs or exposing a
+general filesystem server. Closing the editor stops that source.
+
 ## Palette and Themes
 
 Palette records provide stable semantic color identities. Themes provide

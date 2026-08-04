@@ -84,8 +84,9 @@ never resolve across Projects.
 - Shot time is the ordered aggregate of its Screens.
 - Every Shot owns a stable number. Its code, technical render name and portable
   route are derived from its Project and Episode contracts.
-- A Shot may own one Project-relative reference video, its In and stable
-  video-relative markers; the common Shot clock projects it across Screens.
+- A Shot may own one Project-relative or absolute reference video, its optional
+  In and stable video-relative markers; after In, the common Shot clock projects
+  it across Screens.
 
 ### Preview
 
