@@ -42,8 +42,8 @@ internal sealed record RenderQueueShotDraft(
     string ProjectId,
     string ActorId,
     string ActorName,
-    string DefaultDeviceId,
-    string DefaultThemeId,
+    string DeviceId,
+    string ThemeId,
     int ShotNumber,
     int Fps,
     int TotalFrames,
@@ -88,8 +88,10 @@ internal sealed class RenderJobSnapshotFactory
         }
         var shotSettings = _database.GetShotSettings(shot.Id);
         var actor = _database.GetActorSettings(shotSettings.OwnerActorId);
-        if (string.IsNullOrWhiteSpace(actor.DefaultDeviceId)
-            || string.IsNullOrWhiteSpace(actor.DefaultThemeId))
+        var deviceId = shotSettings.EffectiveDeviceId(actor.DefaultDeviceId);
+        var themeId = shotSettings.EffectiveThemeId(actor.DefaultThemeId);
+        if (string.IsNullOrWhiteSpace(deviceId)
+            || string.IsNullOrWhiteSpace(themeId))
         {
             throw new InvalidOperationException(
                 $"Actor '{actor.DisplayName}' must define a default Device and Theme before rendering.");
@@ -138,8 +140,8 @@ internal sealed class RenderJobSnapshotFactory
             shotSettings.ProjectId,
             shotSettings.OwnerActorId,
             actor.DisplayName,
-            actor.DefaultDeviceId,
-            actor.DefaultThemeId,
+            deviceId,
+            themeId,
             shotSettings.ShotNumber,
             shotSettings.Fps,
             shotSettings.DurationFrames,

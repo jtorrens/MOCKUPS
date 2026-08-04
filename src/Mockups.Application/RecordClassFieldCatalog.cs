@@ -111,7 +111,16 @@ public static class RecordClassFieldCatalog
             "Owner Actor",
             ValueKind.RecordReference,
             RecordReference: new RecordReferenceDefinition("actors")),
-        ["shot.ownerDevice"] = new("shot.ownerDevice", "Device", ValueKind.StringReadOnly, IsEditable: false),
+        ["shot.deviceOverrideId"] = new(
+            "shot.deviceOverrideId",
+            "Device override",
+            ValueKind.RecordReference,
+            RecordReference: new RecordReferenceDefinition("devices")),
+        ["shot.themeOverrideId"] = new(
+            "shot.themeOverrideId",
+            "Theme override",
+            ValueKind.RecordReference,
+            RecordReference: new RecordReferenceDefinition("themes")),
         ["shot.renderName"] = new("shot.renderName", "Render Name", ValueKind.StringReadOnly, IsEditable: false),
         ["shot.canvas"] = new("shot.canvas", "Canvas", ValueKind.StringMultiline),
         ["shot.metadata"] = new("shot.metadata", "Metadata", ValueKind.StringMultiline),

@@ -99,6 +99,8 @@ internal sealed class ShotRepository : IShotRepository
             null,
             240,
             actorId,
+            null,
+            null,
             "{}",
             "{}");
         Insert(connection, record);
@@ -187,6 +189,8 @@ internal sealed class ShotRepository : IShotRepository
             "shot.sortOrder" => "sort_order",
             "shot.fps" => "fps_override",
             "shot.ownerActorId" => "owner_actor_id",
+            "shot.deviceOverrideId" => "device_override_id",
+            "shot.themeOverrideId" => "theme_override_id",
             "shot.canvas" => "canvas_json",
             "shot.metadata" => "metadata_json",
             _ => throw new InvalidOperationException($"Unknown shot field '{fieldId}'."),
@@ -214,11 +218,43 @@ internal sealed class ShotRepository : IShotRepository
                 $"Shot '{shotId}' owner Actor",
                 required: true);
         }
+        if (fieldId is "shot.deviceOverrideId" or "shot.themeOverrideId")
+        {
+            var isDevice = fieldId == "shot.deviceOverrideId";
+            ProjectReferenceIntegrity.RequireSameProjectReference(
+                connection,
+                current.ProjectId,
+                isDevice
+                    ? ProjectReferenceKind.Device
+                    : ProjectReferenceKind.Theme,
+                value,
+                $"Shot '{shotId}' {(isDevice ? "Device" : "Theme")} override",
+                required: true);
+        }
         _context.Execute(
             connection,
             $"UPDATE shots SET {column} = $value WHERE id = $id",
             ("$id", shotId),
             ("$value", nextValue));
+    }
+
+    public void ClearResourceOverride(
+        SqliteConnection connection,
+        string shotId,
+        string fieldId)
+    {
+        _ = Get(connection, shotId);
+        var column = fieldId switch
+        {
+            "shot.deviceOverrideId" => "device_override_id",
+            "shot.themeOverrideId" => "theme_override_id",
+            _ => throw new InvalidOperationException(
+                $"Unknown Shot resource override field '{fieldId}'."),
+        };
+        _context.Execute(
+            connection,
+            $"UPDATE shots SET {column} = NULL WHERE id = $id",
+            ("$id", shotId));
     }
 
     public void UpdateDuration(SqliteConnection connection, string shotId, int durationFrames)
@@ -287,6 +323,18 @@ internal sealed class ShotRepository : IShotRepository
             record.OwnerActorId,
             $"Shot '{record.Id}' owner Actor",
             required: true);
+        ProjectReferenceIntegrity.RequireSameProjectReference(
+            connection,
+            record.ProjectId,
+            ProjectReferenceKind.Device,
+            record.DeviceOverrideId ?? "",
+            $"Shot '{record.Id}' Device override");
+        ProjectReferenceIntegrity.RequireSameProjectReference(
+            connection,
+            record.ProjectId,
+            ProjectReferenceKind.Theme,
+            record.ThemeOverrideId ?? "",
+            $"Shot '{record.Id}' Theme override");
         InsertRow(connection, transaction: null, record);
     }
 
@@ -302,10 +350,12 @@ internal sealed class ShotRepository : IShotRepository
             """
             INSERT INTO shots (
               id, episode_id, name, slug, version, notes, sort_order, fps_override,
-              duration_frames, owner_actor_id, canvas_json, metadata_json, shot_number)
+              duration_frames, owner_actor_id, device_override_id, theme_override_id,
+              canvas_json, metadata_json, shot_number)
             VALUES (
               $id, $episodeId, $name, $slug, $version, $notes, $sortOrder, $fpsOverride,
-              $durationFrames, $ownerActorId, $canvasJson, $metadataJson, $shotNumber)
+              $durationFrames, $ownerActorId, $deviceOverrideId, $themeOverrideId,
+              $canvasJson, $metadataJson, $shotNumber)
             """,
             ("$id", record.Id),
             ("$episodeId", record.EpisodeId),
@@ -317,6 +367,8 @@ internal sealed class ShotRepository : IShotRepository
             ("$fpsOverride", record.FpsOverride),
             ("$durationFrames", record.DurationFrames),
             ("$ownerActorId", record.OwnerActorId),
+            ("$deviceOverrideId", (object?)record.DeviceOverrideId ?? DBNull.Value),
+            ("$themeOverrideId", (object?)record.ThemeOverrideId ?? DBNull.Value),
             ("$canvasJson", record.CanvasJson),
             ("$metadataJson", record.MetadataJson),
             ("$shotNumber", record.ShotNumber));
@@ -345,8 +397,10 @@ internal sealed class ShotRepository : IShotRepository
             reader.IsDBNull(9) ? null : reader.GetInt32(9),
             reader.GetInt32(10),
             SqliteCommandExecutor.ReadString(reader, 11),
-            SqliteCommandExecutor.ReadString(reader, 12),
-            SqliteCommandExecutor.ReadString(reader, 13));
+            reader.IsDBNull(12) ? null : reader.GetString(12),
+            reader.IsDBNull(13) ? null : reader.GetString(13),
+            SqliteCommandExecutor.ReadString(reader, 14),
+            SqliteCommandExecutor.ReadString(reader, 15));
         Validate(record);
         return record;
     }
@@ -363,6 +417,18 @@ internal sealed class ShotRepository : IShotRepository
         if (string.IsNullOrWhiteSpace(record.OwnerActorId))
         {
             throw new InvalidOperationException($"Shot '{record.Id}' requires an explicit owner Actor.");
+        }
+        if (record.DeviceOverrideId is not null
+            && string.IsNullOrWhiteSpace(record.DeviceOverrideId))
+        {
+            throw new InvalidOperationException(
+                $"Shot '{record.Id}' Device override must be null or an exact reference.");
+        }
+        if (record.ThemeOverrideId is not null
+            && string.IsNullOrWhiteSpace(record.ThemeOverrideId))
+        {
+            throw new InvalidOperationException(
+                $"Shot '{record.Id}' Theme override must be null or an exact reference.");
         }
         if (record.ShotNumber <= 0)
         {
@@ -416,6 +482,7 @@ internal sealed class ShotRepository : IShotRepository
         SELECT s.id, s.episode_id, e.project_id, s.name, s.slug, s.shot_number,
                s.version, s.notes,
                s.sort_order, s.fps_override, s.duration_frames, s.owner_actor_id,
+               s.device_override_id, s.theme_override_id,
                s.canvas_json, s.metadata_json
         FROM shots s
         JOIN episodes e ON e.id = s.episode_id

@@ -155,15 +155,16 @@ internal sealed class DesignPreviewPayloadDataSource
             return selectedThemeId;
         }
 
-        var actor = RequiredProductionActorContext(node);
-        if (string.IsNullOrWhiteSpace(actor.DefaultThemeId))
+        var (shot, actor) = RequiredProductionContext(node);
+        var themeId = shot.EffectiveThemeId(actor.DefaultThemeId);
+        if (string.IsNullOrWhiteSpace(themeId))
         {
             throw new InvalidOperationException(
                 $"Actor '{actor.DisplayName}' has no explicit default Theme for Production Preview.");
         }
 
-        _database.GetThemeSettings(actor.DefaultThemeId);
-        return actor.DefaultThemeId;
+        _database.GetThemeSettings(themeId);
+        return themeId;
     }
 
     public DesignPreviewComponentSource LoadComponentClass(ProjectTreeNode node)
@@ -303,18 +304,20 @@ internal sealed class DesignPreviewPayloadDataSource
     private string ResolveDeviceId(ProjectTreeNode node)
     {
         if (node.Kind is not ProjectTreeNodeKind.ModuleInstance and not ProjectTreeNodeKind.Shot) return "";
-        var actor = RequiredProductionActorContext(node);
-        if (string.IsNullOrWhiteSpace(actor.DefaultDeviceId))
+        var (shot, actor) = RequiredProductionContext(node);
+        var deviceId = shot.EffectiveDeviceId(actor.DefaultDeviceId);
+        if (string.IsNullOrWhiteSpace(deviceId))
         {
             throw new InvalidOperationException(
                 $"Actor '{actor.DisplayName}' has no explicit default Device for Production Preview.");
         }
 
-        _database.GetDeviceSettings(actor.DefaultDeviceId);
-        return actor.DefaultDeviceId;
+        _database.GetDeviceSettings(deviceId);
+        return deviceId;
     }
 
-    private ActorPreviewContextSource RequiredProductionActorContext(ProjectTreeNode node)
+    private (ShotSettings Shot, ActorPreviewContextSource Actor)
+        RequiredProductionContext(ProjectTreeNode node)
     {
         var shotId = ShotIdFor(node);
         var shot = _database.GetShotSettings(shotId);
@@ -324,7 +327,7 @@ internal sealed class DesignPreviewPayloadDataSource
                 $"Shot '{shotId}' has no explicit owner Actor for Production Preview.");
         }
 
-        return _actorDataSource.LoadContext(shot.OwnerActorId);
+        return (shot, _actorDataSource.LoadContext(shot.OwnerActorId));
     }
 
     private string ShotIdFor(ProjectTreeNode node) =>

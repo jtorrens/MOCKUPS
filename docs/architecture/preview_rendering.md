@@ -295,8 +295,9 @@ only the latest committed snapshot without direct persistence reads.
 The same preparation closes the complete current Production timeline catalog:
 each Shot's frame rate, ordered Screens, exact effective frame ranges and
 action-shifted keyframes, plus each Screen's transition Motion, action delay,
-action duration and Variant config and each Shot's exact
-Actor-owned Device, Theme and appearance context. Production navigation,
+action duration and Variant config and each Shot's exact Actor plus effective
+Device and Theme context. Each effective resource is the independent Shot
+override when present and otherwise the corresponding Actor default. Production navigation,
 context presentation, validation,
 playhead controls, appearance selection, history subtitles and playback timing
 consume only that catalog. They never recalculate or query the timeline or Shot

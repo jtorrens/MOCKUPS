@@ -39,7 +39,6 @@ public interface IProductionRecordFieldStore
     ShotSettings GetShotSettings(string shotId);
     void UpdateShotField(string shotId, string fieldId, string value);
     string GetShotRenderName(string shotId);
-    string GetShotOwnerDeviceName(string shotId);
     string GetModuleInstanceVariantReference(string moduleInstanceId);
     void UpdateModuleInstanceField(
         string moduleInstanceId,

@@ -5,7 +5,7 @@ Status: normative.
 ## Database scope
 
 The desktop application persists one complete Project workspace in SQLite.
-Schema version `5` is the only current schema. Every row belongs directly or
+Schema version `6` is the only current schema. Every row belongs directly or
 indirectly to a Project and cross-Project lookup is invalid.
 
 The current tables are:
@@ -20,6 +20,10 @@ The current tables are:
 | Editor description | `editor_layouts` | Project-owned layout metadata |
 
 `shots.owner_actor_id` is required and uses a restricted foreign key.
+`shots.device_override_id` and `shots.theme_override_id` are independent
+nullable restricted foreign keys. `NULL` means inherit the corresponding
+required Actor default; a local value must resolve inside the Shot Project.
+Blank, missing and cross-Project override references are invalid current data.
 `shots.shot_number` is a positive stable identity owned by MOCKUPS and unique
 inside its Episode. `shots.slug` stores its generated Shot code. The Project
 stores the portable Production Output naming and route contract.
@@ -29,7 +33,7 @@ updated explicitly before its referenced definition can be removed.
 `ProjectReferenceIntegrity` is the single cross-domain data guard for
 Project-owned relational references. Focused repositories invoke it before
 writes and startup validation invokes the same owner read-only. Actor Device
-and Theme, Shot Actor, and Theme Icon Theme, Status Bar and
+and Theme, Shot Actor and its optional Device and Theme overrides, and Theme Icon Theme, Status Bar and
 Navigation Bar references must resolve inside the owner's exact Project.
 Status and Navigation references additionally require a complete existing
 Component Variant of their exact declared type.
@@ -184,7 +188,7 @@ Module Instance Runtime writes belong to
 `SqliteModuleInstanceCollectionStore`, scalar fields to
 `SqliteProductionRecordFieldStore`, and animation/read models to the Production
 owner. The session composes one Runtime Input store instance.
-Shot scalar writes and derived owner-device reads belong to
+Shot scalar writes and inherited Device/Theme field projection belong to
 `SqliteProductionRecordFieldStore`. App and Module scalar fields belong to
 `SqliteDesignRecordFieldStore`; Palette, Device, Actor, Theme, Icon Theme and
 Production Font scalar fields belong to `SqliteResourceRecordFieldStore`.
@@ -441,7 +445,8 @@ refresh, playback setup and reference browsing consume that snapshot; replacing
 it is revisioned and runs through the same session operation worker.
 That operation also prepares the complete Production Preview session catalog:
 Shot frame rates, ordered Screen ranges and keyframes, and exact Screen Variant
-configs. Each Shot entry includes its resolved Actor-owned Device, Theme and
+configs. Each Shot entry includes its effective Device and Theme—local Shot
+override when present, otherwise the corresponding Actor default—plus Actor and
 appearance context. Timeline controls, context presentation and playback
 consume the catalog and hold no timeline or Shot-context persistence data
 source. Later tree reads remain candidates until this complete catalog and its

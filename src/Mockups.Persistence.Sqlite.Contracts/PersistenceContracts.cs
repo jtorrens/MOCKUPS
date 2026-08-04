@@ -19,6 +19,8 @@ internal sealed record ShotRecord(
     int? FpsOverride,
     int DurationFrames,
     string OwnerActorId,
+    string? DeviceOverrideId,
+    string? ThemeOverrideId,
     string CanvasJson,
     string MetadataJson);
 
@@ -218,6 +220,11 @@ internal interface IShotRepository
         string targetEpisodeId);
 
     void ClearFpsOverride(SqliteConnection connection, string shotId);
+
+    void ClearResourceOverride(
+        SqliteConnection connection,
+        string shotId,
+        string fieldId);
 
     void UpdateField(SqliteConnection connection, string shotId, string fieldId, string value);
 

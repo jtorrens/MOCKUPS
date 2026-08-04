@@ -119,6 +119,7 @@ var tests = new (string Name, Action Run)[]
     ("Render executor publishes a clean PNG sequence", RenderExecutorPublishesCleanPngSequence),
     ("Shots require an explicit replaceable owner Actor", ShotActorContextIsExplicit),
     ("Production Shot context boundary preserves explicit inherited context read-only", ProductionShotContextBoundaryPreservesInheritedContext),
+    ("Shot Device and Theme overrides resolve independently across Production", ShotResourceOverridesResolveIndependently),
     ("Preview payload rejects incomplete Production context without selector fallbacks", PreviewPayloadRejectsIncompleteProductionContext),
     ("Production payload preserves its explicit Actor and animation documents", ProductionPayloadPreservesActorAndAnimation),
     ("Shot Screen transitions reuse simultaneous boundary Motion", ShotScreenTransitionsReuseBoundaryMotion),
@@ -7878,6 +7879,21 @@ static void ProjectOwnedReferencesRejectCrossProjectValues()
         InsertCrossProjectActor(connection);
         Execute(connection, "UPDATE shots SET owner_actor_id = 'actor_cross' WHERE id = 'shot_001'");
     });
+    AssertRejectedDatabaseIsReadOnly("missing-shot-device-override", (connection) =>
+    {
+        Execute(connection, "PRAGMA foreign_keys = OFF");
+        Execute(connection, "UPDATE shots SET device_override_id = 'missing_device' WHERE id = 'shot_001'");
+    });
+    AssertRejectedDatabaseIsReadOnly("missing-shot-theme-override", (connection) =>
+    {
+        Execute(connection, "PRAGMA foreign_keys = OFF");
+        Execute(connection, "UPDATE shots SET theme_override_id = 'missing_theme' WHERE id = 'shot_001'");
+    });
+    AssertRejectedDatabaseIsReadOnly("blank-shot-resource-override", (connection) =>
+    {
+        Execute(connection, "PRAGMA foreign_keys = OFF");
+        Execute(connection, "UPDATE shots SET device_override_id = '' WHERE id = 'shot_001'");
+    });
     AssertRejectedDatabaseIsReadOnly("cross-project-theme-icon-theme", (connection) =>
     {
         InsertCrossProject(connection);
@@ -11307,6 +11323,8 @@ static void ShotRepositoryPreservesFocusedContract()
         Equal(original.Version, settings.Version);
         Equal(original.DurationFrames, settings.DurationFrames);
         Equal(original.OwnerActorId, settings.OwnerActorId);
+        Equal(original.DeviceOverrideId, settings.DeviceOverrideId);
+        Equal(original.ThemeOverrideId, settings.ThemeOverrideId);
         Equal(original.CanvasJson, settings.CanvasJson);
         Equal(original.MetadataJson, settings.MetadataJson);
         using (var connection = context.OpenConnection())
@@ -12510,6 +12528,47 @@ static void ShotActorContextIsExplicit()
         Throws<InvalidOperationException>(() => database.UpdateShotField(shot.Id, "shot.ownerActorId", "missing_actor"));
         Throws<InvalidOperationException>(() => database.UpdateActorField("actor_sam", "actor.defaultThemeId", ""));
 
+        var persistence = new SqliteProjectContext(temporary);
+        using (var connection = persistence.OpenConnection())
+        {
+            persistence.Execute(
+                connection,
+                """
+                INSERT INTO projects (
+                  id, name, slug, default_fps, notes, media_root,
+                  production_code, production_season_code,
+                  output_name_separator, shot_prefix, shot_number_padding,
+                  output_version_padding, output_frame_padding,
+                  output_relative_directory_template, metadata_json)
+                VALUES (
+                  'project_shot_override_cross', 'Cross', 'cross', 25, '', '',
+                  'CROSS', 'S01', '_', 'SH', 4, 3, 8,
+                  '{{SEASON_CODE}}/{{EPISODE_CODE}}/{{SHOT_NAME}}/comp', '{}')
+                """);
+            persistence.Execute(
+                connection,
+                """
+                INSERT INTO devices (id, project_id, name, manufacturer, model, os_family, metrics_json)
+                SELECT 'device_shot_override_cross', 'project_shot_override_cross', 'Cross Device', manufacturer, model, os_family, metrics_json
+                FROM devices ORDER BY id LIMIT 1
+                """);
+            persistence.Execute(
+                connection,
+                """
+                INSERT INTO themes (id, project_id, name, family, icon_theme_id, status_bar_id, navigation_bar_id, tokens_json, metadata_json)
+                SELECT 'theme_shot_override_cross', 'project_shot_override_cross', 'Cross Theme', family, icon_theme_id, status_bar_id, navigation_bar_id, tokens_json, metadata_json
+                FROM themes ORDER BY id LIMIT 1
+                """);
+        }
+        Throws<InvalidOperationException>(() => database.UpdateShotField(
+            shot.Id,
+            "shot.deviceOverrideId",
+            "device_shot_override_cross"));
+        Throws<InvalidOperationException>(() => database.UpdateShotField(
+            shot.Id,
+            "shot.themeOverrideId",
+            "theme_shot_override_cross"));
+
         var duplicate = moduleInstances.Duplicate(screen);
         moduleInstances.MoveModuleInstance(duplicate.Id, -1);
         moduleInstances.Delete(duplicate);
@@ -12642,6 +12701,130 @@ static void ProductionShotContextBoundaryPreservesInheritedContext()
 
         var after = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, after);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void ShotResourceOverridesResolveIndependently()
+{
+    var sourcePath = ParityDatabasePath();
+    var temporary = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-shot-resource-overrides-{Guid.NewGuid():N}.sqlite");
+    File.Copy(sourcePath, temporary, overwrite: true);
+    try
+    {
+        var database = new SqliteProjectTestContext(temporary);
+        var shot = Descendants(database.LoadProjectTree())
+            .Single((node) => node.Kind == ProjectTreeNodeKind.Shot);
+        var settings = database.GetShotSettings(shot.Id);
+        var actor = database.GetActorSettings(settings.OwnerActorId);
+        var deviceOverrideId = database.GetDeviceOptions(settings.ProjectId)
+            .Select((option) => option.Value)
+            .First((id) => !id.Equals(actor.DefaultDeviceId, StringComparison.Ordinal));
+        var themeOverrideId = database.GetThemeOptions(settings.ProjectId)
+            .Select((option) => option.Value)
+            .First((id) => !id.Equals(actor.DefaultThemeId, StringComparison.Ordinal));
+        var values = new RecordClassFieldValueService(
+            ProductionRecordFields(database),
+            DesignRecordFields(database),
+            ResourceRecordFields(database),
+            database.Production,
+            database.Resources);
+
+        var inheritedDevice = values.CreateFieldValue(
+            shot,
+            "shot.deviceOverrideId");
+        var inheritedTheme = values.CreateFieldValue(
+            shot,
+            "shot.themeOverrideId");
+        True(inheritedDevice.IsInherited);
+        True(inheritedTheme.IsInherited);
+        Equal(actor.DefaultDeviceId, inheritedDevice.Definition.InheritedValue);
+        Equal(actor.DefaultThemeId, inheritedTheme.Definition.InheritedValue);
+
+        database.UpdateShotField(
+            shot.Id,
+            "shot.deviceOverrideId",
+            deviceOverrideId);
+        var deviceOnly = database.GetShotSettings(shot.Id);
+        Equal(deviceOverrideId, deviceOnly.DeviceOverrideId);
+        True(deviceOnly.ThemeOverrideId is null);
+
+        var contextService = new ProductionShotContextService(
+            new ProductionShotContextDataSource(
+                database.PreviewInputs,
+                database.Resources));
+        var deviceContext = contextService.Resolve(shot.Id);
+        Equal(database.GetDeviceSettings(deviceOverrideId).Name, deviceContext.Device);
+        Equal(database.GetThemeSettings(actor.DefaultThemeId).Name, deviceContext.Theme);
+
+        var payloadData = new DesignPreviewPayloadDataSource(
+            database.PreviewInputs,
+            database.Production,
+            database.Resources,
+            database.Resources,
+            database.ProjectPaths);
+        var screen = shot.Children.First((node) =>
+            node.Kind == ProjectTreeNodeKind.ModuleInstance);
+        var deviceThemeContext = Required(payloadData.LoadThemeContext(screen, null));
+        Equal(deviceOverrideId, deviceThemeContext.DeviceId);
+        Equal(actor.DefaultThemeId, payloadData.ResolveThemeId(screen, null));
+
+        database.UpdateShotField(
+            shot.Id,
+            "shot.themeOverrideId",
+            themeOverrideId);
+        var overridden = database.GetShotSettings(shot.Id);
+        Equal(deviceOverrideId, overridden.DeviceOverrideId);
+        Equal(themeOverrideId, overridden.ThemeOverrideId);
+        var overrideContext = contextService.Resolve(shot.Id);
+        Equal(database.GetDeviceSettings(deviceOverrideId).Name, overrideContext.Device);
+        Equal(database.GetThemeSettings(themeOverrideId).Name, overrideContext.Theme);
+        Equal(
+            database.GetThemeFieldValue(themeOverrideId, "theme.defaultMode"),
+            overrideContext.ThemeMode);
+        Equal(themeOverrideId, payloadData.ResolveThemeId(screen, null));
+        Equal(
+            database.GetThemeSettings(themeOverrideId).TokensJson,
+            database.GetModuleInstanceThemeTokensJson(screen.Id));
+
+        var draft = new RenderJobSnapshotFactory(
+                RenderSnapshots(database),
+                database.ProjectPaths)
+            .LoadDraftAsync(shot)
+            .GetAwaiter()
+            .GetResult();
+        Equal(deviceOverrideId, draft.DeviceId);
+        Equal(themeOverrideId, draft.ThemeId);
+
+        var deviceNode = Descendants(database.LoadProjectTree())
+            .Single((node) => node.Id == deviceOverrideId);
+        True(database.ReferenceUsages.GetReferenceUsageDetails(deviceNode)
+            .Any((usage) => usage.SourceNodeId == shot.Id
+                && usage.Field == "Device override"));
+
+        database.UpdateShotField(
+            shot.Id,
+            "shot.deviceOverrideId",
+            "inherited");
+        var themeOnly = database.GetShotSettings(shot.Id);
+        True(themeOnly.DeviceOverrideId is null);
+        Equal(themeOverrideId, themeOnly.ThemeOverrideId);
+        Equal(
+            database.GetDeviceSettings(actor.DefaultDeviceId).Name,
+            contextService.Resolve(shot.Id).Device);
+
+        database.UpdateShotField(
+            shot.Id,
+            "shot.themeOverrideId",
+            "inherited");
+        var inherited = database.GetShotSettings(shot.Id);
+        True(inherited.DeviceOverrideId is null);
+        True(inherited.ThemeOverrideId is null);
     }
     finally
     {

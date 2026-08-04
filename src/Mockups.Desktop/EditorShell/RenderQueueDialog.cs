@@ -314,12 +314,12 @@ internal sealed class RenderQueueDialog
                 device.ItemsSource = currentDraft.Devices;
                 device.SelectedItem = currentDraft.Devices.FirstOrDefault(
                     (option) => option.Value.Equals(
-                        currentDraft.DefaultDeviceId,
+                        currentDraft.DeviceId,
                         StringComparison.Ordinal));
                 theme.ItemsSource = currentDraft.Themes;
                 theme.SelectedItem = currentDraft.Themes.FirstOrDefault(
                     (option) => option.Value.Equals(
-                        currentDraft.DefaultThemeId,
+                        currentDraft.ThemeId,
                         StringComparison.Ordinal));
                 var routeOptions = currentDraft.Routes.Select(
                     (candidate) => new FieldOption(

@@ -43,6 +43,18 @@ internal static class ProjectReferenceIntegrity
                 shot.OwnerActorId,
                 $"Shot '{shot.Id}' owner Actor",
                 required: true);
+            RequireSameProjectReference(
+                connection,
+                shot.ProjectId,
+                ProjectReferenceKind.Device,
+                shot.DeviceOverrideId,
+                $"Shot '{shot.Id}' Device override");
+            RequireSameProjectReference(
+                connection,
+                shot.ProjectId,
+                ProjectReferenceKind.Theme,
+                shot.ThemeOverrideId,
+                $"Shot '{shot.Id}' Theme override");
         }
 
         foreach (var theme in ThemeReferences(connection))
@@ -184,7 +196,8 @@ internal static class ProjectReferenceIntegrity
         var rows = new List<ShotReferenceRow>();
         using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT s.id, e.project_id, s.owner_actor_id
+            SELECT s.id, e.project_id, s.owner_actor_id,
+                   s.device_override_id, s.theme_override_id
             FROM shots s
             JOIN episodes e ON e.id = s.episode_id
             ORDER BY s.id
@@ -195,7 +208,9 @@ internal static class ProjectReferenceIntegrity
             rows.Add(new ShotReferenceRow(
                 reader.GetString(0),
                 reader.GetString(1),
-                SqliteCommandExecutor.ReadString(reader, 2)));
+                SqliteCommandExecutor.ReadString(reader, 2),
+                SqliteCommandExecutor.ReadString(reader, 3),
+                SqliteCommandExecutor.ReadString(reader, 4)));
         }
         return rows;
     }
@@ -251,7 +266,9 @@ internal static class ProjectReferenceIntegrity
     private sealed record ShotReferenceRow(
         string Id,
         string ProjectId,
-        string OwnerActorId);
+        string OwnerActorId,
+        string DeviceOverrideId,
+        string ThemeOverrideId);
 
     private sealed record ThemeReferenceRow(
         string Id,

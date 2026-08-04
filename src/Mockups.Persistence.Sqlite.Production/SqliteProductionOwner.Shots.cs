@@ -25,6 +25,8 @@ internal sealed partial class SqliteProductionOwner
             record.FpsOverride,
             record.DurationFrames,
             record.OwnerActorId,
+            record.DeviceOverrideId,
+            record.ThemeOverrideId,
             record.CanvasJson,
             record.MetadataJson);
     }
@@ -130,8 +132,20 @@ internal sealed partial class SqliteProductionOwner
             return false;
         }
 
-        var changesOwner = fieldId == "shot.ownerActorId";
-        if (changesOwner)
+        if (fieldId is "shot.deviceOverrideId" or "shot.themeOverrideId"
+            && value == "inherited")
+        {
+            _shotRepository.ClearResourceOverride(
+                connection,
+                shotId,
+                fieldId);
+            return true;
+        }
+
+        var changesContext = fieldId is "shot.ownerActorId"
+            or "shot.deviceOverrideId"
+            or "shot.themeOverrideId";
+        if (fieldId == "shot.ownerActorId")
         {
             _moduleInstanceThemeContextService.RequireShotOwnerChange(
                 connection,
@@ -144,6 +158,6 @@ internal sealed partial class SqliteProductionOwner
             shotId,
             fieldId,
             value);
-        return changesOwner;
+        return changesContext;
     }
 }

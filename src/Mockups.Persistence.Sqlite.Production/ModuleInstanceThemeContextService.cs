@@ -29,7 +29,9 @@ internal sealed class ModuleInstanceThemeContextService : IModuleInstanceThemeCo
             JOIN shots s ON s.id = target.shot_id
             JOIN episodes e ON e.id = s.episode_id
             JOIN actors actor ON actor.id = s.owner_actor_id AND actor.project_id = e.project_id
-            JOIN themes t ON t.id = actor.default_theme_id AND t.project_id = actor.project_id
+            JOIN themes t
+              ON t.id = COALESCE(s.theme_override_id, actor.default_theme_id)
+             AND t.project_id = actor.project_id
             WHERE target.id = $id
             """,
             ("$id", moduleInstanceId))
@@ -88,7 +90,9 @@ internal sealed class ModuleInstanceThemeContextService : IModuleInstanceThemeCo
             FROM shots s
             JOIN episodes e ON e.id = s.episode_id
             JOIN actors actor ON actor.id = s.owner_actor_id AND actor.project_id = e.project_id
-            JOIN themes t ON t.id = actor.default_theme_id AND t.project_id = actor.project_id
+            JOIN themes t
+              ON t.id = COALESCE(s.theme_override_id, actor.default_theme_id)
+             AND t.project_id = actor.project_id
             WHERE s.id = $shotId
             """,
             ("$shotId", shotId)) == 1;

@@ -43,6 +43,7 @@ An Episode owns ordered Shots. A Shot owns:
 
 - stable identity and order;
 - one required explicit owner Actor;
+- independently inherited Device and Theme references;
 - frame rate and current canvas metadata;
 - ordered Screens;
 - aggregate duration.
@@ -52,6 +53,14 @@ number. The Shot editor never offers an empty owner. The Actor may be changed
 later to another Actor in the same Project. The number is stable and unique
 inside its Episode. MOCKUPS derives the Shot code, technical name and output
 route from it.
+
+Device and Theme overrides are optional same-Project Shot fields. Each is
+independent: `NULL` inherits the corresponding required Actor default, while a
+local reference replaces only that resource. Changing the Actor therefore
+changes only resources that remain inherited. The effective Device and Theme
+are consumed consistently by Preview, playback, Module Theme-token resolution
+and Render Queue initialization. Reference Usage reports only explicit Shot
+override edges; inherited resources remain Actor edges.
 
 Duplicating an Episode preserves every current Shot number because the copies
 belong to a different Episode. Duplicating one Shot requires a new number in
@@ -94,8 +103,8 @@ free folder picker.
 The add modal exposes:
 
 - the Shot Actor as read-only;
-- Device and Theme defaulted from that Actor, with same-Project job-only
-  overrides;
+- Device and Theme initialized from the Shot's effective resources, with
+  additional same-Project job-only overrides;
 - Light, Dark or Both;
 - the Project-owned Production Output route;
 - a job-owned output mode;
@@ -209,11 +218,16 @@ Production UI. Its implementation may remain available to internal tooling.
 Every Screen resolves through its exact Shot. A complete valid route is:
 
 ```text
-Screen → Shot → owner Actor → Actor default Theme → Device and visual context
+Screen → Shot → owner Actor
+              → effective Device (Shot override ?? Actor default)
+              → effective Theme  (Shot override ?? Actor default)
+              → visual context
 ```
 
-Missing or cross-Project context fails explicitly. App, Module, Variant, name,
-type, order and position cannot supply an Actor, Theme or Device implicitly.
+Missing, blank or cross-Project context fails explicitly. App, Module, Variant,
+name, type, order and position cannot supply an Actor, Theme or Device
+implicitly. Actor identity always remains the Shot owner even when either
+visual resource is overridden.
 
 The Preview context shown to the user is derived from the selected Shot and
 Screen. Switching to a referenced definition also switches to the correct

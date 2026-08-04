@@ -598,13 +598,20 @@ internal sealed partial class SqliteCurrentDatabaseValidator
         RequireNoRows(connection, "SELECT 1 FROM module_instances mi JOIN modules m ON m.id = mi.module_id WHERE mi.app_id <> m.app_id", "module instance app/module mismatch");
         RequireNoRows(
             connection,
+            "SELECT 1 FROM shots WHERE device_override_id = '' OR theme_override_id = ''",
+            "shot with blank Device or Theme override");
+        RequireNoRows(
+            connection,
             """
             SELECT 1
             FROM module_instances mi
             JOIN shots s ON s.id = mi.shot_id
             LEFT JOIN actors actor ON actor.id = s.owner_actor_id
-            LEFT JOIN themes t ON t.id = actor.default_theme_id
-            WHERE s.owner_actor_id = '' OR actor.id IS NULL OR actor.default_theme_id = '' OR t.id IS NULL
+            LEFT JOIN themes t
+              ON t.id = COALESCE(s.theme_override_id, actor.default_theme_id)
+            WHERE s.owner_actor_id = '' OR actor.id IS NULL
+               OR COALESCE(s.theme_override_id, actor.default_theme_id) = ''
+               OR t.id IS NULL
             """,
             "module instance without explicit Shot owner Theme context");
         try

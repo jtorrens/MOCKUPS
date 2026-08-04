@@ -60,9 +60,6 @@ internal sealed class SqliteProductionRecordFieldPort(
     public string GetShotRenderName(string shotId) =>
         target.GetShotRenderName(shotId);
 
-    public string GetShotOwnerDeviceName(string shotId) =>
-        target.GetShotOwnerDeviceName(shotId);
-
     public string GetModuleInstanceVariantReference(
         string moduleInstanceId) =>
         target.GetModuleInstanceVariantReference(

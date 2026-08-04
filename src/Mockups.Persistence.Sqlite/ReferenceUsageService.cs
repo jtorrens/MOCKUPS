@@ -225,13 +225,15 @@ internal sealed class ReferenceUsageService :
     {
         using (var command = connection.CreateCommand())
         {
-            command.CommandText = "SELECT s.id, s.name, s.episode_id, s.owner_actor_id, e.project_id FROM shots s JOIN episodes e ON e.id = s.episode_id";
+            command.CommandText = "SELECT s.id, s.name, s.episode_id, s.owner_actor_id, s.device_override_id, s.theme_override_id, e.project_id FROM shots s JOIN episodes e ON e.id = s.episode_id";
             using var reader = command.ExecuteReader();
             while (reader.Read())
             {
-                var source = new SourceContext(reader.GetString(0), ProjectTreeNodeKind.Shot, "Shot", reader.GetString(1), ReferenceUsageScope.Production, reader.GetString(4));
+                var source = new SourceContext(reader.GetString(0), ProjectTreeNodeKind.Shot, "Shot", reader.GetString(1), ReferenceUsageScope.Production, reader.GetString(6));
                 AddExact(usages, targets, ProjectTreeNodeKind.Episode, reader.GetString(2), source, "Episode");
                 AddExact(usages, targets, ProjectTreeNodeKind.Actor, ReadString(reader, 3), source, "Owner actor");
+                AddExact(usages, targets, ProjectTreeNodeKind.Device, ReadString(reader, 4), source, "Device override");
+                AddExact(usages, targets, ProjectTreeNodeKind.Theme, ReadString(reader, 5), source, "Theme override");
             }
         }
 

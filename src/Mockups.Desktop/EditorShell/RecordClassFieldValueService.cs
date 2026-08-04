@@ -122,6 +122,42 @@ internal sealed class RecordClassFieldValueService
                 IsInherited: settings.FpsOverride is null);
         }
 
+        if (node.Kind == ProjectTreeNodeKind.Shot
+            && field.Id is "shot.deviceOverrideId" or "shot.themeOverrideId")
+        {
+            var settings = _production.GetShotSettings(node.Id);
+            var actor = _resources.GetActorSettings(settings.OwnerActorId);
+            var isDevice = field.Id == "shot.deviceOverrideId";
+            var inheritedValue = isDevice
+                ? actor.DefaultDeviceId
+                : actor.DefaultThemeId;
+            var localValue = isDevice
+                ? settings.DeviceOverrideId
+                : settings.ThemeOverrideId;
+            return new FieldValue(
+                new FieldDefinition(
+                    field.Id,
+                    field.Label,
+                    field.ValueKind,
+                    IsEditable: field.IsEditable,
+                    DefaultValue: inheritedValue,
+                    CommitAsDefault: false,
+                    CanInherit: true,
+                    InheritedValue: inheritedValue,
+                    Options: options,
+                    PairLabels: field.PairLabels,
+                    ImagePreview: field.ImagePreview,
+                    Number: field.Number,
+                    RecordReference: field.RecordReference,
+                    ComponentInputBindings: field.ComponentInputBindings,
+                    RuntimeInputComponentVariantFieldId: field.RuntimeInputComponentVariantFieldId,
+                    RuntimeCollectionComponentVariantFieldId: field.RuntimeCollectionComponentVariantFieldId,
+                    Unit: field.Unit,
+                    MotionTiming: field.MotionTiming),
+                localValue ?? inheritedValue,
+                IsInherited: localValue is null);
+        }
+
         var isEditable = field.IsEditable
             || (node.Kind == ProjectTreeNodeKind.ModuleInstance
                 && field.Id == "moduleInstance.durationFrames"
@@ -330,7 +366,8 @@ internal sealed class RecordClassFieldValueService
             "shot.durationFrames" => ModuleInstanceTimeline.ShotDurationFrames(_timelineDataSource, shotId).ToString(),
             "shot.fps" => settings.Fps.ToString(),
             "shot.ownerActorId" => settings.OwnerActorId,
-            "shot.ownerDevice" => _production.GetShotOwnerDeviceName(shotId),
+            "shot.deviceOverrideId" => settings.DeviceOverrideId ?? "",
+            "shot.themeOverrideId" => settings.ThemeOverrideId ?? "",
             "shot.renderName" => _production.GetShotRenderName(shotId),
             "shot.canvas" => settings.CanvasJson,
             "shot.metadata" => settings.MetadataJson,
@@ -465,6 +502,8 @@ internal sealed class RecordClassFieldValueService
         return field.Id switch
         {
             "shot.ownerActorId" => _resources.GetRequiredActorOptions(settings.ProjectId),
+            "shot.deviceOverrideId" => _resources.GetDeviceOptions(settings.ProjectId),
+            "shot.themeOverrideId" => _resources.GetThemeOptions(settings.ProjectId),
             _ => field.Options,
         };
     }

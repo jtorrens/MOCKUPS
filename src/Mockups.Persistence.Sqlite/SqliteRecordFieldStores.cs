@@ -65,32 +65,6 @@ internal sealed partial class SqliteProductionRecordFieldStore :
     public string GetShotRenderName(string shotId) =>
         _production.GetShotRenderName(shotId);
 
-    public string GetShotOwnerDeviceName(string shotId)
-    {
-        using var connection = _context.OpenConnection();
-        var shot = _production.ShotRepository.Get(
-            connection,
-            shotId);
-        var actor = _resources.ActorRepository
-            .QueryAll(connection)
-            .SingleOrDefault((candidate) =>
-                candidate.Id == shot.OwnerActorId)
-            ?? throw new InvalidOperationException(
-                $"Missing Actor '{shot.OwnerActorId}'.");
-        if (string.IsNullOrWhiteSpace(actor.DefaultDeviceId))
-        {
-            return "No default device";
-        }
-
-        return _resources.DeviceRepository
-            .QueryAll(connection)
-            .SingleOrDefault((candidate) =>
-                candidate.Id == actor.DefaultDeviceId)
-            ?.Name
-            ?? throw new InvalidOperationException(
-                $"Missing Device '{actor.DefaultDeviceId}'.");
-    }
-
     public string GetModuleInstanceVariantReference(
         string moduleInstanceId) =>
         _production.GetModuleInstanceVariantReference(

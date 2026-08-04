@@ -19,10 +19,8 @@ internal sealed class ProductionShotContextDataSource
         _actorDataSource = new ActorPreviewDataSource(actors);
     }
 
-    public string LoadShotOwnerActorId(string shotId)
-    {
-        return _database.GetShotSettings(shotId).OwnerActorId;
-    }
+    public ShotSettings LoadShot(string shotId) =>
+        _database.GetShotSettings(shotId);
 
     public ActorPreviewContextSource LoadActor(string actorId)
     {

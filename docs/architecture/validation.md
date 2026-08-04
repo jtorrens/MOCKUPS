@@ -406,7 +406,8 @@ Database validation is read-only and confirms:
 - complete Component and Module Variants;
 - full reference formats and same-Project integrity through the same guard used
   by repository writes;
-- required Shot Actor and Production context;
+- required Shot Actor, independent nullable Device/Theme overrides and their
+  exact effective Production context;
 - exact Production Output settings and derivable Shot plans;
 - declared font, icon and media assets;
 - manifest-to-row agreement.

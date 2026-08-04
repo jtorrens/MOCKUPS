@@ -21,7 +21,8 @@ internal sealed class ProductionShotContextService
 
     public ProductionShotContext Resolve(string shotId)
     {
-        var ownerActorId = _dataSource.LoadShotOwnerActorId(shotId);
+        var shot = _dataSource.LoadShot(shotId);
+        var ownerActorId = shot.OwnerActorId;
         if (string.IsNullOrWhiteSpace(ownerActorId))
         {
             return Invalid($"Shot {shotId} has no Actor assigned.");
@@ -35,14 +36,16 @@ internal sealed class ProductionShotContextService
         {
             return Invalid($"Shot {shotId} references a missing Actor.");
         }
-        if (string.IsNullOrWhiteSpace(actor.DefaultDeviceId) || string.IsNullOrWhiteSpace(actor.DefaultThemeId))
+        var deviceId = shot.EffectiveDeviceId(actor.DefaultDeviceId);
+        var themeId = shot.EffectiveThemeId(actor.DefaultThemeId);
+        if (string.IsNullOrWhiteSpace(deviceId) || string.IsNullOrWhiteSpace(themeId))
         {
             return Invalid($"Actor {actor.DisplayName} must define a default Device and Theme.", actor.DisplayName);
         }
         try
         {
-            var device = _dataSource.LoadDeviceName(actor.DefaultDeviceId);
-            var theme = _dataSource.LoadTheme(actor.DefaultThemeId);
+            var device = _dataSource.LoadDeviceName(deviceId);
+            var theme = _dataSource.LoadTheme(themeId);
             return new ProductionShotContext(true, "", actor.DisplayName, device, theme.Name, theme.DefaultMode);
         }
         catch (Exception)

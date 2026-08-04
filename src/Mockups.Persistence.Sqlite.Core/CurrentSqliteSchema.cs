@@ -52,6 +52,8 @@ internal static class CurrentSqliteSchema
           fps_override INTEGER,
           duration_frames INTEGER NOT NULL DEFAULT 240,
           owner_actor_id TEXT NOT NULL REFERENCES actors(id) ON DELETE RESTRICT,
+          device_override_id TEXT REFERENCES devices(id) ON DELETE RESTRICT,
+          theme_override_id TEXT REFERENCES themes(id) ON DELETE RESTRICT,
           canvas_json TEXT NOT NULL DEFAULT '{}',
           metadata_json TEXT NOT NULL DEFAULT '{}',
           shot_number INTEGER NOT NULL DEFAULT 1 CHECK(shot_number > 0)
@@ -187,7 +189,7 @@ internal static class CurrentSqliteSchema
           layout_json TEXT NOT NULL
         );
 
-        PRAGMA user_version = 5;
+        PRAGMA user_version = 6;
         """;
 
 }

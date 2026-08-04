@@ -32,8 +32,17 @@ public sealed record ShotSettings(
     int? FpsOverride,
     int DurationFrames,
     string OwnerActorId,
+    string? DeviceOverrideId,
+    string? ThemeOverrideId,
     string CanvasJson,
-    string MetadataJson);
+    string MetadataJson)
+{
+    public string EffectiveDeviceId(string actorDefaultDeviceId) =>
+        DeviceOverrideId ?? actorDefaultDeviceId;
+
+    public string EffectiveThemeId(string actorDefaultThemeId) =>
+        ThemeOverrideId ?? actorDefaultThemeId;
+}
 
 public sealed record AppSettings(
     string ProjectId,
