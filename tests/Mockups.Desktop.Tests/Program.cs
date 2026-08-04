@@ -7262,7 +7262,9 @@ static void ResidentPreviewShellRejectsChangedDeviceGeometry()
         ThemeName: "Android Theme Test",
         ThemeMode: "light",
         ScaleMode: "fit",
-        ShowDeviceFrame: true);
+        ShowDeviceFrame: true,
+        ShowTransparencyGrid: false,
+        ShowAlphaOnly: false);
     var sameGeometry = resident with { Metrics = wideMetrics with { } };
     var changedGeometry = resident with { Metrics = compactMetrics };
 
@@ -7275,6 +7277,24 @@ static void ResidentPreviewShellRejectsChangedDeviceGeometry()
     True(!DesignWebPreviewPane.CanPatchResidentShell(
         resident,
         resident with { ShowDeviceFrame = false }));
+    True(!DesignWebPreviewPane.CanPatchResidentShell(
+        resident,
+        resident with { ShowTransparencyGrid = true }));
+    True(!DesignWebPreviewPane.CanPatchResidentShell(
+        resident,
+        resident with { ShowAlphaOnly = true }));
+    Equal(
+        "",
+        WebPreviewPane.TransparencyInspectionClasses(false, false));
+    Equal(
+        " is-transparency-grid",
+        WebPreviewPane.TransparencyInspectionClasses(true, false));
+    Equal(
+        " is-alpha-only",
+        WebPreviewPane.TransparencyInspectionClasses(false, true));
+    Equal(
+        " is-transparency-grid is-alpha-only",
+        WebPreviewPane.TransparencyInspectionClasses(true, true));
 }
 
 static void WebViewScriptResultsNormalizePlatformEncodings()

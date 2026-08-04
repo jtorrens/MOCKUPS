@@ -214,6 +214,16 @@ generic Preview canvas and Screen-transition roots omit their Theme background
 while that policy is enabled, so neither boundary can flatten the Module mask
 before it reaches the shell or raster output.
 
+Preview owns two additional session-only inspection controls. `Grid` alternates
+the interactive matte between black and a classic gray/white transparency
+checkerboard. `Alpha` forces a black matte and converts the already composed
+Preview visual to white while retaining its final alpha, yielding the exact
+white/gray-on-black channel view. Neither control changes payloads, Device or
+Theme data, frozen render documents or Render Queue output. When either
+inspection is active, Preview uses the HTML route for presentation even if the
+playback preference is raster, because the native raster surface is not an
+authoring output transform.
+
 The interactive desktop Preview host may inspect the generic
 `data-renderable-id` and `data-renderable-type` attributes already emitted for
 resolved nodes. Hover identification and the right-click rendered path are

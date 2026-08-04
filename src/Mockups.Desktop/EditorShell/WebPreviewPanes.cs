@@ -577,6 +577,8 @@ internal abstract class WebPreviewPane : Grid
         string previewMode,
         bool showDesignMarks,
         bool showDeviceFrame,
+        bool showTransparencyGrid,
+        bool showAlphaOnly,
         string bodyContent,
         string fontStyleHtml = "",
         PreviewReferenceOverlay? reference = null,
@@ -673,6 +675,32 @@ internal abstract class WebPreviewPane : Grid
                   transform-origin: top left;
                   overflow: hidden;
                   background: var(--preview-screen-background);
+                }
+
+                .preview-scale.is-transparency-grid {
+                  background-color: #FFFFFF;
+                  background-image:
+                    linear-gradient(45deg, #B8B8B8 25%, transparent 25%),
+                    linear-gradient(-45deg, #B8B8B8 25%, transparent 25%),
+                    linear-gradient(45deg, transparent 75%, #B8B8B8 75%),
+                    linear-gradient(-45deg, transparent 75%, #B8B8B8 75%);
+                  background-position: 0 0, 0 16px, 16px -16px, -16px 0;
+                  background-size: 32px 32px;
+                }
+
+                .preview-scale.is-alpha-only {
+                  background: #000000;
+                }
+
+                .preview-content-layer {
+                  position: absolute;
+                  inset: 0;
+                  width: 100%;
+                  height: 100%;
+                }
+
+                .preview-scale.is-alpha-only > .preview-content-layer {
+                  filter: brightness(0) invert(1);
                 }
 
                 .preview-phone-frame {
@@ -862,8 +890,8 @@ internal abstract class WebPreviewPane : Grid
             <body>
               <main class="preview-viewport-host">
                 <section class="preview-viewport" id="previewViewport">
-                  <div class="preview-scale" id="previewScale">
-                    {{bodyContent}}
+                  <div class="preview-scale{{TransparencyInspectionClasses(showTransparencyGrid, showAlphaOnly)}}" id="previewScale">
+                    <div class="preview-content-layer">{{bodyContent}}</div>
                   </div>
                   <div aria-hidden="true" class="preview-reference-layer" id="previewReferenceLayer"><img id="previewReferenceImage" alt=""></div>
                   {{DesignMarksHtml(showDesignMarks, width, height, metrics.DesignSafeMarginCoefficient)}}
@@ -915,6 +943,13 @@ internal abstract class WebPreviewPane : Grid
                 let startTranslateX = 0;
                 let startTranslateY = 0;
                 let isDragging = false;
+
+                window.mockupsSetTransparencyInspection = (showGrid, showAlpha) => {
+                  if (!scaleLayer) return false;
+                  scaleLayer.classList.toggle("is-transparency-grid", Boolean(showGrid));
+                  scaleLayer.classList.toggle("is-alpha-only", Boolean(showAlpha));
+                  return true;
+                };
 
                 window.mockupsSetContextualPreviewState = (kind, title, message) => {
                   window.clearTimeout(contextualStateTimer);
@@ -1520,6 +1555,7 @@ internal abstract class WebPreviewPane : Grid
                   const sequence = ++previewBodyPatchSequence;
                   const startedAt = performance.now();
                   const nextLayer = document.createElement("div");
+                  nextLayer.className = "preview-content-layer";
                   nextLayer.style.position = "absolute";
                   nextLayer.style.inset = "0";
                   nextLayer.style.width = "100%";
@@ -1630,6 +1666,11 @@ internal abstract class WebPreviewPane : Grid
             : themeMode == "dark"
                 ? "#101827"
                 : "#F7F9FC";
+
+    internal static string TransparencyInspectionClasses(
+        bool showGrid,
+        bool showAlpha) =>
+        $"{(showGrid ? " is-transparency-grid" : "")}{(showAlpha ? " is-alpha-only" : "")}";
 
     protected static string Placeholder(string title, string text)
     {
@@ -1813,7 +1854,9 @@ internal sealed record DesignPreviewShellIdentity(
     string ThemeName,
     string ThemeMode,
     string ScaleMode,
-    bool ShowDeviceFrame);
+    bool ShowDeviceFrame,
+    bool ShowTransparencyGrid,
+    bool ShowAlphaOnly);
 
 internal sealed class DesignWebPreviewPane : WebPreviewPane
 {
@@ -1893,6 +1936,21 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             """);
     }
 
+    public async Task<bool> SetTransparencyInspectionAsync(
+        bool showGrid,
+        bool showAlpha)
+    {
+        var result = await WebView.InvokeScript($$"""
+            (() => typeof window.mockupsSetTransparencyInspection === "function"
+              ? window.mockupsSetTransparencyInspection({{(showGrid ? "true" : "false")}}, {{(showAlpha ? "true" : "false")}})
+              : false)();
+            """);
+        return bool.TryParse(
+            WebViewScriptResult.Text(result),
+            out var applied)
+            && applied;
+    }
+
     public void BeginContextUpdate(string message)
     {
         Interlocked.Increment(ref _latestUpdateSequence);
@@ -1957,6 +2015,8 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         string scaleMode,
         bool showDesignMarks,
         bool showDeviceFrame,
+        bool showTransparencyGrid,
+        bool showAlphaOnly,
         PreviewReferenceState reference,
         DesignPreviewPayload? payload,
         PreviewContextState contextState,
@@ -1972,6 +2032,8 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             scaleMode,
             showDesignMarks,
             showDeviceFrame,
+            showTransparencyGrid,
+            showAlphaOnly,
             reference,
             payload,
             contextState,
@@ -2060,6 +2122,8 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 "Design preview",
                 update.ShowDesignMarks,
                 update.ShowDeviceFrame,
+                update.ShowTransparencyGrid,
+                update.ShowAlphaOnly,
                 Placeholder(
                     "Design WebView host",
                     "Select a component variant to preview it through the desktop component route."),
@@ -2246,6 +2310,8 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             "Design preview",
             update.ShowDesignMarks,
             update.ShowDeviceFrame,
+            update.ShowTransparencyGrid,
+            update.ShowAlphaOnly,
             htmlParts.BodyHtml,
             htmlParts.FontStyleHtml,
             reference));
@@ -2290,6 +2356,8 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             "Design preview",
             showDesignMarks: false,
             showDeviceFrame: false,
+            showTransparencyGrid: update.ShowTransparencyGrid,
+            showAlphaOnly: update.ShowAlphaOnly,
             bodyContent: "",
             reference: PreviewReferenceOverlay.Resolve(
                 update.Reference,
@@ -2440,6 +2508,8 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         string ScaleMode,
         bool ShowDesignMarks,
         bool ShowDeviceFrame,
+        bool ShowTransparencyGrid,
+        bool ShowAlphaOnly,
         PreviewReferenceState Reference,
         DesignPreviewPayload? Payload,
         PreviewContextState ContextState,
@@ -2452,7 +2522,9 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             ThemeName,
             ThemeMode,
             ScaleMode,
-            ShowDeviceFrame);
+            ShowDeviceFrame,
+            ShowTransparencyGrid,
+            ShowAlphaOnly);
 
         public bool IsAnimationOnlyUpdateOf(DesignPreviewUpdate other)
         {
@@ -2463,6 +2535,8 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 && ScaleMode == other.ScaleMode
                 && ShowDesignMarks == other.ShowDesignMarks
                 && ShowDeviceFrame == other.ShowDeviceFrame
+                && ShowTransparencyGrid == other.ShowTransparencyGrid
+                && ShowAlphaOnly == other.ShowAlphaOnly
                 && Reference with { PreviewFrame = other.Reference.PreviewFrame } == other.Reference
                 && StablePayloadSignature(Payload) == StablePayloadSignature(other.Payload)
                 && CurrentTimeSignature(Payload) != CurrentTimeSignature(other.Payload);
@@ -2477,6 +2551,8 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 && ThemeMode == other.ThemeMode
                 && ScaleMode == other.ScaleMode
                 && ShowDeviceFrame == other.ShowDeviceFrame
+                && ShowTransparencyGrid == other.ShowTransparencyGrid
+                && ShowAlphaOnly == other.ShowAlphaOnly
                 && Reference == other.Reference
                 && StablePayloadSignature(Payload) == StablePayloadSignature(other.Payload)
                 && CurrentTimeSignature(Payload) == CurrentTimeSignature(other.Payload);

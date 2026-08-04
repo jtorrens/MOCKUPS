@@ -147,7 +147,8 @@ proving simultaneous outgoing and incoming Motion, stable owner-local frames
   materialization, exact ProRes/H.264 profiles, proportional even-dimension
   normalization for odd H.264 Device rasters, black-premultiplied alpha output,
   interactive Preview Theme override through the Production Mode context
-  control and an always-openable Shot add action;
+  control, session-only checkerboard and alpha-channel inspection, and an
+  always-openable Shot add action;
 - explicit Conversation text tracks retaining Keyboard and Text Input Bar
   presence for the outgoing write interval;
 - architecture enforcement;

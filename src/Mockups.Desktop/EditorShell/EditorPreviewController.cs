@@ -92,6 +92,16 @@ internal sealed class EditorPreviewController : IDisposable
         IsChecked = false,
         VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
     };
+    private readonly ToggleSwitch _transparencyGridToggle = new()
+    {
+        IsChecked = false,
+        VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+    };
+    private readonly ToggleSwitch _alphaOnlyToggle = new()
+    {
+        IsChecked = false,
+        VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+    };
     private readonly Button _referenceButton = new()
     {
         Content = "Reference",
@@ -287,6 +297,8 @@ internal sealed class EditorPreviewController : IDisposable
     private string _selectedPlaybackRoute = "html-all";
     private bool _showDesignMarks;
     private bool _showCanonicalFrame;
+    private bool _showTransparencyGrid;
+    private bool _showAlphaOnly;
     private string _referenceSource = "";
     private string _referenceViewMode = "preview";
     private int _referenceStartPreviewFrame;
@@ -800,10 +812,12 @@ internal sealed class EditorPreviewController : IDisposable
     {
         ToolTip.SetTip(_marksToggle, "Show design markers");
         ToolTip.SetTip(_canonicalFrameToggle, "Show canonical 360 × 800 frame without the device layer");
+        ToolTip.SetTip(_transparencyGridToggle, "Alternate the transparency matte between black and a gray checkerboard");
+        ToolTip.SetTip(_alphaOnlyToggle, "Show the final alpha channel as white over black");
 
         var primaryControls = new Grid
         {
-            ColumnDefinitions = new ColumnDefinitions("Auto,Auto,Auto,Auto,Auto"),
+            ColumnDefinitions = new ColumnDefinitions("Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"),
             ColumnSpacing = 10,
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
         };
@@ -813,6 +827,8 @@ internal sealed class EditorPreviewController : IDisposable
             _playbackRouteComboBox,
             LabeledToggle("Markers", _marksToggle),
             LabeledToggle("360", _canonicalFrameToggle),
+            LabeledToggle("Grid", _transparencyGridToggle),
+            LabeledToggle("Alpha", _alphaOnlyToggle),
             _referenceViewComboBox,
         };
         for (var index = 0; index < primaryControlItems.Length; index++)
@@ -956,11 +972,11 @@ internal sealed class EditorPreviewController : IDisposable
                 : 0;
             primaryControls.ColumnDefinitions = productionOrientation
                 ? wraps
-                    ? new ColumnDefinitions("*,1.6*,Auto,Auto,*,*")
-                    : new ColumnDefinitions("Auto,Auto,Auto,Auto,Auto,Auto")
+                    ? new ColumnDefinitions("*,1.6*,Auto,Auto,Auto,Auto,*,*")
+                    : new ColumnDefinitions("Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto")
                 : wraps
-                    ? new ColumnDefinitions("*,2*,Auto,Auto,*")
-                    : new ColumnDefinitions("Auto,Auto,Auto,Auto,Auto");
+                    ? new ColumnDefinitions("*,2*,Auto,Auto,Auto,Auto,*")
+                    : new ColumnDefinitions("Auto,Auto,Auto,Auto,Auto,Auto,Auto");
             Grid.SetColumnSpan(primaryControls, wraps ? 3 : 1);
             primaryControls.HorizontalAlignment = wraps
                 ? Avalonia.Layout.HorizontalAlignment.Stretch
@@ -1253,6 +1269,8 @@ internal sealed class EditorPreviewController : IDisposable
             _designInputsPanel.PresentEveryPlaybackFrame = _selectedPlaybackRoute == "html-all";
             _marksToggle.IsChecked = _showDesignMarks;
             _canonicalFrameToggle.IsChecked = _showCanonicalFrame;
+            _transparencyGridToggle.IsChecked = _showTransparencyGrid;
+            _alphaOnlyToggle.IsChecked = _showAlphaOnly;
             var referenceViewOptions = new[]
             {
                 new FieldOption("preview", "Preview"),
@@ -1319,6 +1337,20 @@ internal sealed class EditorPreviewController : IDisposable
             if (change.Property == ToggleSwitch.IsCheckedProperty)
             {
                 OnCanonicalFrameChanged();
+            }
+        };
+        _transparencyGridToggle.PropertyChanged += (_, change) =>
+        {
+            if (change.Property == ToggleSwitch.IsCheckedProperty)
+            {
+                OnTransparencyInspectionChanged();
+            }
+        };
+        _alphaOnlyToggle.PropertyChanged += (_, change) =>
+        {
+            if (change.Property == ToggleSwitch.IsCheckedProperty)
+            {
+                OnTransparencyInspectionChanged();
             }
         };
     }
@@ -1413,6 +1445,19 @@ internal sealed class EditorPreviewController : IDisposable
         if (!_isRefreshingOptions)
         {
             InvalidatePreparedShotPlayback();
+            Refresh();
+        }
+    }
+
+    private void OnTransparencyInspectionChanged()
+    {
+        _showTransparencyGrid = _transparencyGridToggle.IsChecked == true;
+        _showAlphaOnly = _alphaOnlyToggle.IsChecked == true;
+        if (!_isRefreshingOptions)
+        {
+            _ = _designPreviewPane.SetTransparencyInspectionAsync(
+                _showTransparencyGrid,
+                _showAlphaOnly);
             Refresh();
         }
     }
@@ -1764,6 +1809,8 @@ internal sealed class EditorPreviewController : IDisposable
         if (_selectedPlaybackRoute == "raster"
             && designPayload is not null
             && IsPreviewPlaybackActive
+            && !_showTransparencyGrid
+            && !_showAlphaOnly
             && _rasterPlaybackFrames.TryGetValue(
                 PlaybackFrameKey(designPayload),
                 out var rasterPath))
@@ -1789,6 +1836,8 @@ internal sealed class EditorPreviewController : IDisposable
             _selectedScale,
             _showDesignMarks,
             !_showCanonicalFrame,
+            _showTransparencyGrid,
+            _showAlphaOnly,
             CurrentReferenceState(),
             designPayload,
             contextState,
@@ -3781,7 +3830,7 @@ internal sealed class EditorPreviewController : IDisposable
             _orientationComboBox.MinWidth = 96;
             _orientationComboBox.MaxWidth = 112;
             _orientationComboBox.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch;
-            Grid.SetColumn(_orientationComboBox, 5);
+            Grid.SetColumn(_orientationComboBox, 7);
             Grid.SetRow(_orientationComboBox, 0);
             primaryControls.Children.Add(_orientationComboBox);
             return;
