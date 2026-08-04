@@ -103,6 +103,7 @@ internal sealed partial class SqliteCurrentDatabaseValidator
         ValidateSqliteRuntime(connection);
         ValidatePhysicalSchema(connection);
         ValidateCurrentJsonColumns(connection);
+        ValidateCurrentDeviceMetrics(connection);
         ValidateCurrentScreenTransitions(
             connection);
         ValidateCurrentProductionOutput(connection);
@@ -116,6 +117,29 @@ internal sealed partial class SqliteCurrentDatabaseValidator
         ValidateCurrentComponentVariants(connection);
         ValidateCurrentModuleVariantsAndAnimations(connection);
         ValidateForeignKeyIntegrity(connection);
+    }
+
+    private void ValidateCurrentDeviceMetrics(SqliteConnection connection)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT id, metrics_json FROM devices";
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            var id = reader.GetString(0);
+            try
+            {
+                _ = DeviceMetricRules.PreviewValues(
+                    JsonPath.ParseRequiredObject(
+                        reader.GetString(1),
+                        $"Device '{id}' metrics_json"));
+            }
+            catch (InvalidOperationException exception)
+            {
+                throw InvalidCurrentDatabase(
+                    $"Device '{id}' metrics_json is invalid: {exception.Message}");
+            }
+        }
     }
 
     private void ValidateCurrentScreenTransitions(

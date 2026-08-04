@@ -1,4 +1,3 @@
-using System;
 using Mockups.DesktopEditorShell.Common;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -7,19 +6,15 @@ internal static class DeviceImportMapper
 {
     public static DeviceImportDraft ToDraft(DeviceCatalogDetails details)
     {
-        var width = Math.Max(1, details.RenderWidth);
-        var height = Math.Max(1, details.RenderHeight);
+        var width = details.RenderWidth;
+        var height = details.RenderHeight;
         var profile = VisualGuideProfileFor(details);
         var metricsJson = DeviceMetricRules.CreateMetricsJson(
-            details.DesignWidth,
-            details.DesignHeight,
             width,
             height,
-            includeDynamicIsland: false,
             cornerRadius: width * profile.CornerRadiusCoefficient,
             cornerRadiusCoefficient: profile.CornerRadiusCoefficient,
-            designSafeMarginCoefficient: profile.DesignSafeMarginCoefficient,
-            source: details.Source);
+            designSafeMarginCoefficient: profile.DesignSafeMarginCoefficient);
 
         return new DeviceImportDraft(
             details.Name,

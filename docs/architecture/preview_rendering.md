@@ -166,6 +166,9 @@ The bridge translates only standard resolved values:
 - generic boxes, placement, text, images, SVGs, surfaces and shadows;
 - generic validation for unresolved values.
 
+Device scaling derives from the required positive Screen width. Preview has no
+pixel-ratio or scale fallback and does not receive retired Device metrics.
+
 It contains no Component-specific layout or business rules.
 
 ## Renderer

@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text.Json.Nodes;
-using System.Text.RegularExpressions;
 
 namespace Mockups.DesktopEditorShell.Common;
 
@@ -17,107 +17,36 @@ public sealed record DevicePreviewMetricValues(
     double CornerRadiusCoefficient,
     double DesignSafeMarginCoefficient,
     double StatusBarHeight,
-    double SafeAreaBottom,
-    double ScaleToPixels);
+    double SafeAreaBottom);
 
 public static class DeviceMetricRules
 {
     public static string CreateMetricsJson(
-        int designWidth,
-        int designHeight,
-        int renderWidth,
-        int renderHeight,
-        bool includeDynamicIsland,
+        int width,
+        int height,
         double? cornerRadius = null,
         double? cornerRadiusCoefficient = null,
-        double? designSafeMarginCoefficient = null,
-        string? source = null)
+        double? designSafeMarginCoefficient = null)
     {
-        designWidth = Math.Max(1, designWidth);
-        designHeight = Math.Max(1, designHeight);
-        renderWidth = Math.Max(1, renderWidth);
-        renderHeight = Math.Max(1, renderHeight);
-
-        var horizontalScale = renderWidth / (double)designWidth;
-        var verticalScale = renderHeight / (double)designHeight;
-        if (Math.Abs(horizontalScale - verticalScale) > 0.0001)
+        if (width <= 0 || height <= 0)
         {
-            throw new InvalidOperationException(
-                $"Design size {designWidth} x {designHeight} does not map uniformly to render size {renderWidth} x {renderHeight}.");
+            throw new InvalidOperationException("Device Canvas dimensions must be positive.");
         }
-
-        return CreateMetricsJsonCore(
-            designWidth,
-            designHeight,
-            renderWidth,
-            renderHeight,
-            horizontalScale,
-            includeDynamicIsland,
-            cornerRadius,
-            cornerRadiusCoefficient,
-            designSafeMarginCoefficient,
-            source);
-    }
-
-    public static string CreateMetricsJson(
-        int width,
-        int height,
-        double scale,
-        bool includeDynamicIsland,
-        double? cornerRadius = null,
-        double? cornerRadiusCoefficient = null,
-        double? designSafeMarginCoefficient = null,
-        string? source = null)
-    {
-        width = Math.Max(1, width);
-        height = Math.Max(1, height);
-        scale = scale > 0 ? scale : GuessScale(width, height, "");
-
-        return CreateMetricsJsonCore(
-            (int)Math.Round(width / scale),
-            (int)Math.Round(height / scale),
-            width,
-            height,
-            scale,
-            includeDynamicIsland,
-            cornerRadius,
-            cornerRadiusCoefficient,
-            designSafeMarginCoefficient,
-            source);
-    }
-
-    private static string CreateMetricsJsonCore(
-        int designWidth,
-        int designHeight,
-        int width,
-        int height,
-        double scale,
-        bool includeDynamicIsland,
-        double? cornerRadius,
-        double? cornerRadiusCoefficient,
-        double? designSafeMarginCoefficient,
-        string? source)
-    {
+        if (cornerRadius is < 0)
+        {
+            throw new InvalidOperationException("Device corner radius must be non-negative.");
+        }
+        ValidateCoefficient(cornerRadiusCoefficient, "frame.cornerRadiusCoefficient");
+        ValidateCoefficient(designSafeMarginCoefficient, "designGuides.safeMarginCoefficient");
         var statusBarHeight = StatusBarHeight(height);
         var bottomInset = BottomInset(height);
         var root = new JsonObject
         {
-            ["designSpace"] = new JsonObject
-            {
-                ["width"] = designWidth,
-                ["height"] = designHeight,
-                ["unit"] = "logical",
-            },
-            ["renderSize"] = new JsonObject { ["width"] = width, ["height"] = height },
-            ["scaleToPixels"] = scale,
             ["canvas"] = new JsonObject { ["width"] = width, ["height"] = height },
             ["screen"] = new JsonObject { ["x"] = 0, ["y"] = 0, ["width"] = width, ["height"] = height },
-            ["viewport"] = new JsonObject { ["x"] = 0, ["y"] = 0, ["width"] = width, ["height"] = height },
-            ["safeArea"] = new JsonObject { ["top"] = statusBarHeight, ["right"] = 0, ["bottom"] = bottomInset, ["left"] = 0 },
-            ["statusBar"] = new JsonObject { ["x"] = 0, ["y"] = 0, ["width"] = width, ["height"] = statusBarHeight },
             ["cornerRadius"] = cornerRadius ?? CornerRadius(width),
-            ["pixelRatio"] = scale,
-            ["defaultScreenScale"] = 1,
+            ["safeArea"] = new JsonObject { ["bottom"] = bottomInset },
+            ["statusBar"] = new JsonObject { ["height"] = statusBarHeight },
         };
 
         if (cornerRadiusCoefficient is > 0 and <= 0.5)
@@ -125,7 +54,6 @@ public static class DeviceMetricRules
             root["frame"] = new JsonObject
             {
                 ["cornerRadiusCoefficient"] = cornerRadiusCoefficient.Value,
-                ["source"] = "profileFallback",
             };
         }
 
@@ -134,24 +62,7 @@ public static class DeviceMetricRules
             root["designGuides"] = new JsonObject
             {
                 ["safeMarginCoefficient"] = designSafeMarginCoefficient.Value,
-                ["source"] = "profileFallback",
             };
-        }
-
-        if (includeDynamicIsland)
-        {
-            root["dynamicIsland"] = new JsonObject
-            {
-                ["x"] = 462,
-                ["y"] = 33,
-                ["width"] = 366,
-                ["height"] = 111,
-            };
-        }
-
-        if (!string.IsNullOrWhiteSpace(source))
-        {
-            root["source"] = source;
         }
 
         return root.ToJsonString();
@@ -159,18 +70,35 @@ public static class DeviceMetricRules
 
     public static DevicePreviewMetricValues PreviewValues(JsonObject metrics)
     {
+        RequireExactKeys(
+            metrics,
+            ["canvas", "screen", "cornerRadius", "safeArea", "statusBar"],
+            ["frame", "designGuides"],
+            "Device metrics");
+        RequireExactKeys(JsonPath.RequiredObject(metrics, "canvas", "Device metrics"), ["width", "height"], [], "Device metrics.canvas");
+        RequireExactKeys(JsonPath.RequiredObject(metrics, "screen", "Device metrics"), ["x", "y", "width", "height"], [], "Device metrics.screen");
+        RequireExactKeys(JsonPath.RequiredObject(metrics, "safeArea", "Device metrics"), ["bottom"], [], "Device metrics.safeArea");
+        RequireExactKeys(JsonPath.RequiredObject(metrics, "statusBar", "Device metrics"), ["height"], [], "Device metrics.statusBar");
+        if (JsonPath.OptionalObject(metrics, "frame", "Device metrics") is { } frame)
+        {
+            RequireExactKeys(frame, ["cornerRadiusCoefficient"], [], "Device metrics.frame");
+        }
+        if (JsonPath.OptionalObject(metrics, "designGuides", "Device metrics") is { } designGuides)
+        {
+            RequireExactKeys(designGuides, ["safeMarginCoefficient"], [], "Device metrics.designGuides");
+        }
+
         var canvasWidth = RequiredPositiveNumber(metrics, ["canvas", "width"]);
         var canvasHeight = RequiredPositiveNumber(metrics, ["canvas", "height"]);
         var screenX = RequiredNumber(metrics, ["screen", "x"]);
         var screenY = RequiredNumber(metrics, ["screen", "y"]);
         var screenWidth = RequiredPositiveNumber(metrics, ["screen", "width"]);
         var screenHeight = RequiredPositiveNumber(metrics, ["screen", "height"]);
-        var cornerRadius = RequiredNumber(metrics, ["cornerRadius"]);
-        var cornerRadiusCoefficient = OptionalNonNegativeNumber(metrics, ["frame", "cornerRadiusCoefficient"]) ?? 0;
-        var designSafeMarginCoefficient = OptionalNonNegativeNumber(metrics, ["designGuides", "safeMarginCoefficient"]) ?? 0;
-        var statusBarHeight = RequiredNumber(metrics, ["statusBar", "height"]);
-        var safeAreaBottom = RequiredNumber(metrics, ["safeArea", "bottom"]);
-        var scaleToPixels = RequiredPositiveNumber(metrics, ["scaleToPixels"]);
+        var cornerRadius = RequiredNonNegativeNumber(metrics, ["cornerRadius"]);
+        var cornerRadiusCoefficient = OptionalCoefficient(metrics, ["frame", "cornerRadiusCoefficient"]) ?? 0;
+        var designSafeMarginCoefficient = OptionalCoefficient(metrics, ["designGuides", "safeMarginCoefficient"]) ?? 0;
+        var statusBarHeight = RequiredNonNegativeNumber(metrics, ["statusBar", "height"]);
+        var safeAreaBottom = RequiredNonNegativeNumber(metrics, ["safeArea", "bottom"]);
 
         return new DevicePreviewMetricValues(
             canvasWidth,
@@ -183,34 +111,23 @@ public static class DeviceMetricRules
             cornerRadiusCoefficient,
             designSafeMarginCoefficient,
             statusBarHeight,
-            safeAreaBottom,
-            scaleToPixels);
+            safeAreaBottom);
     }
 
-    public static double GuessScale(int width, int height, string osFamily)
+    private static void RequireExactKeys(
+        JsonObject value,
+        IReadOnlyList<string> required,
+        IReadOnlyList<string> optional,
+        string context)
     {
-        if (osFamily.Equals("ios", StringComparison.OrdinalIgnoreCase))
+        var allowed = required.Concat(optional).ToHashSet(StringComparer.Ordinal);
+        var missing = required.Where((key) => !value.ContainsKey(key)).ToArray();
+        var unknown = value.Select((entry) => entry.Key).Where((key) => !allowed.Contains(key)).ToArray();
+        if (missing.Length > 0 || unknown.Length > 0)
         {
-            return Math.Max(width, height) >= 2200 ? 3 : 2;
+            throw new InvalidOperationException(
+                $"{context} must contain only its current properties; missing [{string.Join(", ", missing)}], unknown [{string.Join(", ", unknown)}].");
         }
-
-        return Math.Max(width, height) >= 2400 ? 3 : 2;
-    }
-
-    public static double GuessScaleFromText(IReadOnlyList<string> values, string osFamily, int width, int height)
-    {
-        var ppiText = values.FirstOrDefault((value) => value.Contains("ppi", StringComparison.OrdinalIgnoreCase));
-        if (ppiText is not null)
-        {
-            var match = Regex.Match(ppiText, @"(?<ppi>\d{3,4})\s*ppi", RegexOptions.IgnoreCase);
-            if (match.Success && int.TryParse(match.Groups["ppi"].Value, out var ppi))
-            {
-                if (ppi >= 430) return 3;
-                if (ppi >= 300) return 2;
-            }
-        }
-
-        return GuessScale(width, height, osFamily);
     }
 
     private static double RequiredPositiveNumber(JsonObject metrics, IReadOnlyList<string> path)
@@ -228,16 +145,28 @@ public static class DeviceMetricRules
             ?? throw new InvalidOperationException(
                 $"Device metrics path '{PathLabel(path)}' is required.");
 
-        if (node is JsonValue value)
+        if (node is JsonValue value
+            && double.TryParse(
+                value.ToJsonString(),
+                NumberStyles.Float,
+                CultureInfo.InvariantCulture,
+                out var number)
+            && double.IsFinite(number))
         {
-            if (value.TryGetValue<double>(out var number) && double.IsFinite(number))
-            {
-                return number;
-            }
+            return number;
         }
 
         throw new InvalidOperationException(
             $"Device metrics path '{PathLabel(path)}' must be numeric.");
+    }
+
+    private static double RequiredNonNegativeNumber(JsonObject metrics, IReadOnlyList<string> path)
+    {
+        var value = RequiredNumber(metrics, path);
+        if (value >= 0) return value;
+
+        throw new InvalidOperationException(
+            $"Device metrics path '{PathLabel(path)}' must be non-negative.");
     }
 
     private static string PathLabel(IReadOnlyList<string> path)
@@ -254,7 +183,11 @@ public static class DeviceMetricRules
         }
 
         if (node is JsonValue value
-            && value.TryGetValue<double>(out var number)
+            && double.TryParse(
+                value.ToJsonString(),
+                NumberStyles.Float,
+                CultureInfo.InvariantCulture,
+                out var number)
             && double.IsFinite(number)
             && number >= 0)
         {
@@ -263,6 +196,21 @@ public static class DeviceMetricRules
 
         throw new InvalidOperationException(
             $"Device metrics optional path '{PathLabel(path)}' must be a non-negative JSON number when present.");
+    }
+
+    private static double? OptionalCoefficient(JsonObject metrics, IReadOnlyList<string> path)
+    {
+        var number = OptionalNonNegativeNumber(metrics, path);
+        ValidateCoefficient(number, PathLabel(path));
+        return number;
+    }
+
+    private static void ValidateCoefficient(double? number, string path)
+    {
+        if (number is null or (>= 0 and <= 0.5)) return;
+
+        throw new InvalidOperationException(
+            $"Device metrics optional path '{path}' must be between 0 and 0.5 when present.");
     }
 
     private static int StatusBarHeight(int height)

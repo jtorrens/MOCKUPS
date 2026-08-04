@@ -214,6 +214,12 @@ export function planScopedValidation(
       typecheck = true;
       continue;
     }
+    if (file.startsWith("tests/animation/")
+      && file.endsWith(".ts")) {
+      broadPreview = true;
+      typecheck = true;
+      continue;
+    }
     if (file.startsWith("tests/architecture/")) {
       architectureBoundaries = true;
       continue;

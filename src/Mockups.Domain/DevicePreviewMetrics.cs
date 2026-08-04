@@ -12,5 +12,4 @@ public sealed record DevicePreviewMetrics(
     double CornerRadiusCoefficient,
     double DesignSafeMarginCoefficient,
     double StatusBarHeight,
-    double SafeAreaBottom,
-    double ScaleToPixels);
+    double SafeAreaBottom);

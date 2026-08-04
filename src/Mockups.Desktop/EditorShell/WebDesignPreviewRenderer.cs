@@ -231,7 +231,6 @@ internal static class WebDesignPreviewRenderer
                 screenY = metrics.ScreenY,
                 screenWidth = metrics.ScreenWidth,
                 screenHeight = metrics.ScreenHeight,
-                scaleToPixels = metrics.ScaleToPixels,
             },
         };
     }

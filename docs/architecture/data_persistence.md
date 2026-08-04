@@ -325,6 +325,10 @@ Every JSON column has one required root kind. Blank, malformed or wrong-root
 content fails explicitly. Readers and writers do not turn invalid documents
 into plausible defaults.
 
+`devices.metrics_json` additionally follows the exact Device document in
+`resources_assets.md`. Startup validation and every focused Device read reject
+missing, wrong-shaped or undeclared properties without repair.
+
 The following inventory is machine-checked against schema validation:
 
 ```text

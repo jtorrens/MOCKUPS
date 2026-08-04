@@ -293,23 +293,6 @@ public static class RecordClassFieldCatalog
         ["device.manufacturer"] = new("device.manufacturer", "Manufacturer", ValueKind.StringSingleLine),
         ["device.model"] = new("device.model", "Model", ValueKind.StringSingleLine),
         ["device.osFamily"] = new("device.osFamily", "OS Family", ValueKind.StringSingleLine),
-        ["device.metrics.designSpace.size"] = new("device.metrics.designSpace.size", "Design space", ValueKind.IntegerPair, PairLabels: WidthHeightPairLabels),
-        ["device.metrics.renderSize"] = new("device.metrics.renderSize", "Render size", ValueKind.IntegerPair, PairLabels: WidthHeightPairLabels),
-        ["device.metrics.scaleToPixels"] = new(
-            "device.metrics.scaleToPixels",
-            "Scale to pixels",
-            ValueKind.Decimal,
-            Number: new NumberDefinition(0.1m, 10, 0.1m, 2)),
-        ["device.metrics.pixelRatio"] = new(
-            "device.metrics.pixelRatio",
-            "Pixel ratio",
-            ValueKind.Decimal,
-            Number: new NumberDefinition(0.1m, 10, 0.1m, 2)),
-        ["device.metrics.defaultScreenScale"] = new(
-            "device.metrics.defaultScreenScale",
-            "Default screen scale",
-            ValueKind.Decimal,
-            Number: new NumberDefinition(0.1m, 10, 0.1m, 2)),
         ["device.metrics.canvas.size"] = new("device.metrics.canvas.size", "Canvas size", ValueKind.IntegerPair, PairLabels: WidthHeightPairLabels),
         ["device.metrics.screen.position"] = new("device.metrics.screen.position", "Screen position", ValueKind.IntegerPair, PairLabels: PositionPairLabels),
         ["device.metrics.screen.size"] = new("device.metrics.screen.size", "Screen size", ValueKind.IntegerPair, PairLabels: WidthHeightPairLabels),
@@ -318,14 +301,16 @@ public static class RecordClassFieldCatalog
             "Corner radius",
             ValueKind.Decimal,
             Number: new NumberDefinition(0, 9999, 0.1m, 3)),
-        ["device.metrics.viewport.position"] = new("device.metrics.viewport.position", "Viewport position", ValueKind.IntegerPair, PairLabels: PositionPairLabels),
-        ["device.metrics.viewport.size"] = new("device.metrics.viewport.size", "Viewport size", ValueKind.IntegerPair, PairLabels: WidthHeightPairLabels),
-        ["device.metrics.safeArea.vertical"] = new("device.metrics.safeArea.vertical", "Safe vertical", ValueKind.IntegerPair, PairLabels: VerticalInsetPairLabels),
-        ["device.metrics.safeArea.horizontal"] = new("device.metrics.safeArea.horizontal", "Safe horizontal", ValueKind.IntegerPair, PairLabels: HorizontalInsetPairLabels),
-        ["device.metrics.statusBar.position"] = new("device.metrics.statusBar.position", "Status bar position", ValueKind.IntegerPair, PairLabels: PositionPairLabels),
-        ["device.metrics.statusBar.size"] = new("device.metrics.statusBar.size", "Status bar size", ValueKind.IntegerPair, PairLabels: WidthHeightPairLabels),
-        ["device.metrics.dynamicIsland.position"] = new("device.metrics.dynamicIsland.position", "Dynamic island position", ValueKind.IntegerPair, PairLabels: PositionPairLabels),
-        ["device.metrics.dynamicIsland.size"] = new("device.metrics.dynamicIsland.size", "Dynamic island size", ValueKind.IntegerPair, PairLabels: WidthHeightPairLabels),
+        ["device.metrics.safeArea.bottom"] = new(
+            "device.metrics.safeArea.bottom",
+            "Safe area bottom",
+            ValueKind.Integer,
+            Number: new NumberDefinition(0, 100000, 1, 0)),
+        ["device.metrics.statusBar.height"] = new(
+            "device.metrics.statusBar.height",
+            "Status bar height",
+            ValueKind.Integer,
+            Number: new NumberDefinition(0, 100000, 1, 0)),
 
         ["theme.family"] = new("theme.family", "Family", ValueKind.OptionToken),
         ["theme.iconThemeId"] = new(

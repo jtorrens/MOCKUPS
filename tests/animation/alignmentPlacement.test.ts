@@ -32,7 +32,7 @@ test("inside edge uses the padded box supplied by its parent", () => {
   );
 });
 
-test("screen percentage resolves to design width independently of preview scale", () => {
+test("screen percentage resolves from the required Screen width", () => {
   assert.equal(screenPercentToDesignWidth({
     kind: "componentClass",
     frameRate: 25,
@@ -45,7 +45,6 @@ test("screen percentage resolves to design width independently of preview scale"
       screenY: 0,
       screenWidth: 720,
       screenHeight: 1440,
-      scaleToPixels: 2,
     },
     themeMode: "light",
     themeTokensJson: "{}",

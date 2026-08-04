@@ -46,12 +46,6 @@ internal sealed class DeviceRepository : IDeviceRepository
         var metrics = JsonPath.ParseRequiredObject(settings.MetricsJson, $"Device '{deviceId}' metrics_json");
         switch (fieldId)
         {
-            case "device.metrics.designSpace.size":
-                JsonPath.SetPair(metrics, value, ["designSpace", "width"], ["designSpace", "height"]);
-                break;
-            case "device.metrics.renderSize":
-                JsonPath.SetPair(metrics, value, ["renderSize", "width"], ["renderSize", "height"]);
-                break;
             case "device.metrics.canvas.size":
                 JsonPath.SetPair(metrics, value, ["canvas", "width"], ["canvas", "height"]);
                 break;
@@ -61,45 +55,20 @@ internal sealed class DeviceRepository : IDeviceRepository
             case "device.metrics.screen.size":
                 JsonPath.SetPair(metrics, value, ["screen", "width"], ["screen", "height"]);
                 break;
-            case "device.metrics.viewport.position":
-                JsonPath.SetPair(metrics, value, ["viewport", "x"], ["viewport", "y"]);
-                break;
-            case "device.metrics.viewport.size":
-                JsonPath.SetPair(metrics, value, ["viewport", "width"], ["viewport", "height"]);
-                break;
-            case "device.metrics.safeArea.vertical":
-                JsonPath.SetPair(metrics, value, ["safeArea", "top"], ["safeArea", "bottom"]);
-                break;
-            case "device.metrics.safeArea.horizontal":
-                JsonPath.SetPair(metrics, value, ["safeArea", "left"], ["safeArea", "right"]);
-                break;
-            case "device.metrics.statusBar.position":
-                JsonPath.SetPair(metrics, value, ["statusBar", "x"], ["statusBar", "y"]);
-                break;
-            case "device.metrics.statusBar.size":
-                JsonPath.SetPair(metrics, value, ["statusBar", "width"], ["statusBar", "height"]);
-                break;
-            case "device.metrics.dynamicIsland.position":
-                JsonPath.SetPair(metrics, value, ["dynamicIsland", "x"], ["dynamicIsland", "y"]);
-                break;
-            case "device.metrics.dynamicIsland.size":
-                JsonPath.SetPair(metrics, value, ["dynamicIsland", "width"], ["dynamicIsland", "height"]);
-                break;
-            case "device.metrics.scaleToPixels":
-                JsonPath.Set(metrics, ["scaleToPixels"], JsonPath.NumberNode(value));
-                break;
-            case "device.metrics.pixelRatio":
-                JsonPath.Set(metrics, ["pixelRatio"], JsonPath.NumberNode(value));
-                break;
-            case "device.metrics.defaultScreenScale":
-                JsonPath.Set(metrics, ["defaultScreenScale"], JsonPath.NumberNode(value));
-                break;
             case "device.metrics.cornerRadius":
                 JsonPath.Set(metrics, ["cornerRadius"], JsonPath.NumberNode(value));
+                break;
+            case "device.metrics.safeArea.bottom":
+                JsonPath.Set(metrics, ["safeArea", "bottom"], JsonPath.NumberNode(value));
+                break;
+            case "device.metrics.statusBar.height":
+                JsonPath.Set(metrics, ["statusBar", "height"], JsonPath.NumberNode(value));
                 break;
             default:
                 throw new InvalidOperationException($"Unknown device metrics field '{fieldId}'.");
         }
+
+        _ = DeviceMetricRules.PreviewValues(metrics);
 
         _context.Execute(
             connection,
@@ -147,7 +116,7 @@ internal sealed class DeviceRepository : IDeviceRepository
             ("$projectId", projectId)) + 1;
         var id = $"device_{Guid.NewGuid():N}";
         var name = $"Device {index}";
-        var metricsJson = DeviceMetricRules.CreateMetricsJson(1170, 2532, 3, includeDynamicIsland: false);
+        var metricsJson = DeviceMetricRules.CreateMetricsJson(1170, 2532);
         _context.Execute(
             connection,
             """
@@ -170,7 +139,8 @@ internal sealed class DeviceRepository : IDeviceRepository
         string osFamily,
         string metricsJson)
     {
-        JsonPath.ParseRequiredObject(metricsJson, "Imported Device metrics_json");
+        _ = DeviceMetricRules.PreviewValues(
+            JsonPath.ParseRequiredObject(metricsJson, "Imported Device metrics_json"));
         var id = $"device_{Guid.NewGuid():N}";
         _context.Execute(
             connection,
@@ -234,11 +204,14 @@ internal sealed class DeviceRepository : IDeviceRepository
             throw new InvalidOperationException($"Missing device '{deviceId}'.");
         }
 
-        return new DeviceSettings(
+        var settings = new DeviceSettings(
             reader.GetString(0),
             SqliteCommandExecutor.ReadString(reader, 1),
             SqliteCommandExecutor.ReadString(reader, 2),
             SqliteCommandExecutor.ReadString(reader, 3),
             reader.GetString(4));
+        _ = DeviceMetricRules.PreviewValues(
+            JsonPath.ParseRequiredObject(settings.MetricsJson, $"Device '{deviceId}' metrics_json"));
+        return settings;
     }
 }

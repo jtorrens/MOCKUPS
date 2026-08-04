@@ -90,6 +90,17 @@ test("broad Preview coverage subsumes changed focused Preview tests", () => {
   );
 });
 
+test("a shared Preview test fixture selects broad Preview coverage", () => {
+  const plan = planScopedValidation(
+    repositoryRoot,
+    ["tests/animation/committedComponentFixture.ts"],
+  );
+  const ids = plan.map((step) => step.id);
+  assert.equal(ids.includes("preview-all"), true);
+  assert.equal(ids.includes("desktop-exhaustive"), true);
+  assert.equal(ids.includes("typecheck"), true);
+});
+
 test("automatic discovery ignores only an unstaged workstation database", () => {
   const files = [
     "data/mockups.sqlite",

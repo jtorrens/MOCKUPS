@@ -94,7 +94,6 @@ export function committedComponentFixture(
         screenY: 0,
         screenWidth: 360,
         screenHeight: 720,
-        scaleToPixels: 1,
       },
       iconAssetRoot: iconTheme.asset_root,
       iconMappingJson: iconTheme.mapping_json,

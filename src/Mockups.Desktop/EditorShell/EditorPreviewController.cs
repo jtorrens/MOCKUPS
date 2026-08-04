@@ -2890,8 +2890,7 @@ internal sealed class EditorPreviewController : IDisposable
             0,
             0,
             0,
-            0,
-            1);
+            0);
     }
 
     private DesignPreviewPayload? DesignPreviewPayloadForSelection()

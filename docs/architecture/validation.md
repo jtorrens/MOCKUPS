@@ -400,6 +400,8 @@ Database validation is read-only and confirms:
 
 - schema version and expected tables, columns, indexes and foreign keys;
 - exact JSON root kinds;
+- exact Device metric objects and nested properties, including rejection of
+  retired geometry and scale fields;
 - complete Component and Module Variants;
 - full reference formats and same-Project integrity through the same guard used
   by repository writes;

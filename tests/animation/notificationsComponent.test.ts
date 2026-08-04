@@ -67,7 +67,6 @@ function payload(): DesignPreviewPayload {
       screenY: 0,
       screenWidth: 360,
       screenHeight: 720,
-      scaleToPixels: 1,
     },
     themeMode: "light",
     themeTokensJson: JSON.stringify({

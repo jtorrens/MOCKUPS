@@ -55,6 +55,7 @@ var tests = new (string Name, Action Run)[]
     ("Project-owned references reject cross-Project reads and writes", ProjectOwnedReferencesRejectCrossProjectValues),
     ("current editor layouts reject retired or incomplete roots read-only", CurrentEditorLayoutContractFailsReadOnly),
     ("persisted JSON roots reject blank malformed and wrong shapes", PersistedJsonRootsAreStrict),
+    ("Device metric documents reject retired and incomplete properties read-only", DeviceMetricDocumentsAreStrict),
     ("incomplete Component and Module Variants fail read-only", IncompleteVariantsFailReadOnly),
     ("Status and Navigation Bar configs fail strictly read-only", SystemBarComponentContractsFailReadOnly),
     ("List and List Item fixed contracts fail strictly read-only", ListComponentContractsFailReadOnly),
@@ -1537,7 +1538,7 @@ static void RecordScalarWritesRejectInvalidValues()
         var beforeRejectedWrites = SHA256.HashData(File.ReadAllBytes(temporary));
         Throws<InvalidOperationException>(() => database.UpdateDeviceField(
             device.Id,
-            "device.metrics.scaleToPixels",
+            "device.metrics.safeArea.bottom",
             "not-a-number"));
         Throws<InvalidOperationException>(() => database.UpdateDeviceField(
             device.Id,
@@ -1650,15 +1651,14 @@ static void ResourceScalarReadsRejectWrongShapes()
         var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
         var deviceMetricsJson = database.GetDeviceSettings(device.Id).MetricsJson;
         var invalidDeviceMetrics = JsonPath.ParseRequiredObject(deviceMetricsJson, "Device test metrics");
-        invalidDeviceMetrics["scaleToPixels"] = "3";
+        invalidDeviceMetrics["scaleToPixels"] = 3;
         ReplaceJson("devices", "metrics_json", device.Id, invalidDeviceMetrics.ToJsonString());
-        RejectsReadWithoutMutation(() => database.GetDeviceMetricFieldValue(device.Id, "device.metrics.scaleToPixels"));
         RejectsReadWithoutMutation(() => database.GetDevicePreviewMetrics(device.Id));
         ReplaceJson("devices", "metrics_json", device.Id, deviceMetricsJson);
-        var invalidDynamicIsland = JsonPath.ParseRequiredObject(deviceMetricsJson, "Device Dynamic Island test metrics");
-        invalidDynamicIsland["dynamicIsland"] = "present-but-invalid";
-        ReplaceJson("devices", "metrics_json", device.Id, invalidDynamicIsland.ToJsonString());
-        RejectsReadWithoutMutation(() => database.GetDeviceMetricFieldValue(device.Id, "device.metrics.dynamicIsland.position"));
+        var invalidSafeArea = JsonPath.ParseRequiredObject(deviceMetricsJson, "Device Safe Area test metrics");
+        invalidSafeArea["safeArea"]!.AsObject()["bottom"] = "93";
+        ReplaceJson("devices", "metrics_json", device.Id, invalidSafeArea.ToJsonString());
+        RejectsReadWithoutMutation(() => database.GetDeviceMetricFieldValue(device.Id, "device.metrics.safeArea.bottom"));
         ReplaceJson("devices", "metrics_json", device.Id, deviceMetricsJson);
 
         var actor = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Actor);
@@ -7246,8 +7246,7 @@ static void ResidentPreviewShellRejectsChangedDeviceGeometry()
         0,
         0,
         0,
-        0,
-        3);
+        0);
     var compactMetrics = wideMetrics with
     {
         Name = "iPhone 15 Pro",
@@ -8190,6 +8189,40 @@ static void PersistedJsonRootsAreStrict()
     });
 }
 
+static void DeviceMetricDocumentsAreStrict()
+{
+    AssertRejectedDatabaseIsReadOnly("retired-device-scale", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            UPDATE devices
+            SET metrics_json = json_set(metrics_json, '$.scaleToPixels', 3)
+            WHERE id = (SELECT id FROM devices LIMIT 1)
+            """;
+        command.ExecuteNonQuery();
+    });
+    AssertRejectedDatabaseIsReadOnly("incomplete-device-safe-area", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            UPDATE devices
+            SET metrics_json = json_remove(metrics_json, '$.safeArea.bottom')
+            WHERE id = (SELECT id FROM devices LIMIT 1)
+            """;
+        command.ExecuteNonQuery();
+    });
+    AssertRejectedDatabaseIsReadOnly("retired-device-nested-property", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            UPDATE devices
+            SET metrics_json = json_set(metrics_json, '$.statusBar.width', 100)
+            WHERE id = (SELECT id FROM devices LIMIT 1)
+            """;
+        command.ExecuteNonQuery();
+    });
+}
+
 static void IncompleteVariantsFailReadOnly()
 {
     AssertRejectedDatabaseIsReadOnly("component-default-unlocked", (connection) =>
@@ -8896,6 +8929,25 @@ static void ResourceRepositoriesPreserveFocusedContract()
         var device = Descendants(tree).First((node) => node.Kind == ProjectTreeNodeKind.Device);
         var actor = Descendants(tree).First((node) => node.Kind == ProjectTreeNodeKind.Actor);
 
+        SequenceEqual(
+            new[]
+            {
+                "device.manufacturer",
+                "device.model",
+                "device.osFamily",
+                "device.metrics.canvas.size",
+                "device.metrics.screen.position",
+                "device.metrics.screen.size",
+                "device.metrics.cornerRadius",
+                "device.metrics.safeArea.bottom",
+                "device.metrics.statusBar.height",
+            },
+            EditorLayouts(database).LoadEditorLayout(device.RecordClassId).Cards
+                .SelectMany((card) => card.VisibleGroups)
+                .SelectMany((group) => group.VisibleFields)
+                .Select((field) => field.Id)
+                .Where((id) => id.StartsWith("device.", StringComparison.Ordinal)));
+
         Equal(database.GetPaletteColorSettings(color.Id), paletteRepository.GetSettings(color.Id));
         Equal(database.GetDeviceSettings(device.Id), deviceRepository.GetSettings(device.Id));
         Equal(database.GetActorSettings(actor.Id), actorRepository.GetSettings(actor.Id));
@@ -8933,6 +8985,24 @@ static void ResourceRepositoriesPreserveFocusedContract()
         Equal("100|200", database.GetDeviceMetricFieldValue(device.Id, "device.metrics.screen.size"));
         database.UpdateDeviceField(device.Id, "device.metrics.screen.size", originalScreenSize);
         Equal(originalDevice, deviceRepository.GetSettings(device.Id));
+
+        var importedDraft = DeviceImportMapper.ToDraft(new DeviceCatalogDetails(
+            "Imported iPhone",
+            "Apple",
+            "iPhone",
+            "ios",
+            393,
+            852,
+            1179,
+            2556,
+            "catalog"));
+        var importedMetrics = JsonPath.ParseRequiredObject(
+            importedDraft.MetricsJson,
+            "Imported Device metrics");
+        _ = DeviceMetricRules.PreviewValues(importedMetrics);
+        True(!importedMetrics.ContainsKey("designSpace"));
+        True(!importedMetrics.ContainsKey("renderSize"));
+        True(!importedMetrics.ContainsKey("scaleToPixels"));
 
         var originalActor = database.GetActorSettings(actor.Id);
         actorRepository.UpdateField(actor.Id, "actor.shortName", "Repository Actor");
@@ -8989,6 +9059,18 @@ static void ResourceRepositoriesPreserveFocusedContract()
         Throws<InvalidOperationException>(() => database.AddImportedDevice(
             devicesRoot,
             new DeviceImportDraft("Invalid Device", "Mockups", "Invalid", "ios", "[]")));
+        var retiredMetrics = JsonPath.ParseRequiredObject(
+            database.GetDeviceSettings(device.Id).MetricsJson,
+            "Retired imported Device metrics");
+        retiredMetrics["pixelRatio"] = 3;
+        Throws<InvalidOperationException>(() => database.AddImportedDevice(
+            devicesRoot,
+            new DeviceImportDraft(
+                "Retired Device",
+                "Mockups",
+                "Retired",
+                "ios",
+                retiredMetrics.ToJsonString())));
         var afterRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(beforeRejectedWrite, afterRejectedWrite);
     }
@@ -11710,8 +11792,7 @@ static void RenderQueueChildrenAreIndependent()
             0,
             0,
             0,
-            0,
-            1);
+            0);
         RenderOutputTarget Output(string appearance) =>
             new(
                 "production",
@@ -12243,8 +12324,7 @@ static void RenderExecutorPublishesCleanPngSequence()
                 0,
                 0,
                 0,
-                0,
-                1),
+                0),
             25,
             StoreRenderFrames(
                 Path.Combine(

@@ -5,7 +5,6 @@ export interface PreviewFramePayload {
   screenY: number;
   screenWidth: number;
   screenHeight: number;
-  scaleToPixels?: number;
 }
 
 export interface DesignPreviewFontFacePayload {

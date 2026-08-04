@@ -188,7 +188,6 @@ function payload(alternatives: Record<string, unknown>[], frame = 0): DesignPrev
       screenY: 0,
       screenWidth: 360,
       screenHeight: 720,
-      scaleToPixels: 1,
     },
     themeMode: "light",
     themeTokensJson: JSON.stringify({

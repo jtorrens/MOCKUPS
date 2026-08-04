@@ -38,9 +38,26 @@ are navigable actions that close the dialog before navigating.
 
 ## Devices
 
-A Device owns its current metrics document. Device metrics are interpreted by
-the domain and Preview layers. Repository, tree and shell expose the record
-without embedding device-specific layout rules.
+A Device owns one strict current metrics document:
+
+```json
+{
+  "canvas": { "width": 1179, "height": 2556 },
+  "screen": { "x": 0, "y": 0, "width": 1179, "height": 2556 },
+  "cornerRadius": 151,
+  "safeArea": { "bottom": 93 },
+  "statusBar": { "height": 161 }
+}
+```
+
+`frame.cornerRadiusCoefficient` and
+`designGuides.safeMarginCoefficient` are the only optional properties. Every
+object rejects undeclared properties. Device metrics contain no design-space,
+render-size, pixel-ratio, default-scale, viewport, Dynamic Island, source or
+unit metadata. The domain owns validation and projection; Preview consumes
+only Canvas and Screen geometry plus the declared visual coefficients.
+Repository, tree and shell expose the record without embedding
+device-specific layout rules.
 
 ## Production Fonts
 
