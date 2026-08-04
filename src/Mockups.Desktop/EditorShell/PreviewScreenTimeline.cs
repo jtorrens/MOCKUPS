@@ -57,6 +57,11 @@ internal sealed record PreviewScreenTimelineKeyframe(
     int ScreenFrame,
     bool IsProtected);
 
+internal sealed record PreviewScreenTimelineReferenceMarker(
+    string Id,
+    int Frame,
+    string Text);
+
 internal sealed record PreviewScreenTimelineSnapshot(
     string ScreenId,
     string ScreenLabel,
@@ -649,6 +654,8 @@ internal sealed class PreviewScreenTimelineController : IDisposable
     private readonly Action<string, int> _setScreenFrame;
     private readonly Action _togglePlayback;
     private readonly PreviewPlaybackState _playbackState;
+    private readonly Func<string, IReadOnlyList<PreviewScreenTimelineReferenceMarker>>
+        _referenceMarkers;
     private readonly PreviewScreenTimelineSurface _surface;
     private string _screenId = "";
 
@@ -658,7 +665,9 @@ internal sealed class PreviewScreenTimelineController : IDisposable
         Func<string, int> screenFrame,
         Action<string, int> setScreenFrame,
         Action togglePlayback,
-        PreviewPlaybackState playbackState)
+        PreviewPlaybackState playbackState,
+        Func<string, IReadOnlyList<PreviewScreenTimelineReferenceMarker>>
+            referenceMarkers)
     {
         _host = host;
         _screenRange = screenRange;
@@ -666,6 +675,7 @@ internal sealed class PreviewScreenTimelineController : IDisposable
         _setScreenFrame = setScreenFrame;
         _togglePlayback = togglePlayback;
         _playbackState = playbackState;
+        _referenceMarkers = referenceMarkers;
         _surface = new PreviewScreenTimelineSurface(
             SetFrame,
             StepFrame,
@@ -696,7 +706,8 @@ internal sealed class PreviewScreenTimelineController : IDisposable
                         prepared.Surface,
                         targetId),
                 _screenFrame(screenId),
-                _playbackState.IsPlaying);
+                _playbackState.IsPlaying,
+                _referenceMarkers(screenId));
         }
         catch (Exception exception)
         {
@@ -716,6 +727,8 @@ internal sealed class PreviewScreenTimelineController : IDisposable
         _surface.SetFrame(
             _screenFrame(_screenId),
             _playbackState.IsPlaying);
+        _surface.SetReferenceMarkers(
+            _referenceMarkers(_screenId));
     }
 
     public void Dispose()
@@ -758,6 +771,8 @@ internal sealed class PreviewScreenTimelineSurface : Border
     private readonly Dictionary<PreviewScreenTimelineLane, TimelineRow>
         _rowsByLane = [];
     private readonly List<int> _keyframeFrames = [];
+    private IReadOnlyList<PreviewScreenTimelineReferenceMarker>
+        _referenceMarkers = [];
     private readonly ContentControl _animationHost = new();
     private PreviewScreenTimelineRuler? _ruler;
     private PreviewScreenTimelineBackdrop? _backdrop;
@@ -853,10 +868,12 @@ internal sealed class PreviewScreenTimelineSurface : Border
         PreviewScreenTimelineSnapshot snapshot,
         Func<string, AnimationTargetEditorContent> animationContent,
         int frame,
-        bool isPlaying)
+        bool isPlaying,
+        IReadOnlyList<PreviewScreenTimelineReferenceMarker>? referenceMarkers = null)
     {
         _snapshot = snapshot;
         _animationContent = animationContent;
+        _referenceMarkers = referenceMarkers ?? [];
         _frame = Math.Clamp(frame, snapshot.MinimumFrame, snapshot.MaximumFrame);
         var zoom = _zoomByScreen.TryGetValue(snapshot.ScreenId, out var storedZoom)
             ? storedZoom
@@ -881,6 +898,7 @@ internal sealed class PreviewScreenTimelineSurface : Border
         _ruler = new PreviewScreenTimelineRuler(
             snapshot,
             _viewport,
+            _referenceMarkers,
             PlayheadSnapTargets,
             OnPlayheadDragged);
         AddTimelineRow(
@@ -999,6 +1017,15 @@ internal sealed class PreviewScreenTimelineSurface : Border
             _playheadSnapFrame is not null);
         UpdateFrameText();
         UpdatePlayButton(isPlaying);
+    }
+
+    public void SetReferenceMarkers(
+        IReadOnlyList<PreviewScreenTimelineReferenceMarker> markers)
+    {
+        if (_snapshot is null
+            || _referenceMarkers.SequenceEqual(markers)) return;
+        _referenceMarkers = markers;
+        _ruler?.SetReferenceMarkers(markers);
     }
 
     private PreviewScreenTimelineLane CreateLane(
@@ -1127,6 +1154,7 @@ internal sealed class PreviewScreenTimelineSurface : Border
             .Where((lane) => lane.IsVisible)
             .SelectMany((lane) => lane.SnapFrames)
             .Concat(_keyframeFrames)
+            .Concat(_referenceMarkers.Select((marker) => marker.Frame))
             .Distinct()
             .Order()
             .ToList();
@@ -1455,6 +1483,7 @@ internal sealed class PreviewScreenTimelineRuler : Border
     public PreviewScreenTimelineRuler(
         PreviewScreenTimelineSnapshot snapshot,
         PreviewScreenTimelineViewport viewport,
+        IReadOnlyList<PreviewScreenTimelineReferenceMarker> referenceMarkers,
         Func<IReadOnlyList<int>> snapTargets,
         Action<PreviewScreenTimelinePlayheadChange> setFrame)
     {
@@ -1464,7 +1493,10 @@ internal sealed class PreviewScreenTimelineRuler : Border
         MinWidth = 180;
         HorizontalAlignment = HorizontalAlignment.Stretch;
         Background = Brushes.Transparent;
-        _ticks = new PreviewScreenTimelineRulerTicks(snapshot, viewport);
+        _ticks = new PreviewScreenTimelineRulerTicks(
+            snapshot,
+            viewport,
+            referenceMarkers);
         Child = _ticks;
         Cursor = new Cursor(StandardCursorType.SizeWestEast);
         PointerPressed += OnPointerPressed;
@@ -1478,6 +1510,10 @@ internal sealed class PreviewScreenTimelineRuler : Border
         _viewport = viewport;
         _ticks.SetViewport(viewport);
     }
+
+    public void SetReferenceMarkers(
+        IReadOnlyList<PreviewScreenTimelineReferenceMarker> markers) =>
+        _ticks.SetReferenceMarkers(markers);
 
     private void OnPointerPressed(object? sender, PointerPressedEventArgs args)
     {
@@ -1520,22 +1556,35 @@ internal sealed class PreviewScreenTimelineRuler : Border
 internal sealed class PreviewScreenTimelineRulerTicks
     : PreviewScreenTimelineTrack
 {
+    private IReadOnlyList<PreviewScreenTimelineReferenceMarker>
+        _referenceMarkers;
+
     public PreviewScreenTimelineRulerTicks(
         PreviewScreenTimelineSnapshot snapshot)
         : this(
             snapshot,
             new PreviewScreenTimelineViewport(
                 snapshot.MinimumFrame,
-                snapshot.MaximumFrame))
+                snapshot.MaximumFrame),
+            [])
     {
     }
 
     public PreviewScreenTimelineRulerTicks(
         PreviewScreenTimelineSnapshot snapshot,
-        PreviewScreenTimelineViewport viewport)
+        PreviewScreenTimelineViewport viewport,
+        IReadOnlyList<PreviewScreenTimelineReferenceMarker> referenceMarkers)
         : base(snapshot, viewport)
     {
+        _referenceMarkers = referenceMarkers;
         IsHitTestVisible = false;
+    }
+
+    public void SetReferenceMarkers(
+        IReadOnlyList<PreviewScreenTimelineReferenceMarker> markers)
+    {
+        _referenceMarkers = markers;
+        InvalidateVisual();
     }
 
     public override void Render(DrawingContext context)
@@ -1550,6 +1599,16 @@ internal sealed class PreviewScreenTimelineRulerTicks
             context.DrawLine(
                 new Pen(EditorAnimationVisuals.TimelineBrush, 1),
                 new Point(x, baselineY - height),
+                new Point(x, baselineY));
+        }
+        foreach (var marker in _referenceMarkers)
+        {
+            if (marker.Frame < Viewport.MinimumFrame
+                || marker.Frame > Viewport.MaximumFrame) continue;
+            var x = X(marker.Frame);
+            context.DrawLine(
+                new Pen(EditorAnimationVisuals.ActiveTrackBrush, 2),
+                new Point(x, 1),
                 new Point(x, baselineY));
         }
     }

@@ -72,6 +72,10 @@ internal static class DictionaryControlRegistry
                 request.Definition,
                 request.Value,
                 request.Services.BrowsePath),
+            [ValueKind.VideoFilePath] = (request) => new DictionaryPathControl(
+                request.Definition,
+                request.Value,
+                request.Services.BrowsePath),
             [ValueKind.ImageFilePath] = (request) => new DictionaryImageFileControl(
                 request.Definition,
                 request.Value,

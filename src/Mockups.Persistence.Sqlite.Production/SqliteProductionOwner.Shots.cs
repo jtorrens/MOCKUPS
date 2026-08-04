@@ -28,6 +28,7 @@ internal sealed partial class SqliteProductionOwner
             record.DeviceOverrideId,
             record.ThemeOverrideId,
             record.CanvasJson,
+            record.ReferenceVideoJson,
             record.MetadataJson);
     }
 

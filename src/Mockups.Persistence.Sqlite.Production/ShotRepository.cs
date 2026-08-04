@@ -102,6 +102,7 @@ internal sealed class ShotRepository : IShotRepository
             null,
             null,
             "{}",
+            ShotReferenceVideoDocument.Empty.ToJson(),
             "{}");
         Insert(connection, record);
         return Get(connection, record.Id);
@@ -180,6 +181,22 @@ internal sealed class ShotRepository : IShotRepository
         if (fieldId == "shot.durationFrames")
         {
             UpdateDuration(connection, shotId, NumericText.Int32(value, 0));
+            return;
+        }
+
+        if (fieldId is "shot.referenceVideoPath" or "shot.referenceVideo")
+        {
+            var referenceRecord = Get(connection, shotId);
+            var reference = fieldId == "shot.referenceVideo"
+                ? ShotReferenceVideoDocument.ParseRequired(
+                    value,
+                    $"Shot '{shotId}' reference video")
+                : referenceRecord.ReferenceVideo() with { SourcePath = value };
+            _context.Execute(
+                connection,
+                "UPDATE shots SET reference_video_json = $value WHERE id = $id",
+                ("$id", shotId),
+                ("$value", reference.ToJson()));
             return;
         }
 
@@ -351,11 +368,11 @@ internal sealed class ShotRepository : IShotRepository
             INSERT INTO shots (
               id, episode_id, name, slug, version, notes, sort_order, fps_override,
               duration_frames, owner_actor_id, device_override_id, theme_override_id,
-              canvas_json, metadata_json, shot_number)
+              canvas_json, reference_video_json, metadata_json, shot_number)
             VALUES (
               $id, $episodeId, $name, $slug, $version, $notes, $sortOrder, $fpsOverride,
               $durationFrames, $ownerActorId, $deviceOverrideId, $themeOverrideId,
-              $canvasJson, $metadataJson, $shotNumber)
+              $canvasJson, $referenceVideoJson, $metadataJson, $shotNumber)
             """,
             ("$id", record.Id),
             ("$episodeId", record.EpisodeId),
@@ -370,6 +387,7 @@ internal sealed class ShotRepository : IShotRepository
             ("$deviceOverrideId", (object?)record.DeviceOverrideId ?? DBNull.Value),
             ("$themeOverrideId", (object?)record.ThemeOverrideId ?? DBNull.Value),
             ("$canvasJson", record.CanvasJson),
+            ("$referenceVideoJson", record.ReferenceVideoJson),
             ("$metadataJson", record.MetadataJson),
             ("$shotNumber", record.ShotNumber));
     }
@@ -400,7 +418,8 @@ internal sealed class ShotRepository : IShotRepository
             reader.IsDBNull(12) ? null : reader.GetString(12),
             reader.IsDBNull(13) ? null : reader.GetString(13),
             SqliteCommandExecutor.ReadString(reader, 14),
-            SqliteCommandExecutor.ReadString(reader, 15));
+            SqliteCommandExecutor.ReadString(reader, 15),
+            SqliteCommandExecutor.ReadString(reader, 16));
         Validate(record);
         return record;
     }
@@ -441,6 +460,9 @@ internal sealed class ShotRepository : IShotRepository
         }
         JsonPath.ParseRequiredObject(record.CanvasJson, $"Shot '{record.Id}' canvas_json");
         JsonPath.ParseRequiredObject(record.MetadataJson, $"Shot '{record.Id}' metadata_json");
+        _ = ShotReferenceVideoDocument.ParseRequired(
+            record.ReferenceVideoJson,
+            $"Shot '{record.Id}' reference_video_json");
     }
 
     private static string RequiredProjectId(SqliteConnection connection, string episodeId)
@@ -483,7 +505,7 @@ internal sealed class ShotRepository : IShotRepository
                s.version, s.notes,
                s.sort_order, s.fps_override, s.duration_frames, s.owner_actor_id,
                s.device_override_id, s.theme_override_id,
-               s.canvas_json, s.metadata_json
+               s.canvas_json, s.reference_video_json, s.metadata_json
         FROM shots s
         JOIN episodes e ON e.id = s.episode_id
         """;

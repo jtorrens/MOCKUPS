@@ -117,6 +117,15 @@ remaining width of the next row and its numeric current/maximum frame sits at
 the right; no redundant Shot/Screen timeline label is visible. When Split is
 active, its reference controls follow immediately below the slider.
 
+The far-right Production transport action uses the shared Video icon to toggle
+the selected Shot's resizable topmost reference-video window. Shot General
+associates the video through the registered `VideoFilePath` Browse control.
+The reference window starts muted and provides Audio, Set In and marker
+actions. Its marker strip supports stable-marker selection and drag; the lower
+text area edits the selected marker and the delete action removes it. The same
+markers appear as amber ticks on the Shot slider and the selected Screen ruler.
+Reference playback follows Production Play only while the window is visible.
+
 The Test Values view keeps temporary-data actions and Play/Restore controls in
 a fixed upper surface. Every finite action also exposes shared previous-frame
 and next-frame chevrons immediately after Restore. A compact numeric current

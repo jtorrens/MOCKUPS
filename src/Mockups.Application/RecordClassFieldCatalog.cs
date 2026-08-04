@@ -121,6 +121,10 @@ public static class RecordClassFieldCatalog
             "Theme override",
             ValueKind.RecordReference,
             RecordReference: new RecordReferenceDefinition("themes")),
+        ["shot.referenceVideoPath"] = new(
+            "shot.referenceVideoPath",
+            "Reference video",
+            ValueKind.VideoFilePath),
         ["shot.renderName"] = new("shot.renderName", "Render Name", ValueKind.StringReadOnly, IsEditable: false),
         ["shot.canvas"] = new("shot.canvas", "Canvas", ValueKind.StringMultiline),
         ["shot.metadata"] = new("shot.metadata", "Metadata", ValueKind.StringMultiline),

@@ -56,7 +56,8 @@ internal static class CurrentSqliteSchema
           theme_override_id TEXT REFERENCES themes(id) ON DELETE RESTRICT,
           canvas_json TEXT NOT NULL DEFAULT '{}',
           metadata_json TEXT NOT NULL DEFAULT '{}',
-          shot_number INTEGER NOT NULL DEFAULT 1 CHECK(shot_number > 0)
+          shot_number INTEGER NOT NULL DEFAULT 1 CHECK(shot_number > 0),
+          reference_video_json TEXT NOT NULL DEFAULT '{"sourcePath":"","inFrame":0,"markers":[]}'
         );
 
         CREATE UNIQUE INDEX IF NOT EXISTS idx_shots_episode_number
@@ -189,7 +190,7 @@ internal static class CurrentSqliteSchema
           layout_json TEXT NOT NULL
         );
 
-        PRAGMA user_version = 7;
+        PRAGMA user_version = 8;
         """;
 
 }

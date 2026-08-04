@@ -3,6 +3,7 @@ using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -40,6 +41,10 @@ internal sealed class EditorPathBrowser
                 _projectPaths,
                 currentPath,
                 SelectedProjectMediaRoot()),
+            ValueKind.VideoFilePath => BrowseProjectVideoFile(
+                _storageProvider,
+                _projectPaths,
+                currentPath),
             _ => BrowseDirectory(currentPath),
         };
     }
@@ -198,6 +203,51 @@ internal sealed class EditorPathBrowser
         return projectPaths.RelativePathIfInsideMediaRoot(
             selectedPath,
             mediaRoot) ?? selectedPath;
+    }
+
+    private static async Task<string?> BrowseProjectVideoFile(
+        IStorageProvider storageProvider,
+        IProjectPathResolver projectPaths,
+        string currentPath)
+    {
+        var options = new FilePickerOpenOptions
+        {
+            Title = "Select Shot reference video",
+            AllowMultiple = false,
+            FileTypeFilter =
+            [
+                new FilePickerFileType("Video")
+                {
+                    Patterns = ["*.mp4", "*.mov", "*.m4v", "*.webm"],
+                    AppleUniformTypeIdentifiers = ["public.movie", "public.video"],
+                    MimeTypes = ["video/mp4", "video/quicktime", "video/webm"],
+                },
+            ],
+        };
+        var currentFullPath = string.IsNullOrWhiteSpace(currentPath)
+            ? projectPaths.ProjectRoot
+            : projectPaths.ResolveProjectPath(currentPath);
+        var start = Directory.Exists(currentFullPath)
+            ? currentFullPath
+            : Path.GetDirectoryName(currentFullPath);
+        if (!string.IsNullOrWhiteSpace(start) && Directory.Exists(start))
+        {
+            options.SuggestedStartLocation =
+                await storageProvider.TryGetFolderFromPathAsync(start);
+        }
+
+        var files = await storageProvider.OpenFilePickerAsync(options);
+        if (files.Count == 0) return null;
+        var relative = Path.GetRelativePath(
+            projectPaths.ProjectRoot,
+            files[0].Path.LocalPath);
+        if (Path.IsPathFullyQualified(relative)
+            || relative.Replace('\\', '/').Split('/').Any(
+                (segment) => segment == ".."))
+        {
+            return null;
+        }
+        return projectPaths.NormalizeRelativePath(relative);
     }
 
     private static ProjectTreeNode ProjectAncestor(ProjectTreeNode node)

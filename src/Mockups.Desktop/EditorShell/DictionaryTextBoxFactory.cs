@@ -20,6 +20,7 @@ internal static class DictionaryTextBoxFactory
             {
                 ValueKind.DirectoryPath => "Select folder...",
                 ValueKind.MediaFilePath => "Select media...",
+                ValueKind.VideoFilePath => "Select reference video...",
                 _ => null,
             },
             VerticalContentAlignment = definition.ValueKind == ValueKind.StringMultiline
@@ -27,7 +28,7 @@ internal static class DictionaryTextBoxFactory
                 : VerticalAlignment.Center,
         };
         EditorTextBoxBehavior.Configure(textBox);
-        if (definition.ValueKind is ValueKind.ImageFilePath or ValueKind.MediaFilePath)
+        if (definition.ValueKind is ValueKind.ImageFilePath or ValueKind.MediaFilePath or ValueKind.VideoFilePath)
         {
             textBox.MaxWidth = 420;
             textBox.HorizontalAlignment = HorizontalAlignment.Stretch;

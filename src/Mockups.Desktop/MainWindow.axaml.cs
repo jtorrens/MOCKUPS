@@ -108,6 +108,7 @@ public partial class MainWindow : SukiWindow
             data.ModuleInstanceThemes,
             data.Dictionary,
             data.ActorPreview,
+            data.ProductionRecordFields,
             data.ProjectPaths,
             application.Operations,
             PreviewDeviceComboBox,
@@ -137,7 +138,8 @@ public partial class MainWindow : SukiWindow
             _previewController.ProductionScreenTimelineFrame,
             _previewController.SetProductionScreenTimelineFrame,
             _previewController.ToggleProductionPlayback,
-            _previewController.PlaybackState);
+            _previewController.PlaybackState,
+            _previewController.ProductionScreenReferenceMarkers);
         _previewControlsDock =
             new PreviewControlsDockController(
                 this,

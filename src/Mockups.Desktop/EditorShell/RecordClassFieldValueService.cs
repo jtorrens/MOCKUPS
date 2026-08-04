@@ -368,6 +368,7 @@ internal sealed class RecordClassFieldValueService
             "shot.ownerActorId" => settings.OwnerActorId,
             "shot.deviceOverrideId" => settings.DeviceOverrideId ?? "",
             "shot.themeOverrideId" => settings.ThemeOverrideId ?? "",
+            "shot.referenceVideoPath" => settings.ReferenceVideo.SourcePath,
             "shot.renderName" => _production.GetShotRenderName(shotId),
             "shot.canvas" => settings.CanvasJson,
             "shot.metadata" => settings.MetadataJson,

@@ -109,6 +109,7 @@ var tests = new (string Name, Action Run)[]
     ("resource scalar reads reject wrong current JSON shapes", ResourceScalarReadsRejectWrongShapes),
     ("Module Instance repository preserves Screen rows and prepared documents", ModuleInstanceRepositoryPreservesFocusedContract),
     ("Shot repository preserves its focused Production contract", ShotRepositoryPreservesFocusedContract),
+    ("Shot reference video documents preserve In and stable video markers", ShotReferenceVideoDocumentsAreStrict),
     ("Production Output generates exact Shot names and portable render routes", ProductionOutputGeneratesExactShotPlans),
     ("Render output naming reserves one version for Light and Dark", RenderOutputNamingReservesOneBatchVersion),
     ("MOV H.264 modes match the Créditos encoding profiles", MovH264ModesMatchCreditosProfiles),
@@ -1151,6 +1152,12 @@ static void RuntimeInputKindAndValueKindShareOneContract()
         RuntimeInputValueKindContract.RequireCompatible(
             "mediaFilePath",
             "MediaFilePath",
+            "Test Runtime Input"));
+    Equal(
+        ValueKind.VideoFilePath,
+        RuntimeInputValueKindContract.RequireCompatible(
+            "mediaFilePath",
+            "VideoFilePath",
             "Test Runtime Input"));
     Equal(
         ValueKind.StructuredCollection,
@@ -10342,6 +10349,9 @@ static void ProductionPreviewSessionBoundaryPreservesCurrentData()
             expectedContext,
             preparedShot.Context);
         Equal(
+            database.GetShotSettings(shot.Id).ReferenceVideo.ToJson(),
+            preparedShot.ReferenceVideo.ToJson());
+        Equal(
             database.GetModuleInstanceVariantSettings(screen.Id).ConfigJson,
             preparedScreen.VariantConfigJson);
         Equal(
@@ -11415,6 +11425,7 @@ static void ShotRepositoryPreservesFocusedContract()
         Equal(original.DeviceOverrideId, settings.DeviceOverrideId);
         Equal(original.ThemeOverrideId, settings.ThemeOverrideId);
         Equal(original.CanvasJson, settings.CanvasJson);
+        Equal(original.ReferenceVideoJson, settings.ReferenceVideoJson);
         Equal(original.MetadataJson, settings.MetadataJson);
         using (var connection = context.OpenConnection())
         {
@@ -11426,8 +11437,20 @@ static void ShotRepositoryPreservesFocusedContract()
         using (var connection = context.OpenConnection())
         {
             repository.UpdateField(connection, original.Id, "shot.fps", "30");
+            repository.UpdateField(
+                connection,
+                original.Id,
+                "shot.referenceVideo",
+                new ShotReferenceVideoDocument(
+                    "assets/FOQN_S2/reference.mov",
+                    12,
+                    [new ShotReferenceVideoMarker("marker_a", 24, "Beat")])
+                    .ToJson());
         }
         Equal(30, database.GetShotSettings(original.Id).FpsOverride);
+        Equal(
+            "assets/FOQN_S2/reference.mov",
+            database.GetShotSettings(original.Id).ReferenceVideo.SourcePath);
         using (var connection = context.OpenConnection())
         {
             repository.ClearFpsOverride(connection, original.Id);
@@ -11461,6 +11484,9 @@ static void ShotRepositoryPreservesFocusedContract()
             Equal(original.OwnerActorId, duplicate.OwnerActorId);
             True(original.ShotNumber != duplicate.ShotNumber);
             Equal(original.CanvasJson, duplicate.CanvasJson);
+            Equal(
+                database.GetShotSettings(original.Id).ReferenceVideoJson,
+                duplicate.ReferenceVideoJson);
             Equal(original.MetadataJson, duplicate.MetadataJson);
             repository.Delete(connection, duplicate.Id);
 
@@ -11471,6 +11497,9 @@ static void ShotRepositoryPreservesFocusedContract()
             var episodeShot = repository.QueryByEpisode(connection, duplicatedEpisode.Id).Single();
             Equal(original.OwnerActorId, episodeShot.OwnerActorId);
             Equal(original.CanvasJson, episodeShot.CanvasJson);
+            Equal(
+                database.GetShotSettings(original.Id).ReferenceVideoJson,
+                episodeShot.ReferenceVideoJson);
             Equal(original.MetadataJson, episodeShot.MetadataJson);
             episodeRepository.DeleteEpisode(connection, duplicatedEpisode.Id);
         }
@@ -11483,6 +11512,12 @@ static void ShotRepositoryPreservesFocusedContract()
             Throws<InvalidOperationException>(() =>
                 repository.UpdateField(connection, original.Id, "shot.metadata", "[]"));
             Throws<InvalidOperationException>(() =>
+                repository.UpdateField(
+                    connection,
+                    original.Id,
+                    "shot.referenceVideo",
+                    "{\"sourcePath\":\"image.png\",\"inFrame\":0,\"markers\":[]}"));
+            Throws<InvalidOperationException>(() =>
                 repository.UpdateDuration(connection, original.Id, 0));
             Throws<InvalidOperationException>(() =>
                 repository.UpdateField(connection, "missing_shot", "shot.slug", "missing"));
@@ -11494,6 +11529,44 @@ static void ShotRepositoryPreservesFocusedContract()
     {
         File.Delete(temporary);
     }
+}
+
+static void ShotReferenceVideoDocumentsAreStrict()
+{
+    var document = new ShotReferenceVideoDocument(
+        "assets/FOQN_S2/reference.mov",
+        12,
+        [
+            new ShotReferenceVideoMarker("marker_a", 24, "First beat"),
+            new ShotReferenceVideoMarker("marker_b", 60, "Second beat"),
+            new ShotReferenceVideoMarker("marker_out", 240, "Outside Shot"),
+        ]);
+    var parsed = ShotReferenceVideoDocument.ParseRequired(
+        document.ToJson(),
+        "Reference video test");
+    Equal(document.SourcePath, parsed.SourcePath);
+    Equal(document.InFrame, parsed.InFrame);
+    SequenceEqual([12, 48], parsed.ShotMarkerFrames(100));
+    Throws<InvalidOperationException>(() =>
+        ShotReferenceVideoDocument.ParseRequired(
+            "{\"sourcePath\":\"/absolute/reference.mov\",\"inFrame\":0,\"markers\":[]}",
+            "Absolute reference"));
+    Throws<InvalidOperationException>(() =>
+        ShotReferenceVideoDocument.ParseRequired(
+            "{\"sourcePath\":\"reference.mov\",\"inFrame\":0,\"markers\":[{\"id\":\"same\",\"videoFrame\":1,\"text\":\"A\"},{\"id\":\"same\",\"videoFrame\":2,\"text\":\"B\"}]}",
+            "Duplicate marker reference"));
+    AssertRejectedDatabaseIsReadOnly(
+        "shot-reference-absolute-path",
+        (connection) =>
+        {
+            using var command = connection.CreateCommand();
+            command.CommandText = """
+                UPDATE shots
+                SET reference_video_json = '{"sourcePath":"/absolute/reference.mov","inFrame":0,"markers":[]}'
+                WHERE id = 'shot_001'
+                """;
+            command.ExecuteNonQuery();
+        });
 }
 
 static void RenderOutputNamingReservesOneBatchVersion()

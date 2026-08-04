@@ -46,7 +46,9 @@ An Episode owns ordered Shots. A Shot owns:
 - independently inherited Device and Theme references;
 - frame rate and current canvas metadata;
 - ordered Screens;
-- aggregate duration.
+- aggregate duration;
+- one optional Project-relative reference video document with an In frame and
+  stable video-relative text markers.
 
 Shot creation requires an Actor selection and an explicit positive Shot
 number. The Shot editor never offers an empty owner. The Actor may be changed
@@ -271,3 +273,16 @@ Restore returns temporary playback state to the current authored frame.
 
 Escape cancels preparation as well as active playback. Cancellation does not
 mutate the Screen payload or animation document.
+
+The Shot reference video is independent of Preview's Split reference. Its
+video frame at In coincides with absolute Shot frame zero, so the shared
+playhead resolves `video frame = In + Shot frame` across every ordered Screen.
+The video is interpreted at the Shot FPS. When that frame is outside the media
+duration, the reference window presents `Sin media`. While the window is
+visible, Production Play starts the reference player from the same shared
+frame and pause, stepping and scrubbing project that playhead back into it.
+
+Reference markers remain owned by video time. Changing In moves their Shot and
+Screen Timeline projection without rewriting their stored frames. Markers may
+exist before Screens or outside the current Shot duration; only markers inside
+the visible timeline range are painted.

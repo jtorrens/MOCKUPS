@@ -72,6 +72,9 @@ It includes:
   regressions proving that a new Shot cannot reach Production navigation before
   its refreshed Preview session commits and that a strict catalog failure keeps
   the prior tree, catalog and selection;
+- strict Shot reference-video documents, including Project-relative video
+  paths, In projection, stable video-time markers and focused repository
+  round trips;
 - operation-coordinated Production playback payload preparation, covering exact
   frame order, preserved local frames, Actor and animation documents,
   cancellation, byte-for-byte read-only persistence and exact owner/frame
@@ -452,6 +455,9 @@ For any editor or Preview change, exercise at least:
     automatic route proposal, Device/Theme overrides, Light/Dark/Both naming,
     job-start folder creation, queue progress, cancel/retry/pause and output
     reveal.
+15. Shot reference Browse, missing/out-of-range `Sin media`, Set In, muted and
+    audible playback, shared Shot/Screen scrubbing, marker add/drag/text/delete
+    and marker ticks across Screen boundaries.
 
 Component-specific changes add an isolated Design case and a Production case
 that reaches the same owner through a Screen payload.

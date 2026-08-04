@@ -22,7 +22,17 @@ internal sealed record ShotRecord(
     string? DeviceOverrideId,
     string? ThemeOverrideId,
     string CanvasJson,
+    string ReferenceVideoJson,
     string MetadataJson);
+
+internal static class ShotRecordReferenceVideo
+{
+    internal static ShotReferenceVideoDocument ReferenceVideo(
+        this ShotRecord record) =>
+        ShotReferenceVideoDocument.ParseRequired(
+            record.ReferenceVideoJson,
+            $"Shot '{record.Id}' reference_video_json");
+}
 
 internal sealed record ResourceOption(string Value, string Label);
 

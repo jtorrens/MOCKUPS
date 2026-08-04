@@ -112,6 +112,10 @@ Padding and gaps use `theme.spacing.*` tokens. X/Y spacing uses a spacing-token
 pair. `PaletteColorPair` owns its compact Light/Dark layout, header, ellipsis
 and border treatment.
 
+`VideoFilePath` is the registered Shot-reference path control. Its Browse
+workflow accepts a supported video inside the Project root and persists only
+the normalized Project-relative path.
+
 ## Shared editor organization
 
 Reusable layout is declared in metadata with stable ids:

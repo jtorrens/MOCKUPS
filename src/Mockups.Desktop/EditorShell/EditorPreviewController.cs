@@ -63,6 +63,7 @@ internal sealed class EditorPreviewController : IDisposable
     private readonly PreviewVisualContextDataSource _visualContextData;
     private readonly EditorOperationCoordinator _operations;
     private readonly ProductionPreviewSessionDataSource _productionPreviewData;
+    private readonly IProductionRecordFieldStore _productionRecordFields;
     private readonly Window _owner;
     private readonly EditorInstantComboBox _deviceComboBox;
     private readonly EditorInstantComboBox _themeComboBox;
@@ -106,6 +107,20 @@ internal sealed class EditorPreviewController : IDisposable
     {
         Content = "Reference",
         MinHeight = 32,
+    };
+    private readonly Button _shotReferenceVideoButton = new()
+    {
+        Content = EditorIcons.Create(EditorIcons.Video, 17),
+        Width = 34,
+        Height = 30,
+        Padding = new Thickness(0),
+        IsVisible = false,
+    };
+    private readonly Canvas _shotReferenceMarkerOverlay = new()
+    {
+        Height = 14,
+        VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top,
+        IsHitTestVisible = false,
     };
     private readonly EditorInstantComboBox _referenceViewComboBox = new()
     {
@@ -266,6 +281,29 @@ internal sealed class EditorPreviewController : IDisposable
 
     public void SetProductionShotFrame(int frame) => SetShotPreviewFrame(frame);
 
+    public IReadOnlyList<PreviewScreenTimelineReferenceMarker>
+        ProductionScreenReferenceMarkers(string moduleInstanceId)
+    {
+        var session = PreparedProductionSession();
+        var screen = session.Screen(moduleInstanceId);
+        var shot = session.Shot(screen.ShotId);
+        var actionOrigin = screen.StartFrame
+            + screen.TransitionFrameCount
+            + screen.ActionDelayFrames;
+        return shot.ReferenceVideo.Markers
+            .Select((marker) => new PreviewScreenTimelineReferenceMarker(
+                marker.Id,
+                marker.VideoFrame
+                    - shot.ReferenceVideo.InFrame
+                    - actionOrigin,
+                marker.Text))
+            .Where((marker) =>
+                marker.Frame >= -screen.TransitionFrameCount - screen.ActionDelayFrames
+                && marker.Frame < screen.ActionDurationFrames
+                    + ScreenPostRollFrames(moduleInstanceId))
+            .ToArray();
+    }
+
     public string ActiveNavigationNodeId
     {
         get
@@ -340,6 +378,8 @@ internal sealed class EditorPreviewController : IDisposable
         _visualContextSnapshot;
     private ProductionPreviewSessionSnapshot?
         _productionSessionSnapshot;
+    private readonly ShotReferenceVideoController
+        _referenceVideoController;
 
     public EditorPreviewController(
         IPreviewInputRepository preview,
@@ -348,6 +388,7 @@ internal sealed class EditorPreviewController : IDisposable
         IModuleInstanceThemeTokenQuery moduleInstanceThemes,
         IDictionaryFieldContextRepository dictionary,
         IActorPreviewRepository actors,
+        IProductionRecordFieldStore productionRecordFields,
         IProjectPathResolver projectPaths,
         EditorOperationCoordinator operations,
         EditorInstantComboBox deviceComboBox,
@@ -371,6 +412,7 @@ internal sealed class EditorPreviewController : IDisposable
         Window owner)
     {
         _projectPaths = projectPaths;
+        _productionRecordFields = productionRecordFields;
         _operations = operations;
         _designPreviewPane = new DesignWebPreviewPane(projectPaths);
         _previewPayloadData = new DesignPreviewPayloadDataSource(
@@ -388,6 +430,10 @@ internal sealed class EditorPreviewController : IDisposable
                 moduleInstanceThemes,
                 actors);
         _owner = owner;
+        _referenceVideoController = new ShotReferenceVideoController(
+            owner,
+            projectPaths,
+            CommitReferenceVideoAsync);
         _deviceComboBox = deviceComboBox;
         _themeComboBox = themeComboBox;
         _modeComboBox = modeComboBox;
@@ -430,6 +476,7 @@ internal sealed class EditorPreviewController : IDisposable
         _designInputsPanel.PlaybackStopped += OnPlaybackStopped;
         _designInputsPanel.PlaybackBusyChanged += PlaybackState.SetBusy;
         _shotPlaybackTimer.Tick += (_, _) => AdvanceShotPlayback();
+        PlaybackState.Changed += SyncReferenceVideo;
 
         _designContextHistoryButton.Content = EditorIcons.CreateSemantic("Recent design contexts", EditorIcons.Collapse, 15);
         _designContextAddHistoryButton.Content = EditorIcons.Create(EditorIcons.Add, 15);
@@ -466,6 +513,8 @@ internal sealed class EditorPreviewController : IDisposable
         _aheadPreloadedFrameKeys.Clear();
         ReleaseFrameCacheReservations();
         _chromiumRasterizer.Dispose();
+        PlaybackState.Changed -= SyncReferenceVideo;
+        _referenceVideoController.Dispose();
     }
 
     private void AddCurrentDesignContextToHistory()
@@ -852,7 +901,16 @@ internal sealed class EditorPreviewController : IDisposable
             _shotFrameSlider,
             "Navigate preview frames",
             "Navigate the shared Shot playhead used by Preview and Animation");
-        _shotTimelineSliderRow.Children.Add(_shotFrameSlider);
+        var shotSliderHost = new Grid
+        {
+            Children =
+            {
+                _shotFrameSlider,
+                _shotReferenceMarkerOverlay,
+            },
+        };
+        shotSliderHost.SizeChanged += (_, _) => RefreshShotReferenceMarkers();
+        _shotTimelineSliderRow.Children.Add(shotSliderHost);
         Grid.SetColumn(_shotFrameText, 1);
         _shotTimelineSliderRow.Children.Add(_shotFrameText);
         var navigationRow = new Border
@@ -904,6 +962,8 @@ internal sealed class EditorPreviewController : IDisposable
         var transportLeadingSeparator = TimelineSeparator(30);
         _shotTimelineControls.Children.Add(transportLeadingSeparator);
         _shotTimelineControls.Children.Add(navigationRow);
+        _shotTimelineControls.Children.Add(TimelineSeparator(30));
+        _shotTimelineControls.Children.Add(_shotReferenceVideoButton);
         EditorAccessibility.Describe(_shotPreviousKeyframeButton, "Previous animation keyframe in the current Screen");
         EditorAccessibility.Describe(_shotPreviousSlotButton, "Previous Screen");
         EditorAccessibility.Describe(_shotAbsoluteStartButton, "First Shot frame");
@@ -913,6 +973,9 @@ internal sealed class EditorPreviewController : IDisposable
         EditorAccessibility.Describe(_shotNextKeyframeButton, "Next animation keyframe in the current Screen");
         EditorAccessibility.Describe(_shotNextSlotButton, "Next Screen");
         EditorAccessibility.Describe(_shotAbsoluteEndButton, "Last Shot frame");
+        EditorAccessibility.Describe(
+            _shotReferenceVideoButton,
+            "Show or hide the Shot reference video");
         _shotAbsoluteStartButton.Click += (_, _) => SetShotPreviewFrame(0);
         _shotPreviousSlotButton.Click += (_, _) => MoveShotSlot(-1);
         _shotPreviousKeyframeButton.Click += (_, _) => MoveAnimationKeyframe(-1);
@@ -922,6 +985,8 @@ internal sealed class EditorPreviewController : IDisposable
         _shotNextKeyframeButton.Click += (_, _) => MoveAnimationKeyframe(1);
         _shotNextSlotButton.Click += (_, _) => MoveShotSlot(1);
         _shotAbsoluteEndButton.Click += (_, _) => SetShotPreviewFrame(ShotLastFrame());
+        _shotReferenceVideoButton.Click += (_, _) =>
+            _referenceVideoController.Toggle();
 
         var controlsRow = new Grid
         {
@@ -3062,6 +3127,13 @@ internal sealed class EditorPreviewController : IDisposable
             StopShotPlayback();
             _shotTimelineControls.IsVisible = false;
             _shotTimelineSliderRow.IsVisible = false;
+            _shotReferenceVideoButton.IsVisible = false;
+            _referenceVideoController.SetContext(
+                "",
+                25,
+                0,
+                false,
+                ShotReferenceVideoDocument.Empty);
             return;
         }
         var contextNode = ProductionContextNode();
@@ -3114,7 +3186,106 @@ internal sealed class EditorPreviewController : IDisposable
         _shotNextSlotButton.IsEnabled = showScreenStep && activeSlotIndex >= 0 && activeSlotIndex < slotCount - 1;
         _shotTimelineControls.IsVisible = true;
         _shotTimelineSliderRow.IsVisible = true;
+        _shotReferenceVideoButton.IsVisible = true;
+        _shotReferenceVideoButton.IsEnabled =
+            !string.IsNullOrWhiteSpace(shot.ReferenceVideo.SourcePath);
+        ToolTip.SetTip(
+            _shotReferenceVideoButton,
+            _shotReferenceVideoButton.IsEnabled
+                ? shot.ReferenceVideo.SourcePath
+                : "Assign a reference video in Shot > General");
+        SyncReferenceVideo();
+        RefreshShotReferenceMarkers();
         _isUpdatingShotTimeline = false;
+    }
+
+    private void SyncReferenceVideo()
+    {
+        var shotId = ProductionShotId();
+        if (_workspace != EditorWorkspace.Production
+            || string.IsNullOrWhiteSpace(shotId)
+            || _productionSessionSnapshot is null
+            || !_productionSessionSnapshot.ShotsById.TryGetValue(
+                shotId,
+                out var shot))
+        {
+            return;
+        }
+        _referenceVideoController.SetContext(
+            shotId,
+            shot.FrameRate,
+            _shotPreviewFrame,
+            PlaybackState.IsPlaying && !PlaybackState.IsBusy,
+            shot.ReferenceVideo);
+    }
+
+    private void RefreshShotReferenceMarkers()
+    {
+        _shotReferenceMarkerOverlay.Children.Clear();
+        var shotId = ProductionShotId();
+        if (string.IsNullOrWhiteSpace(shotId)
+            || _productionSessionSnapshot is null
+            || !_productionSessionSnapshot.ShotsById.TryGetValue(
+                shotId,
+                out var shot))
+        {
+            return;
+        }
+        var range = NavigationFrameRange();
+        var width = _shotReferenceMarkerOverlay.Bounds.Width;
+        if (width <= 0) return;
+        foreach (var marker in shot.ReferenceVideo.Markers)
+        {
+            var shotFrame = marker.VideoFrame - shot.ReferenceVideo.InFrame;
+            if (shotFrame < range.StartFrame || shotFrame > range.EndFrame) continue;
+            var tick = new Border
+            {
+                Width = 2,
+                Height = 12,
+                Background = EditorAnimationVisuals.ActiveTrackBrush,
+            };
+            ToolTip.SetTip(
+                tick,
+                string.IsNullOrWhiteSpace(marker.Text)
+                    ? $"Reference marker · frame {shotFrame}"
+                    : marker.Text);
+            Canvas.SetLeft(
+                tick,
+                (shotFrame - range.StartFrame)
+                / (double)Math.Max(1, range.DurationFrames - 1)
+                * Math.Max(0, width - tick.Width));
+            _shotReferenceMarkerOverlay.Children.Add(tick);
+        }
+    }
+
+    private async Task CommitReferenceVideoAsync(
+        string shotId,
+        ShotReferenceVideoDocument document)
+    {
+        await _operations.ExecuteAsync(() =>
+            _productionRecordFields.UpdateShotField(
+                shotId,
+                "shot.referenceVideo",
+                document.ToJson()));
+        if (_productionSessionSnapshot is null
+            || !_productionSessionSnapshot.ShotsById.TryGetValue(
+                shotId,
+                out var shot))
+        {
+            return;
+        }
+        var shots = _productionSessionSnapshot.ShotsById
+            .ToDictionary(
+                (entry) => entry.Key,
+                (entry) => entry.Value,
+                StringComparer.Ordinal);
+        shots[shotId] = shot with { ReferenceVideo = document };
+        _productionSessionSnapshot = _productionSessionSnapshot with
+        {
+            ShotsById = shots,
+        };
+        PlaybackState.NotifyFrameChanged();
+        RefreshShotReferenceMarkers();
     }
 
     private (int StartFrame, int EndFrame, int DurationFrames) NavigationFrameRange()

@@ -22,7 +22,7 @@ public static class RuntimeInputValueKindContract
         ValueKind.IconToken => "icon",
         ValueKind.IconTokenList or ValueKind.IconSlots => "iconList",
         ValueKind.StringMultiline => "multilineText",
-        ValueKind.MediaFilePath => "mediaFilePath",
+        ValueKind.MediaFilePath or ValueKind.VideoFilePath => "mediaFilePath",
         ValueKind.StructuredCollection => "collection",
         ValueKind.BehaviorTiming => "behaviorTiming",
         ValueKind.StringSingleLine

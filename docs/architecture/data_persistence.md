@@ -5,7 +5,7 @@ Status: normative.
 ## Database scope
 
 The desktop application persists one complete Project workspace in SQLite.
-Schema version `7` is the only current schema. Every row belongs directly or
+Schema version `8` is the only current schema. Every row belongs directly or
 indirectly to a Project and cross-Project lookup is invalid.
 
 The current tables are:
@@ -27,6 +27,11 @@ Blank, missing and cross-Project override references are invalid current data.
 `shots.shot_number` is a positive stable identity owned by MOCKUPS and unique
 inside its Episode. `shots.slug` stores its generated Shot code. The Project
 stores the portable Production Output naming and route contract.
+`shots.reference_video_json` is one required current Shot-owned object. It
+stores a Project-root-relative video path, a non-negative Project-FPS In frame
+and stable video-relative markers with non-negative frames and explicit text.
+An empty path represents no associated reference. Absolute paths and parent
+traversal are invalid current data.
 Definition references are also restricted: authored Production data must be
 updated explicitly before its referenced definition can be removed.
 
@@ -340,6 +345,7 @@ object
   projects.metadata_json
   episodes.metadata_json
   shots.canvas_json
+  shots.reference_video_json
   shots.metadata_json
   apps.config_json
   apps.metadata_json

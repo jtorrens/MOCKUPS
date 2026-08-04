@@ -25,6 +25,7 @@ internal sealed record ProductionPreviewShotSnapshot(
     string ShotId,
     int FrameRate,
     ProductionShotContext Context,
+    ShotReferenceVideoDocument ReferenceVideo,
     IReadOnlyList<ProductionPreviewScreenSnapshot> Screens)
 {
     public int DurationFrames =>
@@ -169,13 +170,15 @@ internal sealed class ProductionPreviewSessionDataSource
                 }
             }
 
+            var shotSettings = _database.GetShotSettings(
+                shotNode.Id);
             var shot =
                 new ProductionPreviewShotSnapshot(
                     shotNode.Id,
-                    _database.GetShotSettings(
-                        shotNode.Id).Fps,
+                    shotSettings.Fps,
                     _shotContexts.Resolve(
                         shotNode.Id),
+                    shotSettings.ReferenceVideo,
                     shotScreens);
             if (!shots.TryAdd(
                     shotNode.Id,

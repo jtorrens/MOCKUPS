@@ -35,8 +35,14 @@ public sealed record ShotSettings(
     string? DeviceOverrideId,
     string? ThemeOverrideId,
     string CanvasJson,
+    string ReferenceVideoJson,
     string MetadataJson)
 {
+    public ShotReferenceVideoDocument ReferenceVideo =>
+        ShotReferenceVideoDocument.ParseRequired(
+            ReferenceVideoJson,
+            $"Shot '{Slug}' reference_video_json");
+
     public string EffectiveDeviceId(string actorDefaultDeviceId) =>
         DeviceOverrideId ?? actorDefaultDeviceId;
 

@@ -14,6 +14,7 @@ public enum ValueKind
     DirectoryPath,
     ImageFilePath,
     MediaFilePath,
+    VideoFilePath,
     OptionToken,
     RecordReference,
     ThemeToken,
