@@ -118,7 +118,7 @@ var tests = new (string Name, Action Run)[]
     ("Render Queue is a permanent Production surface and Shot action stays available", RenderQueueNavigationAndSurfaceAreAlwaysAvailable),
     ("Render executor publishes a clean PNG sequence", RenderExecutorPublishesCleanPngSequence),
     ("Shots require an explicit replaceable owner Actor", ShotActorContextIsExplicit),
-    ("Production Shot context boundary preserves explicit inherited context read-only", ProductionShotContextBoundaryPreservesInheritedContext),
+    ("Production Shot context boundary preserves explicit resolved context read-only", ProductionShotContextBoundaryPreservesResolvedContext),
     ("Shot Device and Theme overrides resolve independently across Production", ShotResourceOverridesResolveIndependently),
     ("Preview payload rejects incomplete Production context without selector fallbacks", PreviewPayloadRejectsIncompleteProductionContext),
     ("Production payload preserves its explicit Actor and animation documents", ProductionPayloadPreservesActorAndAnimation),
@@ -12799,7 +12799,7 @@ static void ProductionOutputGeneratesExactShotPlans()
     }
 }
 
-static void ProductionShotContextBoundaryPreservesInheritedContext()
+static void ProductionShotContextBoundaryPreservesResolvedContext()
 {
     var sourcePath = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-production-context-data-{Guid.NewGuid():N}.sqlite");
@@ -12819,9 +12819,13 @@ static void ProductionShotContextBoundaryPreservesInheritedContext()
         True(context.IsValid);
         Equal("", context.Error);
         Equal(actor.DisplayName, context.Actor);
-        Equal(database.GetDeviceSettings(actor.DefaultDeviceId).Name, context.Device);
-        Equal(database.GetThemeSettings(actor.DefaultThemeId).Name, context.Theme);
-        Equal(database.GetThemeFieldValue(actor.DefaultThemeId, "theme.defaultMode"), context.ThemeMode);
+        var resolvedDeviceId = shotSettings.DeviceOverrideId
+            ?? actor.DefaultDeviceId;
+        var resolvedThemeId = shotSettings.ThemeOverrideId
+            ?? actor.DefaultThemeId;
+        Equal(database.GetDeviceSettings(resolvedDeviceId).Name, context.Device);
+        Equal(database.GetThemeSettings(resolvedThemeId).Name, context.Theme);
+        Equal(database.GetThemeFieldValue(resolvedThemeId, "theme.defaultMode"), context.ThemeMode);
         True(service.CanExposeChildren(shot));
         True(shot.Children.All(service.IsNavigationNodeEnabled));
 
@@ -12848,6 +12852,14 @@ static void ShotResourceOverridesResolveIndependently()
             .Single((node) => node.Kind == ProjectTreeNodeKind.Shot);
         var settings = database.GetShotSettings(shot.Id);
         var actor = database.GetActorSettings(settings.OwnerActorId);
+        database.UpdateShotField(
+            shot.Id,
+            "shot.deviceOverrideId",
+            "inherited");
+        database.UpdateShotField(
+            shot.Id,
+            "shot.themeOverrideId",
+            "inherited");
         var deviceOverrideId = database.GetDeviceOptions(settings.ProjectId)
             .Select((option) => option.Value)
             .First((id) => !id.Equals(actor.DefaultDeviceId, StringComparison.Ordinal));
@@ -12995,6 +13007,10 @@ static void PreviewPayloadRejectsIncompleteProductionContext()
         Throws<InvalidOperationException>(() => dataSource.ResolveThemeId(screen, actor.DefaultThemeId));
 
         UpdateProductionContext("UPDATE actors SET default_theme_id = $value WHERE id = $id", actorId, actor.DefaultThemeId);
+        database.UpdateShotField(
+            shotId,
+            "shot.deviceOverrideId",
+            "inherited");
         UpdateProductionContext("UPDATE actors SET default_device_id = '' WHERE id = $id", actorId);
         Throws<InvalidOperationException>(() => dataSource.LoadThemeContext(screen, actor.DefaultThemeId));
 
@@ -14516,9 +14532,16 @@ static void ExplicitReferenceUsageIsExactTypedAndShared()
             }
         }
 
-        var usedDevice = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device && node.IsUsed);
-        var deviceUsages =
-            database.ReferenceUsages.GetReferenceUsageDetails(usedDevice);
+        var usedDeviceAndUsages = nodes
+            .Where((node) => node.Kind == ProjectTreeNodeKind.Device && node.IsUsed)
+            .Select((node) => (
+                Node: node,
+                Usages: database.ReferenceUsages.GetReferenceUsageDetails(node)))
+            .First((candidate) => candidate.Usages.Any((usage) =>
+                usage.SourceKind == ProjectTreeNodeKind.Actor
+                && usage.IsProduction));
+        var usedDevice = usedDeviceAndUsages.Node;
+        var deviceUsages = usedDeviceAndUsages.Usages;
         True(deviceUsages.Any((usage) => usage.SourceKind == ProjectTreeNodeKind.Actor && usage.IsProduction));
         Throws<InvalidOperationException>(() => database.Delete(usedDevice));
 
