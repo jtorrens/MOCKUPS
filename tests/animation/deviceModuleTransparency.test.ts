@@ -29,7 +29,7 @@ const payload: DesignPreviewPayload = {
       enabled: true,
       mode: "fixed",
       paletteColor: "gray_020",
-      opacity: 0.75,
+      backgroundOpacity: 0.75,
       fixedStart: 80,
       gradientHeight: 40,
       variableOffset: 0,
@@ -70,16 +70,16 @@ const module: RenderableNode = {
   ],
 };
 
-test("fixed Device module transparency replaces the wallpaper and masks the complete Module", () => {
+test("fixed Device module transparency separates background opacity from the global Module mask", () => {
   const rendered = applyDeviceModuleTransparency(payload, module);
   assert.equal(rendered.children?.some((child) => child.id === "wallpaper.image"), false);
   assert.equal(rendered.children?.[0]?.id, "device.moduleTransparency.background");
-  assert.equal(rendered.children?.[0]?.style?.background, "#202020");
+  assert.equal(rendered.children?.[0]?.style?.background, "rgba(32, 32, 32, 0.75)");
   assert.deepEqual(rendered.style?.opacityMask, {
     axis: "vertical",
     start: 80,
     end: 120,
-    beforeOpacity: 0.75,
+    beforeOpacity: 1,
     afterOpacity: 0,
   });
   assert.equal(rendered.children?.some((child) => child.id === "content.motion"), true);
@@ -101,7 +101,7 @@ test("variable Device module transparency measures the last pre-background pixel
     axis: "vertical",
     start: 60,
     end: 100,
-    beforeOpacity: 0.75,
+    beforeOpacity: 1,
     afterOpacity: 0,
   });
 });
@@ -122,6 +122,15 @@ test("disabled Device module transparency preserves the exact Module tree", () =
 
 test("Device module transparency rejects incomplete and legacy payloads", () => {
   assert.throws(() => requiredDeviceModuleTransparency({ enabled: false }));
+  assert.throws(() => requiredDeviceModuleTransparency({
+    enabled: true,
+    mode: "fixed",
+    paletteColor: "gray_020",
+    opacity: 0.75,
+    fixedStart: 80,
+    gradientHeight: 40,
+    variableOffset: 0,
+  }));
   assert.throws(() => requiredDeviceModuleTransparency({
     ...payload.previewFrame.moduleTransparency,
     legacyStart: 20,

@@ -53,7 +53,7 @@ public static class DeviceMetricRules
                 ["enabled"] = false,
                 ["mode"] = "fixed",
                 ["paletteColor"] = "gray_000",
-                ["opacity"] = 1,
+                ["backgroundOpacity"] = 1,
                 ["fixedStart"] = Math.Round(height * 0.5),
                 ["gradientHeight"] = Math.Max(1, Math.Round(height * 0.25)),
                 ["variableOffset"] = 0,
@@ -96,7 +96,7 @@ public static class DeviceMetricRules
             "Device metrics");
         RequireExactKeys(
             moduleTransparency,
-            ["enabled", "mode", "paletteColor", "opacity", "fixedStart", "gradientHeight", "variableOffset"],
+            ["enabled", "mode", "paletteColor", "backgroundOpacity", "fixedStart", "gradientHeight", "variableOffset"],
             [],
             "Device metrics.moduleTransparency");
         if (JsonPath.OptionalObject(metrics, "frame", "Device metrics") is { } frame)
@@ -136,13 +136,13 @@ public static class DeviceMetricRules
             moduleTransparency,
             "paletteColor",
             "Device metrics.moduleTransparency");
-        var moduleTransparencyOpacity = RequiredNumber(
+        var moduleTransparencyBackgroundOpacity = RequiredNumber(
             metrics,
-            ["moduleTransparency", "opacity"]);
-        if (moduleTransparencyOpacity is < 0 or > 1)
+            ["moduleTransparency", "backgroundOpacity"]);
+        if (moduleTransparencyBackgroundOpacity is < 0 or > 1)
         {
             throw new InvalidOperationException(
-                "Device metrics.moduleTransparency.opacity must be between 0 and 1.");
+                "Device metrics.moduleTransparency.backgroundOpacity must be between 0 and 1.");
         }
         var moduleTransparencyFixedStart = RequiredNonNegativeNumber(
             metrics,
@@ -170,7 +170,7 @@ public static class DeviceMetricRules
                 moduleTransparencyEnabled,
                 moduleTransparencyMode,
                 moduleTransparencyPaletteColor,
-                moduleTransparencyOpacity,
+                moduleTransparencyBackgroundOpacity,
                 moduleTransparencyFixedStart,
                 moduleTransparencyGradientHeight,
                 moduleTransparencyVariableOffset));

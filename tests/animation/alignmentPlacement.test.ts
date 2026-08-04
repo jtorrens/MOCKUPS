@@ -45,7 +45,7 @@ test("screen percentage resolves from the required Screen width", () => {
       screenY: 0,
       screenWidth: 720,
       screenHeight: 1440,
-      moduleTransparency: { enabled: false, mode: "fixed", paletteColor: "gray_000", opacity: 1, fixedStart: 0, gradientHeight: 1, variableOffset: 0 },
+      moduleTransparency: { enabled: false, mode: "fixed", paletteColor: "gray_000", backgroundOpacity: 1, fixedStart: 0, gradientHeight: 1, variableOffset: 0 },
     },
     themeMode: "light",
     themeTokensJson: "{}",

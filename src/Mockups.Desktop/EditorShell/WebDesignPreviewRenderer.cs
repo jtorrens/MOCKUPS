@@ -236,7 +236,7 @@ internal static class WebDesignPreviewRenderer
                     enabled = metrics.ModuleTransparency.Enabled,
                     mode = metrics.ModuleTransparency.Mode,
                     paletteColor = metrics.ModuleTransparency.PaletteColor,
-                    opacity = metrics.ModuleTransparency.Opacity,
+                    backgroundOpacity = metrics.ModuleTransparency.BackgroundOpacity,
                     fixedStart = metrics.ModuleTransparency.FixedStart,
                     gradientHeight = metrics.ModuleTransparency.GradientHeight,
                     variableOffset = metrics.ModuleTransparency.VariableOffset,

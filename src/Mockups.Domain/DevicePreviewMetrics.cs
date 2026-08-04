@@ -19,7 +19,7 @@ public sealed record DeviceModuleTransparencyOverride(
     bool Enabled,
     string Mode,
     string PaletteColor,
-    double Opacity,
+    double BackgroundOpacity,
     double FixedStart,
     double GradientHeight,
     double VariableOffset)

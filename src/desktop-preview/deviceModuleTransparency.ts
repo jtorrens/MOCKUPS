@@ -32,7 +32,11 @@ export function applyDeviceModuleTransparency(
     frame: payload.localFrame,
     box: screen,
     style: {
-      background: selectedPaletteColor(payload, policy.paletteColor, 1),
+      background: selectedPaletteColor(
+        payload,
+        policy.paletteColor,
+        policy.backgroundOpacity,
+      ),
     },
     metadata: { paintRole: "moduleBackground" },
   };
@@ -46,7 +50,7 @@ export function applyDeviceModuleTransparency(
         axis: "vertical",
         start,
         end,
-        beforeOpacity: policy.opacity,
+        beforeOpacity: 1,
         afterOpacity: 0,
       },
     },
@@ -64,7 +68,7 @@ export function requiredDeviceModuleTransparency(
     "enabled",
     "mode",
     "paletteColor",
-    "opacity",
+    "backgroundOpacity",
     "fixedStart",
     "gradientHeight",
     "variableOffset",
@@ -86,12 +90,12 @@ export function requiredDeviceModuleTransparency(
   if (typeof value.paletteColor !== "string" || !value.paletteColor.trim()) {
     throw new Error("Preview Device moduleTransparency.paletteColor must be a non-empty string.");
   }
-  const opacity = finiteNumber(value.opacity, "opacity");
+  const backgroundOpacity = finiteNumber(value.backgroundOpacity, "backgroundOpacity");
   const fixedStart = finiteNumber(value.fixedStart, "fixedStart");
   const gradientHeight = finiteNumber(value.gradientHeight, "gradientHeight");
   const variableOffset = finiteNumber(value.variableOffset, "variableOffset");
-  if (opacity < 0 || opacity > 1) {
-    throw new Error("Preview Device moduleTransparency.opacity must be between 0 and 1.");
+  if (backgroundOpacity < 0 || backgroundOpacity > 1) {
+    throw new Error("Preview Device moduleTransparency.backgroundOpacity must be between 0 and 1.");
   }
   if (fixedStart < 0) {
     throw new Error("Preview Device moduleTransparency.fixedStart must be non-negative.");
@@ -103,7 +107,7 @@ export function requiredDeviceModuleTransparency(
     enabled: value.enabled,
     mode: value.mode,
     paletteColor: value.paletteColor,
-    opacity,
+    backgroundOpacity,
     fixedStart,
     gradientHeight,
     variableOffset,

@@ -12,7 +12,7 @@ export interface DeviceModuleTransparencyPayload {
   enabled: boolean;
   mode: "fixed" | "variable";
   paletteColor: string;
-  opacity: number;
+  backgroundOpacity: number;
   fixedStart: number;
   gradientHeight: number;
   variableOffset: number;

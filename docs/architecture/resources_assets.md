@@ -51,7 +51,7 @@ A Device owns one strict current metrics document:
     "enabled": false,
     "mode": "fixed",
     "paletteColor": "gray_000",
-    "opacity": 1,
+    "backgroundOpacity": 1,
     "fixedStart": 1278,
     "gradientHeight": 639,
     "variableOffset": 0
@@ -74,11 +74,14 @@ and is tracked as an exact resource reference. Values are authored in Device
 units. `fixed` uses `fixedStart`; `variable` resolves its start on every frame
 from the last visible pixel of the complete Module foreground before any
 substitute background or opacity mask exists, then adds `variableOffset`.
-From the Device top through that start the complete Module composite has the
-configured `opacity`; over `gradientHeight` it fades to zero. The original
-wallpaper is absent, and the opaque Palette surface below the foreground is
-part of the composite receiving that same mask. No legacy fade keys, aliases
-or missing-object defaults are accepted.
+The original wallpaper is absent. The substitute Palette surface uses only
+`backgroundOpacity`; the Module foreground retains its authored alpha and no
+additional opacity is applied to it. The foreground is then composed over that
+surface, and one separate global mask is applied to the complete result. That
+mask remains fully opaque from the Device top through the resolved start and
+fades to zero over `gradientHeight`. The variable offset changes the start
+before this mask is constructed; it never moves either painted layer. No
+legacy `opacity` or fade keys, aliases or missing-object defaults are accepted.
 
 ## Production Fonts
 

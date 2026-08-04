@@ -401,7 +401,8 @@ Database validation is read-only and confirms:
 - schema version and expected tables, columns, indexes and foreign keys;
 - exact JSON root kinds;
 - exact Device metric objects and nested properties, including rejection of
-  retired geometry and scale fields, incomplete Module transparency policies
+  retired geometry and scale fields, incomplete Module transparency policies,
+  separation of background opacity from the global gradient mask,
   and Palette tokens that do not exist in the same Project;
 - complete Component and Module Variants;
 - full reference formats and same-Project integrity through the same guard used

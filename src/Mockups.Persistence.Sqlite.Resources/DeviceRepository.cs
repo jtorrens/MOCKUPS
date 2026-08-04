@@ -77,8 +77,8 @@ internal sealed class DeviceRepository : IDeviceRepository
             case "device.metrics.moduleTransparency.paletteColor":
                 JsonPath.Set(metrics, ["moduleTransparency", "paletteColor"], JsonValue.Create(value)!);
                 break;
-            case "device.metrics.moduleTransparency.opacity":
-                JsonPath.Set(metrics, ["moduleTransparency", "opacity"], JsonPath.NumberNode(value));
+            case "device.metrics.moduleTransparency.backgroundOpacity":
+                JsonPath.Set(metrics, ["moduleTransparency", "backgroundOpacity"], JsonPath.NumberNode(value));
                 break;
             case "device.metrics.moduleTransparency.fixedStart":
                 JsonPath.Set(metrics, ["moduleTransparency", "fixedStart"], JsonPath.NumberNode(value));

@@ -332,9 +332,9 @@ public static class RecordClassFieldCatalog
             "device.metrics.moduleTransparency.paletteColor",
             "Background color",
             ValueKind.PaletteColorToken),
-        ["device.metrics.moduleTransparency.opacity"] = new(
-            "device.metrics.moduleTransparency.opacity",
-            "Module opacity",
+        ["device.metrics.moduleTransparency.backgroundOpacity"] = new(
+            "device.metrics.moduleTransparency.backgroundOpacity",
+            "Background opacity",
             ValueKind.Alpha),
         ["device.metrics.moduleTransparency.fixedStart"] = new(
             "device.metrics.moduleTransparency.fixedStart",

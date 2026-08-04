@@ -8244,6 +8244,12 @@ static void DeviceMetricDocumentsAreStrict()
         command.CommandText = "UPDATE devices SET metrics_json = json_remove(metrics_json, '$.moduleTransparency.gradientHeight') WHERE id = (SELECT id FROM devices LIMIT 1)";
         command.ExecuteNonQuery();
     });
+    AssertRejectedDatabaseIsReadOnly("legacy-device-module-opacity", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = "UPDATE devices SET metrics_json = json_set(json_remove(metrics_json, '$.moduleTransparency.backgroundOpacity'), '$.moduleTransparency.opacity', 0.5) WHERE id = (SELECT id FROM devices LIMIT 1)";
+        command.ExecuteNonQuery();
+    });
     AssertRejectedDatabaseIsReadOnly("legacy-device-wallpaper-fade", (connection) =>
     {
         using var command = connection.CreateCommand();
@@ -8979,7 +8985,7 @@ static void ResourceRepositoriesPreserveFocusedContract()
                 "device.metrics.moduleTransparency.enabled",
                 "device.metrics.moduleTransparency.mode",
                 "device.metrics.moduleTransparency.paletteColor",
-                "device.metrics.moduleTransparency.opacity",
+                "device.metrics.moduleTransparency.backgroundOpacity",
                 "device.metrics.moduleTransparency.fixedStart",
                 "device.metrics.moduleTransparency.gradientHeight",
                 "device.metrics.moduleTransparency.variableOffset",
@@ -9019,6 +9025,9 @@ static void ResourceRepositoriesPreserveFocusedContract()
         Equal(originalColor, paletteRepository.GetSettings(color.Id));
 
         var originalDevice = database.GetDeviceSettings(device.Id);
+        var originalBackgroundOpacity = database.GetDeviceMetricFieldValue(
+            device.Id,
+            "device.metrics.moduleTransparency.backgroundOpacity");
         deviceRepository.UpdateField(device.Id, "device.manufacturer", "Repository Manufacturer");
         Equal("Repository Manufacturer", database.GetDeviceSettings(device.Id).Manufacturer);
         database.UpdateDeviceField(device.Id, "device.manufacturer", originalDevice.Manufacturer);
@@ -9028,9 +9037,15 @@ static void ResourceRepositoriesPreserveFocusedContract()
         database.UpdateDeviceField(device.Id, "device.metrics.screen.size", originalScreenSize);
         deviceRepository.UpdateField(device.Id, "device.metrics.moduleTransparency.enabled", "true");
         Equal("true", database.GetDeviceMetricFieldValue(device.Id, "device.metrics.moduleTransparency.enabled"));
+        deviceRepository.UpdateField(device.Id, "device.metrics.moduleTransparency.backgroundOpacity", "0.45");
+        Equal("0.45", database.GetDeviceMetricFieldValue(device.Id, "device.metrics.moduleTransparency.backgroundOpacity"));
         deviceRepository.UpdateField(device.Id, "device.metrics.moduleTransparency.variableOffset", "-12.5");
         Equal("-12.5", database.GetDeviceMetricFieldValue(device.Id, "device.metrics.moduleTransparency.variableOffset"));
         database.UpdateDeviceField(device.Id, "device.metrics.moduleTransparency.enabled", "false");
+        database.UpdateDeviceField(
+            device.Id,
+            "device.metrics.moduleTransparency.backgroundOpacity",
+            originalBackgroundOpacity);
         database.UpdateDeviceField(device.Id, "device.metrics.moduleTransparency.variableOffset", "0");
         Equal(originalDevice, deviceRepository.GetSettings(device.Id));
 

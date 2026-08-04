@@ -174,11 +174,13 @@ Module boundary applies the Device `moduleTransparency` policy. Wallpaper and
 fallback background nodes identify themselves only through the generic
 `moduleBackground` paint role. When the policy is enabled, that boundary
 removes those nodes, measures the bottommost visible foreground paint in the
-current frame after transforms and clipping, inserts the resolved Palette
-surface, and attaches one vertical opacity mask to the complete Module root.
+current frame after transforms and clipping, and resolves the gradient start.
 Fixed mode uses the authored Device coordinate directly; variable mode adds
-the signed offset to that pre-background measurement. Neither route branches
-on Module identity.
+the signed offset to that pre-background measurement before constructing the
+mask. The boundary then inserts the resolved Palette surface with only its
+authored background opacity, composes the unmodified Module foreground over
+it, and attaches one fully-opaque-to-transparent vertical mask to the complete
+Module root. Neither route branches on Module identity.
 
 It contains no Component-specific layout or business rules.
 
