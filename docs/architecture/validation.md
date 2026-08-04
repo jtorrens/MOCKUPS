@@ -468,4 +468,7 @@ A revision is ready for review only when:
 - required parity files are included;
 - the worktree is clean after the local commit;
 - the latest validated app is open for UI review, or the handoff states why a
-  UI launch is not applicable.
+  UI launch is not applicable;
+- on macOS, the open app was rebuilt, packaged and launched through
+  `npm run desktop:launch:mac`; a development process or pre-existing bundle is
+  not a delivery artifact.

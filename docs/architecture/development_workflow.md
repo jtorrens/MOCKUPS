@@ -255,6 +255,10 @@ missing or invalid bundle before opening the project database.
 `desktop:mac` runs that same prepared development command under the display
 wake policy. `desktop:open:mac` opens the existing packaged bundle and fails if
 it is absent. `desktop:launch:mac` packages the current revision first.
+Development launch and direct bundle opening are iteration paths only. Every
+final macOS UI handoff runs `npm run desktop:launch:mac`, regardless of whether
+the revision changed packaging, so the reviewed executable always rebuilds and
+embeds the current `HEAD` before it opens.
 Mac packaging first removes only its dedicated `out/desktop/osx-arm64`
 publication directory, then performs a complete self-contained Release publish. Before it
 replaces the `.app`, the packaging owner asks the published executable for its
@@ -342,9 +346,9 @@ For each coherent phase:
    every check it selects for the exact revision scope;
 8. inspect the final diff, including parity artifacts;
 9. create a local commit;
-10. open the validated desktop application for manual review when UI behavior
-   changed; when review targets macOS packaging, rebuild and open the exact
-   `out/desktop/MOCKUPS Editor.app` rather than a development process;
+10. on macOS, always run `npm run desktop:launch:mac` and review the rebuilt
+   `out/desktop/MOCKUPS Editor.app`; on other platforms, open the validated
+   desktop application when UI review is applicable;
 11. push only when the user asks.
 
 Focused Preview files and exact or filtered desktop test names are iteration

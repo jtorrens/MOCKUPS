@@ -404,6 +404,12 @@ After every implemented update, report:
 - local commit and branch;
 - worktree state.
 
+On macOS, final UI handoff always runs `npm run desktop:launch:mac`. This must
+rebuild, package and open the current `out/desktop/MOCKUPS Editor.app` even when
+the change does not target packaging. `npm run desktop`, `desktop:mac`,
+`desktop:open:mac` and directly opening an existing bundle are iteration or
+inspection paths and do not satisfy final delivery.
+
 Create a local commit for every coherent validated revision. Do not push until
 the user explicitly asks.
 
