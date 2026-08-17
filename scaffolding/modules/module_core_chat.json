@@ -55,7 +55,10 @@
       "messageGap": "theme.spacing.l",
       "bubbleMaxWidth": 66,
       "useAppWallpaper": true,
-      "headerAvatarVariant": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+      "headerAvatarSlot": {
+        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+        "overrides": {}
+      },
       "headerAvatarAlignment": "left",
       "headerLeftIconRowSlot": {
         "variantReference": "component_project_foqn_s2_iconRow::variant::default",
@@ -1193,7 +1196,10 @@
         "messageGap": "theme.spacing.l",
         "bubbleMaxWidth": 66,
         "useAppWallpaper": true,
-        "headerAvatarVariant": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+        "headerAvatarSlot": {
+          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+          "overrides": {}
+        },
         "headerAvatarAlignment": "left",
         "headerLeftIconRowSlot": {
           "variantReference": "component_project_foqn_s2_iconRow::variant::default",
@@ -1457,12 +1463,13 @@
       "embeddedSlot": null
     },
     {
-      "id": "module.core.chat.headerAvatarVariant",
-      "label": "Header avatar variant",
+      "id": "module.core.chat.headerAvatar.editor",
+      "label": "Header avatar",
       "valueKind": "ComponentVariant",
       "jsonPath": [
         "conversation",
-        "headerAvatarVariant"
+        "headerAvatarSlot",
+        "variantReference"
       ],
       "defaultValue": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
       "isEditable": true,
@@ -1479,7 +1486,11 @@
       "recordReference": null,
       "motionTiming": null,
       "unit": "",
-      "embeddedSlot": null
+      "embeddedSlot": {
+        "componentType": "avatar",
+        "label": "Header avatar",
+        "recordClassId": "component.avatar"
+      }
     },
     {
       "id": "module.core.chat.headerHeight",
@@ -2240,7 +2251,7 @@
                 "visible": true
               },
               {
-                "id": "module.core.chat.headerAvatarVariant",
+                "id": "module.core.chat.headerAvatar.editor",
                 "order": 50,
                 "visible": true
               },

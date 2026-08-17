@@ -14,7 +14,6 @@ internal sealed class ReferenceUsageService :
 {
     private static readonly (string Label, string[] Path)[] ModuleComponentReferencePaths =
     [
-        ("Header avatar variant", ["conversation", "headerAvatarVariant"]),
         ("Text input variant", ["conversation", "textInputBarVariant"]),
         ("Keyboard variant", ["conversation", "keyboardVariant"]),
         ("Bubble variant", ["conversation", "bubbleVariant"]),

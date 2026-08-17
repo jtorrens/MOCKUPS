@@ -29,7 +29,6 @@ import { resolveConversationModule } from "./conversationModuleResolver.js";
 import {
   authoringVariantPayload,
   renderAuthoringSlot,
-  withAuthoringTarget,
 } from "./previewAuthoringTarget.js";
 import type {
   ConversationMessageContract,
@@ -429,21 +428,22 @@ function headerNode(
   const centerLeft = screen.x + edgePadding + leftSize.width + (leftSize.width > 0 ? rowGap : 0);
   const centerRight = screen.x + screen.width - edgePadding - rightSize.width - (rightSize.width > 0 ? rowGap : 0);
   const avatarAlignment = optionalString(conversation, "headerAvatarAlignment") || "left";
-  const avatarVariantReference = requiredString(
+  const avatarSlot = requiredRecord(
     conversation,
-    "headerAvatarVariant",
-    "module.core.chat.headerAvatarVariant",
+    "headerAvatarSlot",
+    "module.core.chat.headerAvatarSlot",
   );
-  const avatarPayload = authoringVariantPayload(
-    payload,
-    avatarVariantReference,
-    "component.avatar",
+  const avatarVariantReference = requiredString(
+    avatarSlot,
+    "variantReference",
+    "module.core.chat.headerAvatarSlot.variantReference",
   );
   const resolvedAvatar = resolveAvatarComponentFromRecords(
-      componentVariantConfig(
+      embeddedComponentConfig(
         componentBaseConfigs,
+        avatarSlot,
         "avatar",
-        avatarVariantReference,
+        "module.core.chat.headerAvatarSlot",
       ),
       {
         ...preview,
@@ -498,10 +498,14 @@ function headerNode(
     ),
   );
   const avatarSize = resolvedAvatar.size * scale;
-  const unresolvedAvatar = withAuthoringTarget(
-    avatarPayload,
-    avatarComponentToRenderableAt(
-      avatarPayload,
+  const unresolvedAvatar = renderAuthoringSlot(
+    payload,
+    "module.core.chat",
+    "module.core.chat.headerAvatar.editor",
+    "component.avatar",
+    "component.avatar.defaultSize",
+    (slotPayload) => avatarComponentToRenderableAt(
+      slotPayload,
       resolvedAvatar,
       {
         x: 0,

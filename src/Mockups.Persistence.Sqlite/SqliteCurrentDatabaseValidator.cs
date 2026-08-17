@@ -61,7 +61,6 @@ internal sealed partial class SqliteCurrentDatabaseValidator
     {
         "variantReference",
         "bubbleVariant",
-        "headerAvatarVariant",
         "keyboardVariant",
         "textInputBarVariant",
     };

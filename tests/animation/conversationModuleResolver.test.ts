@@ -432,6 +432,15 @@ test("Conversation Header keeps its upward bleed and can use the resolved Actor 
     ownerId: "module_core_chat::variant::default",
     slotFieldIds: ["module.core.chat.headerSurface.editor"],
   });
+  const authoringAvatar = findNode(
+    conversationModuleToRenderable(source),
+    "module.core.chat.header.avatar",
+  );
+  assert.deepEqual(authoringAvatar?.metadata?.authoringTarget, {
+    focusFieldId: "component.avatar.defaultSize",
+    ownerId: "module_core_chat::variant::default",
+    slotFieldIds: ["module.core.chat.headerAvatar.editor"],
+  });
   const headerVideoButton = findNode(
     conversationModuleToRenderable(source),
     "module.core.chat.header.right.button_001",

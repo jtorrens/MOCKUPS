@@ -34,19 +34,19 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ["conversation", "bubbleVariant"],
             "bubble",
             []),
+        ["module.core.chat.headerAvatar.editor"] = new(
+            "module.core.chat",
+            "module.core.chat.headerAvatar.editor",
+            ValueKind.ComponentVariant,
+            ["conversation", "headerAvatarSlot", "variantReference"],
+            "avatar",
+            []),
         ["module.core.chat.headerAvatarAlignment"] = new(
             "module.core.chat",
             "module.core.chat.headerAvatarAlignment",
             ValueKind.OptionToken,
             ["conversation", "headerAvatarAlignment"],
             "",
-            []),
-        ["module.core.chat.headerAvatarVariant"] = new(
-            "module.core.chat",
-            "module.core.chat.headerAvatarVariant",
-            ValueKind.ComponentVariant,
-            ["conversation", "headerAvatarVariant"],
-            "avatar",
             []),
         ["module.core.chat.headerHeight"] = new(
             "module.core.chat",

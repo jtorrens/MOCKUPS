@@ -7,6 +7,12 @@ public static class GeneratedModuleScaffoldEmbeddedSlots
     public static EmbeddedComponentSlotDefinition[] All { get; } =
     [
         new(
+            "module.core.chat.headerAvatar.editor",
+            "avatar",
+            "Header avatar",
+            "component.avatar",
+            ["conversation", "headerAvatarSlot"]),
+        new(
             "module.core.chat.headerLeftIconRow.editor",
             "iconRow",
             "Left icon row",
