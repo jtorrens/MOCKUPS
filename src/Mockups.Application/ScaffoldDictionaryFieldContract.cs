@@ -28,7 +28,13 @@ public static class ScaffoldDictionaryFieldContract
             throw new InvalidOperationException(
                 "Generated Component dictionary field requires id, label and jsonPath.");
         }
-        if (descriptor.Options is { Count: > 0 })
+        if (descriptor.ValueKind == ValueKind.OptionToken)
+        {
+            _ = FieldOptionContract.RequireOptions(
+                descriptor.Options,
+                $"Generated Component field '{descriptor.Id}'");
+        }
+        else if (descriptor.Options is { Count: > 0 })
         {
             _ = FieldOptionContract.RequireOptions(
                 descriptor.Options,

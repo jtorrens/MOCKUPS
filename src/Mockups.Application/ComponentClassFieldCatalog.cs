@@ -36,6 +36,7 @@ public static partial class ComponentClassFieldCatalog
     static ComponentClassFieldCatalog()
     {
         AddGeneratedFields(Fields);
+        ValidateOptionContracts();
     }
 
     static partial void AddGeneratedFields(
@@ -506,6 +507,17 @@ public static partial class ComponentClassFieldCatalog
     }
 
     public static IReadOnlyList<ComponentClassFieldDescriptor> All() => Fields.Values.ToList();
+
+    private static void ValidateOptionContracts()
+    {
+        foreach (var field in Fields.Values.Where((field) =>
+                     field.ValueKind == ValueKind.OptionToken))
+        {
+            _ = FieldOptionContract.RequireOptions(
+                field.Options,
+                $"Component field '{field.Id}'");
+        }
+    }
 
     public static bool IsRuntimeOverrideField(string fieldId) =>
         Fields.TryGetValue(fieldId, out var field)
