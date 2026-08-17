@@ -134,7 +134,11 @@ internal static class ComponentIconRowCompositionContract
                     $"{owner} exposes Variant-owned Icon Row value '{key}' as Runtime.");
             }
         }
-        if (preview.ContainsKey("collections"))
+        var collections = JsonPath.RequiredArray(
+            preview,
+            "collections",
+            owner);
+        if (collections.Count > 0)
         {
             throw new InvalidOperationException(
                 $"{owner} exposes Variant-owned Icon Row Buttons as a Runtime collection.");
