@@ -275,7 +275,7 @@ public static class RuntimeInputDocumentContract
         JsonObject contract,
         IReadOnlySet<string>? excludedInputIds = null)
     {
-        var expected = DefinitionObjects(
+        var inputs = DefinitionObjects(
                 contract,
                 "inputs",
                 "Effective Component Runtime contract")
@@ -285,10 +285,18 @@ public static class RuntimeInputDocumentContract
                     input,
                     "id",
                     "Runtime Input definition")) != true)
+            .ToList();
+        var collections = DefinitionObjects(
+                contract,
+                "collections",
+                "Effective Component Runtime contract")
+            .ToList();
+        var expected = inputs
             .Select((input) => JsonPath.RequiredString(
                 input,
                 "jsonKey",
                 "Runtime Input definition"))
+            .Concat(collections.Select(CollectionStorageKey))
             .ToHashSet(StringComparer.Ordinal);
         var actual = current
             .Select((entry) => entry.Key)
@@ -309,11 +317,7 @@ public static class RuntimeInputDocumentContract
                     ? $" Unknown: {string.Join(", ", unknown)}."
                     : ""));
         }
-        foreach (var input in DefinitionObjects(
-                     contract,
-                     "inputs",
-                     "Effective Component Runtime contract")
-                 .Where(IsRuntimeDefinition))
+        foreach (var input in inputs)
         {
             var inputId = JsonPath.RequiredString(
                 input,
@@ -332,10 +336,35 @@ public static class RuntimeInputDocumentContract
                 current[jsonKey],
                 $"Current Runtime Input '{inputId}'");
         }
-        return CreateInputValuesForContract(
+        var result = CreateInputValuesForContract(
             current,
             contract,
             excludedInputIds: excludedInputIds);
+        foreach (var collection in collections)
+        {
+            var storageKey = CollectionStorageKey(collection);
+            var currentCollection = RequiredCollection(
+                current,
+                storageKey,
+                "Current Component Input bindings");
+            RuntimeCollectionDocumentContract.Validate(
+                currentCollection,
+                $"Current Runtime collection '{storageKey}'");
+            result[storageKey] = collection.ContainsKey(
+                    "storageCollectionJsonKey")
+                ? ReconcileProjectedCollection(
+                    currentCollection,
+                    RequiredCollection(
+                        contract,
+                        JsonPath.RequiredString(
+                            collection,
+                            "jsonKey",
+                            "Runtime collection definition"),
+                        "Effective Component Runtime contract"),
+                    collection)
+                : currentCollection.DeepClone();
+        }
+        return result;
     }
 
     public static JsonObject RemoveOrphanedAnimationTracks(

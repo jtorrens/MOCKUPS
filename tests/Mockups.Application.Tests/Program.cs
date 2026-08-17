@@ -632,6 +632,39 @@ static void ComponentInputBindingsProjectExactStructuredRuntimeValues()
         new JsonObject());
     Equal(1, read.Count);
     Equal(false, read[0].StructuredCollection?.CanEditStructure);
+
+    var collectionContract = new JsonObject
+    {
+        ["inputs"] = new JsonArray(),
+        ["collections"] = new JsonArray
+        {
+            new JsonObject
+            {
+                ["id"] = "items",
+                ["jsonKey"] = "items",
+            },
+        },
+    };
+    var collectionCurrent = new JsonObject
+    {
+        ["items"] = new JsonArray
+        {
+            new JsonObject { ["id"] = "stable", ["value"] = "authored" },
+        },
+    };
+    var collectionProjected = RuntimeInputDocumentContract
+        .ProjectInputValuesForContract(collectionCurrent, collectionContract);
+    Equal(
+        "authored",
+        collectionProjected["items"]?[0]?["value"]?.GetValue<string>());
+    Throws<InvalidOperationException>(() =>
+        RuntimeInputDocumentContract.ProjectInputValuesForContract(
+            new JsonObject
+            {
+                ["items"] = new JsonArray(),
+                ["orphan"] = new JsonArray(),
+            },
+            collectionContract));
 }
 
 static void ComponentInputProjectionOwnershipCoversParents()
