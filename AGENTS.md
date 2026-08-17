@@ -77,6 +77,16 @@ Ownership is:
 
 Do not add a local exception for behavior that can occur in another owner.
 
+## Hard rule: exceptions require a stop and discussion
+
+An exception, one-off mapping, special-case branch, compatibility path, local
+repair, fallback or parallel representation is never an implementation option.
+If a proposed change appears to require one, stop before editing and explain
+the conflicting owners, the missing generic contract and the viable ownership
+options. Resume only after the user explicitly confirms the chosen generic
+owner. Tests, validation and Preview must consume that one owner; they may not
+hide, compensate for or duplicate a local exception.
+
 ## Hard rule: persistence startup is read-only
 
 Opening and validating an existing database must not change its file, schema or

@@ -33,6 +33,13 @@ Before adding a helper, inspect `src/Mockups.Desktop/Common` and the
 existing shared editor surfaces. Reuse or extend the owner when behavior is
 generic. A one-off exception is not an implementation shortcut.
 
+If implementation appears to need an exception, special-case mapping,
+compatibility/fallback path, local repair or a second representation of the
+same state, work stops before code changes. The contributor documents the
+conflicting owners and proposes the generic owner and contract; work resumes
+only after explicit product confirmation. Preview, editor and persistence must
+then consume the same declared owner, never compensate for one another.
+
 ## Validation during implementation
 
 Use `npm run test:changed` during the edit loop and
