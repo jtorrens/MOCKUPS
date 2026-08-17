@@ -37,7 +37,7 @@ shots
 apps
 modules
 module_instances
-palette_colors
+palette_colors    
 devices
 actors
 production_fonts
