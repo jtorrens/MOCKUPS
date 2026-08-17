@@ -62,7 +62,7 @@ test("List Item animates the numeric active set and current state independently"
   );
 });
 
-test("List Item rejects an Icon Row child Runtime that does not match its Variant slots", () => {
+test("List Item resolves Icon Row children from their Variant slots", () => {
   const source = fixture("calls");
   const preview = JSON.parse(source.designPreviewJson) as {
     iconRowContent: Array<{ runtimeInputs: { buttonInputs: unknown[] } }>;
@@ -70,10 +70,7 @@ test("List Item rejects an Icon Row child Runtime that does not match its Varian
   preview.iconRowContent[0]!.runtimeInputs.buttonInputs =
     preview.iconRowContent[0]!.runtimeInputs.buttonInputs.slice(0, 1);
   source.designPreviewJson = JSON.stringify(preview);
-  assert.throws(
-    () => resolveListItemComponent(source),
-    /Button Runtime values must match the Variant items exactly/,
-  );
+  assert.equal(resolveListItemComponent(source).elements.length, 3);
 });
 
 test("List Item requires exactly the Variant-owned number of Content Sets", () => {

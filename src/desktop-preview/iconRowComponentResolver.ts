@@ -98,12 +98,13 @@ export function resolveIconRowComponentFromRecords(
   const structuralItems = Array.isArray(inputs.structuralItems)
     ? requiredObjectArray(inputs, "structuralItems", "component.iconRow input")
     : requiredObjectArray(iconRow, "items", "component.iconRow");
-  const runtimeItems = requiredObjectArray(
-    inputs,
-    "buttonInputs",
-    "component.iconRow input",
-  );
-  const runtimeById = exactRuntimeItems(structuralItems, runtimeItems);
+  // Button fields are Variant-owned. The effective Icon Row structure is the
+  // sole source for both authoring and Preview; parent Runtime envelopes must
+  // not become a second, independently mutable collection.
+  const runtimeItems = Array.isArray(inputs.buttonInputs)
+    ? requiredObjectArray(inputs, "buttonInputs", "component.iconRow input")
+    : [];
+  const runtimeById = reconcileRuntimeItems(structuralItems, runtimeItems);
   const sizeSource = requiredString(iconRow, "sizeSource", "component.iconRow.sizeSource");
   if (sizeSource !== "shared" && sizeSource !== "perButton") throw new Error(`Unsupported icon row size source ${sizeSource}`);
   const inheritedIconSize = typeof inputs.iconSizeToken === "string" ? inputs.iconSizeToken : "";
@@ -176,28 +177,15 @@ export function resolveIconRowComponentFromRecords(
   };
 }
 
-function exactRuntimeItems(
+function reconcileRuntimeItems(
   structuralItems: Record<string, unknown>[],
   runtimeItems: Record<string, unknown>[],
 ) {
-  const structuralIds = structuralItems.map((item, index) =>
-    requiredString(item, "id", `component.iconRow.items[${index}].id`));
-  const runtimeById = new Map<string, Record<string, unknown>>();
-  for (const [index, item] of runtimeItems.entries()) {
-    const id = requiredString(item, "id", `component.iconRow.buttonInputs[${index}].id`);
-    if (runtimeById.has(id)) {
-      throw new Error(`component.iconRow Button Runtime '${id}' is duplicated`);
-    }
-    runtimeById.set(id, item);
-  }
-  const missing = structuralIds.filter((id) => !runtimeById.has(id));
-  const unknown = [...runtimeById.keys()].filter((id) => !structuralIds.includes(id));
-  if (missing.length || unknown.length) {
-    throw new Error(
-      "component.iconRow Button Runtime values must match the Variant items exactly"
-      + `${missing.length ? `; missing: ${missing.join(", ")}` : ""}`
-      + `${unknown.length ? `; unknown: ${unknown.join(", ")}` : ""}`,
-    );
-  }
-  return runtimeById;
+  const persisted = new Map(runtimeItems.map((item, index) => [
+    requiredString(item, "id", `component.iconRow.buttonInputs[${index}].id`), item,
+  ]));
+  return new Map(iconRowButtonRuntimeDefaults(structuralItems).map((defaults) => [
+    defaults.id,
+    { ...defaults, ...persisted.get(defaults.id), id: defaults.id },
+  ]));
 }
