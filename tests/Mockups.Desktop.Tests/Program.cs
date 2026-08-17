@@ -9851,6 +9851,36 @@ static void RecordDictionaryOptionsAreDescriptorOwned()
         },
         "",
         "Test optional actor");
+
+    var componentOption = new ComponentClassFieldDescriptor(
+        "component.test.mode",
+        "Mode",
+        ValueKind.OptionToken,
+        ["test", "mode"],
+        "one",
+        Options:
+        [
+            new FieldOption("one", "One"),
+            new FieldOption("two", "Two"),
+        ]);
+    Equal(
+        "one",
+        SqliteDesignOwner.ComponentConfigJsonValue(
+            componentOption,
+            "one").GetValue<string>());
+    Throws<InvalidOperationException>(() =>
+        SqliteDesignOwner.ComponentConfigJsonValue(
+            componentOption,
+            "unknown"));
+    Throws<InvalidOperationException>(() =>
+        SqliteDesignOwner.ComponentConfigFieldValue(
+            """{"test":{"mode":"unknown"}}""",
+            componentOption));
+    Throws<InvalidOperationException>(() =>
+        ComponentClassFieldCatalog.ValidateConfigOptionValues(
+            "component.button",
+            Object("""{"button":{"contentMode":"unknown"}}"""),
+            "Test component config"));
 }
 
 static void FixedComponentBoundariesUseExactDefaultVariant()

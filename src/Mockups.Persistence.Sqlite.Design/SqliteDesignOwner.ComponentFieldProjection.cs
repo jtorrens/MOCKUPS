@@ -69,13 +69,8 @@ internal sealed partial class SqliteDesignOwner
         }
 
         var owner = $"Component field '{descriptor.Id}'";
-        RuntimeInputValueKindContract.ValidateValue(
-            descriptor.ValueKind,
-            node,
-            owner);
-        ScalarValuePatternContract.Validate(
-            descriptor.ValuePattern,
-            descriptor.ValuePatternMessage,
+        ComponentClassFieldCatalog.ValidateCurrentValue(
+            descriptor,
             node,
             owner);
         return descriptor.ValueKind switch

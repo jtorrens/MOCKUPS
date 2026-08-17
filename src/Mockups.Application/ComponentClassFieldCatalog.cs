@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Nodes;
 using Mockups.DesktopEditorShell.Common;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -507,6 +508,56 @@ public static partial class ComponentClassFieldCatalog
     }
 
     public static IReadOnlyList<ComponentClassFieldDescriptor> All() => Fields.Values.ToList();
+
+    public static void ValidateCurrentValue(
+        ComponentClassFieldDescriptor descriptor,
+        JsonNode value,
+        string owner)
+    {
+        RuntimeInputValueKindContract.ValidateValue(
+            descriptor.ValueKind,
+            value,
+            owner);
+        if (descriptor.ValueKind == ValueKind.OptionToken)
+        {
+            FieldOptionContract.ValidateValue(
+                FieldOptionContract.RequireOptions(
+                    descriptor.Options,
+                    owner),
+                value.GetValue<string>(),
+                owner);
+        }
+        ScalarValuePatternContract.Validate(
+            descriptor.ValuePattern,
+            descriptor.ValuePatternMessage,
+            value,
+            owner);
+    }
+
+    public static void ValidateConfigOptionValues(
+        string recordClassId,
+        JsonObject config,
+        string owner)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(recordClassId);
+        ArgumentNullException.ThrowIfNull(config);
+        foreach (var descriptor in Fields.Values.Where((field) =>
+                     field.ValueKind == ValueKind.OptionToken
+                     && field.Id.StartsWith(
+                         $"{recordClassId}.",
+                         StringComparison.Ordinal)))
+        {
+            var value = JsonPath.Get(config, descriptor.JsonPath);
+            if (value is null)
+            {
+                continue;
+            }
+            ValidateCurrentValue(
+                descriptor,
+                value,
+                $"{owner} field '{descriptor.Id}'");
+        }
+    }
 
     private static void ValidateOptionContracts()
     {

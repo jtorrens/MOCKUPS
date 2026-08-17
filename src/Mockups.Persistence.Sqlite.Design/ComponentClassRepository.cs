@@ -120,7 +120,15 @@ internal sealed class ComponentClassRepository : IComponentClassRepository
             current.ComponentType,
             config,
             $"Component class '{componentClassId}' config_json");
-        ValidateVariantConfigs(current.ComponentType, metadata, componentClassId);
+        ComponentClassFieldCatalog.ValidateConfigOptionValues(
+            current.RecordClassId,
+            config,
+            $"Component class '{componentClassId}' config_json");
+        ValidateVariantConfigs(
+            current.ComponentType,
+            current.RecordClassId,
+            metadata,
+            componentClassId);
         _context.Execute(
             connection,
             "UPDATE component_classes SET config_json = $configJson, metadata_json = $metadataJson WHERE id = $id",
@@ -133,7 +141,11 @@ internal sealed class ComponentClassRepository : IComponentClassRepository
     {
         var current = Get(connection, componentClassId);
         var metadata = ValidateMetadata(metadataJson, componentClassId);
-        ValidateVariantConfigs(current.ComponentType, metadata, componentClassId);
+        ValidateVariantConfigs(
+            current.ComponentType,
+            current.RecordClassId,
+            metadata,
+            componentClassId);
         _context.Execute(
             connection,
             "UPDATE component_classes SET metadata_json = $metadataJson WHERE id = $id",
@@ -181,20 +193,36 @@ internal sealed class ComponentClassRepository : IComponentClassRepository
             record.ComponentType,
             config,
             $"Component class '{record.Id}' config_json");
+        ComponentClassFieldCatalog.ValidateConfigOptionValues(
+            record.RecordClassId,
+            config,
+            $"Component class '{record.Id}' config_json");
         DesignPreviewTestValues.ValidateFixedCollectionCounts(
             preview,
             config,
             $"Component class '{record.Id}' design_preview_json");
-        ValidateVariantConfigs(record.ComponentType, metadata, record.Id);
+        ValidateVariantConfigs(
+            record.ComponentType,
+            record.RecordClassId,
+            metadata,
+            record.Id);
         return record;
     }
 
-    private static void ValidateVariantConfigs(string componentType, JsonObject metadata, string componentClassId)
+    private static void ValidateVariantConfigs(
+        string componentType,
+        string recordClassId,
+        JsonObject metadata,
+        string componentClassId)
     {
         foreach (var variant in VariantEnvelopeContract.Read(metadata, "variants", $"Component class '{componentClassId}'"))
         {
             CurrentComponentConfigContract.Validate(
                 componentType,
+                variant.Config,
+                $"Component class '{componentClassId}' Variant '{variant.Id}' config");
+            ComponentClassFieldCatalog.ValidateConfigOptionValues(
+                recordClassId,
                 variant.Config,
                 $"Component class '{componentClassId}' Variant '{variant.Id}' config");
         }

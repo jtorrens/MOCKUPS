@@ -279,9 +279,8 @@ internal sealed partial class SqliteDesignOwner
             descriptor.ValueKind,
             value,
             $"Component field '{descriptor.Id}' value");
-        ScalarValuePatternContract.Validate(
-            descriptor.ValuePattern,
-            descriptor.ValuePatternMessage,
+        ComponentClassFieldCatalog.ValidateCurrentValue(
+            descriptor,
             node,
             $"Component field '{descriptor.Id}' value");
         return node;
