@@ -433,11 +433,6 @@ function headerNode(
     "headerAvatarSlot",
     "module.core.chat.headerAvatarSlot",
   );
-  const avatarVariantReference = requiredString(
-    avatarSlot,
-    "variantReference",
-    "module.core.chat.headerAvatarSlot.variantReference",
-  );
   const resolvedAvatar = resolveAvatarComponentFromRecords(
       embeddedComponentConfig(
         componentBaseConfigs,

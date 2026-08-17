@@ -157,6 +157,24 @@ test("Module scaffold requires an exact dictionary and editor layout field inven
     ),
     /Dictionary field 'module\.core\.scaffoldTest\.list' is missing from editor layout/,
   );
+
+  const foreign = validSpec();
+  const foreignCards = foreign.editorLayout.cards as Array<Record<string, unknown>>;
+  const foreignGroups = foreignCards[0]!.groups as Array<Record<string, unknown>>;
+  const foreignFields = foreignGroups[0]!.fields as Array<Record<string, unknown>>;
+  foreignFields.push({
+    id: "module.unrelated.owner",
+    order: 20,
+    visible: true,
+  });
+  assert.throws(
+    () => createModuleScaffoldPlan(
+      foreign,
+      loadModuleScaffoldInventory(repositoryRoot),
+      repositoryRoot,
+    ),
+    /Editor layout field 'module\.unrelated\.owner' is missing from dictionary fields/,
+  );
 });
 
 test("Module materialization is no-overwrite and integration is transactional", () => {

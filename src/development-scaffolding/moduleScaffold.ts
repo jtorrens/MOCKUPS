@@ -202,6 +202,18 @@ export class ModuleScaffoldValidationError extends Error {
   }
 }
 
+// These fields are supplied by the generic Module record owner rather than by
+// an individual Module scaffold. Every other layout field belongs to the
+// scaffold's explicit dictionary inventory.
+const sharedModuleFieldIds = new Set([
+  "core.name",
+  "module.recordClassId",
+  "module.sortOrder",
+  "module.appearanceMode",
+  "core.notes",
+  "module.metadata",
+]);
+
 export function parseModuleScaffoldSpec(value: unknown): ModuleScaffoldSpec {
   const root = requiredObject(value, "Module scaffold");
   requireExactKeys(root, [
@@ -1075,7 +1087,7 @@ function validateEditorLayout(spec: ModuleScaffoldSpec, violations: string[]) {
   }
   const declared = new Set(spec.dictionaryFields.map((field) => field.id));
   for (const fieldId of referenced) {
-    if (fieldId.startsWith(`${spec.module.recordClassId}.`) && !declared.has(fieldId)) {
+    if (!declared.has(fieldId) && !sharedModuleFieldIds.has(fieldId)) {
       violations.push(`Editor layout field '${fieldId}' is missing from dictionary fields.`);
     }
   }
