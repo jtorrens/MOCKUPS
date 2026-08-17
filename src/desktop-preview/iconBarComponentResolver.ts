@@ -14,11 +14,7 @@ import type {
   IconBarState,
   IconBarZone,
 } from "./iconBarComponentContract.js";
-import {
-  iconRowButtonRuntimeDefaults,
-  resolveIconRowComponentFromRecords,
-} from "./iconRowComponentResolver.js";
-import { requiredObjectArray } from "./previewJsonHelpers.js";
+import { resolveIconRowComponentFromRecords } from "./iconRowComponentResolver.js";
 
 export function resolveIconBarComponent(
   payload: DesignPreviewPayload,
@@ -115,10 +111,6 @@ function resolveIconBarRow(
     config,
     {
       ...inputs,
-      structuralItems: requiredObjectArray(inputs, "items", `component.iconBar.${inputsKey}`),
-      buttonInputs: iconRowButtonRuntimeDefaults(
-        requiredObjectArray(inputs, "items", `component.iconBar.${inputsKey}`),
-      ),
       ...sharedSizes,
     },
     componentBaseConfigs,

@@ -82,6 +82,10 @@ public static class RuntimeInputDefinitionReader
                 HelpText = JsonString(item, "helpText"),
                 ValuePattern = JsonString(item, "valuePattern"),
                 ValuePatternMessage = JsonString(item, "valuePatternMessage"),
+                StructuredCollection = ReadNestedCollection(OptionalObject(
+                    item,
+                    "structuredCollection",
+                    $"Runtime Input '{id}'")),
             };
             if (source == ComponentInputSource.Runtime && InputIsVisible(item, config))
             {

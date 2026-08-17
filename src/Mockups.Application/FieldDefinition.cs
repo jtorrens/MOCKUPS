@@ -119,7 +119,8 @@ public sealed record ComponentInputBindingDefinition(
     ComponentInputTransitionDefinition? Transition = null,
     AnimationFieldDefinition? Animation = null,
     BehaviorTimingDefinition? BehaviorTiming = null,
-    bool ActionOnly = false);
+    bool ActionOnly = false,
+    RuntimeInputCollectionDefinition? StructuredCollection = null);
 
 public enum ImagePreviewMode
 {

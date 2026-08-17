@@ -63,7 +63,7 @@ internal sealed partial class SqliteDesignOwner
                     input.Label,
                     input.JsonKey,
                     input.ValueKind,
-                    ComponentInputBindingSource.Variant,
+                    ComponentInputBindingSource.Runtime,
                     input.DefaultValue,
                     input.Options,
                     new NumberDefinition(
@@ -82,7 +82,8 @@ internal sealed partial class SqliteDesignOwner
                     input.Transition,
                     input.Animation,
                     input.BehaviorTiming,
-                    input.ActionOnly))
+                    input.ActionOnly,
+                    input.StructuredCollection))
             .ToList();
     }
 

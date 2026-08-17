@@ -32,22 +32,16 @@ internal static class ConversationModuleConfigContract
             conversation,
             "headerLeftIconRowInputs",
             owner);
-        IconSlotsDocumentContract.Validate(
-            JsonPath.RequiredArray(
-                headerLeftIconRowInputs,
-                "items",
-                $"{owner}.headerLeftIconRowInputs"),
-            $"{owner}.headerLeftIconRowInputs.items");
+        ValidateIconRowRuntimeInputs(
+            headerLeftIconRowInputs,
+            $"{owner}.headerLeftIconRowInputs");
         var headerRightIconRowInputs = JsonPath.RequiredObject(
             conversation,
             "headerRightIconRowInputs",
             owner);
-        IconSlotsDocumentContract.Validate(
-            JsonPath.RequiredArray(
-                headerRightIconRowInputs,
-                "items",
-                $"{owner}.headerRightIconRowInputs"),
-            $"{owner}.headerRightIconRowInputs.items");
+        ValidateIconRowRuntimeInputs(
+            headerRightIconRowInputs,
+            $"{owner}.headerRightIconRowInputs");
         JsonPath.RequiredBoolean(conversation, "showStatusBar", owner);
         JsonPath.RequiredBoolean(conversation, "showNavigationBar", owner);
         JsonPath.RequiredBoolean(conversation, "showTextInputBar", owner);
@@ -75,6 +69,27 @@ internal static class ConversationModuleConfigContract
         var slotOwner = $"{owner}.{key}";
         JsonPath.RequiredString(slot, "variantReference", slotOwner);
         JsonPath.RequiredObject(slot, "overrides", slotOwner);
+    }
+
+    private static void ValidateIconRowRuntimeInputs(
+        JsonObject inputs,
+        string owner)
+    {
+        foreach (var key in inputs.Select((entry) => entry.Key))
+        {
+            if (!key.Equals("buttonInputs", StringComparison.Ordinal)
+                && !key.Equals(
+                    RuntimeInputForwardingContract.StorageKey,
+                    StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    $"{owner} contains unknown Runtime Input '{key}'.");
+            }
+        }
+        RuntimeCollectionDocumentContract.Validate(
+            JsonPath.RequiredArray(inputs, "buttonInputs", owner),
+            $"{owner}.buttonInputs");
+        _ = RuntimeInputForwardingContract.Labels(inputs);
     }
 
     private static void RequireNonNegative(double value, string path)

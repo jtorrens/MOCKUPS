@@ -10,13 +10,22 @@ internal sealed partial class SqliteDesignOwner
 {
     public ModuleSettings GetModuleSettings(string moduleId)
     {
-        var record = _appModuleRepository.GetModule(moduleId);
+        using var connection = OpenConnection();
+        var record = _appModuleRepository.GetModule(
+            connection,
+            moduleId);
+        var config = ParseJsonObject(record.ConfigJson);
+        ApplyComponentInputBindingsProjections(
+            connection,
+            record.ProjectId,
+            config,
+            ComponentInputBindingsProjectionCatalog.RecordOwners());
 
         return new ModuleSettings(
             record.ProjectId,
             record.RecordClassId,
             record.SortOrder,
-            record.ConfigJson,
+            config.ToJsonString(),
             record.DesignPreviewJson,
             record.MetadataJson);
     }
@@ -426,6 +435,11 @@ internal sealed partial class SqliteDesignOwner
                 }
             }
             JsonPath.Set(config, generated.JsonPath, next);
+            ApplyComponentInputBindingsProjections(
+                connection,
+                projectId,
+                config,
+                ComponentInputBindingsProjectionCatalog.RecordOwners());
             CurrentModuleConfigContract.Validate(
                 recordClassId,
                 config,
@@ -706,6 +720,11 @@ internal sealed partial class SqliteDesignOwner
                     $"Unknown module config field '{fieldId}'.");
         }
 
+        ApplyComponentInputBindingsProjections(
+            connection,
+            projectId,
+            config,
+            ComponentInputBindingsProjectionCatalog.RecordOwners());
         CurrentModuleConfigContract.Validate(
             recordClassId,
             config,

@@ -7687,22 +7687,18 @@ static void ConversationPreviewTargetsExactIconRowItems()
             "Conversation Preview config");
         var runtimeItems = JsonPath.RequiredArray(
             rightInputs,
-            "items",
+            "buttonInputs",
             "Conversation Preview right Icon Row Inputs");
         var videoRuntime = runtimeItems.Single((item) =>
             item?["id"]?.GetValue<string>() == "button_001");
         Equal(
-            "component_project_foqn_s2_button::variant::icon_only",
+            "media_video",
             JsonPath.RequiredString(
                 videoRuntime!.AsObject(),
-                "buttonVariantReference",
-                "Conversation Preview video Icon Slot"));
-        Equal(
-            "{}",
-            JsonPath.RequiredObject(
-                videoRuntime.AsObject(),
-                "buttonOverrides",
-                "Conversation Preview video Icon Slot").ToJsonString());
+                "iconToken",
+                "Conversation Preview video Button Runtime"));
+        True(!videoRuntime.AsObject().ContainsKey("buttonVariantReference"));
+        True(!videoRuntime.AsObject().ContainsKey("buttonOverrides"));
         var html = WebDesignPreviewRenderer.RenderBodyAsync(
                 database.GetDevicePreviewMetrics(device.Id),
                 false,
@@ -8653,14 +8649,14 @@ static void ModuleConfigsUseOwnerContracts()
             "module_core_chat",
             (config) => config["conversation"]!["headerLeftIconRowInputs"] = new JsonArray());
     });
-    AssertRejectedDatabaseIsReadOnly("conversation-module-icon-slot-document", (connection) =>
+    AssertRejectedDatabaseIsReadOnly("conversation-module-icon-row-runtime-document", (connection) =>
     {
         MutateModuleAndDefaultVariant(
             connection,
             "module_core_chat",
-            (config) => config["conversation"]!["headerRightIconRowInputs"]!["items"]![0]!
+            (config) => config["conversation"]!["headerRightIconRowInputs"]!["buttonInputs"]![0]!
                 .AsObject()
-                .Remove("buttonOverrides"));
+                .Remove("iconToken"));
     });
     AssertRejectedDatabaseIsReadOnly("lock-screen-module-items-root", (connection) =>
     {

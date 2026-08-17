@@ -536,21 +536,6 @@ internal sealed class ReferenceUsageService :
             }
         }
 
-        ScanBindings(
-            JsonPath.Get(config, ["conversation", "headerLeftIconRowInputs"]),
-            ComponentClassFieldCatalog.VariantInputBindingsForComponent("iconRow"),
-            "Left icon row",
-            source,
-            targets,
-            usages);
-        ScanBindings(
-            JsonPath.Get(config, ["conversation", "headerRightIconRowInputs"]),
-            ComponentClassFieldCatalog.VariantInputBindingsForComponent("iconRow"),
-            "Right icon row",
-            source,
-            targets,
-            usages);
-
         var stackReference = "";
         var stackSlot = JsonPath.Get(config, ["lockScreen", "stackSlot"]) as JsonObject;
         stackReference = stackSlot is null ? stackReference : JsonPath.String(stackSlot, "variantReference", "");

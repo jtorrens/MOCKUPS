@@ -13,12 +13,8 @@ import {
   requiredString,
 } from "./componentResolverCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import { requiredObjectArray } from "./previewJsonHelpers.js";
 import { iconRowComponentToRenderableAt, measureIconRowComponent } from "./iconRowComponentRenderable.js";
-import {
-  iconRowButtonRuntimeDefaults,
-  resolveIconRowComponentFromRecords,
-} from "./iconRowComponentResolver.js";
+import { resolveIconRowComponentFromRecords } from "./iconRowComponentResolver.js";
 import {
   cssColorWithAlpha,
   numberToken,
@@ -411,16 +407,7 @@ function headerNode(
       "iconRow",
       "module.conversation.headerLeftIconRowSlot",
     ),
-    {
-      ...leftInputs,
-      buttonInputs: iconRowButtonRuntimeDefaults(
-        requiredObjectArray(
-          leftInputs,
-          "items",
-          "module.conversation.headerLeftIconRowInputs",
-        ),
-      ),
-    },
+    leftInputs,
     componentBaseConfigs,
     "module.conversation.header.left",
   );
@@ -431,16 +418,7 @@ function headerNode(
       "iconRow",
       "module.conversation.headerRightIconRowSlot",
     ),
-    {
-      ...rightInputs,
-      buttonInputs: iconRowButtonRuntimeDefaults(
-        requiredObjectArray(
-          rightInputs,
-          "items",
-          "module.conversation.headerRightIconRowInputs",
-        ),
-      ),
-    },
+    rightInputs,
     componentBaseConfigs,
     "module.conversation.header.right",
   );

@@ -127,6 +127,13 @@ missing Button values. When a Module derives such a collection from a
 Component, its fixture also declares the exact Module-config path to that
 source Component Variant before resolving child-relative paths.
 
+The parent persists only the projected Runtime object (for Icon Row,
+`buttonInputs`). Structural items, Variant references and local Overrides stay
+exclusively in the selected child Variant slot. Fields declared `calculated`
+may exist in the prepared Preview value but are never copied into persisted
+parent Runtime rows. This projection is owned by the common Runtime document
+contract and is applied identically to Module and Component parents.
+
 Text Input Bar forwards only its explicit runtime text. Bubble and Text Input
 Bar customize their selected Text Box slot through local Overrides.
 

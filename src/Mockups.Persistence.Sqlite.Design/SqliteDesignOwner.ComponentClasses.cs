@@ -8,17 +8,26 @@ namespace Mockups.DesktopEditorShell.Data;
 internal sealed partial class SqliteDesignOwner
 {
     public ComponentClassSettings GetComponentClassSettings(
-        string componentClassId) =>
-        ComponentClassSettingsFrom(
-            _componentClassRepository.Get(componentClassId));
+        string componentClassId)
+    {
+        using var connection = OpenConnection();
+        return ProjectComponentInputBindings(
+            connection,
+            ComponentClassSettingsFrom(
+                _componentClassRepository.Get(
+                    connection,
+                    componentClassId)));
+    }
 
     internal ComponentClassSettings GetComponentClassSettings(
         SqliteConnection connection,
         string componentClassId) =>
-        ComponentClassSettingsFrom(
-            _componentClassRepository.Get(
-                connection,
-                componentClassId));
+        ProjectComponentInputBindings(
+            connection,
+            ComponentClassSettingsFrom(
+                _componentClassRepository.Get(
+                    connection,
+                    componentClassId)));
 
     public ComponentClassSettings GetComponentVariantSettings(
         ProjectTreeNode variantNode)
@@ -64,13 +73,16 @@ internal sealed partial class SqliteDesignOwner
             variant,
             "name",
             variantId);
-        return settings with
+        var selected = settings with
         {
             Name = string.IsNullOrWhiteSpace(variantName)
                 ? settings.Name
                 : $"{settings.Name} · {variantName}",
             ConfigJson = configObject.ToJsonString(),
         };
+        return ProjectComponentInputBindings(
+            connection,
+            selected);
     }
 
     public void UpdateComponentClassDesignPreviewJson(
@@ -493,4 +505,17 @@ internal sealed partial class SqliteDesignOwner
                 $"Component class '{record.Id}'"),
             record.DesignPreviewJson,
             record.MetadataJson);
+
+    private ComponentClassSettings ProjectComponentInputBindings(
+        SqliteConnection connection,
+        ComponentClassSettings settings)
+    {
+        var config = ParseJsonObject(settings.ConfigJson);
+        ApplyComponentInputBindingsProjections(
+            connection,
+            settings.ProjectId,
+            config,
+            ComponentInputBindingsProjectionCatalog.ComponentOwners());
+        return settings with { ConfigJson = config.ToJsonString() };
+    }
 }

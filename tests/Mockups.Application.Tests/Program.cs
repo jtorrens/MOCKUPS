@@ -33,6 +33,8 @@ var tests = new (string Name, Action Run)[]
     ("session revisions identify only the current owner transition", SessionRevisionGuardsOwner),
     ("Runtime definitions preserve their explicit owner", RuntimeDefinitionsPreserveOwner),
     ("projected Runtime collections reconcile by stable id", ProjectedRuntimeCollectionsReconcileById),
+    ("Component Input bindings project exact structured Runtime values", ComponentInputBindingsProjectExactStructuredRuntimeValues),
+    ("Component Input projection ownership covers Module and Component parents", ComponentInputProjectionOwnershipCoversParents),
     ("Runtime documents reject missing and parent-owned values", RuntimeDocumentsRejectInvalidOwnership),
     ("Runtime scalar patterns validate defaults and authored values", RuntimeScalarPatternsValidateValues),
     ("Runtime contract transitions retain only current values and animation owners", RuntimeContractTransitionsRetainCurrentOwners),
@@ -365,6 +367,150 @@ static void ProjectedRuntimeCollectionsReconcileById()
     Equal("second", result[1]?["id"]?.GetValue<string>());
     Equal("authored", result[1]?["value"]?.GetValue<string>());
     Equal("Changed", result[1]?["label"]?.GetValue<string>());
+}
+
+static void ComponentInputBindingsProjectExactStructuredRuntimeValues()
+{
+    var definition = new JsonObject
+    {
+        ["id"] = "rows",
+        ["label"] = "Rows",
+        ["jsonKey"] = "rows",
+        ["kind"] = "collection",
+        ["valueKind"] = nameof(ValueKind.StructuredCollection),
+        ["source"] = "runtime",
+        ["defaultValue"] = "[]",
+        ["structuredCollection"] = new JsonObject
+        {
+            ["id"] = "rows",
+            ["label"] = "Rows",
+            ["jsonKey"] = "rows",
+            ["itemLabel"] = "Row",
+            ["canEditStructure"] = false,
+            ["fields"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["id"] = "value",
+                    ["label"] = "Value",
+                    ["jsonKey"] = "value",
+                    ["kind"] = "text",
+                    ["valueKind"] = nameof(ValueKind.StringSingleLine),
+                    ["defaultValue"] = "",
+                },
+                new JsonObject
+                {
+                    ["id"] = "calculated",
+                    ["label"] = "Calculated",
+                    ["jsonKey"] = "calculated",
+                    ["kind"] = "text",
+                    ["valueKind"] = nameof(ValueKind.StringSingleLine),
+                    ["source"] = "calculated",
+                    ["defaultValue"] = "",
+                },
+            },
+            ["structureProjection"] = new JsonObject
+            {
+                ["sourceConfigPath"] = "structure.rows",
+                ["sourceIdJsonKey"] = "id",
+                ["runtimeIdJsonKey"] = "id",
+                ["fieldBindings"] = new JsonObject
+                {
+                    ["value"] = "value",
+                },
+            },
+        },
+    };
+    var contract = new JsonObject
+    {
+        ["inputs"] = new JsonArray(definition),
+        ["rows"] = new JsonArray
+        {
+            new JsonObject { ["id"] = "added", ["value"] = "default" },
+            new JsonObject { ["id"] = "kept", ["value"] = "variant" },
+        },
+    };
+    var current = new JsonObject
+    {
+        ["rows"] = new JsonArray
+        {
+            new JsonObject { ["id"] = "kept", ["value"] = "authored" },
+            new JsonObject { ["id"] = "removed", ["value"] = "discarded" },
+        },
+    };
+
+    var projected = RuntimeInputDocumentContract
+        .ProjectInputValuesForContract(current, contract);
+    var rows = projected["rows"]!.AsArray();
+    Equal(2, rows.Count);
+    Equal("added", rows[0]?["id"]?.GetValue<string>());
+    Equal("default", rows[0]?["value"]?.GetValue<string>());
+    Equal("kept", rows[1]?["id"]?.GetValue<string>());
+    Equal("authored", rows[1]?["value"]?.GetValue<string>());
+
+    Throws<InvalidOperationException>(() =>
+        RuntimeInputDocumentContract.ProjectInputValuesForContract(
+            new JsonObject { ["items"] = new JsonArray() },
+            contract));
+    Throws<InvalidOperationException>(() =>
+        RuntimeInputDocumentContract.ProjectInputValuesForContract(
+            new JsonObject
+            {
+                ["rows"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["id"] = "kept",
+                        ["value"] = "authored",
+                        ["calculated"] = "must-not-persist",
+                    },
+                },
+            },
+            contract));
+    Throws<InvalidOperationException>(() =>
+        RuntimeInputDocumentContract.ProjectInputValuesForContract(
+            new JsonObject
+            {
+                ["rows"] = new JsonArray
+                {
+                    new JsonObject { ["id"] = "kept" },
+                },
+            },
+            contract));
+
+    var read = RuntimeInputDefinitionReader.ReadInputs(
+        new JsonObject
+        {
+            ["inputs"] = new JsonArray(definition.DeepClone()),
+        },
+        new JsonObject());
+    Equal(1, read.Count);
+    Equal(false, read[0].StructuredCollection?.CanEditStructure);
+}
+
+static void ComponentInputProjectionOwnershipCoversParents()
+{
+    var moduleOwners = ComponentInputBindingsProjectionCatalog.RecordOwners();
+    var componentOwners = ComponentInputBindingsProjectionCatalog.ComponentOwners();
+
+    Equal(2, moduleOwners.Count);
+    Equal(7, componentOwners.Count);
+    Equal(true, moduleOwners.Any((owner) => owner.Id.Equals(
+        "module.conversation.headerRightIconRow.inputs",
+        StringComparison.Ordinal)));
+    Equal(true, componentOwners.Any((owner) => owner.Id.Equals(
+        "component.iconBar.activeRightIconRow.inputs",
+        StringComparison.Ordinal)));
+    Equal(true, componentOwners.Any((owner) => owner.Id.Equals(
+        "component.textInput.textBox.inputs",
+        StringComparison.Ordinal)));
+    var textBox = componentOwners.Single((owner) => owner.Id.Equals(
+        "component.textInput.textBox.inputs",
+        StringComparison.Ordinal));
+    Equal(3, textBox.CalculatedInputIds.Count);
+    Equal(true, textBox.CalculatedInputIds.Contains("fixedSize"));
+    Equal(true, textBox.CalculatedInputIds.Contains("contentMaxWidth"));
+    Equal(true, textBox.CalculatedInputIds.Contains("growSize"));
 }
 
 static void RuntimeDocumentsRejectInvalidOwnership()

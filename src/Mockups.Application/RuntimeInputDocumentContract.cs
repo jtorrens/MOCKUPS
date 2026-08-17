@@ -54,7 +54,8 @@ public static class RuntimeInputDocumentContract
 
     public static JsonArray ReconcileProjectedCollection(
         JsonArray? current,
-        JsonArray? defaults)
+        JsonArray? defaults,
+        JsonObject? collectionDefinition = null)
     {
         if (defaults is null)
         {
@@ -97,6 +98,28 @@ public static class RuntimeInputDocumentContract
                 ?? throw new InvalidOperationException(
                     $"Projected runtime collection default item at index {index} must be an object.");
             var next = defaultItem.DeepClone().AsObject();
+            if (collectionDefinition is not null)
+            {
+                var persistedKeys = DefinitionObjects(
+                        collectionDefinition,
+                        "fields",
+                        "Projected runtime collection",
+                        required: true)
+                    .Where(IsRuntimeDefinition)
+                    .Select((field) => JsonPath.RequiredString(
+                        field,
+                        "jsonKey",
+                        "Projected runtime collection field"))
+                    .Append("id")
+                    .ToHashSet(StringComparer.Ordinal);
+                foreach (var key in next
+                             .Select((entry) => entry.Key)
+                             .Where((key) => !persistedKeys.Contains(key))
+                             .ToList())
+                {
+                    next.Remove(key);
+                }
+            }
             var id = JsonPath.RequiredString(
                 next,
                 "id",
@@ -129,43 +152,13 @@ public static class RuntimeInputDocumentContract
             ["schemaVersion"] = current["schemaVersion"]?.DeepClone()
                 ?? JsonValue.Create(2),
         };
-        foreach (var input in DefinitionObjects(
+        foreach (var (key, value) in CreateInputValuesForContract(
+                     current,
                      contract,
-                     "inputs",
-                     "Effective Module Runtime contract"))
+                     preserveForwarding: false))
         {
-            if (!IsRuntimeDefinition(input))
-            {
-                continue;
-            }
-
-            var inputId = JsonPath.RequiredString(
-                input,
-                "id",
-                "Runtime Input definition");
-            var jsonKey = JsonPath.RequiredString(
-                input,
-                "jsonKey",
-                $"Runtime Input '{inputId}'");
-            if (current.TryGetPropertyValue(
-                    jsonKey,
-                    out var currentValue))
-            {
-                RuntimeInputValueKindContract.ValidateRuntimeValue(
-                    input,
-                    currentValue,
-                    $"Current Runtime Input '{inputId}'");
-                next[jsonKey] = currentValue!.DeepClone();
-            }
-            else
-            {
-                next[jsonKey] =
-                    RuntimeInputValueKindContract.CreateDefaultValue(
-                        input,
-                        $"Runtime Input '{inputId}'");
-            }
+            next[key] = value?.DeepClone();
         }
-
         foreach (var collection in DefinitionObjects(
                      contract,
                      "collections",
@@ -194,6 +187,155 @@ public static class RuntimeInputDocumentContract
         }
 
         return next;
+    }
+
+    public static JsonObject CreateInputValuesForContract(
+        JsonObject current,
+        JsonObject contract,
+        bool preserveForwarding = true,
+        IReadOnlySet<string>? excludedInputIds = null)
+    {
+        var next = new JsonObject();
+        foreach (var input in DefinitionObjects(
+                     contract,
+                     "inputs",
+                     "Effective Module Runtime contract"))
+        {
+            if (!IsRuntimeDefinition(input))
+            {
+                continue;
+            }
+
+            var inputId = JsonPath.RequiredString(
+                input,
+                "id",
+                "Runtime Input definition");
+            if (excludedInputIds?.Contains(inputId) == true)
+            {
+                continue;
+            }
+            var jsonKey = JsonPath.RequiredString(
+                input,
+                "jsonKey",
+                $"Runtime Input '{inputId}'");
+            var collection = input["structuredCollection"] as JsonObject;
+            var projectedCollection =
+                collection?["structureProjection"] is not null;
+            if (projectedCollection)
+            {
+                var value = ReconcileProjectedCollection(
+                    OptionalCollection(
+                        current,
+                        jsonKey,
+                        "Current Component Input bindings"),
+                    RequiredCollection(
+                        contract,
+                        jsonKey,
+                        "Effective Component Runtime contract"),
+                    collection!);
+                RuntimeInputValueKindContract.ValidateRuntimeValue(
+                    input,
+                    value,
+                    $"Current Runtime Input '{inputId}'");
+                next[jsonKey] = value;
+                continue;
+            }
+            if (current.TryGetPropertyValue(
+                    jsonKey,
+                    out var currentValue))
+            {
+                RuntimeInputValueKindContract.ValidateRuntimeValue(
+                    input,
+                    currentValue,
+                    $"Current Runtime Input '{inputId}'");
+                next[jsonKey] = currentValue!.DeepClone();
+            }
+            else
+            {
+                next[jsonKey] =
+                    RuntimeInputValueKindContract.CreateDefaultValue(
+                        input,
+                        $"Runtime Input '{inputId}'");
+            }
+        }
+
+        if (preserveForwarding
+            && current[RuntimeInputForwardingContract.StorageKey]
+                is JsonObject forwarding)
+        {
+            next[RuntimeInputForwardingContract.StorageKey] =
+                forwarding.DeepClone();
+        }
+
+        return next;
+    }
+
+    public static JsonObject ProjectInputValuesForContract(
+        JsonObject current,
+        JsonObject contract,
+        IReadOnlySet<string>? excludedInputIds = null)
+    {
+        var expected = DefinitionObjects(
+                contract,
+                "inputs",
+                "Effective Component Runtime contract")
+            .Where(IsRuntimeDefinition)
+            .Where((input) => excludedInputIds?.Contains(
+                JsonPath.RequiredString(
+                    input,
+                    "id",
+                    "Runtime Input definition")) != true)
+            .Select((input) => JsonPath.RequiredString(
+                input,
+                "jsonKey",
+                "Runtime Input definition"))
+            .ToHashSet(StringComparer.Ordinal);
+        var actual = current
+            .Select((entry) => entry.Key)
+            .Where((key) => !key.Equals(
+                RuntimeInputForwardingContract.StorageKey,
+                StringComparison.Ordinal))
+            .ToHashSet(StringComparer.Ordinal);
+        var missing = expected.Except(actual, StringComparer.Ordinal).ToList();
+        var unknown = actual.Except(expected, StringComparer.Ordinal).ToList();
+        if (missing.Count > 0 || unknown.Count > 0)
+        {
+            throw new InvalidOperationException(
+                "Component Input bindings do not match the selected Variant Runtime contract."
+                + (missing.Count > 0
+                    ? $" Missing: {string.Join(", ", missing)}."
+                    : "")
+                + (unknown.Count > 0
+                    ? $" Unknown: {string.Join(", ", unknown)}."
+                    : ""));
+        }
+        foreach (var input in DefinitionObjects(
+                     contract,
+                     "inputs",
+                     "Effective Component Runtime contract")
+                 .Where(IsRuntimeDefinition))
+        {
+            var inputId = JsonPath.RequiredString(
+                input,
+                "id",
+                "Runtime Input definition");
+            if (excludedInputIds?.Contains(inputId) == true)
+            {
+                continue;
+            }
+            var jsonKey = JsonPath.RequiredString(
+                input,
+                "jsonKey",
+                $"Runtime Input '{inputId}'");
+            RuntimeInputValueKindContract.ValidateRuntimeValue(
+                input,
+                current[jsonKey],
+                $"Current Runtime Input '{inputId}'");
+        }
+        return CreateInputValuesForContract(
+            current,
+            contract,
+            excludedInputIds: excludedInputIds);
     }
 
     public static JsonObject RemoveOrphanedAnimationTracks(

@@ -262,41 +262,6 @@ public static partial class ComponentClassFieldCatalog
         new("bottom", "Bottom"),
     ];
 
-    private static readonly ComponentInputBindingDefinition[] IconRowParentInputBindings =
-    [
-        new(
-            "items",
-            "Buttons",
-            "items",
-            ValueKind.IconSlots,
-            ComponentInputBindingSource.Variant,
-            "[]"),
-        new(
-            "gap",
-            "Gap",
-            "gap",
-            ValueKind.ThemeToken,
-            ComponentInputBindingSource.Variant,
-            "theme.spacing.s",
-            Options: SpacingTokenOptions),
-        new(
-            "orientation",
-            "Orientation",
-            "orientation",
-            ValueKind.OptionToken,
-            ComponentInputBindingSource.Variant,
-            "horizontal",
-            Options: IconRowOrientationOptions),
-        new(
-            "itemSizingMode",
-            "Item sizing",
-            "itemSizingMode",
-            ValueKind.OptionToken,
-            ComponentInputBindingSource.Variant,
-            "content",
-            Options: IconRowItemSizingModeOptions),
-    ];
-
     private static readonly ComponentInputBindingDefinition[] TextBoxParentInputBindings =
     [
         new(
@@ -356,28 +321,6 @@ public static partial class ComponentClassFieldCatalog
             "90",
             Number: new NumberDefinition(1, 100, 1, 0)),
     ];
-
-    public static IReadOnlyList<ComponentInputBindingDefinition> RuntimeInputBindingsForComponent(string componentType)
-    {
-        return componentType switch
-        {
-            "iconRow" => IconRowParentInputBindings
-                .Where((binding) => binding.Source == ComponentInputBindingSource.Runtime)
-                .ToList(),
-            _ => [],
-        };
-    }
-
-    public static IReadOnlyList<ComponentInputBindingDefinition> VariantInputBindingsForComponent(string componentType)
-    {
-        return componentType switch
-        {
-            "iconRow" => IconRowParentInputBindings
-                .Where((binding) => binding.Source == ComponentInputBindingSource.Variant)
-                .ToList(),
-            _ => [],
-        };
-    }
 
     private static readonly FieldOption[] PressedEffectOptions =
     [
@@ -633,48 +576,54 @@ public static partial class ComponentClassFieldCatalog
             "Idle left settings",
             ValueKind.ComponentInputBindings,
             ["iconBar", "idleLeftIconRowInputs"],
-            """{"gap":"theme.spacing.m","orientation":"horizontal","items":[]}""",
-            ComponentInputBindings: IconRowParentInputBindings),
+            """{"buttonInputs":[]}""",
+            ComponentInputBindings: [],
+            RuntimeInputComponentVariantFieldId: "component.iconBar.idleLeftIconRow.editor"),
         ["component.iconBar.idleCenterIconRow.editor"] = new("component.iconBar.idleCenterIconRow.editor", "Idle center row", ValueKind.ComponentVariant, ["iconBar", "idleCenterIconRowSlot", "variantReference"], "default"),
         ["component.iconBar.idleCenterIconRow.inputs"] = new(
             "component.iconBar.idleCenterIconRow.inputs",
             "Idle center settings",
             ValueKind.ComponentInputBindings,
             ["iconBar", "idleCenterIconRowInputs"],
-            """{"gap":"theme.spacing.m","orientation":"horizontal","items":[]}""",
-            ComponentInputBindings: IconRowParentInputBindings),
+            """{"buttonInputs":[]}""",
+            ComponentInputBindings: [],
+            RuntimeInputComponentVariantFieldId: "component.iconBar.idleCenterIconRow.editor"),
         ["component.iconBar.idleRightIconRow.editor"] = new("component.iconBar.idleRightIconRow.editor", "Idle right row", ValueKind.ComponentVariant, ["iconBar", "idleRightIconRowSlot", "variantReference"], "default"),
         ["component.iconBar.idleRightIconRow.inputs"] = new(
             "component.iconBar.idleRightIconRow.inputs",
             "Idle right settings",
             ValueKind.ComponentInputBindings,
             ["iconBar", "idleRightIconRowInputs"],
-            """{"gap":"theme.spacing.m","orientation":"horizontal","items":[]}""",
-            ComponentInputBindings: IconRowParentInputBindings),
+            """{"buttonInputs":[]}""",
+            ComponentInputBindings: [],
+            RuntimeInputComponentVariantFieldId: "component.iconBar.idleRightIconRow.editor"),
         ["component.iconBar.activeLeftIconRow.editor"] = new("component.iconBar.activeLeftIconRow.editor", "Active left row", ValueKind.ComponentVariant, ["iconBar", "activeLeftIconRowSlot", "variantReference"], "default"),
         ["component.iconBar.activeLeftIconRow.inputs"] = new(
             "component.iconBar.activeLeftIconRow.inputs",
             "Active left settings",
             ValueKind.ComponentInputBindings,
             ["iconBar", "activeLeftIconRowInputs"],
-            """{"gap":"theme.spacing.m","orientation":"horizontal","items":[]}""",
-            ComponentInputBindings: IconRowParentInputBindings),
+            """{"buttonInputs":[]}""",
+            ComponentInputBindings: [],
+            RuntimeInputComponentVariantFieldId: "component.iconBar.activeLeftIconRow.editor"),
         ["component.iconBar.activeCenterIconRow.editor"] = new("component.iconBar.activeCenterIconRow.editor", "Active center row", ValueKind.ComponentVariant, ["iconBar", "activeCenterIconRowSlot", "variantReference"], "default"),
         ["component.iconBar.activeCenterIconRow.inputs"] = new(
             "component.iconBar.activeCenterIconRow.inputs",
             "Active center settings",
             ValueKind.ComponentInputBindings,
             ["iconBar", "activeCenterIconRowInputs"],
-            """{"gap":"theme.spacing.m","orientation":"horizontal","items":[]}""",
-            ComponentInputBindings: IconRowParentInputBindings),
+            """{"buttonInputs":[]}""",
+            ComponentInputBindings: [],
+            RuntimeInputComponentVariantFieldId: "component.iconBar.activeCenterIconRow.editor"),
         ["component.iconBar.activeRightIconRow.editor"] = new("component.iconBar.activeRightIconRow.editor", "Active right row", ValueKind.ComponentVariant, ["iconBar", "activeRightIconRowSlot", "variantReference"], "default"),
         ["component.iconBar.activeRightIconRow.inputs"] = new(
             "component.iconBar.activeRightIconRow.inputs",
             "Active right settings",
             ValueKind.ComponentInputBindings,
             ["iconBar", "activeRightIconRowInputs"],
-            """{"gap":"theme.spacing.m","orientation":"horizontal","items":[]}""",
-            ComponentInputBindings: IconRowParentInputBindings),
+            """{"buttonInputs":[]}""",
+            ComponentInputBindings: [],
+            RuntimeInputComponentVariantFieldId: "component.iconBar.activeRightIconRow.editor"),
 
         ["component.avatar.defaultSize"] = new("component.avatar.defaultSize", "Default size", ValueKind.Integer, ["avatar", "defaultSize"], "48"),
         ["component.avatar.cornerRadiusToken"] = new("component.avatar.cornerRadiusToken", "Avatar radius", ValueKind.ThemeToken, ["avatar", "cornerRadiusToken"], "theme.radii.full", Options: RadiusTokenOptions),

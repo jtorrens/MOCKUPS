@@ -20,7 +20,8 @@ public sealed record RecordClassFieldDescriptor(
     IReadOnlyList<ComponentInputBindingDefinition>? ComponentInputBindings = null,
     string RuntimeInputComponentVariantFieldId = "",
     string RuntimeCollectionComponentVariantFieldId = "",
-    MotionTimingDefinition? MotionTiming = null);
+    MotionTimingDefinition? MotionTiming = null,
+    string[]? ConfigJsonPath = null);
 
 public static class RecordClassFieldCatalog
 {
@@ -212,9 +213,9 @@ public static class RecordClassFieldCatalog
             new FieldOption("right", "Right"),
         ]),
         ["module.conversation.headerLeftIconRow.editor"] = new("module.conversation.headerLeftIconRow.editor", "Left icon row", ValueKind.ComponentVariant, ComponentVariantType: "iconRow"),
-        ["module.conversation.headerLeftIconRow.inputs"] = new("module.conversation.headerLeftIconRow.inputs", "Left row settings", ValueKind.ComponentInputBindings, ComponentInputBindings: ComponentClassFieldCatalog.VariantInputBindingsForComponent("iconRow")),
+        ["module.conversation.headerLeftIconRow.inputs"] = new("module.conversation.headerLeftIconRow.inputs", "Left row settings", ValueKind.ComponentInputBindings, ComponentInputBindings: [], RuntimeInputComponentVariantFieldId: "module.conversation.headerLeftIconRow.editor", ConfigJsonPath: ["conversation", "headerLeftIconRowInputs"]),
         ["module.conversation.headerRightIconRow.editor"] = new("module.conversation.headerRightIconRow.editor", "Right icon row", ValueKind.ComponentVariant, ComponentVariantType: "iconRow"),
-        ["module.conversation.headerRightIconRow.inputs"] = new("module.conversation.headerRightIconRow.inputs", "Right row settings", ValueKind.ComponentInputBindings, ComponentInputBindings: ComponentClassFieldCatalog.VariantInputBindingsForComponent("iconRow")),
+        ["module.conversation.headerRightIconRow.inputs"] = new("module.conversation.headerRightIconRow.inputs", "Right row settings", ValueKind.ComponentInputBindings, ComponentInputBindings: [], RuntimeInputComponentVariantFieldId: "module.conversation.headerRightIconRow.editor", ConfigJsonPath: ["conversation", "headerRightIconRowInputs"]),
         ["module.conversation.showStatusBar"] = new("module.conversation.showStatusBar", "Status bar", ValueKind.Boolean),
         ["module.conversation.showNavigationBar"] = new("module.conversation.showNavigationBar", "Navigation bar", ValueKind.Boolean),
         ["module.conversation.showTextInputBar"] = new("module.conversation.showTextInputBar", "Text input bar", ValueKind.Boolean),

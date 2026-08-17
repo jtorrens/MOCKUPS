@@ -240,7 +240,85 @@ public static class RuntimeInputValueKindContract
         }
 
         ValidateValue(valueKind, value, owner);
+        if (valueKind == ValueKind.StructuredCollection
+            && definition["structuredCollection"] is JsonObject collection)
+        {
+            ValidateStructuredCollection(
+                RequireArray(value, owner),
+                collection,
+                owner);
+        }
         ValidateValuePattern(definition, value, owner);
+    }
+
+    private static void ValidateStructuredCollection(
+        JsonArray items,
+        JsonObject collection,
+        string owner)
+    {
+        var fields = JsonPath.ObjectItems(
+                JsonPath.RequiredArray(collection, "fields", owner),
+                $"{owner} fields")
+            .ToList();
+        var fieldKeys = fields
+            .Select((field) => JsonPath.RequiredString(
+                field,
+                "jsonKey",
+                $"{owner} field"))
+            .ToHashSet(StringComparer.Ordinal);
+        if (fieldKeys.Contains("id"))
+        {
+            throw new InvalidOperationException(
+                $"{owner} fields must not redeclare the stable item id.");
+        }
+
+        var allowedKeys = fieldKeys
+            .Append("id")
+            .ToHashSet(StringComparer.Ordinal);
+        for (var itemIndex = 0; itemIndex < items.Count; itemIndex++)
+        {
+            var item = items[itemIndex] as JsonObject
+                ?? throw new InvalidOperationException(
+                    $"{owner} item at index {itemIndex} must be an object.");
+            var itemId = JsonPath.RequiredString(
+                item,
+                "id",
+                $"{owner} item at index {itemIndex}");
+            var unknownKeys = item
+                .Select((entry) => entry.Key)
+                .Where((key) => !allowedKeys.Contains(key))
+                .ToList();
+            if (unknownKeys.Count > 0)
+            {
+                throw new InvalidOperationException(
+                    $"{owner} item '{itemId}' has unknown fields: {string.Join(", ", unknownKeys)}.");
+            }
+
+            foreach (var field in fields)
+            {
+                var fieldKey = JsonPath.RequiredString(
+                    field,
+                    "jsonKey",
+                    $"{owner} field");
+                if (RuntimeInputDocumentContract.IsRuntimeDefinition(field))
+                {
+                    if (!item.TryGetPropertyValue(fieldKey, out var fieldValue))
+                    {
+                        throw new InvalidOperationException(
+                            $"{owner} item '{itemId}' requires field '{fieldKey}'.");
+                    }
+                    ValidateRuntimeValue(
+                        field,
+                        fieldValue,
+                        $"{owner} item '{itemId}' field '{fieldKey}'");
+                }
+                else if (item.ContainsKey(fieldKey))
+                {
+                    throw new InvalidOperationException(
+                        $"{owner} item '{itemId}' must not persist parent-owned field '{fieldKey}'.");
+                }
+            }
+        }
     }
 
     public static void ValidateValue(ValueKind valueKind, JsonNode value, string owner)

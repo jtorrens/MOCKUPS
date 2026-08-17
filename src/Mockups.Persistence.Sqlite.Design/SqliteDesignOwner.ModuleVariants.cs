@@ -23,8 +23,25 @@ internal sealed partial class SqliteDesignOwner
     }
 
     public IReadOnlyList<ModuleVariant> GetModuleVariants(
-        string moduleId) =>
-        ModuleVariants(GetModuleSettings(moduleId).MetadataJson);
+        string moduleId)
+    {
+        using var connection = OpenConnection();
+        var module = _appModuleRepository.GetModule(
+            connection,
+            moduleId);
+        return ModuleVariants(module.MetadataJson)
+            .Select((variant) =>
+            {
+                var config = ParseJsonObject(variant.ConfigJson);
+                ApplyComponentInputBindingsProjections(
+                    connection,
+                    module.ProjectId,
+                    config,
+                    ComponentInputBindingsProjectionCatalog.RecordOwners());
+                return variant with { ConfigJson = config.ToJsonString() };
+            })
+            .ToList();
+    }
 
     public ModuleSettings GetModuleVariantSettings(
         ProjectTreeNode variantNode)
@@ -47,7 +64,14 @@ internal sealed partial class SqliteDesignOwner
                     StringComparison.Ordinal))
             ?? throw new InvalidOperationException(
                 $"Missing module variant '{variantId}'.");
-        return settings with { ConfigJson = variant.ConfigJson };
+        using var connection = OpenConnection();
+        var config = ParseJsonObject(variant.ConfigJson);
+        ApplyComponentInputBindingsProjections(
+            connection,
+            settings.ProjectId,
+            config,
+            ComponentInputBindingsProjectionCatalog.RecordOwners());
+        return settings with { ConfigJson = config.ToJsonString() };
     }
 
     public IReadOnlyList<FieldOption> GetModuleVariantOptions(
@@ -405,6 +429,18 @@ internal sealed partial class SqliteDesignOwner
             }
 
             update(variant);
+            var config = variant["config"] as JsonObject
+                ?? throw new InvalidOperationException(
+                    "Module variant has no config.");
+            ApplyComponentInputBindingsProjections(
+                connection,
+                module.ProjectId,
+                config,
+                ComponentInputBindingsProjectionCatalog.RecordOwners());
+            CurrentModuleConfigContract.Validate(
+                module.RecordClassId,
+                config,
+                "Edited Module Variant config");
             _appModuleRepository.UpdateModuleMetadata(
                 connection,
                 moduleId,

@@ -75,6 +75,11 @@ internal sealed partial class SqliteDesignOwner
                 ComponentConfigJsonValue(
                     descriptor,
                     value));
+            ApplyComponentInputBindingsProjections(
+                connection,
+                settings.ProjectId,
+                config,
+                ComponentInputBindingsProjectionCatalog.ComponentOwners());
             CurrentComponentConfigContract.Validate(
                 settings.ComponentType,
                 config,
@@ -146,6 +151,11 @@ internal sealed partial class SqliteDesignOwner
             var settings = GetComponentClassSettings(
                 connection,
                 componentClassId);
+            ApplyComponentInputBindingsProjections(
+                connection,
+                settings.ProjectId,
+                nextConfig,
+                ComponentInputBindingsProjectionCatalog.ComponentOwners());
             CurrentComponentConfigContract.Validate(
                 settings.ComponentType,
                 nextConfig,
@@ -190,6 +200,11 @@ internal sealed partial class SqliteDesignOwner
         var component = _componentClassRepository.Get(
             connection,
             componentClassId);
+        ApplyComponentInputBindingsProjections(
+            connection,
+            component.ProjectId,
+            config,
+            ComponentInputBindingsProjectionCatalog.ComponentOwners());
         CurrentComponentConfigContract.Validate(
             component.ComponentType,
             config,
@@ -225,6 +240,11 @@ internal sealed partial class SqliteDesignOwner
         var component = _componentClassRepository.Get(
             connection,
             componentClassId);
+        ApplyComponentInputBindingsProjections(
+            connection,
+            component.ProjectId,
+            config,
+            ComponentInputBindingsProjectionCatalog.ComponentOwners());
         CurrentComponentConfigContract.Validate(
             component.ComponentType,
             config,

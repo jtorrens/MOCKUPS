@@ -229,6 +229,11 @@ internal sealed partial class SqliteDesignOwner
                 DefaultComponentVariantConfigJson(
                     row.MetadataJson,
                     $"Component class '{row.Id}'"));
+            ApplyComponentInputBindingsProjections(
+                connection,
+                projectId,
+                defaultConfig,
+                ComponentInputBindingsProjectionCatalog.ComponentOwners());
             ValidateEmbeddedSlotVariantReferences(
                 connection,
                 projectId,
@@ -262,6 +267,11 @@ internal sealed partial class SqliteDesignOwner
         foreach (var variant in RequiredComponentClassVariants(row))
         {
             var config = ParseJsonObject(variant.ConfigJson);
+            ApplyComponentInputBindingsProjections(
+                connection,
+                row.ProjectId,
+                config,
+                ComponentInputBindingsProjectionCatalog.ComponentOwners());
             ValidateEmbeddedSlotVariantReferences(
                 connection,
                 row.ProjectId,
