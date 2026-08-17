@@ -77,6 +77,19 @@ Ownership is:
 
 Do not add a local exception for behavior that can occur in another owner.
 
+Creation, deletion, duplication, reordering and stable-id reconciliation for a
+declared class of data are one generic mutation contract. Concrete Components,
+Modules, editors and Preview resolvers may declare metadata and concrete
+semantics, but must not implement their own copy of those lifecycle actions.
+Before changing a concrete owner, prove that the behavior cannot occur for a
+second member of the same declared class. If it can, stop and move the change
+to the generic owner, with tests covering more than one concrete fixture.
+
+Every generic mutation must reach persisted authoring data, editor reads,
+Runtime preparation and Preview preparation through the same contract. A
+strict concrete resolver validates the prepared result; it never repairs or
+reconciles it.
+
 ## Hard rule: exceptions require a stop and discussion
 
 An exception, one-off mapping, special-case branch, compatibility path, local

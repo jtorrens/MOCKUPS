@@ -40,6 +40,15 @@ conflicting owners and proposes the generic owner and contract; work resumes
 only after explicit product confirmation. Preview, editor and persistence must
 then consume the same declared owner, never compensate for one another.
 
+Creation, deletion, duplication, reordering and stable-id reconciliation are
+generic lifecycle actions for their declared data class. Concrete Components,
+Modules, editors and Preview resolvers declare metadata and concrete semantics;
+they do not repeat those actions. A change to such an action must prove the
+editor read, persisted write, Runtime preparation and Preview preparation all
+use the same generic contract. Focused coverage includes more than one concrete
+fixture whenever the class has more than one consumer. Concrete resolvers stay
+strict and reject an unprepared document instead of repairing it.
+
 ## Validation during implementation
 
 Use `npm run test:changed` during the edit loop and
