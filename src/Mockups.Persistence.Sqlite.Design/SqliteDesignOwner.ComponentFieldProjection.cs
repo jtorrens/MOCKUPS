@@ -394,31 +394,6 @@ internal sealed partial class SqliteDesignOwner
                 overrides.ToJsonString(),
                 descriptor)
             : inheritedValue;
-        if (ownerKind is
-            ProjectTreeNodeKind.Module
-            or ProjectTreeNodeKind.ModuleVariant)
-        {
-            return new FieldValue(
-                new FieldDefinition(
-                    descriptor.Id,
-                    descriptor.Label,
-                    descriptor.ValueKind,
-                    descriptor.IsEditable,
-                    descriptor.DefaultValue,
-                    CanInherit: true,
-                    InheritedValue: inheritedValue,
-                    Options: options,
-                    PairLabels: descriptor.PairLabels,
-                    Number: descriptor.Number,
-                    ComponentInputBindings:
-                        descriptor.ComponentInputBindings,
-                    HelpText: descriptor.HelpText,
-                    ValuePattern: descriptor.ValuePattern,
-                    ValuePatternMessage: descriptor.ValuePatternMessage),
-                localValue,
-                IsInherited: !hasOverride);
-        }
-
         var isHighlighted = descriptor.ValueKind is
                 ValueKind.EmbeddedComponent
                 or ValueKind.ComponentVariant

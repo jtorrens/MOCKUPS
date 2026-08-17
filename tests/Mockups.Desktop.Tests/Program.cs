@@ -74,6 +74,7 @@ var tests = new (string Name, Action Run)[]
     ("Runtime Input defaults use their exact ValueKind owner", RuntimeInputDefaultsUseValueKindOwner),
     ("system Hex color pickers preserve exact RGB values", SystemHexColorPickersPreserveRgbValues),
     ("Text Box Preview resolves Variant-owned Icon Row slots", TextBoxPreviewResolvesVariantOwnedIconRowSlots),
+    ("embedded Icon Row overrides retain their structured collection contract", EmbeddedIconRowOverridesRetainStructuredCollectionContract),
     ("Runtime Input readers reject filtered definition metadata", RuntimeInputDefinitionReadersAreStrict),
     ("pair fields require explicit presentation labels", PairFieldsRequireExplicitLabels),
     ("numeric dictionary fields separate current values from drafts", NumericDictionaryFieldsSeparateCurrentValuesFromDrafts),
@@ -7870,6 +7871,37 @@ static void ConversationPreviewTargetsExactIconRowItems()
         True(html.Contains(
             "data-preview-authoring-focus-item-id=\"button_001\"",
             StringComparison.Ordinal));
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void EmbeddedIconRowOverridesRetainStructuredCollectionContract()
+{
+    var source = ParityDatabasePath();
+    var temporary = Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        $".mockups-embedded-icon-row-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SqliteProjectTestContext(temporary);
+        var conversation = database.LoadProjectTree()
+            .SelectMany(DescendantsAndSelf)
+            .Single((node) => node.Kind == ProjectTreeNodeKind.ModuleVariant
+                && node.Id == "module_core_chat::variant::default");
+        var field = database.CreateEmbeddedComponentFieldValue(
+            conversation,
+            [EmbeddedComponentSlotCatalog.Get(
+                "module.core.chat.headerLeftIconRow.editor")],
+            "component.iconRow.items");
+
+        Equal(ValueKind.StructuredCollection, field.Definition.ValueKind);
+        True(field.Definition.StructuredCollection is not null);
+        Equal("buttons", field.Definition.StructuredCollection!.Id);
     }
     finally
     {
