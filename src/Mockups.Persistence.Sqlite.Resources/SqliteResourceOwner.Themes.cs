@@ -330,8 +330,9 @@ internal sealed partial class SqliteResourceOwner
 
     internal static string DefaultThemeTokensJson(
         string family,
-        string textFontFamilyId = "",
-        string emojiFontFamilyId = "")
+        string textFontFamilyId,
+        string emojiFontFamilyId,
+        IReadOnlyDictionary<string, string> paletteColorIds)
     {
         var isAndroid = family.Equals("android", StringComparison.OrdinalIgnoreCase);
         var tokens = new JsonObject
@@ -510,8 +511,49 @@ internal sealed partial class SqliteResourceOwner
                 },
             },
         };
+        ResolveDefaultPaletteColorReferences(tokens, paletteColorIds);
         return tokens.ToJsonString();
     }
+
+    private static void ResolveDefaultPaletteColorReferences(
+        JsonNode? node,
+        IReadOnlyDictionary<string, string> paletteColorIds)
+    {
+        if (node is JsonObject objectNode)
+        {
+            foreach (var property in objectNode.ToList())
+            {
+                if (property.Value is JsonValue value
+                    && value.TryGetValue<string>(out var semanticToken)
+                    && DefaultPaletteColorTokens.Contains(semanticToken))
+                {
+                    objectNode[property.Key] = paletteColorIds.TryGetValue(semanticToken, out var colorId)
+                        ? colorId
+                        : throw new InvalidOperationException(
+                            $"Theme initialization requires palette color '{semanticToken}'.");
+                    continue;
+                }
+
+                ResolveDefaultPaletteColorReferences(property.Value, paletteColorIds);
+            }
+            return;
+        }
+
+        if (node is JsonArray array)
+        {
+            foreach (var item in array)
+            {
+                ResolveDefaultPaletteColorReferences(item, paletteColorIds);
+            }
+        }
+    }
+
+    private static readonly HashSet<string> DefaultPaletteColorTokens =
+    [
+        "gray_000", "gray_010", "gray_020", "gray_030", "gray_040", "gray_050",
+        "gray_060", "gray_070", "gray_080", "gray_090", "gray_100", "blue",
+        "blue_bright", "purple", "purple_tint", "red",
+    ];
 
     private static JsonObject ThemeMotionTokens()
     {

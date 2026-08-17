@@ -209,6 +209,14 @@ internal sealed class SqliteEditorChildStore
             .QueryAll(connection)
             .Where((font) => font.ProjectId == project.Id)
             .ToList();
+        var paletteColorIds = _resources.PaletteRepository
+            .QueryAll(connection)
+            .Where((color) => color.ProjectId == project.Id)
+            .GroupBy((color) => color.Token, StringComparer.Ordinal)
+            .ToDictionary(
+                (group) => group.Key,
+                (group) => group.Single().Id,
+                StringComparer.Ordinal);
         var textFontId = FontId(productionFonts, "text");
         var emojiFontId = FontId(productionFonts, "emoji");
         var statusBarId = _design.DefaultComponentVariantReference(
@@ -229,7 +237,8 @@ internal sealed class SqliteEditorChildStore
             SqliteResourceOwner.DefaultThemeTokensJson(
                 family,
                 textFontId,
-                emojiFontId),
+                emojiFontId,
+                paletteColorIds),
             JsonSerializer.Serialize(
                 new { note = $"{family} production theme." }));
         return new ProjectTreeNode(

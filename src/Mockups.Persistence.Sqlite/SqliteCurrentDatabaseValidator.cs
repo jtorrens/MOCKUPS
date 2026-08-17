@@ -127,7 +127,7 @@ internal sealed partial class SqliteCurrentDatabaseValidator
             FROM devices d
             LEFT JOIN palette_colors p
               ON p.project_id = d.project_id
-             AND p.token = json_extract(
+                 AND p.id = json_extract(
                  d.metrics_json,
                  '$.moduleTransparency.paletteColor')
             """;

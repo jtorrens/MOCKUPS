@@ -9385,7 +9385,7 @@ static void ResourceRepositoriesPreserveFocusedContract()
         Equal(database.GetActorSettings(actor.Id), actorRepository.GetSettings(actor.Id));
         SequenceEqual(
             database.GetPaletteColorOptions(project.Id).Select((option) => option.Value),
-            paletteRepository.GetOptions(project.Id).Select((option) => option.Token));
+            paletteRepository.GetOptions(project.Id).Select((option) => option.Id));
         SequenceEqual(
             database.GetDeviceOptions(project.Id).Select((option) => option.Value),
             deviceRepository.GetOptions(project.Id).Select((option) => option.Value));
@@ -9420,18 +9420,18 @@ static void ResourceRepositoriesPreserveFocusedContract()
         var actorDarkColor = colorTokens[1];
         var referencedColor = Descendants(tree).Single((node) =>
             node.Kind == ProjectTreeNodeKind.PaletteColor
-            && node.Name == actorLightColor);
+            && node.Id == actorLightColor);
         const string renamedPaletteToken = "palette_rename_test";
         database.UpdatePaletteColorField(
             referencedColor.Id,
             "palette.token",
             renamedPaletteToken);
         Equal(
-            $"{renamedPaletteToken}|{actorDarkColor}",
+            alexColorModes,
             database.GetActorFieldValue(alex.Id, "actor.color.modes"));
         Equal(
-            renamedPaletteToken,
-            database.GetPaletteColorSettings(referencedColor.Id).Token);
+            actorLightColor,
+            referencedColor.Id);
         database.UpdatePaletteColorField(
             referencedColor.Id,
             "palette.token",

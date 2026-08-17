@@ -99,7 +99,7 @@ internal sealed class PaletteRepository : IPaletteRepository
         return QueryAll(connection)
             .Where((color) => color.ProjectId == projectId)
             .OrderBy((color) => color.Token)
-            .Select((color) => new PaletteColorOption(color.Token, color.Token, color.ValueHex, color.IsNeutral))
+            .Select((color) => new PaletteColorOption(color.Id, color.Token, color.ValueHex, color.IsNeutral))
             .ToList();
     }
 
@@ -108,7 +108,7 @@ internal sealed class PaletteRepository : IPaletteRepository
         using var connection = _context.OpenConnection();
         return QueryAll(connection)
             .Where((color) => color.ProjectId == projectId)
-            .GroupBy((color) => color.Token, StringComparer.Ordinal)
+            .GroupBy((color) => color.Id, StringComparer.Ordinal)
             .ToDictionary(
                 (group) => group.Key,
                 (group) => group.First().ValueHex,
@@ -120,7 +120,7 @@ internal sealed class PaletteRepository : IPaletteRepository
         using var connection = _context.OpenConnection();
         return QueryAll(connection)
             .Where((color) => color.ProjectId == projectId)
-            .GroupBy((color) => color.Token, StringComparer.Ordinal)
+            .GroupBy((color) => color.Id, StringComparer.Ordinal)
             .ToDictionary(
                 (group) => group.Key,
                 (group) => group.First().IsNeutral,

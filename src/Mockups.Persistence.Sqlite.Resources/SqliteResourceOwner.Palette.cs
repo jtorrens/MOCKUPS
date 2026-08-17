@@ -34,12 +34,6 @@ internal sealed partial class SqliteResourceOwner
             return;
         }
 
-        _actorRepository.ReplacePaletteToken(
-            connection,
-            transaction,
-            palette.ProjectId,
-            palette.Token,
-            token);
         _paletteRepository.RenameToken(
             connection,
             transaction,
@@ -51,7 +45,7 @@ internal sealed partial class SqliteResourceOwner
     public IReadOnlyList<FieldOption> GetPaletteColorOptions(string projectId)
     {
         return _paletteRepository.GetOptions(projectId)
-            .Select((option) => new FieldOption(option.Token, option.Label, option.ColorHex, option.IsNeutral))
+            .Select((option) => new FieldOption(option.Id, option.Label, option.ColorHex, option.IsNeutral))
             .ToList();
     }
 

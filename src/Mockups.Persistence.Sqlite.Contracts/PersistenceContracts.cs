@@ -37,7 +37,7 @@ internal static class ShotRecordReferenceVideo
 internal sealed record ResourceOption(string Value, string Label);
 
 internal sealed record PaletteColorOption(
-    string Token,
+    string Id,
     string Label,
     string ColorHex,
     bool IsNeutral);
@@ -322,13 +322,6 @@ internal interface IActorRepository
     IReadOnlyList<ResourceOption> GetOptions(string projectId);
 
     IReadOnlyList<ActorRecord> QueryAll(SqliteConnection connection);
-
-    void ReplacePaletteToken(
-        SqliteConnection connection,
-        SqliteTransaction transaction,
-        string projectId,
-        string previousToken,
-        string nextToken);
 
     ActorRecord Create(SqliteConnection connection, string projectId);
 
