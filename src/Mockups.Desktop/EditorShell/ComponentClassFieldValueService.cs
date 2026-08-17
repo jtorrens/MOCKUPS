@@ -37,7 +37,7 @@ internal sealed class ComponentClassFieldValueService
         var fieldValue = node.Kind == ProjectTreeNodeKind.ComponentVariant
             ? _database.CreateComponentVariantFieldValue(node, fieldId)
             : _database.CreateComponentClassFieldValue(node.Id, fieldId);
-        return ApplyVariantLock(node, fieldValue);
+        return ValidateFieldValue(ApplyVariantLock(node, fieldValue));
     }
 
     public void CommitFieldValue(ProjectTreeNode node, string fieldId, string value)
@@ -51,10 +51,12 @@ internal sealed class ComponentClassFieldValueService
         {
             if (node.IsLocked) return;
 
+            ValidateNextValue(node, fieldId, value);
             _database.UpdateComponentVariantField(node, fieldId, value);
             return;
         }
 
+        ValidateNextValue(node, fieldId, value);
         _database.UpdateComponentClassField(node.Id, fieldId, value);
     }
 
@@ -75,12 +77,12 @@ internal sealed class ComponentClassFieldValueService
             throw new InvalidOperationException($"Embedded component '{embeddedComponentType}' is not supported for slot '{slotFieldId}'.");
         }
 
-        return ApplyVariantLock(
+        return ValidateFieldValue(ApplyVariantLock(
             node,
             _documents.CreateEmbeddedComponentFieldValue(
                 node,
                 [slot],
-                embeddedFieldId));
+                embeddedFieldId)));
     }
 
     public FieldValue CreateEmbeddedFieldValue(
@@ -93,12 +95,12 @@ internal sealed class ComponentClassFieldValueService
             throw new InvalidOperationException($"Embedded component field '{embeddedFieldId}' is not supported for '{node.Kind}'.");
         }
 
-        return ApplyVariantLock(
+        return ValidateFieldValue(ApplyVariantLock(
             node,
             _documents.CreateEmbeddedComponentFieldValue(
                 node,
                 slots,
-                embeddedFieldId));
+                embeddedFieldId)));
     }
 
     public void CommitEmbeddedFieldValue(
@@ -121,6 +123,10 @@ internal sealed class ComponentClassFieldValueService
 
         if (node.IsLocked) return;
 
+        FieldOptionContract.ValidateValue(
+            CreateEmbeddedFieldValue(node, [slot], embeddedFieldId).Definition,
+            value,
+            $"Dictionary field '{embeddedFieldId}'");
         _documents.UpdateEmbeddedComponentField(
             node,
             [slot],
@@ -141,6 +147,10 @@ internal sealed class ComponentClassFieldValueService
 
         if (node.IsLocked) return;
 
+        FieldOptionContract.ValidateValue(
+            CreateEmbeddedFieldValue(node, slots, embeddedFieldId).Definition,
+            value,
+            $"Dictionary field '{embeddedFieldId}'");
         _documents.UpdateEmbeddedComponentField(
             node,
             slots,
@@ -149,25 +159,57 @@ internal sealed class ComponentClassFieldValueService
     }
 
     public FieldValue CreateEmbeddedFieldValue(EditorEmbeddedContext context, string embeddedFieldId) =>
-        _embeddedDocuments.CreateFieldValue(context, embeddedFieldId);
+        ValidateFieldValue(_embeddedDocuments.CreateFieldValue(context, embeddedFieldId));
 
     public Task CommitEmbeddedFieldValueAsync(
         EditorEmbeddedContext context,
         string embeddedFieldId,
-        string value) =>
-        _embeddedDocuments.CommitFieldValueAsync(
+        string value)
+    {
+        FieldOptionContract.ValidateValue(
+            CreateEmbeddedFieldValue(context, embeddedFieldId).Definition,
+            value,
+            $"Dictionary field '{embeddedFieldId}'");
+        return _embeddedDocuments.CommitFieldValueAsync(
             context,
             embeddedFieldId,
             value);
+    }
 
     public void CommitEmbeddedFieldValue(
         EditorEmbeddedContext context,
         string embeddedFieldId,
-        string value) =>
+        string value)
+    {
+        FieldOptionContract.ValidateValue(
+            CreateEmbeddedFieldValue(context, embeddedFieldId).Definition,
+            value,
+            $"Dictionary field '{embeddedFieldId}'");
         _embeddedDocuments.CommitFieldValue(
             context,
             embeddedFieldId,
             value);
+    }
+
+    private void ValidateNextValue(
+        ProjectTreeNode node,
+        string fieldId,
+        string value)
+    {
+        FieldOptionContract.ValidateValue(
+            CreateFieldValue(node, fieldId).Definition,
+            value,
+            $"Dictionary field '{fieldId}'");
+    }
+
+    private static FieldValue ValidateFieldValue(FieldValue fieldValue)
+    {
+        FieldOptionContract.ValidateValue(
+            fieldValue.Definition,
+            fieldValue.Value,
+            $"Dictionary field '{fieldValue.Definition.Id}'");
+        return fieldValue;
+    }
 
     private static FieldValue ApplyVariantLock(ProjectTreeNode node, FieldValue fieldValue)
     {

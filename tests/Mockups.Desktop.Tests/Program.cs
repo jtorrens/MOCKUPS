@@ -1182,6 +1182,29 @@ static void RuntimeInputKindAndValueKindShareOneContract()
         "collection",
         "UnknownValueKind",
         "Test Runtime Input"));
+
+    var optionDefinition = new JsonObject
+    {
+        ["id"] = "direction",
+        ["label"] = "Direction",
+        ["jsonKey"] = "direction",
+        ["kind"] = "option",
+        ["valueKind"] = "OptionToken",
+        ["defaultValue"] = "incoming",
+        ["options"] = new JsonArray
+        {
+            new JsonObject { ["value"] = "incoming", ["label"] = "Incoming" },
+            new JsonObject { ["value"] = "outgoing", ["label"] = "Outgoing" },
+        },
+    };
+    RuntimeInputValueKindContract.ValidateRuntimeValue(
+        optionDefinition,
+        JsonValue.Create("incoming"),
+        "Test Runtime Input");
+    Throws<InvalidOperationException>(() => RuntimeInputValueKindContract.ValidateRuntimeValue(
+        optionDefinition,
+        JsonValue.Create("unknown"),
+        "Test Runtime Input"));
 }
 
 static void RuntimeInputDefinitionReadersAreStrict()
@@ -9570,6 +9593,38 @@ static void RecordDictionaryOptionsAreDescriptorOwned()
         "emoji",
         RecordClassFieldCatalog.Get("theme.typography.emojiFontFamilyId")
             .RecordReference!.Filter);
+
+    var definition = new FieldDefinition(
+        "test.mode",
+        "Mode",
+        ValueKind.OptionToken,
+        Options:
+        [
+            new FieldOption("one", "One"),
+            new FieldOption("two", "Two"),
+        ]);
+    FieldOptionContract.ValidateValue(definition, "one", "Test field");
+    Throws<InvalidOperationException>(() =>
+        FieldOptionContract.ValidateValue(definition, "unknown", "Test field"));
+    Throws<InvalidOperationException>(() => FieldOptionContract.RequireOptions(
+        [new FieldOption("same", "One"), new FieldOption("same", "Two")],
+        "Test field"));
+
+    var requiredReference = new FieldDefinition(
+        "test.actor",
+        "Actor",
+        ValueKind.RecordReference,
+        Options: [new FieldOption("actor_1", "Actor")],
+        RecordReference: new RecordReferenceDefinition("actors"));
+    Throws<InvalidOperationException>(() =>
+        FieldOptionContract.ValidateValue(requiredReference, "", "Test actor"));
+    FieldOptionContract.ValidateValue(
+        requiredReference with
+        {
+            RecordReference = requiredReference.RecordReference! with { AllowEmpty = true },
+        },
+        "",
+        "Test optional actor");
 }
 
 static void FixedComponentBoundariesUseExactDefaultVariant()
@@ -18116,7 +18171,7 @@ static void CollectionItemPresentationSummarizesConfiguredFields()
           {"id":"name","label":"Name","jsonKey":"name","kind":"text","valueKind":"StringSingleLine","defaultValue":""},
           {"id":"direction","label":"Direction","jsonKey":"direction","kind":"option","valueKind":"OptionToken","defaultValue":"incoming","options":[{"value":"incoming","label":"Incoming"}]},
           {"id":"text","label":"Text","jsonKey":"text","kind":"text","valueKind":"StringSingleLine","defaultValue":""},
-          {"id":"mediaType","label":"Media","jsonKey":"mediaType","kind":"option","valueKind":"OptionToken","defaultValue":"none"}
+          {"id":"mediaType","label":"Media","jsonKey":"mediaType","kind":"option","valueKind":"OptionToken","defaultValue":"none","options":[{"value":"none","label":"None"},{"value":"image","label":"Image"}]}
         ],"itemPresentation":{"titleFieldId":"name","firstItemBadge":"Initial","subtitleFieldIds":["direction","text"],"subtitleMaxCharacters":24,"iconFieldId":"mediaType","fallbackIcon":"message","iconValueMap":{"image":"image"}}}]}
         """);
     var collection = RuntimeInputDefinitionReader.ReadCollections(preview, new JsonObject()).Single();

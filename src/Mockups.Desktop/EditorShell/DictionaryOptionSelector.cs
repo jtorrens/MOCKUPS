@@ -18,14 +18,17 @@ internal static class DictionaryOptionSelector
 
     public static void SetValue(EditorInstantComboBox comboBox, FieldDefinition definition, string value)
     {
-        comboBox.ItemsSource = OptionsWithValue(definition, value);
+        comboBox.ItemsSource = DisplayOptions(definition);
         comboBox.SelectedItem = SelectedOption(definition, value);
     }
 
     public static FieldOption? SelectedOption(FieldDefinition definition, string value)
     {
-        return OptionsWithValue(definition, value).FirstOrDefault((option) => option.Value == value)
-            ?? OptionsWithValue(definition, value).FirstOrDefault();
+        FieldOptionContract.ValidateValue(
+            definition,
+            value,
+            $"Dictionary field '{definition.Id}'");
+        return DisplayOptions(definition).FirstOrDefault((option) => option.Value == value);
     }
 
     public static string Value(EditorInstantComboBox comboBox)
@@ -33,20 +36,17 @@ internal static class DictionaryOptionSelector
         return comboBox.SelectedItem is FieldOption option ? option.Value : "";
     }
 
-    private static IReadOnlyList<FieldOption> OptionsWithValue(FieldDefinition definition, string value)
+    private static IReadOnlyList<FieldOption> DisplayOptions(FieldDefinition definition)
     {
-        var options = definition.Options ?? [];
+        var options = FieldOptionContract.RequireOptions(
+            definition.Options,
+            $"Dictionary field '{definition.Id}'");
         if (definition.ValueKind == ValueKind.RecordReference
-            && string.IsNullOrWhiteSpace(value)
+            && definition.RecordReference?.AllowEmpty == true
             && !options.Any((option) => string.IsNullOrWhiteSpace(option.Value)))
         {
             return [new FieldOption("", $"Select {definition.Label.ToLowerInvariant()}…"), .. options];
         }
-        if (string.IsNullOrWhiteSpace(value) || options.Any((option) => option.Value == value))
-        {
-            return options;
-        }
-
-        return [.. options, new FieldOption(value, value)];
+        return options;
     }
 }

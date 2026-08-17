@@ -124,12 +124,12 @@ public static class RecordClassFieldCatalog
             "shot.deviceOverrideId",
             "Device override",
             ValueKind.RecordReference,
-            RecordReference: new RecordReferenceDefinition("devices")),
+            RecordReference: new RecordReferenceDefinition("devices", AllowEmpty: true)),
         ["shot.themeOverrideId"] = new(
             "shot.themeOverrideId",
             "Theme override",
             ValueKind.RecordReference,
-            RecordReference: new RecordReferenceDefinition("themes")),
+            RecordReference: new RecordReferenceDefinition("themes", AllowEmpty: true)),
         ["shot.referenceVideoPath"] = new(
             "shot.referenceVideoPath",
             "Reference video",
@@ -606,17 +606,25 @@ public static class RecordClassFieldCatalog
     private static void ValidateOptionContracts()
     {
         var invalid = Fields.Values
-            .Where((field) => field.IsEditable
-                && field.ValueKind == ValueKind.OptionToken
-                && (field.Options is null || field.Options.Count == 0)
-                && field.OptionSource == FieldOptionSource.None)
+            .Where((field) => field.ValueKind == ValueKind.OptionToken
+                && ((field.Options is null || field.Options.Count == 0)
+                    == (field.OptionSource == FieldOptionSource.None)))
             .Select((field) => field.Id)
             .OrderBy((id) => id, StringComparer.Ordinal)
             .ToList();
         if (invalid.Count > 0)
         {
             throw new InvalidOperationException(
-                $"Editable OptionToken fields require declared Options or OptionSource: {string.Join(", ", invalid)}.");
+                $"OptionToken fields require exactly one declared Options or OptionSource contract: {string.Join(", ", invalid)}.");
+        }
+
+        foreach (var field in Fields.Values.Where((field) =>
+                     field.ValueKind == ValueKind.OptionToken
+                     && field.Options is not null))
+        {
+            _ = FieldOptionContract.RequireOptions(
+                field.Options,
+                $"Record field '{field.Id}'");
         }
     }
 

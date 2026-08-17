@@ -96,6 +96,11 @@ public static class RuntimeInputValueKindContract
             valueKind,
             defaultValue,
             $"{owner} defaultValue");
+        ValidateDeclaredOptions(
+            definition,
+            valueKind,
+            parsedDefault,
+            $"{owner} defaultValue");
         ValidateValuePattern(definition, parsedDefault, $"{owner} defaultValue");
         return parsedDefault;
     }
@@ -240,6 +245,7 @@ public static class RuntimeInputValueKindContract
         }
 
         ValidateValue(valueKind, value, owner);
+        ValidateDeclaredOptions(definition, valueKind, value, owner);
         if (valueKind == ValueKind.StructuredCollection
             && definition["structuredCollection"] is JsonObject collection)
         {
@@ -249,6 +255,63 @@ public static class RuntimeInputValueKindContract
                 owner);
         }
         ValidateValuePattern(definition, value, owner);
+    }
+
+    private static void ValidateDeclaredOptions(
+        JsonObject definition,
+        ValueKind valueKind,
+        JsonNode value,
+        string owner)
+    {
+        if (valueKind != ValueKind.OptionToken)
+        {
+            return;
+        }
+
+        var options = ReadDeclaredOptions(definition, owner);
+        if (options.Count == 0)
+        {
+            var sourceCollection = definition["optionsSourceCollectionJsonKey"] is JsonValue sourceNode
+                && sourceNode.TryGetValue<string>(out var sourceText)
+                    ? sourceText
+                    : "";
+            if (!string.IsNullOrWhiteSpace(sourceCollection))
+            {
+                return;
+            }
+            throw new InvalidOperationException(
+                $"{owner} OptionToken requires declared options or an explicit option source.");
+        }
+
+        FieldOptionContract.ValidateValue(
+            options,
+            RequireStringValue(value, owner),
+            owner);
+    }
+
+    private static IReadOnlyList<FieldOption> ReadDeclaredOptions(
+        JsonObject definition,
+        string owner)
+    {
+        if (definition["options"] is null)
+        {
+            return [];
+        }
+        var array = definition["options"] as JsonArray
+            ?? throw new InvalidOperationException($"{owner} options must be an array.");
+        var result = new List<FieldOption>(array.Count);
+        for (var index = 0; index < array.Count; index++)
+        {
+            var option = array[index] as JsonObject
+                ?? throw new InvalidOperationException(
+                    $"{owner} option at index {index} must be an object.");
+            result.Add(new FieldOption(
+                JsonPath.RequiredString(option, "value", $"{owner} option at index {index}"),
+                JsonPath.RequiredString(option, "label", $"{owner} option at index {index}")));
+        }
+        return result.Count == 0
+            ? result
+            : FieldOptionContract.RequireOptions(result, owner);
     }
 
     private static void ValidateStructuredCollection(

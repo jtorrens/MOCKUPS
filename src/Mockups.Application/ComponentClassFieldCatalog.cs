@@ -632,7 +632,6 @@ public static partial class ComponentClassFieldCatalog
         ["component.avatar.label.placement"] = new("component.avatar.label.placement", "Placement", ValueKind.AlignmentPlacement, ["avatar", "labelSlot", "placement"], """{"mode":"outsideEdge","alignX":1,"alignY":0.5,"offsetX":4,"offsetY":0}"""),
         ["component.avatar.badge.placement"] = new("component.avatar.badge.placement", "Placement", ValueKind.AlignmentPlacement, ["avatar", "badgeSlot", "placement"], """{"mode":"center","alignX":1,"alignY":0,"offsetX":0,"offsetY":0}"""),
         ["component.avatar.badge.editor"] = new("component.avatar.badge.editor", "Badge", ValueKind.ComponentVariant, ["avatar", "badgeSlot", "variantReference"], "default"),
-        ["component.avatar.label.variantReference"] = new("component.avatar.label.variantReference", "Variant", ValueKind.OptionToken, ["avatar", "labelSlot", "variantReference"], "default"),
         ["component.avatar.label.editor"] = new("component.avatar.label.editor", "Label", ValueKind.ComponentVariant, ["avatar", "labelSlot", "variantReference"], "default"),
 
         ["component.textInput.height"] = new("component.textInput.height", "Height", ValueKind.Integer, ["textInput", "height"], "44"),
@@ -885,7 +884,6 @@ public static partial class ComponentClassFieldCatalog
         ["component.audio.progressKnobSize"] = new("component.audio.progressKnobSize", "Progress knob", ValueKind.Integer, ["audio", "progressKnobSize"], "9"),
         ["component.audio.avatar.showAvatar"] = new("component.audio.avatar.showAvatar", "Show avatar", ValueKind.Boolean, ["audio", "avatarSlot", "showAvatar"], "true"),
         ["component.audio.avatar.placement"] = new("component.audio.avatar.placement", "Placement", ValueKind.AlignmentPlacement, ["audio", "avatarSlot", "placement"], """{"mode":"outsideEdge","alignX":1,"alignY":0.5,"offsetX":4,"offsetY":0}"""),
-        ["component.audio.avatar.variantReference"] = new("component.audio.avatar.variantReference", "Variant", ValueKind.OptionToken, ["audio", "avatarSlot", "variantReference"], "default"),
         ["component.audio.avatar.editor"] = new("component.audio.avatar.editor", "Avatar", ValueKind.ComponentVariant, ["audio", "avatarSlot", "variantReference"], "default"),
         ["component.audio.badge.placement"] = new("component.audio.badge.placement", "Placement", ValueKind.AlignmentPlacement, ["audio", "badgeSlot", "placement"], """{"mode":"center","alignX":1,"alignY":1,"offsetX":0,"offsetY":0}"""),
         ["component.audio.badge.editor"] = new("component.audio.badge.editor", "Badge", ValueKind.ComponentVariant, ["audio", "badgeSlot", "variantReference"], "default"),

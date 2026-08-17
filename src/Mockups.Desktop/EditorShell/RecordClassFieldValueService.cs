@@ -83,7 +83,7 @@ internal sealed class RecordClassFieldValueService
         {
             var settings = _production.GetShotSettings(node.Id);
             var inheritedValue = settings.ProjectDefaultFps.ToString();
-            return new FieldValue(
+            return ValidateFieldValue(new FieldValue(
                 new FieldDefinition(
                     field.Id,
                     field.Label,
@@ -104,7 +104,7 @@ internal sealed class RecordClassFieldValueService
                     Unit: field.Unit,
                     MotionTiming: field.MotionTiming),
                 settings.FpsOverride?.ToString() ?? inheritedValue,
-                IsInherited: settings.FpsOverride is null);
+                IsInherited: settings.FpsOverride is null));
         }
 
         if (node.Kind == ProjectTreeNodeKind.Shot
@@ -119,7 +119,7 @@ internal sealed class RecordClassFieldValueService
             var localValue = isDevice
                 ? settings.DeviceOverrideId
                 : settings.ThemeOverrideId;
-            return new FieldValue(
+            return ValidateFieldValue(new FieldValue(
                 new FieldDefinition(
                     field.Id,
                     field.Label,
@@ -140,7 +140,7 @@ internal sealed class RecordClassFieldValueService
                     Unit: field.Unit,
                     MotionTiming: field.MotionTiming),
                 localValue ?? inheritedValue,
-                IsInherited: localValue is null);
+                IsInherited: localValue is null));
         }
 
         var isEditable = field.IsEditable
@@ -168,14 +168,20 @@ internal sealed class RecordClassFieldValueService
                 Unit: field.Unit,
                 MotionTiming: field.MotionTiming),
             value);
-        return node.Kind == ProjectTreeNodeKind.ModuleVariant && node.IsLocked
+        var lockedResult = node.Kind == ProjectTreeNodeKind.ModuleVariant && node.IsLocked
             ? result with { Definition = result.Definition with { IsEditable = false } }
             : result;
+        return ValidateFieldValue(lockedResult);
     }
 
     public void CommitFieldValue(ProjectTreeNode node, string fieldId, string value)
     {
         if (node.Kind == ProjectTreeNodeKind.ModuleVariant && node.IsLocked) return;
+        var current = CreateFieldValue(node, fieldId);
+        FieldOptionContract.ValidateValue(
+            current.Definition,
+            value,
+            $"Dictionary field '{fieldId}'");
         if (node.Kind == ProjectTreeNodeKind.PaletteColor && fieldId == "palette.token")
         {
             var renamed = _resources.RenamePaletteColor(node, value);
@@ -234,6 +240,15 @@ internal sealed class RecordClassFieldValueService
             default:
                 throw new InvalidOperationException($"Record class field '{fieldId}' is not supported for '{node.Kind}'.");
         }
+    }
+
+    private static FieldValue ValidateFieldValue(FieldValue fieldValue)
+    {
+        FieldOptionContract.ValidateValue(
+            fieldValue.Definition,
+            fieldValue.Value,
+            $"Dictionary field '{fieldValue.Definition.Id}'");
+        return fieldValue;
     }
 
     private string ProjectFieldValue(string projectId, string fieldId)

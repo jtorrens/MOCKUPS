@@ -47,12 +47,6 @@ internal sealed class ComponentFieldOptionResolver
                 _designOptions.GetComponentVariantReferenceOptionsByType(
                     projectId,
                     descriptor.ComponentVariantType),
-            ValueKind.OptionToken
-                when EmbeddedComponentVariantType(descriptor.Id)
-                    is { } componentType =>
-                _designOptions.GetComponentVariantReferenceOptionsByType(
-                    projectId,
-                    componentType),
             ValueKind.PaletteColorToken
                 or ValueKind.PaletteColorPair
                 or ValueKind.PaletteColorAlphaPair =>
@@ -66,25 +60,4 @@ internal sealed class ComponentFieldOptionResolver
             ],
             _ => descriptor.Options,
         };
-
-    private static string? EmbeddedComponentVariantType(string fieldId)
-    {
-        if (!fieldId.EndsWith(
-                ".variantReference",
-                StringComparison.Ordinal))
-        {
-            return null;
-        }
-
-        var slotEditorFieldId = string.Concat(
-            fieldId.AsSpan(
-                0,
-                fieldId.Length - ".variantReference".Length),
-            ".editor");
-        return EmbeddedComponentSlotCatalog.TryGet(
-            slotEditorFieldId,
-            out var slot)
-                ? slot.EmbeddedComponentType
-                : null;
-    }
 }
