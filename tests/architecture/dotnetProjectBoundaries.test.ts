@@ -687,6 +687,49 @@ test("structured collection lifecycle has one generic source owner", () => {
     [],
     "retired collection-specific lifecycle paths returned",
   );
+
+  const productionMutationOwner =
+    "src/Mockups.Persistence.Sqlite.Production/SqliteProductionOwner.RuntimeDocuments.cs";
+  const mutationEngineCallers = files
+    .filter((file) => file.endsWith(".cs"))
+    .filter((file) => readFileSync(file, "utf8").includes(
+      "StructuredCollectionMutationEngine.Apply("))
+    .map(repositoryPath)
+    .sort();
+  assert.deepEqual(
+    mutationEngineCallers,
+    [
+      "src/Mockups.Desktop/EditorShell/DictionaryStructuredCollectionControl.cs",
+      "src/Mockups.Desktop/EditorShell/RuntimeInputsCollectionEditor.cs",
+      productionMutationOwner,
+    ],
+    "structured collection mutations must use the generic engine; only transient "
+      + "editor state and the atomic Production owner may invoke it",
+  );
+
+  const identityMutationCallers = files
+    .filter((file) => file.endsWith(".cs"))
+    .filter((file) => readFileSync(file, "utf8").includes(
+      "StructuredCollectionItemIdentity.RebaseNestedItems("))
+    .map(repositoryPath)
+    .sort();
+  assert.deepEqual(
+    identityMutationCallers,
+    ["src/Mockups.Application/StructuredCollectionMutation.cs"],
+    "only the generic structured collection mutation engine may rebase item identities",
+  );
+
+  const atomicPersistenceCallers = files
+    .filter((file) => file.endsWith(".cs"))
+    .filter((file) => readFileSync(file, "utf8").includes(
+      ".UpdateContentAndAnimation("))
+    .map(repositoryPath)
+    .sort();
+  assert.deepEqual(
+    atomicPersistenceCallers,
+    [productionMutationOwner],
+    "a structured collection persistence mutation must write content and animation together",
+  );
 });
 
 test("Preview values have one effective document preparation boundary", () => {
