@@ -1,5 +1,6 @@
 using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.EditorShell;
+using System.Linq;
 using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.Data;
@@ -66,6 +67,7 @@ internal sealed partial class SqliteDesignOwner
                 slots,
                 descriptor,
                 value);
+            SynchronizeDeclaredRuntimeCollections(config);
             PersistDefaultComponentConfig(
                 connection,
                 componentClassId,
@@ -255,6 +257,27 @@ internal sealed partial class SqliteDesignOwner
             value,
             $"Embedded collection '{slots[^1].FieldId}' items");
         inputs[projection.RuntimeValueKey] = items.DeepClone();
+    }
+
+    private static void SynchronizeDeclaredRuntimeCollections(JsonObject config)
+    {
+        foreach (var slot in EmbeddedComponentSlotCatalog.All())
+        {
+            if (!EmbeddedComponentSlotCatalog.TryRuntimeCollectionProjection(
+                    slot.FieldId,
+                    out var projection)
+                || JsonPath.Get(config, slot.SlotPath) is not JsonObject slotValue
+                || JsonPath.Get(slotValue, new[] { "overrides" }.Concat(projection.StructuralConfigPath).ToArray())
+                    is not JsonArray structuralItems)
+            {
+                continue;
+            }
+
+            var inputs = JsonPath.Get(config, projection.RuntimeInputPath) as JsonObject
+                ?? throw new InvalidOperationException(
+                    $"Embedded collection '{slot.FieldId}' has no declared Runtime inputs.");
+            inputs[projection.RuntimeValueKey] = structuralItems.DeepClone();
+        }
     }
 
     private static JsonObject? EmbeddedOverrides(
