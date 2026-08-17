@@ -7691,8 +7691,18 @@ static void ConversationPreviewTargetsExactIconRowItems()
             "Conversation Preview right Icon Row Inputs");
         var videoRuntime = runtimeItems.Single((item) =>
             item?["id"]?.GetValue<string>() == "button_001");
-        True(videoRuntime?["buttonVariantReference"] is null);
-        True(videoRuntime?["buttonOverrides"] is null);
+        Equal(
+            "component_project_foqn_s2_button::variant::icon_only",
+            JsonPath.RequiredString(
+                videoRuntime!.AsObject(),
+                "buttonVariantReference",
+                "Conversation Preview video Icon Slot"));
+        Equal(
+            "{}",
+            JsonPath.RequiredObject(
+                videoRuntime.AsObject(),
+                "buttonOverrides",
+                "Conversation Preview video Icon Slot").ToJsonString());
         var html = WebDesignPreviewRenderer.RenderBodyAsync(
                 database.GetDevicePreviewMetrics(device.Id),
                 false,
@@ -8642,6 +8652,15 @@ static void ModuleConfigsUseOwnerContracts()
             connection,
             "module_core_chat",
             (config) => config["conversation"]!["headerLeftIconRowInputs"] = new JsonArray());
+    });
+    AssertRejectedDatabaseIsReadOnly("conversation-module-icon-slot-document", (connection) =>
+    {
+        MutateModuleAndDefaultVariant(
+            connection,
+            "module_core_chat",
+            (config) => config["conversation"]!["headerRightIconRowInputs"]!["items"]![0]!
+                .AsObject()
+                .Remove("buttonOverrides"));
     });
     AssertRejectedDatabaseIsReadOnly("lock-screen-module-items-root", (connection) =>
     {

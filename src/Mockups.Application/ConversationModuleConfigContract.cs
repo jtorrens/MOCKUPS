@@ -28,8 +28,26 @@ internal static class ConversationModuleConfigContract
             $"{owner}.headerAvatarAlignment");
         RequireSlot(conversation, "headerLeftIconRowSlot", owner);
         RequireSlot(conversation, "headerRightIconRowSlot", owner);
-        JsonPath.RequiredObject(conversation, "headerLeftIconRowInputs", owner);
-        JsonPath.RequiredObject(conversation, "headerRightIconRowInputs", owner);
+        var headerLeftIconRowInputs = JsonPath.RequiredObject(
+            conversation,
+            "headerLeftIconRowInputs",
+            owner);
+        IconSlotsDocumentContract.Validate(
+            JsonPath.RequiredArray(
+                headerLeftIconRowInputs,
+                "items",
+                $"{owner}.headerLeftIconRowInputs"),
+            $"{owner}.headerLeftIconRowInputs.items");
+        var headerRightIconRowInputs = JsonPath.RequiredObject(
+            conversation,
+            "headerRightIconRowInputs",
+            owner);
+        IconSlotsDocumentContract.Validate(
+            JsonPath.RequiredArray(
+                headerRightIconRowInputs,
+                "items",
+                $"{owner}.headerRightIconRowInputs"),
+            $"{owner}.headerRightIconRowInputs.items");
         JsonPath.RequiredBoolean(conversation, "showStatusBar", owner);
         JsonPath.RequiredBoolean(conversation, "showNavigationBar", owner);
         JsonPath.RequiredBoolean(conversation, "showTextInputBar", owner);
