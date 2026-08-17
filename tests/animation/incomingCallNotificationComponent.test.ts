@@ -133,7 +133,7 @@ test("Incoming Call Notification preserves an exact nested Button Surface select
   );
 });
 
-test("Incoming Call Notification resolves Icon Row buttons from its Variant structure", () => {
+test("Incoming Call Notification rejects missing or manufactured child Runtime values", () => {
   const source = fixture();
   const preview = JSON.parse(source.designPreviewJson) as {
     avatarRuntime: unknown[];
@@ -157,9 +157,9 @@ test("Incoming Call Notification resolves Icon Row buttons from its Variant stru
   actionPreview.iconRowRuntime[0]!.runtimeInputs.buttonInputs =
     actionPreview.iconRowRuntime[0]!.runtimeInputs.buttonInputs.slice(0, 1);
   actionSource.designPreviewJson = JSON.stringify(actionPreview);
-  assert.equal(
-    resolveIncomingCallNotificationComponent(actionSource).iconRow.items.length,
-    2,
+  assert.throws(
+    () => resolveIncomingCallNotificationComponent(actionSource),
+    /Button Runtime values must match the Variant items exactly/,
   );
 });
 
