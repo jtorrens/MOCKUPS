@@ -696,6 +696,30 @@ static void ComponentInputBindingsProjectExactStructuredRuntimeValues()
     Equal("kept", rows[1]?["id"]?.GetValue<string>());
     Equal("variant", rows[1]?["value"]?.GetValue<string>());
 
+    var prepared = RuntimePreviewDocumentContract.PrepareRuntime(
+        new JsonObject
+        {
+            ["inputs"] = new JsonArray(definition.DeepClone()),
+            ["rows"] = new JsonArray
+            {
+                new JsonObject { ["id"] = "kept", ["value"] = "fixture" },
+            },
+        },
+        new JsonObject
+        {
+            ["structure"] = new JsonObject
+            {
+                ["rows"] = new JsonArray
+                {
+                    new JsonObject { ["id"] = "kept", ["value"] = "variant" },
+                },
+            },
+        },
+        current);
+    Equal(
+        "variant",
+        prepared["rows"]?[0]?["value"]?.GetValue<string>());
+
     Throws<InvalidOperationException>(() =>
         RuntimeInputDocumentContract.ProjectInputValuesForContract(
             new JsonObject { ["items"] = new JsonArray() },

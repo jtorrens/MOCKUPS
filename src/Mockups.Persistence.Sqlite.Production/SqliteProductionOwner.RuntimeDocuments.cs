@@ -12,19 +12,11 @@ internal sealed partial class SqliteProductionOwner
     {
         var instance = GetModuleInstanceSettings(moduleInstanceId);
         var module = GetModuleInstanceVariantSettings(moduleInstanceId);
-        var preview = RuntimeInputForwardingContract.EffectivePreview(
+        var config = ParseJsonObject(module.ConfigJson);
+        var preview = RuntimePreviewDocumentContract.PrepareRuntime(
             ParseJsonObject(module.DesignPreviewJson),
-            ParseJsonObject(module.ConfigJson));
-        var runtime = ParseJsonObject(instance.ContentJson);
-        foreach (var (key, value) in runtime)
-        {
-            if (key == "schemaVersion")
-            {
-                continue;
-            }
-
-            preview[key] = value?.DeepClone();
-        }
+            config,
+            ParseJsonObject(instance.ContentJson));
 
         preview.Remove("testValues");
         return preview.ToJsonString();

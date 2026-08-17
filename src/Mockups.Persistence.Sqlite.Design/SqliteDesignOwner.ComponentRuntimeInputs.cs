@@ -30,10 +30,9 @@ internal sealed partial class SqliteDesignOwner
 
         var settings = GetComponentClassSettings(componentClassId);
         var config = GetComponentVariantConfig(variantReference);
-        var effective = RuntimeInputForwardingContract.EffectivePreview(
+        var effective = RuntimePreviewDocumentContract.PrepareFixture(
             ParseJsonObject(settings.DesignPreviewJson),
             config);
-        StructuredRuntimeCollectionProjection.Apply(effective, config);
         return effective;
     }
 
@@ -51,7 +50,7 @@ internal sealed partial class SqliteDesignOwner
 
         var settings = GetComponentClassSettings(componentClassId);
         var config = GetComponentVariantConfig(variantReference);
-        var effective = RuntimeInputForwardingContract.EffectivePreview(
+        var effective = RuntimePreviewDocumentContract.PrepareFixture(
             ParseJsonObject(settings.DesignPreviewJson),
             config);
         return RuntimeInputDefinitionReader.ReadInputs(
@@ -101,7 +100,7 @@ internal sealed partial class SqliteDesignOwner
 
         var settings = GetComponentClassSettings(componentClassId);
         var config = GetComponentVariantConfig(variantReference);
-        var effective = RuntimeInputForwardingContract.EffectivePreview(
+        var effective = RuntimePreviewDocumentContract.PrepareFixture(
             ParseJsonObject(settings.DesignPreviewJson),
             config);
         return RuntimeInputDefinitionReader.ReadCollections(

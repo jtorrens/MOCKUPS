@@ -231,7 +231,7 @@ internal sealed partial class SqliteProductionOwner
             .FirstOrDefault((candidate) => candidate.Id == variantId)
             ?? throw new InvalidOperationException(
                 $"Missing module variant '{reference}'.");
-        return RuntimeInputForwardingContract.EffectivePreview(
+        return RuntimePreviewDocumentContract.PrepareFixture(
             ParseJsonObject(module.DesignPreviewJson),
             ParseJsonObject(variant.ConfigJson));
     }

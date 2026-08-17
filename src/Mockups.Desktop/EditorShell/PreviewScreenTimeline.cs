@@ -320,7 +320,7 @@ internal static class PreviewScreenTimelineSnapshotFactory
         var config = Parse(
             surface.Owner.ConfigJson,
             "Screen Timeline Variant config");
-        var contract = RuntimeInputForwardingContract.EffectivePreview(
+        var contract = RuntimePreviewDocumentContract.PrepareFixture(
             Parse(
                 animationSnapshot.Source.EffectiveContractJson,
                 "Screen Timeline Runtime contract"),

@@ -86,7 +86,7 @@ internal static class ComponentPreviewTransientValues
         ComponentPreviewTransientState state,
         Func<string, JsonObject> componentVariantConfig)
     {
-        var envelope = RuntimeInputForwardingContract.EffectivePreview(
+        var envelope = RuntimePreviewDocumentContract.PrepareFixture(
             preview,
             config);
         if (state.HasCollectionTestValues)
@@ -135,7 +135,12 @@ internal static class ComponentPreviewTransientValues
         JsonObject config,
         Func<string, JsonObject> componentVariantConfig)
     {
-        StructuredRuntimeCollectionProjection.Apply(preview, config);
+        var prepared = RuntimePreviewDocumentContract.PrepareFixture(preview, config);
+        preview.Clear();
+        foreach (var (key, value) in prepared)
+        {
+            preview[key] = value?.DeepClone();
+        }
         foreach (var collection in
                  RuntimeInputDefinitionReader.ReadCollections(
                      preview,
@@ -170,9 +175,14 @@ internal static class ComponentPreviewTransientValues
                 }
                 var childConfig =
                     componentVariantConfig(variantReference);
-                StructuredRuntimeCollectionProjection.Apply(
+                var preparedChild = RuntimePreviewDocumentContract.PrepareFixture(
                     childRuntime,
                     childConfig);
+                childRuntime.Clear();
+                foreach (var (key, value) in preparedChild)
+                {
+                    childRuntime[key] = value?.DeepClone();
+                }
             }
         }
     }

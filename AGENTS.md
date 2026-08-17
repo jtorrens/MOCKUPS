@@ -304,6 +304,17 @@ dependencies come from
 Registries route prepared payloads by exact stable id and do nothing else.
 Payload preparation owns context and explicit forwarding before dispatch.
 
+Every Design fixture and Production Screen uses the same single effective
+Preview-document path: exact Variant config, explicit local Overrides,
+declared forwarding, structure-owned Runtime projection and owner Runtime
+values. `RuntimePreviewDocumentContract` is the only boundary that prepares
+resolved Preview values. A resolver receives that one prepared value document;
+it never re-reads, merges, repairs, defaults or chooses between Variant,
+Override, Runtime or test-value sources. Theme tokens and Palette identities
+remain resolved through their declared common visual helpers after this
+document boundary. A second or special-case resolution route is forbidden;
+stop and discuss before adding one.
+
 Each Component keeps:
 
 ```text

@@ -688,3 +688,34 @@ test("structured collection lifecycle has one generic source owner", () => {
     "retired collection-specific lifecycle paths returned",
   );
 });
+
+test("Preview values have one effective document preparation boundary", () => {
+  const files = lifecycleSourceFiles(path.join(repositoryRoot, "src"));
+  const directPreparation = files
+    .filter((file) => file.endsWith(".cs"))
+    .filter((file) => {
+      const relative = repositoryPath(file);
+      return relative !== "src/Mockups.Application/RuntimePreviewDocumentContract.cs"
+        && relative !== "src/Mockups.Application/RuntimeInputDefinitionReader.cs";
+    })
+    .filter((file) => readFileSync(file, "utf8").includes(
+      "RuntimeInputForwardingContract.EffectivePreview("))
+    .map(repositoryPath);
+  assert.deepEqual(
+    directPreparation,
+    [],
+    "Preview value preparation bypasses RuntimePreviewDocumentContract",
+  );
+  const directStructureProjection = files
+    .filter((file) => file.endsWith(".cs"))
+    .filter((file) => repositoryPath(file)
+      !== "src/Mockups.Application/RuntimePreviewDocumentContract.cs")
+    .filter((file) => readFileSync(file, "utf8").includes(
+      "StructuredRuntimeCollectionProjection.Apply("))
+    .map(repositoryPath);
+  assert.deepEqual(
+    directStructureProjection,
+    [],
+    "Preview value preparation bypasses RuntimePreviewDocumentContract",
+  );
+});

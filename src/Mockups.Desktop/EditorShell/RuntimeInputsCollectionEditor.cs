@@ -901,7 +901,7 @@ internal sealed class RuntimeInputsCollectionEditor
     internal static JsonObject PrepareDefaultPreview(
         string designPreviewJson,
         JsonObject config) =>
-        RuntimeInputForwardingContract.EffectivePreview(
+        RuntimePreviewDocumentContract.PrepareFixture(
             DesignPreviewTestValues.Parse(
                 designPreviewJson),
             config);

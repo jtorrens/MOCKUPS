@@ -58,6 +58,16 @@ The payload boundary owns:
 - complete runtime-contract temporal envelope;
 - requested Shot and Screen frame.
 
+`RuntimePreviewDocumentContract` is the single preparation path for both
+Design and Production. It derives effective configuration from the exact
+Variant and explicit Overrides, applies declared forwarding and structural
+Runtime projection, then overlays the owner Runtime document (Design Test
+Values or Production Screen content). A resolver consumes only that prepared
+document and never chooses, merges, defaults or repairs a second Variant,
+Override or Runtime value source. Theme-token and Palette resolution remains
+the subsequent declared visual-resolution stage; it is not a parallel config
+or Runtime path.
+
 For a Shot frame inside a Screen boundary transition, the prepared payload also
 contains the exact outgoing and incoming Screen payloads, their complete Motion
 documents and the shared non-negative elapsed interval. The outgoing payload is

@@ -394,7 +394,7 @@ internal static class DesignPreviewPayloadFactory
             $"Module '{settings.RecordClassId}' Variant config",
             respectAuthoredAppearance: false);
         var config = DesignPreviewTestValues.Parse(settings.ConfigJson);
-        var effectivePreview = RuntimeInputForwardingContract.EffectivePreview(
+        var effectivePreview = EffectiveRuntimeContract(
             DesignPreviewTestValues.Parse(settings.DesignPreviewJson),
             config);
         var runtimePreview = DesignPreviewTestValues.Parse(DesignPreviewTestValues.RuntimeJson(effectivePreview.ToJsonString()));
@@ -449,7 +449,7 @@ internal static class DesignPreviewPayloadFactory
             themeMode,
             $"Component '{settings.ComponentType}' Preview Theme mode");
         var configJson = settings.ConfigJson;
-        var effectivePreview = RuntimeInputForwardingContract.EffectivePreview(
+        var effectivePreview = EffectiveRuntimeContract(
             DesignPreviewTestValues.Parse(settings.DesignPreviewJson),
             DesignPreviewTestValues.Parse(configJson));
         var designPreviewJson = ResolveActionDurationsJson(
@@ -496,6 +496,13 @@ internal static class DesignPreviewPayloadFactory
         }
 
         return changed ? preview.ToJsonString() : designPreviewJson;
+    }
+
+    private static JsonObject EffectiveRuntimeContract(
+        JsonObject preview,
+        JsonObject config)
+    {
+        return RuntimePreviewDocumentContract.PrepareFixture(preview, config);
     }
 
     private static bool ResolveActionDuration(JsonObject config, JsonObject themeTokens, JsonObject action)
