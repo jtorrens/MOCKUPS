@@ -751,9 +751,7 @@
               "sampleText": "text",
               "iconToken": "iconToken",
               "iconSizeToken": "iconSizeToken",
-              "textSizeToken": "textSizeToken",
-              "pushTrigger": "pushTrigger",
-              "pushElapsedMs": "pushElapsedMs"
+              "textSizeToken": "textSizeToken"
             }
           }
         },
@@ -1054,27 +1052,6 @@
               { "value": "theme.typography.sizes.l", "label": "Large" },
               { "value": "theme.typography.sizes.xl", "label": "Extra large" }
             ]
-          },
-          {
-            "id": "pushTrigger",
-            "label": "Push trigger",
-            "jsonKey": "pushTrigger",
-            "kind": "Boolean",
-            "valueKind": "Boolean",
-            "defaultValue": "false",
-            "showInEditor": false
-          },
-          {
-            "id": "pushElapsedMs",
-            "label": "Push elapsed",
-            "jsonKey": "pushElapsedMs",
-            "kind": "Number",
-            "valueKind": "Decimal",
-            "defaultValue": "0",
-            "minimum": 0,
-            "maximum": 999999,
-            "increment": 1,
-            "showInEditor": false
           }
         ],
         "itemPresentation": {

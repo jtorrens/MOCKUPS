@@ -2332,7 +2332,7 @@ static void ValidIntegerPairsCommitAfterEditingPause()
 static void FixedComponentCollectionBoundariesPreserveSequentialOverrides()
 {
     const string iconSlots = """
-        [{"id":"decline","buttonVariantReference":"component_project_foqn_s2_button::variant::default","state":"normal","iconToken":"phone_hangup","text":"Decline","iconSizeToken":"theme.iconSizes.m","textSizeToken":"theme.typography.sizes.s","pushTrigger":false,"pushElapsedMs":0,"buttonOverrides":{"button":{"dimensionMode":"fixed","size":"112|48"}}}]
+        [{"id":"decline","buttonVariantReference":"component_project_foqn_s2_button::variant::default","state":"normal","iconToken":"phone_hangup","text":"Decline","iconSizeToken":"theme.iconSizes.m","textSizeToken":"theme.typography.sizes.s","buttonOverrides":{"button":{"dimensionMode":"fixed","size":"112|48"}}}]
         """;
     var definition = ComponentClassFieldCatalog
         .Get("component.iconRow.items")
@@ -7727,8 +7727,8 @@ static void PreviewAuthoringFocusRevealsExactCard()
                 StructuredCollection: descriptor.StructuredCollection),
             """
             [
-              {"id":"button_other","buttonVariantReference":"component_button::variant::default","state":"normal","iconToken":"other","text":"","iconSizeToken":"theme.iconSizes.m","textSizeToken":"theme.typography.sizes.s","pushTrigger":false,"pushElapsedMs":0,"buttonOverrides":{}},
-              {"id":"button_attachment","buttonVariantReference":"component_button::variant::default","state":"normal","iconToken":"chat_attach","text":"","iconSizeToken":"theme.iconSizes.m","textSizeToken":"theme.typography.sizes.s","pushTrigger":false,"pushElapsedMs":0,"buttonOverrides":{}}
+              {"id":"button_other","buttonVariantReference":"component_button::variant::default","state":"normal","iconToken":"other","text":"","iconSizeToken":"theme.iconSizes.m","textSizeToken":"theme.typography.sizes.s","buttonOverrides":{}},
+              {"id":"button_attachment","buttonVariantReference":"component_button::variant::default","state":"normal","iconToken":"chat_attach","text":"","iconSizeToken":"theme.iconSizes.m","textSizeToken":"theme.typography.sizes.s","buttonOverrides":{}}
             ]
             """,
             new DictionaryFieldServices(
