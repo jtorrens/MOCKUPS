@@ -150,6 +150,12 @@ public static class StructuredRuntimeCollectionProjection
             };
             foreach (var (runtimeKey, definition) in fieldsByJsonKey)
             {
+                if (definition["source"] is JsonValue fieldSourceValue
+                    && fieldSourceValue.TryGetValue<string>(out var fieldSource)
+                    && fieldSource.Equals("calculated", StringComparison.Ordinal))
+                {
+                    continue;
+                }
                 JsonNode value;
                 // A declared structure binding is authored by the selected
                 // Variant (including its local Override).  Only fields without
