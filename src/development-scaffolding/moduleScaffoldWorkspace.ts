@@ -14,7 +14,6 @@ import {
   loadModuleScaffoldInventory,
   moduleOwnerTargets,
   ModuleScaffoldValidationError,
-  resolveModuleScaffoldContract,
   type ModuleScaffoldPlan,
   type ModuleScaffoldSpec,
 } from "./moduleScaffold.js";
@@ -221,7 +220,6 @@ export function verifyModuleScaffoldImplementation(
     repositoryRoot,
     "mustExist",
   );
-  const resolved = resolveModuleScaffoldContract(spec, inventory);
   const manifestPath = "src/desktop-preview/desktopPreviewManifest.json";
   const manifest = jsonObject(
     JSON.parse(readFileSync(scaffoldTarget(repositoryRoot, manifestPath), "utf8")),
@@ -267,13 +265,7 @@ export function verifyModuleScaffoldImplementation(
       SELECT m.id,
              m.app_id,
              a.project_id,
-             m.record_class_id,
-             m.name,
-             m.notes,
-             m.sort_order,
-             m.config_json,
-             m.design_preview_json,
-             m.metadata_json
+             m.record_class_id
       FROM modules m
       JOIN apps a ON a.id = m.app_id
       WHERE m.id = ?
@@ -282,12 +274,6 @@ export function verifyModuleScaffoldImplementation(
       app_id: string;
       project_id: string;
       record_class_id: string;
-      name: string;
-      notes: string;
-      sort_order: number;
-      config_json: string;
-      design_preview_json: string;
-      metadata_json: string;
     } | undefined;
     if (!row) {
       violations.push(`Module '${spec.module.moduleId}' is missing from persistence.`);
@@ -297,30 +283,14 @@ export function verifyModuleScaffoldImplementation(
         appId: row.app_id,
         projectId: row.project_id,
         recordClassId: row.record_class_id,
-        name: row.name,
-        notes: row.notes,
-        sortOrder: row.sort_order,
       };
       if (canonicalJson(identity) !== canonicalJson({
         id: spec.module.moduleId,
         appId: spec.module.appId,
         projectId: spec.module.projectId,
         recordClassId: spec.module.recordClassId,
-        name: spec.module.name,
-        notes: spec.module.notes,
-        sortOrder: spec.module.sortOrder,
       })) {
-        violations.push(`Module '${spec.module.moduleId}' identity differs.`);
-      }
-      if (canonicalJson(JSON.parse(row.config_json)) !== canonicalJson(spec.config)) {
-        violations.push(`Module '${spec.module.moduleId}' config differs.`);
-      }
-      if (canonicalJson(JSON.parse(row.design_preview_json))
-          !== canonicalJson(resolved.designPreview)) {
-        violations.push(`Module '${spec.module.moduleId}' Runtime fixture differs.`);
-      }
-      if (canonicalJson(JSON.parse(row.metadata_json)) !== canonicalJson(resolved.metadata)) {
-        violations.push(`Module '${spec.module.moduleId}' Variants differ.`);
+        violations.push(`Module '${spec.module.moduleId}' stable identity differs.`);
       }
     }
     const layout = database.prepare(`

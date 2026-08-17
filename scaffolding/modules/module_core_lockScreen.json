@@ -52,8 +52,8 @@
       },
       "stackInputs": {
         "sizingMode": "fill",
-        "startGapToken": "theme.spacing.xxl",
-        "endGapToken": "theme.spacing.none",
+        "startGapToken": "theme.spacing.l",
+        "endGapToken": "theme.spacing.xxl",
         "items": [
           {
             "id": "items_115bd12c82ee4b2f8d1d421bc7751574",
@@ -354,6 +354,45 @@
                   "transition": "slide",
                   "direction": "bottom",
                   "bounds": "screen",
+                  "fade": true,
+                  "translate": false,
+                  "scale": false
+                },
+                "exitMotion": {
+                  "transition": "slide",
+                  "direction": "bottom",
+                  "bounds": "screen",
+                  "fade": false,
+                  "translate": true,
+                  "scale": false
+                },
+                "placement": {
+                  "mode": "insideEdge",
+                  "alignX": 0.5,
+                  "alignY": 0,
+                  "offsetX": 0,
+                  "offsetY": 0
+                },
+                "name": "Clock"
+              }
+            ],
+            "name": "Clock"
+          },
+          {
+            "id": "items_6c455f1295d14cefb5e922691d290d8f",
+            "gapBeforeMode": "fixed",
+            "gapBeforeToken": "theme.spacing.m",
+            "gapBeforeWeight": 1,
+            "alternatives": [
+              {
+                "id": "alternatives_e4dd46735c214adfa28e6e1142037ad5",
+                "variantReference": "",
+                "active": false,
+                "behavior": "replace",
+                "enterMotion": {
+                  "transition": "slide",
+                  "direction": "bottom",
+                  "bounds": "screen",
                   "fade": false,
                   "translate": true,
                   "scale": false
@@ -366,6 +405,8 @@
                   "translate": true,
                   "scale": false
                 },
+                "overrides": {},
+                "inputs": {},
                 "placement": {
                   "mode": "center",
                   "alignX": 0.5,
@@ -373,12 +414,54 @@
                   "offsetX": 0,
                   "offsetY": 0
                 },
-                "name": "Clock"
+                "name": "Empty"
               },
               {
-                "id": "items_115bd12c82ee4b2f8d1d421bc7751574_password",
+                "id": "alternatives_4f74b1f0b2e346fc81d1edc34a4d034e",
                 "variantReference": "component_project_foqn_s2_password::variant::default",
-                "overrides": {},
+                "active": false,
+                "behavior": "replace",
+                "enterMotion": {
+                  "transition": "slide",
+                  "direction": "bottom",
+                  "bounds": "screen",
+                  "fade": true,
+                  "translate": true,
+                  "scale": false
+                },
+                "exitMotion": {
+                  "transition": "slide",
+                  "direction": "bottom",
+                  "bounds": "screen",
+                  "fade": false,
+                  "translate": true,
+                  "scale": false
+                },
+                "overrides": {
+                  "password": {
+                    "initialLabelSlot": {
+                      "overrides": {
+                        "label": {
+                          "textShadowEnabled": true
+                        }
+                      }
+                    },
+                    "correctLabelSlot": {
+                      "overrides": {
+                        "label": {
+                          "textShadowEnabled": true
+                        }
+                      }
+                    },
+                    "incorrectLabelSlot": {
+                      "overrides": {
+                        "label": {
+                          "textShadowEnabled": true
+                        }
+                      }
+                    }
+                  }
+                },
                 "inputs": {
                   "componentType": "password",
                   "sampleText": "Sample",
@@ -590,14 +673,15 @@
                       "completionBehavior": "holdFinal"
                     }
                   ],
+                  "collections": [],
                   "initialText": "Enter password",
                   "correctText": "Password correct",
                   "incorrectText": "Password incorrect",
                   "$forwardedInputs": {
                     "initialText": {
-                      "id": "forwarded.module.core.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.initialText",
+                      "id": "forwarded.module.core.lockScreen.stackItems.items_6c455f1295d14cefb5e922691d290d8f.inputs.initialText",
                       "label": "Initial text",
-                      "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_115bd12c82ee4b2f8d1d421bc7751574_inputs_initialText",
+                      "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_6c455f1295d14cefb5e922691d290d8f_inputs_initialText",
                       "kind": "text",
                       "valueKind": "StringSingleLine",
                       "defaultValue": "Enter password",
@@ -620,9 +704,9 @@
                       "sourceInputId": "initialText"
                     },
                     "correctText": {
-                      "id": "forwarded.module.core.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.correctText",
+                      "id": "forwarded.module.core.lockScreen.stackItems.items_6c455f1295d14cefb5e922691d290d8f.inputs.correctText",
                       "label": "Correct text",
-                      "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_115bd12c82ee4b2f8d1d421bc7751574_inputs_correctText",
+                      "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_6c455f1295d14cefb5e922691d290d8f_inputs_correctText",
                       "kind": "text",
                       "valueKind": "StringSingleLine",
                       "defaultValue": "Password correct",
@@ -645,9 +729,9 @@
                       "sourceInputId": "correctText"
                     },
                     "incorrectText": {
-                      "id": "forwarded.module.core.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.incorrectText",
+                      "id": "forwarded.module.core.lockScreen.stackItems.items_6c455f1295d14cefb5e922691d290d8f.inputs.incorrectText",
                       "label": "Incorrect text",
-                      "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_115bd12c82ee4b2f8d1d421bc7751574_inputs_incorrectText",
+                      "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_6c455f1295d14cefb5e922691d290d8f_inputs_incorrectText",
                       "kind": "text",
                       "valueKind": "StringSingleLine",
                       "defaultValue": "Password incorrect",
@@ -670,9 +754,9 @@
                       "sourceInputId": "incorrectText"
                     },
                     "expectedPassword": {
-                      "id": "forwarded.module.core.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.expectedPassword",
+                      "id": "forwarded.module.core.lockScreen.stackItems.items_6c455f1295d14cefb5e922691d290d8f.inputs.expectedPassword",
                       "label": "Password",
-                      "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_115bd12c82ee4b2f8d1d421bc7751574_inputs_expectedPassword",
+                      "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_6c455f1295d14cefb5e922691d290d8f_inputs_expectedPassword",
                       "kind": "text",
                       "valueKind": "StringSingleLine",
                       "defaultValue": "2345",
@@ -695,9 +779,9 @@
                       "sourceInputId": "expectedPassword"
                     },
                     "attemptPassword": {
-                      "id": "forwarded.module.core.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.attemptPassword",
+                      "id": "forwarded.module.core.lockScreen.stackItems.items_6c455f1295d14cefb5e922691d290d8f.inputs.attemptPassword",
                       "label": "Attempt",
-                      "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_115bd12c82ee4b2f8d1d421bc7751574_inputs_attemptPassword",
+                      "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_6c455f1295d14cefb5e922691d290d8f_inputs_attemptPassword",
                       "kind": "text",
                       "valueKind": "StringSingleLine",
                       "defaultValue": "2345",
@@ -720,9 +804,9 @@
                       "sourceInputId": "attemptPassword"
                     },
                     "enabled": {
-                      "id": "forwarded.module.core.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.enabled",
+                      "id": "forwarded.module.core.lockScreen.stackItems.items_6c455f1295d14cefb5e922691d290d8f.inputs.enabled",
                       "label": "Enabled",
-                      "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_115bd12c82ee4b2f8d1d421bc7751574_inputs_enabled",
+                      "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_6c455f1295d14cefb5e922691d290d8f_inputs_enabled",
                       "kind": "boolean",
                       "valueKind": "Boolean",
                       "defaultValue": "true",
@@ -745,9 +829,9 @@
                       "sourceInputId": "enabled"
                     },
                     "entryTiming": {
-                      "id": "forwarded.module.core.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.entryTiming",
+                      "id": "forwarded.module.core.lockScreen.stackItems.items_6c455f1295d14cefb5e922691d290d8f.inputs.entryTiming",
                       "label": "Entry timing",
-                      "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_115bd12c82ee4b2f8d1d421bc7751574_inputs_entryTiming",
+                      "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_6c455f1295d14cefb5e922691d290d8f_inputs_entryTiming",
                       "kind": "behaviorTiming",
                       "valueKind": "BehaviorTiming",
                       "defaultValue": "{\"mode\":\"fixed\",\"fixedFrames\":16,\"paceToken\":\"theme.motion.naturalPace.normal\"}",
@@ -796,9 +880,9 @@
                       "sourceInputId": "entryTiming"
                     },
                     "entryTrigger": {
-                      "id": "forwarded.module.core.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.entryTrigger",
+                      "id": "forwarded.module.core.lockScreen.stackItems.items_6c455f1295d14cefb5e922691d290d8f.inputs.entryTrigger",
                       "label": "Enter password",
-                      "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_115bd12c82ee4b2f8d1d421bc7751574_inputs_entryTrigger",
+                      "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_6c455f1295d14cefb5e922691d290d8f_inputs_entryTrigger",
                       "kind": "boolean",
                       "valueKind": "Boolean",
                       "defaultValue": "false",
@@ -826,9 +910,9 @@
                       "sourceInputId": "entryTrigger"
                     },
                     "entryFrame": {
-                      "id": "forwarded.module.core.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.entryFrame",
+                      "id": "forwarded.module.core.lockScreen.stackItems.items_6c455f1295d14cefb5e922691d290d8f.inputs.entryFrame",
                       "label": "Entry frame",
-                      "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_115bd12c82ee4b2f8d1d421bc7751574_inputs_entryFrame",
+                      "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_6c455f1295d14cefb5e922691d290d8f_inputs_entryFrame",
                       "kind": "number",
                       "valueKind": "Integer",
                       "defaultValue": "0",
@@ -853,188 +937,14 @@
                     }
                   }
                 },
-                "active": false,
-                "behavior": "replace",
-                "enterMotion": {
-                  "transition": "slide",
-                  "direction": "bottom",
-                  "bounds": "screen",
-                  "fade": false,
-                  "translate": true,
-                  "scale": false
-                },
-                "exitMotion": {
-                  "transition": "slide",
-                  "direction": "bottom",
-                  "bounds": "screen",
-                  "fade": false,
-                  "translate": true,
-                  "scale": false
-                },
                 "placement": {
-                  "mode": "center",
+                  "mode": "insideEdge",
                   "alignX": 0.5,
-                  "alignY": 0.5,
+                  "alignY": 0,
                   "offsetX": 0,
                   "offsetY": 0
                 },
                 "name": "Password"
-              }
-            ],
-            "name": "Clock"
-          },
-          {
-            "id": "items_6c455f1295d14cefb5e922691d290d8f",
-            "gapBeforeMode": "fixed",
-            "gapBeforeToken": "theme.spacing.m",
-            "gapBeforeWeight": 1,
-            "alternatives": [
-              {
-                "id": "items_6c455f1295d14cefb5e922691d290d8f_default",
-                "variantReference": "component_project_foqn_s2_iconBar::variant::default",
-                "overrides": {
-                  "iconBar": {
-                    "idleLeftIconRowInputs": {
-                      "buttonInputs": [
-                        {
-                          "id": "button_001",
-                          "state": "normal",
-                          "sampleText": "",
-                          "iconToken": "android_nav_back",
-                          "iconSizeToken": "theme.iconSizes.m",
-                          "textSizeToken": "theme.typography.sizes.s",
-                          "showBadge": false,
-                          "badgeContentMode": "text",
-                          "badgeIconToken": "system_check",
-                          "badgeText": "1",
-                          "badgeSize": 20,
-                          "badgeBackgroundPaletteColor": "blue",
-                          "badgeContentPaletteColor": "gray_100",
-                          "iconColorToken": "theme.colors.icon",
-                          "textColorToken": "theme.colors.textPrimary"
-                        }
-                      ]
-                    },
-                    "idleLeftIconRowSlot": {
-                      "variantReference": "component_project_foqn_s2_iconRow::variant::default",
-                      "overrides": {
-                        "iconRow": {
-                          "items": [
-                            {
-                              "id": "button_001",
-                              "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                              "state": "normal",
-                              "iconToken": "android_nav_back",
-                              "text": "",
-                              "pushTrigger": false,
-                              "pushElapsedMs": 0,
-                              "buttonOverrides": {},
-                              "iconSizeToken": "theme.iconSizes.m",
-                              "textSizeToken": "theme.typography.sizes.s"
-                            }
-                          ]
-                        }
-                      }
-                    }
-                  }
-                },
-                "inputs": {
-                  "componentType": "iconBar",
-                  "sampleText": "Sample",
-                  "sampleSubtext": "",
-                  "sampleSize": 256,
-                  "size": "360|56",
-                  "state": "idle",
-                  "inputs": [
-                    {
-                      "id": "state",
-                      "label": "State",
-                      "jsonKey": "state",
-                      "kind": "option",
-                      "valueKind": "OptionToken",
-                      "defaultValue": "idle",
-                      "minimum": 0,
-                      "maximum": 9999,
-                      "increment": 1,
-                      "tableId": "",
-                      "resolvedJsonKey": "",
-                      "componentType": "",
-                      "options": [
-                        {
-                          "value": "idle",
-                          "label": "Idle"
-                        },
-                        {
-                          "value": "active",
-                          "label": "Active"
-                        }
-                      ],
-                      "pairFirstLabel": "W",
-                      "pairSecondLabel": "H",
-                      "visibleWhenPath": "",
-                      "visibleWhenValue": "",
-                      "source": "runtime",
-                      "uiOrigin": "embedded",
-                      "uiGroupId": "state",
-                      "uiGroupLabel": "State",
-                      "uiParentGroupId": "",
-                      "unit": "",
-                      "uiOrder": 10
-                    },
-                    {
-                      "id": "size",
-                      "label": "Size",
-                      "jsonKey": "size",
-                      "kind": "integerPair",
-                      "valueKind": "IntegerPair",
-                      "defaultValue": "360|56",
-                      "minimum": 0,
-                      "maximum": 9999,
-                      "increment": 1,
-                      "tableId": "",
-                      "resolvedJsonKey": "",
-                      "componentType": "",
-                      "options": [],
-                      "pairFirstLabel": "W",
-                      "pairSecondLabel": "H",
-                      "visibleWhenPath": "",
-                      "visibleWhenValue": "",
-                      "source": "runtime",
-                      "uiOrigin": "embedded",
-                      "uiGroupId": "layout",
-                      "uiGroupLabel": "Layout",
-                      "uiParentGroupId": "",
-                      "unit": "",
-                      "uiOrder": 20
-                    }
-                  ]
-                },
-                "active": false,
-                "behavior": "replace",
-                "enterMotion": {
-                  "transition": "slide",
-                  "direction": "bottom",
-                  "bounds": "screen",
-                  "fade": false,
-                  "translate": true,
-                  "scale": false
-                },
-                "exitMotion": {
-                  "transition": "slide",
-                  "direction": "bottom",
-                  "bounds": "screen",
-                  "fade": false,
-                  "translate": true,
-                  "scale": false
-                },
-                "placement": {
-                  "mode": "center",
-                  "alignX": 0.5,
-                  "alignY": 0.5,
-                  "offsetX": 0,
-                  "offsetY": 0
-                },
-                "name": "Icon Bar"
               }
             ],
             "name": "Authentication"
@@ -1254,8 +1164,8 @@
         },
         "stackInputs": {
           "sizingMode": "fill",
-          "startGapToken": "theme.spacing.xxl",
-          "endGapToken": "theme.spacing.none",
+          "startGapToken": "theme.spacing.l",
+          "endGapToken": "theme.spacing.xxl",
           "items": [
             {
               "id": "items_115bd12c82ee4b2f8d1d421bc7751574",
@@ -1556,6 +1466,45 @@
                     "transition": "slide",
                     "direction": "bottom",
                     "bounds": "screen",
+                    "fade": true,
+                    "translate": false,
+                    "scale": false
+                  },
+                  "exitMotion": {
+                    "transition": "slide",
+                    "direction": "bottom",
+                    "bounds": "screen",
+                    "fade": false,
+                    "translate": true,
+                    "scale": false
+                  },
+                  "placement": {
+                    "mode": "insideEdge",
+                    "alignX": 0.5,
+                    "alignY": 0,
+                    "offsetX": 0,
+                    "offsetY": 0
+                  },
+                  "name": "Clock"
+                }
+              ],
+              "name": "Clock"
+            },
+            {
+              "id": "items_6c455f1295d14cefb5e922691d290d8f",
+              "gapBeforeMode": "fixed",
+              "gapBeforeToken": "theme.spacing.m",
+              "gapBeforeWeight": 1,
+              "alternatives": [
+                {
+                  "id": "alternatives_e4dd46735c214adfa28e6e1142037ad5",
+                  "variantReference": "",
+                  "active": false,
+                  "behavior": "replace",
+                  "enterMotion": {
+                    "transition": "slide",
+                    "direction": "bottom",
+                    "bounds": "screen",
                     "fade": false,
                     "translate": true,
                     "scale": false
@@ -1568,6 +1517,8 @@
                     "translate": true,
                     "scale": false
                   },
+                  "overrides": {},
+                  "inputs": {},
                   "placement": {
                     "mode": "center",
                     "alignX": 0.5,
@@ -1575,12 +1526,54 @@
                     "offsetX": 0,
                     "offsetY": 0
                   },
-                  "name": "Clock"
+                  "name": "Empty"
                 },
                 {
-                  "id": "items_115bd12c82ee4b2f8d1d421bc7751574_password",
+                  "id": "alternatives_4f74b1f0b2e346fc81d1edc34a4d034e",
                   "variantReference": "component_project_foqn_s2_password::variant::default",
-                  "overrides": {},
+                  "active": false,
+                  "behavior": "replace",
+                  "enterMotion": {
+                    "transition": "slide",
+                    "direction": "bottom",
+                    "bounds": "screen",
+                    "fade": true,
+                    "translate": true,
+                    "scale": false
+                  },
+                  "exitMotion": {
+                    "transition": "slide",
+                    "direction": "bottom",
+                    "bounds": "screen",
+                    "fade": false,
+                    "translate": true,
+                    "scale": false
+                  },
+                  "overrides": {
+                    "password": {
+                      "initialLabelSlot": {
+                        "overrides": {
+                          "label": {
+                            "textShadowEnabled": true
+                          }
+                        }
+                      },
+                      "correctLabelSlot": {
+                        "overrides": {
+                          "label": {
+                            "textShadowEnabled": true
+                          }
+                        }
+                      },
+                      "incorrectLabelSlot": {
+                        "overrides": {
+                          "label": {
+                            "textShadowEnabled": true
+                          }
+                        }
+                      }
+                    }
+                  },
                   "inputs": {
                     "componentType": "password",
                     "sampleText": "Sample",
@@ -1792,14 +1785,15 @@
                         "completionBehavior": "holdFinal"
                       }
                     ],
+                    "collections": [],
                     "initialText": "Enter password",
                     "correctText": "Password correct",
                     "incorrectText": "Password incorrect",
                     "$forwardedInputs": {
                       "initialText": {
-                        "id": "forwarded.module.core.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.initialText",
+                        "id": "forwarded.module.core.lockScreen.stackItems.items_6c455f1295d14cefb5e922691d290d8f.inputs.initialText",
                         "label": "Initial text",
-                        "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_115bd12c82ee4b2f8d1d421bc7751574_inputs_initialText",
+                        "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_6c455f1295d14cefb5e922691d290d8f_inputs_initialText",
                         "kind": "text",
                         "valueKind": "StringSingleLine",
                         "defaultValue": "Enter password",
@@ -1822,9 +1816,9 @@
                         "sourceInputId": "initialText"
                       },
                       "correctText": {
-                        "id": "forwarded.module.core.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.correctText",
+                        "id": "forwarded.module.core.lockScreen.stackItems.items_6c455f1295d14cefb5e922691d290d8f.inputs.correctText",
                         "label": "Correct text",
-                        "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_115bd12c82ee4b2f8d1d421bc7751574_inputs_correctText",
+                        "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_6c455f1295d14cefb5e922691d290d8f_inputs_correctText",
                         "kind": "text",
                         "valueKind": "StringSingleLine",
                         "defaultValue": "Password correct",
@@ -1847,9 +1841,9 @@
                         "sourceInputId": "correctText"
                       },
                       "incorrectText": {
-                        "id": "forwarded.module.core.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.incorrectText",
+                        "id": "forwarded.module.core.lockScreen.stackItems.items_6c455f1295d14cefb5e922691d290d8f.inputs.incorrectText",
                         "label": "Incorrect text",
-                        "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_115bd12c82ee4b2f8d1d421bc7751574_inputs_incorrectText",
+                        "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_6c455f1295d14cefb5e922691d290d8f_inputs_incorrectText",
                         "kind": "text",
                         "valueKind": "StringSingleLine",
                         "defaultValue": "Password incorrect",
@@ -1872,9 +1866,9 @@
                         "sourceInputId": "incorrectText"
                       },
                       "expectedPassword": {
-                        "id": "forwarded.module.core.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.expectedPassword",
+                        "id": "forwarded.module.core.lockScreen.stackItems.items_6c455f1295d14cefb5e922691d290d8f.inputs.expectedPassword",
                         "label": "Password",
-                        "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_115bd12c82ee4b2f8d1d421bc7751574_inputs_expectedPassword",
+                        "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_6c455f1295d14cefb5e922691d290d8f_inputs_expectedPassword",
                         "kind": "text",
                         "valueKind": "StringSingleLine",
                         "defaultValue": "2345",
@@ -1897,9 +1891,9 @@
                         "sourceInputId": "expectedPassword"
                       },
                       "attemptPassword": {
-                        "id": "forwarded.module.core.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.attemptPassword",
+                        "id": "forwarded.module.core.lockScreen.stackItems.items_6c455f1295d14cefb5e922691d290d8f.inputs.attemptPassword",
                         "label": "Attempt",
-                        "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_115bd12c82ee4b2f8d1d421bc7751574_inputs_attemptPassword",
+                        "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_6c455f1295d14cefb5e922691d290d8f_inputs_attemptPassword",
                         "kind": "text",
                         "valueKind": "StringSingleLine",
                         "defaultValue": "2345",
@@ -1922,9 +1916,9 @@
                         "sourceInputId": "attemptPassword"
                       },
                       "enabled": {
-                        "id": "forwarded.module.core.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.enabled",
+                        "id": "forwarded.module.core.lockScreen.stackItems.items_6c455f1295d14cefb5e922691d290d8f.inputs.enabled",
                         "label": "Enabled",
-                        "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_115bd12c82ee4b2f8d1d421bc7751574_inputs_enabled",
+                        "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_6c455f1295d14cefb5e922691d290d8f_inputs_enabled",
                         "kind": "boolean",
                         "valueKind": "Boolean",
                         "defaultValue": "true",
@@ -1947,9 +1941,9 @@
                         "sourceInputId": "enabled"
                       },
                       "entryTiming": {
-                        "id": "forwarded.module.core.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.entryTiming",
+                        "id": "forwarded.module.core.lockScreen.stackItems.items_6c455f1295d14cefb5e922691d290d8f.inputs.entryTiming",
                         "label": "Entry timing",
-                        "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_115bd12c82ee4b2f8d1d421bc7751574_inputs_entryTiming",
+                        "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_6c455f1295d14cefb5e922691d290d8f_inputs_entryTiming",
                         "kind": "behaviorTiming",
                         "valueKind": "BehaviorTiming",
                         "defaultValue": "{\"mode\":\"fixed\",\"fixedFrames\":16,\"paceToken\":\"theme.motion.naturalPace.normal\"}",
@@ -1998,9 +1992,9 @@
                         "sourceInputId": "entryTiming"
                       },
                       "entryTrigger": {
-                        "id": "forwarded.module.core.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.entryTrigger",
+                        "id": "forwarded.module.core.lockScreen.stackItems.items_6c455f1295d14cefb5e922691d290d8f.inputs.entryTrigger",
                         "label": "Enter password",
-                        "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_115bd12c82ee4b2f8d1d421bc7751574_inputs_entryTrigger",
+                        "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_6c455f1295d14cefb5e922691d290d8f_inputs_entryTrigger",
                         "kind": "boolean",
                         "valueKind": "Boolean",
                         "defaultValue": "false",
@@ -2028,9 +2022,9 @@
                         "sourceInputId": "entryTrigger"
                       },
                       "entryFrame": {
-                        "id": "forwarded.module.core.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.entryFrame",
+                        "id": "forwarded.module.core.lockScreen.stackItems.items_6c455f1295d14cefb5e922691d290d8f.inputs.entryFrame",
                         "label": "Entry frame",
-                        "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_115bd12c82ee4b2f8d1d421bc7751574_inputs_entryFrame",
+                        "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_6c455f1295d14cefb5e922691d290d8f_inputs_entryFrame",
                         "kind": "number",
                         "valueKind": "Integer",
                         "defaultValue": "0",
@@ -2055,188 +2049,14 @@
                       }
                     }
                   },
-                  "active": false,
-                  "behavior": "replace",
-                  "enterMotion": {
-                    "transition": "slide",
-                    "direction": "bottom",
-                    "bounds": "screen",
-                    "fade": false,
-                    "translate": true,
-                    "scale": false
-                  },
-                  "exitMotion": {
-                    "transition": "slide",
-                    "direction": "bottom",
-                    "bounds": "screen",
-                    "fade": false,
-                    "translate": true,
-                    "scale": false
-                  },
                   "placement": {
-                    "mode": "center",
+                    "mode": "insideEdge",
                     "alignX": 0.5,
-                    "alignY": 0.5,
+                    "alignY": 0,
                     "offsetX": 0,
                     "offsetY": 0
                   },
                   "name": "Password"
-                }
-              ],
-              "name": "Clock"
-            },
-            {
-              "id": "items_6c455f1295d14cefb5e922691d290d8f",
-              "gapBeforeMode": "fixed",
-              "gapBeforeToken": "theme.spacing.m",
-              "gapBeforeWeight": 1,
-              "alternatives": [
-                {
-                  "id": "items_6c455f1295d14cefb5e922691d290d8f_default",
-                  "variantReference": "component_project_foqn_s2_iconBar::variant::default",
-                  "overrides": {
-                    "iconBar": {
-                      "idleLeftIconRowInputs": {
-                        "buttonInputs": [
-                          {
-                            "id": "button_001",
-                            "state": "normal",
-                            "sampleText": "",
-                            "iconToken": "android_nav_back",
-                            "iconSizeToken": "theme.iconSizes.m",
-                            "textSizeToken": "theme.typography.sizes.s",
-                            "showBadge": false,
-                            "badgeContentMode": "text",
-                            "badgeIconToken": "system_check",
-                            "badgeText": "1",
-                            "badgeSize": 20,
-                            "badgeBackgroundPaletteColor": "blue",
-                            "badgeContentPaletteColor": "gray_100",
-                            "iconColorToken": "theme.colors.icon",
-                            "textColorToken": "theme.colors.textPrimary"
-                          }
-                        ]
-                      },
-                      "idleLeftIconRowSlot": {
-                        "variantReference": "component_project_foqn_s2_iconRow::variant::default",
-                        "overrides": {
-                          "iconRow": {
-                            "items": [
-                              {
-                                "id": "button_001",
-                                "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                                "state": "normal",
-                                "iconToken": "android_nav_back",
-                                "text": "",
-                                "pushTrigger": false,
-                                "pushElapsedMs": 0,
-                                "buttonOverrides": {},
-                                "iconSizeToken": "theme.iconSizes.m",
-                                "textSizeToken": "theme.typography.sizes.s"
-                              }
-                            ]
-                          }
-                        }
-                      }
-                    }
-                  },
-                  "inputs": {
-                    "componentType": "iconBar",
-                    "sampleText": "Sample",
-                    "sampleSubtext": "",
-                    "sampleSize": 256,
-                    "size": "360|56",
-                    "state": "idle",
-                    "inputs": [
-                      {
-                        "id": "state",
-                        "label": "State",
-                        "jsonKey": "state",
-                        "kind": "option",
-                        "valueKind": "OptionToken",
-                        "defaultValue": "idle",
-                        "minimum": 0,
-                        "maximum": 9999,
-                        "increment": 1,
-                        "tableId": "",
-                        "resolvedJsonKey": "",
-                        "componentType": "",
-                        "options": [
-                          {
-                            "value": "idle",
-                            "label": "Idle"
-                          },
-                          {
-                            "value": "active",
-                            "label": "Active"
-                          }
-                        ],
-                        "pairFirstLabel": "W",
-                        "pairSecondLabel": "H",
-                        "visibleWhenPath": "",
-                        "visibleWhenValue": "",
-                        "source": "runtime",
-                        "uiOrigin": "embedded",
-                        "uiGroupId": "state",
-                        "uiGroupLabel": "State",
-                        "uiParentGroupId": "",
-                        "unit": "",
-                        "uiOrder": 10
-                      },
-                      {
-                        "id": "size",
-                        "label": "Size",
-                        "jsonKey": "size",
-                        "kind": "integerPair",
-                        "valueKind": "IntegerPair",
-                        "defaultValue": "360|56",
-                        "minimum": 0,
-                        "maximum": 9999,
-                        "increment": 1,
-                        "tableId": "",
-                        "resolvedJsonKey": "",
-                        "componentType": "",
-                        "options": [],
-                        "pairFirstLabel": "W",
-                        "pairSecondLabel": "H",
-                        "visibleWhenPath": "",
-                        "visibleWhenValue": "",
-                        "source": "runtime",
-                        "uiOrigin": "embedded",
-                        "uiGroupId": "layout",
-                        "uiGroupLabel": "Layout",
-                        "uiParentGroupId": "",
-                        "unit": "",
-                        "uiOrder": 20
-                      }
-                    ]
-                  },
-                  "active": false,
-                  "behavior": "replace",
-                  "enterMotion": {
-                    "transition": "slide",
-                    "direction": "bottom",
-                    "bounds": "screen",
-                    "fade": false,
-                    "translate": true,
-                    "scale": false
-                  },
-                  "exitMotion": {
-                    "transition": "slide",
-                    "direction": "bottom",
-                    "bounds": "screen",
-                    "fade": false,
-                    "translate": true,
-                    "scale": false
-                  },
-                  "placement": {
-                    "mode": "center",
-                    "alignX": 0.5,
-                    "alignY": 0.5,
-                    "offsetX": 0,
-                    "offsetY": 0
-                  },
-                  "name": "Icon Bar"
                 }
               ],
               "name": "Authentication"

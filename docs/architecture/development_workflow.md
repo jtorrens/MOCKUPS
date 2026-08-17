@@ -224,9 +224,13 @@ embedded-slot catalog.
 
 Files named `generatedModuleScaffold*` or
 `GeneratedModuleScaffold*` are derived only from integrated specifications and
-must not be edited manually. Verification re-derives the Runtime fixture from
-the exact child Component contract and checks the manifest, owners, generated
-routes, complete Variants, editor layout and committed parity database.
+must not be edited manually. Verification checks the stable persisted identity,
+manifest, owners, generated routes, exact dictionary inventory and editor
+layout. As with Components, the integrated specification records the
+development intervention and does not retain ownership of later authored
+names, notes, sort order, config, Design Preview or complete Variants. Those
+current values are validated strictly by their document contracts and the
+read-only persistence gates, not compared with an historical scaffold snapshot.
 
 ## Persisted changes
 

@@ -201,6 +201,37 @@ test("Module materialization is no-overwrite and integration is transactional", 
     verifyModuleScaffoldImplementation(spec, fixture.root, fixture.database).status,
     "integrated-contract-verified",
   );
+  const authoredDatabase = new Database(fixture.database);
+  try {
+    const authoredConfig = structuredClone(spec.config);
+    authoredConfig.appearanceMode = "dark";
+    const authoredPreview = JSON.parse(JSON.stringify(
+      spec.designPreview ?? {},
+    )) as Record<string, unknown>;
+    authoredPreview.sampleText = "Authored after integration";
+    authoredDatabase.prepare(`
+      UPDATE modules
+      SET name = ?,
+          notes = ?,
+          sort_order = ?,
+          config_json = ?,
+          design_preview_json = ?
+      WHERE id = ?
+    `).run(
+      "Renamed after integration",
+      "Authored notes",
+      42,
+      JSON.stringify(authoredConfig),
+      JSON.stringify(authoredPreview),
+      spec.module.moduleId,
+    );
+  } finally {
+    authoredDatabase.close();
+  }
+  assert.equal(
+    verifyModuleScaffoldImplementation(spec, fixture.root, fixture.database).status,
+    "integrated-contract-verified",
+  );
 });
 
 function validSpec(): ModuleScaffoldSpec {

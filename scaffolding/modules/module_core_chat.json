@@ -178,13 +178,13 @@
           }
         }
       },
-      "headerUseActorColor": false,
+      "headerUseActorColor": true,
       "messageMotion": {
         "transition": "slide",
-        "direction": "bottom",
+        "direction": "left",
         "bounds": "parent",
-        "fade": false,
-        "translate": true,
+        "fade": true,
+        "translate": false,
         "scale": false
       },
       "messageViewportMotion": {
@@ -337,7 +337,7 @@
         "label": "Typing indicator text",
         "jsonKey": "typingIndicatorText",
         "kind": "text",
-        "defaultValue": "\u2022\u2022\u2022",
+        "defaultValue": "•••",
         "groupId": "timing",
         "groupLabel": "Timing",
         "groupOrder": 20,
@@ -454,7 +454,7 @@
       },
       {
         "direction": "outgoing",
-        "text": "Mensaje de prueba \uD83D\uDE0E\uD83D\uDE0D en dos l\u00EDneas",
+        "text": "Mensaje de prueba 😎😍 en dos líneas",
         "delayAfterPreviousFrames": 6,
         "statusState": "read",
         "statusText": "",
@@ -486,7 +486,7 @@
       },
       {
         "direction": "system",
-        "text": "Hola 123 \uD83D\uDE0E A",
+        "text": "Hola 123 😎 A",
         "delayAfterPreviousFrames": 12,
         "statusState": "none",
         "statusText": "",
@@ -661,7 +661,7 @@
             "jsonKey": "writeOnTiming",
             "kind": "behaviorTiming",
             "valueKind": "BehaviorTiming",
-            "defaultValue": "{\u0022mode\u0022:\u0022fixed\u0022,\u0022fixedFrames\u0022:30,\u0022paceToken\u0022:\u0022theme.motion.naturalPace.normal\u0022}",
+            "defaultValue": "{\"mode\":\"fixed\",\"fixedFrames\":30,\"paceToken\":\"theme.motion.naturalPace.normal\"}",
             "options": [
               {
                 "value": "theme.motion.naturalPace.verySlow",
@@ -1167,7 +1167,7 @@
     "textInputVisible": true,
     "keyboardVisible": true,
     "incomingRevealMode": "typingIndicator",
-    "typingIndicatorText": "\u2022\u2022\u2022",
+    "typingIndicatorText": "•••",
     "typingIndicatorSizeToken": "theme.typography.sizes.m",
     "typingIndicatorAnimation": "pulsating",
     "timelineFrameJsonKey": "conversationFrame",
@@ -1316,13 +1316,13 @@
             }
           }
         },
-        "headerUseActorColor": false,
+        "headerUseActorColor": true,
         "messageMotion": {
           "transition": "slide",
-          "direction": "bottom",
+          "direction": "left",
           "bounds": "parent",
-          "fade": false,
-          "translate": true,
+          "fade": true,
+          "translate": false,
           "scale": false
         },
         "messageViewportMotion": {
@@ -1550,7 +1550,7 @@
         "conversation",
         "headerLeftIconRowInputs"
       ],
-      "defaultValue": "{\u0022buttonInputs\u0022:[{\u0022id\u0022:\u0022button_7b4e351285854647ade31e13887ce39f\u0022,\u0022state\u0022:\u0022normal\u0022,\u0022sampleText\u0022:\u0022\u0022,\u0022iconToken\u0022:\u0022android_nav_back\u0022,\u0022iconSizeToken\u0022:\u0022theme.iconSizes.m\u0022,\u0022textSizeToken\u0022:\u0022theme.typography.sizes.s\u0022,\u0022showBadge\u0022:false,\u0022badgeContentMode\u0022:\u0022text\u0022,\u0022badgeIconToken\u0022:\u0022system_check\u0022,\u0022badgeText\u0022:\u00221\u0022,\u0022badgeSize\u0022:20,\u0022badgeBackgroundPaletteColor\u0022:\u0022blue\u0022,\u0022badgeContentPaletteColor\u0022:\u0022gray_100\u0022,\u0022iconColorToken\u0022:\u0022theme.colors.icon\u0022,\u0022textColorToken\u0022:\u0022theme.colors.textPrimary\u0022}]}",
+      "defaultValue": "{\"buttonInputs\":[{\"id\":\"button_7b4e351285854647ade31e13887ce39f\",\"state\":\"normal\",\"sampleText\":\"\",\"iconToken\":\"android_nav_back\",\"iconSizeToken\":\"theme.iconSizes.m\",\"textSizeToken\":\"theme.typography.sizes.s\",\"showBadge\":false,\"badgeContentMode\":\"text\",\"badgeIconToken\":\"system_check\",\"badgeText\":\"1\",\"badgeSize\":20,\"badgeBackgroundPaletteColor\":\"blue\",\"badgeContentPaletteColor\":\"gray_100\",\"iconColorToken\":\"theme.colors.icon\",\"textColorToken\":\"theme.colors.textPrimary\"}]}",
       "isEditable": true,
       "options": [],
       "optionSource": "None",
@@ -1605,7 +1605,7 @@
         "conversation",
         "headerRightIconRowInputs"
       ],
-      "defaultValue": "{\u0022buttonInputs\u0022:[{\u0022id\u0022:\u0022button_783e5f18980742d197e32380c16a6c0d\u0022,\u0022state\u0022:\u0022normal\u0022,\u0022sampleText\u0022:\u0022\u0022,\u0022iconToken\u0022:\u0022phone_call\u0022,\u0022iconSizeToken\u0022:\u0022theme.iconSizes.m\u0022,\u0022textSizeToken\u0022:\u0022theme.typography.sizes.s\u0022,\u0022showBadge\u0022:false,\u0022badgeContentMode\u0022:\u0022text\u0022,\u0022badgeIconToken\u0022:\u0022system_check\u0022,\u0022badgeText\u0022:\u00221\u0022,\u0022badgeSize\u0022:20,\u0022badgeBackgroundPaletteColor\u0022:\u0022blue\u0022,\u0022badgeContentPaletteColor\u0022:\u0022gray_100\u0022,\u0022iconColorToken\u0022:\u0022theme.colors.icon\u0022,\u0022textColorToken\u0022:\u0022theme.colors.textPrimary\u0022},{\u0022id\u0022:\u0022button_001\u0022,\u0022state\u0022:\u0022normal\u0022,\u0022sampleText\u0022:\u0022\u0022,\u0022iconToken\u0022:\u0022media_video\u0022,\u0022iconSizeToken\u0022:\u0022theme.iconSizes.m\u0022,\u0022textSizeToken\u0022:\u0022theme.typography.sizes.s\u0022,\u0022showBadge\u0022:false,\u0022badgeContentMode\u0022:\u0022text\u0022,\u0022badgeIconToken\u0022:\u0022system_check\u0022,\u0022badgeText\u0022:\u00221\u0022,\u0022badgeSize\u0022:20,\u0022badgeBackgroundPaletteColor\u0022:\u0022blue\u0022,\u0022badgeContentPaletteColor\u0022:\u0022gray_100\u0022,\u0022iconColorToken\u0022:\u0022theme.colors.icon\u0022,\u0022textColorToken\u0022:\u0022theme.colors.textPrimary\u0022}]}",
+      "defaultValue": "{\"buttonInputs\":[{\"id\":\"button_783e5f18980742d197e32380c16a6c0d\",\"state\":\"normal\",\"sampleText\":\"\",\"iconToken\":\"phone_call\",\"iconSizeToken\":\"theme.iconSizes.m\",\"textSizeToken\":\"theme.typography.sizes.s\",\"showBadge\":false,\"badgeContentMode\":\"text\",\"badgeIconToken\":\"system_check\",\"badgeText\":\"1\",\"badgeSize\":20,\"badgeBackgroundPaletteColor\":\"blue\",\"badgeContentPaletteColor\":\"gray_100\",\"iconColorToken\":\"theme.colors.icon\",\"textColorToken\":\"theme.colors.textPrimary\"},{\"id\":\"button_001\",\"state\":\"normal\",\"sampleText\":\"\",\"iconToken\":\"media_video\",\"iconSizeToken\":\"theme.iconSizes.m\",\"textSizeToken\":\"theme.typography.sizes.s\",\"showBadge\":false,\"badgeContentMode\":\"text\",\"badgeIconToken\":\"system_check\",\"badgeText\":\"1\",\"badgeSize\":20,\"badgeBackgroundPaletteColor\":\"blue\",\"badgeContentPaletteColor\":\"gray_100\",\"iconColorToken\":\"theme.colors.icon\",\"textColorToken\":\"theme.colors.textPrimary\"}]}",
       "isEditable": true,
       "options": [],
       "optionSource": "None",
@@ -1799,7 +1799,7 @@
         "conversation",
         "messageMotion"
       ],
-      "defaultValue": "{\u0022transition\u0022:\u0022slide\u0022,\u0022direction\u0022:\u0022bottom\u0022,\u0022bounds\u0022:\u0022parent\u0022,\u0022fade\u0022:false,\u0022translate\u0022:true,\u0022scale\u0022:false}",
+      "defaultValue": "{\"transition\":\"slide\",\"direction\":\"bottom\",\"bounds\":\"parent\",\"fade\":false,\"translate\":true,\"scale\":false}",
       "isEditable": true,
       "options": [],
       "optionSource": "None",
@@ -1824,7 +1824,7 @@
         "conversation",
         "messageViewportMotion"
       ],
-      "defaultValue": "{\u0022transition\u0022:\u0022slide\u0022,\u0022direction\u0022:\u0022bottom\u0022,\u0022bounds\u0022:\u0022parent\u0022,\u0022fade\u0022:false,\u0022translate\u0022:true,\u0022scale\u0022:false}",
+      "defaultValue": "{\"transition\":\"slide\",\"direction\":\"bottom\",\"bounds\":\"parent\",\"fade\":false,\"translate\":true,\"scale\":false}",
       "isEditable": true,
       "options": [],
       "optionSource": "None",
