@@ -57,4 +57,26 @@ internal static class RuntimeInputDynamicOptions
         }
         return options;
     }
+
+    public static IReadOnlyList<FieldOption>? ResolveForCollectionItem(
+        IRuntimeInputOptionsDataSource optionsDataSource,
+        ComponentInputDefinition? input,
+        JsonObject preview,
+        IReadOnlyDictionary<string, RuntimeInputCollectionDefinition> collections,
+        RuntimeInputCollectionDefinition collection,
+        JsonObject item)
+    {
+        if (input is null || string.IsNullOrWhiteSpace(input.OptionsSourceCollectionJsonKey))
+        {
+            return Resolve(optionsDataSource, input, item);
+        }
+        var sourceOwner = RuntimeCollectionItemContext.ResolveOwnerOfKey(
+            preview,
+            collections,
+            collection,
+            item,
+            input.OptionsSourceCollectionJsonKey,
+            $"Runtime option source '{input.OptionsSourceCollectionJsonKey}'");
+        return Resolve(optionsDataSource, input, sourceOwner);
+    }
 }

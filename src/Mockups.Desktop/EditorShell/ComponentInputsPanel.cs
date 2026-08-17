@@ -738,7 +738,13 @@ internal sealed class ComponentPreviewInputSession
                 throw new InvalidOperationException(
                     $"Runtime action '{action.Id}' target item '{action.CollectionItemId}' does not exist.");
             }
-            var validValues = (RuntimeInputDynamicOptions.Resolve(_inputOptionsData, input, item)
+            var validValues = (RuntimeInputDynamicOptions.ResolveForCollectionItem(
+                    _inputOptionsData,
+                    input,
+                    preview,
+                    collections,
+                    collection,
+                    item)
                     ?? throw new InvalidOperationException(
                         $"Runtime action '{action.Id}' has no declared option source."))
                 .Select((option) => option.Value)

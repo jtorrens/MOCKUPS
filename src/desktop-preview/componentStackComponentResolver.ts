@@ -17,6 +17,7 @@ import {
   resolveMotionFrame,
 } from "./previewMotionHelpers.js";
 import { rootScreenFrame } from "./previewFrameContext.js";
+import { resolvedRuntimeCollectionItems } from "./runtimeCollectionProjection.js";
 import type {
   ComponentStackAlternativeContract,
   ComponentStackDesignContract,
@@ -37,7 +38,7 @@ export function resolveComponentStackComponent(payload: DesignPreviewPayload): C
     sizingMode: sizingMode as ComponentStackSizingMode,
     startGapToken: requiredString(preview, "startGapToken", "componentStack.runtime.startGapToken"),
     endGapToken: requiredString(preview, "endGapToken", "componentStack.runtime.endGapToken"),
-    slots: requiredObjectArray(preview, "items", "componentStack runtime")
+    slots: resolvedRuntimeCollectionItems(preview, "items", "componentStack")
       .map((slot, index) => resolveSlot(payload, slot, index)),
   };
 }

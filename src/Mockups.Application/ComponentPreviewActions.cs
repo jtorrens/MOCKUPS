@@ -436,7 +436,8 @@ public static class ComponentPreviewActions
         var target = Target(preview, action)
             ?? throw new InvalidOperationException(
                 $"Design Preview action '{action.Id}' has no target owner.");
-        var states = target[action.DurationStateCollectionJsonKey] as JsonArray
+        var stateOwner = StateCollectionOwner(preview, action, target);
+        var states = stateOwner[action.DurationStateCollectionJsonKey] as JsonArray
             ?? throw new InvalidOperationException(
                 $"Design Preview action '{action.Id}' requires state collection '{action.DurationStateCollectionJsonKey}'.");
         RuntimeCollectionDocumentContract.Validate(
@@ -478,6 +479,33 @@ public static class ComponentPreviewActions
                     $"Design Preview action '{action.Id}' duration"));
         }
         return duration;
+    }
+
+    private static JsonObject StateCollectionOwner(
+        JsonObject preview,
+        ComponentPreviewActionDefinition action,
+        JsonObject target)
+    {
+        if (target.ContainsKey(action.DurationStateCollectionJsonKey)) return target;
+        if (!action.IsCollectionItemAction)
+        {
+            throw new InvalidOperationException(
+                $"Design Preview action '{action.Id}' state collection '{action.DurationStateCollectionJsonKey}' has no declared owner.");
+        }
+        var collections = RuntimeInputDefinitionReader.ReadCollections(preview, new JsonObject())
+            .ToDictionary((collection) => collection.JsonKey, StringComparer.Ordinal);
+        if (!collections.TryGetValue(action.CollectionJsonKey, out var collection))
+        {
+            throw new InvalidOperationException(
+                $"Design Preview action '{action.Id}' collection '{action.CollectionJsonKey}' is not declared.");
+        }
+        return RuntimeCollectionItemContext.ResolveOwnerOfKey(
+            preview,
+            collections,
+            collection,
+            target,
+            action.DurationStateCollectionJsonKey,
+            $"Design Preview action '{action.Id}'");
     }
 
     private static double StateMotionDurationMilliseconds(

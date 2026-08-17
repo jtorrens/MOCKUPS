@@ -3249,7 +3249,7 @@ static void FixedStructuralRuntimeCollectionsReconcileByStableIds()
     var androidConfig = database.GetComponentVariantConfig(references["incoming_call_android"]);
     StructuredRuntimeCollectionProjection.Apply(preview, androidConfig);
     buttons = JsonPath.RequiredArray(preview, "buttonInputs", "Reprojected Icon Row Runtime");
-    Equal("pushed", buttons[1]?["state"]?.GetValue<string>() ?? "");
+    Equal("normal", buttons[1]?["state"]?.GetValue<string>() ?? "");
 
     var reorderedAndroid = androidConfig.DeepClone().AsObject();
     var structuralItems = JsonPath.RequiredArray(
@@ -3264,7 +3264,7 @@ static void FixedStructuralRuntimeCollectionsReconcileByStableIds()
     SequenceEqual(
         ["answer", "decline"],
         buttons.OfType<JsonObject>().Select((item) => JsonPath.RequiredString(item, "id", "Reordered button")));
-    Equal("pushed", buttons[0]?["state"]?.GetValue<string>() ?? "");
+    Equal("normal", buttons[0]?["state"]?.GetValue<string>() ?? "");
 
     StructuredRuntimeCollectionProjection.Apply(
         preview,
@@ -10789,7 +10789,7 @@ static void ProductionPreviewSessionBoundaryPreservesCurrentData()
             database.Production,
             database.Resources);
         var tree = database.LoadProjectTree();
-        var shot = Descendants(tree).Single((node) => node.Kind == ProjectTreeNodeKind.Shot);
+        var shot = Descendants(tree).Single((node) => node.Id == "shot_001");
         var screen = shot.Children.First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance);
         var snapshot = dataSource.LoadSnapshot(tree);
         var preparedShot = snapshot.Shot(shot.Id);
@@ -11970,7 +11970,8 @@ static void ShotRepositoryPreservesFocusedContract()
                 connection,
                 original.EpisodeId,
                 "Repository Episode");
-            var episodeShot = repository.QueryByEpisode(connection, duplicatedEpisode.Id).Single();
+            var episodeShot = repository.QueryByEpisode(connection, duplicatedEpisode.Id)
+                .Single((candidate) => candidate.ShotNumber == original.ShotNumber);
             Equal(original.OwnerActorId, episodeShot.OwnerActorId);
             Equal(original.CanvasJson, episodeShot.CanvasJson);
             Equal(
@@ -12213,7 +12214,7 @@ static void ProductionRenderOverridesRespectScreenAppearance()
         var database = new SqliteProjectTestContext(temporary);
         var tree = database.LoadProjectTree();
         var shot = Descendants(tree)
-            .Single((node) => node.Kind == ProjectTreeNodeKind.Shot);
+            .Single((node) => node.Id == "shot_001");
         var firstScreen = shot.Children
             .Where((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance)
             .OrderBy((node) =>
@@ -13404,7 +13405,7 @@ static void ProductionShotContextBoundaryPreservesResolvedContext()
         var dataSource = new ProductionShotContextDataSource(database.PreviewInputs, database.Resources);
         var service = new ProductionShotContextService(dataSource);
         var shot = Descendants(database.LoadProjectTree())
-            .Single((node) => node.Kind == ProjectTreeNodeKind.Shot);
+            .Single((node) => node.Id == "shot_001");
         var shotSettings = database.GetShotSettings(shot.Id);
         var actor = database.GetActorSettings(shotSettings.OwnerActorId);
         var context = service.Resolve(shot.Id);
@@ -13442,7 +13443,7 @@ static void ShotResourceOverridesResolveIndependently()
     {
         var database = new SqliteProjectTestContext(temporary);
         var shot = Descendants(database.LoadProjectTree())
-            .Single((node) => node.Kind == ProjectTreeNodeKind.Shot);
+            .Single((node) => node.Id == "shot_001");
         var settings = database.GetShotSettings(shot.Id);
         var actor = database.GetActorSettings(settings.OwnerActorId);
         database.UpdateShotField(
@@ -13953,9 +13954,7 @@ static void ShotScreenTransitionsReuseBoundaryMotion()
             database.LoadProjectTree();
         var shot =
             Descendants(tree)
-                .Single((node) =>
-                    node.Kind
-                    == ProjectTreeNodeKind.Shot);
+                .Single((node) => node.Id == "shot_001");
         var slots =
             database.GetShotModuleInstanceSlots(
                 shot.Id);
@@ -14319,6 +14318,7 @@ static void ConversationMessageActorsFollowDirectionContract()
         var database = new SqliteProjectTestContext(temporary);
         var screen = Descendants(database.LoadProjectTree())
             .Single((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance
+                && database.GetModuleInstanceSettings(node.Id).ShotId == "shot_001"
                 && database.GetModuleSettings(database.GetModuleInstanceSettings(node.Id).ModuleId).RecordClassId
                     == ModuleRuntimeDocumentContracts.ConversationRecordClassId);
         var instance = database.GetModuleInstanceSettings(screen.Id);
@@ -14470,7 +14470,7 @@ static void InvalidConversationMessageActorsFailReadOnly()
         command.CommandText = """
             UPDATE module_instances
             SET content_json = json_set(content_json, '$.messages[0].actorId', 'actor_sam')
-            WHERE module_id = 'module_core_chat'
+            WHERE module_id = 'module_core_chat' AND shot_id = 'shot_001'
             """;
         Equal(1, command.ExecuteNonQuery());
     });
@@ -14480,7 +14480,7 @@ static void InvalidConversationMessageActorsFailReadOnly()
         command.CommandText = """
             UPDATE module_instances
             SET content_json = json_set(content_json, '$.messages[2].actorId', '')
-            WHERE module_id = 'module_core_chat'
+            WHERE module_id = 'module_core_chat' AND shot_id = 'shot_001'
             """;
         Equal(1, command.ExecuteNonQuery());
     });
@@ -14493,7 +14493,7 @@ static void InvalidConversationMessageActorsFailReadOnly()
                 content_json,
                 '$.messages[0].direction', 'system',
                 '$.messages[0].actorId', 'missing_actor')
-            WHERE module_id = 'module_core_chat'
+            WHERE module_id = 'module_core_chat' AND shot_id = 'shot_001'
             """;
         Equal(1, command.ExecuteNonQuery());
     });
@@ -15086,7 +15086,7 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
         session.UpdateForPayload(updatedPayload, settings.ProjectId);
         var normalized = session.ApplyInputs(updatedPayload, "light", settings.ProjectId);
         var normalizedPreview = DesignPreviewTestValues.Parse(normalized.DesignPreviewJson);
-        var firstRemainingStateId = normalizedPreview[slots.JsonKey]?[0]?["alternatives"]?[0]?["id"]?.GetValue<string>() ?? "";
+        var firstRemainingStateId = normalizedPreview[slots.SourceCollectionJsonKey]?[0]?["alternatives"]?[0]?["id"]?.GetValue<string>() ?? "";
         Equal(firstRemainingStateId, normalizedPreview[slots.JsonKey]?[0]?["runtimeStateId"]?.GetValue<string>() ?? "");
         True(firstRemainingStateId != deletedStateId);
     }

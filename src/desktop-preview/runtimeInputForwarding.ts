@@ -3,6 +3,7 @@ import { isRecord, parseObject, type JsonRecord } from "./previewJsonHelpers.js"
 
 const storageKey = "$forwardedInputs";
 const runtimeFieldIdsKey = "__runtimeFieldIds";
+const runtimeCollectionSourcesKey = "__runtimeCollectionSources";
 
 export function applyRuntimeInputForwarding(
   payload: DesignPreviewPayload,
@@ -112,6 +113,20 @@ function apply(node: unknown, runtime: JsonRecord, inheritedOwnerId: string) {
       runtimeFieldIds[targetKey] = rawDefinition.id;
       node[runtimeFieldIdsKey] = runtimeFieldIds;
       node[targetKey] = runtimeOwner[rawDefinition.jsonKey as string];
+      if (isRecord(rawDefinition.collection)) {
+        const sourceKey = `${rawDefinition.jsonKey}__variantSource`;
+        const source = runtimeOwner[sourceKey];
+        if (!Array.isArray(source)) {
+          throw new Error(`Forwarded runtime collection '${rawDefinition.jsonKey}' has no structural source.`);
+        }
+        const currentSources = node[runtimeCollectionSourcesKey];
+        if (currentSources !== undefined && !isRecord(currentSources)) {
+          throw new Error(`${runtimeCollectionSourcesKey} must be an object when present`);
+        }
+        const sources = isRecord(currentSources) ? currentSources : {};
+        sources[targetKey] = source;
+        node[runtimeCollectionSourcesKey] = sources;
+      }
       if (
         typeof rawDefinition.resolvedJsonKey === "string" &&
         rawDefinition.resolvedJsonKey &&
