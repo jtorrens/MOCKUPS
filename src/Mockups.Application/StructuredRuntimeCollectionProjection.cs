@@ -151,14 +151,18 @@ public static class StructuredRuntimeCollectionProjection
             foreach (var (runtimeKey, definition) in fieldsByJsonKey)
             {
                 JsonNode value;
-                if (currentItem?[runtimeKey] is { } currentValue)
-                {
-                    value = currentValue.DeepClone();
-                }
-                else if (sourceKeyByRuntimeKey.TryGetValue(runtimeKey, out var sourceKey)
-                         && sourceItem[sourceKey] is { } sourceValue)
+                // A declared structure binding is authored by the selected
+                // Variant (including its local Override).  Only fields without
+                // a binding are Runtime-owned and may retain their current
+                // value when the structure is reconciled.
+                if (sourceKeyByRuntimeKey.TryGetValue(runtimeKey, out var sourceKey)
+                    && sourceItem[sourceKey] is { } sourceValue)
                 {
                     value = sourceValue.DeepClone();
+                }
+                else if (currentItem?[runtimeKey] is { } currentValue)
+                {
+                    value = currentValue.DeepClone();
                 }
                 else
                 {

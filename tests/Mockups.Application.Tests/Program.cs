@@ -33,7 +33,7 @@ var tests = new (string Name, Action Run)[]
     ("session revisions identify only the current owner transition", SessionRevisionGuardsOwner),
     ("Runtime definitions preserve their explicit owner", RuntimeDefinitionsPreserveOwner),
     ("projected Runtime collections reconcile by stable id", ProjectedRuntimeCollectionsReconcileById),
-    ("Component Input bindings project exact structured Runtime values", ComponentInputBindingsProjectExactStructuredRuntimeValues),
+    ("Component Input bindings project exact structure-owned Runtime values", ComponentInputBindingsProjectExactStructuredRuntimeValues),
     ("Component Input projection ownership covers Module and Component parents", ComponentInputProjectionOwnershipCoversParents),
     ("Runtime documents reject missing and parent-owned values", RuntimeDocumentsRejectInvalidOwnership),
     ("Runtime scalar patterns validate defaults and authored values", RuntimeScalarPatternsValidateValues),
@@ -694,7 +694,7 @@ static void ComponentInputBindingsProjectExactStructuredRuntimeValues()
     Equal("added", rows[0]?["id"]?.GetValue<string>());
     Equal("default", rows[0]?["value"]?.GetValue<string>());
     Equal("kept", rows[1]?["id"]?.GetValue<string>());
-    Equal("authored", rows[1]?["value"]?.GetValue<string>());
+    Equal("variant", rows[1]?["value"]?.GetValue<string>());
 
     Throws<InvalidOperationException>(() =>
         RuntimeInputDocumentContract.ProjectInputValuesForContract(

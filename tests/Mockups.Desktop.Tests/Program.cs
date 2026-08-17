@@ -75,6 +75,7 @@ var tests = new (string Name, Action Run)[]
     ("system Hex color pickers preserve exact RGB values", SystemHexColorPickersPreserveRgbValues),
     ("Text Box Preview resolves Variant-owned Icon Row slots", TextBoxPreviewResolvesVariantOwnedIconRowSlots),
     ("embedded Icon Row overrides retain their structured collection contract", EmbeddedIconRowOverridesRetainStructuredCollectionContract),
+    ("embedded structural Runtime projections refresh Preview values", EmbeddedStructuralRuntimeProjectionsRefreshPreviewValues),
     ("Runtime Input readers reject filtered definition metadata", RuntimeInputDefinitionReadersAreStrict),
     ("pair fields require explicit presentation labels", PairFieldsRequireExplicitLabels),
     ("numeric dictionary fields separate current values from drafts", NumericDictionaryFieldsSeparateCurrentValuesFromDrafts),
@@ -7902,6 +7903,64 @@ static void EmbeddedIconRowOverridesRetainStructuredCollectionContract()
         Equal(ValueKind.StructuredCollection, field.Definition.ValueKind);
         True(field.Definition.StructuredCollection is not null);
         Equal("buttons", field.Definition.StructuredCollection!.Id);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void EmbeddedStructuralRuntimeProjectionsRefreshPreviewValues()
+{
+    var source = ParityDatabasePath();
+    var temporary = Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        $".mockups-embedded-projection-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SqliteProjectTestContext(temporary);
+        var conversation = database.LoadProjectTree()
+            .SelectMany(DescendantsAndSelf)
+            .Single((node) => node.Kind == ProjectTreeNodeKind.ModuleVariant
+                && node.Id == "module_core_chat::variant::default");
+        conversation = NodeCommands(database)
+            .ToggleModuleVariantLock(conversation);
+        var slot = EmbeddedComponentSlotCatalog.Get(
+            "module.core.chat.headerLeftIconRow.editor");
+        var field = database.CreateEmbeddedComponentFieldValue(
+            conversation,
+            [slot],
+            "component.iconRow.items");
+        var items = JsonPath.ParseRequiredArray(
+            field.Value,
+            "Embedded Icon Row items");
+        items[0]!.AsObject()["iconToken"] = "android_nav_home";
+
+        database.UpdateEmbeddedComponentField(
+            conversation,
+            [slot],
+            "component.iconRow.items",
+            items.ToJsonString());
+
+        var config = JsonPath.ParseRequiredObject(
+            database.GetModuleVariantSettings(conversation).ConfigJson,
+            "Conversation Variant config");
+        var inputs = JsonPath.RequiredObject(
+            JsonPath.RequiredObject(config, "conversation", "Conversation Variant config"),
+            "headerLeftIconRowInputs",
+            "Conversation left Icon Row Runtime inputs");
+        var projected = JsonPath.RequiredArray(
+            inputs,
+            "buttonInputs",
+            "Conversation left Icon Row Runtime inputs");
+        Equal(
+            "android_nav_home",
+            JsonPath.RequiredString(
+                projected[0]!.AsObject(),
+                "iconToken",
+                "Conversation left Icon Row projected Button Runtime"));
     }
     finally
     {

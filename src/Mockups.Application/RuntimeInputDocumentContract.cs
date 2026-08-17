@@ -92,6 +92,7 @@ public static class RuntimeInputDocumentContract
         }
 
         var result = new JsonArray();
+        var structureOwnedKeys = StructureOwnedKeys(collectionDefinition);
         for (var index = 0; index < defaults.Count; index++)
         {
             var defaultItem = defaults[index] as JsonObject
@@ -128,6 +129,7 @@ public static class RuntimeInputDocumentContract
             {
                 foreach (var key in next
                              .Select((entry) => entry.Key)
+                             .Where((key) => !structureOwnedKeys.Contains(key))
                              .ToList())
                 {
                     if (currentItem[key] is { } value)
@@ -141,6 +143,23 @@ public static class RuntimeInputDocumentContract
         }
 
         return result;
+    }
+
+    private static IReadOnlySet<string> StructureOwnedKeys(
+        JsonObject? collectionDefinition)
+    {
+        if (collectionDefinition?["structureProjection"] is not JsonObject projection)
+        {
+            return new HashSet<string>(StringComparer.Ordinal);
+        }
+
+        var bindings = JsonPath.RequiredObject(
+            projection,
+            "fieldBindings",
+            "Runtime collection structureProjection");
+        return bindings
+            .Select((entry) => entry.Key)
+            .ToHashSet(StringComparer.Ordinal);
     }
 
     public static JsonObject CreateContentForContract(

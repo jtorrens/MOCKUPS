@@ -170,6 +170,11 @@ internal sealed partial class SqliteDesignOwner
                 overrides,
                 descriptor,
                 value);
+            ApplyComponentInputBindingsProjections(
+                connection,
+                settings.ProjectId,
+                config,
+                ComponentInputBindingsProjectionCatalog.RecordOwners());
             if (ownerNode.Kind == ProjectTreeNodeKind.Module)
             {
                 _appModuleRepository.UpdateModuleConfig(
