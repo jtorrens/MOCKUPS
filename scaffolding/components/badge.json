@@ -258,12 +258,148 @@
     "contentMode": "icon",
     "size": 20,
     "backgroundPaletteColor": "blue",
-    "contentPaletteColor": "gray_100"
+    "contentPaletteColor": "gray_100",
+    "collections": [],
+    "actions": []
   },
   "metadata": {
     "note": "Seeded reusable component class."
   },
-  "dictionaryFields": [],
+  "dictionaryFields": [
+    {
+      "id": "component.badge.paddingToken",
+      "label": "Padding",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "badge",
+        "paddingToken"
+      ],
+      "defaultValue": "theme.spacing.xs",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xl",
+          "label": "spacing.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xxl",
+          "label": "spacing.xxl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.badge.placement",
+      "label": "Placement",
+      "valueKind": "AlignmentPlacement",
+      "jsonPath": [
+        "badge",
+        "placement"
+      ],
+      "defaultValue": "{\u0022mode\u0022:\u0022center\u0022,\u0022alignX\u0022:1,\u0022alignY\u0022:0,\u0022offsetX\u0022:0,\u0022offsetY\u0022:0}",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.badge.textTypography",
+      "label": "Text typography",
+      "valueKind": "TypographyStyle",
+      "jsonPath": [
+        "badge",
+        "textTypography"
+      ],
+      "defaultValue": "{\u0022fontFamilyId\u0022:\u0022theme\u0022,\u0022weight\u0022:\u0022theme.typography.weight\u0022,\u0022style\u0022:\u0022theme.typography.style\u0022,\u0022sizeToken\u0022:\u0022theme.typography.sizes.xs\u0022,\u0022lineHeight\u0022:\u0022theme.typography.lineHeights.normal\u0022}",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    }
+  ],
   "editorLayout": {
     "cards": [
       {

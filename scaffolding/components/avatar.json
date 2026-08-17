@@ -225,7 +225,7 @@
     },
     {
       "id": "default_copy",
-      "name": "Avatar pequeño",
+      "name": "Avatar peque\u00F1o",
       "protected": false,
       "locked": false,
       "config": {
@@ -551,12 +551,287 @@
     "badgeContentMode": "icon",
     "badgeSize": 20,
     "badgeBackgroundPaletteColor": "blue",
-    "badgeContentPaletteColor": "gray_100"
+    "badgeContentPaletteColor": "gray_100",
+    "collections": [],
+    "actions": [],
+    "actorId": "actor_alex"
   },
   "metadata": {
     "note": "Seeded reusable component class."
   },
-  "dictionaryFields": [],
+  "dictionaryFields": [
+    {
+      "id": "component.avatar.badge.editor",
+      "label": "Badge",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "avatar",
+        "badgeSlot",
+        "variantReference"
+      ],
+      "defaultValue": "default",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "badge",
+        "label": "Badge",
+        "recordClassId": "component.badge"
+      }
+    },
+    {
+      "id": "component.avatar.badge.placement",
+      "label": "Placement",
+      "valueKind": "AlignmentPlacement",
+      "jsonPath": [
+        "avatar",
+        "badgeSlot",
+        "placement"
+      ],
+      "defaultValue": "{\u0022mode\u0022:\u0022center\u0022,\u0022alignX\u0022:1,\u0022alignY\u0022:0,\u0022offsetX\u0022:0,\u0022offsetY\u0022:0}",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.avatar.cornerRadiusToken",
+      "label": "Avatar radius",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "avatar",
+        "cornerRadiusToken"
+      ],
+      "defaultValue": "theme.radii.full",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.radii.none",
+          "label": "radii.none",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.radii.xs",
+          "label": "radii.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.radii.s",
+          "label": "radii.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.radii.m",
+          "label": "radii.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.radii.l",
+          "label": "radii.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.radii.xl",
+          "label": "radii.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.radii.xxl",
+          "label": "radii.xxl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.radii.full",
+          "label": "radii.full",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.avatar.defaultSize",
+      "label": "Default size",
+      "valueKind": "Integer",
+      "jsonPath": [
+        "avatar",
+        "defaultSize"
+      ],
+      "defaultValue": "48",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.avatar.label.editor",
+      "label": "Label",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "avatar",
+        "labelSlot",
+        "variantReference"
+      ],
+      "defaultValue": "default",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "label",
+        "label": "Label",
+        "recordClassId": "component.label"
+      }
+    },
+    {
+      "id": "component.avatar.label.placement",
+      "label": "Placement",
+      "valueKind": "AlignmentPlacement",
+      "jsonPath": [
+        "avatar",
+        "labelSlot",
+        "placement"
+      ],
+      "defaultValue": "{\u0022mode\u0022:\u0022outsideEdge\u0022,\u0022alignX\u0022:1,\u0022alignY\u0022:0.5,\u0022offsetX\u0022:4,\u0022offsetY\u0022:0}",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.avatar.label.showLabel",
+      "label": "Show label",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "avatar",
+        "labelSlot",
+        "showLabel"
+      ],
+      "defaultValue": "false",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.avatar.label.showSubtext",
+      "label": "Show subtext",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "avatar",
+        "labelSlot",
+        "showSubtext"
+      ],
+      "defaultValue": "false",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    }
+  ],
   "editorLayout": {
     "cards": [
       {

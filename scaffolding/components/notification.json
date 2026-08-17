@@ -268,12 +268,13 @@
         "visibleWhenPath": "",
         "visibleWhenValue": "",
         "source": "runtime",
-        "uiOrigin": "",
+        "uiOrigin": "self",
         "uiGroupId": "",
         "uiGroupLabel": "",
         "uiParentGroupId": "",
         "transition": null,
-        "unit": "%"
+        "unit": "%",
+        "uiOrder": 10
       },
       {
         "id": "actorId",
@@ -294,12 +295,13 @@
         "visibleWhenPath": "",
         "visibleWhenValue": "",
         "source": "runtime",
-        "uiOrigin": "",
+        "uiOrigin": "self",
         "uiGroupId": "",
         "uiGroupLabel": "",
         "uiParentGroupId": "",
         "transition": null,
-        "unit": ""
+        "unit": "",
+        "uiOrder": 20
       },
       {
         "id": "displayMode",
@@ -329,7 +331,7 @@
         "visibleWhenPath": "",
         "visibleWhenValue": "",
         "source": "runtime",
-        "uiOrigin": "",
+        "uiOrigin": "self",
         "uiGroupId": "",
         "uiGroupLabel": "",
         "uiParentGroupId": "",
@@ -338,7 +340,8 @@
         "animatable": true,
         "animationInterpolations": [
           "hold"
-        ]
+        ],
+        "uiOrder": 30
       },
       {
         "id": "summaryText",
@@ -359,12 +362,13 @@
         "visibleWhenPath": "",
         "visibleWhenValue": "",
         "source": "runtime",
-        "uiOrigin": "",
+        "uiOrigin": "self",
         "uiGroupId": "",
         "uiGroupLabel": "",
         "uiParentGroupId": "",
         "transition": null,
-        "unit": ""
+        "unit": "",
+        "uiOrder": 40
       },
       {
         "id": "summarySubtext",
@@ -385,12 +389,13 @@
         "visibleWhenPath": "",
         "visibleWhenValue": "",
         "source": "runtime",
-        "uiOrigin": "",
+        "uiOrigin": "self",
         "uiGroupId": "",
         "uiGroupLabel": "",
         "uiParentGroupId": "",
         "transition": null,
-        "unit": ""
+        "unit": "",
+        "uiOrder": 50
       },
       {
         "id": "detailText",
@@ -411,12 +416,13 @@
         "visibleWhenPath": "",
         "visibleWhenValue": "",
         "source": "runtime",
-        "uiOrigin": "",
+        "uiOrigin": "self",
         "uiGroupId": "",
         "uiGroupLabel": "",
         "uiParentGroupId": "",
         "transition": null,
-        "unit": ""
+        "unit": "",
+        "uiOrder": 60
       },
       {
         "id": "detailSubtext",
@@ -437,12 +443,13 @@
         "visibleWhenPath": "",
         "visibleWhenValue": "",
         "source": "runtime",
-        "uiOrigin": "",
+        "uiOrigin": "self",
         "uiGroupId": "",
         "uiGroupLabel": "",
         "uiParentGroupId": "",
         "transition": null,
-        "unit": ""
+        "unit": "",
+        "uiOrder": 70
       }
     ],
     "actorId": "actor_alex",
@@ -450,7 +457,7 @@
     "summaryText": "New notification",
     "summarySubtext": "Now",
     "detailText": "New notification",
-    "detailSubtext": "Notification detail de más de una linea largo deberian ser dos lineas  ❤️👍",
+    "detailSubtext": "Notification detail de m\u00E1s de una linea largo deberian ser dos lineas  \u2764\uFE0F\uD83D\uDC4D",
     "maxWidth": 90,
     "displayModeTransition": false,
     "displayModeElapsedMs": 0,
@@ -469,12 +476,634 @@
         "prewarmFrames": false,
         "completionBehavior": "reset"
       }
-    ]
+    ],
+    "collections": []
   },
   "metadata": {
     "note": "Seeded reusable component class."
   },
-  "dictionaryFields": [],
+  "dictionaryFields": [
+    {
+      "id": "component.notification.avatar.editor",
+      "label": "Avatar",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "notification",
+        "avatarSlot",
+        "variantReference"
+      ],
+      "defaultValue": "default",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "avatar",
+        "label": "Avatar",
+        "recordClassId": "component.avatar"
+      }
+    },
+    {
+      "id": "component.notification.avatar.inputs",
+      "label": "Badge settings",
+      "valueKind": "ComponentInputBindings",
+      "jsonPath": [
+        "notification",
+        "avatarInputs"
+      ],
+      "defaultValue": "{\u0022showBadge\u0022:false,\u0022badgeContentMode\u0022:\u0022icon\u0022,\u0022badgeIconToken\u0022:\u0022system_check\u0022,\u0022badgeText\u0022:\u00221\u0022,\u0022badgeSize\u0022:20,\u0022badgeBackgroundPaletteColor\u0022:\u0022blue\u0022,\u0022badgeContentPaletteColor\u0022:\u0022gray_100\u0022}",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": [
+        {
+          "id": "showBadge",
+          "label": "Show badge",
+          "jsonKey": "showBadge",
+          "valueKind": "Boolean",
+          "source": "Variant",
+          "defaultValue": "false",
+          "options": null,
+          "number": null,
+          "pairLabels": null,
+          "componentType": "",
+          "uiGroupId": "badge",
+          "uiGroupLabel": "Badge",
+          "tableId": "",
+          "resolvedJsonKey": "",
+          "uiParentGroupId": "",
+          "uiOrder": 10,
+          "uiSectionLabel": "",
+          "transition": null,
+          "animation": null,
+          "behaviorTiming": null,
+          "actionOnly": false,
+          "structuredCollection": null
+        },
+        {
+          "id": "badgeContentMode",
+          "label": "Content",
+          "jsonKey": "badgeContentMode",
+          "valueKind": "OptionToken",
+          "source": "Variant",
+          "defaultValue": "icon",
+          "options": [
+            {
+              "value": "icon",
+              "label": "Icon",
+              "colorHex": null,
+              "isNeutral": false,
+              "groupValue": "",
+              "groupLabel": "",
+              "localLabel": ""
+            },
+            {
+              "value": "text",
+              "label": "Text",
+              "colorHex": null,
+              "isNeutral": false,
+              "groupValue": "",
+              "groupLabel": "",
+              "localLabel": ""
+            }
+          ],
+          "number": null,
+          "pairLabels": null,
+          "componentType": "",
+          "uiGroupId": "badge",
+          "uiGroupLabel": "Badge",
+          "tableId": "",
+          "resolvedJsonKey": "",
+          "uiParentGroupId": "",
+          "uiOrder": 20,
+          "uiSectionLabel": "",
+          "transition": null,
+          "animation": null,
+          "behaviorTiming": null,
+          "actionOnly": false,
+          "structuredCollection": null
+        },
+        {
+          "id": "badgeIconToken",
+          "label": "Icon",
+          "jsonKey": "badgeIconToken",
+          "valueKind": "IconToken",
+          "source": "Variant",
+          "defaultValue": "system_check",
+          "options": null,
+          "number": null,
+          "pairLabels": null,
+          "componentType": "",
+          "uiGroupId": "badge",
+          "uiGroupLabel": "Badge",
+          "tableId": "",
+          "resolvedJsonKey": "",
+          "uiParentGroupId": "",
+          "uiOrder": 30,
+          "uiSectionLabel": "",
+          "transition": null,
+          "animation": null,
+          "behaviorTiming": null,
+          "actionOnly": false,
+          "structuredCollection": null
+        },
+        {
+          "id": "badgeText",
+          "label": "Text",
+          "jsonKey": "badgeText",
+          "valueKind": "StringSingleLine",
+          "source": "Variant",
+          "defaultValue": "1",
+          "options": null,
+          "number": null,
+          "pairLabels": null,
+          "componentType": "",
+          "uiGroupId": "badge",
+          "uiGroupLabel": "Badge",
+          "tableId": "",
+          "resolvedJsonKey": "",
+          "uiParentGroupId": "",
+          "uiOrder": 40,
+          "uiSectionLabel": "",
+          "transition": null,
+          "animation": null,
+          "behaviorTiming": null,
+          "actionOnly": false,
+          "structuredCollection": null
+        },
+        {
+          "id": "badgeSize",
+          "label": "Size",
+          "jsonKey": "badgeSize",
+          "valueKind": "Integer",
+          "source": "Variant",
+          "defaultValue": "20",
+          "options": null,
+          "number": {
+            "minimum": 1,
+            "maximum": 512,
+            "increment": 1,
+            "decimalPlaces": 0,
+            "useSlider": false
+          },
+          "pairLabels": null,
+          "componentType": "",
+          "uiGroupId": "badge",
+          "uiGroupLabel": "Badge",
+          "tableId": "",
+          "resolvedJsonKey": "",
+          "uiParentGroupId": "",
+          "uiOrder": 50,
+          "uiSectionLabel": "",
+          "transition": null,
+          "animation": null,
+          "behaviorTiming": null,
+          "actionOnly": false,
+          "structuredCollection": null
+        },
+        {
+          "id": "badgeBackgroundPaletteColor",
+          "label": "Background",
+          "jsonKey": "badgeBackgroundPaletteColor",
+          "valueKind": "PaletteColorToken",
+          "source": "Variant",
+          "defaultValue": "blue",
+          "options": null,
+          "number": null,
+          "pairLabels": null,
+          "componentType": "",
+          "uiGroupId": "badge",
+          "uiGroupLabel": "Badge",
+          "tableId": "",
+          "resolvedJsonKey": "",
+          "uiParentGroupId": "",
+          "uiOrder": 60,
+          "uiSectionLabel": "",
+          "transition": null,
+          "animation": null,
+          "behaviorTiming": null,
+          "actionOnly": false,
+          "structuredCollection": null
+        },
+        {
+          "id": "badgeContentPaletteColor",
+          "label": "Icon / text color",
+          "jsonKey": "badgeContentPaletteColor",
+          "valueKind": "PaletteColorToken",
+          "source": "Variant",
+          "defaultValue": "gray_100",
+          "options": null,
+          "number": null,
+          "pairLabels": null,
+          "componentType": "",
+          "uiGroupId": "badge",
+          "uiGroupLabel": "Badge",
+          "tableId": "",
+          "resolvedJsonKey": "",
+          "uiParentGroupId": "",
+          "uiOrder": 70,
+          "uiSectionLabel": "",
+          "transition": null,
+          "animation": null,
+          "behaviorTiming": null,
+          "actionOnly": false,
+          "structuredCollection": null
+        }
+      ],
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.notification.avatarPlacement",
+      "label": "Avatar placement",
+      "valueKind": "AlignmentPlacement",
+      "jsonPath": [
+        "notification",
+        "avatarPlacement"
+      ],
+      "defaultValue": "{\u0022mode\u0022:\u0022center\u0022,\u0022alignX\u0022:0.5,\u0022alignY\u0022:0.5,\u0022offsetX\u0022:0,\u0022offsetY\u0022:0}",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.notification.detailLabel.editor",
+      "label": "Detail label",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "notification",
+        "detailLabelSlot",
+        "variantReference"
+      ],
+      "defaultValue": "default",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "label",
+        "label": "Detail label",
+        "recordClassId": "component.label"
+      }
+    },
+    {
+      "id": "component.notification.dimensionMode",
+      "label": "Dimension mode",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "notification",
+        "dimensionMode"
+      ],
+      "defaultValue": "content",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "fixed",
+          "label": "Fixed size",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "content",
+          "label": "Content \u002B padding",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.notification.gapToken",
+      "label": "Gap",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "notification",
+        "gapToken"
+      ],
+      "defaultValue": "theme.spacing.m",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xl",
+          "label": "spacing.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xxl",
+          "label": "spacing.xxl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.notification.labelPlacement",
+      "label": "Label placement",
+      "valueKind": "AlignmentPlacement",
+      "jsonPath": [
+        "notification",
+        "labelPlacement"
+      ],
+      "defaultValue": "{\u0022mode\u0022:\u0022center\u0022,\u0022alignX\u0022:0.5,\u0022alignY\u0022:0.5,\u0022offsetX\u0022:0,\u0022offsetY\u0022:0}",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.notification.padding",
+      "label": "Padding",
+      "valueKind": "ThemeTokenPair",
+      "jsonPath": [
+        "notification",
+        "padding"
+      ],
+      "defaultValue": "theme.spacing.m|theme.spacing.m",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xl",
+          "label": "spacing.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xxl",
+          "label": "spacing.xxl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": {
+        "first": "X",
+        "second": "Y"
+      },
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.notification.size",
+      "label": "Fixed size",
+      "valueKind": "IntegerPair",
+      "jsonPath": [
+        "notification",
+        "size"
+      ],
+      "defaultValue": "320|88",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": {
+        "first": "W",
+        "second": "H"
+      },
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.notification.summaryLabel.editor",
+      "label": "Summary label",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "notification",
+        "summaryLabelSlot",
+        "variantReference"
+      ],
+      "defaultValue": "default",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "label",
+        "label": "Summary label",
+        "recordClassId": "component.label"
+      }
+    },
+    {
+      "id": "component.notification.surface.editor",
+      "label": "Surface",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "notification",
+        "surfaceSlot",
+        "variantReference"
+      ],
+      "defaultValue": "default",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "surface",
+        "label": "Surface",
+        "recordClassId": "component.surface"
+      }
+    }
+  ],
   "editorLayout": {
     "cards": [
       {

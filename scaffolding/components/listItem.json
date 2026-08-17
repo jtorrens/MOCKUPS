@@ -718,7 +718,8 @@
         "uiGroupLabel": "",
         "uiParentGroupId": "",
         "transition": null,
-        "unit": ""
+        "unit": "",
+        "uiOrder": 10
       },
       {
         "id": "height",
@@ -744,7 +745,8 @@
         "uiGroupLabel": "",
         "uiParentGroupId": "",
         "transition": null,
-        "unit": ""
+        "unit": "",
+        "uiOrder": 20
       },
       {
         "id": "activeSet",
@@ -774,7 +776,8 @@
         "animatable": true,
         "animationInterpolations": [
           "hold"
-        ]
+        ],
+        "uiOrder": 30
       },
       {
         "id": "state",
@@ -817,7 +820,8 @@
         "animatable": true,
         "animationInterpolations": [
           "hold"
-        ]
+        ],
+        "uiOrder": 40
       }
     ],
     "collections": [
@@ -1709,7 +1713,7 @@
           "componentType": "label",
           "sampleText": "Diana",
           "sampleSize": 256,
-          "sampleSubtext": "↙ WhatsApp de vídeo",
+          "sampleSubtext": "\u2199 WhatsApp de v\u00EDdeo",
           "inputs": [
             {
               "id": "sampleText",
@@ -1781,7 +1785,7 @@
                   "countDown"
                 ],
                 "replacementValue": "00:00",
-                "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
                 "forwardedTargetOnly": true
               },
               "unit": "",
@@ -1884,7 +1888,7 @@
                   "countDown"
                 ],
                 "replacementValue": "00:00",
-                "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
                 "forwardedTargetOnly": true
               },
               "unit": "",
@@ -1985,9 +1989,9 @@
         "contentSetId": "set_b",
         "runtimeInputs": {
           "componentType": "label",
-          "sampleText": "+34 848 983 160",
+          "sampleText": "\u002B34 848 983 160",
           "sampleSize": 256,
-          "sampleSubtext": "↙ Pamplona / Iruña",
+          "sampleSubtext": "\u2199 Pamplona / Iru\u00F1a",
           "inputs": [
             {
               "id": "sampleText",
@@ -2059,7 +2063,7 @@
                   "countDown"
                 ],
                 "replacementValue": "00:00",
-                "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
                 "forwardedTargetOnly": true
               },
               "unit": "",
@@ -2162,7 +2166,7 @@
                   "countDown"
                 ],
                 "replacementValue": "00:00",
-                "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
                 "forwardedTargetOnly": true
               },
               "unit": "",
@@ -2265,7 +2269,7 @@
           "componentType": "label",
           "sampleText": "Dave",
           "sampleSize": 256,
-          "sampleSubtext": "Thank you pal 😁",
+          "sampleSubtext": "Thank you pal \uD83D\uDE01",
           "inputs": [
             {
               "id": "sampleText",
@@ -2337,7 +2341,7 @@
                   "countDown"
                 ],
                 "replacementValue": "00:00",
-                "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
                 "forwardedTargetOnly": true
               },
               "unit": "",
@@ -2440,7 +2444,7 @@
                   "countDown"
                 ],
                 "replacementValue": "00:00",
-                "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
                 "forwardedTargetOnly": true
               },
               "unit": "",
@@ -4326,28 +4330,59 @@
           ]
         }
       }
-    ]
+    ],
+    "actions": []
   },
   "metadata": {
     "note": "List Item owns fixed Avatar, Label and Icon Row slots, a numeric Content Set count, and exact child Runtime contracts."
   },
   "dictionaryFields": [
     {
-      "id": "component.listItem.contentSetCount",
-      "label": "Content Sets",
+      "id": "component.listItem.components.avatar.component",
+      "label": "Avatar",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "listItem",
+        "components",
+        "avatar",
+        "componentSlot"
+      ],
+      "defaultValue": "{\u0022variantReference\u0022:\u0022component_project_foqn_s2_avatar::variant::default\u0022,\u0022overrides\u0022:{}}",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "avatar",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "avatar",
+        "label": "Avatar",
+        "recordClassId": "component.avatar"
+      }
+    },
+    {
+      "id": "component.listItem.components.avatar.fixedSize",
+      "label": "Fixed size",
       "valueKind": "Integer",
       "jsonPath": [
         "listItem",
-        "contentSetCount"
+        "components",
+        "avatar",
+        "fixedSize"
       ],
-      "defaultValue": "1",
+      "defaultValue": "56",
       "isEditable": true,
       "options": [],
-      "optionsSource": "",
       "pairLabels": null,
       "number": {
         "minimum": 1,
-        "maximum": 100,
+        "maximum": 4096,
         "increment": 1,
         "decimalPlaces": 0,
         "useSlider": false
@@ -4356,91 +4391,11 @@
       "structuredCollection": null,
       "componentVariantType": "",
       "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
-    },
-    {
-      "id": "component.listItem.padding",
-      "label": "Padding",
-      "valueKind": "ThemeTokenPair",
-      "jsonPath": [
-        "listItem",
-        "padding"
-      ],
-      "defaultValue": "theme.spacing.m|theme.spacing.s",
-      "isEditable": true,
-      "options": [],
-      "optionsSource": "SpacingTokenOptions",
-      "pairLabels": {
-        "first": "X",
-        "second": "Y"
-      },
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
-    },
-    {
-      "id": "component.listItem.gapToken",
-      "label": "Gap",
-      "valueKind": "ThemeToken",
-      "jsonPath": [
-        "listItem",
-        "gapToken"
-      ],
-      "defaultValue": "theme.spacing.m",
-      "isEditable": true,
-      "options": [],
-      "optionsSource": "SpacingTokenOptions",
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
-    },
-    {
-      "id": "component.listItem.motion",
-      "label": "Motion",
-      "valueKind": "Motion",
-      "jsonPath": [
-        "boundaryMotion"
-      ],
-      "defaultValue": "{\"transition\":\"slide\",\"direction\":\"bottom\",\"bounds\":\"parent\",\"fade\":true,\"translate\":true,\"scale\":false}",
-      "isEditable": true,
-      "options": [],
-      "optionsSource": "",
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
-    },
-    {
-      "id": "component.listItem.components.avatar.visible",
-      "label": "Visible",
-      "valueKind": "Boolean",
-      "jsonPath": [
-        "listItem",
-        "components",
-        "avatar",
-        "visible"
-      ],
-      "defaultValue": "true",
-      "isEditable": true,
-      "options": [],
-      "optionsSource": "",
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
     },
     {
       "id": "component.listItem.components.avatar.order",
@@ -4455,7 +4410,6 @@
       "defaultValue": "1",
       "isEditable": true,
       "options": [],
-      "optionsSource": "",
       "pairLabels": null,
       "number": {
         "minimum": 1,
@@ -4468,29 +4422,11 @@
       "structuredCollection": null,
       "componentVariantType": "",
       "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
-    },
-    {
-      "id": "component.listItem.components.avatar.component",
-      "label": "Avatar",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "listItem",
-        "components",
-        "avatar",
-        "componentSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::default\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "optionsSource": "",
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "avatar",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
     },
     {
       "id": "component.listItem.components.avatar.sizeMode",
@@ -4507,49 +4443,34 @@
       "options": [
         {
           "value": "auto",
-          "label": "Use item height"
+          "label": "Use item height",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
         },
         {
           "value": "fixed",
-          "label": "Fixed"
+          "label": "Fixed",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
         }
       ],
-      "optionsSource": "",
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
       "componentVariantType": "",
       "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
-    },
-    {
-      "id": "component.listItem.components.avatar.fixedSize",
-      "label": "Fixed size",
-      "valueKind": "Integer",
-      "jsonPath": [
-        "listItem",
-        "components",
-        "avatar",
-        "fixedSize"
-      ],
-      "defaultValue": "56",
-      "isEditable": true,
-      "options": [],
-      "optionsSource": "",
-      "pairLabels": null,
-      "number": {
-        "minimum": 1,
-        "maximum": 4096,
-        "increment": 1,
-        "decimalPlaces": 0,
-        "useSlider": false
-      },
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
     },
     {
       "id": "component.listItem.components.avatar.verticalAlignment",
@@ -4566,143 +4487,111 @@
       "options": [
         {
           "value": "start",
-          "label": "Top"
+          "label": "Top",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
         },
         {
           "value": "center",
-          "label": "Center"
+          "label": "Center",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
         },
         {
           "value": "end",
-          "label": "Bottom"
+          "label": "Bottom",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
         }
       ],
-      "optionsSource": "",
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
       "componentVariantType": "",
       "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
     },
     {
-      "id": "component.listItem.components.label.visible",
+      "id": "component.listItem.components.avatar.visible",
       "label": "Visible",
       "valueKind": "Boolean",
       "jsonPath": [
         "listItem",
         "components",
-        "label",
+        "avatar",
         "visible"
       ],
       "defaultValue": "true",
       "isEditable": true,
       "options": [],
-      "optionsSource": "",
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
       "componentVariantType": "",
       "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
     },
     {
-      "id": "component.listItem.components.label.order",
-      "label": "Order",
-      "valueKind": "Integer",
-      "jsonPath": [
-        "listItem",
-        "components",
-        "label",
-        "order"
-      ],
-      "defaultValue": "2",
-      "isEditable": true,
-      "options": [],
-      "optionsSource": "",
-      "pairLabels": null,
-      "number": {
-        "minimum": 1,
-        "maximum": 3,
-        "increment": 1,
-        "decimalPlaces": 0,
-        "useSlider": false
-      },
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
-    },
-    {
-      "id": "component.listItem.components.label.component",
-      "label": "Label",
+      "id": "component.listItem.components.iconRow.component",
+      "label": "Icon Row",
       "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "listItem",
         "components",
-        "label",
+        "iconRow",
         "componentSlot"
       ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
+      "defaultValue": "{\u0022variantReference\u0022:\u0022component_project_foqn_s2_iconRow::variant::default\u0022,\u0022overrides\u0022:{}}",
       "isEditable": true,
       "options": [],
-      "optionsSource": "",
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "label",
+      "componentVariantType": "iconRow",
       "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "iconRow",
+        "label": "Icon Row",
+        "recordClassId": "component.iconRow"
+      }
     },
     {
-      "id": "component.listItem.components.label.sizeMode",
-      "label": "Size",
-      "valueKind": "OptionToken",
-      "jsonPath": [
-        "listItem",
-        "components",
-        "label",
-        "sizeMode"
-      ],
-      "defaultValue": "fill",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "fill",
-          "label": "Fill remaining width"
-        },
-        {
-          "value": "fixed",
-          "label": "Fixed"
-        }
-      ],
-      "optionsSource": "",
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
-    },
-    {
-      "id": "component.listItem.components.label.fixedSize",
+      "id": "component.listItem.components.iconRow.fixedSize",
       "label": "Fixed size",
       "valueKind": "IntegerPair",
       "jsonPath": [
         "listItem",
         "components",
-        "label",
+        "iconRow",
         "fixedSize"
       ],
-      "defaultValue": "196|62",
+      "defaultValue": "88|44",
       "isEditable": true,
       "options": [],
-      "optionsSource": "",
       "pairLabels": {
         "first": "W",
         "second": "H"
@@ -4712,64 +4601,11 @@
       "structuredCollection": null,
       "componentVariantType": "",
       "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
-    },
-    {
-      "id": "component.listItem.components.label.verticalAlignment",
-      "label": "Vertical alignment",
-      "valueKind": "OptionToken",
-      "jsonPath": [
-        "listItem",
-        "components",
-        "label",
-        "verticalAlignment"
-      ],
-      "defaultValue": "center",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "start",
-          "label": "Top"
-        },
-        {
-          "value": "center",
-          "label": "Center"
-        },
-        {
-          "value": "end",
-          "label": "Bottom"
-        }
-      ],
-      "optionsSource": "",
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
-    },
-    {
-      "id": "component.listItem.components.iconRow.visible",
-      "label": "Visible",
-      "valueKind": "Boolean",
-      "jsonPath": [
-        "listItem",
-        "components",
-        "iconRow",
-        "visible"
-      ],
-      "defaultValue": "true",
-      "isEditable": true,
-      "options": [],
-      "optionsSource": "",
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
     },
     {
       "id": "component.listItem.components.iconRow.order",
@@ -4784,7 +4620,6 @@
       "defaultValue": "3",
       "isEditable": true,
       "options": [],
-      "optionsSource": "",
       "pairLabels": null,
       "number": {
         "minimum": 1,
@@ -4797,29 +4632,11 @@
       "structuredCollection": null,
       "componentVariantType": "",
       "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
-    },
-    {
-      "id": "component.listItem.components.iconRow.component",
-      "label": "Icon Row",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "listItem",
-        "components",
-        "iconRow",
-        "componentSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_iconRow::variant::default\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "optionsSource": "",
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "iconRow",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
     },
     {
       "id": "component.listItem.components.iconRow.sizeMode",
@@ -4836,46 +4653,34 @@
       "options": [
         {
           "value": "content",
-          "label": "Fit content"
+          "label": "Fit content",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
         },
         {
           "value": "fixed",
-          "label": "Fixed"
+          "label": "Fixed",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
         }
       ],
-      "optionsSource": "",
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
       "componentVariantType": "",
       "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
-    },
-    {
-      "id": "component.listItem.components.iconRow.fixedSize",
-      "label": "Fixed size",
-      "valueKind": "IntegerPair",
-      "jsonPath": [
-        "listItem",
-        "components",
-        "iconRow",
-        "fixedSize"
-      ],
-      "defaultValue": "88|44",
-      "isEditable": true,
-      "options": [],
-      "optionsSource": "",
-      "pairLabels": {
-        "first": "W",
-        "second": "H"
-      },
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
     },
     {
       "id": "component.listItem.components.iconRow.verticalAlignment",
@@ -4892,135 +4697,506 @@
       "options": [
         {
           "value": "start",
-          "label": "Top"
+          "label": "Top",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
         },
         {
           "value": "center",
-          "label": "Center"
+          "label": "Center",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
         },
         {
           "value": "end",
-          "label": "Bottom"
+          "label": "Bottom",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
         }
       ],
-      "optionsSource": "",
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
       "componentVariantType": "",
       "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
     },
     {
-      "id": "component.listItem.states.normal.surface",
-      "label": "Normal surface",
-      "valueKind": "ComponentVariantSlot",
+      "id": "component.listItem.components.iconRow.visible",
+      "label": "Visible",
+      "valueKind": "Boolean",
       "jsonPath": [
         "listItem",
-        "states",
-        "normal",
-        "surfaceSlot"
+        "components",
+        "iconRow",
+        "visible"
       ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_surface::variant::default_copy_4\",\"overrides\":{}}",
+      "defaultValue": "true",
       "isEditable": true,
       "options": [],
-      "optionsSource": "",
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "surface",
+      "componentVariantType": "",
       "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
     },
     {
-      "id": "component.listItem.states.normal.elementsOpacity",
-      "label": "Normal opacity",
-      "valueKind": "Alpha",
+      "id": "component.listItem.components.label.component",
+      "label": "Label",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "listItem",
-        "states",
-        "normal",
-        "elementsOpacity"
+        "components",
+        "label",
+        "componentSlot"
+      ],
+      "defaultValue": "{\u0022variantReference\u0022:\u0022component_project_foqn_s2_label::variant::default\u0022,\u0022overrides\u0022:{}}",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "label",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "label",
+        "label": "Label",
+        "recordClassId": "component.label"
+      }
+    },
+    {
+      "id": "component.listItem.components.label.fixedSize",
+      "label": "Fixed size",
+      "valueKind": "IntegerPair",
+      "jsonPath": [
+        "listItem",
+        "components",
+        "label",
+        "fixedSize"
+      ],
+      "defaultValue": "196|62",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": {
+        "first": "W",
+        "second": "H"
+      },
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.listItem.components.label.order",
+      "label": "Order",
+      "valueKind": "Integer",
+      "jsonPath": [
+        "listItem",
+        "components",
+        "label",
+        "order"
+      ],
+      "defaultValue": "2",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": {
+        "minimum": 1,
+        "maximum": 3,
+        "increment": 1,
+        "decimalPlaces": 0,
+        "useSlider": false
+      },
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.listItem.components.label.sizeMode",
+      "label": "Size",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "listItem",
+        "components",
+        "label",
+        "sizeMode"
+      ],
+      "defaultValue": "fill",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "fill",
+          "label": "Fill remaining width",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "fixed",
+          "label": "Fixed",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.listItem.components.label.verticalAlignment",
+      "label": "Vertical alignment",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "listItem",
+        "components",
+        "label",
+        "verticalAlignment"
+      ],
+      "defaultValue": "center",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "start",
+          "label": "Top",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "center",
+          "label": "Center",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "end",
+          "label": "Bottom",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.listItem.components.label.visible",
+      "label": "Visible",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "listItem",
+        "components",
+        "label",
+        "visible"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.listItem.contentSetCount",
+      "label": "Content Sets",
+      "valueKind": "Integer",
+      "jsonPath": [
+        "listItem",
+        "contentSetCount"
       ],
       "defaultValue": "1",
       "isEditable": true,
       "options": [],
-      "optionsSource": "",
+      "pairLabels": null,
+      "number": {
+        "minimum": 1,
+        "maximum": 100,
+        "increment": 1,
+        "decimalPlaces": 0,
+        "useSlider": false
+      },
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.listItem.gapToken",
+      "label": "Gap",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "listItem",
+        "gapToken"
+      ],
+      "defaultValue": "theme.spacing.m",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xl",
+          "label": "spacing.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xxl",
+          "label": "spacing.xxl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
       "componentVariantType": "",
       "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
     },
     {
-      "id": "component.listItem.states.pressed.surface",
-      "label": "Pressed surface",
-      "valueKind": "ComponentVariantSlot",
+      "id": "component.listItem.motion",
+      "label": "Motion",
+      "valueKind": "Motion",
       "jsonPath": [
-        "listItem",
-        "states",
-        "pressed",
-        "surfaceSlot"
+        "boundaryMotion"
       ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_surface::variant::surface_00_copy\",\"overrides\":{}}",
+      "defaultValue": "{\u0022transition\u0022:\u0022slide\u0022,\u0022direction\u0022:\u0022bottom\u0022,\u0022bounds\u0022:\u0022parent\u0022,\u0022fade\u0022:true,\u0022translate\u0022:true,\u0022scale\u0022:false}",
       "isEditable": true,
       "options": [],
-      "optionsSource": "",
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "surface",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
-    },
-    {
-      "id": "component.listItem.states.pressed.elementsOpacity",
-      "label": "Pressed opacity",
-      "valueKind": "Alpha",
-      "jsonPath": [
-        "listItem",
-        "states",
-        "pressed",
-        "elementsOpacity"
-      ],
-      "defaultValue": "0.82",
-      "isEditable": true,
-      "options": [],
-      "optionsSource": "",
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
       "componentVariantType": "",
       "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
     },
     {
-      "id": "component.listItem.states.inactive.surface",
-      "label": "Inactive surface",
-      "valueKind": "ComponentVariantSlot",
+      "id": "component.listItem.padding",
+      "label": "Padding",
+      "valueKind": "ThemeTokenPair",
       "jsonPath": [
         "listItem",
-        "states",
-        "inactive",
-        "surfaceSlot"
+        "padding"
       ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_surface::variant::default_copy_4\",\"overrides\":{}}",
+      "defaultValue": "theme.spacing.m|theme.spacing.s",
       "isEditable": true,
-      "options": [],
-      "optionsSource": "",
-      "pairLabels": null,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xl",
+          "label": "spacing.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xxl",
+          "label": "spacing.xxl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": {
+        "first": "X",
+        "second": "Y"
+      },
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "surface",
+      "componentVariantType": "",
       "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
     },
     {
       "id": "component.listItem.states.inactive.elementsOpacity",
@@ -5035,14 +5211,154 @@
       "defaultValue": "0.45",
       "isEditable": true,
       "options": [],
-      "optionsSource": "",
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
       "componentVariantType": "",
       "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.listItem.states.inactive.surface",
+      "label": "Inactive surface",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "listItem",
+        "states",
+        "inactive",
+        "surfaceSlot"
+      ],
+      "defaultValue": "{\u0022variantReference\u0022:\u0022component_project_foqn_s2_surface::variant::default_copy_4\u0022,\u0022overrides\u0022:{}}",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "surface",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "surface",
+        "label": "Inactive surface",
+        "recordClassId": "component.surface"
+      }
+    },
+    {
+      "id": "component.listItem.states.normal.elementsOpacity",
+      "label": "Normal opacity",
+      "valueKind": "Alpha",
+      "jsonPath": [
+        "listItem",
+        "states",
+        "normal",
+        "elementsOpacity"
+      ],
+      "defaultValue": "1",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.listItem.states.normal.surface",
+      "label": "Normal surface",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "listItem",
+        "states",
+        "normal",
+        "surfaceSlot"
+      ],
+      "defaultValue": "{\u0022variantReference\u0022:\u0022component_project_foqn_s2_surface::variant::default_copy_4\u0022,\u0022overrides\u0022:{}}",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "surface",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "surface",
+        "label": "Normal surface",
+        "recordClassId": "component.surface"
+      }
+    },
+    {
+      "id": "component.listItem.states.pressed.elementsOpacity",
+      "label": "Pressed opacity",
+      "valueKind": "Alpha",
+      "jsonPath": [
+        "listItem",
+        "states",
+        "pressed",
+        "elementsOpacity"
+      ],
+      "defaultValue": "0.82",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.listItem.states.pressed.surface",
+      "label": "Pressed surface",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "listItem",
+        "states",
+        "pressed",
+        "surfaceSlot"
+      ],
+      "defaultValue": "{\u0022variantReference\u0022:\u0022component_project_foqn_s2_surface::variant::surface_00_copy\u0022,\u0022overrides\u0022:{}}",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "surface",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "surface",
+        "label": "Pressed surface",
+        "recordClassId": "component.surface"
+      }
     }
   ],
   "editorLayout": {

@@ -94,7 +94,25 @@
             "label": "Fit content"
           }
         ],
-        "valueKind": "OptionToken"
+        "valueKind": "OptionToken",
+        "uiOrigin": "self",
+        "uiOrder": 10,
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "source": "runtime",
+        "uiGroupId": "",
+        "uiGroupLabel": "",
+        "uiParentGroupId": "",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "transition": null,
+        "unit": ""
       },
       {
         "id": "startGapToken",
@@ -132,7 +150,25 @@
             "label": "spacing.xxl"
           }
         ],
-        "valueKind": "ThemeToken"
+        "valueKind": "ThemeToken",
+        "uiOrigin": "self",
+        "uiOrder": 20,
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "source": "runtime",
+        "uiGroupId": "",
+        "uiGroupLabel": "",
+        "uiParentGroupId": "",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "transition": null,
+        "unit": ""
       },
       {
         "id": "endGapToken",
@@ -170,7 +206,25 @@
             "label": "spacing.xxl"
           }
         ],
-        "valueKind": "ThemeToken"
+        "valueKind": "ThemeToken",
+        "uiOrigin": "self",
+        "uiOrder": 30,
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "source": "runtime",
+        "uiGroupId": "",
+        "uiGroupLabel": "",
+        "uiParentGroupId": "",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "transition": null,
+        "unit": ""
       }
     ],
     "items": [
@@ -1230,7 +1284,7 @@
                       "countDown"
                     ],
                     "replacementValue": "00:00",
-                    "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                    "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
                     "forwardedTargetOnly": true
                   },
                   "unit": "",
@@ -1333,7 +1387,7 @@
                       "countDown"
                     ],
                     "replacementValue": "00:00",
-                    "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                    "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
                     "forwardedTargetOnly": true
                   },
                   "unit": "",
@@ -1419,7 +1473,7 @@
             "jsonKey": "alternatives",
             "kind": "collection",
             "valueKind": "StructuredCollection",
-            "defaultValue": "[{\"id\":\"default\",\"name\":\"State\",\"variantReference\":\"\",\"overrides\":{},\"inputs\":{},\"active\":false,\"behavior\":\"replace\",\"placement\":{\"mode\":\"center\",\"alignX\":0.5,\"alignY\":0.5,\"offsetX\":0,\"offsetY\":0},\"enterMotion\":{\"transition\":\"slide\",\"direction\":\"bottom\",\"bounds\":\"screen\",\"fade\":false,\"translate\":true,\"scale\":false},\"exitMotion\":{\"transition\":\"slide\",\"direction\":\"bottom\",\"bounds\":\"screen\",\"fade\":false,\"translate\":true,\"scale\":false}}]",
+            "defaultValue": "[{\u0022id\u0022:\u0022default\u0022,\u0022name\u0022:\u0022State\u0022,\u0022variantReference\u0022:\u0022\u0022,\u0022overrides\u0022:{},\u0022inputs\u0022:{},\u0022active\u0022:false,\u0022behavior\u0022:\u0022replace\u0022,\u0022placement\u0022:{\u0022mode\u0022:\u0022center\u0022,\u0022alignX\u0022:0.5,\u0022alignY\u0022:0.5,\u0022offsetX\u0022:0,\u0022offsetY\u0022:0},\u0022enterMotion\u0022:{\u0022transition\u0022:\u0022slide\u0022,\u0022direction\u0022:\u0022bottom\u0022,\u0022bounds\u0022:\u0022screen\u0022,\u0022fade\u0022:false,\u0022translate\u0022:true,\u0022scale\u0022:false},\u0022exitMotion\u0022:{\u0022transition\u0022:\u0022slide\u0022,\u0022direction\u0022:\u0022bottom\u0022,\u0022bounds\u0022:\u0022screen\u0022,\u0022fade\u0022:false,\u0022translate\u0022:true,\u0022scale\u0022:false}}]",
             "structuredCollection": {
               "id": "alternatives",
               "label": "States",
@@ -1487,7 +1541,7 @@
                   "jsonKey": "placement",
                   "kind": "text",
                   "valueKind": "AlignmentPlacement",
-                  "defaultValue": "{\"mode\":\"center\",\"alignX\":0.5,\"alignY\":0.5,\"offsetX\":0,\"offsetY\":0}"
+                  "defaultValue": "{\u0022mode\u0022:\u0022center\u0022,\u0022alignX\u0022:0.5,\u0022alignY\u0022:0.5,\u0022offsetX\u0022:0,\u0022offsetY\u0022:0}"
                 },
                 {
                   "id": "enterMotion",
@@ -1495,7 +1549,7 @@
                   "jsonKey": "enterMotion",
                   "kind": "text",
                   "valueKind": "Motion",
-                  "defaultValue": "{\"transition\":\"slide\",\"direction\":\"bottom\",\"bounds\":\"screen\",\"fade\":false,\"translate\":true,\"scale\":false}"
+                  "defaultValue": "{\u0022transition\u0022:\u0022slide\u0022,\u0022direction\u0022:\u0022bottom\u0022,\u0022bounds\u0022:\u0022screen\u0022,\u0022fade\u0022:false,\u0022translate\u0022:true,\u0022scale\u0022:false}"
                 },
                 {
                   "id": "exitMotion",
@@ -1503,7 +1557,7 @@
                   "jsonKey": "exitMotion",
                   "kind": "text",
                   "valueKind": "Motion",
-                  "defaultValue": "{\"transition\":\"slide\",\"direction\":\"bottom\",\"bounds\":\"screen\",\"fade\":false,\"translate\":true,\"scale\":false}"
+                  "defaultValue": "{\u0022transition\u0022:\u0022slide\u0022,\u0022direction\u0022:\u0022bottom\u0022,\u0022bounds\u0022:\u0022screen\u0022,\u0022fade\u0022:false,\u0022translate\u0022:true,\u0022scale\u0022:false}"
                 }
               ],
               "itemPresentation": {
@@ -1608,7 +1662,9 @@
         },
         "itemActions": []
       }
-    ]
+    ],
+    "actions": [],
+    "sampleSize": 256
   },
   "metadata": {
     "note": "Seeded reusable component class."

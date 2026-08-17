@@ -441,7 +441,7 @@
   ],
   "designPreview": {
     "componentType": "bubble",
-    "sampleText": "Mensaje de prueba 😎 😎😍 \ncon salto y wrap en la tercera línea de 123",
+    "sampleText": "Mensaje de prueba \uD83D\uDE0E \uD83D\uDE0E\uD83D\uDE0D \ncon salto y wrap en la tercera l\u00EDnea de 123",
     "sampleSubtext": "",
     "sampleSize": 256,
     "inputs": [
@@ -1180,12 +1180,2049 @@
     "statusState": "read",
     "actorId": "",
     "mediaType": "image",
-    "motionElapsedMs": 0
+    "motionElapsedMs": 0,
+    "collections": []
   },
   "metadata": {
     "note": "Seeded reusable component class."
   },
-  "dictionaryFields": [],
+  "dictionaryFields": [
+    {
+      "id": "component.bubble.actorLabel.editor",
+      "label": "Actor label",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "bubble",
+        "actorLabelSlot",
+        "variantReference"
+      ],
+      "defaultValue": "default",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "label",
+        "label": "Actor label",
+        "recordClassId": "component.label"
+      }
+    },
+    {
+      "id": "component.bubble.actorLabel.placement",
+      "label": "Actor label placement",
+      "valueKind": "AlignmentPlacement",
+      "jsonPath": [
+        "bubble",
+        "actorLabelSlot",
+        "placement"
+      ],
+      "defaultValue": "{\u0022mode\u0022:\u0022outsideEdge\u0022,\u0022alignX\u0022:0.5,\u0022alignY\u0022:0,\u0022offsetX\u0022:0,\u0022offsetY\u0022:-4}",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.bubble.actorLabel.showLabel",
+      "label": "Show actor label",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "bubble",
+        "actorLabelSlot",
+        "showLabel"
+      ],
+      "defaultValue": "false",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.bubble.actorLabel.useActorColor",
+      "label": "Use actor color",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "bubble",
+        "actorLabelSlot",
+        "useActorColor"
+      ],
+      "defaultValue": "false",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.bubble.avatar.editor",
+      "label": "Avatar",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "bubble",
+        "avatarSlot",
+        "variantReference"
+      ],
+      "defaultValue": "default",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "avatar",
+        "label": "Avatar",
+        "recordClassId": "component.avatar"
+      }
+    },
+    {
+      "id": "component.bubble.avatar.placement",
+      "label": "Avatar placement",
+      "valueKind": "AlignmentPlacement",
+      "jsonPath": [
+        "bubble",
+        "avatarSlot",
+        "placement"
+      ],
+      "defaultValue": "{\u0022mode\u0022:\u0022outsideEdge\u0022,\u0022alignX\u0022:0,\u0022alignY\u0022:1,\u0022offsetX\u0022:-8,\u0022offsetY\u0022:0}",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.bubble.avatar.showAvatar",
+      "label": "Show avatar",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "bubble",
+        "avatarSlot",
+        "showAvatar"
+      ],
+      "defaultValue": "false",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.bubble.incomingBackground",
+      "label": "Incoming background",
+      "valueKind": "PaletteColorPair",
+      "jsonPath": [
+        "bubble",
+        "incomingBackground"
+      ],
+      "defaultValue": "gray_080|gray_020",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": {
+        "first": "Light",
+        "second": "Dark"
+      },
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.bubble.incomingText",
+      "label": "Incoming text",
+      "valueKind": "PaletteColorPair",
+      "jsonPath": [
+        "bubble",
+        "incomingText"
+      ],
+      "defaultValue": "gray_010|gray_100",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": {
+        "first": "Light",
+        "second": "Dark"
+      },
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.bubble.media.audio.editor",
+      "label": "Audio variant",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "bubble",
+        "audioSlot",
+        "variantReference"
+      ],
+      "defaultValue": "default",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "audio",
+        "label": "Audio media",
+        "recordClassId": "component.audio"
+      }
+    },
+    {
+      "id": "component.bubble.media.image.editor",
+      "label": "Image variant",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "bubble",
+        "imageMediaSlot",
+        "variantReference"
+      ],
+      "defaultValue": "default",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "media",
+        "label": "Image media",
+        "recordClassId": "component.media"
+      }
+    },
+    {
+      "id": "component.bubble.media.position",
+      "label": "Media position",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "bubble",
+        "mediaPosition"
+      ],
+      "defaultValue": "bottom",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "top",
+          "label": "Top",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "bottom",
+          "label": "Bottom",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "left",
+          "label": "Left",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "right",
+          "label": "Right",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.bubble.media.type",
+      "label": "Media type",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "bubble",
+        "mediaType"
+      ],
+      "defaultValue": "none",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "none",
+          "label": "None",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "image",
+          "label": "Image",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "video",
+          "label": "Video",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "audio",
+          "label": "Audio",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.bubble.media.video.editor",
+      "label": "Video variant",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "bubble",
+        "videoMediaSlot",
+        "variantReference"
+      ],
+      "defaultValue": "default",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "media",
+        "label": "Video media",
+        "recordClassId": "component.media"
+      }
+    },
+    {
+      "id": "component.bubble.outgoingBackground",
+      "label": "Outgoing background",
+      "valueKind": "PaletteColorPair",
+      "jsonPath": [
+        "bubble",
+        "outgoingBackground"
+      ],
+      "defaultValue": "aqua_green|aqua_green",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": {
+        "first": "Light",
+        "second": "Dark"
+      },
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.bubble.outgoingText",
+      "label": "Outgoing text",
+      "valueKind": "PaletteColorPair",
+      "jsonPath": [
+        "bubble",
+        "outgoingText"
+      ],
+      "defaultValue": "gray_100|gray_100",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": {
+        "first": "Light",
+        "second": "Dark"
+      },
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.bubble.padding",
+      "label": "Padding",
+      "valueKind": "ThemeTokenPair",
+      "jsonPath": [
+        "bubble",
+        "padding"
+      ],
+      "defaultValue": "theme.spacing.l|theme.spacing.m",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xl",
+          "label": "spacing.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xxl",
+          "label": "spacing.xxl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": {
+        "first": "X",
+        "second": "Y"
+      },
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.bubble.status.delivered.color",
+      "label": "Delivered color",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "bubble",
+        "status",
+        "delivered",
+        "colorToken"
+      ],
+      "defaultValue": "theme.icons.secondary",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.colors.background",
+          "label": "colors.background",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.surface",
+          "label": "colors.surface",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.card",
+          "label": "colors.card",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.label",
+          "label": "colors.label",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.text",
+          "label": "colors.text",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.textPrimary",
+          "label": "colors.textPrimary",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.textSecondary",
+          "label": "colors.textSecondary",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.icon",
+          "label": "colors.icon",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.button",
+          "label": "colors.button",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.field",
+          "label": "colors.field",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.checkbox",
+          "label": "colors.checkbox",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.radio",
+          "label": "colors.radio",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.switch",
+          "label": "colors.switch",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.tab",
+          "label": "colors.tab",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.menuItem",
+          "label": "colors.menuItem",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.badge",
+          "label": "colors.badge",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.toast",
+          "label": "colors.toast",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.divider",
+          "label": "colors.divider",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.accent",
+          "label": "colors.accent",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.positive",
+          "label": "colors.positive",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.negative",
+          "label": "colors.negative",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.onAction",
+          "label": "colors.onAction",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.icons.primary",
+          "label": "icons.primary",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.icons.secondary",
+          "label": "icons.secondary",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.icons.alternate",
+          "label": "icons.alternate",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.icons.accent",
+          "label": "icons.accent",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.borders.primary",
+          "label": "borders.primary",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.borders.secondary",
+          "label": "borders.secondary",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.borders.alternate",
+          "label": "borders.alternate",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.cursor.color",
+          "label": "cursor.color",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.keyboard.background",
+          "label": "keyboard.background",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.keyboard.keyBackground",
+          "label": "keyboard.keyBackground",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.keyboard.specialKeyBackground",
+          "label": "keyboard.specialKeyBackground",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.keyboard.pressedKeyBackground",
+          "label": "keyboard.pressedKeyBackground",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.keyboard.keyBorder",
+          "label": "keyboard.keyBorder",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.keyboard.text",
+          "label": "keyboard.text",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.bubble.status.delivered.icon",
+      "label": "Delivered icon",
+      "valueKind": "IconToken",
+      "jsonPath": [
+        "bubble",
+        "status",
+        "delivered",
+        "iconToken"
+      ],
+      "defaultValue": "system_check",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.bubble.status.gap",
+      "label": "Status gap",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "bubble",
+        "status",
+        "gapToken"
+      ],
+      "defaultValue": "theme.spacing.xs",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xl",
+          "label": "spacing.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xxl",
+          "label": "spacing.xxl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.bubble.status.read.color",
+      "label": "Read color",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "bubble",
+        "status",
+        "read",
+        "colorToken"
+      ],
+      "defaultValue": "theme.icons.accent",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.colors.background",
+          "label": "colors.background",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.surface",
+          "label": "colors.surface",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.card",
+          "label": "colors.card",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.label",
+          "label": "colors.label",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.text",
+          "label": "colors.text",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.textPrimary",
+          "label": "colors.textPrimary",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.textSecondary",
+          "label": "colors.textSecondary",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.icon",
+          "label": "colors.icon",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.button",
+          "label": "colors.button",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.field",
+          "label": "colors.field",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.checkbox",
+          "label": "colors.checkbox",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.radio",
+          "label": "colors.radio",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.switch",
+          "label": "colors.switch",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.tab",
+          "label": "colors.tab",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.menuItem",
+          "label": "colors.menuItem",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.badge",
+          "label": "colors.badge",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.toast",
+          "label": "colors.toast",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.divider",
+          "label": "colors.divider",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.accent",
+          "label": "colors.accent",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.positive",
+          "label": "colors.positive",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.negative",
+          "label": "colors.negative",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.onAction",
+          "label": "colors.onAction",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.icons.primary",
+          "label": "icons.primary",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.icons.secondary",
+          "label": "icons.secondary",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.icons.alternate",
+          "label": "icons.alternate",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.icons.accent",
+          "label": "icons.accent",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.borders.primary",
+          "label": "borders.primary",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.borders.secondary",
+          "label": "borders.secondary",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.borders.alternate",
+          "label": "borders.alternate",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.cursor.color",
+          "label": "cursor.color",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.keyboard.background",
+          "label": "keyboard.background",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.keyboard.keyBackground",
+          "label": "keyboard.keyBackground",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.keyboard.specialKeyBackground",
+          "label": "keyboard.specialKeyBackground",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.keyboard.pressedKeyBackground",
+          "label": "keyboard.pressedKeyBackground",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.keyboard.keyBorder",
+          "label": "keyboard.keyBorder",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.keyboard.text",
+          "label": "keyboard.text",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.bubble.status.read.icon",
+      "label": "Read icon",
+      "valueKind": "IconToken",
+      "jsonPath": [
+        "bubble",
+        "status",
+        "read",
+        "iconToken"
+      ],
+      "defaultValue": "system_check",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.bubble.status.sent.color",
+      "label": "Sent color",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "bubble",
+        "status",
+        "sent",
+        "colorToken"
+      ],
+      "defaultValue": "theme.icons.secondary",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.colors.background",
+          "label": "colors.background",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.surface",
+          "label": "colors.surface",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.card",
+          "label": "colors.card",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.label",
+          "label": "colors.label",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.text",
+          "label": "colors.text",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.textPrimary",
+          "label": "colors.textPrimary",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.textSecondary",
+          "label": "colors.textSecondary",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.icon",
+          "label": "colors.icon",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.button",
+          "label": "colors.button",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.field",
+          "label": "colors.field",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.checkbox",
+          "label": "colors.checkbox",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.radio",
+          "label": "colors.radio",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.switch",
+          "label": "colors.switch",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.tab",
+          "label": "colors.tab",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.menuItem",
+          "label": "colors.menuItem",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.badge",
+          "label": "colors.badge",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.toast",
+          "label": "colors.toast",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.divider",
+          "label": "colors.divider",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.accent",
+          "label": "colors.accent",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.positive",
+          "label": "colors.positive",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.negative",
+          "label": "colors.negative",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.onAction",
+          "label": "colors.onAction",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.icons.primary",
+          "label": "icons.primary",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.icons.secondary",
+          "label": "icons.secondary",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.icons.alternate",
+          "label": "icons.alternate",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.icons.accent",
+          "label": "icons.accent",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.borders.primary",
+          "label": "borders.primary",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.borders.secondary",
+          "label": "borders.secondary",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.borders.alternate",
+          "label": "borders.alternate",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.cursor.color",
+          "label": "cursor.color",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.keyboard.background",
+          "label": "keyboard.background",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.keyboard.keyBackground",
+          "label": "keyboard.keyBackground",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.keyboard.specialKeyBackground",
+          "label": "keyboard.specialKeyBackground",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.keyboard.pressedKeyBackground",
+          "label": "keyboard.pressedKeyBackground",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.keyboard.keyBorder",
+          "label": "keyboard.keyBorder",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.keyboard.text",
+          "label": "keyboard.text",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.bubble.status.sent.icon",
+      "label": "Sent icon",
+      "valueKind": "IconToken",
+      "jsonPath": [
+        "bubble",
+        "status",
+        "sent",
+        "iconToken"
+      ],
+      "defaultValue": "system_check",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.bubble.status.size",
+      "label": "Status icon size",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "bubble",
+        "status",
+        "sizeToken"
+      ],
+      "defaultValue": "theme.iconSizes.s",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.iconSizes.xs",
+          "label": "iconSizes.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.iconSizes.s",
+          "label": "iconSizes.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.iconSizes.m",
+          "label": "iconSizes.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.iconSizes.l",
+          "label": "iconSizes.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.iconSizes.xl",
+          "label": "iconSizes.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.bubble.status.textSize",
+      "label": "Status text size",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "bubble",
+        "status",
+        "textSizeToken"
+      ],
+      "defaultValue": "theme.iconSizes.s",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.iconSizes.xs",
+          "label": "iconSizes.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.iconSizes.s",
+          "label": "iconSizes.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.iconSizes.m",
+          "label": "iconSizes.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.iconSizes.l",
+          "label": "iconSizes.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.iconSizes.xl",
+          "label": "iconSizes.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.bubble.surface.editor",
+      "label": "Surface",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "bubble",
+        "surfaceSlot",
+        "variantReference"
+      ],
+      "defaultValue": "default",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "surface",
+        "label": "Surface",
+        "recordClassId": "component.surface"
+      }
+    },
+    {
+      "id": "component.bubble.systemBackground",
+      "label": "System background",
+      "valueKind": "PaletteColorPair",
+      "jsonPath": [
+        "bubble",
+        "systemBackground"
+      ],
+      "defaultValue": "gray_080|gray_020",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": {
+        "first": "Light",
+        "second": "Dark"
+      },
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.bubble.systemText",
+      "label": "System text",
+      "valueKind": "PaletteColorPair",
+      "jsonPath": [
+        "bubble",
+        "systemText"
+      ],
+      "defaultValue": "gray_010|gray_100",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": {
+        "first": "Light",
+        "second": "Dark"
+      },
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.bubble.textBox.editor",
+      "label": "Text box",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "bubble",
+        "textBoxSlot",
+        "variantReference"
+      ],
+      "defaultValue": "default",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "textBox",
+        "label": "Text box",
+        "recordClassId": "component.textBox"
+      }
+    }
+  ],
   "editorLayout": {
     "cards": [
       {

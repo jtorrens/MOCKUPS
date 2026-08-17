@@ -105,7 +105,25 @@
             "label": "Stacked"
           }
         ],
-        "valueKind": "OptionToken"
+        "valueKind": "OptionToken",
+        "uiOrigin": "self",
+        "uiOrder": 10,
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "source": "runtime",
+        "uiGroupId": "",
+        "uiGroupLabel": "",
+        "uiParentGroupId": "",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "transition": null,
+        "unit": ""
       },
       {
         "id": "sizingMode",
@@ -125,7 +143,25 @@
             "label": "Fit content"
           }
         ],
-        "valueKind": "OptionToken"
+        "valueKind": "OptionToken",
+        "uiOrigin": "self",
+        "uiOrder": 20,
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "source": "runtime",
+        "uiGroupId": "",
+        "uiGroupLabel": "",
+        "uiParentGroupId": "",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "transition": null,
+        "unit": ""
       },
       {
         "id": "startGapToken",
@@ -163,7 +199,25 @@
             "label": "spacing.xxl"
           }
         ],
-        "valueKind": "ThemeToken"
+        "valueKind": "ThemeToken",
+        "uiOrigin": "self",
+        "uiOrder": 30,
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "source": "runtime",
+        "uiGroupId": "",
+        "uiGroupLabel": "",
+        "uiParentGroupId": "",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "transition": null,
+        "unit": ""
       },
       {
         "id": "endGapToken",
@@ -201,7 +255,25 @@
             "label": "spacing.xxl"
           }
         ],
-        "valueKind": "ThemeToken"
+        "valueKind": "ThemeToken",
+        "uiOrigin": "self",
+        "uiOrder": 40,
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "source": "runtime",
+        "uiGroupId": "",
+        "uiGroupLabel": "",
+        "uiParentGroupId": "",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "transition": null,
+        "unit": ""
       },
       {
         "id": "stackDirection",
@@ -219,7 +291,25 @@
             "label": "Up"
           }
         ],
-        "valueKind": "OptionToken"
+        "valueKind": "OptionToken",
+        "uiOrigin": "self",
+        "uiOrder": 50,
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "source": "runtime",
+        "uiGroupId": "",
+        "uiGroupLabel": "",
+        "uiParentGroupId": "",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "transition": null,
+        "unit": ""
       },
       {
         "id": "stackOffsetToken",
@@ -257,7 +347,25 @@
             "label": "spacing.xxl"
           }
         ],
-        "valueKind": "ThemeToken"
+        "valueKind": "ThemeToken",
+        "uiOrigin": "self",
+        "uiOrder": 60,
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "source": "runtime",
+        "uiGroupId": "",
+        "uiGroupLabel": "",
+        "uiParentGroupId": "",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "transition": null,
+        "unit": ""
       },
       {
         "id": "itemSizingMode",
@@ -275,7 +383,25 @@
             "label": "Largest item"
           }
         ],
-        "valueKind": "OptionToken"
+        "valueKind": "OptionToken",
+        "uiOrigin": "self",
+        "uiOrder": 70,
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "source": "runtime",
+        "uiGroupId": "",
+        "uiGroupLabel": "",
+        "uiParentGroupId": "",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "transition": null,
+        "unit": ""
       },
       {
         "id": "scaleRatio",
@@ -288,7 +414,23 @@
         "maximum": 1,
         "increment": 0.01,
         "enabledWhenPath": "distributionMode",
-        "enabledWhenValue": "stacked"
+        "enabledWhenValue": "stacked",
+        "uiOrigin": "self",
+        "uiOrder": 80,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "source": "runtime",
+        "uiGroupId": "",
+        "uiGroupLabel": "",
+        "uiParentGroupId": "",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "transition": null,
+        "unit": ""
       },
       {
         "id": "opacityRatio",
@@ -301,7 +443,23 @@
         "maximum": 1,
         "increment": 0.01,
         "enabledWhenPath": "distributionMode",
-        "enabledWhenValue": "stacked"
+        "enabledWhenValue": "stacked",
+        "uiOrigin": "self",
+        "uiOrder": 90,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "source": "runtime",
+        "uiGroupId": "",
+        "uiGroupLabel": "",
+        "uiParentGroupId": "",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "transition": null,
+        "unit": ""
       }
     ],
     "items": [],
@@ -352,7 +510,7 @@
             "jsonKey": "presenceMotion",
             "kind": "text",
             "valueKind": "Motion",
-            "defaultValue": "{\"transition\":\"slide\",\"direction\":\"bottom\",\"bounds\":\"screen\",\"fade\":false,\"translate\":true,\"scale\":false}"
+            "defaultValue": "{\u0022transition\u0022:\u0022slide\u0022,\u0022direction\u0022:\u0022bottom\u0022,\u0022bounds\u0022:\u0022screen\u0022,\u0022fade\u0022:false,\u0022translate\u0022:true,\u0022scale\u0022:false}"
           },
           {
             "id": "alignment",
@@ -497,7 +655,8 @@
         "prewarmFrames": false,
         "completionBehavior": "reset"
       }
-    ]
+    ],
+    "sampleSize": 256
   },
   "metadata": {
     "note": "Seeded reusable component class."

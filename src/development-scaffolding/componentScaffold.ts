@@ -29,7 +29,6 @@ export interface ComponentScaffoldField {
   defaultValue: string;
   isEditable: boolean;
   options: JsonObject[];
-  optionsSource: string;
   pairLabels: { first: string; second: string } | null;
   number: {
     minimum: number | null;
@@ -43,6 +42,14 @@ export interface ComponentScaffoldField {
   componentVariantType: string;
   runtimeInputComponentVariantFieldId: string;
   unit: string;
+  helpText: string;
+  valuePattern: string;
+  valuePatternMessage: string;
+  embeddedSlot: {
+    componentType: string;
+    label: string;
+    recordClassId: string;
+  } | null;
 }
 
 export interface ComponentScaffoldSpec {
@@ -203,6 +210,19 @@ const identityFieldIds = [
   "core.name",
   "component.type",
   "core.notes",
+] as const;
+const sharedComponentFieldIds = [
+  ...identityFieldIds,
+  "component.style.shadowEnabled",
+  "component.style.reliefEnabled",
+  "component.style.borderWidth",
+  "component.style.borderColorToken",
+  "component.style.cornerRadiusToken",
+  "component.style.reliefAngle",
+  "component.style.reliefExtent",
+  "component.style.reliefSpread",
+  "component.style.reliefTopIntensity",
+  "component.style.reliefBottomIntensity",
 ] as const;
 const runtimeInputBaseKeys = [
   "id",
@@ -576,7 +596,7 @@ export function createComponentScaffoldPlan(
   }
 
   validateIdentity(componentType, /^[a-z][A-Za-z0-9_]*$/, "componentType", violations);
-  validateIdentity(componentClassId, /^[a-z][a-z0-9_]*$/, "componentClassId", violations);
+  validateIdentity(componentClassId, /^[a-z][A-Za-z0-9_]*$/, "componentClassId", violations);
   validateIdentity(projectId, /^[a-z][a-z0-9_]*$/, "projectId", violations);
   validateIdentity(
     recordClassId,
@@ -649,9 +669,10 @@ export function createComponentScaffoldPlan(
       violations.push(error instanceof Error ? error.message : `Invalid owner path '${owner.path}'.`);
     }
     if (owner.role === "focusedTest") {
-      if (!normalized.startsWith("tests/animation/") || !normalized.endsWith(".test.ts")) {
+      if ((!normalized.startsWith("tests/animation/") || !normalized.endsWith(".test.ts"))
+          && normalized !== "tests/Mockups.Desktop.Tests/Program.cs") {
         violations.push(
-          `Focused test '${owner.path}' must be an executable tests/animation/*.test.ts owner.`,
+          `Focused test '${owner.path}' must be an executable Preview test or the exhaustive Desktop fixture owner.`,
         );
       }
     } else if (owner.role === "desktopConfigContract") {
@@ -908,7 +929,6 @@ export function componentScaffoldTemplate(): ComponentScaffoldSpec {
         defaultValue: "100",
         isEditable: true,
         options: [],
-        optionsSource: "",
         pairLabels: null,
         number: {
           minimum: 1,
@@ -922,6 +942,10 @@ export function componentScaffoldTemplate(): ComponentScaffoldSpec {
         componentVariantType: "",
         runtimeInputComponentVariantFieldId: "",
         unit: "",
+        helpText: "",
+        valuePattern: "",
+        valuePatternMessage: "",
+        embeddedSlot: null,
       },
     ],
     editorLayout: {
@@ -984,7 +1008,6 @@ function parseDictionaryField(value: unknown, owner: string): ComponentScaffoldF
     "defaultValue",
     "isEditable",
     "options",
-    "optionsSource",
     "pairLabels",
     "number",
     "componentInputBindings",
@@ -992,6 +1015,10 @@ function parseDictionaryField(value: unknown, owner: string): ComponentScaffoldF
     "componentVariantType",
     "runtimeInputComponentVariantFieldId",
     "unit",
+    "helpText",
+    "valuePattern",
+    "valuePatternMessage",
+    "embeddedSlot",
   ], owner);
   const pairLabels = field.pairLabels === null
     ? null
@@ -1016,6 +1043,16 @@ function parseDictionaryField(value: unknown, owner: string): ComponentScaffoldF
         item,
         `${owner} componentInputBindings[${index}]`,
       ));
+  const embeddedSlot = field.embeddedSlot === null
+    ? null
+    : requiredObject(field.embeddedSlot, `${owner} embeddedSlot`);
+  if (embeddedSlot) {
+    requireExactKeys(
+      embeddedSlot,
+      ["componentType", "label", "recordClassId"],
+      `${owner} embeddedSlot`,
+    );
+  }
   return {
     id: requiredString(field.id, `${owner} id`),
     label: requiredString(field.label, `${owner} label`),
@@ -1026,11 +1063,6 @@ function parseDictionaryField(value: unknown, owner: string): ComponentScaffoldF
     isEditable: requiredBoolean(field.isEditable, `${owner} isEditable`),
     options: requiredArray(field.options, `${owner} options`)
       .map((option, index) => requiredJsonObject(option, `${owner} options[${index}]`)),
-    optionsSource: requiredString(
-      field.optionsSource,
-      `${owner} optionsSource`,
-      true,
-    ),
     pairLabels: pairLabels
       ? {
           first: requiredString(pairLabels.first, `${owner} pairLabels first`),
@@ -1064,6 +1096,26 @@ function parseDictionaryField(value: unknown, owner: string): ComponentScaffoldF
       true,
     ),
     unit: requiredString(field.unit, `${owner} unit`, true),
+    helpText: requiredString(field.helpText, `${owner} helpText`, true),
+    valuePattern: requiredString(field.valuePattern, `${owner} valuePattern`, true),
+    valuePatternMessage: requiredString(
+      field.valuePatternMessage,
+      `${owner} valuePatternMessage`,
+      true,
+    ),
+    embeddedSlot: embeddedSlot
+      ? {
+          componentType: requiredString(
+            embeddedSlot.componentType,
+            `${owner} embeddedSlot componentType`,
+          ),
+          label: requiredString(embeddedSlot.label, `${owner} embeddedSlot label`),
+          recordClassId: requiredString(
+            embeddedSlot.recordClassId,
+            `${owner} embeddedSlot recordClassId`,
+          ),
+        }
+      : null,
   };
 }
 
@@ -1114,12 +1166,23 @@ function validateDictionaryFields(
         violations.push(`Dictionary field '${field.id}' number minimum exceeds its maximum.`);
       }
     }
+    if (field.embeddedSlot) {
+      if (field.componentVariantType
+          && field.componentVariantType !== field.embeddedSlot.componentType) {
+        violations.push(
+          `Embedded slot field '${field.id}' must use the same componentVariantType.`,
+        );
+      }
+      if (!field.embeddedSlot.recordClassId.startsWith("component.")) {
+        violations.push(`Embedded slot field '${field.id}' has an invalid recordClassId.`);
+      }
+    }
     const themeTokens = field.defaultValue.split("|");
     if ((field.valueKind === "ThemeToken" || field.valueKind === "ThemeTokenPair")
         && themeTokens.some((token) => token.startsWith("theme.spacing."))
-        && field.optionsSource !== "SpacingTokenOptions") {
+        && field.options.length === 0) {
       violations.push(
-        `Dictionary field '${field.id}' uses Theme spacing defaults and requires optionsSource 'SpacingTokenOptions'.`,
+        `Dictionary field '${field.id}' uses Theme spacing defaults and requires explicit options.`,
       );
     }
   }
@@ -1157,7 +1220,7 @@ function validateDesignPreview(
   validateStableObjectIds(spec.designPreview.collections, "collections", violations);
   validateStableObjectIds(spec.designPreview.actions, "actions", violations);
   const ids = new Set<string>();
-  const keys = new Set<string>();
+  const keys = new Map<string, JsonObject[]>();
   for (let index = 0; index < inputs.length; index += 1) {
     const input = inputs[index];
     if (!isPlainObject(input)) {
@@ -1182,11 +1245,27 @@ function validateDesignPreview(
       );
     }
     if (ids.has(id)) violations.push(`Design Preview Runtime Input id '${id}' is duplicated.`);
-    if (keys.has(jsonKey)) {
-      violations.push(`Design Preview Runtime Input jsonKey '${jsonKey}' is duplicated.`);
+    const sameKeyInputs = keys.get(jsonKey) ?? [];
+    if (sameKeyInputs.length > 0) {
+      const visibilityPath = typeof input.visibleWhenPath === "string"
+        ? input.visibleWhenPath
+        : "";
+      const visibilityValue = typeof input.visibleWhenValue === "string"
+        ? input.visibleWhenValue
+        : "";
+      const isExclusiveProjection = visibilityPath.length > 0
+        && visibilityValue.length > 0
+        && sameKeyInputs.every((candidate) =>
+          candidate.visibleWhenPath === visibilityPath
+          && typeof candidate.visibleWhenValue === "string"
+          && candidate.visibleWhenValue.length > 0
+          && candidate.visibleWhenValue !== visibilityValue);
+      if (!isExclusiveProjection) {
+        violations.push(`Design Preview Runtime Input jsonKey '${jsonKey}' is duplicated.`);
+      }
     }
     ids.add(id);
-    keys.add(jsonKey);
+    keys.set(jsonKey, [...sameKeyInputs, input]);
     if (!inventory.valueKinds.has(valueKind)) {
       violations.push(
         `Design Preview Runtime Input '${id || index}' uses unknown current ValueKind '${valueKind}'.`,
@@ -1349,7 +1428,8 @@ function validateEditorLayout(
     }
   }
   for (const fieldId of fieldCounts.keys()) {
-    if (!requiredFields.has(fieldId)) {
+    if (!requiredFields.has(fieldId)
+        && !(sharedComponentFieldIds as readonly string[]).includes(fieldId)) {
       violations.push(`Editor layout references undeclared field '${fieldId}'.`);
     }
   }

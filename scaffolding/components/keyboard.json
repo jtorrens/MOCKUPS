@@ -214,7 +214,7 @@
         "jsonKey": "text",
         "kind": "multilineText",
         "valueKind": "StringMultiline",
-        "defaultValue": "Hola 😀😃😄",
+        "defaultValue": "Hola \uD83D\uDE00\uD83D\uDE03\uD83D\uDE04",
         "minimum": 0,
         "maximum": 9999,
         "increment": 1,
@@ -300,12 +300,705 @@
         "timeUnit": "milliseconds",
         "completionBehavior": "reset"
       }
-    ]
+    ],
+    "collections": [],
+    "text": "Hola \uD83D\uDE00\uD83D\uDE03\uD83D\uDE04",
+    "currentCharacter": 1,
+    "trigger": false
   },
   "metadata": {
     "note": "Seeded reusable component class."
   },
-  "dictionaryFields": [],
+  "dictionaryFields": [
+    {
+      "id": "component.keyboard.emojiScale",
+      "label": "Emoji scale",
+      "valueKind": "Decimal",
+      "jsonPath": [
+        "keyboard",
+        "emojiScale"
+      ],
+      "defaultValue": "1.2",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": {
+        "minimum": 0.1,
+        "maximum": 4,
+        "increment": 0.05,
+        "decimalPlaces": 2,
+        "useSlider": false
+      },
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.keyboard.heightToken",
+      "label": "Height",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "keyboard",
+        "heightToken"
+      ],
+      "defaultValue": "theme.keyboard.height",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.keyboard.height",
+          "label": "keyboard.height",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.keyboard.iconBar.editor",
+      "label": "Icon bar",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "keyboard",
+        "iconBarSlot",
+        "variantReference"
+      ],
+      "defaultValue": "default",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "iconBar",
+        "label": "Icon bar",
+        "recordClassId": "component.iconBar"
+      }
+    },
+    {
+      "id": "component.keyboard.iconEdgePadding",
+      "label": "Icon edge padding",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "keyboard",
+        "iconEdgePadding"
+      ],
+      "defaultValue": "theme.spacing.none",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xl",
+          "label": "spacing.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xxl",
+          "label": "spacing.xxl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.keyboard.iconRowPlacement",
+      "label": "Placement",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "keyboard",
+        "iconRowPlacement"
+      ],
+      "defaultValue": "bottom",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "top",
+          "label": "Top",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "bottom",
+          "label": "Bottom",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.keyboard.iconRowsHeight",
+      "label": "Icon zone height",
+      "valueKind": "Integer",
+      "jsonPath": [
+        "keyboard",
+        "iconRowsHeight"
+      ],
+      "defaultValue": "52",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": {
+        "minimum": 0,
+        "maximum": 240,
+        "increment": 1,
+        "decimalPlaces": 0,
+        "useSlider": false
+      },
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.keyboard.keyBorderWidth",
+      "label": "Key border width",
+      "valueKind": "Decimal",
+      "jsonPath": [
+        "keyboard",
+        "keyBorderWidth"
+      ],
+      "defaultValue": "0",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": {
+        "minimum": 0,
+        "maximum": 32,
+        "increment": 0.5,
+        "decimalPlaces": 2,
+        "useSlider": false
+      },
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.keyboard.keyCornerRadiusToken",
+      "label": "Key radius",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "keyboard",
+        "keyCornerRadiusToken"
+      ],
+      "defaultValue": "theme.radii.m",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.radii.none",
+          "label": "radii.none",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.radii.xs",
+          "label": "radii.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.radii.s",
+          "label": "radii.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.radii.m",
+          "label": "radii.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.radii.l",
+          "label": "radii.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.radii.xl",
+          "label": "radii.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.radii.xxl",
+          "label": "radii.xxl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.radii.full",
+          "label": "radii.full",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.keyboard.keyGapToken",
+      "label": "Key gap",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "keyboard",
+        "keyGapToken"
+      ],
+      "defaultValue": "theme.keyboard.keyGap",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.keyboard.keyGap",
+          "label": "keyboard.keyGap",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.keyboard.keyPadding",
+      "label": "Key padding",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "keyboard",
+        "keyPadding"
+      ],
+      "defaultValue": "theme.spacing.s",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xl",
+          "label": "spacing.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xxl",
+          "label": "spacing.xxl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.keyboard.keyShadowEnabled",
+      "label": "Key shadow",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "keyboard",
+        "keyShadowEnabled"
+      ],
+      "defaultValue": "false",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.keyboard.language",
+      "label": "Language",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "keyboard",
+        "language"
+      ],
+      "defaultValue": "es",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "es",
+          "label": "Spanish",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "en",
+          "label": "English",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.keyboard.motion",
+      "label": "Motion",
+      "valueKind": "Motion",
+      "jsonPath": [
+        "keyboard",
+        "motion"
+      ],
+      "defaultValue": "{\u0022transition\u0022:\u0022slide\u0022,\u0022direction\u0022:\u0022bottom\u0022,\u0022bounds\u0022:\u0022screen\u0022,\u0022fade\u0022:false,\u0022translate\u0022:true,\u0022scale\u0022:false}",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.keyboard.pressedEffect",
+      "label": "Pressed effect",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "keyboard",
+        "pressedEffect"
+      ],
+      "defaultValue": "popup",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "popup",
+          "label": "Popup",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "scale",
+          "label": "Scale in place",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "none",
+          "label": "None",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.keyboard.rowGapToken",
+      "label": "Row gap",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "keyboard",
+        "rowGapToken"
+      ],
+      "defaultValue": "theme.keyboard.rowGap",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.keyboard.rowGap",
+          "label": "keyboard.rowGap",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.keyboard.typography",
+      "label": "Typography",
+      "valueKind": "TypographySystemStyle",
+      "jsonPath": [
+        "keyboard",
+        "typography"
+      ],
+      "defaultValue": "{\u0022fontFamilyId\u0022:\u0022theme.system\u0022,\u0022weight\u0022:\u0022theme.typography.weight\u0022,\u0022style\u0022:\u0022theme.typography.style\u0022,\u0022sizeToken\u0022:\u0022theme.typography.sizes.s\u0022,\u0022lineHeight\u0022:\u0022theme.typography.lineHeights.normal\u0022}",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    }
+  ],
   "editorLayout": {
     "cards": [
       {
@@ -398,6 +1091,21 @@
                 "id": "component.keyboard.emojiScale",
                 "order": 80,
                 "visible": true
+              },
+              {
+                "id": "component.keyboard.heightToken",
+                "order": 90,
+                "visible": false
+              },
+              {
+                "id": "component.keyboard.keyGapToken",
+                "order": 100,
+                "visible": false
+              },
+              {
+                "id": "component.keyboard.rowGapToken",
+                "order": 110,
+                "visible": false
               }
             ]
           },

@@ -218,7 +218,8 @@
         "uiGroupLabel": "",
         "uiParentGroupId": "",
         "transition": null,
-        "unit": ""
+        "unit": "",
+        "uiOrder": 10
       },
       {
         "id": "itemHeight",
@@ -244,7 +245,8 @@
         "uiGroupLabel": "",
         "uiParentGroupId": "",
         "transition": null,
-        "unit": ""
+        "unit": "",
+        "uiOrder": 20
       }
     ],
     "collections": [
@@ -1316,7 +1318,7 @@
                 "componentType": "label",
                 "sampleText": "Diana",
                 "sampleSize": 256,
-                "sampleSubtext": "↙ WhatsApp de vídeo",
+                "sampleSubtext": "\u2199 WhatsApp de v\u00EDdeo",
                 "inputs": [
                   {
                     "id": "sampleText",
@@ -1388,7 +1390,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -1491,7 +1493,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -1594,7 +1596,7 @@
                 "componentType": "label",
                 "sampleText": "Diana",
                 "sampleSize": 256,
-                "sampleSubtext": "↙ WhatsApp de vídeo",
+                "sampleSubtext": "\u2199 WhatsApp de v\u00EDdeo",
                 "inputs": [
                   {
                     "id": "sampleText",
@@ -1666,7 +1668,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -1769,7 +1771,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -1872,7 +1874,7 @@
                 "componentType": "label",
                 "sampleText": "Diana",
                 "sampleSize": 256,
-                "sampleSubtext": "↙ WhatsApp de vídeo",
+                "sampleSubtext": "\u2199 WhatsApp de v\u00EDdeo",
                 "inputs": [
                   {
                     "id": "sampleText",
@@ -1944,7 +1946,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -2047,7 +2049,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -4956,9 +4958,9 @@
               "contentSetId": "list_item_missed_set_b",
               "runtimeInputs": {
                 "componentType": "label",
-                "sampleText": "+34 848 983 160",
+                "sampleText": "\u002B34 848 983 160",
                 "sampleSize": 256,
-                "sampleSubtext": "↙ Pamplona / Iruña",
+                "sampleSubtext": "\u2199 Pamplona / Iru\u00F1a",
                 "inputs": [
                   {
                     "id": "sampleText",
@@ -5030,7 +5032,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -5133,7 +5135,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -5234,9 +5236,9 @@
               "contentSetId": "list_item_missed_set_b_2",
               "runtimeInputs": {
                 "componentType": "label",
-                "sampleText": "+34 848 983 160",
+                "sampleText": "\u002B34 848 983 160",
                 "sampleSize": 256,
-                "sampleSubtext": "↙ Pamplona / Iruña",
+                "sampleSubtext": "\u2199 Pamplona / Iru\u00F1a",
                 "inputs": [
                   {
                     "id": "sampleText",
@@ -5308,7 +5310,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -5411,7 +5413,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -5512,9 +5514,9 @@
               "contentSetId": "list_item_missed_set_b_2_3",
               "runtimeInputs": {
                 "componentType": "label",
-                "sampleText": "+34 848 983 160",
+                "sampleText": "\u002B34 848 983 160",
                 "sampleSize": 256,
-                "sampleSubtext": "↙ Pamplona / Iruña",
+                "sampleSubtext": "\u2199 Pamplona / Iru\u00F1a",
                 "inputs": [
                   {
                     "id": "sampleText",
@@ -5586,7 +5588,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -5689,7 +5691,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -8600,7 +8602,7 @@
                 "componentType": "label",
                 "sampleText": "Dave",
                 "sampleSize": 256,
-                "sampleSubtext": "Thank you pal 😁",
+                "sampleSubtext": "Thank you pal \uD83D\uDE01",
                 "inputs": [
                   {
                     "id": "sampleText",
@@ -8672,7 +8674,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -8775,7 +8777,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -8878,7 +8880,7 @@
                 "componentType": "label",
                 "sampleText": "Dave",
                 "sampleSize": 256,
-                "sampleSubtext": "Thank you pal 😁",
+                "sampleSubtext": "Thank you pal \uD83D\uDE01",
                 "inputs": [
                   {
                     "id": "sampleText",
@@ -8950,7 +8952,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -9053,7 +9055,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -9156,7 +9158,7 @@
                 "componentType": "label",
                 "sampleText": "Dave",
                 "sampleSize": 256,
-                "sampleSubtext": "Thank you pal 😁",
+                "sampleSubtext": "Thank you pal \uD83D\uDE01",
                 "inputs": [
                   {
                     "id": "sampleText",
@@ -9228,7 +9230,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -9331,7 +9333,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -12242,7 +12244,7 @@
                 "componentType": "label",
                 "sampleText": "Dave",
                 "sampleSize": 256,
-                "sampleSubtext": "Thank you pal 😁",
+                "sampleSubtext": "Thank you pal \uD83D\uDE01",
                 "inputs": [
                   {
                     "id": "sampleText",
@@ -12314,7 +12316,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -12417,7 +12419,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -12520,7 +12522,7 @@
                 "componentType": "label",
                 "sampleText": "Dave",
                 "sampleSize": 256,
-                "sampleSubtext": "Thank you pal 😁",
+                "sampleSubtext": "Thank you pal \uD83D\uDE01",
                 "inputs": [
                   {
                     "id": "sampleText",
@@ -12592,7 +12594,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -12695,7 +12697,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -12798,7 +12800,7 @@
                 "componentType": "label",
                 "sampleText": "Dave",
                 "sampleSize": 256,
-                "sampleSubtext": "Thank you pal 😁",
+                "sampleSubtext": "Thank you pal \uD83D\uDE01",
                 "inputs": [
                   {
                     "id": "sampleText",
@@ -12870,7 +12872,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -12973,7 +12975,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -15884,7 +15886,7 @@
                 "componentType": "label",
                 "sampleText": "Diana",
                 "sampleSize": 256,
-                "sampleSubtext": "↙ WhatsApp de vídeo",
+                "sampleSubtext": "\u2199 WhatsApp de v\u00EDdeo",
                 "inputs": [
                   {
                     "id": "sampleText",
@@ -15956,7 +15958,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -16059,7 +16061,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -16162,7 +16164,7 @@
                 "componentType": "label",
                 "sampleText": "Diana",
                 "sampleSize": 256,
-                "sampleSubtext": "↙ WhatsApp de vídeo",
+                "sampleSubtext": "\u2199 WhatsApp de v\u00EDdeo",
                 "inputs": [
                   {
                     "id": "sampleText",
@@ -16234,7 +16236,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -16337,7 +16339,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -16440,7 +16442,7 @@
                 "componentType": "label",
                 "sampleText": "Diana",
                 "sampleSize": 256,
-                "sampleSubtext": "↙ WhatsApp de vídeo",
+                "sampleSubtext": "\u2199 WhatsApp de v\u00EDdeo",
                 "inputs": [
                   {
                     "id": "sampleText",
@@ -16512,7 +16514,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -16615,7 +16617,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -18520,106 +18522,24 @@
         "list",
         "collectionStackSlot"
       ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_collectionStack::variant::default\",\"overrides\":{}}",
+      "defaultValue": "{\u0022variantReference\u0022:\u0022component_project_foqn_s2_collectionStack::variant::default\u0022,\u0022overrides\u0022:{}}",
       "isEditable": true,
       "options": [],
-      "optionsSource": "",
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
       "componentVariantType": "collectionStack",
       "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
-    },
-    {
-      "id": "component.list.listItem",
-      "label": "List Item",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "list",
-        "listItemSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_list_item::variant::default\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "optionsSource": "",
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "listItem",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
-    },
-    {
-      "id": "component.list.surface",
-      "label": "Surface",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "list",
-        "surfaceSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_surface::variant::default\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "optionsSource": "",
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "surface",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
-    },
-    {
-      "id": "component.list.sizingMode",
-      "label": "Sizing",
-      "valueKind": "OptionToken",
-      "jsonPath": [
-        "list",
-        "sizingMode"
-      ],
-      "defaultValue": "content",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "content",
-          "label": "Fit content"
-        },
-        {
-          "value": "fill",
-          "label": "Fill container"
-        }
-      ],
-      "optionsSource": "",
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
-    },
-    {
-      "id": "component.list.startGapToken",
-      "label": "Start gap",
-      "valueKind": "ThemeToken",
-      "jsonPath": [
-        "list",
-        "startGapToken"
-      ],
-      "defaultValue": "theme.spacing.none",
-      "isEditable": true,
-      "options": [],
-      "optionsSource": "SpacingTokenOptions",
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "collectionStack",
+        "label": "Collection Stack",
+        "recordClassId": "component.collectionStack"
+      }
     },
     {
       "id": "component.list.endGapToken",
@@ -18631,44 +18551,82 @@
       ],
       "defaultValue": "theme.spacing.none",
       "isEditable": true,
-      "options": [],
-      "optionsSource": "SpacingTokenOptions",
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
-    },
-    {
-      "id": "component.list.itemSizingMode",
-      "label": "Item sizing",
-      "valueKind": "OptionToken",
-      "jsonPath": [
-        "list",
-        "itemSizingMode"
-      ],
-      "defaultValue": "largest",
-      "isEditable": true,
       "options": [
         {
-          "value": "intrinsic",
-          "label": "Intrinsic"
+          "value": "theme.spacing.none",
+          "label": "spacing.none",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
         },
         {
-          "value": "largest",
-          "label": "Largest item"
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xl",
+          "label": "spacing.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xxl",
+          "label": "spacing.xxl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
         }
       ],
-      "optionsSource": "",
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
       "componentVariantType": "",
       "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
     },
     {
       "id": "component.list.itemAlignment",
@@ -18683,58 +18641,43 @@
       "options": [
         {
           "value": "start",
-          "label": "Left"
+          "label": "Left",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
         },
         {
           "value": "center",
-          "label": "Center"
+          "label": "Center",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
         },
         {
           "value": "end",
-          "label": "Right"
+          "label": "Right",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
         }
       ],
-      "optionsSource": "",
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
       "componentVariantType": "",
       "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
-    },
-    {
-      "id": "component.list.itemsPlacement",
-      "label": "Items placement",
-      "valueKind": "OptionToken",
-      "jsonPath": [
-        "list",
-        "itemsPlacement"
-      ],
-      "defaultValue": "top",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "top",
-          "label": "Top"
-        },
-        {
-          "value": "center",
-          "label": "Center"
-        },
-        {
-          "value": "bottom",
-          "label": "Bottom"
-        }
-      ],
-      "optionsSource": "",
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
     },
     {
       "id": "component.list.itemGapBeforeMode",
@@ -18749,21 +18692,34 @@
       "options": [
         {
           "value": "fixed",
-          "label": "Fixed"
+          "label": "Fixed",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
         },
         {
           "value": "reflow",
-          "label": "Reflow"
+          "label": "Reflow",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
         }
       ],
-      "optionsSource": "",
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
       "componentVariantType": "",
       "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
     },
     {
       "id": "component.list.itemGapBeforeToken",
@@ -18775,15 +18731,82 @@
       ],
       "defaultValue": "theme.spacing.none",
       "isEditable": true,
-      "options": [],
-      "optionsSource": "SpacingTokenOptions",
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xl",
+          "label": "spacing.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xxl",
+          "label": "spacing.xxl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
       "componentVariantType": "",
       "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
     },
     {
       "id": "component.list.itemGapBeforeWeight",
@@ -18796,7 +18819,6 @@
       "defaultValue": "1",
       "isEditable": true,
       "options": [],
-      "optionsSource": "",
       "pairLabels": null,
       "number": {
         "minimum": 0.01,
@@ -18809,7 +18831,131 @@
       "structuredCollection": null,
       "componentVariantType": "",
       "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.list.itemSizingMode",
+      "label": "Item sizing",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "list",
+        "itemSizingMode"
+      ],
+      "defaultValue": "largest",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "intrinsic",
+          "label": "Intrinsic",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "largest",
+          "label": "Largest item",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.list.itemsPlacement",
+      "label": "Items placement",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "list",
+        "itemsPlacement"
+      ],
+      "defaultValue": "top",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "top",
+          "label": "Top",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "center",
+          "label": "Center",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "bottom",
+          "label": "Bottom",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.list.listItem",
+      "label": "List Item",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "list",
+        "listItemSlot"
+      ],
+      "defaultValue": "{\u0022variantReference\u0022:\u0022component_project_foqn_s2_list_item::variant::default\u0022,\u0022overrides\u0022:{}}",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "listItem",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "listItem",
+        "label": "List Item",
+        "recordClassId": "component.listItem"
+      }
     },
     {
       "id": "component.list.motion",
@@ -18818,17 +18964,172 @@
       "jsonPath": [
         "boundaryMotion"
       ],
-      "defaultValue": "{\"transition\":\"slide\",\"direction\":\"bottom\",\"bounds\":\"screen\",\"fade\":true,\"translate\":true,\"scale\":false}",
+      "defaultValue": "{\u0022transition\u0022:\u0022slide\u0022,\u0022direction\u0022:\u0022bottom\u0022,\u0022bounds\u0022:\u0022screen\u0022,\u0022fade\u0022:true,\u0022translate\u0022:true,\u0022scale\u0022:false}",
       "isEditable": true,
       "options": [],
-      "optionsSource": "",
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
       "componentVariantType": "",
       "runtimeInputComponentVariantFieldId": "",
-      "unit": ""
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.list.sizingMode",
+      "label": "Sizing",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "list",
+        "sizingMode"
+      ],
+      "defaultValue": "content",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "content",
+          "label": "Fit content",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "fill",
+          "label": "Fill container",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.list.startGapToken",
+      "label": "Start gap",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "list",
+        "startGapToken"
+      ],
+      "defaultValue": "theme.spacing.none",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xl",
+          "label": "spacing.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xxl",
+          "label": "spacing.xxl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.list.surface",
+      "label": "Surface",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "list",
+        "surfaceSlot"
+      ],
+      "defaultValue": "{\u0022variantReference\u0022:\u0022component_project_foqn_s2_surface::variant::default\u0022,\u0022overrides\u0022:{}}",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "surface",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
     }
   ],
   "editorLayout": {

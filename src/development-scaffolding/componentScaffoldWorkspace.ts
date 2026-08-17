@@ -295,6 +295,30 @@ export function verifyComponentScaffoldImplementation(
     }
   }
 
+  const currentInventory = loadComponentScaffoldInventory(
+    repositoryRoot,
+    databasePath,
+  );
+  createComponentScaffoldPlan(
+    spec,
+    {
+      ...currentInventory,
+      componentTypes: new Set(
+        [...currentInventory.componentTypes]
+          .filter((value) => value !== spec.component.componentType),
+      ),
+      recordClassIds: new Set(
+        [...currentInventory.recordClassIds]
+          .filter((value) => value !== spec.component.recordClassId),
+      ),
+      componentClasses: currentInventory.componentClasses.filter(
+        (value) => value.id !== spec.component.componentClassId,
+      ),
+    },
+    repositoryRoot,
+    "mustExist",
+  );
+
   const manifestPath = "src/desktop-preview/desktopPreviewManifest.json";
   const manifest = jsonObject(
     JSON.parse(readFileSync(scaffoldTarget(repositoryRoot, manifestPath), "utf8")),
@@ -367,13 +391,15 @@ export function verifyComponentScaffoldImplementation(
       violations.push(`Dictionary field '${field.id}' is not registered.`);
       continue;
     }
-    if (!fieldSources.includes(`ValueKind.${field.valueKind}`)) {
+    if (!fieldSources.includes(`\"valueKind\":\"${field.valueKind}\"`)) {
       violations.push(
         `Dictionary field '${field.id}' does not expose ValueKind '${field.valueKind}'.`,
       );
     }
     if (field.componentVariantType
-        && !fieldSources.includes(`ComponentVariantType: "${field.componentVariantType}"`)) {
+        && !fieldSources.includes(
+          `\"componentVariantType\":\"${field.componentVariantType}\"`,
+        )) {
       violations.push(
         `Dictionary field '${field.id}' does not retain Component type '${field.componentVariantType}'.`,
       );

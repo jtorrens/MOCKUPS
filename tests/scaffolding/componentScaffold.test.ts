@@ -654,8 +654,8 @@ test("Component scaffold validates current dictionary and Runtime Input contract
   unfilteredSpacing.dictionaryFields[0]!.valueKind = "ThemeTokenPair";
   unfilteredSpacing.dictionaryFields[0]!.defaultValue =
     "theme.spacing.l|theme.spacing.m";
-  unfilteredSpacing.dictionaryFields[0]!.optionsSource = "";
-  expectInvalid(unfilteredSpacing, "requires optionsSource 'SpacingTokenOptions'");
+  unfilteredSpacing.dictionaryFields[0]!.options = [];
+  expectInvalid(unfilteredSpacing, "requires explicit options");
 
   const unknownInputKind = validSpec();
   (unknownInputKind.designPreview.inputs as Array<Record<string, unknown>>)[0]!.valueKind = "Unknown";

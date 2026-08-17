@@ -371,12 +371,588 @@
         "unit": "",
         "uiOrder": 20
       }
-    ]
+    ],
+    "collections": [],
+    "actions": []
   },
   "metadata": {
     "note": "Seeded reusable component class."
   },
-  "dictionaryFields": [],
+  "dictionaryFields": [
+    {
+      "id": "component.iconBar.activeCenterIconRow.editor",
+      "label": "Active center row",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "iconBar",
+        "activeCenterIconRowSlot",
+        "variantReference"
+      ],
+      "defaultValue": "default",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "iconRow",
+        "label": "Active center row",
+        "recordClassId": "component.iconRow"
+      }
+    },
+    {
+      "id": "component.iconBar.activeCenterIconRow.inputs",
+      "label": "Active center settings",
+      "valueKind": "ComponentInputBindings",
+      "jsonPath": [
+        "iconBar",
+        "activeCenterIconRowInputs"
+      ],
+      "defaultValue": "{\u0022buttonInputs\u0022:[]}",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "component.iconBar.activeCenterIconRow.editor",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.iconBar.activeLeftIconRow.editor",
+      "label": "Active left row",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "iconBar",
+        "activeLeftIconRowSlot",
+        "variantReference"
+      ],
+      "defaultValue": "default",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "iconRow",
+        "label": "Active left row",
+        "recordClassId": "component.iconRow"
+      }
+    },
+    {
+      "id": "component.iconBar.activeLeftIconRow.inputs",
+      "label": "Active left settings",
+      "valueKind": "ComponentInputBindings",
+      "jsonPath": [
+        "iconBar",
+        "activeLeftIconRowInputs"
+      ],
+      "defaultValue": "{\u0022buttonInputs\u0022:[]}",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "component.iconBar.activeLeftIconRow.editor",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.iconBar.activeRightIconRow.editor",
+      "label": "Active right row",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "iconBar",
+        "activeRightIconRowSlot",
+        "variantReference"
+      ],
+      "defaultValue": "default",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "iconRow",
+        "label": "Active right row",
+        "recordClassId": "component.iconRow"
+      }
+    },
+    {
+      "id": "component.iconBar.activeRightIconRow.inputs",
+      "label": "Active right settings",
+      "valueKind": "ComponentInputBindings",
+      "jsonPath": [
+        "iconBar",
+        "activeRightIconRowInputs"
+      ],
+      "defaultValue": "{\u0022buttonInputs\u0022:[]}",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "component.iconBar.activeRightIconRow.editor",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.iconBar.edgePadding",
+      "label": "Edge padding",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "iconBar",
+        "edgePadding"
+      ],
+      "defaultValue": "theme.spacing.m",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xl",
+          "label": "spacing.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xxl",
+          "label": "spacing.xxl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.iconBar.iconSizeToken",
+      "label": "Shared icon size",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "iconBar",
+        "iconSizeToken"
+      ],
+      "defaultValue": "theme.iconSizes.m",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.iconSizes.xs",
+          "label": "iconSizes.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.iconSizes.s",
+          "label": "iconSizes.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.iconSizes.m",
+          "label": "iconSizes.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.iconSizes.l",
+          "label": "iconSizes.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.iconSizes.xl",
+          "label": "iconSizes.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.iconBar.idleCenterIconRow.editor",
+      "label": "Idle center row",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "iconBar",
+        "idleCenterIconRowSlot",
+        "variantReference"
+      ],
+      "defaultValue": "default",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "iconRow",
+        "label": "Idle center row",
+        "recordClassId": "component.iconRow"
+      }
+    },
+    {
+      "id": "component.iconBar.idleCenterIconRow.inputs",
+      "label": "Idle center settings",
+      "valueKind": "ComponentInputBindings",
+      "jsonPath": [
+        "iconBar",
+        "idleCenterIconRowInputs"
+      ],
+      "defaultValue": "{\u0022buttonInputs\u0022:[]}",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "component.iconBar.idleCenterIconRow.editor",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.iconBar.idleLeftIconRow.editor",
+      "label": "Idle left row",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "iconBar",
+        "idleLeftIconRowSlot",
+        "variantReference"
+      ],
+      "defaultValue": "default",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "iconRow",
+        "label": "Idle left row",
+        "recordClassId": "component.iconRow"
+      }
+    },
+    {
+      "id": "component.iconBar.idleLeftIconRow.inputs",
+      "label": "Idle left settings",
+      "valueKind": "ComponentInputBindings",
+      "jsonPath": [
+        "iconBar",
+        "idleLeftIconRowInputs"
+      ],
+      "defaultValue": "{\u0022buttonInputs\u0022:[]}",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "component.iconBar.idleLeftIconRow.editor",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.iconBar.idleRightIconRow.editor",
+      "label": "Idle right row",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "iconBar",
+        "idleRightIconRowSlot",
+        "variantReference"
+      ],
+      "defaultValue": "default",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "iconRow",
+        "label": "Idle right row",
+        "recordClassId": "component.iconRow"
+      }
+    },
+    {
+      "id": "component.iconBar.idleRightIconRow.inputs",
+      "label": "Idle right settings",
+      "valueKind": "ComponentInputBindings",
+      "jsonPath": [
+        "iconBar",
+        "idleRightIconRowInputs"
+      ],
+      "defaultValue": "{\u0022buttonInputs\u0022:[]}",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "component.iconBar.idleRightIconRow.editor",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.iconBar.sizeSource",
+      "label": "Size source",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "iconBar",
+        "sizeSource"
+      ],
+      "defaultValue": "shared",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "shared",
+          "label": "Shared",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "perRow",
+          "label": "Per row",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.iconBar.textSizeToken",
+      "label": "Shared text size",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "iconBar",
+        "textSizeToken"
+      ],
+      "defaultValue": "theme.typography.sizes.s",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.typography.sizes.xs",
+          "label": "typography.sizes.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.typography.sizes.s",
+          "label": "typography.sizes.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.typography.sizes.m",
+          "label": "typography.sizes.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.typography.sizes.l",
+          "label": "typography.sizes.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.typography.sizes.xl",
+          "label": "typography.sizes.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    }
+  ],
   "editorLayout": {
     "cards": [
       {

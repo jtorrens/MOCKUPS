@@ -50,7 +50,7 @@
     },
     "textInput": {
       "height": 35,
-      "placeholder": "Escribe aquí...",
+      "placeholder": "Escribe aqu\u00ED...",
       "idleTextColorToken": "theme.colors.textSecondary",
       "cursorColorToken": "theme.cursor.color",
       "cursorWidth": 2,
@@ -169,7 +169,7 @@
       },
       "textInput": {
         "height": 35,
-        "placeholder": "Escribe aquí...",
+        "placeholder": "Escribe aqu\u00ED...",
         "idleTextColorToken": "theme.colors.textSecondary",
         "cursorColorToken": "theme.cursor.color",
         "cursorWidth": 2,
@@ -290,7 +290,7 @@
         },
         "textInput": {
           "height": 25,
-          "placeholder": "Escribe aquí...",
+          "placeholder": "Escribe aqu\u00ED...",
           "idleTextColorToken": "theme.colors.textSecondary",
           "cursorColorToken": "theme.cursor.color",
           "cursorWidth": 2,
@@ -430,7 +430,7 @@
         },
         "textInput": {
           "height": 35,
-          "placeholder": "Escribe aquí...",
+          "placeholder": "Escribe aqu\u00ED...",
           "idleTextColorToken": "theme.colors.textSecondary",
           "cursorColorToken": "theme.cursor.color",
           "cursorWidth": 2,
@@ -564,12 +564,443 @@
       }
     ],
     "focused": true,
-    "availableWidth": 360
+    "availableWidth": 360,
+    "collections": [],
+    "actions": []
   },
   "metadata": {
     "note": "Seeded reusable component class."
   },
-  "dictionaryFields": [],
+  "dictionaryFields": [
+    {
+      "id": "component.textInputBar.barPadding",
+      "label": "Bar padding",
+      "valueKind": "ThemeTokenPair",
+      "jsonPath": [
+        "textInput",
+        "barPadding"
+      ],
+      "defaultValue": "theme.spacing.l|theme.spacing.m",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xl",
+          "label": "spacing.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xxl",
+          "label": "spacing.xxl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": {
+        "first": "X",
+        "second": "Y"
+      },
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.textInputBar.barSurface.editor",
+      "label": "Bar surface",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "textInput",
+        "barSurfaceSlot",
+        "variantReference"
+      ],
+      "defaultValue": "default",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "surface",
+        "label": "Bar surface",
+        "recordClassId": "component.surface"
+      }
+    },
+    {
+      "id": "component.textInputBar.height",
+      "label": "Height",
+      "valueKind": "Integer",
+      "jsonPath": [
+        "textInput",
+        "height"
+      ],
+      "defaultValue": "44",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.textInputBar.iconBar.editor",
+      "label": "Icon bar",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "textInput",
+        "iconBarSlot",
+        "variantReference"
+      ],
+      "defaultValue": "default",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "iconBar",
+        "label": "Icon bar",
+        "recordClassId": "component.iconBar"
+      }
+    },
+    {
+      "id": "component.textInputBar.iconGap",
+      "label": "Icon gap",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "textInput",
+        "iconGap"
+      ],
+      "defaultValue": "theme.spacing.m",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xl",
+          "label": "spacing.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xxl",
+          "label": "spacing.xxl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.textInputBar.textBox.editor",
+      "label": "Text box variant",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "textInput",
+        "textBoxSlot",
+        "variantReference"
+      ],
+      "defaultValue": "default",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "textBox",
+        "label": "Text box",
+        "recordClassId": "component.textBox"
+      }
+    },
+    {
+      "id": "component.textInputBar.textBox.inputs",
+      "label": "Text box inputs",
+      "valueKind": "ComponentInputBindings",
+      "jsonPath": [
+        "textInput",
+        "textBoxInputs"
+      ],
+      "defaultValue": "{\u0022placeholder\u0022:\u0022Message\u0022}",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": [
+        {
+          "id": "sampleText",
+          "label": "Text",
+          "jsonKey": "sampleText",
+          "valueKind": "StringMultiline",
+          "source": "Runtime",
+          "defaultValue": "Message",
+          "options": null,
+          "number": null,
+          "pairLabels": null,
+          "componentType": "",
+          "uiGroupId": "",
+          "uiGroupLabel": "",
+          "tableId": "",
+          "resolvedJsonKey": "",
+          "uiParentGroupId": "",
+          "uiOrder": 0,
+          "uiSectionLabel": "",
+          "transition": null,
+          "animation": null,
+          "behaviorTiming": null,
+          "actionOnly": false,
+          "structuredCollection": null
+        },
+        {
+          "id": "fixedSize",
+          "label": "Size",
+          "jsonKey": "size",
+          "valueKind": "IntegerPair",
+          "source": "Calculated",
+          "defaultValue": "220|44",
+          "options": null,
+          "number": {
+            "minimum": 1,
+            "maximum": 9999,
+            "increment": 1,
+            "decimalPlaces": 0,
+            "useSlider": false
+          },
+          "pairLabels": {
+            "first": "W",
+            "second": "H"
+          },
+          "componentType": "",
+          "uiGroupId": "",
+          "uiGroupLabel": "",
+          "tableId": "",
+          "resolvedJsonKey": "",
+          "uiParentGroupId": "",
+          "uiOrder": 0,
+          "uiSectionLabel": "",
+          "transition": null,
+          "animation": null,
+          "behaviorTiming": null,
+          "actionOnly": false,
+          "structuredCollection": null
+        },
+        {
+          "id": "contentMaxWidth",
+          "label": "Max width",
+          "jsonKey": "maxWidth",
+          "valueKind": "Integer",
+          "source": "Calculated",
+          "defaultValue": "220",
+          "options": null,
+          "number": {
+            "minimum": 1,
+            "maximum": 9999,
+            "increment": 1,
+            "decimalPlaces": 0,
+            "useSlider": false
+          },
+          "pairLabels": null,
+          "componentType": "",
+          "uiGroupId": "",
+          "uiGroupLabel": "",
+          "tableId": "",
+          "resolvedJsonKey": "",
+          "uiParentGroupId": "",
+          "uiOrder": 0,
+          "uiSectionLabel": "",
+          "transition": null,
+          "animation": null,
+          "behaviorTiming": null,
+          "actionOnly": false,
+          "structuredCollection": null
+        },
+        {
+          "id": "growSize",
+          "label": "Size",
+          "jsonKey": "size",
+          "valueKind": "IntegerPair",
+          "source": "Calculated",
+          "defaultValue": "220|44",
+          "options": null,
+          "number": {
+            "minimum": 1,
+            "maximum": 9999,
+            "increment": 1,
+            "decimalPlaces": 0,
+            "useSlider": false
+          },
+          "pairLabels": {
+            "first": "W",
+            "second": "Min H"
+          },
+          "componentType": "",
+          "uiGroupId": "",
+          "uiGroupLabel": "",
+          "tableId": "",
+          "resolvedJsonKey": "",
+          "uiParentGroupId": "",
+          "uiOrder": 0,
+          "uiSectionLabel": "",
+          "transition": null,
+          "animation": null,
+          "behaviorTiming": null,
+          "actionOnly": false,
+          "structuredCollection": null
+        }
+      ],
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "component.textInputBar.textBox.editor",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    }
+  ],
   "editorLayout": {
     "cards": [
       {

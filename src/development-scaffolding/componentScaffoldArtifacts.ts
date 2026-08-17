@@ -10,7 +10,6 @@ import {
   parseComponentScaffoldSpec,
   type ComponentScaffoldField,
   type ComponentScaffoldSpec,
-  type JsonObject,
 } from "./componentScaffold.js";
 
 export const draftComponentSpecRoot = "scaffolding/drafts";
@@ -22,6 +21,8 @@ export const generatedDesktopFieldCatalogPath =
   "src/Mockups.Application/GeneratedComponentScaffoldFieldCatalog.cs";
 export const generatedDesktopConfigRegistryPath =
   "src/Mockups.Application/GeneratedComponentScaffoldConfigRegistry.cs";
+export const generatedComponentEmbeddedSlotsPath =
+  "src/Mockups.Application/GeneratedComponentScaffoldEmbeddedSlots.cs";
 
 export interface GeneratedComponentScaffoldArtifacts {
   schemaVersion: 1;
@@ -51,6 +52,7 @@ export function expectedIntegratedComponentScaffoldArtifacts(
     [generatedComponentRegistryPath, renderRegistry(ordered)],
     [generatedDesktopFieldCatalogPath, renderFieldCatalog(ordered)],
     [generatedDesktopConfigRegistryPath, renderConfigRegistry(ordered)],
+    [generatedComponentEmbeddedSlotsPath, renderEmbeddedSlots(ordered)],
   ]);
 }
 
@@ -165,80 +167,54 @@ function renderConfigRegistry(specs: readonly ComponentScaffoldSpec[]) {
     + `}\n`;
 }
 
+function renderEmbeddedSlots(specs: readonly ComponentScaffoldSpec[]) {
+  const slots = specs.flatMap((spec) => spec.dictionaryFields)
+    .filter((field) => field.embeddedSlot !== null)
+    .sort((left, right) => left.id.localeCompare(right.id))
+    .map((field) => {
+      const embedded = field.embeddedSlot!;
+      const slotPath = field.valueKind === "ComponentVariant"
+        ? field.jsonPath.slice(0, -1)
+        : field.jsonPath;
+      return `        new(\n`
+        + `            ${csharpString(field.id)},\n`
+        + `            ${csharpString(embedded.componentType)},\n`
+        + `            ${csharpString(embedded.label)},\n`
+        + `            ${csharpString(embedded.recordClassId)},\n`
+        + `            [${slotPath.map(csharpString).join(", ")}]),`;
+    }).join("\n");
+  return `// Generated from scaffolding/components/*.json. Do not edit manually.\n`
+    + `namespace Mockups.DesktopEditorShell.EditorShell;\n\n`
+    + `public static class GeneratedComponentScaffoldEmbeddedSlots\n`
+    + `{\n`
+    + `    public static EmbeddedComponentSlotDefinition[] All { get; } =\n`
+    + `    [\n`
+    + `${slots}${slots ? "\n" : ""}`
+    + `    ];\n`
+    + `}\n`;
+}
+
 function renderField(field: ComponentScaffoldField) {
-  const argumentsList = [
-    csharpString(field.id),
-    csharpString(field.label),
-    `ValueKind.${field.valueKind}`,
-    `[${field.jsonPath.map(csharpString).join(", ")}]`,
-    csharpString(field.defaultValue),
-  ];
-  if (!field.isEditable) argumentsList.push("IsEditable: false");
-  if (field.optionsSource) {
-    argumentsList.push(`Options: ${field.optionsSource}`);
-  } else if (field.options.length > 0) {
-    argumentsList.push(`Options: [${field.options.map(renderOption).join(", ")}]`);
-  }
-  if (field.pairLabels) {
-    argumentsList.push(
-      `PairLabels: new(${csharpString(field.pairLabels.first)}, `
-      + `${csharpString(field.pairLabels.second)})`,
-    );
-  }
-  if (field.number) {
-    argumentsList.push(
-      `Number: new NumberDefinition(${csharpDecimal(field.number.minimum)}, `
-      + `${csharpDecimal(field.number.maximum)}, `
-      + `${csharpDecimal(field.number.increment)}, `
-      + `${field.number.decimalPlaces}, `
-      + `${field.number.useSlider ? "true" : "false"})`,
-    );
-  }
-  if (field.componentInputBindings !== null || field.structuredCollection !== null) {
-    throw new Error(
-      `Generated dictionary field '${field.id}' uses a complex owner that requires an explicit scaffold renderer.`,
-    );
-  }
-  if (field.componentVariantType) {
-    argumentsList.push(
-      `ComponentVariantType: ${csharpString(field.componentVariantType)}`,
-    );
-  }
-  if (field.runtimeInputComponentVariantFieldId) {
-    argumentsList.push(
-      `RuntimeInputComponentVariantFieldId: `
-      + `${csharpString(field.runtimeInputComponentVariantFieldId)}`,
-    );
-  }
-  if (field.unit) argumentsList.push(`Unit: ${csharpString(field.unit)}`);
-  return `new(${argumentsList.join(", ")})`;
-}
-
-function renderOption(option: JsonObject) {
-  const value = requiredOptionString(option, "value");
-  const label = requiredOptionString(option, "label");
-  const optional = [
-    ["colorHex", "ColorHex"],
-    ["groupValue", "GroupValue"],
-    ["groupLabel", "GroupLabel"],
-    ["localLabel", "LocalLabel"],
-  ] as const;
-  const args = [csharpString(value), csharpString(label)];
-  if (option.isNeutral === true) args.push("IsNeutral: true");
-  for (const [jsonKey, csharpName] of optional) {
-    if (typeof option[jsonKey] === "string" && option[jsonKey]) {
-      args.push(`${csharpName}: ${csharpString(option[jsonKey])}`);
-    }
-  }
-  return `new(${args.join(", ")})`;
-}
-
-function requiredOptionString(option: JsonObject, key: string) {
-  const value = option[key];
-  if (typeof value !== "string") {
-    throw new Error(`Generated dictionary option requires string '${key}'.`);
-  }
-  return value;
+  const descriptor = {
+    id: field.id,
+    label: field.label,
+    valueKind: field.valueKind,
+    jsonPath: field.jsonPath,
+    defaultValue: field.defaultValue,
+    isEditable: field.isEditable,
+    options: field.options,
+    pairLabels: field.pairLabels,
+    number: field.number,
+    componentInputBindings: field.componentInputBindings,
+    structuredCollection: field.structuredCollection,
+    componentVariantType: field.componentVariantType,
+    runtimeInputComponentVariantFieldId: field.runtimeInputComponentVariantFieldId,
+    unit: field.unit,
+    helpText: field.helpText,
+    valuePattern: field.valuePattern,
+    valuePatternMessage: field.valuePatternMessage,
+  };
+  return `ScaffoldDictionaryFieldContract.Component(${csharpString(JSON.stringify(descriptor))})`;
 }
 
 function csharpString(value: string) {
@@ -249,11 +225,6 @@ function csharpString(value: string) {
 
 function escapeCSharp(value: string) {
   return value.replaceAll("\\", "\\\\").replaceAll('"', '\\"');
-}
-
-function csharpDecimal(value: number | null) {
-  if (value === null) return "null";
-  return Number.isInteger(value) ? String(value) : `${value}m`;
 }
 
 function repositoryPath(repositoryRoot: string, relativePath: string) {

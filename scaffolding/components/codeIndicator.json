@@ -404,12 +404,13 @@
         "visibleWhenPath": "",
         "visibleWhenValue": "",
         "source": "runtime",
-        "uiOrigin": "",
+        "uiOrigin": "self",
         "uiGroupId": "",
         "uiGroupLabel": "",
         "uiParentGroupId": "",
         "transition": null,
-        "unit": ""
+        "unit": "",
+        "uiOrder": 10
       },
       {
         "id": "filledCount",
@@ -430,12 +431,13 @@
         "visibleWhenPath": "",
         "visibleWhenValue": "",
         "source": "runtime",
-        "uiOrigin": "",
+        "uiOrigin": "self",
         "uiGroupId": "",
         "uiGroupLabel": "",
         "uiParentGroupId": "",
         "transition": null,
-        "unit": ""
+        "unit": "",
+        "uiOrder": 20
       },
       {
         "id": "state",
@@ -469,22 +471,361 @@
         "visibleWhenPath": "",
         "visibleWhenValue": "",
         "source": "runtime",
-        "uiOrigin": "",
+        "uiOrigin": "self",
         "uiGroupId": "",
         "uiGroupLabel": "",
         "uiParentGroupId": "",
         "transition": null,
-        "unit": ""
+        "unit": "",
+        "uiOrder": 30
       }
     ],
     "count": 4,
     "filledCount": 2,
-    "state": "initial"
+    "state": "initial",
+    "collections": [],
+    "actions": []
   },
   "metadata": {
     "note": "Seeded reusable component class."
   },
-  "dictionaryFields": [],
+  "dictionaryFields": [
+    {
+      "id": "component.codeIndicator.displayMode",
+      "label": "Display",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "codeIndicator",
+        "displayMode"
+      ],
+      "defaultValue": "visible",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "visible",
+          "label": "Visible",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "collapsed",
+          "label": "Collapsed",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.codeIndicator.gapToken",
+      "label": "Gap",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "codeIndicator",
+        "gapToken"
+      ],
+      "defaultValue": "theme.spacing.m",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xl",
+          "label": "spacing.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xxl",
+          "label": "spacing.xxl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.codeIndicator.glyphSize",
+      "label": "Glyph size",
+      "valueKind": "IntegerPair",
+      "jsonPath": [
+        "codeIndicator",
+        "glyphSize"
+      ],
+      "defaultValue": "16|16",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": {
+        "first": "W",
+        "second": "H"
+      },
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.codeIndicator.states.correct.empty.editor",
+      "label": "Empty",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "codeIndicator",
+        "states",
+        "correct",
+        "emptySurfaceSlot",
+        "variantReference"
+      ],
+      "defaultValue": "default",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "surface",
+        "label": "Correct empty",
+        "recordClassId": "component.surface"
+      }
+    },
+    {
+      "id": "component.codeIndicator.states.correct.filled.editor",
+      "label": "Filled",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "codeIndicator",
+        "states",
+        "correct",
+        "filledSurfaceSlot",
+        "variantReference"
+      ],
+      "defaultValue": "default",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "surface",
+        "label": "Correct filled",
+        "recordClassId": "component.surface"
+      }
+    },
+    {
+      "id": "component.codeIndicator.states.incorrect.empty.editor",
+      "label": "Empty",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "codeIndicator",
+        "states",
+        "incorrect",
+        "emptySurfaceSlot",
+        "variantReference"
+      ],
+      "defaultValue": "default",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "surface",
+        "label": "Incorrect empty",
+        "recordClassId": "component.surface"
+      }
+    },
+    {
+      "id": "component.codeIndicator.states.incorrect.filled.editor",
+      "label": "Filled",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "codeIndicator",
+        "states",
+        "incorrect",
+        "filledSurfaceSlot",
+        "variantReference"
+      ],
+      "defaultValue": "default",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "surface",
+        "label": "Incorrect filled",
+        "recordClassId": "component.surface"
+      }
+    },
+    {
+      "id": "component.codeIndicator.states.initial.empty.editor",
+      "label": "Empty",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "codeIndicator",
+        "states",
+        "initial",
+        "emptySurfaceSlot",
+        "variantReference"
+      ],
+      "defaultValue": "default",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "surface",
+        "label": "Initial empty",
+        "recordClassId": "component.surface"
+      }
+    },
+    {
+      "id": "component.codeIndicator.states.initial.filled.editor",
+      "label": "Filled",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "codeIndicator",
+        "states",
+        "initial",
+        "filledSurfaceSlot",
+        "variantReference"
+      ],
+      "defaultValue": "default",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "surface",
+        "label": "Initial filled",
+        "recordClassId": "component.surface"
+      }
+    }
+  ],
   "editorLayout": {
     "cards": [
       {
