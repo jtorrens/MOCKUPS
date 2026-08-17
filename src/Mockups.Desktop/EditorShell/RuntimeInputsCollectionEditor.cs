@@ -1335,31 +1335,34 @@ internal sealed class RuntimeInputsCollectionEditor
             {
                 var item = items[itemIndex];
                 var itemId = ItemId(item, itemIndex);
-                var duplicateId = $"{collection.Id}_{Guid.NewGuid():N}";
-                var copy = CloneObject(item);
-                copy["id"] = duplicateId;
-                RuntimeInputForwardingContract.RebaseIds(copy, itemId, duplicateId);
-                var idMappings = StructuredCollectionItemIdentity.RebaseNestedItems(copy, collection)
-                    .ToDictionary((entry) => entry.Key, (entry) => entry.Value, StringComparer.Ordinal);
-                idMappings[itemId] = duplicateId;
-                activate(copy, items.Count);
+                var mutation = new StructuredCollectionMutation(
+                    StructuredCollectionMutationKind.Duplicate,
+                    [new StructuredCollectionPathSegment(
+                        StorageCollectionKey(collection),
+                        itemId)]);
+                StructuredCollectionMutationResult result;
                 if (owner.IsInstance)
                 {
-                    await _instanceDocuments.DuplicateCollectionItemAsync(
+                    result = await _instanceDocuments.MutateStructuredCollectionAsync(
                         owner.Node.Id,
-                        StorageCollectionKey(collection),
-                        itemId,
-                        copy,
-                        idMappings);
+                        mutation);
                 }
                 else
                 {
-                    var current = DesignPreviewTestValues.CollectionItems(preview, collection)
-                        .Select(CloneObject)
-                        .ToList();
-                    current.Insert(itemIndex + 1, copy);
-                    _setPreviewCollectionTestItems(owner.Node, collection.JsonKey, current);
+                    result = MutateTransientStructuredCollection(
+                        preview,
+                        collection,
+                        mutation);
+                    _setPreviewCollectionTestItems(
+                        owner.Node,
+                        collection.JsonKey,
+                        result.Collection.OfType<JsonObject>().ToList());
                 }
+                activate(
+                    result.Item
+                    ?? throw new InvalidOperationException(
+                        "Duplicate structured collection mutation returned no item."),
+                    result.Collection.Count);
                 changed();
             },
             Move: async (itemIndex, delta) =>
@@ -1394,21 +1397,57 @@ internal sealed class RuntimeInputsCollectionEditor
                 if (!await _confirmCollectionItemDelete(label)) return;
                 if (owner.IsInstance)
                 {
-                    await _instanceDocuments.DeleteCollectionItemAsync(
+                    await _instanceDocuments.MutateStructuredCollectionAsync(
                         owner.Node.Id,
-                        StorageCollectionKey(collection),
-                        itemId);
+                        new StructuredCollectionMutation(
+                            StructuredCollectionMutationKind.Delete,
+                            [new StructuredCollectionPathSegment(
+                                StorageCollectionKey(collection),
+                                itemId)]));
                 }
                 else
                 {
-                    var current = DesignPreviewTestValues.CollectionItems(preview, collection)
-                        .Select(CloneObject)
-                        .ToList();
-                    current.RemoveAt(itemIndex);
-                    _setPreviewCollectionTestItems(owner.Node, collection.JsonKey, current);
+                    var result = MutateTransientStructuredCollection(
+                        preview,
+                        collection,
+                        new StructuredCollectionMutation(
+                            StructuredCollectionMutationKind.Delete,
+                            [new StructuredCollectionPathSegment(
+                                StorageCollectionKey(collection),
+                                itemId)]));
+                    _setPreviewCollectionTestItems(
+                        owner.Node,
+                        collection.JsonKey,
+                        result.Collection.OfType<JsonObject>().ToList());
                 }
                 changed();
             });
+    }
+
+    private static StructuredCollectionMutationResult
+        MutateTransientStructuredCollection(
+            JsonObject preview,
+            RuntimeInputCollectionDefinition collection,
+            StructuredCollectionMutation mutation)
+    {
+        var storageKey = StorageCollectionKey(collection);
+        var content = new JsonObject
+        {
+            [storageKey] = new JsonArray(
+                DesignPreviewTestValues.CollectionItems(preview, collection)
+                    .Select((item) => item.DeepClone())
+                    .ToArray()),
+        };
+        return StructuredCollectionMutationEngine.Apply(
+            content,
+            new JsonObject
+            {
+                ["schemaVersion"] = 2,
+                ["tracks"] = new JsonArray(),
+            },
+            collection,
+            storageKey,
+            mutation);
     }
 
     private Control CreateTestValueCollectionContent(
@@ -1867,31 +1906,25 @@ internal sealed class RuntimeInputsCollectionEditor
             DecorateStructuredCollectionField = owner.IsInstance
                 ? (nestedInput, targetId, nestedControl) => DecorateAnimationToggle(owner, nestedInput, targetId, nestedControl)
                 : null,
-            RemoveStructuredCollectionAnimationTargets = owner.IsInstance
-                ? async (targetIds) =>
+            MutateStructuredCollection = owner.IsInstance
+                ? async (kind, nestedItemId) =>
                 {
-                    await ExecutePreparedAnimationMutationAsync(
-                        owner,
-                        (document) =>
-                        {
-                            foreach (var targetId in targetIds)
-                            {
-                                document.RemoveTarget(targetId);
-                            }
-                            return true;
-                        });
-                }
-                : null,
-            DuplicateStructuredCollectionAnimationTargets = owner.IsInstance
-                ? async (targetIds) =>
-                {
-                    await ExecutePreparedAnimationMutationAsync(
-                        owner,
-                        (document) =>
-                        {
-                            document.DuplicateTargets(targetIds);
-                            return true;
-                        });
+                    var result = await _instanceDocuments
+                        .MutateStructuredCollectionAsync(
+                            owner.Node.Id,
+                            new StructuredCollectionMutation(
+                                kind,
+                                [
+                                    new StructuredCollectionPathSegment(
+                                        StorageCollectionKey(collection),
+                                        ItemId(item, itemIndex)),
+                                    new StructuredCollectionPathSegment(
+                                        input.JsonKey,
+                                        nestedItemId),
+                                ]));
+                    _onChanged();
+                    _testValuesChanged();
+                    return result;
                 }
                 : null,
         };

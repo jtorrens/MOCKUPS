@@ -1,4 +1,5 @@
 using Microsoft.Data.Sqlite;
+using Mockups.DesktopEditorShell.EditorShell;
 using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.Data;
@@ -93,37 +94,15 @@ internal sealed class SqliteRuntimeInputInstanceStore(
                 moduleInstanceId));
     }
 
-    public void DuplicateModuleInstanceRuntimeCollectionItem(
+    public StructuredCollectionMutationResult MutateModuleInstanceStructuredCollection(
         string moduleInstanceId,
-        string collectionJsonKey,
-        string itemId,
-        JsonObject duplicate,
-        IReadOnlyDictionary<string, string> targetIdMappings)
+        StructuredCollectionMutation mutation)
     {
         using var connection = context.OpenConnection();
-        production.DuplicateModuleInstanceRuntimeCollectionItem(
+        return production.MutateModuleInstanceStructuredCollection(
             connection,
             moduleInstanceId,
-            collectionJsonKey,
-            itemId,
-            duplicate,
-            targetIdMappings,
-            ModuleInstanceProjectActorIds(
-                connection,
-                moduleInstanceId));
-    }
-
-    public void DeleteModuleInstanceRuntimeCollectionItem(
-        string moduleInstanceId,
-        string collectionJsonKey,
-        string itemId)
-    {
-        using var connection = context.OpenConnection();
-        production.DeleteModuleInstanceRuntimeCollectionItem(
-            connection,
-            moduleInstanceId,
-            collectionJsonKey,
-            itemId,
+            mutation,
             ModuleInstanceProjectActorIds(
                 connection,
                 moduleInstanceId));

@@ -88,6 +88,50 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
             InitializeComponentItem(collection, item);
             return item;
         }
+        async Task<StructuredCollectionMutationResult> Mutate(
+            StructuredCollectionMutationKind kind,
+            string itemId)
+        {
+            if (_services.MutateStructuredCollection is { } persistedMutation)
+            {
+                return await persistedMutation(kind, itemId);
+            }
+            var content = new JsonObject
+            {
+                [collection.JsonKey] = _items.DeepClone(),
+            };
+            return StructuredCollectionMutationEngine.Apply(
+                content,
+                new JsonObject
+                {
+                    ["schemaVersion"] = 2,
+                    ["tracks"] = new JsonArray(),
+                },
+                collection,
+                collection.JsonKey,
+                new StructuredCollectionMutation(
+                    kind,
+                    [new StructuredCollectionPathSegment(
+                        collection.JsonKey,
+                        itemId)]));
+        }
+        void ApplyMutationResult(
+            StructuredCollectionMutationResult result,
+            bool runtimeContractChanged)
+        {
+            _items = result.Collection.DeepClone().AsArray();
+            if (_services.MutateStructuredCollection is null)
+            {
+                Commit(runtimeContractChanged);
+                return;
+            }
+            ValueChanged?.Invoke(this, _items.ToJsonString());
+            Rebuild();
+            if (runtimeContractChanged)
+            {
+                RuntimeContractChanged?.Invoke(this, EventArgs.Empty);
+            }
+        }
         editor = new StructuredCollectionEditor(
             StructuredCollectionEditingContext.VariantAuthoring,
             _definition.Id,
@@ -122,22 +166,17 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                 Duplicate: async (index) =>
                 {
                     var source = items[index];
-                    var copy = source.DeepClone().AsObject();
-                    var oldId = ItemId(source, index);
-                    var newId = $"{collection.Id}_{Guid.NewGuid():N}";
-                    copy["id"] = newId;
-                    RuntimeInputForwardingContract.RebaseIds(copy, oldId, newId);
-                    var mappings = StructuredCollectionItemIdentity.RebaseNestedItems(copy, collection)
-                        .ToDictionary((entry) => entry.Key, (entry) => entry.Value, StringComparer.Ordinal);
-                    mappings[oldId] = newId;
-                    if (_services.DuplicateStructuredCollectionAnimationTargets
-                        is { } duplicateAnimationTargets)
-                    {
-                        await duplicateAnimationTargets(mappings);
-                    }
-                    editor!.ActivateOnly(copy, items.Count);
-                    _items.Insert(index + 1, copy);
-                    Commit(runtimeContractChanged: true);
+                    var result = await Mutate(
+                        StructuredCollectionMutationKind.Duplicate,
+                        ItemId(source, index));
+                    editor!.ActivateOnly(
+                        result.Item
+                        ?? throw new InvalidOperationException(
+                            "Duplicate structured collection mutation returned no item."),
+                        result.Collection.Count);
+                    ApplyMutationResult(
+                        result,
+                        runtimeContractChanged: true);
                 },
                 Move: (index, delta) =>
                 {
@@ -167,15 +206,12 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                         : _services.ConfirmStructuredCollectionItemDelete is null
                           || await _services.ConfirmStructuredCollectionItemDelete(title);
                     if (!confirmed) return;
-                    if (_services.RemoveStructuredCollectionAnimationTargets
-                        is { } removeAnimationTargets)
-                    {
-                        await removeAnimationTargets(
-                            StructuredCollectionItemIdentity.TargetIds(
-                                items[index]));
-                    }
-                    _items.RemoveAt(index);
-                    Commit(runtimeContractChanged: true);
+                    var result = await Mutate(
+                        StructuredCollectionMutationKind.Delete,
+                        ItemId(items[index], index));
+                    ApplyMutationResult(
+                        result,
+                        runtimeContractChanged: true);
                 }),
             _services.StructuredCollectionUiState ?? new EditorSessionUiState(),
             canEditStructure: _definition.IsEditable && collection.CanEditStructure);

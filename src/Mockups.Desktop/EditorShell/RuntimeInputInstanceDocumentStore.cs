@@ -1,5 +1,6 @@
 using Mockups.DesktopEditorShell.Data;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
@@ -71,23 +72,17 @@ internal sealed class RuntimeInputInstanceDocumentStore
                 itemSnapshot));
     }
 
-    public Task DuplicateCollectionItemAsync(
+    public Task<StructuredCollectionMutationResult> MutateStructuredCollectionAsync(
         string moduleInstanceId,
-        string collectionJsonKey,
-        string itemId,
-        JsonObject duplicate,
-        IReadOnlyDictionary<string, string> targetIdMappings)
+        StructuredCollectionMutation mutation)
     {
-        var duplicateSnapshot = duplicate.DeepClone().AsObject();
-        var mappingsSnapshot = new Dictionary<string, string>(
-            targetIdMappings);
+        var mutationSnapshot = new StructuredCollectionMutation(
+            mutation.Kind,
+            mutation.Path.ToList());
         return _operations.ExecuteAsync(
-            () => _database.DuplicateModuleInstanceRuntimeCollectionItem(
+            () => _database.MutateModuleInstanceStructuredCollection(
                 moduleInstanceId,
-                collectionJsonKey,
-                itemId,
-                duplicateSnapshot,
-                mappingsSnapshot));
+                mutationSnapshot));
     }
 
     public Task MoveCollectionItemAsync(
@@ -101,16 +96,6 @@ internal sealed class RuntimeInputInstanceDocumentStore
                 collectionJsonKey,
                 itemId,
                 offset));
-
-    public Task DeleteCollectionItemAsync(
-        string moduleInstanceId,
-        string collectionJsonKey,
-        string itemId)
-        => _operations.ExecuteAsync(
-            () => _database.DeleteModuleInstanceRuntimeCollectionItem(
-                moduleInstanceId,
-                collectionJsonKey,
-                itemId));
 
     public Task UpdateCollectionValueAsync(
         string moduleInstanceId,

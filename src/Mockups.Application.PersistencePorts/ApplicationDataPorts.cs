@@ -375,16 +375,9 @@ public interface IRuntimeInputInstanceStore
         string collectionJsonKey,
         string afterItemId,
         JsonObject item);
-    void DuplicateModuleInstanceRuntimeCollectionItem(
+    EditorShell.StructuredCollectionMutationResult MutateModuleInstanceStructuredCollection(
         string moduleInstanceId,
-        string collectionJsonKey,
-        string itemId,
-        JsonObject duplicate,
-        IReadOnlyDictionary<string, string> targetIdMappings);
-    void DeleteModuleInstanceRuntimeCollectionItem(
-        string moduleInstanceId,
-        string collectionJsonKey,
-        string itemId);
+        EditorShell.StructuredCollectionMutation mutation);
     void MoveModuleInstanceRuntimeCollectionItem(
         string moduleInstanceId,
         string collectionJsonKey,

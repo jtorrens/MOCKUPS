@@ -5,7 +5,7 @@ using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal static class StructuredCollectionItemIdentity
+public static class StructuredCollectionItemIdentity
 {
     public static IReadOnlyDictionary<string, string> RebaseNestedItems(
         JsonObject owner,

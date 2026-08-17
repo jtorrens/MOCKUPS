@@ -111,6 +111,15 @@ Resources reference. Production owns calculated Screen duration resolution
 and Shot duration synchronization. Composition invokes that operation only
 after a cross-owner write that can affect the timeline.
 
+Structured Runtime collection duplication and deletion are one generic
+Application mutation addressed by a stable collection/item path. The
+Application owner creates replacement ids, rebases nested ids and exact
+references, and derives the affected animation targets. Production applies
+that mutation to the candidate `content_json` and `animation_json`, validates
+both complete documents, and persists them through one combined repository
+write. Desktop never fabricates id mappings or performs animation cleanup as a
+separate commit; this rule is identical for top-level and nested collections.
+
 `module_instances.transition_json` is one complete current `Motion` document.
 It uses the same strict transition, direction, bounds, fade, translate and
 scale fields as reusable Component boundary Motion. A retired cut discriminator

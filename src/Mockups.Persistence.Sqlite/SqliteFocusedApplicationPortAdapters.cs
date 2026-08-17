@@ -319,27 +319,12 @@ internal sealed class SqliteRuntimeInputInstancePort(
             afterItemId,
             item);
 
-    public void DuplicateModuleInstanceRuntimeCollectionItem(
+    public StructuredCollectionMutationResult MutateModuleInstanceStructuredCollection(
         string moduleInstanceId,
-        string collectionJsonKey,
-        string itemId,
-        JsonObject duplicate,
-        IReadOnlyDictionary<string, string> targetIdMappings) =>
-        target.DuplicateModuleInstanceRuntimeCollectionItem(
+        StructuredCollectionMutation mutation) =>
+        target.MutateModuleInstanceStructuredCollection(
             moduleInstanceId,
-            collectionJsonKey,
-            itemId,
-            duplicate,
-            targetIdMappings);
-
-    public void DeleteModuleInstanceRuntimeCollectionItem(
-        string moduleInstanceId,
-        string collectionJsonKey,
-        string itemId) =>
-        target.DeleteModuleInstanceRuntimeCollectionItem(
-            moduleInstanceId,
-            collectionJsonKey,
-            itemId);
+            mutation);
 
     public void MoveModuleInstanceRuntimeCollectionItem(
         string moduleInstanceId,

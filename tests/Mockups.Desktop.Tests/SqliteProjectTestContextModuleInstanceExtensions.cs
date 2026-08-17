@@ -97,31 +97,15 @@ internal static class SqliteProjectTestContextModuleInstanceExtensions
                 afterItemId,
                 item);
 
-    internal static void DuplicateModuleInstanceRuntimeCollectionItem(
+    internal static StructuredCollectionMutationResult
+        MutateModuleInstanceStructuredCollection(
         this SqliteProjectTestContext engine,
         string moduleInstanceId,
-        string collectionJsonKey,
-        string itemId,
-        JsonObject duplicate,
-        IReadOnlyDictionary<string, string> targetIdMappings) =>
+        StructuredCollectionMutation mutation) =>
         engine.RuntimeInputInstances
-            .DuplicateModuleInstanceRuntimeCollectionItem(
+            .MutateModuleInstanceStructuredCollection(
                 moduleInstanceId,
-                collectionJsonKey,
-                itemId,
-                duplicate,
-                targetIdMappings);
-
-    internal static void DeleteModuleInstanceRuntimeCollectionItem(
-        this SqliteProjectTestContext engine,
-        string moduleInstanceId,
-        string collectionJsonKey,
-        string itemId) =>
-        engine.RuntimeInputInstances
-            .DeleteModuleInstanceRuntimeCollectionItem(
-                moduleInstanceId,
-                collectionJsonKey,
-                itemId);
+                mutation);
 
     internal static void MoveModuleInstanceRuntimeCollectionItem(
         this SqliteProjectTestContext engine,

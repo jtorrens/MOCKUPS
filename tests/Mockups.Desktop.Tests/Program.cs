@@ -3616,9 +3616,8 @@ static void VisualPersistenceWritersRequireOperationCoordination()
                  (typeof(RuntimeInputInstanceDocumentStore), "UpdateRuntimeValueAsync"),
                  (typeof(RuntimeInputInstanceDocumentStore), "AddCollectionItemAsync"),
                  (typeof(RuntimeInputInstanceDocumentStore), "InsertCollectionItemAfterAsync"),
-                 (typeof(RuntimeInputInstanceDocumentStore), "DuplicateCollectionItemAsync"),
+                 (typeof(RuntimeInputInstanceDocumentStore), "MutateStructuredCollectionAsync"),
                  (typeof(RuntimeInputInstanceDocumentStore), "MoveCollectionItemAsync"),
-                 (typeof(RuntimeInputInstanceDocumentStore), "DeleteCollectionItemAsync"),
                  (typeof(RuntimeInputInstanceDocumentStore), "UpdateCollectionValueAsync"),
                  (typeof(RuntimeInputInstanceDocumentStore), "UpdateCollectionValuesAsync"),
                  (typeof(RuntimeInputInstanceDocumentStore), "ExecuteAnimationMutationAsync"),
@@ -3635,6 +3634,13 @@ static void VisualPersistenceWritersRequireOperationCoordination()
         True(method is not null);
         True(typeof(Task).IsAssignableFrom(method!.ReturnType));
     }
+
+    True(typeof(RuntimeInputInstanceDocumentStore).GetMethod(
+        "DuplicateCollectionItemAsync",
+        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic) is null);
+    True(typeof(RuntimeInputInstanceDocumentStore).GetMethod(
+        "DeleteCollectionItemAsync",
+        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic) is null);
 }
 
 static void MainWindowRetainsOnlyShellServices()
@@ -10219,12 +10225,18 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
             collectionKey,
             "test_a",
             TestMessage("test_b", "B")).GetAwaiter().GetResult();
-        store.DuplicateCollectionItemAsync(
-            screen.Id,
-            collectionKey,
-            "test_a",
-            TestMessage("test_c", "C"),
-            new Dictionary<string, string>()).GetAwaiter().GetResult();
+        var duplicate = store.MutateStructuredCollectionAsync(
+                screen.Id,
+                new StructuredCollectionMutation(
+                    StructuredCollectionMutationKind.Duplicate,
+                    [new StructuredCollectionPathSegment(
+                        collectionKey,
+                        "test_a")]))
+            .GetAwaiter()
+            .GetResult();
+        var duplicateId = duplicate.Item?["id"]?.GetValue<string>()
+            ?? throw new InvalidOperationException(
+                "Duplicate collection mutation returned no stable item id.");
         var beforeRejectedField = SHA256.HashData(File.ReadAllBytes(temporary));
         Throws<InvalidOperationException>(() => store.UpdateCollectionValueAsync(
             screen.Id,
@@ -10248,12 +10260,17 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
         store.MoveCollectionItemAsync(
             screen.Id,
             collectionKey,
-            "test_c",
+            duplicateId,
             1).GetAwaiter().GetResult();
-        store.DeleteCollectionItemAsync(
-            screen.Id,
-            collectionKey,
-            "test_a").GetAwaiter().GetResult();
+        store.MutateStructuredCollectionAsync(
+                screen.Id,
+                new StructuredCollectionMutation(
+                    StructuredCollectionMutationKind.Delete,
+                    [new StructuredCollectionPathSegment(
+                        collectionKey,
+                        "test_a")]))
+            .GetAwaiter()
+            .GetResult();
 
         var content = JsonPath.ParseRequiredObject(
             database.GetModuleInstanceSettings(screen.Id).ContentJson,
@@ -10262,8 +10279,10 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
         var items = content[collectionKey]?.AsArray()
             ?? throw new InvalidOperationException("Missing test runtime collection.");
         SequenceEqual(
-            new[] { "test_b", "test_c" },
-            items.Where((item) => item?["id"]?.GetValue<string>()?.StartsWith("test_", StringComparison.Ordinal) == true)
+            new[] { "test_b", duplicateId },
+            items.Where((item) =>
+                    item?["id"]?.GetValue<string>() == "test_b"
+                    || item?["id"]?.GetValue<string>() == duplicateId)
                 .Select((item) => item?["id"]?.GetValue<string>() ?? ""));
         Equal(
             "B2",

@@ -196,120 +196,34 @@ internal sealed partial class SqliteProductionOwner
             projectActorIds);
     }
 
-    internal void DuplicateModuleInstanceRuntimeCollectionItem(
+    internal StructuredCollectionMutationResult MutateModuleInstanceStructuredCollection(
         SqliteConnection connection,
         string moduleInstanceId,
-        string collectionJsonKey,
-        string itemId,
-        JsonObject duplicate,
-        IReadOnlyDictionary<string, string> targetIdMappings,
+        StructuredCollectionMutation mutation,
         IReadOnlySet<string> projectActorIds)
     {
-        var settings = _moduleInstanceRepository.Get(
-            connection,
-            moduleInstanceId);
-        var content = ParseJsonObject(settings.ContentJson);
-        var items = RequireDeclaredRuntimeCollection(
-            connection,
-            moduleInstanceId,
-            collectionJsonKey,
-            content);
-        RuntimeCollectionDocumentContract.RequireNewItem(
-            items,
-            duplicate,
-            $"runtime collection '{collectionJsonKey}'");
-        var currentIndex = IndexOfRuntimeItem(items, itemId);
-        if (currentIndex < 0)
+        if (mutation.Path.Count == 0)
         {
             throw new InvalidOperationException(
-                $"Missing runtime collection item '{itemId}'.");
+                "A Module Instance structured collection mutation requires one stable path segment.");
         }
-
-        items.Insert(currentIndex + 1, duplicate.DeepClone());
-        var animation = ParseJsonObject(settings.AnimationJson);
-        if (animation["tracks"] is JsonArray tracks)
-        {
-            foreach (var sourceTrack in tracks
-                         .OfType<JsonObject>()
-                         .Where((track) =>
-                             targetIdMappings.ContainsKey(
-                                 track["targetId"]?.GetValue<string>()
-                                 ?? ""))
-                         .ToList())
-            {
-                var duplicateTrack =
-                    sourceTrack.DeepClone().AsObject();
-                duplicateTrack["id"] = $"track_{Guid.NewGuid():N}";
-                duplicateTrack["targetId"] =
-                    targetIdMappings[
-                        sourceTrack["targetId"]?.GetValue<string>()
-                        ?? ""];
-                foreach (var keyframe in
-                         (duplicateTrack["keyframes"] as JsonArray)
-                         ?.OfType<JsonObject>() ?? [])
-                {
-                    keyframe["id"] =
-                        $"keyframe_{Guid.NewGuid():N}";
-                }
-
-                tracks.Add(duplicateTrack);
-            }
-        }
-
-        ValidateModuleInstanceRuntimeContent(
-            connection,
-            moduleInstanceId,
-            content,
-            projectActorIds);
-        ModuleInstanceAnimationDocumentContract.Validate(
-            animation,
-            $"Module Instance '{moduleInstanceId}' animation_json");
-        _moduleInstanceRepository.UpdateContentAndAnimation(
-            connection,
-            moduleInstanceId,
-            content.ToJsonString(),
-            animation.ToJsonString());
-        SynchronizeTimelineDurations(connection);
-    }
-
-    internal void DeleteModuleInstanceRuntimeCollectionItem(
-        SqliteConnection connection,
-        string moduleInstanceId,
-        string collectionJsonKey,
-        string itemId,
-        IReadOnlySet<string> projectActorIds)
-    {
         var settings = _moduleInstanceRepository.Get(
             connection,
             moduleInstanceId);
         var content = ParseJsonObject(settings.ContentJson);
-        var items = RequireDeclaredRuntimeCollection(
+        var rootStorageKey = mutation.Path[0].CollectionJsonKey;
+        var rootDefinition = RequireDeclaredRuntimeCollectionDefinition(
             connection,
             moduleInstanceId,
-            collectionJsonKey,
+            rootStorageKey,
             content);
-        var item = items
-            .OfType<JsonObject>()
-            .FirstOrDefault((candidate) =>
-                candidate["id"]?.GetValue<string>() == itemId)
-            ?? throw new InvalidOperationException(
-                $"Missing runtime collection item '{itemId}'.");
-        items.Remove(item);
-        var removedTargetIds = CollectionTargetIds(item);
         var animation = ParseJsonObject(settings.AnimationJson);
-        if (animation["tracks"] is JsonArray tracks)
-        {
-            foreach (var track in tracks
-                         .OfType<JsonObject>()
-                         .Where((candidate) =>
-                             removedTargetIds.Contains(
-                                 candidate["targetId"]
-                                     ?.GetValue<string>() ?? ""))
-                         .ToList())
-            {
-                tracks.Remove(track);
-            }
-        }
+        var result = StructuredCollectionMutationEngine.Apply(
+            content,
+            animation,
+            rootDefinition,
+            rootStorageKey,
+            mutation);
 
         ValidateModuleInstanceRuntimeContent(
             connection,
@@ -325,6 +239,7 @@ internal sealed partial class SqliteProductionOwner
             content.ToJsonString(),
             animation.ToJsonString());
         SynchronizeTimelineDurations(connection);
+        return result;
     }
 
     internal void MoveModuleInstanceRuntimeCollectionItem(
@@ -815,6 +730,46 @@ internal sealed partial class SqliteProductionOwner
         return items;
     }
 
+    private RuntimeInputCollectionDefinition
+        RequireDeclaredRuntimeCollectionDefinition(
+            SqliteConnection connection,
+            string moduleInstanceId,
+            string collectionJsonKey,
+            JsonObject content)
+    {
+        _ = RequireDeclaredRuntimeCollection(
+            connection,
+            moduleInstanceId,
+            collectionJsonKey,
+            content);
+        var contract = ModuleInstanceRuntimeContract(
+            connection,
+            moduleInstanceId);
+        var matches = RuntimeInputDefinitionReader.ReadCollections(
+                contract,
+                new JsonObject(),
+                includeHidden: true)
+            .Where((collection) =>
+                RuntimeCollectionStorageKey(collection).Equals(
+                    collectionJsonKey,
+                    StringComparison.Ordinal))
+            .ToList();
+        if (matches.Count != 1)
+        {
+            throw new InvalidOperationException(
+                $"Module Instance '{moduleInstanceId}' has no unique structured collection definition '{collectionJsonKey}'.");
+        }
+        return matches[0];
+    }
+
+    private static string RuntimeCollectionStorageKey(
+        RuntimeInputCollectionDefinition collection) =>
+        !string.IsNullOrWhiteSpace(collection.StorageCollectionJsonKey)
+            ? collection.StorageCollectionJsonKey
+            : !string.IsNullOrWhiteSpace(collection.SourceCollectionJsonKey)
+                ? collection.SourceCollectionJsonKey
+                : collection.JsonKey;
+
     private JsonObject RequireDeclaredRuntimeInput(
         SqliteConnection connection,
         string moduleInstanceId,
@@ -934,41 +889,6 @@ internal sealed partial class SqliteProductionOwner
         }
 
         return -1;
-    }
-
-    private static HashSet<string> CollectionTargetIds(
-        JsonNode root)
-    {
-        var result = new HashSet<string>(StringComparer.Ordinal);
-
-        void Visit(JsonNode? node)
-        {
-            if (node is JsonObject value)
-            {
-                if (value["id"] is JsonValue idValue
-                    && idValue.TryGetValue<string>(out var id)
-                    && !string.IsNullOrWhiteSpace(id))
-                {
-                    result.Add(id);
-                }
-
-                foreach (var child in
-                         value.Select((entry) => entry.Value))
-                {
-                    Visit(child);
-                }
-            }
-            else if (node is JsonArray array)
-            {
-                foreach (var child in array)
-                {
-                    Visit(child);
-                }
-            }
-        }
-
-        Visit(root);
-        return result;
     }
 
     private static string DefaultModuleAnimationJson() =>
