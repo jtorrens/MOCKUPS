@@ -28,6 +28,7 @@ internal sealed record EditorPreparedOverrideGroup(
 
 internal sealed record EditorPreparedOverrideProjection(
     IReadOnlyList<EditorPreparedOverrideGroup> Groups,
+    IReadOnlyDictionary<string, FieldValue> RootFields,
     EditorDictionaryContextSnapshot DictionaryContext)
 {
     public int Count => Groups.Sum((group) =>
@@ -339,6 +340,7 @@ internal sealed class EditorContentPreparationService : IDisposable
 
         return new EditorPreparedOverrideProjection(
             groups,
+            rootFields,
             _dictionaryFields.PrepareContext(
                 node,
                 selectedThemeId,

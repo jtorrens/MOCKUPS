@@ -318,6 +318,7 @@ internal sealed class EditorLayoutCardFactory
             field,
             dictionaryContext,
             preparedFields,
+            null,
             _activeFieldControls,
             null);
 
@@ -361,6 +362,7 @@ internal sealed class EditorLayoutCardFactory
                     group.Fields[fieldId],
                     projection.DictionaryContext,
                     group.Fields,
+                    projection.RootFields,
                     scopedControls,
                     () => _scheduleActiveEditorReload(node),
                     compact: true));
@@ -404,6 +406,7 @@ internal sealed class EditorLayoutCardFactory
         FieldValue field,
         EditorDictionaryContextSnapshot dictionaryContext,
         IReadOnlyDictionary<string, FieldValue> preparedFields,
+        IReadOnlyDictionary<string, FieldValue>? dependencyFields,
         EditorActiveFieldControls activeFieldControls,
         Action? restored,
         bool compact = false)
@@ -415,7 +418,8 @@ internal sealed class EditorLayoutCardFactory
                 id,
                 (storedId) => PreparedStoredValue(
                     preparedFields,
-                    storedId)),
+                    storedId,
+                    dependencyFields)),
             _openComponentVariantReference,
             (id) => _openNestedEmbeddedComponentEditor(context, id),
             (definition, input) => _openNestedEmbeddedComponentSlotEditor(context, ComponentInputSlot(definition, input)),
@@ -509,9 +513,12 @@ internal sealed class EditorLayoutCardFactory
 
     private static string PreparedStoredValue(
         IReadOnlyDictionary<string, FieldValue> preparedFields,
-        string fieldId)
+        string fieldId,
+        IReadOnlyDictionary<string, FieldValue>? dependencyFields = null)
     {
-        if (!preparedFields.TryGetValue(fieldId, out var field))
+        if (!preparedFields.TryGetValue(fieldId, out var field)
+            && (dependencyFields is null
+                || !dependencyFields.TryGetValue(fieldId, out field)))
         {
             throw new InvalidOperationException(
                 $"Field '{fieldId}' was not included in the prepared editor snapshot.");
