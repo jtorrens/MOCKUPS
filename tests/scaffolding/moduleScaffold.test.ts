@@ -30,6 +30,18 @@ import {
 
 const repositoryRoot = process.cwd();
 
+test("the current Module registry has one generated routing owner", () => {
+  const source = readFileSync(path.join(
+    repositoryRoot,
+    "src/desktop-preview/moduleRenderableRegistry.ts",
+  ), "utf8");
+  assert.match(
+    source,
+    /moduleRenderableFactories[\s\S]*= generatedModuleScaffoldFactories;/,
+  );
+  assert.doesNotMatch(source, /builtInModuleRenderableFactories/);
+});
+
 test("Module scaffold template is deliberately incomplete", () => {
   const spec = moduleScaffoldTemplate();
   assert.throws(
@@ -208,9 +220,11 @@ function validSpec(): ModuleScaffoldSpec {
       contractExport: "ScaffoldTestModuleContract",
       resolverExport: "resolveScaffoldTestModule",
       renderableExport: "scaffoldTestModuleToRenderable",
+      configContractExport: "ScaffoldTestModuleConfigContract",
       focusedTest: "tests/animation/scaffoldTestModule.test.ts",
     },
     config,
+    designPreview: null,
     defaultVariant: {
       id: "default",
       name: "Default",

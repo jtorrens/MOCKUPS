@@ -1,4 +1,5 @@
 // Generated from scaffolding/modules/*.json. Do not edit manually.
+// Modules: module.core.chat, module.core.chatList, module.core.lockScreen
 using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Collections.Generic;
@@ -77,8 +78,14 @@ internal static class GeneratedModuleScaffoldConfigRegistry
     {
         switch (recordClassId)
         {
-            case ChatListModuleConfigContract.RecordClassId:
+            case "module.core.chat":
+                ConversationModuleConfigContract.Validate(config, context);
+                return true;
+            case "module.core.chatList":
                 ChatListModuleConfigContract.Validate(config, context);
+                return true;
+            case "module.core.lockScreen":
+                LockScreenModuleConfigContract.Validate(config, context);
                 return true;
             default:
                 return false;

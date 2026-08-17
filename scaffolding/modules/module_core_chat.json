@@ -1,0 +1,1626 @@
+{
+  "schemaVersion": 1,
+  "intent": {
+    "responsibility": "Own the Chat conversation Screen and its ordered message lifecycle.",
+    "visualBoundary": "Compose the declared system chrome, header, messages, composer and keyboard Component boundaries.",
+    "runtimeBehavior": "Own conversation inputs, messages and playback without inferring child Runtime values.",
+    "forwarding": "Forward only declared stable child Runtime identities across exact Component Variant boundaries.",
+    "temporalOwnership": "Own calculated conversation duration while each message and child behavior retains its declared local timeline.",
+    "productionContext": "Resolve only through the exact Screen to Shot owner Actor to Theme and Device context."
+  },
+  "module": {
+    "moduleId": "module_core_chat",
+    "appId": "app_core_chat",
+    "projectId": "project_foqn_s2",
+    "recordClassId": "module.core.chat",
+    "name": "Conversation",
+    "notes": "Seed conversation module linked to Chat app.",
+    "sortOrder": 0
+  },
+  "manifest": {
+    "label": "Core Chat",
+    "contract": "./conversationModuleContract",
+    "resolver": "./conversationModuleResolver",
+    "renderable": "./conversationModuleRenderable",
+    "embeds": [
+      "avatar",
+      "bubble",
+      "keyboard",
+      "iconRow",
+      "surface",
+      "navigation_bar",
+      "status_bar",
+      "textInputBar"
+    ]
+  },
+  "owners": {
+    "contractExport": "ConversationModuleContract",
+    "resolverExport": "resolveConversationModule",
+    "renderableExport": "conversationModuleToRenderable",
+    "configContractExport": "ConversationModuleConfigContract",
+    "focusedTest": "tests/animation/conversationModuleResolver.test.ts"
+  },
+  "config": {
+    "conversation": {
+      "showHeader": true,
+      "headerHeight": 40,
+      "showStatusBar": true,
+      "showNavigationBar": true,
+      "showTextInputBar": true,
+      "textInputBarVariant": "component_project_foqn_s2_textInputBar::variant::default_copy",
+      "showKeyboard": true,
+      "keyboardVariant": "component_project_foqn_s2_keyboard::variant::default_copy",
+      "bubbleVariant": "component_project_foqn_s2_bubble::variant::default_copy",
+      "screenGutter": "theme.spacing.l|theme.spacing.l",
+      "messageGap": "theme.spacing.l",
+      "bubbleMaxWidth": 66,
+      "useAppWallpaper": true,
+      "headerAvatarVariant": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+      "headerAvatarAlignment": "left",
+      "headerLeftIconRowSlot": {
+        "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+        "overrides": {
+          "iconRow": {
+            "items": [
+              {
+                "id": "button_7b4e351285854647ade31e13887ce39f",
+                "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                "state": "normal",
+                "iconToken": "android_nav_back",
+                "text": "",
+                "iconSizeToken": "theme.iconSizes.m",
+                "textSizeToken": "theme.typography.sizes.s",
+                "pushTrigger": false,
+                "pushElapsedMs": 0,
+                "buttonOverrides": {}
+              }
+            ]
+          }
+        }
+      },
+      "headerRightIconRowSlot": {
+        "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+        "overrides": {
+          "iconRow": {
+            "items": [
+              {
+                "id": "button_783e5f18980742d197e32380c16a6c0d",
+                "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                "state": "normal",
+                "iconToken": "phone_call",
+                "text": "",
+                "iconSizeToken": "theme.iconSizes.m",
+                "textSizeToken": "theme.typography.sizes.s",
+                "pushTrigger": false,
+                "pushElapsedMs": 0,
+                "buttonOverrides": {}
+              },
+              {
+                "id": "button_001",
+                "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                "state": "normal",
+                "iconToken": "media_video",
+                "text": "",
+                "iconSizeToken": "theme.iconSizes.m",
+                "textSizeToken": "theme.typography.sizes.s",
+                "pushTrigger": false,
+                "pushElapsedMs": 0,
+                "buttonOverrides": {}
+              }
+            ]
+          }
+        }
+      },
+      "headerLeftIconRowInputs": {
+        "buttonInputs": [
+          {
+            "id": "button_7b4e351285854647ade31e13887ce39f",
+            "state": "normal",
+            "sampleText": "",
+            "iconToken": "android_nav_back",
+            "iconSizeToken": "theme.iconSizes.m",
+            "textSizeToken": "theme.typography.sizes.s",
+            "showBadge": false,
+            "badgeContentMode": "text",
+            "badgeIconToken": "system_check",
+            "badgeText": "1",
+            "badgeSize": 20,
+            "badgeBackgroundPaletteColor": "blue",
+            "badgeContentPaletteColor": "gray_100",
+            "iconColorToken": "theme.colors.icon",
+            "textColorToken": "theme.colors.textPrimary"
+          }
+        ]
+      },
+      "headerRightIconRowInputs": {
+        "buttonInputs": [
+          {
+            "id": "button_783e5f18980742d197e32380c16a6c0d",
+            "state": "normal",
+            "sampleText": "",
+            "iconToken": "phone_call",
+            "iconSizeToken": "theme.iconSizes.m",
+            "textSizeToken": "theme.typography.sizes.s",
+            "showBadge": false,
+            "badgeContentMode": "text",
+            "badgeIconToken": "system_check",
+            "badgeText": "1",
+            "badgeSize": 20,
+            "badgeBackgroundPaletteColor": "blue",
+            "badgeContentPaletteColor": "gray_100",
+            "iconColorToken": "theme.colors.icon",
+            "textColorToken": "theme.colors.textPrimary"
+          },
+          {
+            "id": "button_001",
+            "state": "normal",
+            "sampleText": "",
+            "iconToken": "media_video",
+            "iconSizeToken": "theme.iconSizes.m",
+            "textSizeToken": "theme.typography.sizes.s",
+            "showBadge": false,
+            "badgeContentMode": "text",
+            "badgeIconToken": "system_check",
+            "badgeText": "1",
+            "badgeSize": 20,
+            "badgeBackgroundPaletteColor": "blue",
+            "badgeContentPaletteColor": "gray_100",
+            "iconColorToken": "theme.colors.icon",
+            "textColorToken": "theme.colors.textPrimary"
+          }
+        ]
+      },
+      "headerSurfaceSlot": {
+        "variantReference": "component_project_foqn_s2_surface::variant::default",
+        "overrides": {
+          "style": {
+            "cornerRadiusToken": "theme.radii.none"
+          }
+        }
+      },
+      "headerUseActorColor": false,
+      "messageMotion": {
+        "transition": "slide",
+        "direction": "bottom",
+        "bounds": "parent",
+        "fade": false,
+        "translate": true,
+        "scale": false
+      }
+    },
+    "appearanceMode": "inherit"
+  },
+  "designPreview": {
+    "headerSubtitle": "online",
+    "inputText": "Message",
+    "inputs": [
+      {
+        "id": "conversationType",
+        "label": "Chat type",
+        "jsonKey": "conversationType",
+        "kind": "option",
+        "defaultValue": "individual",
+        "options": [
+          {
+            "value": "individual",
+            "label": "Individual"
+          },
+          {
+            "value": "group",
+            "label": "Group"
+          }
+        ],
+        "groupId": "participants",
+        "groupLabel": "Participants",
+        "groupOrder": 10,
+        "valueKind": "OptionToken"
+      },
+      {
+        "id": "actor",
+        "label": "Actor",
+        "jsonKey": "actorId",
+        "kind": "recordReference",
+        "defaultValue": "",
+        "tableId": "actors",
+        "resolvedJsonKey": "actor",
+        "valueKind": "RecordReference"
+      },
+      {
+        "id": "headerSubtitle",
+        "label": "Header subtitle",
+        "jsonKey": "headerSubtitle",
+        "kind": "text",
+        "defaultValue": "online",
+        "animatable": true,
+        "animationInterpolations": [
+          "hold",
+          "writeOn"
+        ],
+        "animationTimeline": {
+          "origin": {
+            "kind": "ownerStart"
+          }
+        },
+        "valueKind": "StringSingleLine"
+      },
+      {
+        "id": "conversationFrame",
+        "label": "Timeline frame",
+        "jsonKey": "conversationFrame",
+        "kind": "number",
+        "defaultValue": "0",
+        "minimum": 0,
+        "maximum": 100000,
+        "increment": 1,
+        "unit": "frames",
+        "source": "calculated",
+        "valueKind": "Integer"
+      },
+      {
+        "id": "bubbleReveal",
+        "label": "Outgoing bubble reveal",
+        "jsonKey": "bubbleRevealMode",
+        "kind": "option",
+        "defaultValue": "afterWriteOn",
+        "options": [
+          {
+            "value": "duringWriteOn",
+            "label": "During write-on"
+          },
+          {
+            "value": "afterWriteOn",
+            "label": "After write-on"
+          }
+        ],
+        "groupId": "timing",
+        "groupLabel": "Timing",
+        "groupOrder": 20,
+        "valueKind": "OptionToken"
+      },
+      {
+        "id": "incomingReveal",
+        "label": "Incoming reveal",
+        "jsonKey": "incomingRevealMode",
+        "kind": "option",
+        "defaultValue": "typingIndicator",
+        "options": [
+          {
+            "value": "instant",
+            "label": "Instant"
+          },
+          {
+            "value": "writeOn",
+            "label": "Write-on"
+          },
+          {
+            "value": "typingIndicator",
+            "label": "Typing indicator"
+          }
+        ],
+        "groupId": "timing",
+        "groupLabel": "Timing",
+        "groupOrder": 20,
+        "valueKind": "OptionToken"
+      },
+      {
+        "id": "textInput",
+        "label": "Text input while writing",
+        "jsonKey": "textInputVisible",
+        "kind": "boolean",
+        "defaultValue": "true",
+        "groupId": "timing",
+        "groupLabel": "Timing",
+        "groupOrder": 20,
+        "valueKind": "Boolean"
+      },
+      {
+        "id": "keyboard",
+        "label": "Keyboard while writing",
+        "jsonKey": "keyboardVisible",
+        "kind": "boolean",
+        "defaultValue": "true",
+        "groupId": "timing",
+        "groupLabel": "Timing",
+        "groupOrder": 20,
+        "valueKind": "Boolean"
+      },
+      {
+        "id": "typingIndicatorText",
+        "label": "Typing indicator text",
+        "jsonKey": "typingIndicatorText",
+        "kind": "text",
+        "defaultValue": "•••",
+        "groupId": "timing",
+        "groupLabel": "Timing",
+        "groupOrder": 20,
+        "valueKind": "StringSingleLine"
+      },
+      {
+        "id": "typingIndicatorSize",
+        "label": "Typing indicator size",
+        "jsonKey": "typingIndicatorSizeToken",
+        "kind": "themeToken",
+        "defaultValue": "theme.typography.sizes.m",
+        "options": [
+          {
+            "value": "theme.typography.sizes.xs",
+            "label": "typography.sizes.xs"
+          },
+          {
+            "value": "theme.typography.sizes.s",
+            "label": "typography.sizes.s"
+          },
+          {
+            "value": "theme.typography.sizes.m",
+            "label": "typography.sizes.m"
+          },
+          {
+            "value": "theme.typography.sizes.l",
+            "label": "typography.sizes.l"
+          },
+          {
+            "value": "theme.typography.sizes.xl",
+            "label": "typography.sizes.xl"
+          }
+        ],
+        "groupId": "timing",
+        "groupLabel": "Timing",
+        "groupOrder": 20,
+        "valueKind": "ThemeToken"
+      },
+      {
+        "id": "typingIndicatorAnimation",
+        "label": "Typing indicator animation",
+        "jsonKey": "typingIndicatorAnimation",
+        "kind": "option",
+        "defaultValue": "pulsating",
+        "options": [
+          {
+            "value": "none",
+            "label": "None"
+          },
+          {
+            "value": "pulsating",
+            "label": "Pulsating"
+          },
+          {
+            "value": "wave",
+            "label": "Wave"
+          }
+        ],
+        "groupId": "timing",
+        "groupLabel": "Timing",
+        "groupOrder": 20,
+        "valueKind": "OptionToken"
+      }
+    ],
+    "actorId": "actor_alex",
+    "conversationFrame": 240,
+    "actions": [
+      {
+        "id": "playConversation",
+        "label": "Play messages",
+        "playInputId": "conversationPlayback",
+        "durationOwnerTimeline": true,
+        "durationBaseFrames": 1,
+        "definesModuleDuration": true,
+        "timeJsonKey": "conversationFrame",
+        "timeUnit": "frames",
+        "prewarmFrames": false,
+        "completionBehavior": "reset"
+      }
+    ],
+    "conversationDurationFrames": 240,
+    "messages": [
+      {
+        "direction": "incoming",
+        "text": "Tenias razon: ya podemos componer desde el modulo.",
+        "delayAfterPreviousFrames": 6,
+        "statusState": "none",
+        "statusText": "",
+        "statusVisible": false,
+        "mediaType": "video",
+        "mediaSource": "media/gatos_V2-0012.mp4",
+        "viewportSize": "240|160",
+        "mediaScale": 1,
+        "mediaOffset": "0|0",
+        "isPlaying": false,
+        "currentTimeSeconds": 0,
+        "durationSeconds": 12,
+        "isFullScreen": false,
+        "fullScreenTransition": false,
+        "fullframeOrientation": "portrait",
+        "controlsElapsedMs": 0,
+        "id": "message_001",
+        "postWriteOnHoldFrames": 0,
+        "playbackMode": "once",
+        "playDurationFrames": 72,
+        "playbackFrame": 0,
+        "actorId": "",
+        "writeOnTiming": {
+          "mode": "fixed",
+          "fixedFrames": 30,
+          "paceToken": "theme.motion.naturalPace.normal"
+        },
+        "visibleDurationFrames": 0
+      },
+      {
+        "direction": "outgoing",
+        "text": "Mensaje de prueba 😎😍 en dos líneas",
+        "delayAfterPreviousFrames": 6,
+        "statusState": "read",
+        "statusText": "",
+        "statusVisible": false,
+        "mediaType": "none",
+        "mediaSource": "",
+        "viewportSize": "240|160",
+        "mediaScale": 1,
+        "mediaOffset": "0|0",
+        "isPlaying": false,
+        "currentTimeSeconds": 0,
+        "durationSeconds": 12,
+        "isFullScreen": false,
+        "fullScreenTransition": false,
+        "fullframeOrientation": "portrait",
+        "controlsElapsedMs": 0,
+        "id": "message_002",
+        "postWriteOnHoldFrames": 10,
+        "playbackMode": "once",
+        "playDurationFrames": 72,
+        "playbackFrame": 0,
+        "actorId": "",
+        "writeOnTiming": {
+          "mode": "fixed",
+          "fixedFrames": 42,
+          "paceToken": "theme.motion.naturalPace.normal"
+        },
+        "visibleDurationFrames": 0
+      },
+      {
+        "direction": "system",
+        "text": "Hola 123 😎 A",
+        "delayAfterPreviousFrames": 12,
+        "statusState": "none",
+        "statusText": "",
+        "statusVisible": false,
+        "mediaType": "none",
+        "mediaSource": "",
+        "viewportSize": "240|160",
+        "mediaScale": 1,
+        "mediaOffset": "0|0",
+        "isPlaying": false,
+        "currentTimeSeconds": 0,
+        "durationSeconds": 12,
+        "isFullScreen": false,
+        "fullScreenTransition": false,
+        "fullframeOrientation": "portrait",
+        "controlsElapsedMs": 0,
+        "id": "message_003",
+        "postWriteOnHoldFrames": 0,
+        "playbackMode": "once",
+        "playDurationFrames": 72,
+        "playbackFrame": 0,
+        "actorId": "",
+        "writeOnTiming": {
+          "mode": "fixed",
+          "fixedFrames": 0,
+          "paceToken": "theme.motion.naturalPace.normal"
+        },
+        "visibleDurationFrames": 0
+      }
+    ],
+    "collections": [
+      {
+        "id": "messages",
+        "label": "Messages",
+        "jsonKey": "messages",
+        "itemLabel": "Message",
+        "sourceCollectionJsonKey": "messages",
+        "itemPresentation": {
+          "subtitleFieldIds": [
+            "direction",
+            "text"
+          ],
+          "subtitleMaxCharacters": 72,
+          "iconFieldId": "mediaType",
+          "fallbackIcon": "message",
+          "iconValueMap": {
+            "image": "image",
+            "video": "video",
+            "audio": "audio"
+          }
+        },
+        "animationTimeline": {
+          "sequence": "serial",
+          "preDurationFieldIds": [
+            "delay"
+          ],
+          "postDurationFieldIds": [
+            "postWriteOnHold"
+          ],
+          "sequenceCompletionFieldIds": [
+            "text"
+          ],
+          "presenceDurationFieldId": "visibleDuration"
+        },
+        "fields": [
+          {
+            "id": "actor",
+            "label": "Actor",
+            "jsonKey": "actorId",
+            "kind": "recordReference",
+            "defaultValue": "",
+            "tableId": "actors",
+            "resolvedJsonKey": "actor",
+            "uiGroupId": "message",
+            "uiGroupLabel": "Message",
+            "uiParentGroupId": "",
+            "uiOrder": 10,
+            "uiSectionLabel": "",
+            "valueKind": "RecordReference",
+            "enabledWhenItemJsonKey": "direction",
+            "enabledWhenItemValues": [
+              "incoming",
+              "system"
+            ],
+            "allowEmptyWhenItemJsonKey": "direction",
+            "allowEmptyWhenItemValues": [
+              "system"
+            ]
+          },
+          {
+            "id": "direction",
+            "label": "Direction",
+            "jsonKey": "direction",
+            "kind": "option",
+            "defaultValue": "system",
+            "options": [
+              {
+                "value": "incoming",
+                "label": "Incoming"
+              },
+              {
+                "value": "outgoing",
+                "label": "Outgoing"
+              },
+              {
+                "value": "system",
+                "label": "System"
+              }
+            ],
+            "uiGroupId": "message",
+            "uiGroupLabel": "Message",
+            "uiParentGroupId": "",
+            "uiOrder": 11,
+            "uiSectionLabel": "",
+            "valueKind": "OptionToken",
+            "transition": {
+              "targetInputId": "actor",
+              "triggerValues": [
+                "outgoing"
+              ],
+              "replacementValue": ""
+            }
+          },
+          {
+            "id": "text",
+            "label": "Text",
+            "jsonKey": "text",
+            "kind": "multilineText",
+            "defaultValue": "",
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              },
+              "completion": {
+                "baseDurationFieldId": "writeOn",
+                "trackOverride": "lastEnabledKeyframe",
+                "minimumEnabledKeyframes": 2
+              }
+            },
+            "uiGroupId": "message",
+            "uiGroupLabel": "Message",
+            "uiParentGroupId": "",
+            "uiOrder": 12,
+            "uiSectionLabel": "",
+            "valueKind": "StringMultiline"
+          },
+          {
+            "id": "delay",
+            "label": "Delay",
+            "jsonKey": "delayAfterPreviousFrames",
+            "kind": "number",
+            "defaultValue": "0",
+            "minimum": -100000,
+            "maximum": 100000,
+            "increment": 1,
+            "unit": "frames",
+            "uiGroupId": "timing",
+            "uiGroupLabel": "Timing",
+            "uiParentGroupId": "",
+            "uiOrder": 20,
+            "uiSectionLabel": "",
+            "valueKind": "Integer"
+          },
+          {
+            "id": "writeOn",
+            "label": "Write-on timing",
+            "jsonKey": "writeOnTiming",
+            "kind": "behaviorTiming",
+            "valueKind": "BehaviorTiming",
+            "defaultValue": "{\"mode\":\"fixed\",\"fixedFrames\":30,\"paceToken\":\"theme.motion.naturalPace.normal\"}",
+            "options": [
+              {
+                "value": "theme.motion.naturalPace.verySlow",
+                "label": "Very slow"
+              },
+              {
+                "value": "theme.motion.naturalPace.slow",
+                "label": "Slow"
+              },
+              {
+                "value": "theme.motion.naturalPace.normal",
+                "label": "Normal"
+              },
+              {
+                "value": "theme.motion.naturalPace.fast",
+                "label": "Fast"
+              },
+              {
+                "value": "theme.motion.naturalPace.veryFast",
+                "label": "Very fast"
+              }
+            ],
+            "naturalTiming": {
+              "sourceFieldId": "text",
+              "unit": "grapheme",
+              "baseFramesPerUnit": 7
+            },
+            "uiGroupId": "timing",
+            "uiGroupLabel": "Timing",
+            "uiParentGroupId": "",
+            "uiOrder": 21,
+            "uiSectionLabel": ""
+          },
+          {
+            "id": "postWriteOnHold",
+            "label": "Post write-on hold",
+            "jsonKey": "postWriteOnHoldFrames",
+            "kind": "number",
+            "defaultValue": "0",
+            "minimum": 0,
+            "maximum": 100000,
+            "increment": 1,
+            "unit": "frames",
+            "uiGroupId": "timing",
+            "uiGroupLabel": "Timing",
+            "uiParentGroupId": "",
+            "uiOrder": 22,
+            "uiSectionLabel": "",
+            "valueKind": "Integer"
+          },
+          {
+            "id": "statusVisible",
+            "label": "Show delivery status",
+            "jsonKey": "statusVisible",
+            "kind": "boolean",
+            "defaultValue": "false",
+            "animatable": true,
+            "animationInterpolations": [
+              "hold"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "fieldCompletion",
+                "fieldId": "text",
+                "offsetFrames": 0
+              },
+              "extendsOwnerDuration": false
+            },
+            "uiGroupId": "delivery",
+            "uiGroupLabel": "Delivery",
+            "uiParentGroupId": "",
+            "uiOrder": 30,
+            "uiSectionLabel": "",
+            "valueKind": "Boolean"
+          },
+          {
+            "id": "status",
+            "label": "Status",
+            "jsonKey": "statusState",
+            "kind": "option",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "sent",
+                "label": "Sent"
+              },
+              {
+                "value": "delivered",
+                "label": "Delivered"
+              },
+              {
+                "value": "read",
+                "label": "Read"
+              }
+            ],
+            "animatable": true,
+            "animationInterpolations": [
+              "hold"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "fieldCompletion",
+                "fieldId": "text",
+                "offsetFrames": 0
+              },
+              "extendsOwnerDuration": false
+            },
+            "uiGroupId": "delivery",
+            "uiGroupLabel": "Delivery",
+            "uiParentGroupId": "",
+            "uiOrder": 31,
+            "uiSectionLabel": "",
+            "valueKind": "OptionToken"
+          },
+          {
+            "id": "statusText",
+            "label": "Status text",
+            "jsonKey": "statusText",
+            "kind": "text",
+            "defaultValue": "",
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "fieldCompletion",
+                "fieldId": "text",
+                "offsetFrames": 0
+              },
+              "extendsOwnerDuration": false
+            },
+            "uiGroupId": "delivery",
+            "uiGroupLabel": "Delivery",
+            "uiParentGroupId": "",
+            "uiOrder": 32,
+            "uiSectionLabel": "",
+            "valueKind": "StringSingleLine"
+          },
+          {
+            "id": "mediaType",
+            "label": "Attachment type",
+            "jsonKey": "mediaType",
+            "kind": "option",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "image",
+                "label": "Image"
+              },
+              {
+                "value": "video",
+                "label": "Video"
+              },
+              {
+                "value": "audio",
+                "label": "Audio"
+              }
+            ],
+            "uiGroupId": "attachment",
+            "uiGroupLabel": "Attachment",
+            "uiParentGroupId": "",
+            "uiOrder": 40,
+            "uiSectionLabel": "",
+            "valueKind": "OptionToken"
+          },
+          {
+            "id": "mediaSource",
+            "label": "Media source",
+            "jsonKey": "mediaSource",
+            "kind": "mediaFilePath",
+            "valueKind": "MediaFilePath",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "mediaType",
+            "enabledWhenItemValues": [
+              "image",
+              "video",
+              "audio"
+            ],
+            "uiGroupId": "attachment",
+            "uiGroupLabel": "Attachment",
+            "uiParentGroupId": "",
+            "uiOrder": 41,
+            "uiSectionLabel": ""
+          },
+          {
+            "id": "viewport",
+            "label": "Media viewport",
+            "jsonKey": "viewportSize",
+            "kind": "integerPair",
+            "defaultValue": "240|160",
+            "pairFirstLabel": "W",
+            "pairSecondLabel": "H",
+            "uiGroupId": "attachment",
+            "uiGroupLabel": "Attachment",
+            "uiParentGroupId": "",
+            "uiOrder": 50,
+            "uiSectionLabel": "Frame",
+            "valueKind": "IntegerPair"
+          },
+          {
+            "id": "mediaScale",
+            "label": "Media scale",
+            "jsonKey": "mediaScale",
+            "kind": "number",
+            "defaultValue": "1",
+            "minimum": 0.01,
+            "maximum": 100,
+            "increment": 0.01,
+            "uiGroupId": "attachment",
+            "uiGroupLabel": "Attachment",
+            "uiParentGroupId": "",
+            "uiOrder": 51,
+            "uiSectionLabel": "Frame",
+            "valueKind": "Decimal"
+          },
+          {
+            "id": "mediaOffset",
+            "label": "Media offset",
+            "jsonKey": "mediaOffset",
+            "kind": "integerPair",
+            "defaultValue": "0|0",
+            "pairFirstLabel": "X",
+            "pairSecondLabel": "Y",
+            "uiGroupId": "attachment",
+            "uiGroupLabel": "Attachment",
+            "uiParentGroupId": "",
+            "uiOrder": 52,
+            "uiSectionLabel": "Frame",
+            "valueKind": "IntegerPair"
+          },
+          {
+            "id": "isPlaying",
+            "label": "Playing",
+            "jsonKey": "isPlaying",
+            "kind": "boolean",
+            "defaultValue": "false",
+            "animatable": true,
+            "animationInterpolations": [
+              "hold"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "fieldCompletion",
+                "fieldId": "text",
+                "offsetFrames": 0
+              }
+            },
+            "uiGroupId": "attachment",
+            "uiGroupLabel": "Attachment",
+            "uiParentGroupId": "",
+            "uiOrder": 60,
+            "uiSectionLabel": "Playback",
+            "valueKind": "Boolean"
+          },
+          {
+            "id": "currentTime",
+            "label": "Current time",
+            "jsonKey": "currentTimeSeconds",
+            "kind": "number",
+            "defaultValue": "0",
+            "minimum": 0,
+            "maximum": 86400,
+            "increment": 0.01,
+            "unit": "s",
+            "uiGroupId": "attachment",
+            "uiGroupLabel": "Attachment",
+            "uiParentGroupId": "",
+            "uiOrder": 61,
+            "uiSectionLabel": "Playback",
+            "valueKind": "Decimal"
+          },
+          {
+            "id": "duration",
+            "label": "Source duration",
+            "jsonKey": "durationSeconds",
+            "kind": "number",
+            "defaultValue": "12",
+            "minimum": 1,
+            "maximum": 86400,
+            "increment": 0.01,
+            "enabledWhenItemJsonKey": "mediaType",
+            "enabledWhenItemValues": [
+              "video",
+              "audio"
+            ],
+            "unit": "s",
+            "uiGroupId": "attachment",
+            "uiGroupLabel": "Attachment",
+            "uiParentGroupId": "",
+            "uiOrder": 62,
+            "uiSectionLabel": "Playback",
+            "valueKind": "Decimal"
+          },
+          {
+            "id": "playbackMode",
+            "label": "Playback mode",
+            "jsonKey": "playbackMode",
+            "kind": "option",
+            "defaultValue": "once",
+            "options": [
+              {
+                "value": "once",
+                "label": "Play once"
+              },
+              {
+                "value": "loop",
+                "label": "Loop"
+              }
+            ],
+            "enabledWhenItemJsonKey": "mediaType",
+            "enabledWhenItemValues": [
+              "video",
+              "audio"
+            ],
+            "uiGroupId": "attachment",
+            "uiGroupLabel": "Attachment",
+            "uiParentGroupId": "",
+            "uiOrder": 63,
+            "uiSectionLabel": "Playback",
+            "valueKind": "OptionToken"
+          },
+          {
+            "id": "playDuration",
+            "label": "Playback duration",
+            "jsonKey": "playDurationFrames",
+            "kind": "number",
+            "defaultValue": "72",
+            "minimum": 1,
+            "maximum": 100000,
+            "increment": 1,
+            "enabledWhenItemJsonKey": "mediaType",
+            "enabledWhenItemValues": [
+              "video",
+              "audio"
+            ],
+            "unit": "frames",
+            "uiGroupId": "attachment",
+            "uiGroupLabel": "Attachment",
+            "uiParentGroupId": "",
+            "uiOrder": 64,
+            "uiSectionLabel": "Playback",
+            "valueKind": "Integer"
+          },
+          {
+            "id": "fullScreen",
+            "label": "Full screen",
+            "jsonKey": "isFullScreen",
+            "kind": "boolean",
+            "defaultValue": "false",
+            "animatable": true,
+            "animationInterpolations": [
+              "hold"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "fieldCompletion",
+                "fieldId": "text",
+                "offsetFrames": 0
+              }
+            },
+            "uiGroupId": "attachment",
+            "uiGroupLabel": "Attachment",
+            "uiParentGroupId": "",
+            "uiOrder": 70,
+            "uiSectionLabel": "Full screen",
+            "valueKind": "Boolean"
+          },
+          {
+            "id": "fullScreenTransition",
+            "label": "Full-screen transition",
+            "jsonKey": "fullScreenTransition",
+            "kind": "boolean",
+            "defaultValue": "false",
+            "uiGroupId": "attachment",
+            "uiGroupLabel": "Attachment",
+            "uiParentGroupId": "",
+            "uiOrder": 71,
+            "uiSectionLabel": "Full screen",
+            "valueKind": "Boolean"
+          },
+          {
+            "id": "fullframeOrientation",
+            "label": "Fullframe orientation",
+            "jsonKey": "fullframeOrientation",
+            "kind": "option",
+            "defaultValue": "portrait",
+            "options": [
+              {
+                "value": "portrait",
+                "label": "Portrait"
+              },
+              {
+                "value": "landscape",
+                "label": "Landscape"
+              }
+            ],
+            "uiGroupId": "attachment",
+            "uiGroupLabel": "Attachment",
+            "uiParentGroupId": "",
+            "uiOrder": 72,
+            "uiSectionLabel": "Full screen",
+            "valueKind": "OptionToken"
+          },
+          {
+            "id": "controlsElapsed",
+            "label": "Controls elapsed ms",
+            "jsonKey": "controlsElapsedMs",
+            "kind": "number",
+            "defaultValue": "0",
+            "minimum": 0,
+            "maximum": 86400000,
+            "increment": 1,
+            "unit": "ms",
+            "uiGroupId": "attachment",
+            "uiGroupLabel": "Attachment",
+            "uiParentGroupId": "",
+            "uiOrder": 65,
+            "uiSectionLabel": "Playback",
+            "valueKind": "Integer"
+          },
+          {
+            "id": "visibleDuration",
+            "label": "Visible duration",
+            "jsonKey": "visibleDurationFrames",
+            "kind": "number",
+            "defaultValue": "0",
+            "minimum": 0,
+            "maximum": 100000,
+            "increment": 1,
+            "unit": "frames",
+            "helpText": "0 keeps the item visible until the end of the Screen. A positive value defines an explicit Out.",
+            "uiGroupId": "timing",
+            "uiGroupLabel": "Timing",
+            "uiParentGroupId": "",
+            "uiOrder": 23,
+            "uiSectionLabel": "",
+            "valueKind": "Integer"
+          }
+        ],
+        "itemActions": [
+          {
+            "id": "playVideo",
+            "label": "Play video",
+            "playInputId": "isPlaying",
+            "durationInputId": "playDuration",
+            "timeJsonKey": "playbackFrame",
+            "timeUnit": "frames",
+            "prewarmFrames": false,
+            "extendsModuleDuration": true,
+            "durationEnabledInputId": "isPlaying",
+            "visibleWhenItemJsonKey": "mediaType",
+            "visibleWhenItemValues": [
+              "video"
+            ],
+            "completionBehavior": "reset"
+          },
+          {
+            "id": "playAudio",
+            "label": "Play audio",
+            "playInputId": "isPlaying",
+            "durationInputId": "playDuration",
+            "timeJsonKey": "playbackFrame",
+            "timeUnit": "frames",
+            "prewarmFrames": false,
+            "extendsModuleDuration": true,
+            "durationEnabledInputId": "isPlaying",
+            "visibleWhenItemJsonKey": "mediaType",
+            "visibleWhenItemValues": [
+              "audio"
+            ],
+            "completionBehavior": "reset"
+          },
+          {
+            "id": "fullScreen",
+            "label": "Full screen",
+            "playInputId": "fullScreenTransition",
+            "targetInputId": "isFullScreen",
+            "targetMode": "toggle",
+            "durationSeconds": 0.3,
+            "timeJsonKey": "motionElapsedMs",
+            "timeUnit": "milliseconds",
+            "prewarmFrames": false,
+            "visibleWhenItemJsonKey": "mediaType",
+            "visibleWhenItemValues": [
+              "video"
+            ],
+            "completionBehavior": "reset"
+          }
+        ]
+      }
+    ],
+    "bubbleRevealMode": "afterWriteOn",
+    "textInputVisible": true,
+    "keyboardVisible": true,
+    "incomingRevealMode": "typingIndicator",
+    "typingIndicatorText": "•••",
+    "typingIndicatorSizeToken": "theme.typography.sizes.m",
+    "typingIndicatorAnimation": "pulsating",
+    "timelineFrameJsonKey": "conversationFrame",
+    "conversationType": "individual"
+  },
+  "defaultVariant": {
+    "id": "default",
+    "name": "Default",
+    "protected": true,
+    "locked": true,
+    "config": {
+      "conversation": {
+        "showHeader": true,
+        "headerHeight": 40,
+        "showStatusBar": true,
+        "showNavigationBar": true,
+        "showTextInputBar": true,
+        "textInputBarVariant": "component_project_foqn_s2_textInputBar::variant::default_copy",
+        "showKeyboard": true,
+        "keyboardVariant": "component_project_foqn_s2_keyboard::variant::default_copy",
+        "bubbleVariant": "component_project_foqn_s2_bubble::variant::default_copy",
+        "screenGutter": "theme.spacing.l|theme.spacing.l",
+        "messageGap": "theme.spacing.l",
+        "bubbleMaxWidth": 66,
+        "useAppWallpaper": true,
+        "headerAvatarVariant": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+        "headerAvatarAlignment": "left",
+        "headerLeftIconRowSlot": {
+          "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+          "overrides": {
+            "iconRow": {
+              "items": [
+                {
+                  "id": "button_7b4e351285854647ade31e13887ce39f",
+                  "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                  "state": "normal",
+                  "iconToken": "android_nav_back",
+                  "text": "",
+                  "iconSizeToken": "theme.iconSizes.m",
+                  "textSizeToken": "theme.typography.sizes.s",
+                  "pushTrigger": false,
+                  "pushElapsedMs": 0,
+                  "buttonOverrides": {}
+                }
+              ]
+            }
+          }
+        },
+        "headerRightIconRowSlot": {
+          "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+          "overrides": {
+            "iconRow": {
+              "items": [
+                {
+                  "id": "button_783e5f18980742d197e32380c16a6c0d",
+                  "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                  "state": "normal",
+                  "iconToken": "phone_call",
+                  "text": "",
+                  "iconSizeToken": "theme.iconSizes.m",
+                  "textSizeToken": "theme.typography.sizes.s",
+                  "pushTrigger": false,
+                  "pushElapsedMs": 0,
+                  "buttonOverrides": {}
+                },
+                {
+                  "id": "button_001",
+                  "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                  "state": "normal",
+                  "iconToken": "media_video",
+                  "text": "",
+                  "iconSizeToken": "theme.iconSizes.m",
+                  "textSizeToken": "theme.typography.sizes.s",
+                  "pushTrigger": false,
+                  "pushElapsedMs": 0,
+                  "buttonOverrides": {}
+                }
+              ]
+            }
+          }
+        },
+        "headerLeftIconRowInputs": {
+          "buttonInputs": [
+            {
+              "id": "button_7b4e351285854647ade31e13887ce39f",
+              "state": "normal",
+              "sampleText": "",
+              "iconToken": "android_nav_back",
+              "iconSizeToken": "theme.iconSizes.m",
+              "textSizeToken": "theme.typography.sizes.s",
+              "showBadge": false,
+              "badgeContentMode": "text",
+              "badgeIconToken": "system_check",
+              "badgeText": "1",
+              "badgeSize": 20,
+              "badgeBackgroundPaletteColor": "blue",
+              "badgeContentPaletteColor": "gray_100",
+              "iconColorToken": "theme.colors.icon",
+              "textColorToken": "theme.colors.textPrimary"
+            }
+          ]
+        },
+        "headerRightIconRowInputs": {
+          "buttonInputs": [
+            {
+              "id": "button_783e5f18980742d197e32380c16a6c0d",
+              "state": "normal",
+              "sampleText": "",
+              "iconToken": "phone_call",
+              "iconSizeToken": "theme.iconSizes.m",
+              "textSizeToken": "theme.typography.sizes.s",
+              "showBadge": false,
+              "badgeContentMode": "text",
+              "badgeIconToken": "system_check",
+              "badgeText": "1",
+              "badgeSize": 20,
+              "badgeBackgroundPaletteColor": "blue",
+              "badgeContentPaletteColor": "gray_100",
+              "iconColorToken": "theme.colors.icon",
+              "textColorToken": "theme.colors.textPrimary"
+            },
+            {
+              "id": "button_001",
+              "state": "normal",
+              "sampleText": "",
+              "iconToken": "media_video",
+              "iconSizeToken": "theme.iconSizes.m",
+              "textSizeToken": "theme.typography.sizes.s",
+              "showBadge": false,
+              "badgeContentMode": "text",
+              "badgeIconToken": "system_check",
+              "badgeText": "1",
+              "badgeSize": 20,
+              "badgeBackgroundPaletteColor": "blue",
+              "badgeContentPaletteColor": "gray_100",
+              "iconColorToken": "theme.colors.icon",
+              "textColorToken": "theme.colors.textPrimary"
+            }
+          ]
+        },
+        "headerSurfaceSlot": {
+          "variantReference": "component_project_foqn_s2_surface::variant::default",
+          "overrides": {
+            "style": {
+              "cornerRadiusToken": "theme.radii.none"
+            }
+          }
+        },
+        "headerUseActorColor": true,
+        "messageMotion": {
+          "transition": "slide",
+          "direction": "left",
+          "bounds": "parent",
+          "fade": true,
+          "translate": false,
+          "scale": false
+        }
+      },
+      "appearanceMode": "inherit"
+    }
+  },
+  "additionalVariants": [],
+  "runtimeContract": {
+    "source": null,
+    "durationPolicy": "calculated",
+    "defaultDurationFrames": null
+  },
+  "metadata": {
+    "note": "Seed conversation module linked to Chat app."
+  },
+  "dictionaryFields": [],
+  "editorLayout": {
+    "cards": [
+      {
+        "id": "general",
+        "label": "General",
+        "subtitle": "Identity",
+        "icon": "general",
+        "order": 10,
+        "visible": true,
+        "defaultOpen": true,
+        "groups": [
+          {
+            "id": "identity",
+            "label": "Identity",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "core.name",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "module.recordClassId",
+                "order": 20,
+                "visible": false
+              },
+              {
+                "id": "module.sortOrder",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "module.appearanceMode",
+                "order": 40,
+                "visible": true
+              },
+              {
+                "id": "core.notes",
+                "order": 50,
+                "visible": true
+              },
+              {
+                "id": "module.metadata",
+                "order": 60,
+                "visible": false
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "layout",
+        "label": "Layout",
+        "subtitle": "Conversation frame and spacing",
+        "icon": "layout",
+        "order": 20,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "layout",
+            "label": "Layout",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "module.conversation.useAppWallpaper",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "module.conversation.screenGutter",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "module.conversation.messageGap",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "module.conversation.messageViewportMotion",
+                "order": 40,
+                "visible": true
+              },
+              {
+                "id": "module.conversation.messageMotion",
+                "order": 35,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "header",
+        "label": "Header",
+        "subtitle": "Conversation header composition",
+        "icon": "header",
+        "order": 25,
+        "visible": true,
+        "defaultOpen": true,
+        "groups": [
+          {
+            "id": "header",
+            "label": "Header",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "module.conversation.showHeader",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "module.conversation.headerHeight",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "module.conversation.headerSurface.editor",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "module.conversation.headerUseActorColor",
+                "order": 40,
+                "visible": true
+              },
+              {
+                "id": "module.conversation.headerAvatarVariant",
+                "order": 50,
+                "visible": true
+              },
+              {
+                "id": "module.conversation.headerAvatarAlignment",
+                "order": 60,
+                "visible": true
+              },
+              {
+                "id": "module.conversation.headerLeftIconRow.editor",
+                "order": 70,
+                "visible": true
+              },
+              {
+                "id": "module.conversation.headerRightIconRow.editor",
+                "order": 80,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "status-bar",
+        "label": "Status Bar",
+        "subtitle": "System status component",
+        "icon": "status",
+        "order": 30,
+        "visible": true,
+        "defaultOpen": true,
+        "groups": [
+          {
+            "id": "status-bar",
+            "label": "Status Bar",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "module.conversation.showStatusBar",
+                "order": 10,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "navigation-bar",
+        "label": "Navigation Bar",
+        "subtitle": "System navigation component",
+        "icon": "navigation",
+        "order": 40,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "navigation-bar",
+            "label": "Navigation Bar",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "module.conversation.showNavigationBar",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "keyboard",
+        "label": "Keyboard",
+        "subtitle": "Keyboard component",
+        "icon": "keyboard",
+        "order": 50,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "keyboard",
+            "label": "Keyboard",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "module.conversation.showKeyboard",
+                "order": 50,
+                "visible": true
+              },
+              {
+                "id": "module.conversation.keyboardVariant",
+                "order": 60,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "text-input",
+        "label": "Text Input Bar",
+        "subtitle": "Input bar component",
+        "icon": "text-input",
+        "order": 60,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "text-input",
+            "label": "Text Input Bar",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "module.conversation.showTextInputBar",
+                "order": 70,
+                "visible": true
+              },
+              {
+                "id": "module.conversation.textInputBarVariant",
+                "order": 80,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "bubble",
+        "label": "Bubble",
+        "subtitle": "Message bubble component",
+        "icon": "bubble",
+        "order": 70,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "bubble",
+            "label": "Bubble",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "module.conversation.bubbleVariant",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "module.conversation.bubbleMaxWidth",
+                "order": 20,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "assets": []
+}

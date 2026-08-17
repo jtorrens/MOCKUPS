@@ -85,6 +85,7 @@ function renderFieldCatalog(specs: readonly ModuleScaffoldSpec[]) {
     .map((field) => `        fields.Add(${csharpString(field.id)}, ${renderField(field)});`)
     .join("\n");
   return `// Generated from scaffolding/modules/*.json. Do not edit manually.\n`
+    + `// Modules: ${specs.map((spec) => spec.module.recordClassId).join(", ")}\n`
     + `using System.Collections.Generic;\n\n`
     + `namespace Mockups.DesktopEditorShell.EditorShell;\n\n`
     + `public static class GeneratedModuleScaffoldFieldCatalog\n`
@@ -99,8 +100,8 @@ function renderFieldCatalog(specs: readonly ModuleScaffoldSpec[]) {
 
 function renderConfigRegistry(specs: readonly ModuleScaffoldSpec[]) {
   const validationCases = specs.map((spec) => {
-    const owner = `${moduleTypeName(spec)}ModuleConfigContract`;
-    return `            case ${owner}.RecordClassId:\n`
+    const owner = spec.owners.configContractExport;
+    return `            case ${csharpString(spec.module.recordClassId)}:\n`
       + `                ${owner}.Validate(config, context);\n`
       + `                return true;`;
   }).join("\n");
@@ -119,6 +120,7 @@ function renderConfigRegistry(specs: readonly ModuleScaffoldSpec[]) {
         .join(", ")}]),`)
     .join("\n");
   return `// Generated from scaffolding/modules/*.json. Do not edit manually.\n`
+    + `// Modules: ${specs.map((spec) => spec.module.recordClassId).join(", ")}\n`
     + `using Mockups.DesktopEditorShell.EditorShell;\n`
     + `using System;\n`
     + `using System.Collections.Generic;\n`
@@ -181,6 +183,7 @@ function renderEmbeddedSlots(specs: readonly ModuleScaffoldSpec[]) {
         + `            [${field.jsonPath.map(csharpString).join(", ")}]),`;
     }).join("\n");
   return `// Generated from scaffolding/modules/*.json. Do not edit manually.\n`
+    + `// Modules: ${specs.map((spec) => spec.module.recordClassId).join(", ")}\n`
     + `namespace Mockups.DesktopEditorShell.EditorShell;\n\n`
     + `public static class GeneratedModuleScaffoldEmbeddedSlots\n`
     + `{\n`
@@ -254,14 +257,6 @@ function requiredOptionString(option: JsonObject, key: string) {
     throw new Error(`Generated Module dictionary option requires string '${key}'.`);
   }
   return value;
-}
-
-function moduleTypeName(spec: ModuleScaffoldSpec) {
-  return pascalCase(spec.module.recordClassId.split(".").at(-1) ?? "");
-}
-
-function pascalCase(value: string) {
-  return value.length === 0 ? value : `${value[0]!.toUpperCase()}${value.slice(1)}`;
 }
 
 function csharpString(value: string) {

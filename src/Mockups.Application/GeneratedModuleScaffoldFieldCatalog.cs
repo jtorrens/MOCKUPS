@@ -1,4 +1,5 @@
 // Generated from scaffolding/modules/*.json. Do not edit manually.
+// Modules: module.core.chat, module.core.chatList, module.core.lockScreen
 using System.Collections.Generic;
 
 namespace Mockups.DesktopEditorShell.EditorShell;

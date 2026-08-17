@@ -68,9 +68,11 @@ export interface ModuleScaffoldSpec {
     contractExport: string;
     resolverExport: string;
     renderableExport: string;
+    configContractExport: string;
     focusedTest: string;
   };
   config: JsonObject;
+  designPreview: JsonObject | null;
   defaultVariant: {
     id: "default";
     name: string;
@@ -92,7 +94,7 @@ export interface ModuleScaffoldSpec {
       variantReferenceConfigPath: string;
       inputIds: string[];
       collectionIds: string[];
-    };
+    } | null;
     durationPolicy: ModuleDurationPolicy;
     defaultDurationFrames: number | null;
   };
@@ -206,6 +208,7 @@ export function parseModuleScaffoldSpec(value: unknown): ModuleScaffoldSpec {
     "manifest",
     "owners",
     "config",
+    "designPreview",
     "defaultVariant",
     "additionalVariants",
     "runtimeContract",
@@ -248,7 +251,7 @@ export function parseModuleScaffoldSpec(value: unknown): ModuleScaffoldSpec {
   const owners = requiredObject(root.owners, "Module scaffold owners");
   requireExactKeys(
     owners,
-    ["contractExport", "resolverExport", "renderableExport", "focusedTest"],
+    ["contractExport", "resolverExport", "renderableExport", "configContractExport", "focusedTest"],
     "Module scaffold owners",
   );
 
@@ -277,18 +280,22 @@ export function parseModuleScaffoldSpec(value: unknown): ModuleScaffoldSpec {
     ["source", "durationPolicy", "defaultDurationFrames"],
     "Module scaffold runtimeContract",
   );
-  const source = requiredObject(runtimeContract.source, "Module scaffold runtimeContract source");
-  requireExactKeys(
-    source,
-    [
-      "componentType",
-      "variantReference",
-      "variantReferenceConfigPath",
-      "inputIds",
-      "collectionIds",
-    ],
-    "Module scaffold runtimeContract source",
-  );
+  const source = runtimeContract.source === null
+    ? null
+    : requiredObject(runtimeContract.source, "Module scaffold runtimeContract source");
+  if (source) {
+    requireExactKeys(
+      source,
+      [
+        "componentType",
+        "variantReference",
+        "variantReferenceConfigPath",
+        "inputIds",
+        "collectionIds",
+      ],
+      "Module scaffold runtimeContract source",
+    );
+  }
   const durationPolicy = requiredString(
     runtimeContract.durationPolicy,
     "Module scaffold runtimeContract durationPolicy",
@@ -331,9 +338,16 @@ export function parseModuleScaffoldSpec(value: unknown): ModuleScaffoldSpec {
       contractExport: requiredString(owners.contractExport, "Module scaffold contract export"),
       resolverExport: requiredString(owners.resolverExport, "Module scaffold resolver export"),
       renderableExport: requiredString(owners.renderableExport, "Module scaffold renderable export"),
+      configContractExport: requiredString(
+        owners.configContractExport,
+        "Module scaffold config contract export",
+      ),
       focusedTest: requiredString(owners.focusedTest, "Module scaffold focused test"),
     },
     config: requiredJsonObject(root.config, "Module scaffold config"),
+    designPreview: root.designPreview === null
+      ? null
+      : requiredJsonObject(root.designPreview, "Module scaffold designPreview"),
     defaultVariant: {
       id: "default",
       name: requiredString(defaultVariant.name, "Module scaffold defaultVariant name"),
@@ -360,7 +374,7 @@ export function parseModuleScaffoldSpec(value: unknown): ModuleScaffoldSpec {
       };
     }),
     runtimeContract: {
-      source: {
+      source: source ? {
         componentType: requiredString(source.componentType, "Module runtime source componentType"),
         variantReference: requiredString(source.variantReference, "Module runtime source variantReference"),
         variantReferenceConfigPath: requiredString(
@@ -369,7 +383,7 @@ export function parseModuleScaffoldSpec(value: unknown): ModuleScaffoldSpec {
         ),
         inputIds: stringArray(source.inputIds, "Module runtime source inputIds"),
         collectionIds: stringArray(source.collectionIds, "Module runtime source collectionIds"),
-      },
+      } : null,
       durationPolicy,
       defaultDurationFrames,
     },
@@ -700,9 +714,11 @@ export function moduleScaffoldTemplate(): ModuleScaffoldSpec {
       contractExport: "ReplaceMeModuleContract",
       resolverExport: "resolveReplaceMeModule",
       renderableExport: "replaceMeModuleToRenderable",
+      configContractExport: "ReplaceMeModuleConfigContract",
       focusedTest: "tests/animation/replaceMeModule.test.ts",
     },
     config,
+    designPreview: null,
     defaultVariant: {
       id: "default",
       name: "Default",
@@ -764,13 +780,12 @@ export function resolveModuleScaffoldContract(
   const source = resolveRuntimeSource(spec, inventory, violations);
   const resolved = source
     ? resolveRuntimeContract(spec, source, violations)
-    : { designPreview: {}, metadata: {} };
+    : resolveOwnedRuntimeContract(spec, violations);
   if (violations.length > 0) throw new ModuleScaffoldValidationError(violations);
   return resolved;
 }
 
 export function moduleOwnerTargets(spec: ModuleScaffoldSpec) {
-  const typeName = pascalCase(spec.module.recordClassId.split(".").at(-1) ?? "");
   return [
     {
       role: "contract" as const,
@@ -793,14 +808,14 @@ export function moduleOwnerTargets(spec: ModuleScaffoldSpec) {
     {
       role: "desktopConfigContract" as const,
       label: "desktop config contract",
-      path: `src/Mockups.Application/${typeName}ModuleConfigContract.cs`,
-      requiredTerm: `${typeName}ModuleConfigContract`,
+      path: `src/Mockups.Application/${spec.owners.configContractExport}.cs`,
+      requiredTerm: spec.owners.configContractExport,
     },
     {
       role: "focusedTest" as const,
       label: "focused test",
       path: spec.owners.focusedTest,
-      requiredTerm: spec.owners.resolverExport,
+      requiredTerm: "",
     },
   ];
 }
@@ -811,6 +826,7 @@ function resolveRuntimeSource(
   violations: string[],
 ) {
   const sourceSpec = spec.runtimeContract.source;
+  if (sourceSpec === null) return undefined;
   if (!inventory.componentTypes.has(sourceSpec.componentType)) {
     violations.push(
       `Runtime source Component '${sourceSpec.componentType}' is not in the manifest.`,
@@ -863,6 +879,10 @@ function resolveRuntimeContract(
   source: RuntimeSourceRow,
   violations: string[],
 ): ResolvedModuleScaffoldContract {
+  const sourceSpec = spec.runtimeContract.source;
+  if (sourceSpec === null) {
+    throw new Error("Projected Module Runtime contract requires a Component source.");
+  }
   const preview = requiredJsonObject(
     JSON.parse(source.designPreviewJson) as unknown,
     `Runtime source '${source.componentType}' Design Preview`,
@@ -872,14 +892,14 @@ function resolveRuntimeContract(
   const inputIds = inputs.map((input) => requiredString(input.id, "Runtime source input id"));
   const collectionIds = collections.map((collection) =>
     requiredString(collection.id, "Runtime source collection id"));
-  if (canonicalJson(inputIds) !== canonicalJson(spec.runtimeContract.source.inputIds)) {
+  if (canonicalJson(inputIds) !== canonicalJson(sourceSpec.inputIds)) {
     violations.push(
-      `Runtime source input ids differ: expected [${spec.runtimeContract.source.inputIds.join(", ")}], found [${inputIds.join(", ")}].`,
+      `Runtime source input ids differ: expected [${sourceSpec.inputIds.join(", ")}], found [${inputIds.join(", ")}].`,
     );
   }
-  if (canonicalJson(collectionIds) !== canonicalJson(spec.runtimeContract.source.collectionIds)) {
+  if (canonicalJson(collectionIds) !== canonicalJson(sourceSpec.collectionIds)) {
     violations.push(
-      `Runtime source collection ids differ: expected [${spec.runtimeContract.source.collectionIds.join(", ")}], found [${collectionIds.join(", ")}].`,
+      `Runtime source collection ids differ: expected [${sourceSpec.collectionIds.join(", ")}], found [${collectionIds.join(", ")}].`,
     );
   }
   const designPreview = structuredClone(preview);
@@ -892,7 +912,7 @@ function resolveRuntimeContract(
     if (typeof collection.itemRuntimeVariantReferencePath === "string"
         && collection.itemRuntimeVariantReferencePath.length > 0) {
       collection.itemRuntimeOwnerVariantReferencePath =
-        spec.runtimeContract.source.variantReferenceConfigPath;
+        sourceSpec.variantReferenceConfigPath;
     }
   }
   designPreview.animationTimeline = spec.runtimeContract.durationPolicy === "explicit"
@@ -901,13 +921,45 @@ function resolveRuntimeContract(
       defaultDurationFrames: spec.runtimeContract.defaultDurationFrames!,
     }
     : { durationPolicy: "calculated" };
+  validateDurationContract(spec, violations);
+  return {
+    designPreview,
+    metadata: {
+      ...spec.metadata,
+      variants: [spec.defaultVariant, ...spec.additionalVariants],
+    },
+  };
+}
+
+function resolveOwnedRuntimeContract(
+  spec: ModuleScaffoldSpec,
+  violations: string[],
+): ResolvedModuleScaffoldContract {
+  validateDurationContract(spec, violations);
+  const designPreview = spec.designPreview;
+  if (designPreview === null) {
+    violations.push("Module-owned Runtime contract requires an exact designPreview document.");
+    return { designPreview: {}, metadata: {} };
+  }
+  if (designPreview.componentType !== undefined
+      && designPreview.componentType !== spec.module.recordClassId) {
+    violations.push(
+      `Module-owned designPreview componentType must equal '${spec.module.recordClassId}'.`,
+    );
+  }
   if (spec.runtimeContract.durationPolicy === "explicit") {
-    if (!spec.runtimeContract.defaultDurationFrames
-        || spec.runtimeContract.defaultDurationFrames <= 0) {
-      violations.push("Explicit Module duration requires positive defaultDurationFrames.");
+    const expectedTimeline = {
+      durationPolicy: "explicit",
+      defaultDurationFrames: spec.runtimeContract.defaultDurationFrames!,
+    };
+    if (canonicalJson(designPreview.animationTimeline)
+        !== canonicalJson(expectedTimeline)) {
+      violations.push("Module-owned designPreview has a different explicit duration contract.");
     }
-  } else if (spec.runtimeContract.defaultDurationFrames !== null) {
-    violations.push("Calculated Module duration must use null defaultDurationFrames.");
+  } else if (designPreview.animationTimeline !== undefined
+      && canonicalJson(designPreview.animationTimeline)
+        !== canonicalJson({ durationPolicy: "calculated" })) {
+    violations.push("Module-owned designPreview has a different calculated duration contract.");
   }
   return {
     designPreview,
@@ -916,6 +968,20 @@ function resolveRuntimeContract(
       variants: [spec.defaultVariant, ...spec.additionalVariants],
     },
   };
+}
+
+function validateDurationContract(
+  spec: ModuleScaffoldSpec,
+  violations: string[],
+) {
+  if (spec.runtimeContract.durationPolicy === "explicit") {
+    if (!spec.runtimeContract.defaultDurationFrames
+        || spec.runtimeContract.defaultDurationFrames <= 0) {
+      violations.push("Explicit Module duration requires positive defaultDurationFrames.");
+    }
+  } else if (spec.runtimeContract.defaultDurationFrames !== null) {
+    violations.push("Calculated Module duration must use null defaultDurationFrames.");
+  }
 }
 
 function validateFields(
@@ -1188,10 +1254,6 @@ function canonicalJson(value: unknown): string {
   const record = value as Record<string, unknown>;
   return `{${Object.keys(record).sort().map((key) =>
     `${JSON.stringify(key)}:${canonicalJson(record[key])}`).join(",")}}`;
-}
-
-function pascalCase(value: string) {
-  return value.length === 0 ? value : `${value[0]!.toUpperCase()}${value.slice(1)}`;
 }
 
 function requiredObject(value: unknown, owner: string): Record<string, unknown> {

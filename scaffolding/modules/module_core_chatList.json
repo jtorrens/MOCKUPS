@@ -34,7 +34,8 @@
     "contractExport": "ChatListModuleContract",
     "resolverExport": "resolveChatListModule",
     "renderableExport": "chatListModuleToRenderable",
-    "focusedTest": "tests/animation/chatListModule.test.ts"
+    "focusedTest": "tests/animation/chatListModule.test.ts",
+    "configContractExport": "ChatListModuleConfigContract"
   },
   "config": {
     "appearanceMode": "inherit",
@@ -471,5 +472,6 @@
       }
     ]
   },
-  "assets": []
+  "assets": [],
+  "designPreview": null
 }
