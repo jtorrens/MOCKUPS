@@ -26,8 +26,14 @@ internal static class ConversationModuleConfigContract
             JsonPath.RequiredString(conversation, "headerAvatarAlignment", owner),
             ["left", "center", "right"],
             $"{owner}.headerAvatarAlignment");
-        RequireSlot(conversation, "headerLeftIconRowSlot", owner);
-        RequireSlot(conversation, "headerRightIconRowSlot", owner);
+        var headerLeftIconRowSlot = RequireSlot(
+            conversation,
+            "headerLeftIconRowSlot",
+            owner);
+        var headerRightIconRowSlot = RequireSlot(
+            conversation,
+            "headerRightIconRowSlot",
+            owner);
         var headerLeftIconRowInputs = JsonPath.RequiredObject(
             conversation,
             "headerLeftIconRowInputs",
@@ -38,6 +44,10 @@ internal static class ConversationModuleConfigContract
                 "items",
                 $"{owner}.headerLeftIconRowInputs"),
             $"{owner}.headerLeftIconRowInputs.items");
+        ValidateLocalIconRowStructure(
+            headerLeftIconRowSlot,
+            headerLeftIconRowInputs,
+            $"{owner}.headerLeftIconRow");
         var headerRightIconRowInputs = JsonPath.RequiredObject(
             conversation,
             "headerRightIconRowInputs",
@@ -48,6 +58,10 @@ internal static class ConversationModuleConfigContract
                 "items",
                 $"{owner}.headerRightIconRowInputs"),
             $"{owner}.headerRightIconRowInputs.items");
+        ValidateLocalIconRowStructure(
+            headerRightIconRowSlot,
+            headerRightIconRowInputs,
+            $"{owner}.headerRightIconRow");
         JsonPath.RequiredBoolean(conversation, "showStatusBar", owner);
         JsonPath.RequiredBoolean(conversation, "showNavigationBar", owner);
         JsonPath.RequiredBoolean(conversation, "showTextInputBar", owner);
@@ -69,12 +83,30 @@ internal static class ConversationModuleConfigContract
             MotionVariantValue.Parse(motion.ToJsonString());
     }
 
-    private static void RequireSlot(JsonObject conversation, string key, string owner)
+    private static JsonObject RequireSlot(JsonObject conversation, string key, string owner)
     {
         var slot = JsonPath.RequiredObject(conversation, key, owner);
         var slotOwner = $"{owner}.{key}";
         JsonPath.RequiredString(slot, "variantReference", slotOwner);
         JsonPath.RequiredObject(slot, "overrides", slotOwner);
+        return slot;
+    }
+
+    private static void ValidateLocalIconRowStructure(
+        JsonObject slot,
+        JsonObject inputs,
+        string owner)
+    {
+        if (JsonPath.Get(slot, ["overrides", "iconRow", "items"])
+            is not JsonArray structuralItems)
+        {
+            return;
+        }
+
+        IconSlotsDocumentContract.ValidateRuntimeItemsMatchStructure(
+            structuralItems,
+            JsonPath.RequiredArray(inputs, "items", owner),
+            owner);
     }
 
     private static void RequireNonNegative(double value, string path)

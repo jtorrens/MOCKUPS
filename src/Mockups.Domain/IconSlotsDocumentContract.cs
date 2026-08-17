@@ -89,4 +89,38 @@ public static class IconSlotsDocumentContract
         item["buttonOverrides"] =
             ComponentVariantSlotDocumentContract.Overrides(slot, slotOwner).DeepClone();
     }
+
+    public static void ValidateRuntimeItemsMatchStructure(
+        JsonArray structuralItems,
+        JsonArray runtimeItems,
+        string owner)
+    {
+        Validate(structuralItems, $"{owner} structural items");
+        Validate(runtimeItems, $"{owner} Runtime items");
+        var structuralIds = structuralItems
+            .Select((item) => JsonPath.RequiredString(
+                item!.AsObject(),
+                "id",
+                $"{owner} structural item"))
+            .ToList();
+        var runtimeIds = runtimeItems
+            .Select((item) => JsonPath.RequiredString(
+                item!.AsObject(),
+                "id",
+                $"{owner} Runtime item"))
+            .ToList();
+        var missing = structuralIds.Except(runtimeIds, StringComparer.Ordinal)
+            .ToList();
+        var unknown = runtimeIds.Except(structuralIds, StringComparer.Ordinal)
+            .ToList();
+        if (missing.Count == 0 && unknown.Count == 0)
+        {
+            return;
+        }
+
+        throw new InvalidOperationException(
+            $"{owner} Runtime Button items must match its effective Icon Row structure exactly"
+            + (missing.Count == 0 ? "" : $"; missing: {string.Join(", ", missing)}")
+            + (unknown.Count == 0 ? "" : $"; unknown: {string.Join(", ", unknown)}"));
+    }
 }

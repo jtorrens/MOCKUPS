@@ -89,6 +89,24 @@ internal sealed partial class SqliteDesignOwner
                 componentClassId,
                 config.ToJsonString(),
                 metadata.ToJsonString());
+            if (settings.ComponentType.Equals("iconRow", StringComparison.Ordinal)
+                && descriptor.Id.Equals("component.iconRow.items", StringComparison.Ordinal))
+            {
+                SynchronizeVariantOwnedCollectionConsumers(
+                    connection,
+                    settings.ProjectId,
+                    VariantReferenceId.Format(
+                        componentClassId,
+                        VariantEnvelopeContract.DefaultId),
+                    descriptor,
+                    JsonPath.RequiredArray(
+                        JsonPath.RequiredObject(
+                            config,
+                            "iconRow",
+                            $"Component class '{componentClassId}' config"),
+                        "items",
+                        $"Component class '{componentClassId}' config"));
+            }
         }
     }
 
@@ -123,6 +141,25 @@ internal sealed partial class SqliteDesignOwner
                 componentClassId,
                 config,
                 metadata);
+            var component = _componentClassRepository.Get(
+                connection,
+                componentClassId);
+            if (component.ComponentType.Equals("iconRow", StringComparison.Ordinal)
+                && descriptor.Id.Equals("component.iconRow.items", StringComparison.Ordinal))
+            {
+                SynchronizeVariantOwnedCollectionConsumers(
+                    connection,
+                    component.ProjectId,
+                    variantNode.Id,
+                    descriptor,
+                    JsonPath.RequiredArray(
+                        JsonPath.RequiredObject(
+                            config,
+                            "iconRow",
+                            $"Component Variant '{variantNode.Id}' config"),
+                        "items",
+                        $"Component Variant '{variantNode.Id}' config"));
+            }
         }
     }
 
@@ -178,6 +215,18 @@ internal sealed partial class SqliteDesignOwner
                 connection,
                 componentClassId,
                 metadata.ToJsonString());
+            if (settings.ComponentType.Equals("iconRow", StringComparison.Ordinal))
+            {
+                SynchronizeVariantOwnedCollectionConsumers(
+                    connection,
+                    settings.ProjectId,
+                    node.Id,
+                    ComponentClassFieldCatalog.Get("component.iconRow.items"),
+                    JsonPath.RequiredArray(
+                        JsonPath.RequiredObject(nextConfig, "iconRow", $"Component Variant '{node.Id}' config"),
+                        "items",
+                        $"Component Variant '{node.Id}' config"));
+            }
         }
     }
 
