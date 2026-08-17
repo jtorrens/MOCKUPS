@@ -119,6 +119,7 @@ var tests = new (string Name, Action Run)[]
     ("Production render overrides Device and Theme while respecting forced Screen appearance", ProductionRenderOverridesRespectScreenAppearance),
     ("Render snapshot store interns repeated font assets", RenderSnapshotStoreInternsAssets),
     ("Render Queue persists and completes batch children independently", RenderQueueChildrenAreIndependent),
+    ("Render Queue shutdown never blocks the UI thread", RenderQueueShutdownNeverBlocksUiThread),
     ("Render Queue is a permanent Production surface and Shot action stays available", RenderQueueNavigationAndSurfaceAreAlwaysAvailable),
     ("Render executor publishes a clean PNG sequence", RenderExecutorPublishesCleanPngSequence),
     ("Shots require an explicit replaceable owner Actor", ShotActorContextIsExplicit),
@@ -12595,6 +12596,41 @@ static void RenderQueueChildrenAreIndependent()
         True(reopened.Jobs().Single((job) =>
             job.Summary.Appearance == RenderQueueAppearance.Dark)
             .SnapshotAvailable);
+    }
+    finally
+    {
+        Directory.Delete(root, recursive: true);
+    }
+}
+
+static void RenderQueueShutdownNeverBlocksUiThread()
+{
+    var root = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-render-queue-shutdown-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(root);
+    try
+    {
+        var completion = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var queue = new RenderQueueManager(
+            Path.Combine(root, "state", "queue.json"));
+        typeof(RenderQueueManager)
+            .GetField(
+                "_workerTask",
+                BindingFlags.Instance | BindingFlags.NonPublic)
+            ?.SetValue(queue, completion.Task);
+
+        var stopwatch = Stopwatch.StartNew();
+        queue.Dispose();
+        True(
+            stopwatch.Elapsed < TimeSpan.FromMilliseconds(500),
+            "Render Queue shutdown must not wait for active work on the UI thread.");
+
+        completion.SetResult();
+        SpinWait.SpinUntil(
+            () => completion.Task.IsCompleted,
+            TimeSpan.FromSeconds(1));
     }
     finally
     {

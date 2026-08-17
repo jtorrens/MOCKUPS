@@ -39,17 +39,11 @@ internal sealed class ReferenceVideoHttpSource : IDisposable
         _disposed = true;
         _cancellation.Cancel();
         _listener.Close();
-        try
-        {
-            _serveTask.GetAwaiter().GetResult();
-        }
-        catch (OperationCanceledException)
-        {
-        }
-        catch (HttpListenerException)
-        {
-        }
-        _cancellation.Dispose();
+        _ = _serveTask.ContinueWith(
+            _ => _cancellation.Dispose(),
+            CancellationToken.None,
+            TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler.Default);
     }
 
     private async Task ServeAsync(CancellationToken cancellationToken)

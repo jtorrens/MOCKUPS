@@ -98,6 +98,12 @@ internal static class WebDesignPreviewRenderer
         _ = await RenderPrewarmBodyAsync(metrics, showMarks, payload);
     }
 
+    public static void Shutdown()
+    {
+        PersistentRenderer.Stop();
+        PrewarmPersistentRenderer.Stop();
+    }
+
     public static IDisposable ReserveFrameCacheCapacity(int frameCount)
     {
         var reservationId = Interlocked.Increment(ref _nextFrameCacheReservationId);
@@ -484,6 +490,24 @@ internal static class WebDesignPreviewRenderer
                     Restart();
                     throw;
                 }
+            }
+            finally
+            {
+                _gate.Release();
+            }
+        }
+
+        public void Stop()
+        {
+            _ = StopAsync();
+        }
+
+        private async Task StopAsync()
+        {
+            await _gate.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                Restart();
             }
             finally
             {

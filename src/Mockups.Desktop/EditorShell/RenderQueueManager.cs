@@ -1095,23 +1095,13 @@ internal sealed class RenderQueueManager : IDisposable
                     : [_workerTask])
                 .ToArray();
         }
-        var completion = Task.WhenAll(tasks);
-        var stopped = tasks.Length == 0;
-        try
-        {
-            stopped = completion.Wait(TimeSpan.FromSeconds(3));
-        }
-        catch
-        {
-            // Process shutdown will reclaim remaining child resources.
-        }
-        if (stopped)
+        if (tasks.Length == 0)
         {
             _executor.Dispose();
             _shutdown.Dispose();
             return;
         }
-        _ = completion.ContinueWith(
+        _ = Task.WhenAll(tasks).ContinueWith(
             _ =>
             {
                 _executor.Dispose();

@@ -517,6 +517,7 @@ internal sealed class EditorPreviewController : IDisposable
         _aheadPreloadedFrameKeys.Clear();
         ReleaseFrameCacheReservations();
         _chromiumRasterizer.Dispose();
+        WebDesignPreviewRenderer.Shutdown();
         PlaybackState.Changed -= SyncReferenceVideo;
         _referenceVideoController.Dispose();
     }
