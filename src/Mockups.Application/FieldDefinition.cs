@@ -65,7 +65,9 @@ public sealed record NumberDefinition(
     int DecimalPlaces = 0,
     bool UseSlider = false);
 
-public sealed record RecordReferenceDefinition(string TableId);
+public sealed record RecordReferenceDefinition(
+    string TableId,
+    string Filter = "");
 
 public sealed record AnimationFieldDefinition(
     IReadOnlyList<string> Interpolations,

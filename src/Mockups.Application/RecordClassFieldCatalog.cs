@@ -21,13 +21,21 @@ public sealed record RecordClassFieldDescriptor(
     string RuntimeInputComponentVariantFieldId = "",
     string RuntimeCollectionComponentVariantFieldId = "",
     MotionTimingDefinition? MotionTiming = null,
-    string[]? ConfigJsonPath = null);
+    string[]? ConfigJsonPath = null,
+    FieldOptionSource OptionSource = FieldOptionSource.None);
+
+public enum FieldOptionSource
+{
+    None,
+    ModuleVariants,
+}
 
 public static class RecordClassFieldCatalog
 {
     static RecordClassFieldCatalog()
     {
         GeneratedModuleScaffoldFieldCatalog.AddFields(Fields);
+        ValidateOptionContracts();
     }
 
     private static readonly FieldOption[] SpacingTokenOptions = ComponentClassFieldCatalog.SpacingTokenOptions;
@@ -131,10 +139,20 @@ public static class RecordClassFieldCatalog
         ["shot.metadata"] = new("shot.metadata", "Metadata", ValueKind.StringMultiline),
 
         ["app.bundleKey"] = new("app.bundleKey", "Bundle Key", ValueKind.StringSingleLine),
-        ["app.appType"] = new("app.appType", "App Type", ValueKind.OptionToken),
+        ["app.appType"] = new("app.appType", "App Type", ValueKind.OptionToken, Options:
+        [
+            new("chat", "Chat"),
+            new("media", "Media"),
+            new("system", "System"),
+            new("custom", "Custom"),
+        ]),
         ["app.config"] = new("app.config", "Config", ValueKind.StringMultiline),
         ["app.metadata"] = new("app.metadata", "Metadata", ValueKind.StringMultiline),
-        ["app.wallpaper.kind"] = new("app.wallpaper.kind", "Kind", ValueKind.OptionToken),
+        ["app.wallpaper.kind"] = new("app.wallpaper.kind", "Kind", ValueKind.OptionToken, Options:
+        [
+            new("solid", "Solid"),
+            new("image", "Image"),
+        ]),
         ["app.wallpaper.opacity"] = new(
             "app.wallpaper.opacity",
             "Opacity",
@@ -277,7 +295,11 @@ public static class RecordClassFieldCatalog
             RuntimeCollectionComponentVariantFieldId: "module.lockScreen.stackVariant"),
 
         ["moduleInstance.module"] = new("moduleInstance.module", "Module", ValueKind.StringReadOnly, IsEditable: false),
-        ["moduleInstance.variant"] = new("moduleInstance.variant", "Variant", ValueKind.ComponentVariant),
+        ["moduleInstance.variant"] = new(
+            "moduleInstance.variant",
+            "Variant",
+            ValueKind.ComponentVariant,
+            OptionSource: FieldOptionSource.ModuleVariants),
         ["moduleInstance.sortOrder"] = new("moduleInstance.sortOrder", "Sort Order", ValueKind.Integer, IsEditable: false),
         ["moduleInstance.durationFrames"] = new(
             "moduleInstance.durationFrames",
@@ -332,7 +354,12 @@ public static class RecordClassFieldCatalog
         ["device.metrics.moduleTransparency.mode"] = new(
             "device.metrics.moduleTransparency.mode",
             "Start mode",
-            ValueKind.OptionToken),
+            ValueKind.OptionToken,
+            Options:
+            [
+                new("fixed", "Fixed"),
+                new("variable", "Variable · content bottom"),
+            ]),
         ["device.metrics.moduleTransparency.paletteColor"] = new(
             "device.metrics.moduleTransparency.paletteColor",
             "Background color",
@@ -360,7 +387,12 @@ public static class RecordClassFieldCatalog
             Number: new NumberDefinition(-100000, 100000, 0.1m, 3),
             Unit: "device px"),
 
-        ["theme.family"] = new("theme.family", "Family", ValueKind.OptionToken),
+        ["theme.family"] = new("theme.family", "Family", ValueKind.OptionToken, Options:
+        [
+            new("ios", "iOS"),
+            new("android", "Android"),
+            new("custom", "Custom"),
+        ]),
         ["theme.iconThemeId"] = new(
             "theme.iconThemeId",
             "Icon theme",
@@ -376,7 +408,11 @@ public static class RecordClassFieldCatalog
             "Navigation bar",
             ValueKind.ComponentVariant,
             ComponentVariantType: "navigation_bar"),
-        ["theme.defaultMode"] = new("theme.defaultMode", "Default mode", ValueKind.OptionToken),
+        ["theme.defaultMode"] = new("theme.defaultMode", "Default mode", ValueKind.OptionToken, Options:
+        [
+            new("light", "Light"),
+            new("dark", "Dark"),
+        ]),
         ["theme.neutralTint.hueDeg"] = new("theme.neutralTint.hueDeg", "Hue", ValueKind.HueDegrees),
         ["theme.neutralTint.saturation"] = new(
             "theme.neutralTint.saturation",
@@ -449,24 +485,33 @@ public static class RecordClassFieldCatalog
             "theme.typography.fontFamilyId",
             "Text font",
             ValueKind.RecordReference,
-            RecordReference: new RecordReferenceDefinition("production_fonts")),
+            RecordReference: new RecordReferenceDefinition("production_fonts", "text")),
         ["theme.typography.systemFontFamilyId"] = new(
             "theme.typography.systemFontFamilyId",
             "System components font",
             ValueKind.RecordReference,
-            RecordReference: new RecordReferenceDefinition("production_fonts")),
+            RecordReference: new RecordReferenceDefinition("production_fonts", "text")),
         ["theme.typography.emojiFontFamilyId"] = new(
             "theme.typography.emojiFontFamilyId",
             "Emoji font",
             ValueKind.RecordReference,
-            RecordReference: new RecordReferenceDefinition("production_fonts")),
+            RecordReference: new RecordReferenceDefinition("production_fonts", "emoji")),
         ["theme.typography.sizes.xs"] = new("theme.typography.sizes.xs", "Text XS", ValueKind.Integer),
         ["theme.typography.sizes.s"] = new("theme.typography.sizes.s", "Text S", ValueKind.Integer),
         ["theme.typography.sizes.m"] = new("theme.typography.sizes.m", "Text M", ValueKind.Integer),
         ["theme.typography.sizes.l"] = new("theme.typography.sizes.l", "Text L", ValueKind.Integer),
         ["theme.typography.sizes.xl"] = new("theme.typography.sizes.xl", "Text XL", ValueKind.Integer),
-        ["theme.typography.weight"] = new("theme.typography.weight", "Weight", ValueKind.OptionToken),
-        ["theme.typography.style"] = new("theme.typography.style", "Style", ValueKind.OptionToken),
+        ["theme.typography.weight"] = new("theme.typography.weight", "Weight", ValueKind.OptionToken, Options:
+        [
+            new("100", "100"), new("200", "200"), new("300", "300"),
+            new("400", "400"), new("500", "500"), new("600", "600"),
+            new("700", "700"), new("800", "800"), new("900", "900"),
+        ]),
+        ["theme.typography.style"] = new("theme.typography.style", "Style", ValueKind.OptionToken, Options:
+        [
+            new("normal", "Normal"),
+            new("italic", "Italic"),
+        ]),
         ["theme.typography.lineHeights.tight"] = new("theme.typography.lineHeights.tight", "Line tight", ValueKind.Decimal, Number: new NumberDefinition(0.5m, 3, 0.05m, 2)),
         ["theme.typography.lineHeights.compact"] = new("theme.typography.lineHeights.compact", "Line compact", ValueKind.Decimal, Number: new NumberDefinition(0.5m, 3, 0.05m, 2)),
         ["theme.typography.lineHeights.normal"] = new("theme.typography.lineHeights.normal", "Line normal", ValueKind.Decimal, Number: new NumberDefinition(0.5m, 3, 0.05m, 2)),
@@ -506,7 +551,11 @@ public static class RecordClassFieldCatalog
             RecordReference: new RecordReferenceDefinition("themes")),
         ["actor.color.modes"] = new("actor.color.modes", "Actor Color", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
         ["actor.avatarTextColor.modes"] = new("actor.avatarTextColor.modes", "Actor Text Color", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
-        ["actor.wallpaper.kind"] = new("actor.wallpaper.kind", "Kind", ValueKind.OptionToken),
+        ["actor.wallpaper.kind"] = new("actor.wallpaper.kind", "Kind", ValueKind.OptionToken, Options:
+        [
+            new("solid", "Solid"),
+            new("image", "Image"),
+        ]),
         ["actor.wallpaper.opacity"] = new("actor.wallpaper.opacity", "Opacity", ValueKind.Decimal, Number: new NumberDefinition(0, 1, 0.05m, 2)),
         ["actor.wallpaper.color"] = new("actor.wallpaper.color", "Wallpaper Color", ValueKind.PaletteColorPair, PairLabels: LightDarkPairLabels),
         ["actor.wallpaper.images.light.filePath"] = new(
@@ -538,7 +587,11 @@ public static class RecordClassFieldCatalog
         ["actor.avatar.initialsPadding"] = new("actor.avatar.initialsPadding", "Initials padding", ValueKind.Integer),
 
         ["font.family"] = new("font.family", "Family", ValueKind.StringReadOnly, IsEditable: false),
-        ["font.category"] = new("font.category", "Category", ValueKind.OptionToken),
+        ["font.category"] = new("font.category", "Category", ValueKind.OptionToken, Options:
+        [
+            new("text", "Text"),
+            new("emoji", "Emoji"),
+        ]),
         ["font.sourceDirectory"] = new("font.sourceDirectory", "Source Directory", ValueKind.StringReadOnly, IsEditable: false),
         ["font.files"] = new("font.files", "Font Files", ValueKind.StringMultiline, IsEditable: false),
 
@@ -549,6 +602,23 @@ public static class RecordClassFieldCatalog
     };
 
     public static IReadOnlyCollection<RecordClassFieldDescriptor> All => Fields.Values;
+
+    private static void ValidateOptionContracts()
+    {
+        var invalid = Fields.Values
+            .Where((field) => field.IsEditable
+                && field.ValueKind == ValueKind.OptionToken
+                && (field.Options is null || field.Options.Count == 0)
+                && field.OptionSource == FieldOptionSource.None)
+            .Select((field) => field.Id)
+            .OrderBy((id) => id, StringComparer.Ordinal)
+            .ToList();
+        if (invalid.Count > 0)
+        {
+            throw new InvalidOperationException(
+                $"Editable OptionToken fields require declared Options or OptionSource: {string.Join(", ", invalid)}.");
+        }
+    }
 
     public static RecordClassFieldDescriptor Get(string fieldId)
     {

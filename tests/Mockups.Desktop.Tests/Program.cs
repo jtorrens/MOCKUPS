@@ -68,6 +68,7 @@ var tests = new (string Name, Action Run)[]
     ("Actor preview data boundary preserves current values read-only", ActorPreviewDataBoundaryPreservesCurrentValues),
     ("Actor preview surfaces share initials identity", ActorPreviewSurfacesShareInitialsIdentity),
     ("Runtime Input option boundary preserves dictionary options read-only", RuntimeInputOptionBoundaryPreservesDictionaryOptions),
+    ("record dictionary options are declared by their generic descriptor", RecordDictionaryOptionsAreDescriptorOwned),
     ("fixed Component boundaries use one exact class and its Default Variant", FixedComponentBoundariesUseExactDefaultVariant),
     ("Runtime Input kind and ValueKind share one exact contract", RuntimeInputKindAndValueKindShareOneContract),
     ("Runtime Input defaults use their exact ValueKind owner", RuntimeInputDefaultsUseValueKindOwner),
@@ -9544,6 +9545,31 @@ static void RuntimeInputOptionBoundaryPreservesDictionaryOptions()
     {
         File.Delete(temporary);
     }
+}
+
+static void RecordDictionaryOptionsAreDescriptorOwned()
+{
+    var invalid = RecordClassFieldCatalog.All
+        .Where((field) => field.IsEditable
+            && field.ValueKind == ValueKind.OptionToken
+            && (field.Options is null || field.Options.Count == 0)
+            && field.OptionSource == FieldOptionSource.None)
+        .Select((field) => field.Id)
+        .OrderBy((id) => id, StringComparer.Ordinal)
+        .ToList();
+    Equal(0, invalid.Count);
+    SequenceEqual(
+        ["solid", "image"],
+        RecordClassFieldCatalog.Get("actor.wallpaper.kind").Options!
+            .Select((option) => option.Value));
+    SequenceEqual(
+        ["text", "emoji"],
+        RecordClassFieldCatalog.Get("font.category").Options!
+            .Select((option) => option.Value));
+    Equal(
+        "emoji",
+        RecordClassFieldCatalog.Get("theme.typography.emojiFontFamilyId")
+            .RecordReference!.Filter);
 }
 
 static void FixedComponentBoundariesUseExactDefaultVariant()

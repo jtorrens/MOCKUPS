@@ -77,22 +77,7 @@ internal sealed class RecordClassFieldValueService
             ProjectTreeNodeKind.IconTheme => IconThemeFieldValue(node.Id, field.Id),
             _ => throw new InvalidOperationException($"Record class field '{fieldId}' is not supported for '{node.Kind}'."),
         };
-        var options = node.Kind switch
-        {
-            ProjectTreeNodeKind.Theme => ThemeFieldOptions(node.Id, field),
-            ProjectTreeNodeKind.Actor => ActorFieldOptions(node.Id, field),
-            ProjectTreeNodeKind.App => AppFieldOptions(node.Id, field),
-            ProjectTreeNodeKind.Module => ModuleFieldOptions(node.Id, field),
-            ProjectTreeNodeKind.ModuleVariant => ModuleFieldOptions(node.Parent?.Id ?? "", field),
-            ProjectTreeNodeKind.ModuleInstance => field.Id == "moduleInstance.variant"
-                ? _design.GetModuleVariantOptions(
-                    _timeline.GetModuleInstanceSettings(node.Id).ModuleId)
-                : field.Options,
-            ProjectTreeNodeKind.Shot => ShotFieldOptions(node.Id, field),
-            ProjectTreeNodeKind.ProductionFont => ProductionFontFieldOptions(field),
-            ProjectTreeNodeKind.Device => DeviceFieldOptions(node.Id, field),
-            _ => field.Options,
-        };
+        var options = ResolveOptions(node, field);
 
         if (node.Kind == ProjectTreeNodeKind.Shot && field.Id == "shot.fps")
         {
@@ -446,144 +431,70 @@ internal sealed class RecordClassFieldValueService
         return _resources.GetIconThemeFieldValue(iconThemeId, fieldId);
     }
 
-    private static IReadOnlyList<FieldOption>? ProductionFontFieldOptions(RecordClassFieldDescriptor field)
-    {
-        return field.Id == "font.category"
-            ?
-            [
-                new FieldOption("text", "Text"),
-                new FieldOption("emoji", "Emoji"),
-            ]
-            : field.Options;
-    }
-
-    private IReadOnlyList<FieldOption>? AppFieldOptions(string appId, RecordClassFieldDescriptor field)
-    {
-        return field.Id switch
-        {
-            "app.appType" =>
-            [
-                new FieldOption("chat", "Chat"),
-                new FieldOption("media", "Media"),
-                new FieldOption("system", "System"),
-                new FieldOption("custom", "Custom"),
-            ],
-            "app.wallpaper.kind" =>
-            [
-                new FieldOption("solid", "Solid"),
-                new FieldOption("image", "Image"),
-            ],
-            "app.wallpaper.color" => _resources.GetPaletteColorOptions(
-                _design.GetAppSettings(appId).ProjectId),
-            _ => field.Options,
-        };
-    }
-
-    private IReadOnlyList<FieldOption>? DeviceFieldOptions(
-        string deviceId,
+    private IReadOnlyList<FieldOption>? ResolveOptions(
+        ProjectTreeNode node,
         RecordClassFieldDescriptor field)
     {
-        var settings = _resources.GetDeviceSettings(deviceId);
-        return field.Id switch
+        if (field.Options is { Count: > 0 }) return field.Options;
+        if (field.OptionSource == FieldOptionSource.ModuleVariants)
         {
-            "device.metrics.moduleTransparency.mode" =>
-            [
-                new FieldOption("fixed", "Fixed"),
-                new FieldOption("variable", "Variable · content bottom"),
-            ],
-            "device.metrics.moduleTransparency.paletteColor" =>
-                _resources.GetPaletteColorOptions(settings.ProjectId),
-            _ => field.Options,
-        };
-    }
-
-    private IReadOnlyList<FieldOption>? ShotFieldOptions(string shotId, RecordClassFieldDescriptor field)
-    {
-        var settings = _production.GetShotSettings(shotId);
-        return field.Id switch
-        {
-            "shot.ownerActorId" => _resources.GetRequiredActorOptions(settings.ProjectId),
-            "shot.deviceOverrideId" => _resources.GetDeviceOptions(settings.ProjectId),
-            "shot.themeOverrideId" => _resources.GetThemeOptions(settings.ProjectId),
-            _ => field.Options,
-        };
-    }
-
-    private IReadOnlyList<FieldOption>? ModuleFieldOptions(string moduleId, RecordClassFieldDescriptor field)
-    {
-        var settings = _design.GetModuleSettings(moduleId);
-        if (field.ValueKind is ValueKind.ComponentVariant or ValueKind.ComponentVariantSlot
-            && !string.IsNullOrWhiteSpace(field.ComponentVariantType))
-        {
-            return _design.GetComponentVariantReferenceOptionsByType(
-                settings.ProjectId,
-                field.ComponentVariantType);
+            return _design.GetModuleVariantOptions(
+                _timeline.GetModuleInstanceSettings(node.Id).ModuleId);
         }
 
-        return field.Options;
+        var requiresProjectOptions = field.ValueKind is ValueKind.ComponentVariant
+            or ValueKind.ComponentVariantSlot
+            or ValueKind.PaletteColorToken
+            or ValueKind.PaletteColorPair
+            or ValueKind.PaletteColorAlphaPair
+            || field.RecordReference is not null;
+        if (!requiresProjectOptions) return null;
+        var projectId = RequiredProjectId(node);
+        if (field.ValueKind is ValueKind.ComponentVariant or ValueKind.ComponentVariantSlot)
+        {
+            if (string.IsNullOrWhiteSpace(field.ComponentVariantType))
+            {
+                throw new InvalidOperationException(
+                    $"Component Variant field '{field.Id}' requires a declared Component type or OptionSource.");
+            }
+            return _design.GetComponentVariantReferenceOptionsByType(
+                projectId,
+                field.ComponentVariantType);
+        }
+        if (field.ValueKind is ValueKind.PaletteColorToken
+            or ValueKind.PaletteColorPair
+            or ValueKind.PaletteColorAlphaPair)
+        {
+            return _resources.GetPaletteColorOptions(projectId);
+        }
+        if (field.RecordReference is not null)
+        {
+            return field.RecordReference.TableId switch
+            {
+                "actors" => _resources.GetRequiredActorOptions(projectId),
+                "devices" => _resources.GetDeviceOptions(projectId),
+                "themes" => _resources.GetThemeOptions(projectId),
+                "icon_themes" => _resources.GetIconThemeOptions(projectId),
+                "production_fonts" => _resources.GetProductionFontOptions(
+                    projectId,
+                    string.IsNullOrWhiteSpace(field.RecordReference.Filter)
+                        ? null
+                        : field.RecordReference.Filter),
+                _ => throw new InvalidOperationException(
+                    $"Record field '{field.Id}' has unsupported option table '{field.RecordReference.TableId}'."),
+            };
+        }
+        return null;
     }
 
-    private IReadOnlyList<FieldOption>? ThemeFieldOptions(string themeId, RecordClassFieldDescriptor field)
+    private static string RequiredProjectId(ProjectTreeNode node)
     {
-        var settings = _resources.GetThemeSettings(themeId);
-        return field.Id switch
+        for (var current = node; current is not null; current = current.Parent)
         {
-            "theme.family" =>
-            [
-                new FieldOption("ios", "iOS"),
-                new FieldOption("android", "Android"),
-                new FieldOption("custom", "Custom"),
-            ],
-            "theme.iconThemeId" => _resources.GetIconThemeOptions(settings.ProjectId),
-            "theme.statusBarId" => _design.GetStatusBarComponentVariantOptions(settings.ProjectId),
-            "theme.navigationBarId" => _design.GetNavigationBarComponentVariantOptions(settings.ProjectId),
-            "theme.defaultMode" =>
-            [
-                new FieldOption("light", "Light"),
-                new FieldOption("dark", "Dark"),
-            ],
-            "theme.typography.fontFamilyId" => _resources.GetProductionFontOptions(settings.ProjectId, "text"),
-            "theme.typography.systemFontFamilyId" => _resources.GetProductionFontOptions(settings.ProjectId, "text"),
-            "theme.typography.emojiFontFamilyId" => _resources.GetProductionFontOptions(settings.ProjectId, "emoji"),
-            "theme.typography.weight" =>
-            [
-                new FieldOption("100", "100"),
-                new FieldOption("200", "200"),
-                new FieldOption("300", "300"),
-                new FieldOption("400", "400"),
-                new FieldOption("500", "500"),
-                new FieldOption("600", "600"),
-                new FieldOption("700", "700"),
-                new FieldOption("800", "800"),
-                new FieldOption("900", "900"),
-            ],
-            "theme.typography.style" =>
-            [
-                new FieldOption("normal", "Normal"),
-                new FieldOption("italic", "Italic"),
-            ],
-            "actor.wallpaper.kind" =>
-            [
-                new FieldOption("solid", "Solid"),
-                new FieldOption("image", "Image"),
-            ],
-            _ => field.ValueKind is ValueKind.PaletteColorToken or ValueKind.PaletteColorPair or ValueKind.PaletteColorAlphaPair
-                ? _resources.GetPaletteColorOptions(settings.ProjectId)
-                : field.Options,
-        };
-    }
-
-    private IReadOnlyList<FieldOption>? ActorFieldOptions(string actorId, RecordClassFieldDescriptor field)
-    {
-        var settings = _resources.GetActorSettings(actorId);
-        return field.Id switch
-        {
-            "actor.defaultDeviceId" => _resources.GetDeviceOptions(settings.ProjectId),
-            "actor.defaultThemeId" => _resources.GetThemeOptions(settings.ProjectId),
-            _ => field.ValueKind is ValueKind.PaletteColorToken or ValueKind.PaletteColorPair or ValueKind.PaletteColorAlphaPair
-                ? _resources.GetPaletteColorOptions(settings.ProjectId)
-                : field.Options,
-        };
+            if (current.Kind == ProjectTreeNodeKind.Project) return current.Id;
+        }
+        throw new InvalidOperationException(
+            $"Record field owner '{node.Id}' requires an exact Project ancestor.");
     }
 
     private static string DefaultValue(ProjectTreeNodeKind nodeKind, RecordClassFieldDescriptor field, string currentValue)
