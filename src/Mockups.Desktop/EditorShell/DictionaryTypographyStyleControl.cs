@@ -181,7 +181,14 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
         var row = 0;
         if (string.IsNullOrWhiteSpace(_fixedFontFamilyId))
         {
-            AddOptionRow(row++, "Font", TypographyStyleValue.FontFamilyId, FontOptions(definition.Options), "theme");
+            AddOptionRow(
+                row++,
+                "Font",
+                TypographyStyleValue.FontFamilyId,
+                FieldOptionContract.RequireOptions(
+                    definition.Options,
+                    $"Dictionary field '{definition.Id}' font family"),
+                "theme");
         }
         AddOptionRow(row++, "Weight", TypographyStyleValue.Weight, WeightOptions, "theme.typography.weight");
         AddOptionRow(row++, "Style", TypographyStyleValue.Style, StyleOptions, "theme.typography.style");
@@ -218,18 +225,6 @@ internal sealed class DictionaryTypographyStyleControl : Grid, IDictionaryValueC
 
         RefreshRows();
         _isUpdating = false;
-    }
-
-    private static IReadOnlyList<FieldOption> FontOptions(IReadOnlyList<FieldOption>? options)
-    {
-        return
-        [
-            new FieldOption("theme", "Theme"),
-            .. (options ?? []).Select((option) =>
-                string.IsNullOrWhiteSpace(option.Value)
-                    ? new FieldOption("system", option.Label, option.ColorHex, option.IsNeutral)
-                    : option),
-        ];
     }
 
     private void AddOptionRow(int row, string label, string key, IReadOnlyList<FieldOption> options, string fallback)

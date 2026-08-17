@@ -5294,11 +5294,28 @@ static void EditorViewStateSurvivesRealNavigation()
 
             void Layout()
             {
-                Dispatcher.UIThread.RunJobs();
-                var size = new Size(window.Width, window.Height);
-                window.Measure(size);
-                window.Arrange(new Rect(size));
-                Dispatcher.UIThread.RunJobs();
+                var timeout = Stopwatch.StartNew();
+                while (true)
+                {
+                    Dispatcher.UIThread.RunJobs();
+                    var size = new Size(window.Width, window.Height);
+                    window.Measure(size);
+                    window.Arrange(new Rect(size));
+                    Dispatcher.UIThread.RunJobs();
+                    if (editorContent.Cards.All((card) =>
+                            card.SessionStateId != "editor:loading"))
+                    {
+                        return;
+                    }
+                    if (timeout.Elapsed >= TimeSpan.FromSeconds(10))
+                    {
+                        throw new TimeoutException(
+                            "Editor preparation did not complete during navigation. "
+                            + (window.FindControl<TextBox>("ShellMessagesTextBox")?.Text
+                                ?? "No shell message."));
+                    }
+                    Thread.Sleep(10);
+                }
             }
 
             void Select(ProjectTreeNode node)
