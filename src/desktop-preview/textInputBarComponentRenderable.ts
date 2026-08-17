@@ -114,7 +114,7 @@ export function textInputBarComponentToRenderable(
       renderAuthoringSlot(
         payload,
         "component.textInputBar",
-        "component.textInput.barSurface.editor",
+        "component.textInputBar.barSurface.editor",
         "component.surface",
         "component.surface.backgroundColorToken",
         (slotPayload) => ({
@@ -125,7 +125,7 @@ export function textInputBarComponentToRenderable(
       renderAuthoringSlot(
         payload,
         "component.textInputBar",
-        "component.textInput.textBox.editor",
+        "component.textInputBar.textBox.editor",
         "component.textBox",
         "component.textBox.dimensionMode",
         (slotPayload) => textBoxComponentToRenderableAt(
@@ -138,7 +138,7 @@ export function textInputBarComponentToRenderable(
         ? [renderAuthoringSlot(
             payload,
             "component.textInputBar",
-            "component.textInput.iconBar.editor",
+            "component.textInputBar.iconBar.editor",
             "component.iconBar",
             "component.iconBar.edgePadding",
             (slotPayload) => iconBarComponentToRenderableAt(

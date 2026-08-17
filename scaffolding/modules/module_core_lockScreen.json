@@ -306,10 +306,10 @@
                   ],
                   "$forwardedInputs": {
                     "sampleText": {
-                      "id": "forwarded.module.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.sampleText",
+                      "id": "forwarded.module.core.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.sampleText",
                       "sourceInputId": "sampleText",
                       "label": "Hora",
-                      "jsonKey": "f_o_r_w_a_r_d_e_d___m_o_d_u_l_e___l_o_c_k_S_c_r_e_e_n___s_t_a_c_k_I_t_e_m_s___i_t_e_m_s___1_1_5_b_d_1_2_c_8_2_e_e_4_b_2_f_8_d_1_d_4_2_1_b_c_7_7_5_1_5_7_4___i_n_p_u_t_s___s_a_m_p_l_e_T_e_x_t",
+                      "jsonKey": "f_o_r_w_a_r_d_e_d___m_o_d_u_l_e___c_o_r_e___l_o_c_k_S_c_r_e_e_n___s_t_a_c_k_I_t_e_m_s___i_t_e_m_s___1_1_5_b_d_1_2_c_8_2_e_e_4_b_2_f_8_d_1_d_4_2_1_b_c_7_7_5_1_5_7_4___i_n_p_u_t_s___s_a_m_p_l_e_T_e_x_t",
                       "kind": "text",
                       "valueKind": "StringSingleLine",
                       "defaultValue": "00:00",
@@ -324,10 +324,10 @@
                       "options": []
                     },
                     "sampleSubtext": {
-                      "id": "forwarded.module.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.sampleSubtext",
+                      "id": "forwarded.module.core.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.sampleSubtext",
                       "sourceInputId": "sampleSubtext",
                       "label": "Subtext",
-                      "jsonKey": "f_o_r_w_a_r_d_e_d___m_o_d_u_l_e___l_o_c_k_S_c_r_e_e_n___s_t_a_c_k_I_t_e_m_s___i_t_e_m_s___1_1_5_b_d_1_2_c_8_2_e_e_4_b_2_f_8_d_1_d_4_2_1_b_c_7_7_5_1_5_7_4___i_n_p_u_t_s___s_a_m_p_l_e_S_u_b_t_e_x_t",
+                      "jsonKey": "f_o_r_w_a_r_d_e_d___m_o_d_u_l_e___c_o_r_e___l_o_c_k_S_c_r_e_e_n___s_t_a_c_k_I_t_e_m_s___i_t_e_m_s___1_1_5_b_d_1_2_c_8_2_e_e_4_b_2_f_8_d_1_d_4_2_1_b_c_7_7_5_1_5_7_4___i_n_p_u_t_s___s_a_m_p_l_e_S_u_b_t_e_x_t",
                       "kind": "text",
                       "valueKind": "StringSingleLine",
                       "defaultValue": "Mar 14 Jul",
@@ -595,9 +595,9 @@
                   "incorrectText": "Password incorrect",
                   "$forwardedInputs": {
                     "initialText": {
-                      "id": "forwarded.module.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.initialText",
+                      "id": "forwarded.module.core.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.initialText",
                       "label": "Initial text",
-                      "jsonKey": "forwarded_module_lockScreen_stackItems_items_115bd12c82ee4b2f8d1d421bc7751574_inputs_initialText",
+                      "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_115bd12c82ee4b2f8d1d421bc7751574_inputs_initialText",
                       "kind": "text",
                       "valueKind": "StringSingleLine",
                       "defaultValue": "Enter password",
@@ -620,9 +620,9 @@
                       "sourceInputId": "initialText"
                     },
                     "correctText": {
-                      "id": "forwarded.module.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.correctText",
+                      "id": "forwarded.module.core.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.correctText",
                       "label": "Correct text",
-                      "jsonKey": "forwarded_module_lockScreen_stackItems_items_115bd12c82ee4b2f8d1d421bc7751574_inputs_correctText",
+                      "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_115bd12c82ee4b2f8d1d421bc7751574_inputs_correctText",
                       "kind": "text",
                       "valueKind": "StringSingleLine",
                       "defaultValue": "Password correct",
@@ -645,9 +645,9 @@
                       "sourceInputId": "correctText"
                     },
                     "incorrectText": {
-                      "id": "forwarded.module.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.incorrectText",
+                      "id": "forwarded.module.core.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.incorrectText",
                       "label": "Incorrect text",
-                      "jsonKey": "forwarded_module_lockScreen_stackItems_items_115bd12c82ee4b2f8d1d421bc7751574_inputs_incorrectText",
+                      "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_115bd12c82ee4b2f8d1d421bc7751574_inputs_incorrectText",
                       "kind": "text",
                       "valueKind": "StringSingleLine",
                       "defaultValue": "Password incorrect",
@@ -670,9 +670,9 @@
                       "sourceInputId": "incorrectText"
                     },
                     "expectedPassword": {
-                      "id": "forwarded.module.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.expectedPassword",
+                      "id": "forwarded.module.core.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.expectedPassword",
                       "label": "Password",
-                      "jsonKey": "forwarded_module_lockScreen_stackItems_items_115bd12c82ee4b2f8d1d421bc7751574_inputs_expectedPassword",
+                      "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_115bd12c82ee4b2f8d1d421bc7751574_inputs_expectedPassword",
                       "kind": "text",
                       "valueKind": "StringSingleLine",
                       "defaultValue": "2345",
@@ -695,9 +695,9 @@
                       "sourceInputId": "expectedPassword"
                     },
                     "attemptPassword": {
-                      "id": "forwarded.module.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.attemptPassword",
+                      "id": "forwarded.module.core.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.attemptPassword",
                       "label": "Attempt",
-                      "jsonKey": "forwarded_module_lockScreen_stackItems_items_115bd12c82ee4b2f8d1d421bc7751574_inputs_attemptPassword",
+                      "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_115bd12c82ee4b2f8d1d421bc7751574_inputs_attemptPassword",
                       "kind": "text",
                       "valueKind": "StringSingleLine",
                       "defaultValue": "2345",
@@ -720,9 +720,9 @@
                       "sourceInputId": "attemptPassword"
                     },
                     "enabled": {
-                      "id": "forwarded.module.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.enabled",
+                      "id": "forwarded.module.core.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.enabled",
                       "label": "Enabled",
-                      "jsonKey": "forwarded_module_lockScreen_stackItems_items_115bd12c82ee4b2f8d1d421bc7751574_inputs_enabled",
+                      "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_115bd12c82ee4b2f8d1d421bc7751574_inputs_enabled",
                       "kind": "boolean",
                       "valueKind": "Boolean",
                       "defaultValue": "true",
@@ -745,9 +745,9 @@
                       "sourceInputId": "enabled"
                     },
                     "entryTiming": {
-                      "id": "forwarded.module.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.entryTiming",
+                      "id": "forwarded.module.core.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.entryTiming",
                       "label": "Entry timing",
-                      "jsonKey": "forwarded_module_lockScreen_stackItems_items_115bd12c82ee4b2f8d1d421bc7751574_inputs_entryTiming",
+                      "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_115bd12c82ee4b2f8d1d421bc7751574_inputs_entryTiming",
                       "kind": "behaviorTiming",
                       "valueKind": "BehaviorTiming",
                       "defaultValue": "{\"mode\":\"fixed\",\"fixedFrames\":16,\"paceToken\":\"theme.motion.naturalPace.normal\"}",
@@ -796,9 +796,9 @@
                       "sourceInputId": "entryTiming"
                     },
                     "entryTrigger": {
-                      "id": "forwarded.module.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.entryTrigger",
+                      "id": "forwarded.module.core.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.entryTrigger",
                       "label": "Enter password",
-                      "jsonKey": "forwarded_module_lockScreen_stackItems_items_115bd12c82ee4b2f8d1d421bc7751574_inputs_entryTrigger",
+                      "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_115bd12c82ee4b2f8d1d421bc7751574_inputs_entryTrigger",
                       "kind": "boolean",
                       "valueKind": "Boolean",
                       "defaultValue": "false",
@@ -826,9 +826,9 @@
                       "sourceInputId": "entryTrigger"
                     },
                     "entryFrame": {
-                      "id": "forwarded.module.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.entryFrame",
+                      "id": "forwarded.module.core.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.entryFrame",
                       "label": "Entry frame",
-                      "jsonKey": "forwarded_module_lockScreen_stackItems_items_115bd12c82ee4b2f8d1d421bc7751574_inputs_entryFrame",
+                      "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_115bd12c82ee4b2f8d1d421bc7751574_inputs_entryFrame",
                       "kind": "number",
                       "valueKind": "Integer",
                       "defaultValue": "0",
@@ -1042,14 +1042,14 @@
         ],
         "$forwardedInputs": {
           "items": {
-            "id": "forwarded.module.lockScreen.stackStates",
+            "id": "forwarded.module.core.lockScreen.stackStates",
             "label": "Slots",
-            "jsonKey": "forwarded_module_lockScreen_stackStates",
+            "jsonKey": "forwarded_module_core_lockScreen_stackStates",
             "kind": "collection",
             "collection": {
               "id": "stackStates",
               "label": "Slots",
-              "jsonKey": "forwarded_module_lockScreen_stackStates",
+              "jsonKey": "forwarded_module_core_lockScreen_stackStates",
               "itemLabel": "Slot",
               "animationPresentation": "collectionFooter",
               "animationTimeline": {
@@ -1128,7 +1128,7 @@
               "childCollection": {
                 "id": "stackStateInputs",
                 "label": "States",
-                "jsonKey": "forwarded_module_lockScreen_stackStateInputs",
+                "jsonKey": "forwarded_module_core_lockScreen_stackStateInputs",
                 "itemLabel": "State",
                 "sourceCollectionJsonKey": "alternatives",
                 "parentItemIdJsonKey": "slotId",
@@ -1180,7 +1180,7 @@
                   "sequenceItems": false,
                   "ownerOrigin": {
                     "kind": "firstMatchingValue",
-                    "sourceCollectionJsonKey": "forwarded_module_lockScreen_stackStates",
+                    "sourceCollectionJsonKey": "forwarded_module_core_lockScreen_stackStates",
                     "sourceTargetIdJsonKey": "slotId",
                     "sourceFieldId": "runtimeStateId",
                     "sourceValueJsonKey": "runtimeStateId",
@@ -1508,10 +1508,10 @@
                     ],
                     "$forwardedInputs": {
                       "sampleText": {
-                        "id": "forwarded.module.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.sampleText",
+                        "id": "forwarded.module.core.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.sampleText",
                         "sourceInputId": "sampleText",
                         "label": "Hora",
-                        "jsonKey": "f_o_r_w_a_r_d_e_d___m_o_d_u_l_e___l_o_c_k_S_c_r_e_e_n___s_t_a_c_k_I_t_e_m_s___i_t_e_m_s___1_1_5_b_d_1_2_c_8_2_e_e_4_b_2_f_8_d_1_d_4_2_1_b_c_7_7_5_1_5_7_4___i_n_p_u_t_s___s_a_m_p_l_e_T_e_x_t",
+                        "jsonKey": "f_o_r_w_a_r_d_e_d___m_o_d_u_l_e___c_o_r_e___l_o_c_k_S_c_r_e_e_n___s_t_a_c_k_I_t_e_m_s___i_t_e_m_s___1_1_5_b_d_1_2_c_8_2_e_e_4_b_2_f_8_d_1_d_4_2_1_b_c_7_7_5_1_5_7_4___i_n_p_u_t_s___s_a_m_p_l_e_T_e_x_t",
                         "kind": "text",
                         "valueKind": "StringSingleLine",
                         "defaultValue": "00:00",
@@ -1526,10 +1526,10 @@
                         "options": []
                       },
                       "sampleSubtext": {
-                        "id": "forwarded.module.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.sampleSubtext",
+                        "id": "forwarded.module.core.lockScreen.stackItems.items_115bd12c82ee4b2f8d1d421bc7751574.inputs.sampleSubtext",
                         "sourceInputId": "sampleSubtext",
                         "label": "Subtext",
-                        "jsonKey": "f_o_r_w_a_r_d_e_d___m_o_d_u_l_e___l_o_c_k_S_c_r_e_e_n___s_t_a_c_k_I_t_e_m_s___i_t_e_m_s___1_1_5_b_d_1_2_c_8_2_e_e_4_b_2_f_8_d_1_d_4_2_1_b_c_7_7_5_1_5_7_4___i_n_p_u_t_s___s_a_m_p_l_e_S_u_b_t_e_x_t",
+                        "jsonKey": "f_o_r_w_a_r_d_e_d___m_o_d_u_l_e___c_o_r_e___l_o_c_k_S_c_r_e_e_n___s_t_a_c_k_I_t_e_m_s___i_t_e_m_s___1_1_5_b_d_1_2_c_8_2_e_e_4_b_2_f_8_d_1_d_4_2_1_b_c_7_7_5_1_5_7_4___i_n_p_u_t_s___s_a_m_p_l_e_S_u_b_t_e_x_t",
                         "kind": "text",
                         "valueKind": "StringSingleLine",
                         "defaultValue": "Mar 14 Jul",
@@ -1881,9 +1881,9 @@
                     "incorrectText": "Password incorrect",
                     "$forwardedInputs": {
                       "initialText": {
-                        "id": "forwarded.module.lockScreen.stackItems.items_6c455f1295d14cefb5e922691d290d8f.inputs.initialText",
+                        "id": "forwarded.module.core.lockScreen.stackItems.items_6c455f1295d14cefb5e922691d290d8f.inputs.initialText",
                         "label": "Initial text",
-                        "jsonKey": "forwarded_module_lockScreen_stackItems_items_6c455f1295d14cefb5e922691d290d8f_inputs_initialText",
+                        "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_6c455f1295d14cefb5e922691d290d8f_inputs_initialText",
                         "kind": "text",
                         "valueKind": "StringSingleLine",
                         "defaultValue": "Enter password",
@@ -1906,9 +1906,9 @@
                         "sourceInputId": "initialText"
                       },
                       "correctText": {
-                        "id": "forwarded.module.lockScreen.stackItems.items_6c455f1295d14cefb5e922691d290d8f.inputs.correctText",
+                        "id": "forwarded.module.core.lockScreen.stackItems.items_6c455f1295d14cefb5e922691d290d8f.inputs.correctText",
                         "label": "Correct text",
-                        "jsonKey": "forwarded_module_lockScreen_stackItems_items_6c455f1295d14cefb5e922691d290d8f_inputs_correctText",
+                        "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_6c455f1295d14cefb5e922691d290d8f_inputs_correctText",
                         "kind": "text",
                         "valueKind": "StringSingleLine",
                         "defaultValue": "Password correct",
@@ -1931,9 +1931,9 @@
                         "sourceInputId": "correctText"
                       },
                       "incorrectText": {
-                        "id": "forwarded.module.lockScreen.stackItems.items_6c455f1295d14cefb5e922691d290d8f.inputs.incorrectText",
+                        "id": "forwarded.module.core.lockScreen.stackItems.items_6c455f1295d14cefb5e922691d290d8f.inputs.incorrectText",
                         "label": "Incorrect text",
-                        "jsonKey": "forwarded_module_lockScreen_stackItems_items_6c455f1295d14cefb5e922691d290d8f_inputs_incorrectText",
+                        "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_6c455f1295d14cefb5e922691d290d8f_inputs_incorrectText",
                         "kind": "text",
                         "valueKind": "StringSingleLine",
                         "defaultValue": "Password incorrect",
@@ -1956,9 +1956,9 @@
                         "sourceInputId": "incorrectText"
                       },
                       "expectedPassword": {
-                        "id": "forwarded.module.lockScreen.stackItems.items_6c455f1295d14cefb5e922691d290d8f.inputs.expectedPassword",
+                        "id": "forwarded.module.core.lockScreen.stackItems.items_6c455f1295d14cefb5e922691d290d8f.inputs.expectedPassword",
                         "label": "Password",
-                        "jsonKey": "forwarded_module_lockScreen_stackItems_items_6c455f1295d14cefb5e922691d290d8f_inputs_expectedPassword",
+                        "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_6c455f1295d14cefb5e922691d290d8f_inputs_expectedPassword",
                         "kind": "text",
                         "valueKind": "StringSingleLine",
                         "defaultValue": "2345",
@@ -1981,9 +1981,9 @@
                         "sourceInputId": "expectedPassword"
                       },
                       "attemptPassword": {
-                        "id": "forwarded.module.lockScreen.stackItems.items_6c455f1295d14cefb5e922691d290d8f.inputs.attemptPassword",
+                        "id": "forwarded.module.core.lockScreen.stackItems.items_6c455f1295d14cefb5e922691d290d8f.inputs.attemptPassword",
                         "label": "Attempt",
-                        "jsonKey": "forwarded_module_lockScreen_stackItems_items_6c455f1295d14cefb5e922691d290d8f_inputs_attemptPassword",
+                        "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_6c455f1295d14cefb5e922691d290d8f_inputs_attemptPassword",
                         "kind": "text",
                         "valueKind": "StringSingleLine",
                         "defaultValue": "2345",
@@ -2006,9 +2006,9 @@
                         "sourceInputId": "attemptPassword"
                       },
                       "enabled": {
-                        "id": "forwarded.module.lockScreen.stackItems.items_6c455f1295d14cefb5e922691d290d8f.inputs.enabled",
+                        "id": "forwarded.module.core.lockScreen.stackItems.items_6c455f1295d14cefb5e922691d290d8f.inputs.enabled",
                         "label": "Enabled",
-                        "jsonKey": "forwarded_module_lockScreen_stackItems_items_6c455f1295d14cefb5e922691d290d8f_inputs_enabled",
+                        "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_6c455f1295d14cefb5e922691d290d8f_inputs_enabled",
                         "kind": "boolean",
                         "valueKind": "Boolean",
                         "defaultValue": "true",
@@ -2031,9 +2031,9 @@
                         "sourceInputId": "enabled"
                       },
                       "entryTiming": {
-                        "id": "forwarded.module.lockScreen.stackItems.items_6c455f1295d14cefb5e922691d290d8f.inputs.entryTiming",
+                        "id": "forwarded.module.core.lockScreen.stackItems.items_6c455f1295d14cefb5e922691d290d8f.inputs.entryTiming",
                         "label": "Entry timing",
-                        "jsonKey": "forwarded_module_lockScreen_stackItems_items_6c455f1295d14cefb5e922691d290d8f_inputs_entryTiming",
+                        "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_6c455f1295d14cefb5e922691d290d8f_inputs_entryTiming",
                         "kind": "behaviorTiming",
                         "valueKind": "BehaviorTiming",
                         "defaultValue": "{\"mode\":\"fixed\",\"fixedFrames\":16,\"paceToken\":\"theme.motion.naturalPace.normal\"}",
@@ -2082,9 +2082,9 @@
                         "sourceInputId": "entryTiming"
                       },
                       "entryTrigger": {
-                        "id": "forwarded.module.lockScreen.stackItems.items_6c455f1295d14cefb5e922691d290d8f.inputs.entryTrigger",
+                        "id": "forwarded.module.core.lockScreen.stackItems.items_6c455f1295d14cefb5e922691d290d8f.inputs.entryTrigger",
                         "label": "Enter password",
-                        "jsonKey": "forwarded_module_lockScreen_stackItems_items_6c455f1295d14cefb5e922691d290d8f_inputs_entryTrigger",
+                        "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_6c455f1295d14cefb5e922691d290d8f_inputs_entryTrigger",
                         "kind": "boolean",
                         "valueKind": "Boolean",
                         "defaultValue": "false",
@@ -2112,9 +2112,9 @@
                         "sourceInputId": "entryTrigger"
                       },
                       "entryFrame": {
-                        "id": "forwarded.module.lockScreen.stackItems.items_6c455f1295d14cefb5e922691d290d8f.inputs.entryFrame",
+                        "id": "forwarded.module.core.lockScreen.stackItems.items_6c455f1295d14cefb5e922691d290d8f.inputs.entryFrame",
                         "label": "Entry frame",
-                        "jsonKey": "forwarded_module_lockScreen_stackItems_items_6c455f1295d14cefb5e922691d290d8f_inputs_entryFrame",
+                        "jsonKey": "forwarded_module_core_lockScreen_stackItems_items_6c455f1295d14cefb5e922691d290d8f_inputs_entryFrame",
                         "kind": "number",
                         "valueKind": "Integer",
                         "defaultValue": "0",
@@ -2154,14 +2154,14 @@
           ],
           "$forwardedInputs": {
             "items": {
-              "id": "forwarded.module.lockScreen.stackStates",
+              "id": "forwarded.module.core.lockScreen.stackStates",
               "label": "Slots",
-              "jsonKey": "forwarded_module_lockScreen_stackStates",
+              "jsonKey": "forwarded_module_core_lockScreen_stackStates",
               "kind": "collection",
               "collection": {
                 "id": "stackStates",
                 "label": "Slots",
-                "jsonKey": "forwarded_module_lockScreen_stackStates",
+                "jsonKey": "forwarded_module_core_lockScreen_stackStates",
                 "itemLabel": "Slot",
                 "animationPresentation": "collectionFooter",
                 "animationTimeline": {
@@ -2240,7 +2240,7 @@
                 "childCollection": {
                   "id": "stackStateInputs",
                   "label": "States",
-                  "jsonKey": "forwarded_module_lockScreen_stackStateInputs",
+                  "jsonKey": "forwarded_module_core_lockScreen_stackStateInputs",
                   "itemLabel": "State",
                   "sourceCollectionJsonKey": "alternatives",
                   "parentItemIdJsonKey": "slotId",
@@ -2292,7 +2292,7 @@
                     "sequenceItems": false,
                     "ownerOrigin": {
                       "kind": "firstMatchingValue",
-                      "sourceCollectionJsonKey": "forwarded_module_lockScreen_stackStates",
+                      "sourceCollectionJsonKey": "forwarded_module_core_lockScreen_stackStates",
                       "sourceTargetIdJsonKey": "slotId",
                       "sourceFieldId": "runtimeStateId",
                       "sourceValueJsonKey": "runtimeStateId",
@@ -2383,17 +2383,17 @@
             "visible": true,
             "fields": [
               {
-                "id": "module.lockScreen.stackVariant",
+                "id": "module.core.lockScreen.stackVariant",
                 "order": 10,
                 "visible": true
               },
               {
-                "id": "module.lockScreen.stackInputs",
+                "id": "module.core.lockScreen.stackInputs",
                 "order": 20,
                 "visible": true
               },
               {
-                "id": "module.lockScreen.stackItems",
+                "id": "module.core.lockScreen.stackItems",
                 "order": 30,
                 "visible": true
               }
@@ -2417,7 +2417,7 @@
             "visible": true,
             "fields": [
               {
-                "id": "module.lockScreen.statusBarVariant",
+                "id": "module.core.lockScreen.statusBarVariant",
                 "order": 10,
                 "visible": true
               }
@@ -2441,7 +2441,7 @@
             "visible": true,
             "fields": [
               {
-                "id": "module.lockScreen.navigationBarVariant",
+                "id": "module.core.lockScreen.navigationBarVariant",
                 "order": 10,
                 "visible": true
               }

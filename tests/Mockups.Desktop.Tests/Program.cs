@@ -3008,7 +3008,7 @@ static void DefaultVariantEditingUnlockIsSessionOnly()
             "theme.spacing.s|theme.spacing.s");
         database.UpdateModuleVariantField(
             moduleDefault,
-            "module.conversation.showHeader",
+            "module.core.chat.showHeader",
             "false");
         Equal(true, PersistedDefaultLock(temporary, "component_classes", "component_project_foqn_s2_label"));
         Equal(true, PersistedDefaultLock(temporary, "modules", "module_core_chat"));
@@ -3029,7 +3029,7 @@ static void DefaultVariantEditingUnlockIsSessionOnly()
             "theme.spacing.m|theme.spacing.m"));
         Throws<InvalidOperationException>(() => nextSession.UpdateModuleVariantField(
             nextModuleDefault,
-            "module.conversation.showHeader",
+            "module.core.chat.showHeader",
             "true"));
     }
     finally
@@ -7740,7 +7740,7 @@ static void ConversationPreviewTargetsExactIconRowItems()
             $"data-preview-authoring-owner-id=\"{textInputVariant}\"",
             StringComparison.Ordinal));
         True(html.Contains(
-            "data-preview-authoring-slot-field-ids=\"[&quot;component.textInput.textBox.editor&quot;,&quot;component.textBox.rightIconRow.editor&quot;]\"",
+            "data-preview-authoring-slot-field-ids=\"[&quot;component.textInputBar.textBox.editor&quot;,&quot;component.textBox.rightIconRow.editor&quot;]\"",
             StringComparison.Ordinal));
         True(html.Contains(
             "data-preview-authoring-focus-field-id=\"component.iconRow.items\"",
@@ -7749,7 +7749,7 @@ static void ConversationPreviewTargetsExactIconRowItems()
             "data-preview-authoring-focus-item-id=\"button_attachment\"",
             StringComparison.Ordinal));
         True(html.Contains(
-            "data-preview-authoring-slot-field-ids=\"[&quot;module.conversation.headerRightIconRow.editor&quot;]\"",
+            "data-preview-authoring-slot-field-ids=\"[&quot;module.core.chat.headerRightIconRow.editor&quot;]\"",
             StringComparison.Ordinal));
         True(html.Contains(
             "data-preview-authoring-focus-item-id=\"button_001\"",
@@ -8710,27 +8710,27 @@ static void ModuleConfigsUseOwnerContracts()
 
         Throws<InvalidOperationException>(() => database.UpdateModuleField(
             conversation.Id,
-            "module.conversation.headerLeftIconRow.inputs",
+            "module.core.chat.headerLeftIconRow.inputs",
             "[]"));
         Throws<InvalidOperationException>(() => database.UpdateModuleField(
             conversation.Id,
-            "module.conversation.showHeader",
+            "module.core.chat.showHeader",
             "perhaps"));
         Throws<InvalidOperationException>(() => database.UpdateModuleField(
             conversation.Id,
-            "module.conversation.headerHeight",
+            "module.core.chat.headerHeight",
             "many"));
         Throws<InvalidOperationException>(() => database.UpdateModuleField(
             conversation.Id,
-            "module.conversation.headerSurface.editor",
+            "module.core.chat.headerSurface.editor",
             "component_project_foqn_s2_button::variant::default"));
         Throws<InvalidOperationException>(() => database.UpdateModuleVariantField(
             conversationVariant,
-            "module.conversation.headerAvatarAlignment",
+            "module.core.chat.headerAvatarAlignment",
             "automatic"));
         Throws<InvalidOperationException>(() => database.UpdateModuleField(
             lockScreen.Id,
-            "module.lockScreen.stackItems",
+            "module.core.lockScreen.stackItems",
             "{}"));
         SequenceEqual(beforeRejectedWrites, SHA256.HashData(File.ReadAllBytes(temporary)));
 
@@ -8738,40 +8738,40 @@ static void ModuleConfigsUseOwnerContracts()
             "component_project_foqn_s2_surface::variant::default",
             database.GetModuleConfigFieldValue(
                 conversation.Id,
-                "module.conversation.headerSurface.editor"));
+                "module.core.chat.headerSurface.editor"));
         database.UpdateModuleField(
             conversation.Id,
-            "module.conversation.headerUseActorColor",
+            "module.core.chat.headerUseActorColor",
             "true");
         Equal(
             "true",
             database.GetModuleConfigFieldValue(
                 conversation.Id,
-                "module.conversation.headerUseActorColor"));
+                "module.core.chat.headerUseActorColor"));
 
         conversationVariant = NodeCommands(database)
             .ToggleModuleVariantLock(conversationVariant);
         database.UpdateModuleVariantField(
             conversationVariant,
-            "module.conversation.showHeader",
+            "module.core.chat.showHeader",
             "false");
         Equal(
             "false",
             database.GetModuleVariantConfigFieldValue(
                 conversationVariant,
-                "module.conversation.showHeader"));
+                "module.core.chat.showHeader"));
         database.UpdateModuleVariantField(
             conversationVariant,
-            "module.conversation.headerUseActorColor",
+            "module.core.chat.headerUseActorColor",
             "true");
         Equal(
             "true",
             database.GetModuleVariantConfigFieldValue(
                 conversationVariant,
-                "module.conversation.headerUseActorColor"));
+                "module.core.chat.headerUseActorColor"));
 
         var surfaceSlot = Required(
-            EmbeddedComponentSlotCatalog.Get("module.conversation.headerSurface.editor"));
+            EmbeddedComponentSlotCatalog.Get("module.core.chat.headerSurface.editor"));
         Equal("surface", surfaceSlot.EmbeddedComponentType);
         Equal("component.surface", surfaceSlot.RecordClassId);
     }
@@ -8783,8 +8783,8 @@ static void ModuleConfigsUseOwnerContracts()
 
 static void SystemBarItemsUseFixedDictionaryCollections()
 {
-    var statusField = ComponentClassFieldCatalog.Get("component.statusBar.items");
-    var navigationField = ComponentClassFieldCatalog.Get("component.navigationBar.items");
+    var statusField = ComponentClassFieldCatalog.Get("component.status_bar.items");
+    var navigationField = ComponentClassFieldCatalog.Get("component.navigation_bar.items");
     Equal(ValueKind.StructuredCollection, statusField.ValueKind);
     Equal(ValueKind.StructuredCollection, navigationField.ValueKind);
     True(statusField.StructuredCollection is { CanEditStructure: false });
@@ -10398,7 +10398,7 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
         using var command = connection.CreateCommand();
         command.CommandText = """
             UPDATE module_instances
-            SET content_json = json_set(content_json, '$.forwarded_module_lockScreen_stackStates', json('{}'))
+            SET content_json = json_set(content_json, '$.forwarded_module_core_lockScreen_stackStates', json('{}'))
             WHERE module_id = 'module_project_foqn_s2_lock_screen'
             """;
         command.ExecuteNonQuery();
@@ -14491,7 +14491,7 @@ static void ForwardedChildInputsBecomeParentRuntimeInputs()
         var effective = RuntimeInputForwardingContract.EffectivePreview(preview, config);
         var inputs = RuntimeInputDefinitionReader.ReadInputs(effective, config);
         var forwarded = inputs.Single((input) =>
-            input.Id == "forwarded.component.textInput.textBox.inputs.sampleText");
+            input.Id == "forwarded.component.textInputBar.textBox.inputs.sampleText");
         Equal("Text", forwarded.Label);
         Equal("Message", forwarded.DefaultValue);
         Equal("Message", effective[forwarded.JsonKey]?.GetValue<string>());
@@ -14613,7 +14613,7 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
             previewInputData.ComponentVariantConfig);
         True(
             moduleEffective[
-                "forwarded_module_lockScreen_stackStates__variantSource"]
+                "forwarded_module_core_lockScreen_stackStates__variantSource"]
             is JsonArray);
         moduleVariant = NodeCommands(database)
             .ToggleModuleVariantLock(moduleVariant);
@@ -14631,7 +14631,7 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
             added["active"] = false;
             added["behavior"] = "replace";
             authoredStates.Add(added);
-            database.UpdateModuleVariantField(moduleVariant, "module.lockScreen.stackItems", authoredItems.ToJsonString());
+            database.UpdateModuleVariantField(moduleVariant, "module.core.lockScreen.stackItems", authoredItems.ToJsonString());
             settings = database.GetModuleVariantSettings(moduleVariant);
             config = DesignPreviewTestValues.Parse(settings.ConfigJson);
         }
@@ -14649,7 +14649,7 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
             previewInputData.ComponentVariantConfig);
         True(
             effective[
-                "forwarded_module_lockScreen_stackStates__variantSource"]
+                "forwarded_module_core_lockScreen_stackStates__variantSource"]
             is JsonArray);
         var forwardedInputs = RuntimeInputDefinitionReader.ReadInputs(effective, config);
         Equal(0, forwardedInputs.Count((input) => input.Label is "Hora" or "Subtext" or "Password" or "Attempt"));
@@ -14770,7 +14770,7 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
         var stackItems = config["lockScreen"]?["stackInputs"]?["items"]?.DeepClone() as JsonArray
             ?? throw new InvalidOperationException("Missing Lock Screen Stack items.");
         (stackItems[0]?["alternatives"] as JsonArray)?.RemoveAt(1);
-        database.UpdateModuleVariantField(moduleVariant, "module.lockScreen.stackItems", stackItems.ToJsonString());
+        database.UpdateModuleVariantField(moduleVariant, "module.core.lockScreen.stackItems", stackItems.ToJsonString());
         var updatedPayload = Required(CreatePreviewPayload(database, moduleVariant, theme.Id));
         session.UpdateForPayload(updatedPayload, settings.ProjectId);
         var normalized = session.ApplyInputs(updatedPayload, "light", settings.ProjectId);
@@ -17898,7 +17898,7 @@ static void LockScreenComposesRuntimeStack()
         var stateOwnerOrigin = stackInputs[RuntimeInputForwardingContract.StorageKey]?["items"]?["projection"]?["childCollection"]?["animationTimeline"]?["ownerOrigin"]
             ?? throw new InvalidOperationException("Missing forwarded Lock Screen State owner origin.");
         Equal("firstMatchingValue", stateOwnerOrigin["kind"]?.GetValue<string>() ?? "");
-        Equal("forwarded_module_lockScreen_stackStates", stateOwnerOrigin["sourceCollectionJsonKey"]?.GetValue<string>() ?? "");
+        Equal("forwarded_module_core_lockScreen_stackStates", stateOwnerOrigin["sourceCollectionJsonKey"]?.GetValue<string>() ?? "");
         Equal("runtimeStateId", stateOwnerOrigin["sourceFieldId"]?.GetValue<string>() ?? "");
         var defaultVariant = module.Children.Single((child) => child.Kind == ProjectTreeNodeKind.ModuleVariant && child.IsProtected);
         var variantConfig = JsonNode.Parse(database.GetModuleVariantSettings(defaultVariant).ConfigJson) as JsonObject
@@ -17914,8 +17914,8 @@ static void LockScreenComposesRuntimeStack()
             .SelectMany((group) => group.VisibleFields)
             .Select((field) => field.Id)
             .ToHashSet(StringComparer.Ordinal);
-        True(lockScreenFields.Contains("module.lockScreen.stackInputs"));
-        True(lockScreenFields.Contains("module.lockScreen.stackItems"));
+        True(lockScreenFields.Contains("module.core.lockScreen.stackInputs"));
+        True(lockScreenFields.Contains("module.core.lockScreen.stackItems"));
 
         var lockScreenInstance = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance
             && database.GetModuleInstanceSettings(node.Id).ModuleId == module.Id);
@@ -18082,14 +18082,14 @@ static void LockScreenComposesRuntimeStack()
         {
             [subtitleBinding.JsonKey] = RuntimeInputForwardingContract.Definition(
                 new FieldDefinition(
-                    "module.lockScreen.stackItems.lock_screen_label.inputs",
+                    "module.core.lockScreen.stackItems.lock_screen_label.inputs",
                     "Component inputs",
                     ValueKind.ComponentInputBindings),
                 subtitleBinding,
                 "Lock subtitle",
                 "Subtitle"),
         };
-        database.UpdateModuleField(module.Id, "module.lockScreen.stackItems", new JsonArray
+        database.UpdateModuleField(module.Id, "module.core.lockScreen.stackItems", new JsonArray
         {
             new JsonObject
             {

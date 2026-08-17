@@ -339,17 +339,17 @@
             "visible": true,
             "fields": [
               {
-                "id": "component.navigationBar.foregroundColorToken",
+                "id": "component.navigation_bar.foregroundColorToken",
                 "order": 10,
                 "visible": true
               },
               {
-                "id": "component.navigationBar.backgroundColorToken",
+                "id": "component.navigation_bar.backgroundColorToken",
                 "order": 20,
                 "visible": true
               },
               {
-                "id": "component.navigationBar.backgroundAlpha",
+                "id": "component.navigation_bar.backgroundAlpha",
                 "order": 30,
                 "visible": true
               }
@@ -363,37 +363,37 @@
             "visible": true,
             "fields": [
               {
-                "id": "component.navigationBar.type",
+                "id": "component.navigation_bar.type",
                 "order": 10,
                 "visible": true
               },
               {
-                "id": "component.navigationBar.layout.height",
+                "id": "component.navigation_bar.layout.height",
                 "order": 20,
                 "visible": true
               },
               {
-                "id": "component.navigationBar.layout.itemSize",
+                "id": "component.navigation_bar.layout.itemSize",
                 "order": 30,
                 "visible": true
               },
               {
-                "id": "component.navigationBar.layout.sidePadding",
+                "id": "component.navigation_bar.layout.sidePadding",
                 "order": 40,
                 "visible": true
               },
               {
-                "id": "component.navigationBar.layout.strokeWidth",
+                "id": "component.navigation_bar.layout.strokeWidth",
                 "order": 50,
                 "visible": true
               },
               {
-                "id": "component.navigationBar.layout.cornerRadius",
+                "id": "component.navigation_bar.layout.cornerRadius",
                 "order": 60,
                 "visible": true
               },
               {
-                "id": "component.navigationBar.layout.filled",
+                "id": "component.navigation_bar.layout.filled",
                 "order": 70,
                 "visible": true
               }
@@ -407,17 +407,17 @@
             "visible": true,
             "fields": [
               {
-                "id": "component.navigationBar.gesture.width",
+                "id": "component.navigation_bar.gesture.width",
                 "order": 10,
                 "visible": true
               },
               {
-                "id": "component.navigationBar.gesture.height",
+                "id": "component.navigation_bar.gesture.height",
                 "order": 20,
                 "visible": true
               },
               {
-                "id": "component.navigationBar.gesture.cornerRadius",
+                "id": "component.navigation_bar.gesture.cornerRadius",
                 "order": 30,
                 "visible": true
               }
@@ -441,7 +441,7 @@
             "visible": true,
             "fields": [
               {
-                "id": "component.navigationBar.items",
+                "id": "component.navigation_bar.items",
                 "order": 10,
                 "visible": true
               }

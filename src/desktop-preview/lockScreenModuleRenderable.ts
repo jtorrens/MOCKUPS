@@ -50,7 +50,7 @@ export function lockScreenModuleToRenderable(payload: DesignPreviewPayload): Ren
         componentBaseConfigs,
         { ...contract.stackSlot },
         "componentStack",
-        "module.lockScreen.stackSlot",
+        "module.core.lockScreen.stackSlot",
       )),
       designPreviewJson: JSON.stringify(contract.stackInputs),
     },
@@ -81,7 +81,7 @@ function componentSlotPayload(
       componentBaseConfigs,
       { ...slot },
       componentType,
-      `module.lockScreen.${componentType}`,
+      `module.core.lockScreen.${componentType}`,
     )),
   };
 }

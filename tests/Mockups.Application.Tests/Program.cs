@@ -642,16 +642,16 @@ static void ComponentInputProjectionOwnershipCoversParents()
     Equal(2, moduleOwners.Count);
     Equal(7, componentOwners.Count);
     Equal(true, moduleOwners.Any((owner) => owner.Id.Equals(
-        "module.conversation.headerRightIconRow.inputs",
+        "module.core.chat.headerRightIconRow.inputs",
         StringComparison.Ordinal)));
     Equal(true, componentOwners.Any((owner) => owner.Id.Equals(
         "component.iconBar.activeRightIconRow.inputs",
         StringComparison.Ordinal)));
     Equal(true, componentOwners.Any((owner) => owner.Id.Equals(
-        "component.textInput.textBox.inputs",
+        "component.textInputBar.textBox.inputs",
         StringComparison.Ordinal)));
     var textBox = componentOwners.Single((owner) => owner.Id.Equals(
-        "component.textInput.textBox.inputs",
+        "component.textInputBar.textBox.inputs",
         StringComparison.Ordinal));
     Equal(3, textBox.CalculatedInputIds.Count);
     Equal(true, textBox.CalculatedInputIds.Contains("fixedSize"));

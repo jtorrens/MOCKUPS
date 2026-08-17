@@ -15,19 +15,19 @@ public static class EmbeddedComponentSlotCatalog
     private static readonly EmbeddedComponentSlotDefinition[] Slots =
     [
         new(
-            "module.lockScreen.statusBarVariant",
+            "module.core.lockScreen.statusBarVariant",
             "status_bar",
             "Status bar",
             "component.status_bar",
             ["lockScreen", "statusBarSlot"]),
         new(
-            "module.lockScreen.navigationBarVariant",
+            "module.core.lockScreen.navigationBarVariant",
             "navigation_bar",
             "Navigation bar",
             "component.navigation_bar",
             ["lockScreen", "navigationBarSlot"]),
         new(
-            "module.lockScreen.stackVariant",
+            "module.core.lockScreen.stackVariant",
             "componentStack",
             "Stack",
             "component.componentStack",
@@ -47,9 +47,9 @@ public static class EmbeddedComponentSlotCatalog
         new("component.listItem.states.inactive.surface", "surface", "Inactive surface", "component.surface", ["listItem", "states", "inactive", "surfaceSlot"]),
         new("component.list.collectionStack", "collectionStack", "Collection Stack", "component.collectionStack", ["list", "collectionStackSlot"]),
         new("component.list.listItem", "listItem", "List Item", "component.listItem", ["list", "listItemSlot"]),
-        new("module.conversation.headerSurface.editor", "surface", "Header surface", "component.surface", ["conversation", "headerSurfaceSlot"]),
-        new("module.conversation.headerLeftIconRow.editor", "iconRow", "Left icon row", "component.iconRow", ["conversation", "headerLeftIconRowSlot"]),
-        new("module.conversation.headerRightIconRow.editor", "iconRow", "Right icon row", "component.iconRow", ["conversation", "headerRightIconRowSlot"]),
+        new("module.core.chat.headerSurface.editor", "surface", "Header surface", "component.surface", ["conversation", "headerSurfaceSlot"]),
+        new("module.core.chat.headerLeftIconRow.editor", "iconRow", "Left icon row", "component.iconRow", ["conversation", "headerLeftIconRowSlot"]),
+        new("module.core.chat.headerRightIconRow.editor", "iconRow", "Right icon row", "component.iconRow", ["conversation", "headerRightIconRowSlot"]),
         new(
             "component.avatar.label.editor",
             "label",
@@ -59,19 +59,19 @@ public static class EmbeddedComponentSlotCatalog
         new("component.avatar.badge.editor", "badge", "Badge", "component.badge", ["avatar", "badgeSlot"]),
         new("component.button.badge.editor", "badge", "Badge", "component.badge", ["button", "badgeSlot"]),
         new(
-            "component.textInput.barSurface.editor",
+            "component.textInputBar.barSurface.editor",
             "surface",
             "Bar surface",
             "component.surface",
             ["textInput", "barSurfaceSlot"]),
         new(
-            "component.textInput.textBox.editor",
+            "component.textInputBar.textBox.editor",
             "textBox",
             "Text box",
             "component.textBox",
             ["textInput", "textBoxSlot"]),
         new(
-            "component.textInput.iconBar.editor",
+            "component.textInputBar.iconBar.editor",
             "iconBar",
             "Icon bar",
             "component.iconBar",

@@ -456,17 +456,17 @@
             "visible": true,
             "fields": [
               {
-                "id": "component.statusBar.foregroundColorToken",
+                "id": "component.status_bar.foregroundColorToken",
                 "order": 10,
                 "visible": true
               },
               {
-                "id": "component.statusBar.backgroundColorToken",
+                "id": "component.status_bar.backgroundColorToken",
                 "order": 20,
                 "visible": true
               },
               {
-                "id": "component.statusBar.backgroundAlpha",
+                "id": "component.status_bar.backgroundAlpha",
                 "order": 30,
                 "visible": true
               }
@@ -480,22 +480,22 @@
             "visible": true,
             "fields": [
               {
-                "id": "component.statusBar.layout.height",
+                "id": "component.status_bar.layout.height",
                 "order": 10,
                 "visible": true
               },
               {
-                "id": "component.statusBar.layout.itemSize",
+                "id": "component.status_bar.layout.itemSize",
                 "order": 20,
                 "visible": true
               },
               {
-                "id": "component.statusBar.layout.gap",
+                "id": "component.status_bar.layout.gap",
                 "order": 30,
                 "visible": true
               },
               {
-                "id": "component.statusBar.layout.sidePadding",
+                "id": "component.status_bar.layout.sidePadding",
                 "order": 40,
                 "visible": true
               }
@@ -519,7 +519,7 @@
             "visible": true,
             "fields": [
               {
-                "id": "component.statusBar.items",
+                "id": "component.status_bar.items",
                 "order": 10,
                 "visible": true
               }

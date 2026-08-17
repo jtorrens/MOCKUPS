@@ -395,9 +395,9 @@ test("Conversation Header keeps its upward bleed and can use the resolved Actor 
   const surfaceColorTree = conversationModuleToRenderable(source);
   const surfaceColorNode = findNode(
     surfaceColorTree,
-    "module.conversation.header.surface",
+    "module.core.chat.header.surface",
   );
-  const headerNode = findNode(surfaceColorTree, "module.conversation.header");
+  const headerNode = findNode(surfaceColorTree, "module.core.chat.header");
   const statusNode = findNode(surfaceColorTree, "status_bar");
   assert.ok(surfaceColorNode);
   assert.ok(headerNode?.box);
@@ -415,7 +415,7 @@ test("Conversation Header keeps its upward bleed and can use the resolved Actor 
   source.configJson = JSON.stringify(config);
   const actorColorNode = findNode(
     conversationModuleToRenderable(source),
-    "module.conversation.header.surface",
+    "module.core.chat.header.surface",
   );
   assert.ok(actorColorNode);
   assert.equal(actorColorNode.style?.background, actorColor);
@@ -425,22 +425,22 @@ test("Conversation Header keeps its upward bleed and can use the resolved Actor 
   source.authoringRecordClassId = "module.core.chat";
   const authoringNode = findNode(
     conversationModuleToRenderable(source),
-    "module.conversation.header.surface",
+    "module.core.chat.header.surface",
   );
   assert.deepEqual(authoringNode?.metadata?.authoringTarget, {
     focusFieldId: "component.surface.backgroundColorToken",
     ownerId: "module_core_chat::variant::default",
-    slotFieldIds: ["module.conversation.headerSurface.editor"],
+    slotFieldIds: ["module.core.chat.headerSurface.editor"],
   });
   const headerVideoButton = findNode(
     conversationModuleToRenderable(source),
-    "module.conversation.header.right.button_001",
+    "module.core.chat.header.right.button_001",
   );
   assert.deepEqual(headerVideoButton?.metadata?.authoringTarget, {
     focusFieldId: "component.iconRow.items",
     focusItemId: "button_001",
     ownerId: "module_core_chat::variant::default",
-    slotFieldIds: ["module.conversation.headerRightIconRow.editor"],
+    slotFieldIds: ["module.core.chat.headerRightIconRow.editor"],
   });
 });
 

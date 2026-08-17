@@ -53,7 +53,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
   const wallpaper = requiredBoolean(
     conversation,
     "useAppWallpaper",
-    "module.conversation.useAppWallpaper",
+    "module.core.chat.useAppWallpaper",
   )
     ? wallpaperRenderable(payload, screen)
     : undefined;
@@ -64,7 +64,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
   const status = requiredBoolean(
     conversation,
     "showStatusBar",
-    "module.conversation.showStatusBar",
+    "module.core.chat.showStatusBar",
   ) && themeStatusBarVariantReference
     ? childRenderable(
         payload,
@@ -78,7 +78,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
   const navigation = requiredBoolean(
     conversation,
     "showNavigationBar",
-    "module.conversation.showNavigationBar",
+    "module.core.chat.showNavigationBar",
   ) && themeNavigationBarVariantReference
     ? childRenderable(
         payload,
@@ -98,7 +98,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
         componentBaseConfigs,
         "keyboard",
         "component.keyboard",
-        requiredString(conversation, "keyboardVariant", "module.conversation.keyboardVariant"),
+        requiredString(conversation, "keyboardVariant", "module.core.chat.keyboardVariant"),
         {
           text: composer.text,
           currentCharacter: composer.currentCharacter,
@@ -115,7 +115,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
         requiredString(
           conversation,
           "textInputBarVariant",
-          "module.conversation.textInputBarVariant",
+          "module.core.chat.textInputBarVariant",
         ),
         {
           availableWidth: screen.width / scale,
@@ -139,7 +139,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
   const header = requiredBoolean(
     conversation,
     "showHeader",
-    "module.conversation.showHeader",
+    "module.core.chat.showHeader",
   )
     ? headerNode(
         payload,
@@ -147,7 +147,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
         conversation,
         preview,
         (status?.box?.height ?? 0),
-        requiredNumber(conversation, "headerHeight", "module.conversation.headerHeight") * scale,
+        requiredNumber(conversation, "headerHeight", "module.core.chat.headerHeight") * scale,
       )
     : undefined;
   if (header) children.push(header);
@@ -172,7 +172,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
     height: Math.max(0, bottom - top),
   };
   children.push({
-    id: "module.conversation.messages",
+    id: "module.core.chat.messages",
     type: "group",
     frame: 0,
     box: messageViewport,
@@ -226,7 +226,7 @@ function messageNodes(
   const bubbleVariant = requiredString(
     conversation,
     "bubbleVariant",
-    "module.conversation.bubbleVariant",
+    "module.core.chat.bubbleVariant",
   );
   const bubbleNode = (message: ConversationMessageContract, writeOnTrigger: boolean) => childRenderable(
     payload,
@@ -405,22 +405,22 @@ function headerNode(
       componentBaseConfigs,
       leftSlot,
       "iconRow",
-      "module.conversation.headerLeftIconRowSlot",
+      "module.core.chat.headerLeftIconRowSlot",
     ),
     leftInputs,
     componentBaseConfigs,
-    "module.conversation.header.left",
+    "module.core.chat.header.left",
   );
   const rightRow = resolveIconRowComponentFromRecords(
     embeddedComponentConfig(
       componentBaseConfigs,
       rightSlot,
       "iconRow",
-      "module.conversation.headerRightIconRowSlot",
+      "module.core.chat.headerRightIconRowSlot",
     ),
     rightInputs,
     componentBaseConfigs,
-    "module.conversation.header.right",
+    "module.core.chat.header.right",
   );
   const leftSize = measureIconRowComponent(payload, leftRow);
   const rightSize = measureIconRowComponent(payload, rightRow);
@@ -432,7 +432,7 @@ function headerNode(
   const avatarVariantReference = requiredString(
     conversation,
     "headerAvatarVariant",
-    "module.conversation.headerAvatarVariant",
+    "module.core.chat.headerAvatarVariant",
   );
   const avatarPayload = authoringVariantPayload(
     payload,
@@ -453,25 +453,25 @@ function headerNode(
         badgeText: "1",
       },
       componentBaseConfigs,
-      "module.conversation.header.avatar",
+      "module.core.chat.header.avatar",
     );
   const resolvedSurface = resolveSurfaceComponentAtSize(
     embeddedComponentConfig(
       componentBaseConfigs,
       surfaceSlot,
       "surface",
-      "module.conversation.headerSurfaceSlot",
+      "module.core.chat.headerSurfaceSlot",
     ),
     {
       width: screen.width / scale,
       height: (offsetY + height) / scale,
     },
-    "module.conversation.header.surface",
+    "module.core.chat.header.surface",
   );
   const surfaceNode = renderAuthoringSlot(
     payload,
     "module.core.chat",
-    "module.conversation.headerSurface.editor",
+    "module.core.chat.headerSurface.editor",
     "component.surface",
     "component.surface.backgroundColorToken",
     (slotPayload) => surfaceComponentToRenderableAt(
@@ -486,7 +486,7 @@ function headerNode(
       requiredBoolean(
         conversation,
         "headerUseActorColor",
-        "module.conversation.headerUseActorColor",
+        "module.core.chat.headerUseActorColor",
       )
         ? {
             background: cssColorWithAlpha(
@@ -525,7 +525,7 @@ function headerNode(
   const leftRowNode = renderAuthoringSlot(
     payload,
     "module.core.chat",
-    "module.conversation.headerLeftIconRow.editor",
+    "module.core.chat.headerLeftIconRow.editor",
     "component.iconRow",
     "component.iconRow.items",
     (slotPayload) => iconRowComponentToRenderableAt(slotPayload, leftRow, {
@@ -538,7 +538,7 @@ function headerNode(
   const rightRowNode = renderAuthoringSlot(
     payload,
     "module.core.chat",
-    "module.conversation.headerRightIconRow.editor",
+    "module.core.chat.headerRightIconRow.editor",
     "component.iconRow",
     "component.iconRow.items",
     (slotPayload) => iconRowComponentToRenderableAt(slotPayload, rightRow, {
@@ -549,7 +549,7 @@ function headerNode(
     }),
   );
   return {
-    id: "module.conversation.header",
+    id: "module.core.chat.header",
     type: "group",
     frame: 0,
     box: {
@@ -566,7 +566,7 @@ function headerNode(
       leftRowNode,
       rightRowNode,
       {
-        id: "module.conversation.header.separator",
+        id: "module.core.chat.header.separator",
         type: "surface",
         frame: 0,
         box: {

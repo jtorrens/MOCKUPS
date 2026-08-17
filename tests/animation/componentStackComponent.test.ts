@@ -247,7 +247,7 @@ test("Component Stack publishes each alternative's exact Component Variant owner
   source.componentBaseConfigsJson = JSON.stringify(bases);
   source.authoringOwnerId = "module_lock_screen::variant::default";
   source.authoringRecordClassId = "module.core.lockScreen";
-  source.authoringSlotFieldIds = ["module.lockScreen.stack.editor"];
+  source.authoringSlotFieldIds = ["module.core.lockScreen.stack.editor"];
 
   const renderable = componentStackComponentToRenderable(
     source,

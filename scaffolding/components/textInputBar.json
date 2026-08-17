@@ -130,9 +130,9 @@
         "sampleText": "Message",
         "$forwardedInputs": {
           "sampleText": {
-            "id": "forwarded.component.textInput.textBox.inputs.sampleText",
+            "id": "forwarded.component.textInputBar.textBox.inputs.sampleText",
             "label": "Text",
-            "jsonKey": "forwarded_component_textInput_textBox_inputs_sampleText",
+            "jsonKey": "forwarded_component_textInputBar_textBox_inputs_sampleText",
             "kind": "multilineText",
             "valueKind": "StringMultiline",
             "defaultValue": "Message",
@@ -249,9 +249,9 @@
           "sampleText": "Message",
           "$forwardedInputs": {
             "sampleText": {
-              "id": "forwarded.component.textInput.textBox.inputs.sampleText",
+              "id": "forwarded.component.textInputBar.textBox.inputs.sampleText",
               "label": "Text",
-              "jsonKey": "forwarded_component_textInput_textBox_inputs_sampleText",
+              "jsonKey": "forwarded_component_textInputBar_textBox_inputs_sampleText",
               "kind": "multilineText",
               "valueKind": "StringMultiline",
               "defaultValue": "Message",
@@ -390,9 +390,9 @@
             "sampleText": "Message",
             "$forwardedInputs": {
               "sampleText": {
-                "id": "forwarded.component.textInput.textBox.inputs.sampleText",
+                "id": "forwarded.component.textInputBar.textBox.inputs.sampleText",
                 "label": "Text",
-                "jsonKey": "forwarded_component_textInput_textBox_inputs_sampleText",
+                "jsonKey": "forwarded_component_textInputBar_textBox_inputs_sampleText",
                 "kind": "multilineText",
                 "valueKind": "StringMultiline",
                 "defaultValue": "Message",
@@ -510,9 +510,9 @@
             "sampleText": "Message",
             "$forwardedInputs": {
               "sampleText": {
-                "id": "forwarded.component.textInput.textBox.inputs.sampleText",
+                "id": "forwarded.component.textInputBar.textBox.inputs.sampleText",
                 "label": "Label Test",
-                "jsonKey": "forwarded_component_textInput_textBox_inputs_sampleText",
+                "jsonKey": "forwarded_component_textInputBar_textBox_inputs_sampleText",
                 "kind": "multilineText",
                 "valueKind": "StringMultiline",
                 "defaultValue": "Message",
@@ -623,17 +623,17 @@
             "visible": true,
             "fields": [
               {
-                "id": "component.textInput.height",
+                "id": "component.textInputBar.height",
                 "order": 10,
                 "visible": true
               },
               {
-                "id": "component.textInput.barPadding",
+                "id": "component.textInputBar.barPadding",
                 "order": 20,
                 "visible": true
               },
               {
-                "id": "component.textInput.barSurface.editor",
+                "id": "component.textInputBar.barSurface.editor",
                 "order": 30,
                 "visible": true
               }
@@ -658,12 +658,12 @@
             "visible": true,
             "fields": [
               {
-                "id": "component.textInput.textBox.editor",
+                "id": "component.textInputBar.textBox.editor",
                 "order": 10,
                 "visible": true
               },
               {
-                "id": "component.textInput.textBox.inputs",
+                "id": "component.textInputBar.textBox.inputs",
                 "order": 20,
                 "visible": true
               }
@@ -688,12 +688,12 @@
             "visible": true,
             "fields": [
               {
-                "id": "component.textInput.iconGap",
+                "id": "component.textInputBar.iconGap",
                 "order": 10,
                 "visible": true
               },
               {
-                "id": "component.textInput.iconBar.editor",
+                "id": "component.textInputBar.iconBar.editor",
                 "order": 20,
                 "visible": true
               }

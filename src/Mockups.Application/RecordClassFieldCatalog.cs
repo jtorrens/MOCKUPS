@@ -203,96 +203,96 @@ public static class RecordClassFieldCatalog
             new FieldOption("dark", "Dark"),
         ]),
         ["module.metadata"] = new("module.metadata", "Metadata", ValueKind.StringMultiline),
-        ["module.conversation.showHeader"] = new("module.conversation.showHeader", "Header", ValueKind.Boolean),
-        ["module.conversation.useAppWallpaper"] = new("module.conversation.useAppWallpaper", "Use app wallpaper", ValueKind.Boolean),
-        ["module.conversation.headerHeight"] = new(
-            "module.conversation.headerHeight",
+        ["module.core.chat.showHeader"] = new("module.core.chat.showHeader", "Header", ValueKind.Boolean),
+        ["module.core.chat.useAppWallpaper"] = new("module.core.chat.useAppWallpaper", "Use app wallpaper", ValueKind.Boolean),
+        ["module.core.chat.headerHeight"] = new(
+            "module.core.chat.headerHeight",
             "Header height",
             ValueKind.Integer,
             Number: new NumberDefinition(0, 240, 1, 0)),
-        ["module.conversation.headerSurface.editor"] = new(
-            "module.conversation.headerSurface.editor",
+        ["module.core.chat.headerSurface.editor"] = new(
+            "module.core.chat.headerSurface.editor",
             "Header surface",
             ValueKind.ComponentVariant,
             ComponentVariantType: "surface"),
-        ["module.conversation.headerUseActorColor"] = new(
-            "module.conversation.headerUseActorColor",
+        ["module.core.chat.headerUseActorColor"] = new(
+            "module.core.chat.headerUseActorColor",
             "Use actor color",
             ValueKind.Boolean),
-        ["module.conversation.headerAvatarVariant"] = new(
-            "module.conversation.headerAvatarVariant",
+        ["module.core.chat.headerAvatarVariant"] = new(
+            "module.core.chat.headerAvatarVariant",
             "Header avatar variant",
             ValueKind.ComponentVariant,
             ComponentVariantType: "avatar"),
-        ["module.conversation.headerAvatarAlignment"] = new("module.conversation.headerAvatarAlignment", "Avatar alignment", ValueKind.OptionToken, Options:
+        ["module.core.chat.headerAvatarAlignment"] = new("module.core.chat.headerAvatarAlignment", "Avatar alignment", ValueKind.OptionToken, Options:
         [
             new FieldOption("left", "Left"),
             new FieldOption("center", "Center"),
             new FieldOption("right", "Right"),
         ]),
-        ["module.conversation.headerLeftIconRow.editor"] = new("module.conversation.headerLeftIconRow.editor", "Left icon row", ValueKind.ComponentVariant, ComponentVariantType: "iconRow"),
-        ["module.conversation.headerLeftIconRow.inputs"] = new("module.conversation.headerLeftIconRow.inputs", "Left row settings", ValueKind.ComponentInputBindings, ComponentInputBindings: [], RuntimeInputComponentVariantFieldId: "module.conversation.headerLeftIconRow.editor", ConfigJsonPath: ["conversation", "headerLeftIconRowInputs"]),
-        ["module.conversation.headerRightIconRow.editor"] = new("module.conversation.headerRightIconRow.editor", "Right icon row", ValueKind.ComponentVariant, ComponentVariantType: "iconRow"),
-        ["module.conversation.headerRightIconRow.inputs"] = new("module.conversation.headerRightIconRow.inputs", "Right row settings", ValueKind.ComponentInputBindings, ComponentInputBindings: [], RuntimeInputComponentVariantFieldId: "module.conversation.headerRightIconRow.editor", ConfigJsonPath: ["conversation", "headerRightIconRowInputs"]),
-        ["module.conversation.showStatusBar"] = new("module.conversation.showStatusBar", "Status bar", ValueKind.Boolean),
-        ["module.conversation.showNavigationBar"] = new("module.conversation.showNavigationBar", "Navigation bar", ValueKind.Boolean),
-        ["module.conversation.showTextInputBar"] = new("module.conversation.showTextInputBar", "Text input bar", ValueKind.Boolean),
-        ["module.conversation.textInputBarVariant"] = new(
-            "module.conversation.textInputBarVariant",
+        ["module.core.chat.headerLeftIconRow.editor"] = new("module.core.chat.headerLeftIconRow.editor", "Left icon row", ValueKind.ComponentVariant, ComponentVariantType: "iconRow"),
+        ["module.core.chat.headerLeftIconRow.inputs"] = new("module.core.chat.headerLeftIconRow.inputs", "Left row settings", ValueKind.ComponentInputBindings, ComponentInputBindings: [], RuntimeInputComponentVariantFieldId: "module.core.chat.headerLeftIconRow.editor", ConfigJsonPath: ["conversation", "headerLeftIconRowInputs"]),
+        ["module.core.chat.headerRightIconRow.editor"] = new("module.core.chat.headerRightIconRow.editor", "Right icon row", ValueKind.ComponentVariant, ComponentVariantType: "iconRow"),
+        ["module.core.chat.headerRightIconRow.inputs"] = new("module.core.chat.headerRightIconRow.inputs", "Right row settings", ValueKind.ComponentInputBindings, ComponentInputBindings: [], RuntimeInputComponentVariantFieldId: "module.core.chat.headerRightIconRow.editor", ConfigJsonPath: ["conversation", "headerRightIconRowInputs"]),
+        ["module.core.chat.showStatusBar"] = new("module.core.chat.showStatusBar", "Status bar", ValueKind.Boolean),
+        ["module.core.chat.showNavigationBar"] = new("module.core.chat.showNavigationBar", "Navigation bar", ValueKind.Boolean),
+        ["module.core.chat.showTextInputBar"] = new("module.core.chat.showTextInputBar", "Text input bar", ValueKind.Boolean),
+        ["module.core.chat.textInputBarVariant"] = new(
+            "module.core.chat.textInputBarVariant",
             "Text input variant",
             ValueKind.ComponentVariant,
             ComponentVariantType: "textInputBar"),
-        ["module.conversation.showKeyboard"] = new("module.conversation.showKeyboard", "Keyboard", ValueKind.Boolean),
-        ["module.conversation.keyboardVariant"] = new(
-            "module.conversation.keyboardVariant",
+        ["module.core.chat.showKeyboard"] = new("module.core.chat.showKeyboard", "Keyboard", ValueKind.Boolean),
+        ["module.core.chat.keyboardVariant"] = new(
+            "module.core.chat.keyboardVariant",
             "Keyboard variant",
             ValueKind.ComponentVariant,
             ComponentVariantType: "keyboard"),
-        ["module.conversation.bubbleVariant"] = new(
-            "module.conversation.bubbleVariant",
+        ["module.core.chat.bubbleVariant"] = new(
+            "module.core.chat.bubbleVariant",
             "Bubble variant",
             ValueKind.ComponentVariant,
             ComponentVariantType: "bubble"),
-        ["module.conversation.bubbleMaxWidth"] = new(
-            "module.conversation.bubbleMaxWidth",
+        ["module.core.chat.bubbleMaxWidth"] = new(
+            "module.core.chat.bubbleMaxWidth",
             "Max width %",
             ValueKind.Integer,
             Number: new NumberDefinition(1, 100, 1, 0)),
-        ["module.conversation.screenGutter"] = new(
-            "module.conversation.screenGutter",
+        ["module.core.chat.screenGutter"] = new(
+            "module.core.chat.screenGutter",
             "Screen gutter",
             ValueKind.ThemeTokenPair,
             PairLabels: PositionPairLabels,
             Options: SpacingTokenOptions),
-        ["module.conversation.messageGap"] = new(
-            "module.conversation.messageGap",
+        ["module.core.chat.messageGap"] = new(
+            "module.core.chat.messageGap",
             "Message gap",
             ValueKind.ThemeToken,
             Options: SpacingTokenOptions),
-        ["module.conversation.messageMotion"] = new(
-            "module.conversation.messageMotion",
+        ["module.core.chat.messageMotion"] = new(
+            "module.core.chat.messageMotion",
             "Messages motion",
             ValueKind.Motion),
-        ["module.conversation.messageViewportMotion"] = new(
-            "module.conversation.messageViewportMotion",
+        ["module.core.chat.messageViewportMotion"] = new(
+            "module.core.chat.messageViewportMotion",
             "Message viewport motion",
             ValueKind.Motion),
-        ["module.lockScreen.statusBarVariant"] = new(
-            "module.lockScreen.statusBarVariant", "Status bar variant", ValueKind.ComponentVariant, ComponentVariantType: "status_bar"),
-        ["module.lockScreen.navigationBarVariant"] = new(
-            "module.lockScreen.navigationBarVariant", "Navigation bar variant", ValueKind.ComponentVariant, ComponentVariantType: "navigation_bar"),
-        ["module.lockScreen.stackVariant"] = new(
-            "module.lockScreen.stackVariant", "Stack variant", ValueKind.ComponentVariant, ComponentVariantType: "componentStack"),
-        ["module.lockScreen.stackInputs"] = new(
-            "module.lockScreen.stackInputs",
+        ["module.core.lockScreen.statusBarVariant"] = new(
+            "module.core.lockScreen.statusBarVariant", "Status bar variant", ValueKind.ComponentVariant, ComponentVariantType: "status_bar"),
+        ["module.core.lockScreen.navigationBarVariant"] = new(
+            "module.core.lockScreen.navigationBarVariant", "Navigation bar variant", ValueKind.ComponentVariant, ComponentVariantType: "navigation_bar"),
+        ["module.core.lockScreen.stackVariant"] = new(
+            "module.core.lockScreen.stackVariant", "Stack variant", ValueKind.ComponentVariant, ComponentVariantType: "componentStack"),
+        ["module.core.lockScreen.stackInputs"] = new(
+            "module.core.lockScreen.stackInputs",
             "Stack inputs",
             ValueKind.ComponentInputBindings,
-            RuntimeInputComponentVariantFieldId: "module.lockScreen.stackVariant"),
-        ["module.lockScreen.stackItems"] = new(
-            "module.lockScreen.stackItems",
+            RuntimeInputComponentVariantFieldId: "module.core.lockScreen.stackVariant"),
+        ["module.core.lockScreen.stackItems"] = new(
+            "module.core.lockScreen.stackItems",
             "Components",
             ValueKind.StructuredCollection,
-            RuntimeCollectionComponentVariantFieldId: "module.lockScreen.stackVariant"),
+            RuntimeCollectionComponentVariantFieldId: "module.core.lockScreen.stackVariant"),
 
         ["moduleInstance.module"] = new("moduleInstance.module", "Module", ValueKind.StringReadOnly, IsEditable: false),
         ["moduleInstance.variant"] = new(

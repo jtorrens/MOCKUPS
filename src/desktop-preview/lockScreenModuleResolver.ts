@@ -13,34 +13,34 @@ export function resolveLockScreenModuleFrame(
   const config = parseObject(payload.configJson);
   const lockScreen = requiredRecord(config, "lockScreen", "module.lockScreen");
   const runtime = parseObject(payload.designPreviewJson);
-  const statusBarSlot = requiredRecord(lockScreen, "statusBarSlot", "module.lockScreen.statusBarSlot");
-  const navigationBarSlot = requiredRecord(lockScreen, "navigationBarSlot", "module.lockScreen.navigationBarSlot");
-  const stackSlot = requiredRecord(lockScreen, "stackSlot", "module.lockScreen.stackSlot");
-  const stackInputs = requiredRecord(lockScreen, "stackInputs", "module.lockScreen.stackInputs");
+  const statusBarSlot = requiredRecord(lockScreen, "statusBarSlot", "module.core.lockScreen.statusBarSlot");
+  const navigationBarSlot = requiredRecord(lockScreen, "navigationBarSlot", "module.core.lockScreen.navigationBarSlot");
+  const stackSlot = requiredRecord(lockScreen, "stackSlot", "module.core.lockScreen.stackSlot");
+  const stackInputs = requiredRecord(lockScreen, "stackInputs", "module.core.lockScreen.stackInputs");
   return {
     id: "lockScreen",
     statusBarSlot: {
-      variantReference: requiredString(statusBarSlot, "variantReference", "module.lockScreen.statusBarSlot.variantReference"),
-      overrides: requiredRecord(statusBarSlot, "overrides", "module.lockScreen.statusBarSlot.overrides"),
+      variantReference: requiredString(statusBarSlot, "variantReference", "module.core.lockScreen.statusBarSlot.variantReference"),
+      overrides: requiredRecord(statusBarSlot, "overrides", "module.core.lockScreen.statusBarSlot.overrides"),
     },
     navigationBarSlot: {
-      variantReference: requiredString(navigationBarSlot, "variantReference", "module.lockScreen.navigationBarSlot.variantReference"),
-      overrides: requiredRecord(navigationBarSlot, "overrides", "module.lockScreen.navigationBarSlot.overrides"),
+      variantReference: requiredString(navigationBarSlot, "variantReference", "module.core.lockScreen.navigationBarSlot.variantReference"),
+      overrides: requiredRecord(navigationBarSlot, "overrides", "module.core.lockScreen.navigationBarSlot.overrides"),
     },
     stackSlot: {
-      variantReference: requiredString(stackSlot, "variantReference", "module.lockScreen.stackSlot.variantReference"),
-      overrides: requiredRecord(stackSlot, "overrides", "module.lockScreen.stackSlot.overrides"),
+      variantReference: requiredString(stackSlot, "variantReference", "module.core.lockScreen.stackSlot.variantReference"),
+      overrides: requiredRecord(stackSlot, "overrides", "module.core.lockScreen.stackSlot.overrides"),
     },
     stackInputs,
     showStatusBar: requiredBoolean(
       runtime,
       "showStatusBar",
-      "module.lockScreen.runtime.showStatusBar",
+      "module.core.lockScreen.runtime.showStatusBar",
     ),
     showNavigationBar: requiredBoolean(
       runtime,
       "showNavigationBar",
-      "module.lockScreen.runtime.showNavigationBar",
+      "module.core.lockScreen.runtime.showNavigationBar",
     ),
   };
 }

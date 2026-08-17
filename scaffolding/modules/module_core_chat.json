@@ -1398,27 +1398,27 @@
             "visible": true,
             "fields": [
               {
-                "id": "module.conversation.useAppWallpaper",
+                "id": "module.core.chat.useAppWallpaper",
                 "order": 10,
                 "visible": true
               },
               {
-                "id": "module.conversation.screenGutter",
+                "id": "module.core.chat.screenGutter",
                 "order": 20,
                 "visible": true
               },
               {
-                "id": "module.conversation.messageGap",
+                "id": "module.core.chat.messageGap",
                 "order": 30,
                 "visible": true
               },
               {
-                "id": "module.conversation.messageViewportMotion",
+                "id": "module.core.chat.messageViewportMotion",
                 "order": 40,
                 "visible": true
               },
               {
-                "id": "module.conversation.messageMotion",
+                "id": "module.core.chat.messageMotion",
                 "order": 35,
                 "visible": true
               }
@@ -1442,42 +1442,42 @@
             "visible": true,
             "fields": [
               {
-                "id": "module.conversation.showHeader",
+                "id": "module.core.chat.showHeader",
                 "order": 10,
                 "visible": true
               },
               {
-                "id": "module.conversation.headerHeight",
+                "id": "module.core.chat.headerHeight",
                 "order": 20,
                 "visible": true
               },
               {
-                "id": "module.conversation.headerSurface.editor",
+                "id": "module.core.chat.headerSurface.editor",
                 "order": 30,
                 "visible": true
               },
               {
-                "id": "module.conversation.headerUseActorColor",
+                "id": "module.core.chat.headerUseActorColor",
                 "order": 40,
                 "visible": true
               },
               {
-                "id": "module.conversation.headerAvatarVariant",
+                "id": "module.core.chat.headerAvatarVariant",
                 "order": 50,
                 "visible": true
               },
               {
-                "id": "module.conversation.headerAvatarAlignment",
+                "id": "module.core.chat.headerAvatarAlignment",
                 "order": 60,
                 "visible": true
               },
               {
-                "id": "module.conversation.headerLeftIconRow.editor",
+                "id": "module.core.chat.headerLeftIconRow.editor",
                 "order": 70,
                 "visible": true
               },
               {
-                "id": "module.conversation.headerRightIconRow.editor",
+                "id": "module.core.chat.headerRightIconRow.editor",
                 "order": 80,
                 "visible": true
               }
@@ -1501,7 +1501,7 @@
             "visible": true,
             "fields": [
               {
-                "id": "module.conversation.showStatusBar",
+                "id": "module.core.chat.showStatusBar",
                 "order": 10,
                 "visible": true
               }
@@ -1525,7 +1525,7 @@
             "visible": true,
             "fields": [
               {
-                "id": "module.conversation.showNavigationBar",
+                "id": "module.core.chat.showNavigationBar",
                 "order": 30,
                 "visible": true
               }
@@ -1549,12 +1549,12 @@
             "visible": true,
             "fields": [
               {
-                "id": "module.conversation.showKeyboard",
+                "id": "module.core.chat.showKeyboard",
                 "order": 50,
                 "visible": true
               },
               {
-                "id": "module.conversation.keyboardVariant",
+                "id": "module.core.chat.keyboardVariant",
                 "order": 60,
                 "visible": true
               }
@@ -1578,12 +1578,12 @@
             "visible": true,
             "fields": [
               {
-                "id": "module.conversation.showTextInputBar",
+                "id": "module.core.chat.showTextInputBar",
                 "order": 70,
                 "visible": true
               },
               {
-                "id": "module.conversation.textInputBarVariant",
+                "id": "module.core.chat.textInputBarVariant",
                 "order": 80,
                 "visible": true
               }
@@ -1607,12 +1607,12 @@
             "visible": true,
             "fields": [
               {
-                "id": "module.conversation.bubbleVariant",
+                "id": "module.core.chat.bubbleVariant",
                 "order": 10,
                 "visible": true
               },
               {
-                "id": "module.conversation.bubbleMaxWidth",
+                "id": "module.core.chat.bubbleMaxWidth",
                 "order": 20,
                 "visible": true
               }

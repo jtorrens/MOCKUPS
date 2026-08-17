@@ -52,13 +52,13 @@ export function resolveConversationModule(
   const messageMotion = requiredMotionContract(
     conversation,
     "messageMotion",
-    "module.conversation.messageMotion",
+    "module.core.chat.messageMotion",
   );
   const composer = composerState(resolvedMessages, screenFrame, timing);
   const conversationType = requiredString(
     preview,
     "conversationType",
-    "module.conversation.input.conversationType",
+    "module.core.chat.input.conversationType",
   );
   if (conversationType !== "individual" && conversationType !== "group") {
     throw new Error(`Unsupported Conversation type ${conversationType}`);
@@ -89,7 +89,7 @@ export function resolveConversationModule(
     ? requiredMotionContract(
         conversation,
         "messageViewportMotion",
-        "module.conversation.messageViewportMotion",
+        "module.core.chat.messageViewportMotion",
       )
     : {
         transition: "slide" as const,
@@ -124,9 +124,9 @@ export function resolveConversationModule(
     },
   ).progress;
   const keyboardVisible = composer.keyboardVisible
-    && requiredBoolean(conversation, "showKeyboard", "module.conversation.showKeyboard");
+    && requiredBoolean(conversation, "showKeyboard", "module.core.chat.showKeyboard");
   const textInputVisible = composer.textInputVisible
-    && requiredBoolean(conversation, "showTextInputBar", "module.conversation.showTextInputBar");
+    && requiredBoolean(conversation, "showTextInputBar", "module.core.chat.showTextInputBar");
   const textInputConfig = textInputVisible
     ? resolvedTextInputConfig(payload, conversation, composer.text)
     : undefined;
@@ -178,16 +178,16 @@ export function resolveConversationModuleFrame(
     const targetId = requiredString(
       message,
       "id",
-      `module.conversation.messages[${index}]`,
+      `module.core.chat.messages[${index}]`,
     );
     const direction = requiredString(
       message,
       "direction",
-      `module.conversation.messages[${index}]`,
+      `module.core.chat.messages[${index}]`,
     );
     if (direction !== "incoming" && direction !== "outgoing" && direction !== "system") {
       throw new Error(
-        `module.conversation.messages[${index}] has unsupported direction '${direction}'`,
+        `module.core.chat.messages[${index}] has unsupported direction '${direction}'`,
       );
     }
     const resolve = (fieldId: string, baseValue: unknown) =>
@@ -347,7 +347,7 @@ function optionalBooleanWithFallback(
 function conversationMessages(preview: JsonRecord): ResolvedConversationMessage[] {
   const messages = requiredObjectArray(preview, "messages", "module.conversation runtime");
   return messages.map((message, index) => {
-    const path = `module.conversation.messages[${index}]`;
+    const path = `module.core.chat.messages[${index}]`;
     return {
       actor: optionalObject(message, "actor", path),
       state: requiredString(message, "direction", path),
@@ -556,7 +556,7 @@ function resolvedTextInputConfig(
     requiredString(
       conversation,
       "textInputBarVariant",
-      "module.conversation.textInputBarVariant",
+      "module.core.chat.textInputBarVariant",
     ),
   );
   const resolved = applyRuntimeInputForwarding({
@@ -567,7 +567,7 @@ function resolvedTextInputConfig(
     designPreviewJson: JSON.stringify({
       ...forwardedRuntimeInputPatch(
         config,
-        "forwarded.component.textInput.textBox.inputs.sampleText",
+        "forwarded.component.textInputBar.textBox.inputs.sampleText",
         text,
       ),
       availableWidth: payload.previewFrame.screenWidth / renderScale(payload),

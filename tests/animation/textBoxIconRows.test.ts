@@ -240,7 +240,7 @@ test("the committed Text Input Bar resolves its migrated structured Button item"
     assert.deepEqual(
       rightIconRow?.metadata?.authoringTarget?.slotFieldIds,
       [
-        "component.textInput.textBox.editor",
+        "component.textInputBar.textBox.editor",
         "component.textBox.rightIconRow.editor",
       ],
     );

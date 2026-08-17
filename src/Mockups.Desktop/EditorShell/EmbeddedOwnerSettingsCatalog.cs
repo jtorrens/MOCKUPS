@@ -13,12 +13,12 @@ internal static class EmbeddedOwnerSettingsCatalog
     private static readonly IReadOnlyDictionary<string, EmbeddedOwnerSettingsDefinition> Definitions =
         new Dictionary<string, EmbeddedOwnerSettingsDefinition>
         {
-            ["module.conversation.headerLeftIconRow.editor"] = new(
+            ["module.core.chat.headerLeftIconRow.editor"] = new(
                 "Slots", "Content owned by Conversation", EditorIcons.Content,
-                ["module.conversation.headerLeftIconRow.inputs"]),
-            ["module.conversation.headerRightIconRow.editor"] = new(
+                ["module.core.chat.headerLeftIconRow.inputs"]),
+            ["module.core.chat.headerRightIconRow.editor"] = new(
                 "Slots", "Content owned by Conversation", EditorIcons.Content,
-                ["module.conversation.headerRightIconRow.inputs"]),
+                ["module.core.chat.headerRightIconRow.inputs"]),
         };
 
     public static bool TryGet(string slotFieldId, out EmbeddedOwnerSettingsDefinition definition) =>

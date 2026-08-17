@@ -121,7 +121,7 @@ internal sealed partial class SqliteDesignOwner
         }
 
         var conversation = fieldId.StartsWith(
-            "module.conversation.",
+            "module.core.chat.",
             StringComparison.Ordinal)
                 ? JsonPath.RequiredObject(
                     config,
@@ -129,7 +129,7 @@ internal sealed partial class SqliteDesignOwner
                     "Module config")
                 : null;
         var lockScreen = fieldId.StartsWith(
-            "module.lockScreen.",
+            "module.core.lockScreen.",
             StringComparison.Ordinal)
                 ? JsonPath.RequiredObject(
                     config,
@@ -142,132 +142,132 @@ internal sealed partial class SqliteDesignOwner
                 ModuleAppearanceModeContract.Read(
                     config,
                     "Module Variant config"),
-            "module.conversation.showHeader" =>
+            "module.core.chat.showHeader" =>
                 BooleanText.Format(
                     JsonPath.RequiredBoolean(
                         conversation!,
                         "showHeader",
                         "Module config.conversation")),
-            "module.conversation.useAppWallpaper" =>
+            "module.core.chat.useAppWallpaper" =>
                 BooleanText.Format(
                     JsonPath.RequiredBoolean(
                         conversation!,
                         "useAppWallpaper",
                         "Module config.conversation")),
-            "module.conversation.headerHeight" =>
+            "module.core.chat.headerHeight" =>
                 RequiredNumberString(conversation!, "headerHeight"),
-            "module.conversation.headerSurface.editor" =>
+            "module.core.chat.headerSurface.editor" =>
                 RequiredSlotReference(
                     conversation!,
                     "headerSurfaceSlot"),
-            "module.conversation.headerUseActorColor" =>
+            "module.core.chat.headerUseActorColor" =>
                 BooleanText.Format(
                     JsonPath.RequiredBoolean(
                         conversation!,
                         "headerUseActorColor",
                         "Module config.conversation")),
-            "module.conversation.headerAvatarVariant" =>
+            "module.core.chat.headerAvatarVariant" =>
                 JsonPath.RequiredString(
                     conversation!,
                     "headerAvatarVariant",
                     "Module config.conversation"),
-            "module.conversation.headerAvatarAlignment" =>
+            "module.core.chat.headerAvatarAlignment" =>
                 JsonPath.RequiredString(
                     conversation!,
                     "headerAvatarAlignment",
                     "Module config.conversation"),
-            "module.conversation.headerLeftIconRow.editor" =>
+            "module.core.chat.headerLeftIconRow.editor" =>
                 RequiredSlotReference(
                     conversation!,
                     "headerLeftIconRowSlot"),
-            "module.conversation.headerLeftIconRow.inputs" =>
+            "module.core.chat.headerLeftIconRow.inputs" =>
                 JsonPath.RequiredObject(
                     conversation!,
                     "headerLeftIconRowInputs",
                     "Module config.conversation").ToJsonString(),
-            "module.conversation.headerRightIconRow.editor" =>
+            "module.core.chat.headerRightIconRow.editor" =>
                 RequiredSlotReference(
                     conversation!,
                     "headerRightIconRowSlot"),
-            "module.conversation.headerRightIconRow.inputs" =>
+            "module.core.chat.headerRightIconRow.inputs" =>
                 JsonPath.RequiredObject(
                     conversation!,
                     "headerRightIconRowInputs",
                     "Module config.conversation").ToJsonString(),
-            "module.conversation.showStatusBar" =>
+            "module.core.chat.showStatusBar" =>
                 BooleanText.Format(
                     JsonPath.RequiredBoolean(
                         conversation!,
                         "showStatusBar",
                         "Module config.conversation")),
-            "module.conversation.showNavigationBar" =>
+            "module.core.chat.showNavigationBar" =>
                 BooleanText.Format(
                     JsonPath.RequiredBoolean(
                         conversation!,
                         "showNavigationBar",
                         "Module config.conversation")),
-            "module.conversation.showTextInputBar" =>
+            "module.core.chat.showTextInputBar" =>
                 BooleanText.Format(
                     JsonPath.RequiredBoolean(
                         conversation!,
                         "showTextInputBar",
                         "Module config.conversation")),
-            "module.conversation.textInputBarVariant" =>
+            "module.core.chat.textInputBarVariant" =>
                 JsonPath.RequiredString(
                     conversation!,
                     "textInputBarVariant",
                     "Module config.conversation"),
-            "module.conversation.showKeyboard" =>
+            "module.core.chat.showKeyboard" =>
                 BooleanText.Format(
                     JsonPath.RequiredBoolean(
                         conversation!,
                         "showKeyboard",
                         "Module config.conversation")),
-            "module.conversation.keyboardVariant" =>
+            "module.core.chat.keyboardVariant" =>
                 JsonPath.RequiredString(
                     conversation!,
                     "keyboardVariant",
                     "Module config.conversation"),
-            "module.conversation.bubbleVariant" =>
+            "module.core.chat.bubbleVariant" =>
                 JsonPath.RequiredString(
                     conversation!,
                     "bubbleVariant",
                     "Module config.conversation"),
-            "module.conversation.bubbleMaxWidth" =>
+            "module.core.chat.bubbleMaxWidth" =>
                 RequiredNumberString(conversation!, "bubbleMaxWidth"),
-            "module.conversation.screenGutter" =>
+            "module.core.chat.screenGutter" =>
                 JsonPath.RequiredString(
                     conversation!,
                     "screenGutter",
                     "Module config.conversation"),
-            "module.conversation.messageGap" =>
+            "module.core.chat.messageGap" =>
                 JsonPath.RequiredString(
                     conversation!,
                     "messageGap",
                     "Module config.conversation"),
-            "module.conversation.messageMotion" =>
+            "module.core.chat.messageMotion" =>
                 JsonPath.RequiredObject(
                     conversation!,
                     "messageMotion",
                     "Module config.conversation").ToJsonString(),
-            "module.conversation.messageViewportMotion" =>
+            "module.core.chat.messageViewportMotion" =>
                 conversation!["messageViewportMotion"]?.ToJsonString()
                     ?? (MotionVariantValue.Default with
                     {
                         Bounds = MotionVariantValue.Parent,
                     }).ToJsonString(),
-            "module.lockScreen.statusBarVariant" =>
+            "module.core.lockScreen.statusBarVariant" =>
                 RequiredSlotReference(lockScreen!, "statusBarSlot"),
-            "module.lockScreen.navigationBarVariant" =>
+            "module.core.lockScreen.navigationBarVariant" =>
                 RequiredSlotReference(lockScreen!, "navigationBarSlot"),
-            "module.lockScreen.stackVariant" =>
+            "module.core.lockScreen.stackVariant" =>
                 RequiredSlotReference(lockScreen!, "stackSlot"),
-            "module.lockScreen.stackInputs" =>
+            "module.core.lockScreen.stackInputs" =>
                 JsonPath.RequiredObject(
                     lockScreen!,
                     "stackInputs",
                     "Module config.lockScreen").ToJsonString(),
-            "module.lockScreen.stackItems" =>
+            "module.core.lockScreen.stackItems" =>
                 JsonPath.RequiredArray(
                     JsonPath.RequiredObject(
                         lockScreen!,
@@ -312,10 +312,10 @@ internal sealed partial class SqliteDesignOwner
             moduleId);
         if (fieldId == "module.appearanceMode"
             || fieldId.StartsWith(
-                "module.conversation.",
+                "module.core.chat.",
                 StringComparison.Ordinal)
             || fieldId.StartsWith(
-                "module.lockScreen.",
+                "module.core.lockScreen.",
                 StringComparison.Ordinal)
             || GeneratedModuleScaffoldConfigRegistry.TryGetField(
                 module.RecordClassId,
@@ -458,21 +458,21 @@ internal sealed partial class SqliteDesignOwner
                             value,
                             "Module Variant config"))!);
                 break;
-            case "module.conversation.showHeader":
+            case "module.core.chat.showHeader":
                 SetJsonValue(
                     config,
                     ["conversation", "showHeader"],
                     JsonValue.Create(
                         BooleanText.ParseRequired(value, fieldId))!);
                 break;
-            case "module.conversation.useAppWallpaper":
+            case "module.core.chat.useAppWallpaper":
                 SetJsonValue(
                     config,
                     ["conversation", "useAppWallpaper"],
                     JsonValue.Create(
                         BooleanText.ParseRequired(value, fieldId))!);
                 break;
-            case "module.conversation.headerHeight":
+            case "module.core.chat.headerHeight":
                 SetJsonValue(
                     config,
                     ["conversation", "headerHeight"],
@@ -480,7 +480,7 @@ internal sealed partial class SqliteDesignOwner
                         value,
                         fieldId));
                 break;
-            case "module.conversation.headerSurface.editor":
+            case "module.core.chat.headerSurface.editor":
                 SetJsonValue(
                     config,
                     [
@@ -495,14 +495,14 @@ internal sealed partial class SqliteDesignOwner
                             "surface",
                             value))!);
                 break;
-            case "module.conversation.headerUseActorColor":
+            case "module.core.chat.headerUseActorColor":
                 SetJsonValue(
                     config,
                     ["conversation", "headerUseActorColor"],
                     JsonValue.Create(
                         BooleanText.ParseRequired(value, fieldId))!);
                 break;
-            case "module.conversation.headerAvatarVariant":
+            case "module.core.chat.headerAvatarVariant":
                 SetJsonValue(
                     config,
                     ["conversation", "headerAvatarVariant"],
@@ -513,13 +513,13 @@ internal sealed partial class SqliteDesignOwner
                             "avatar",
                             value))!);
                 break;
-            case "module.conversation.headerAvatarAlignment":
+            case "module.core.chat.headerAvatarAlignment":
                 SetJsonValue(
                     config,
                     ["conversation", "headerAvatarAlignment"],
                     JsonValue.Create(value)!);
                 break;
-            case "module.conversation.headerLeftIconRow.editor":
+            case "module.core.chat.headerLeftIconRow.editor":
                 SetJsonValue(
                     config,
                     [
@@ -534,13 +534,13 @@ internal sealed partial class SqliteDesignOwner
                             "iconRow",
                             value))!);
                 break;
-            case "module.conversation.headerLeftIconRow.inputs":
+            case "module.core.chat.headerLeftIconRow.inputs":
                 SetJsonValue(
                     config,
                     ["conversation", "headerLeftIconRowInputs"],
                     JsonPath.ParseRequiredObject(value, fieldId));
                 break;
-            case "module.conversation.headerRightIconRow.editor":
+            case "module.core.chat.headerRightIconRow.editor":
                 SetJsonValue(
                     config,
                     [
@@ -555,34 +555,34 @@ internal sealed partial class SqliteDesignOwner
                             "iconRow",
                             value))!);
                 break;
-            case "module.conversation.headerRightIconRow.inputs":
+            case "module.core.chat.headerRightIconRow.inputs":
                 SetJsonValue(
                     config,
                     ["conversation", "headerRightIconRowInputs"],
                     JsonPath.ParseRequiredObject(value, fieldId));
                 break;
-            case "module.conversation.showStatusBar":
+            case "module.core.chat.showStatusBar":
                 SetJsonValue(
                     config,
                     ["conversation", "showStatusBar"],
                     JsonValue.Create(
                         BooleanText.ParseRequired(value, fieldId))!);
                 break;
-            case "module.conversation.showNavigationBar":
+            case "module.core.chat.showNavigationBar":
                 SetJsonValue(
                     config,
                     ["conversation", "showNavigationBar"],
                     JsonValue.Create(
                         BooleanText.ParseRequired(value, fieldId))!);
                 break;
-            case "module.conversation.showTextInputBar":
+            case "module.core.chat.showTextInputBar":
                 SetJsonValue(
                     config,
                     ["conversation", "showTextInputBar"],
                     JsonValue.Create(
                         BooleanText.ParseRequired(value, fieldId))!);
                 break;
-            case "module.conversation.textInputBarVariant":
+            case "module.core.chat.textInputBarVariant":
                 SetJsonValue(
                     config,
                     ["conversation", "textInputBarVariant"],
@@ -593,14 +593,14 @@ internal sealed partial class SqliteDesignOwner
                             "textInputBar",
                             value))!);
                 break;
-            case "module.conversation.showKeyboard":
+            case "module.core.chat.showKeyboard":
                 SetJsonValue(
                     config,
                     ["conversation", "showKeyboard"],
                     JsonValue.Create(
                         BooleanText.ParseRequired(value, fieldId))!);
                 break;
-            case "module.conversation.keyboardVariant":
+            case "module.core.chat.keyboardVariant":
                 SetJsonValue(
                     config,
                     ["conversation", "keyboardVariant"],
@@ -611,7 +611,7 @@ internal sealed partial class SqliteDesignOwner
                             "keyboard",
                             value))!);
                 break;
-            case "module.conversation.bubbleVariant":
+            case "module.core.chat.bubbleVariant":
                 SetJsonValue(
                     config,
                     ["conversation", "bubbleVariant"],
@@ -622,7 +622,7 @@ internal sealed partial class SqliteDesignOwner
                             "bubble",
                             value))!);
                 break;
-            case "module.conversation.bubbleMaxWidth":
+            case "module.core.chat.bubbleMaxWidth":
                 SetJsonValue(
                     config,
                     ["conversation", "bubbleMaxWidth"],
@@ -630,19 +630,19 @@ internal sealed partial class SqliteDesignOwner
                         value,
                         fieldId));
                 break;
-            case "module.conversation.screenGutter":
+            case "module.core.chat.screenGutter":
                 SetJsonValue(
                     config,
                     ["conversation", "screenGutter"],
                     JsonValue.Create(value)!);
                 break;
-            case "module.conversation.messageGap":
+            case "module.core.chat.messageGap":
                 SetJsonValue(
                     config,
                     ["conversation", "messageGap"],
                     JsonValue.Create(value)!);
                 break;
-            case "module.conversation.messageMotion":
+            case "module.core.chat.messageMotion":
                 SetJsonValue(
                     config,
                     ["conversation", "messageMotion"],
@@ -650,7 +650,7 @@ internal sealed partial class SqliteDesignOwner
                         MotionVariantValue.Parse(value)
                             .ToJsonString())!);
                 break;
-            case "module.conversation.messageViewportMotion":
+            case "module.core.chat.messageViewportMotion":
                 SetJsonValue(
                     config,
                     ["conversation", "messageViewportMotion"],
@@ -658,7 +658,7 @@ internal sealed partial class SqliteDesignOwner
                         MotionVariantValue.Parse(value)
                             .ToJsonString())!);
                 break;
-            case "module.lockScreen.statusBarVariant":
+            case "module.core.lockScreen.statusBarVariant":
                 SetJsonValue(
                     config,
                     [
@@ -673,7 +673,7 @@ internal sealed partial class SqliteDesignOwner
                             "status_bar",
                             value))!);
                 break;
-            case "module.lockScreen.navigationBarVariant":
+            case "module.core.lockScreen.navigationBarVariant":
                 SetJsonValue(
                     config,
                     [
@@ -688,7 +688,7 @@ internal sealed partial class SqliteDesignOwner
                             "navigation_bar",
                             value))!);
                 break;
-            case "module.lockScreen.stackVariant":
+            case "module.core.lockScreen.stackVariant":
                 SetJsonValue(
                     config,
                     [
@@ -703,13 +703,13 @@ internal sealed partial class SqliteDesignOwner
                             "componentStack",
                             value))!);
                 break;
-            case "module.lockScreen.stackInputs":
+            case "module.core.lockScreen.stackInputs":
                 SetJsonValue(
                     config,
                     ["lockScreen", "stackInputs"],
                     JsonPath.ParseRequiredObject(value, fieldId));
                 break;
-            case "module.lockScreen.stackItems":
+            case "module.core.lockScreen.stackItems":
                 SetJsonValue(
                     config,
                     ["lockScreen", "stackInputs", "items"],

@@ -26,34 +26,34 @@ export function resolveTextInputBarComponent(
   const barSurfaceSlot = requiredRecord(
     textInput,
     "barSurfaceSlot",
-    "component.textInput.barSurfaceSlot",
+    "component.textInputBar.barSurfaceSlot",
   );
   const textBoxSlot = requiredRecord(
     textInput,
     "textBoxSlot",
-    "component.textInput.textBoxSlot",
+    "component.textInputBar.textBoxSlot",
   );
   const iconBarSlot = requiredRecord(
     textInput,
     "iconBarSlot",
-    "component.textInput.iconBarSlot",
+    "component.textInputBar.iconBarSlot",
   );
   const textBoxInputs = requiredRecord(
     textInput,
     "textBoxInputs",
-    "component.textInput.textBoxInputs",
+    "component.textInputBar.textBoxInputs",
   );
   const sampleText = requiredPossiblyEmptyString(
     textBoxInputs,
     "sampleText",
-    "component.textInput.textBoxInputs.sampleText",
+    "component.textInputBar.textBoxInputs.sampleText",
   );
   const availableWidth = Math.max(
     1,
     requiredNumber(preview, "availableWidth", "component.textInputBar.input.availableWidth"),
   );
   const isTyping = sampleText.trim().length > 0;
-  const height = requiredNumber(textInput, "height", "component.textInput.height");
+  const height = requiredNumber(textInput, "height", "component.textInputBar.height");
   const embeddedBarSurfaceConfig = mergeComponentDefaults(
     componentVariantConfig(
       componentBaseConfigs,
@@ -61,13 +61,13 @@ export function resolveTextInputBarComponent(
       requiredString(
         barSurfaceSlot,
         "variantReference",
-        "component.textInput.barSurfaceSlot.variantReference",
+        "component.textInputBar.barSurfaceSlot.variantReference",
       ),
     ),
     requiredRecord(
       barSurfaceSlot,
       "overrides",
-      "component.textInput.barSurfaceSlot.overrides",
+      "component.textInputBar.barSurfaceSlot.overrides",
     ),
   );
   const embeddedTextBoxConfig = mergeComponentDefaults(
@@ -77,25 +77,25 @@ export function resolveTextInputBarComponent(
       requiredString(
         textBoxSlot,
         "variantReference",
-        "component.textInput.textBoxSlot.variantReference",
+        "component.textInputBar.textBoxSlot.variantReference",
       ),
     ),
     requiredRecord(
       textBoxSlot,
       "overrides",
-      "component.textInput.textBoxSlot.overrides",
+      "component.textInputBar.textBoxSlot.overrides",
     ),
   );
   const embeddedIconBarConfig = mergeComponentDefaults(
     componentVariantConfig(
       componentBaseConfigs,
       "iconBar",
-      requiredString(iconBarSlot, "variantReference", "component.textInput.iconBarSlot.variantReference"),
+      requiredString(iconBarSlot, "variantReference", "component.textInputBar.iconBarSlot.variantReference"),
     ),
     requiredRecord(
       iconBarSlot,
       "overrides",
-      "component.textInput.iconBarSlot.overrides",
+      "component.textInputBar.iconBarSlot.overrides",
     ),
   );
 
@@ -118,14 +118,14 @@ export function resolveTextInputBarComponent(
     barPadding: toSpacingPair(requiredStringPair(
       textInput,
       "barPadding",
-      "component.textInput.barPadding",
+      "component.textInputBar.barPadding",
     )),
     barSurface: resolveSurfaceComponentAtSize(
       embeddedBarSurfaceConfig,
       { width: availableWidth, height },
       "component.textInputBar.barSurface",
     ),
-    iconGapToken: requiredString(textInput, "iconGap", "component.textInput.iconGap"),
+    iconGapToken: requiredString(textInput, "iconGap", "component.textInputBar.iconGap"),
     iconBar: resolveIconBarComponentFromRecords(
       embeddedIconBarConfig,
       {
