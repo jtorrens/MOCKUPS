@@ -9174,6 +9174,38 @@ static void ResourceRepositoriesPreserveFocusedContract()
         database.UpdatePaletteColorField(color.Id, "palette.valueHex", originalColor.ValueHex);
         Equal(originalColor, paletteRepository.GetSettings(color.Id));
 
+        var alex = Descendants(tree).Single((node) =>
+            node.Kind == ProjectTreeNodeKind.Actor
+            && node.Id == "actor_alex");
+        var alexColorModes = database.GetActorFieldValue(
+            alex.Id,
+            "actor.color.modes");
+        var colorTokens = alexColorModes.Split('|', 2);
+        Equal(2, colorTokens.Length);
+        var actorLightColor = colorTokens[0];
+        var actorDarkColor = colorTokens[1];
+        var referencedColor = Descendants(tree).Single((node) =>
+            node.Kind == ProjectTreeNodeKind.PaletteColor
+            && node.Name == actorLightColor);
+        const string renamedPaletteToken = "palette_rename_test";
+        database.UpdatePaletteColorField(
+            referencedColor.Id,
+            "palette.token",
+            renamedPaletteToken);
+        Equal(
+            $"{renamedPaletteToken}|{actorDarkColor}",
+            database.GetActorFieldValue(alex.Id, "actor.color.modes"));
+        Equal(
+            renamedPaletteToken,
+            database.GetPaletteColorSettings(referencedColor.Id).Token);
+        database.UpdatePaletteColorField(
+            referencedColor.Id,
+            "palette.token",
+            actorLightColor);
+        Equal(
+            alexColorModes,
+            database.GetActorFieldValue(alex.Id, "actor.color.modes"));
+
         var originalDevice = database.GetDeviceSettings(device.Id);
         var originalBackgroundOpacity = database.GetDeviceMetricFieldValue(
             device.Id,

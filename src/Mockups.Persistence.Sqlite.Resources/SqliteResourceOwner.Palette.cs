@@ -14,7 +14,38 @@ internal sealed partial class SqliteResourceOwner
 
     public void UpdatePaletteColorField(string colorId, string fieldId, string value)
     {
+        if (fieldId == "palette.token")
+        {
+            RenamePaletteToken(colorId, value);
+            return;
+        }
+
         _paletteRepository.UpdateField(colorId, fieldId, value);
+    }
+
+    private void RenamePaletteToken(string colorId, string token)
+    {
+        using var connection = OpenConnection();
+        using var transaction = connection.BeginTransaction();
+        var palette = _paletteRepository.RequireRecord(connection, colorId);
+        if (palette.Token.Equals(token, System.StringComparison.Ordinal))
+        {
+            transaction.Commit();
+            return;
+        }
+
+        _actorRepository.ReplacePaletteToken(
+            connection,
+            transaction,
+            palette.ProjectId,
+            palette.Token,
+            token);
+        _paletteRepository.RenameToken(
+            connection,
+            transaction,
+            colorId,
+            token);
+        transaction.Commit();
     }
 
     public IReadOnlyList<FieldOption> GetPaletteColorOptions(string projectId)

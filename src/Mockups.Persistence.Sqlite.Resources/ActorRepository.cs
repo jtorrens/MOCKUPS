@@ -9,6 +9,16 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed class ActorRepository : IActorRepository
 {
+    private static readonly IReadOnlyList<string[]> PaletteTokenPaths =
+    [
+        ["modes", "light", "color"],
+        ["modes", "dark", "color"],
+        ["modes", "light", "avatarTextColor"],
+        ["modes", "dark", "avatarTextColor"],
+        ["modes", "light", "wallpaper", "color"],
+        ["modes", "dark", "wallpaper", "color"],
+    ];
+
     private readonly SqliteProjectContext _context;
 
     public ActorRepository(SqliteProjectContext context)
@@ -133,6 +143,47 @@ internal sealed class ActorRepository : IActorRepository
         }
 
         return rows;
+    }
+
+    public void ReplacePaletteToken(
+        SqliteConnection connection,
+        SqliteTransaction transaction,
+        string projectId,
+        string previousToken,
+        string nextToken)
+    {
+        foreach (var actor in QueryAll(connection).Where((candidate) =>
+                     candidate.ProjectId.Equals(projectId, StringComparison.Ordinal)))
+        {
+            var metadata = JsonPath.ParseRequiredObject(
+                actor.MetadataJson,
+                $"Actor '{actor.Id}' metadata_json");
+            var changed = false;
+            foreach (var path in PaletteTokenPaths)
+            {
+                if (!JsonPath.String(metadata, path).Equals(
+                        previousToken,
+                        StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                JsonPath.Set(metadata, path, JsonValue.Create(nextToken)!);
+                changed = true;
+            }
+
+            if (!changed)
+            {
+                continue;
+            }
+
+            _context.Execute(
+                connection,
+                transaction,
+                "UPDATE actors SET metadata_json = $metadataJson WHERE id = $id",
+                ("$id", actor.Id),
+                ("$metadataJson", metadata.ToJsonString()));
+        }
     }
 
     public ActorRecord Create(SqliteConnection connection, string projectId)

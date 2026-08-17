@@ -264,6 +264,14 @@ internal interface IPaletteRepository
 
     IReadOnlyList<PaletteColorRecord> QueryAll(SqliteConnection connection);
 
+    PaletteColorRecord RequireRecord(SqliteConnection connection, string colorId);
+
+    void RenameToken(
+        SqliteConnection connection,
+        SqliteTransaction transaction,
+        string colorId,
+        string token);
+
     PaletteColorRecord Create(SqliteConnection connection, string projectId);
 
     PaletteColorRecord Duplicate(SqliteConnection connection, string sourceId);
@@ -310,6 +318,13 @@ internal interface IActorRepository
     IReadOnlyList<ResourceOption> GetOptions(string projectId);
 
     IReadOnlyList<ActorRecord> QueryAll(SqliteConnection connection);
+
+    void ReplacePaletteToken(
+        SqliteConnection connection,
+        SqliteTransaction transaction,
+        string projectId,
+        string previousToken,
+        string nextToken);
 
     ActorRecord Create(SqliteConnection connection, string projectId);
 

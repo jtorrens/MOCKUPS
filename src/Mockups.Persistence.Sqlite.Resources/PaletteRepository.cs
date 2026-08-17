@@ -71,6 +71,28 @@ internal sealed class PaletteRepository : IPaletteRepository
         }
     }
 
+    public PaletteColorRecord RequireRecord(
+        SqliteConnection connection,
+        string colorId)
+    {
+        return QueryAll(connection).SingleOrDefault((color) => color.Id == colorId)
+            ?? throw new InvalidOperationException($"Missing palette color '{colorId}'.");
+    }
+
+    public void RenameToken(
+        SqliteConnection connection,
+        SqliteTransaction transaction,
+        string colorId,
+        string token)
+    {
+        _context.Execute(
+            connection,
+            transaction,
+            "UPDATE palette_colors SET token = $token WHERE id = $id",
+            ("$id", colorId),
+            ("$token", token));
+    }
+
     public IReadOnlyList<PaletteColorOption> GetOptions(string projectId)
     {
         using var connection = _context.OpenConnection();
