@@ -222,10 +222,15 @@ internal sealed class EditorContentPreparationService : IDisposable
     {
         var fields = new Dictionary<string, FieldValue>(
             StringComparer.Ordinal);
-        foreach (var fieldId in fieldIds.Distinct(StringComparer.Ordinal))
+        var pending = new Queue<string>(fieldIds.Distinct(StringComparer.Ordinal));
+        while (pending.Count > 0)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            fields[fieldId] = _fieldValues.Create(node, fieldId);
+            var fieldId = pending.Dequeue();
+            if (fields.ContainsKey(fieldId)) continue;
+            var field = _fieldValues.Create(node, fieldId);
+            fields[fieldId] = field;
+            EnqueueRuntimeDependencies(field.Definition, pending, fields);
         }
         return fields;
     }
@@ -237,23 +242,40 @@ internal sealed class EditorContentPreparationService : IDisposable
     {
         var fields = new Dictionary<string, FieldValue>(
             StringComparer.Ordinal);
-        foreach (var fieldId in fieldIds
-                     .Where((fieldId) =>
-                         fieldId.StartsWith(
-                             "component.",
-                             StringComparison.Ordinal)
-                         && !fieldId.Equals(
-                             "component.type",
-                             StringComparison.Ordinal))
-                     .Distinct(StringComparer.Ordinal))
+        var pending = new Queue<string>(fieldIds
+            .Where((fieldId) =>
+                fieldId.StartsWith("component.", StringComparison.Ordinal)
+                && !fieldId.Equals("component.type", StringComparison.Ordinal))
+            .Distinct(StringComparer.Ordinal));
+        while (pending.Count > 0)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            fields[fieldId] =
-                _componentFields.CreateEmbeddedFieldValue(
-                    context,
-                    fieldId);
+            var fieldId = pending.Dequeue();
+            if (fields.ContainsKey(fieldId)) continue;
+            var field = _componentFields.CreateEmbeddedFieldValue(context, fieldId);
+            fields[fieldId] = field;
+            EnqueueRuntimeDependencies(field.Definition, pending, fields);
         }
         return fields;
+    }
+
+    private static void EnqueueRuntimeDependencies(
+        FieldDefinition definition,
+        Queue<string> pending,
+        IReadOnlyDictionary<string, FieldValue> prepared)
+    {
+        foreach (var fieldId in new[]
+                 {
+                     definition.RuntimeInputComponentVariantFieldId,
+                     definition.RuntimeCollectionComponentVariantFieldId,
+                 })
+        {
+            if (!string.IsNullOrWhiteSpace(fieldId)
+                && !prepared.ContainsKey(fieldId))
+            {
+                pending.Enqueue(fieldId);
+            }
+        }
     }
 
     private EditorPreparedOverrideProjection PrepareOverrideProjection(
