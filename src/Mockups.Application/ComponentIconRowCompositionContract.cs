@@ -62,12 +62,6 @@ internal static class ComponentIconRowCompositionContract
             return;
         }
 
-        if (componentType.Equals("iconBar", StringComparison.Ordinal))
-        {
-            ValidateIconBar(JsonPath.RequiredObject(config, "iconBar", owner), owner);
-            return;
-        }
-
         if (componentType.Equals("textInputBar", StringComparison.Ordinal))
         {
             var textInput = JsonPath.RequiredObject(config, "textInput", owner);
@@ -177,37 +171,6 @@ internal static class ComponentIconRowCompositionContract
         {
             throw new InvalidOperationException(
                 $"{owner} has unsupported item sizing mode '{itemSizingMode}'.");
-        }
-    }
-
-    private static void ValidateIconBar(JsonObject iconBar, string owner)
-    {
-        foreach (var state in new[] { "idle", "active" })
-        {
-            foreach (var zone in new[] { "Left", "Center", "Right" })
-            {
-                var slot = JsonPath.RequiredObject(
-                    iconBar,
-                    $"{state}{zone}IconRowSlot",
-                    owner);
-                var inputs = JsonPath.RequiredObject(
-                    iconBar,
-                    $"{state}{zone}IconRowInputs",
-                    owner);
-                if (JsonPath.Get(slot, ["overrides", "iconRow", "items"])
-                    is not JsonArray structuralItems)
-                {
-                    continue;
-                }
-
-                IconSlotsDocumentContract.ValidateRuntimeItemsMatchStructure(
-                    structuralItems,
-                    JsonPath.RequiredArray(
-                        inputs,
-                        "items",
-                        $"{owner}.{state}{zone}IconRowInputs"),
-                    $"{owner}.{state}{zone} Icon Row");
-            }
         }
     }
 

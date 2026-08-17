@@ -10,27 +10,8 @@ public sealed record EmbeddedComponentSlotDefinition(
     string RecordClassId,
     string[] SlotPath);
 
-public sealed record EmbeddedRuntimeCollectionProjectionDefinition(
-    string StructuralFieldId,
-    string[] StructuralConfigPath,
-    string[] RuntimeInputPath,
-    string RuntimeValueKey);
-
 public static class EmbeddedComponentSlotCatalog
 {
-    private static readonly IReadOnlyDictionary<string, EmbeddedRuntimeCollectionProjectionDefinition> RuntimeCollectionProjections =
-        new Dictionary<string, EmbeddedRuntimeCollectionProjectionDefinition>(StringComparer.Ordinal)
-        {
-            ["module.conversation.headerLeftIconRow.editor"] = new("component.iconRow.items", ["iconRow", "items"], ["conversation", "headerLeftIconRowInputs"], "items"),
-            ["module.conversation.headerRightIconRow.editor"] = new("component.iconRow.items", ["iconRow", "items"], ["conversation", "headerRightIconRowInputs"], "items"),
-            ["component.iconBar.idleLeftIconRow.editor"] = new("component.iconRow.items", ["iconRow", "items"], ["iconBar", "idleLeftIconRowInputs"], "items"),
-            ["component.iconBar.idleCenterIconRow.editor"] = new("component.iconRow.items", ["iconRow", "items"], ["iconBar", "idleCenterIconRowInputs"], "items"),
-            ["component.iconBar.idleRightIconRow.editor"] = new("component.iconRow.items", ["iconRow", "items"], ["iconBar", "idleRightIconRowInputs"], "items"),
-            ["component.iconBar.activeLeftIconRow.editor"] = new("component.iconRow.items", ["iconRow", "items"], ["iconBar", "activeLeftIconRowInputs"], "items"),
-            ["component.iconBar.activeCenterIconRow.editor"] = new("component.iconRow.items", ["iconRow", "items"], ["iconBar", "activeCenterIconRowInputs"], "items"),
-            ["component.iconBar.activeRightIconRow.editor"] = new("component.iconRow.items", ["iconRow", "items"], ["iconBar", "activeRightIconRowInputs"], "items"),
-        };
-
     private static readonly EmbeddedComponentSlotDefinition[] Slots =
     [
         new(
@@ -297,11 +278,6 @@ public static class EmbeddedComponentSlotCatalog
             "component.avatar",
             ["bubble", "avatarSlot"]),
     ];
-
-    public static bool TryRuntimeCollectionProjection(
-        string slotFieldId,
-        out EmbeddedRuntimeCollectionProjectionDefinition projection) =>
-        RuntimeCollectionProjections.TryGetValue(slotFieldId, out projection!);
 
     public static bool TryGet(string fieldId, out EmbeddedComponentSlotDefinition slot)
     {

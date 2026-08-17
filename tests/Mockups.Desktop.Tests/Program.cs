@@ -78,7 +78,6 @@ var tests = new (string Name, Action Run)[]
     ("numeric dictionary fields separate current values from drafts", NumericDictionaryFieldsSeparateCurrentValuesFromDrafts),
     ("valid integer pairs commit after a short editing pause", ValidIntegerPairsCommitAfterEditingPause),
     ("Icon Row preserves sequential nested Button Override commits", IconRowPreservesSequentialNestedButtonOverrideCommits),
-    ("Icon Row Variant structure synchronizes declared parent Runtime values", IconRowVariantStructureSynchronizesParentRuntimeValues),
     ("Design Preview actions reject incomplete declarative contracts", PreviewActionContractsAreStrict),
     ("Runtime Input forwarding envelopes reject invalid current shapes", RuntimeInputForwardingEnvelopesAreStrict),
     ("Design Test Values preserve strict transient documents", DesignTestValuesPreserveStrictDocuments),
@@ -2312,91 +2311,6 @@ static void IconRowPreservesSequentialNestedButtonOverrideCommits()
         button,
         "padding",
         "Sequential Icon Row Button Overrides"));
-}
-
-static void IconRowVariantStructureSynchronizesParentRuntimeValues()
-{
-    var source = ParityDatabasePath();
-    var temporary = Path.Combine(
-        Path.GetTempPath(),
-        $"mockups-icon-row-runtime-sync-{Guid.NewGuid():N}.sqlite");
-    File.Copy(source, temporary, overwrite: true);
-    try
-    {
-        var database = new SqliteProjectTestContext(temporary);
-        var nodes = Descendants(database.LoadProjectTree()).ToList();
-        var iconRow = nodes.Single((node) =>
-            node.Id == "component_project_foqn_s2_iconRow::variant::default");
-        iconRow = NodeCommands(database).ToggleComponentVariantLock(iconRow);
-        var sourceConversation = nodes.Single((node) =>
-            node.Id == "module_core_chat::variant::default");
-        var sourceConfig = JsonPath.ParseRequiredObject(
-            database.GetModuleVariantSettings(sourceConversation).ConfigJson,
-            "Conversation source Variant config");
-        var items = JsonPath.RequiredArray(
-            JsonPath.RequiredObject(
-                JsonPath.RequiredObject(
-                    sourceConfig,
-                    "conversation",
-                    "Conversation source Variant config"),
-                "headerRightIconRowInputs",
-                "Conversation source Variant config"),
-            "items",
-            "Conversation source Variant config").DeepClone().AsArray();
-        database.UpdateComponentVariantField(
-            iconRow,
-            "component.iconRow.items",
-            items.ToJsonString());
-        items.RemoveAt(0);
-        database.UpdateComponentVariantField(
-            iconRow,
-            "component.iconRow.items",
-            items.ToJsonString());
-
-        foreach (var conversation in nodes.Where((node) =>
-                     node.Kind == ProjectTreeNodeKind.ModuleVariant
-                     && node.Id.StartsWith(
-                         "module_core_chat::variant::",
-                         StringComparison.Ordinal)))
-        {
-            var config = JsonPath.ParseRequiredObject(
-                database.GetModuleVariantSettings(conversation).ConfigJson,
-                "Conversation Variant config");
-            var content = JsonPath.RequiredObject(
-                config,
-                "conversation",
-                "Conversation Variant config");
-            var slot = JsonPath.RequiredObject(
-                content,
-                "headerRightIconRowSlot",
-                "Conversation Variant config");
-            if (!JsonPath.RequiredString(
-                    slot,
-                    "variantReference",
-                    "Conversation Variant config")
-                    .Equals(iconRow.Id, StringComparison.Ordinal))
-            {
-                continue;
-            }
-            var effectiveItems = slot["overrides"] is JsonObject overrides
-                && JsonPath.Get(overrides, ["iconRow", "items"]) is JsonArray localItems
-                    ? localItems
-                    : items;
-            True(JsonNode.DeepEquals(
-                effectiveItems,
-                JsonPath.RequiredArray(
-                    JsonPath.RequiredObject(
-                        content,
-                        "headerRightIconRowInputs",
-                        "Conversation Variant config"),
-                    "items",
-                    "Conversation Variant config")));
-        }
-    }
-    finally
-    {
-        File.Delete(temporary);
-    }
 }
 
 static void PreviewActionContractsAreStrict()
@@ -8829,50 +8743,6 @@ static void ModuleConfigsUseOwnerContracts()
             database.GetModuleVariantConfigFieldValue(
                 conversationVariant,
                 "module.conversation.headerUseActorColor"));
-
-        var rightIconRow = EmbeddedComponentSlotCatalog.Get(
-            "module.conversation.headerRightIconRow.editor");
-        var rightItems = JsonPath.ParseRequiredArray(
-            ComponentDocuments(database)
-                .CreateEmbeddedComponentFieldValue(
-                    conversationVariant,
-                    [rightIconRow],
-                    "component.iconRow.items")
-                .Value,
-            "Conversation Variant right Icon Row items");
-        rightItems.RemoveAt(0);
-        ComponentDocuments(database).UpdateEmbeddedComponentField(
-            conversationVariant,
-            [rightIconRow],
-            "component.iconRow.items",
-            rightItems.ToJsonString());
-        var savedConversation = JsonPath.RequiredObject(
-            JsonPath.ParseRequiredObject(
-                database.GetModuleVariantSettings(conversationVariant).ConfigJson,
-                "Conversation Variant config"),
-            "conversation",
-            "Conversation Variant config");
-        True(JsonNode.DeepEquals(
-            JsonPath.RequiredArray(
-                JsonPath.RequiredObject(
-                    JsonPath.RequiredObject(
-                        JsonPath.RequiredObject(
-                            savedConversation,
-                            "headerRightIconRowSlot",
-                            "Conversation Variant config"),
-                        "overrides",
-                        "Conversation Variant config"),
-                    "iconRow",
-                    "Conversation Variant config"),
-                "items",
-                "Conversation Variant config")
-            , JsonPath.RequiredArray(
-                JsonPath.RequiredObject(
-                    savedConversation,
-                    "headerRightIconRowInputs",
-                    "Conversation Variant config"),
-                "items",
-                "Conversation Variant config")));
 
         var surfaceSlot = Required(
             EmbeddedComponentSlotCatalog.Get("module.conversation.headerSurface.editor"));

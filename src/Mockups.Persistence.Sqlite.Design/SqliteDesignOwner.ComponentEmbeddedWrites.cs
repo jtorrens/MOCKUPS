@@ -61,11 +61,6 @@ internal sealed partial class SqliteDesignOwner
                 overrides,
                 descriptor,
                 value);
-            SynchronizeStructuralRuntimeInputs(
-                config,
-                slots,
-                descriptor,
-                value);
             PersistDefaultComponentConfig(
                 connection,
                 componentClassId,
@@ -134,11 +129,6 @@ internal sealed partial class SqliteDesignOwner
                 overrides,
                 descriptor,
                 value);
-            SynchronizeStructuralRuntimeInputs(
-                config,
-                slots,
-                descriptor,
-                value);
             PersistComponentVariantUpdate(
                 connection,
                 ownerNode,
@@ -180,11 +170,6 @@ internal sealed partial class SqliteDesignOwner
                 overrides,
                 descriptor,
                 value);
-            SynchronizeStructuralRuntimeInputs(
-                config,
-                slots,
-                descriptor,
-                value);
             if (ownerNode.Kind == ProjectTreeNodeKind.Module)
             {
                 _appModuleRepository.UpdateModuleConfig(
@@ -222,39 +207,6 @@ internal sealed partial class SqliteDesignOwner
             ComponentConfigJsonValue(
                 descriptor,
                 value));
-    }
-
-    // The parent owns Runtime values across an embedded boundary. A declared
-    // structural collection edit therefore replaces the matching parent
-    // collection in the same write.
-    private static void SynchronizeStructuralRuntimeInputs(
-        JsonObject config,
-        IReadOnlyList<EmbeddedComponentSlotDefinition> slots,
-        ComponentClassFieldDescriptor descriptor,
-        string value)
-    {
-        if (value.Equals("inherited", StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        if (!EmbeddedComponentSlotCatalog.TryRuntimeCollectionProjection(
-                slots[^1].FieldId,
-                out var projection)
-            || !descriptor.Id.Equals(
-                projection.StructuralFieldId,
-                StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        var inputs = JsonPath.Get(config, projection.RuntimeInputPath) as JsonObject
-            ?? throw new InvalidOperationException(
-                $"Embedded collection '{slots[^1].FieldId}' has no declared Runtime inputs.");
-        var items = JsonPath.ParseRequiredArray(
-            value,
-            $"Embedded collection '{slots[^1].FieldId}' items");
-        inputs[projection.RuntimeValueKey] = items.DeepClone();
     }
 
     private static JsonObject? EmbeddedOverrides(
