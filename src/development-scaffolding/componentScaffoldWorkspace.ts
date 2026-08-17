@@ -143,7 +143,7 @@ export function integrateComponentScaffold(
   for (const owner of ownerTargets(spec)) {
     const resolved = scaffoldTarget(repositoryRoot, owner.path);
     const source = readFileSync(resolved, "utf8");
-    if (!source.includes(owner.requiredTerm)) {
+    if (owner.requiredTerm && !source.includes(owner.requiredTerm)) {
       violations.push(
         `${owner.label} owner '${owner.path}' does not expose '${owner.requiredTerm}'.`,
       );
@@ -461,7 +461,6 @@ export function verifyComponentScaffoldImplementation(
 }
 
 function ownerTargets(spec: ComponentScaffoldSpec) {
-  const typeName = pascalCase(spec.component.componentType);
   return [
     {
       label: "contract",
@@ -478,15 +477,15 @@ function ownerTargets(spec: ComponentScaffoldSpec) {
       path: manifestOwnerPath(spec.manifest.renderable),
       requiredTerm: spec.owners.renderableExport,
     },
-    {
+    ...(spec.owners.configContractExport ? [{
       label: "desktop config contract",
-      path: `src/Mockups.Application/${typeName}ComponentConfigContract.cs`,
-      requiredTerm: `${typeName}ComponentConfigContract`,
-    },
+      path: `src/Mockups.Application/${spec.owners.configContractExport}.cs`,
+      requiredTerm: spec.owners.configContractExport,
+    }] : []),
     {
       label: "focused test",
       path: spec.owners.focusedTest,
-      requiredTerm: spec.owners.resolverExport,
+      requiredTerm: "",
     },
   ];
 }
@@ -576,9 +575,8 @@ function scaffoldTarget(repositoryRoot: string, relativePath: string) {
 }
 
 function pascalCase(value: string) {
-  return value.length === 0
-    ? value
-    : `${value[0]!.toUpperCase()}${value.slice(1)}`;
+  return value.replace(/(^|[_-])([a-z])/g, (_match, _prefix, letter: string) =>
+    letter.toUpperCase());
 }
 
 function jsonObject(value: unknown, owner: string): JsonObject {

@@ -12,14 +12,68 @@ internal static class GeneratedComponentScaffoldConfigRegistry
     {
         switch (componentType)
         {
-            case IncomingCallNotificationComponentConfigContract.ComponentType:
+            case "audio":
+                return true;
+            case "avatar":
+                return true;
+            case "badge":
+                return true;
+            case "bubble":
+                return true;
+            case "button":
+                return true;
+            case "codeIndicator":
+                return true;
+            case "collectionStack":
+                return true;
+            case "componentStack":
+                return true;
+            case "cursor":
+                return true;
+            case "drawPassword":
+                return true;
+            case "faceRecognition":
+                return true;
+            case "fingerprint":
+                return true;
+            case "iconBar":
+                return true;
+            case "iconRow":
+                return true;
+            case "incomingCallNotification":
                 IncomingCallNotificationComponentConfigContract.Validate(config, context);
                 return true;
-            case ListComponentConfigContract.ComponentType:
+            case "keyboard":
+                return true;
+            case "keypad":
+                return true;
+            case "label":
+                return true;
+            case "list":
                 ListComponentConfigContract.Validate(config, context);
                 return true;
-            case ListItemComponentConfigContract.ComponentType:
+            case "listItem":
                 ListItemComponentConfigContract.Validate(config, context);
+                return true;
+            case "media":
+                return true;
+            case "navigation_bar":
+                NavigationBarComponentConfigContract.Validate(config, context);
+                return true;
+            case "notification":
+                return true;
+            case "notifications":
+                return true;
+            case "password":
+                return true;
+            case "status_bar":
+                StatusBarComponentConfigContract.Validate(config, context);
+                return true;
+            case "surface":
+                return true;
+            case "textBox":
+                return true;
+            case "textInputBar":
                 return true;
             default:
                 return false;

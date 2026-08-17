@@ -1,0 +1,614 @@
+{
+  "schemaVersion": 1,
+  "intent": {
+    "responsibility": "Own the complete current Component configuration and its exact Runtime Input contract.",
+    "visualBoundary": "Resolve the Component through its manifest-declared resolver and renderable boundary.",
+    "runtimeBehavior": "Consume only declared Runtime Inputs and explicit embedded Component boundaries.",
+    "forwarding": "Forward values only through declared stable source and target identities.",
+    "temporalOwnership": "Keep reusable behavior relative to the Component owner and its declared child owners."
+  },
+  "component": {
+    "componentType": "iconBar",
+    "category": "atom",
+    "componentClassId": "component_project_foqn_s2_iconBar",
+    "projectId": "project_foqn_s2",
+    "recordClassId": "component.iconBar",
+    "name": "Icon Bar",
+    "notes": "Icon bar component"
+  },
+  "manifest": {
+    "contract": "./iconBarComponentContract",
+    "resolver": "./iconBarComponentResolver",
+    "renderable": "./iconBarComponentRenderable",
+    "embeds": [
+      "iconRow"
+    ]
+  },
+  "owners": {
+    "contractExport": "IconBarDesignContract",
+    "resolverExport": "resolveIconBarComponent",
+    "renderableExport": "iconBarComponentToRenderable",
+    "registryMode": "simple",
+    "focusedTest": "tests/Mockups.Desktop.Tests/Program.cs",
+    "configContractExport": null
+  },
+  "config": {
+    "style": {
+      "shadowEnabled": false,
+      "reliefEnabled": false,
+      "borderWidth": 0,
+      "borderColorToken": "theme.borders.primary",
+      "cornerRadiusToken": "theme.radii.xl",
+      "reliefAngle": -45,
+      "reliefExtent": 1,
+      "reliefSpread": 0,
+      "reliefTopIntensity": 0.12,
+      "reliefBottomIntensity": -0.1
+    },
+    "iconBar": {
+      "edgePadding": "theme.spacing.m",
+      "idleLeftIconRowSlot": {
+        "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+        "overrides": {}
+      },
+      "idleLeftIconRowInputs": {
+        "buttonInputs": []
+      },
+      "idleCenterIconRowSlot": {
+        "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+        "overrides": {}
+      },
+      "idleCenterIconRowInputs": {
+        "buttonInputs": []
+      },
+      "idleRightIconRowSlot": {
+        "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+        "overrides": {}
+      },
+      "idleRightIconRowInputs": {
+        "buttonInputs": []
+      },
+      "activeLeftIconRowSlot": {
+        "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+        "overrides": {}
+      },
+      "activeLeftIconRowInputs": {
+        "buttonInputs": []
+      },
+      "activeCenterIconRowSlot": {
+        "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+        "overrides": {}
+      },
+      "activeCenterIconRowInputs": {
+        "buttonInputs": []
+      },
+      "activeRightIconRowSlot": {
+        "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+        "overrides": {}
+      },
+      "activeRightIconRowInputs": {
+        "buttonInputs": []
+      },
+      "sizeSource": "shared",
+      "iconSizeToken": "theme.iconSizes.m",
+      "textSizeToken": "theme.typography.sizes.s"
+    }
+  },
+  "defaultVariant": {
+    "id": "default",
+    "name": "Default",
+    "protected": true,
+    "locked": true,
+    "config": {
+      "style": {
+        "shadowEnabled": false,
+        "reliefEnabled": false,
+        "borderWidth": 0,
+        "borderColorToken": "theme.borders.primary",
+        "cornerRadiusToken": "theme.radii.xl",
+        "reliefAngle": -45,
+        "reliefExtent": 1,
+        "reliefSpread": 0,
+        "reliefTopIntensity": 0.12,
+        "reliefBottomIntensity": -0.1
+      },
+      "iconBar": {
+        "edgePadding": "theme.spacing.m",
+        "idleLeftIconRowSlot": {
+          "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+          "overrides": {}
+        },
+        "idleLeftIconRowInputs": {
+          "buttonInputs": []
+        },
+        "idleCenterIconRowSlot": {
+          "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+          "overrides": {}
+        },
+        "idleCenterIconRowInputs": {
+          "buttonInputs": []
+        },
+        "idleRightIconRowSlot": {
+          "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+          "overrides": {}
+        },
+        "idleRightIconRowInputs": {
+          "buttonInputs": []
+        },
+        "activeLeftIconRowSlot": {
+          "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+          "overrides": {}
+        },
+        "activeLeftIconRowInputs": {
+          "buttonInputs": []
+        },
+        "activeCenterIconRowSlot": {
+          "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+          "overrides": {}
+        },
+        "activeCenterIconRowInputs": {
+          "buttonInputs": []
+        },
+        "activeRightIconRowSlot": {
+          "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+          "overrides": {}
+        },
+        "activeRightIconRowInputs": {
+          "buttonInputs": []
+        },
+        "sizeSource": "shared",
+        "iconSizeToken": "theme.iconSizes.m",
+        "textSizeToken": "theme.typography.sizes.s"
+      }
+    }
+  },
+  "additionalVariants": [
+    {
+      "id": "default_copy",
+      "name": "Text_Input_Chat",
+      "protected": false,
+      "locked": false,
+      "config": {
+        "style": {
+          "shadowEnabled": false,
+          "reliefEnabled": false,
+          "borderWidth": 0,
+          "borderColorToken": "theme.borders.primary",
+          "cornerRadiusToken": "theme.radii.xl",
+          "reliefAngle": -45,
+          "reliefExtent": 1,
+          "reliefSpread": 0,
+          "reliefTopIntensity": 0.12,
+          "reliefBottomIntensity": -0.1
+        },
+        "iconBar": {
+          "edgePadding": "theme.spacing.m",
+          "idleLeftIconRowSlot": {
+            "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+            "overrides": {}
+          },
+          "idleLeftIconRowInputs": {
+            "buttonInputs": []
+          },
+          "idleCenterIconRowSlot": {
+            "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+            "overrides": {}
+          },
+          "idleCenterIconRowInputs": {
+            "buttonInputs": []
+          },
+          "idleRightIconRowSlot": {
+            "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+            "overrides": {}
+          },
+          "idleRightIconRowInputs": {
+            "buttonInputs": []
+          },
+          "activeLeftIconRowSlot": {
+            "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+            "overrides": {}
+          },
+          "activeLeftIconRowInputs": {
+            "buttonInputs": []
+          },
+          "activeCenterIconRowSlot": {
+            "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+            "overrides": {}
+          },
+          "activeCenterIconRowInputs": {
+            "buttonInputs": []
+          },
+          "activeRightIconRowSlot": {
+            "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+            "overrides": {}
+          },
+          "activeRightIconRowInputs": {
+            "buttonInputs": []
+          },
+          "sizeSource": "shared",
+          "iconSizeToken": "theme.iconSizes.m",
+          "textSizeToken": "theme.typography.sizes.s"
+        }
+      }
+    },
+    {
+      "id": "text_input_chat_copy",
+      "name": "Keyboard",
+      "protected": false,
+      "locked": false,
+      "config": {
+        "style": {
+          "shadowEnabled": false,
+          "reliefEnabled": false,
+          "borderWidth": 0,
+          "borderColorToken": "theme.borders.primary",
+          "cornerRadiusToken": "theme.radii.xl",
+          "reliefAngle": -45,
+          "reliefExtent": 1,
+          "reliefSpread": 0,
+          "reliefTopIntensity": 0.12,
+          "reliefBottomIntensity": -0.1
+        },
+        "iconBar": {
+          "edgePadding": "theme.spacing.m",
+          "idleLeftIconRowSlot": {
+            "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+            "overrides": {}
+          },
+          "idleLeftIconRowInputs": {
+            "buttonInputs": []
+          },
+          "idleCenterIconRowSlot": {
+            "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+            "overrides": {}
+          },
+          "idleCenterIconRowInputs": {
+            "buttonInputs": []
+          },
+          "idleRightIconRowSlot": {
+            "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+            "overrides": {}
+          },
+          "idleRightIconRowInputs": {
+            "buttonInputs": []
+          },
+          "activeLeftIconRowSlot": {
+            "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+            "overrides": {}
+          },
+          "activeLeftIconRowInputs": {
+            "buttonInputs": []
+          },
+          "activeCenterIconRowSlot": {
+            "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+            "overrides": {}
+          },
+          "activeCenterIconRowInputs": {
+            "buttonInputs": []
+          },
+          "activeRightIconRowSlot": {
+            "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+            "overrides": {}
+          },
+          "activeRightIconRowInputs": {
+            "buttonInputs": []
+          },
+          "sizeSource": "shared",
+          "iconSizeToken": "theme.iconSizes.m",
+          "textSizeToken": "theme.typography.sizes.s"
+        }
+      }
+    }
+  ],
+  "designPreview": {
+    "componentType": "iconBar",
+    "sampleText": "Sample",
+    "sampleSubtext": "",
+    "sampleSize": 256,
+    "size": "360|56",
+    "state": "idle",
+    "inputs": [
+      {
+        "id": "state",
+        "label": "State",
+        "jsonKey": "state",
+        "kind": "option",
+        "valueKind": "OptionToken",
+        "defaultValue": "idle",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [
+          {
+            "value": "idle",
+            "label": "Idle"
+          },
+          {
+            "value": "active",
+            "label": "Active"
+          }
+        ],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "state",
+        "uiGroupLabel": "State",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 10
+      },
+      {
+        "id": "size",
+        "label": "Size",
+        "jsonKey": "size",
+        "kind": "integerPair",
+        "valueKind": "IntegerPair",
+        "defaultValue": "360|56",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "layout",
+        "uiGroupLabel": "Layout",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 20
+      }
+    ]
+  },
+  "metadata": {
+    "note": "Seeded reusable component class."
+  },
+  "dictionaryFields": [],
+  "editorLayout": {
+    "cards": [
+      {
+        "id": "general",
+        "label": "General",
+        "subtitle": "Identity",
+        "icon": "general",
+        "order": 10,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "identity",
+            "label": "Identity",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "core.name",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.type",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "core.notes",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "iconBar",
+        "label": "Icon Bar",
+        "subtitle": "Three aligned icon rows with two states",
+        "icon": "icon",
+        "order": 20,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "iconBar",
+            "label": "Icon bar",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.iconBar.edgePadding",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.iconBar.sizeSource",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.iconBar.iconSizeToken",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "component.iconBar.textSizeToken",
+                "order": 40,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "iconBarIdle",
+        "label": "Idle",
+        "subtitle": "Icon rows used by the idle state",
+        "icon": "icon",
+        "order": 30,
+        "visible": true,
+        "defaultOpen": false,
+        "groupLayout": "verticalCards",
+        "groups": [
+          {
+            "id": "idleLeft",
+            "label": "Left",
+            "icon": "navigation-asset:Left icon row",
+            "order": 10,
+            "visible": true,
+            "collapsible": true,
+            "exclusive": true,
+            "defaultOpen": false,
+            "fields": [
+              {
+                "id": "component.iconBar.idleLeftIconRow.editor",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.iconBar.idleLeftIconRow.inputs",
+                "order": 20,
+                "visible": true
+              }
+            ]
+          },
+          {
+            "id": "idleCenter",
+            "label": "Center",
+            "icon": "navigation-asset:Center",
+            "order": 20,
+            "visible": true,
+            "collapsible": true,
+            "exclusive": true,
+            "defaultOpen": false,
+            "fields": [
+              {
+                "id": "component.iconBar.idleCenterIconRow.editor",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.iconBar.idleCenterIconRow.inputs",
+                "order": 20,
+                "visible": true
+              }
+            ]
+          },
+          {
+            "id": "idleRight",
+            "label": "Right",
+            "icon": "navigation-asset:Right icon row",
+            "order": 30,
+            "visible": true,
+            "collapsible": true,
+            "exclusive": true,
+            "defaultOpen": false,
+            "fields": [
+              {
+                "id": "component.iconBar.idleRightIconRow.editor",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.iconBar.idleRightIconRow.inputs",
+                "order": 20,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "iconBarActive",
+        "label": "Active",
+        "subtitle": "Icon rows used by the active state",
+        "icon": "icon",
+        "order": 40,
+        "visible": true,
+        "defaultOpen": false,
+        "groupLayout": "verticalCards",
+        "groups": [
+          {
+            "id": "activeLeft",
+            "label": "Left",
+            "icon": "navigation-asset:Left icon row",
+            "order": 10,
+            "visible": true,
+            "collapsible": true,
+            "exclusive": true,
+            "defaultOpen": false,
+            "fields": [
+              {
+                "id": "component.iconBar.activeLeftIconRow.editor",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.iconBar.activeLeftIconRow.inputs",
+                "order": 20,
+                "visible": true
+              }
+            ]
+          },
+          {
+            "id": "activeCenter",
+            "label": "Center",
+            "icon": "navigation-asset:Center",
+            "order": 20,
+            "visible": true,
+            "collapsible": true,
+            "exclusive": true,
+            "defaultOpen": false,
+            "fields": [
+              {
+                "id": "component.iconBar.activeCenterIconRow.editor",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.iconBar.activeCenterIconRow.inputs",
+                "order": 20,
+                "visible": true
+              }
+            ]
+          },
+          {
+            "id": "activeRight",
+            "label": "Right",
+            "icon": "navigation-asset:Right icon row",
+            "order": 30,
+            "visible": true,
+            "collapsible": true,
+            "exclusive": true,
+            "defaultOpen": false,
+            "fields": [
+              {
+                "id": "component.iconBar.activeRightIconRow.editor",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.iconBar.activeRightIconRow.inputs",
+                "order": 20,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "assets": []
+}

@@ -1,0 +1,291 @@
+{
+  "schemaVersion": 1,
+  "intent": {
+    "responsibility": "Own the complete current Component configuration and its exact Runtime Input contract.",
+    "visualBoundary": "Resolve the Component through its manifest-declared resolver and renderable boundary.",
+    "runtimeBehavior": "Consume only declared Runtime Inputs and explicit embedded Component boundaries.",
+    "forwarding": "Forward values only through declared stable source and target identities.",
+    "temporalOwnership": "Keep reusable behavior relative to the Component owner and its declared child owners."
+  },
+  "component": {
+    "componentType": "faceRecognition",
+    "category": "system",
+    "componentClassId": "component_project_foqn_s2_faceRecognition",
+    "projectId": "project_foqn_s2",
+    "recordClassId": "component.faceRecognition",
+    "name": "Default Face Recognition",
+    "notes": "Face recognition component"
+  },
+  "manifest": {
+    "contract": "./faceRecognitionComponentContract",
+    "resolver": "./faceRecognitionComponentResolver",
+    "renderable": "./faceRecognitionComponentRenderable",
+    "embeds": []
+  },
+  "owners": {
+    "contractExport": "FaceRecognitionDesignContract",
+    "resolverExport": "resolveFaceRecognitionComponent",
+    "renderableExport": "faceRecognitionComponentToRenderable",
+    "registryMode": "simple",
+    "focusedTest": "tests/animation/atomicTemporalComponents.test.ts",
+    "configContractExport": null
+  },
+  "config": {
+    "faceRecognition": {
+      "size": "140|140",
+      "iconToken": "face",
+      "iconSizeToken": "theme.iconSizes.xl",
+      "strokeWidth": 3,
+      "states": {
+        "initial": {
+          "colorToken": "theme.colors.textSecondary"
+        },
+        "active": {
+          "colorToken": "theme.colors.accent"
+        },
+        "correct": {
+          "colorToken": "theme.colors.accent"
+        },
+        "incorrect": {
+          "colorToken": "theme.colors.textSecondary"
+        }
+      },
+      "iconSizeMultiplier": 1
+    }
+  },
+  "defaultVariant": {
+    "id": "default",
+    "name": "Default",
+    "protected": true,
+    "locked": true,
+    "config": {
+      "faceRecognition": {
+        "size": "140|140",
+        "iconToken": "face",
+        "iconSizeToken": "theme.iconSizes.xl",
+        "strokeWidth": 3,
+        "states": {
+          "initial": {
+            "colorToken": "theme.colors.textSecondary"
+          },
+          "active": {
+            "colorToken": "theme.colors.accent"
+          },
+          "correct": {
+            "colorToken": "theme.colors.accent"
+          },
+          "incorrect": {
+            "colorToken": "theme.colors.textSecondary"
+          }
+        },
+        "iconSizeMultiplier": 1
+      }
+    }
+  },
+  "additionalVariants": [],
+  "designPreview": {
+    "componentType": "faceRecognition",
+    "sampleText": "Sample",
+    "sampleSubtext": "",
+    "sampleSize": 256,
+    "inputs": [
+      {
+        "id": "state",
+        "label": "State",
+        "jsonKey": "state",
+        "kind": "option",
+        "valueKind": "OptionToken",
+        "defaultValue": "active",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [
+          {
+            "value": "initial",
+            "label": "Initial"
+          },
+          {
+            "value": "active",
+            "label": "Active"
+          },
+          {
+            "value": "correct",
+            "label": "Correct"
+          },
+          {
+            "value": "incorrect",
+            "label": "Incorrect"
+          }
+        ],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "",
+        "uiGroupId": "",
+        "uiGroupLabel": "",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": ""
+      },
+      {
+        "id": "progress",
+        "label": "Progress",
+        "jsonKey": "progress",
+        "kind": "number",
+        "valueKind": "Decimal",
+        "defaultValue": "0.5",
+        "minimum": 0,
+        "maximum": 1,
+        "increment": 0.05,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "",
+        "uiGroupId": "",
+        "uiGroupLabel": "",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": ""
+      }
+    ],
+    "state": "active",
+    "progress": 0.5
+  },
+  "metadata": {
+    "note": "Seeded reusable component class."
+  },
+  "dictionaryFields": [],
+  "editorLayout": {
+    "cards": [
+      {
+        "id": "general",
+        "label": "General",
+        "subtitle": "Identity",
+        "icon": "general",
+        "order": 10,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "identity",
+            "label": "Identity",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "core.name",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.type",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "core.notes",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "layout",
+        "label": "Layout",
+        "subtitle": "Face Recognition geometry",
+        "icon": "layout",
+        "order": 20,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "layout",
+            "label": "Layout",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.faceRecognition.size",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.faceRecognition.iconToken",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.faceRecognition.iconSizeToken",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "component.faceRecognition.iconSizeMultiplier",
+                "order": 40,
+                "visible": true
+              },
+              {
+                "id": "component.faceRecognition.strokeWidth",
+                "order": 50,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "states",
+        "label": "States",
+        "subtitle": "Resolved colors",
+        "icon": "variants",
+        "order": 30,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "states",
+            "label": "States",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.faceRecognition.states.initial.colorToken",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.faceRecognition.states.active.colorToken",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.faceRecognition.states.correct.colorToken",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "component.faceRecognition.states.incorrect.colorToken",
+                "order": 40,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "assets": []
+}

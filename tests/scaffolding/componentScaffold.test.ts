@@ -43,6 +43,18 @@ import {
 
 const repositoryRoot = process.cwd();
 
+test("the current Component registry has one generated routing owner", () => {
+  const source = readFileSync(path.join(
+    repositoryRoot,
+    "src/desktop-preview/componentClassRenderableRegistry.ts",
+  ), "utf8");
+  assert.match(
+    source,
+    /componentRenderableFactories[\s\S]*= generatedComponentScaffoldFactories;/,
+  );
+  assert.doesNotMatch(source, /builtInComponentRenderableFactories/);
+});
+
 function inventory(
   overrides: Partial<ComponentScaffoldInventory> = {},
 ): ComponentScaffoldInventory {
@@ -102,6 +114,7 @@ function validSpec(): ComponentScaffoldSpec {
     contractExport: "ScaffoldFixtureDesignContract",
     resolverExport: "resolveScaffoldFixtureComponent",
     renderableExport: "scaffoldFixtureComponentToRenderable",
+    configContractExport: "ScaffoldFixtureComponentConfigContract",
     registryMode: "simple",
     focusedTest: "tests/animation/scaffoldFixtureComponent.test.ts",
   };

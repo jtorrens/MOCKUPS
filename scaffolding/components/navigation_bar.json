@@ -1,0 +1,455 @@
+{
+  "schemaVersion": 1,
+  "intent": {
+    "responsibility": "Own the complete current Component configuration and its exact Runtime Input contract.",
+    "visualBoundary": "Resolve the Component through its manifest-declared resolver and renderable boundary.",
+    "runtimeBehavior": "Consume only declared Runtime Inputs and explicit embedded Component boundaries.",
+    "forwarding": "Forward values only through declared stable source and target identities.",
+    "temporalOwnership": "Keep reusable behavior relative to the Component owner and its declared child owners."
+  },
+  "component": {
+    "componentType": "navigation_bar",
+    "category": "system",
+    "componentClassId": "component_project_foqn_s2_navigation_bar",
+    "projectId": "project_foqn_s2",
+    "recordClassId": "component.navigation_bar",
+    "name": "Navigation Bar",
+    "notes": "Navigation bar component"
+  },
+  "manifest": {
+    "contract": "./navigationBarComponentContract",
+    "resolver": "./navigationBarComponentResolver",
+    "renderable": "./navigationBarComponentRenderable",
+    "embeds": []
+  },
+  "owners": {
+    "contractExport": "NavigationBarDesignContract",
+    "resolverExport": "resolveNavigationBarComponent",
+    "renderableExport": "navigationBarComponentToRenderable",
+    "registryMode": "simple",
+    "focusedTest": "tests/Mockups.Desktop.Tests/Program.cs",
+    "configContractExport": "NavigationBarComponentConfigContract"
+  },
+  "config": {
+    "schemaVersion": 1,
+    "type": "buttons",
+    "layout": {
+      "height": 50,
+      "itemSize": 30,
+      "sidePadding": "theme.spacing.xxl",
+      "strokeWidth": 2,
+      "cornerRadius": 3,
+      "filled": false
+    },
+    "gesture": {
+      "width": 134,
+      "height": 5,
+      "cornerRadius": 3
+    },
+    "items": [
+      {
+        "id": "back",
+        "label": "Back",
+        "kind": "generatedBack",
+        "zone": "left",
+        "order": 10,
+        "iconSizeToken": "theme.iconSizes.m",
+        "textSizeToken": "theme.typography.sizes.s"
+      },
+      {
+        "id": "home",
+        "label": "Home",
+        "kind": "generatedHome",
+        "zone": "center",
+        "order": 10,
+        "iconSizeToken": "theme.iconSizes.m",
+        "textSizeToken": "theme.typography.sizes.s"
+      },
+      {
+        "id": "recents",
+        "label": "Recents",
+        "kind": "generatedRecents",
+        "zone": "right",
+        "order": 10,
+        "iconSizeToken": "theme.iconSizes.m",
+        "textSizeToken": "theme.typography.sizes.s"
+      }
+    ],
+    "foregroundColorToken": "theme.icons.primary",
+    "backgroundColorToken": "theme.colors.background",
+    "backgroundAlpha": 1
+  },
+  "defaultVariant": {
+    "id": "default",
+    "name": "Default",
+    "protected": true,
+    "locked": true,
+    "config": {
+      "schemaVersion": 1,
+      "type": "buttons",
+      "layout": {
+        "height": 50,
+        "itemSize": 30,
+        "sidePadding": "theme.spacing.xxl",
+        "strokeWidth": 2,
+        "cornerRadius": 3,
+        "filled": false
+      },
+      "gesture": {
+        "width": 134,
+        "height": 5,
+        "cornerRadius": 3
+      },
+      "items": [
+        {
+          "id": "back",
+          "label": "Back",
+          "kind": "generatedBack",
+          "zone": "left",
+          "order": 10,
+          "iconSizeToken": "theme.iconSizes.m",
+          "textSizeToken": "theme.typography.sizes.s"
+        },
+        {
+          "id": "home",
+          "label": "Home",
+          "kind": "generatedHome",
+          "zone": "center",
+          "order": 10,
+          "iconSizeToken": "theme.iconSizes.m",
+          "textSizeToken": "theme.typography.sizes.s"
+        },
+        {
+          "id": "recents",
+          "label": "Recents",
+          "kind": "generatedRecents",
+          "zone": "right",
+          "order": 10,
+          "iconSizeToken": "theme.iconSizes.m",
+          "textSizeToken": "theme.typography.sizes.s"
+        }
+      ],
+      "foregroundColorToken": "theme.icons.primary",
+      "backgroundColorToken": "theme.colors.background",
+      "backgroundAlpha": 1
+    }
+  },
+  "additionalVariants": [
+    {
+      "id": "default_copy",
+      "name": "Nav Bar Gesture",
+      "protected": false,
+      "locked": true,
+      "config": {
+        "schemaVersion": 1,
+        "type": "gestureBar",
+        "layout": {
+          "height": 50,
+          "itemSize": 30,
+          "sidePadding": "theme.spacing.xxl",
+          "strokeWidth": 2,
+          "cornerRadius": 3,
+          "filled": false
+        },
+        "gesture": {
+          "width": 200,
+          "height": 5,
+          "cornerRadius": 3
+        },
+        "items": [
+          {
+            "id": "back",
+            "label": "Back",
+            "kind": "generatedBack",
+            "zone": "left",
+            "order": 10,
+            "iconSizeToken": "theme.iconSizes.m",
+            "textSizeToken": "theme.typography.sizes.s"
+          },
+          {
+            "id": "home",
+            "label": "Home",
+            "kind": "generatedHome",
+            "zone": "center",
+            "order": 10,
+            "iconSizeToken": "theme.iconSizes.m",
+            "textSizeToken": "theme.typography.sizes.s"
+          },
+          {
+            "id": "recents",
+            "label": "Recents",
+            "kind": "generatedRecents",
+            "zone": "right",
+            "order": 10,
+            "iconSizeToken": "theme.iconSizes.m",
+            "textSizeToken": "theme.typography.sizes.s"
+          }
+        ],
+        "foregroundColorToken": "theme.icons.primary",
+        "backgroundColorToken": "theme.colors.background",
+        "backgroundAlpha": 1
+      }
+    },
+    {
+      "id": "lock_screen",
+      "name": "Nav Bar Iphone lock",
+      "protected": false,
+      "locked": true,
+      "config": {
+        "schemaVersion": 1,
+        "type": "gestureBar",
+        "layout": {
+          "height": 50,
+          "itemSize": 30,
+          "sidePadding": "theme.spacing.xxl",
+          "strokeWidth": 2,
+          "cornerRadius": 3,
+          "filled": false
+        },
+        "gesture": {
+          "width": 134,
+          "height": 5,
+          "cornerRadius": 3
+        },
+        "items": [
+          {
+            "id": "back",
+            "label": "Back",
+            "kind": "generatedBack",
+            "zone": "left",
+            "order": 10,
+            "iconSizeToken": "theme.iconSizes.m",
+            "textSizeToken": "theme.typography.sizes.s"
+          },
+          {
+            "id": "home",
+            "label": "Home",
+            "kind": "generatedHome",
+            "zone": "center",
+            "order": 10,
+            "iconSizeToken": "theme.iconSizes.m",
+            "textSizeToken": "theme.typography.sizes.s"
+          },
+          {
+            "id": "recents",
+            "label": "Recents",
+            "kind": "generatedRecents",
+            "zone": "right",
+            "order": 10,
+            "iconSizeToken": "theme.iconSizes.m",
+            "textSizeToken": "theme.typography.sizes.s"
+          }
+        ],
+        "foregroundColorToken": "theme.icons.primary",
+        "backgroundColorToken": "theme.colors.background",
+        "backgroundAlpha": 0
+      }
+    },
+    {
+      "id": "none",
+      "name": "None",
+      "protected": false,
+      "locked": true,
+      "config": {
+        "schemaVersion": 1,
+        "type": "buttons",
+        "layout": {
+          "height": 50,
+          "itemSize": 30,
+          "sidePadding": "theme.spacing.xxl",
+          "strokeWidth": 2,
+          "cornerRadius": 3,
+          "filled": false
+        },
+        "gesture": {
+          "width": 134,
+          "height": 5,
+          "cornerRadius": 3
+        },
+        "items": [],
+        "foregroundColorToken": "theme.icons.primary",
+        "backgroundColorToken": "theme.colors.background",
+        "backgroundAlpha": 0
+      }
+    }
+  ],
+  "designPreview": {
+    "componentType": "navigation_bar",
+    "sampleText": "Sample",
+    "sampleSubtext": "",
+    "sampleSize": 256,
+    "inputs": []
+  },
+  "metadata": {
+    "note": "Seeded reusable component class.",
+    "nonDefaultVariantProtectionPolicyVersion": 1
+  },
+  "dictionaryFields": [],
+  "editorLayout": {
+    "cards": [
+      {
+        "id": "general",
+        "label": "General",
+        "subtitle": "Identity",
+        "icon": "general",
+        "order": 10,
+        "visible": true,
+        "defaultOpen": true,
+        "groups": [
+          {
+            "id": "identity",
+            "label": "Identity",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "core.name",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.type",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "core.notes",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "navigationBar",
+        "label": "Navigation Bar",
+        "subtitle": "Reusable device navigation bar composition",
+        "icon": "navigation",
+        "order": 20,
+        "visible": true,
+        "defaultOpen": false,
+        "groupLayout": "separatedSections",
+        "groups": [
+          {
+            "id": "appearance",
+            "label": "Appearance",
+            "icon": "style",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.navigationBar.foregroundColorToken",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.navigationBar.backgroundColorToken",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.navigationBar.backgroundAlpha",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          },
+          {
+            "id": "layout",
+            "label": "Layout",
+            "icon": "layout",
+            "order": 20,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.navigationBar.type",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.navigationBar.layout.height",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.navigationBar.layout.itemSize",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "component.navigationBar.layout.sidePadding",
+                "order": 40,
+                "visible": true
+              },
+              {
+                "id": "component.navigationBar.layout.strokeWidth",
+                "order": 50,
+                "visible": true
+              },
+              {
+                "id": "component.navigationBar.layout.cornerRadius",
+                "order": 60,
+                "visible": true
+              },
+              {
+                "id": "component.navigationBar.layout.filled",
+                "order": 70,
+                "visible": true
+              }
+            ]
+          },
+          {
+            "id": "gesture",
+            "label": "Gesture",
+            "icon": "behavior",
+            "order": 30,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.navigationBar.gesture.width",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.navigationBar.gesture.height",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.navigationBar.gesture.cornerRadius",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "navigationBarItems",
+        "label": "Button Items",
+        "subtitle": "Generated button placement inside the bar",
+        "icon": "navigation",
+        "order": 30,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "items",
+            "label": "Button Items",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.navigationBar.items",
+                "order": 10,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "assets": []
+}

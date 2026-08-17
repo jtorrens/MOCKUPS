@@ -1,0 +1,744 @@
+{
+  "schemaVersion": 1,
+  "intent": {
+    "responsibility": "Own the complete current Component configuration and its exact Runtime Input contract.",
+    "visualBoundary": "Resolve the Component through its manifest-declared resolver and renderable boundary.",
+    "runtimeBehavior": "Consume only declared Runtime Inputs and explicit embedded Component boundaries.",
+    "forwarding": "Forward values only through declared stable source and target identities.",
+    "temporalOwnership": "Keep reusable behavior relative to the Component owner and its declared child owners."
+  },
+  "component": {
+    "componentType": "surface",
+    "category": "atom",
+    "componentClassId": "component_project_foqn_s2_surface",
+    "projectId": "project_foqn_s2",
+    "recordClassId": "component.surface",
+    "name": "Surface",
+    "notes": "Surface component"
+  },
+  "manifest": {
+    "contract": "./surfaceComponentContract",
+    "resolver": "./surfaceComponentResolver",
+    "renderable": "./surfaceComponentRenderable",
+    "embeds": []
+  },
+  "owners": {
+    "contractExport": "SurfaceDesignContract",
+    "resolverExport": "resolveSurfaceComponent",
+    "renderableExport": "surfaceComponentToRenderable",
+    "registryMode": "simple",
+    "focusedTest": "tests/Mockups.Desktop.Tests/Program.cs",
+    "configContractExport": null
+  },
+  "config": {
+    "style": {
+      "shadowEnabled": false,
+      "reliefEnabled": false,
+      "borderWidth": 0,
+      "borderColorToken": "theme.borders.primary",
+      "cornerRadiusToken": "theme.radii.xl",
+      "reliefAngle": -45,
+      "reliefExtent": 1,
+      "reliefSpread": 0,
+      "reliefTopIntensity": 0.12,
+      "reliefBottomIntensity": -0.1
+    },
+    "surface": {
+      "backgroundColorToken": "theme.colors.surface",
+      "backgroundAlpha": 1,
+      "borderAlpha": 1,
+      "tail": {
+        "enabled": false,
+        "style": "cut_corner",
+        "side": "right",
+        "vertical": "top",
+        "size": "40|30",
+        "outerCornerRadius": 0
+      }
+    }
+  },
+  "defaultVariant": {
+    "id": "default",
+    "name": "Default",
+    "protected": true,
+    "locked": true,
+    "config": {
+      "style": {
+        "shadowEnabled": false,
+        "reliefEnabled": false,
+        "borderWidth": 0,
+        "borderColorToken": "theme.borders.primary",
+        "cornerRadiusToken": "theme.radii.xl",
+        "reliefAngle": -45,
+        "reliefExtent": 1,
+        "reliefSpread": 0,
+        "reliefTopIntensity": 0.12,
+        "reliefBottomIntensity": -0.1
+      },
+      "surface": {
+        "backgroundColorToken": "theme.colors.surface",
+        "backgroundAlpha": 1,
+        "borderAlpha": 1,
+        "tail": {
+          "enabled": false,
+          "style": "cut_corner",
+          "side": "right",
+          "vertical": "top",
+          "size": "40|30",
+          "outerCornerRadius": 0
+        }
+      }
+    }
+  },
+  "additionalVariants": [
+    {
+      "id": "default_copy",
+      "name": "Surface_InputBox",
+      "protected": false,
+      "locked": false,
+      "config": {
+        "style": {
+          "shadowEnabled": false,
+          "reliefEnabled": false,
+          "borderWidth": 1,
+          "borderColorToken": "theme.borders.primary",
+          "cornerRadiusToken": "theme.radii.xl",
+          "reliefAngle": -45,
+          "reliefExtent": 1,
+          "reliefSpread": 0,
+          "reliefTopIntensity": 0.12,
+          "reliefBottomIntensity": -0.1
+        },
+        "surface": {
+          "backgroundColorToken": "theme.colors.field",
+          "backgroundAlpha": 1,
+          "borderAlpha": 1,
+          "tail": {
+            "enabled": false,
+            "style": "rounded_wedge",
+            "side": "left",
+            "vertical": "bottom",
+            "size": "18|14",
+            "outerCornerRadius": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "surface_inputbox_copy",
+      "name": "Surface_None",
+      "protected": false,
+      "locked": true,
+      "config": {
+        "style": {
+          "shadowEnabled": false,
+          "reliefEnabled": false,
+          "borderWidth": 0,
+          "borderColorToken": "theme.borders.primary",
+          "cornerRadiusToken": "theme.radii.full",
+          "reliefAngle": 90,
+          "reliefExtent": 1,
+          "reliefSpread": 0,
+          "reliefTopIntensity": 0.25,
+          "reliefBottomIntensity": -0.25
+        },
+        "surface": {
+          "backgroundColorToken": "theme.colors.label",
+          "backgroundAlpha": 0,
+          "borderAlpha": 0,
+          "tail": {
+            "enabled": false,
+            "style": "rounded_wedge",
+            "side": "left",
+            "vertical": "bottom",
+            "size": "18|14",
+            "outerCornerRadius": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "default_copy_2",
+      "name": "Surface_Label",
+      "protected": false,
+      "locked": false,
+      "config": {
+        "style": {
+          "shadowEnabled": false,
+          "reliefEnabled": false,
+          "borderWidth": 0,
+          "borderColorToken": "theme.borders.primary",
+          "cornerRadiusToken": "theme.radii.none",
+          "reliefAngle": -45,
+          "reliefExtent": 1,
+          "reliefSpread": 0,
+          "reliefTopIntensity": 0.12,
+          "reliefBottomIntensity": -0.1
+        },
+        "surface": {
+          "backgroundColorToken": "theme.colors.surface",
+          "backgroundAlpha": 0,
+          "borderAlpha": 1,
+          "tail": {
+            "enabled": false,
+            "style": "rounded_wedge",
+            "side": "left",
+            "vertical": "bottom",
+            "size": "18|14",
+            "outerCornerRadius": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "surface_iconbutton_copy",
+      "name": "Surface_Badge",
+      "protected": false,
+      "locked": false,
+      "config": {
+        "style": {
+          "shadowEnabled": false,
+          "reliefEnabled": false,
+          "borderWidth": 0,
+          "borderColorToken": "theme.borders.primary",
+          "cornerRadiusToken": "theme.radii.full",
+          "reliefAngle": 90,
+          "reliefExtent": 1,
+          "reliefSpread": 0,
+          "reliefTopIntensity": 0.25,
+          "reliefBottomIntensity": -0.25
+        },
+        "surface": {
+          "backgroundColorToken": "theme.colors.icon",
+          "backgroundAlpha": 1,
+          "borderAlpha": 1,
+          "tail": {
+            "enabled": false,
+            "style": "rounded_wedge",
+            "side": "left",
+            "vertical": "bottom",
+            "size": "18|14",
+            "outerCornerRadius": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "default_copy_3",
+      "name": "Surface Bubble",
+      "protected": false,
+      "locked": false,
+      "config": {
+        "style": {
+          "shadowEnabled": true,
+          "reliefEnabled": false,
+          "borderWidth": 1,
+          "borderColorToken": "theme.borders.primary",
+          "cornerRadiusToken": "theme.radii.l",
+          "reliefAngle": 90,
+          "reliefExtent": 1,
+          "reliefSpread": 0.1,
+          "reliefTopIntensity": 0.25,
+          "reliefBottomIntensity": -0.25
+        },
+        "surface": {
+          "backgroundColorToken": "theme.colors.accent",
+          "backgroundAlpha": 1,
+          "borderAlpha": 1,
+          "tail": {
+            "enabled": true,
+            "style": "cut_corner",
+            "side": "right",
+            "vertical": "top",
+            "size": "40|20",
+            "outerCornerRadius": 5
+          }
+        }
+      }
+    },
+    {
+      "id": "default_copy_4",
+      "name": "Surface_000",
+      "protected": false,
+      "locked": false,
+      "config": {
+        "style": {
+          "shadowEnabled": false,
+          "reliefEnabled": false,
+          "borderWidth": 0,
+          "borderColorToken": "theme.borders.primary",
+          "cornerRadiusToken": "theme.radii.xl",
+          "reliefAngle": -45,
+          "reliefExtent": 1,
+          "reliefSpread": 0,
+          "reliefTopIntensity": 0.12,
+          "reliefBottomIntensity": -0.1
+        },
+        "surface": {
+          "backgroundColorToken": "theme.colors.button",
+          "backgroundAlpha": 0,
+          "borderAlpha": 1,
+          "tail": {
+            "enabled": false,
+            "style": "cut_corner",
+            "side": "right",
+            "vertical": "top",
+            "size": "40|30",
+            "outerCornerRadius": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "surface_00_copy",
+      "name": "Surface_020",
+      "protected": false,
+      "locked": false,
+      "config": {
+        "style": {
+          "shadowEnabled": false,
+          "reliefEnabled": false,
+          "borderWidth": 0,
+          "borderColorToken": "theme.borders.primary",
+          "cornerRadiusToken": "theme.radii.xl",
+          "reliefAngle": -45,
+          "reliefExtent": 1,
+          "reliefSpread": 0,
+          "reliefTopIntensity": 0.12,
+          "reliefBottomIntensity": -0.1
+        },
+        "surface": {
+          "backgroundColorToken": "theme.colors.button",
+          "backgroundAlpha": 0.2,
+          "borderAlpha": 1,
+          "tail": {
+            "enabled": false,
+            "style": "cut_corner",
+            "side": "right",
+            "vertical": "top",
+            "size": "40|30",
+            "outerCornerRadius": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "surface_20_copy",
+      "name": "Surface_040",
+      "protected": false,
+      "locked": false,
+      "config": {
+        "style": {
+          "shadowEnabled": false,
+          "reliefEnabled": false,
+          "borderWidth": 0,
+          "borderColorToken": "theme.borders.primary",
+          "cornerRadiusToken": "theme.radii.xl",
+          "reliefAngle": -45,
+          "reliefExtent": 1,
+          "reliefSpread": 0,
+          "reliefTopIntensity": 0.12,
+          "reliefBottomIntensity": -0.1
+        },
+        "surface": {
+          "backgroundColorToken": "theme.colors.button",
+          "backgroundAlpha": 0.4,
+          "borderAlpha": 1,
+          "tail": {
+            "enabled": false,
+            "style": "cut_corner",
+            "side": "right",
+            "vertical": "top",
+            "size": "40|30",
+            "outerCornerRadius": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "surface_40_copy",
+      "name": "Surface_060",
+      "protected": false,
+      "locked": false,
+      "config": {
+        "style": {
+          "shadowEnabled": false,
+          "reliefEnabled": false,
+          "borderWidth": 0,
+          "borderColorToken": "theme.borders.primary",
+          "cornerRadiusToken": "theme.radii.xl",
+          "reliefAngle": -45,
+          "reliefExtent": 1,
+          "reliefSpread": 0,
+          "reliefTopIntensity": 0.12,
+          "reliefBottomIntensity": -0.1
+        },
+        "surface": {
+          "backgroundColorToken": "theme.colors.button",
+          "backgroundAlpha": 0.6,
+          "borderAlpha": 1,
+          "tail": {
+            "enabled": false,
+            "style": "cut_corner",
+            "side": "right",
+            "vertical": "top",
+            "size": "40|30",
+            "outerCornerRadius": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "surface_60_copy",
+      "name": "Surface_080",
+      "protected": false,
+      "locked": false,
+      "config": {
+        "style": {
+          "shadowEnabled": false,
+          "reliefEnabled": false,
+          "borderWidth": 0,
+          "borderColorToken": "theme.borders.primary",
+          "cornerRadiusToken": "theme.radii.xl",
+          "reliefAngle": -45,
+          "reliefExtent": 1,
+          "reliefSpread": 0,
+          "reliefTopIntensity": 0.12,
+          "reliefBottomIntensity": -0.1
+        },
+        "surface": {
+          "backgroundColorToken": "theme.colors.button",
+          "backgroundAlpha": 0.8,
+          "borderAlpha": 1,
+          "tail": {
+            "enabled": false,
+            "style": "cut_corner",
+            "side": "right",
+            "vertical": "top",
+            "size": "40|30",
+            "outerCornerRadius": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "surface_80_copy",
+      "name": "Surface_100",
+      "protected": false,
+      "locked": false,
+      "config": {
+        "style": {
+          "shadowEnabled": false,
+          "reliefEnabled": false,
+          "borderWidth": 0,
+          "borderColorToken": "theme.borders.primary",
+          "cornerRadiusToken": "theme.radii.xl",
+          "reliefAngle": -45,
+          "reliefExtent": 1,
+          "reliefSpread": 0,
+          "reliefTopIntensity": 0.12,
+          "reliefBottomIntensity": -0.1
+        },
+        "surface": {
+          "backgroundColorToken": "theme.colors.button",
+          "backgroundAlpha": 1,
+          "borderAlpha": 1,
+          "tail": {
+            "enabled": false,
+            "style": "cut_corner",
+            "side": "right",
+            "vertical": "top",
+            "size": "40|30",
+            "outerCornerRadius": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "default_copy_5",
+      "name": "Android Buttons",
+      "protected": false,
+      "locked": true,
+      "config": {
+        "style": {
+          "shadowEnabled": false,
+          "reliefEnabled": false,
+          "borderWidth": 0,
+          "borderColorToken": "theme.borders.primary",
+          "cornerRadiusToken": "theme.radii.m",
+          "reliefAngle": -45,
+          "reliefExtent": 1,
+          "reliefSpread": 0,
+          "reliefTopIntensity": 0.12,
+          "reliefBottomIntensity": -0.1
+        },
+        "surface": {
+          "backgroundColorToken": "theme.colors.surface",
+          "backgroundAlpha": 1,
+          "borderAlpha": 1,
+          "tail": {
+            "enabled": false,
+            "style": "cut_corner",
+            "side": "right",
+            "vertical": "top",
+            "size": "40|30",
+            "outerCornerRadius": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "android_buttons_copy",
+      "name": "iOs Buttons",
+      "protected": false,
+      "locked": true,
+      "config": {
+        "style": {
+          "shadowEnabled": false,
+          "reliefEnabled": false,
+          "borderWidth": 0,
+          "borderColorToken": "theme.borders.primary",
+          "cornerRadiusToken": "theme.radii.m",
+          "reliefAngle": -45,
+          "reliefExtent": 1,
+          "reliefSpread": 0,
+          "reliefTopIntensity": 0.12,
+          "reliefBottomIntensity": -0.1
+        },
+        "surface": {
+          "backgroundColorToken": "theme.colors.surface",
+          "backgroundAlpha": 1,
+          "borderAlpha": 1,
+          "tail": {
+            "enabled": false,
+            "style": "cut_corner",
+            "side": "right",
+            "vertical": "top",
+            "size": "40|30",
+            "outerCornerRadius": 0
+          }
+        }
+      }
+    }
+  ],
+  "designPreview": {
+    "componentType": "surface",
+    "sampleText": "Sample",
+    "sampleSubtext": "",
+    "sampleSize": 256,
+    "inputs": [
+      {
+        "id": "size",
+        "label": "Size",
+        "jsonKey": "size",
+        "kind": "integerPair",
+        "valueKind": "IntegerPair",
+        "defaultValue": "180|104",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "",
+        "uiGroupId": "",
+        "uiGroupLabel": "",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": ""
+      }
+    ],
+    "size": "180|104"
+  },
+  "metadata": {
+    "note": "Seeded reusable component class."
+  },
+  "dictionaryFields": [],
+  "editorLayout": {
+    "cards": [
+      {
+        "id": "general",
+        "label": "General",
+        "subtitle": "Identity",
+        "icon": "general",
+        "order": 10,
+        "visible": true,
+        "defaultOpen": true,
+        "groups": [
+          {
+            "id": "identity",
+            "label": "Identity",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "core.name",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.type",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "core.notes",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "surface",
+        "label": "Surface",
+        "subtitle": "Reusable visual surface appearance",
+        "icon": "style",
+        "order": 20,
+        "visible": true,
+        "defaultOpen": false,
+        "groupLayout": "separatedSections",
+        "groups": [
+          {
+            "id": "surface",
+            "label": "Surface",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.surface.backgroundColorToken",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.surface.backgroundAlpha",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.surface.borderAlpha",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          },
+          {
+            "id": "tail",
+            "label": "Tail",
+            "order": 20,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.surface.tail.enabled",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.surface.tail.style",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.surface.tail.side",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "component.surface.tail.vertical",
+                "order": 40,
+                "visible": true
+              },
+              {
+                "id": "component.surface.tail.size",
+                "order": 50,
+                "visible": true
+              },
+              {
+                "id": "component.surface.tail.outerCornerRadius",
+                "order": 60,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "style",
+        "label": "Style",
+        "subtitle": "Shared surface style defaults",
+        "icon": "style",
+        "order": 90,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "style",
+            "label": "Surface style",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.style.shadowEnabled",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.style.reliefEnabled",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.style.borderWidth",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "component.style.borderColorToken",
+                "order": 40,
+                "visible": true
+              },
+              {
+                "id": "component.style.cornerRadiusToken",
+                "order": 50,
+                "visible": true
+              },
+              {
+                "id": "component.style.reliefAngle",
+                "order": 60,
+                "visible": true
+              },
+              {
+                "id": "component.style.reliefExtent",
+                "order": 70,
+                "visible": true
+              },
+              {
+                "id": "component.style.reliefSpread",
+                "order": 80,
+                "visible": true
+              },
+              {
+                "id": "component.style.reliefTopIntensity",
+                "order": 90,
+                "visible": true
+              },
+              {
+                "id": "component.style.reliefBottomIntensity",
+                "order": 100,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "assets": []
+}

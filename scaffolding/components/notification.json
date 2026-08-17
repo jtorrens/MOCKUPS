@@ -1,0 +1,648 @@
+{
+  "schemaVersion": 1,
+  "intent": {
+    "responsibility": "Own the complete current Component configuration and its exact Runtime Input contract.",
+    "visualBoundary": "Resolve the Component through its manifest-declared resolver and renderable boundary.",
+    "runtimeBehavior": "Consume only declared Runtime Inputs and explicit embedded Component boundaries.",
+    "forwarding": "Forward values only through declared stable source and target identities.",
+    "temporalOwnership": "Keep reusable behavior relative to the Component owner and its declared child owners."
+  },
+  "component": {
+    "componentType": "notification",
+    "category": "component",
+    "componentClassId": "component_project_foqn_s2_notification",
+    "projectId": "project_foqn_s2",
+    "recordClassId": "component.notification",
+    "name": "Default Notification",
+    "notes": "Notification component"
+  },
+  "manifest": {
+    "contract": "./notificationComponentContract",
+    "resolver": "./notificationComponentResolver",
+    "renderable": "./notificationComponentRenderable",
+    "embeds": [
+      "surface",
+      "avatar",
+      "label"
+    ]
+  },
+  "owners": {
+    "contractExport": "NotificationDesignContract",
+    "resolverExport": "resolveNotificationComponent",
+    "renderableExport": "notificationComponentToRenderable",
+    "registryMode": "assignedBox",
+    "focusedTest": "tests/animation/atomicTemporalComponents.test.ts",
+    "configContractExport": null
+  },
+  "config": {
+    "notification": {
+      "gapToken": "theme.spacing.m",
+      "avatarSlot": {
+        "variantReference": "component_project_foqn_s2_avatar::variant::default",
+        "overrides": {
+          "avatar": {
+            "labelSlot": {
+              "showLabel": false,
+              "showSubtext": false
+            },
+            "badgeSlot": {
+              "placement": {
+                "mode": "insideEdge",
+                "alignX": 1,
+                "alignY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "overrides": {
+                "badge": {
+                  "paddingToken": "theme.spacing.s"
+                }
+              }
+            }
+          }
+        }
+      },
+      "surfaceSlot": {
+        "variantReference": "component_project_foqn_s2_surface::variant::default",
+        "overrides": {
+          "surface": {
+            "backgroundAlpha": 1,
+            "borderAlpha": 1
+          },
+          "style": {
+            "shadowEnabled": true
+          }
+        }
+      },
+      "dimensionMode": "content",
+      "size": "320|88",
+      "padding": "theme.spacing.m|theme.spacing.m",
+      "avatarPlacement": {
+        "mode": "insideEdge",
+        "alignX": 0,
+        "alignY": 0.5,
+        "offsetX": 0,
+        "offsetY": 0
+      },
+      "labelPlacement": {
+        "mode": "insideEdge",
+        "alignX": 0,
+        "alignY": 0.5,
+        "offsetX": 0,
+        "offsetY": 0
+      },
+      "avatarInputs": {
+        "showBadge": true,
+        "badgeContentMode": "icon",
+        "badgeIconToken": "phone_call",
+        "badgeText": "1",
+        "badgeSize": 20,
+        "badgeBackgroundPaletteColor": "blue",
+        "badgeContentPaletteColor": "gray_100"
+      },
+      "summaryLabelSlot": {
+        "variantReference": "component_project_foqn_s2_label::variant::default",
+        "overrides": {
+          "label": {
+            "textAlign": "left",
+            "subtextTypography": {
+              "style": "normal",
+              "weight": "400",
+              "sizeToken": "theme.typography.sizes.s"
+            },
+            "subtextVerticalPosition": "bottom",
+            "subtextHorizontalAlign": "left",
+            "reserveSubtextSpace": false,
+            "textGapToken": "theme.spacing.s"
+          }
+        }
+      },
+      "detailLabelSlot": {
+        "variantReference": "component_project_foqn_s2_label::variant::default",
+        "overrides": {
+          "label": {
+            "textAlign": "left",
+            "subtextTypography": {
+              "style": "normal",
+              "weight": "400",
+              "sizeToken": "theme.typography.sizes.s"
+            },
+            "subtextVerticalPosition": "bottom",
+            "subtextHorizontalAlign": "left",
+            "reserveSubtextSpace": false,
+            "textGapToken": "theme.spacing.s"
+          }
+        }
+      }
+    }
+  },
+  "defaultVariant": {
+    "id": "default",
+    "name": "Default",
+    "protected": true,
+    "locked": true,
+    "config": {
+      "notification": {
+        "gapToken": "theme.spacing.m",
+        "avatarSlot": {
+          "variantReference": "component_project_foqn_s2_avatar::variant::default",
+          "overrides": {
+            "avatar": {
+              "labelSlot": {
+                "showLabel": false,
+                "showSubtext": false
+              },
+              "badgeSlot": {
+                "placement": {
+                  "mode": "insideEdge",
+                  "alignX": 1,
+                  "alignY": 1,
+                  "offsetX": 0,
+                  "offsetY": 0
+                },
+                "overrides": {
+                  "badge": {
+                    "paddingToken": "theme.spacing.s"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "surfaceSlot": {
+          "variantReference": "component_project_foqn_s2_surface::variant::default",
+          "overrides": {
+            "surface": {
+              "backgroundAlpha": 1,
+              "borderAlpha": 1
+            },
+            "style": {
+              "shadowEnabled": true
+            }
+          }
+        },
+        "dimensionMode": "content",
+        "size": "320|88",
+        "padding": "theme.spacing.m|theme.spacing.m",
+        "avatarPlacement": {
+          "mode": "insideEdge",
+          "alignX": 0,
+          "alignY": 0.5,
+          "offsetX": 0,
+          "offsetY": 0
+        },
+        "labelPlacement": {
+          "mode": "insideEdge",
+          "alignX": 0,
+          "alignY": 0.5,
+          "offsetX": 0,
+          "offsetY": 0
+        },
+        "avatarInputs": {
+          "showBadge": true,
+          "badgeContentMode": "icon",
+          "badgeIconToken": "phone_call",
+          "badgeText": "1",
+          "badgeSize": 20,
+          "badgeBackgroundPaletteColor": "blue",
+          "badgeContentPaletteColor": "gray_100"
+        },
+        "summaryLabelSlot": {
+          "variantReference": "component_project_foqn_s2_label::variant::default",
+          "overrides": {
+            "label": {
+              "textAlign": "left",
+              "subtextTypography": {
+                "style": "normal",
+                "weight": "400",
+                "sizeToken": "theme.typography.sizes.s"
+              },
+              "subtextVerticalPosition": "bottom",
+              "subtextHorizontalAlign": "left",
+              "reserveSubtextSpace": false,
+              "textGapToken": "theme.spacing.s"
+            }
+          }
+        },
+        "detailLabelSlot": {
+          "variantReference": "component_project_foqn_s2_label::variant::default",
+          "overrides": {
+            "label": {
+              "textAlign": "left",
+              "subtextTypography": {
+                "style": "normal",
+                "weight": "400",
+                "sizeToken": "theme.typography.sizes.s"
+              },
+              "subtextVerticalPosition": "bottom",
+              "subtextHorizontalAlign": "left",
+              "reserveSubtextSpace": false,
+              "textGapToken": "theme.spacing.s"
+            }
+          }
+        }
+      }
+    }
+  },
+  "additionalVariants": [],
+  "designPreview": {
+    "componentType": "notification",
+    "sampleSize": 256,
+    "inputs": [
+      {
+        "id": "maxWidth",
+        "label": "Max width %",
+        "jsonKey": "maxWidth",
+        "kind": "number",
+        "valueKind": "Integer",
+        "defaultValue": "90",
+        "minimum": 1,
+        "maximum": 100,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "",
+        "uiGroupId": "",
+        "uiGroupLabel": "",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "%"
+      },
+      {
+        "id": "actorId",
+        "label": "Actor",
+        "jsonKey": "actorId",
+        "kind": "recordReference",
+        "valueKind": "RecordReference",
+        "defaultValue": "actor_alex",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "actors",
+        "resolvedJsonKey": "actor",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "",
+        "uiGroupId": "",
+        "uiGroupLabel": "",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": ""
+      },
+      {
+        "id": "displayMode",
+        "label": "Display mode",
+        "jsonKey": "displayMode",
+        "kind": "option",
+        "valueKind": "OptionToken",
+        "defaultValue": "summary",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [
+          {
+            "value": "summary",
+            "label": "Summary"
+          },
+          {
+            "value": "detail",
+            "label": "Detail"
+          }
+        ],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "",
+        "uiGroupId": "",
+        "uiGroupLabel": "",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "animatable": true,
+        "animationInterpolations": [
+          "hold"
+        ]
+      },
+      {
+        "id": "summaryText",
+        "label": "Summary text",
+        "jsonKey": "summaryText",
+        "kind": "text",
+        "valueKind": "StringSingleLine",
+        "defaultValue": "New notification",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "",
+        "uiGroupId": "",
+        "uiGroupLabel": "",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": ""
+      },
+      {
+        "id": "summarySubtext",
+        "label": "Summary subtext",
+        "jsonKey": "summarySubtext",
+        "kind": "text",
+        "valueKind": "StringSingleLine",
+        "defaultValue": "Now",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "",
+        "uiGroupId": "",
+        "uiGroupLabel": "",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": ""
+      },
+      {
+        "id": "detailText",
+        "label": "Detail text",
+        "jsonKey": "detailText",
+        "kind": "text",
+        "valueKind": "StringSingleLine",
+        "defaultValue": "New notification",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "",
+        "uiGroupId": "",
+        "uiGroupLabel": "",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": ""
+      },
+      {
+        "id": "detailSubtext",
+        "label": "Detail subtext",
+        "jsonKey": "detailSubtext",
+        "kind": "text",
+        "valueKind": "StringSingleLine",
+        "defaultValue": "Notification detail",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "",
+        "uiGroupId": "",
+        "uiGroupLabel": "",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": ""
+      }
+    ],
+    "actorId": "actor_alex",
+    "displayMode": "summary",
+    "summaryText": "New notification",
+    "summarySubtext": "Now",
+    "detailText": "New notification",
+    "detailSubtext": "Notification detail de más de una linea largo deberian ser dos lineas  ❤️👍",
+    "maxWidth": 90,
+    "displayModeTransition": false,
+    "displayModeElapsedMs": 0,
+    "displayModeFrom": "summary",
+    "actions": [
+      {
+        "id": "changeDisplayMode",
+        "label": "Display mode",
+        "playInputId": "displayModeTransition",
+        "targetInputId": "displayMode",
+        "targetMode": "option",
+        "targetFromJsonKey": "displayModeFrom",
+        "durationThemeToken": "theme.motion.reflowDurationMs",
+        "timeJsonKey": "displayModeElapsedMs",
+        "timeUnit": "milliseconds",
+        "prewarmFrames": false,
+        "completionBehavior": "reset"
+      }
+    ]
+  },
+  "metadata": {
+    "note": "Seeded reusable component class."
+  },
+  "dictionaryFields": [],
+  "editorLayout": {
+    "cards": [
+      {
+        "id": "general",
+        "label": "General",
+        "subtitle": "Identity",
+        "icon": "general",
+        "order": 10,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "identity",
+            "label": "Identity",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "core.name",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.type",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "core.notes",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "layout",
+        "label": "Layout",
+        "subtitle": "Notification frame and spacing",
+        "icon": "layout",
+        "order": 20,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "layout",
+            "label": "Layout",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.notification.dimensionMode",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.notification.size",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.notification.padding",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "component.notification.gapToken",
+                "order": 40,
+                "visible": true
+              },
+              {
+                "id": "component.notification.surface.editor",
+                "order": 50,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "avatar",
+        "label": "Avatar",
+        "subtitle": "Avatar variant and placement",
+        "icon": "avatar",
+        "order": 30,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "avatar",
+            "label": "Avatar",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.notification.avatar.editor",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.notification.avatarPlacement",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.notification.avatar.inputs",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "summaryLabel",
+        "label": "Summary Label",
+        "subtitle": "Collapsed notification content",
+        "icon": "label",
+        "order": 40,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "label",
+            "label": "Summary",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.notification.summaryLabel.editor",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.notification.labelPlacement",
+                "order": 20,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "detailLabel",
+        "label": "Detail Label",
+        "subtitle": "Expanded notification content",
+        "icon": "label",
+        "order": 50,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "label",
+            "label": "Detail",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.notification.detailLabel.editor",
+                "order": 10,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "assets": []
+}

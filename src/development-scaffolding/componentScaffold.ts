@@ -73,6 +73,7 @@ export interface ComponentScaffoldSpec {
     contractExport: string;
     resolverExport: string;
     renderableExport: string;
+    configContractExport: string | null;
     registryMode: ComponentRegistryMode;
     focusedTest: string;
   };
@@ -289,6 +290,7 @@ export function parseComponentScaffoldSpec(value: unknown): ComponentScaffoldSpe
     "contractExport",
     "resolverExport",
     "renderableExport",
+    "configContractExport",
     "registryMode",
     "focusedTest",
   ], "Component scaffold owners");
@@ -431,6 +433,12 @@ export function parseComponentScaffoldSpec(value: unknown): ComponentScaffoldSpe
         owners.renderableExport,
         "Component scaffold owners renderableExport",
       ),
+      configContractExport: owners.configContractExport === null
+        ? null
+        : requiredString(
+          owners.configContractExport,
+          "Component scaffold owners configContractExport",
+        ),
       registryMode: registryMode as ComponentRegistryMode,
       focusedTest: requiredString(
         owners.focusedTest,
@@ -617,11 +625,11 @@ export function createComponentScaffoldPlan(
     ownerFile("contract", spec.manifest.contract, spec.owners.contractExport),
     ownerFile("resolver", spec.manifest.resolver, spec.owners.resolverExport),
     ownerFile("renderable", spec.manifest.renderable, spec.owners.renderableExport),
-    {
+    ...(spec.owners.configContractExport ? [{
       role: "desktopConfigContract" as const,
-      path: `src/Mockups.Application/${pascalCase(componentType)}ComponentConfigContract.cs`,
-      requiredExport: `${pascalCase(componentType)}ComponentConfigContract`,
-    },
+      path: `src/Mockups.Application/${spec.owners.configContractExport}.cs`,
+      requiredExport: spec.owners.configContractExport,
+    }] : []),
     {
       role: "focusedTest" as const,
       path: spec.owners.focusedTest,
@@ -839,6 +847,7 @@ export function componentScaffoldTemplate(): ComponentScaffoldSpec {
       contractExport: "ReplaceMeDesignContract",
       resolverExport: "resolveReplaceMeComponent",
       renderableExport: "replaceMeComponentToRenderable",
+      configContractExport: null,
       registryMode: "simple",
       focusedTest: "tests/animation/replaceMeComponent.test.ts",
     },
@@ -1425,12 +1434,6 @@ function jsonPathExists(root: JsonObject, segments: readonly string[]) {
     current = current[segment] as JsonValue;
   }
   return current !== null;
-}
-
-function pascalCase(value: string) {
-  return value.length === 0
-    ? value
-    : `${value[0]!.toUpperCase()}${value.slice(1)}`;
 }
 
 function requiredObject(value: unknown, owner: string): Record<string, unknown> {

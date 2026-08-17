@@ -1,0 +1,707 @@
+{
+  "schemaVersion": 1,
+  "intent": {
+    "responsibility": "Own the complete current Component configuration and its exact Runtime Input contract.",
+    "visualBoundary": "Resolve the Component through its manifest-declared resolver and renderable boundary.",
+    "runtimeBehavior": "Consume only declared Runtime Inputs and explicit embedded Component boundaries.",
+    "forwarding": "Forward values only through declared stable source and target identities.",
+    "temporalOwnership": "Keep reusable behavior relative to the Component owner and its declared child owners."
+  },
+  "component": {
+    "componentType": "textInputBar",
+    "category": "system",
+    "componentClassId": "component_project_foqn_s2_textInputBar",
+    "projectId": "project_foqn_s2",
+    "recordClassId": "component.textInputBar",
+    "name": "Text Input Bar",
+    "notes": "Text input bar component"
+  },
+  "manifest": {
+    "contract": "./textInputBarComponentContract",
+    "resolver": "./textInputBarComponentResolver",
+    "renderable": "./textInputBarComponentRenderable",
+    "embeds": [
+      "surface",
+      "textBox",
+      "iconBar"
+    ]
+  },
+  "owners": {
+    "contractExport": "TextInputBarDesignContract",
+    "resolverExport": "resolveTextInputBarComponent",
+    "renderableExport": "textInputBarComponentToRenderable",
+    "registryMode": "simple",
+    "focusedTest": "tests/animation/cursorFrameResolution.test.ts",
+    "configContractExport": null
+  },
+  "config": {
+    "style": {
+      "shadowEnabled": false,
+      "reliefEnabled": false,
+      "borderWidth": 0,
+      "borderColorToken": "theme.borders.primary",
+      "cornerRadiusToken": "theme.radii.xl",
+      "reliefAngle": -45,
+      "reliefExtent": 1,
+      "reliefSpread": 0,
+      "reliefTopIntensity": 0.12,
+      "reliefBottomIntensity": -0.1,
+      "shadowToken": "elevated"
+    },
+    "textInput": {
+      "height": 35,
+      "placeholder": "Escribe aquí...",
+      "idleTextColorToken": "theme.colors.textSecondary",
+      "cursorColorToken": "theme.cursor.color",
+      "cursorWidth": 2,
+      "backgroundColorToken": "theme.colors.field",
+      "backgroundAlpha": 1,
+      "textSizeToken": "theme.typography.sizes.s",
+      "surfaceSlot": {
+        "variantReference": "component_project_foqn_s2_surface::variant::default_copy",
+        "overrides": {
+          "surface": {
+            "backgroundAlpha": 1,
+            "borderAlpha": 1
+          }
+        }
+      },
+      "barPadding": "theme.spacing.m|theme.spacing.m",
+      "textPadding": "theme.spacing.xl|theme.spacing.none",
+      "iconGap": "theme.spacing.m",
+      "barSurfaceSlot": {
+        "variantReference": "component_project_foqn_s2_surface::variant::default",
+        "overrides": {
+          "surface": {
+            "backgroundAlpha": 1,
+            "borderAlpha": 1,
+            "backgroundColorToken": "theme.colors.switch"
+          },
+          "style": {
+            "cornerRadiusToken": "theme.radii.none",
+            "shadowEnabled": true
+          }
+        }
+      },
+      "textBoxSlot": {
+        "variantReference": "component_project_foqn_s2_textBox::variant::default_copy",
+        "overrides": {
+          "textBox": {
+            "maxLines": 3,
+            "placeholder": "Message",
+            "iconGap": "theme.spacing.s",
+            "leftIconRowSlot": {
+              "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+              "overrides": {
+                "iconRow": {
+                  "items": [],
+                  "gap": "theme.spacing.s",
+                  "orientation": "horizontal"
+                }
+              }
+            },
+            "rightIconRowSlot": {
+              "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+              "overrides": {
+                "iconRow": {
+                  "items": [
+                    {
+                      "id": "button_attachment",
+                      "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                      "state": "normal",
+                      "iconToken": "chat_attach",
+                      "text": "",
+                      "iconSizeToken": "theme.iconSizes.m",
+                      "textSizeToken": "theme.typography.sizes.s",
+                      "pushTrigger": false,
+                      "pushElapsedMs": 0,
+                      "buttonOverrides": {}
+                    }
+                  ],
+                  "gap": "theme.spacing.s",
+                  "orientation": "horizontal"
+                }
+              }
+            }
+          }
+        }
+      },
+      "textBoxInputs": {
+        "sampleText": "Message",
+        "$forwardedInputs": {
+          "sampleText": {
+            "id": "forwarded.component.textInput.textBox.inputs.sampleText",
+            "label": "Text",
+            "jsonKey": "forwarded_component_textInput_textBox_inputs_sampleText",
+            "kind": "multilineText",
+            "valueKind": "StringMultiline",
+            "defaultValue": "Message",
+            "source": "runtime",
+            "componentType": "",
+            "options": []
+          }
+        }
+      },
+      "iconBarSlot": {
+        "variantReference": "component_project_foqn_s2_iconBar::variant::default",
+        "overrides": {}
+      }
+    }
+  },
+  "defaultVariant": {
+    "id": "default",
+    "name": "Default",
+    "protected": true,
+    "locked": true,
+    "config": {
+      "style": {
+        "shadowEnabled": false,
+        "reliefEnabled": false,
+        "borderWidth": 0,
+        "borderColorToken": "theme.borders.primary",
+        "cornerRadiusToken": "theme.radii.xl",
+        "reliefAngle": -45,
+        "reliefExtent": 1,
+        "reliefSpread": 0,
+        "reliefTopIntensity": 0.12,
+        "reliefBottomIntensity": -0.1,
+        "shadowToken": "elevated"
+      },
+      "textInput": {
+        "height": 35,
+        "placeholder": "Escribe aquí...",
+        "idleTextColorToken": "theme.colors.textSecondary",
+        "cursorColorToken": "theme.cursor.color",
+        "cursorWidth": 2,
+        "backgroundColorToken": "theme.colors.field",
+        "backgroundAlpha": 1,
+        "textSizeToken": "theme.typography.sizes.s",
+        "surfaceSlot": {
+          "variantReference": "component_project_foqn_s2_surface::variant::default_copy",
+          "overrides": {
+            "surface": {
+              "backgroundAlpha": 1,
+              "borderAlpha": 1
+            }
+          }
+        },
+        "barPadding": "theme.spacing.m|theme.spacing.m",
+        "textPadding": "theme.spacing.xl|theme.spacing.none",
+        "iconGap": "theme.spacing.m",
+        "barSurfaceSlot": {
+          "variantReference": "component_project_foqn_s2_surface::variant::default",
+          "overrides": {
+            "surface": {
+              "backgroundAlpha": 1,
+              "borderAlpha": 1,
+              "backgroundColorToken": "theme.colors.switch"
+            },
+            "style": {
+              "cornerRadiusToken": "theme.radii.none",
+              "shadowEnabled": true
+            }
+          }
+        },
+        "textBoxSlot": {
+          "variantReference": "component_project_foqn_s2_textBox::variant::default_copy",
+          "overrides": {
+            "textBox": {
+              "maxLines": 3,
+              "placeholder": "Message",
+              "iconGap": "theme.spacing.s",
+              "leftIconRowSlot": {
+                "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                "overrides": {
+                  "iconRow": {
+                    "items": [],
+                    "gap": "theme.spacing.s",
+                    "orientation": "horizontal"
+                  }
+                }
+              },
+              "rightIconRowSlot": {
+                "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                "overrides": {
+                  "iconRow": {
+                    "items": [
+                      {
+                        "id": "button_attachment",
+                        "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                        "state": "normal",
+                        "iconToken": "chat_attach",
+                        "text": "",
+                        "iconSizeToken": "theme.iconSizes.m",
+                        "textSizeToken": "theme.typography.sizes.s",
+                        "pushTrigger": false,
+                        "pushElapsedMs": 0,
+                        "buttonOverrides": {}
+                      }
+                    ],
+                    "gap": "theme.spacing.s",
+                    "orientation": "horizontal"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "textBoxInputs": {
+          "sampleText": "Message",
+          "$forwardedInputs": {
+            "sampleText": {
+              "id": "forwarded.component.textInput.textBox.inputs.sampleText",
+              "label": "Text",
+              "jsonKey": "forwarded_component_textInput_textBox_inputs_sampleText",
+              "kind": "multilineText",
+              "valueKind": "StringMultiline",
+              "defaultValue": "Message",
+              "source": "runtime",
+              "componentType": "",
+              "options": []
+            }
+          }
+        },
+        "iconBarSlot": {
+          "variantReference": "component_project_foqn_s2_iconBar::variant::default",
+          "overrides": {}
+        }
+      }
+    }
+  },
+  "additionalVariants": [
+    {
+      "id": "default_copy",
+      "name": "Chat",
+      "protected": false,
+      "locked": false,
+      "config": {
+        "style": {
+          "shadowEnabled": false,
+          "reliefEnabled": false,
+          "borderWidth": 0,
+          "borderColorToken": "theme.borders.primary",
+          "cornerRadiusToken": "theme.radii.xl",
+          "reliefAngle": -45,
+          "reliefExtent": 1,
+          "reliefSpread": 0,
+          "reliefTopIntensity": 0.12,
+          "reliefBottomIntensity": -0.1,
+          "shadowToken": "elevated"
+        },
+        "textInput": {
+          "height": 25,
+          "placeholder": "Escribe aquí...",
+          "idleTextColorToken": "theme.colors.textSecondary",
+          "cursorColorToken": "theme.cursor.color",
+          "cursorWidth": 2,
+          "backgroundColorToken": "theme.colors.field",
+          "backgroundAlpha": 1,
+          "textSizeToken": "theme.typography.sizes.s",
+          "surfaceSlot": {
+            "variantReference": "component_project_foqn_s2_surface::variant::default_copy",
+            "overrides": {
+              "surface": {
+                "backgroundAlpha": 1,
+                "borderAlpha": 1
+              }
+            }
+          },
+          "barPadding": "theme.spacing.m|theme.spacing.m",
+          "textPadding": "theme.spacing.xl|theme.spacing.none",
+          "iconGap": "theme.spacing.m",
+          "barSurfaceSlot": {
+            "variantReference": "component_project_foqn_s2_surface::variant::default",
+            "overrides": {
+              "surface": {
+                "backgroundAlpha": 1,
+                "borderAlpha": 1,
+                "backgroundColorToken": "theme.colors.background",
+                "tail": {
+                  "size": "40|30"
+                }
+              },
+              "style": {
+                "cornerRadiusToken": "theme.radii.none",
+                "shadowEnabled": true
+              }
+            }
+          },
+          "textBoxSlot": {
+            "variantReference": "component_project_foqn_s2_textBox::variant::default_copy",
+            "overrides": {
+              "textBox": {
+                "maxLines": 4,
+                "placeholder": "Message",
+                "iconGap": "theme.spacing.s",
+                "leftIconRowSlot": {
+                  "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                  "overrides": {
+                    "iconRow": {
+                      "items": [],
+                      "gap": "theme.spacing.s",
+                      "orientation": "horizontal"
+                    }
+                  }
+                },
+                "rightIconRowSlot": {
+                  "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                  "overrides": {
+                    "iconRow": {
+                      "items": [
+                        {
+                          "id": "button_attachment",
+                          "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                          "state": "normal",
+                          "iconToken": "chat_attach",
+                          "text": "",
+                          "iconSizeToken": "theme.iconSizes.m",
+                          "textSizeToken": "theme.typography.sizes.s",
+                          "pushTrigger": false,
+                          "pushElapsedMs": 0,
+                          "buttonOverrides": {
+                            "button": {
+                              "states": {
+                                "normal": {
+                                  "iconColorToken": "theme.borders.alternate"
+                                }
+                              },
+                              "size": "25|25"
+                            }
+                          }
+                        }
+                      ],
+                      "gap": "theme.spacing.s",
+                      "orientation": "horizontal",
+                      "iconSizeToken": "theme.iconSizes.xs"
+                    }
+                  }
+                },
+                "cursorSlot": {
+                  "overrides": {
+                    "cursor": {
+                      "minimumFade": 0.15
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "textBoxInputs": {
+            "sampleText": "Message",
+            "$forwardedInputs": {
+              "sampleText": {
+                "id": "forwarded.component.textInput.textBox.inputs.sampleText",
+                "label": "Text",
+                "jsonKey": "forwarded_component_textInput_textBox_inputs_sampleText",
+                "kind": "multilineText",
+                "valueKind": "StringMultiline",
+                "defaultValue": "Message",
+                "source": "runtime",
+                "componentType": "",
+                "options": []
+              }
+            }
+          },
+          "iconBarSlot": {
+            "variantReference": "component_project_foqn_s2_iconBar::variant::default_copy",
+            "overrides": {}
+          }
+        }
+      }
+    },
+    {
+      "id": "default_copy_2",
+      "name": "Test",
+      "protected": false,
+      "locked": false,
+      "config": {
+        "style": {
+          "shadowEnabled": false,
+          "reliefEnabled": false,
+          "borderWidth": 0,
+          "borderColorToken": "theme.borders.primary",
+          "cornerRadiusToken": "theme.radii.xl",
+          "reliefAngle": -45,
+          "reliefExtent": 1,
+          "reliefSpread": 0,
+          "reliefTopIntensity": 0.12,
+          "reliefBottomIntensity": -0.1,
+          "shadowToken": "elevated"
+        },
+        "textInput": {
+          "height": 35,
+          "placeholder": "Escribe aquí...",
+          "idleTextColorToken": "theme.colors.textSecondary",
+          "cursorColorToken": "theme.cursor.color",
+          "cursorWidth": 2,
+          "backgroundColorToken": "theme.colors.field",
+          "backgroundAlpha": 1,
+          "textSizeToken": "theme.typography.sizes.s",
+          "surfaceSlot": {
+            "variantReference": "component_project_foqn_s2_surface::variant::default_copy",
+            "overrides": {
+              "surface": {
+                "backgroundAlpha": 1,
+                "borderAlpha": 1
+              }
+            }
+          },
+          "barPadding": "theme.spacing.m|theme.spacing.m",
+          "textPadding": "theme.spacing.xl|theme.spacing.none",
+          "iconGap": "theme.spacing.m",
+          "barSurfaceSlot": {
+            "variantReference": "component_project_foqn_s2_surface::variant::default",
+            "overrides": {
+              "surface": {
+                "backgroundAlpha": 1,
+                "borderAlpha": 1,
+                "backgroundColorToken": "theme.colors.switch"
+              },
+              "style": {
+                "cornerRadiusToken": "theme.radii.none",
+                "shadowEnabled": true
+              }
+            }
+          },
+          "textBoxSlot": {
+            "variantReference": "component_project_foqn_s2_textBox::variant::default_copy",
+            "overrides": {
+              "textBox": {
+                "maxLines": 3,
+                "placeholder": "Message",
+                "iconGap": "theme.spacing.s",
+                "leftIconRowSlot": {
+                  "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                  "overrides": {
+                    "iconRow": {
+                      "items": [],
+                      "gap": "theme.spacing.s",
+                      "orientation": "horizontal"
+                    }
+                  }
+                },
+                "rightIconRowSlot": {
+                  "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                  "overrides": {
+                    "iconRow": {
+                      "items": [
+                        {
+                          "id": "button_attachment",
+                          "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                          "state": "normal",
+                          "iconToken": "chat_attach",
+                          "text": "",
+                          "iconSizeToken": "theme.iconSizes.m",
+                          "textSizeToken": "theme.typography.sizes.s",
+                          "pushTrigger": false,
+                          "pushElapsedMs": 0,
+                          "buttonOverrides": {}
+                        }
+                      ],
+                      "gap": "theme.spacing.s",
+                      "orientation": "horizontal"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "textBoxInputs": {
+            "sampleText": "Message",
+            "$forwardedInputs": {
+              "sampleText": {
+                "id": "forwarded.component.textInput.textBox.inputs.sampleText",
+                "label": "Label Test",
+                "jsonKey": "forwarded_component_textInput_textBox_inputs_sampleText",
+                "kind": "multilineText",
+                "valueKind": "StringMultiline",
+                "defaultValue": "Message",
+                "source": "runtime",
+                "componentType": "",
+                "options": []
+              }
+            }
+          },
+          "iconBarSlot": {
+            "variantReference": "component_project_foqn_s2_iconBar::variant::default",
+            "overrides": {}
+          }
+        }
+      }
+    }
+  ],
+  "designPreview": {
+    "componentType": "textInputBar",
+    "sampleSize": 256,
+    "sampleSubtext": "",
+    "inputs": [
+      {
+        "id": "availableWidth",
+        "label": "Available width",
+        "jsonKey": "availableWidth",
+        "kind": "number",
+        "valueKind": "Decimal",
+        "defaultValue": "360",
+        "minimum": 1,
+        "maximum": 10000,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "layout",
+        "uiGroupLabel": "Layout",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 10
+      }
+    ],
+    "focused": true,
+    "availableWidth": 360
+  },
+  "metadata": {
+    "note": "Seeded reusable component class."
+  },
+  "dictionaryFields": [],
+  "editorLayout": {
+    "cards": [
+      {
+        "id": "general",
+        "label": "General",
+        "subtitle": "Identity",
+        "icon": "general",
+        "order": 10,
+        "visible": true,
+        "defaultOpen": true,
+        "groups": [
+          {
+            "id": "identity",
+            "label": "Identity",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "core.name",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.type",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "core.notes",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "textInputBar",
+        "label": "Bar",
+        "subtitle": "Overall input bar frame and surface",
+        "icon": "text-input",
+        "order": 20,
+        "visible": true,
+        "defaultOpen": false,
+        "groupLayout": "separatedSections",
+        "groups": [
+          {
+            "id": "bar",
+            "label": "Bar",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.textInput.height",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.textInput.barPadding",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.textInput.barSurface.editor",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "textInputBox",
+        "label": "Text Box",
+        "subtitle": "Text field surface, typography and cursor",
+        "icon": "text-input",
+        "order": 30,
+        "visible": true,
+        "defaultOpen": false,
+        "groupLayout": "separatedSections",
+        "groups": [
+          {
+            "id": "textBox",
+            "label": "Text box",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.textInput.textBox.editor",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.textInput.textBox.inputs",
+                "order": 20,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "textInputIcons",
+        "label": "Icons",
+        "subtitle": "Shared icon spacing and icon bar variant",
+        "icon": "icon",
+        "order": 40,
+        "visible": true,
+        "defaultOpen": false,
+        "groupLayout": "separatedSections",
+        "groups": [
+          {
+            "id": "iconDefaults",
+            "label": "Icons",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.textInput.iconGap",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.textInput.iconBar.editor",
+                "order": 20,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "assets": []
+}

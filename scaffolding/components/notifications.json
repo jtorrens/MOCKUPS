@@ -1,0 +1,658 @@
+{
+  "schemaVersion": 1,
+  "intent": {
+    "responsibility": "Own the complete current Component configuration and its exact Runtime Input contract.",
+    "visualBoundary": "Resolve the Component through its manifest-declared resolver and renderable boundary.",
+    "runtimeBehavior": "Consume only declared Runtime Inputs and explicit embedded Component boundaries.",
+    "forwarding": "Forward values only through declared stable source and target identities.",
+    "temporalOwnership": "Keep reusable behavior relative to the Component owner and its declared child owners."
+  },
+  "component": {
+    "componentType": "notifications",
+    "category": "component",
+    "componentClassId": "component_project_foqn_s2_notifications",
+    "projectId": "project_foqn_s2",
+    "recordClassId": "component.notifications",
+    "name": "Default Notifications",
+    "notes": "Notifications component"
+  },
+  "manifest": {
+    "contract": "./notificationsComponentContract",
+    "resolver": "./notificationsComponentResolver",
+    "renderable": "./notificationsComponentRenderable",
+    "embeds": [
+      "collectionStack",
+      "badge"
+    ]
+  },
+  "owners": {
+    "contractExport": "NotificationsDesignContract",
+    "resolverExport": "resolveNotificationsComponent",
+    "renderableExport": "notificationsComponentToRenderable",
+    "registryMode": "children",
+    "focusedTest": "tests/animation/notificationsComponent.test.ts",
+    "configContractExport": null
+  },
+  "config": {
+    "notifications": {
+      "collectionStackSlot": {
+        "variantReference": "component_project_foqn_s2_collectionStack::variant::default",
+        "overrides": {}
+      },
+      "badgeSlot": {
+        "variantReference": "component_project_foqn_s2_badge::variant::default",
+        "overrides": {
+          "badge": {}
+        }
+      },
+      "badgeInputs": {
+        "size": 20,
+        "backgroundPaletteColor": "blue",
+        "contentPaletteColor": "gray_100"
+      },
+      "closedItemLimit": 3,
+      "distributionMotion": {
+        "transition": "slide",
+        "direction": "bottom",
+        "bounds": "screen",
+        "fade": false,
+        "translate": true,
+        "scale": false
+      },
+      "distributionMode": "stacked",
+      "sizingMode": "content",
+      "startGapToken": "theme.spacing.none",
+      "endGapToken": "theme.spacing.none",
+      "stackDirection": "down",
+      "stackOffsetToken": "theme.spacing.m",
+      "itemSizingMode": "largest",
+      "scaleRatio": 0.95,
+      "opacityRatio": 0.6,
+      "showBadge": true,
+      "notificationSlot": {
+        "variantReference": "component_project_foqn_s2_notification::variant::default",
+        "overrides": {}
+      },
+      "notificationInputs": {
+        "maxWidth": 90
+      },
+      "itemAlignment": "center",
+      "itemGapBeforeMode": "fixed",
+      "itemGapBeforeToken": "theme.spacing.m",
+      "itemGapBeforeWeight": 1,
+      "itemPresenceMotion": {
+        "transition": "slide",
+        "direction": "bottom",
+        "bounds": "screen",
+        "fade": false,
+        "translate": true,
+        "scale": false
+      }
+    }
+  },
+  "defaultVariant": {
+    "id": "default",
+    "name": "Default",
+    "protected": true,
+    "locked": true,
+    "config": {
+      "notifications": {
+        "collectionStackSlot": {
+          "variantReference": "component_project_foqn_s2_collectionStack::variant::default",
+          "overrides": {}
+        },
+        "badgeSlot": {
+          "variantReference": "component_project_foqn_s2_badge::variant::default",
+          "overrides": {
+            "badge": {}
+          }
+        },
+        "badgeInputs": {
+          "size": 20,
+          "backgroundPaletteColor": "blue",
+          "contentPaletteColor": "gray_100"
+        },
+        "closedItemLimit": 3,
+        "distributionMotion": {
+          "transition": "slide",
+          "direction": "bottom",
+          "bounds": "screen",
+          "fade": false,
+          "translate": true,
+          "scale": false
+        },
+        "distributionMode": "stacked",
+        "sizingMode": "content",
+        "startGapToken": "theme.spacing.none",
+        "endGapToken": "theme.spacing.none",
+        "stackDirection": "down",
+        "stackOffsetToken": "theme.spacing.m",
+        "itemSizingMode": "largest",
+        "scaleRatio": 0.95,
+        "opacityRatio": 0.6,
+        "showBadge": true,
+        "notificationSlot": {
+          "variantReference": "component_project_foqn_s2_notification::variant::default",
+          "overrides": {}
+        },
+        "notificationInputs": {
+          "maxWidth": 90
+        },
+        "itemAlignment": "center",
+        "itemGapBeforeMode": "fixed",
+        "itemGapBeforeToken": "theme.spacing.m",
+        "itemGapBeforeWeight": 1,
+        "itemPresenceMotion": {
+          "transition": "slide",
+          "direction": "bottom",
+          "bounds": "screen",
+          "fade": false,
+          "translate": true,
+          "scale": false
+        }
+      }
+    }
+  },
+  "additionalVariants": [],
+  "designPreview": {
+    "componentType": "notifications",
+    "distributionMode": "stacked",
+    "inputs": [
+      {
+        "id": "distributionMode",
+        "label": "Distribution",
+        "jsonKey": "distributionMode",
+        "kind": "option",
+        "defaultValue": "stacked",
+        "refreshOnCommit": true,
+        "animatable": true,
+        "animationInterpolations": [
+          "hold"
+        ],
+        "options": [
+          {
+            "value": "flow",
+            "label": "Flow"
+          },
+          {
+            "value": "stacked",
+            "label": "Stacked"
+          }
+        ],
+        "valueKind": "OptionToken"
+      }
+    ],
+    "items": [
+      {
+        "id": "items_e966b1f6af4d46f789ad021d12a00f93",
+        "present": true,
+        "actorId": "actor_alex",
+        "displayMode": "summary",
+        "summaryText": "New notification",
+        "summarySubtext": "Now",
+        "detailText": "New notification",
+        "detailSubtext": "Notification detail"
+      },
+      {
+        "id": "items_24ec872ab329481283bbae28a4630532",
+        "present": true,
+        "actorId": "actor_alex",
+        "displayMode": "summary",
+        "summaryText": "New notification",
+        "summarySubtext": "Now",
+        "detailText": "New notification",
+        "detailSubtext": "Notification detail"
+      },
+      {
+        "id": "items_d50f6c9bb0bc4a7f9836cc8e4148d00a",
+        "present": true,
+        "actorId": "actor_alex_b",
+        "displayMode": "summary",
+        "summaryText": "New notification",
+        "summarySubtext": "Now",
+        "detailText": "New notification",
+        "detailSubtext": "Notification detail"
+      }
+    ],
+    "collections": [
+      {
+        "id": "items",
+        "label": "Notifications",
+        "jsonKey": "items",
+        "itemLabel": "Notification",
+        "fields": [
+          {
+            "id": "actorId",
+            "label": "Actor",
+            "jsonKey": "actorId",
+            "kind": "recordReference",
+            "valueKind": "RecordReference",
+            "defaultValue": "actor_alex",
+            "minimum": 0,
+            "maximum": 9999,
+            "increment": 1,
+            "tableId": "actors",
+            "resolvedJsonKey": "actor",
+            "componentType": "",
+            "options": [],
+            "pairFirstLabel": "W",
+            "pairSecondLabel": "H",
+            "visibleWhenPath": "",
+            "visibleWhenValue": "",
+            "source": "runtime",
+            "uiOrigin": "",
+            "uiGroupId": "",
+            "uiGroupLabel": "",
+            "uiParentGroupId": "",
+            "transition": null,
+            "unit": ""
+          },
+          {
+            "id": "displayMode",
+            "label": "Display mode",
+            "jsonKey": "displayMode",
+            "kind": "option",
+            "valueKind": "OptionToken",
+            "defaultValue": "summary",
+            "minimum": 0,
+            "maximum": 9999,
+            "increment": 1,
+            "tableId": "",
+            "resolvedJsonKey": "",
+            "componentType": "",
+            "options": [
+              {
+                "value": "summary",
+                "label": "Summary"
+              },
+              {
+                "value": "detail",
+                "label": "Detail"
+              }
+            ],
+            "pairFirstLabel": "W",
+            "pairSecondLabel": "H",
+            "visibleWhenPath": "",
+            "visibleWhenValue": "",
+            "source": "runtime",
+            "uiOrigin": "",
+            "uiGroupId": "",
+            "uiGroupLabel": "",
+            "uiParentGroupId": "",
+            "transition": null,
+            "unit": "",
+            "animatable": true,
+            "animationInterpolations": [
+              "hold"
+            ]
+          },
+          {
+            "id": "summaryText",
+            "label": "Summary text",
+            "jsonKey": "summaryText",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "New notification",
+            "minimum": 0,
+            "maximum": 9999,
+            "increment": 1,
+            "tableId": "",
+            "resolvedJsonKey": "",
+            "componentType": "",
+            "options": [],
+            "pairFirstLabel": "W",
+            "pairSecondLabel": "H",
+            "visibleWhenPath": "",
+            "visibleWhenValue": "",
+            "source": "runtime",
+            "uiOrigin": "",
+            "uiGroupId": "",
+            "uiGroupLabel": "",
+            "uiParentGroupId": "",
+            "transition": null,
+            "unit": ""
+          },
+          {
+            "id": "summarySubtext",
+            "label": "Summary subtext",
+            "jsonKey": "summarySubtext",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "Now",
+            "minimum": 0,
+            "maximum": 9999,
+            "increment": 1,
+            "tableId": "",
+            "resolvedJsonKey": "",
+            "componentType": "",
+            "options": [],
+            "pairFirstLabel": "W",
+            "pairSecondLabel": "H",
+            "visibleWhenPath": "",
+            "visibleWhenValue": "",
+            "source": "runtime",
+            "uiOrigin": "",
+            "uiGroupId": "",
+            "uiGroupLabel": "",
+            "uiParentGroupId": "",
+            "transition": null,
+            "unit": ""
+          },
+          {
+            "id": "detailText",
+            "label": "Detail text",
+            "jsonKey": "detailText",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "New notification",
+            "minimum": 0,
+            "maximum": 9999,
+            "increment": 1,
+            "tableId": "",
+            "resolvedJsonKey": "",
+            "componentType": "",
+            "options": [],
+            "pairFirstLabel": "W",
+            "pairSecondLabel": "H",
+            "visibleWhenPath": "",
+            "visibleWhenValue": "",
+            "source": "runtime",
+            "uiOrigin": "",
+            "uiGroupId": "",
+            "uiGroupLabel": "",
+            "uiParentGroupId": "",
+            "transition": null,
+            "unit": ""
+          },
+          {
+            "id": "detailSubtext",
+            "label": "Detail subtext",
+            "jsonKey": "detailSubtext",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "Notification detail",
+            "minimum": 0,
+            "maximum": 9999,
+            "increment": 1,
+            "tableId": "",
+            "resolvedJsonKey": "",
+            "componentType": "",
+            "options": [],
+            "pairFirstLabel": "W",
+            "pairSecondLabel": "H",
+            "visibleWhenPath": "",
+            "visibleWhenValue": "",
+            "source": "runtime",
+            "uiOrigin": "",
+            "uiGroupId": "",
+            "uiGroupLabel": "",
+            "uiParentGroupId": "",
+            "transition": null,
+            "unit": ""
+          },
+          {
+            "id": "name",
+            "label": "Name",
+            "jsonKey": "name",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "Slot"
+          },
+          {
+            "id": "present",
+            "label": "Present",
+            "jsonKey": "present",
+            "kind": "boolean",
+            "defaultValue": "true",
+            "animatable": true,
+            "animationInterpolations": [
+              "hold"
+            ],
+            "valueKind": "Boolean"
+          }
+        ],
+        "itemActions": [
+          {
+            "id": "togglePresent",
+            "label": "Presence",
+            "playInputId": "presenceTransition",
+            "targetInputId": "present",
+            "targetMode": "toggle",
+            "durationSeconds": 0.3,
+            "timeJsonKey": "presenceElapsedMs",
+            "timeUnit": "milliseconds",
+            "prewarmFrames": false,
+            "completionBehavior": "reset"
+          },
+          {
+            "id": "changeDisplayMode",
+            "label": "Display mode",
+            "playInputId": "displayModeTransition",
+            "targetInputId": "displayMode",
+            "targetMode": "option",
+            "targetFromJsonKey": "displayModeFrom",
+            "durationThemeToken": "theme.motion.reflowDurationMs",
+            "timeJsonKey": "displayModeElapsedMs",
+            "timeUnit": "milliseconds",
+            "prewarmFrames": false,
+            "completionBehavior": "reset"
+          }
+        ],
+        "itemPresentation": {
+          "subtitleFieldIds": [
+            "summaryText",
+            "actorId",
+            "present"
+          ],
+          "subtitleMaxCharacters": 72,
+          "fallbackIcon": "component"
+        }
+      }
+    ],
+    "distributionTransition": false,
+    "distributionElapsedMs": 0,
+    "distributionFrom": "stacked",
+    "actions": [
+      {
+        "id": "changeDistribution",
+        "label": "Distribution",
+        "playInputId": "distributionTransition",
+        "targetInputId": "distributionMode",
+        "targetMode": "option",
+        "targetFromJsonKey": "distributionFrom",
+        "durationThemeToken": "theme.motion.reflowDurationMs",
+        "timeJsonKey": "distributionElapsedMs",
+        "timeUnit": "milliseconds",
+        "prewarmFrames": false,
+        "completionBehavior": "reset"
+      }
+    ]
+  },
+  "metadata": {
+    "note": "Seeded reusable component class."
+  },
+  "dictionaryFields": [],
+  "editorLayout": {
+    "cards": [
+      {
+        "id": "general",
+        "label": "General",
+        "subtitle": "Identity",
+        "icon": "general",
+        "order": 10,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "identity",
+            "label": "Identity",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "core.name",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.type",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "core.notes",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "layout",
+        "label": "Layout",
+        "subtitle": "Stack, notification, badge and motion",
+        "icon": "layout",
+        "order": 20,
+        "visible": true,
+        "defaultOpen": false,
+        "groupLayout": "verticalCards",
+        "groups": [
+          {
+            "id": "stack",
+            "label": "Stack",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.notifications.closedItemLimit",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.notifications.distributionMode",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.notifications.sizingMode",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "component.notifications.startGapToken",
+                "order": 40,
+                "visible": true
+              },
+              {
+                "id": "component.notifications.endGapToken",
+                "order": 50,
+                "visible": true
+              },
+              {
+                "id": "component.notifications.stackDirection",
+                "order": 60,
+                "visible": true
+              },
+              {
+                "id": "component.notifications.stackOffsetToken",
+                "order": 70,
+                "visible": true
+              },
+              {
+                "id": "component.notifications.itemSizingMode",
+                "order": 80,
+                "visible": true
+              },
+              {
+                "id": "component.notifications.scaleRatio",
+                "order": 90,
+                "visible": true
+              },
+              {
+                "id": "component.notifications.opacityRatio",
+                "order": 100,
+                "visible": true
+              },
+              {
+                "id": "component.notifications.itemAlignment",
+                "order": 110,
+                "visible": true
+              },
+              {
+                "id": "component.notifications.itemGapBeforeMode",
+                "order": 120,
+                "visible": true
+              },
+              {
+                "id": "component.notifications.itemGapBeforeToken",
+                "order": 130,
+                "visible": true
+              },
+              {
+                "id": "component.notifications.itemGapBeforeWeight",
+                "order": 140,
+                "visible": true
+              }
+            ]
+          },
+          {
+            "id": "notification",
+            "label": "Notification",
+            "order": 20,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.notifications.notification.editor",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.notifications.notification.inputs",
+                "order": 20,
+                "visible": true
+              }
+            ]
+          },
+          {
+            "id": "badge",
+            "label": "Badge",
+            "order": 30,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.notifications.showBadge",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.notifications.badge.editor",
+                "order": 20,
+                "visible": true
+              }
+            ]
+          },
+          {
+            "id": "motion",
+            "label": "Motion",
+            "order": 40,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.notifications.distributionMotion",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.notifications.itemPresenceMotion",
+                "order": 20,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "assets": []
+}

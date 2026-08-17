@@ -1,0 +1,942 @@
+{
+  "schemaVersion": 1,
+  "intent": {
+    "responsibility": "Own the complete current Component configuration and its exact Runtime Input contract.",
+    "visualBoundary": "Resolve the Component through its manifest-declared resolver and renderable boundary.",
+    "runtimeBehavior": "Consume only declared Runtime Inputs and explicit embedded Component boundaries.",
+    "forwarding": "Forward values only through declared stable source and target identities.",
+    "temporalOwnership": "Keep reusable behavior relative to the Component owner and its declared child owners."
+  },
+  "component": {
+    "componentType": "audio",
+    "category": "component",
+    "componentClassId": "component_project_foqn_s2_audio",
+    "projectId": "project_foqn_s2",
+    "recordClassId": "component.audio",
+    "name": "Audio",
+    "notes": "Audio component"
+  },
+  "manifest": {
+    "contract": "./audioComponentContract",
+    "resolver": "./audioComponentResolver",
+    "renderable": "./audioComponentRenderable",
+    "embeds": [
+      "surface",
+      "avatar",
+      "badge",
+      "label"
+    ]
+  },
+  "owners": {
+    "contractExport": "AudioDesignContract",
+    "resolverExport": "resolveAudioComponent",
+    "renderableExport": "audioComponentToRenderable",
+    "registryMode": "simple",
+    "focusedTest": "tests/animation/atomicTemporalComponents.test.ts",
+    "configContractExport": null
+  },
+  "config": {
+    "style": {
+      "shadowEnabled": false,
+      "reliefEnabled": false,
+      "borderWidth": 2,
+      "borderColorToken": "theme.colors.accent",
+      "cornerRadiusToken": "theme.radii.full",
+      "reliefAngle": -45,
+      "reliefExtent": 1,
+      "reliefSpread": 0,
+      "reliefTopIntensity": 0.12,
+      "reliefBottomIntensity": -0.1,
+      "shadowToken": "elevated"
+    },
+    "audio": {
+      "size": "200|50",
+      "avatarPosition": "right",
+      "avatarSize": 32,
+      "playColorToken": "theme.icons.accent",
+      "waveformColorToken": "theme.icons.secondary",
+      "knobSize": 10,
+      "avatarSlot": {
+        "showAvatar": true,
+        "placement": {
+          "mode": "outsideEdge",
+          "alignX": 1,
+          "alignY": 0.5,
+          "offsetX": 4,
+          "offsetY": 0
+        },
+        "overrides": {
+          "avatar": {
+            "defaultSize": 32,
+            "labelSlot": {
+              "showLabel": false,
+              "showSubtext": false
+            }
+          },
+          "style": {
+            "shadowEnabled": false,
+            "reliefEnabled": false
+          }
+        },
+        "variantReference": "component_project_foqn_s2_avatar::variant::default"
+      },
+      "badgeSlot": {
+        "placement": {
+          "mode": "center",
+          "alignX": 1,
+          "alignY": 1,
+          "offsetX": -5,
+          "offsetY": -5
+        },
+        "overrides": {},
+        "variantReference": "component_project_foqn_s2_badge::variant::default"
+      },
+      "progressKnobSize": 12,
+      "backgroundColorToken": "theme.colors.surface",
+      "backgroundAlpha": 0.2,
+      "playCircleSize": 20,
+      "playIconColorToken": "theme.icons.primary",
+      "waveformPlayedColorToken": "theme.icons.accent",
+      "waveformBarCount": 28,
+      "waveformGap": "theme.spacing.xs",
+      "waveformMinHeight": 4,
+      "waveformMaxHeight": 22,
+      "padding": "theme.spacing.l|theme.spacing.m",
+      "playIconPadding": "theme.spacing.xs",
+      "waveformBarWidth": 3,
+      "surfaceSlot": {
+        "variantReference": "component_project_foqn_s2_surface::variant::default",
+        "overrides": {}
+      },
+      "durationLabelSlot": {
+        "variantReference": "component_project_foqn_s2_label::variant::default",
+        "overrides": {
+          "label": {
+            "dimensionMode": "content",
+            "padding": "theme.spacing.none|theme.spacing.none",
+            "textColorToken": "theme.icons.secondary",
+            "textTypography": {
+              "fontFamilyId": "theme",
+              "weight": "theme.typography.weight",
+              "style": "theme.typography.style",
+              "sizeToken": "theme.typography.sizes.xs",
+              "lineHeight": "theme.typography.lineHeights.normal"
+            },
+            "textAlign": "right",
+            "surfaceSlot": {
+              "variantReference": "component_project_foqn_s2_surface::variant::default",
+              "overrides": {
+                "surface": {
+                  "backgroundAlpha": 0,
+                  "borderAlpha": 0
+                },
+                "style": {
+                  "borderWidth": 0,
+                  "shadowEnabled": false,
+                  "reliefEnabled": false
+                }
+              }
+            },
+            "reserveSubtextSpace": false,
+            "subtextVerticalPosition": "bottom",
+            "subtextHorizontalAlign": "center"
+          }
+        }
+      }
+    }
+  },
+  "defaultVariant": {
+    "id": "default",
+    "name": "Default",
+    "protected": true,
+    "locked": true,
+    "config": {
+      "style": {
+        "shadowEnabled": false,
+        "reliefEnabled": false,
+        "borderWidth": 2,
+        "borderColorToken": "theme.colors.accent",
+        "cornerRadiusToken": "theme.radii.full",
+        "reliefAngle": -45,
+        "reliefExtent": 1,
+        "reliefSpread": 0,
+        "reliefTopIntensity": 0.12,
+        "reliefBottomIntensity": -0.1,
+        "shadowToken": "elevated"
+      },
+      "audio": {
+        "size": "200|50",
+        "avatarPosition": "right",
+        "avatarSize": 32,
+        "playColorToken": "theme.icons.accent",
+        "waveformColorToken": "theme.icons.secondary",
+        "knobSize": 10,
+        "avatarSlot": {
+          "showAvatar": true,
+          "placement": {
+            "mode": "outsideEdge",
+            "alignX": 1,
+            "alignY": 0.5,
+            "offsetX": 4,
+            "offsetY": 0
+          },
+          "overrides": {
+            "avatar": {
+              "defaultSize": 32,
+              "labelSlot": {
+                "showLabel": false,
+                "showSubtext": false
+              }
+            },
+            "style": {
+              "shadowEnabled": false,
+              "reliefEnabled": false
+            }
+          },
+          "variantReference": "component_project_foqn_s2_avatar::variant::default"
+        },
+        "badgeSlot": {
+          "placement": {
+            "mode": "center",
+            "alignX": 1,
+            "alignY": 1,
+            "offsetX": -5,
+            "offsetY": -5
+          },
+          "overrides": {},
+          "variantReference": "component_project_foqn_s2_badge::variant::default"
+        },
+        "progressKnobSize": 12,
+        "backgroundColorToken": "theme.colors.surface",
+        "backgroundAlpha": 0.2,
+        "playCircleSize": 20,
+        "playIconColorToken": "theme.icons.primary",
+        "waveformPlayedColorToken": "theme.icons.accent",
+        "waveformBarCount": 28,
+        "waveformGap": "theme.spacing.xs",
+        "waveformMinHeight": 4,
+        "waveformMaxHeight": 22,
+        "padding": "theme.spacing.l|theme.spacing.m",
+        "playIconPadding": "theme.spacing.xs",
+        "waveformBarWidth": 3,
+        "surfaceSlot": {
+          "variantReference": "component_project_foqn_s2_surface::variant::default",
+          "overrides": {}
+        },
+        "durationLabelSlot": {
+          "variantReference": "component_project_foqn_s2_label::variant::default",
+          "overrides": {
+            "label": {
+              "dimensionMode": "content",
+              "padding": "theme.spacing.none|theme.spacing.none",
+              "textColorToken": "theme.icons.secondary",
+              "textTypography": {
+                "fontFamilyId": "theme",
+                "weight": "theme.typography.weight",
+                "style": "theme.typography.style",
+                "sizeToken": "theme.typography.sizes.xs",
+                "lineHeight": "theme.typography.lineHeights.normal"
+              },
+              "textAlign": "right",
+              "surfaceSlot": {
+                "variantReference": "component_project_foqn_s2_surface::variant::default",
+                "overrides": {
+                  "surface": {
+                    "backgroundAlpha": 0,
+                    "borderAlpha": 0
+                  },
+                  "style": {
+                    "borderWidth": 0,
+                    "shadowEnabled": false,
+                    "reliefEnabled": false
+                  }
+                }
+              },
+              "reserveSubtextSpace": false,
+              "subtextVerticalPosition": "bottom",
+              "subtextHorizontalAlign": "center"
+            }
+          }
+        }
+      }
+    }
+  },
+  "additionalVariants": [
+    {
+      "id": "default_copy",
+      "name": "Audio chat",
+      "protected": false,
+      "locked": false,
+      "config": {
+        "style": {
+          "shadowEnabled": false,
+          "reliefEnabled": false,
+          "borderWidth": 2,
+          "borderColorToken": "theme.colors.accent",
+          "cornerRadiusToken": "theme.radii.full",
+          "reliefAngle": -45,
+          "reliefExtent": 1,
+          "reliefSpread": 0,
+          "reliefTopIntensity": 0.12,
+          "reliefBottomIntensity": -0.1,
+          "shadowToken": "elevated"
+        },
+        "audio": {
+          "size": "200|50",
+          "avatarPosition": "right",
+          "avatarSize": 32,
+          "playColorToken": "theme.icons.accent",
+          "waveformColorToken": "theme.icons.secondary",
+          "knobSize": 10,
+          "avatarSlot": {
+            "showAvatar": true,
+            "placement": {
+              "mode": "outsideEdge",
+              "alignX": 1,
+              "alignY": 0.5,
+              "offsetX": 4,
+              "offsetY": 0
+            },
+            "overrides": {
+              "avatar": {
+                "defaultSize": 32,
+                "labelSlot": {
+                  "showLabel": false,
+                  "showSubtext": false
+                }
+              },
+              "style": {
+                "shadowEnabled": false,
+                "reliefEnabled": false
+              }
+            },
+            "variantReference": "component_project_foqn_s2_avatar::variant::default"
+          },
+          "badgeSlot": {
+            "placement": {
+              "mode": "center",
+              "alignX": 1,
+              "alignY": 1,
+              "offsetX": -5,
+              "offsetY": -5
+            },
+            "overrides": {},
+            "variantReference": "component_project_foqn_s2_badge::variant::default"
+          },
+          "progressKnobSize": 12,
+          "backgroundColorToken": "theme.colors.surface",
+          "backgroundAlpha": 0.2,
+          "playCircleSize": 20,
+          "playIconColorToken": "theme.icons.primary",
+          "waveformPlayedColorToken": "theme.icons.accent",
+          "waveformBarCount": 40,
+          "waveformGap": "theme.spacing.xs",
+          "waveformMinHeight": 4,
+          "waveformMaxHeight": 28,
+          "padding": "theme.spacing.m|theme.spacing.m",
+          "playIconPadding": "theme.spacing.s",
+          "waveformBarWidth": 5,
+          "surfaceSlot": {
+            "variantReference": "component_project_foqn_s2_surface::variant::default_copy",
+            "overrides": {}
+          },
+          "durationLabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {
+              "label": {
+                "dimensionMode": "content",
+                "padding": "theme.spacing.none|theme.spacing.none",
+                "textColorToken": "theme.colors.textPrimary",
+                "textTypography": {
+                  "fontFamilyId": "theme",
+                  "weight": "theme.typography.weight",
+                  "style": "theme.typography.style",
+                  "sizeToken": "theme.typography.sizes.xs",
+                  "lineHeight": "theme.typography.lineHeights.normal"
+                },
+                "textAlign": "right",
+                "surfaceSlot": {
+                  "variantReference": "component_project_foqn_s2_surface::variant::default",
+                  "overrides": {
+                    "surface": {
+                      "backgroundAlpha": 0,
+                      "borderAlpha": 0
+                    },
+                    "style": {
+                      "borderWidth": 0,
+                      "shadowEnabled": false,
+                      "reliefEnabled": false
+                    }
+                  }
+                },
+                "reserveSubtextSpace": false,
+                "subtextVerticalPosition": "bottom",
+                "subtextHorizontalAlign": "center"
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "designPreview": {
+    "componentType": "audio",
+    "sampleText": "0:05",
+    "sampleSize": 256,
+    "sampleSubtext": "",
+    "inputs": [
+      {
+        "id": "availableWidth",
+        "label": "Available width",
+        "jsonKey": "availableWidth",
+        "kind": "number",
+        "valueKind": "Decimal",
+        "defaultValue": "240",
+        "minimum": 1,
+        "maximum": 10000,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "layout",
+        "uiGroupLabel": "Layout",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 10
+      },
+      {
+        "id": "isPlaying",
+        "label": "Playing",
+        "jsonKey": "isPlaying",
+        "kind": "boolean",
+        "valueKind": "Boolean",
+        "defaultValue": "false",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "playback",
+        "uiGroupLabel": "Playback",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 20
+      },
+      {
+        "id": "currentTimeSeconds",
+        "label": "Current time",
+        "jsonKey": "currentTimeSeconds",
+        "kind": "number",
+        "valueKind": "Decimal",
+        "defaultValue": "0",
+        "minimum": 0,
+        "maximum": 86400,
+        "increment": 0.1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "playback",
+        "uiGroupLabel": "Playback",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "s",
+        "uiOrder": 21
+      },
+      {
+        "id": "durationSeconds",
+        "label": "Duration",
+        "jsonKey": "durationSeconds",
+        "kind": "number",
+        "valueKind": "Decimal",
+        "defaultValue": "65",
+        "minimum": 1,
+        "maximum": 86400,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "playback",
+        "uiGroupLabel": "Playback",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "s",
+        "uiOrder": 22
+      },
+      {
+        "id": "actorId",
+        "label": "Actor",
+        "jsonKey": "actorId",
+        "kind": "recordReference",
+        "valueKind": "RecordReference",
+        "defaultValue": "",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "actors",
+        "resolvedJsonKey": "actor",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "identity",
+        "uiGroupLabel": "Actor",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 30
+      },
+      {
+        "id": "showBadge",
+        "label": "Show badge",
+        "jsonKey": "showBadge",
+        "kind": "boolean",
+        "valueKind": "Boolean",
+        "defaultValue": "false",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "badge",
+        "uiGroupLabel": "Badge",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 40
+      },
+      {
+        "id": "badgeContentMode",
+        "label": "Badge content",
+        "jsonKey": "badgeContentMode",
+        "kind": "option",
+        "valueKind": "OptionToken",
+        "defaultValue": "icon",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [
+          {
+            "value": "icon",
+            "label": "Icon"
+          },
+          {
+            "value": "text",
+            "label": "Text"
+          }
+        ],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "badge",
+        "uiGroupLabel": "Badge",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 41
+      },
+      {
+        "id": "badgeIconToken",
+        "label": "Badge icon",
+        "jsonKey": "badgeIconToken",
+        "kind": "icon",
+        "valueKind": "IconToken",
+        "defaultValue": "media_mic",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "badge",
+        "uiGroupLabel": "Badge",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 42
+      },
+      {
+        "id": "badgeText",
+        "label": "Badge text",
+        "jsonKey": "badgeText",
+        "kind": "text",
+        "valueKind": "StringSingleLine",
+        "defaultValue": "1",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "badge",
+        "uiGroupLabel": "Badge",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 43
+      },
+      {
+        "id": "badgeSize",
+        "label": "Badge size",
+        "jsonKey": "badgeSize",
+        "kind": "number",
+        "valueKind": "Integer",
+        "defaultValue": "16",
+        "minimum": 1,
+        "maximum": 512,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "badge",
+        "uiGroupLabel": "Badge",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 44
+      },
+      {
+        "id": "badgeBackgroundPaletteColor",
+        "label": "Badge background",
+        "jsonKey": "badgeBackgroundPaletteColor",
+        "kind": "text",
+        "valueKind": "PaletteColorToken",
+        "defaultValue": "blue",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "badge",
+        "uiGroupLabel": "Badge",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 45
+      },
+      {
+        "id": "badgeContentPaletteColor",
+        "label": "Badge icon / text color",
+        "jsonKey": "badgeContentPaletteColor",
+        "kind": "text",
+        "valueKind": "PaletteColorToken",
+        "defaultValue": "gray_100",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "badge",
+        "uiGroupLabel": "Badge",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 46
+      }
+    ],
+    "actions": [
+      {
+        "id": "play",
+        "label": "Play",
+        "playInputId": "isPlaying",
+        "durationInputId": "durationSeconds",
+        "timeJsonKey": "currentTimeSeconds",
+        "prewarmFrames": false,
+        "completionBehavior": "reset",
+        "timeUnit": "seconds"
+      }
+    ],
+    "isPlaying": false,
+    "currentTimeSeconds": 0,
+    "durationSeconds": 5,
+    "actorId": "actor_alex",
+    "availableWidth": 240,
+    "showBadge": true,
+    "badgeContentMode": "icon",
+    "badgeIconToken": "media_mic",
+    "badgeText": "1",
+    "badgeSize": 16,
+    "badgeBackgroundPaletteColor": "blue",
+    "badgeContentPaletteColor": "gray_100"
+  },
+  "metadata": {
+    "note": "Seeded reusable component class."
+  },
+  "dictionaryFields": [],
+  "editorLayout": {
+    "cards": [
+      {
+        "id": "general",
+        "label": "General",
+        "subtitle": "Identity",
+        "icon": "general",
+        "order": 10,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "identity",
+            "label": "Identity",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "core.name",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.type",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "core.notes",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "audio",
+        "label": "Audio",
+        "subtitle": "Audio bubble layout and waveform defaults",
+        "icon": "audio",
+        "order": 20,
+        "visible": true,
+        "defaultOpen": false,
+        "groupLayout": "verticalCards",
+        "groups": [
+          {
+            "id": "audio",
+            "label": "General",
+            "icon": "general",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.audio.padding",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.audio.surface.editor",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.audio.durationLabel.editor",
+                "order": 40,
+                "visible": true
+              }
+            ]
+          },
+          {
+            "id": "audioPlayback",
+            "label": "Playback",
+            "icon": "play",
+            "order": 20,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.audio.playCircleSize",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.audio.playIconPadding",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.audio.playColorToken",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "component.audio.playIconColorToken",
+                "order": 40,
+                "visible": true
+              },
+              {
+                "id": "component.audio.progressKnobSize",
+                "order": 50,
+                "visible": true
+              }
+            ]
+          },
+          {
+            "id": "audioWaveform",
+            "label": "Waveform",
+            "icon": "navigation-asset:Waveform",
+            "order": 30,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.audio.waveformBarCount",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.audio.waveformGap",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.audio.waveformMinHeight",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "component.audio.waveformMaxHeight",
+                "order": 40,
+                "visible": true
+              },
+              {
+                "id": "component.audio.waveformColorToken",
+                "order": 50,
+                "visible": true
+              },
+              {
+                "id": "component.audio.waveformPlayedColorToken",
+                "order": 60,
+                "visible": true
+              }
+            ]
+          },
+          {
+            "id": "audioAvatar",
+            "label": "Avatar",
+            "icon": "avatar",
+            "order": 40,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.audio.avatar.showAvatar",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.audio.avatar.placement",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.audio.avatar.editor",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          },
+          {
+            "id": "audioBadge",
+            "label": "Badge",
+            "icon": "navigation-asset:Badge",
+            "order": 50,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.audio.badge.editor",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.audio.badge.placement",
+                "order": 20,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "assets": []
+}

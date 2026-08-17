@@ -31,7 +31,8 @@
     "resolverExport": "resolveIncomingCallNotificationComponent",
     "renderableExport": "incomingCallNotificationComponentToRenderable",
     "registryMode": "assignedBox",
-    "focusedTest": "tests/animation/incomingCallNotificationComponent.test.ts"
+    "focusedTest": "tests/animation/incomingCallNotificationComponent.test.ts",
+    "configContractExport": "IncomingCallNotificationComponentConfigContract"
   },
   "config": {
     "boundaryMotion": {

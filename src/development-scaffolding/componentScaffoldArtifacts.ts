@@ -140,9 +140,9 @@ function renderFieldCatalog(specs: readonly ComponentScaffoldSpec[]) {
 
 function renderConfigRegistry(specs: readonly ComponentScaffoldSpec[]) {
   const cases = specs.map((spec) => {
-    const owner = `${pascalCase(spec.component.componentType)}ComponentConfigContract`;
-    return `            case ${owner}.ComponentType:\n`
-      + `                ${owner}.Validate(config, context);\n`
+    const owner = spec.owners.configContractExport;
+    return `            case "${escapeCSharp(spec.component.componentType)}":\n`
+      + (owner ? `                ${owner}.Validate(config, context);\n` : "")
       + `                return true;`;
   }).join("\n");
   return `// Generated from scaffolding/components/*.json. Do not edit manually.\n`
@@ -254,12 +254,6 @@ function escapeCSharp(value: string) {
 function csharpDecimal(value: number | null) {
   if (value === null) return "null";
   return Number.isInteger(value) ? String(value) : `${value}m`;
-}
-
-function pascalCase(value: string) {
-  return value.length === 0
-    ? value
-    : `${value[0]!.toUpperCase()}${value.slice(1)}`;
 }
 
 function repositoryPath(repositoryRoot: string, relativePath: string) {

@@ -1,0 +1,855 @@
+{
+  "schemaVersion": 1,
+  "intent": {
+    "responsibility": "Own the complete current Component configuration and its exact Runtime Input contract.",
+    "visualBoundary": "Resolve the Component through its manifest-declared resolver and renderable boundary.",
+    "runtimeBehavior": "Consume only declared Runtime Inputs and explicit embedded Component boundaries.",
+    "forwarding": "Forward values only through declared stable source and target identities.",
+    "temporalOwnership": "Keep reusable behavior relative to the Component owner and its declared child owners."
+  },
+  "component": {
+    "componentType": "keypad",
+    "category": "system",
+    "componentClassId": "component_project_foqn_s2_keypad",
+    "projectId": "project_foqn_s2",
+    "recordClassId": "component.keypad",
+    "name": "Keypad",
+    "notes": "Keypad component"
+  },
+  "manifest": {
+    "contract": "./keypadComponentContract",
+    "resolver": "./keypadComponentResolver",
+    "renderable": "./keypadComponentRenderable",
+    "embeds": [
+      "label"
+    ]
+  },
+  "owners": {
+    "contractExport": "KeypadDesignContract",
+    "resolverExport": "resolveKeypadComponent",
+    "renderableExport": "keypadComponentToRenderable",
+    "registryMode": "simple",
+    "focusedTest": "tests/animation/atomicTemporalComponents.test.ts",
+    "configContractExport": null
+  },
+  "config": {
+    "keypad": {
+      "sizingMode": "content",
+      "columns": 3,
+      "keySize": "45|45",
+      "padding": "theme.spacing.none|theme.spacing.none",
+      "columnGapToken": "theme.spacing.l",
+      "rowGapToken": "theme.spacing.l",
+      "keys": [
+        {
+          "id": "key_1",
+          "kind": "text",
+          "value": "1",
+          "text": "1",
+          "subtext": "",
+          "disabled": false,
+          "iconToken": "app_clock"
+        },
+        {
+          "id": "key_2",
+          "kind": "text",
+          "value": "2",
+          "text": "2",
+          "subtext": "ABC",
+          "disabled": false,
+          "iconToken": "app_clock"
+        },
+        {
+          "id": "key_3",
+          "kind": "text",
+          "value": "3",
+          "text": "3",
+          "subtext": "DEF",
+          "disabled": false,
+          "iconToken": "app_clock"
+        },
+        {
+          "id": "key_4",
+          "kind": "text",
+          "value": "4",
+          "text": "4",
+          "subtext": "GHI",
+          "disabled": false,
+          "iconToken": "app_clock"
+        },
+        {
+          "id": "key_5",
+          "kind": "text",
+          "value": "5",
+          "text": "5",
+          "subtext": "JKL",
+          "disabled": false,
+          "iconToken": "app_clock"
+        },
+        {
+          "id": "key_6",
+          "kind": "text",
+          "value": "6",
+          "text": "6",
+          "subtext": "MNO",
+          "disabled": false,
+          "iconToken": "app_clock"
+        },
+        {
+          "id": "key_7",
+          "kind": "text",
+          "value": "7",
+          "text": "7",
+          "subtext": "PQRS",
+          "disabled": false,
+          "iconToken": "app_clock"
+        },
+        {
+          "id": "key_8",
+          "kind": "text",
+          "value": "8",
+          "text": "8",
+          "subtext": "TUV",
+          "disabled": false,
+          "iconToken": "app_clock"
+        },
+        {
+          "id": "key_9",
+          "kind": "text",
+          "value": "9",
+          "text": "9",
+          "subtext": "WXYZ",
+          "disabled": false,
+          "iconToken": "app_clock"
+        },
+        {
+          "id": "key_star",
+          "kind": "icon",
+          "value": "*",
+          "text": "*",
+          "subtext": "",
+          "disabled": false,
+          "iconToken": "print"
+        },
+        {
+          "id": "key_0",
+          "kind": "text",
+          "value": "0",
+          "text": "0",
+          "subtext": "+",
+          "disabled": false,
+          "iconToken": "app_clock"
+        },
+        {
+          "id": "key_hash",
+          "kind": "text",
+          "value": "#",
+          "text": "#",
+          "subtext": "",
+          "disabled": false,
+          "iconToken": "app_clock"
+        }
+      ],
+      "iconSizeToken": "theme.iconSizes.m",
+      "states": {
+        "normal": {
+          "backgroundColorToken": "theme.keyboard.keyBackground",
+          "backgroundAlpha": 1,
+          "borderAlpha": 1,
+          "textColorToken": "theme.colors.textPrimary"
+        },
+        "active": {
+          "backgroundColorToken": "theme.colors.surface",
+          "backgroundAlpha": 1,
+          "borderAlpha": 1,
+          "textColorToken": "theme.colors.accent"
+        },
+        "pushed": {
+          "backgroundColorToken": "theme.borders.secondary",
+          "backgroundAlpha": 1,
+          "borderAlpha": 1,
+          "textColorToken": "theme.colors.accent"
+        },
+        "disabled": {
+          "backgroundColorToken": "theme.colors.surface",
+          "backgroundAlpha": 1,
+          "borderAlpha": 1,
+          "textColorToken": "theme.colors.textSecondary"
+        }
+      },
+      "labelSlot": {
+        "variantReference": "component_project_foqn_s2_label::variant::default",
+        "overrides": {
+          "label": {
+            "dimensionMode": "fixed",
+            "padding": "theme.spacing.none|theme.spacing.none",
+            "textColorToken": "theme.colors.textPrimary",
+            "textAlign": "center",
+            "reserveSubtextSpace": true,
+            "surfaceSlot": {
+              "overrides": {
+                "style": {
+                  "cornerRadiusToken": "theme.radii.l"
+                }
+              }
+            },
+            "subtextVerticalPosition": "bottom",
+            "subtextHorizontalAlign": "center"
+          }
+        }
+      }
+    }
+  },
+  "defaultVariant": {
+    "id": "default",
+    "name": "Default",
+    "protected": true,
+    "locked": true,
+    "config": {
+      "keypad": {
+        "sizingMode": "content",
+        "columns": 3,
+        "keySize": "45|45",
+        "padding": "theme.spacing.none|theme.spacing.none",
+        "columnGapToken": "theme.spacing.l",
+        "rowGapToken": "theme.spacing.l",
+        "keys": [
+          {
+            "id": "key_1",
+            "kind": "text",
+            "value": "1",
+            "text": "1",
+            "subtext": "",
+            "disabled": false,
+            "iconToken": "app_clock"
+          },
+          {
+            "id": "key_2",
+            "kind": "text",
+            "value": "2",
+            "text": "2",
+            "subtext": "ABC",
+            "disabled": false,
+            "iconToken": "app_clock"
+          },
+          {
+            "id": "key_3",
+            "kind": "text",
+            "value": "3",
+            "text": "3",
+            "subtext": "DEF",
+            "disabled": false,
+            "iconToken": "app_clock"
+          },
+          {
+            "id": "key_4",
+            "kind": "text",
+            "value": "4",
+            "text": "4",
+            "subtext": "GHI",
+            "disabled": false,
+            "iconToken": "app_clock"
+          },
+          {
+            "id": "key_5",
+            "kind": "text",
+            "value": "5",
+            "text": "5",
+            "subtext": "JKL",
+            "disabled": false,
+            "iconToken": "app_clock"
+          },
+          {
+            "id": "key_6",
+            "kind": "text",
+            "value": "6",
+            "text": "6",
+            "subtext": "MNO",
+            "disabled": false,
+            "iconToken": "app_clock"
+          },
+          {
+            "id": "key_7",
+            "kind": "text",
+            "value": "7",
+            "text": "7",
+            "subtext": "PQRS",
+            "disabled": false,
+            "iconToken": "app_clock"
+          },
+          {
+            "id": "key_8",
+            "kind": "text",
+            "value": "8",
+            "text": "8",
+            "subtext": "TUV",
+            "disabled": false,
+            "iconToken": "app_clock"
+          },
+          {
+            "id": "key_9",
+            "kind": "text",
+            "value": "9",
+            "text": "9",
+            "subtext": "WXYZ",
+            "disabled": false,
+            "iconToken": "app_clock"
+          },
+          {
+            "id": "key_star",
+            "kind": "icon",
+            "value": "*",
+            "text": "*",
+            "subtext": "",
+            "disabled": false,
+            "iconToken": "print"
+          },
+          {
+            "id": "key_0",
+            "kind": "text",
+            "value": "0",
+            "text": "0",
+            "subtext": "+",
+            "disabled": false,
+            "iconToken": "app_clock"
+          },
+          {
+            "id": "key_hash",
+            "kind": "text",
+            "value": "#",
+            "text": "#",
+            "subtext": "",
+            "disabled": false,
+            "iconToken": "app_clock"
+          }
+        ],
+        "iconSizeToken": "theme.iconSizes.m",
+        "states": {
+          "normal": {
+            "backgroundColorToken": "theme.keyboard.keyBackground",
+            "backgroundAlpha": 1,
+            "borderAlpha": 1,
+            "textColorToken": "theme.colors.textPrimary"
+          },
+          "active": {
+            "backgroundColorToken": "theme.colors.surface",
+            "backgroundAlpha": 1,
+            "borderAlpha": 1,
+            "textColorToken": "theme.colors.accent"
+          },
+          "pushed": {
+            "backgroundColorToken": "theme.borders.secondary",
+            "backgroundAlpha": 1,
+            "borderAlpha": 1,
+            "textColorToken": "theme.colors.accent"
+          },
+          "disabled": {
+            "backgroundColorToken": "theme.colors.surface",
+            "backgroundAlpha": 1,
+            "borderAlpha": 1,
+            "textColorToken": "theme.colors.textSecondary"
+          }
+        },
+        "labelSlot": {
+          "variantReference": "component_project_foqn_s2_label::variant::default",
+          "overrides": {
+            "label": {
+              "dimensionMode": "fixed",
+              "padding": "theme.spacing.none|theme.spacing.none",
+              "textColorToken": "theme.colors.textPrimary",
+              "textAlign": "center",
+              "reserveSubtextSpace": true,
+              "surfaceSlot": {
+                "overrides": {
+                  "style": {
+                    "cornerRadiusToken": "theme.radii.l"
+                  }
+                }
+              },
+              "subtextVerticalPosition": "bottom",
+              "subtextHorizontalAlign": "center"
+            }
+          }
+        }
+      }
+    }
+  },
+  "additionalVariants": [],
+  "designPreview": {
+    "componentType": "keypad",
+    "sampleText": "Sample",
+    "sampleSubtext": "",
+    "sampleSize": 256,
+    "inputs": [
+      {
+        "id": "availableWidth",
+        "label": "Available width",
+        "jsonKey": "availableWidth",
+        "kind": "number",
+        "valueKind": "Decimal",
+        "defaultValue": "280",
+        "minimum": 1,
+        "maximum": 10000,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "",
+        "uiGroupId": "",
+        "uiGroupLabel": "",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": ""
+      },
+      {
+        "id": "activeKey",
+        "label": "Active key",
+        "jsonKey": "activeKey",
+        "kind": "text",
+        "valueKind": "StringSingleLine",
+        "defaultValue": "",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "",
+        "uiGroupId": "",
+        "uiGroupLabel": "",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": ""
+      },
+      {
+        "id": "pushedKey",
+        "label": "Pushed key",
+        "jsonKey": "pushedKey",
+        "kind": "text",
+        "valueKind": "StringSingleLine",
+        "defaultValue": "",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "",
+        "uiGroupId": "",
+        "uiGroupLabel": "",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": ""
+      },
+      {
+        "id": "enabled",
+        "label": "Enabled",
+        "jsonKey": "enabled",
+        "kind": "boolean",
+        "valueKind": "Boolean",
+        "defaultValue": "true",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "",
+        "uiGroupId": "",
+        "uiGroupLabel": "",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": ""
+      }
+    ],
+    "availableWidth": 280,
+    "activeKey": "",
+    "enabled": true,
+    "pushedKey": "",
+    "pushTrigger": false,
+    "pushElapsedMs": 0,
+    "actions": [
+      {
+        "id": "pushKey",
+        "label": "Push key",
+        "playInputId": "pushTrigger",
+        "targetInputId": "pushedKey",
+        "targetMode": "option",
+        "targetOptions": [
+          {
+            "value": "1",
+            "label": "1"
+          },
+          {
+            "value": "2",
+            "label": "2"
+          },
+          {
+            "value": "3",
+            "label": "3"
+          },
+          {
+            "value": "4",
+            "label": "4"
+          },
+          {
+            "value": "5",
+            "label": "5"
+          },
+          {
+            "value": "6",
+            "label": "6"
+          },
+          {
+            "value": "7",
+            "label": "7"
+          },
+          {
+            "value": "8",
+            "label": "8"
+          },
+          {
+            "value": "9",
+            "label": "9"
+          },
+          {
+            "value": "*",
+            "label": "*"
+          },
+          {
+            "value": "0",
+            "label": "0"
+          },
+          {
+            "value": "#",
+            "label": "#"
+          }
+        ],
+        "durationThemeToken": "theme.motion.buttonPushedDurationMs",
+        "timeJsonKey": "pushElapsedMs",
+        "timeUnit": "milliseconds",
+        "prewarmFrames": false,
+        "completionBehavior": "holdFinal"
+      }
+    ]
+  },
+  "metadata": {
+    "note": "Seeded reusable component class."
+  },
+  "dictionaryFields": [],
+  "editorLayout": {
+    "cards": [
+      {
+        "id": "general",
+        "label": "General",
+        "subtitle": "Identity",
+        "icon": "general",
+        "order": 10,
+        "visible": true,
+        "defaultOpen": false,
+        "groupLayout": "stacked",
+        "groups": [
+          {
+            "id": "identity",
+            "label": "Identity",
+            "icon": "",
+            "presentation": "",
+            "pairLayout": "",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "core.name",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.type",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "core.notes",
+                "order": 30,
+                "visible": true
+              }
+            ],
+            "collapsible": false,
+            "exclusive": false,
+            "defaultOpen": false
+          }
+        ]
+      },
+      {
+        "id": "layout",
+        "label": "Layout",
+        "subtitle": "Grid geometry and shared key sizing",
+        "icon": "layout",
+        "order": 20,
+        "visible": true,
+        "defaultOpen": false,
+        "groupLayout": "stacked",
+        "groups": [
+          {
+            "id": "layout",
+            "label": "Layout",
+            "icon": "layout",
+            "presentation": "",
+            "pairLayout": "",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.keypad.sizingMode",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.keypad.columns",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.keypad.keySize",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "component.keypad.padding",
+                "order": 40,
+                "visible": true
+              },
+              {
+                "id": "component.keypad.columnGapToken",
+                "order": 50,
+                "visible": true
+              },
+              {
+                "id": "component.keypad.rowGapToken",
+                "order": 60,
+                "visible": true
+              },
+              {
+                "id": "component.keypad.iconSizeToken",
+                "order": 70,
+                "visible": true
+              }
+            ],
+            "collapsible": false,
+            "exclusive": false,
+            "defaultOpen": false
+          }
+        ]
+      },
+      {
+        "id": "keys",
+        "label": "Keys",
+        "subtitle": "Ordered keypad contents",
+        "icon": "keypad",
+        "order": 30,
+        "visible": true,
+        "defaultOpen": false,
+        "groupLayout": "stacked",
+        "groups": [
+          {
+            "id": "keys",
+            "label": "Keys",
+            "icon": "keypad",
+            "presentation": "",
+            "pairLayout": "",
+            "order": 20,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.keypad.keys",
+                "order": 10,
+                "visible": true
+              }
+            ],
+            "collapsible": false,
+            "exclusive": false,
+            "defaultOpen": false
+          }
+        ]
+      },
+      {
+        "id": "states",
+        "label": "States",
+        "subtitle": "Shared label and state color overrides",
+        "icon": "variants",
+        "order": 40,
+        "visible": true,
+        "defaultOpen": false,
+        "groupLayout": "verticalCards",
+        "groups": [
+          {
+            "id": "normalState",
+            "label": "Normal",
+            "icon": "variants",
+            "presentation": "",
+            "pairLayout": "",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.keypad.label.editor",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.keypad.states.normal.backgroundColorToken",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.keypad.states.normal.textColorToken",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "component.keypad.states.normal.backgroundAlpha",
+                "order": 40,
+                "visible": true
+              },
+              {
+                "id": "component.keypad.states.normal.borderAlpha",
+                "order": 50,
+                "visible": true
+              }
+            ],
+            "collapsible": false,
+            "exclusive": false,
+            "defaultOpen": false
+          },
+          {
+            "id": "activeState",
+            "label": "Active",
+            "icon": "variants",
+            "presentation": "",
+            "pairLayout": "",
+            "order": 20,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.keypad.states.active.backgroundColorToken",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.keypad.states.active.textColorToken",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.keypad.states.active.backgroundAlpha",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "component.keypad.states.active.borderAlpha",
+                "order": 40,
+                "visible": true
+              }
+            ],
+            "collapsible": false,
+            "exclusive": false,
+            "defaultOpen": false
+          },
+          {
+            "id": "pushedState",
+            "label": "Pushed",
+            "icon": "variants",
+            "presentation": "",
+            "pairLayout": "",
+            "order": 30,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.keypad.states.pushed.backgroundColorToken",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.keypad.states.pushed.textColorToken",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.keypad.states.pushed.backgroundAlpha",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "component.keypad.states.pushed.borderAlpha",
+                "order": 40,
+                "visible": true
+              }
+            ],
+            "collapsible": false,
+            "exclusive": false,
+            "defaultOpen": false
+          },
+          {
+            "id": "disabledState",
+            "label": "Disabled",
+            "icon": "variants",
+            "presentation": "",
+            "pairLayout": "",
+            "order": 40,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.keypad.states.disabled.backgroundColorToken",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.keypad.states.disabled.textColorToken",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.keypad.states.disabled.backgroundAlpha",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "component.keypad.states.disabled.borderAlpha",
+                "order": 40,
+                "visible": true
+              }
+            ],
+            "collapsible": false,
+            "exclusive": false,
+            "defaultOpen": false
+          }
+        ]
+      }
+    ]
+  },
+  "assets": []
+}

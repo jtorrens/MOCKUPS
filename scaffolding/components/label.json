@@ -1,0 +1,673 @@
+{
+  "schemaVersion": 1,
+  "intent": {
+    "responsibility": "Own the complete current Component configuration and its exact Runtime Input contract.",
+    "visualBoundary": "Resolve the Component through its manifest-declared resolver and renderable boundary.",
+    "runtimeBehavior": "Consume only declared Runtime Inputs and explicit embedded Component boundaries.",
+    "forwarding": "Forward values only through declared stable source and target identities.",
+    "temporalOwnership": "Keep reusable behavior relative to the Component owner and its declared child owners."
+  },
+  "component": {
+    "componentType": "label",
+    "category": "atom",
+    "componentClassId": "component_project_foqn_s2_label",
+    "projectId": "project_foqn_s2",
+    "recordClassId": "component.label",
+    "name": "Label",
+    "notes": "Label component"
+  },
+  "manifest": {
+    "contract": "./labelComponentContract",
+    "resolver": "./labelComponentResolver",
+    "renderable": "./labelComponentRenderable",
+    "embeds": [
+      "surface"
+    ]
+  },
+  "owners": {
+    "contractExport": "LabelDesignContract",
+    "resolverExport": "resolveLabelComponent",
+    "renderableExport": "labelComponentToRenderable",
+    "registryMode": "simple",
+    "focusedTest": "tests/animation/calculatedText.test.ts",
+    "configContractExport": null
+  },
+  "config": {
+    "style": {
+      "shadowEnabled": true,
+      "reliefEnabled": true,
+      "borderWidth": 0,
+      "borderColorToken": "theme.borders.secondary",
+      "cornerRadiusToken": "theme.radii.m",
+      "reliefAngle": 90,
+      "reliefExtent": 1,
+      "reliefSpread": 0,
+      "reliefTopIntensity": 0.25,
+      "reliefBottomIntensity": -0.25,
+      "shadowToken": "elevated"
+    },
+    "label": {
+      "dimensionMode": "content",
+      "size": "100|50",
+      "padding": "theme.spacing.s|theme.spacing.s",
+      "backgroundVisible": true,
+      "backgroundColorToken": "theme.colors.label",
+      "textColorToken": "theme.colors.textPrimary",
+      "textSize": 25,
+      "textStyle": "normal",
+      "textSizeToken": "theme.typography.sizes.m",
+      "backgroundAlpha": "0.95",
+      "borderAlpha": "1",
+      "reliefAlpha": "0.35",
+      "alpha": 1,
+      "subtextColorToken": "theme.colors.textSecondary",
+      "subtextSizeToken": "theme.typography.sizes.xs",
+      "subtextStyle": "italic",
+      "textAlign": "right",
+      "surfaceSlot": {
+        "variantReference": "component_project_foqn_s2_surface::variant::default_copy_2",
+        "overrides": {}
+      },
+      "textTypography": {
+        "sizeToken": "theme.typography.sizes.m",
+        "style": "normal",
+        "fontFamilyId": "theme",
+        "weight": "400",
+        "lineHeight": "theme.typography.lineHeights.normal"
+      },
+      "subtextTypography": {
+        "fontFamilyId": "theme",
+        "weight": "200",
+        "style": "italic",
+        "sizeToken": "theme.typography.sizes.xs",
+        "lineHeight": "theme.typography.lineHeights.normal"
+      },
+      "textGapToken": "theme.spacing.m",
+      "reserveSubtextSpace": false,
+      "subtextVerticalPosition": "bottom",
+      "subtextHorizontalAlign": "center",
+      "textShadowEnabled": false,
+      "textFormat": "HH:MM",
+      "subtextFormat": "MM:SS"
+    }
+  },
+  "defaultVariant": {
+    "id": "default",
+    "name": "Default",
+    "protected": true,
+    "locked": true,
+    "config": {
+      "style": {
+        "shadowEnabled": true,
+        "reliefEnabled": true,
+        "borderWidth": 0,
+        "borderColorToken": "theme.borders.secondary",
+        "cornerRadiusToken": "theme.radii.m",
+        "reliefAngle": 90,
+        "reliefExtent": 1,
+        "reliefSpread": 0,
+        "reliefTopIntensity": 0.25,
+        "reliefBottomIntensity": -0.25,
+        "shadowToken": "elevated"
+      },
+      "label": {
+        "dimensionMode": "content",
+        "size": "100|50",
+        "padding": "theme.spacing.s|theme.spacing.s",
+        "backgroundVisible": true,
+        "backgroundColorToken": "theme.colors.label",
+        "textColorToken": "theme.colors.textPrimary",
+        "textSize": 25,
+        "textStyle": "normal",
+        "textSizeToken": "theme.typography.sizes.m",
+        "backgroundAlpha": "0.95",
+        "borderAlpha": "1",
+        "reliefAlpha": "0.35",
+        "alpha": 1,
+        "subtextColorToken": "theme.colors.textSecondary",
+        "subtextSizeToken": "theme.typography.sizes.xs",
+        "subtextStyle": "italic",
+        "textAlign": "right",
+        "surfaceSlot": {
+          "variantReference": "component_project_foqn_s2_surface::variant::default_copy_2",
+          "overrides": {}
+        },
+        "textTypography": {
+          "sizeToken": "theme.typography.sizes.m",
+          "style": "normal",
+          "fontFamilyId": "theme",
+          "weight": "400",
+          "lineHeight": "theme.typography.lineHeights.normal"
+        },
+        "subtextTypography": {
+          "fontFamilyId": "theme",
+          "weight": "200",
+          "style": "italic",
+          "sizeToken": "theme.typography.sizes.xs",
+          "lineHeight": "theme.typography.lineHeights.normal"
+        },
+        "textGapToken": "theme.spacing.m",
+        "reserveSubtextSpace": false,
+        "subtextVerticalPosition": "bottom",
+        "subtextHorizontalAlign": "center",
+        "textShadowEnabled": false,
+        "textFormat": "HH:MM",
+        "subtextFormat": "MM:SS"
+      }
+    }
+  },
+  "additionalVariants": [
+    {
+      "id": "default_copy",
+      "name": "Bubble Chat",
+      "protected": false,
+      "locked": false,
+      "config": {
+        "style": {
+          "shadowEnabled": true,
+          "reliefEnabled": true,
+          "borderWidth": 0,
+          "borderColorToken": "theme.borders.secondary",
+          "cornerRadiusToken": "theme.radii.m",
+          "reliefAngle": 90,
+          "reliefExtent": 1,
+          "reliefSpread": 0,
+          "reliefTopIntensity": 0.25,
+          "reliefBottomIntensity": -0.25,
+          "shadowToken": "elevated"
+        },
+        "label": {
+          "dimensionMode": "content",
+          "size": "100|50",
+          "padding": "theme.spacing.s|theme.spacing.s",
+          "backgroundVisible": true,
+          "backgroundColorToken": "theme.colors.label",
+          "textColorToken": "theme.colors.textPrimary",
+          "textSize": 25,
+          "textStyle": "normal",
+          "textSizeToken": "theme.typography.sizes.m",
+          "backgroundAlpha": "0.95",
+          "borderAlpha": "1",
+          "reliefAlpha": "0.35",
+          "alpha": 1,
+          "subtextColorToken": "theme.colors.accent",
+          "subtextSizeToken": "theme.typography.sizes.xs",
+          "subtextStyle": "italic",
+          "textAlign": "right",
+          "surfaceSlot": {
+            "variantReference": "component_project_foqn_s2_surface::variant::default_copy_3",
+            "overrides": {
+              "surface": {
+                "backgroundAlpha": 1,
+                "borderAlpha": 1,
+                "backgroundColorToken": "theme.colors.badge",
+                "tail": {
+                  "enabled": false
+                }
+              },
+              "style": {
+                "cornerRadiusToken": "theme.radii.m",
+                "shadowEnabled": true,
+                "borderWidth": 1,
+                "reliefEnabled": false
+              }
+            }
+          },
+          "textTypography": {
+            "sizeToken": "theme.typography.sizes.m",
+            "style": "normal",
+            "fontFamilyId": "theme",
+            "weight": "400",
+            "lineHeight": "theme.typography.lineHeights.normal"
+          },
+          "subtextTypography": {
+            "fontFamilyId": "theme",
+            "weight": "200",
+            "style": "italic",
+            "sizeToken": "theme.typography.sizes.xs",
+            "lineHeight": "theme.typography.lineHeights.normal"
+          },
+          "textGapToken": "theme.spacing.m",
+          "reserveSubtextSpace": false,
+          "subtextVerticalPosition": "bottom",
+          "subtextHorizontalAlign": "center",
+          "textShadowEnabled": false,
+          "textFormat": "MM:SS",
+          "subtextFormat": "MM:SS"
+        }
+      }
+    }
+  ],
+  "designPreview": {
+    "componentType": "label",
+    "sampleText": "Alex",
+    "sampleSize": 256,
+    "sampleSubtext": "Subtitle",
+    "inputs": [
+      {
+        "id": "sampleText",
+        "label": "Text",
+        "jsonKey": "sampleText",
+        "kind": "text",
+        "valueKind": "StringSingleLine",
+        "defaultValue": "Sample",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "text",
+        "uiGroupLabel": "Text",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 10
+      },
+      {
+        "id": "textMode",
+        "label": "Content source",
+        "jsonKey": "textMode",
+        "kind": "option",
+        "valueKind": "OptionToken",
+        "defaultValue": "literal",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [
+          {
+            "value": "literal",
+            "label": "Text"
+          },
+          {
+            "value": "countUp",
+            "label": "Count up"
+          },
+          {
+            "value": "countDown",
+            "label": "Count down"
+          }
+        ],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "text",
+        "uiGroupLabel": "Text",
+        "uiParentGroupId": "",
+        "transition": {
+          "targetInputId": "sampleText",
+          "triggerValues": [
+            "countUp",
+            "countDown"
+          ],
+          "replacementValue": "00:00",
+          "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+          "forwardedTargetOnly": true
+        },
+        "unit": "",
+        "uiOrder": 11
+      },
+      {
+        "id": "textSizeMultiplier",
+        "label": "Size multiplier",
+        "jsonKey": "textSizeMultiplier",
+        "kind": "number",
+        "valueKind": "Decimal",
+        "defaultValue": "1",
+        "minimum": 0.1,
+        "maximum": 20,
+        "increment": 0.1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "text",
+        "uiGroupLabel": "Text",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 12
+      },
+      {
+        "id": "sampleSubtext",
+        "label": "Subtext",
+        "jsonKey": "sampleSubtext",
+        "kind": "text",
+        "valueKind": "StringSingleLine",
+        "defaultValue": "Subtitle",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "subtext",
+        "uiGroupLabel": "Subtext",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 20
+      },
+      {
+        "id": "subtextMode",
+        "label": "Content source",
+        "jsonKey": "subtextMode",
+        "kind": "option",
+        "valueKind": "OptionToken",
+        "defaultValue": "literal",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [
+          {
+            "value": "literal",
+            "label": "Text"
+          },
+          {
+            "value": "countUp",
+            "label": "Count up"
+          },
+          {
+            "value": "countDown",
+            "label": "Count down"
+          }
+        ],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "subtext",
+        "uiGroupLabel": "Subtext",
+        "uiParentGroupId": "",
+        "transition": {
+          "targetInputId": "sampleSubtext",
+          "triggerValues": [
+            "countUp",
+            "countDown"
+          ],
+          "replacementValue": "00:00",
+          "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+          "forwardedTargetOnly": true
+        },
+        "unit": "",
+        "uiOrder": 21
+      },
+      {
+        "id": "subtextSizeMultiplier",
+        "label": "Size multiplier",
+        "jsonKey": "subtextSizeMultiplier",
+        "kind": "number",
+        "valueKind": "Decimal",
+        "defaultValue": "1",
+        "minimum": 0.1,
+        "maximum": 20,
+        "increment": 0.1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "subtext",
+        "uiGroupLabel": "Subtext",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 22
+      },
+      {
+        "id": "textColorToken",
+        "label": "Text color",
+        "jsonKey": "textColorToken",
+        "kind": "themeToken",
+        "valueKind": "ThemeToken",
+        "defaultValue": "theme.colors.textPrimary",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "self",
+        "uiGroupId": "",
+        "uiGroupLabel": "",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 22
+      },
+      {
+        "id": "subtextColorToken",
+        "label": "Subtext color",
+        "jsonKey": "subtextColorToken",
+        "kind": "themeToken",
+        "valueKind": "ThemeToken",
+        "defaultValue": "theme.colors.textSecondary",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "self",
+        "uiGroupId": "",
+        "uiGroupLabel": "",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 22
+      }
+    ],
+    "textMode": "literal",
+    "textSizeMultiplier": 1,
+    "subtextMode": "literal",
+    "subtextSizeMultiplier": 1,
+    "textColorToken": "theme.colors.textPrimary",
+    "subtextColorToken": "theme.colors.textSecondary"
+  },
+  "metadata": {
+    "note": "Seeded reusable component class."
+  },
+  "dictionaryFields": [],
+  "editorLayout": {
+    "cards": [
+      {
+        "id": "general",
+        "label": "General",
+        "subtitle": "Identity",
+        "icon": "general",
+        "order": 10,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "identity",
+            "label": "Identity",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "core.name",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.type",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "core.notes",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "label",
+        "label": "Label",
+        "subtitle": "Centered text label dimensions and colors",
+        "icon": "label",
+        "order": 20,
+        "visible": true,
+        "defaultOpen": false,
+        "groupLayout": "separatedSections",
+        "groups": [
+          {
+            "id": "label",
+            "label": "Label",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.label.dimensionMode",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.label.size",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.label.padding",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "component.label.surface.editor",
+                "order": 40,
+                "visible": true
+              },
+              {
+                "id": "component.label.textShadowEnabled",
+                "order": 80,
+                "visible": true
+              },
+              {
+                "id": "component.label.textColorToken",
+                "order": 90,
+                "visible": true
+              },
+              {
+                "id": "component.label.textTypography",
+                "order": 100,
+                "visible": true
+              },
+              {
+                "id": "component.label.textAlign",
+                "order": 120,
+                "visible": true
+              },
+              {
+                "id": "component.label.textFormat",
+                "order": 130,
+                "visible": true
+              }
+            ]
+          },
+          {
+            "id": "labelSubtext",
+            "label": "Subtext",
+            "order": 20,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.label.textGapToken",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.label.reserveSubtextSpace",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.label.subtextVerticalPosition",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "component.label.subtextHorizontalAlign",
+                "order": 40,
+                "visible": true
+              },
+              {
+                "id": "component.label.subtextColorToken",
+                "order": 50,
+                "visible": true
+              },
+              {
+                "id": "component.label.subtextTypography",
+                "order": 60,
+                "visible": true
+              },
+              {
+                "id": "component.label.subtextFormat",
+                "order": 70,
+                "visible": true
+              }
+            ]
+          },
+          {
+            "id": "labelTransparency",
+            "label": "Transparency",
+            "order": 30,
+            "visible": false,
+            "fields": []
+          }
+        ]
+      }
+    ]
+  },
+  "assets": []
+}

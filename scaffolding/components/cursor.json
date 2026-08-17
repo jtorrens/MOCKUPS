@@ -1,0 +1,197 @@
+{
+  "schemaVersion": 1,
+  "intent": {
+    "responsibility": "Own the complete current Component configuration and its exact Runtime Input contract.",
+    "visualBoundary": "Resolve the Component through its manifest-declared resolver and renderable boundary.",
+    "runtimeBehavior": "Consume only declared Runtime Inputs and explicit embedded Component boundaries.",
+    "forwarding": "Forward values only through declared stable source and target identities.",
+    "temporalOwnership": "Keep reusable behavior relative to the Component owner and its declared child owners."
+  },
+  "component": {
+    "componentType": "cursor",
+    "category": "atom",
+    "componentClassId": "component_project_foqn_s2_cursor",
+    "projectId": "project_foqn_s2",
+    "recordClassId": "component.cursor",
+    "name": "Cursor",
+    "notes": "Cursor component"
+  },
+  "manifest": {
+    "contract": "./cursorComponentContract",
+    "resolver": "./cursorComponentResolver",
+    "renderable": "./cursorComponentRenderable",
+    "embeds": []
+  },
+  "owners": {
+    "contractExport": "CursorDesignContract",
+    "resolverExport": "resolveCursorComponent",
+    "renderableExport": "cursorComponentToRenderable",
+    "registryMode": "simple",
+    "focusedTest": "tests/animation/cursorFrameResolution.test.ts",
+    "configContractExport": null
+  },
+  "config": {
+    "style": {
+      "shadowEnabled": false,
+      "reliefEnabled": false,
+      "borderWidth": 0,
+      "borderColorToken": "theme.borders.primary",
+      "cornerRadiusToken": "theme.radii.xl",
+      "reliefAngle": -45,
+      "reliefExtent": 1,
+      "reliefSpread": 0,
+      "reliefTopIntensity": 0.12,
+      "reliefBottomIntensity": -0.1
+    },
+    "cursor": {
+      "colorToken": "theme.cursor.color",
+      "width": 3,
+      "minimumFade": 0.15,
+      "fadeDurationMs": 480
+    }
+  },
+  "defaultVariant": {
+    "id": "default",
+    "name": "Default",
+    "protected": true,
+    "locked": true,
+    "config": {
+      "style": {
+        "shadowEnabled": false,
+        "reliefEnabled": false,
+        "borderWidth": 0,
+        "borderColorToken": "theme.borders.primary",
+        "cornerRadiusToken": "theme.radii.xl",
+        "reliefAngle": -45,
+        "reliefExtent": 1,
+        "reliefSpread": 0,
+        "reliefTopIntensity": 0.12,
+        "reliefBottomIntensity": -0.1
+      },
+      "cursor": {
+        "colorToken": "theme.cursor.color",
+        "width": 3,
+        "minimumFade": 0.15,
+        "fadeDurationMs": 480
+      }
+    }
+  },
+  "additionalVariants": [],
+  "designPreview": {
+    "componentType": "cursor",
+    "sampleText": "Sample",
+    "sampleSubtext": "",
+    "sampleSize": 256,
+    "inputs": [
+      {
+        "id": "height",
+        "label": "Height",
+        "jsonKey": "height",
+        "kind": "number",
+        "valueKind": "Decimal",
+        "defaultValue": "32",
+        "minimum": 1,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "",
+        "uiGroupId": "",
+        "uiGroupLabel": "",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": ""
+      }
+    ],
+    "height": 32
+  },
+  "metadata": {
+    "note": "Seeded reusable component class."
+  },
+  "dictionaryFields": [],
+  "editorLayout": {
+    "cards": [
+      {
+        "id": "general",
+        "label": "General",
+        "subtitle": "Identity",
+        "icon": "general",
+        "order": 10,
+        "visible": true,
+        "defaultOpen": true,
+        "groups": [
+          {
+            "id": "identity",
+            "label": "Identity",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "core.name",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.type",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "core.notes",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "cursor",
+        "label": "Cursor",
+        "subtitle": "Theme color and fade timing",
+        "icon": "text-input",
+        "order": 20,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "cursor",
+            "label": "Cursor",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.cursor.colorToken",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.cursor.width",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.cursor.minimumFade",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "component.cursor.fadeDurationMs",
+                "order": 40,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "assets": []
+}

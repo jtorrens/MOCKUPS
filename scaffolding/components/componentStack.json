@@ -1,0 +1,1656 @@
+{
+  "schemaVersion": 1,
+  "intent": {
+    "responsibility": "Own the complete current Component configuration and its exact Runtime Input contract.",
+    "visualBoundary": "Resolve the Component through its manifest-declared resolver and renderable boundary.",
+    "runtimeBehavior": "Consume only declared Runtime Inputs and explicit embedded Component boundaries.",
+    "forwarding": "Forward values only through declared stable source and target identities.",
+    "temporalOwnership": "Keep reusable behavior relative to the Component owner and its declared child owners."
+  },
+  "component": {
+    "componentType": "componentStack",
+    "category": "atom",
+    "componentClassId": "component_project_foqn_s2_componentStack",
+    "projectId": "project_foqn_s2",
+    "recordClassId": "component.componentStack",
+    "name": "Component Stack",
+    "notes": "Component stack atom"
+  },
+  "manifest": {
+    "contract": "./componentStackComponentContract",
+    "resolver": "./componentStackComponentResolver",
+    "renderable": "./componentStackComponentRenderable",
+    "embeds": [
+      "label",
+      "surface",
+      "cursor",
+      "textBox",
+      "iconRow",
+      "iconBar",
+      "collectionStack",
+      "badge",
+      "codeIndicator",
+      "avatar",
+      "button",
+      "audio",
+      "notification",
+      "notifications",
+      "listItem",
+      "list",
+      "textInputBar",
+      "keyboard",
+      "keypad",
+      "fingerprint",
+      "faceRecognition",
+      "drawPassword",
+      "password",
+      "media",
+      "bubble",
+      "status_bar",
+      "navigation_bar",
+      "incomingCallNotification"
+    ]
+  },
+  "owners": {
+    "contractExport": "ComponentStackDesignContract",
+    "resolverExport": "resolveComponentStackComponent",
+    "renderableExport": "componentStackComponentToRenderable",
+    "registryMode": "children",
+    "focusedTest": "tests/animation/componentStackComponent.test.ts",
+    "configContractExport": null
+  },
+  "config": {
+    "componentStack": {}
+  },
+  "defaultVariant": {
+    "id": "default",
+    "name": "Default",
+    "protected": true,
+    "locked": true,
+    "config": {
+      "componentStack": {}
+    }
+  },
+  "additionalVariants": [],
+  "designPreview": {
+    "componentType": "componentStack",
+    "sizingMode": "fill",
+    "startGapToken": "theme.spacing.m",
+    "endGapToken": "theme.spacing.m",
+    "inputs": [
+      {
+        "id": "sizingMode",
+        "label": "Sizing",
+        "jsonKey": "sizingMode",
+        "kind": "option",
+        "defaultValue": "fill",
+        "options": [
+          {
+            "value": "fill",
+            "label": "Fill container"
+          },
+          {
+            "value": "content",
+            "label": "Fit content"
+          }
+        ],
+        "valueKind": "OptionToken"
+      },
+      {
+        "id": "startGapToken",
+        "label": "Start gap",
+        "jsonKey": "startGapToken",
+        "kind": "themeToken",
+        "defaultValue": "theme.spacing.none",
+        "options": [
+          {
+            "value": "theme.spacing.none",
+            "label": "spacing.none"
+          },
+          {
+            "value": "theme.spacing.xs",
+            "label": "spacing.xs"
+          },
+          {
+            "value": "theme.spacing.s",
+            "label": "spacing.s"
+          },
+          {
+            "value": "theme.spacing.m",
+            "label": "spacing.m"
+          },
+          {
+            "value": "theme.spacing.l",
+            "label": "spacing.l"
+          },
+          {
+            "value": "theme.spacing.xl",
+            "label": "spacing.xl"
+          },
+          {
+            "value": "theme.spacing.xxl",
+            "label": "spacing.xxl"
+          }
+        ],
+        "valueKind": "ThemeToken"
+      },
+      {
+        "id": "endGapToken",
+        "label": "End gap",
+        "jsonKey": "endGapToken",
+        "kind": "themeToken",
+        "defaultValue": "theme.spacing.none",
+        "options": [
+          {
+            "value": "theme.spacing.none",
+            "label": "spacing.none"
+          },
+          {
+            "value": "theme.spacing.xs",
+            "label": "spacing.xs"
+          },
+          {
+            "value": "theme.spacing.s",
+            "label": "spacing.s"
+          },
+          {
+            "value": "theme.spacing.m",
+            "label": "spacing.m"
+          },
+          {
+            "value": "theme.spacing.l",
+            "label": "spacing.l"
+          },
+          {
+            "value": "theme.spacing.xl",
+            "label": "spacing.xl"
+          },
+          {
+            "value": "theme.spacing.xxl",
+            "label": "spacing.xxl"
+          }
+        ],
+        "valueKind": "ThemeToken"
+      }
+    ],
+    "items": [
+      {
+        "id": "items_57582e4e9e974bd98b939ddc86c399c9",
+        "iconSizeToken": "theme.iconSizes.m",
+        "textSizeToken": "theme.typography.sizes.s",
+        "gapBeforeMode": "fixed",
+        "gapBeforeToken": "theme.spacing.none",
+        "gapBeforeWeight": 1,
+        "alternatives": [
+          {
+            "id": "items_57582e4e9e974bd98b939ddc86c399c9_default",
+            "variantReference": "component_project_foqn_s2_media::variant::default",
+            "overrides": {},
+            "inputs": {
+              "componentType": "media",
+              "sampleText": "",
+              "sampleSubtext": "",
+              "sampleSize": 256,
+              "mediaSource": "media/gatos_V2-0012.mp4",
+              "mediaType": "video",
+              "viewportSize": "320|180",
+              "mediaScale": 1,
+              "mediaOffset": "0|0",
+              "currentTimeSeconds": 0,
+              "durationSeconds": 12,
+              "fullframeOrientation": "portrait",
+              "controlsElapsedMs": 0,
+              "inputs": [
+                {
+                  "id": "mediaSource",
+                  "label": "Source",
+                  "jsonKey": "mediaSource",
+                  "kind": "mediaFilePath",
+                  "valueKind": "MediaFilePath",
+                  "defaultValue": "",
+                  "minimum": 0,
+                  "maximum": 9999,
+                  "increment": 1,
+                  "tableId": "",
+                  "resolvedJsonKey": "",
+                  "componentType": "",
+                  "options": [],
+                  "pairFirstLabel": "W",
+                  "pairSecondLabel": "H",
+                  "visibleWhenPath": "",
+                  "visibleWhenValue": "",
+                  "source": "runtime",
+                  "uiOrigin": "embedded",
+                  "uiGroupId": "source",
+                  "uiGroupLabel": "Source",
+                  "uiParentGroupId": "",
+                  "unit": "",
+                  "uiOrder": 10
+                },
+                {
+                  "id": "mediaType",
+                  "label": "Type",
+                  "jsonKey": "mediaType",
+                  "kind": "option",
+                  "valueKind": "OptionToken",
+                  "defaultValue": "image",
+                  "minimum": 0,
+                  "maximum": 9999,
+                  "increment": 1,
+                  "tableId": "",
+                  "resolvedJsonKey": "",
+                  "componentType": "",
+                  "options": [
+                    {
+                      "value": "image",
+                      "label": "Image"
+                    },
+                    {
+                      "value": "video",
+                      "label": "Video"
+                    }
+                  ],
+                  "pairFirstLabel": "W",
+                  "pairSecondLabel": "H",
+                  "visibleWhenPath": "",
+                  "visibleWhenValue": "",
+                  "source": "runtime",
+                  "uiOrigin": "embedded",
+                  "uiGroupId": "source",
+                  "uiGroupLabel": "Source",
+                  "uiParentGroupId": "",
+                  "unit": "",
+                  "uiOrder": 11
+                },
+                {
+                  "id": "viewportSize",
+                  "label": "Viewport",
+                  "jsonKey": "viewportSize",
+                  "kind": "integerPair",
+                  "valueKind": "IntegerPair",
+                  "defaultValue": "320|180",
+                  "minimum": 0,
+                  "maximum": 9999,
+                  "increment": 1,
+                  "tableId": "",
+                  "resolvedJsonKey": "",
+                  "componentType": "",
+                  "options": [],
+                  "pairFirstLabel": "W",
+                  "pairSecondLabel": "H",
+                  "visibleWhenPath": "",
+                  "visibleWhenValue": "",
+                  "source": "runtime",
+                  "uiOrigin": "embedded",
+                  "uiGroupId": "frame",
+                  "uiGroupLabel": "Frame",
+                  "uiParentGroupId": "",
+                  "unit": "",
+                  "uiOrder": 20
+                },
+                {
+                  "id": "mediaScale",
+                  "label": "Scale",
+                  "jsonKey": "mediaScale",
+                  "kind": "number",
+                  "valueKind": "Decimal",
+                  "defaultValue": "1",
+                  "minimum": 0.05,
+                  "maximum": 16,
+                  "increment": 0.05,
+                  "tableId": "",
+                  "resolvedJsonKey": "",
+                  "componentType": "",
+                  "options": [],
+                  "pairFirstLabel": "W",
+                  "pairSecondLabel": "H",
+                  "visibleWhenPath": "",
+                  "visibleWhenValue": "",
+                  "source": "runtime",
+                  "uiOrigin": "embedded",
+                  "uiGroupId": "frame",
+                  "uiGroupLabel": "Frame",
+                  "uiParentGroupId": "",
+                  "unit": "",
+                  "uiOrder": 21
+                },
+                {
+                  "id": "mediaOffset",
+                  "label": "Offset",
+                  "jsonKey": "mediaOffset",
+                  "kind": "integerPair",
+                  "valueKind": "IntegerPair",
+                  "defaultValue": "0|0",
+                  "minimum": 0,
+                  "maximum": 9999,
+                  "increment": 1,
+                  "tableId": "",
+                  "resolvedJsonKey": "",
+                  "componentType": "",
+                  "options": [],
+                  "pairFirstLabel": "X",
+                  "pairSecondLabel": "Y",
+                  "visibleWhenPath": "",
+                  "visibleWhenValue": "",
+                  "source": "runtime",
+                  "uiOrigin": "embedded",
+                  "uiGroupId": "frame",
+                  "uiGroupLabel": "Frame",
+                  "uiParentGroupId": "",
+                  "unit": "",
+                  "uiOrder": 22
+                },
+                {
+                  "id": "isPlaying",
+                  "label": "Play/Pause",
+                  "jsonKey": "isPlaying",
+                  "kind": "boolean",
+                  "valueKind": "Boolean",
+                  "defaultValue": "false",
+                  "minimum": 0,
+                  "maximum": 9999,
+                  "increment": 1,
+                  "tableId": "",
+                  "resolvedJsonKey": "",
+                  "componentType": "",
+                  "options": [],
+                  "pairFirstLabel": "W",
+                  "pairSecondLabel": "H",
+                  "visibleWhenPath": "",
+                  "visibleWhenValue": "",
+                  "source": "runtime",
+                  "uiOrigin": "embedded",
+                  "uiGroupId": "playback",
+                  "uiGroupLabel": "Playback",
+                  "uiParentGroupId": "",
+                  "unit": "",
+                  "uiOrder": 30
+                },
+                {
+                  "id": "currentTimeSeconds",
+                  "label": "Current time",
+                  "jsonKey": "currentTimeSeconds",
+                  "kind": "number",
+                  "valueKind": "Decimal",
+                  "defaultValue": "0",
+                  "minimum": 0,
+                  "maximum": 86400,
+                  "increment": 0.1,
+                  "tableId": "",
+                  "resolvedJsonKey": "",
+                  "componentType": "",
+                  "options": [],
+                  "pairFirstLabel": "W",
+                  "pairSecondLabel": "H",
+                  "visibleWhenPath": "",
+                  "visibleWhenValue": "",
+                  "source": "runtime",
+                  "uiOrigin": "embedded",
+                  "uiGroupId": "playback",
+                  "uiGroupLabel": "Playback",
+                  "uiParentGroupId": "",
+                  "unit": "s",
+                  "uiOrder": 31
+                },
+                {
+                  "id": "durationSeconds",
+                  "label": "Duration",
+                  "jsonKey": "durationSeconds",
+                  "kind": "number",
+                  "valueKind": "Decimal",
+                  "defaultValue": "12",
+                  "minimum": 0,
+                  "maximum": 86400,
+                  "increment": 0.1,
+                  "tableId": "",
+                  "resolvedJsonKey": "",
+                  "componentType": "",
+                  "options": [],
+                  "pairFirstLabel": "W",
+                  "pairSecondLabel": "H",
+                  "visibleWhenPath": "",
+                  "visibleWhenValue": "",
+                  "source": "runtime",
+                  "uiOrigin": "embedded",
+                  "uiGroupId": "playback",
+                  "uiGroupLabel": "Playback",
+                  "uiParentGroupId": "",
+                  "unit": "s",
+                  "uiOrder": 32
+                },
+                {
+                  "id": "isFullScreen",
+                  "label": "Full screen",
+                  "jsonKey": "isFullScreen",
+                  "kind": "boolean",
+                  "valueKind": "Boolean",
+                  "defaultValue": "false",
+                  "minimum": 0,
+                  "maximum": 9999,
+                  "increment": 1,
+                  "tableId": "",
+                  "resolvedJsonKey": "",
+                  "componentType": "",
+                  "options": [],
+                  "pairFirstLabel": "W",
+                  "pairSecondLabel": "H",
+                  "visibleWhenPath": "",
+                  "visibleWhenValue": "",
+                  "source": "runtime",
+                  "uiOrigin": "embedded",
+                  "uiGroupId": "fullScreen",
+                  "uiGroupLabel": "Full screen",
+                  "uiParentGroupId": "",
+                  "unit": "",
+                  "uiOrder": 40
+                },
+                {
+                  "id": "fullScreenTransition",
+                  "label": "Full-screen transition",
+                  "jsonKey": "fullScreenTransition",
+                  "kind": "boolean",
+                  "valueKind": "Boolean",
+                  "defaultValue": "false",
+                  "minimum": 0,
+                  "maximum": 9999,
+                  "increment": 1,
+                  "tableId": "",
+                  "resolvedJsonKey": "",
+                  "componentType": "",
+                  "options": [],
+                  "pairFirstLabel": "W",
+                  "pairSecondLabel": "H",
+                  "visibleWhenPath": "",
+                  "visibleWhenValue": "",
+                  "source": "runtime",
+                  "uiOrigin": "embedded",
+                  "uiGroupId": "fullScreen",
+                  "uiGroupLabel": "Full screen",
+                  "uiParentGroupId": "",
+                  "unit": "",
+                  "uiOrder": 41
+                },
+                {
+                  "id": "fullframeOrientation",
+                  "label": "Fullframe orientation",
+                  "jsonKey": "fullframeOrientation",
+                  "kind": "option",
+                  "valueKind": "OptionToken",
+                  "defaultValue": "portrait",
+                  "minimum": 0,
+                  "maximum": 9999,
+                  "increment": 1,
+                  "tableId": "",
+                  "resolvedJsonKey": "",
+                  "componentType": "",
+                  "options": [
+                    {
+                      "value": "portrait",
+                      "label": "Portrait"
+                    },
+                    {
+                      "value": "landscape",
+                      "label": "Landscape"
+                    }
+                  ],
+                  "pairFirstLabel": "W",
+                  "pairSecondLabel": "H",
+                  "visibleWhenPath": "",
+                  "visibleWhenValue": "",
+                  "source": "runtime",
+                  "uiOrigin": "embedded",
+                  "uiGroupId": "fullScreen",
+                  "uiGroupLabel": "Full screen",
+                  "uiParentGroupId": "",
+                  "unit": "",
+                  "uiOrder": 42
+                },
+                {
+                  "id": "controlsElapsedMs",
+                  "label": "Controls elapsed",
+                  "jsonKey": "controlsElapsedMs",
+                  "kind": "number",
+                  "valueKind": "Integer",
+                  "defaultValue": "0",
+                  "minimum": 0,
+                  "maximum": 60000,
+                  "increment": 10,
+                  "tableId": "",
+                  "resolvedJsonKey": "",
+                  "componentType": "",
+                  "options": [],
+                  "pairFirstLabel": "W",
+                  "pairSecondLabel": "H",
+                  "visibleWhenPath": "",
+                  "visibleWhenValue": "",
+                  "source": "runtime",
+                  "uiOrigin": "embedded",
+                  "uiGroupId": "playback",
+                  "uiGroupLabel": "Playback",
+                  "uiParentGroupId": "",
+                  "unit": "ms",
+                  "uiOrder": 33
+                },
+                {
+                  "id": "motionElapsedMs",
+                  "label": "Motion elapsed",
+                  "jsonKey": "motionElapsedMs",
+                  "kind": "number",
+                  "valueKind": "Decimal",
+                  "defaultValue": "0",
+                  "minimum": 0,
+                  "maximum": 86400000,
+                  "increment": 10,
+                  "tableId": "",
+                  "resolvedJsonKey": "",
+                  "componentType": "",
+                  "options": [],
+                  "pairFirstLabel": "W",
+                  "pairSecondLabel": "H",
+                  "visibleWhenPath": "",
+                  "visibleWhenValue": "",
+                  "source": "calculated",
+                  "uiOrigin": "",
+                  "uiGroupId": "",
+                  "uiGroupLabel": "",
+                  "uiParentGroupId": "",
+                  "unit": "ms"
+                }
+              ],
+              "isPlaying": false,
+              "isFullScreen": false,
+              "fullScreenTransition": false,
+              "actions": [
+                {
+                  "id": "play",
+                  "label": "Play",
+                  "playInputId": "isPlaying",
+                  "durationInputId": "durationSeconds",
+                  "timeJsonKey": "currentTimeSeconds",
+                  "prewarmFrames": true,
+                  "prewarmWhenJsonKey": "mediaType",
+                  "prewarmWhenValue": "video",
+                  "timeUnit": "seconds",
+                  "completionBehavior": "reset"
+                },
+                {
+                  "id": "fullScreen",
+                  "label": "Full screen",
+                  "playInputId": "fullScreenTransition",
+                  "activateInputIds": [
+                    "isFullScreen"
+                  ],
+                  "durationSeconds": 0.3,
+                  "durationMotionConfigPath": "media.motion",
+                  "timeJsonKey": "motionElapsedMs",
+                  "prewarmFrames": false,
+                  "timeUnit": "milliseconds",
+                  "completionBehavior": "reset"
+                }
+              ]
+            },
+            "active": false,
+            "behavior": "replace",
+            "enterMotion": {
+              "transition": "slide",
+              "direction": "bottom",
+              "bounds": "screen",
+              "fade": false,
+              "translate": true,
+              "scale": false
+            },
+            "exitMotion": {
+              "transition": "slide",
+              "direction": "bottom",
+              "bounds": "screen",
+              "fade": false,
+              "translate": true,
+              "scale": false
+            },
+            "placement": {
+              "mode": "center",
+              "alignX": 0.5,
+              "alignY": 0.5,
+              "offsetX": 0,
+              "offsetY": 0
+            },
+            "name": "State 1"
+          }
+        ],
+        "name": "Slot 1"
+      },
+      {
+        "id": "items_50c6c3309f6f438fac787c81f0abb350",
+        "iconSizeToken": "theme.iconSizes.m",
+        "textSizeToken": "theme.typography.sizes.s",
+        "gapBeforeMode": "fixed",
+        "gapBeforeToken": "theme.spacing.m",
+        "gapBeforeWeight": 1,
+        "alternatives": [
+          {
+            "id": "items_50c6c3309f6f438fac787c81f0abb350_default",
+            "variantReference": "component_project_foqn_s2_audio::variant::default",
+            "overrides": {
+              "audio": {
+                "surfaceSlot": {
+                  "variantReference": "component_project_foqn_s2_surface::variant::surface_00_copy"
+                },
+                "waveformBarCount": 60,
+                "waveformColorToken": "theme.colors.badge"
+              }
+            },
+            "inputs": {
+              "componentType": "audio",
+              "sampleText": "0:05",
+              "sampleSize": 256,
+              "sampleSubtext": "",
+              "inputs": [
+                {
+                  "id": "availableWidth",
+                  "label": "Available width",
+                  "jsonKey": "availableWidth",
+                  "kind": "number",
+                  "valueKind": "Decimal",
+                  "defaultValue": "240",
+                  "minimum": 1,
+                  "maximum": 10000,
+                  "increment": 1,
+                  "tableId": "",
+                  "resolvedJsonKey": "",
+                  "componentType": "",
+                  "options": [],
+                  "pairFirstLabel": "W",
+                  "pairSecondLabel": "H",
+                  "visibleWhenPath": "",
+                  "visibleWhenValue": "",
+                  "source": "runtime",
+                  "uiOrigin": "embedded",
+                  "uiGroupId": "layout",
+                  "uiGroupLabel": "Layout",
+                  "uiParentGroupId": "",
+                  "unit": "",
+                  "uiOrder": 10
+                },
+                {
+                  "id": "isPlaying",
+                  "label": "Playing",
+                  "jsonKey": "isPlaying",
+                  "kind": "boolean",
+                  "valueKind": "Boolean",
+                  "defaultValue": "false",
+                  "minimum": 0,
+                  "maximum": 9999,
+                  "increment": 1,
+                  "tableId": "",
+                  "resolvedJsonKey": "",
+                  "componentType": "",
+                  "options": [],
+                  "pairFirstLabel": "W",
+                  "pairSecondLabel": "H",
+                  "visibleWhenPath": "",
+                  "visibleWhenValue": "",
+                  "source": "runtime",
+                  "uiOrigin": "embedded",
+                  "uiGroupId": "playback",
+                  "uiGroupLabel": "Playback",
+                  "uiParentGroupId": "",
+                  "unit": "",
+                  "uiOrder": 20
+                },
+                {
+                  "id": "currentTimeSeconds",
+                  "label": "Current time",
+                  "jsonKey": "currentTimeSeconds",
+                  "kind": "number",
+                  "valueKind": "Decimal",
+                  "defaultValue": "0",
+                  "minimum": 0,
+                  "maximum": 86400,
+                  "increment": 0.1,
+                  "tableId": "",
+                  "resolvedJsonKey": "",
+                  "componentType": "",
+                  "options": [],
+                  "pairFirstLabel": "W",
+                  "pairSecondLabel": "H",
+                  "visibleWhenPath": "",
+                  "visibleWhenValue": "",
+                  "source": "runtime",
+                  "uiOrigin": "embedded",
+                  "uiGroupId": "playback",
+                  "uiGroupLabel": "Playback",
+                  "uiParentGroupId": "",
+                  "unit": "s",
+                  "uiOrder": 21
+                },
+                {
+                  "id": "durationSeconds",
+                  "label": "Duration",
+                  "jsonKey": "durationSeconds",
+                  "kind": "number",
+                  "valueKind": "Decimal",
+                  "defaultValue": "65",
+                  "minimum": 1,
+                  "maximum": 86400,
+                  "increment": 1,
+                  "tableId": "",
+                  "resolvedJsonKey": "",
+                  "componentType": "",
+                  "options": [],
+                  "pairFirstLabel": "W",
+                  "pairSecondLabel": "H",
+                  "visibleWhenPath": "",
+                  "visibleWhenValue": "",
+                  "source": "runtime",
+                  "uiOrigin": "embedded",
+                  "uiGroupId": "playback",
+                  "uiGroupLabel": "Playback",
+                  "uiParentGroupId": "",
+                  "unit": "s",
+                  "uiOrder": 22
+                },
+                {
+                  "id": "actorId",
+                  "label": "Actor",
+                  "jsonKey": "actorId",
+                  "kind": "recordReference",
+                  "valueKind": "RecordReference",
+                  "defaultValue": "",
+                  "minimum": 0,
+                  "maximum": 9999,
+                  "increment": 1,
+                  "tableId": "actors",
+                  "resolvedJsonKey": "actor",
+                  "componentType": "",
+                  "options": [],
+                  "pairFirstLabel": "W",
+                  "pairSecondLabel": "H",
+                  "visibleWhenPath": "",
+                  "visibleWhenValue": "",
+                  "source": "runtime",
+                  "uiOrigin": "embedded",
+                  "uiGroupId": "identity",
+                  "uiGroupLabel": "Actor",
+                  "uiParentGroupId": "",
+                  "unit": "",
+                  "uiOrder": 30
+                },
+                {
+                  "id": "showBadge",
+                  "label": "Show badge",
+                  "jsonKey": "showBadge",
+                  "kind": "boolean",
+                  "valueKind": "Boolean",
+                  "defaultValue": "false",
+                  "minimum": 0,
+                  "maximum": 9999,
+                  "increment": 1,
+                  "tableId": "",
+                  "resolvedJsonKey": "",
+                  "componentType": "",
+                  "options": [],
+                  "pairFirstLabel": "W",
+                  "pairSecondLabel": "H",
+                  "visibleWhenPath": "",
+                  "visibleWhenValue": "",
+                  "source": "runtime",
+                  "uiOrigin": "embedded",
+                  "uiGroupId": "badge",
+                  "uiGroupLabel": "Badge",
+                  "uiParentGroupId": "",
+                  "transition": null,
+                  "unit": "",
+                  "uiOrder": 20
+                },
+                {
+                  "id": "badgeContentMode",
+                  "label": "Badge content",
+                  "jsonKey": "badgeContentMode",
+                  "kind": "option",
+                  "valueKind": "OptionToken",
+                  "defaultValue": "icon",
+                  "minimum": 0,
+                  "maximum": 9999,
+                  "increment": 1,
+                  "tableId": "",
+                  "resolvedJsonKey": "",
+                  "componentType": "",
+                  "options": [
+                    {
+                      "value": "icon",
+                      "label": "Icon"
+                    },
+                    {
+                      "value": "text",
+                      "label": "Text"
+                    }
+                  ],
+                  "pairFirstLabel": "W",
+                  "pairSecondLabel": "H",
+                  "visibleWhenPath": "",
+                  "visibleWhenValue": "",
+                  "source": "runtime",
+                  "uiOrigin": "embedded",
+                  "uiGroupId": "badge",
+                  "uiGroupLabel": "Badge",
+                  "uiParentGroupId": "",
+                  "transition": null,
+                  "unit": "",
+                  "uiOrder": 21
+                },
+                {
+                  "id": "badgeIconToken",
+                  "label": "Badge icon",
+                  "jsonKey": "badgeIconToken",
+                  "kind": "icon",
+                  "valueKind": "IconToken",
+                  "defaultValue": "media_mic",
+                  "minimum": 0,
+                  "maximum": 9999,
+                  "increment": 1,
+                  "tableId": "",
+                  "resolvedJsonKey": "",
+                  "componentType": "",
+                  "options": [],
+                  "pairFirstLabel": "W",
+                  "pairSecondLabel": "H",
+                  "visibleWhenPath": "",
+                  "visibleWhenValue": "",
+                  "source": "runtime",
+                  "uiOrigin": "embedded",
+                  "uiGroupId": "badge",
+                  "uiGroupLabel": "Badge",
+                  "uiParentGroupId": "",
+                  "transition": null,
+                  "unit": "",
+                  "uiOrder": 22
+                },
+                {
+                  "id": "badgeText",
+                  "label": "Badge text",
+                  "jsonKey": "badgeText",
+                  "kind": "text",
+                  "valueKind": "StringSingleLine",
+                  "defaultValue": "1",
+                  "minimum": 0,
+                  "maximum": 9999,
+                  "increment": 1,
+                  "tableId": "",
+                  "resolvedJsonKey": "",
+                  "componentType": "",
+                  "options": [],
+                  "pairFirstLabel": "W",
+                  "pairSecondLabel": "H",
+                  "visibleWhenPath": "",
+                  "visibleWhenValue": "",
+                  "source": "runtime",
+                  "uiOrigin": "embedded",
+                  "uiGroupId": "badge",
+                  "uiGroupLabel": "Badge",
+                  "uiParentGroupId": "",
+                  "transition": null,
+                  "unit": "",
+                  "uiOrder": 23
+                },
+                {
+                  "id": "badgeSize",
+                  "label": "Badge size",
+                  "jsonKey": "badgeSize",
+                  "kind": "number",
+                  "valueKind": "Integer",
+                  "defaultValue": "16",
+                  "minimum": 1,
+                  "maximum": 512,
+                  "increment": 1,
+                  "tableId": "",
+                  "resolvedJsonKey": "",
+                  "componentType": "",
+                  "options": [],
+                  "pairFirstLabel": "W",
+                  "pairSecondLabel": "H",
+                  "visibleWhenPath": "",
+                  "visibleWhenValue": "",
+                  "source": "runtime",
+                  "uiOrigin": "embedded",
+                  "uiGroupId": "badge",
+                  "uiGroupLabel": "Badge",
+                  "uiParentGroupId": "",
+                  "transition": null,
+                  "unit": "",
+                  "uiOrder": 24
+                },
+                {
+                  "id": "badgeBackgroundPaletteColor",
+                  "label": "Badge background",
+                  "jsonKey": "badgeBackgroundPaletteColor",
+                  "kind": "text",
+                  "valueKind": "PaletteColorToken",
+                  "defaultValue": "blue",
+                  "minimum": 0,
+                  "maximum": 9999,
+                  "increment": 1,
+                  "tableId": "",
+                  "resolvedJsonKey": "",
+                  "componentType": "",
+                  "options": [],
+                  "pairFirstLabel": "W",
+                  "pairSecondLabel": "H",
+                  "visibleWhenPath": "",
+                  "visibleWhenValue": "",
+                  "source": "runtime",
+                  "uiOrigin": "embedded",
+                  "uiGroupId": "badge",
+                  "uiGroupLabel": "Badge",
+                  "uiParentGroupId": "",
+                  "transition": null,
+                  "unit": "",
+                  "uiOrder": 25
+                },
+                {
+                  "id": "badgeContentPaletteColor",
+                  "label": "Badge icon / text color",
+                  "jsonKey": "badgeContentPaletteColor",
+                  "kind": "text",
+                  "valueKind": "PaletteColorToken",
+                  "defaultValue": "gray_100",
+                  "minimum": 0,
+                  "maximum": 9999,
+                  "increment": 1,
+                  "tableId": "",
+                  "resolvedJsonKey": "",
+                  "componentType": "",
+                  "options": [],
+                  "pairFirstLabel": "W",
+                  "pairSecondLabel": "H",
+                  "visibleWhenPath": "",
+                  "visibleWhenValue": "",
+                  "source": "runtime",
+                  "uiOrigin": "embedded",
+                  "uiGroupId": "badge",
+                  "uiGroupLabel": "Badge",
+                  "uiParentGroupId": "",
+                  "transition": null,
+                  "unit": "",
+                  "uiOrder": 26
+                }
+              ],
+              "actions": [
+                {
+                  "id": "play",
+                  "label": "Play",
+                  "playInputId": "isPlaying",
+                  "durationInputId": "durationSeconds",
+                  "timeJsonKey": "currentTimeSeconds",
+                  "prewarmFrames": false,
+                  "timeUnit": "seconds",
+                  "completionBehavior": "reset"
+                }
+              ],
+              "isPlaying": false,
+              "currentTimeSeconds": 0,
+              "durationSeconds": 5,
+              "actorId": "actor_alex",
+              "availableWidth": 240,
+              "showBadge": true,
+              "badgeContentMode": "icon",
+              "badgeIconToken": "media_mic",
+              "badgeText": "1",
+              "badgeSize": 16,
+              "badgeBackgroundPaletteColor": "blue",
+              "badgeContentPaletteColor": "gray_100"
+            },
+            "active": false,
+            "behavior": "replace",
+            "enterMotion": {
+              "transition": "slide",
+              "direction": "bottom",
+              "bounds": "screen",
+              "fade": false,
+              "translate": true,
+              "scale": false
+            },
+            "exitMotion": {
+              "transition": "slide",
+              "direction": "bottom",
+              "bounds": "screen",
+              "fade": false,
+              "translate": true,
+              "scale": false
+            },
+            "placement": {
+              "mode": "center",
+              "alignX": 0.5,
+              "alignY": 0.5,
+              "offsetX": 0,
+              "offsetY": 0
+            },
+            "name": "Audio"
+          }
+        ],
+        "name": "Slot 2"
+      },
+      {
+        "id": "items_817618386d674af0ba4c796c3374adf9",
+        "iconSizeToken": "theme.iconSizes.m",
+        "textSizeToken": "theme.typography.sizes.s",
+        "gapBeforeMode": "fixed",
+        "gapBeforeToken": "theme.spacing.xl",
+        "gapBeforeWeight": 1,
+        "alternatives": [
+          {
+            "id": "items_817618386d674af0ba4c796c3374adf9_default",
+            "variantReference": "component_project_foqn_s2_iconBar::variant::default",
+            "overrides": {},
+            "inputs": {
+              "componentType": "iconBar",
+              "sampleText": "Sample",
+              "sampleSubtext": "",
+              "sampleSize": 256,
+              "size": "360|56",
+              "state": "idle",
+              "inputs": [
+                {
+                  "id": "state",
+                  "label": "State",
+                  "jsonKey": "state",
+                  "kind": "option",
+                  "valueKind": "OptionToken",
+                  "defaultValue": "idle",
+                  "minimum": 0,
+                  "maximum": 9999,
+                  "increment": 1,
+                  "tableId": "",
+                  "resolvedJsonKey": "",
+                  "componentType": "",
+                  "options": [
+                    {
+                      "value": "idle",
+                      "label": "Idle"
+                    },
+                    {
+                      "value": "active",
+                      "label": "Active"
+                    }
+                  ],
+                  "pairFirstLabel": "W",
+                  "pairSecondLabel": "H",
+                  "visibleWhenPath": "",
+                  "visibleWhenValue": "",
+                  "source": "runtime",
+                  "uiOrigin": "embedded",
+                  "uiGroupId": "state",
+                  "uiGroupLabel": "State",
+                  "uiParentGroupId": "",
+                  "unit": "",
+                  "uiOrder": 10
+                },
+                {
+                  "id": "size",
+                  "label": "Size",
+                  "jsonKey": "size",
+                  "kind": "integerPair",
+                  "valueKind": "IntegerPair",
+                  "defaultValue": "360|56",
+                  "minimum": 0,
+                  "maximum": 9999,
+                  "increment": 1,
+                  "tableId": "",
+                  "resolvedJsonKey": "",
+                  "componentType": "",
+                  "options": [],
+                  "pairFirstLabel": "W",
+                  "pairSecondLabel": "H",
+                  "visibleWhenPath": "",
+                  "visibleWhenValue": "",
+                  "source": "runtime",
+                  "uiOrigin": "embedded",
+                  "uiGroupId": "layout",
+                  "uiGroupLabel": "Layout",
+                  "uiParentGroupId": "",
+                  "unit": "",
+                  "uiOrder": 20
+                }
+              ]
+            },
+            "active": false,
+            "behavior": "replace",
+            "enterMotion": {
+              "transition": "slide",
+              "direction": "bottom",
+              "bounds": "screen",
+              "fade": false,
+              "translate": true,
+              "scale": false
+            },
+            "exitMotion": {
+              "transition": "slide",
+              "direction": "bottom",
+              "bounds": "screen",
+              "fade": false,
+              "translate": true,
+              "scale": false
+            },
+            "placement": {
+              "mode": "center",
+              "alignX": 0.5,
+              "alignY": 0.5,
+              "offsetX": 0,
+              "offsetY": 0
+            },
+            "name": "Icon Bar"
+          }
+        ],
+        "name": "Slot 3"
+      },
+      {
+        "id": "items_77b77a6433d34935a46dc9a60556c2a9",
+        "iconSizeToken": "theme.iconSizes.m",
+        "textSizeToken": "theme.typography.sizes.s",
+        "gapBeforeMode": "reflow",
+        "gapBeforeToken": "theme.spacing.xxl",
+        "gapBeforeWeight": 1,
+        "alternatives": [
+          {
+            "id": "items_77b77a6433d34935a46dc9a60556c2a9_default",
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {},
+            "inputs": {
+              "componentType": "label",
+              "sampleText": "Alex",
+              "sampleSize": 256,
+              "sampleSubtext": "Subtitle",
+              "inputs": [
+                {
+                  "id": "sampleText",
+                  "label": "Text",
+                  "jsonKey": "sampleText",
+                  "kind": "text",
+                  "valueKind": "StringSingleLine",
+                  "defaultValue": "Sample",
+                  "minimum": 0,
+                  "maximum": 9999,
+                  "increment": 1,
+                  "tableId": "",
+                  "resolvedJsonKey": "",
+                  "componentType": "",
+                  "options": [],
+                  "pairFirstLabel": "W",
+                  "pairSecondLabel": "H",
+                  "visibleWhenPath": "",
+                  "visibleWhenValue": "",
+                  "source": "runtime",
+                  "uiOrigin": "embedded",
+                  "uiGroupId": "text",
+                  "uiGroupLabel": "Text",
+                  "uiParentGroupId": "",
+                  "transition": null,
+                  "unit": "",
+                  "uiOrder": 10
+                },
+                {
+                  "id": "textMode",
+                  "label": "Content source",
+                  "jsonKey": "textMode",
+                  "kind": "option",
+                  "valueKind": "OptionToken",
+                  "defaultValue": "literal",
+                  "minimum": 0,
+                  "maximum": 9999,
+                  "increment": 1,
+                  "tableId": "",
+                  "resolvedJsonKey": "",
+                  "componentType": "",
+                  "options": [
+                    {
+                      "value": "literal",
+                      "label": "Text"
+                    },
+                    {
+                      "value": "countUp",
+                      "label": "Count up"
+                    },
+                    {
+                      "value": "countDown",
+                      "label": "Count down"
+                    }
+                  ],
+                  "pairFirstLabel": "W",
+                  "pairSecondLabel": "H",
+                  "visibleWhenPath": "",
+                  "visibleWhenValue": "",
+                  "source": "runtime",
+                  "uiOrigin": "embedded",
+                  "uiGroupId": "text",
+                  "uiGroupLabel": "Text",
+                  "uiParentGroupId": "",
+                  "transition": {
+                    "targetInputId": "sampleText",
+                    "triggerValues": [
+                      "countUp",
+                      "countDown"
+                    ],
+                    "replacementValue": "00:00",
+                    "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                    "forwardedTargetOnly": true
+                  },
+                  "unit": "",
+                  "uiOrder": 11
+                },
+                {
+                  "id": "textSizeMultiplier",
+                  "label": "Size multiplier",
+                  "jsonKey": "textSizeMultiplier",
+                  "kind": "number",
+                  "valueKind": "Decimal",
+                  "defaultValue": "1",
+                  "minimum": 0.1,
+                  "maximum": 20,
+                  "increment": 0.1,
+                  "tableId": "",
+                  "resolvedJsonKey": "",
+                  "componentType": "",
+                  "options": [],
+                  "pairFirstLabel": "W",
+                  "pairSecondLabel": "H",
+                  "visibleWhenPath": "",
+                  "visibleWhenValue": "",
+                  "source": "runtime",
+                  "uiOrigin": "embedded",
+                  "uiGroupId": "text",
+                  "uiGroupLabel": "Text",
+                  "uiParentGroupId": "",
+                  "transition": null,
+                  "unit": "",
+                  "uiOrder": 12
+                },
+                {
+                  "id": "sampleSubtext",
+                  "label": "Subtext",
+                  "jsonKey": "sampleSubtext",
+                  "kind": "text",
+                  "valueKind": "StringSingleLine",
+                  "defaultValue": "Subtitle",
+                  "minimum": 0,
+                  "maximum": 9999,
+                  "increment": 1,
+                  "tableId": "",
+                  "resolvedJsonKey": "",
+                  "componentType": "",
+                  "options": [],
+                  "pairFirstLabel": "W",
+                  "pairSecondLabel": "H",
+                  "visibleWhenPath": "",
+                  "visibleWhenValue": "",
+                  "source": "runtime",
+                  "uiOrigin": "embedded",
+                  "uiGroupId": "subtext",
+                  "uiGroupLabel": "Subtext",
+                  "uiParentGroupId": "",
+                  "transition": null,
+                  "unit": "",
+                  "uiOrder": 20
+                },
+                {
+                  "id": "subtextMode",
+                  "label": "Content source",
+                  "jsonKey": "subtextMode",
+                  "kind": "option",
+                  "valueKind": "OptionToken",
+                  "defaultValue": "literal",
+                  "minimum": 0,
+                  "maximum": 9999,
+                  "increment": 1,
+                  "tableId": "",
+                  "resolvedJsonKey": "",
+                  "componentType": "",
+                  "options": [
+                    {
+                      "value": "literal",
+                      "label": "Text"
+                    },
+                    {
+                      "value": "countUp",
+                      "label": "Count up"
+                    },
+                    {
+                      "value": "countDown",
+                      "label": "Count down"
+                    }
+                  ],
+                  "pairFirstLabel": "W",
+                  "pairSecondLabel": "H",
+                  "visibleWhenPath": "",
+                  "visibleWhenValue": "",
+                  "source": "runtime",
+                  "uiOrigin": "embedded",
+                  "uiGroupId": "subtext",
+                  "uiGroupLabel": "Subtext",
+                  "uiParentGroupId": "",
+                  "transition": {
+                    "targetInputId": "sampleSubtext",
+                    "triggerValues": [
+                      "countUp",
+                      "countDown"
+                    ],
+                    "replacementValue": "00:00",
+                    "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
+                    "forwardedTargetOnly": true
+                  },
+                  "unit": "",
+                  "uiOrder": 21
+                },
+                {
+                  "id": "subtextSizeMultiplier",
+                  "label": "Size multiplier",
+                  "jsonKey": "subtextSizeMultiplier",
+                  "kind": "number",
+                  "valueKind": "Decimal",
+                  "defaultValue": "1",
+                  "minimum": 0.1,
+                  "maximum": 20,
+                  "increment": 0.1,
+                  "tableId": "",
+                  "resolvedJsonKey": "",
+                  "componentType": "",
+                  "options": [],
+                  "pairFirstLabel": "W",
+                  "pairSecondLabel": "H",
+                  "visibleWhenPath": "",
+                  "visibleWhenValue": "",
+                  "source": "runtime",
+                  "uiOrigin": "embedded",
+                  "uiGroupId": "subtext",
+                  "uiGroupLabel": "Subtext",
+                  "uiParentGroupId": "",
+                  "transition": null,
+                  "unit": "",
+                  "uiOrder": 22
+                }
+              ],
+              "textMode": "literal",
+              "textSizeMultiplier": 1,
+              "subtextMode": "literal",
+              "subtextSizeMultiplier": 1
+            },
+            "active": false,
+            "behavior": "replace",
+            "enterMotion": {
+              "transition": "slide",
+              "direction": "bottom",
+              "bounds": "screen",
+              "fade": false,
+              "translate": true,
+              "scale": false
+            },
+            "exitMotion": {
+              "transition": "slide",
+              "direction": "bottom",
+              "bounds": "screen",
+              "fade": false,
+              "translate": true,
+              "scale": false
+            },
+            "placement": {
+              "mode": "insideEdge",
+              "alignX": 0,
+              "alignY": 0.5,
+              "offsetX": 0,
+              "offsetY": 0
+            },
+            "name": "Label"
+          }
+        ],
+        "name": "Slot 4"
+      }
+    ],
+    "collections": [
+      {
+        "id": "items",
+        "label": "Slots",
+        "jsonKey": "items",
+        "itemLabel": "Slot",
+        "animationTimeline": {
+          "sequenceItems": false
+        },
+        "fields": [
+          {
+            "id": "alternatives",
+            "label": "States",
+            "jsonKey": "alternatives",
+            "kind": "collection",
+            "valueKind": "StructuredCollection",
+            "defaultValue": "[{\"id\":\"default\",\"name\":\"State\",\"variantReference\":\"\",\"overrides\":{},\"inputs\":{},\"active\":false,\"behavior\":\"replace\",\"placement\":{\"mode\":\"center\",\"alignX\":0.5,\"alignY\":0.5,\"offsetX\":0,\"offsetY\":0},\"enterMotion\":{\"transition\":\"slide\",\"direction\":\"bottom\",\"bounds\":\"screen\",\"fade\":false,\"translate\":true,\"scale\":false},\"exitMotion\":{\"transition\":\"slide\",\"direction\":\"bottom\",\"bounds\":\"screen\",\"fade\":false,\"translate\":true,\"scale\":false}}]",
+            "structuredCollection": {
+              "id": "alternatives",
+              "label": "States",
+              "jsonKey": "alternatives",
+              "itemLabel": "State",
+              "componentItems": {
+                "variantReferenceJsonKey": "variantReference",
+                "overridesJsonKey": "overrides",
+                "inputsJsonKey": "inputs"
+              },
+              "fields": [
+                {
+                  "id": "name",
+                  "label": "Name",
+                  "jsonKey": "name",
+                  "kind": "text",
+                  "valueKind": "StringSingleLine",
+                  "defaultValue": "State"
+                },
+                {
+                  "id": "variantReference",
+                  "label": "Component",
+                  "jsonKey": "variantReference",
+                  "kind": "componentVariant",
+                  "defaultValue": "",
+                  "componentType": "*,-componentStack",
+                  "allowEmpty": true,
+                  "valueKind": "ComponentVariant"
+                },
+                {
+                  "id": "active",
+                  "label": "Active",
+                  "jsonKey": "active",
+                  "kind": "boolean",
+                  "defaultValue": "false",
+                  "minimumItemIndex": 1,
+                  "animatable": true,
+                  "animationInterpolations": [
+                    "hold"
+                  ],
+                  "valueKind": "Boolean"
+                },
+                {
+                  "id": "behavior",
+                  "label": "Behavior",
+                  "jsonKey": "behavior",
+                  "kind": "option",
+                  "defaultValue": "replace",
+                  "minimumItemIndex": 1,
+                  "options": [
+                    {
+                      "value": "replace",
+                      "label": "Replace"
+                    },
+                    {
+                      "value": "overlay",
+                      "label": "Overlay"
+                    }
+                  ],
+                  "valueKind": "OptionToken"
+                },
+                {
+                  "id": "placement",
+                  "label": "Placement",
+                  "jsonKey": "placement",
+                  "kind": "text",
+                  "valueKind": "AlignmentPlacement",
+                  "defaultValue": "{\"mode\":\"center\",\"alignX\":0.5,\"alignY\":0.5,\"offsetX\":0,\"offsetY\":0}"
+                },
+                {
+                  "id": "enterMotion",
+                  "label": "Enter transition",
+                  "jsonKey": "enterMotion",
+                  "kind": "text",
+                  "valueKind": "Motion",
+                  "defaultValue": "{\"transition\":\"slide\",\"direction\":\"bottom\",\"bounds\":\"screen\",\"fade\":false,\"translate\":true,\"scale\":false}"
+                },
+                {
+                  "id": "exitMotion",
+                  "label": "Exit transition",
+                  "jsonKey": "exitMotion",
+                  "kind": "text",
+                  "valueKind": "Motion",
+                  "defaultValue": "{\"transition\":\"slide\",\"direction\":\"bottom\",\"bounds\":\"screen\",\"fade\":false,\"translate\":true,\"scale\":false}"
+                }
+              ],
+              "itemPresentation": {
+                "titleFieldId": "name",
+                "firstItemBadge": "Initial",
+                "subtitleFieldIds": [
+                  "variantReference",
+                  "behavior",
+                  "placement"
+                ],
+                "subtitleMaxCharacters": 72,
+                "fallbackIcon": "component"
+              }
+            }
+          },
+          {
+            "id": "gapBeforeMode",
+            "label": "Gap before",
+            "jsonKey": "gapBeforeMode",
+            "kind": "option",
+            "defaultValue": "fixed",
+            "minimumItemIndex": 1,
+            "options": [
+              {
+                "value": "fixed",
+                "label": "Fixed"
+              },
+              {
+                "value": "reflow",
+                "label": "Reflow"
+              }
+            ],
+            "valueKind": "OptionToken"
+          },
+          {
+            "id": "gapBeforeToken",
+            "label": "Fixed gap before",
+            "jsonKey": "gapBeforeToken",
+            "kind": "themeToken",
+            "defaultValue": "theme.spacing.m",
+            "minimumItemIndex": 1,
+            "options": [
+              {
+                "value": "theme.spacing.none",
+                "label": "spacing.none"
+              },
+              {
+                "value": "theme.spacing.xs",
+                "label": "spacing.xs"
+              },
+              {
+                "value": "theme.spacing.s",
+                "label": "spacing.s"
+              },
+              {
+                "value": "theme.spacing.m",
+                "label": "spacing.m"
+              },
+              {
+                "value": "theme.spacing.l",
+                "label": "spacing.l"
+              },
+              {
+                "value": "theme.spacing.xl",
+                "label": "spacing.xl"
+              },
+              {
+                "value": "theme.spacing.xxl",
+                "label": "spacing.xxl"
+              }
+            ],
+            "enabledWhenItemJsonKey": "gapBeforeMode",
+            "enabledWhenItemValues": [
+              "fixed"
+            ],
+            "valueKind": "ThemeToken"
+          },
+          {
+            "id": "gapBeforeWeight",
+            "label": "Reflow gap before weight",
+            "jsonKey": "gapBeforeWeight",
+            "kind": "number",
+            "valueKind": "Decimal",
+            "defaultValue": "1",
+            "minimumItemIndex": 1,
+            "minimum": 0.01,
+            "maximum": 100,
+            "increment": 0.1,
+            "enabledWhenItemJsonKey": "gapBeforeMode",
+            "enabledWhenItemValues": [
+              "reflow"
+            ]
+          }
+        ],
+        "itemPresentation": {
+          "titleFieldId": "name",
+          "subtitleFieldIds": [
+            "alternatives"
+          ],
+          "subtitleMaxCharacters": 72,
+          "fallbackIcon": "component"
+        },
+        "itemActions": []
+      }
+    ]
+  },
+  "metadata": {
+    "note": "Seeded reusable component class."
+  },
+  "dictionaryFields": [],
+  "editorLayout": {
+    "cards": [
+      {
+        "id": "general",
+        "label": "General",
+        "subtitle": "Identity",
+        "icon": "general",
+        "order": 10,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "identity",
+            "label": "Identity",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "core.name",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.type",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "core.notes",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "assets": []
+}

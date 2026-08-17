@@ -1,0 +1,1536 @@
+{
+  "schemaVersion": 1,
+  "intent": {
+    "responsibility": "Own the complete current Component configuration and its exact Runtime Input contract.",
+    "visualBoundary": "Resolve the Component through its manifest-declared resolver and renderable boundary.",
+    "runtimeBehavior": "Consume only declared Runtime Inputs and explicit embedded Component boundaries.",
+    "forwarding": "Forward values only through declared stable source and target identities.",
+    "temporalOwnership": "Keep reusable behavior relative to the Component owner and its declared child owners."
+  },
+  "component": {
+    "componentType": "bubble",
+    "category": "component",
+    "componentClassId": "component_project_foqn_s2_bubble",
+    "projectId": "project_foqn_s2",
+    "recordClassId": "component.bubble",
+    "name": "Bubble",
+    "notes": "Bubble component"
+  },
+  "manifest": {
+    "contract": "./bubbleComponentContract",
+    "resolver": "./bubbleComponentResolver",
+    "renderable": "./bubbleComponentRenderable",
+    "embeds": [
+      "surface",
+      "textBox",
+      "media",
+      "audio",
+      "label",
+      "avatar"
+    ]
+  },
+  "owners": {
+    "contractExport": "BubbleDesignContract",
+    "resolverExport": "resolveBubbleComponent",
+    "renderableExport": "bubbleComponentToRenderable",
+    "registryMode": "simple",
+    "focusedTest": "tests/animation/atomicTemporalComponents.test.ts",
+    "configContractExport": null
+  },
+  "config": {
+    "style": {
+      "shadowEnabled": false,
+      "reliefEnabled": false,
+      "borderWidth": 0,
+      "borderColorToken": "theme.borders.primary",
+      "cornerRadiusToken": "theme.radii.xl",
+      "reliefAngle": -45,
+      "reliefExtent": 1,
+      "reliefSpread": 0,
+      "reliefTopIntensity": 0.12,
+      "reliefBottomIntensity": -0.1
+    },
+    "bubble": {
+      "surfaceSlot": {
+        "variantReference": "component_project_foqn_s2_surface::variant::default",
+        "overrides": {}
+      },
+      "textBoxSlot": {
+        "variantReference": "component_project_foqn_s2_textBox::variant::default",
+        "overrides": {
+          "textBox": {
+            "placeholder": "",
+            "maxLines": 12,
+            "iconGap": "theme.spacing.none",
+            "leftIconRowSlot": {
+              "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+              "overrides": {
+                "iconRow": {
+                  "items": [],
+                  "gap": "theme.spacing.none",
+                  "orientation": "horizontal"
+                }
+              }
+            },
+            "rightIconRowSlot": {
+              "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+              "overrides": {
+                "iconRow": {
+                  "items": [],
+                  "gap": "theme.spacing.none",
+                  "orientation": "horizontal"
+                }
+              }
+            }
+          }
+        }
+      },
+      "actorLabelSlot": {
+        "showLabel": false,
+        "variantReference": "component_project_foqn_s2_label::variant::default",
+        "placement": {
+          "mode": "outsideEdge",
+          "alignX": 0.5,
+          "alignY": 0,
+          "offsetX": 0,
+          "offsetY": 4
+        },
+        "overrides": {},
+        "useActorColor": false
+      },
+      "incomingBackground": "gray_020|gray_080",
+      "incomingText": "gray_010|gray_100",
+      "systemBackground": "gray_030|gray_070",
+      "systemText": "gray_010|gray_100",
+      "outgoingBackground": "aqua_green|aqua_green",
+      "outgoingText": "gray_100|gray_100",
+      "padding": "theme.spacing.l|theme.spacing.m",
+      "mediaType": "none",
+      "imageMediaSlot": {
+        "variantReference": "component_project_foqn_s2_media::variant::default",
+        "overrides": {}
+      },
+      "videoMediaSlot": {
+        "variantReference": "component_project_foqn_s2_media::variant::default",
+        "overrides": {}
+      },
+      "audioSlot": {
+        "variantReference": "component_project_foqn_s2_audio::variant::default",
+        "overrides": {}
+      },
+      "mediaPosition": "bottom",
+      "avatarSlot": {
+        "variantReference": "component_project_foqn_s2_avatar::variant::default",
+        "overrides": {},
+        "showAvatar": false,
+        "placement": {
+          "mode": "outsideEdge",
+          "alignX": 0,
+          "alignY": 0.5,
+          "offsetX": -8,
+          "offsetY": 0
+        }
+      },
+      "status": {
+        "sent": {
+          "iconToken": "system_check",
+          "colorToken": "theme.icons.secondary"
+        },
+        "delivered": {
+          "iconToken": "system_check",
+          "colorToken": "theme.icons.secondary"
+        },
+        "read": {
+          "iconToken": "system_check",
+          "colorToken": "theme.icons.accent"
+        },
+        "sizeToken": "theme.iconSizes.s",
+        "textSizeToken": "theme.iconSizes.s",
+        "gapToken": "theme.spacing.xs"
+      }
+    }
+  },
+  "defaultVariant": {
+    "id": "default",
+    "name": "Default",
+    "protected": true,
+    "locked": true,
+    "config": {
+      "style": {
+        "shadowEnabled": false,
+        "reliefEnabled": false,
+        "borderWidth": 0,
+        "borderColorToken": "theme.borders.primary",
+        "cornerRadiusToken": "theme.radii.xl",
+        "reliefAngle": -45,
+        "reliefExtent": 1,
+        "reliefSpread": 0,
+        "reliefTopIntensity": 0.12,
+        "reliefBottomIntensity": -0.1
+      },
+      "bubble": {
+        "surfaceSlot": {
+          "variantReference": "component_project_foqn_s2_surface::variant::default",
+          "overrides": {}
+        },
+        "textBoxSlot": {
+          "variantReference": "component_project_foqn_s2_textBox::variant::default",
+          "overrides": {
+            "textBox": {
+              "placeholder": "",
+              "maxLines": 12,
+              "iconGap": "theme.spacing.none",
+              "leftIconRowSlot": {
+                "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                "overrides": {
+                  "iconRow": {
+                    "items": [],
+                    "gap": "theme.spacing.none",
+                    "orientation": "horizontal"
+                  }
+                }
+              },
+              "rightIconRowSlot": {
+                "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                "overrides": {
+                  "iconRow": {
+                    "items": [],
+                    "gap": "theme.spacing.none",
+                    "orientation": "horizontal"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "actorLabelSlot": {
+          "showLabel": false,
+          "variantReference": "component_project_foqn_s2_label::variant::default",
+          "placement": {
+            "mode": "outsideEdge",
+            "alignX": 0.5,
+            "alignY": 0,
+            "offsetX": 0,
+            "offsetY": 4
+          },
+          "overrides": {},
+          "useActorColor": false
+        },
+        "incomingBackground": "gray_020|gray_080",
+        "incomingText": "gray_010|gray_100",
+        "systemBackground": "gray_030|gray_070",
+        "systemText": "gray_010|gray_100",
+        "outgoingBackground": "aqua_green|aqua_green",
+        "outgoingText": "gray_100|gray_100",
+        "padding": "theme.spacing.l|theme.spacing.m",
+        "mediaType": "none",
+        "imageMediaSlot": {
+          "variantReference": "component_project_foqn_s2_media::variant::default",
+          "overrides": {}
+        },
+        "videoMediaSlot": {
+          "variantReference": "component_project_foqn_s2_media::variant::default",
+          "overrides": {}
+        },
+        "audioSlot": {
+          "variantReference": "component_project_foqn_s2_audio::variant::default",
+          "overrides": {}
+        },
+        "mediaPosition": "bottom",
+        "avatarSlot": {
+          "variantReference": "component_project_foqn_s2_avatar::variant::default",
+          "overrides": {},
+          "showAvatar": false,
+          "placement": {
+            "mode": "outsideEdge",
+            "alignX": 0,
+            "alignY": 0.5,
+            "offsetX": -8,
+            "offsetY": 0
+          }
+        },
+        "status": {
+          "sent": {
+            "iconToken": "system_check",
+            "colorToken": "theme.icons.secondary"
+          },
+          "delivered": {
+            "iconToken": "system_check",
+            "colorToken": "theme.icons.secondary"
+          },
+          "read": {
+            "iconToken": "system_check",
+            "colorToken": "theme.icons.accent"
+          },
+          "sizeToken": "theme.iconSizes.s",
+          "textSizeToken": "theme.iconSizes.s",
+          "gapToken": "theme.spacing.xs"
+        }
+      }
+    }
+  },
+  "additionalVariants": [
+    {
+      "id": "default_copy",
+      "name": "Bubble",
+      "protected": false,
+      "locked": false,
+      "config": {
+        "style": {
+          "shadowEnabled": false,
+          "reliefEnabled": false,
+          "borderWidth": 0,
+          "borderColorToken": "theme.borders.primary",
+          "cornerRadiusToken": "theme.radii.xl",
+          "reliefAngle": -45,
+          "reliefExtent": 1,
+          "reliefSpread": 0,
+          "reliefTopIntensity": 0.12,
+          "reliefBottomIntensity": -0.1
+        },
+        "bubble": {
+          "surfaceSlot": {
+            "variantReference": "component_project_foqn_s2_surface::variant::default_copy_3",
+            "overrides": {
+              "style": {
+                "cornerRadiusToken": "theme.radii.m",
+                "borderWidth": 0
+              },
+              "surface": {
+                "tail": {
+                  "size": "25|20",
+                  "outerCornerRadius": 2
+                },
+                "backgroundColorToken": "theme.colors.card"
+              }
+            }
+          },
+          "textBoxSlot": {
+            "variantReference": "component_project_foqn_s2_textBox::variant::default",
+            "overrides": {
+              "textBox": {
+                "placeholder": "",
+                "maxLines": 12,
+                "iconGap": "theme.spacing.none",
+                "leftIconRowSlot": {
+                  "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                  "overrides": {
+                    "iconRow": {
+                      "items": [],
+                      "gap": "theme.spacing.none",
+                      "orientation": "horizontal"
+                    }
+                  }
+                },
+                "rightIconRowSlot": {
+                  "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                  "overrides": {
+                    "iconRow": {
+                      "items": [],
+                      "gap": "theme.spacing.none",
+                      "orientation": "horizontal"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "actorLabelSlot": {
+            "showLabel": true,
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "placement": {
+              "mode": "center",
+              "alignX": 0,
+              "alignY": 0,
+              "offsetX": 31,
+              "offsetY": 1
+            },
+            "overrides": {
+              "label": {
+                "surfaceSlot": {
+                  "overrides": {
+                    "surface": {
+                      "backgroundAlpha": 1,
+                      "borderAlpha": 1,
+                      "backgroundColorToken": "theme.colors.badge"
+                    },
+                    "style": {
+                      "shadowEnabled": true,
+                      "cornerRadiusToken": "theme.radii.m"
+                    }
+                  }
+                },
+                "reserveSubtextSpace": false,
+                "subtextVerticalPosition": "bottom",
+                "subtextHorizontalAlign": "center"
+              }
+            },
+            "useActorColor": true
+          },
+          "incomingBackground": "gray_090|gray_010",
+          "incomingText": "gray_010|gray_100",
+          "systemBackground": "gray_070|gray_050",
+          "systemText": "gray_010|gray_100",
+          "outgoingBackground": "aqua_green|aqua_green",
+          "outgoingText": "gray_100|gray_100",
+          "padding": "theme.spacing.m|theme.spacing.m",
+          "mediaType": "image",
+          "imageMediaSlot": {
+            "variantReference": "component_project_foqn_s2_media::variant::media_video_copy",
+            "overrides": {}
+          },
+          "videoMediaSlot": {
+            "variantReference": "component_project_foqn_s2_media::variant::default_copy",
+            "overrides": {}
+          },
+          "audioSlot": {
+            "variantReference": "component_project_foqn_s2_audio::variant::default_copy",
+            "overrides": {}
+          },
+          "mediaPosition": "top",
+          "avatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::default",
+            "overrides": {
+              "avatar": {
+                "labelSlot": {
+                  "showLabel": false,
+                  "showSubtext": false,
+                  "placement": {
+                    "mode": "outsideEdge",
+                    "alignX": 0,
+                    "alignY": 1,
+                    "offsetX": 50,
+                    "offsetY": 0
+                  }
+                },
+                "defaultSize": 30
+              },
+              "style": {
+                "shadowEnabled": true
+              }
+            },
+            "showAvatar": true,
+            "placement": {
+              "mode": "center",
+              "alignX": 0,
+              "alignY": 0,
+              "offsetX": -24,
+              "offsetY": 30
+            }
+          },
+          "status": {
+            "sent": {
+              "iconToken": "system_check",
+              "colorToken": "theme.icons.secondary"
+            },
+            "delivered": {
+              "iconToken": "double_check_outline",
+              "colorToken": "theme.icons.secondary"
+            },
+            "read": {
+              "iconToken": "double_check_outline",
+              "colorToken": "theme.icons.accent"
+            },
+            "sizeToken": "theme.iconSizes.s",
+            "textSizeToken": "theme.iconSizes.xs",
+            "gapToken": "theme.spacing.xs"
+          }
+        }
+      }
+    }
+  ],
+  "designPreview": {
+    "componentType": "bubble",
+    "sampleText": "Mensaje de prueba 😎 😎😍 \ncon salto y wrap en la tercera línea de 123",
+    "sampleSubtext": "",
+    "sampleSize": 256,
+    "inputs": [
+      {
+        "id": "state",
+        "label": "State",
+        "jsonKey": "state",
+        "kind": "option",
+        "valueKind": "OptionToken",
+        "defaultValue": "incoming",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [
+          {
+            "value": "incoming",
+            "label": "Incoming"
+          },
+          {
+            "value": "system",
+            "label": "System"
+          },
+          {
+            "value": "outgoing",
+            "label": "Outgoing"
+          }
+        ],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "message",
+        "uiGroupLabel": "Message",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 10
+      },
+      {
+        "id": "sampleText",
+        "label": "Text",
+        "jsonKey": "sampleText",
+        "kind": "multilineText",
+        "valueKind": "StringMultiline",
+        "defaultValue": "Message",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "message",
+        "uiGroupLabel": "Message",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 11
+      },
+      {
+        "id": "maxWidth",
+        "label": "Max width %",
+        "jsonKey": "maxWidth",
+        "kind": "number",
+        "valueKind": "Integer",
+        "defaultValue": "66",
+        "minimum": 1,
+        "maximum": 100,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "message",
+        "uiGroupLabel": "Message",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 12
+      },
+      {
+        "id": "writeOnDurationFrames",
+        "label": "Write-on duration",
+        "jsonKey": "writeOnDurationFrames",
+        "kind": "number",
+        "valueKind": "Integer",
+        "defaultValue": "30",
+        "minimum": 1,
+        "maximum": 10000,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "timing",
+        "uiGroupLabel": "Timing",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "frames",
+        "uiOrder": 20
+      },
+      {
+        "id": "writeOnTrigger",
+        "label": "Write-on trigger",
+        "jsonKey": "writeOnTrigger",
+        "kind": "boolean",
+        "valueKind": "Boolean",
+        "defaultValue": "false",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "calculated",
+        "uiOrigin": "embedded",
+        "uiGroupId": "timing",
+        "uiGroupLabel": "Timing",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 21
+      },
+      {
+        "id": "writeOnFrame",
+        "label": "Write-on position",
+        "jsonKey": "writeOnFrame",
+        "kind": "number",
+        "valueKind": "Integer",
+        "defaultValue": "0",
+        "minimum": 0,
+        "maximum": 10000,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "calculated",
+        "uiOrigin": "embedded",
+        "uiGroupId": "timing",
+        "uiGroupLabel": "Timing",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "frames",
+        "uiOrder": 22
+      },
+      {
+        "id": "actorId",
+        "label": "Actor",
+        "jsonKey": "actorId",
+        "kind": "recordReference",
+        "valueKind": "RecordReference",
+        "defaultValue": "",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "actors",
+        "resolvedJsonKey": "actor",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "avatar",
+        "uiGroupLabel": "Avatar",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 40
+      },
+      {
+        "id": "actorName",
+        "label": "Actor name",
+        "jsonKey": "actorName",
+        "kind": "text",
+        "valueKind": "StringSingleLine",
+        "defaultValue": "Alex Q",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "actorLabel",
+        "uiGroupLabel": "Actor label",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 50
+      },
+      {
+        "id": "statusText",
+        "label": "Status text",
+        "jsonKey": "statusText",
+        "kind": "text",
+        "valueKind": "StringSingleLine",
+        "defaultValue": "9:41",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "delivery",
+        "uiGroupLabel": "Delivery",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 30
+      },
+      {
+        "id": "statusState",
+        "label": "Status",
+        "jsonKey": "statusState",
+        "kind": "option",
+        "valueKind": "OptionToken",
+        "defaultValue": "read",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [
+          {
+            "value": "none",
+            "label": "None"
+          },
+          {
+            "value": "sent",
+            "label": "Sent"
+          },
+          {
+            "value": "delivered",
+            "label": "Delivered"
+          },
+          {
+            "value": "read",
+            "label": "Read"
+          }
+        ],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "delivery",
+        "uiGroupLabel": "Delivery",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 31
+      },
+      {
+        "id": "mediaType",
+        "label": "Media type",
+        "jsonKey": "mediaType",
+        "kind": "option",
+        "valueKind": "OptionToken",
+        "defaultValue": "image",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [
+          {
+            "value": "none",
+            "label": "None"
+          },
+          {
+            "value": "image",
+            "label": "Image"
+          },
+          {
+            "value": "video",
+            "label": "Video"
+          },
+          {
+            "value": "audio",
+            "label": "Audio"
+          }
+        ],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "media",
+        "uiGroupLabel": "Media",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 60
+      },
+      {
+        "id": "mediaSource",
+        "label": "Media source",
+        "jsonKey": "mediaSource",
+        "kind": "mediaFilePath",
+        "valueKind": "MediaFilePath",
+        "defaultValue": "",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "media",
+        "uiGroupLabel": "Media",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 61
+      },
+      {
+        "id": "viewportSize",
+        "label": "Media viewport",
+        "jsonKey": "viewportSize",
+        "kind": "integerPair",
+        "valueKind": "IntegerPair",
+        "defaultValue": "240|160",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "media",
+        "uiGroupLabel": "Media",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 62
+      },
+      {
+        "id": "mediaScale",
+        "label": "Media scale",
+        "jsonKey": "mediaScale",
+        "kind": "number",
+        "valueKind": "Decimal",
+        "defaultValue": "1",
+        "minimum": 0.05,
+        "maximum": 16,
+        "increment": 0.05,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "media",
+        "uiGroupLabel": "Media",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 63
+      },
+      {
+        "id": "mediaOffset",
+        "label": "Media offset",
+        "jsonKey": "mediaOffset",
+        "kind": "integerPair",
+        "valueKind": "IntegerPair",
+        "defaultValue": "0|0",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "X",
+        "pairSecondLabel": "Y",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "media",
+        "uiGroupLabel": "Media",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 64
+      },
+      {
+        "id": "isPlaying",
+        "label": "Play/Pause",
+        "jsonKey": "isPlaying",
+        "kind": "boolean",
+        "valueKind": "Boolean",
+        "defaultValue": "false",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "media",
+        "uiGroupLabel": "Media",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 65
+      },
+      {
+        "id": "currentTimeSeconds",
+        "label": "Current time",
+        "jsonKey": "currentTimeSeconds",
+        "kind": "number",
+        "valueKind": "Decimal",
+        "defaultValue": "0",
+        "minimum": 0,
+        "maximum": 86400,
+        "increment": 0.1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "media",
+        "uiGroupLabel": "Media",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "s",
+        "uiOrder": 66
+      },
+      {
+        "id": "durationSeconds",
+        "label": "Duration",
+        "jsonKey": "durationSeconds",
+        "kind": "number",
+        "valueKind": "Decimal",
+        "defaultValue": "12",
+        "minimum": 0,
+        "maximum": 86400,
+        "increment": 0.1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "media",
+        "uiGroupLabel": "Media",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "s",
+        "uiOrder": 67
+      },
+      {
+        "id": "isFullScreen",
+        "label": "Full screen",
+        "jsonKey": "isFullScreen",
+        "kind": "boolean",
+        "valueKind": "Boolean",
+        "defaultValue": "false",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "media",
+        "uiGroupLabel": "Media",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 68
+      },
+      {
+        "id": "fullScreenTransition",
+        "label": "Full-screen transition",
+        "jsonKey": "fullScreenTransition",
+        "kind": "boolean",
+        "valueKind": "Boolean",
+        "defaultValue": "false",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "media",
+        "uiGroupLabel": "Media",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 69
+      },
+      {
+        "id": "fullframeOrientation",
+        "label": "Fullframe orientation",
+        "jsonKey": "fullframeOrientation",
+        "kind": "option",
+        "valueKind": "OptionToken",
+        "defaultValue": "portrait",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [
+          {
+            "value": "portrait",
+            "label": "Portrait"
+          },
+          {
+            "value": "landscape",
+            "label": "Landscape"
+          }
+        ],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "media",
+        "uiGroupLabel": "Media",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 70
+      },
+      {
+        "id": "controlsElapsedMs",
+        "label": "Controls elapsed",
+        "jsonKey": "controlsElapsedMs",
+        "kind": "number",
+        "valueKind": "Integer",
+        "defaultValue": "0",
+        "minimum": 0,
+        "maximum": 60000,
+        "increment": 10,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "media",
+        "uiGroupLabel": "Media",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "ms",
+        "uiOrder": 71
+      },
+      {
+        "id": "motionElapsedMs",
+        "label": "Motion elapsed",
+        "jsonKey": "motionElapsedMs",
+        "kind": "number",
+        "valueKind": "Decimal",
+        "defaultValue": "0",
+        "minimum": 0,
+        "maximum": 86400000,
+        "increment": 10,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "calculated",
+        "uiOrigin": "embedded",
+        "uiGroupId": "media",
+        "uiGroupLabel": "Media",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "ms",
+        "uiOrder": 72
+      }
+    ],
+    "state": "incoming",
+    "actorName": "Alex Q",
+    "maxWidth": 66,
+    "writeOnTrigger": false,
+    "actions": [
+      {
+        "id": "writeOn",
+        "label": "Write-on",
+        "playInputId": "writeOnTrigger",
+        "durationInputId": "writeOnDurationFrames",
+        "timeJsonKey": "writeOnFrame",
+        "timeUnit": "frames",
+        "prewarmFrames": false,
+        "completionBehavior": "reset"
+      },
+      {
+        "id": "play",
+        "label": "Play",
+        "playInputId": "isPlaying",
+        "durationInputId": "durationSeconds",
+        "timeJsonKey": "currentTimeSeconds",
+        "prewarmFrames": true,
+        "prewarmWhenConfigPath": "bubble.mediaType",
+        "prewarmWhenValue": "video",
+        "completionBehavior": "reset",
+        "timeUnit": "seconds"
+      },
+      {
+        "id": "fullScreen",
+        "label": "Full screen",
+        "playInputId": "fullScreenTransition",
+        "durationSeconds": 0.3,
+        "timeJsonKey": "motionElapsedMs",
+        "prewarmFrames": false,
+        "timeUnit": "milliseconds",
+        "completionBehavior": "reset",
+        "targetInputId": "isFullScreen",
+        "targetMode": "toggle"
+      }
+    ],
+    "writeOnDurationFrames": 30,
+    "writeOnFrame": 0,
+    "mediaSource": "media/image.14b3f25e7af16bda8755ce1c2c1efe6b.jpg",
+    "viewportSize": "240|160",
+    "mediaScale": 1,
+    "mediaOffset": "0|0",
+    "isPlaying": false,
+    "currentTimeSeconds": 0,
+    "durationSeconds": 12,
+    "isFullScreen": false,
+    "fullScreenTransition": false,
+    "fullframeOrientation": "portrait",
+    "controlsElapsedMs": 0,
+    "statusText": "9:41",
+    "statusState": "read",
+    "actorId": "",
+    "mediaType": "image",
+    "motionElapsedMs": 0
+  },
+  "metadata": {
+    "note": "Seeded reusable component class."
+  },
+  "dictionaryFields": [],
+  "editorLayout": {
+    "cards": [
+      {
+        "id": "general",
+        "label": "General",
+        "subtitle": "Identity",
+        "icon": "general",
+        "order": 10,
+        "visible": true,
+        "defaultOpen": true,
+        "groups": [
+          {
+            "id": "identity",
+            "label": "Identity",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "core.name",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.type",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "core.notes",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "bubble",
+        "label": "Bubble",
+        "subtitle": "Message surface and padding",
+        "icon": "bubble",
+        "order": 20,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "bubbleSurface",
+            "label": "Surface",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.bubble.surface.editor",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.bubble.padding",
+                "order": 20,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "bubbleText",
+        "label": "Text",
+        "subtitle": "Text box variant used by the message body",
+        "icon": "text-input",
+        "order": 30,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "bubbleText",
+            "label": "Text",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.bubble.textBox.editor",
+                "order": 10,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "bubbleMedia",
+        "label": "Media",
+        "subtitle": "Optional media content and variants",
+        "icon": "media",
+        "order": 40,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "bubbleMedia",
+            "label": "Media",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.bubble.media.type",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.bubble.media.position",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.bubble.media.image.editor",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "component.bubble.media.video.editor",
+                "order": 40,
+                "visible": true
+              },
+              {
+                "id": "component.bubble.media.audio.editor",
+                "order": 50,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "bubbleColors",
+        "label": "Colors",
+        "subtitle": "Incoming, system and outgoing palette colors",
+        "icon": "color",
+        "order": 50,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "bubbleColors",
+            "label": "Colors",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.bubble.incomingBackground",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.bubble.incomingText",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.bubble.systemBackground",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "component.bubble.systemText",
+                "order": 40,
+                "visible": true
+              },
+              {
+                "id": "component.bubble.outgoingBackground",
+                "order": 50,
+                "visible": true
+              },
+              {
+                "id": "component.bubble.outgoingText",
+                "order": 60,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "bubbleActorLabel",
+        "label": "Actor label",
+        "subtitle": "Optional embedded actor label",
+        "icon": "label",
+        "order": 60,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "bubbleActorLabel",
+            "label": "Actor label",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.bubble.actorLabel.showLabel",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.bubble.actorLabel.useActorColor",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.bubble.actorLabel.placement",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "component.bubble.actorLabel.editor",
+                "order": 40,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "bubbleAvatar",
+        "label": "Avatar",
+        "subtitle": "Optional embedded actor avatar",
+        "icon": "avatar",
+        "order": 70,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "bubbleAvatar",
+            "label": "Avatar",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.bubble.avatar.showAvatar",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.bubble.avatar.placement",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.bubble.avatar.editor",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "bubbleStatus",
+        "label": "Status",
+        "subtitle": "Message status text and state icons",
+        "icon": "status",
+        "order": 80,
+        "visible": true,
+        "defaultOpen": false,
+        "groupLayout": "separatedSections",
+        "groups": [
+          {
+            "id": "bubbleStatusGeneral",
+            "label": "General",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.bubble.status.size",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.bubble.status.textSize",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.bubble.status.gap",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          },
+          {
+            "id": "bubbleStatusSent",
+            "label": "Sent",
+            "order": 20,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.bubble.status.sent.icon",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.bubble.status.sent.color",
+                "order": 20,
+                "visible": true
+              }
+            ]
+          },
+          {
+            "id": "bubbleStatusDelivered",
+            "label": "Delivered",
+            "order": 30,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.bubble.status.delivered.icon",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.bubble.status.delivered.color",
+                "order": 20,
+                "visible": true
+              }
+            ]
+          },
+          {
+            "id": "bubbleStatusRead",
+            "label": "Read",
+            "order": 40,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.bubble.status.read.icon",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.bubble.status.read.color",
+                "order": 20,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "assets": []
+}

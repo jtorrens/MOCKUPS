@@ -1,0 +1,1961 @@
+{
+  "schemaVersion": 1,
+  "intent": {
+    "responsibility": "Own the complete current Component configuration and its exact Runtime Input contract.",
+    "visualBoundary": "Resolve the Component through its manifest-declared resolver and renderable boundary.",
+    "runtimeBehavior": "Consume only declared Runtime Inputs and explicit embedded Component boundaries.",
+    "forwarding": "Forward values only through declared stable source and target identities.",
+    "temporalOwnership": "Keep reusable behavior relative to the Component owner and its declared child owners."
+  },
+  "component": {
+    "componentType": "media",
+    "category": "component",
+    "componentClassId": "component_project_foqn_s2_media",
+    "projectId": "project_foqn_s2",
+    "recordClassId": "component.media",
+    "name": "Media",
+    "notes": "Media component"
+  },
+  "manifest": {
+    "contract": "./mediaComponentContract",
+    "resolver": "./mediaComponentResolver",
+    "renderable": "./mediaComponentRenderable",
+    "embeds": [
+      "surface",
+      "iconBar",
+      "label"
+    ]
+  },
+  "owners": {
+    "contractExport": "MediaDesignContract",
+    "resolverExport": "resolveMediaComponent",
+    "renderableExport": "mediaComponentToRenderable",
+    "registryMode": "simple",
+    "focusedTest": "tests/animation/atomicTemporalComponents.test.ts",
+    "configContractExport": null
+  },
+  "config": {
+    "media": {
+      "surfaceSlot": {
+        "variantReference": "component_project_foqn_s2_surface::variant::default",
+        "overrides": {}
+      },
+      "controlBarHeight": 56,
+      "controlsFadeDelayMs": 900,
+      "controlsFadeDurationMs": 180,
+      "motion": {
+        "transition": "slide",
+        "direction": "bottom",
+        "bounds": "screen",
+        "fade": false,
+        "translate": true,
+        "scale": true
+      },
+      "inlineTopIconBarSlot": {
+        "variantReference": "component_project_foqn_s2_iconBar::variant::default",
+        "overrides": {}
+      },
+      "inlineCenterIconBarSlot": {
+        "variantReference": "component_project_foqn_s2_iconBar::variant::default",
+        "overrides": {}
+      },
+      "inlineBottomIconBarSlot": {
+        "variantReference": "component_project_foqn_s2_iconBar::variant::default",
+        "overrides": {}
+      },
+      "fullScreenTopIconBarSlot": {
+        "variantReference": "component_project_foqn_s2_iconBar::variant::default",
+        "overrides": {}
+      },
+      "fullScreenCenterIconBarSlot": {
+        "variantReference": "component_project_foqn_s2_iconBar::variant::default",
+        "overrides": {}
+      },
+      "fullScreenBottomIconBarSlot": {
+        "variantReference": "component_project_foqn_s2_iconBar::variant::default",
+        "overrides": {}
+      },
+      "idleText": {
+        "enabled": false,
+        "mode": "free",
+        "text": "",
+        "targetSeconds": 0,
+        "placement": {
+          "mode": "center",
+          "alignX": 0.5,
+          "alignY": 0.5,
+          "offsetX": 0,
+          "offsetY": 0
+        },
+        "labelSlot": {
+          "variantReference": "component_project_foqn_s2_label::variant::default",
+          "overrides": {
+            "label": {
+              "dimensionMode": "content",
+              "padding": "theme.spacing.none|theme.spacing.none",
+              "textColorToken": "theme.colors.textPrimary",
+              "textTypography": {
+                "fontFamilyId": "theme",
+                "weight": "theme.typography.weight",
+                "style": "theme.typography.style",
+                "sizeToken": "theme.typography.sizes.s",
+                "lineHeight": "theme.typography.lineHeights.normal"
+              },
+              "textAlign": "center",
+              "surfaceSlot": {
+                "variantReference": "component_project_foqn_s2_surface::variant::default",
+                "overrides": {
+                  "surface": {
+                    "backgroundAlpha": 0,
+                    "borderAlpha": 0
+                  },
+                  "style": {
+                    "borderWidth": 0,
+                    "shadowEnabled": false,
+                    "reliefEnabled": false
+                  }
+                }
+              },
+              "reserveSubtextSpace": false,
+              "subtextVerticalPosition": "bottom",
+              "subtextHorizontalAlign": "center"
+            }
+          }
+        }
+      },
+      "playText": {
+        "enabled": true,
+        "mode": "countDown",
+        "text": "",
+        "targetSeconds": 0,
+        "placement": {
+          "mode": "center",
+          "alignX": 0.5,
+          "alignY": 1,
+          "offsetX": 0,
+          "offsetY": -18
+        },
+        "labelSlot": {
+          "variantReference": "component_project_foqn_s2_label::variant::default",
+          "overrides": {
+            "label": {
+              "dimensionMode": "content",
+              "padding": "theme.spacing.none|theme.spacing.none",
+              "textColorToken": "theme.colors.textPrimary",
+              "textTypography": {
+                "fontFamilyId": "theme",
+                "weight": "theme.typography.weight",
+                "style": "theme.typography.style",
+                "sizeToken": "theme.typography.sizes.s",
+                "lineHeight": "theme.typography.lineHeights.normal"
+              },
+              "textAlign": "center",
+              "surfaceSlot": {
+                "variantReference": "component_project_foqn_s2_surface::variant::default",
+                "overrides": {
+                  "surface": {
+                    "backgroundAlpha": 0,
+                    "borderAlpha": 0
+                  },
+                  "style": {
+                    "borderWidth": 0,
+                    "shadowEnabled": false,
+                    "reliefEnabled": false
+                  }
+                }
+              },
+              "reserveSubtextSpace": false,
+              "subtextVerticalPosition": "bottom",
+              "subtextHorizontalAlign": "center"
+            }
+          }
+        }
+      },
+      "iconBarPadding": "theme.spacing.xl|theme.spacing.xl",
+      "iconColorTokenOverride": "theme.icons.alternate"
+    },
+    "style": {
+      "shadowEnabled": false,
+      "reliefEnabled": false,
+      "borderWidth": 0,
+      "borderColorToken": "theme.borders.primary",
+      "cornerRadiusToken": "theme.radii.xl",
+      "reliefAngle": -45,
+      "reliefExtent": 1,
+      "reliefSpread": 0,
+      "reliefTopIntensity": 0.12,
+      "reliefBottomIntensity": -0.1
+    }
+  },
+  "defaultVariant": {
+    "id": "default",
+    "name": "Default",
+    "protected": true,
+    "locked": true,
+    "config": {
+      "media": {
+        "surfaceSlot": {
+          "variantReference": "component_project_foqn_s2_surface::variant::default",
+          "overrides": {}
+        },
+        "controlBarHeight": 56,
+        "controlsFadeDelayMs": 900,
+        "controlsFadeDurationMs": 180,
+        "motion": {
+          "transition": "slide",
+          "direction": "bottom",
+          "bounds": "screen",
+          "fade": false,
+          "translate": true,
+          "scale": true
+        },
+        "inlineTopIconBarSlot": {
+          "variantReference": "component_project_foqn_s2_iconBar::variant::default",
+          "overrides": {}
+        },
+        "inlineCenterIconBarSlot": {
+          "variantReference": "component_project_foqn_s2_iconBar::variant::default",
+          "overrides": {}
+        },
+        "inlineBottomIconBarSlot": {
+          "variantReference": "component_project_foqn_s2_iconBar::variant::default",
+          "overrides": {}
+        },
+        "fullScreenTopIconBarSlot": {
+          "variantReference": "component_project_foqn_s2_iconBar::variant::default",
+          "overrides": {}
+        },
+        "fullScreenCenterIconBarSlot": {
+          "variantReference": "component_project_foqn_s2_iconBar::variant::default",
+          "overrides": {}
+        },
+        "fullScreenBottomIconBarSlot": {
+          "variantReference": "component_project_foqn_s2_iconBar::variant::default",
+          "overrides": {}
+        },
+        "idleText": {
+          "enabled": false,
+          "mode": "free",
+          "text": "",
+          "targetSeconds": 0,
+          "placement": {
+            "mode": "center",
+            "alignX": 0.5,
+            "alignY": 0.5,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          "labelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {
+              "label": {
+                "dimensionMode": "content",
+                "padding": "theme.spacing.none|theme.spacing.none",
+                "textColorToken": "theme.colors.textPrimary",
+                "textTypography": {
+                  "fontFamilyId": "theme",
+                  "weight": "theme.typography.weight",
+                  "style": "theme.typography.style",
+                  "sizeToken": "theme.typography.sizes.s",
+                  "lineHeight": "theme.typography.lineHeights.normal"
+                },
+                "textAlign": "center",
+                "surfaceSlot": {
+                  "variantReference": "component_project_foqn_s2_surface::variant::default",
+                  "overrides": {
+                    "surface": {
+                      "backgroundAlpha": 0,
+                      "borderAlpha": 0
+                    },
+                    "style": {
+                      "borderWidth": 0,
+                      "shadowEnabled": false,
+                      "reliefEnabled": false
+                    }
+                  }
+                },
+                "reserveSubtextSpace": false,
+                "subtextVerticalPosition": "bottom",
+                "subtextHorizontalAlign": "center"
+              }
+            }
+          }
+        },
+        "playText": {
+          "enabled": true,
+          "mode": "countDown",
+          "text": "",
+          "targetSeconds": 0,
+          "placement": {
+            "mode": "center",
+            "alignX": 0.5,
+            "alignY": 1,
+            "offsetX": 0,
+            "offsetY": -18
+          },
+          "labelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {
+              "label": {
+                "dimensionMode": "content",
+                "padding": "theme.spacing.none|theme.spacing.none",
+                "textColorToken": "theme.colors.textPrimary",
+                "textTypography": {
+                  "fontFamilyId": "theme",
+                  "weight": "theme.typography.weight",
+                  "style": "theme.typography.style",
+                  "sizeToken": "theme.typography.sizes.s",
+                  "lineHeight": "theme.typography.lineHeights.normal"
+                },
+                "textAlign": "center",
+                "surfaceSlot": {
+                  "variantReference": "component_project_foqn_s2_surface::variant::default",
+                  "overrides": {
+                    "surface": {
+                      "backgroundAlpha": 0,
+                      "borderAlpha": 0
+                    },
+                    "style": {
+                      "borderWidth": 0,
+                      "shadowEnabled": false,
+                      "reliefEnabled": false
+                    }
+                  }
+                },
+                "reserveSubtextSpace": false,
+                "subtextVerticalPosition": "bottom",
+                "subtextHorizontalAlign": "center"
+              }
+            }
+          }
+        },
+        "iconBarPadding": "theme.spacing.xl|theme.spacing.xl",
+        "iconColorTokenOverride": "theme.icons.alternate"
+      },
+      "style": {
+        "shadowEnabled": false,
+        "reliefEnabled": false,
+        "borderWidth": 0,
+        "borderColorToken": "theme.borders.primary",
+        "cornerRadiusToken": "theme.radii.xl",
+        "reliefAngle": -45,
+        "reliefExtent": 1,
+        "reliefSpread": 0,
+        "reliefTopIntensity": 0.12,
+        "reliefBottomIntensity": -0.1
+      }
+    }
+  },
+  "additionalVariants": [
+    {
+      "id": "default_copy",
+      "name": "Media Video",
+      "protected": false,
+      "locked": false,
+      "config": {
+        "media": {
+          "surfaceSlot": {
+            "variantReference": "component_project_foqn_s2_surface::variant::default",
+            "overrides": {}
+          },
+          "controlBarHeight": 30,
+          "controlsFadeDelayMs": 900,
+          "controlsFadeDurationMs": 180,
+          "motion": {
+            "transition": "slide",
+            "direction": "bottom",
+            "bounds": "screen",
+            "fade": false,
+            "translate": false,
+            "scale": false
+          },
+          "inlineTopIconBarSlot": {
+            "variantReference": "component_project_foqn_s2_iconBar::variant::default_copy",
+            "overrides": {
+              "iconBar": {
+                "idleLeftIconRowInputs": {
+                  "buttonInputs": [
+                    {
+                      "id": "button_001",
+                      "state": "normal",
+                      "sampleText": "",
+                      "iconToken": "media_fullscreen",
+                      "iconSizeToken": "theme.iconSizes.m",
+                      "textSizeToken": "theme.typography.sizes.s",
+                      "showBadge": false,
+                      "badgeContentMode": "text",
+                      "badgeIconToken": "system_check",
+                      "badgeText": "1",
+                      "badgeSize": 20,
+                      "badgeBackgroundPaletteColor": "blue",
+                      "badgeContentPaletteColor": "gray_100",
+                      "iconColorToken": "theme.colors.icon",
+                      "textColorToken": "theme.colors.textPrimary"
+                    }
+                  ]
+                },
+                "idleRightIconRowInputs": {
+                  "buttonInputs": []
+                },
+                "sizeSource": "shared",
+                "iconSizeToken": "theme.iconSizes.m",
+                "textSizeToken": "theme.typography.sizes.s",
+                "idleLeftIconRowSlot": {
+                  "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                  "overrides": {
+                    "iconRow": {
+                      "items": [
+                        {
+                          "id": "button_001",
+                          "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                          "state": "normal",
+                          "iconToken": "media_fullscreen",
+                          "text": "",
+                          "pushTrigger": false,
+                          "pushElapsedMs": 0,
+                          "buttonOverrides": {},
+                          "iconSizeToken": "theme.iconSizes.m",
+                          "textSizeToken": "theme.typography.sizes.s"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "idleRightIconRowSlot": {
+                  "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                  "overrides": {
+                    "iconRow": {
+                      "items": []
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "inlineCenterIconBarSlot": {
+            "variantReference": "component_project_foqn_s2_iconBar::variant::default",
+            "overrides": {
+              "iconBar": {
+                "idleLeftIconRowInputs": {
+                  "buttonInputs": []
+                },
+                "idleCenterIconRowInputs": {
+                  "buttonInputs": [
+                    {
+                      "id": "button_001",
+                      "state": "normal",
+                      "sampleText": "",
+                      "iconToken": "media_play_fill",
+                      "iconSizeToken": "theme.iconSizes.m",
+                      "textSizeToken": "theme.typography.sizes.s",
+                      "showBadge": false,
+                      "badgeContentMode": "text",
+                      "badgeIconToken": "system_check",
+                      "badgeText": "1",
+                      "badgeSize": 20,
+                      "badgeBackgroundPaletteColor": "blue",
+                      "badgeContentPaletteColor": "gray_100",
+                      "iconColorToken": "theme.colors.icon",
+                      "textColorToken": "theme.colors.textPrimary"
+                    }
+                  ]
+                },
+                "idleRightIconRowInputs": {
+                  "buttonInputs": []
+                },
+                "activeLeftIconRowInputs": {
+                  "buttonInputs": []
+                },
+                "activeCenterIconRowInputs": {
+                  "buttonInputs": [
+                    {
+                      "id": "button_001",
+                      "state": "normal",
+                      "sampleText": "",
+                      "iconToken": "media_pause",
+                      "iconSizeToken": "theme.iconSizes.m",
+                      "textSizeToken": "theme.typography.sizes.s",
+                      "showBadge": false,
+                      "badgeContentMode": "text",
+                      "badgeIconToken": "system_check",
+                      "badgeText": "1",
+                      "badgeSize": 20,
+                      "badgeBackgroundPaletteColor": "blue",
+                      "badgeContentPaletteColor": "gray_100",
+                      "iconColorToken": "theme.colors.icon",
+                      "textColorToken": "theme.colors.textPrimary"
+                    }
+                  ]
+                },
+                "sizeSource": "shared",
+                "iconSizeToken": "theme.iconSizes.m",
+                "textSizeToken": "theme.typography.sizes.s",
+                "idleLeftIconRowSlot": {
+                  "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                  "overrides": {
+                    "iconRow": {
+                      "items": []
+                    }
+                  }
+                },
+                "idleCenterIconRowSlot": {
+                  "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                  "overrides": {
+                    "iconRow": {
+                      "items": [
+                        {
+                          "id": "button_001",
+                          "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                          "state": "normal",
+                          "iconToken": "media_play_fill",
+                          "text": "",
+                          "pushTrigger": false,
+                          "pushElapsedMs": 0,
+                          "buttonOverrides": {},
+                          "iconSizeToken": "theme.iconSizes.m",
+                          "textSizeToken": "theme.typography.sizes.s"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "idleRightIconRowSlot": {
+                  "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                  "overrides": {
+                    "iconRow": {
+                      "items": []
+                    }
+                  }
+                },
+                "activeLeftIconRowSlot": {
+                  "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                  "overrides": {
+                    "iconRow": {
+                      "items": []
+                    }
+                  }
+                },
+                "activeCenterIconRowSlot": {
+                  "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                  "overrides": {
+                    "iconRow": {
+                      "items": [
+                        {
+                          "id": "button_001",
+                          "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                          "state": "normal",
+                          "iconToken": "media_pause",
+                          "text": "",
+                          "pushTrigger": false,
+                          "pushElapsedMs": 0,
+                          "buttonOverrides": {},
+                          "iconSizeToken": "theme.iconSizes.m",
+                          "textSizeToken": "theme.typography.sizes.s"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "inlineBottomIconBarSlot": {
+            "variantReference": "component_project_foqn_s2_iconBar::variant::default_copy",
+            "overrides": {
+              "iconBar": {
+                "idleLeftIconRowInputs": {
+                  "buttonInputs": [
+                    {
+                      "id": "button_001",
+                      "state": "normal",
+                      "sampleText": "",
+                      "iconToken": "media_video_fill",
+                      "iconSizeToken": "theme.iconSizes.m",
+                      "textSizeToken": "theme.typography.sizes.s",
+                      "showBadge": false,
+                      "badgeContentMode": "text",
+                      "badgeIconToken": "system_check",
+                      "badgeText": "1",
+                      "badgeSize": 20,
+                      "badgeBackgroundPaletteColor": "blue",
+                      "badgeContentPaletteColor": "gray_100",
+                      "iconColorToken": "theme.colors.icon",
+                      "textColorToken": "theme.colors.textPrimary"
+                    }
+                  ]
+                },
+                "idleRightIconRowInputs": {
+                  "buttonInputs": []
+                },
+                "sizeSource": "shared",
+                "iconSizeToken": "theme.iconSizes.m",
+                "textSizeToken": "theme.typography.sizes.s",
+                "idleLeftIconRowSlot": {
+                  "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                  "overrides": {
+                    "iconRow": {
+                      "items": [
+                        {
+                          "id": "button_001",
+                          "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                          "state": "normal",
+                          "iconToken": "media_video_fill",
+                          "text": "",
+                          "pushTrigger": false,
+                          "pushElapsedMs": 0,
+                          "buttonOverrides": {},
+                          "iconSizeToken": "theme.iconSizes.m",
+                          "textSizeToken": "theme.typography.sizes.s"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "idleRightIconRowSlot": {
+                  "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                  "overrides": {
+                    "iconRow": {
+                      "items": []
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "fullScreenTopIconBarSlot": {
+            "variantReference": "component_project_foqn_s2_iconBar::variant::text_input_chat_copy",
+            "overrides": {}
+          },
+          "fullScreenCenterIconBarSlot": {
+            "variantReference": "component_project_foqn_s2_iconBar::variant::default",
+            "overrides": {}
+          },
+          "fullScreenBottomIconBarSlot": {
+            "variantReference": "component_project_foqn_s2_iconBar::variant::default_copy",
+            "overrides": {}
+          },
+          "idleText": {
+            "enabled": true,
+            "mode": "countDown",
+            "text": "",
+            "targetSeconds": 10,
+            "placement": {
+              "mode": "center",
+              "alignX": 1,
+              "alignY": 1,
+              "offsetX": -25,
+              "offsetY": -15
+            },
+            "labelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {
+                "label": {
+                  "dimensionMode": "content",
+                  "padding": "theme.spacing.none|theme.spacing.none",
+                  "textColorToken": "theme.icons.alternate",
+                  "textTypography": {
+                    "fontFamilyId": "theme",
+                    "weight": "theme.typography.weight",
+                    "style": "theme.typography.style",
+                    "sizeToken": "theme.typography.sizes.s",
+                    "lineHeight": "theme.typography.lineHeights.normal"
+                  },
+                  "textAlign": "center",
+                  "surfaceSlot": {
+                    "variantReference": "component_project_foqn_s2_surface::variant::default",
+                    "overrides": {
+                      "surface": {
+                        "backgroundAlpha": 0,
+                        "borderAlpha": 0
+                      },
+                      "style": {
+                        "borderWidth": 0,
+                        "shadowEnabled": false,
+                        "reliefEnabled": false
+                      }
+                    }
+                  },
+                  "reserveSubtextSpace": false,
+                  "subtextVerticalPosition": "bottom",
+                  "subtextHorizontalAlign": "center"
+                }
+              }
+            }
+          },
+          "playText": {
+            "enabled": true,
+            "mode": "countDown",
+            "text": "",
+            "targetSeconds": 0,
+            "placement": {
+              "mode": "center",
+              "alignX": 0.5,
+              "alignY": 1,
+              "offsetX": 0,
+              "offsetY": -18
+            },
+            "labelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {
+                "label": {
+                  "dimensionMode": "content",
+                  "padding": "theme.spacing.none|theme.spacing.none",
+                  "textColorToken": "theme.colors.textPrimary",
+                  "textTypography": {
+                    "fontFamilyId": "theme",
+                    "weight": "theme.typography.weight",
+                    "style": "theme.typography.style",
+                    "sizeToken": "theme.typography.sizes.s",
+                    "lineHeight": "theme.typography.lineHeights.normal"
+                  },
+                  "textAlign": "center",
+                  "surfaceSlot": {
+                    "variantReference": "component_project_foqn_s2_surface::variant::default",
+                    "overrides": {
+                      "surface": {
+                        "backgroundAlpha": 0,
+                        "borderAlpha": 0
+                      },
+                      "style": {
+                        "borderWidth": 0,
+                        "shadowEnabled": false,
+                        "reliefEnabled": false
+                      }
+                    }
+                  },
+                  "reserveSubtextSpace": false,
+                  "subtextVerticalPosition": "bottom",
+                  "subtextHorizontalAlign": "center"
+                }
+              }
+            }
+          },
+          "iconBarPadding": "theme.spacing.none|theme.spacing.none",
+          "iconColorTokenOverride": "theme.icons.alternate"
+        },
+        "style": {
+          "shadowEnabled": false,
+          "reliefEnabled": false,
+          "borderWidth": 0,
+          "borderColorToken": "theme.borders.primary",
+          "cornerRadiusToken": "theme.radii.xl",
+          "reliefAngle": -45,
+          "reliefExtent": 1,
+          "reliefSpread": 0,
+          "reliefTopIntensity": 0.12,
+          "reliefBottomIntensity": -0.1
+        }
+      }
+    },
+    {
+      "id": "media_video_copy",
+      "name": "Media Imagen",
+      "protected": false,
+      "locked": false,
+      "config": {
+        "media": {
+          "surfaceSlot": {
+            "variantReference": "component_project_foqn_s2_surface::variant::default",
+            "overrides": {}
+          },
+          "controlBarHeight": 30,
+          "controlsFadeDelayMs": 900,
+          "controlsFadeDurationMs": 180,
+          "motion": {
+            "transition": "slide",
+            "direction": "bottom",
+            "bounds": "screen",
+            "fade": false,
+            "translate": false,
+            "scale": false
+          },
+          "inlineTopIconBarSlot": {
+            "variantReference": "component_project_foqn_s2_iconBar::variant::default",
+            "overrides": {
+              "iconBar": {
+                "idleLeftIconRowInputs": {
+                  "buttonInputs": []
+                },
+                "idleRightIconRowInputs": {
+                  "buttonInputs": [
+                    {
+                      "id": "button_001",
+                      "state": "normal",
+                      "sampleText": "",
+                      "iconToken": "media_fullscreen",
+                      "iconSizeToken": "theme.iconSizes.m",
+                      "textSizeToken": "theme.typography.sizes.s",
+                      "showBadge": false,
+                      "badgeContentMode": "text",
+                      "badgeIconToken": "system_check",
+                      "badgeText": "1",
+                      "badgeSize": 20,
+                      "badgeBackgroundPaletteColor": "blue",
+                      "badgeContentPaletteColor": "gray_100",
+                      "iconColorToken": "theme.colors.icon",
+                      "textColorToken": "theme.colors.textPrimary"
+                    }
+                  ]
+                },
+                "idleCenterIconRowInputs": {
+                  "buttonInputs": []
+                },
+                "sizeSource": "shared",
+                "iconSizeToken": "theme.iconSizes.m",
+                "textSizeToken": "theme.typography.sizes.s",
+                "idleLeftIconRowSlot": {
+                  "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                  "overrides": {
+                    "iconRow": {
+                      "items": []
+                    }
+                  }
+                },
+                "idleCenterIconRowSlot": {
+                  "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                  "overrides": {
+                    "iconRow": {
+                      "items": []
+                    }
+                  }
+                },
+                "idleRightIconRowSlot": {
+                  "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                  "overrides": {
+                    "iconRow": {
+                      "items": [
+                        {
+                          "id": "button_001",
+                          "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                          "state": "normal",
+                          "iconToken": "media_fullscreen",
+                          "text": "",
+                          "pushTrigger": false,
+                          "pushElapsedMs": 0,
+                          "buttonOverrides": {},
+                          "iconSizeToken": "theme.iconSizes.m",
+                          "textSizeToken": "theme.typography.sizes.s"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "inlineCenterIconBarSlot": {
+            "variantReference": "component_project_foqn_s2_iconBar::variant::default",
+            "overrides": {
+              "iconBar": {
+                "idleLeftIconRowInputs": {
+                  "buttonInputs": []
+                },
+                "idleCenterIconRowInputs": {
+                  "buttonInputs": []
+                },
+                "idleRightIconRowInputs": {
+                  "buttonInputs": []
+                },
+                "activeLeftIconRowInputs": {
+                  "buttonInputs": []
+                },
+                "activeCenterIconRowInputs": {
+                  "buttonInputs": [
+                    {
+                      "id": "button_001",
+                      "state": "normal",
+                      "sampleText": "",
+                      "iconToken": "media_pause",
+                      "iconSizeToken": "theme.iconSizes.m",
+                      "textSizeToken": "theme.typography.sizes.s",
+                      "showBadge": false,
+                      "badgeContentMode": "text",
+                      "badgeIconToken": "system_check",
+                      "badgeText": "1",
+                      "badgeSize": 20,
+                      "badgeBackgroundPaletteColor": "blue",
+                      "badgeContentPaletteColor": "gray_100",
+                      "iconColorToken": "theme.colors.icon",
+                      "textColorToken": "theme.colors.textPrimary"
+                    }
+                  ]
+                },
+                "sizeSource": "shared",
+                "iconSizeToken": "theme.iconSizes.m",
+                "textSizeToken": "theme.typography.sizes.s",
+                "idleLeftIconRowSlot": {
+                  "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                  "overrides": {
+                    "iconRow": {
+                      "items": []
+                    }
+                  }
+                },
+                "idleCenterIconRowSlot": {
+                  "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                  "overrides": {
+                    "iconRow": {
+                      "items": []
+                    }
+                  }
+                },
+                "idleRightIconRowSlot": {
+                  "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                  "overrides": {
+                    "iconRow": {
+                      "items": []
+                    }
+                  }
+                },
+                "activeLeftIconRowSlot": {
+                  "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                  "overrides": {
+                    "iconRow": {
+                      "items": []
+                    }
+                  }
+                },
+                "activeCenterIconRowSlot": {
+                  "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                  "overrides": {
+                    "iconRow": {
+                      "items": [
+                        {
+                          "id": "button_001",
+                          "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                          "state": "normal",
+                          "iconToken": "media_pause",
+                          "text": "",
+                          "pushTrigger": false,
+                          "pushElapsedMs": 0,
+                          "buttonOverrides": {},
+                          "iconSizeToken": "theme.iconSizes.m",
+                          "textSizeToken": "theme.typography.sizes.s"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "inlineBottomIconBarSlot": {
+            "variantReference": "component_project_foqn_s2_iconBar::variant::default",
+            "overrides": {
+              "iconBar": {
+                "idleRightIconRowInputs": {
+                  "buttonInputs": []
+                },
+                "idleLeftIconRowInputs": {
+                  "buttonInputs": []
+                },
+                "idleCenterIconRowInputs": {
+                  "buttonInputs": []
+                },
+                "sizeSource": "shared",
+                "iconSizeToken": "theme.iconSizes.m",
+                "textSizeToken": "theme.typography.sizes.s",
+                "idleLeftIconRowSlot": {
+                  "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                  "overrides": {
+                    "iconRow": {
+                      "items": []
+                    }
+                  }
+                },
+                "idleCenterIconRowSlot": {
+                  "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                  "overrides": {
+                    "iconRow": {
+                      "items": []
+                    }
+                  }
+                },
+                "idleRightIconRowSlot": {
+                  "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                  "overrides": {
+                    "iconRow": {
+                      "items": []
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "fullScreenTopIconBarSlot": {
+            "variantReference": "component_project_foqn_s2_iconBar::variant::default",
+            "overrides": {
+              "iconBar": {
+                "edgePadding": "theme.spacing.xxl",
+                "idleLeftIconRowInputs": {
+                  "buttonInputs": []
+                },
+                "idleCenterIconRowInputs": {
+                  "buttonInputs": []
+                },
+                "idleRightIconRowInputs": {
+                  "buttonInputs": [
+                    {
+                      "id": "button_001",
+                      "state": "normal",
+                      "sampleText": "",
+                      "iconToken": "media_fullscreen",
+                      "iconSizeToken": "theme.iconSizes.m",
+                      "textSizeToken": "theme.typography.sizes.s",
+                      "showBadge": false,
+                      "badgeContentMode": "text",
+                      "badgeIconToken": "system_check",
+                      "badgeText": "1",
+                      "badgeSize": 20,
+                      "badgeBackgroundPaletteColor": "blue",
+                      "badgeContentPaletteColor": "gray_100",
+                      "iconColorToken": "theme.colors.icon",
+                      "textColorToken": "theme.colors.textPrimary"
+                    }
+                  ]
+                },
+                "sizeSource": "shared",
+                "iconSizeToken": "theme.iconSizes.m",
+                "textSizeToken": "theme.typography.sizes.s",
+                "idleLeftIconRowSlot": {
+                  "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                  "overrides": {
+                    "iconRow": {
+                      "items": []
+                    }
+                  }
+                },
+                "idleCenterIconRowSlot": {
+                  "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                  "overrides": {
+                    "iconRow": {
+                      "items": []
+                    }
+                  }
+                },
+                "idleRightIconRowSlot": {
+                  "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                  "overrides": {
+                    "iconRow": {
+                      "items": [
+                        {
+                          "id": "button_001",
+                          "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                          "state": "normal",
+                          "iconToken": "media_fullscreen",
+                          "text": "",
+                          "pushTrigger": false,
+                          "pushElapsedMs": 0,
+                          "buttonOverrides": {},
+                          "iconSizeToken": "theme.iconSizes.m",
+                          "textSizeToken": "theme.typography.sizes.s"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "fullScreenCenterIconBarSlot": {
+            "variantReference": "component_project_foqn_s2_iconBar::variant::default",
+            "overrides": {}
+          },
+          "fullScreenBottomIconBarSlot": {
+            "variantReference": "component_project_foqn_s2_iconBar::variant::default",
+            "overrides": {
+              "iconBar": {
+                "edgePadding": "theme.spacing.xxl",
+                "idleLeftIconRowInputs": {
+                  "buttonInputs": []
+                },
+                "idleCenterIconRowInputs": {
+                  "buttonInputs": []
+                },
+                "idleRightIconRowInputs": {
+                  "buttonInputs": []
+                },
+                "activeLeftIconRowInputs": {
+                  "buttonInputs": []
+                },
+                "activeCenterIconRowInputs": {
+                  "buttonInputs": []
+                },
+                "activeRightIconRowInputs": {
+                  "buttonInputs": []
+                },
+                "sizeSource": "shared",
+                "iconSizeToken": "theme.iconSizes.m",
+                "textSizeToken": "theme.typography.sizes.s",
+                "idleLeftIconRowSlot": {
+                  "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                  "overrides": {
+                    "iconRow": {
+                      "items": []
+                    }
+                  }
+                },
+                "idleCenterIconRowSlot": {
+                  "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                  "overrides": {
+                    "iconRow": {
+                      "items": []
+                    }
+                  }
+                },
+                "idleRightIconRowSlot": {
+                  "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                  "overrides": {
+                    "iconRow": {
+                      "items": []
+                    }
+                  }
+                },
+                "activeLeftIconRowSlot": {
+                  "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                  "overrides": {
+                    "iconRow": {
+                      "items": []
+                    }
+                  }
+                },
+                "activeCenterIconRowSlot": {
+                  "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                  "overrides": {
+                    "iconRow": {
+                      "items": []
+                    }
+                  }
+                },
+                "activeRightIconRowSlot": {
+                  "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                  "overrides": {
+                    "iconRow": {
+                      "items": []
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "idleText": {
+            "enabled": false,
+            "mode": "countDown",
+            "text": "",
+            "targetSeconds": 10,
+            "placement": {
+              "mode": "center",
+              "alignX": 1,
+              "alignY": 1,
+              "offsetX": -25,
+              "offsetY": -15
+            },
+            "labelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {
+                "label": {
+                  "dimensionMode": "content",
+                  "padding": "theme.spacing.none|theme.spacing.none",
+                  "textColorToken": "theme.icons.alternate",
+                  "textTypography": {
+                    "fontFamilyId": "theme",
+                    "weight": "theme.typography.weight",
+                    "style": "theme.typography.style",
+                    "sizeToken": "theme.typography.sizes.s",
+                    "lineHeight": "theme.typography.lineHeights.normal"
+                  },
+                  "textAlign": "center",
+                  "surfaceSlot": {
+                    "variantReference": "component_project_foqn_s2_surface::variant::default",
+                    "overrides": {
+                      "surface": {
+                        "backgroundAlpha": 0,
+                        "borderAlpha": 0
+                      },
+                      "style": {
+                        "borderWidth": 0,
+                        "shadowEnabled": false,
+                        "reliefEnabled": false
+                      }
+                    }
+                  },
+                  "reserveSubtextSpace": false,
+                  "subtextVerticalPosition": "bottom",
+                  "subtextHorizontalAlign": "center"
+                }
+              }
+            }
+          },
+          "playText": {
+            "enabled": true,
+            "mode": "countDown",
+            "text": "",
+            "targetSeconds": 0,
+            "placement": {
+              "mode": "center",
+              "alignX": 0.5,
+              "alignY": 1,
+              "offsetX": 0,
+              "offsetY": -18
+            },
+            "labelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {
+                "label": {
+                  "dimensionMode": "content",
+                  "padding": "theme.spacing.none|theme.spacing.none",
+                  "textColorToken": "theme.colors.textPrimary",
+                  "textTypography": {
+                    "fontFamilyId": "theme",
+                    "weight": "theme.typography.weight",
+                    "style": "theme.typography.style",
+                    "sizeToken": "theme.typography.sizes.s",
+                    "lineHeight": "theme.typography.lineHeights.normal"
+                  },
+                  "textAlign": "center",
+                  "surfaceSlot": {
+                    "variantReference": "component_project_foqn_s2_surface::variant::default",
+                    "overrides": {
+                      "surface": {
+                        "backgroundAlpha": 0,
+                        "borderAlpha": 0
+                      },
+                      "style": {
+                        "borderWidth": 0,
+                        "shadowEnabled": false,
+                        "reliefEnabled": false
+                      }
+                    }
+                  },
+                  "reserveSubtextSpace": false,
+                  "subtextVerticalPosition": "bottom",
+                  "subtextHorizontalAlign": "center"
+                }
+              }
+            }
+          },
+          "iconBarPadding": "theme.spacing.none|theme.spacing.none",
+          "iconColorTokenOverride": "theme.icons.alternate"
+        },
+        "style": {
+          "shadowEnabled": false,
+          "reliefEnabled": false,
+          "borderWidth": 0,
+          "borderColorToken": "theme.borders.primary",
+          "cornerRadiusToken": "theme.radii.xl",
+          "reliefAngle": -45,
+          "reliefExtent": 1,
+          "reliefSpread": 0,
+          "reliefTopIntensity": 0.12,
+          "reliefBottomIntensity": -0.1
+        }
+      }
+    }
+  ],
+  "designPreview": {
+    "componentType": "media",
+    "sampleText": "",
+    "sampleSubtext": "",
+    "sampleSize": 256,
+    "mediaSource": "media/gatos_V2-0012.mp4",
+    "mediaType": "video",
+    "viewportSize": "320|180",
+    "mediaScale": 1,
+    "mediaOffset": "0|0",
+    "currentTimeSeconds": 0,
+    "durationSeconds": 12,
+    "fullframeOrientation": "portrait",
+    "controlsElapsedMs": 0,
+    "inputs": [
+      {
+        "id": "mediaSource",
+        "label": "Source",
+        "jsonKey": "mediaSource",
+        "kind": "mediaFilePath",
+        "valueKind": "MediaFilePath",
+        "defaultValue": "",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "source",
+        "uiGroupLabel": "Source",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 10
+      },
+      {
+        "id": "mediaType",
+        "label": "Type",
+        "jsonKey": "mediaType",
+        "kind": "option",
+        "valueKind": "OptionToken",
+        "defaultValue": "image",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [
+          {
+            "value": "image",
+            "label": "Image"
+          },
+          {
+            "value": "video",
+            "label": "Video"
+          }
+        ],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "source",
+        "uiGroupLabel": "Source",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 11
+      },
+      {
+        "id": "viewportSize",
+        "label": "Viewport",
+        "jsonKey": "viewportSize",
+        "kind": "integerPair",
+        "valueKind": "IntegerPair",
+        "defaultValue": "320|180",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "frame",
+        "uiGroupLabel": "Frame",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 20
+      },
+      {
+        "id": "mediaScale",
+        "label": "Scale",
+        "jsonKey": "mediaScale",
+        "kind": "number",
+        "valueKind": "Decimal",
+        "defaultValue": "1",
+        "minimum": 0.05,
+        "maximum": 16,
+        "increment": 0.05,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "frame",
+        "uiGroupLabel": "Frame",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 21
+      },
+      {
+        "id": "mediaOffset",
+        "label": "Offset",
+        "jsonKey": "mediaOffset",
+        "kind": "integerPair",
+        "valueKind": "IntegerPair",
+        "defaultValue": "0|0",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "X",
+        "pairSecondLabel": "Y",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "frame",
+        "uiGroupLabel": "Frame",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 22
+      },
+      {
+        "id": "isPlaying",
+        "label": "Play/Pause",
+        "jsonKey": "isPlaying",
+        "kind": "boolean",
+        "valueKind": "Boolean",
+        "defaultValue": "false",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "playback",
+        "uiGroupLabel": "Playback",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 30
+      },
+      {
+        "id": "currentTimeSeconds",
+        "label": "Current time",
+        "jsonKey": "currentTimeSeconds",
+        "kind": "number",
+        "valueKind": "Decimal",
+        "defaultValue": "0",
+        "minimum": 0,
+        "maximum": 86400,
+        "increment": 0.1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "playback",
+        "uiGroupLabel": "Playback",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "s",
+        "uiOrder": 31
+      },
+      {
+        "id": "durationSeconds",
+        "label": "Duration",
+        "jsonKey": "durationSeconds",
+        "kind": "number",
+        "valueKind": "Decimal",
+        "defaultValue": "12",
+        "minimum": 0,
+        "maximum": 86400,
+        "increment": 0.1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "playback",
+        "uiGroupLabel": "Playback",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "s",
+        "uiOrder": 32
+      },
+      {
+        "id": "isFullScreen",
+        "label": "Full screen",
+        "jsonKey": "isFullScreen",
+        "kind": "boolean",
+        "valueKind": "Boolean",
+        "defaultValue": "false",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "fullScreen",
+        "uiGroupLabel": "Full screen",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 40
+      },
+      {
+        "id": "fullScreenTransition",
+        "label": "Full-screen transition",
+        "jsonKey": "fullScreenTransition",
+        "kind": "boolean",
+        "valueKind": "Boolean",
+        "defaultValue": "false",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "fullScreen",
+        "uiGroupLabel": "Full screen",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 41
+      },
+      {
+        "id": "fullframeOrientation",
+        "label": "Fullframe orientation",
+        "jsonKey": "fullframeOrientation",
+        "kind": "option",
+        "valueKind": "OptionToken",
+        "defaultValue": "portrait",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [
+          {
+            "value": "portrait",
+            "label": "Portrait"
+          },
+          {
+            "value": "landscape",
+            "label": "Landscape"
+          }
+        ],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "fullScreen",
+        "uiGroupLabel": "Full screen",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 42
+      },
+      {
+        "id": "controlsElapsedMs",
+        "label": "Controls elapsed",
+        "jsonKey": "controlsElapsedMs",
+        "kind": "number",
+        "valueKind": "Integer",
+        "defaultValue": "0",
+        "minimum": 0,
+        "maximum": 60000,
+        "increment": 10,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "playback",
+        "uiGroupLabel": "Playback",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "ms",
+        "uiOrder": 33
+      },
+      {
+        "id": "motionElapsedMs",
+        "label": "Motion elapsed",
+        "jsonKey": "motionElapsedMs",
+        "kind": "number",
+        "valueKind": "Decimal",
+        "defaultValue": "0",
+        "minimum": 0,
+        "maximum": 86400000,
+        "increment": 10,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "calculated",
+        "uiOrigin": "",
+        "uiGroupId": "",
+        "uiGroupLabel": "",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "ms"
+      }
+    ],
+    "isPlaying": false,
+    "isFullScreen": false,
+    "fullScreenTransition": false,
+    "actions": [
+      {
+        "id": "play",
+        "label": "Play",
+        "playInputId": "isPlaying",
+        "durationInputId": "durationSeconds",
+        "timeJsonKey": "currentTimeSeconds",
+        "prewarmFrames": true,
+        "prewarmWhenJsonKey": "mediaType",
+        "prewarmWhenValue": "video",
+        "completionBehavior": "reset",
+        "timeUnit": "seconds"
+      },
+      {
+        "id": "fullScreen",
+        "label": "Full screen",
+        "playInputId": "fullScreenTransition",
+        "durationSeconds": 0.3,
+        "durationMotionConfigPath": "media.motion",
+        "timeJsonKey": "motionElapsedMs",
+        "prewarmFrames": false,
+        "timeUnit": "milliseconds",
+        "completionBehavior": "reset",
+        "targetInputId": "isFullScreen",
+        "targetMode": "toggle"
+      }
+    ]
+  },
+  "metadata": {
+    "note": "Seeded reusable component class."
+  },
+  "dictionaryFields": [],
+  "editorLayout": {
+    "cards": [
+      {
+        "id": "general",
+        "label": "General",
+        "subtitle": "Identity",
+        "icon": "general",
+        "order": 10,
+        "visible": true,
+        "defaultOpen": true,
+        "groups": [
+          {
+            "id": "identity",
+            "label": "Identity",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "core.name",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.type",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "core.notes",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "media",
+        "label": "Media",
+        "subtitle": "Surface and shared media controls",
+        "icon": "video",
+        "order": 20,
+        "visible": true,
+        "defaultOpen": false,
+        "groupLayout": "separatedSections",
+        "groups": [
+          {
+            "id": "media",
+            "label": "Media",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.media.surface.editor",
+                "order": 10,
+                "visible": true
+              }
+            ]
+          },
+          {
+            "id": "mediaControls",
+            "label": "Controls",
+            "order": 20,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.media.controlBarHeight",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.media.iconBarPadding",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.media.iconColorTokenOverride",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "component.media.controlsFadeDelayMs",
+                "order": 40,
+                "visible": true
+              },
+              {
+                "id": "component.media.controlsFadeDurationMs",
+                "order": 50,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "mediaInlineControls",
+        "label": "Inline controls",
+        "subtitle": "Icon bars shown in inline media state",
+        "icon": "icon",
+        "order": 30,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "mediaInlineControls",
+            "label": "Inline controls",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.media.inlineTopIconBar.editor",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.media.inlineCenterIconBar.editor",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.media.inlineBottomIconBar.editor",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "mediaFullScreenControls",
+        "label": "Full screen controls",
+        "subtitle": "Icon bars shown in full screen media state",
+        "icon": "icon",
+        "order": 40,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "mediaFullScreenControls",
+            "label": "Full screen controls",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.media.fullScreenTopIconBar.editor",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.media.fullScreenCenterIconBar.editor",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.media.fullScreenBottomIconBar.editor",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "mediaIdleText",
+        "label": "Idle text",
+        "subtitle": "Text overlay shown while media is idle",
+        "icon": "text-input",
+        "order": 50,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "mediaIdleText",
+            "label": "Idle text",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.media.idleText.enabled",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.media.idleText.mode",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.media.idleText.text",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "component.media.idleText.targetSeconds",
+                "order": 40,
+                "visible": true
+              },
+              {
+                "id": "component.media.idleText.label.editor",
+                "order": 50,
+                "visible": true
+              },
+              {
+                "id": "component.media.idleText.placement",
+                "order": 70,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "mediaPlayText",
+        "label": "Play text",
+        "subtitle": "Text overlay shown during playback",
+        "icon": "text-input",
+        "order": 60,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "mediaPlayText",
+            "label": "Play text",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.media.playText.enabled",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.media.playText.mode",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.media.playText.text",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "component.media.playText.targetSeconds",
+                "order": 40,
+                "visible": true
+              },
+              {
+                "id": "component.media.playText.label.editor",
+                "order": 50,
+                "visible": true
+              },
+              {
+                "id": "component.media.playText.placement",
+                "order": 70,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "behavior",
+        "label": "Behavior",
+        "subtitle": "Interaction and transition behavior",
+        "icon": "animation",
+        "order": 95,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "motion",
+            "label": "Motion",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.media.motion",
+                "order": 10,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "assets": []
+}

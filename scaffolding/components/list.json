@@ -31,7 +31,8 @@
     "resolverExport": "resolveListComponent",
     "renderableExport": "listComponentToRenderable",
     "registryMode": "assignedBoxAndChildren",
-    "focusedTest": "tests/animation/listComponent.test.ts"
+    "focusedTest": "tests/animation/listComponent.test.ts",
+    "configContractExport": "ListComponentConfigContract"
   },
   "config": {
     "boundaryMotion": {

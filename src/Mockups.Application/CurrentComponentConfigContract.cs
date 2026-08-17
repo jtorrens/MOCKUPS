@@ -7,20 +7,13 @@ internal static class CurrentComponentConfigContract
 {
     public static void Validate(string componentType, JsonObject config, string context)
     {
-        switch (componentType)
+        if (!GeneratedComponentScaffoldConfigRegistry.TryValidate(
+            componentType,
+            config,
+            context))
         {
-            case StatusBarComponentConfigContract.ComponentType:
-                StatusBarComponentConfigContract.Validate(config, context);
-                break;
-            case NavigationBarComponentConfigContract.ComponentType:
-                NavigationBarComponentConfigContract.Validate(config, context);
-                break;
-            default:
-                _ = GeneratedComponentScaffoldConfigRegistry.TryValidate(
-                    componentType,
-                    config,
-                    context);
-                break;
+            throw new InvalidOperationException(
+                $"{context} has no registered current Component config contract for '{componentType}'.");
         }
     }
 }

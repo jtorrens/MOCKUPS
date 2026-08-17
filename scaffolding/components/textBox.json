@@ -1,0 +1,532 @@
+{
+  "schemaVersion": 1,
+  "intent": {
+    "responsibility": "Own the complete current Component configuration and its exact Runtime Input contract.",
+    "visualBoundary": "Resolve the Component through its manifest-declared resolver and renderable boundary.",
+    "runtimeBehavior": "Consume only declared Runtime Inputs and explicit embedded Component boundaries.",
+    "forwarding": "Forward values only through declared stable source and target identities.",
+    "temporalOwnership": "Keep reusable behavior relative to the Component owner and its declared child owners."
+  },
+  "component": {
+    "componentType": "textBox",
+    "category": "atom",
+    "componentClassId": "component_project_foqn_s2_textBox",
+    "projectId": "project_foqn_s2",
+    "recordClassId": "component.textBox",
+    "name": "Text Box",
+    "notes": "Text box component"
+  },
+  "manifest": {
+    "contract": "./textBoxComponentContract",
+    "resolver": "./textBoxComponentResolver",
+    "renderable": "./textBoxComponentRenderable",
+    "embeds": [
+      "surface",
+      "cursor",
+      "iconRow"
+    ]
+  },
+  "owners": {
+    "contractExport": "TextBoxDesignContract",
+    "resolverExport": "resolveTextBoxComponent",
+    "renderableExport": "textBoxComponentToRenderable",
+    "registryMode": "simple",
+    "focusedTest": "tests/animation/cursorFrameResolution.test.ts",
+    "configContractExport": null
+  },
+  "config": {
+    "style": {
+      "shadowEnabled": false,
+      "reliefEnabled": false,
+      "borderWidth": 0,
+      "borderColorToken": "theme.borders.primary",
+      "cornerRadiusToken": "theme.radii.xl",
+      "reliefAngle": -45,
+      "reliefExtent": 1,
+      "reliefSpread": 0,
+      "reliefTopIntensity": 0.12,
+      "reliefBottomIntensity": -0.1
+    },
+    "textBox": {
+      "dimensionMode": "growVertical",
+      "padding": "theme.spacing.none|theme.spacing.none",
+      "surfaceSlot": {
+        "variantReference": "component_project_foqn_s2_surface::variant::default",
+        "overrides": {}
+      },
+      "placeholder": "Message",
+      "textColorToken": "theme.colors.textPrimary",
+      "placeholderColorToken": "theme.colors.textSecondary",
+      "typography": {
+        "fontFamilyId": "font_2f3748a776df454c8a7a0a3e1fe6a3bb",
+        "weight": "400",
+        "style": "theme.typography.style",
+        "sizeToken": "theme.typography.sizes.s",
+        "lineHeight": "theme.typography.lineHeights.normal"
+      },
+      "textAlign": "left",
+      "overflowMode": "scroll",
+      "cursorSlot": {
+        "showCursor": true,
+        "variantReference": "component_project_foqn_s2_cursor::variant::default",
+        "overrides": {
+          "cursor": {
+            "minimumFade": 0.15,
+            "colorToken": "theme.icons.accent"
+          }
+        }
+      },
+      "maxLines": 3,
+      "leftIconRowSlot": {
+        "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+        "overrides": {}
+      },
+      "rightIconRowSlot": {
+        "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+        "overrides": {}
+      },
+      "iconGap": "theme.spacing.m"
+    }
+  },
+  "defaultVariant": {
+    "id": "default",
+    "name": "Default",
+    "protected": true,
+    "locked": true,
+    "config": {
+      "style": {
+        "shadowEnabled": false,
+        "reliefEnabled": false,
+        "borderWidth": 0,
+        "borderColorToken": "theme.borders.primary",
+        "cornerRadiusToken": "theme.radii.xl",
+        "reliefAngle": -45,
+        "reliefExtent": 1,
+        "reliefSpread": 0,
+        "reliefTopIntensity": 0.12,
+        "reliefBottomIntensity": -0.1
+      },
+      "textBox": {
+        "dimensionMode": "growVertical",
+        "padding": "theme.spacing.none|theme.spacing.none",
+        "surfaceSlot": {
+          "variantReference": "component_project_foqn_s2_surface::variant::default",
+          "overrides": {}
+        },
+        "placeholder": "Message",
+        "textColorToken": "theme.colors.textPrimary",
+        "placeholderColorToken": "theme.colors.textSecondary",
+        "typography": {
+          "fontFamilyId": "font_2f3748a776df454c8a7a0a3e1fe6a3bb",
+          "weight": "400",
+          "style": "theme.typography.style",
+          "sizeToken": "theme.typography.sizes.s",
+          "lineHeight": "theme.typography.lineHeights.normal"
+        },
+        "textAlign": "left",
+        "overflowMode": "scroll",
+        "cursorSlot": {
+          "showCursor": true,
+          "variantReference": "component_project_foqn_s2_cursor::variant::default",
+          "overrides": {
+            "cursor": {
+              "minimumFade": 0.15,
+              "colorToken": "theme.icons.accent"
+            }
+          }
+        },
+        "maxLines": 3,
+        "leftIconRowSlot": {
+          "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+          "overrides": {}
+        },
+        "rightIconRowSlot": {
+          "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+          "overrides": {}
+        },
+        "iconGap": "theme.spacing.m"
+      }
+    }
+  },
+  "additionalVariants": [
+    {
+      "id": "default_copy",
+      "name": "Text Box",
+      "protected": false,
+      "locked": false,
+      "config": {
+        "style": {
+          "shadowEnabled": false,
+          "reliefEnabled": false,
+          "borderWidth": 0,
+          "borderColorToken": "theme.borders.primary",
+          "cornerRadiusToken": "theme.radii.xl",
+          "reliefAngle": -45,
+          "reliefExtent": 1,
+          "reliefSpread": 0,
+          "reliefTopIntensity": 0.12,
+          "reliefBottomIntensity": -0.1
+        },
+        "textBox": {
+          "dimensionMode": "growVertical",
+          "padding": "theme.spacing.s|theme.spacing.s",
+          "surfaceSlot": {
+            "variantReference": "component_project_foqn_s2_surface::variant::default_copy",
+            "overrides": {
+              "surface": {
+                "backgroundAlpha": 1,
+                "borderAlpha": 1
+              },
+              "style": {
+                "borderWidth": 1,
+                "shadowEnabled": false
+              }
+            }
+          },
+          "placeholder": "Message",
+          "textColorToken": "theme.colors.textPrimary",
+          "placeholderColorToken": "theme.colors.textSecondary",
+          "typography": {
+            "fontFamilyId": "theme",
+            "weight": "theme.typography.weight",
+            "style": "theme.typography.style",
+            "sizeToken": "theme.typography.sizes.s",
+            "lineHeight": "theme.typography.lineHeights.normal"
+          },
+          "textAlign": "left",
+          "overflowMode": "scroll",
+          "cursorSlot": {
+            "showCursor": true,
+            "variantReference": "component_project_foqn_s2_cursor::variant::default",
+            "overrides": {
+              "cursor": {
+                "minimumFade": 0.15,
+                "colorToken": "theme.icons.accent"
+              }
+            }
+          },
+          "maxLines": 4,
+          "leftIconRowSlot": {
+            "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+            "overrides": {}
+          },
+          "rightIconRowSlot": {
+            "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+            "overrides": {
+              "iconRow": {
+                "items": [
+                  {
+                    "id": "button_95660b921b614784b6ba1955721adea1",
+                    "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                    "state": "normal",
+                    "iconToken": "media_mic",
+                    "text": "",
+                    "iconSizeToken": "theme.iconSizes.m",
+                    "textSizeToken": "theme.typography.sizes.s",
+                    "pushTrigger": false,
+                    "pushElapsedMs": 0,
+                    "buttonOverrides": {
+                      "button": {
+                        "states": {
+                          "normal": {
+                            "surfaceSlot": {
+                              "overrides": {
+                                "surface": {},
+                                "style": {}
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "iconGap": "theme.spacing.m"
+        }
+      }
+    }
+  ],
+  "designPreview": {
+    "componentType": "textBox",
+    "sampleText": "Message",
+    "sampleSubtext": "",
+    "sampleSize": 256,
+    "inputs": [
+      {
+        "id": "sampleText",
+        "label": "Text",
+        "jsonKey": "sampleText",
+        "kind": "multilineText",
+        "valueKind": "StringMultiline",
+        "defaultValue": "Message",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "text",
+        "uiGroupLabel": "Text",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 10
+      },
+      {
+        "id": "fixedSize",
+        "label": "Size",
+        "jsonKey": "size",
+        "kind": "integerPair",
+        "valueKind": "IntegerPair",
+        "defaultValue": "220|44",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "textBox.dimensionMode",
+        "visibleWhenValue": "fixed",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "layout",
+        "uiGroupLabel": "Layout",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 20
+      },
+      {
+        "id": "contentMaxWidth",
+        "label": "Max width",
+        "jsonKey": "maxWidth",
+        "kind": "number",
+        "valueKind": "Decimal",
+        "defaultValue": "220",
+        "minimum": 1,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "textBox.dimensionMode",
+        "visibleWhenValue": "content",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "layout",
+        "uiGroupLabel": "Layout",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 21
+      },
+      {
+        "id": "growSize",
+        "label": "Size",
+        "jsonKey": "size",
+        "kind": "integerPair",
+        "valueKind": "IntegerPair",
+        "defaultValue": "220|44",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "Min H",
+        "visibleWhenPath": "textBox.dimensionMode",
+        "visibleWhenValue": "growVertical",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "layout",
+        "uiGroupLabel": "Layout",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 22
+      }
+    ],
+    "size": "220|44",
+    "maxWidth": 220
+  },
+  "metadata": {
+    "note": "Seeded reusable component class."
+  },
+  "dictionaryFields": [],
+  "editorLayout": {
+    "cards": [
+      {
+        "id": "general",
+        "label": "General",
+        "subtitle": "Identity",
+        "icon": "general",
+        "order": 10,
+        "visible": true,
+        "defaultOpen": true,
+        "groups": [
+          {
+            "id": "identity",
+            "label": "Identity",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "core.name",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.type",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "core.notes",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "textBox",
+        "label": "Text Box",
+        "subtitle": "Reusable text field content box",
+        "icon": "text-input",
+        "order": 20,
+        "visible": true,
+        "defaultOpen": false,
+        "groupLayout": "separatedSections",
+        "groups": [
+          {
+            "id": "textBox",
+            "label": "Text box",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.textBox.dimensionMode",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.textBox.padding",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.textBox.surface.editor",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "component.textBox.placeholder",
+                "order": 40,
+                "visible": true
+              },
+              {
+                "id": "component.textBox.maxLines",
+                "order": 50,
+                "visible": true
+              },
+              {
+                "id": "component.textBox.textColorToken",
+                "order": 60,
+                "visible": true
+              },
+              {
+                "id": "component.textBox.placeholderColorToken",
+                "order": 70,
+                "visible": true
+              },
+              {
+                "id": "component.textBox.typography",
+                "order": 80,
+                "visible": true
+              },
+              {
+                "id": "component.textBox.textAlign",
+                "order": 90,
+                "visible": true
+              },
+              {
+                "id": "component.textBox.overflowMode",
+                "order": 100,
+                "visible": true
+              },
+              {
+                "id": "component.textBox.iconGap",
+                "order": 110,
+                "visible": true
+              }
+            ]
+          },
+          {
+            "id": "textBoxLeftIconRow",
+            "label": "Left icon row",
+            "order": 20,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.textBox.leftIconRow.editor",
+                "order": 10,
+                "visible": true
+              }
+            ]
+          },
+          {
+            "id": "textBoxRightIconRow",
+            "label": "Right icon row",
+            "order": 30,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.textBox.rightIconRow.editor",
+                "order": 10,
+                "visible": true
+              }
+            ]
+          },
+          {
+            "id": "textBoxCursor",
+            "label": "Cursor",
+            "order": 40,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.textBox.cursor.showCursor",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.textBox.cursor.editor",
+                "order": 20,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "assets": []
+}

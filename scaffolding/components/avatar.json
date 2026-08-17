@@ -1,0 +1,744 @@
+{
+  "schemaVersion": 1,
+  "intent": {
+    "responsibility": "Own the complete current Component configuration and its exact Runtime Input contract.",
+    "visualBoundary": "Resolve the Component through its manifest-declared resolver and renderable boundary.",
+    "runtimeBehavior": "Consume only declared Runtime Inputs and explicit embedded Component boundaries.",
+    "forwarding": "Forward values only through declared stable source and target identities.",
+    "temporalOwnership": "Keep reusable behavior relative to the Component owner and its declared child owners."
+  },
+  "component": {
+    "componentType": "avatar",
+    "category": "component",
+    "componentClassId": "component_project_foqn_s2_avatar",
+    "projectId": "project_foqn_s2",
+    "recordClassId": "component.avatar",
+    "name": "Avatar",
+    "notes": "Avatar component"
+  },
+  "manifest": {
+    "contract": "./avatarComponentContract",
+    "resolver": "./avatarComponentResolver",
+    "renderable": "./avatarComponentRenderable",
+    "embeds": [
+      "label",
+      "badge"
+    ]
+  },
+  "owners": {
+    "contractExport": "AvatarActorDesignContract",
+    "resolverExport": "resolveAvatarComponent",
+    "renderableExport": "avatarComponentToRenderable",
+    "registryMode": "simple",
+    "focusedTest": "tests/Mockups.Desktop.Tests/Program.cs",
+    "configContractExport": null
+  },
+  "config": {
+    "style": {
+      "shadowEnabled": false,
+      "reliefEnabled": false,
+      "borderWidth": 0,
+      "borderColorToken": "theme.borders.primary",
+      "cornerRadiusToken": "theme.radii.full",
+      "reliefAngle": 90,
+      "reliefExtent": 1,
+      "reliefSpread": 0,
+      "reliefTopIntensity": 0.12,
+      "reliefBottomIntensity": -0.1,
+      "shadowToken": "elevated"
+    },
+    "avatar": {
+      "defaultSize": 50,
+      "cornerRadiusToken": "theme.radii.full",
+      "labelSlot": {
+        "showLabel": false,
+        "showSubtext": false,
+        "position": "right",
+        "overrides": {
+          "label": {
+            "alpha": 0,
+            "textAlign": "left",
+            "textGapToken": "theme.spacing.none",
+            "reserveSubtextSpace": false,
+            "subtextVerticalPosition": "bottom",
+            "subtextHorizontalAlign": "center"
+          },
+          "style": {
+            "reliefEnabled": false
+          }
+        },
+        "placement": {
+          "mode": "outsideEdge",
+          "alignX": 0.5,
+          "alignY": 1,
+          "offsetX": 0,
+          "offsetY": 0
+        },
+        "variantReference": "component_project_foqn_s2_label::variant::default"
+      },
+      "badgeSlot": {
+        "variantReference": "component_project_foqn_s2_badge::variant::default",
+        "overrides": {},
+        "placement": {
+          "mode": "center",
+          "alignX": 1,
+          "alignY": 0,
+          "offsetX": 0,
+          "offsetY": 0
+        }
+      }
+    }
+  },
+  "defaultVariant": {
+    "id": "default",
+    "name": "Default",
+    "protected": true,
+    "locked": true,
+    "config": {
+      "style": {
+        "shadowEnabled": false,
+        "reliefEnabled": false,
+        "borderWidth": 0,
+        "borderColorToken": "theme.borders.primary",
+        "cornerRadiusToken": "theme.radii.full",
+        "reliefAngle": 90,
+        "reliefExtent": 1,
+        "reliefSpread": 0,
+        "reliefTopIntensity": 0.12,
+        "reliefBottomIntensity": -0.1,
+        "shadowToken": "elevated"
+      },
+      "avatar": {
+        "defaultSize": 50,
+        "cornerRadiusToken": "theme.radii.full",
+        "labelSlot": {
+          "showLabel": false,
+          "showSubtext": false,
+          "position": "right",
+          "overrides": {
+            "label": {
+              "alpha": 0,
+              "textAlign": "left",
+              "textGapToken": "theme.spacing.none",
+              "reserveSubtextSpace": false,
+              "subtextVerticalPosition": "bottom",
+              "subtextHorizontalAlign": "center"
+            },
+            "style": {
+              "reliefEnabled": false
+            }
+          },
+          "placement": {
+            "mode": "outsideEdge",
+            "alignX": 0.5,
+            "alignY": 1,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          "variantReference": "component_project_foqn_s2_label::variant::default"
+        },
+        "badgeSlot": {
+          "variantReference": "component_project_foqn_s2_badge::variant::default",
+          "overrides": {},
+          "placement": {
+            "mode": "center",
+            "alignX": 1,
+            "alignY": 0,
+            "offsetX": 0,
+            "offsetY": 0
+          }
+        }
+      }
+    }
+  },
+  "additionalVariants": [
+    {
+      "id": "avatar_chat_header",
+      "name": "Avatar_Chat_Header",
+      "protected": false,
+      "locked": false,
+      "config": {
+        "style": {
+          "shadowEnabled": false,
+          "reliefEnabled": false,
+          "borderWidth": 1,
+          "borderColorToken": "theme.colors.icon",
+          "cornerRadiusToken": "theme.radii.full",
+          "reliefAngle": -45,
+          "reliefExtent": 1,
+          "reliefSpread": 0,
+          "reliefTopIntensity": 0.12,
+          "reliefBottomIntensity": -0.1,
+          "shadowToken": "elevated"
+        },
+        "avatar": {
+          "defaultSize": 32,
+          "cornerRadiusToken": "theme.radii.full",
+          "labelSlot": {
+            "showLabel": true,
+            "showSubtext": true,
+            "position": "right",
+            "overrides": {
+              "label": {
+                "alpha": 0,
+                "textAlign": "left",
+                "textSizeToken": "theme.typography.sizes.l",
+                "subtextColorToken": "theme.colors.textSecondary",
+                "surfaceSlot": {
+                  "variantReference": "component_project_foqn_s2_surface::variant::default_copy_2"
+                },
+                "textTypography": {
+                  "sizeToken": "theme.typography.sizes.m"
+                },
+                "textGapToken": "theme.spacing.none",
+                "reserveSubtextSpace": false,
+                "subtextVerticalPosition": "bottom",
+                "subtextHorizontalAlign": "center"
+              },
+              "style": {
+                "reliefEnabled": false,
+                "shadowEnabled": false
+              }
+            },
+            "placement": {
+              "mode": "outsideEdge",
+              "alignX": 1,
+              "alignY": 0.5,
+              "offsetX": 0,
+              "offsetY": 0
+            },
+            "variantReference": "component_project_foqn_s2_label::variant::default"
+          },
+          "badgeSlot": {
+            "variantReference": "component_project_foqn_s2_badge::variant::default",
+            "overrides": {},
+            "placement": {
+              "mode": "center",
+              "alignX": 1,
+              "alignY": 0,
+              "offsetX": 0,
+              "offsetY": 0
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "default_copy",
+      "name": "Avatar pequeño",
+      "protected": false,
+      "locked": false,
+      "config": {
+        "style": {
+          "shadowEnabled": false,
+          "reliefEnabled": false,
+          "borderWidth": 0,
+          "borderColorToken": "theme.borders.primary",
+          "cornerRadiusToken": "theme.radii.full",
+          "reliefAngle": 90,
+          "reliefExtent": 1,
+          "reliefSpread": 0,
+          "reliefTopIntensity": 0.12,
+          "reliefBottomIntensity": -0.1,
+          "shadowToken": "elevated"
+        },
+        "avatar": {
+          "defaultSize": 25,
+          "cornerRadiusToken": "theme.radii.full",
+          "labelSlot": {
+            "showLabel": false,
+            "showSubtext": false,
+            "position": "right",
+            "overrides": {
+              "label": {
+                "alpha": 0,
+                "textAlign": "left",
+                "textGapToken": "theme.spacing.none",
+                "reserveSubtextSpace": false,
+                "subtextVerticalPosition": "bottom",
+                "subtextHorizontalAlign": "center"
+              },
+              "style": {
+                "reliefEnabled": false
+              }
+            },
+            "placement": {
+              "mode": "outsideEdge",
+              "alignX": 0.5,
+              "alignY": 1,
+              "offsetX": 0,
+              "offsetY": 0
+            },
+            "variantReference": "component_project_foqn_s2_label::variant::default"
+          },
+          "badgeSlot": {
+            "variantReference": "component_project_foqn_s2_badge::variant::default",
+            "overrides": {},
+            "placement": {
+              "mode": "center",
+              "alignX": 1,
+              "alignY": 0,
+              "offsetX": 0,
+              "offsetY": 0
+            }
+          }
+        }
+      }
+    }
+  ],
+  "designPreview": {
+    "componentType": "avatar",
+    "sampleText": "Sample",
+    "sampleSize": 256,
+    "sampleSubtext": "Subtitle",
+    "inputs": [
+      {
+        "id": "actorId",
+        "label": "Actor",
+        "jsonKey": "actorId",
+        "kind": "recordReference",
+        "valueKind": "RecordReference",
+        "defaultValue": "",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "actors",
+        "resolvedJsonKey": "actor",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "identity",
+        "uiGroupLabel": "Identity",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 10
+      },
+      {
+        "id": "sampleSubtext",
+        "label": "Subtitle",
+        "jsonKey": "sampleSubtext",
+        "kind": "text",
+        "valueKind": "StringSingleLine",
+        "defaultValue": "Subtitle",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "identity",
+        "uiGroupLabel": "Identity",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 11
+      },
+      {
+        "id": "showBadge",
+        "label": "Show badge",
+        "jsonKey": "showBadge",
+        "kind": "boolean",
+        "valueKind": "Boolean",
+        "defaultValue": "false",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "badge",
+        "uiGroupLabel": "Badge",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 20
+      },
+      {
+        "id": "badgeContentMode",
+        "label": "Badge content",
+        "jsonKey": "badgeContentMode",
+        "kind": "option",
+        "valueKind": "OptionToken",
+        "defaultValue": "icon",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [
+          {
+            "value": "icon",
+            "label": "Icon"
+          },
+          {
+            "value": "text",
+            "label": "Text"
+          }
+        ],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "badge",
+        "uiGroupLabel": "Badge",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 21
+      },
+      {
+        "id": "badgeIconToken",
+        "label": "Badge icon",
+        "jsonKey": "badgeIconToken",
+        "kind": "icon",
+        "valueKind": "IconToken",
+        "defaultValue": "system_check",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "badge",
+        "uiGroupLabel": "Badge",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 22
+      },
+      {
+        "id": "badgeText",
+        "label": "Badge text",
+        "jsonKey": "badgeText",
+        "kind": "text",
+        "valueKind": "StringSingleLine",
+        "defaultValue": "1",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "badge",
+        "uiGroupLabel": "Badge",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 23
+      },
+      {
+        "id": "badgeSize",
+        "label": "Badge size",
+        "jsonKey": "badgeSize",
+        "kind": "number",
+        "valueKind": "Integer",
+        "defaultValue": "20",
+        "minimum": 1,
+        "maximum": 512,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "badge",
+        "uiGroupLabel": "Badge",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 24
+      },
+      {
+        "id": "badgeBackgroundPaletteColor",
+        "label": "Badge background",
+        "jsonKey": "badgeBackgroundPaletteColor",
+        "kind": "text",
+        "valueKind": "PaletteColorToken",
+        "defaultValue": "blue",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "badge",
+        "uiGroupLabel": "Badge",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 25
+      },
+      {
+        "id": "badgeContentPaletteColor",
+        "label": "Badge icon / text color",
+        "jsonKey": "badgeContentPaletteColor",
+        "kind": "text",
+        "valueKind": "PaletteColorToken",
+        "defaultValue": "gray_100",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "badge",
+        "uiGroupLabel": "Badge",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 26
+      }
+    ],
+    "showBadge": false,
+    "badgeIconToken": "system_check",
+    "badgeText": "1",
+    "badgeContentMode": "icon",
+    "badgeSize": 20,
+    "badgeBackgroundPaletteColor": "blue",
+    "badgeContentPaletteColor": "gray_100"
+  },
+  "metadata": {
+    "note": "Seeded reusable component class."
+  },
+  "dictionaryFields": [],
+  "editorLayout": {
+    "cards": [
+      {
+        "id": "general",
+        "label": "General",
+        "subtitle": "Identity",
+        "icon": "general",
+        "order": 10,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "identity",
+            "label": "Identity",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "core.name",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.type",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "core.notes",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "avatar",
+        "label": "Avatar",
+        "subtitle": "Reusable avatar presentation defaults",
+        "icon": "avatar",
+        "order": 20,
+        "visible": true,
+        "defaultOpen": false,
+        "groupLayout": "separatedSections",
+        "groups": [
+          {
+            "id": "avatar",
+            "label": "Avatar",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.avatar.defaultSize",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.avatar.cornerRadiusToken",
+                "order": 20,
+                "visible": true
+              }
+            ]
+          },
+          {
+            "id": "avatarLabel",
+            "label": "Label",
+            "order": 20,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.avatar.label.showLabel",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.avatar.label.showSubtext",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.avatar.label.placement",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "component.avatar.label.editor",
+                "order": 40,
+                "visible": true
+              }
+            ]
+          },
+          {
+            "id": "avatarBadge",
+            "label": "Badge",
+            "order": 30,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.avatar.badge.editor",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.avatar.badge.placement",
+                "order": 20,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "style",
+        "label": "Style",
+        "subtitle": "Shared surface style defaults",
+        "icon": "style",
+        "order": 90,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "style",
+            "label": "Surface style",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.style.shadowEnabled",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.style.reliefEnabled",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.style.borderWidth",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "component.style.borderColorToken",
+                "order": 40,
+                "visible": true
+              },
+              {
+                "id": "component.style.cornerRadiusToken",
+                "order": 50,
+                "visible": true
+              },
+              {
+                "id": "component.style.reliefAngle",
+                "order": 60,
+                "visible": true
+              },
+              {
+                "id": "component.style.reliefExtent",
+                "order": 70,
+                "visible": true
+              },
+              {
+                "id": "component.style.reliefSpread",
+                "order": 80,
+                "visible": true
+              },
+              {
+                "id": "component.style.reliefTopIntensity",
+                "order": 90,
+                "visible": true
+              },
+              {
+                "id": "component.style.reliefBottomIntensity",
+                "order": 100,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "assets": []
+}

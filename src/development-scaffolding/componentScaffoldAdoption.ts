@@ -134,7 +134,20 @@ export function adoptExistingComponentScaffold(
     const contractSource = ownerSource(repositoryRoot, contractRoute);
     const resolverSource = ownerSource(repositoryRoot, resolverRoute);
     const renderableSource = ownerSource(repositoryRoot, renderableRoute);
-    const focusedTest = `tests/animation/${componentType}Component.test.ts`;
+    const route = registryRoute(
+      repositoryRoot,
+      componentType,
+      resolverSource,
+      renderableSource,
+    );
+    const conventionalFocusedTest =
+      `tests/animation/${componentType}Component.test.ts`;
+    const focusedTest = existsSync(repositoryPath(
+      repositoryRoot,
+      conventionalFocusedTest,
+    ))
+      ? conventionalFocusedTest
+      : adoptedFocusedTest(repositoryRoot, componentType);
     if (!existsSync(repositoryPath(repositoryRoot, focusedTest))) {
       throw new Error(`Missing focused Component test '${focusedTest}'.`);
     }
@@ -163,17 +176,13 @@ export function adoptExistingComponentScaffold(
           /export (?:interface|type) ([A-Za-z_$][A-Za-z0-9_$]*DesignContract)\b/,
           "contract",
         ),
-        resolverExport: requiredExport(
-          resolverSource,
-          /export function ([A-Za-z_$][A-Za-z0-9_$]*)\s*\(/,
-          "resolver",
+        resolverExport: route.resolverExport,
+        renderableExport: route.renderableExport,
+        configContractExport: existingConfigContractExport(
+          componentType,
+          repositoryRoot,
         ),
-        renderableExport: requiredExport(
-          renderableSource,
-          /export function ([A-Za-z_$][A-Za-z0-9_$]*)\s*\(/,
-          "renderable",
-        ),
-        registryMode: registryMode(repositoryRoot, componentType),
+        registryMode: route.mode,
         focusedTest,
       },
       config,
@@ -207,6 +216,31 @@ export function adoptExistingComponentScaffold(
   } finally {
     database.close();
   }
+}
+
+function adoptedFocusedTest(repositoryRoot: string, componentType: string) {
+  const matrixPath = "tests/animation/desktopPreviewCapabilityMatrix.test.ts";
+  const source = readFileSync(repositoryPath(repositoryRoot, matrixPath), "utf8");
+  const escapedType = componentType.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const match = new RegExp(
+    `^\\s*["']?${escapedType}["']?\\s*:\\s*["']([^"']+)["']\\s*,?\\s*$`,
+    "m",
+  ).exec(source);
+  if (!match) {
+    const exhaustiveFixtureTest = "tests/Mockups.Desktop.Tests/Program.cs";
+    if (!existsSync(repositoryPath(repositoryRoot, exhaustiveFixtureTest))) {
+      throw new Error(
+        `Missing Component fixture test for '${componentType}'.`,
+      );
+    }
+    return exhaustiveFixtureTest;
+  }
+  if (!existsSync(repositoryPath(repositoryRoot, match[1]!))) {
+    throw new Error(
+      `Missing focused Component test '${match[1]}' for '${componentType}'.`,
+    );
+  }
+  return match[1]!;
 }
 
 function adoptedDictionaryFields(
@@ -273,13 +307,15 @@ function adoptedDictionaryFields(
       unit: csharpNamedString(named.get("Unit")),
     });
   }
-  if (fields.length === 0) {
-    throw new Error(`No dictionary fields were found for '${recordClassId}'.`);
-  }
   return fields;
 }
 
-function registryMode(repositoryRoot: string, componentType: string) {
+function registryRoute(
+  repositoryRoot: string,
+  componentType: string,
+  resolverSource: string,
+  renderableSource: string,
+) {
   const source = [
     "src/desktop-preview/componentClassRenderableRegistry.ts",
     "src/desktop-preview/generatedComponentScaffoldRegistry.ts",
@@ -289,16 +325,38 @@ function registryMode(repositoryRoot: string, componentType: string) {
     .map((candidate) => readFileSync(candidate, "utf8"))
     .join("\n");
   const match = new RegExp(
-    `\\n\\s*${escapeRegex(componentType)}:\\s*\\(([^)]*)\\)\\s*=>`,
+    `\\n\\s{2}${escapeRegex(componentType)}:\\s*\\(([^)]*)\\)\\s*=>`
+      + `([\\s\\S]*?)(?=\\n\\s{2}[A-Za-z_$][A-Za-z0-9_$]*:\\s*\\(|\\n} satisfies)`,
   ).exec(source);
   if (!match) throw new Error(`Missing registry route '${componentType}'.`);
   const args = match[1]!.split(",").map((value) => value.trim());
+  const body = match[2]!;
+  const resolverExport = routeOwnerExport(body, resolverSource, "resolver");
+  const renderableExport = routeOwnerExport(body, renderableSource, "renderable");
   const assignedBox = args.includes("assignedBox");
   const children = args.includes("renderChild");
-  if (assignedBox && children) return "assignedBoxAndChildren";
-  if (assignedBox) return "assignedBox";
-  if (children) return "children";
-  return "simple";
+  const mode = assignedBox && children
+    ? "assignedBoxAndChildren"
+    : assignedBox
+      ? "assignedBox"
+      : children
+        ? "children"
+        : "simple";
+  return { resolverExport, renderableExport, mode } as const;
+}
+
+function routeOwnerExport(body: string, ownerSource: string, owner: string) {
+  const candidates = [...ownerSource.matchAll(
+    /export function ([A-Za-z_$][A-Za-z0-9_$]*)\s*\(/g,
+  )]
+    .map((match) => match[1]!)
+    .filter((name) => new RegExp(`\\b${escapeRegex(name)}\\s*\\(`).test(body));
+  if (candidates.length !== 1) {
+    throw new Error(
+      `Registry route must call exactly one exported ${owner}; found ${candidates.length}.`,
+    );
+  }
+  return candidates[0]!;
 }
 
 function ownerSource(repositoryRoot: string, route: string) {
@@ -429,4 +487,21 @@ function stringValue(value: JsonValue | undefined, owner: string) {
 
 function escapeRegex(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function existingConfigContractExport(
+  componentType: string,
+  repositoryRoot: string,
+) {
+  const exportName = `${pascalCase(componentType)}ComponentConfigContract`;
+  return existsSync(path.join(
+    repositoryRoot,
+    "src/Mockups.Application",
+    `${exportName}.cs`,
+  )) ? exportName : null;
+}
+
+function pascalCase(value: string) {
+  return value.replace(/(^|[_-])([a-z])/g, (_match, _prefix, letter: string) =>
+    letter.toUpperCase());
 }

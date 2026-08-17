@@ -1,0 +1,2136 @@
+{
+  "schemaVersion": 1,
+  "intent": {
+    "responsibility": "Own the complete current Component configuration and its exact Runtime Input contract.",
+    "visualBoundary": "Resolve the Component through its manifest-declared resolver and renderable boundary.",
+    "runtimeBehavior": "Consume only declared Runtime Inputs and explicit embedded Component boundaries.",
+    "forwarding": "Forward values only through declared stable source and target identities.",
+    "temporalOwnership": "Keep reusable behavior relative to the Component owner and its declared child owners."
+  },
+  "component": {
+    "componentType": "button",
+    "category": "atom",
+    "componentClassId": "component_project_foqn_s2_button",
+    "projectId": "project_foqn_s2",
+    "recordClassId": "component.button",
+    "name": "Button",
+    "notes": "Button component"
+  },
+  "manifest": {
+    "contract": "./buttonComponentContract",
+    "resolver": "./buttonComponentResolver",
+    "renderable": "./buttonComponentRenderable",
+    "embeds": [
+      "surface",
+      "label",
+      "badge"
+    ]
+  },
+  "owners": {
+    "contractExport": "ButtonStateDesignContract",
+    "resolverExport": "resolveButtonComponent",
+    "renderableExport": "buttonComponentToRenderable",
+    "registryMode": "simple",
+    "focusedTest": "tests/animation/atomicTemporalComponents.test.ts",
+    "configContractExport": null
+  },
+  "config": {
+    "style": {
+      "shadowEnabled": false,
+      "reliefEnabled": false,
+      "borderWidth": 0,
+      "borderColorToken": "theme.borders.primary",
+      "cornerRadiusToken": "theme.radii.xl",
+      "reliefAngle": -45,
+      "reliefExtent": 1,
+      "reliefSpread": 0,
+      "reliefTopIntensity": 0.12,
+      "reliefBottomIntensity": -0.1
+    },
+    "button": {
+      "contentMode": "text",
+      "dimensionMode": "content",
+      "size": "120|50",
+      "padding": "theme.spacing.s|theme.spacing.s",
+      "contentGapToken": "theme.spacing.m",
+      "iconToken": "media_play_fill",
+      "states": {
+        "normal": {
+          "surfaceSlot": {
+            "variantReference": "component_project_foqn_s2_surface::variant::default_copy_4",
+            "overrides": {}
+          },
+          "labelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {
+              "label": {
+                "textTypography": {
+                  "sizeToken": "theme.typography.sizes.m"
+                },
+                "reserveSubtextSpace": false,
+                "subtextVerticalPosition": "bottom",
+                "subtextHorizontalAlign": "center"
+              }
+            }
+          },
+          "iconColorToken": "theme.colors.icon"
+        },
+        "active": {
+          "surfaceSlot": {
+            "variantReference": "component_project_foqn_s2_surface::variant::surface_00_copy",
+            "overrides": {
+              "surface": {
+                "backgroundAlpha": 0.2,
+                "borderAlpha": 1
+              },
+              "style": {}
+            }
+          },
+          "labelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          },
+          "iconColorToken": "theme.colors.accent"
+        },
+        "pushed": {
+          "surfaceSlot": {
+            "variantReference": "component_project_foqn_s2_surface::variant::default",
+            "overrides": {}
+          },
+          "labelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          },
+          "iconColorToken": "theme.icons.primary"
+        },
+        "disabled": {
+          "surfaceSlot": {
+            "variantReference": "component_project_foqn_s2_surface::variant::default",
+            "overrides": {}
+          },
+          "labelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {
+              "label": {
+                "textColorToken": "theme.colors.textSecondary",
+                "reserveSubtextSpace": false,
+                "subtextVerticalPosition": "bottom",
+                "subtextHorizontalAlign": "center"
+              }
+            }
+          },
+          "iconColorToken": "theme.icons.secondary"
+        }
+      },
+      "badgeSlot": {
+        "variantReference": "component_project_foqn_s2_badge::variant::default",
+        "overrides": {}
+      }
+    }
+  },
+  "defaultVariant": {
+    "id": "default",
+    "name": "Default",
+    "protected": true,
+    "locked": true,
+    "config": {
+      "style": {
+        "shadowEnabled": false,
+        "reliefEnabled": false,
+        "borderWidth": 0,
+        "borderColorToken": "theme.borders.primary",
+        "cornerRadiusToken": "theme.radii.xl",
+        "reliefAngle": -45,
+        "reliefExtent": 1,
+        "reliefSpread": 0,
+        "reliefTopIntensity": 0.12,
+        "reliefBottomIntensity": -0.1
+      },
+      "button": {
+        "contentMode": "text",
+        "dimensionMode": "content",
+        "size": "120|50",
+        "padding": "theme.spacing.s|theme.spacing.s",
+        "contentGapToken": "theme.spacing.m",
+        "iconToken": "media_play_fill",
+        "states": {
+          "normal": {
+            "surfaceSlot": {
+              "variantReference": "component_project_foqn_s2_surface::variant::default_copy_4",
+              "overrides": {}
+            },
+            "labelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {
+                "label": {
+                  "textTypography": {
+                    "sizeToken": "theme.typography.sizes.m"
+                  },
+                  "reserveSubtextSpace": false,
+                  "subtextVerticalPosition": "bottom",
+                  "subtextHorizontalAlign": "center"
+                }
+              }
+            },
+            "iconColorToken": "theme.colors.icon"
+          },
+          "active": {
+            "surfaceSlot": {
+              "variantReference": "component_project_foqn_s2_surface::variant::surface_00_copy",
+              "overrides": {
+                "surface": {
+                  "backgroundAlpha": 0.2,
+                  "borderAlpha": 1
+                },
+                "style": {}
+              }
+            },
+            "labelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            },
+            "iconColorToken": "theme.colors.accent"
+          },
+          "pushed": {
+            "surfaceSlot": {
+              "variantReference": "component_project_foqn_s2_surface::variant::default",
+              "overrides": {}
+            },
+            "labelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            },
+            "iconColorToken": "theme.icons.primary"
+          },
+          "disabled": {
+            "surfaceSlot": {
+              "variantReference": "component_project_foqn_s2_surface::variant::default",
+              "overrides": {}
+            },
+            "labelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {
+                "label": {
+                  "textColorToken": "theme.colors.textSecondary",
+                  "reserveSubtextSpace": false,
+                  "subtextVerticalPosition": "bottom",
+                  "subtextHorizontalAlign": "center"
+                }
+              }
+            },
+            "iconColorToken": "theme.icons.secondary"
+          }
+        },
+        "badgeSlot": {
+          "variantReference": "component_project_foqn_s2_badge::variant::default",
+          "overrides": {}
+        }
+      }
+    }
+  },
+  "additionalVariants": [
+    {
+      "id": "icon_only",
+      "name": "Icon only",
+      "protected": false,
+      "locked": false,
+      "config": {
+        "style": {
+          "shadowEnabled": false,
+          "reliefEnabled": false,
+          "borderWidth": 0,
+          "borderColorToken": "theme.borders.primary",
+          "cornerRadiusToken": "theme.radii.xl",
+          "reliefAngle": -45,
+          "reliefExtent": 1,
+          "reliefSpread": 0,
+          "reliefTopIntensity": 0.12,
+          "reliefBottomIntensity": -0.1
+        },
+        "button": {
+          "contentMode": "icon",
+          "dimensionMode": "content",
+          "size": "44|44",
+          "padding": "theme.spacing.none|theme.spacing.none",
+          "contentGapToken": "theme.spacing.s",
+          "iconToken": "media_play_fill",
+          "states": {
+            "normal": {
+              "surfaceSlot": {
+                "variantReference": "component_project_foqn_s2_surface::variant::default",
+                "overrides": {
+                  "surface": {
+                    "tail": {
+                      "size": "40|30"
+                    },
+                    "backgroundAlpha": 0,
+                    "borderAlpha": 1
+                  }
+                }
+              },
+              "labelSlot": {
+                "variantReference": "component_project_foqn_s2_label::variant::default",
+                "overrides": {}
+              },
+              "iconColorToken": "theme.colors.icon"
+            },
+            "active": {
+              "surfaceSlot": {
+                "variantReference": "component_project_foqn_s2_surface::variant::default",
+                "overrides": {}
+              },
+              "labelSlot": {
+                "variantReference": "component_project_foqn_s2_label::variant::default",
+                "overrides": {}
+              },
+              "iconColorToken": "theme.colors.accent"
+            },
+            "pushed": {
+              "surfaceSlot": {
+                "variantReference": "component_project_foqn_s2_surface::variant::default",
+                "overrides": {}
+              },
+              "labelSlot": {
+                "variantReference": "component_project_foqn_s2_label::variant::default",
+                "overrides": {}
+              },
+              "iconColorToken": "theme.colors.accent"
+            },
+            "disabled": {
+              "surfaceSlot": {
+                "variantReference": "component_project_foqn_s2_surface::variant::default",
+                "overrides": {}
+              },
+              "labelSlot": {
+                "variantReference": "component_project_foqn_s2_label::variant::default",
+                "overrides": {}
+              },
+              "iconColorToken": "theme.colors.icon"
+            }
+          },
+          "badgeSlot": {
+            "variantReference": "component_project_foqn_s2_badge::variant::default",
+            "overrides": {}
+          }
+        }
+      }
+    },
+    {
+      "id": "ios_answer",
+      "name": "iOS · Accept",
+      "protected": false,
+      "locked": false,
+      "config": {
+        "style": {
+          "shadowEnabled": false,
+          "reliefEnabled": false,
+          "borderWidth": 0,
+          "borderColorToken": "theme.borders.primary",
+          "cornerRadiusToken": "theme.radii.full",
+          "reliefAngle": -45,
+          "reliefExtent": 1,
+          "reliefSpread": 0,
+          "reliefTopIntensity": 0.12,
+          "reliefBottomIntensity": -0.1
+        },
+        "button": {
+          "contentMode": "icon",
+          "dimensionMode": "fixed",
+          "size": "52|52",
+          "padding": "theme.spacing.s|theme.spacing.s",
+          "contentGapToken": "theme.spacing.s",
+          "iconToken": "phone_call",
+          "states": {
+            "normal": {
+              "surfaceSlot": {
+                "variantReference": "component_project_foqn_s2_surface::variant::android_buttons_copy",
+                "overrides": {
+                  "style": {
+                    "cornerRadiusToken": "theme.radii.full"
+                  },
+                  "surface": {
+                    "backgroundColorToken": "theme.colors.positive",
+                    "borderAlpha": 0
+                  }
+                }
+              },
+              "labelSlot": {
+                "variantReference": "component_project_foqn_s2_label::variant::default",
+                "overrides": {
+                  "style": {
+                    "shadowEnabled": false,
+                    "reliefEnabled": false,
+                    "borderWidth": 0
+                  },
+                  "label": {
+                    "dimensionMode": "content",
+                    "size": "100|32",
+                    "padding": "theme.spacing.none|theme.spacing.none",
+                    "textColorToken": "theme.colors.onAction",
+                    "subtextColorToken": "theme.colors.onAction",
+                    "textAlign": "center",
+                    "textGapToken": "theme.spacing.xs",
+                    "reserveSubtextSpace": false,
+                    "subtextVerticalPosition": "bottom",
+                    "subtextHorizontalAlign": "center",
+                    "textTypography": {
+                      "fontFamilyId": "theme",
+                      "weight": "600",
+                      "style": "normal",
+                      "sizeToken": "theme.typography.sizes.s",
+                      "lineHeight": "theme.typography.lineHeights.normal"
+                    },
+                    "subtextTypography": {
+                      "fontFamilyId": "theme",
+                      "weight": "400",
+                      "style": "normal",
+                      "sizeToken": "theme.typography.sizes.xs",
+                      "lineHeight": "theme.typography.lineHeights.normal"
+                    },
+                    "surfaceSlot": {
+                      "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
+                      "overrides": {}
+                    }
+                  }
+                }
+              },
+              "iconColorToken": "theme.colors.onAction"
+            },
+            "active": {
+              "surfaceSlot": {
+                "variantReference": "component_project_foqn_s2_surface::variant::default",
+                "overrides": {
+                  "style": {
+                    "shadowEnabled": false,
+                    "reliefEnabled": false,
+                    "borderWidth": 0,
+                    "cornerRadiusToken": "theme.radii.full"
+                  },
+                  "surface": {
+                    "backgroundColorToken": "theme.colors.positive",
+                    "backgroundAlpha": 0.9,
+                    "borderAlpha": 0
+                  }
+                }
+              },
+              "labelSlot": {
+                "variantReference": "component_project_foqn_s2_label::variant::default",
+                "overrides": {
+                  "style": {
+                    "shadowEnabled": false,
+                    "reliefEnabled": false,
+                    "borderWidth": 0
+                  },
+                  "label": {
+                    "dimensionMode": "content",
+                    "size": "100|32",
+                    "padding": "theme.spacing.none|theme.spacing.none",
+                    "textColorToken": "theme.colors.onAction",
+                    "subtextColorToken": "theme.colors.onAction",
+                    "textAlign": "center",
+                    "textGapToken": "theme.spacing.xs",
+                    "reserveSubtextSpace": false,
+                    "subtextVerticalPosition": "bottom",
+                    "subtextHorizontalAlign": "center",
+                    "textTypography": {
+                      "fontFamilyId": "theme",
+                      "weight": "600",
+                      "style": "normal",
+                      "sizeToken": "theme.typography.sizes.s",
+                      "lineHeight": "theme.typography.lineHeights.normal"
+                    },
+                    "subtextTypography": {
+                      "fontFamilyId": "theme",
+                      "weight": "400",
+                      "style": "normal",
+                      "sizeToken": "theme.typography.sizes.xs",
+                      "lineHeight": "theme.typography.lineHeights.normal"
+                    },
+                    "surfaceSlot": {
+                      "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
+                      "overrides": {}
+                    }
+                  }
+                }
+              },
+              "iconColorToken": "theme.colors.onAction"
+            },
+            "pushed": {
+              "surfaceSlot": {
+                "variantReference": "component_project_foqn_s2_surface::variant::default",
+                "overrides": {
+                  "style": {
+                    "shadowEnabled": false,
+                    "reliefEnabled": false,
+                    "borderWidth": 0,
+                    "cornerRadiusToken": "theme.radii.full"
+                  },
+                  "surface": {
+                    "backgroundColorToken": "theme.colors.positive",
+                    "backgroundAlpha": 0.78,
+                    "borderAlpha": 0
+                  }
+                }
+              },
+              "labelSlot": {
+                "variantReference": "component_project_foqn_s2_label::variant::default",
+                "overrides": {
+                  "style": {
+                    "shadowEnabled": false,
+                    "reliefEnabled": false,
+                    "borderWidth": 0
+                  },
+                  "label": {
+                    "dimensionMode": "content",
+                    "size": "100|32",
+                    "padding": "theme.spacing.none|theme.spacing.none",
+                    "textColorToken": "theme.colors.onAction",
+                    "subtextColorToken": "theme.colors.onAction",
+                    "textAlign": "center",
+                    "textGapToken": "theme.spacing.xs",
+                    "reserveSubtextSpace": false,
+                    "subtextVerticalPosition": "bottom",
+                    "subtextHorizontalAlign": "center",
+                    "textTypography": {
+                      "fontFamilyId": "theme",
+                      "weight": "600",
+                      "style": "normal",
+                      "sizeToken": "theme.typography.sizes.s",
+                      "lineHeight": "theme.typography.lineHeights.normal"
+                    },
+                    "subtextTypography": {
+                      "fontFamilyId": "theme",
+                      "weight": "400",
+                      "style": "normal",
+                      "sizeToken": "theme.typography.sizes.xs",
+                      "lineHeight": "theme.typography.lineHeights.normal"
+                    },
+                    "surfaceSlot": {
+                      "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
+                      "overrides": {}
+                    }
+                  }
+                }
+              },
+              "iconColorToken": "theme.colors.onAction"
+            },
+            "disabled": {
+              "surfaceSlot": {
+                "variantReference": "component_project_foqn_s2_surface::variant::default",
+                "overrides": {
+                  "style": {
+                    "shadowEnabled": false,
+                    "reliefEnabled": false,
+                    "borderWidth": 0,
+                    "cornerRadiusToken": "theme.radii.full"
+                  },
+                  "surface": {
+                    "backgroundColorToken": "theme.colors.positive",
+                    "backgroundAlpha": 0.36,
+                    "borderAlpha": 0
+                  }
+                }
+              },
+              "labelSlot": {
+                "variantReference": "component_project_foqn_s2_label::variant::default",
+                "overrides": {
+                  "style": {
+                    "shadowEnabled": false,
+                    "reliefEnabled": false,
+                    "borderWidth": 0
+                  },
+                  "label": {
+                    "dimensionMode": "content",
+                    "size": "100|32",
+                    "padding": "theme.spacing.none|theme.spacing.none",
+                    "textColorToken": "theme.colors.onAction",
+                    "subtextColorToken": "theme.colors.onAction",
+                    "textAlign": "center",
+                    "textGapToken": "theme.spacing.xs",
+                    "reserveSubtextSpace": false,
+                    "subtextVerticalPosition": "bottom",
+                    "subtextHorizontalAlign": "center",
+                    "textTypography": {
+                      "fontFamilyId": "theme",
+                      "weight": "600",
+                      "style": "normal",
+                      "sizeToken": "theme.typography.sizes.s",
+                      "lineHeight": "theme.typography.lineHeights.normal"
+                    },
+                    "subtextTypography": {
+                      "fontFamilyId": "theme",
+                      "weight": "400",
+                      "style": "normal",
+                      "sizeToken": "theme.typography.sizes.xs",
+                      "lineHeight": "theme.typography.lineHeights.normal"
+                    },
+                    "surfaceSlot": {
+                      "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
+                      "overrides": {}
+                    }
+                  }
+                }
+              },
+              "iconColorToken": "theme.colors.onAction"
+            }
+          },
+          "badgeSlot": {
+            "variantReference": "component_project_foqn_s2_badge::variant::default",
+            "overrides": {}
+          }
+        }
+      }
+    },
+    {
+      "id": "ios_decline",
+      "name": "iOS · Decline",
+      "protected": false,
+      "locked": false,
+      "config": {
+        "style": {
+          "shadowEnabled": false,
+          "reliefEnabled": false,
+          "borderWidth": 0,
+          "borderColorToken": "theme.borders.primary",
+          "cornerRadiusToken": "theme.radii.full",
+          "reliefAngle": -45,
+          "reliefExtent": 1,
+          "reliefSpread": 0,
+          "reliefTopIntensity": 0.12,
+          "reliefBottomIntensity": -0.1
+        },
+        "button": {
+          "contentMode": "icon",
+          "dimensionMode": "fixed",
+          "size": "52|52",
+          "padding": "theme.spacing.s|theme.spacing.s",
+          "contentGapToken": "theme.spacing.s",
+          "iconToken": "phone_hangup",
+          "states": {
+            "normal": {
+              "surfaceSlot": {
+                "variantReference": "component_project_foqn_s2_surface::variant::default",
+                "overrides": {
+                  "style": {
+                    "cornerRadiusToken": "theme.radii.full"
+                  },
+                  "surface": {
+                    "backgroundColorToken": "theme.colors.negative"
+                  }
+                }
+              },
+              "labelSlot": {
+                "variantReference": "component_project_foqn_s2_label::variant::default",
+                "overrides": {
+                  "style": {
+                    "shadowEnabled": false,
+                    "reliefEnabled": false,
+                    "borderWidth": 0
+                  },
+                  "label": {
+                    "dimensionMode": "content",
+                    "size": "100|32",
+                    "padding": "theme.spacing.none|theme.spacing.none",
+                    "textColorToken": "theme.colors.onAction",
+                    "subtextColorToken": "theme.colors.onAction",
+                    "textAlign": "center",
+                    "textGapToken": "theme.spacing.xs",
+                    "reserveSubtextSpace": false,
+                    "subtextVerticalPosition": "bottom",
+                    "subtextHorizontalAlign": "center",
+                    "textTypography": {
+                      "fontFamilyId": "theme",
+                      "weight": "600",
+                      "style": "normal",
+                      "sizeToken": "theme.typography.sizes.s",
+                      "lineHeight": "theme.typography.lineHeights.normal"
+                    },
+                    "subtextTypography": {
+                      "fontFamilyId": "theme",
+                      "weight": "400",
+                      "style": "normal",
+                      "sizeToken": "theme.typography.sizes.xs",
+                      "lineHeight": "theme.typography.lineHeights.normal"
+                    },
+                    "surfaceSlot": {
+                      "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
+                      "overrides": {}
+                    }
+                  }
+                }
+              },
+              "iconColorToken": "theme.colors.onAction"
+            },
+            "active": {
+              "surfaceSlot": {
+                "variantReference": "component_project_foqn_s2_surface::variant::default",
+                "overrides": {
+                  "style": {
+                    "shadowEnabled": false,
+                    "reliefEnabled": false,
+                    "borderWidth": 0,
+                    "cornerRadiusToken": "theme.radii.full"
+                  },
+                  "surface": {
+                    "backgroundColorToken": "theme.colors.negative",
+                    "backgroundAlpha": 0.9,
+                    "borderAlpha": 0
+                  }
+                }
+              },
+              "labelSlot": {
+                "variantReference": "component_project_foqn_s2_label::variant::default",
+                "overrides": {
+                  "style": {
+                    "shadowEnabled": false,
+                    "reliefEnabled": false,
+                    "borderWidth": 0
+                  },
+                  "label": {
+                    "dimensionMode": "content",
+                    "size": "100|32",
+                    "padding": "theme.spacing.none|theme.spacing.none",
+                    "textColorToken": "theme.colors.onAction",
+                    "subtextColorToken": "theme.colors.onAction",
+                    "textAlign": "center",
+                    "textGapToken": "theme.spacing.xs",
+                    "reserveSubtextSpace": false,
+                    "subtextVerticalPosition": "bottom",
+                    "subtextHorizontalAlign": "center",
+                    "textTypography": {
+                      "fontFamilyId": "theme",
+                      "weight": "600",
+                      "style": "normal",
+                      "sizeToken": "theme.typography.sizes.s",
+                      "lineHeight": "theme.typography.lineHeights.normal"
+                    },
+                    "subtextTypography": {
+                      "fontFamilyId": "theme",
+                      "weight": "400",
+                      "style": "normal",
+                      "sizeToken": "theme.typography.sizes.xs",
+                      "lineHeight": "theme.typography.lineHeights.normal"
+                    },
+                    "surfaceSlot": {
+                      "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
+                      "overrides": {}
+                    }
+                  }
+                }
+              },
+              "iconColorToken": "theme.colors.onAction"
+            },
+            "pushed": {
+              "surfaceSlot": {
+                "variantReference": "component_project_foqn_s2_surface::variant::default",
+                "overrides": {
+                  "style": {
+                    "shadowEnabled": false,
+                    "reliefEnabled": false,
+                    "borderWidth": 0,
+                    "cornerRadiusToken": "theme.radii.full"
+                  },
+                  "surface": {
+                    "backgroundColorToken": "theme.colors.negative",
+                    "backgroundAlpha": 0.78,
+                    "borderAlpha": 0
+                  }
+                }
+              },
+              "labelSlot": {
+                "variantReference": "component_project_foqn_s2_label::variant::default",
+                "overrides": {
+                  "style": {
+                    "shadowEnabled": false,
+                    "reliefEnabled": false,
+                    "borderWidth": 0
+                  },
+                  "label": {
+                    "dimensionMode": "content",
+                    "size": "100|32",
+                    "padding": "theme.spacing.none|theme.spacing.none",
+                    "textColorToken": "theme.colors.onAction",
+                    "subtextColorToken": "theme.colors.onAction",
+                    "textAlign": "center",
+                    "textGapToken": "theme.spacing.xs",
+                    "reserveSubtextSpace": false,
+                    "subtextVerticalPosition": "bottom",
+                    "subtextHorizontalAlign": "center",
+                    "textTypography": {
+                      "fontFamilyId": "theme",
+                      "weight": "600",
+                      "style": "normal",
+                      "sizeToken": "theme.typography.sizes.s",
+                      "lineHeight": "theme.typography.lineHeights.normal"
+                    },
+                    "subtextTypography": {
+                      "fontFamilyId": "theme",
+                      "weight": "400",
+                      "style": "normal",
+                      "sizeToken": "theme.typography.sizes.xs",
+                      "lineHeight": "theme.typography.lineHeights.normal"
+                    },
+                    "surfaceSlot": {
+                      "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
+                      "overrides": {}
+                    }
+                  }
+                }
+              },
+              "iconColorToken": "theme.colors.onAction"
+            },
+            "disabled": {
+              "surfaceSlot": {
+                "variantReference": "component_project_foqn_s2_surface::variant::default",
+                "overrides": {
+                  "style": {
+                    "shadowEnabled": false,
+                    "reliefEnabled": false,
+                    "borderWidth": 0,
+                    "cornerRadiusToken": "theme.radii.full"
+                  },
+                  "surface": {
+                    "backgroundColorToken": "theme.colors.negative",
+                    "backgroundAlpha": 0.36,
+                    "borderAlpha": 0
+                  }
+                }
+              },
+              "labelSlot": {
+                "variantReference": "component_project_foqn_s2_label::variant::default",
+                "overrides": {
+                  "style": {
+                    "shadowEnabled": false,
+                    "reliefEnabled": false,
+                    "borderWidth": 0
+                  },
+                  "label": {
+                    "dimensionMode": "content",
+                    "size": "100|32",
+                    "padding": "theme.spacing.none|theme.spacing.none",
+                    "textColorToken": "theme.colors.onAction",
+                    "subtextColorToken": "theme.colors.onAction",
+                    "textAlign": "center",
+                    "textGapToken": "theme.spacing.xs",
+                    "reserveSubtextSpace": false,
+                    "subtextVerticalPosition": "bottom",
+                    "subtextHorizontalAlign": "center",
+                    "textTypography": {
+                      "fontFamilyId": "theme",
+                      "weight": "600",
+                      "style": "normal",
+                      "sizeToken": "theme.typography.sizes.s",
+                      "lineHeight": "theme.typography.lineHeights.normal"
+                    },
+                    "subtextTypography": {
+                      "fontFamilyId": "theme",
+                      "weight": "400",
+                      "style": "normal",
+                      "sizeToken": "theme.typography.sizes.xs",
+                      "lineHeight": "theme.typography.lineHeights.normal"
+                    },
+                    "surfaceSlot": {
+                      "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
+                      "overrides": {}
+                    }
+                  }
+                }
+              },
+              "iconColorToken": "theme.colors.onAction"
+            }
+          },
+          "badgeSlot": {
+            "variantReference": "component_project_foqn_s2_badge::variant::default",
+            "overrides": {}
+          }
+        }
+      }
+    },
+    {
+      "id": "android_answer",
+      "name": "Android · Accept",
+      "protected": false,
+      "locked": false,
+      "config": {
+        "style": {
+          "shadowEnabled": false,
+          "reliefEnabled": false,
+          "borderWidth": 0,
+          "borderColorToken": "theme.borders.primary",
+          "cornerRadiusToken": "theme.radii.full",
+          "reliefAngle": -45,
+          "reliefExtent": 1,
+          "reliefSpread": 0,
+          "reliefTopIntensity": 0.12,
+          "reliefBottomIntensity": -0.1
+        },
+        "button": {
+          "contentMode": "iconText",
+          "dimensionMode": "content",
+          "size": "112|48",
+          "padding": "theme.spacing.l|theme.spacing.m",
+          "contentGapToken": "theme.spacing.s",
+          "iconToken": "phone_call",
+          "states": {
+            "normal": {
+              "surfaceSlot": {
+                "variantReference": "component_project_foqn_s2_surface::variant::default_copy_5",
+                "overrides": {
+                  "style": {
+                    "shadowEnabled": false,
+                    "reliefEnabled": false,
+                    "borderWidth": 0,
+                    "cornerRadiusToken": "theme.radii.m"
+                  },
+                  "surface": {
+                    "backgroundColorToken": "theme.colors.positive",
+                    "backgroundAlpha": 1,
+                    "borderAlpha": 0
+                  }
+                }
+              },
+              "labelSlot": {
+                "variantReference": "component_project_foqn_s2_label::variant::default",
+                "overrides": {
+                  "style": {
+                    "shadowEnabled": false,
+                    "reliefEnabled": false,
+                    "borderWidth": 0
+                  },
+                  "label": {
+                    "dimensionMode": "content",
+                    "size": "100|32",
+                    "padding": "theme.spacing.none|theme.spacing.none",
+                    "textColorToken": "theme.colors.onAction",
+                    "subtextColorToken": "theme.colors.onAction",
+                    "textAlign": "center",
+                    "textGapToken": "theme.spacing.xs",
+                    "reserveSubtextSpace": false,
+                    "subtextVerticalPosition": "bottom",
+                    "subtextHorizontalAlign": "center",
+                    "textTypography": {
+                      "fontFamilyId": "theme",
+                      "weight": "600",
+                      "style": "normal",
+                      "sizeToken": "theme.typography.sizes.s",
+                      "lineHeight": "theme.typography.lineHeights.normal"
+                    },
+                    "subtextTypography": {
+                      "fontFamilyId": "theme",
+                      "weight": "400",
+                      "style": "normal",
+                      "sizeToken": "theme.typography.sizes.xs",
+                      "lineHeight": "theme.typography.lineHeights.normal"
+                    },
+                    "surfaceSlot": {
+                      "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
+                      "overrides": {}
+                    }
+                  }
+                }
+              },
+              "iconColorToken": "theme.colors.onAction"
+            },
+            "active": {
+              "surfaceSlot": {
+                "variantReference": "component_project_foqn_s2_surface::variant::default_copy_5",
+                "overrides": {
+                  "style": {
+                    "shadowEnabled": false,
+                    "reliefEnabled": false,
+                    "borderWidth": 0,
+                    "cornerRadiusToken": "theme.radii.full"
+                  },
+                  "surface": {
+                    "backgroundColorToken": "theme.colors.positive",
+                    "backgroundAlpha": 0.9,
+                    "borderAlpha": 0
+                  }
+                }
+              },
+              "labelSlot": {
+                "variantReference": "component_project_foqn_s2_label::variant::default",
+                "overrides": {
+                  "style": {
+                    "shadowEnabled": false,
+                    "reliefEnabled": false,
+                    "borderWidth": 0
+                  },
+                  "label": {
+                    "dimensionMode": "content",
+                    "size": "100|32",
+                    "padding": "theme.spacing.none|theme.spacing.none",
+                    "textColorToken": "theme.colors.onAction",
+                    "subtextColorToken": "theme.colors.onAction",
+                    "textAlign": "center",
+                    "textGapToken": "theme.spacing.xs",
+                    "reserveSubtextSpace": false,
+                    "subtextVerticalPosition": "bottom",
+                    "subtextHorizontalAlign": "center",
+                    "textTypography": {
+                      "fontFamilyId": "theme",
+                      "weight": "600",
+                      "style": "normal",
+                      "sizeToken": "theme.typography.sizes.s",
+                      "lineHeight": "theme.typography.lineHeights.normal"
+                    },
+                    "subtextTypography": {
+                      "fontFamilyId": "theme",
+                      "weight": "400",
+                      "style": "normal",
+                      "sizeToken": "theme.typography.sizes.xs",
+                      "lineHeight": "theme.typography.lineHeights.normal"
+                    },
+                    "surfaceSlot": {
+                      "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
+                      "overrides": {}
+                    }
+                  }
+                }
+              },
+              "iconColorToken": "theme.colors.onAction"
+            },
+            "pushed": {
+              "surfaceSlot": {
+                "variantReference": "component_project_foqn_s2_surface::variant::default_copy_5",
+                "overrides": {
+                  "style": {
+                    "shadowEnabled": false,
+                    "reliefEnabled": false,
+                    "borderWidth": 0,
+                    "cornerRadiusToken": "theme.radii.full"
+                  },
+                  "surface": {
+                    "backgroundColorToken": "theme.colors.positive",
+                    "backgroundAlpha": 0.78,
+                    "borderAlpha": 0
+                  }
+                }
+              },
+              "labelSlot": {
+                "variantReference": "component_project_foqn_s2_label::variant::default",
+                "overrides": {
+                  "style": {
+                    "shadowEnabled": false,
+                    "reliefEnabled": false,
+                    "borderWidth": 0
+                  },
+                  "label": {
+                    "dimensionMode": "content",
+                    "size": "100|32",
+                    "padding": "theme.spacing.none|theme.spacing.none",
+                    "textColorToken": "theme.colors.onAction",
+                    "subtextColorToken": "theme.colors.onAction",
+                    "textAlign": "center",
+                    "textGapToken": "theme.spacing.xs",
+                    "reserveSubtextSpace": false,
+                    "subtextVerticalPosition": "bottom",
+                    "subtextHorizontalAlign": "center",
+                    "textTypography": {
+                      "fontFamilyId": "theme",
+                      "weight": "600",
+                      "style": "normal",
+                      "sizeToken": "theme.typography.sizes.s",
+                      "lineHeight": "theme.typography.lineHeights.normal"
+                    },
+                    "subtextTypography": {
+                      "fontFamilyId": "theme",
+                      "weight": "400",
+                      "style": "normal",
+                      "sizeToken": "theme.typography.sizes.xs",
+                      "lineHeight": "theme.typography.lineHeights.normal"
+                    },
+                    "surfaceSlot": {
+                      "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
+                      "overrides": {}
+                    }
+                  }
+                }
+              },
+              "iconColorToken": "theme.colors.onAction"
+            },
+            "disabled": {
+              "surfaceSlot": {
+                "variantReference": "component_project_foqn_s2_surface::variant::default_copy_5",
+                "overrides": {
+                  "style": {
+                    "shadowEnabled": false,
+                    "reliefEnabled": false,
+                    "borderWidth": 0,
+                    "cornerRadiusToken": "theme.radii.full"
+                  },
+                  "surface": {
+                    "backgroundColorToken": "theme.colors.positive",
+                    "backgroundAlpha": 0.36,
+                    "borderAlpha": 0
+                  }
+                }
+              },
+              "labelSlot": {
+                "variantReference": "component_project_foqn_s2_label::variant::default",
+                "overrides": {
+                  "style": {
+                    "shadowEnabled": false,
+                    "reliefEnabled": false,
+                    "borderWidth": 0
+                  },
+                  "label": {
+                    "dimensionMode": "content",
+                    "size": "100|32",
+                    "padding": "theme.spacing.none|theme.spacing.none",
+                    "textColorToken": "theme.colors.onAction",
+                    "subtextColorToken": "theme.colors.onAction",
+                    "textAlign": "center",
+                    "textGapToken": "theme.spacing.xs",
+                    "reserveSubtextSpace": false,
+                    "subtextVerticalPosition": "bottom",
+                    "subtextHorizontalAlign": "center",
+                    "textTypography": {
+                      "fontFamilyId": "theme",
+                      "weight": "600",
+                      "style": "normal",
+                      "sizeToken": "theme.typography.sizes.s",
+                      "lineHeight": "theme.typography.lineHeights.normal"
+                    },
+                    "subtextTypography": {
+                      "fontFamilyId": "theme",
+                      "weight": "400",
+                      "style": "normal",
+                      "sizeToken": "theme.typography.sizes.xs",
+                      "lineHeight": "theme.typography.lineHeights.normal"
+                    },
+                    "surfaceSlot": {
+                      "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
+                      "overrides": {}
+                    }
+                  }
+                }
+              },
+              "iconColorToken": "theme.colors.onAction"
+            }
+          },
+          "badgeSlot": {
+            "variantReference": "component_project_foqn_s2_badge::variant::default",
+            "overrides": {}
+          }
+        }
+      }
+    },
+    {
+      "id": "android_decline",
+      "name": "Android · Decline",
+      "protected": false,
+      "locked": false,
+      "config": {
+        "style": {
+          "shadowEnabled": false,
+          "reliefEnabled": false,
+          "borderWidth": 0,
+          "borderColorToken": "theme.borders.primary",
+          "cornerRadiusToken": "theme.radii.full",
+          "reliefAngle": -45,
+          "reliefExtent": 1,
+          "reliefSpread": 0,
+          "reliefTopIntensity": 0.12,
+          "reliefBottomIntensity": -0.1
+        },
+        "button": {
+          "contentMode": "iconText",
+          "dimensionMode": "content",
+          "size": "112|48",
+          "padding": "theme.spacing.l|theme.spacing.m",
+          "contentGapToken": "theme.spacing.s",
+          "iconToken": "phone_hangup",
+          "states": {
+            "normal": {
+              "surfaceSlot": {
+                "variantReference": "component_project_foqn_s2_surface::variant::default_copy_5",
+                "overrides": {
+                  "style": {},
+                  "surface": {
+                    "backgroundColorToken": "theme.colors.negative",
+                    "borderAlpha": 0
+                  }
+                }
+              },
+              "labelSlot": {
+                "variantReference": "component_project_foqn_s2_label::variant::default",
+                "overrides": {
+                  "style": {
+                    "shadowEnabled": false,
+                    "reliefEnabled": false,
+                    "borderWidth": 0
+                  },
+                  "label": {
+                    "dimensionMode": "content",
+                    "size": "100|32",
+                    "padding": "theme.spacing.none|theme.spacing.none",
+                    "textColorToken": "theme.colors.onAction",
+                    "subtextColorToken": "theme.colors.onAction",
+                    "textAlign": "center",
+                    "textGapToken": "theme.spacing.xs",
+                    "reserveSubtextSpace": false,
+                    "subtextVerticalPosition": "bottom",
+                    "subtextHorizontalAlign": "center",
+                    "textTypography": {
+                      "fontFamilyId": "theme",
+                      "weight": "600",
+                      "style": "normal",
+                      "sizeToken": "theme.typography.sizes.s",
+                      "lineHeight": "theme.typography.lineHeights.normal"
+                    },
+                    "subtextTypography": {
+                      "fontFamilyId": "theme",
+                      "weight": "400",
+                      "style": "normal",
+                      "sizeToken": "theme.typography.sizes.xs",
+                      "lineHeight": "theme.typography.lineHeights.normal"
+                    },
+                    "surfaceSlot": {
+                      "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
+                      "overrides": {}
+                    }
+                  }
+                }
+              },
+              "iconColorToken": "theme.colors.onAction"
+            },
+            "active": {
+              "surfaceSlot": {
+                "variantReference": "component_project_foqn_s2_surface::variant::default_copy_5",
+                "overrides": {
+                  "style": {
+                    "shadowEnabled": false,
+                    "reliefEnabled": false,
+                    "borderWidth": 0,
+                    "cornerRadiusToken": "theme.radii.full"
+                  },
+                  "surface": {
+                    "backgroundColorToken": "theme.colors.negative",
+                    "backgroundAlpha": 0.9,
+                    "borderAlpha": 0
+                  }
+                }
+              },
+              "labelSlot": {
+                "variantReference": "component_project_foqn_s2_label::variant::default",
+                "overrides": {
+                  "style": {
+                    "shadowEnabled": false,
+                    "reliefEnabled": false,
+                    "borderWidth": 0
+                  },
+                  "label": {
+                    "dimensionMode": "content",
+                    "size": "100|32",
+                    "padding": "theme.spacing.none|theme.spacing.none",
+                    "textColorToken": "theme.colors.onAction",
+                    "subtextColorToken": "theme.colors.onAction",
+                    "textAlign": "center",
+                    "textGapToken": "theme.spacing.xs",
+                    "reserveSubtextSpace": false,
+                    "subtextVerticalPosition": "bottom",
+                    "subtextHorizontalAlign": "center",
+                    "textTypography": {
+                      "fontFamilyId": "theme",
+                      "weight": "600",
+                      "style": "normal",
+                      "sizeToken": "theme.typography.sizes.s",
+                      "lineHeight": "theme.typography.lineHeights.normal"
+                    },
+                    "subtextTypography": {
+                      "fontFamilyId": "theme",
+                      "weight": "400",
+                      "style": "normal",
+                      "sizeToken": "theme.typography.sizes.xs",
+                      "lineHeight": "theme.typography.lineHeights.normal"
+                    },
+                    "surfaceSlot": {
+                      "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
+                      "overrides": {}
+                    }
+                  }
+                }
+              },
+              "iconColorToken": "theme.colors.onAction"
+            },
+            "pushed": {
+              "surfaceSlot": {
+                "variantReference": "component_project_foqn_s2_surface::variant::default_copy_5",
+                "overrides": {
+                  "style": {
+                    "shadowEnabled": false,
+                    "reliefEnabled": false,
+                    "borderWidth": 0,
+                    "cornerRadiusToken": "theme.radii.full"
+                  },
+                  "surface": {
+                    "backgroundColorToken": "theme.colors.negative",
+                    "backgroundAlpha": 0.78,
+                    "borderAlpha": 0
+                  }
+                }
+              },
+              "labelSlot": {
+                "variantReference": "component_project_foqn_s2_label::variant::default",
+                "overrides": {
+                  "style": {
+                    "shadowEnabled": false,
+                    "reliefEnabled": false,
+                    "borderWidth": 0
+                  },
+                  "label": {
+                    "dimensionMode": "content",
+                    "size": "100|32",
+                    "padding": "theme.spacing.none|theme.spacing.none",
+                    "textColorToken": "theme.colors.onAction",
+                    "subtextColorToken": "theme.colors.onAction",
+                    "textAlign": "center",
+                    "textGapToken": "theme.spacing.xs",
+                    "reserveSubtextSpace": false,
+                    "subtextVerticalPosition": "bottom",
+                    "subtextHorizontalAlign": "center",
+                    "textTypography": {
+                      "fontFamilyId": "theme",
+                      "weight": "600",
+                      "style": "normal",
+                      "sizeToken": "theme.typography.sizes.s",
+                      "lineHeight": "theme.typography.lineHeights.normal"
+                    },
+                    "subtextTypography": {
+                      "fontFamilyId": "theme",
+                      "weight": "400",
+                      "style": "normal",
+                      "sizeToken": "theme.typography.sizes.xs",
+                      "lineHeight": "theme.typography.lineHeights.normal"
+                    },
+                    "surfaceSlot": {
+                      "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
+                      "overrides": {}
+                    }
+                  }
+                }
+              },
+              "iconColorToken": "theme.colors.onAction"
+            },
+            "disabled": {
+              "surfaceSlot": {
+                "variantReference": "component_project_foqn_s2_surface::variant::default_copy_5",
+                "overrides": {
+                  "style": {
+                    "shadowEnabled": false,
+                    "reliefEnabled": false,
+                    "borderWidth": 0,
+                    "cornerRadiusToken": "theme.radii.full"
+                  },
+                  "surface": {
+                    "backgroundColorToken": "theme.colors.negative",
+                    "backgroundAlpha": 0.36,
+                    "borderAlpha": 0
+                  }
+                }
+              },
+              "labelSlot": {
+                "variantReference": "component_project_foqn_s2_label::variant::default",
+                "overrides": {
+                  "style": {
+                    "shadowEnabled": false,
+                    "reliefEnabled": false,
+                    "borderWidth": 0
+                  },
+                  "label": {
+                    "dimensionMode": "content",
+                    "size": "100|32",
+                    "padding": "theme.spacing.none|theme.spacing.none",
+                    "textColorToken": "theme.colors.onAction",
+                    "subtextColorToken": "theme.colors.onAction",
+                    "textAlign": "center",
+                    "textGapToken": "theme.spacing.xs",
+                    "reserveSubtextSpace": false,
+                    "subtextVerticalPosition": "bottom",
+                    "subtextHorizontalAlign": "center",
+                    "textTypography": {
+                      "fontFamilyId": "theme",
+                      "weight": "600",
+                      "style": "normal",
+                      "sizeToken": "theme.typography.sizes.s",
+                      "lineHeight": "theme.typography.lineHeights.normal"
+                    },
+                    "subtextTypography": {
+                      "fontFamilyId": "theme",
+                      "weight": "400",
+                      "style": "normal",
+                      "sizeToken": "theme.typography.sizes.xs",
+                      "lineHeight": "theme.typography.lineHeights.normal"
+                    },
+                    "surfaceSlot": {
+                      "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
+                      "overrides": {}
+                    }
+                  }
+                }
+              },
+              "iconColorToken": "theme.colors.onAction"
+            }
+          },
+          "badgeSlot": {
+            "variantReference": "component_project_foqn_s2_badge::variant::default",
+            "overrides": {}
+          }
+        }
+      }
+    }
+  ],
+  "designPreview": {
+    "componentType": "button",
+    "sampleText": "Sample",
+    "sampleSubtext": "",
+    "sampleSize": 256,
+    "inputs": [
+      {
+        "id": "state",
+        "label": "State",
+        "jsonKey": "state",
+        "kind": "option",
+        "valueKind": "OptionToken",
+        "defaultValue": "normal",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [
+          {
+            "value": "normal",
+            "label": "Normal"
+          },
+          {
+            "value": "active",
+            "label": "Active"
+          },
+          {
+            "value": "pushed",
+            "label": "Pushed"
+          },
+          {
+            "value": "disabled",
+            "label": "Disabled"
+          }
+        ],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "state",
+        "uiGroupLabel": "State",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 10
+      },
+      {
+        "id": "sampleText",
+        "label": "Text",
+        "jsonKey": "sampleText",
+        "kind": "text",
+        "valueKind": "StringSingleLine",
+        "defaultValue": "Action",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "content",
+        "uiGroupLabel": "Content",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 21
+      },
+      {
+        "id": "iconToken",
+        "label": "Icon",
+        "jsonKey": "iconToken",
+        "kind": "icon",
+        "valueKind": "IconToken",
+        "defaultValue": "media_play_fill",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "content",
+        "uiGroupLabel": "Content",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 22
+      },
+      {
+        "id": "iconSizeToken",
+        "label": "Icon size",
+        "jsonKey": "iconSizeToken",
+        "kind": "themeToken",
+        "valueKind": "ThemeToken",
+        "defaultValue": "theme.iconSizes.m",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [
+          {
+            "value": "theme.iconSizes.xs",
+            "label": "iconSizes.xs"
+          },
+          {
+            "value": "theme.iconSizes.s",
+            "label": "iconSizes.s"
+          },
+          {
+            "value": "theme.iconSizes.m",
+            "label": "iconSizes.m"
+          },
+          {
+            "value": "theme.iconSizes.l",
+            "label": "iconSizes.l"
+          },
+          {
+            "value": "theme.iconSizes.xl",
+            "label": "iconSizes.xl"
+          }
+        ],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "content",
+        "uiGroupLabel": "Content",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 23
+      },
+      {
+        "id": "textSizeToken",
+        "label": "Text size",
+        "jsonKey": "textSizeToken",
+        "kind": "themeToken",
+        "valueKind": "ThemeToken",
+        "defaultValue": "theme.typography.sizes.s",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [
+          {
+            "value": "theme.typography.sizes.xs",
+            "label": "typography.sizes.xs"
+          },
+          {
+            "value": "theme.typography.sizes.s",
+            "label": "typography.sizes.s"
+          },
+          {
+            "value": "theme.typography.sizes.m",
+            "label": "typography.sizes.m"
+          },
+          {
+            "value": "theme.typography.sizes.l",
+            "label": "typography.sizes.l"
+          },
+          {
+            "value": "theme.typography.sizes.xl",
+            "label": "typography.sizes.xl"
+          }
+        ],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "content",
+        "uiGroupLabel": "Content",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 24
+      },
+      {
+        "id": "pushTrigger",
+        "label": "Push",
+        "jsonKey": "pushTrigger",
+        "kind": "boolean",
+        "valueKind": "Boolean",
+        "defaultValue": "false",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "calculated",
+        "uiOrigin": "embedded",
+        "uiGroupId": "action",
+        "uiGroupLabel": "Action",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 30
+      },
+      {
+        "id": "pushElapsedMs",
+        "label": "Push elapsed",
+        "jsonKey": "pushElapsedMs",
+        "kind": "number",
+        "valueKind": "Decimal",
+        "defaultValue": "0",
+        "minimum": 0,
+        "maximum": 60000,
+        "increment": 10,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "calculated",
+        "uiOrigin": "embedded",
+        "uiGroupId": "action",
+        "uiGroupLabel": "Action",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "ms",
+        "uiOrder": 31
+      },
+      {
+        "id": "showBadge",
+        "label": "Show badge",
+        "jsonKey": "showBadge",
+        "kind": "boolean",
+        "valueKind": "Boolean",
+        "defaultValue": "false",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "badge",
+        "uiGroupLabel": "Badge",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 40
+      },
+      {
+        "id": "badgeContentMode",
+        "label": "Badge content",
+        "jsonKey": "badgeContentMode",
+        "kind": "option",
+        "valueKind": "OptionToken",
+        "defaultValue": "icon",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [
+          {
+            "value": "icon",
+            "label": "Icon"
+          },
+          {
+            "value": "text",
+            "label": "Text"
+          }
+        ],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "badge",
+        "uiGroupLabel": "Badge",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 41
+      },
+      {
+        "id": "badgeIconToken",
+        "label": "Badge icon",
+        "jsonKey": "badgeIconToken",
+        "kind": "icon",
+        "valueKind": "IconToken",
+        "defaultValue": "system_check",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "badge",
+        "uiGroupLabel": "Badge",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 42
+      },
+      {
+        "id": "badgeText",
+        "label": "Badge text",
+        "jsonKey": "badgeText",
+        "kind": "text",
+        "valueKind": "StringSingleLine",
+        "defaultValue": "1",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "badge",
+        "uiGroupLabel": "Badge",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 43
+      },
+      {
+        "id": "badgeSize",
+        "label": "Badge size",
+        "jsonKey": "badgeSize",
+        "kind": "number",
+        "valueKind": "Integer",
+        "defaultValue": "20",
+        "minimum": 1,
+        "maximum": 512,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "badge",
+        "uiGroupLabel": "Badge",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 44
+      },
+      {
+        "id": "badgeBackgroundPaletteColor",
+        "label": "Badge background",
+        "jsonKey": "badgeBackgroundPaletteColor",
+        "kind": "text",
+        "valueKind": "PaletteColorToken",
+        "defaultValue": "blue",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "badge",
+        "uiGroupLabel": "Badge",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 45
+      },
+      {
+        "id": "badgeContentPaletteColor",
+        "label": "Badge icon / text color",
+        "jsonKey": "badgeContentPaletteColor",
+        "kind": "text",
+        "valueKind": "PaletteColorToken",
+        "defaultValue": "gray_100",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "badge",
+        "uiGroupLabel": "Badge",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 46
+      },
+      {
+        "id": "iconColorToken",
+        "label": "Icon color",
+        "jsonKey": "iconColorToken",
+        "kind": "themeToken",
+        "valueKind": "ThemeToken",
+        "defaultValue": "theme.colors.icon",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "self",
+        "uiGroupId": "",
+        "uiGroupLabel": "",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 22
+      },
+      {
+        "id": "textColorToken",
+        "label": "Text color",
+        "jsonKey": "textColorToken",
+        "kind": "themeToken",
+        "valueKind": "ThemeToken",
+        "defaultValue": "theme.colors.textPrimary",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "self",
+        "uiGroupId": "",
+        "uiGroupLabel": "",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 22
+      }
+    ],
+    "pushTrigger": false,
+    "pushElapsedMs": 0,
+    "actions": [
+      {
+        "id": "push",
+        "label": "Push",
+        "playInputId": "pushTrigger",
+        "durationThemeToken": "theme.motion.buttonPushedDurationMs",
+        "timeJsonKey": "pushElapsedMs",
+        "timeUnit": "milliseconds",
+        "prewarmFrames": false,
+        "completionBehavior": "reset"
+      }
+    ],
+    "iconSizeToken": "theme.iconSizes.m",
+    "textSizeToken": "theme.typography.sizes.s",
+    "showBadge": false,
+    "badgeIconToken": "system_check",
+    "badgeText": "1",
+    "badgeContentMode": "icon",
+    "badgeSize": 20,
+    "badgeBackgroundPaletteColor": "blue",
+    "badgeContentPaletteColor": "gray_100",
+    "iconColorToken": "theme.colors.icon",
+    "textColorToken": "theme.colors.textPrimary"
+  },
+  "metadata": {
+    "note": "Seeded reusable component class."
+  },
+  "dictionaryFields": [],
+  "editorLayout": {
+    "cards": [
+      {
+        "id": "general",
+        "label": "General",
+        "subtitle": "Identity",
+        "icon": "general",
+        "order": 10,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "identity",
+            "label": "Identity",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "core.name",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.type",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "core.notes",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "button",
+        "label": "Button",
+        "subtitle": "Reusable icon, text or combined action",
+        "icon": "button-icon",
+        "order": 20,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "content",
+            "label": "Content",
+            "icon": "content",
+            "presentation": "separatedSections",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.button.contentMode",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.button.iconToken",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.button.contentGapToken",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          },
+          {
+            "id": "layout",
+            "label": "Layout",
+            "icon": "layout",
+            "presentation": "separatedSections",
+            "order": 20,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.button.dimensionMode",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.button.size",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.button.padding",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          },
+          {
+            "id": "interaction",
+            "label": "Interaction",
+            "icon": "navigation-asset:Interaction",
+            "presentation": "verticalCards",
+            "order": 30,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.button.badge.editor",
+                "order": 20,
+                "visible": true
+              }
+            ]
+          },
+          {
+            "id": "normalState",
+            "label": "Normal",
+            "icon": "navigation-asset:Normal",
+            "presentation": "verticalCards",
+            "order": 40,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.button.states.normal.surface.editor",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.button.states.normal.label.editor",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.button.states.normal.iconColorToken",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          },
+          {
+            "id": "activeState",
+            "label": "Active",
+            "icon": "status",
+            "presentation": "verticalCards",
+            "order": 50,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.button.states.active.surface.editor",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.button.states.active.label.editor",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.button.states.active.iconColorToken",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          },
+          {
+            "id": "pushedState",
+            "label": "Pushed",
+            "icon": "navigation-asset:Push",
+            "presentation": "verticalCards",
+            "order": 60,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.button.states.pushed.surface.editor",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.button.states.pushed.label.editor",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.button.states.pushed.iconColorToken",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          },
+          {
+            "id": "disabledState",
+            "label": "Disabled",
+            "icon": "navigation-asset:Disabled",
+            "presentation": "verticalCards",
+            "order": 70,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.button.states.disabled.surface.editor",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.button.states.disabled.label.editor",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.button.states.disabled.iconColorToken",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "assets": []
+}
