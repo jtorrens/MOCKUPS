@@ -639,10 +639,13 @@ static void ComponentInputProjectionOwnershipCoversParents()
     var moduleOwners = ComponentInputBindingsProjectionCatalog.RecordOwners();
     var componentOwners = ComponentInputBindingsProjectionCatalog.ComponentOwners();
 
-    Equal(2, moduleOwners.Count);
+    Equal(3, moduleOwners.Count);
     Equal(7, componentOwners.Count);
     Equal(true, moduleOwners.Any((owner) => owner.Id.Equals(
         "module.core.chat.headerRightIconRow.inputs",
+        StringComparison.Ordinal)));
+    Equal(true, moduleOwners.Any((owner) => owner.Id.Equals(
+        "module.core.lockScreen.stackInputs",
         StringComparison.Ordinal)));
     Equal(true, componentOwners.Any((owner) => owner.Id.Equals(
         "component.iconBar.activeRightIconRow.inputs",

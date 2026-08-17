@@ -16,7 +16,7 @@ export interface ModuleScaffoldField {
   defaultValue: string;
   isEditable: boolean;
   options: JsonObject[];
-  optionsSource: string;
+  optionSource: string;
   pairLabels: { first: string; second: string } | null;
   number: {
     minimum: number | null;
@@ -29,7 +29,10 @@ export interface ModuleScaffoldField {
   synchronizedVariantReferenceJsonPaths: string[][];
   runtimeInputComponentVariantFieldId: string;
   runtimeCollectionComponentVariantFieldId: string;
-  componentInputBindingsSource: string;
+  componentInputBindings: JsonObject[] | null;
+  imagePreview: JsonObject | null;
+  recordReference: JsonObject | null;
+  motionTiming: JsonObject | null;
   unit: string;
   embeddedSlot: {
     componentType: string;
@@ -1070,6 +1073,12 @@ function validateEditorLayout(spec: ModuleScaffoldSpec, violations: string[]) {
       violations.push(`Dictionary field '${field.id}' is missing from editor layout.`);
     }
   }
+  const declared = new Set(spec.dictionaryFields.map((field) => field.id));
+  for (const fieldId of referenced) {
+    if (fieldId.startsWith(`${spec.module.recordClassId}.`) && !declared.has(fieldId)) {
+      violations.push(`Editor layout field '${fieldId}' is missing from dictionary fields.`);
+    }
+  }
 }
 
 function parseField(value: unknown, owner: string): ModuleScaffoldField {
@@ -1082,14 +1091,17 @@ function parseField(value: unknown, owner: string): ModuleScaffoldField {
     "defaultValue",
     "isEditable",
     "options",
-    "optionsSource",
+    "optionSource",
     "pairLabels",
     "number",
     "componentVariantType",
     "synchronizedVariantReferenceJsonPaths",
     "runtimeInputComponentVariantFieldId",
     "runtimeCollectionComponentVariantFieldId",
-    "componentInputBindingsSource",
+    "componentInputBindings",
+    "imagePreview",
+    "recordReference",
+    "motionTiming",
     "unit",
     "embeddedSlot",
   ], owner);
@@ -1125,7 +1137,7 @@ function parseField(value: unknown, owner: string): ModuleScaffoldField {
     defaultValue: requiredString(field.defaultValue, `${owner} defaultValue`, true),
     isEditable: requiredBoolean(field.isEditable, `${owner} isEditable`),
     options: objectArray(field.options, `${owner} options`) as JsonObject[],
-    optionsSource: requiredString(field.optionsSource, `${owner} optionsSource`, true),
+    optionSource: requiredString(field.optionSource, `${owner} optionSource`),
     pairLabels: pair
       ? {
         first: requiredString(pair.first, `${owner} pairLabels first`),
@@ -1163,11 +1175,21 @@ function parseField(value: unknown, owner: string): ModuleScaffoldField {
       `${owner} runtimeCollectionComponentVariantFieldId`,
       true,
     ),
-    componentInputBindingsSource: requiredString(
-      field.componentInputBindingsSource,
-      `${owner} componentInputBindingsSource`,
-      true,
-    ),
+    componentInputBindings: field.componentInputBindings === null
+      ? null
+      : objectArray(
+        field.componentInputBindings,
+        `${owner} componentInputBindings`,
+      ) as JsonObject[],
+    imagePreview: field.imagePreview === null
+      ? null
+      : requiredJsonObject(field.imagePreview, `${owner} imagePreview`),
+    recordReference: field.recordReference === null
+      ? null
+      : requiredJsonObject(field.recordReference, `${owner} recordReference`),
+    motionTiming: field.motionTiming === null
+      ? null
+      : requiredJsonObject(field.motionTiming, `${owner} motionTiming`),
     unit: requiredString(field.unit, `${owner} unit`, true),
     embeddedSlot: embedded
       ? {

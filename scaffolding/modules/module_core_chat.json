@@ -186,6 +186,14 @@
         "fade": false,
         "translate": true,
         "scale": false
+      },
+      "messageViewportMotion": {
+        "transition": "slide",
+        "direction": "bottom",
+        "bounds": "parent",
+        "fade": false,
+        "translate": true,
+        "scale": false
       }
     },
     "appearanceMode": "inherit"
@@ -329,7 +337,7 @@
         "label": "Typing indicator text",
         "jsonKey": "typingIndicatorText",
         "kind": "text",
-        "defaultValue": "•••",
+        "defaultValue": "\u2022\u2022\u2022",
         "groupId": "timing",
         "groupLabel": "Timing",
         "groupOrder": 20,
@@ -446,7 +454,7 @@
       },
       {
         "direction": "outgoing",
-        "text": "Mensaje de prueba 😎😍 en dos líneas",
+        "text": "Mensaje de prueba \uD83D\uDE0E\uD83D\uDE0D en dos l\u00EDneas",
         "delayAfterPreviousFrames": 6,
         "statusState": "read",
         "statusText": "",
@@ -478,7 +486,7 @@
       },
       {
         "direction": "system",
-        "text": "Hola 123 😎 A",
+        "text": "Hola 123 \uD83D\uDE0E A",
         "delayAfterPreviousFrames": 12,
         "statusState": "none",
         "statusText": "",
@@ -653,7 +661,7 @@
             "jsonKey": "writeOnTiming",
             "kind": "behaviorTiming",
             "valueKind": "BehaviorTiming",
-            "defaultValue": "{\"mode\":\"fixed\",\"fixedFrames\":30,\"paceToken\":\"theme.motion.naturalPace.normal\"}",
+            "defaultValue": "{\u0022mode\u0022:\u0022fixed\u0022,\u0022fixedFrames\u0022:30,\u0022paceToken\u0022:\u0022theme.motion.naturalPace.normal\u0022}",
             "options": [
               {
                 "value": "theme.motion.naturalPace.verySlow",
@@ -1159,7 +1167,7 @@
     "textInputVisible": true,
     "keyboardVisible": true,
     "incomingRevealMode": "typingIndicator",
-    "typingIndicatorText": "•••",
+    "typingIndicatorText": "\u2022\u2022\u2022",
     "typingIndicatorSizeToken": "theme.typography.sizes.m",
     "typingIndicatorAnimation": "pulsating",
     "timelineFrameJsonKey": "conversationFrame",
@@ -1308,13 +1316,21 @@
             }
           }
         },
-        "headerUseActorColor": true,
+        "headerUseActorColor": false,
         "messageMotion": {
           "transition": "slide",
-          "direction": "left",
+          "direction": "bottom",
           "bounds": "parent",
-          "fade": true,
-          "translate": false,
+          "fade": false,
+          "translate": true,
+          "scale": false
+        },
+        "messageViewportMotion": {
+          "transition": "slide",
+          "direction": "bottom",
+          "bounds": "parent",
+          "fade": false,
+          "translate": true,
           "scale": false
         }
       },
@@ -1330,7 +1346,769 @@
   "metadata": {
     "note": "Seed conversation module linked to Chat app."
   },
-  "dictionaryFields": [],
+  "dictionaryFields": [
+    {
+      "id": "module.core.chat.bubbleMaxWidth",
+      "label": "Max width %",
+      "valueKind": "Integer",
+      "jsonPath": [
+        "conversation",
+        "bubbleMaxWidth"
+      ],
+      "defaultValue": "66",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": {
+        "minimum": 1,
+        "maximum": 100,
+        "increment": 1,
+        "decimalPlaces": 0,
+        "useSlider": false
+      },
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.chat.bubbleVariant",
+      "label": "Bubble variant",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "conversation",
+        "bubbleVariant"
+      ],
+      "defaultValue": "component_project_foqn_s2_bubble::variant::default_copy",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "bubble",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.chat.headerAvatarAlignment",
+      "label": "Avatar alignment",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "conversation",
+        "headerAvatarAlignment"
+      ],
+      "defaultValue": "left",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "left",
+          "label": "Left",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "center",
+          "label": "Center",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "right",
+          "label": "Right",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.chat.headerAvatarVariant",
+      "label": "Header avatar variant",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "conversation",
+        "headerAvatarVariant"
+      ],
+      "defaultValue": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "avatar",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.chat.headerHeight",
+      "label": "Header height",
+      "valueKind": "Integer",
+      "jsonPath": [
+        "conversation",
+        "headerHeight"
+      ],
+      "defaultValue": "40",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": {
+        "minimum": 0,
+        "maximum": 240,
+        "increment": 1,
+        "decimalPlaces": 0,
+        "useSlider": false
+      },
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.chat.headerLeftIconRow.editor",
+      "label": "Left icon row",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "conversation",
+        "headerLeftIconRowSlot",
+        "variantReference"
+      ],
+      "defaultValue": "component_project_foqn_s2_iconRow::variant::default",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "iconRow",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "iconRow",
+        "label": "Left icon row",
+        "recordClassId": "component.iconRow"
+      }
+    },
+    {
+      "id": "module.core.chat.headerLeftIconRow.inputs",
+      "label": "Left row settings",
+      "valueKind": "ComponentInputBindings",
+      "jsonPath": [
+        "conversation",
+        "headerLeftIconRowInputs"
+      ],
+      "defaultValue": "{\u0022buttonInputs\u0022:[{\u0022id\u0022:\u0022button_7b4e351285854647ade31e13887ce39f\u0022,\u0022state\u0022:\u0022normal\u0022,\u0022sampleText\u0022:\u0022\u0022,\u0022iconToken\u0022:\u0022android_nav_back\u0022,\u0022iconSizeToken\u0022:\u0022theme.iconSizes.m\u0022,\u0022textSizeToken\u0022:\u0022theme.typography.sizes.s\u0022,\u0022showBadge\u0022:false,\u0022badgeContentMode\u0022:\u0022text\u0022,\u0022badgeIconToken\u0022:\u0022system_check\u0022,\u0022badgeText\u0022:\u00221\u0022,\u0022badgeSize\u0022:20,\u0022badgeBackgroundPaletteColor\u0022:\u0022blue\u0022,\u0022badgeContentPaletteColor\u0022:\u0022gray_100\u0022,\u0022iconColorToken\u0022:\u0022theme.colors.icon\u0022,\u0022textColorToken\u0022:\u0022theme.colors.textPrimary\u0022}]}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "module.core.chat.headerLeftIconRow.editor",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": [],
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.chat.headerRightIconRow.editor",
+      "label": "Right icon row",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "conversation",
+        "headerRightIconRowSlot",
+        "variantReference"
+      ],
+      "defaultValue": "component_project_foqn_s2_iconRow::variant::default",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "iconRow",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "iconRow",
+        "label": "Right icon row",
+        "recordClassId": "component.iconRow"
+      }
+    },
+    {
+      "id": "module.core.chat.headerRightIconRow.inputs",
+      "label": "Right row settings",
+      "valueKind": "ComponentInputBindings",
+      "jsonPath": [
+        "conversation",
+        "headerRightIconRowInputs"
+      ],
+      "defaultValue": "{\u0022buttonInputs\u0022:[{\u0022id\u0022:\u0022button_783e5f18980742d197e32380c16a6c0d\u0022,\u0022state\u0022:\u0022normal\u0022,\u0022sampleText\u0022:\u0022\u0022,\u0022iconToken\u0022:\u0022phone_call\u0022,\u0022iconSizeToken\u0022:\u0022theme.iconSizes.m\u0022,\u0022textSizeToken\u0022:\u0022theme.typography.sizes.s\u0022,\u0022showBadge\u0022:false,\u0022badgeContentMode\u0022:\u0022text\u0022,\u0022badgeIconToken\u0022:\u0022system_check\u0022,\u0022badgeText\u0022:\u00221\u0022,\u0022badgeSize\u0022:20,\u0022badgeBackgroundPaletteColor\u0022:\u0022blue\u0022,\u0022badgeContentPaletteColor\u0022:\u0022gray_100\u0022,\u0022iconColorToken\u0022:\u0022theme.colors.icon\u0022,\u0022textColorToken\u0022:\u0022theme.colors.textPrimary\u0022},{\u0022id\u0022:\u0022button_001\u0022,\u0022state\u0022:\u0022normal\u0022,\u0022sampleText\u0022:\u0022\u0022,\u0022iconToken\u0022:\u0022media_video\u0022,\u0022iconSizeToken\u0022:\u0022theme.iconSizes.m\u0022,\u0022textSizeToken\u0022:\u0022theme.typography.sizes.s\u0022,\u0022showBadge\u0022:false,\u0022badgeContentMode\u0022:\u0022text\u0022,\u0022badgeIconToken\u0022:\u0022system_check\u0022,\u0022badgeText\u0022:\u00221\u0022,\u0022badgeSize\u0022:20,\u0022badgeBackgroundPaletteColor\u0022:\u0022blue\u0022,\u0022badgeContentPaletteColor\u0022:\u0022gray_100\u0022,\u0022iconColorToken\u0022:\u0022theme.colors.icon\u0022,\u0022textColorToken\u0022:\u0022theme.colors.textPrimary\u0022}]}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "module.core.chat.headerRightIconRow.editor",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": [],
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.chat.headerSurface.editor",
+      "label": "Header surface",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "conversation",
+        "headerSurfaceSlot",
+        "variantReference"
+      ],
+      "defaultValue": "component_project_foqn_s2_surface::variant::default",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "surface",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "surface",
+        "label": "Header surface",
+        "recordClassId": "component.surface"
+      }
+    },
+    {
+      "id": "module.core.chat.headerUseActorColor",
+      "label": "Use actor color",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "conversation",
+        "headerUseActorColor"
+      ],
+      "defaultValue": "false",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.chat.keyboardVariant",
+      "label": "Keyboard variant",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "conversation",
+        "keyboardVariant"
+      ],
+      "defaultValue": "component_project_foqn_s2_keyboard::variant::default_copy",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "keyboard",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.chat.messageGap",
+      "label": "Message gap",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "conversation",
+        "messageGap"
+      ],
+      "defaultValue": "theme.spacing.l",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xl",
+          "label": "spacing.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xxl",
+          "label": "spacing.xxl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.chat.messageMotion",
+      "label": "Messages motion",
+      "valueKind": "Motion",
+      "jsonPath": [
+        "conversation",
+        "messageMotion"
+      ],
+      "defaultValue": "{\u0022transition\u0022:\u0022slide\u0022,\u0022direction\u0022:\u0022bottom\u0022,\u0022bounds\u0022:\u0022parent\u0022,\u0022fade\u0022:false,\u0022translate\u0022:true,\u0022scale\u0022:false}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.chat.messageViewportMotion",
+      "label": "Message viewport motion",
+      "valueKind": "Motion",
+      "jsonPath": [
+        "conversation",
+        "messageViewportMotion"
+      ],
+      "defaultValue": "{\u0022transition\u0022:\u0022slide\u0022,\u0022direction\u0022:\u0022bottom\u0022,\u0022bounds\u0022:\u0022parent\u0022,\u0022fade\u0022:false,\u0022translate\u0022:true,\u0022scale\u0022:false}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.chat.screenGutter",
+      "label": "Screen gutter",
+      "valueKind": "ThemeTokenPair",
+      "jsonPath": [
+        "conversation",
+        "screenGutter"
+      ],
+      "defaultValue": "theme.spacing.l|theme.spacing.l",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xl",
+          "label": "spacing.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xxl",
+          "label": "spacing.xxl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": {
+        "first": "X",
+        "second": "Y"
+      },
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.chat.showHeader",
+      "label": "Header",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "conversation",
+        "showHeader"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.chat.showKeyboard",
+      "label": "Keyboard",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "conversation",
+        "showKeyboard"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.chat.showNavigationBar",
+      "label": "Navigation bar",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "conversation",
+        "showNavigationBar"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.chat.showStatusBar",
+      "label": "Status bar",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "conversation",
+        "showStatusBar"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.chat.showTextInputBar",
+      "label": "Text input bar",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "conversation",
+        "showTextInputBar"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.chat.textInputBarVariant",
+      "label": "Text input variant",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "conversation",
+        "textInputBarVariant"
+      ],
+      "defaultValue": "component_project_foqn_s2_textInputBar::variant::default_copy",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "textInputBar",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.chat.useAppWallpaper",
+      "label": "Use app wallpaper",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "conversation",
+        "useAppWallpaper"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    }
+  ],
   "editorLayout": {
     "cards": [
       {
@@ -1477,9 +2255,19 @@
                 "visible": true
               },
               {
+                "id": "module.core.chat.headerLeftIconRow.inputs",
+                "order": 75,
+                "visible": false
+              },
+              {
                 "id": "module.core.chat.headerRightIconRow.editor",
                 "order": 80,
                 "visible": true
+              },
+              {
+                "id": "module.core.chat.headerRightIconRow.inputs",
+                "order": 85,
+                "visible": false
               }
             ]
           }

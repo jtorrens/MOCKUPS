@@ -133,6 +133,32 @@ test("Module scaffold parser rejects hidden and incomplete envelopes", () => {
   assert.throws(() => parseModuleScaffoldSpec(extra), /must contain exactly/);
 });
 
+test("Module scaffold requires an exact dictionary and editor layout field inventory", () => {
+  const undeclared = validSpec();
+  undeclared.dictionaryFields = [];
+  assert.throws(
+    () => createModuleScaffoldPlan(
+      undeclared,
+      loadModuleScaffoldInventory(repositoryRoot),
+      repositoryRoot,
+    ),
+    /Editor layout field 'module\.core\.scaffoldTest\.list' is missing from dictionary fields/,
+  );
+
+  const missing = validSpec();
+  const cards = missing.editorLayout.cards as Array<Record<string, unknown>>;
+  const groups = cards[0]!.groups as Array<Record<string, unknown>>;
+  groups[0]!.fields = [];
+  assert.throws(
+    () => createModuleScaffoldPlan(
+      missing,
+      loadModuleScaffoldInventory(repositoryRoot),
+      repositoryRoot,
+    ),
+    /Dictionary field 'module\.core\.scaffoldTest\.list' is missing from editor layout/,
+  );
+});
+
 test("Module materialization is no-overwrite and integration is transactional", () => {
   const fixture = integrationFixture();
   const spec = validSpec();
@@ -254,7 +280,7 @@ function validSpec(): ModuleScaffoldSpec {
         defaultValue: JSON.stringify(config.chatList.listSlot),
         isEditable: true,
         options: [],
-        optionsSource: "",
+        optionSource: "None",
         pairLabels: null,
         number: null,
         componentVariantType: "list",
@@ -263,7 +289,10 @@ function validSpec(): ModuleScaffoldSpec {
         ],
         runtimeInputComponentVariantFieldId: "",
         runtimeCollectionComponentVariantFieldId: "",
-        componentInputBindingsSource: "",
+        componentInputBindings: null,
+        imagePreview: null,
+        recordReference: null,
+        motionTiming: null,
         unit: "",
         embeddedSlot: {
           componentType: "list",

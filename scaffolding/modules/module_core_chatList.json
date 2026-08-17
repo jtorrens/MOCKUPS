@@ -165,76 +165,31 @@
   },
   "dictionaryFields": [
     {
-      "id": "module.core.chatList.wallpaperEnabled",
-      "label": "Wallpaper",
-      "valueKind": "Boolean",
-      "jsonPath": [
-        "chatList",
-        "wallpaperEnabled"
-      ],
-      "defaultValue": "false",
-      "isEditable": true,
-      "options": [],
-      "optionsSource": "",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindingsSource": "",
-      "unit": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "module.core.chatList.stack",
-      "label": "Content Stack",
+      "id": "module.core.chatList.bottomIconBar",
+      "label": "Bottom Icon Bar",
       "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "chatList",
-        "stackSlot"
+        "bottomIconBarSlot"
       ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_componentStack::variant::default\",\"overrides\":{}}",
+      "defaultValue": "{\u0022variantReference\u0022:\u0022component_project_foqn_s2_iconBar::variant::default\u0022,\u0022overrides\u0022:{}}",
       "isEditable": true,
       "options": [],
-      "optionsSource": "",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "componentStack",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindingsSource": "",
-      "unit": "",
-      "embeddedSlot": {
-        "componentType": "componentStack",
-        "label": "Content Stack",
-        "recordClassId": "component.componentStack"
-      }
-    },
-    {
-      "id": "module.core.chatList.topIconBar",
-      "label": "Top Icon Bar",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "chatList",
-        "topIconBarSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_iconBar::variant::default\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "optionsSource": "",
+      "optionSource": "None",
       "pairLabels": null,
       "number": null,
       "componentVariantType": "iconBar",
       "synchronizedVariantReferenceJsonPaths": [],
       "runtimeInputComponentVariantFieldId": "",
       "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindingsSource": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
       "unit": "",
       "embeddedSlot": {
         "componentType": "iconBar",
-        "label": "Top Icon Bar",
+        "label": "Bottom Icon Bar",
         "recordClassId": "component.iconBar"
       }
     },
@@ -246,10 +201,10 @@
         "chatList",
         "listSlot"
       ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_list::variant::chats\",\"overrides\":{}}",
+      "defaultValue": "{\u0022variantReference\u0022:\u0022component_project_foqn_s2_list::variant::chats\u0022,\u0022overrides\u0022:{}}",
       "isEditable": true,
       "options": [],
-      "optionsSource": "",
+      "optionSource": "None",
       "pairLabels": null,
       "number": null,
       "componentVariantType": "list",
@@ -262,64 +217,15 @@
       ],
       "runtimeInputComponentVariantFieldId": "",
       "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindingsSource": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
       "unit": "",
       "embeddedSlot": {
         "componentType": "list",
         "label": "List",
         "recordClassId": "component.list"
-      }
-    },
-    {
-      "id": "module.core.chatList.bottomIconBar",
-      "label": "Bottom Icon Bar",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "chatList",
-        "bottomIconBarSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_iconBar::variant::default\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "optionsSource": "",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "iconBar",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindingsSource": "",
-      "unit": "",
-      "embeddedSlot": {
-        "componentType": "iconBar",
-        "label": "Bottom Icon Bar",
-        "recordClassId": "component.iconBar"
-      }
-    },
-    {
-      "id": "module.core.chatList.statusBar",
-      "label": "Status Bar",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "chatList",
-        "statusBarSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_status_bar::variant::default\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "optionsSource": "",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "status_bar",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindingsSource": "",
-      "unit": "",
-      "embeddedSlot": {
-        "componentType": "status_bar",
-        "label": "Status Bar",
-        "recordClassId": "component.status_bar"
       }
     },
     {
@@ -330,23 +236,138 @@
         "chatList",
         "navigationBarSlot"
       ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_navigation_bar::variant::default\",\"overrides\":{}}",
+      "defaultValue": "{\u0022variantReference\u0022:\u0022component_project_foqn_s2_navigation_bar::variant::default\u0022,\u0022overrides\u0022:{}}",
       "isEditable": true,
       "options": [],
-      "optionsSource": "",
+      "optionSource": "None",
       "pairLabels": null,
       "number": null,
       "componentVariantType": "navigation_bar",
       "synchronizedVariantReferenceJsonPaths": [],
       "runtimeInputComponentVariantFieldId": "",
       "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindingsSource": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
       "unit": "",
       "embeddedSlot": {
         "componentType": "navigation_bar",
         "label": "Navigation Bar",
         "recordClassId": "component.navigation_bar"
       }
+    },
+    {
+      "id": "module.core.chatList.stack",
+      "label": "Content Stack",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "chatList",
+        "stackSlot"
+      ],
+      "defaultValue": "{\u0022variantReference\u0022:\u0022component_project_foqn_s2_componentStack::variant::default\u0022,\u0022overrides\u0022:{}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "componentStack",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "componentStack",
+        "label": "Content Stack",
+        "recordClassId": "component.componentStack"
+      }
+    },
+    {
+      "id": "module.core.chatList.statusBar",
+      "label": "Status Bar",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "chatList",
+        "statusBarSlot"
+      ],
+      "defaultValue": "{\u0022variantReference\u0022:\u0022component_project_foqn_s2_status_bar::variant::default\u0022,\u0022overrides\u0022:{}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "status_bar",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "status_bar",
+        "label": "Status Bar",
+        "recordClassId": "component.status_bar"
+      }
+    },
+    {
+      "id": "module.core.chatList.topIconBar",
+      "label": "Top Icon Bar",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "chatList",
+        "topIconBarSlot"
+      ],
+      "defaultValue": "{\u0022variantReference\u0022:\u0022component_project_foqn_s2_iconBar::variant::default\u0022,\u0022overrides\u0022:{}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "iconBar",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "iconBar",
+        "label": "Top Icon Bar",
+        "recordClassId": "component.iconBar"
+      }
+    },
+    {
+      "id": "module.core.chatList.wallpaperEnabled",
+      "label": "Wallpaper",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "chatList",
+        "wallpaperEnabled"
+      ],
+      "defaultValue": "false",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
     }
   ],
   "editorLayout": {

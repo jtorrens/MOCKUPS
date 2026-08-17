@@ -6,7 +6,6 @@ import {
   type ModuleScaffoldField,
   type ModuleScaffoldSpec,
 } from "./moduleScaffold.js";
-import type { JsonObject } from "./componentScaffold.js";
 
 export const draftModuleSpecRoot = "scaffolding/module-drafts";
 export const integratedModuleSpecRoot = "scaffolding/modules";
@@ -175,12 +174,15 @@ function renderEmbeddedSlots(specs: readonly ModuleScaffoldSpec[]) {
     .sort((left, right) => left.id.localeCompare(right.id))
     .map((field) => {
       const embedded = field.embeddedSlot!;
+      const slotPath = field.valueKind === "ComponentVariant"
+        ? field.jsonPath.slice(0, -1)
+        : field.jsonPath;
       return `        new(\n`
         + `            ${csharpString(field.id)},\n`
         + `            ${csharpString(embedded.componentType)},\n`
         + `            ${csharpString(embedded.label)},\n`
         + `            ${csharpString(embedded.recordClassId)},\n`
-        + `            [${field.jsonPath.map(csharpString).join(", ")}]),`;
+        + `            [${slotPath.map(csharpString).join(", ")}]),`;
     }).join("\n");
   return `// Generated from scaffolding/modules/*.json. Do not edit manually.\n`
     + `// Modules: ${specs.map((spec) => spec.module.recordClassId).join(", ")}\n`
@@ -195,79 +197,32 @@ function renderEmbeddedSlots(specs: readonly ModuleScaffoldSpec[]) {
 }
 
 function renderField(field: ModuleScaffoldField) {
-  const args = [
-    csharpString(field.id),
-    csharpString(field.label),
-    `ValueKind.${field.valueKind}`,
-  ];
-  if (!field.isEditable) args.push("IsEditable: false");
-  if (field.optionsSource) {
-    args.push(`Options: ${field.optionsSource}`);
-  } else if (field.options.length > 0) {
-    args.push(`Options: [${field.options.map(renderOption).join(", ")}]`);
-  }
-  if (field.pairLabels) {
-    args.push(
-      `PairLabels: new(${csharpString(field.pairLabels.first)}, `
-      + `${csharpString(field.pairLabels.second)})`,
-    );
-  }
-  if (field.number) {
-    args.push(
-      `Number: new(${csharpDecimal(field.number.minimum)}, `
-      + `${csharpDecimal(field.number.maximum)}, `
-      + `${csharpDecimal(field.number.increment)}, `
-      + `${field.number.decimalPlaces}, `
-      + `${field.number.useSlider ? "true" : "false"})`,
-    );
-  }
-  if (field.componentVariantType) {
-    args.push(`ComponentVariantType: ${csharpString(field.componentVariantType)}`);
-  }
-  if (field.unit) args.push(`Unit: ${csharpString(field.unit)}`);
-  if (field.componentInputBindingsSource) {
-    args.push(`ComponentInputBindings: ${field.componentInputBindingsSource}`);
-  }
-  if (field.runtimeInputComponentVariantFieldId) {
-    args.push(
-      `RuntimeInputComponentVariantFieldId: `
-      + `${csharpString(field.runtimeInputComponentVariantFieldId)}`,
-    );
-  }
-  if (field.runtimeCollectionComponentVariantFieldId) {
-    args.push(
-      `RuntimeCollectionComponentVariantFieldId: `
-      + `${csharpString(field.runtimeCollectionComponentVariantFieldId)}`,
-    );
-  }
-  return `new(${args.join(", ")})`;
-}
-
-function renderOption(option: JsonObject) {
-  const value = requiredOptionString(option, "value");
-  const label = requiredOptionString(option, "label");
-  const args = [csharpString(value), csharpString(label)];
-  if (option.isNeutral === true) args.push("IsNeutral: true");
-  return `new(${args.join(", ")})`;
-}
-
-function requiredOptionString(option: JsonObject, key: string) {
-  const value = option[key];
-  if (typeof value !== "string") {
-    throw new Error(`Generated Module dictionary option requires string '${key}'.`);
-  }
-  return value;
+  const descriptor = {
+    id: field.id,
+    label: field.label,
+    valueKind: field.valueKind,
+    isEditable: field.isEditable,
+    options: field.options,
+    pairLabels: field.pairLabels,
+    imagePreview: field.imagePreview,
+    number: field.number,
+    recordReference: field.recordReference,
+    componentVariantType: field.componentVariantType,
+    unit: field.unit,
+    componentInputBindings: field.componentInputBindings,
+    runtimeInputComponentVariantFieldId: field.runtimeInputComponentVariantFieldId,
+    runtimeCollectionComponentVariantFieldId: field.runtimeCollectionComponentVariantFieldId,
+    motionTiming: field.motionTiming,
+    configJsonPath: field.jsonPath,
+    optionSource: field.optionSource,
+  };
+  return `ScaffoldDictionaryFieldContract.Module(${csharpString(JSON.stringify(descriptor))})`;
 }
 
 function csharpString(value: string) {
   return value.includes('"') || value.includes("\n")
     ? `"""${value.replaceAll('"""', '\\"\\"\\"')}"""`
     : `"${value.replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`;
-}
-
-function csharpDecimal(value: number | null) {
-  if (value === null) return "null";
-  return Number.isInteger(value) ? String(value) : `${value}m`;
 }
 
 function repositoryPath(repositoryRoot: string, relativePath: string) {

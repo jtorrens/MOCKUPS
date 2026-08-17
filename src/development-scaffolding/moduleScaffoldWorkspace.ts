@@ -202,6 +202,25 @@ export function verifyModuleScaffoldImplementation(
   checked.push(specPath);
 
   const inventory = loadModuleScaffoldInventory(repositoryRoot, databasePath);
+  createModuleScaffoldPlan(
+    spec,
+    {
+      ...inventory,
+      moduleClasses: new Set(
+        [...inventory.moduleClasses]
+          .filter((value) => value !== spec.module.recordClassId),
+      ),
+      recordClassIds: new Set(
+        [...inventory.recordClassIds]
+          .filter((value) => value !== spec.module.recordClassId),
+      ),
+      modules: inventory.modules.filter(
+        (value) => value.id !== spec.module.moduleId,
+      ),
+    },
+    repositoryRoot,
+    "mustExist",
+  );
   const resolved = resolveModuleScaffoldContract(spec, inventory);
   const manifestPath = "src/desktop-preview/desktopPreviewManifest.json";
   const manifest = jsonObject(

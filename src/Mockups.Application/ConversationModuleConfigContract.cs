@@ -59,8 +59,11 @@ internal static class ConversationModuleConfigContract
 
         MotionVariantValue.Parse(
             JsonPath.RequiredObject(conversation, "messageMotion", owner).ToJsonString());
-        if (conversation["messageViewportMotion"] is JsonNode motion)
-            MotionVariantValue.Parse(motion.ToJsonString());
+        MotionVariantValue.Parse(
+            JsonPath.RequiredObject(
+                conversation,
+                "messageViewportMotion",
+                owner).ToJsonString());
     }
 
     private static void RequireSlot(JsonObject conversation, string key, string owner)
