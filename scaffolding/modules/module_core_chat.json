@@ -228,7 +228,7 @@
         "label": "Actor",
         "jsonKey": "actorId",
         "kind": "recordReference",
-        "defaultValue": "",
+        "defaultValue": "actor_alex",
         "tableId": "actors",
         "resolvedJsonKey": "actor",
         "valueKind": "RecordReference"
@@ -444,7 +444,7 @@
         "playbackMode": "once",
         "playDurationFrames": 72,
         "playbackFrame": 0,
-        "actorId": "",
+        "actorId": "actor_alex",
         "writeOnTiming": {
           "mode": "fixed",
           "fixedFrames": 30,
@@ -557,7 +557,7 @@
             "label": "Actor",
             "jsonKey": "actorId",
             "kind": "recordReference",
-            "defaultValue": "",
+            "defaultValue": "actor_alex",
             "tableId": "actors",
             "resolvedJsonKey": "actor",
             "uiGroupId": "message",

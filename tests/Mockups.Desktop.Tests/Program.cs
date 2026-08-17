@@ -9461,6 +9461,19 @@ static void RuntimeInputOptionBoundaryPreservesDictionaryOptions()
         SequenceEqual(
             database.GetRequiredActorOptions(project.Id).Select((option) => option.Value),
             actorDefinition.Options!.Select((option) => option.Value));
+        True(actorDefinition.RecordReference?.AllowEmpty == false);
+        Throws<InvalidOperationException>(() => FieldOptionContract.ValidateValue(
+            actorDefinition,
+            "",
+            "Required Runtime actor"));
+        var inheritedActorDefinition = actorDefinition with
+        {
+            CanInherit = true,
+        };
+        FieldOptionContract.ValidateValue(
+            inheritedActorDefinition,
+            inheritedActorDefinition.InheritedStorageValue,
+            "Inherited Runtime actor");
         var optionalActorDefinition = RuntimeInputFieldDefinitionFactory.Create(
             dataSource,
             project,
@@ -9468,6 +9481,11 @@ static void RuntimeInputOptionBoundaryPreservesDictionaryOptions()
         SequenceEqual(
             database.GetActorOptions(project.Id).Select((option) => option.Value),
             optionalActorDefinition.Options!.Select((option) => option.Value));
+        True(optionalActorDefinition.RecordReference?.AllowEmpty == true);
+        FieldOptionContract.ValidateValue(
+            optionalActorDefinition,
+            "",
+            "Optional Runtime actor");
 
         var paletteInput = new ComponentInputDefinition(
             "color", "Color", "color", ComponentInputKind.Option,
@@ -14064,18 +14082,22 @@ static void ConversationMessageActorsFollowDirectionContract()
             .Single((collection) => collection.Id == "messages");
         var actorField = messageCollection.Fields.Single((field) => field.Id == "actor");
         var optionsSource = new RuntimeInputOptionsDataSource(database.DictionaryContext, database.Resources);
-        var incomingActorOptions = RuntimeInputFieldDefinitionFactory.Create(
+        var incomingActorDefinition = RuntimeInputFieldDefinitionFactory.Create(
             optionsSource,
             screen,
             actorField,
-            CollectionFieldAvailability.AllowsEmpty(incoming, actorField)).Options ?? [];
-        var systemActorOptions = RuntimeInputFieldDefinitionFactory.Create(
+            CollectionFieldAvailability.AllowsEmpty(incoming, actorField));
+        var systemActorDefinition = RuntimeInputFieldDefinitionFactory.Create(
             optionsSource,
             screen,
             actorField,
-            CollectionFieldAvailability.AllowsEmpty(system, actorField)).Options ?? [];
+            CollectionFieldAvailability.AllowsEmpty(system, actorField));
+        var incomingActorOptions = incomingActorDefinition.Options ?? [];
+        var systemActorOptions = systemActorDefinition.Options ?? [];
         True(incomingActorOptions.All((option) => !string.IsNullOrWhiteSpace(option.Value)));
         True(systemActorOptions.Any((option) => string.IsNullOrWhiteSpace(option.Value)));
+        True(incomingActorDefinition.RecordReference?.AllowEmpty == false);
+        True(systemActorDefinition.RecordReference?.AllowEmpty == true);
 
         var payload = Required(DesignPreviewPayloadFactory.Create(
             new DesignPreviewPayloadDataSource(
@@ -14724,6 +14746,9 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
         Equal("Clock", items[0]?["name"]?.GetValue<string>() ?? "");
         Equal("Clock", items[0]?["alternatives"]?[0]?["name"]?.GetValue<string>() ?? "");
         Equal(2, (items[0]?["alternatives"] as JsonArray)?.Count ?? 0);
+        Equal(
+            items[0]?["alternatives"]?[0]?["id"]?.GetValue<string>() ?? "",
+            items[0]?["runtimeStateId"]?.GetValue<string>() ?? "");
         var actions = ComponentPreviewActions.Read(effective);
         var stateAction = actions.Single((action) => action.CollectionJsonKey == slots.JsonKey
             && action.TargetInputId == "runtimeStateId"

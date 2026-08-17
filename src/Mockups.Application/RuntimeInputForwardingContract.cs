@@ -47,7 +47,11 @@ public static class RuntimeInputForwardingContract
                 if (!effective.TryGetPropertyValue(jsonKey, out var storedNode))
                     effective[jsonKey] = projected;
                 else if (storedNode is JsonArray stored)
-                    ApplyProjectedMetadata(stored, projected, MetadataKeys(next["projection"] as JsonObject));
+                    effective[jsonKey] = ReconcileProjectedParentCollection(
+                        stored,
+                        source,
+                        projected,
+                        next["projection"] as JsonObject);
                 else
                     throw new InvalidOperationException(
                         $"Effective Preview forwarded collection '{jsonKey}' must be an array.");
@@ -172,7 +176,16 @@ public static class RuntimeInputForwardingContract
         if (!effective.TryGetPropertyValue(childJsonKey, out var storedNode))
             effective[childJsonKey] = values;
         else if (storedNode is JsonArray stored)
-            ApplyProjectedMetadata(stored, values, metadataKeys);
+            effective[childJsonKey] = ReconcileProjectedItems(
+                stored,
+                values,
+                [
+                    "id",
+                    parentItemIdJsonKey,
+                    variantReferenceJsonKey,
+                    .. metadataKeys,
+                ],
+                [parentItemIdJsonKey, variantReferenceJsonKey]);
         else
             throw new InvalidOperationException(
                 $"Effective Preview projected child collection '{childJsonKey}' must be an array.");
@@ -314,41 +327,103 @@ public static class RuntimeInputForwardingContract
         return result;
     }
 
-    private static void ApplyProjectedMetadata(
+    private static JsonArray ReconcileProjectedParentCollection(
+        JsonArray stored,
+        JsonArray source,
+        JsonArray projected,
+        JsonObject? projection)
+    {
+        if (projection is null)
+        {
+            throw new InvalidOperationException(
+                "Forwarded structural runtime collection requires an explicit projection.");
+        }
+        var alternativesKey = Text(projection["optionsSourceCollectionJsonKey"]);
+        var stateKey = Text(projection["stateJsonKey"]);
+        var transitionKey = Text(projection["transitionJsonKey"]);
+        var elapsedKey = Text(projection["elapsedJsonKey"]);
+        var fromKey = Text(projection["fromJsonKey"]);
+        var result = ReconcileProjectedItems(
+            stored,
+            projected,
+            ["id", .. MetadataKeys(projection)]);
+        var sourceById = ObjectItems(
+                source,
+                "Forwarded runtime collection source")
+            .ToDictionary(
+                (item) => Text(item["id"]),
+                StringComparer.Ordinal);
+        foreach (var item in ObjectItems(
+                     result,
+                     "Reconciled forwarded runtime collection"))
+        {
+            var id = Text(item["id"]);
+            var sourceItem = sourceById[id];
+            var alternatives = sourceItem[alternativesKey] as JsonArray
+                ?? throw new InvalidOperationException(
+                    $"Forwarded runtime collection item '{id}' is missing '{alternativesKey}'.");
+            var allowed = ObjectItems(
+                    alternatives,
+                    $"Forwarded runtime collection item '{id}' alternatives")
+                .Select((alternative) => Text(alternative["id"]))
+                .ToHashSet(StringComparer.Ordinal);
+            if (!allowed.Contains(Text(item[stateKey])))
+            {
+                var fallback = projected
+                    .OfType<JsonObject>()
+                    .Single((candidate) => Text(candidate["id"]) == id);
+                item[stateKey] = fallback[stateKey]?.DeepClone();
+                item[transitionKey] = fallback[transitionKey]?.DeepClone();
+                item[elapsedKey] = fallback[elapsedKey]?.DeepClone();
+                item[fromKey] = fallback[fromKey]?.DeepClone();
+            }
+            else if (!allowed.Contains(Text(item[fromKey])))
+            {
+                item[fromKey] = item[stateKey]?.DeepClone();
+                item[transitionKey] = false;
+                item[elapsedKey] = 0;
+            }
+        }
+        return result;
+    }
+
+    private static JsonArray ReconcileProjectedItems(
         JsonArray stored,
         JsonArray projected,
-        IReadOnlyList<string> metadataKeys)
+        IReadOnlyCollection<string> authoritativeKeys,
+        IReadOnlyCollection<string>? resetOnChangedKeys = null)
     {
-        if (metadataKeys.Count == 0) return;
         RuntimeCollectionDocumentContract.Validate(projected, "Projected runtime collection");
         RuntimeCollectionDocumentContract.Validate(stored, "Stored projected runtime collection");
         var projectedItems = ObjectItems(projected, "Projected runtime collection").ToList();
         var storedItems = ObjectItems(stored, "Stored projected runtime collection").ToList();
-        var projectedById = projectedItems
-            .ToDictionary((item) => Text(item["id"]), StringComparer.Ordinal);
-        for (var index = stored.Count - 1; index >= 0; index--)
+        var storedById = storedItems.ToDictionary(
+            (item) => Text(item["id"]),
+            StringComparer.Ordinal);
+        var result = new JsonArray();
+        foreach (var projectedItem in projectedItems)
         {
-            var item = stored[index]!.AsObject();
-            if (!projectedById.ContainsKey(Text(item["id"])))
+            var id = Text(projectedItem["id"]);
+            var next = projectedItem.DeepClone().AsObject();
+            if (storedById.TryGetValue(id, out var current)
+                && (resetOnChangedKeys is null
+                    || !resetOnChangedKeys.Any((key) =>
+                        !JsonNode.DeepEquals(current[key], projectedItem[key]))))
             {
-                stored.RemoveAt(index);
+                foreach (var key in next
+                             .Select((entry) => entry.Key)
+                             .Where((key) => !authoritativeKeys.Contains(key))
+                             .ToList())
+                {
+                    if (current[key] is { } value)
+                    {
+                        next[key] = value.DeepClone();
+                    }
+                }
             }
+            result.Add(next);
         }
-        var storedIds = storedItems
-            .Select((item) => Text(item["id"]))
-            .ToHashSet(StringComparer.Ordinal);
-        foreach (var source in projectedItems)
-        {
-            if (storedIds.Add(Text(source["id"]))) stored.Add(source.DeepClone());
-        }
-        foreach (var item in ObjectItems(stored, "Stored projected runtime collection"))
-        {
-            var id = Text(item["id"]);
-            var source = projectedById[id];
-            foreach (var metadataKey in metadataKeys)
-                item[metadataKey] = source[metadataKey]?.DeepClone()
-                    ?? throw new InvalidOperationException($"Projected runtime collection item is missing '{metadataKey}'.");
-        }
+        return result;
     }
 
     private static void RebaseTransitionForParent(JsonObject definition, JsonObject container)

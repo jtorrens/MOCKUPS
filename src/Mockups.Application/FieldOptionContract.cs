@@ -35,6 +35,14 @@ public static class FieldOptionContract
         string value,
         string owner)
     {
+        if (definition.CanInherit
+            && value.Equals(
+                definition.InheritedStorageValue,
+                StringComparison.Ordinal))
+        {
+            return;
+        }
+
         if (!UsesDeclaredOptions(definition.ValueKind))
         {
             return;

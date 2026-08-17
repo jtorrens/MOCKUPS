@@ -258,8 +258,9 @@ public static class DesignPreviewTestValues
 
             var sourceItems = MergeCollectionSource(
                 RequiredArray(preview, sourceKey, "Design Preview source collection"),
-                OptionalArray(TestValues(preview), jsonKey, "Design Test Values collection"),
-                jsonKey);
+                jsonKey,
+                OptionalArray(preview, jsonKey, "Design Preview current collection"),
+                OptionalArray(TestValues(preview), jsonKey, "Design Test Values collection"));
             preview[jsonKey] = new JsonArray(sourceItems.Select((item) => (JsonNode?)item).ToArray());
         }
     }
@@ -284,33 +285,46 @@ public static class DesignPreviewTestValues
     {
         return MergeCollectionSource(
             RequiredArray(preview, collection.SourceCollectionJsonKey, "Design Preview source collection"),
-            OptionalArray(TestValues(preview), collection.JsonKey, "Design Test Values collection"),
-            collection.JsonKey);
+            collection.JsonKey,
+            OptionalArray(preview, collection.JsonKey, "Design Preview current collection"),
+            OptionalArray(TestValues(preview), collection.JsonKey, "Design Test Values collection"));
     }
 
     private static IReadOnlyList<JsonObject> MergeCollectionSource(
         JsonArray source,
-        JsonArray? overrides,
-        string collectionJsonKey)
+        string collectionJsonKey,
+        params JsonArray?[] overrideLayers)
     {
         RuntimeCollectionDocumentContract.Validate(
             source,
             $"Design Preview source collection '{collectionJsonKey}'");
-        if (overrides is not null)
+        foreach (var overrides in overrideLayers.Where(
+                     (candidate) => candidate is not null))
         {
             RuntimeCollectionDocumentContract.Validate(
-                overrides,
-                $"Design Test Values collection '{collectionJsonKey}'");
+                overrides!,
+                $"Design Preview collection layer '{collectionJsonKey}'");
         }
         var overrideById = new Dictionary<string, JsonObject>(StringComparer.Ordinal);
-        foreach (var item in overrides is null
-                     ? []
-                     : ObjectItems(overrides, $"Design Test Values collection '{collectionJsonKey}'"))
+        foreach (var overrides in overrideLayers)
         {
-            var id = JsonString(item, "id");
-            if (!string.IsNullOrWhiteSpace(id))
+            foreach (var item in overrides is null
+                         ? []
+                         : ObjectItems(
+                             overrides,
+                             $"Design Preview collection layer '{collectionJsonKey}'"))
             {
-                overrideById[id] = item;
+                var id = JsonString(item, "id");
+                if (string.IsNullOrWhiteSpace(id)) continue;
+                if (!overrideById.TryGetValue(id, out var merged))
+                {
+                    merged = new JsonObject { ["id"] = id };
+                    overrideById[id] = merged;
+                }
+                foreach (var (key, value) in item)
+                {
+                    merged[key] = value?.DeepClone();
+                }
             }
         }
 

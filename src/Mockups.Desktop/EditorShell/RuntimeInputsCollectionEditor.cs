@@ -1877,6 +1877,15 @@ internal sealed class RuntimeInputsCollectionEditor
         Action? afterCommit = null,
         Action? openComponentOverrides = null)
     {
+        var fieldIsActive = CollectionFieldAvailability.IsEnabled(
+            item,
+            input,
+            itemIndex);
+        if (!fieldIsActive)
+        {
+            return new Border { IsVisible = false };
+        }
+
         var componentItems = collection.ComponentItems;
         var selectsComponent = componentItems is not null
             && input.JsonKey.Equals(componentItems.VariantReferenceJsonKey, StringComparison.Ordinal);
@@ -1943,9 +1952,6 @@ internal sealed class RuntimeInputsCollectionEditor
                 DesignPreviewTestValues.CollectionValue(item, input),
                 IsHighlighted: hasComponentOverrides),
             services);
-        var fieldIsActive = CollectionFieldAvailability.IsEnabled(item, input, itemIndex);
-        control.IsEnabled = fieldIsActive;
-        control.IsVisible = fieldIsActive;
         control.ValueCommitted += async (_, next) =>
         {
             var itemId = item["id"] is JsonValue idValue && idValue.TryGetValue<string>(out var id)

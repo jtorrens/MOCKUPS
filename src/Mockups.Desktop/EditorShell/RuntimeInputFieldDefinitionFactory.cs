@@ -38,7 +38,7 @@ internal static class RuntimeInputFieldDefinitionFactory
                 ? new NumberDefinition(input.Minimum, input.Maximum, input.Increment, input.ValueKind == ValueKind.Integer ? 0 : 2)
                 : null,
             RecordReference: input.ValueKind == ValueKind.RecordReference
-                ? new RecordReferenceDefinition(input.TableId)
+                ? new RecordReferenceDefinition(input.TableId, AllowEmpty: permitsEmpty)
                 : null,
             SelectComponentClass: input.ValueKind is ValueKind.ComponentVariant or ValueKind.ComponentVariantSlot
                 && ComponentVariantOptionContract.SelectsComponentClass(input.ComponentType),

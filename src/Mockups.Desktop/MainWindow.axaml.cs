@@ -853,6 +853,13 @@ public partial class MainWindow : SukiWindow
         ProjectTreeNode node,
         long revision)
     {
+        if (!_workspaceCoordinator.IsCurrent(
+                revision,
+                node.Id))
+        {
+            return;
+        }
+
         var workspace = Session.Workspace;
         if (!EditorCollectionCardFactory
                 .SupportsPreviewAuthoringSurface(
