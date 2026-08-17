@@ -299,26 +299,6 @@ internal sealed class SqliteRuntimeInputInstancePort(
             itemId,
             values);
 
-    public void AddModuleInstanceRuntimeCollectionItem(
-        string moduleInstanceId,
-        string collectionJsonKey,
-        JsonObject item) =>
-        target.AddModuleInstanceRuntimeCollectionItem(
-            moduleInstanceId,
-            collectionJsonKey,
-            item);
-
-    public void InsertModuleInstanceRuntimeCollectionItemAfter(
-        string moduleInstanceId,
-        string collectionJsonKey,
-        string afterItemId,
-        JsonObject item) =>
-        target.InsertModuleInstanceRuntimeCollectionItemAfter(
-            moduleInstanceId,
-            collectionJsonKey,
-            afterItemId,
-            item);
-
     public StructuredCollectionMutationResult MutateModuleInstanceStructuredCollection(
         string moduleInstanceId,
         StructuredCollectionMutation mutation) =>
@@ -326,16 +306,6 @@ internal sealed class SqliteRuntimeInputInstancePort(
             moduleInstanceId,
             mutation);
 
-    public void MoveModuleInstanceRuntimeCollectionItem(
-        string moduleInstanceId,
-        string collectionJsonKey,
-        string itemId,
-        int offset) =>
-        target.MoveModuleInstanceRuntimeCollectionItem(
-            moduleInstanceId,
-            collectionJsonKey,
-            itemId,
-            offset);
 }
 
 internal sealed class SqliteReferenceUsagePort(IReferenceUsageQuery target)

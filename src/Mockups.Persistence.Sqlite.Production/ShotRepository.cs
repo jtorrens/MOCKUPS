@@ -279,7 +279,11 @@ internal sealed class ShotRepository : IShotRepository
             ("$id", shotId));
     }
 
-    public void UpdateDuration(SqliteConnection connection, string shotId, int durationFrames)
+    public void UpdateDuration(
+        SqliteConnection connection,
+        string shotId,
+        int durationFrames,
+        SqliteTransaction? transaction = null)
     {
         if (durationFrames <= 0)
         {
@@ -288,6 +292,7 @@ internal sealed class ShotRepository : IShotRepository
         _ = Get(connection, shotId);
         _context.Execute(
             connection,
+            transaction,
             "UPDATE shots SET duration_frames = $duration WHERE id = $id",
             ("$id", shotId),
             ("$duration", durationFrames));

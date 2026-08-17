@@ -26,7 +26,6 @@ public sealed record ComponentClassFieldDescriptor(
 
 public static partial class ComponentClassFieldCatalog
 {
-    public const string EmptyIconSlots = "[]";
     private const string CalculatedTextFormatHelp =
         "Time: MM:SS or HH:MM:SS · Number: ###0 optional digits, 0000 zero-padded.";
     private const string CalculatedTextFormatPattern =

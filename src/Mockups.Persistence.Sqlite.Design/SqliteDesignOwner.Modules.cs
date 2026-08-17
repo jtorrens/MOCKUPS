@@ -109,7 +109,6 @@ internal sealed partial class SqliteDesignOwner
                     or ValueKind.Motion
                     or ValueKind.MotionTiming
                     or ValueKind.IconTokenList
-                    or ValueKind.IconSlots
                     or ValueKind.ComponentInputBindings
                     or ValueKind.ComponentVariantSlot
                     or ValueKind.StructuredCollection

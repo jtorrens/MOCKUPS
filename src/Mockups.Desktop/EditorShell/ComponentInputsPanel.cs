@@ -398,12 +398,9 @@ internal sealed class ComponentPreviewInputSession
             candidate["id"] is JsonValue idValue
             && idValue.TryGetValue<string>(out var candidateId)
             && candidateId == itemId);
-        if (item is null)
-        {
-            item = new JsonObject { ["id"] = itemId };
-            items.Add(item);
-        }
-        return item;
+        return item
+            ?? throw new InvalidOperationException(
+                $"Transient collection Test Values '{collectionJsonKey}' has no declared item '{itemId}'.");
     }
 
     public void SetExternalCollectionItems(

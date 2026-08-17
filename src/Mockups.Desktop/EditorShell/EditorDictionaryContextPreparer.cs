@@ -322,11 +322,6 @@ internal sealed class EditorDictionaryContextPreparer
             Add(
                 definition.ValueKind,
                 definition.BehaviorTiming);
-            if (definition.ValueKind == ValueKind.IconSlots)
-            {
-                ComponentTypes.Add("button");
-                AddVariantReferences(value);
-            }
             foreach (var input in
                      definition.ComponentInputBindings ?? [])
             {
@@ -359,10 +354,6 @@ internal sealed class EditorDictionaryContextPreparer
                 input.ValueKind,
                 input.ComponentType,
                 fullRuntime: false);
-            if (input.ValueKind == ValueKind.IconSlots)
-            {
-                ComponentTypes.Add("button");
-            }
             if (input.ValueKind == ValueKind.RecordReference
                 && !string.IsNullOrWhiteSpace(input.TableId))
             {
@@ -545,8 +536,7 @@ internal sealed class EditorDictionaryContextPreparer
         {
             NeedsIconAssets |= valueKind is
                 ValueKind.IconToken
-                or ValueKind.IconTokenList
-                or ValueKind.IconSlots;
+                or ValueKind.IconTokenList;
             NeedsPaletteOptions |= valueKind is
                 ValueKind.PaletteColorToken
                 or ValueKind.PaletteColorPair

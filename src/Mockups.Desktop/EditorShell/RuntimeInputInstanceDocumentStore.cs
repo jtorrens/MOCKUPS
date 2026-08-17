@@ -44,58 +44,16 @@ internal sealed class RuntimeInputInstanceDocumentStore
                 valueSnapshot));
     }
 
-    public Task AddCollectionItemAsync(
-        string moduleInstanceId,
-        string collectionJsonKey,
-        JsonObject item)
-    {
-        var itemSnapshot = item.DeepClone().AsObject();
-        return _operations.ExecuteAsync(
-            () => _database.AddModuleInstanceRuntimeCollectionItem(
-                moduleInstanceId,
-                collectionJsonKey,
-                itemSnapshot));
-    }
-
-    public Task InsertCollectionItemAfterAsync(
-        string moduleInstanceId,
-        string collectionJsonKey,
-        string afterItemId,
-        JsonObject item)
-    {
-        var itemSnapshot = item.DeepClone().AsObject();
-        return _operations.ExecuteAsync(
-            () => _database.InsertModuleInstanceRuntimeCollectionItemAfter(
-                moduleInstanceId,
-                collectionJsonKey,
-                afterItemId,
-                itemSnapshot));
-    }
-
     public Task<StructuredCollectionMutationResult> MutateStructuredCollectionAsync(
         string moduleInstanceId,
         StructuredCollectionMutation mutation)
     {
-        var mutationSnapshot = new StructuredCollectionMutation(
-            mutation.Kind,
-            mutation.Path.ToList());
+        var mutationSnapshot = StructuredCollectionMutationEngine.Snapshot(mutation);
         return _operations.ExecuteAsync(
             () => _database.MutateModuleInstanceStructuredCollection(
                 moduleInstanceId,
                 mutationSnapshot));
     }
-
-    public Task MoveCollectionItemAsync(
-        string moduleInstanceId,
-        string collectionJsonKey,
-        string itemId,
-        int offset)
-        => _operations.ExecuteAsync(
-            () => _database.MoveModuleInstanceRuntimeCollectionItem(
-                moduleInstanceId,
-                collectionJsonKey,
-                itemId,
-                offset));
 
     public Task UpdateCollectionValueAsync(
         string moduleInstanceId,

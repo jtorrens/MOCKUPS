@@ -59,6 +59,13 @@ static void StructuredCollectionMutationsAreAtomicDocuments()
         "State",
         [
             new ComponentInputDefinition(
+                "note",
+                "Note",
+                "note",
+                ComponentInputKind.Text,
+                ValueKind.StringSingleLine,
+                ""),
+            new ComponentInputDefinition(
                 "children",
                 "Children",
                 "children",
@@ -94,6 +101,7 @@ static void StructuredCollectionMutationsAreAtomicDocuments()
                     new JsonObject
                     {
                         ["id"] = "state-a",
+                        ["note"] = "child-a",
                         ["children"] = new JsonArray
                         {
                             new JsonObject { ["id"] = "child-a" },
@@ -111,26 +119,108 @@ static void StructuredCollectionMutationsAreAtomicDocuments()
             TestTrack("track-message", "message-a"),
             TestTrack("track-state", "state-a"),
             TestTrack("track-child", "child-a"),
+            TestTrack("track-untyped", "untyped-a"),
         },
     };
+
+    var added = StructuredCollectionMutationEngine.Apply(
+        content,
+        animation,
+        root,
+        new AddStructuredCollectionItem(
+            new StructuredCollectionAddress(
+                "messages",
+                [new StructuredCollectionOwnerSegment("messages", "message-a")],
+                "states"),
+            new JsonObject
+            {
+                ["note"] = "prototype-child",
+                ["children"] = new JsonArray
+                {
+                    new JsonObject { ["id"] = "prototype-child" },
+                },
+            },
+            "state-a"));
+    var addedId = added.SelectedItemId
+        ?? throw new InvalidOperationException("Missing added item identity.");
+    Equal(1, content["messages"]![0]!["states"]!.AsArray().Count);
+    Equal(2, added.Content["messages"]![0]!["states"]!.AsArray().Count);
+    Equal(addedId, added.Content["messages"]![0]!["states"]![0]!["id"]!.GetValue<string>());
+    True(added.Item!["children"]![0]!["id"]!.GetValue<string>() != "prototype-child");
+    var moved = StructuredCollectionMutationEngine.Apply(
+        added.Content,
+        added.Animation,
+        root,
+        new MoveStructuredCollectionItem(
+            new StructuredCollectionAddress(
+                "messages",
+                [new StructuredCollectionOwnerSegment("messages", "message-a")],
+                "states"),
+            addedId));
+    Equal(addedId, moved.Content["messages"]![0]!["states"]![1]!["id"]!.GetValue<string>());
+    Equal(addedId, moved.SelectedItemId ?? "");
+
+    var duplicateNestedIds = content.DeepClone().AsObject();
+    duplicateNestedIds["messages"]![0]!["states"]![0]!["children"]!.AsArray().Add(
+        new JsonObject { ["id"] = "child-a" });
+    Throws<InvalidOperationException>(() => StructuredCollectionMutationEngine.Apply(
+        duplicateNestedIds,
+        animation,
+        root,
+        new DuplicateStructuredCollectionItem(
+            new StructuredCollectionAddress(
+                "messages",
+                [new StructuredCollectionOwnerSegment("messages", "message-a")],
+                "states"),
+                "state-a")));
+
+    var duplicateSiblingBranchIds = content.DeepClone().AsObject();
+    duplicateSiblingBranchIds["messages"]!.AsArray().Add(
+        new JsonObject
+        {
+            ["id"] = "message-b",
+            ["states"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["id"] = "state-b",
+                    ["note"] = "child-b",
+                    ["children"] = new JsonArray
+                    {
+                        new JsonObject { ["id"] = "child-a" },
+                    },
+                },
+            },
+        });
+    Throws<InvalidOperationException>(() => StructuredCollectionMutationEngine.Apply(
+        duplicateSiblingBranchIds,
+        animation,
+        root,
+        new MoveStructuredCollectionItem(
+            new StructuredCollectionAddress("messages", [], "messages"),
+            "message-a")));
 
     var duplicate = StructuredCollectionMutationEngine.Apply(
         content,
         animation,
         root,
-        "messages",
-        new StructuredCollectionMutation(
-            StructuredCollectionMutationKind.Duplicate,
-            [
-                new StructuredCollectionPathSegment("messages", "message-a"),
-                new StructuredCollectionPathSegment("states", "state-a"),
-            ]));
+        new DuplicateStructuredCollectionItem(
+            new StructuredCollectionAddress(
+                "messages",
+                [new StructuredCollectionOwnerSegment("messages", "message-a")],
+                "states"),
+            "state-a"));
     var duplicatedState = duplicate.Item
         ?? throw new InvalidOperationException("Missing duplicated nested item.");
     var duplicatedStateId = duplicatedState["id"]!.GetValue<string>();
     var duplicatedChildId = duplicatedState["children"]![0]!["id"]!.GetValue<string>();
+    Equal("child-a", duplicatedState["note"]?.GetValue<string>() ?? "");
+    Equal(1, content["messages"]![0]!["states"]!.AsArray().Count);
+    Equal(4, animation["tracks"]!.AsArray().Count);
+    content = duplicate.Content;
+    animation = duplicate.Animation;
     Equal(2, content["messages"]![0]!["states"]!.AsArray().Count);
-    Equal(5, animation["tracks"]!.AsArray().Count);
+    Equal(6, animation["tracks"]!.AsArray().Count);
     Equal(true, animation["tracks"]!.AsArray().OfType<JsonObject>().Any((track) =>
         track["targetId"]?.GetValue<string>() == duplicatedStateId));
     Equal(true, animation["tracks"]!.AsArray().OfType<JsonObject>().Any((track) =>
@@ -138,37 +228,40 @@ static void StructuredCollectionMutationsAreAtomicDocuments()
     Equal(1, animation["tracks"]!.AsArray().OfType<JsonObject>().Count((track) =>
         track["targetId"]?.GetValue<string>() == "message-a"));
 
-    StructuredCollectionMutationEngine.Apply(
+    var deletedDuplicate = StructuredCollectionMutationEngine.Apply(
         content,
         animation,
         root,
-        "messages",
-        new StructuredCollectionMutation(
-            StructuredCollectionMutationKind.Delete,
-            [
-                new StructuredCollectionPathSegment("messages", "message-a"),
-                new StructuredCollectionPathSegment("states", duplicatedStateId),
-            ]));
+        new DeleteStructuredCollectionItem(
+            new StructuredCollectionAddress(
+                "messages",
+                [new StructuredCollectionOwnerSegment("messages", "message-a")],
+                "states"),
+            duplicatedStateId));
+    content = deletedDuplicate.Content;
+    animation = deletedDuplicate.Animation;
     Equal(1, content["messages"]![0]!["states"]!.AsArray().Count);
-    Equal(3, animation["tracks"]!.AsArray().Count);
+    Equal(4, animation["tracks"]!.AsArray().Count);
     Equal(false, animation["tracks"]!.AsArray().OfType<JsonObject>().Any((track) =>
         track["targetId"]?.GetValue<string>() == duplicatedStateId
         || track["targetId"]?.GetValue<string>() == duplicatedChildId));
 
-    StructuredCollectionMutationEngine.Apply(
+    var deletedOriginal = StructuredCollectionMutationEngine.Apply(
         content,
         animation,
         root,
-        "messages",
-        new StructuredCollectionMutation(
-            StructuredCollectionMutationKind.Delete,
-            [
-                new StructuredCollectionPathSegment("messages", "message-a"),
-                new StructuredCollectionPathSegment("states", "state-a"),
-            ]));
+        new DeleteStructuredCollectionItem(
+            new StructuredCollectionAddress(
+                "messages",
+                [new StructuredCollectionOwnerSegment("messages", "message-a")],
+                "states"),
+            "state-a"));
+    content = deletedOriginal.Content;
+    animation = deletedOriginal.Animation;
     Equal(0, content["messages"]![0]!["states"]!.AsArray().Count);
-    Equal(1, animation["tracks"]!.AsArray().Count);
+    Equal(2, animation["tracks"]!.AsArray().Count);
     Equal("message-a", animation["tracks"]![0]!["targetId"]!.GetValue<string>());
+    Equal("untyped-a", animation["tracks"]![1]!["targetId"]!.GetValue<string>());
 
     static JsonObject TestTrack(string id, string targetId) => new()
     {
@@ -584,6 +677,15 @@ static void ComponentInputBindingsProjectExactStructuredRuntimeValues()
             new JsonObject { ["id"] = "removed", ["value"] = "discarded" },
         },
     };
+    var parsedCollection = RuntimeInputDefinitionReader.ReadInputs(
+            new JsonObject { ["inputs"] = new JsonArray(definition.DeepClone()) },
+            new JsonObject())
+        .Single()
+        .StructuredCollection
+        ?? throw new InvalidOperationException("Missing parsed structured collection.");
+    Equal(
+        ComponentInputSource.Calculated,
+        parsedCollection.Fields.Single((field) => field.Id == "calculated").Source);
 
     var projected = RuntimeInputDocumentContract
         .ProjectInputValuesForContract(current, contract);

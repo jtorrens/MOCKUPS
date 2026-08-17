@@ -20,7 +20,7 @@ public static class RuntimeInputValueKindContract
         ValueKind.ComponentVariantSlot => "componentVariantSlot",
         ValueKind.ThemeToken => "themeToken",
         ValueKind.IconToken => "icon",
-        ValueKind.IconTokenList or ValueKind.IconSlots => "iconList",
+        ValueKind.IconTokenList => "iconList",
         ValueKind.StringMultiline => "multilineText",
         ValueKind.MediaFilePath or ValueKind.VideoFilePath => "mediaFilePath",
         ValueKind.StructuredCollection => "collection",
@@ -204,7 +204,6 @@ public static class RuntimeInputValueKindContract
         ValueKind.PaletteColorAlphaPair => JsonValue.Create(
             PaletteAlphaPair.NormalizeRequired(value, owner))!,
         ValueKind.IconTokenList => ParseStringArray(value, owner),
-        ValueKind.IconSlots => ParseIconSlots(value, owner),
         ValueKind.StructuredCollection => ParseCollection(value, owner),
         ValueKind.AlignmentPlacement => JsonPath.ParseRequiredObject(
             AlignmentPlacementValue.Parse(value).ToJsonString(),
@@ -255,6 +254,50 @@ public static class RuntimeInputValueKindContract
                 owner);
         }
         ValidateValuePattern(definition, value, owner);
+    }
+
+    public static void ValidateRuntimeValue(
+        ComponentInputDefinition definition,
+        JsonNode? value,
+        string owner)
+    {
+        if (value is null)
+        {
+            throw new InvalidOperationException($"{owner} value cannot be null.");
+        }
+        ValidateValue(definition.ValueKind, value, owner);
+        if (definition.ValueKind == ValueKind.OptionToken)
+        {
+            var options = definition.Options ?? [];
+            if (options.Count > 0)
+            {
+                FieldOptionContract.ValidateValue(
+                    FieldOptionContract.RequireOptions(options, owner),
+                    RequireStringValue(value, owner),
+                    owner);
+            }
+            else if (string.IsNullOrWhiteSpace(
+                         definition.OptionsSourceCollectionJsonKey))
+            {
+                throw new InvalidOperationException(
+                    $"{owner} OptionToken requires declared options or an explicit option source.");
+            }
+        }
+        if (definition.ValueKind == ValueKind.StructuredCollection)
+        {
+            var collection = definition.StructuredCollection
+                ?? throw new InvalidOperationException(
+                    $"{owner} StructuredCollection requires a collection contract.");
+            StructuredCollectionDocumentContract.Validate(
+                RequireArray(value, owner),
+                collection,
+                owner);
+        }
+        ScalarValuePatternContract.Validate(
+            definition.ValuePattern,
+            definition.ValuePatternMessage,
+            value,
+            owner);
     }
 
     private static void ValidateDeclaredOptions(
@@ -319,69 +362,16 @@ public static class RuntimeInputValueKindContract
         JsonObject collection,
         string owner)
     {
-        var fields = JsonPath.ObjectItems(
-                JsonPath.RequiredArray(collection, "fields", owner),
-                $"{owner} fields")
-            .ToList();
-        var fieldKeys = fields
-            .Select((field) => JsonPath.RequiredString(
-                field,
-                "jsonKey",
-                $"{owner} field"))
-            .ToHashSet(StringComparer.Ordinal);
-        if (fieldKeys.Contains("id"))
+        var wrapper = new JsonObject
         {
-            throw new InvalidOperationException(
-                $"{owner} fields must not redeclare the stable item id.");
-        }
-
-        var allowedKeys = fieldKeys
-            .Append("id")
-            .ToHashSet(StringComparer.Ordinal);
-        for (var itemIndex = 0; itemIndex < items.Count; itemIndex++)
-        {
-            var item = items[itemIndex] as JsonObject
-                ?? throw new InvalidOperationException(
-                    $"{owner} item at index {itemIndex} must be an object.");
-            var itemId = JsonPath.RequiredString(
-                item,
-                "id",
-                $"{owner} item at index {itemIndex}");
-            var unknownKeys = item
-                .Select((entry) => entry.Key)
-                .Where((key) => !allowedKeys.Contains(key))
-                .ToList();
-            if (unknownKeys.Count > 0)
-            {
-                throw new InvalidOperationException(
-                    $"{owner} item '{itemId}' has unknown fields: {string.Join(", ", unknownKeys)}.");
-            }
-
-            foreach (var field in fields)
-            {
-                var fieldKey = JsonPath.RequiredString(
-                    field,
-                    "jsonKey",
-                    $"{owner} field");
-                if (RuntimeInputDocumentContract.IsRuntimeDefinition(field))
-                {
-                    if (!item.TryGetPropertyValue(fieldKey, out var fieldValue))
-                    {
-                        throw new InvalidOperationException(
-                            $"{owner} item '{itemId}' requires field '{fieldKey}'.");
-                    }
-                    ValidateRuntimeValue(
-                        field,
-                        fieldValue,
-                        $"{owner} item '{itemId}' field '{fieldKey}'");
-                }
-                else if (item.ContainsKey(fieldKey))
-                {
-                    throw new InvalidOperationException(
-                        $"{owner} item '{itemId}' must not persist parent-owned field '{fieldKey}'.");
-                }
-            }
-        }
+            ["collections"] = new JsonArray(collection.DeepClone()),
+        };
+        var definition = RuntimeInputDefinitionReader.ReadCollections(
+                wrapper,
+                new JsonObject(),
+                includeHidden: true)
+            .Single();
+        StructuredCollectionDocumentContract.Validate(items, definition, owner);
     }
 
     public static void ValidateValue(ValueKind valueKind, JsonNode value, string owner)
@@ -413,9 +403,6 @@ public static class RuntimeInputValueKindContract
                 return;
             case ValueKind.IconTokenList:
                 RequireStringArray(value, owner);
-                return;
-            case ValueKind.IconSlots:
-                IconSlotsDocumentContract.Validate(RequireArray(value, owner), owner);
                 return;
             case ValueKind.StructuredCollection:
                 RuntimeCollectionDocumentContract.Validate(RequireArray(value, owner), owner);
@@ -526,13 +513,6 @@ public static class RuntimeInputValueKindContract
     {
         var items = JsonPath.ParseRequiredArray(value, owner);
         RuntimeCollectionDocumentContract.Validate(items, owner);
-        return items;
-    }
-
-    private static JsonArray ParseIconSlots(string value, string owner)
-    {
-        var items = JsonPath.ParseRequiredArray(value, owner);
-        IconSlotsDocumentContract.Validate(items, owner);
         return items;
     }
 

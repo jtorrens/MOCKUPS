@@ -160,8 +160,14 @@ internal static class ComponentIconRowCompositionContract
 
     private static void ValidateIconRow(JsonObject iconRow, string owner)
     {
-        IconSlotsDocumentContract.Validate(
+        var itemsDefinition = ComponentClassFieldCatalog
+            .Get("component.iconRow.items")
+            .StructuredCollection
+            ?? throw new InvalidOperationException(
+                "Icon Row items require a declared structured collection.");
+        StructuredCollectionDocumentContract.Validate(
             JsonPath.RequiredArray(iconRow, "items", owner),
+            itemsDefinition,
             $"{owner}.items");
         _ = JsonPath.RequiredString(iconRow, "gap", owner);
         var orientation = JsonPath.RequiredString(iconRow, "orientation", owner);

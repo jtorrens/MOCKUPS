@@ -60,40 +60,6 @@ internal sealed class SqliteRuntimeInputInstanceStore(
                 moduleInstanceId));
     }
 
-    public void AddModuleInstanceRuntimeCollectionItem(
-        string moduleInstanceId,
-        string collectionJsonKey,
-        JsonObject item)
-    {
-        using var connection = context.OpenConnection();
-        production.AddModuleInstanceRuntimeCollectionItem(
-            connection,
-            moduleInstanceId,
-            collectionJsonKey,
-            item,
-            ModuleInstanceProjectActorIds(
-                connection,
-                moduleInstanceId));
-    }
-
-    public void InsertModuleInstanceRuntimeCollectionItemAfter(
-        string moduleInstanceId,
-        string collectionJsonKey,
-        string afterItemId,
-        JsonObject item)
-    {
-        using var connection = context.OpenConnection();
-        production.InsertModuleInstanceRuntimeCollectionItemAfter(
-            connection,
-            moduleInstanceId,
-            collectionJsonKey,
-            afterItemId,
-            item,
-            ModuleInstanceProjectActorIds(
-                connection,
-                moduleInstanceId));
-    }
-
     public StructuredCollectionMutationResult MutateModuleInstanceStructuredCollection(
         string moduleInstanceId,
         StructuredCollectionMutation mutation)
@@ -103,24 +69,6 @@ internal sealed class SqliteRuntimeInputInstanceStore(
             connection,
             moduleInstanceId,
             mutation,
-            ModuleInstanceProjectActorIds(
-                connection,
-                moduleInstanceId));
-    }
-
-    public void MoveModuleInstanceRuntimeCollectionItem(
-        string moduleInstanceId,
-        string collectionJsonKey,
-        string itemId,
-        int offset)
-    {
-        using var connection = context.OpenConnection();
-        production.MoveModuleInstanceRuntimeCollectionItem(
-            connection,
-            moduleInstanceId,
-            collectionJsonKey,
-            itemId,
-            offset,
             ModuleInstanceProjectActorIds(
                 connection,
                 moduleInstanceId));

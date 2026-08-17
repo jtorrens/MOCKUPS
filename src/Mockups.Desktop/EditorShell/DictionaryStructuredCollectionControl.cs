@@ -9,10 +9,11 @@ using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal sealed class DictionaryStructuredCollectionControl : Border, IDictionaryValueControl, IDictionaryRuntimeContractValueControl
+internal sealed class DictionaryStructuredCollectionControl : Border, IDictionaryValueControl, IDictionaryRuntimeContractValueControl, IEditorAuthoringItemTarget
 {
     private readonly FieldDefinition _definition;
     private readonly DictionaryFieldServices _services;
+    private readonly EditorSessionUiState _uiState;
     private JsonArray _items;
 
     public DictionaryStructuredCollectionControl(
@@ -22,6 +23,7 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
     {
         _definition = definition;
         _services = services;
+        _uiState = services.StructuredCollectionUiState ?? new EditorSessionUiState();
         _items = Parse(value);
         Rebuild();
     }
@@ -29,6 +31,23 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
     public event EventHandler<string>? ValueChanged;
     public event EventHandler<string>? ValueCommitted;
     public event EventHandler? RuntimeContractChanged;
+    public string FieldId => _definition.Id;
+
+    public bool SelectItem(string itemId)
+    {
+        var items = _items.OfType<JsonObject>().ToList();
+        var selected = items.FirstOrDefault((item) =>
+            (item["id"]?.GetValue<string>() ?? "").Equals(itemId, StringComparison.Ordinal));
+        if (selected is null) return false;
+        var activeKey = $"{_definition.Id}:{itemId}:expanded";
+        _uiState.SetOnlyExpanded(
+            items.Select((item, index) =>
+                $"{_definition.Id}:{ItemId(item, index)}:expanded"),
+            activeKey);
+        _uiState.RequestReveal(activeKey);
+        Rebuild();
+        return true;
+    }
 
     public void SetValue(string value)
     {
@@ -48,8 +67,9 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
             };
             return;
         }
-        RuntimeCollectionDocumentContract.Validate(
+        StructuredCollectionDocumentContract.Validate(
             _items,
+            collection,
             $"Structured collection '{collection.Id}'");
         var items = _items.Select((node, index) => node as JsonObject
                 ?? throw new InvalidOperationException(
@@ -79,22 +99,23 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
         }
         JsonObject NewItem()
         {
-            var item = new JsonObject { ["id"] = $"{collection.Id}_{Guid.NewGuid():N}" };
-            foreach (var field in collection.Fields)
-            {
-                item[field.JsonKey] = DesignPreviewTestValues.ValueNode(field, DefaultValue(field));
-            }
-            StructuredCollectionItemIdentity.RebaseNestedItems(item, collection);
-            InitializeComponentItem(collection, item);
-            return item;
+            return StructuredCollectionItemFactory.Create(
+                collection,
+                (field) => DefaultValue(collection, field),
+                (reference) => _services.GetComponentVariantRuntimeValues?.Invoke(reference)
+                    ?? throw new InvalidOperationException(
+                        $"Component Variant '{reference}' has no Runtime values provider."));
         }
+        var address = new StructuredCollectionAddress(
+            collection.JsonKey,
+            [],
+            collection.JsonKey);
         async Task<StructuredCollectionMutationResult> Mutate(
-            StructuredCollectionMutationKind kind,
-            string itemId)
+            StructuredCollectionMutation mutation)
         {
             if (_services.MutateStructuredCollection is { } persistedMutation)
             {
-                return await persistedMutation(kind, itemId);
+                return await persistedMutation(mutation);
             }
             var content = new JsonObject
             {
@@ -108,12 +129,7 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                     ["tracks"] = new JsonArray(),
                 },
                 collection,
-                collection.JsonKey,
-                new StructuredCollectionMutation(
-                    kind,
-                    [new StructuredCollectionPathSegment(
-                        collection.JsonKey,
-                        itemId)]));
+                mutation);
         }
         void ApplyMutationResult(
             StructuredCollectionMutationResult result,
@@ -147,28 +163,42 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                 EditorIcons.Component),
             (item, index) => ItemContent(collection, item, index),
             new StructuredCollectionActions(
-                AddFirst: () =>
+                AddFirst: async () =>
                 {
-                    var item = NewItem();
-                    editor!.ActivateOnly(item, items.Count);
-                    _items.Add(item);
-                    Commit();
-                    return Task.CompletedTask;
+                    var result = await Mutate(new AddStructuredCollectionItem(
+                        address,
+                        NewItem(),
+                        items.Count == 0 ? null : ItemId(items[0], 0)));
+                    editor!.ActivateOnly(
+                        result.Item ?? throw new InvalidOperationException(
+                            "Add structured collection mutation returned no item."),
+                        result.Collection.Count);
+                    ApplyMutationResult(result, runtimeContractChanged: true);
                 },
-                AddAfter: (index) =>
+                AddAfter: async (index) =>
                 {
-                    var item = NewItem();
-                    editor!.ActivateOnly(item, items.Count);
-                    _items.Insert(index + 1, item);
-                    Commit();
-                    return Task.CompletedTask;
+                    var beforeItemId = index + 1 < items.Count
+                        ? ItemId(items[index + 1], index + 1)
+                        : null;
+                    var result = await Mutate(new AddStructuredCollectionItem(
+                        address,
+                        NewItem(),
+                        beforeItemId));
+                    editor!.ActivateOnly(
+                        result.Item ?? throw new InvalidOperationException(
+                            "Add structured collection mutation returned no item."),
+                        result.Collection.Count);
+                    ApplyMutationResult(result, runtimeContractChanged: true);
                 },
                 Duplicate: async (index) =>
                 {
                     var source = items[index];
-                    var result = await Mutate(
-                        StructuredCollectionMutationKind.Duplicate,
-                        ItemId(source, index));
+                    var result = await Mutate(new DuplicateStructuredCollectionItem(
+                        address,
+                        ItemId(source, index),
+                        index + 1 < items.Count
+                            ? ItemId(items[index + 1], index + 1)
+                            : null));
                     editor!.ActivateOnly(
                         result.Item
                         ?? throw new InvalidOperationException(
@@ -178,15 +208,20 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                         result,
                         runtimeContractChanged: true);
                 },
-                Move: (index, delta) =>
+                Move: async (index, delta) =>
                 {
                     var target = index + delta;
-                    if (target < 0 || target >= _items.Count) return Task.CompletedTask;
-                    var item = _items[index];
-                    _items.RemoveAt(index);
-                    _items.Insert(target, item);
-                    Commit();
-                    return Task.CompletedTask;
+                    if (target < 0 || target >= _items.Count) return;
+                    var beforeItemId = delta < 0
+                        ? ItemId(items[target], target)
+                        : target + 1 < items.Count
+                            ? ItemId(items[target + 1], target + 1)
+                            : null;
+                    var result = await Mutate(new MoveStructuredCollectionItem(
+                        address,
+                        ItemId(items[index], index),
+                        beforeItemId));
+                    ApplyMutationResult(result, runtimeContractChanged: false);
                 },
                 Delete: async (index) =>
                 {
@@ -206,14 +241,14 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                         : _services.ConfirmStructuredCollectionItemDelete is null
                           || await _services.ConfirmStructuredCollectionItemDelete(title);
                     if (!confirmed) return;
-                    var result = await Mutate(
-                        StructuredCollectionMutationKind.Delete,
-                        ItemId(items[index], index));
+                    var result = await Mutate(new DeleteStructuredCollectionItem(
+                        address,
+                        ItemId(items[index], index)));
                     ApplyMutationResult(
                         result,
                         runtimeContractChanged: true);
                 }),
-            _services.StructuredCollectionUiState ?? new EditorSessionUiState(),
+            _uiState,
             canEditStructure: _definition.IsEditable && collection.CanEditStructure);
         Child = editor.Create();
     }
@@ -274,8 +309,12 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
         ComponentInputDefinition input)
     {
         var componentItems = collection.ComponentItems;
-        var selectsComponent = componentItems is not null
+        var fixedBoundary = collection.FixedComponentBoundary;
+        var selectsRuntimeComponent = componentItems is not null
             && input.JsonKey.Equals(componentItems.VariantReferenceJsonKey, StringComparison.Ordinal);
+        var selectsFixedComponent = fixedBoundary is not null
+            && input.JsonKey.Equals(fixedBoundary.VariantReferenceJsonKey, StringComparison.Ordinal);
+        var selectsComponent = selectsRuntimeComponent || selectsFixedComponent;
         var options = input.ValueKind switch
         {
             ValueKind.RecordReference =>
@@ -284,7 +323,7 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                     $"Structured collection record reference '{input.Id}' has no options provider."),
             ValueKind.ComponentVariant or ValueKind.ComponentVariantSlot
                 when !string.IsNullOrWhiteSpace(input.ComponentType) =>
-                ComponentVariantOptions(input),
+                ComponentVariantOptions(input, fixedBoundary),
             ValueKind.PaletteColorToken => _services.GetPaletteColorOptions?.Invoke() ?? [],
             _ => input.Options ?? [],
         };
@@ -308,43 +347,77 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
             Unit: input.Unit,
             Animation: input.Animation,
             BehaviorTiming: input.BehaviorTiming);
-        var overrides = componentItems is null
+        var overridesKey = selectsRuntimeComponent
+            ? componentItems!.OverridesJsonKey
+            : selectsFixedComponent
+                ? fixedBoundary!.OverridesJsonKey
+                : "";
+        var overrides = overridesKey.Length == 0
             ? null
-            : item[componentItems.OverridesJsonKey] as JsonObject;
-        var services = selectsComponent && componentItems is not null
+            : item[overridesKey] as JsonObject;
+        var services = selectsComponent
             ? _services with
             {
                 OpenEmbeddedComponent = async (_) =>
                 {
                     if (_services.OpenRuntimeComponentOverrides is null) return;
-                    var reference = RuntimeComponentCollectionItemDocumentContract.RequireVariantReference(
+                    var reference = JsonPath.RequiredString(
                         item,
-                        componentItems.DocumentKeys,
+                        input.JsonKey,
                         $"{collection.ItemLabel} '{ItemId(item, itemIndex)}'");
-                    var currentOverrides = RuntimeComponentCollectionItemDocumentContract.RequireOverrides(
+                    var currentOverrides = JsonPath.RequiredObject(
                         item,
-                        componentItems.DocumentKeys,
+                        overridesKey,
                         $"{collection.ItemLabel} '{ItemId(item, itemIndex)}'");
                     await _services.OpenRuntimeComponentOverrides(reference, currentOverrides, (next) =>
                     {
-                        item[componentItems.OverridesJsonKey] = next.DeepClone();
+                        item[overridesKey] = next.DeepClone();
                         Publish(commit: true);
                         return Task.CompletedTask;
                     });
                 },
             }
             : _services;
+        if (input.StructuredCollection is not null
+            && services.MutateStructuredCollection is { } parentMutation)
+        {
+            services = services with
+            {
+                MutateStructuredCollection = (mutation) =>
+                {
+                    var address = mutation.Address with
+                    {
+                        RootStorageJsonKey = collection.JsonKey,
+                        Owners =
+                        [
+                            new StructuredCollectionOwnerSegment(
+                                collection.JsonKey,
+                                ItemId(item, itemIndex)),
+                            .. mutation.Address.Owners,
+                        ],
+                    };
+                    return parentMutation(
+                        StructuredCollectionMutationEngine.WithAddress(
+                            mutation,
+                            address));
+                },
+            };
+        }
+        var currentValue = DesignPreviewTestValues.CollectionValue(item, input);
         var control = new DictionaryFieldControl(
             new FieldValue(
                 definition,
-                DesignPreviewTestValues.CollectionValue(item, input),
+                currentValue,
                 IsHighlighted: selectsComponent && overrides is { Count: > 0 }),
             services);
         control.ValueCommitted += async (_, next) =>
         {
             var previous = DesignPreviewTestValues.CollectionValue(item, input);
+            var nextReference = next;
             var componentChanged = selectsComponent
-                && !ComponentCategory(options, previous).Equals(ComponentCategory(options, next), StringComparison.Ordinal);
+                && !ComponentCategory(options, previous).Equals(
+                    ComponentCategory(options, nextReference),
+                    StringComparison.Ordinal);
             if (componentChanged)
             {
                 var forwardedLabels = RuntimeInputForwardingContract.Labels(item);
@@ -359,7 +432,7 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                     return;
                 }
             }
-            item[input.JsonKey] = DesignPreviewTestValues.ValueNode(input, next);
+            item[input.JsonKey] = DesignPreviewTestValues.ValueNode(input, nextReference);
             if (componentChanged && componentItems is not null)
             {
                 item[componentItems.OverridesJsonKey] = new JsonObject();
@@ -425,7 +498,9 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
             : _services.GetComponentVariantRuntimeCollections(reference).FirstOrDefault();
     }
 
-    private string DefaultValue(ComponentInputDefinition input)
+    private string DefaultValue(
+        RuntimeInputCollectionDefinition collection,
+        ComponentInputDefinition input)
     {
         if (input.ValueKind != ValueKind.ComponentVariant
             || input.AllowEmpty
@@ -438,33 +513,26 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
             return "";
         }
         var boundary = ComponentVariantOptionContract.RequireFixedBoundary(
-            _services.GetComponentVariantOptions?.Invoke(input.ComponentType) ?? [],
+            ComponentVariantOptions(input, collection.FixedComponentBoundary),
             $"Structured collection field '{input.Id}'");
         return boundary.DefaultVariantReference;
     }
 
-    private IReadOnlyList<FieldOption> ComponentVariantOptions(ComponentInputDefinition input)
+    private IReadOnlyList<FieldOption> ComponentVariantOptions(
+        ComponentInputDefinition input,
+        RuntimeFixedComponentBoundaryDefinition? fixedBoundary = null)
     {
-        var options = (_services.GetComponentVariantOptions?.Invoke(input.ComponentType) ?? []).ToList();
+        var options = (_services.GetComponentVariantOptions?.Invoke(input.ComponentType) ?? [])
+            .Where((option) => fixedBoundary is null
+                || option.GroupValue.Equals(
+                    fixedBoundary.ComponentClassId,
+                    StringComparison.Ordinal))
+            .ToList();
         if (input.AllowEmpty && options.All((option) => !string.IsNullOrWhiteSpace(option.Value)))
         {
             options.Insert(0, new FieldOption("", "None"));
         }
         return options;
-    }
-
-    private void InitializeComponentItem(RuntimeInputCollectionDefinition collection, JsonObject item)
-    {
-        if (collection.ComponentItems is not { } componentItems) return;
-        var variantField = collection.Fields.Single((field) =>
-            field.JsonKey.Equals(componentItems.VariantReferenceJsonKey, StringComparison.Ordinal));
-        var reference = DesignPreviewTestValues.CollectionValue(item, variantField);
-        item[componentItems.OverridesJsonKey] = new JsonObject();
-        item[componentItems.InputsJsonKey] = reference.Length == 0
-            ? new JsonObject()
-            : _services.GetComponentVariantRuntimeValues?.Invoke(reference)
-              ?? throw new InvalidOperationException(
-                  $"Component Variant '{reference}' has no Runtime values provider.");
     }
 
     private static string ItemId(JsonObject item, int index) =>

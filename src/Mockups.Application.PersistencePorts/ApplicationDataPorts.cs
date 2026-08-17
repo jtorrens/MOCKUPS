@@ -366,23 +366,9 @@ public interface IRuntimeInputInstanceStore
         string collectionJsonKey,
         string itemId,
         IReadOnlyDictionary<string, JsonNode?> values);
-    void AddModuleInstanceRuntimeCollectionItem(
-        string moduleInstanceId,
-        string collectionJsonKey,
-        JsonObject item);
-    void InsertModuleInstanceRuntimeCollectionItemAfter(
-        string moduleInstanceId,
-        string collectionJsonKey,
-        string afterItemId,
-        JsonObject item);
     EditorShell.StructuredCollectionMutationResult MutateModuleInstanceStructuredCollection(
         string moduleInstanceId,
         EditorShell.StructuredCollectionMutation mutation);
-    void MoveModuleInstanceRuntimeCollectionItem(
-        string moduleInstanceId,
-        string collectionJsonKey,
-        string itemId,
-        int offset);
 }
 
 public interface IModuleInstanceTimelineStore

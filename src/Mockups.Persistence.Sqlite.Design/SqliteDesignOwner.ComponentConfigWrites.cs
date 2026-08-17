@@ -84,7 +84,7 @@ internal sealed partial class SqliteDesignOwner
                 settings.ComponentType,
                 config,
                 $"Component class '{componentClassId}' config_json");
-            ValidateEmbeddedSlotVariantReferences(
+            ValidateDeclaredComponentVariantReferences(
                 connection,
                 settings.ProjectId,
                 config);
@@ -160,7 +160,7 @@ internal sealed partial class SqliteDesignOwner
                 settings.ComponentType,
                 nextConfig,
                 $"Component class '{componentClassId}' Variant '{variantId}' config");
-            ValidateEmbeddedSlotVariantReferences(
+            ValidateDeclaredComponentVariantReferences(
                 connection,
                 settings.ProjectId,
                 nextConfig);
@@ -209,7 +209,7 @@ internal sealed partial class SqliteDesignOwner
             component.ComponentType,
             config,
             $"Component class '{componentClassId}' Default Variant config");
-        ValidateEmbeddedSlotVariantReferences(
+        ValidateDeclaredComponentVariantReferences(
             connection,
             component.ProjectId,
             config);
@@ -249,7 +249,7 @@ internal sealed partial class SqliteDesignOwner
             component.ComponentType,
             config,
             $"Component class '{componentClassId}' Variant '{variantId}' config");
-        ValidateEmbeddedSlotVariantReferences(
+        ValidateDeclaredComponentVariantReferences(
             connection,
             component.ProjectId,
             config);

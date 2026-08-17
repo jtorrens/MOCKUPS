@@ -234,7 +234,7 @@ internal sealed partial class SqliteDesignOwner
                 projectId,
                 defaultConfig,
                 ComponentInputBindingsProjectionCatalog.ComponentOwners());
-            ValidateEmbeddedSlotVariantReferences(
+            ValidateDeclaredComponentVariantReferences(
                 connection,
                 projectId,
                 defaultConfig);
@@ -252,7 +252,7 @@ internal sealed partial class SqliteDesignOwner
     {
         using var connection = OpenConnection();
         var config = ParseJsonObject(configJson);
-        ValidateEmbeddedSlotVariantReferences(
+        ValidateDeclaredComponentVariantReferences(
             connection,
             projectId,
             config);
@@ -272,7 +272,7 @@ internal sealed partial class SqliteDesignOwner
                 row.ProjectId,
                 config,
                 ComponentInputBindingsProjectionCatalog.ComponentOwners());
-            ValidateEmbeddedSlotVariantReferences(
+            ValidateDeclaredComponentVariantReferences(
                 connection,
                 row.ProjectId,
                 config);

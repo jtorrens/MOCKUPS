@@ -62,7 +62,6 @@ internal static class DictionaryFieldLayoutRules
         return valueKind switch
         {
             ValueKind.StringMultiline => 96,
-            ValueKind.IconSlots => 150,
             ValueKind.ComponentInputBindings => 46,
             ValueKind.StructuredCollection => 80,
             ValueKind.BehaviorTiming => 124,
@@ -72,14 +71,14 @@ internal static class DictionaryFieldLayoutRules
 
     public static VerticalAlignment LabelVerticalAlignment(ValueKind valueKind)
     {
-        return valueKind is ValueKind.StringMultiline or ValueKind.IconSlots or ValueKind.AlignmentPlacement or ValueKind.TypographyStyle or ValueKind.TypographySystemStyle or ValueKind.ComponentInputBindings or ValueKind.StructuredCollection or ValueKind.BehaviorTiming
+        return valueKind is ValueKind.StringMultiline or ValueKind.AlignmentPlacement or ValueKind.TypographyStyle or ValueKind.TypographySystemStyle or ValueKind.ComponentInputBindings or ValueKind.StructuredCollection or ValueKind.BehaviorTiming
             ? VerticalAlignment.Top
             : VerticalAlignment.Center;
     }
 
     public static Avalonia.Thickness LabelMargin(ValueKind valueKind)
     {
-        return valueKind is ValueKind.StringMultiline or ValueKind.IconSlots or ValueKind.AlignmentPlacement or ValueKind.TypographyStyle or ValueKind.TypographySystemStyle or ValueKind.ComponentInputBindings or ValueKind.StructuredCollection or ValueKind.BehaviorTiming
+        return valueKind is ValueKind.StringMultiline or ValueKind.AlignmentPlacement or ValueKind.TypographyStyle or ValueKind.TypographySystemStyle or ValueKind.ComponentInputBindings or ValueKind.StructuredCollection or ValueKind.BehaviorTiming
             ? new Avalonia.Thickness(0, 7, 0, 0)
             : new Avalonia.Thickness(0);
     }

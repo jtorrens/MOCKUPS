@@ -238,7 +238,11 @@ internal interface IShotRepository
 
     void UpdateField(SqliteConnection connection, string shotId, string fieldId, string value);
 
-    void UpdateDuration(SqliteConnection connection, string shotId, int durationFrames);
+    void UpdateDuration(
+        SqliteConnection connection,
+        string shotId,
+        int durationFrames,
+        SqliteTransaction? transaction = null);
 
     void UpdateGeneratedCodes(
         SqliteConnection connection,
@@ -560,7 +564,8 @@ internal interface IModuleInstanceRepository
         SqliteConnection connection,
         string moduleInstanceId,
         string contentJson,
-        string animationJson);
+        string animationJson,
+        SqliteTransaction? transaction = null);
 
     void UpdateVariantDocuments(
         SqliteConnection connection,
@@ -569,7 +574,11 @@ internal interface IModuleInstanceRepository
         string contentJson,
         string animationJson);
 
-    void UpdateDuration(SqliteConnection connection, string moduleInstanceId, int durationFrames);
+    void UpdateDuration(
+        SqliteConnection connection,
+        string moduleInstanceId,
+        int durationFrames,
+        SqliteTransaction? transaction = null);
 
     void SwapSortOrder(
         SqliteConnection connection,

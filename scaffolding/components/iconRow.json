@@ -969,7 +969,7 @@
     {
       "id": "component.iconRow.items",
       "label": "Buttons",
-      "valueKind": "IconSlots",
+      "valueKind": "StructuredCollection",
       "jsonPath": [
         "iconRow",
         "items"
@@ -980,7 +980,119 @@
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
-      "structuredCollection": null,
+      "structuredCollection": {
+        "id": "buttons",
+        "label": "Buttons",
+        "jsonKey": "items",
+        "itemLabel": "Button",
+        "fields": [
+          {
+            "id": "buttonVariantReference",
+            "label": "Button",
+            "jsonKey": "buttonVariantReference",
+            "kind": "ComponentVariant",
+            "valueKind": "ComponentVariant",
+            "defaultValue": "",
+            "componentType": "button"
+          },
+          {
+            "id": "state",
+            "label": "State",
+            "jsonKey": "state",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "normal",
+            "options": [
+              { "value": "normal", "label": "Normal" },
+              { "value": "active", "label": "Active" },
+              { "value": "pushed", "label": "Pushed" },
+              { "value": "disabled", "label": "Disabled" }
+            ]
+          },
+          {
+            "id": "iconToken",
+            "label": "Icon",
+            "jsonKey": "iconToken",
+            "kind": "Icon",
+            "valueKind": "IconToken",
+            "defaultValue": "media_mic"
+          },
+          {
+            "id": "text",
+            "label": "Label",
+            "jsonKey": "text",
+            "kind": "Text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": ""
+          },
+          {
+            "id": "iconSizeToken",
+            "label": "Icon size",
+            "jsonKey": "iconSizeToken",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "theme.iconSizes.m",
+            "options": [
+              { "value": "theme.iconSizes.xs", "label": "Extra small" },
+              { "value": "theme.iconSizes.s", "label": "Small" },
+              { "value": "theme.iconSizes.m", "label": "Medium" },
+              { "value": "theme.iconSizes.l", "label": "Large" },
+              { "value": "theme.iconSizes.xl", "label": "Extra large" }
+            ]
+          },
+          {
+            "id": "textSizeToken",
+            "label": "Text size",
+            "jsonKey": "textSizeToken",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "theme.typography.sizes.s",
+            "options": [
+              { "value": "theme.typography.sizes.xs", "label": "Extra small" },
+              { "value": "theme.typography.sizes.s", "label": "Small" },
+              { "value": "theme.typography.sizes.m", "label": "Medium" },
+              { "value": "theme.typography.sizes.l", "label": "Large" },
+              { "value": "theme.typography.sizes.xl", "label": "Extra large" }
+            ]
+          },
+          {
+            "id": "pushTrigger",
+            "label": "Push trigger",
+            "jsonKey": "pushTrigger",
+            "kind": "Boolean",
+            "valueKind": "Boolean",
+            "defaultValue": "false",
+            "showInEditor": false
+          },
+          {
+            "id": "pushElapsedMs",
+            "label": "Push elapsed",
+            "jsonKey": "pushElapsedMs",
+            "kind": "Number",
+            "valueKind": "Decimal",
+            "defaultValue": "0",
+            "minimum": 0,
+            "maximum": 999999,
+            "increment": 1,
+            "showInEditor": false
+          }
+        ],
+        "itemPresentation": {
+          "titleFieldId": "text",
+          "firstItemBadge": "",
+          "subtitleFieldIds": ["state"],
+          "subtitleMaxCharacters": 72,
+          "iconFieldId": "iconToken",
+          "fallbackIcon": "component",
+          "iconValueMap": {}
+        },
+        "fixedComponentBoundary": {
+          "variantReferenceJsonKey": "buttonVariantReference",
+          "overridesJsonKey": "buttonOverrides",
+          "componentType": "button",
+          "componentClassId": "component_project_foqn_s2_button"
+        }
+      },
       "componentVariantType": "",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",

@@ -8,7 +8,7 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SqliteDesignOwner
 {
-    internal void ValidateEmbeddedSlotVariantReferences(
+    internal void ValidateDeclaredComponentVariantReferences(
         SqliteConnection connection,
         string projectId,
         JsonObject config)
@@ -59,6 +59,44 @@ internal sealed partial class SqliteDesignOwner
             {
                 throw new InvalidOperationException(
                     $"Embedded component slot '{slot.FieldId}' references missing variant '{variantId}' on '{componentClassId}'.");
+            }
+        }
+
+        foreach (var descriptor in ComponentClassFieldCatalog.All().Where((candidate) =>
+                     candidate.StructuredCollection?.FixedComponentBoundary is not null))
+        {
+            var collection = descriptor.StructuredCollection!;
+            var boundary = collection.FixedComponentBoundary!;
+            if (!componentRows.Any((row) => row.Id.Equals(
+                    boundary.ComponentClassId,
+                    StringComparison.Ordinal)
+                && row.ComponentType.Equals(
+                    boundary.ComponentType,
+                    StringComparison.Ordinal)))
+            {
+                throw new InvalidOperationException(
+                    $"Structured collection field '{descriptor.Id}' fixed Component class '{boundary.ComponentClassId}' is not a {boundary.ComponentType} class in project '{projectId}'.");
+            }
+            var node = JsonPath.Get(config, descriptor.JsonPath);
+            if (node is null) continue;
+            var items = node as JsonArray
+                ?? throw new InvalidOperationException(
+                    $"Structured collection field '{descriptor.Id}' must be an array.");
+            StructuredCollectionDocumentContract.Validate(
+                items,
+                collection,
+                $"Structured collection field '{descriptor.Id}'");
+            foreach (var item in items.OfType<JsonObject>())
+            {
+                var reference = JsonPath.RequiredString(
+                    item,
+                    boundary.VariantReferenceJsonKey,
+                    $"Structured collection field '{descriptor.Id}'");
+                _ = ValidateComponentVariantReference(
+                    connection,
+                    projectId,
+                    boundary.ComponentType,
+                    reference);
             }
         }
     }

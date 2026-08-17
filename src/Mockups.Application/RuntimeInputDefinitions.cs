@@ -98,7 +98,14 @@ public sealed record RuntimeInputCollectionDefinition(
     string ItemRuntimePresentation = "card",
     IReadOnlyList<string>? ItemRuntimeHiddenInputIds = null,
     string ItemRuntimeVariantReferencePath = "",
-    string ItemRuntimeOwnerVariantReferencePath = "");
+    string ItemRuntimeOwnerVariantReferencePath = "",
+    RuntimeFixedComponentBoundaryDefinition? FixedComponentBoundary = null);
+
+public sealed record RuntimeFixedComponentBoundaryDefinition(
+    string VariantReferenceJsonKey,
+    string OverridesJsonKey,
+    string ComponentType,
+    string ComponentClassId);
 
 public sealed record RuntimeComponentCollectionItemDefinition(
     string VariantReferenceJsonKey,

@@ -348,6 +348,19 @@ function projectFiles(directory: string): string[] {
   });
 }
 
+function lifecycleSourceFiles(directory: string): string[] {
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const fullPath = path.join(directory, entry.name);
+    if (entry.isDirectory()) {
+      if (entry.name === "bin" || entry.name === "obj") return [];
+      return lifecycleSourceFiles(fullPath);
+    }
+    return [".cs", ".ts", ".json"].includes(path.extname(entry.name))
+      ? [fullPath]
+      : [];
+  });
+}
+
 function repositoryPath(fullPath: string): string {
   return path.relative(repositoryRoot, fullPath).split(path.sep).join("/");
 }
@@ -646,5 +659,32 @@ test("a SQLite session cannot compile as a universal application store", () => {
   assertCannotCompile(
     "tests/architecture/fixtures/UniversalSqliteCapabilityLeak/UniversalSqliteCapabilityLeak.csproj",
     /ForbiddenDependencyProbe\.cs.*CS1061/su,
+  );
+});
+
+test("structured collection lifecycle has one generic source owner", () => {
+  const retiredConcreteLifecycleTokens = [
+    "ValueKind.IconSlots",
+    "IconSlotsControl",
+    "IconSlotsDocumentContract",
+    "IconSlotsContract",
+    "requiredIconSlots",
+    "AddModuleInstanceRuntimeCollectionItem",
+    "InsertModuleInstanceRuntimeCollectionItemAfter",
+    "MoveModuleInstanceRuntimeCollectionItem",
+    "ReplaceExactReferences",
+  ];
+  const files = ["src", "scaffolding"].flatMap((directory) =>
+    lifecycleSourceFiles(path.join(repositoryRoot, directory)));
+  const violations = files.flatMap((file) => {
+    const source = readFileSync(file, "utf8");
+    return retiredConcreteLifecycleTokens
+      .filter((token) => source.includes(token))
+      .map((token) => `${repositoryPath(file)}: ${token}`);
+  });
+  assert.deepEqual(
+    violations,
+    [],
+    "retired collection-specific lifecycle paths returned",
   );
 });

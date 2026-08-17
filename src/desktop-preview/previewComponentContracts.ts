@@ -32,12 +32,6 @@ export interface TypographyStyleContract {
   lineHeight: number | string;
 }
 
-export interface IconSlotsContract {
-  left: string[];
-  center: string[];
-  right: string[];
-}
-
 export interface ComponentMotionContract {
   transition: "none" | "slide" | "swipe" | "scale";
   direction: "top" | "bottom" | "left" | "right";

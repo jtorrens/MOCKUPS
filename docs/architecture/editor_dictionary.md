@@ -21,7 +21,11 @@ shape is needed, its `ValueKind`, validation, registered control, serialization
 and commit behavior are defined first.
 
 Structured collections have an owning collection editor. Scalar fields inside
-each item still use dictionary definitions and controls.
+each item still use dictionary definitions and controls. Their Add, Duplicate,
+Move and Delete actions call the same typed collection mutation owner used by
+Runtime/Test Value collections. A collection item factory creates the exact
+declared item document before that mutation; controls do not append ids or
+embedded documents independently.
 
 ## Field identity and metadata
 
@@ -150,7 +154,11 @@ semantics, not a comparison between Variant snapshots:
   differ from the protected Default Variant, class scaffold or seed;
 - referenced child Variant data never appears as an Override of its parent.
 
-An Icon Row item contributes only its typed local `buttonOverrides` boundary.
+An Icon Row item contributes only its declared fixed Component boundary and
+typed local `buttonOverrides` document. It uses the generic structured
+collection control and the same lifecycle mutation as every other collection;
+there is no Icon Row value kind, control or persistence path. The boundary
+metadata names the Button Variant field, Overrides key and exact Button class.
 The item's selected icon, label, state and Button Variant reference remain
 direct Icon Row Variant data and are not projected.
 

@@ -132,159 +132,52 @@ internal sealed partial class SqliteProductionOwner
             projectActorIds);
     }
 
-    internal void AddModuleInstanceRuntimeCollectionItem(
-        SqliteConnection connection,
-        string moduleInstanceId,
-        string collectionJsonKey,
-        JsonObject item,
-        IReadOnlySet<string> projectActorIds)
-    {
-        var content = ParseJsonObject(
-            _moduleInstanceRepository
-                .Get(connection, moduleInstanceId)
-                .ContentJson);
-        var items = RequireDeclaredRuntimeCollection(
-            connection,
-            moduleInstanceId,
-            collectionJsonKey,
-            content);
-        RuntimeCollectionDocumentContract.RequireNewItem(
-            items,
-            item,
-            $"runtime collection '{collectionJsonKey}'");
-        items.Add(item.DeepClone());
-        SaveModuleInstanceRuntimeContent(
-            connection,
-            moduleInstanceId,
-            content,
-            projectActorIds);
-    }
-
-    internal void InsertModuleInstanceRuntimeCollectionItemAfter(
-        SqliteConnection connection,
-        string moduleInstanceId,
-        string collectionJsonKey,
-        string afterItemId,
-        JsonObject item,
-        IReadOnlySet<string> projectActorIds)
-    {
-        var content = ParseJsonObject(
-            _moduleInstanceRepository
-                .Get(connection, moduleInstanceId)
-                .ContentJson);
-        var items = RequireDeclaredRuntimeCollection(
-            connection,
-            moduleInstanceId,
-            collectionJsonKey,
-            content);
-        RuntimeCollectionDocumentContract.RequireNewItem(
-            items,
-            item,
-            $"runtime collection '{collectionJsonKey}'");
-        var currentIndex = IndexOfRuntimeItem(items, afterItemId);
-        if (currentIndex < 0)
-        {
-            throw new InvalidOperationException(
-                $"Missing runtime collection item '{afterItemId}'.");
-        }
-
-        items.Insert(currentIndex + 1, item.DeepClone());
-        SaveModuleInstanceRuntimeContent(
-            connection,
-            moduleInstanceId,
-            content,
-            projectActorIds);
-    }
-
     internal StructuredCollectionMutationResult MutateModuleInstanceStructuredCollection(
         SqliteConnection connection,
         string moduleInstanceId,
         StructuredCollectionMutation mutation,
         IReadOnlySet<string> projectActorIds)
     {
-        if (mutation.Path.Count == 0)
+        lock (WriteGate)
         {
-            throw new InvalidOperationException(
-                "A Module Instance structured collection mutation requires one stable path segment.");
+            using var transaction = connection.BeginTransaction();
+            var settings = _moduleInstanceRepository.Get(
+                connection,
+                moduleInstanceId);
+            var content = ParseJsonObject(settings.ContentJson);
+            var rootDefinition = RequireDeclaredRuntimeCollectionDefinition(
+                connection,
+                moduleInstanceId,
+                mutation.Address.RootStorageJsonKey,
+                content);
+            var animation = ParseJsonObject(settings.AnimationJson);
+            var result = StructuredCollectionMutationEngine.Apply(
+                content,
+                animation,
+                rootDefinition,
+                mutation);
+
+            ValidateModuleInstanceRuntimeContent(
+                connection,
+                moduleInstanceId,
+                result.Content,
+                projectActorIds);
+            ModuleInstanceAnimationDocumentContract.Validate(
+                result.Animation,
+                $"Module Instance '{moduleInstanceId}' animation_json");
+            _moduleInstanceRepository.UpdateContentAndAnimation(
+                connection,
+                moduleInstanceId,
+                result.Content.ToJsonString(),
+                result.Animation.ToJsonString(),
+                transaction);
+            SynchronizeTimelineDurations(
+                connection,
+                settings.ShotId,
+                transaction: transaction);
+            transaction.Commit();
+            return result;
         }
-        var settings = _moduleInstanceRepository.Get(
-            connection,
-            moduleInstanceId);
-        var content = ParseJsonObject(settings.ContentJson);
-        var rootStorageKey = mutation.Path[0].CollectionJsonKey;
-        var rootDefinition = RequireDeclaredRuntimeCollectionDefinition(
-            connection,
-            moduleInstanceId,
-            rootStorageKey,
-            content);
-        var animation = ParseJsonObject(settings.AnimationJson);
-        var result = StructuredCollectionMutationEngine.Apply(
-            content,
-            animation,
-            rootDefinition,
-            rootStorageKey,
-            mutation);
-
-        ValidateModuleInstanceRuntimeContent(
-            connection,
-            moduleInstanceId,
-            content,
-            projectActorIds);
-        ModuleInstanceAnimationDocumentContract.Validate(
-            animation,
-            $"Module Instance '{moduleInstanceId}' animation_json");
-        _moduleInstanceRepository.UpdateContentAndAnimation(
-            connection,
-            moduleInstanceId,
-            content.ToJsonString(),
-            animation.ToJsonString());
-        SynchronizeTimelineDurations(connection);
-        return result;
-    }
-
-    internal void MoveModuleInstanceRuntimeCollectionItem(
-        SqliteConnection connection,
-        string moduleInstanceId,
-        string collectionJsonKey,
-        string itemId,
-        int offset,
-        IReadOnlySet<string> projectActorIds)
-    {
-        if (offset == 0)
-        {
-            return;
-        }
-
-        var content = ParseJsonObject(
-            _moduleInstanceRepository
-                .Get(connection, moduleInstanceId)
-                .ContentJson);
-        var items = RequireDeclaredRuntimeCollection(
-            connection,
-            moduleInstanceId,
-            collectionJsonKey,
-            content);
-        var currentIndex = IndexOfRuntimeItem(items, itemId);
-        if (currentIndex < 0)
-        {
-            throw new InvalidOperationException(
-                $"Missing runtime collection item '{itemId}'.");
-        }
-
-        var targetIndex = currentIndex + offset;
-        if (targetIndex < 0 || targetIndex >= items.Count)
-        {
-            return;
-        }
-
-        var item = items[currentIndex];
-        items.RemoveAt(currentIndex);
-        items.Insert(targetIndex, item);
-        SaveModuleInstanceRuntimeContent(
-            connection,
-            moduleInstanceId,
-            content,
-            projectActorIds);
     }
 
     internal void UpdateModuleInstanceVariant(

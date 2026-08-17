@@ -1293,71 +1293,66 @@ internal sealed class RuntimeInputsCollectionEditor
         Action<JsonObject, int> activate,
         Action changed)
     {
+        var address = new StructuredCollectionAddress(
+            StorageCollectionKey(collection),
+            [],
+            StorageCollectionKey(collection));
+        async Task<StructuredCollectionMutationResult> Mutate(
+            StructuredCollectionMutation mutation)
+        {
+            if (owner.IsInstance)
+            {
+                return await _instanceDocuments.MutateStructuredCollectionAsync(
+                    owner.Node.Id,
+                    mutation);
+            }
+            var result = MutateTransientStructuredCollection(
+                preview,
+                collection,
+                mutation);
+            _setPreviewCollectionTestItems(
+                owner.Node,
+                collection.JsonKey,
+                result.Collection.OfType<JsonObject>().ToList());
+            return result;
+        }
         return new StructuredCollectionActions(
             AddFirst: async () =>
             {
-                var item = DefaultCollectionItem(owner, collection);
-                activate(item, items.Count);
-                if (owner.IsInstance)
-                    await _instanceDocuments.AddCollectionItemAsync(
-                        owner.Node.Id,
-                        StorageCollectionKey(collection),
-                        item);
-                else
-                    _setPreviewCollectionTestItems(owner.Node, collection.JsonKey, [item]);
+                var result = await Mutate(new AddStructuredCollectionItem(
+                    address,
+                    DefaultCollectionItem(owner, collection),
+                    items.Count == 0 ? null : ItemId(items[0], 0)));
+                activate(
+                    result.Item ?? throw new InvalidOperationException(
+                        "Add structured collection mutation returned no item."),
+                    result.Collection.Count);
                 changed();
             },
             AddAfter: async (itemIndex) =>
             {
-                var currentItem = items[itemIndex];
-                var itemId = ItemId(currentItem, itemIndex);
-                var next = DefaultCollectionItem(owner, collection);
-                activate(next, items.Count);
-                if (owner.IsInstance)
-                {
-                    await _instanceDocuments.InsertCollectionItemAfterAsync(
-                        owner.Node.Id,
-                        StorageCollectionKey(collection),
-                        itemId,
-                        next);
-                }
-                else
-                {
-                    var current = DesignPreviewTestValues.CollectionItems(preview, collection)
-                        .Select(CloneObject)
-                        .ToList();
-                    current.Insert(Math.Min(itemIndex + 1, current.Count), next);
-                    _setPreviewCollectionTestItems(owner.Node, collection.JsonKey, current);
-                }
+                var result = await Mutate(new AddStructuredCollectionItem(
+                    address,
+                    DefaultCollectionItem(owner, collection),
+                    itemIndex + 1 < items.Count
+                        ? ItemId(items[itemIndex + 1], itemIndex + 1)
+                        : null));
+                activate(
+                    result.Item ?? throw new InvalidOperationException(
+                        "Add structured collection mutation returned no item."),
+                    result.Collection.Count);
                 changed();
             },
             Duplicate: async (itemIndex) =>
             {
                 var item = items[itemIndex];
                 var itemId = ItemId(item, itemIndex);
-                var mutation = new StructuredCollectionMutation(
-                    StructuredCollectionMutationKind.Duplicate,
-                    [new StructuredCollectionPathSegment(
-                        StorageCollectionKey(collection),
-                        itemId)]);
-                StructuredCollectionMutationResult result;
-                if (owner.IsInstance)
-                {
-                    result = await _instanceDocuments.MutateStructuredCollectionAsync(
-                        owner.Node.Id,
-                        mutation);
-                }
-                else
-                {
-                    result = MutateTransientStructuredCollection(
-                        preview,
-                        collection,
-                        mutation);
-                    _setPreviewCollectionTestItems(
-                        owner.Node,
-                        collection.JsonKey,
-                        result.Collection.OfType<JsonObject>().ToList());
-                }
+                var result = await Mutate(new DuplicateStructuredCollectionItem(
+                    address,
+                    itemId,
+                    itemIndex + 1 < items.Count
+                        ? ItemId(items[itemIndex + 1], itemIndex + 1)
+                        : null));
                 activate(
                     result.Item
                     ?? throw new InvalidOperationException(
@@ -1368,19 +1363,17 @@ internal sealed class RuntimeInputsCollectionEditor
             Move: async (itemIndex, delta) =>
             {
                 var itemId = ItemId(items[itemIndex], itemIndex);
-                if (owner.IsInstance)
-                {
-                    await _instanceDocuments.MoveCollectionItemAsync(
-                        owner.Node.Id,
-                        StorageCollectionKey(collection),
-                        itemId,
-                        delta);
-                }
-                else
-                {
-                    MoveTransientCollectionItem(owner, preview, collection, itemIndex, delta);
-                    await Task.CompletedTask;
-                }
+                var target = itemIndex + delta;
+                if (target < 0 || target >= items.Count) return;
+                var beforeItemId = delta < 0
+                    ? ItemId(items[target], target)
+                    : target + 1 < items.Count
+                        ? ItemId(items[target + 1], target + 1)
+                        : null;
+                await Mutate(new MoveStructuredCollectionItem(
+                    address,
+                    itemId,
+                    beforeItemId));
                 changed();
             },
             Delete: async (itemIndex) =>
@@ -1395,31 +1388,7 @@ internal sealed class RuntimeInputsCollectionEditor
                     $"Payload item {itemIndex + 1}",
                     EditorIcons.Component).Title;
                 if (!await _confirmCollectionItemDelete(label)) return;
-                if (owner.IsInstance)
-                {
-                    await _instanceDocuments.MutateStructuredCollectionAsync(
-                        owner.Node.Id,
-                        new StructuredCollectionMutation(
-                            StructuredCollectionMutationKind.Delete,
-                            [new StructuredCollectionPathSegment(
-                                StorageCollectionKey(collection),
-                                itemId)]));
-                }
-                else
-                {
-                    var result = MutateTransientStructuredCollection(
-                        preview,
-                        collection,
-                        new StructuredCollectionMutation(
-                            StructuredCollectionMutationKind.Delete,
-                            [new StructuredCollectionPathSegment(
-                                StorageCollectionKey(collection),
-                                itemId)]));
-                    _setPreviewCollectionTestItems(
-                        owner.Node,
-                        collection.JsonKey,
-                        result.Collection.OfType<JsonObject>().ToList());
-                }
+                await Mutate(new DeleteStructuredCollectionItem(address, itemId));
                 changed();
             });
     }
@@ -1446,7 +1415,6 @@ internal sealed class RuntimeInputsCollectionEditor
                 ["tracks"] = new JsonArray(),
             },
             collection,
-            storageKey,
             mutation);
     }
 
@@ -1747,47 +1715,39 @@ internal sealed class RuntimeInputsCollectionEditor
 
     private JsonObject DefaultCollectionItem(RuntimeInputOwner owner, RuntimeInputCollectionDefinition collection)
     {
-        var item = new JsonObject { ["id"] = $"{collection.Id}_{Guid.NewGuid():N}" };
-        foreach (var field in collection.Fields)
-        {
-            var value = field.DefaultValue;
-            if (field.ValueKind == ValueKind.ComponentVariant && string.IsNullOrWhiteSpace(value))
+        return StructuredCollectionItemFactory.Create(
+            collection,
+            (field) =>
             {
-                var options = RuntimeInputFieldDefinitionFactory.Create(ActiveInputOptions, owner.Node, field).Options ?? [];
-                value = ComponentVariantOptionContract.SelectsComponentClass(field.ComponentType)
+                var value = field.DefaultValue;
+                if (field.ValueKind != ValueKind.ComponentVariant
+                    || !string.IsNullOrWhiteSpace(value))
+                {
+                    return value;
+                }
+                var options = RuntimeInputFieldDefinitionFactory.Create(
+                    ActiveInputOptions,
+                    owner.Node,
+                    field).Options ?? [];
+                if (collection.FixedComponentBoundary is { } fixedBoundary)
+                {
+                    options = options.Where((option) => option.GroupValue.Equals(
+                            fixedBoundary.ComponentClassId,
+                            StringComparison.Ordinal))
+                        .ToList();
+                }
+                return ComponentVariantOptionContract.SelectsComponentClass(field.ComponentType)
                     ? ""
                     : ComponentVariantOptionContract.RequireFixedBoundary(
                         options,
                         $"Runtime collection field '{field.Id}'").DefaultVariantReference;
-            }
-            item[field.JsonKey] = DesignPreviewTestValues.ValueNode(field, value);
-        }
-        var componentItems = collection.ComponentItems;
-        var variant = componentItems is null
-            ? null
-            : collection.Fields.FirstOrDefault((field) => field.JsonKey == componentItems.VariantReferenceJsonKey);
-        if (variant is not null && componentItems is not null)
-        {
-            var reference = item[variant.JsonKey]?.GetValue<string>() ?? "";
-            item[componentItems.OverridesJsonKey] = new JsonObject();
-            item[componentItems.InputsJsonKey] = string.IsNullOrWhiteSpace(reference)
-                ? new JsonObject()
-                : _ownerDocuments.ComponentVariantRuntimeInputs(reference);
-        }
-        if (!string.IsNullOrWhiteSpace(collection.ItemRuntimeContractJsonKey))
-        {
-            var config = DesignPreviewTestValues.Parse(owner.ConfigJson);
-            var reference = RuntimeCollectionItemContractOwner
-                .ResolveItemVariantReference(
+            },
+            _ownerDocuments.ComponentVariantRuntimeInputs,
+            (item, definition) => RuntimeCollectionItemContractOwner.ResolveItemVariantReference(
                 item,
-                collection,
-                config,
-                ComponentVariantConfig);
-            item[collection.ItemRuntimeContractJsonKey] =
-                _ownerDocuments.ComponentVariantRuntimeInputs(reference);
-        }
-        StructuredCollectionItemIdentity.RebaseNestedItems(item, collection);
-        return item;
+                definition,
+                DesignPreviewTestValues.Parse(owner.ConfigJson),
+                ComponentVariantConfig));
     }
 
     private void OpenRuntimeComponentOverrides(
@@ -1852,22 +1812,6 @@ internal sealed class RuntimeInputsCollectionEditor
     private static JsonObject CloneObject(JsonObject source) =>
         source.DeepClone().AsObject();
 
-    private void MoveTransientCollectionItem(
-        RuntimeInputOwner owner,
-        JsonObject preview,
-        RuntimeInputCollectionDefinition collection,
-        int itemIndex,
-        int delta)
-    {
-        var current = DesignPreviewTestValues.CollectionItems(preview, collection).Select(CloneObject).ToList();
-        var target = itemIndex + delta;
-        if (itemIndex < 0 || target < 0 || target >= current.Count) return;
-        var item = current[itemIndex];
-        current.RemoveAt(itemIndex);
-        current.Insert(target, item);
-        _setPreviewCollectionTestItems(owner.Node, collection.JsonKey, current);
-    }
-
     private Control CreateTestValueCollectionControl(
         RuntimeInputOwner owner,
         RuntimeInputCollectionDefinition collection,
@@ -1916,21 +1860,25 @@ internal sealed class RuntimeInputsCollectionEditor
                 ? (nestedInput, targetId, nestedControl) => DecorateAnimationToggle(owner, nestedInput, targetId, nestedControl)
                 : null,
             MutateStructuredCollection = owner.IsInstance
-                ? async (kind, nestedItemId) =>
+                ? async (mutation) =>
                 {
+                    var nestedAddress = mutation.Address with
+                    {
+                        RootStorageJsonKey = StorageCollectionKey(collection),
+                        Owners =
+                        [
+                            new StructuredCollectionOwnerSegment(
+                                StorageCollectionKey(collection),
+                                ItemId(item, itemIndex)),
+                            .. mutation.Address.Owners,
+                        ],
+                    };
                     var result = await _instanceDocuments
                         .MutateStructuredCollectionAsync(
                             owner.Node.Id,
-                            new StructuredCollectionMutation(
-                                kind,
-                                [
-                                    new StructuredCollectionPathSegment(
-                                        StorageCollectionKey(collection),
-                                        ItemId(item, itemIndex)),
-                                    new StructuredCollectionPathSegment(
-                                        input.JsonKey,
-                                        nestedItemId),
-                                ]));
+                            StructuredCollectionMutationEngine.WithAddress(
+                                mutation,
+                                nestedAddress));
                     _onChanged();
                     _testValuesChanged();
                     return result;

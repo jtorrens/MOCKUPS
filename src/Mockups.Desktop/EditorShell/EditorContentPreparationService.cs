@@ -268,7 +268,7 @@ internal sealed class EditorContentPreparationService : IDisposable
             {
                 rootFields,
             };
-        var iconOwners = new List<PreparedIconSlotsOwner>();
+        var fixedBoundaryOwners = new List<PreparedFixedBoundaryCollectionOwner>();
         var visited = new HashSet<string>(StringComparer.Ordinal);
 
         foreach (var field in rootFields.Values)
@@ -283,17 +283,18 @@ internal sealed class EditorContentPreparationService : IDisposable
                     slot.Label,
                     groups,
                     fieldSets,
-                    iconOwners,
+                    fixedBoundaryOwners,
                     visited,
                     cancellationToken);
             }
-            if (field.Definition.ValueKind == ValueKind.IconSlots)
+            if (field.Definition.StructuredCollection is { FixedComponentBoundary: not null } collection)
             {
-                iconOwners.Add(new PreparedIconSlotsOwner(
+                fixedBoundaryOwners.Add(new PreparedFixedBoundaryCollectionOwner(
                     null,
                     field.Definition.Id,
                     field.Value,
-                    field.Definition.DisplayLabel));
+                    field.Definition.DisplayLabel,
+                    collection));
             }
         }
 
@@ -302,11 +303,11 @@ internal sealed class EditorContentPreparationService : IDisposable
             selectedThemeId,
             fieldSets,
             cancellationToken);
-        foreach (var iconOwner in iconOwners)
+        foreach (var owner in fixedBoundaryOwners)
         {
-            PrepareIconSlotOverrides(
+            PrepareFixedBoundaryOverrides(
                 node,
-                iconOwner,
+                owner,
                 dictionaryContext,
                 groups,
                 fieldSets,
@@ -328,7 +329,7 @@ internal sealed class EditorContentPreparationService : IDisposable
         string pathLabel,
         List<EditorPreparedOverrideGroup> groups,
         List<IReadOnlyDictionary<string, FieldValue>> fieldSets,
-        List<PreparedIconSlotsOwner> iconOwners,
+        List<PreparedFixedBoundaryCollectionOwner> fixedBoundaryOwners,
         HashSet<string> visited,
         CancellationToken cancellationToken)
     {
@@ -379,25 +380,26 @@ internal sealed class EditorContentPreparationService : IDisposable
                     $"{pathLabel} · {nestedSlot.Label}",
                     groups,
                     fieldSets,
-                    iconOwners,
+                    fixedBoundaryOwners,
                     visited,
                     cancellationToken);
             }
-            if (field.Definition.ValueKind == ValueKind.IconSlots
+            if (field.Definition.StructuredCollection is { FixedComponentBoundary: not null } collection
                 && field.HasLocalOverride)
             {
-                iconOwners.Add(new PreparedIconSlotsOwner(
+                fixedBoundaryOwners.Add(new PreparedFixedBoundaryCollectionOwner(
                     context,
                     field.Definition.Id,
                     field.Value,
-                    $"{pathLabel} · {field.Definition.DisplayLabel}"));
+                    $"{pathLabel} · {field.Definition.DisplayLabel}",
+                    collection));
             }
         }
     }
 
-    private void PrepareIconSlotOverrides(
+    private void PrepareFixedBoundaryOverrides(
         ProjectTreeNode node,
-        PreparedIconSlotsOwner owner,
+        PreparedFixedBoundaryCollectionOwner owner,
         EditorDictionaryContextSnapshot dictionaryContext,
         List<EditorPreparedOverrideGroup> groups,
         List<IReadOnlyDictionary<string, FieldValue>> fieldSets,
@@ -406,10 +408,14 @@ internal sealed class EditorContentPreparationService : IDisposable
     {
         var items = JsonNode.Parse(owner.Value) as JsonArray
             ?? throw new InvalidOperationException(
-                $"Icon Slots field '{owner.FieldId}' must be an array.");
-        IconSlotsDocumentContract.Validate(
+                $"Structured collection field '{owner.FieldId}' must be an array.");
+        StructuredCollectionDocumentContract.Validate(
             items,
+            owner.Collection,
             $"Flat Overrides '{owner.FieldId}'");
+        var boundary = owner.Collection.FixedComponentBoundary
+            ?? throw new InvalidOperationException(
+                $"Structured collection '{owner.Collection.Id}' requires a fixed Component boundary.");
         foreach (var itemNode in items)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -420,19 +426,19 @@ internal sealed class EditorContentPreparationService : IDisposable
                 $"Flat Overrides '{owner.FieldId}'");
             var variantReference = JsonPath.RequiredString(
                 item,
-                "buttonVariantReference",
-                $"Flat Overrides '{owner.FieldId}' Button '{itemId}'");
+                boundary.VariantReferenceJsonKey,
+                $"Flat Overrides '{owner.FieldId}' item '{itemId}'");
             if (!dictionaryContext.TryVariantSelection(
                     variantReference,
                     out var selection))
             {
                 throw new InvalidOperationException(
-                    $"Button Variant '{variantReference}' was not included in the prepared dictionary context.");
+                    $"Component Variant '{variantReference}' was not included in the prepared dictionary context.");
             }
             var overrides = JsonPath.RequiredObject(
                     item,
-                    "buttonOverrides",
-                    $"Flat Overrides '{owner.FieldId}' Button '{itemId}'")
+                    boundary.OverridesJsonKey,
+                    $"Flat Overrides '{owner.FieldId}' item '{itemId}'")
                 .DeepClone()
                 .AsObject();
             var runtimeSource = new RuntimeComponentOverrideSource(
@@ -442,7 +448,7 @@ internal sealed class EditorContentPreparationService : IDisposable
                 selection.RecordClassId,
                 selection.ConfigJson,
                 overrides,
-                (changed) => UpdateIconSlotOverridesAsync(
+                (changed) => UpdateFixedBoundaryOverridesAsync(
                     node,
                     owner,
                     itemId,
@@ -451,14 +457,20 @@ internal sealed class EditorContentPreparationService : IDisposable
                 node,
                 [],
                 runtimeSource);
-            var itemLabel = JsonPath.RequiredString(
-                item,
-                "text",
-                $"Flat Overrides '{owner.FieldId}' Button '{itemId}'",
-                allowEmpty: true);
+            var titleKey = owner.Collection.Fields.FirstOrDefault((field) =>
+                    field.Id.Equals(
+                        owner.Collection.ItemPresentation?.TitleFieldId,
+                        StringComparison.Ordinal))?.JsonKey ?? "";
+            var itemLabel = titleKey.Length == 0
+                ? ""
+                : JsonPath.RequiredString(
+                    item,
+                    titleKey,
+                    $"Flat Overrides '{owner.FieldId}' item '{itemId}'",
+                    allowEmpty: true);
             PrepareOverrideContext(
                 context,
-                $"{owner.PathLabel} · Button "
+                $"{owner.PathLabel} · {owner.Collection.ItemLabel} "
                     + (string.IsNullOrWhiteSpace(itemLabel)
                         ? itemId
                         : itemLabel),
@@ -470,9 +482,9 @@ internal sealed class EditorContentPreparationService : IDisposable
         }
     }
 
-    private Task UpdateIconSlotOverridesAsync(
+    private Task UpdateFixedBoundaryOverridesAsync(
         ProjectTreeNode node,
-        PreparedIconSlotsOwner owner,
+        PreparedFixedBoundaryCollectionOwner owner,
         string itemId,
         JsonObject overrides) =>
         _operations.ExecuteAsync(() =>
@@ -484,15 +496,18 @@ internal sealed class EditorContentPreparationService : IDisposable
                     owner.FieldId);
             var items = JsonNode.Parse(current.Value) as JsonArray
                 ?? throw new InvalidOperationException(
-                    $"Icon Slots field '{owner.FieldId}' must be an array.");
+                    $"Structured collection field '{owner.FieldId}' must be an array.");
             var item = items
                 .Select((candidate) => candidate!.AsObject())
                 .Single((candidate) => JsonPath.RequiredString(
                         candidate,
                         "id",
-                        $"Icon Slots field '{owner.FieldId}'")
+                        $"Structured collection field '{owner.FieldId}'")
                     .Equals(itemId, StringComparison.Ordinal));
-            item["buttonOverrides"] = overrides.DeepClone();
+            var boundary = owner.Collection.FixedComponentBoundary
+                ?? throw new InvalidOperationException(
+                    $"Structured collection '{owner.Collection.Id}' requires a fixed Component boundary.");
+            item[boundary.OverridesJsonKey] = overrides.DeepClone();
             var value = items.ToJsonString();
             if (owner.Context is null)
             {
@@ -527,11 +542,12 @@ internal sealed class EditorContentPreparationService : IDisposable
         return slots;
     }
 
-    private sealed record PreparedIconSlotsOwner(
+    private sealed record PreparedFixedBoundaryCollectionOwner(
         EditorEmbeddedContext? Context,
         string FieldId,
         string Value,
-        string PathLabel);
+        string PathLabel,
+        RuntimeInputCollectionDefinition Collection);
 
     private static IEnumerable<EditorLayoutCard> VisibleCards(
         EditorLayout layout) =>

@@ -78,7 +78,7 @@ var tests = new (string Name, Action Run)[]
     ("pair fields require explicit presentation labels", PairFieldsRequireExplicitLabels),
     ("numeric dictionary fields separate current values from drafts", NumericDictionaryFieldsSeparateCurrentValuesFromDrafts),
     ("valid integer pairs commit after a short editing pause", ValidIntegerPairsCommitAfterEditingPause),
-    ("Icon Row preserves sequential nested Button Override commits", IconRowPreservesSequentialNestedButtonOverrideCommits),
+    ("fixed Component collection boundaries preserve sequential Override commits", FixedComponentCollectionBoundariesPreserveSequentialOverrides),
     ("Design Preview actions reject incomplete declarative contracts", PreviewActionContractsAreStrict),
     ("Runtime Input forwarding envelopes reject invalid current shapes", RuntimeInputForwardingEnvelopesAreStrict),
     ("Design Test Values preserve strict transient documents", DesignTestValuesPreserveStrictDocuments),
@@ -1429,6 +1429,94 @@ static void RuntimeInputDefinitionReadersAreStrict()
     Throws<InvalidOperationException>(() => RuntimeInputDefinitionReader.ReadCollections(
         CollectionPreview(overlappingComponentCollection),
         new JsonObject()));
+    static JsonObject FixedComponentBoundary() => new()
+    {
+        ["variantReferenceJsonKey"] = "variantReference",
+        ["overridesJsonKey"] = "overrides",
+        ["componentType"] = "button",
+        ["componentClassId"] = "component_example",
+    };
+    var fixedComponentField = ComponentField();
+    fixedComponentField["componentType"] = "button";
+    var validFixedComponentCollection = Collection();
+    validFixedComponentCollection["fields"] = new JsonArray(fixedComponentField.DeepClone());
+    validFixedComponentCollection["fixedComponentBoundary"] = FixedComponentBoundary();
+    Equal(
+        "button",
+        RuntimeInputDefinitionReader.ReadCollections(
+            CollectionPreview(validFixedComponentCollection),
+            new JsonObject()).Single().FixedComponentBoundary?.ComponentType ?? "");
+    var wrongFixedComponentType = FixedComponentBoundary();
+    wrongFixedComponentType["componentType"] = "iconRow";
+    var wrongFixedComponentCollection = Collection();
+    wrongFixedComponentCollection["fields"] = new JsonArray(fixedComponentField.DeepClone());
+    wrongFixedComponentCollection["fixedComponentBoundary"] = wrongFixedComponentType;
+    Throws<InvalidOperationException>(() => RuntimeInputDefinitionReader.ReadCollections(
+        CollectionPreview(wrongFixedComponentCollection),
+        new JsonObject()));
+    var polymorphicFixedBoundary = FixedComponentBoundary();
+    polymorphicFixedBoundary["componentType"] = "*";
+    var polymorphicFixedComponentCollection = Collection();
+    polymorphicFixedComponentCollection["fields"] = new JsonArray(fixedComponentField.DeepClone());
+    polymorphicFixedComponentCollection["fixedComponentBoundary"] = polymorphicFixedBoundary;
+    Throws<InvalidOperationException>(() => RuntimeInputDefinitionReader.ReadCollections(
+        CollectionPreview(polymorphicFixedComponentCollection),
+        new JsonObject()));
+    var idOverlappingFixedBoundary = FixedComponentBoundary();
+    idOverlappingFixedBoundary["overridesJsonKey"] = "id";
+    var idOverlappingFixedComponentCollection = Collection();
+    idOverlappingFixedComponentCollection["fields"] = new JsonArray(fixedComponentField.DeepClone());
+    idOverlappingFixedComponentCollection["fixedComponentBoundary"] = idOverlappingFixedBoundary;
+    Throws<InvalidOperationException>(() => RuntimeInputDefinitionReader.ReadCollections(
+        CollectionPreview(idOverlappingFixedComponentCollection),
+        new JsonObject()));
+    var optionalFixedComponentField = fixedComponentField.DeepClone().AsObject();
+    optionalFixedComponentField["allowEmpty"] = true;
+    var optionalFixedComponentCollection = Collection();
+    optionalFixedComponentCollection["fields"] = new JsonArray(optionalFixedComponentField);
+    optionalFixedComponentCollection["fixedComponentBoundary"] = FixedComponentBoundary();
+    Throws<InvalidOperationException>(() => RuntimeInputDefinitionReader.ReadCollections(
+        CollectionPreview(optionalFixedComponentCollection),
+        new JsonObject()));
+    var wrongFixedBoundaryRoot = Collection();
+    wrongFixedBoundaryRoot["fields"] = new JsonArray(fixedComponentField.DeepClone());
+    wrongFixedBoundaryRoot["fixedComponentBoundary"] = new JsonArray();
+    Throws<InvalidOperationException>(() => RuntimeInputDefinitionReader.ReadCollections(
+        CollectionPreview(wrongFixedBoundaryRoot),
+        new JsonObject()));
+    var incompleteFixedBoundary = FixedComponentBoundary();
+    incompleteFixedBoundary.Remove("componentType");
+    var incompleteFixedBoundaryCollection = Collection();
+    incompleteFixedBoundaryCollection["fields"] = new JsonArray(fixedComponentField.DeepClone());
+    incompleteFixedBoundaryCollection["fixedComponentBoundary"] = incompleteFixedBoundary;
+    Throws<InvalidOperationException>(() => RuntimeInputDefinitionReader.ReadCollections(
+        CollectionPreview(incompleteFixedBoundaryCollection),
+        new JsonObject()));
+    var extendedFixedBoundary = FixedComponentBoundary();
+    extendedFixedBoundary["legacy"] = true;
+    var extendedFixedBoundaryCollection = Collection();
+    extendedFixedBoundaryCollection["fields"] = new JsonArray(fixedComponentField.DeepClone());
+    extendedFixedBoundaryCollection["fixedComponentBoundary"] = extendedFixedBoundary;
+    Throws<InvalidOperationException>(() => RuntimeInputDefinitionReader.ReadCollections(
+        CollectionPreview(extendedFixedBoundaryCollection),
+        new JsonObject()));
+    var overlappingFixedComponentCollection = Collection();
+    var overlappingFixedField = fixedComponentField.DeepClone().AsObject();
+    overlappingFixedField["jsonKey"] = "overrides";
+    overlappingFixedComponentCollection["fields"] = new JsonArray(
+        fixedComponentField.DeepClone(),
+        overlappingFixedField);
+    overlappingFixedComponentCollection["fixedComponentBoundary"] = FixedComponentBoundary();
+    Throws<InvalidOperationException>(() => RuntimeInputDefinitionReader.ReadCollections(
+        CollectionPreview(overlappingFixedComponentCollection),
+        new JsonObject()));
+    var competingCollectionContracts = Collection();
+    competingCollectionContracts["fields"] = new JsonArray(fixedComponentField.DeepClone());
+    competingCollectionContracts["componentItems"] = ComponentItems();
+    competingCollectionContracts["fixedComponentBoundary"] = FixedComponentBoundary();
+    Throws<InvalidOperationException>(() => RuntimeInputDefinitionReader.ReadCollections(
+        CollectionPreview(competingCollectionContracts),
+        new JsonObject()));
     var wrongPresentation = Collection();
     wrongPresentation["itemPresentation"] = new JsonArray();
     Throws<InvalidOperationException>(() => RuntimeInputDefinitionReader.ReadCollections(
@@ -1773,14 +1861,6 @@ static void RuntimeInputDefaultsUseValueKindOwner()
         RuntimeInputValueKindContract.CreateDefaultValue(
             Definition("iconList", "IconTokenList", "[\"first\",\"second\"]"),
             "Test Runtime Input").AsArray().Count);
-    const string iconSlot = """
-        [{"id":"button_001","buttonVariantReference":"component_button::variant::default","state":"normal","iconToken":"media_mic","text":"","iconSizeToken":"theme.iconSizes.m","textSizeToken":"theme.typography.sizes.s","pushTrigger":false,"pushElapsedMs":0,"buttonOverrides":{}}]
-        """;
-    Equal(
-        1,
-        RuntimeInputValueKindContract.CreateDefaultValue(
-            Definition("iconList", "IconSlots", iconSlot),
-            "Test Runtime Input").AsArray().Count);
     Equal(
         "natural",
         RuntimeInputValueKindContract.CreateDefaultValue(
@@ -1878,9 +1958,6 @@ static void RuntimeInputDefaultsUseValueKindOwner()
         Definition("number", "Integer", "1.5"),
         "Test Runtime Input"));
     Throws<InvalidOperationException>(() => RuntimeInputValueKindContract.CreateDefaultValue(
-        Definition("iconList", "IconSlots", "{}"),
-        "Test Runtime Input"));
-    Throws<InvalidOperationException>(() => RuntimeInputValueKindContract.CreateDefaultValue(
         Definition("collection", "StructuredCollection", null),
         "Test Runtime Input"));
     Throws<InvalidOperationException>(() => RuntimeInputValueKindContract.ParseValue(
@@ -1899,24 +1976,6 @@ static void RuntimeInputDefaultsUseValueKindOwner()
         ValueKind.StructuredCollection,
         "[{\"id\":\"item_1\"},{\"id\":\"item_1\"}]",
         "Test Runtime Input"));
-    Throws<InvalidOperationException>(() => RuntimeInputValueKindContract.ParseValue(
-        ValueKind.IconSlots,
-        "[{\"contentMode\":\"icon\"}]",
-        "Test Runtime Input"));
-    foreach (var invalidIconSlot in new[]
-    {
-        iconSlot.Replace("component_button::variant::default", "default", StringComparison.Ordinal),
-        iconSlot.Replace("\"buttonOverrides\":{}", "\"buttonOverrides\":null", StringComparison.Ordinal),
-        iconSlot.Replace("\"pushElapsedMs\":0", "\"pushElapsedMs\":-1", StringComparison.Ordinal),
-        iconSlot.Replace("\"state\":\"normal\"", "\"contentMode\":\"icon\",\"state\":\"normal\"", StringComparison.Ordinal),
-        iconSlot.Replace("\"buttonOverrides\":{}", "\"buttonOverrides\":{},\"position\":1", StringComparison.Ordinal),
-    })
-    {
-        Throws<InvalidOperationException>(() => RuntimeInputValueKindContract.ParseValue(
-            ValueKind.IconSlots,
-            invalidIconSlot,
-            "Test Runtime Input"));
-    }
     foreach (var invalidComponentVariantSlot in new[]
     {
         "\"component_icon_row::variant::default\"",
@@ -2268,22 +2327,59 @@ static void ValidIntegerPairsCommitAfterEditingPause()
     Equal(1, commitCount);
 }
 
-static void IconRowPreservesSequentialNestedButtonOverrideCommits()
+static void FixedComponentCollectionBoundariesPreserveSequentialOverrides()
 {
     const string iconSlots = """
-        [{"id":"decline","buttonVariantReference":"component_project_button::variant::default","state":"normal","iconToken":"phone_hangup","text":"Decline","iconSizeToken":"theme.iconSizes.m","textSizeToken":"theme.typography.sizes.s","pushTrigger":false,"pushElapsedMs":0,"buttonOverrides":{"button":{"dimensionMode":"fixed","size":"112|48"}}}]
+        [{"id":"decline","buttonVariantReference":"component_project_foqn_s2_button::variant::default","state":"normal","iconToken":"phone_hangup","text":"Decline","iconSizeToken":"theme.iconSizes.m","textSizeToken":"theme.typography.sizes.s","pushTrigger":false,"pushElapsedMs":0,"buttonOverrides":{"button":{"dimensionMode":"fixed","size":"112|48"}}}]
         """;
-    var items = RuntimeInputValueKindContract.ParseValue(
-            ValueKind.IconSlots,
-            iconSlots,
-            "Sequential Icon Row Overrides")
-        .AsArray()
-        .OfType<JsonObject>()
-        .Select((item) => item.DeepClone().AsObject())
-        .ToList();
-    static string Slot(string size) => new JsonObject
+    var definition = ComponentClassFieldCatalog
+        .Get("component.iconRow.items")
+        .StructuredCollection
+        ?? throw new InvalidOperationException("Icon Row requires a structured Button collection.");
+    var boundary = definition.FixedComponentBoundary
+        ?? throw new InvalidOperationException("Icon Row requires a fixed Button boundary.");
+    Equal(
+        "",
+        definition.Fields.Single((field) =>
+            field.JsonKey == boundary.VariantReferenceJsonKey).DefaultValue);
+    var prototype = StructuredCollectionItemFactory.Create(
+        definition,
+        (field) => field.ValueKind == ValueKind.ComponentVariant
+            ? "component_project_foqn_s2_button::variant::default"
+            : field.DefaultValue,
+        (_) => new JsonObject());
+    True(!prototype.ContainsKey("id"));
+    True(prototype[boundary.OverridesJsonKey] is JsonObject { Count: 0 });
+    var added = StructuredCollectionMutationEngine.Apply(
+        new JsonObject { [definition.JsonKey] = new JsonArray() },
+        new JsonObject
+        {
+            ["schemaVersion"] = 2,
+            ["tracks"] = new JsonArray(),
+        },
+        definition,
+        new AddStructuredCollectionItem(
+            new StructuredCollectionAddress(
+                definition.JsonKey,
+                [],
+                definition.JsonKey),
+            prototype));
+    StructuredCollectionDocumentContract.Validate(
+        added.Collection,
+        definition,
+        "Added fixed Component collection");
+    var items = JsonPath.ParseRequiredArray(iconSlots, "Fixed Component collection");
+    StructuredCollectionDocumentContract.Validate(items, definition, "Fixed Component collection");
+    var wrongClassItems = items.DeepClone().AsArray();
+    wrongClassItems[0]![boundary.VariantReferenceJsonKey] =
+        "component_other_button::variant::default";
+    Throws<InvalidOperationException>(() => StructuredCollectionDocumentContract.Validate(
+        wrongClassItems,
+        definition,
+        "Wrong fixed Component class"));
+    static JsonObject Slot(string size) => new()
     {
-        ["variantReference"] = "component_project_button::variant::default",
+        ["variantReference"] = "component_project_foqn_s2_button::variant::default",
         ["overrides"] = new JsonObject
         {
             ["button"] = new JsonObject
@@ -2293,28 +2389,24 @@ static void IconRowPreservesSequentialNestedButtonOverrideCommits()
                 ["padding"] = "theme.spacing.s|theme.spacing.s",
             },
         },
-    }.ToJsonString();
+    };
+    void ApplySlot(JsonObject slot)
+    {
+        ComponentVariantSlotDocumentContract.Validate(slot, "Fixed Component slot");
+        var item = items.OfType<JsonObject>().Single();
+        item[boundary.VariantReferenceJsonKey] =
+            ComponentVariantSlotDocumentContract.VariantReference(slot, "Fixed Component slot");
+        item[boundary.OverridesJsonKey] =
+            ComponentVariantSlotDocumentContract.Overrides(slot, "Fixed Component slot").DeepClone();
+        StructuredCollectionDocumentContract.Validate(items, definition, "Fixed Component collection");
+    }
 
-    IconSlotsDocumentContract.ReplaceButtonVariantSlot(
-        items,
-        "decline",
-        Slot("112|48"),
-        "Sequential Icon Row");
-    items = RuntimeInputValueKindContract.ParseValue(
-            ValueKind.IconSlots,
-            new JsonArray(items.Select((item) => (JsonNode?)item.DeepClone()).ToArray()).ToJsonString(),
-            "Rebuilt Sequential Icon Row Overrides")
-        .AsArray()
-        .OfType<JsonObject>()
-        .Select((item) => item.DeepClone().AsObject())
-        .ToList();
-    IconSlotsDocumentContract.ReplaceButtonVariantSlot(
-        items,
-        "decline",
-        Slot("300|300"),
-        "Sequential Icon Row");
+    ApplySlot(Slot("112|48"));
+    items = items.DeepClone().AsArray();
+    StructuredCollectionDocumentContract.Validate(items, definition, "Rebuilt fixed Component collection");
+    ApplySlot(Slot("300|300"));
 
-    var persisted = items.Single();
+    var persisted = items.OfType<JsonObject>().Single();
     var buttonOverrides = JsonPath.RequiredObject(
         persisted,
         "buttonOverrides",
@@ -2861,6 +2953,10 @@ static void DesignTestValuesPreserveStrictDocuments()
     {
         ["components"] = new JsonArray(ComponentItem()),
     };
+    StructuredCollectionDocumentContract.Validate(
+        componentPreview["components"]!.AsArray(),
+        componentCollection,
+        "Component item collection");
     Equal(
         1,
         DesignPreviewTestValues.CollectionItems(componentPreview, componentCollection).Count);
@@ -2891,6 +2987,10 @@ static void DesignTestValuesPreserveStrictDocuments()
     Throws<InvalidOperationException>(() => DesignPreviewTestValues.CollectionItems(
         new JsonObject { ["components"] = new JsonArray(wrongInputs) },
         componentCollection));
+    Throws<InvalidOperationException>(() => StructuredCollectionDocumentContract.Validate(
+        new JsonArray(wrongInputs.DeepClone()),
+        componentCollection,
+        "Wrong Component item collection"));
 
     var projectedCollection = new RuntimeInputCollectionDefinition(
         "states",
@@ -3638,10 +3738,7 @@ static void VisualPersistenceWritersRequireOperationCoordination()
     foreach (var (writerType, methodName) in new[]
              {
                  (typeof(RuntimeInputInstanceDocumentStore), "UpdateRuntimeValueAsync"),
-                 (typeof(RuntimeInputInstanceDocumentStore), "AddCollectionItemAsync"),
-                 (typeof(RuntimeInputInstanceDocumentStore), "InsertCollectionItemAfterAsync"),
                  (typeof(RuntimeInputInstanceDocumentStore), "MutateStructuredCollectionAsync"),
-                 (typeof(RuntimeInputInstanceDocumentStore), "MoveCollectionItemAsync"),
                  (typeof(RuntimeInputInstanceDocumentStore), "UpdateCollectionValueAsync"),
                  (typeof(RuntimeInputInstanceDocumentStore), "UpdateCollectionValuesAsync"),
                  (typeof(RuntimeInputInstanceDocumentStore), "ExecuteAnimationMutationAsync"),
@@ -4386,7 +4483,7 @@ static void FlatVariantOverridesUseRestoreSemantics()
                                     == "Overrides (1)");
                     },
                     TimeSpan.FromSeconds(15)));
-                var persistedIconSlots = JsonNode.Parse(
+                var persistedButtonItems = JsonNode.Parse(
                         database.CreateComponentVariantFieldValue(
                                 iconRowVariant,
                                 "component.iconRow.items")
@@ -4394,7 +4491,7 @@ static void FlatVariantOverridesUseRestoreSemantics()
                     ?.AsArray()
                     ?? throw new InvalidOperationException(
                         "Icon Row Variant requires Button items.");
-                True(persistedIconSlots[0]?[
+                True(persistedButtonItems[0]?[
                         "buttonOverrides"]?[
                         "button"]?[
                         "padding"]
@@ -6570,7 +6667,9 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
                 listCollectionDefinition);
             True(idMappings.Count > 0);
             Equal(idMappings.Count, idMappings.Values.Distinct(StringComparer.Ordinal).Count());
-            var rebasedTargetIds = StructuredCollectionItemIdentity.TargetIds(rebasedItem);
+            var rebasedTargetIds = StructuredCollectionItemIdentity.TargetIds(
+                rebasedItem,
+                listCollectionDefinition);
             foreach (var (previous, next) in idMappings)
             {
                 True(previous != next);
@@ -7616,27 +7715,29 @@ static void PreviewAuthoringFocusRevealsExactCard()
                 layout,
                 new Dictionary<string, FieldValue>());
         var itemUiState = new EditorSessionUiState();
-        var itemTarget = new IconSlotsControl(
-            "component.iconRow.items",
+        var descriptor = ComponentClassFieldCatalog.Get("component.iconRow.items");
+        var itemTarget = new DictionaryStructuredCollectionControl(
+            new FieldDefinition(
+                descriptor.Id,
+                descriptor.Label,
+                descriptor.ValueKind,
+                IsEditable: false,
+                StructuredCollection: descriptor.StructuredCollection),
             """
             [
               {"id":"button_other","buttonVariantReference":"component_button::variant::default","state":"normal","iconToken":"other","text":"","iconSizeToken":"theme.iconSizes.m","textSizeToken":"theme.typography.sizes.s","pushTrigger":false,"pushElapsedMs":0,"buttonOverrides":{}},
               {"id":"button_attachment","buttonVariantReference":"component_button::variant::default","state":"normal","iconToken":"chat_attach","text":"","iconSizeToken":"theme.iconSizes.m","textSizeToken":"theme.typography.sizes.s","pushTrigger":false,"pushElapsedMs":0,"buttonOverrides":{}}
             ]
             """,
-            isEditable: false,
-            showIconTokenPicker: null,
-            createIconPreview: null,
-            buttonVariantOptions:
-            [
-                new FieldOption(
-                    "component_button::variant::default",
-                    "Default",
-                    GroupValue: "component_button"),
-            ],
-            openComponentVariantReference: null,
-            openRuntimeComponentOverrides: null,
-            sessionUiState: itemUiState);
+            new DictionaryFieldServices(
+                GetComponentVariantOptions: (_) =>
+                [
+                    new FieldOption(
+                        "component_button::variant::default",
+                        "Default",
+                        GroupValue: "component_button"),
+                ],
+                StructuredCollectionUiState: itemUiState));
         var card = new InstantEditorCard(
             new TextBlock(),
             itemTarget,
@@ -7663,10 +7764,8 @@ static void PreviewAuthoringFocusRevealsExactCard()
             [card]));
         True(card.IsExpanded);
         True(cancelledRestore);
-        Equal(
-            "button_attachment",
-            itemUiState.Selection(
-                "component.iconRow.items:icon-slots"));
+        True(itemUiState.IsExpanded(
+            "component.iconRow.items:button_attachment:expanded"));
         Equal(0, messages.Warnings.Count);
         window.Close();
     },
@@ -10257,11 +10356,12 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
             database.GetModuleInstanceSettings(screen.Id).ContentJson,
             "Conversation test content")["messages"]?[0]?.DeepClone().AsObject()
             ?? throw new InvalidOperationException("Missing Conversation test message.");
-        JsonObject TestMessage(string id, string name)
+        JsonObject TestMessage(string name)
         {
             var message = messagePrototype.DeepClone().AsObject();
-            message["id"] = id;
-            message["name"] = name;
+            message.Remove("id");
+            message.Remove("type");
+            message["text"] = name;
             message["direction"] = "system";
             message["actorId"] = "";
             return message;
@@ -10271,6 +10371,10 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
         SequenceEqual(before, afterReads);
 
         const string collectionKey = "messages";
+        var collectionAddress = new StructuredCollectionAddress(
+            collectionKey,
+            [],
+            collectionKey);
         var beforeRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
         Throws<InvalidOperationException>(() => store.UpdateRuntimeValueAsync(
             screen.Id,
@@ -10280,16 +10384,21 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
             screen.Id,
             "headerSubtitle",
             JsonValue.Create(42)).GetAwaiter().GetResult());
-        Throws<InvalidOperationException>(() => store.AddCollectionItemAsync(
+        Throws<InvalidOperationException>(() => store.MutateStructuredCollectionAsync(
             screen.Id,
-            "undeclared_items",
-            TestMessage("undeclared", "Undeclared")).GetAwaiter().GetResult());
-        var missingId = TestMessage("missing", "Missing");
-        missingId.Remove("id");
-        Throws<InvalidOperationException>(() => store.AddCollectionItemAsync(
+            new AddStructuredCollectionItem(
+                new StructuredCollectionAddress(
+                    "undeclared_items",
+                    [],
+                    "undeclared_items"),
+                TestMessage("Undeclared"))).GetAwaiter().GetResult());
+        var suppliedId = TestMessage("Supplied id");
+        suppliedId["id"] = "supplied";
+        Throws<InvalidOperationException>(() => store.MutateStructuredCollectionAsync(
             screen.Id,
-            collectionKey,
-            missingId).GetAwaiter().GetResult());
+            new AddStructuredCollectionItem(
+                collectionAddress,
+                suppliedId)).GetAwaiter().GetResult());
         SequenceEqual(beforeRejectedWrite, SHA256.HashData(File.ReadAllBytes(temporary)));
 
         store.UpdateRuntimeValueAsync(
@@ -10305,15 +10414,18 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
                 releaseQueuedWrite.Wait();
             });
         True(queuedWriteStarted.Wait(TimeSpan.FromSeconds(5)));
-        var queuedItem = TestMessage("test_a", "A");
-        var queuedAdd = store.AddCollectionItemAsync(
+        var queuedItem = TestMessage("A");
+        var queuedAdd = store.MutateStructuredCollectionAsync(
             screen.Id,
-            collectionKey,
-            queuedItem);
-        queuedItem["name"] = "Mutated after submission";
+            new AddStructuredCollectionItem(
+                collectionAddress,
+                queuedItem));
+        queuedItem["text"] = "Mutated after submission";
         releaseQueuedWrite.Set();
         blockingWrite.GetAwaiter().GetResult();
-        queuedAdd.GetAwaiter().GetResult();
+        var queuedResult = queuedAdd.GetAwaiter().GetResult();
+        var testAId = queuedResult.SelectedItemId
+            ?? throw new InvalidOperationException("Add mutation returned no selected item id.");
         var queuedContent = JsonPath.ParseRequiredObject(
             database.GetModuleInstanceSettings(screen.Id).ContentJson,
             $"Module Instance '{screen.Id}' queued snapshot content");
@@ -10322,32 +10434,30 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
             queuedContent[collectionKey]?
                 .AsArray()
                 .OfType<JsonObject>()
-                .Single((item) => item["id"]?.GetValue<string>() == "test_a")["name"]?
+                .Single((item) => item["id"]?.GetValue<string>() == testAId)["text"]?
                 .GetValue<string>()
             ?? "");
         var afterFirstItem = SHA256.HashData(File.ReadAllBytes(temporary));
-        Throws<InvalidOperationException>(() => store.AddCollectionItemAsync(
+        Throws<InvalidOperationException>(() => store.MutateStructuredCollectionAsync(
             screen.Id,
-            collectionKey,
-            TestMessage("test_a", "Duplicate")).GetAwaiter().GetResult());
-        Throws<InvalidOperationException>(() => store.InsertCollectionItemAfterAsync(
-            screen.Id,
-            collectionKey,
-            "missing_item",
-            TestMessage("test_missing_anchor", "Missing anchor")).GetAwaiter().GetResult());
+            new AddStructuredCollectionItem(
+                collectionAddress,
+                TestMessage("Missing anchor"),
+                "missing_item")).GetAwaiter().GetResult());
         SequenceEqual(afterFirstItem, SHA256.HashData(File.ReadAllBytes(temporary)));
-        store.InsertCollectionItemAfterAsync(
+        var addedB = store.MutateStructuredCollectionAsync(
             screen.Id,
-            collectionKey,
-            "test_a",
-            TestMessage("test_b", "B")).GetAwaiter().GetResult();
+            new AddStructuredCollectionItem(
+                collectionAddress,
+                TestMessage("B"))).GetAwaiter().GetResult();
+        var testBId = addedB.SelectedItemId
+            ?? throw new InvalidOperationException("Add mutation returned no selected item id.");
         var duplicate = store.MutateStructuredCollectionAsync(
                 screen.Id,
-                new StructuredCollectionMutation(
-                    StructuredCollectionMutationKind.Duplicate,
-                    [new StructuredCollectionPathSegment(
-                        collectionKey,
-                        "test_a")]))
+                new DuplicateStructuredCollectionItem(
+                    collectionAddress,
+                    testAId,
+                    testBId))
             .GetAwaiter()
             .GetResult();
         var duplicateId = duplicate.Item?["id"]?.GetValue<string>()
@@ -10357,34 +10467,32 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
         Throws<InvalidOperationException>(() => store.UpdateCollectionValueAsync(
             screen.Id,
             collectionKey,
-            "test_b",
+            testBId,
             "undeclared_field",
             JsonValue.Create("value")).GetAwaiter().GetResult());
         Throws<InvalidOperationException>(() => store.UpdateCollectionValueAsync(
             screen.Id,
             collectionKey,
-            "test_b",
+            testBId,
             "text",
             JsonValue.Create(42)).GetAwaiter().GetResult());
         SequenceEqual(beforeRejectedField, SHA256.HashData(File.ReadAllBytes(temporary)));
         store.UpdateCollectionValueAsync(
             screen.Id,
             collectionKey,
-            "test_b",
+            testBId,
             "text",
             JsonValue.Create("B2")).GetAwaiter().GetResult();
-        store.MoveCollectionItemAsync(
+        store.MutateStructuredCollectionAsync(
             screen.Id,
-            collectionKey,
-            duplicateId,
-            1).GetAwaiter().GetResult();
+            new MoveStructuredCollectionItem(
+                collectionAddress,
+                duplicateId)).GetAwaiter().GetResult();
         store.MutateStructuredCollectionAsync(
                 screen.Id,
-                new StructuredCollectionMutation(
-                    StructuredCollectionMutationKind.Delete,
-                    [new StructuredCollectionPathSegment(
-                        collectionKey,
-                        "test_a")]))
+                new DeleteStructuredCollectionItem(
+                    collectionAddress,
+                    testAId))
             .GetAwaiter()
             .GetResult();
 
@@ -10395,14 +10503,14 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
         var items = content[collectionKey]?.AsArray()
             ?? throw new InvalidOperationException("Missing test runtime collection.");
         SequenceEqual(
-            new[] { "test_b", duplicateId },
+            new[] { testBId, duplicateId },
             items.Where((item) =>
-                    item?["id"]?.GetValue<string>() == "test_b"
+                    item?["id"]?.GetValue<string>() == testBId
                     || item?["id"]?.GetValue<string>() == duplicateId)
                 .Select((item) => item?["id"]?.GetValue<string>() ?? ""));
         Equal(
             "B2",
-            items.OfType<JsonObject>().Single((item) => item["id"]?.GetValue<string>() == "test_b")["text"]?.GetValue<string>() ?? "");
+            items.OfType<JsonObject>().Single((item) => item["id"]?.GetValue<string>() == testBId)["text"]?.GetValue<string>() ?? "");
         Equal(
             animationJson,
             store.ExecuteAnimationMutationAsync(
@@ -14069,10 +14177,14 @@ static void ConversationMessageActorsFollowDirectionContract()
             .All((message) => string.IsNullOrWhiteSpace(message["actorId"]?.GetValue<string>())));
 
         var system = incoming.DeepClone().AsObject();
-        system["id"] = $"message_system_{Guid.NewGuid():N}";
+        system.Remove("id");
         system["direction"] = "system";
         system["actorId"] = "";
-        database.AddModuleInstanceRuntimeCollectionItem(screen.Id, "messages", system);
+        database.MutateModuleInstanceStructuredCollection(
+            screen.Id,
+            new AddStructuredCollectionItem(
+                new StructuredCollectionAddress("messages", [], "messages"),
+                system));
 
         var moduleVariant = database.GetModuleInstanceVariantSettings(screen.Id);
         var runtimePreview = DesignPreviewTestValues.Parse(database.GetModuleInstanceRuntimePreviewJson(screen.Id));
@@ -16898,11 +17010,22 @@ static void CollectionItemReorderPersistsStableIds()
         var before = CollectionOrder(temporary);
         True(before.ItemIds.Count >= 2);
         var database = new SqliteProjectTestContext(temporary);
-        database.MoveModuleInstanceRuntimeCollectionItem(before.InstanceId, "messages", before.ItemIds[0], 1);
+        var address = new StructuredCollectionAddress("messages", [], "messages");
+        database.MutateModuleInstanceStructuredCollection(
+            before.InstanceId,
+            new MoveStructuredCollectionItem(
+                address,
+                before.ItemIds[0],
+                before.ItemIds.Count > 2 ? before.ItemIds[2] : null));
         var moved = CollectionOrder(temporary, before.InstanceId);
         Equal(before.ItemIds[0], moved.ItemIds[1]);
         Equal(before.ItemIds[1], moved.ItemIds[0]);
-        database.MoveModuleInstanceRuntimeCollectionItem(before.InstanceId, "messages", before.ItemIds[0], -1);
+        database.MutateModuleInstanceStructuredCollection(
+            before.InstanceId,
+            new MoveStructuredCollectionItem(
+                address,
+                before.ItemIds[0],
+                before.ItemIds[1]));
         SequenceEqual(before.ItemIds, CollectionOrder(temporary, before.InstanceId).ItemIds);
     }
     finally

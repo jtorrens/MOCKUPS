@@ -158,7 +158,7 @@ public static class RuntimeInputDefinitionReader
                     JsonString(field, "tableId"),
                     JsonString(field, "resolvedJsonKey"),
                     JsonString(field, "componentType"),
-                    ComponentInputSource.Runtime,
+                    ParseInputSource(JsonString(field, "source")),
                     ReadPairLabels(field),
                     string.IsNullOrWhiteSpace(JsonString(field, "uiGroupId"))
                         ? ComponentInputUiOrigin.Self
@@ -197,6 +197,12 @@ public static class RuntimeInputDefinitionReader
 
             var itemPresentation = ReadItemPresentation(collection);
             var componentItems = ReadComponentItems(collection);
+            var fixedComponentBoundary = ReadFixedComponentBoundary(collection);
+            if (componentItems is not null && fixedComponentBoundary is not null)
+            {
+                throw new InvalidOperationException(
+                    $"Runtime Input collection '{id}' cannot declare componentItems and fixedComponentBoundary together.");
+            }
             if (componentItems is not null)
             {
                 var matchingFields = itemFields.Where((field) =>
@@ -216,6 +222,27 @@ public static class RuntimeInputDefinitionReader
                 {
                     throw new InvalidOperationException(
                         $"Runtime Input collection '{id}' componentItems object keys must not overlap field keys.");
+                }
+            }
+            if (fixedComponentBoundary is not null)
+            {
+                var matchingFields = itemFields.Where((field) =>
+                        field.JsonKey.Equals(
+                            fixedComponentBoundary.VariantReferenceJsonKey,
+                            StringComparison.Ordinal)
+                        && field.ValueKind == ValueKind.ComponentVariant
+                        && field.ComponentType.Equals(
+                            fixedComponentBoundary.ComponentType,
+                            StringComparison.Ordinal))
+                    .ToList();
+                if (matchingFields.Count != 1
+                    || matchingFields[0].AllowEmpty
+                    || itemFields.Any((field) => field.JsonKey.Equals(
+                        fixedComponentBoundary.OverridesJsonKey,
+                        StringComparison.Ordinal)))
+                {
+                    throw new InvalidOperationException(
+                        $"Runtime Input collection '{id}' fixed Component boundary requires one matching ComponentVariant field and a distinct Overrides key.");
                 }
             }
             if (!isVisible && !includeHidden) continue;
@@ -251,7 +278,8 @@ public static class RuntimeInputDefinitionReader
                 itemRuntimePresentation,
                 JsonStringArray(collection, "itemRuntimeHiddenInputIds"),
                 JsonString(collection, "itemRuntimeVariantReferencePath"),
-                JsonString(collection, "itemRuntimeOwnerVariantReferencePath")));
+                JsonString(collection, "itemRuntimeOwnerVariantReferencePath"),
+                fixedComponentBoundary));
         }
         return definitions;
     }
@@ -379,6 +407,52 @@ public static class RuntimeInputDefinitionReader
                 keys.VariantReferenceJsonKey,
                 keys.OverridesJsonKey,
                 keys.InputsJsonKey);
+    }
+
+    private static RuntimeFixedComponentBoundaryDefinition? ReadFixedComponentBoundary(
+        JsonObject collection)
+    {
+        var boundary = OptionalObject(
+            collection,
+            "fixedComponentBoundary",
+            $"Runtime Input collection '{JsonString(collection, "id")}'");
+        if (boundary is null) return null;
+        var actualKeys = boundary.Select((entry) => entry.Key).ToHashSet(StringComparer.Ordinal);
+        var expectedKeys = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "variantReferenceJsonKey",
+            "overridesJsonKey",
+            "componentType",
+            "componentClassId",
+        };
+        if (!actualKeys.SetEquals(expectedKeys))
+        {
+            throw new InvalidOperationException(
+                "Fixed Component boundary must contain exactly variantReferenceJsonKey, overridesJsonKey, componentType and componentClassId.");
+        }
+        var variantReferenceJsonKey = JsonPath.RequiredString(
+            boundary,
+            "variantReferenceJsonKey",
+            "Fixed Component boundary");
+        var overridesJsonKey = JsonPath.RequiredString(
+            boundary,
+            "overridesJsonKey",
+            "Fixed Component boundary");
+        var componentType = JsonPath.RequiredString(boundary, "componentType", "Fixed Component boundary");
+        var componentClassId = JsonPath.RequiredString(boundary, "componentClassId", "Fixed Component boundary");
+        if (componentType.Equals("*", StringComparison.Ordinal)
+            || variantReferenceJsonKey.Equals("id", StringComparison.Ordinal)
+            || overridesJsonKey.Equals("id", StringComparison.Ordinal)
+            || variantReferenceJsonKey.Equals(overridesJsonKey, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "Fixed Component boundary must declare one non-polymorphic Component type and distinct non-id Variant and Overrides keys.");
+        }
+        return new RuntimeFixedComponentBoundaryDefinition(
+            variantReferenceJsonKey,
+            overridesJsonKey,
+            componentType,
+            componentClassId);
     }
 
     private static BehaviorTimingDefinition? ReadBehaviorTimingDefinition(JsonObject field) =>

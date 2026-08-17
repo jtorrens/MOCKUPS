@@ -11,7 +11,6 @@ export {
   requiredBoolean,
   requiredComponentVariantSlot,
   requiredFontFamilyId,
-  requiredIconSlots,
   requiredNumber,
   requiredNumberPair,
   requiredPlacement,

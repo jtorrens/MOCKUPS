@@ -28,7 +28,6 @@ public enum ValueKind
     PaletteColorAlphaPair,
     IconToken,
     IconTokenList,
-    IconSlots,
     EmbeddedComponent,
     ComponentVariant,
     ComponentVariantSlot,

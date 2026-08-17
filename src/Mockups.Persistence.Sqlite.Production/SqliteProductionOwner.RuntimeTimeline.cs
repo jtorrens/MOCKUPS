@@ -8,7 +8,8 @@ internal sealed partial class SqliteProductionOwner
 {
     internal void SynchronizeTimelineDurations(
         SqliteConnection connection,
-        string? shotId = null)
+        string? shotId = null,
+        SqliteTransaction? transaction = null)
     {
         var instances = shotId is null
             ? _moduleInstanceRepository.QueryAll(connection)
@@ -44,7 +45,8 @@ internal sealed partial class SqliteProductionOwner
             _moduleInstanceRepository.UpdateDuration(
                 connection,
                 update.Id,
-                update.Duration);
+                update.Duration,
+                transaction);
         }
 
         var shots =
@@ -132,7 +134,8 @@ internal sealed partial class SqliteProductionOwner
             _shotRepository.UpdateDuration(
                 connection,
                 shot.Id,
-                duration);
+                duration,
+                transaction);
         }
     }
 }

@@ -327,7 +327,9 @@ the row disappears after the confirmed write.
 
 Collection rows display stable identity, useful summary and owner actions.
 Add, remove, reorder, duplicate and State changes preserve ids and explicit
-references according to the collection contract.
+references according to the collection contract. All structural actions use
+the shared collection command surface for both Variant and Runtime authoring;
+an editor never implements a collection type's lifecycle locally.
 
 For conversation messages, direction controls Actor requirements visibly.
 Incoming requires an Actor, outgoing derives the Shot owner at payload

@@ -60,7 +60,6 @@ internal sealed partial class SqliteCurrentDatabaseValidator
     private static readonly HashSet<string> CurrentComponentVariantReferenceKeys = new(StringComparer.Ordinal)
     {
         "variantReference",
-        "buttonVariantReference",
         "bubbleVariant",
         "headerAvatarVariant",
         "keyboardVariant",
@@ -642,7 +641,7 @@ internal sealed partial class SqliteCurrentDatabaseValidator
                     row.ComponentType,
                     variantConfig,
                     $"Component Variant '{row.Id}::{variant.Id}'");
-                _designOwner.ValidateEmbeddedSlotVariantReferences(
+                _designOwner.ValidateDeclaredComponentVariantReferences(
                     connection,
                     row.ProjectId,
                     variantConfig);
@@ -654,7 +653,7 @@ internal sealed partial class SqliteCurrentDatabaseValidator
                 row.ComponentType,
                 classConfig,
                 $"Component Class '{row.Id}' config_json");
-            _designOwner.ValidateEmbeddedSlotVariantReferences(
+            _designOwner.ValidateDeclaredComponentVariantReferences(
                 connection,
                 row.ProjectId,
                 classConfig);

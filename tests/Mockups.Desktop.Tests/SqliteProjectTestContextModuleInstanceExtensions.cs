@@ -73,30 +73,6 @@ internal static class SqliteProjectTestContextModuleInstanceExtensions
                 itemId,
                 values);
 
-    internal static void AddModuleInstanceRuntimeCollectionItem(
-        this SqliteProjectTestContext engine,
-        string moduleInstanceId,
-        string collectionJsonKey,
-        JsonObject item) =>
-        engine.RuntimeInputInstances
-            .AddModuleInstanceRuntimeCollectionItem(
-                moduleInstanceId,
-                collectionJsonKey,
-                item);
-
-    internal static void InsertModuleInstanceRuntimeCollectionItemAfter(
-        this SqliteProjectTestContext engine,
-        string moduleInstanceId,
-        string collectionJsonKey,
-        string afterItemId,
-        JsonObject item) =>
-        engine.RuntimeInputInstances
-            .InsertModuleInstanceRuntimeCollectionItemAfter(
-                moduleInstanceId,
-                collectionJsonKey,
-                afterItemId,
-                item);
-
     internal static StructuredCollectionMutationResult
         MutateModuleInstanceStructuredCollection(
         this SqliteProjectTestContext engine,
@@ -106,19 +82,6 @@ internal static class SqliteProjectTestContextModuleInstanceExtensions
             .MutateModuleInstanceStructuredCollection(
                 moduleInstanceId,
                 mutation);
-
-    internal static void MoveModuleInstanceRuntimeCollectionItem(
-        this SqliteProjectTestContext engine,
-        string moduleInstanceId,
-        string collectionJsonKey,
-        string itemId,
-        int offset) =>
-        engine.RuntimeInputInstances
-            .MoveModuleInstanceRuntimeCollectionItem(
-                moduleInstanceId,
-                collectionJsonKey,
-                itemId,
-                offset);
 
     internal static IReadOnlyList<ModuleInstanceSlot>
         GetShotModuleInstanceSlots(
