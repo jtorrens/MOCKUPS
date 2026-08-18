@@ -456,7 +456,6 @@ function bubbleSurfaceForState(
     ...surface,
     tail: {
       ...surface.tail,
-      enabled: state !== "system",
       side,
     },
   };
