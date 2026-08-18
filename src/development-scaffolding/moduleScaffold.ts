@@ -1053,6 +1053,11 @@ function validateFields(
       }
     }
     if (field.embeddedSlot) {
+      if (field.valueKind !== "ComponentVariantSlot") {
+        violations.push(
+          `Embedded slot field '${field.id}' must use ComponentVariantSlot.`,
+        );
+      }
       if (!field.componentVariantType
           || field.componentVariantType !== field.embeddedSlot.componentType) {
         violations.push(
@@ -1061,6 +1066,15 @@ function validateFields(
       }
       if (!field.embeddedSlot.recordClassId.startsWith("component.")) {
         violations.push(`Embedded slot field '${field.id}' has an invalid recordClassId.`);
+      }
+      const slot = jsonPathValue(spec.config, field.jsonPath);
+      if (!isPlainObject(slot)
+          || Object.keys(slot).length !== 2
+          || typeof slot.variantReference !== "string"
+          || !isPlainObject(slot.overrides)) {
+        violations.push(
+          `Embedded slot field '${field.id}' must address its exact { variantReference, overrides } document.`,
+        );
       }
     }
   }

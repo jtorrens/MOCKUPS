@@ -91,18 +91,34 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
   const { composer, timing } = contract;
   const keyboardVisible = composer.keyboardVisible;
   const textInputVisible = composer.textInputVisible;
+  const keyboardSlot = requiredRecord(
+    conversation,
+    "keyboardSlot",
+    "module.core.chat.keyboardSlot",
+  );
+  const textInputBarSlot = requiredRecord(
+    conversation,
+    "textInputBarSlot",
+    "module.core.chat.textInputBarSlot",
+  );
   const keyboard = keyboardVisible
     ? childRenderable(
         payload,
         componentBaseConfigs,
         "keyboard",
         "component.keyboard",
-        requiredString(conversation, "keyboardVariant", "module.core.chat.keyboardVariant"),
+        requiredString(keyboardSlot, "variantReference", "module.core.chat.keyboardSlot"),
         {
           text: composer.text,
           currentCharacter: composer.currentCharacter,
           motionElapsedMs: contract.motionElapsedMs,
         },
+        embeddedComponentConfig(
+          componentBaseConfigs,
+          keyboardSlot,
+          "keyboard",
+          "module.core.chat.keyboardSlot",
+        ),
       )
     : undefined;
   const textInput = textInputVisible
@@ -111,11 +127,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
         componentBaseConfigs,
         "textInputBar",
         "component.textInputBar",
-        requiredString(
-          conversation,
-          "textInputBarVariant",
-          "module.core.chat.textInputBarVariant",
-        ),
+        requiredString(textInputBarSlot, "variantReference", "module.core.chat.textInputBarSlot"),
         {
           availableWidth: screen.width / scale,
         },
@@ -222,17 +234,17 @@ function messageNodes(
     * renderScale(payload);
   const gutter = spacingPair(payload, optionalString(conversation, "screenGutter") || "theme.spacing.l|theme.spacing.l");
   const screen = previewScreenBox(payload);
-  const bubbleVariant = requiredString(
+  const bubbleSlot = requiredRecord(
     conversation,
-    "bubbleVariant",
-    "module.core.chat.bubbleVariant",
+    "bubbleSlot",
+    "module.core.chat.bubbleSlot",
   );
   const bubbleNode = (message: ConversationMessageContract, writeOnTrigger: boolean) => childRenderable(
     payload,
     componentBaseConfigs,
     "bubble",
     "component.bubble",
-    bubbleVariant,
+    requiredString(bubbleSlot, "variantReference", "module.core.chat.bubbleSlot"),
     {
       state: message.state,
       sampleText: message.text,
@@ -263,6 +275,12 @@ function messageNodes(
       statusState: message.statusVisible ? message.statusState : "none",
       statusText: message.statusVisible ? message.statusText : "",
     },
+    embeddedComponentConfig(
+      componentBaseConfigs,
+      bubbleSlot,
+      "bubble",
+      "module.core.chat.bubbleSlot",
+    ),
   );
   const entries = messages.map((message) => {
     const node = bubbleNode(message, message.writeOnTrigger);

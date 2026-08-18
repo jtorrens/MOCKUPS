@@ -30,15 +30,15 @@ internal static class GeneratedModuleScaffoldConfigRegistry
         ["module.core.chat.bubbleVariant"] = new(
             "module.core.chat",
             "module.core.chat.bubbleVariant",
-            ValueKind.ComponentVariant,
-            ["conversation", "bubbleVariant"],
+            ValueKind.ComponentVariantSlot,
+            ["conversation", "bubbleSlot"],
             "bubble",
             []),
         ["module.core.chat.headerAvatar.editor"] = new(
             "module.core.chat",
             "module.core.chat.headerAvatar.editor",
-            ValueKind.ComponentVariant,
-            ["conversation", "headerAvatarSlot", "variantReference"],
+            ValueKind.ComponentVariantSlot,
+            ["conversation", "headerAvatarSlot"],
             "avatar",
             []),
         ["module.core.chat.headerAvatarAlignment"] = new(
@@ -58,8 +58,8 @@ internal static class GeneratedModuleScaffoldConfigRegistry
         ["module.core.chat.headerLeftIconRow.editor"] = new(
             "module.core.chat",
             "module.core.chat.headerLeftIconRow.editor",
-            ValueKind.ComponentVariant,
-            ["conversation", "headerLeftIconRowSlot", "variantReference"],
+            ValueKind.ComponentVariantSlot,
+            ["conversation", "headerLeftIconRowSlot"],
             "iconRow",
             []),
         ["module.core.chat.headerLeftIconRow.inputs"] = new(
@@ -72,8 +72,8 @@ internal static class GeneratedModuleScaffoldConfigRegistry
         ["module.core.chat.headerRightIconRow.editor"] = new(
             "module.core.chat",
             "module.core.chat.headerRightIconRow.editor",
-            ValueKind.ComponentVariant,
-            ["conversation", "headerRightIconRowSlot", "variantReference"],
+            ValueKind.ComponentVariantSlot,
+            ["conversation", "headerRightIconRowSlot"],
             "iconRow",
             []),
         ["module.core.chat.headerRightIconRow.inputs"] = new(
@@ -86,8 +86,8 @@ internal static class GeneratedModuleScaffoldConfigRegistry
         ["module.core.chat.headerSurface.editor"] = new(
             "module.core.chat",
             "module.core.chat.headerSurface.editor",
-            ValueKind.ComponentVariant,
-            ["conversation", "headerSurfaceSlot", "variantReference"],
+            ValueKind.ComponentVariantSlot,
+            ["conversation", "headerSurfaceSlot"],
             "surface",
             []),
         ["module.core.chat.headerUseActorColor"] = new(
@@ -100,8 +100,8 @@ internal static class GeneratedModuleScaffoldConfigRegistry
         ["module.core.chat.keyboardVariant"] = new(
             "module.core.chat",
             "module.core.chat.keyboardVariant",
-            ValueKind.ComponentVariant,
-            ["conversation", "keyboardVariant"],
+            ValueKind.ComponentVariantSlot,
+            ["conversation", "keyboardSlot"],
             "keyboard",
             []),
         ["module.core.chat.messageGap"] = new(
@@ -170,8 +170,8 @@ internal static class GeneratedModuleScaffoldConfigRegistry
         ["module.core.chat.textInputBarVariant"] = new(
             "module.core.chat",
             "module.core.chat.textInputBarVariant",
-            ValueKind.ComponentVariant,
-            ["conversation", "textInputBarVariant"],
+            ValueKind.ComponentVariantSlot,
+            ["conversation", "textInputBarSlot"],
             "textInputBar",
             []),
         ["module.core.chat.useAppWallpaper"] = new(
@@ -233,8 +233,8 @@ internal static class GeneratedModuleScaffoldConfigRegistry
         ["module.core.lockScreen.navigationBarVariant"] = new(
             "module.core.lockScreen",
             "module.core.lockScreen.navigationBarVariant",
-            ValueKind.ComponentVariant,
-            ["lockScreen", "navigationBarSlot", "variantReference"],
+            ValueKind.ComponentVariantSlot,
+            ["lockScreen", "navigationBarSlot"],
             "navigation_bar",
             []),
         ["module.core.lockScreen.stackInputs"] = new(
@@ -254,15 +254,15 @@ internal static class GeneratedModuleScaffoldConfigRegistry
         ["module.core.lockScreen.stackVariant"] = new(
             "module.core.lockScreen",
             "module.core.lockScreen.stackVariant",
-            ValueKind.ComponentVariant,
-            ["lockScreen", "stackSlot", "variantReference"],
+            ValueKind.ComponentVariantSlot,
+            ["lockScreen", "stackSlot"],
             "componentStack",
             []),
         ["module.core.lockScreen.statusBarVariant"] = new(
             "module.core.lockScreen",
             "module.core.lockScreen.statusBarVariant",
-            ValueKind.ComponentVariant,
-            ["lockScreen", "statusBarSlot", "variantReference"],
+            ValueKind.ComponentVariantSlot,
+            ["lockScreen", "statusBarSlot"],
             "status_bar",
             []),
     };

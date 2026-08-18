@@ -14,9 +14,9 @@ internal sealed class ReferenceUsageService :
 {
     private static readonly (string Label, string[] Path)[] ModuleComponentReferencePaths =
     [
-        ("Text input variant", ["conversation", "textInputBarVariant"]),
-        ("Keyboard variant", ["conversation", "keyboardVariant"]),
-        ("Bubble variant", ["conversation", "bubbleVariant"]),
+        ("Text input bar", ["conversation", "textInputBarSlot", "variantReference"]),
+        ("Keyboard", ["conversation", "keyboardSlot", "variantReference"]),
+        ("Bubble", ["conversation", "bubbleSlot", "variantReference"]),
     ];
 
     private static readonly (string Label, string[] Path)[] ThemeFontReferencePaths =

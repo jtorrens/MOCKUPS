@@ -177,6 +177,21 @@ test("Module scaffold requires an exact dictionary and editor layout field inven
   );
 });
 
+test("Module scaffold requires every embedded boundary to own one exact slot document", () => {
+  const reduced = validSpec();
+  const field = reduced.dictionaryFields[0]!;
+  field.valueKind = "ComponentVariant";
+  field.jsonPath = ["chatList", "listSlot", "variantReference"];
+  assert.throws(
+    () => createModuleScaffoldPlan(
+      reduced,
+      loadModuleScaffoldInventory(repositoryRoot),
+      repositoryRoot,
+    ),
+    /Embedded slot field 'module\.core\.scaffoldTest\.list' must use ComponentVariantSlot/,
+  );
+});
+
 test("Module materialization is no-overwrite and integration is transactional", () => {
   const fixture = integrationFixture();
   const spec = validSpec();

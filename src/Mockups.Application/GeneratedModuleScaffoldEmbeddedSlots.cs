@@ -7,6 +7,12 @@ public static class GeneratedModuleScaffoldEmbeddedSlots
     public static EmbeddedComponentSlotDefinition[] All { get; } =
     [
         new(
+            "module.core.chat.bubbleVariant",
+            "bubble",
+            "Bubble",
+            "component.bubble",
+            ["conversation", "bubbleSlot"]),
+        new(
             "module.core.chat.headerAvatar.editor",
             "avatar",
             "Header avatar",
@@ -30,6 +36,18 @@ public static class GeneratedModuleScaffoldEmbeddedSlots
             "Header surface",
             "component.surface",
             ["conversation", "headerSurfaceSlot"]),
+        new(
+            "module.core.chat.keyboardVariant",
+            "keyboard",
+            "Keyboard",
+            "component.keyboard",
+            ["conversation", "keyboardSlot"]),
+        new(
+            "module.core.chat.textInputBarVariant",
+            "textInputBar",
+            "Text input bar",
+            "component.textInputBar",
+            ["conversation", "textInputBarSlot"]),
         new(
             "module.core.chatList.bottomIconBar",
             "iconBar",

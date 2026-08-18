@@ -47,10 +47,19 @@
       "showStatusBar": true,
       "showNavigationBar": true,
       "showTextInputBar": true,
-      "textInputBarVariant": "component_project_foqn_s2_textInputBar::variant::default_copy",
+      "textInputBarSlot": {
+        "variantReference": "component_project_foqn_s2_textInputBar::variant::default_copy",
+        "overrides": {}
+      },
       "showKeyboard": true,
-      "keyboardVariant": "component_project_foqn_s2_keyboard::variant::default_copy",
-      "bubbleVariant": "component_project_foqn_s2_bubble::variant::default_copy",
+      "keyboardSlot": {
+        "variantReference": "component_project_foqn_s2_keyboard::variant::default_copy",
+        "overrides": {}
+      },
+      "bubbleSlot": {
+        "variantReference": "component_project_foqn_s2_bubble::variant::default_copy",
+        "overrides": {}
+      },
       "screenGutter": "theme.spacing.l|theme.spacing.l",
       "messageGap": "theme.spacing.l",
       "bubbleMaxWidth": 66,
@@ -295,10 +304,6 @@
         "kind": "option",
         "defaultValue": "typingIndicator",
         "options": [
-          {
-            "value": "instant",
-            "label": "Instant"
-          },
           {
             "value": "writeOn",
             "label": "Write-on"
@@ -1188,10 +1193,19 @@
         "showStatusBar": true,
         "showNavigationBar": true,
         "showTextInputBar": true,
-        "textInputBarVariant": "component_project_foqn_s2_textInputBar::variant::default_copy",
+        "textInputBarSlot": {
+          "variantReference": "component_project_foqn_s2_textInputBar::variant::default_copy",
+          "overrides": {}
+        },
         "showKeyboard": true,
-        "keyboardVariant": "component_project_foqn_s2_keyboard::variant::default_copy",
-        "bubbleVariant": "component_project_foqn_s2_bubble::variant::default_copy",
+        "keyboardSlot": {
+          "variantReference": "component_project_foqn_s2_keyboard::variant::default_copy",
+          "overrides": {}
+        },
+        "bubbleSlot": {
+          "variantReference": "component_project_foqn_s2_bubble::variant::default_copy",
+          "overrides": {}
+        },
         "screenGutter": "theme.spacing.l|theme.spacing.l",
         "messageGap": "theme.spacing.l",
         "bubbleMaxWidth": 66,
@@ -1387,10 +1401,10 @@
     {
       "id": "module.core.chat.bubbleVariant",
       "label": "Bubble variant",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "conversation",
-        "bubbleVariant"
+        "bubbleSlot"
       ],
       "defaultValue": "component_project_foqn_s2_bubble::variant::default_copy",
       "isEditable": true,
@@ -1407,7 +1421,11 @@
       "recordReference": null,
       "motionTiming": null,
       "unit": "",
-      "embeddedSlot": null
+      "embeddedSlot": {
+        "componentType": "bubble",
+        "label": "Bubble",
+        "recordClassId": "component.bubble"
+      }
     },
     {
       "id": "module.core.chat.headerAvatarAlignment",
@@ -1465,11 +1483,10 @@
     {
       "id": "module.core.chat.headerAvatar.editor",
       "label": "Header avatar",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "conversation",
-        "headerAvatarSlot",
-        "variantReference"
+        "headerAvatarSlot"
       ],
       "defaultValue": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
       "isEditable": true,
@@ -1526,11 +1543,10 @@
     {
       "id": "module.core.chat.headerLeftIconRow.editor",
       "label": "Left icon row",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "conversation",
-        "headerLeftIconRowSlot",
-        "variantReference"
+        "headerLeftIconRowSlot"
       ],
       "defaultValue": "component_project_foqn_s2_iconRow::variant::default",
       "isEditable": true,
@@ -1581,12 +1597,11 @@
     {
       "id": "module.core.chat.headerRightIconRow.editor",
       "label": "Right icon row",
-      "valueKind": "ComponentVariant",
       "jsonPath": [
         "conversation",
-        "headerRightIconRowSlot",
-        "variantReference"
+        "headerRightIconRowSlot"
       ],
+      "valueKind": "ComponentVariantSlot",
       "defaultValue": "component_project_foqn_s2_iconRow::variant::default",
       "isEditable": true,
       "options": [],
@@ -1636,11 +1651,10 @@
     {
       "id": "module.core.chat.headerSurface.editor",
       "label": "Header surface",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "conversation",
-        "headerSurfaceSlot",
-        "variantReference"
+        "headerSurfaceSlot"
       ],
       "defaultValue": "component_project_foqn_s2_surface::variant::default",
       "isEditable": true,
@@ -1691,10 +1705,10 @@
     {
       "id": "module.core.chat.keyboardVariant",
       "label": "Keyboard variant",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "conversation",
-        "keyboardVariant"
+        "keyboardSlot"
       ],
       "defaultValue": "component_project_foqn_s2_keyboard::variant::default_copy",
       "isEditable": true,
@@ -1711,7 +1725,11 @@
       "recordReference": null,
       "motionTiming": null,
       "unit": "",
-      "embeddedSlot": null
+      "embeddedSlot": {
+        "componentType": "keyboard",
+        "label": "Keyboard",
+        "recordClassId": "component.keyboard"
+      }
     },
     {
       "id": "module.core.chat.messageGap",
@@ -2072,10 +2090,10 @@
     {
       "id": "module.core.chat.textInputBarVariant",
       "label": "Text input variant",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "conversation",
-        "textInputBarVariant"
+        "textInputBarSlot"
       ],
       "defaultValue": "component_project_foqn_s2_textInputBar::variant::default_copy",
       "isEditable": true,
@@ -2092,7 +2110,11 @@
       "recordReference": null,
       "motionTiming": null,
       "unit": "",
-      "embeddedSlot": null
+      "embeddedSlot": {
+        "componentType": "textInputBar",
+        "label": "Text input bar",
+        "recordClassId": "component.textInputBar"
+      }
     },
     {
       "id": "module.core.chat.useAppWallpaper",

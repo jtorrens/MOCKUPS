@@ -60,9 +60,6 @@ internal sealed partial class SqliteCurrentDatabaseValidator
     private static readonly HashSet<string> CurrentComponentVariantReferenceKeys = new(StringComparer.Ordinal)
     {
         "variantReference",
-        "bubbleVariant",
-        "keyboardVariant",
-        "textInputBarVariant",
     };
 
     private static readonly (string Table, string Column, string RootKind)[] CurrentJsonColumns =

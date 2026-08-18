@@ -2229,11 +2229,10 @@
     {
       "id": "module.core.lockScreen.navigationBarVariant",
       "label": "Navigation bar variant",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "lockScreen",
-        "navigationBarSlot",
-        "variantReference"
+        "navigationBarSlot"
       ],
       "defaultValue": "component_project_foqn_s2_navigation_bar::variant::lock_screen",
       "isEditable": true,
@@ -2310,11 +2309,10 @@
     {
       "id": "module.core.lockScreen.stackVariant",
       "label": "Stack variant",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "lockScreen",
-        "stackSlot",
-        "variantReference"
+        "stackSlot"
       ],
       "defaultValue": "component_project_foqn_s2_componentStack::variant::default",
       "isEditable": true,
@@ -2340,11 +2338,10 @@
     {
       "id": "module.core.lockScreen.statusBarVariant",
       "label": "Status bar variant",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "lockScreen",
-        "statusBarSlot",
-        "variantReference"
+        "statusBarSlot"
       ],
       "defaultValue": "component_project_foqn_s2_status_bar::variant::lock_screen",
       "isEditable": true,

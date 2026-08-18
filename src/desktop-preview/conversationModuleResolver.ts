@@ -34,7 +34,7 @@ import {
   resolveMotionFrame,
 } from "./previewMotionHelpers.js";
 import type { ComponentMotionContract } from "./previewComponentContracts.js";
-import { componentVariantConfig } from "./componentPreviewDefaults.js";
+import { embeddedComponentConfig } from "./componentPreviewDefaults.js";
 import {
   applyRuntimeInputForwarding,
   forwardedRuntimeInputPatch,
@@ -630,14 +630,16 @@ function resolvedTextInputConfig(
   text: string,
 ) {
   const componentBaseConfigs = parseObject(payload.componentBaseConfigsJson);
-  const config = componentVariantConfig(
+  const slot = requiredRecord(
+    conversation,
+    "textInputBarSlot",
+    "module.core.chat.textInputBarSlot",
+  );
+  const config = embeddedComponentConfig(
     componentBaseConfigs,
+    slot,
     "textInputBar",
-    requiredString(
-      conversation,
-      "textInputBarVariant",
-      "module.core.chat.textInputBarVariant",
-    ),
+    "module.core.chat.textInputBarSlot",
   );
   const resolved = applyRuntimeInputForwarding({
     ...payload,

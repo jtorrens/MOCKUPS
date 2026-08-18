@@ -45,10 +45,10 @@ internal static class ConversationModuleConfigContract
         JsonPath.RequiredBoolean(conversation, "showStatusBar", owner);
         JsonPath.RequiredBoolean(conversation, "showNavigationBar", owner);
         JsonPath.RequiredBoolean(conversation, "showTextInputBar", owner);
-        JsonPath.RequiredString(conversation, "textInputBarVariant", owner);
+        RequireSlot(conversation, "textInputBarSlot", owner);
         JsonPath.RequiredBoolean(conversation, "showKeyboard", owner);
-        JsonPath.RequiredString(conversation, "keyboardVariant", owner);
-        JsonPath.RequiredString(conversation, "bubbleVariant", owner);
+        RequireSlot(conversation, "keyboardSlot", owner);
+        RequireSlot(conversation, "bubbleSlot", owner);
         RequireRange(
             JsonPath.RequiredNumber(conversation, "bubbleMaxWidth", owner),
             1,

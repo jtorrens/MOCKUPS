@@ -174,15 +174,12 @@ function renderEmbeddedSlots(specs: readonly ModuleScaffoldSpec[]) {
     .sort((left, right) => left.id.localeCompare(right.id))
     .map((field) => {
       const embedded = field.embeddedSlot!;
-      const slotPath = field.valueKind === "ComponentVariant"
-        ? field.jsonPath.slice(0, -1)
-        : field.jsonPath;
       return `        new(\n`
         + `            ${csharpString(field.id)},\n`
         + `            ${csharpString(embedded.componentType)},\n`
         + `            ${csharpString(embedded.label)},\n`
         + `            ${csharpString(embedded.recordClassId)},\n`
-        + `            [${slotPath.map(csharpString).join(", ")}]),`;
+        + `            [${field.jsonPath.map(csharpString).join(", ")}]),`;
     }).join("\n");
   return `// Generated from scaffolding/modules/*.json. Do not edit manually.\n`
     + `// Modules: ${specs.map((spec) => spec.module.recordClassId).join(", ")}\n`

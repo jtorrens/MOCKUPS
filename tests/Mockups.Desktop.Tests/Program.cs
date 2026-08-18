@@ -7808,10 +7808,14 @@ static void ConversationPreviewTargetsExactIconRowItems()
             config,
             "conversation",
             "Conversation Preview config");
-        var textInputVariant = JsonPath.RequiredString(
+        var textInputSlot = JsonPath.RequiredObject(
             conversationConfig,
-            "textInputBarVariant",
+            "textInputBarSlot",
             "Conversation Preview config");
+        var textInputVariant = JsonPath.RequiredString(
+            textInputSlot,
+            "variantReference",
+            "Conversation Preview text input slot");
         var rightSlot = JsonPath.RequiredObject(
             conversationConfig,
             "headerRightIconRowSlot",
@@ -8942,11 +8946,23 @@ static void ModuleConfigsUseOwnerContracts()
             "{}"));
         SequenceEqual(beforeRejectedWrites, SHA256.HashData(File.ReadAllBytes(temporary)));
 
-        Equal(
-            "component_project_foqn_s2_surface::variant::default",
+        var headerSurfaceSlot = JsonPath.ParseRequiredObject(
             database.GetModuleConfigFieldValue(
                 conversation.Id,
-                "module.core.chat.headerSurface.editor"));
+                "module.core.chat.headerSurface.editor"),
+            "Conversation Header Surface slot");
+        Equal(
+            "component_project_foqn_s2_surface::variant::default",
+            JsonPath.RequiredString(
+                headerSurfaceSlot,
+                "variantReference",
+                "Conversation Header Surface slot"));
+        Equal(
+            1,
+            JsonPath.RequiredObject(
+                headerSurfaceSlot,
+                "overrides",
+                "Conversation Header Surface slot").Count);
         database.UpdateModuleField(
             conversation.Id,
             "module.core.chat.headerUseActorColor",
@@ -11019,7 +11035,8 @@ static void RapidAnimationCommandsUseLatestConfirmedDocument()
                         candidateJson,
                         "{}",
                         "{}",
-                        "{}"),
+                        "{}",
+                        25),
                     0,
                     0,
                     100);
@@ -15762,7 +15779,8 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
                 EmptyDocument().ToJson(),
                 preview.ToJsonString(),
                 "{}",
-                contract),
+                contract,
+                25),
             ScreenStartFrame: 0,
             ActionStartFrame: 20,
             DurationFrames: 100));
@@ -15867,7 +15885,8 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
                 stateAnimation.ToJson(),
                 stateRuntime.ToJsonString(),
                 "{}",
-                stateContract),
+                stateContract,
+                25),
             ScreenStartFrame: 0,
             ActionStartFrame: 0,
             DurationFrames: 200));
