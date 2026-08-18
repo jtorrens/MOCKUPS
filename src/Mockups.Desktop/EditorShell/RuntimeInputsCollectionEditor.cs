@@ -52,6 +52,7 @@ internal sealed class RuntimeInputsCollectionEditor
     private readonly Action<string, string?> _triggerAction;
     private readonly Action<string> _restoreAction;
     private readonly Func<string, bool> _canRestoreAction;
+    private readonly Func<string, bool> _isActionPlaying;
     private readonly Action<string, int, string?> _stepAction;
     private readonly Func<string, int, bool> _canStepAction;
     private readonly Action<string, int, string?> _setActionFrame;
@@ -97,6 +98,7 @@ internal sealed class RuntimeInputsCollectionEditor
         Action<string, string?> triggerAction,
         Action<string> restoreAction,
         Func<string, bool> canRestoreAction,
+        Func<string, bool> isActionPlaying,
         Action<string, int, string?> stepAction,
         Func<string, int, bool> canStepAction,
         Action<string, int, string?> setActionFrame,
@@ -140,6 +142,7 @@ internal sealed class RuntimeInputsCollectionEditor
         _triggerAction = triggerAction;
         _restoreAction = restoreAction;
         _canRestoreAction = canRestoreAction;
+        _isActionPlaying = isActionPlaying;
         _stepAction = stepAction;
         _canStepAction = canStepAction;
         _setActionFrame = setActionFrame;
@@ -2315,6 +2318,7 @@ internal sealed class RuntimeInputsCollectionEditor
             (targetValue) => _triggerAction(action.Id, targetValue),
             () => _restoreAction(action.Id),
             () => _canRestoreAction(action.Id),
+            () => _isActionPlaying(action.Id),
             (targetValue, delta) => _stepAction(action.Id, delta, targetValue),
             (delta) => _canStepAction(action.Id, delta),
             (targetValue, frame) => _setActionFrame(action.Id, frame, targetValue),

@@ -230,6 +230,13 @@ internal sealed class ComponentPreviewInputSession
         return _actions.Any((candidate) => candidate.Id == actionId);
     }
 
+    public bool IsActionPlaying(string actionId)
+    {
+        return _actions.FirstOrDefault((candidate) => candidate.Id == actionId) is { } action
+            && IsPlaying(action)
+            && _heldFinalActionId != action.Id;
+    }
+
     public bool CanStepActionFrame(string actionId, int delta)
     {
         return delta is -1 or 1

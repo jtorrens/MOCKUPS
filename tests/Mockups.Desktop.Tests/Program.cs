@@ -16889,6 +16889,7 @@ static void RuntimeActionControlsReactivateAfterPlaybackAndReattachment()
             (_) => { },
             () => currentFrame = 0,
             () => true,
+            () => playbackState.IsPlaying,
             (_, delta) => currentFrame = Math.Clamp(currentFrame + delta, 0, 10),
             (_) => true,
             (_, frame) => currentFrame = Math.Clamp(frame, 0, 10),
@@ -16931,6 +16932,13 @@ static void RuntimeActionControlsReactivateAfterPlaybackAndReattachment()
         True(restore.IsEnabled);
         True(previous.IsEnabled);
         True(next.IsEnabled);
+
+        playbackState.SetPlaying(true);
+        Dispatcher.UIThread.RunJobs();
+        True(ActionButton("Pause Test Action").IsEnabled);
+        playbackState.SetPlaying(false);
+        Dispatcher.UIThread.RunJobs();
+        True(ActionButton("Play Test Action").IsEnabled);
 
         playbackState.SetBusy(true);
         Dispatcher.UIThread.RunJobs();

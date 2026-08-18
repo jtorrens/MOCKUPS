@@ -40,6 +40,7 @@ internal sealed class EditorCollectionCardFactory : IDisposable
     private readonly Action<string, string?> _triggerPreviewAction;
     private readonly Action<string> _restorePreviewAction;
     private readonly Func<string, bool> _canRestorePreviewAction;
+    private readonly Func<string, bool> _isPreviewActionPlaying;
     private readonly Action<string, int, string?> _stepPreviewAction;
     private readonly Func<string, int, bool> _canStepPreviewAction;
     private readonly Action<string, int, string?> _setPreviewActionFrame;
@@ -84,6 +85,7 @@ internal sealed class EditorCollectionCardFactory : IDisposable
         Action<string, string?> triggerPreviewAction,
         Action<string> restorePreviewAction,
         Func<string, bool> canRestorePreviewAction,
+        Func<string, bool> isPreviewActionPlaying,
         Action<string, int, string?> stepPreviewAction,
         Func<string, int, bool> canStepPreviewAction,
         Action<string, int, string?> setPreviewActionFrame,
@@ -125,6 +127,7 @@ internal sealed class EditorCollectionCardFactory : IDisposable
         _triggerPreviewAction = triggerPreviewAction;
         _restorePreviewAction = restorePreviewAction;
         _canRestorePreviewAction = canRestorePreviewAction;
+        _isPreviewActionPlaying = isPreviewActionPlaying;
         _stepPreviewAction = stepPreviewAction;
         _canStepPreviewAction = canStepPreviewAction;
         _setPreviewActionFrame = setPreviewActionFrame;
@@ -356,6 +359,7 @@ internal sealed class EditorCollectionCardFactory : IDisposable
             _triggerPreviewAction,
             _restorePreviewAction,
             _canRestorePreviewAction,
+            _isPreviewActionPlaying,
             _stepPreviewAction,
             _canStepPreviewAction,
             _setPreviewActionFrame,

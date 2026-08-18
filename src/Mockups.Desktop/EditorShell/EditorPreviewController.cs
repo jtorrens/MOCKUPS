@@ -481,6 +481,8 @@ internal sealed class EditorPreviewController : IDisposable
         _designInputsPanel.PlaybackBusyChanged += PlaybackState.SetBusy;
         _shotPlaybackTimer.Tick += (_, _) => AdvanceShotPlayback();
         PlaybackState.Changed += SyncReferenceVideo;
+        PlaybackState.Changed += RefreshShotPlaybackButton;
+        RefreshShotPlaybackButton();
 
         _designContextHistoryButton.Content = EditorIcons.CreateSemantic("Recent design contexts", EditorIcons.Collapse, 15);
         _designContextAddHistoryButton.Content = EditorIcons.Create(EditorIcons.Add, 15);
@@ -519,6 +521,7 @@ internal sealed class EditorPreviewController : IDisposable
         _chromiumRasterizer.Dispose();
         WebDesignPreviewRenderer.Shutdown();
         PlaybackState.Changed -= SyncReferenceVideo;
+        PlaybackState.Changed -= RefreshShotPlaybackButton;
         _referenceVideoController.Dispose();
     }
 
@@ -1117,6 +1120,11 @@ internal sealed class EditorPreviewController : IDisposable
             16);
         EditorIcons.ApplyBrush(icon, Brushes.White);
         return icon;
+    }
+
+    private void RefreshShotPlaybackButton()
+    {
+        _shotPlayButton.Content = ShotPlaybackIcon(PlaybackState.IsPlaying);
     }
 
     private static Control TimelineButtonGroup(params Button[] buttons)
@@ -1949,6 +1957,11 @@ internal sealed class EditorPreviewController : IDisposable
         return _designInputsPanel.CanRestoreAction(actionId);
     }
 
+    public bool IsDesignPreviewActionPlaying(string actionId)
+    {
+        return _designInputsPanel.IsActionPlaying(actionId);
+    }
+
     public bool CanStepDesignPreviewAction(string actionId, int delta)
     {
         return _designInputsPanel.CanStepActionFrame(actionId, delta);
@@ -2485,6 +2498,7 @@ internal sealed class EditorPreviewController : IDisposable
 
     private void OnPlaybackStarted(ComponentPreviewInputSession.PlaybackRunInfo run)
     {
+        PlaybackState.SetPlaying(true);
         _playbackSummaryGeneration++;
         _playbackPerformanceRun = new PlaybackPerformanceRun(run.TargetFrames, run.TargetFps, Stopwatch.GetTimestamp());
         if (_selectedPlaybackRoute == "raster"
@@ -2546,6 +2560,7 @@ internal sealed class EditorPreviewController : IDisposable
 
     private void OnPlaybackStopped(ComponentPreviewInputSession.PlaybackRunInfo run)
     {
+        PlaybackState.SetPlaying(false);
         if (_preparedShotPlayback is null && _preparedDesignPlayback is null)
         {
             ReleaseFrameCacheReservations();
@@ -3582,8 +3597,8 @@ internal sealed class EditorPreviewController : IDisposable
     {
         _shotPlaybackStartFrame = _shotPreviewFrame;
         _shotPlaybackStartedTimestamp = Stopwatch.GetTimestamp();
+        PlaybackState.SetPlaying(true);
         _shotPlaybackTimer.Start();
-        _shotPlayButton.Content = ShotPlaybackIcon(isPlaying: true);
         OnPlaybackStarted(new ComponentPreviewInputSession.PlaybackRunInfo(
             navigationRange.EndFrame - _shotPlaybackStartFrame + 1,
             Math.Max(
@@ -3783,7 +3798,6 @@ internal sealed class EditorPreviewController : IDisposable
         if (wasPlaying) _shotPlaybackTimer.Stop();
         _shotPlaybackStartedTimestamp = 0;
         PlaybackState.SetPlaying(false);
-        _shotPlayButton.Content = ShotPlaybackIcon(isPlaying: false);
         if (wasPlaying)
         {
             OnPlaybackStopped(new ComponentPreviewInputSession.PlaybackRunInfo(

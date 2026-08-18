@@ -16,10 +16,12 @@ internal sealed class RuntimeTestActionControl : Border
     private readonly Button _restoreButton;
     private readonly Button _previousFrameButton;
     private readonly Button _nextFrameButton;
+    private readonly string _label;
     private readonly NumericUpDown _frameInput;
     private readonly Slider _frameSlider;
     private readonly TextBlock _maximumFrameText;
     private readonly Func<bool> _canRestore;
+    private readonly Func<bool> _isPlaying;
     private readonly Func<int, bool> _canStep;
     private readonly Action<string?, int> _setFrame;
     private readonly Func<int> _currentFrame;
@@ -37,6 +39,7 @@ internal sealed class RuntimeTestActionControl : Border
         Action<string?> play,
         Action restore,
         Func<bool> canRestore,
+        Func<bool> isPlaying,
         Action<string?, int> step,
         Func<int, bool> canStep,
         Action<string?, int> setFrame,
@@ -46,7 +49,9 @@ internal sealed class RuntimeTestActionControl : Border
         IReadOnlyList<FieldOption>? targetOptions = null,
         string currentTargetValue = "")
     {
+        _label = label;
         _canRestore = canRestore;
+        _isPlaying = isPlaying;
         _canStep = canStep;
         _setFrame = setFrame;
         _currentFrame = currentFrame;
@@ -266,6 +271,15 @@ internal sealed class RuntimeTestActionControl : Border
 
     private void RefreshState()
     {
+        var isPlaying = _isPlaying();
+        var playbackLabel = isPlaying ? $"Pause {_label}" : $"Play {_label}";
+        _playButton.Content = EditorIcons.CreateSemantic(
+            playbackLabel,
+            isPlaying ? EditorIcons.Pause : EditorIcons.Play,
+            13);
+        EditorAccessibility.Describe(
+            _playButton,
+            playbackLabel);
         _playButton.IsEnabled = true;
         _restoreButton.IsEnabled = _canRestore();
         _previousFrameButton.IsEnabled = _canStep(-1);
