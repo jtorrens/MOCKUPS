@@ -401,11 +401,13 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
             }
         }
 
-        box.LostFocus += (_, _) => Commit();
+        var deferred = new EditorDeferredCommit(Commit);
+        box.TextChanged += (_, _) => deferred.Schedule();
+        box.LostFocus += (_, _) => deferred.CommitNow();
         box.KeyDown += (_, args) =>
         {
             if (args.Key != Key.Enter) return;
-            Commit();
+            deferred.CommitNow();
             args.Handled = true;
         };
     }
@@ -426,11 +428,13 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
             }
         }
 
-        box.LostFocus += (_, _) => Commit();
+        var deferred = new EditorDeferredCommit(Commit);
+        box.TextChanged += (_, _) => deferred.Schedule();
+        box.LostFocus += (_, _) => deferred.CommitNow();
         box.KeyDown += (_, args) =>
         {
             if (args.Key != Key.Enter) return;
-            Commit();
+            deferred.CommitNow();
             args.Handled = true;
         };
     }

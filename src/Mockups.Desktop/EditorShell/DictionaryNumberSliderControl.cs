@@ -12,6 +12,7 @@ internal sealed class DictionaryNumberSliderControl : Grid, IDictionaryValueCont
     private readonly FieldDefinition _definition;
     private readonly Slider _slider;
     private readonly TextBox _box;
+    private readonly EditorDeferredCommit _textCommit;
     private bool _isUpdating;
     private string _value;
     private string _lastCommittedValue;
@@ -55,6 +56,7 @@ internal sealed class DictionaryNumberSliderControl : Grid, IDictionaryValueCont
         Children.Add(_slider);
         Children.Add(_box);
 
+        _textCommit = new EditorDeferredCommit(CommitValue);
         Hook();
     }
 
@@ -66,6 +68,7 @@ internal sealed class DictionaryNumberSliderControl : Grid, IDictionaryValueCont
 
     public void SetValue(string value)
     {
+        _textCommit.Cancel();
         var normalized = Normalize(value);
         if (_value == normalized) return;
 
@@ -95,6 +98,7 @@ internal sealed class DictionaryNumberSliderControl : Grid, IDictionaryValueCont
 
             if (!DictionaryNumericValueContract.TryParseDraft(_definition, _box.Text, out var parsed))
             {
+                _textCommit.Cancel();
                 return;
             }
             var normalized = Format(parsed);
@@ -108,12 +112,12 @@ internal sealed class DictionaryNumberSliderControl : Grid, IDictionaryValueCont
             _slider.Value = (double)Clamp(parsed);
             _isUpdating = false;
             ValueChanged?.Invoke(this, _value);
-            CommitValue();
+            _textCommit.Schedule();
         };
         _box.LostFocus += (_, _) =>
         {
             _box.Text = _value;
-            CommitValue();
+            _textCommit.CommitNow();
         };
         _box.KeyDown += (_, args) =>
         {
@@ -123,7 +127,7 @@ internal sealed class DictionaryNumberSliderControl : Grid, IDictionaryValueCont
             }
 
             _box.Text = _value;
-            CommitValue();
+            _textCommit.CommitNow();
             args.Handled = true;
         };
     }

@@ -174,7 +174,6 @@ internal sealed class EditorPreviewController : IDisposable
     private readonly IEditorShellMessageSink _messages;
     private readonly Func<bool> _isDark;
     private readonly Func<ProjectTreeNode?> _selectedNode;
-    private readonly Func<string, ProjectTreeNode?> _findNodeById;
     private readonly Func<string, bool> _selectNodeById;
     private readonly TextBlock _designContextText;
     private readonly Button _designContextHistoryButton;
@@ -415,7 +414,6 @@ internal sealed class EditorPreviewController : IDisposable
         Panel previewTitle,
         Func<bool> isDark,
         Func<ProjectTreeNode?> selectedNode,
-        Func<string, ProjectTreeNode?> findNodeById,
         Func<string, bool> selectNodeById,
         Action<PreviewAuthoringNavigationTarget> navigateAuthoringTarget,
         Window owner)
@@ -453,7 +451,6 @@ internal sealed class EditorPreviewController : IDisposable
         _messages = messages;
         _isDark = isDark;
         _selectedNode = selectedNode;
-        _findNodeById = findNodeById;
         _selectNodeById = selectNodeById;
         _designContextText = designContextText;
         _designContextHistoryButton = designContextHistoryButton;
@@ -3976,7 +3973,7 @@ internal sealed class EditorPreviewController : IDisposable
     {
         if (LockedNode(EditorWorkspace.Production) is { } locked)
         {
-            return _findNodeById(locked.Id) ?? locked.ToNode();
+            return locked.ToNode();
         }
         if (_workspace != EditorWorkspace.Production)
         {
@@ -4000,7 +3997,7 @@ internal sealed class EditorPreviewController : IDisposable
 
     private ProjectTreeNode? LockedContextNode() =>
         _lockedPreviewContext is { } locked
-            ? _findNodeById(locked.Node.Id) ?? locked.Node.ToNode()
+            ? locked.Node.ToNode()
             : null;
 
     private PreviewNodeKey? ActiveProductionScreenPreviewNode()

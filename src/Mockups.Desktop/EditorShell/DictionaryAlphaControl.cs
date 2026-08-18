@@ -11,6 +11,7 @@ internal sealed class DictionaryAlphaControl : Grid, IDictionaryValueControl
 {
     private readonly Slider _slider;
     private readonly TextBox _box;
+    private readonly EditorDeferredCommit _textCommit;
     private bool _isUpdating;
 
     public DictionaryAlphaControl(string value, bool isEditable)
@@ -27,6 +28,7 @@ internal sealed class DictionaryAlphaControl : Grid, IDictionaryValueControl
         Children.Add(_slider);
         Children.Add(_box);
 
+        _textCommit = new EditorDeferredCommit(CommitValue);
         Hook();
     }
 
@@ -38,6 +40,7 @@ internal sealed class DictionaryAlphaControl : Grid, IDictionaryValueControl
 
     public void SetValue(string value)
     {
+        _textCommit.Cancel();
         var alpha = PaletteAlphaPair.ParseAlphaRequired(value, "Alpha dictionary value");
         _isUpdating = true;
         SetAlpha(_slider, _box, alpha);
@@ -60,29 +63,34 @@ internal sealed class DictionaryAlphaControl : Grid, IDictionaryValueControl
             _isUpdating = false;
             CommitValue();
         };
-        _box.LostFocus += (_, _) => CommitBoxValue(normalizeText: true);
+        _box.LostFocus += (_, _) => CommitBoxValue(normalizeText: true, immediate: true);
         _box.TextChanged += (_, _) =>
         {
-            if (_isUpdating || !PaletteAlphaPair.TryParseAlpha(_box.Text, out var value))
+            if (_isUpdating)
             {
+                return;
+            }
+            if (!PaletteAlphaPair.TryParseAlpha(_box.Text, out var value))
+            {
+                _textCommit.Cancel();
                 return;
             }
 
             _isUpdating = true;
             _slider.Value = value;
             _isUpdating = false;
-            CommitValue();
+            _textCommit.Schedule();
         };
         _box.KeyDown += (_, args) =>
         {
             if (args.Key == Avalonia.Input.Key.Enter)
             {
-                CommitBoxValue(normalizeText: true);
+                CommitBoxValue(normalizeText: true, immediate: true);
             }
         };
     }
 
-    private void CommitBoxValue(bool normalizeText)
+    private void CommitBoxValue(bool normalizeText, bool immediate)
     {
         if (_isUpdating)
         {
@@ -104,7 +112,14 @@ internal sealed class DictionaryAlphaControl : Grid, IDictionaryValueControl
             _slider.Value = value;
         }
         _isUpdating = false;
-        CommitValue();
+        if (immediate)
+        {
+            _textCommit.CommitNow();
+        }
+        else
+        {
+            _textCommit.Schedule();
+        }
     }
 
     private void CommitValue()

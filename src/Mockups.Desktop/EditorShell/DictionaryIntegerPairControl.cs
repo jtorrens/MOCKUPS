@@ -1,28 +1,27 @@
 using Avalonia.Controls;
 using Avalonia.Layout;
-using Avalonia.Threading;
 using System;
 using System.Globalization;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class DictionaryIntegerPairControl : Grid, IDictionaryValueControl
 {
     private const double MinimumPairWidth = 156;
-    private static readonly TimeSpan ValidDraftCommitDelay = TimeSpan.FromMilliseconds(300);
     private readonly TextBlock _firstLabel;
     private readonly TextBlock _secondLabel;
     private readonly TextBox _firstTextBox;
     private readonly TextBox _secondTextBox;
     private readonly FieldDefinition _definition;
-    private CancellationTokenSource? _validDraftCommitCancellation;
+    private readonly EditorDeferredCommit _validDraftCommit;
     private bool _isUpdating;
 
     public DictionaryIntegerPairControl(FieldDefinition definition, string value)
     {
         _definition = definition;
+        _validDraftCommit = new EditorDeferredCommit(
+            CommitCurrentValue,
+            HasValidDraft);
         ColumnSpacing = 8;
         RowSpacing = 8;
         VerticalAlignment = VerticalAlignment.Center;
@@ -39,12 +38,20 @@ internal sealed class DictionaryIntegerPairControl : Grid, IDictionaryValueContr
 
         _firstTextBox = DictionaryTextBoxFactory.CreateCompactPair(pair.First);
         _firstTextBox.TextChanged += (_, _) => SetValueFromTextBoxes();
-        EditorTextBoxBehavior.AttachDeferredCommit(_firstTextBox, CommitValue);
+        EditorTextBoxBehavior.AttachDeferredCommit(
+            _firstTextBox,
+            CommitValue,
+            canCommit: HasValidDraft,
+            commitAfterTextChange: false);
         _secondLabel = CreateLabel(labels.Second);
 
         _secondTextBox = DictionaryTextBoxFactory.CreateCompactPair(pair.Second);
         _secondTextBox.TextChanged += (_, _) => SetValueFromTextBoxes();
-        EditorTextBoxBehavior.AttachDeferredCommit(_secondTextBox, CommitValue);
+        EditorTextBoxBehavior.AttachDeferredCommit(
+            _secondTextBox,
+            CommitValue,
+            canCommit: HasValidDraft,
+            commitAfterTextChange: false);
         Children.Add(_firstLabel);
         Children.Add(_firstTextBox);
         Children.Add(_secondLabel);
@@ -59,7 +66,7 @@ internal sealed class DictionaryIntegerPairControl : Grid, IDictionaryValueContr
 
     public void SetValue(string value)
     {
-        CancelPendingValidDraftCommit();
+        _validDraftCommit.Cancel();
         var pair = DictionaryFieldPairText.ParseRequired(
             ValueKind.IntegerPair,
             value,
@@ -85,18 +92,12 @@ internal sealed class DictionaryIntegerPairControl : Grid, IDictionaryValueContr
         ValueChanged?.Invoke(this, DictionaryFieldPairText.Join(
             _firstTextBox.Text ?? "",
             _secondTextBox.Text ?? ""));
-        CancelPendingValidDraftCommit();
-        if (HasValidDraft())
-        {
-            _validDraftCommitCancellation = new CancellationTokenSource();
-            _ = CommitValidDraftAfterDelay(_validDraftCommitCancellation);
-        }
+        _validDraftCommit.Schedule();
     }
 
     private void CommitValue()
     {
-        CancelPendingValidDraftCommit();
-        CommitCurrentValue();
+        _validDraftCommit.CommitNow();
     }
 
     private void CommitCurrentValue()
@@ -118,43 +119,6 @@ internal sealed class DictionaryIntegerPairControl : Grid, IDictionaryValueContr
                 NumberStyles.Integer,
                 CultureInfo.InvariantCulture,
                 out _);
-    }
-
-    private async Task CommitValidDraftAfterDelay(CancellationTokenSource pending)
-    {
-        try
-        {
-            await Task.Delay(ValidDraftCommitDelay, pending.Token).ConfigureAwait(false);
-        }
-        catch (OperationCanceledException)
-        {
-            pending.Dispose();
-            return;
-        }
-
-        Dispatcher.UIThread.Post(() =>
-        {
-            if (!ReferenceEquals(_validDraftCommitCancellation, pending)
-                || pending.IsCancellationRequested)
-            {
-                pending.Dispose();
-                return;
-            }
-
-            _validDraftCommitCancellation = null;
-            pending.Dispose();
-            if (HasValidDraft())
-            {
-                CommitCurrentValue();
-            }
-        });
-    }
-
-    private void CancelPendingValidDraftCommit()
-    {
-        var pending = _validDraftCommitCancellation;
-        _validDraftCommitCancellation = null;
-        pending?.Cancel();
     }
 
     private static TextBlock CreateLabel(string text)

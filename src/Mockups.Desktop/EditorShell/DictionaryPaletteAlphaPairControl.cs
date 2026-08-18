@@ -16,6 +16,7 @@ internal sealed class DictionaryPaletteAlphaPairControl : Grid, IDictionaryValue
     private readonly Slider _secondAlphaSlider;
     private readonly TextBox _firstAlphaBox;
     private readonly TextBox _secondAlphaBox;
+    private readonly EditorDeferredCommit _textCommit;
     private bool _isUpdating;
 
     public DictionaryPaletteAlphaPairControl(FieldDefinition definition, string value)
@@ -34,6 +35,7 @@ internal sealed class DictionaryPaletteAlphaPairControl : Grid, IDictionaryValue
         _secondAlphaSlider = DictionaryAlphaControl.CreateSlider(pair.Second.Alpha, definition.IsEditable);
         _firstAlphaBox = DictionaryAlphaControl.CreateAlphaBox(pair.First.Alpha, definition.IsEditable);
         _secondAlphaBox = DictionaryAlphaControl.CreateAlphaBox(pair.Second.Alpha, definition.IsEditable);
+        _textCommit = new EditorDeferredCommit(CommitValue);
 
         Hook(_firstColorControl);
         Hook(_secondColorControl);
@@ -54,6 +56,7 @@ internal sealed class DictionaryPaletteAlphaPairControl : Grid, IDictionaryValue
 
     public void SetValue(string value)
     {
+        _textCommit.Cancel();
         var pair = PaletteAlphaPair.Split(value);
         _isUpdating = true;
         _firstColorControl.SetValue(pair.First.ColorToken);
@@ -91,19 +94,24 @@ internal sealed class DictionaryPaletteAlphaPairControl : Grid, IDictionaryValue
                 return;
             }
 
-            CommitBoxValue(slider, box, normalizeText: true);
+            CommitBoxValue(slider, box, normalizeText: true, immediate: true);
         };
         box.TextChanged += (_, _) =>
         {
-            if (_isUpdating || !PaletteAlphaPair.TryParseAlpha(box.Text, out var value))
+            if (_isUpdating)
             {
+                return;
+            }
+            if (!PaletteAlphaPair.TryParseAlpha(box.Text, out var value))
+            {
+                _textCommit.Cancel();
                 return;
             }
 
             _isUpdating = true;
             slider.Value = value;
             _isUpdating = false;
-            CommitValue();
+            _textCommit.Schedule();
         };
         box.KeyDown += (_, args) =>
         {
@@ -112,11 +120,15 @@ internal sealed class DictionaryPaletteAlphaPairControl : Grid, IDictionaryValue
                 return;
             }
 
-            CommitBoxValue(slider, box, normalizeText: true);
+            CommitBoxValue(slider, box, normalizeText: true, immediate: true);
         };
     }
 
-    private void CommitBoxValue(Slider slider, TextBox box, bool normalizeText)
+    private void CommitBoxValue(
+        Slider slider,
+        TextBox box,
+        bool normalizeText,
+        bool immediate)
     {
         if (!PaletteAlphaPair.TryParseAlpha(box.Text, out var value))
         {
@@ -133,7 +145,14 @@ internal sealed class DictionaryPaletteAlphaPairControl : Grid, IDictionaryValue
             slider.Value = value;
         }
         _isUpdating = false;
-        CommitValue();
+        if (immediate)
+        {
+            _textCommit.CommitNow();
+        }
+        else
+        {
+            _textCommit.Schedule();
+        }
     }
 
     private void CommitValue()

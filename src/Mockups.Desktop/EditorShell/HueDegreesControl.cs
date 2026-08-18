@@ -13,6 +13,7 @@ internal sealed class HueDegreesControl : Grid, IDictionaryValueControl
 {
     private readonly Slider _slider;
     private readonly TextBox _textBox;
+    private readonly EditorDeferredCommit _textCommit;
     private bool _isUpdating;
     private string _value;
     private string _lastCommittedValue;
@@ -84,6 +85,7 @@ internal sealed class HueDegreesControl : Grid, IDictionaryValueControl
             VerticalContentAlignment = VerticalAlignment.Center,
         };
         EditorNumericTextStyle.Apply(_textBox);
+        _textCommit = new EditorDeferredCommit(CommitValue);
         _textBox.TextChanged += (_, _) =>
         {
             if (_isUpdating) return;
@@ -91,18 +93,23 @@ internal sealed class HueDegreesControl : Grid, IDictionaryValueControl
             if (TryNormalizeHue(_textBox.Text ?? "", out var normalized))
             {
                 SetLocalValue(normalized);
+                _textCommit.Schedule();
+            }
+            else
+            {
+                _textCommit.Cancel();
             }
         };
         _textBox.LostFocus += (_, _) =>
         {
             UpdateControls();
-            CommitValue();
+            _textCommit.CommitNow();
         };
         _textBox.KeyDown += (_, args) =>
         {
             if (args.Key != Key.Enter) return;
 
-            CommitValue();
+            _textCommit.CommitNow();
             args.Handled = true;
         };
         Grid.SetColumn(_textBox, 1);

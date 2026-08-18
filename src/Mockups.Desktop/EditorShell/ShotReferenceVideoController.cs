@@ -441,6 +441,12 @@ internal sealed class ShotReferenceVideoController : IDisposable
     {
         if (string.IsNullOrWhiteSpace(_selectedMarkerId)) return;
         var text = _markerText.Text ?? "";
+        var current = _document.Markers.FirstOrDefault((marker) =>
+            marker.Id.Equals(_selectedMarkerId, StringComparison.Ordinal));
+        if (current is null || current.Text.Equals(text, StringComparison.Ordinal))
+        {
+            return;
+        }
         _ = CommitAsync(_document with
         {
             Markers = _document.Markers.Select((marker) =>

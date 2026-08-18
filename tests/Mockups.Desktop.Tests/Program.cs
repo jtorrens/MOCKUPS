@@ -80,6 +80,7 @@ var tests = new (string Name, Action Run)[]
     ("pair fields require explicit presentation labels", PairFieldsRequireExplicitLabels),
     ("numeric dictionary fields separate current values from drafts", NumericDictionaryFieldsSeparateCurrentValuesFromDrafts),
     ("valid integer pairs commit after a short editing pause", ValidIntegerPairsCommitAfterEditingPause),
+    ("dictionary free-form number inputs commit after a short editing pause", DictionaryFreeFormNumberInputsCommitAfterEditingPause),
     ("fixed Component collection boundaries preserve sequential Override commits", FixedComponentCollectionBoundariesPreserveSequentialOverrides),
     ("Design Preview actions reject incomplete declarative contracts", PreviewActionContractsAreStrict),
     ("Runtime Input forwarding envelopes reject invalid current shapes", RuntimeInputForwardingEnvelopesAreStrict),
@@ -2331,6 +2332,36 @@ static void ValidIntegerPairsCommitAfterEditingPause()
         Dispatcher.UIThread.RunJobs();
     }
     Equal(1, commitCount);
+}
+
+static void DictionaryFreeFormNumberInputsCommitAfterEditingPause()
+{
+    var definition = new FieldDefinition(
+        "test.gradientHeight",
+        "Gradient height",
+        ValueKind.Integer,
+        Number: new NumberDefinition(0, 100, 1, 0, UseSlider: true));
+    var control = new DictionaryNumberSliderControl(definition, "10");
+    var commits = new List<string>();
+    control.ValueCommitted += (_, value) => commits.Add(value);
+    var box = typeof(DictionaryNumberSliderControl)
+        .GetField("_box", BindingFlags.Instance | BindingFlags.NonPublic)
+        ?.GetValue(control) as TextBox
+        ?? throw new InvalidOperationException("Missing Number Slider text editor.");
+
+    box.Text = "42";
+    Thread.Sleep(100);
+    Dispatcher.UIThread.RunJobs();
+    Equal(0, commits.Count);
+
+    for (var attempt = 0; attempt < 10 && commits.Count == 0; attempt++)
+    {
+        Thread.Sleep(100);
+        Dispatcher.UIThread.RunJobs();
+    }
+    Equal(1, commits.Count);
+    Equal("42", commits.Single());
+
 }
 
 static void FixedComponentCollectionBoundariesPreserveSequentialOverrides()
@@ -14904,6 +14935,7 @@ var isolatedUiTests = new HashSet<string>(StringComparer.Ordinal)
     "List Item and List expose their runtime model in the real editor",
     "Conversation Module exposes its Test Values Runtime in the real editor",
     "pinned Module Variant Preview survives changing editor selection",
+    "pinned Production Preview keeps its active Screen while editing Design",
     "Chat List Module exposes its fixed List boundary and exact Runtime in the real editor",
 };
 var exhaustiveTests = new HashSet<string>(StringComparer.Ordinal)

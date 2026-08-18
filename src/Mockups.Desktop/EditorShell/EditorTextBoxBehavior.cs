@@ -32,14 +32,24 @@ internal static class EditorTextBoxBehavior
         EnsureInteractionState(textBox).SelectAllOnDoubleClick = true;
     }
 
-    public static void AttachDeferredCommit(TextBox textBox, Action commit, bool commitOnEnter = true)
+    public static void AttachDeferredCommit(
+        TextBox textBox,
+        Action commit,
+        bool commitOnEnter = true,
+        Func<bool>? canCommit = null,
+        bool commitAfterTextChange = true)
     {
-        textBox.LostFocus += (_, _) => commit();
+        var deferred = new EditorDeferredCommit(commit, canCommit);
+        if (commitAfterTextChange)
+        {
+            textBox.TextChanged += (_, _) => deferred.Schedule();
+        }
+        textBox.LostFocus += (_, _) => deferred.CommitNow();
         textBox.KeyDown += (_, args) =>
         {
             if (args.Key != Key.Enter || !commitOnEnter) return;
 
-            Dispatcher.UIThread.Post(commit);
+            Dispatcher.UIThread.Post(deferred.CommitNow);
         };
     }
 
