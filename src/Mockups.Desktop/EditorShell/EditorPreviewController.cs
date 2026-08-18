@@ -2903,7 +2903,13 @@ internal sealed class EditorPreviewController : IDisposable
     {
         if (action.DurationOwnerTimeline)
         {
-            return RuntimeTimeline.DurationFrames(preview.ToJsonString(), preview.ToJsonString(), "{}", 1, themeTokensJson);
+            return RuntimeTimeline.DurationFrames(
+                preview.ToJsonString(),
+                preview.ToJsonString(),
+                "{}",
+                1,
+                themeTokensJson,
+                fps);
         }
         if (!string.IsNullOrWhiteSpace(action.DurationStateCollectionJsonKey))
         {

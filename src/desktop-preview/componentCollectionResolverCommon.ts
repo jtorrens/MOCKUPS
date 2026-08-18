@@ -51,7 +51,14 @@ export function resolveComponentCollectionItem(
     const animation = optionalObject(instance, "animation", "Preview instance envelope");
     const runtimeContract = parseObject(payload.runtimeContractJson);
     const themeTokens = parseObject(payload.themeTokensJson);
-    const timeline = new RuntimeOwnerTimeline(runtimeContract, runtimeContract, animation, themeTokens);
+    const timeline = new RuntimeOwnerTimeline(
+      runtimeContract,
+      runtimeContract,
+      animation,
+      themeTokens,
+      0,
+      payload.frameRate,
+    );
     const variantReference = requiredString(item, "variantReference", `${itemPath}.variantReference`);
     const componentType = variantTypes[variantReference];
     if (typeof componentType !== "string" || !componentType) {

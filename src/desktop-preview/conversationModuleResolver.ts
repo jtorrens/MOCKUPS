@@ -170,7 +170,14 @@ export function resolveConversationModuleFrame(
   const animation = optionalObject(instance, "animation", "Preview instance envelope");
   const screenFrame = rootScreenFrame(payload);
   const themeTokens = parseObject(payload.themeTokensJson);
-  const timeline = new RuntimeOwnerTimeline(preview, preview, animation, themeTokens);
+  const timeline = new RuntimeOwnerTimeline(
+    preview,
+    preview,
+    animation,
+    themeTokens,
+    0,
+    payload.frameRate,
+  );
   const automaticEndFrame = Math.max(
     1,
     payload.screenTiming?.actionDurationFrames ?? timeline.durationFrames,
@@ -227,6 +234,7 @@ export function resolveConversationModuleFrame(
       targetId,
       timeline.fieldCompletionLocal("text", targetId) + postHold,
     );
+    message.timelineTextStartFrame = textOriginFrame;
     message.writeOnDurationFrames = textUsesTrackCompletion
       ? 0
       : Math.max(0, textCompletionFrame - textOriginFrame);
@@ -303,6 +311,7 @@ type ResolvedConversationMessage = Omit<
   composerWriteOnDurationFrames: number;
   composerWriteOnFrame: number;
   timelineStartFrame: number;
+  timelineTextStartFrame: number;
   timelineRevealAtFrame: number;
   presenceEndFrame: number;
   hasExplicitPresenceEnd: boolean;
@@ -387,6 +396,14 @@ function conversationMessages(preview: JsonRecord): ResolvedConversationMessage[
         0,
         Math.floor(optionalNumber(message, "timelineStartFrame", 0)),
       ),
+      timelineTextStartFrame: Math.max(
+        0,
+        Math.floor(optionalNumber(
+          message,
+          "timelineTextStartFrame",
+          optionalNumber(message, "timelineStartFrame", 0),
+        )),
+      ),
       timelineRevealAtFrame: Math.max(
         0,
         Math.floor(optionalNumber(message, "timelineRevealAtFrame", 0)),
@@ -439,8 +456,9 @@ function visibleMessages(
     const isSystemMessage = message.state === "system";
     const isOutgoingMessage = message.state === "outgoing";
     const isIncomingMessage = message.state === "incoming";
+    const textStartFrame = message.timelineTextStartFrame;
     const effectiveWriteOnFrames = isSystemMessage ? 0 : message.writeOnDurationFrames;
-    const revealEndFrame = startFrame + effectiveWriteOnFrames;
+    const revealEndFrame = textStartFrame + effectiveWriteOnFrames;
     const revealAfterWriteOn = isOutgoingMessage
       && timing.bubbleRevealMode === "afterWriteOn"
       && !writesInBubble;
@@ -474,23 +492,28 @@ function visibleMessages(
         : {};
     const incomingTyping = isIncomingMessage
       && timing.incomingRevealMode === "typingIndicator"
+      && frame >= textStartFrame
       && frame < revealEndFrame;
     const incomingWriteOn = isIncomingMessage
       && timing.incomingRevealMode === "writeOn"
       && effectiveWriteOnFrames > 0
       && frame < revealEndFrame;
     const messageIsWriting = frame < revealEndFrame
+      && frame >= textStartFrame
       && effectiveWriteOnFrames > 0
       && (isOutgoingMessage || incomingWriteOn || incomingTyping);
     return [{
       ...message,
       visibleAtFrame: visibleAt,
-      text: incomingTyping ? timing.typingIndicatorText : message.text,
+      text: frame < textStartFrame
+        ? ""
+        : incomingTyping ? timing.typingIndicatorText : message.text,
       mediaType: messageIsWriting ? "none" as const : message.mediaType,
       mediaSource: messageIsWriting ? "" : message.mediaSource,
       isTypingIndicator: incomingTyping,
       writeOnTrigger: (isOutgoingMessage || incomingWriteOn)
         && !revealAfterWriteOn
+        && frame >= textStartFrame
         && effectiveWriteOnFrames > 0,
       writeOnDurationFrames: effectiveWriteOnFrames,
       presenceMotion: messageMotion,
@@ -505,7 +528,7 @@ function composerState(
   timing: ConversationTimingContract,
 ) {
   for (const message of messages) {
-    const startFrame = message.timelineStartFrame;
+    const startFrame = message.timelineTextStartFrame;
     const effectiveWriteOnFrames = message.state === "system"
       ? 0
       : message.composerWriteOnDurationFrames;

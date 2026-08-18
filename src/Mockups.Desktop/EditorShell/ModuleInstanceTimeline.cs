@@ -41,7 +41,8 @@ internal static class ModuleInstanceTimeline
             source.ContentJson,
             source.AnimationJson,
             source.PersistedDurationFrames,
-            source.ThemeTokensJson);
+            source.ThemeTokensJson,
+            source.FrameRate);
     }
 
     public static int ShotDurationFrames(
@@ -143,7 +144,8 @@ internal static class ModuleInstanceTimeline
                         fieldId,
                         targetId,
                         System.Math.Max(0, keyframe["frame"]?.GetValue<int>() ?? 0),
-                        themeTokens))
+                        themeTokens,
+                        source.FrameRate))
                     ?? [];
             })
             .Distinct()

@@ -8,7 +8,8 @@ internal sealed record ModuleInstanceAnimationSource(
     string AnimationJson,
     string RuntimePreviewJson,
     string ThemeTokensJson,
-    string EffectiveContractJson);
+    string EffectiveContractJson,
+    int FrameRate);
 
 internal sealed record ModuleInstanceAnimationSnapshot(
     string ModuleInstanceId,
@@ -49,7 +50,8 @@ internal sealed class ModuleInstanceAnimationDocumentStore
             timeline.RuntimePreviewJson,
             _themeTokens.GetModuleInstanceThemeTokensJson(
                 moduleInstanceId),
-            timeline.EffectiveContractJson);
+            timeline.EffectiveContractJson,
+            timeline.FrameRate);
     }
 
     public ModuleInstanceAnimationSnapshot LoadSnapshot(

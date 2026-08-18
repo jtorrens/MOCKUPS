@@ -3,6 +3,7 @@ import { isRecord, optionalObject, optionalObjectArray } from "./previewJsonHelp
 import { resolveBehaviorTimingFrames } from "./behaviorTiming.js";
 import { requiredNumberValue } from "./previewValueHelpers.js";
 import { validateTransientAnimationDocument } from "./transientAnimationDocument.js";
+import { motionTotalDurationMsForTheme, requiredMotionContract } from "./previewMotionHelpers.js";
 
 type JsonRecord = Record<string, unknown>;
 type FieldTiming = { origin: number; completion: number; endExclusive: number };
@@ -29,6 +30,7 @@ export class RuntimeOwnerTimeline {
     private readonly animation: JsonRecord,
     private readonly themeTokens: JsonRecord = {},
     storedFallback = 0,
+    private readonly frameRate = 0,
   ) {
     validateTransientAnimationDocument(animation);
     let naturalEnd = Math.max(1, declaredBaseDuration(contract));
@@ -57,6 +59,7 @@ export class RuntimeOwnerTimeline {
       for (const item of values) {
         const fields = itemFields(collection, item);
         const targetId = requiredString(item, "id", `runtime owner collection '${key}' item id`);
+        const phase = ownerPhaseFrames(collectionTimeline, item, this.themeTokens, this.frameRate);
         const pre = optionalStringArray(
           collectionTimeline,
           "preDurationFieldIds",
@@ -67,7 +70,7 @@ export class RuntimeOwnerTimeline {
           0,
           (sequenceItems ? cursor : this.itemOwnerOrigin(collection, item)) + pre,
         );
-        const durations = this.itemDurations(collection, item, targetId);
+        const durations = this.itemDurations(collection, item, targetId, phase);
         const effectiveSpan = this.targetDuration(targetId, durations.span);
         const effectiveSequence = scale(durations.sequence, durations.span, effectiveSpan);
         if (this.items.has(targetId)) {
@@ -91,6 +94,12 @@ export class RuntimeOwnerTimeline {
     const topInputs = optionalObjectArray(contract, "inputs", "runtime owner contract");
     topInputs.forEach(validateFieldTimeline);
     validateUniqueFieldIds(topInputs, "runtime owner inputs");
+    const topPhase = ownerPhaseFrames(
+      optionalObject(contract, "animationTimeline", "runtime owner animation timeline"),
+      runtime,
+      this.themeTokens,
+      this.frameRate,
+    );
     for (const definition of topInputs) {
       const fieldId = requiredString(definition, "id", "runtime owner input");
       const timing = this.resolveFieldTiming(
@@ -99,6 +108,7 @@ export class RuntimeOwnerTimeline {
         "",
         topInputs,
         new Set(),
+        topPhase,
       );
       this.topFields.set(fieldId, timing);
       naturalEnd = Math.max(naturalEnd, timing.endExclusive);
@@ -216,7 +226,19 @@ export class RuntimeOwnerTimeline {
     const fields = optionalObjectArray(this.contract, "inputs", "runtime owner contract");
     const definition = fields.find((field) => optionalString(field, "id") === fieldId);
     const timing = definition
-      ? this.resolveFieldTiming(definition, this.runtime, "", fields, new Set())
+      ? this.resolveFieldTiming(
+          definition,
+          this.runtime,
+          "",
+          fields,
+          new Set(),
+          ownerPhaseFrames(
+            optionalObject(this.contract, "animationTimeline", "runtime owner animation timeline"),
+            this.runtime,
+            this.themeTokens,
+            this.frameRate,
+          ),
+        )
       : { origin: 0, completion: 0, endExclusive: 0 };
     this.topFields.set(fieldId, timing);
     return timing;
@@ -228,13 +250,25 @@ export class RuntimeOwnerTimeline {
     const fields = itemFields(item.collection, item.item);
     const definition = fields.find((field) => optionalString(field, "id") === fieldId);
     const timing = definition
-      ? this.resolveFieldTiming(definition, item.item, optionalString(item.item, "id"), fields, new Set())
+      ? this.resolveFieldTiming(
+          definition,
+          item.item,
+          optionalString(item.item, "id"),
+          fields,
+          new Set(),
+          ownerPhaseFrames(
+            optionalObject(item.collection, "animationTimeline", "runtime owner collection animation timeline"),
+            item.item,
+            this.themeTokens,
+            this.frameRate,
+          ),
+        )
       : { origin: 0, completion: 0, endExclusive: 0 };
     item.fields.set(fieldId, timing);
     return timing;
   }
 
-  private itemDurations(collection: JsonRecord, item: JsonRecord, targetId: string) {
+  private itemDurations(collection: JsonRecord, item: JsonRecord, targetId: string, phase: number) {
     const fields = itemFields(collection, item);
     const collectionTimeline = optionalObject(
       collection,
@@ -257,6 +291,7 @@ export class RuntimeOwnerTimeline {
         targetId,
         fields,
         new Set(),
+        phase,
       ).endExclusive;
       spanEnd = Math.max(spanEnd, end);
       const fieldId = requiredString(definition, "id", "runtime owner item field");
@@ -266,7 +301,7 @@ export class RuntimeOwnerTimeline {
         sequenceBodyEnd = Math.max(sequenceBodyEnd, end);
       }
     }
-    const actionEnd = this.lastFiniteActionEnd(collection, item, targetId, fields);
+    const actionEnd = this.lastFiniteActionEnd(collection, item, targetId, fields, phase);
     if (!sequenceCompletionFieldIds) sequenceBodyEnd = Math.max(sequenceBodyEnd, actionEnd);
     spanEnd = Math.max(spanEnd, actionEnd);
     const post = optionalStringArray(
@@ -285,6 +320,7 @@ export class RuntimeOwnerTimeline {
     targetId: string,
     ownerFields: JsonRecord[],
     resolving: Set<string>,
+    phase = 0,
   ): FieldTiming {
     const fieldId = optionalString(definition, "id");
     if (resolving.has(fieldId)) throw new Error(`Animation timeline dependency cycle at field '${fieldId}'.`);
@@ -298,12 +334,12 @@ export class RuntimeOwnerTimeline {
       "origin",
       `runtime animation field '${optionalString(definition, "id")}' timeline`,
     );
-    let origin = 0;
+    let origin = phase;
     if (optionalString(originDefinition, "kind") === "fieldCompletion") {
       const sourceId = optionalString(originDefinition, "fieldId");
       const source = ownerFields.find((field) => optionalString(field, "id") === sourceId);
       if (!source) throw new Error(`Animation field '${fieldId}' references missing field '${sourceId}'.`);
-      origin = this.resolveFieldTiming(source, owner, targetId, ownerFields, resolving).completion
+      origin = this.resolveFieldTiming(source, owner, targetId, ownerFields, resolving, phase).completion
         + requiredNonNegativeInteger(
           originDefinition.offsetFrames,
           `runtime animation field '${fieldId}' origin offsetFrames`,
@@ -345,6 +381,7 @@ export class RuntimeOwnerTimeline {
     item: JsonRecord,
     targetId: string,
     fields: JsonRecord[],
+    phase: number,
   ) {
     let lastEnd = 0;
     for (const action of itemActions(collection, item)) {
@@ -367,7 +404,7 @@ export class RuntimeOwnerTimeline {
       if (!definition) {
         throw new Error(`Finite runtime action '${actionId}' references missing play field '${playFieldId}'`);
       }
-      const origin = this.resolveFieldTiming(definition, item, targetId, fields, new Set()).origin;
+      const origin = this.resolveFieldTiming(definition, item, targetId, fields, new Set(), phase).origin;
       const keyframes = enabledKeyframes(this.track(playFieldId, targetId));
       const enabledJsonKey = requiredString(
         action,
@@ -546,6 +583,7 @@ function validateCollectionTimeline(collection: JsonRecord, fields: JsonRecord[]
   if (Object.hasOwn(timeline, "sequenceItems") && typeof timeline.sequenceItems !== "boolean") {
     throw new Error("runtime collection sequenceItems must be a boolean when present");
   }
+  validateOwnerPhase(timeline, "runtime collection animation timeline");
   optionalStringArray(timeline, "preDurationFieldIds", "runtime collection animation timeline");
   optionalStringArray(timeline, "postDurationFieldIds", "runtime collection animation timeline");
   if (Object.hasOwn(timeline, "sequenceCompletionFieldIds")) {
@@ -598,6 +636,44 @@ function validateCollectionTimeline(collection: JsonRecord, fields: JsonRecord[]
   ]) {
     requiredString(ownerOrigin, key, `runtime collection owner origin ${key}`);
   }
+}
+
+function validateOwnerPhase(timeline: JsonRecord, path: string) {
+  if (!Object.hasOwn(timeline, "ownerPhase")) return;
+  const phase = requiredObject(timeline, "ownerPhase", path);
+  const kind = requiredString(phase, "kind", `${path} owner phase`);
+  if (kind !== "resolvedMotion" && kind !== "itemMotion") {
+    throw new Error(`Unknown ${path} owner phase '${kind}'`);
+  }
+  if (kind === "resolvedMotion") {
+    requiredObject(phase, "motion", `${path} resolved owner phase`);
+    return;
+  }
+  requiredString(phase, "jsonKey", `${path} item owner phase`);
+}
+
+function ownerPhaseFrames(
+  timeline: JsonRecord,
+  owner: JsonRecord,
+  themeTokens: JsonRecord,
+  frameRate: number,
+) {
+  if (!Object.hasOwn(timeline, "ownerPhase")) return 0;
+  validateOwnerPhase(timeline, "runtime owner animation timeline");
+  const phase = requiredObject(timeline, "ownerPhase", "runtime owner animation timeline");
+  const kind = requiredString(phase, "kind", "runtime owner phase");
+  const motionOwner = kind === "resolvedMotion"
+    ? phase
+    : requiredObject(owner, requiredString(phase, "jsonKey", "runtime item owner phase"), "runtime item owner phase");
+  const motion = requiredMotionContract(
+    motionOwner,
+    "motion",
+    "runtime owner phase motion",
+  );
+  if (!Number.isInteger(frameRate) || frameRate <= 0) {
+    throw new Error("Runtime owner phase requires a positive project frame rate.");
+  }
+  return Math.ceil(motionTotalDurationMsForTheme(themeTokens, motion) / 1000 * frameRate);
 }
 
 function validateFieldTimeline(field: JsonRecord) {

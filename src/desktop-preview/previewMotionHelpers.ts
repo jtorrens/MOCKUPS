@@ -122,8 +122,22 @@ export function wrapExitMotionFrame(
 }
 
 export function motionTotalDurationMs(payload: DesignPreviewPayload, motion: ComponentMotionContract) {
+  return motionTotalDurationMsForTheme(parseObject(payload.themeTokensJson), motion);
+}
+
+/**
+ * Resolves a Motion duration at the common temporal boundary.  Runtime owner
+ * timelines use this same calculation before any owner-relative field begins.
+ */
+export function motionTotalDurationMsForTheme(
+  themeTokens: Record<string, unknown>,
+  motion: ComponentMotionContract,
+) {
   if (motion.transition === "none" && !motion.fade) return 0;
-  const timing = motionTiming(payload, motion.transition === "none" ? "fade" : motion.transition);
+  const timing = motionTimingTokens(
+    themeTokens,
+    motion.transition === "none" ? "fade" : motion.transition,
+  );
   return Math.max(0, timing.delayMs + timing.durationMs);
 }
 
@@ -176,7 +190,10 @@ export function requiredMotionContract(
 }
 
 function motionTiming(payload: DesignPreviewPayload, transition: string): MotionTiming {
-  const root = parseObject(payload.themeTokensJson);
+  return motionTimingTokens(parseObject(payload.themeTokensJson), transition);
+}
+
+function motionTimingTokens(root: Record<string, unknown>, transition: string): MotionTiming {
   const motion = requiredRecord(root, "motion", "theme.motion");
   const transitions = requiredRecord(motion, "transitions", "theme.motion.transitions");
   const timing = requiredRecord(

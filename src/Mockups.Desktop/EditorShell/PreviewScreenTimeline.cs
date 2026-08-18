@@ -349,7 +349,8 @@ internal static class PreviewScreenTimelineSnapshotFactory
                 runtime,
                 animation,
                 themeTokens,
-                range.ContentDurationFrames))
+                range.ContentDurationFrames,
+                animationSnapshot.Source.FrameRate))
             .Where((collection) => collection.Items.Count > 0)
             .ToList();
         var keyframes = CreateKeyframes(
@@ -368,7 +369,8 @@ internal static class PreviewScreenTimelineSnapshotFactory
             contract,
             runtime,
             animation,
-            themeTokens);
+            themeTokens,
+            animationSnapshot.Source.FrameRate);
 
         return new PreviewScreenTimelineSnapshot(
             surface.Owner.Node.Id,
@@ -387,7 +389,8 @@ internal static class PreviewScreenTimelineSnapshotFactory
         JsonObject contract,
         JsonObject runtime,
         JsonObject animation,
-        JsonObject themeTokens) =>
+        JsonObject themeTokens,
+        int frameRate) =>
         tracks.SelectMany((track) =>
         {
             var fieldId = JsonPath.RequiredString(
@@ -420,7 +423,8 @@ internal static class PreviewScreenTimelineSnapshotFactory
                             fieldId,
                             targetId,
                             localFrame,
-                            themeTokens),
+                            themeTokens,
+                            frameRate),
                         localFrame == 0);
                 });
         }).ToList();
@@ -433,7 +437,8 @@ internal static class PreviewScreenTimelineSnapshotFactory
         JsonObject runtime,
         JsonObject animation,
         JsonObject themeTokens,
-        int contentDurationFrames)
+        int contentDurationFrames,
+        int frameRate)
     {
         var definition = contractCollections.FirstOrDefault((candidate) =>
             JsonPath.RequiredString(candidate, "jsonKey", "Runtime collection")
@@ -458,7 +463,8 @@ internal static class PreviewScreenTimelineSnapshotFactory
                     runtime,
                     animation,
                     themeTokens,
-                    contentDurationFrames)).ToList());
+                    contentDurationFrames,
+                    frameRate)).ToList());
         }
 
         var sequenceItems = timeline["sequenceItems"]?.GetValue<bool>() != false;
@@ -479,14 +485,14 @@ internal static class PreviewScreenTimelineSnapshotFactory
             var itemId = JsonPath.RequiredString(item, "id", $"Screen Timeline collection '{collection.Id}' item");
             var start = sequenceItems
                 ? Math.Max(0, RuntimeAnimationFrameOrigin.ScreenFrameForOwnerFrame(
-                    contract, runtime, animation, itemId, 0, themeTokens))
+                    contract, runtime, animation, itemId, 0, themeTokens, frameRate))
                 : 0;
             var sequenceEnd = sequenceItems
                 ? Math.Max(start + 1, RuntimeAnimationFrameOrigin.OwnerSequenceEndScreenFrame(
-                    contract, runtime, animation, itemId, themeTokens))
+                    contract, runtime, animation, itemId, themeTokens, frameRate))
                 : contentDurationFrames;
             var end = RuntimeAnimationFrameOrigin.OwnerPresenceEndScreenFrame(
-                contract, runtime, animation, itemId, contentDurationFrames, themeTokens);
+                contract, runtime, animation, itemId, contentDurationFrames, themeTokens, frameRate);
             var label = ItemLabel(collection, item, index);
             PreviewScreenTimelineSerialEdit? serialEdit = null;
             if (sequenceItems && preFieldIds.Count == 1)
@@ -526,7 +532,8 @@ internal static class PreviewScreenTimelineSnapshotFactory
         JsonObject runtime,
         JsonObject animation,
         JsonObject themeTokens,
-        int contentDurationFrames)
+        int contentDurationFrames,
+        int frameRate)
     {
         string Required(string key) => JsonPath.RequiredString(ownerOrigin, key, "State Timeline owner origin");
         var sourceCollectionKey = Required("sourceCollectionJsonKey");
@@ -562,7 +569,7 @@ internal static class PreviewScreenTimelineSnapshotFactory
         {
             var screenFrame = Math.Clamp(
                 RuntimeAnimationFrameOrigin.ScreenFrame(
-                    contract, runtime, animation, sourceFieldId, sourceTargetId, stateEvent.LocalFrame, themeTokens),
+                    contract, runtime, animation, sourceFieldId, sourceTargetId, stateEvent.LocalFrame, themeTokens, frameRate),
                 0,
                 contentDurationFrames);
             if (stateEvent.Value == matchValue && activeStartLocal is null)
@@ -591,7 +598,7 @@ internal static class PreviewScreenTimelineSnapshotFactory
         var selectorBoundaries = events
             .Select(stateEvent => Math.Clamp(
                 RuntimeAnimationFrameOrigin.ScreenFrame(
-                    contract, runtime, animation, sourceFieldId, sourceTargetId, stateEvent.LocalFrame, themeTokens),
+                    contract, runtime, animation, sourceFieldId, sourceTargetId, stateEvent.LocalFrame, themeTokens, frameRate),
                 0,
                 contentDurationFrames))
             .Distinct()
@@ -612,7 +619,7 @@ internal static class PreviewScreenTimelineSnapshotFactory
         }).ToList();
         int LocalFrameForScreenFrame(int screenFrame) => Math.Max(0, (int)Math.Round(
             RuntimeAnimationFrameOrigin.OwnerLocalFrame(
-                contract, runtime, animation, sourceTargetId, screenFrame, themeTokens),
+                contract, runtime, animation, sourceTargetId, screenFrame, themeTokens, frameRate),
             MidpointRounding.AwayFromZero));
         return new PreviewScreenTimelineItem(
             JsonPath.RequiredString(item, "id", "State Timeline item"),

@@ -1298,7 +1298,8 @@ internal sealed class ComponentPreviewInputSession
                 _runtimePreview.ToJsonString(),
                 "{}",
                 1,
-                _themeTokens.ToJsonString());
+                _themeTokens.ToJsonString(),
+                _playbackFrameRate);
         }
 
         return Math.Max(1, (int)Math.Round(ActionDurationInputValue(action), MidpointRounding.AwayFromZero));

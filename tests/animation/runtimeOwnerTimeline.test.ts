@@ -147,6 +147,52 @@ test("collection presence duration is independent from serial completion", () =>
   assert.equal(timeline.itemHasExplicitPresenceEnd("second"), true);
 });
 
+test("a declared owner motion phase precedes every relative item field and serial successor", () => {
+  const timeline = new RuntimeOwnerTimeline(
+    {
+      collections: [{
+        jsonKey: "items",
+        animationTimeline: {
+          sequenceItems: true,
+          ownerPhase: {
+            kind: "resolvedMotion",
+            motion: {
+              transition: "slide",
+              direction: "bottom",
+              bounds: "parent",
+              fade: false,
+              translate: true,
+              scale: false,
+            },
+          },
+          sequenceCompletionFieldIds: ["text"],
+        },
+        fields: [
+          { id: "text", jsonKey: "text", animationTimeline: { completion: { baseDurationFieldId: "write" } } },
+          { id: "write", jsonKey: "write" },
+        ],
+      }],
+    },
+    { items: [
+      { id: "first", text: "One", write: 4 },
+      { id: "second", text: "Two", write: 2 },
+    ] },
+    {},
+    {
+      motion: {
+        transitions: {
+          slide: { delayMs: 0, durationMs: 200, easing: "linear", intensity: 1 },
+        },
+      },
+    },
+    0,
+    25,
+  );
+  assert.equal(timeline.screenFrame("text", "first", 0), 5);
+  assert.equal(timeline.itemStartFrame("second"), 9);
+  assert.equal(timeline.screenFrame("text", "second", 0), 14);
+});
+
 test("finite runtime action durations require positive JSON numbers", () => {
   const finiteContract = {
     collections: [{

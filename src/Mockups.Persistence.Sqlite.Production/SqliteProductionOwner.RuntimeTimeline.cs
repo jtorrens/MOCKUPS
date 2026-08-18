@@ -14,6 +14,7 @@ internal sealed partial class SqliteProductionOwner
         var instances = shotId is null
             ? _moduleInstanceRepository.QueryAll(connection)
             : _moduleInstanceRepository.QueryByShot(connection, shotId);
+        var shots = _shotRepository.QueryAll(connection);
         var updates = new List<(string Id, int Duration)>();
         foreach (var instance in instances)
         {
@@ -33,7 +34,8 @@ internal sealed partial class SqliteProductionOwner
                 instance.DurationFrames,
                 _moduleInstanceThemeContextService.GetTokensJson(
                     connection,
-                    instance.Id));
+                    instance.Id),
+                ResolveFrameRate(instance.ShotId));
             if (duration != instance.DurationFrames)
             {
                 updates.Add((instance.Id, duration));
@@ -49,9 +51,6 @@ internal sealed partial class SqliteProductionOwner
                 transaction);
         }
 
-        var shots =
-            _shotRepository.QueryAll(
-                connection);
         var durationByShot =
             new Dictionary<string, int>(
                 StringComparer.Ordinal);
@@ -136,6 +135,13 @@ internal sealed partial class SqliteProductionOwner
                 shot.Id,
                 duration,
                 transaction);
+        }
+
+        int ResolveFrameRate(string instanceShotId)
+        {
+            var shot = shots.Single((candidate) => candidate.Id == instanceShotId);
+            var project = _projectEpisodeRepository.GetProjectSettings(connection, shot.ProjectId);
+            return shot.FpsOverride ?? project.DefaultFps;
         }
     }
 }

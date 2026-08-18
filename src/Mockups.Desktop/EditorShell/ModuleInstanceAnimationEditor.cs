@@ -123,14 +123,16 @@ internal sealed class ModuleInstanceAnimationEditor
             animation,
             targetId,
             screenFrame,
-            themeTokens);
+            themeTokens,
+            source.FrameRate);
         var fieldOrigin = RuntimeAnimationFrameOrigin.FieldOwnerFrameOrigin(
             preview,
             preview,
             animation,
             input.Id,
             targetId,
-            themeTokens);
+            themeTokens,
+            source.FrameRate);
         return ModuleInstanceAnimationValueResolver.ResolveDisplayValue(
             track,
             ownerFrame - fieldOrigin,
@@ -196,7 +198,8 @@ internal sealed class ModuleInstanceAnimationEditor
                 preview,
                 config,
                 currentAnimation,
-                themeTokens)
+                themeTokens,
+                source.FrameRate)
             .Where(includesTarget)
             .ToList();
         var targets = ReadScopeTargets(animation);
@@ -279,7 +282,8 @@ internal sealed class ModuleInstanceAnimationEditor
                     currentAnimation,
                     durationTargetId,
                     candidateScreenFrame,
-                    themeTokens));
+                    themeTokens,
+                    preparedSnapshot.Source.FrameRate));
         int ScreenFrameForTimelineFrame(double timelineFrame) =>
             AnimationTimelineCoordinateSpace.ScreenFrameForTimelineFrame(
                 usesOwnerTimeline,
@@ -290,7 +294,8 @@ internal sealed class ModuleInstanceAnimationEditor
                     currentAnimation,
                     durationTargetId,
                     candidateOwnerFrame,
-                    themeTokens));
+                    themeTokens,
+                    preparedSnapshot.Source.FrameRate));
         int MarkerTimelineFrame(
             ResolvedAnimationTarget candidate,
             AnimationKeyframeView keyframe)
@@ -366,7 +371,8 @@ internal sealed class ModuleInstanceAnimationEditor
                 currentAnimation,
                 selected.Target?.TargetId ?? "",
                 TimelineFrame(),
-                themeTokens);
+                themeTokens,
+                preparedSnapshot.Source.FrameRate);
         selectedId = TargetKey(selected);
         _sessionUiState.Select(selectionKey, selectedId);
         var root = new StackPanel { Spacing = EditorUiDensity.Card(12) };
@@ -1267,7 +1273,8 @@ internal sealed class ModuleInstanceAnimationEditor
         JsonObject preview,
         JsonObject config,
         JsonObject animation,
-        JsonObject themeTokens)
+        JsonObject themeTokens,
+        int frameRate)
     {
         var result = new List<AnimationTarget>();
         foreach (var input in RuntimeInputDefinitionReader.ReadInputs(preview, config).Where((input) => input.Animation is not null))
@@ -1277,12 +1284,12 @@ internal sealed class ModuleInstanceAnimationEditor
                 input.Label,
                 input,
                 DesignPreviewTestValues.Value(preview, input),
-                RuntimeAnimationFrameOrigin.FieldOwnerFrameOrigin(preview, preview, animation, input.Id, "", themeTokens),
+                RuntimeAnimationFrameOrigin.FieldOwnerFrameOrigin(preview, preview, animation, input.Id, "", themeTokens, frameRate),
                 RuntimeAnimationFrameOrigin.FieldReferenceDurationFrames(preview, preview, animation, input.Id, "", themeTokens),
                 (ownerFrame) => RuntimeAnimationFrameOrigin.ScreenFrameForOwnerFrame(
-                    preview, preview, animation, "", ownerFrame, themeTokens),
+                    preview, preview, animation, "", ownerFrame, themeTokens, frameRate),
                 (screenFrame) => RuntimeAnimationFrameOrigin.OwnerLocalFrame(
-                    preview, preview, animation, "", screenFrame, themeTokens)));
+                    preview, preview, animation, "", screenFrame, themeTokens, frameRate)));
         foreach (var collection in RuntimeInputDefinitionReader.ReadCollections(preview, config))
         {
             var items = DesignPreviewTestValues.CollectionItems(preview, collection);
@@ -1304,12 +1311,12 @@ internal sealed class ModuleInstanceAnimationEditor
                         targetInput.Label,
                         targetInput,
                         DesignPreviewTestValues.CollectionValue(item, targetInput),
-                        RuntimeAnimationFrameOrigin.FieldOwnerFrameOrigin(preview, preview, animation, targetInput.Id, targetId, themeTokens),
+                        RuntimeAnimationFrameOrigin.FieldOwnerFrameOrigin(preview, preview, animation, targetInput.Id, targetId, themeTokens, frameRate),
                         RuntimeAnimationFrameOrigin.FieldReferenceDurationFrames(preview, preview, animation, targetInput.Id, targetId, themeTokens),
                         (ownerFrame) => RuntimeAnimationFrameOrigin.ScreenFrameForOwnerFrame(
-                            preview, preview, animation, targetId, ownerFrame, themeTokens),
+                            preview, preview, animation, targetId, ownerFrame, themeTokens, frameRate),
                         (screenFrame) => RuntimeAnimationFrameOrigin.OwnerLocalFrame(
-                            preview, preview, animation, targetId, screenFrame, themeTokens)));
+                            preview, preview, animation, targetId, screenFrame, themeTokens, frameRate)));
                 }
                 if (!string.IsNullOrWhiteSpace(collection.ItemRuntimeContractJsonKey))
                 {
@@ -1327,12 +1334,12 @@ internal sealed class ModuleInstanceAnimationEditor
                             input.Label,
                             input,
                             DesignPreviewTestValues.Value(runtimeContract, input),
-                            RuntimeAnimationFrameOrigin.FieldOwnerFrameOrigin(preview, preview, animation, input.Id, targetId, themeTokens),
+                            RuntimeAnimationFrameOrigin.FieldOwnerFrameOrigin(preview, preview, animation, input.Id, targetId, themeTokens, frameRate),
                             RuntimeAnimationFrameOrigin.FieldReferenceDurationFrames(preview, preview, animation, input.Id, targetId, themeTokens),
                             (ownerFrame) => RuntimeAnimationFrameOrigin.ScreenFrameForOwnerFrame(
-                                preview, preview, animation, targetId, ownerFrame, themeTokens),
+                                preview, preview, animation, targetId, ownerFrame, themeTokens, frameRate),
                             (screenFrame) => RuntimeAnimationFrameOrigin.OwnerLocalFrame(
-                                preview, preview, animation, targetId, screenFrame, themeTokens)));
+                                preview, preview, animation, targetId, screenFrame, themeTokens, frameRate)));
                     }
                 }
             }
