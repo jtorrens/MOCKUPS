@@ -368,14 +368,18 @@ internal sealed class RenderQueueMonitorControl : StackPanel
                 },
             },
         };
-        var error = new TextBlock
+        var error = EditorTextBoxBehavior.Configure(new TextBox
         {
             Text = job.Error,
+            IsReadOnly = true,
+            AcceptsReturn = true,
+            TextWrapping = TextWrapping.Wrap,
+            BorderThickness = new Thickness(0),
+            Background = Brushes.Transparent,
             Foreground = Brushes.IndianRed,
             FontSize = 12,
-            TextWrapping = TextWrapping.Wrap,
             IsVisible = !string.IsNullOrWhiteSpace(job.Error),
-        };
+        });
         details.Children.Add(error);
 
         var actions = new StackPanel
@@ -560,14 +564,14 @@ internal sealed class RenderQueueMonitorControl : StackPanel
         TextBlock status,
         TextBlock progressDetail,
         ProgressBar progress,
-        TextBlock error,
+        TextBox error,
         StackPanel actions)
     {
         public Border Root { get; } = root;
         public TextBlock Status { get; } = status;
         public TextBlock ProgressDetail { get; } = progressDetail;
         public ProgressBar Progress { get; } = progress;
-        public TextBlock Error { get; } = error;
+        public TextBox Error { get; } = error;
         public StackPanel Actions { get; } = actions;
         public string ActionKey { get; set; } = "";
     }

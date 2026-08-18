@@ -70,6 +70,23 @@ internal sealed class ProductionPreviewPayloadPreparer
         return resolved;
     }
 
+    public DesignPreviewPayload PrepareRenderRequired(
+        ProjectTreeNode shot,
+        string themeId,
+        string deviceId,
+        string themeMode,
+        int shotFrame)
+    {
+        var payload = DesignPreviewPayloadFactory.CreateProductionRender(
+            _payloads,
+            shot,
+            themeId,
+            deviceId,
+            themeMode,
+            shotFrame);
+        return _runtime.Resolve(payload, themeMode);
+    }
+
     public IReadOnlyList<DesignPreviewPayload>
         PrepareFrames(
             ProjectTreeNode node,

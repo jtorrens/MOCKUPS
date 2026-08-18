@@ -60,6 +60,7 @@ internal sealed class RenderJobSnapshotFactory
     private readonly IRenderSnapshotDataSource _database;
     private readonly ProductionOutputRootStore _roots;
     private readonly DesignPreviewPayloadDataSource _payloadData;
+    private readonly ProductionPreviewPayloadPreparer _productionPayloads;
 
     public RenderJobSnapshotFactory(
         IRenderSnapshotDataSource database,
@@ -74,6 +75,9 @@ internal sealed class RenderJobSnapshotFactory
             database,
             database,
             projectPaths);
+        _productionPayloads = new ProductionPreviewPayloadPreparer(
+            _payloadData,
+            new ProductionPreviewRuntimeResolver(database, projectPaths));
     }
 
     public Task<RenderQueueShotDraft> LoadDraftAsync(
@@ -252,8 +256,7 @@ internal sealed class RenderJobSnapshotFactory
             for (var frame = 0; frame < draft.TotalFrames; frame++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var payload = DesignPreviewPayloadFactory.CreateProductionRender(
-                    _payloadData,
+                var payload = _productionPayloads.PrepareRenderRequired(
                     draft.Shot,
                     preparation.ThemeId,
                     preparation.DeviceId,
