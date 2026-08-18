@@ -3044,7 +3044,16 @@ static void ComponentAndModuleVariantsShareReferenceGrammar()
         "default"));
     True(!VariantReferenceId.HasVariantId(reference, "default"));
 
-    foreach (var malformed in new[] { "", "owner_001", "::variant::default", "owner_001::variant::" })
+    foreach (var malformed in new[]
+             {
+                 "",
+                 "owner_001",
+                 "::variant::default",
+                 "owner_001::variant::",
+                 "{\"variantReference\":\"owner_001::variant::default\",\"overrides\":{}}",
+                 "owner_001::variant::default::variant::other",
+                 "owner 001::variant::default",
+             })
     {
         True(!VariantReferenceId.TryParse(malformed, out _, out _));
     }
