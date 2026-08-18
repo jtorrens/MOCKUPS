@@ -16884,6 +16884,7 @@ static void RuntimeActionControlsReactivateAfterPlaybackAndReattachment()
     {
         var playbackState = new PreviewPlaybackState();
         var currentFrame = 0;
+        playbackState.SetPlaying(true);
         var control = new RuntimeTestActionControl(
             "Test Action",
             (_) => { },
@@ -16912,6 +16913,9 @@ static void RuntimeActionControlsReactivateAfterPlaybackAndReattachment()
             .OfType<Button>()
             .Single((button) => ToolTip.GetTip(button) as string == accessibleName);
 
+        True(ActionButton("Pause Test Action").IsEnabled);
+        playbackState.SetPlaying(false);
+        Dispatcher.UIThread.RunJobs();
         var play = ActionButton("Play Test Action");
         var restore = ActionButton("Restore Test Action");
         var previous = ActionButton("Previous frame · Test Action");

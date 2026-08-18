@@ -234,6 +234,7 @@ internal sealed class RuntimeTestActionControl : Border
         Child = content;
 
         PreviewPlaybackStateBinding.Attach(this, _playbackState, OnPlaybackStateChanged);
+        RefreshState();
     }
 
     private static Button CreateButton(string icon, string accessibleName)
