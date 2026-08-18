@@ -24,16 +24,11 @@ internal sealed record ProductionPreviewScreenSnapshot(
 internal sealed record ProductionPreviewShotSnapshot(
     string ShotId,
     int FrameRate,
+    int DurationFrames,
     ProductionShotContext Context,
     ShotReferenceVideoDocument ReferenceVideo,
     IReadOnlyList<ProductionPreviewScreenSnapshot> Screens)
 {
-    public int DurationFrames =>
-        Math.Max(
-            1,
-            Screens.Sum(
-                (screen) => screen.DurationFrames));
-
     public IReadOnlyList<ProductionScreenFrameRange>
         FrameRanges =>
         Screens.Select(
@@ -176,6 +171,7 @@ internal sealed class ProductionPreviewSessionDataSource
                 new ProductionPreviewShotSnapshot(
                     shotNode.Id,
                     shotSettings.Fps,
+                    shotSettings.DurationFrames,
                     _shotContexts.Resolve(
                         shotNode.Id),
                     shotSettings.ReferenceVideo,

@@ -104,6 +104,21 @@ public static class RecordClassFieldCatalog
         ["shot.slug"] = new("shot.slug", "Shot Code", ValueKind.StringSingleLine),
         ["shot.version"] = new("shot.version", "Version", ValueKind.Integer),
         ["shot.sortOrder"] = new("shot.sortOrder", "Sort Order", ValueKind.Integer),
+        ["shot.durationPolicy"] = new(
+            "shot.durationPolicy",
+            "Duration mode",
+            ValueKind.OptionToken,
+            Options:
+            [
+                new FieldOption("calculated", "Calculated"),
+                new FieldOption("explicit", "Explicit"),
+            ]),
+        ["shot.calculatedDurationFrames"] = new(
+            "shot.calculatedDurationFrames",
+            "Calculated duration",
+            ValueKind.Integer,
+            IsEditable: false,
+            Unit: "frames"),
         ["shot.durationFrames"] = new("shot.durationFrames", "Duration", ValueKind.Integer, IsEditable: false, Unit: "frames"),
         ["shot.fps"] = new("shot.fps", "Frame rate", ValueKind.Integer, Unit: "fps"),
         ["shot.ownerActorId"] = new(

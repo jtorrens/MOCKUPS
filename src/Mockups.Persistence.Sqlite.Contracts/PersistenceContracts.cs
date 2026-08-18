@@ -18,6 +18,8 @@ internal sealed record ShotRecord(
     int SortOrder,
     int? FpsOverride,
     int DurationFrames,
+    string DurationPolicy,
+    int ExplicitDurationFrames,
     string OwnerActorId,
     string? DeviceOverrideId,
     string? ThemeOverrideId,

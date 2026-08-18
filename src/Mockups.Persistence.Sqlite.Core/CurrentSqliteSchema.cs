@@ -50,6 +50,10 @@ internal static class CurrentSqliteSchema
           sort_order INTEGER NOT NULL DEFAULT 0,
           fps_override INTEGER,
           duration_frames INTEGER NOT NULL DEFAULT 240,
+          duration_policy TEXT NOT NULL DEFAULT 'calculated'
+            CHECK(duration_policy IN ('calculated', 'explicit')),
+          explicit_duration_frames INTEGER NOT NULL DEFAULT 240
+            CHECK(explicit_duration_frames > 0),
           owner_actor_id TEXT NOT NULL REFERENCES actors(id) ON DELETE RESTRICT,
           device_override_id TEXT REFERENCES devices(id) ON DELETE RESTRICT,
           theme_override_id TEXT REFERENCES themes(id) ON DELETE RESTRICT,
@@ -192,7 +196,7 @@ internal static class CurrentSqliteSchema
           layout_json TEXT NOT NULL
         );
 
-        PRAGMA user_version = 11;
+        PRAGMA user_version = 12;
         """;
 
 }

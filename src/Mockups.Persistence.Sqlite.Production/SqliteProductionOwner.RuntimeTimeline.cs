@@ -124,7 +124,11 @@ internal sealed partial class SqliteProductionOwner
         }
         foreach (var shot in shots)
         {
-            var duration = durationByShot.GetValueOrDefault(shot.Id, 1);
+            var calculatedDuration = durationByShot.GetValueOrDefault(shot.Id, 1);
+            var duration = ShotTimelineDuration.Resolve(
+                ShotTimelineDuration.ParsePolicy(shot.DurationPolicy),
+                calculatedDuration,
+                shot.ExplicitDurationFrames);
             if (duration == shot.DurationFrames)
             {
                 continue;

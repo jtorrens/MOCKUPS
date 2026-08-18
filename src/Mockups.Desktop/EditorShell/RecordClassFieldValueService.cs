@@ -144,6 +144,10 @@ internal sealed class RecordClassFieldValueService
         }
 
         var isEditable = field.IsEditable
+            || (node.Kind == ProjectTreeNodeKind.Shot
+                && field.Id == "shot.durationFrames"
+                && _production.GetShotSettings(node.Id).DurationPolicy
+                    == ShotDurationPolicy.Explicit)
             || (node.Kind == ProjectTreeNodeKind.ModuleInstance
                 && field.Id == "moduleInstance.durationFrames"
                 && RuntimeDurationContract.Policy(
@@ -369,7 +373,9 @@ internal sealed class RecordClassFieldValueService
             "shot.slug" => settings.Slug,
             "shot.version" => settings.Version.ToString(),
             "shot.sortOrder" => settings.SortOrder.ToString(),
-            "shot.durationFrames" => ModuleInstanceTimeline.ShotDurationFrames(_timelineDataSource, shotId).ToString(),
+            "shot.durationPolicy" => ShotTimelineDuration.FormatPolicy(settings.DurationPolicy),
+            "shot.calculatedDurationFrames" => ModuleInstanceTimeline.ShotDurationFrames(_timelineDataSource, shotId).ToString(),
+            "shot.durationFrames" => settings.DurationFrames.ToString(),
             "shot.fps" => settings.Fps.ToString(),
             "shot.ownerActorId" => settings.OwnerActorId,
             "shot.deviceOverrideId" => settings.DeviceOverrideId ?? "",

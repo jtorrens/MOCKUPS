@@ -300,6 +300,7 @@ internal sealed class EditorLayoutCardFactory
                 _inlinePreviews.Refresh(node, _activeFieldControls.ControlsByFieldId);
                 _activeFieldControls.RefreshPreviews();
                 _refreshPreview();
+                _scheduleActiveEditorReload(node);
             }
             catch (Exception exception)
             {

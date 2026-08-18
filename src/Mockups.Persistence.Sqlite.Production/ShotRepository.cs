@@ -98,6 +98,8 @@ internal sealed class ShotRepository : IShotRepository
             sortOrder,
             null,
             240,
+            "calculated",
+            240,
             actorId,
             null,
             null,
@@ -180,7 +182,28 @@ internal sealed class ShotRepository : IShotRepository
     {
         if (fieldId == "shot.durationFrames")
         {
-            UpdateDuration(connection, shotId, NumericText.Int32(value, 0));
+            var record = Get(connection, shotId);
+            if (ShotTimelineDuration.ParsePolicy(record.DurationPolicy)
+                != ShotDurationPolicy.Explicit)
+            {
+                throw new InvalidOperationException(
+                    "Shot duration is calculated. Select Explicit duration to edit it.");
+            }
+            UpdateExplicitDuration(connection, shotId, NumericText.Int32(value, 0));
+            return;
+        }
+        if (fieldId == "shot.durationPolicy")
+        {
+            var record = Get(connection, shotId);
+            var policy = ShotTimelineDuration.ParsePolicy(value);
+            _context.Execute(
+                connection,
+                "UPDATE shots SET duration_policy = $policy, explicit_duration_frames = $duration WHERE id = $id",
+                ("$id", shotId),
+                ("$policy", ShotTimelineDuration.FormatPolicy(policy)),
+                ("$duration", policy == ShotDurationPolicy.Explicit
+                    ? record.DurationFrames
+                    : record.ExplicitDurationFrames));
             return;
         }
 
@@ -313,6 +336,23 @@ internal sealed class ShotRepository : IShotRepository
             ("$duration", durationFrames));
     }
 
+    public void UpdateExplicitDuration(
+        SqliteConnection connection,
+        string shotId,
+        int durationFrames)
+    {
+        if (durationFrames <= 0)
+        {
+            throw new InvalidOperationException($"Shot '{shotId}' explicit duration must be positive.");
+        }
+        _ = Get(connection, shotId);
+        _context.Execute(
+            connection,
+            "UPDATE shots SET explicit_duration_frames = $duration, duration_frames = $duration WHERE id = $id",
+            ("$duration", durationFrames),
+            ("$id", shotId));
+    }
+
     public void UpdateNode(SqliteConnection connection, string shotId, string name, string notes)
     {
         _ = Get(connection, shotId);
@@ -376,11 +416,13 @@ internal sealed class ShotRepository : IShotRepository
             """
             INSERT INTO shots (
               id, episode_id, name, slug, version, notes, sort_order, fps_override,
-              duration_frames, owner_actor_id, device_override_id, theme_override_id,
+              duration_frames, duration_policy, explicit_duration_frames,
+              owner_actor_id, device_override_id, theme_override_id,
               canvas_json, reference_video_json, metadata_json, shot_number)
             VALUES (
               $id, $episodeId, $name, $slug, $version, $notes, $sortOrder, $fpsOverride,
-              $durationFrames, $ownerActorId, $deviceOverrideId, $themeOverrideId,
+              $durationFrames, $durationPolicy, $explicitDurationFrames,
+              $ownerActorId, $deviceOverrideId, $themeOverrideId,
               $canvasJson, $referenceVideoJson, $metadataJson, $shotNumber)
             """,
             ("$id", record.Id),
@@ -392,6 +434,8 @@ internal sealed class ShotRepository : IShotRepository
             ("$sortOrder", record.SortOrder),
             ("$fpsOverride", record.FpsOverride),
             ("$durationFrames", record.DurationFrames),
+            ("$durationPolicy", record.DurationPolicy),
+            ("$explicitDurationFrames", record.ExplicitDurationFrames),
             ("$ownerActorId", record.OwnerActorId),
             ("$deviceOverrideId", (object?)record.DeviceOverrideId ?? DBNull.Value),
             ("$themeOverrideId", (object?)record.ThemeOverrideId ?? DBNull.Value),
@@ -424,11 +468,13 @@ internal sealed class ShotRepository : IShotRepository
             reader.IsDBNull(9) ? null : reader.GetInt32(9),
             reader.GetInt32(10),
             SqliteCommandExecutor.ReadString(reader, 11),
-            reader.IsDBNull(12) ? null : reader.GetString(12),
-            reader.IsDBNull(13) ? null : reader.GetString(13),
-            SqliteCommandExecutor.ReadString(reader, 14),
-            SqliteCommandExecutor.ReadString(reader, 15),
-            SqliteCommandExecutor.ReadString(reader, 16));
+            reader.GetInt32(12),
+            SqliteCommandExecutor.ReadString(reader, 13),
+            reader.IsDBNull(14) ? null : reader.GetString(14),
+            reader.IsDBNull(15) ? null : reader.GetString(15),
+            SqliteCommandExecutor.ReadString(reader, 16),
+            SqliteCommandExecutor.ReadString(reader, 17),
+            SqliteCommandExecutor.ReadString(reader, 18));
         Validate(record);
         return record;
     }
@@ -466,6 +512,11 @@ internal sealed class ShotRepository : IShotRepository
         if (record.DurationFrames <= 0)
         {
             throw new InvalidOperationException($"Shot '{record.Id}' duration must be positive.");
+        }
+        _ = ShotTimelineDuration.ParsePolicy(record.DurationPolicy);
+        if (record.ExplicitDurationFrames <= 0)
+        {
+            throw new InvalidOperationException($"Shot '{record.Id}' explicit duration must be positive.");
         }
         JsonPath.ParseRequiredObject(record.CanvasJson, $"Shot '{record.Id}' canvas_json");
         JsonPath.ParseRequiredObject(record.MetadataJson, $"Shot '{record.Id}' metadata_json");
@@ -536,7 +587,8 @@ internal sealed class ShotRepository : IShotRepository
     private const string SelectCurrentRows = """
         SELECT s.id, s.episode_id, e.project_id, s.name, s.slug, s.shot_number,
                s.version, s.notes,
-               s.sort_order, s.fps_override, s.duration_frames, s.owner_actor_id,
+               s.sort_order, s.fps_override, s.duration_frames, s.duration_policy,
+               s.explicit_duration_frames, s.owner_actor_id,
                s.device_override_id, s.theme_override_id,
                s.canvas_json, s.reference_video_json, s.metadata_json
         FROM shots s

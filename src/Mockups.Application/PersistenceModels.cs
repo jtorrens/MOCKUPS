@@ -31,6 +31,8 @@ public sealed record ShotSettings(
     int Fps,
     int? FpsOverride,
     int DurationFrames,
+    ShotDurationPolicy DurationPolicy,
+    int ExplicitDurationFrames,
     string OwnerActorId,
     string? DeviceOverrideId,
     string? ThemeOverrideId,

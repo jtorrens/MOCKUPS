@@ -24,6 +24,8 @@ internal sealed partial class SqliteProductionOwner
             record.FpsOverride ?? project.DefaultFps,
             record.FpsOverride,
             record.DurationFrames,
+            ShotTimelineDuration.ParsePolicy(record.DurationPolicy),
+            record.ExplicitDurationFrames,
             record.OwnerActorId,
             record.DeviceOverrideId,
             record.ThemeOverrideId,
@@ -150,7 +152,9 @@ internal sealed partial class SqliteProductionOwner
 
         var changesContext = fieldId is "shot.ownerActorId"
             or "shot.deviceOverrideId"
-            or "shot.themeOverrideId";
+            or "shot.themeOverrideId"
+            or "shot.durationPolicy"
+            or "shot.durationFrames";
         if (fieldId == "shot.ownerActorId")
         {
             _moduleInstanceThemeContextService.RequireShotOwnerChange(

@@ -213,6 +213,7 @@ var tests = new (string Name, Action Run)[]
     ("Screen-owned fields start at Screen zero", ScreenFieldsStartAtZero),
     ("runtime owner timeline rejects filtered contract envelopes", RuntimeOwnerTimelineRejectsFilteredEnvelopes),
     ("Screen duration policy distinguishes calculated and explicit ownership", ScreenDurationPolicyIsContractOwned),
+    ("Shot duration policy resolves calculated and explicit timeline extents", ShotDurationPolicyIsContractOwned),
     ("target-owned fields use target-relative origins", TargetFieldsUseRelativeOrigins),
     ("parallel collection targets share the Screen origin", ParallelCollectionTargetsShareScreenOrigin),
     ("entity fields keep their first-appearance origin across re-entry", EntityFieldsKeepFirstAppearanceOrigin),
@@ -16456,6 +16457,25 @@ static void ScreenDurationPolicyIsContractOwned()
         "{\"animationTimeline\":{\"durationPolicy\":\"explicit\",\"defaultDurationFrames\":1.5}}"));
     Throws<InvalidOperationException>(() => RuntimeDurationContract.InitialDurationFrames(
         "{\"animationTimeline\":{\"durationPolicy\":\"explicit\",\"defaultDurationFrames\":0}}"));
+}
+
+static void ShotDurationPolicyIsContractOwned()
+{
+    Equal(120, ShotTimelineDuration.Resolve(
+        ShotDurationPolicy.Calculated,
+        calculatedDurationFrames: 120,
+        explicitDurationFrames: 240));
+    Equal(60, ShotTimelineDuration.Resolve(
+        ShotDurationPolicy.Explicit,
+        calculatedDurationFrames: 120,
+        explicitDurationFrames: 60));
+    Equal("explicit", ShotTimelineDuration.FormatPolicy(ShotDurationPolicy.Explicit));
+    Equal(ShotDurationPolicy.Calculated, ShotTimelineDuration.ParsePolicy("calculated"));
+    Throws<InvalidOperationException>(() => ShotTimelineDuration.ParsePolicy("legacy"));
+    Throws<InvalidOperationException>(() => ShotTimelineDuration.Resolve(
+        ShotDurationPolicy.Explicit,
+        calculatedDurationFrames: 120,
+        explicitDurationFrames: 0));
 }
 
 static void TargetFieldsUseRelativeOrigins()

@@ -124,12 +124,10 @@ internal sealed class RenderJobSnapshotFactory
                     range.EffectiveDurationFrames);
             })
             .ToList();
-        if (screens.Count == 0
-            || screens.Sum((screen) => screen.DurationFrames)
-                != shotSettings.DurationFrames)
+        if (screens.Count == 0)
         {
             throw new InvalidOperationException(
-                $"Render preparation Shot '{shot.Id}' has inconsistent Screen ranges.");
+                $"Render preparation Shot '{shot.Id}' has no Screens.");
         }
         var rootPath = _roots.Get(shotSettings.ProjectId) ?? "";
         var status = string.IsNullOrWhiteSpace(rootPath)
@@ -322,8 +320,13 @@ internal sealed class RenderJobSnapshotFactory
         var screen = draft.Screens.SingleOrDefault((candidate) =>
             frame >= candidate.StartFrame
             && frame < candidate.StartFrame + candidate.DurationFrames);
-        return screen?.ScreenName
-            ?? throw new InvalidOperationException(
-                $"Render preparation frame {frame} has no exact Screen in Shot '{draft.Shot.Id}'.");
+        if (screen is not null) return screen.ScreenName;
+        var last = draft.Screens.LastOrDefault();
+        if (last is null)
+        {
+            throw new InvalidOperationException(
+                $"Render preparation Shot '{draft.Shot.Id}' has no Screen to hold.");
+        }
+        return last.ScreenName;
     }
 }

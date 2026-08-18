@@ -87,8 +87,11 @@ incoming Screen consumes its non-negative action delay, still at local frame
 zero, and only then starts its internal timeline. The first Screen has no
 synthetic entry Motion but consumes its action delay before its timeline starts.
 The effective Screen extent is entry-transition frames plus action-delay frames
-plus its calculated or explicit action duration. Shot aggregate duration is the
-sum of those effective extents.
+plus its calculated or explicit action duration. Shot calculated duration is the
+sum of those effective extents. A Shot may instead own a positive explicit
+duration. The common Shot timeline resolves that effective extent for editor,
+Preview and render: a shorter explicit extent cuts the timeline; a longer one
+holds the final local frame of the last Screen.
 
 The event clock and the visual Motion recipe have distinct owners. A child
 Component Variant may declare its reusable boundary Motion, while the parent

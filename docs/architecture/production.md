@@ -215,7 +215,10 @@ After both Motions complete, the Screen remains at frame zero for its authored
 action delay; only then does its internal action timeline start. The first
 Screen has no synthetic entry transition but applies its delay before its
 actions; the last Screen has no synthetic exit. The effective Screen duration
-and derived Shot duration include entry transition, delay and action duration.
+and calculated Shot duration include entry transition, delay and action duration.
+A Shot can select an explicit positive duration at its own timeline boundary;
+that single resolved duration cuts the final Screen early or holds its final
+frame after the calculated sequence ends for Preview and render alike.
 `none` with no fade remains an immediate change.
 
 Screen payload is authored in Preview because that is where its effect can be
