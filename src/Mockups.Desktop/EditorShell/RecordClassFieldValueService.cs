@@ -267,8 +267,6 @@ internal sealed class RecordClassFieldValueService
                 settings.ProductionOutput.SeasonCode,
             "project.episodePrefix" =>
                 settings.ProductionOutput.EpisodePrefix,
-            "project.outputNameSeparator" =>
-                settings.ProductionOutput.NameSeparator,
             "project.shotPrefix" =>
                 settings.ProductionOutput.ShotPrefix,
             "project.shotNumberPadding" =>

@@ -72,16 +72,6 @@ public static class RecordClassFieldCatalog
         ["project.productionCode"] = new("project.productionCode", "Production Code", ValueKind.StringSingleLine),
         ["project.productionSeasonCode"] = new("project.productionSeasonCode", "Season Code", ValueKind.StringSingleLine),
         ["project.episodePrefix"] = new("project.episodePrefix", "Episode Prefix", ValueKind.StringSingleLine),
-        ["project.outputNameSeparator"] = new(
-            "project.outputNameSeparator",
-            "Name Separator",
-            ValueKind.OptionToken,
-            Options:
-            [
-                new("_", "Underscore (_)"),
-                new("-", "Hyphen (-)"),
-                new("", "None"),
-            ]),
         ["project.shotPrefix"] = new("project.shotPrefix", "Shot Prefix", ValueKind.StringSingleLine),
         ["project.shotNumberPadding"] = new(
             "project.shotNumberPadding",

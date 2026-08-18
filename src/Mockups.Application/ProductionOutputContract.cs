@@ -8,7 +8,6 @@ public sealed record ProductionOutputSettings(
     string TechnicalCode,
     string SeasonCode,
     string EpisodePrefix,
-    string NameSeparator,
     string ShotPrefix,
     int ShotNumberPadding,
     int VersionPadding,
@@ -44,30 +43,25 @@ public static partial class ProductionOutputContract
         ProductionOutputSettings value,
         string context)
     {
-        if (!TechnicalCodePattern().IsMatch(value.TechnicalCode))
+        if (!NamingSegmentPattern().IsMatch(value.TechnicalCode))
         {
             throw new InvalidOperationException(
-                $"{context}.technicalCode must use A-Z and 0-9.");
+                $"{context}.technicalCode must use letters, numbers, hyphen and underscore.");
         }
-        if (!HierarchyCodePattern().IsMatch(value.SeasonCode))
+        if (!NamingSegmentPattern().IsMatch(value.SeasonCode))
         {
             throw new InvalidOperationException(
-                $"{context}.seasonCode must use A-Z, 0-9 and underscore.");
+                $"{context}.seasonCode must use letters, numbers, hyphen and underscore.");
         }
-        if (value.NameSeparator is not "_" and not "-" and not "")
+        if (!OptionalNamingSegmentPattern().IsMatch(value.EpisodePrefix))
         {
             throw new InvalidOperationException(
-                $"{context}.nameSeparator must be underscore, hyphen or empty.");
+                $"{context}.episodePrefix must be blank or use letters, numbers, hyphen and underscore.");
         }
-        if (!OptionalTechnicalCodePattern().IsMatch(value.EpisodePrefix))
+        if (!OptionalNamingSegmentPattern().IsMatch(value.ShotPrefix))
         {
             throw new InvalidOperationException(
-                $"{context}.episodePrefix must be blank or use A-Z and 0-9.");
-        }
-        if (!OptionalTechnicalCodePattern().IsMatch(value.ShotPrefix))
-        {
-            throw new InvalidOperationException(
-                $"{context}.shotPrefix must be blank or use A-Z and 0-9.");
+                $"{context}.shotPrefix must be blank or use letters, numbers, hyphen and underscore.");
         }
         RequirePadding(
             value.ShotNumberPadding,
@@ -104,8 +98,7 @@ public static partial class ProductionOutputContract
         var normalizedShotCode = RequireShotCode(
             shotCode,
             "Production output Shot code");
-        var technicalName = string.Join(
-            settings.NameSeparator,
+        var technicalName = string.Concat(
             settings.TechnicalCode,
             settings.SeasonCode,
             normalizedEpisodeCode,
@@ -142,11 +135,11 @@ public static partial class ProductionOutputContract
         string value,
         string context)
     {
-        var normalized = value.Trim().ToUpperInvariant();
-        if (!HierarchyCodePattern().IsMatch(normalized))
+        var normalized = value.Trim();
+        if (!NamingSegmentPattern().IsMatch(normalized))
         {
             throw new InvalidOperationException(
-                $"{context} must use A-Z, 0-9 and underscore.");
+                $"{context} must use letters, numbers, hyphen and underscore.");
         }
         return normalized;
     }
@@ -160,15 +153,13 @@ public static partial class ProductionOutputContract
             throw new InvalidOperationException(
                 "An Episode requires a positive stable number.");
         }
-        var prefix = episodePrefix.Trim().ToUpperInvariant();
-        if (!OptionalTechnicalCodePattern().IsMatch(prefix))
+        var prefix = episodePrefix.Trim();
+        if (!OptionalNamingSegmentPattern().IsMatch(prefix))
         {
             throw new InvalidOperationException(
-                "Episode prefix must be blank or use A-Z and 0-9.");
+                "Episode prefix must be blank or use letters, numbers, hyphen and underscore.");
         }
-        return string.IsNullOrEmpty(prefix)
-            ? episodeNumber.ToString("00")
-            : $"{prefix}_{episodeNumber:00}";
+        return $"{prefix}{episodeNumber:00}";
     }
 
     public static string CreateShotCode(
@@ -182,11 +173,11 @@ public static partial class ProductionOutputContract
             throw new InvalidOperationException(
                 "A Shot requires a positive stable number.");
         }
-        var prefix = shotPrefix.Trim().ToUpperInvariant();
-        if (!OptionalTechnicalCodePattern().IsMatch(prefix))
+        var prefix = shotPrefix.Trim();
+        if (!OptionalNamingSegmentPattern().IsMatch(prefix))
         {
             throw new InvalidOperationException(
-                "Shot prefix must be blank or use A-Z and 0-9.");
+                "Shot prefix must be blank or use letters, numbers, hyphen and underscore.");
         }
         return RequireShotCode(
             $"{prefix}{shotNumber.ToString().PadLeft(padding, '0')}",
@@ -278,14 +269,11 @@ public static partial class ProductionOutputContract
         return count;
     }
 
-    [GeneratedRegex("^[A-Z0-9]{1,32}$")]
-    private static partial Regex TechnicalCodePattern();
+    [GeneratedRegex("^[A-Za-z0-9_-]{1,32}$")]
+    private static partial Regex NamingSegmentPattern();
 
-    [GeneratedRegex("^[A-Z0-9]{0,32}$")]
-    private static partial Regex OptionalTechnicalCodePattern();
-
-    [GeneratedRegex("^[A-Z0-9_]{1,32}$")]
-    private static partial Regex HierarchyCodePattern();
+    [GeneratedRegex("^[A-Za-z0-9_-]{0,32}$")]
+    private static partial Regex OptionalNamingSegmentPattern();
 
     [GeneratedRegex("^[A-Za-z0-9_-]{1,64}$")]
     private static partial Regex ShotCodePattern();

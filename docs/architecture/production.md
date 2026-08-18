@@ -73,8 +73,8 @@ the same Episode and creates a new stable id.
 
 MOCKUPS is the sole owner of Projects, Episodes and Shots. A Project stores one
 portable Production Output contract: Production and Season codes, optional
-Episode and Shot prefixes, the exact name separator, number/version/frame
-padding and one relative route template containing exactly `SEASON_CODE`, `EPISODE_CODE` and
+Episode and Shot prefixes, number/version/frame padding and one relative route
+template containing exactly `SEASON_CODE`, `EPISODE_CODE` and
 `SHOT_NAME`.
 
 Episode codes are explicit current authored values; the optional Episode Prefix
@@ -84,10 +84,12 @@ and preserves the source Actor. The optional Shot Prefix and padding only
 supply the initial Shot Code. A Shot Code is editable, unique within its
 Episode, accepts letters, numbers, hyphen and underscore, and is never derived
 again. The technical name and route resolve from the exact authored codes. The
-current FOQN contract resolves:
+four naming segments are concatenated literally: punctuation belongs to the
+relevant Production, Season, Episode or Shot segment rather than to a separate
+global separator. The current FOQN contract resolves:
 
 ```text
-FOQN + S02 + EP_01 + SH0001
+FOQN + _S02_ + EP_01 + _SH0001
 → FOQN_S02_EP_01_SH0001
 → S02/EP_01/FOQN_S02_EP_01_SH0001/comp
 ```

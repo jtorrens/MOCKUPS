@@ -34,7 +34,6 @@ internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
               production_code,
               production_season_code,
               episode_prefix,
-              output_name_separator,
               shot_prefix,
               shot_number_padding,
               output_version_padding,
@@ -56,11 +55,10 @@ internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
                 reader.GetString(4),
                 reader.GetString(5),
                 reader.GetString(6),
-                reader.GetString(7),
+                reader.GetInt32(7),
                 reader.GetInt32(8),
                 reader.GetInt32(9),
-                reader.GetInt32(10),
-                reader.GetString(11)),
+                reader.GetString(10)),
             $"Project '{projectId}' Production output");
         return new ProjectSettings(
             SqliteCommandExecutor.ReadString(reader, 0),
@@ -83,24 +81,22 @@ internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
                 "project.productionCode" =>
                     output with
                     {
-                        TechnicalCode = value.Trim().ToUpperInvariant(),
+                        TechnicalCode = value.Trim(),
                     },
                 "project.productionSeasonCode" =>
                     output with
                     {
-                        SeasonCode = value.Trim().ToUpperInvariant(),
+                        SeasonCode = value.Trim(),
                     },
                 "project.episodePrefix" =>
                     output with
                     {
-                        EpisodePrefix = value.Trim().ToUpperInvariant(),
+                        EpisodePrefix = value.Trim(),
                     },
-                "project.outputNameSeparator" =>
-                    output with { NameSeparator = value },
                 "project.shotPrefix" =>
                     output with
                     {
-                        ShotPrefix = value.Trim().ToUpperInvariant(),
+                        ShotPrefix = value.Trim(),
                     },
                 "project.shotNumberPadding" =>
                     output with
@@ -132,7 +128,6 @@ internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
                 "project.productionCode" => output.TechnicalCode,
                 "project.productionSeasonCode" => output.SeasonCode,
                 "project.episodePrefix" => output.EpisodePrefix,
-                "project.outputNameSeparator" => output.NameSeparator,
                 "project.shotPrefix" => output.ShotPrefix,
                 "project.shotNumberPadding" =>
                     output.ShotNumberPadding.ToString(),
@@ -153,8 +148,6 @@ internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
                 "project.productionSeasonCode" =>
                     "production_season_code",
                 "project.episodePrefix" => "episode_prefix",
-                "project.outputNameSeparator" =>
-                    "output_name_separator",
                 "project.shotPrefix" => "shot_prefix",
                 "project.shotNumberPadding" =>
                     "shot_number_padding",

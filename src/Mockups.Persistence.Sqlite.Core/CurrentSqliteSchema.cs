@@ -16,8 +16,6 @@ internal static class CurrentSqliteSchema
           production_code TEXT NOT NULL,
           production_season_code TEXT NOT NULL,
           episode_prefix TEXT NOT NULL DEFAULT 'EP',
-          output_name_separator TEXT NOT NULL DEFAULT '_'
-            CHECK(output_name_separator IN ('_', '-', '')),
           shot_prefix TEXT NOT NULL DEFAULT 'SH',
           shot_number_padding INTEGER NOT NULL DEFAULT 4
             CHECK(shot_number_padding BETWEEN 1 AND 8),
@@ -194,7 +192,7 @@ internal static class CurrentSqliteSchema
           layout_json TEXT NOT NULL
         );
 
-        PRAGMA user_version = 10;
+        PRAGMA user_version = 11;
         """;
 
 }

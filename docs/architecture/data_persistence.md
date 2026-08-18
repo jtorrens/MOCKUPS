@@ -28,8 +28,9 @@ Blank, missing and cross-Project override references are invalid current data.
 inside its Episode. `shots.slug` stores the explicit Shot Code, which is unique
 inside its Episode and accepts letters, numbers, hyphen and underscore. It is
 not an identifier and is never regenerated after creation. The Project stores
-the portable Production Output naming and route contract; its optional Episode
-and Shot prefixes generate initial codes only.
+the portable Production Output naming and route contract. Its naming segments
+are concatenated literally; optional Episode and Shot prefixes generate initial
+codes only and may contain letters, numbers, hyphen and underscore.
 `shots.reference_video_json` is one required current Shot-owned object. It
 stores a Project-relative or absolute video path, a nullable non-negative
 Project-FPS In frame and stable video-relative markers with non-negative frames

@@ -8429,12 +8429,12 @@ static void ProjectOwnedReferencesRejectCrossProjectValues()
             INSERT INTO projects (
                 id, name, slug, default_fps, notes, media_root,
                 production_code, production_season_code,
-                output_name_separator, shot_prefix, shot_number_padding,
+                episode_prefix, shot_prefix, shot_number_padding,
                 output_version_padding, output_frame_padding,
                 output_relative_directory_template, metadata_json)
             VALUES (
                 'project_cross', 'Cross Project', 'cross-project', 25, '', '',
-                'CROSS', 'S01', '_', 'SH', 4, 3, 8,
+                'CROSS', '_S01_', 'EP_', '_SH', 4, 3, 8,
                 '{{SEASON_CODE}}/{{EPISODE_CODE}}/{{SHOT_NAME}}/comp', '{}')
             """);
     }
@@ -13283,12 +13283,12 @@ static void ShotActorContextIsExplicit()
                 INSERT INTO projects (
                   id, name, slug, default_fps, notes, media_root,
                   production_code, production_season_code,
-                  output_name_separator, shot_prefix, shot_number_padding,
+                  episode_prefix, shot_prefix, shot_number_padding,
                   output_version_padding, output_frame_padding,
                   output_relative_directory_template, metadata_json)
                 VALUES (
                   'project_shot_override_cross', 'Cross', 'cross', 25, '', '',
-                  'CROSS', 'S01', '_', 'SH', 4, 3, 8,
+                  'CROSS', '_S01_', 'EP_', '_SH', 4, 3, 8,
                   '{{SEASON_CODE}}/{{EPISODE_CODE}}/{{SHOT_NAME}}/comp', '{}')
                 """);
             persistence.Execute(
@@ -13348,11 +13348,17 @@ static void ProductionOutputGeneratesExactShotPlans()
     try
     {
         var database = new SqliteProjectTestContext(temporary);
+        database.UpdateProjectField("project_foqn_s2", "project.productionCode", "FOQN");
+        database.UpdateProjectField("project_foqn_s2", "project.productionSeasonCode", "_S02_");
+        database.UpdateProjectField("project_foqn_s2", "project.episodePrefix", "EP_");
+        database.UpdateProjectField("project_foqn_s2", "project.shotPrefix", "_SH");
+        database.UpdateEpisodeField("episode_001", "episode.slug", "EP_01");
+        database.UpdateShotField("shot_001", "shot.slug", "_SH0001");
         var plan = database.GetProductionOutputShotPlan("shot_001");
         Equal("project_foqn_s2", plan.ProjectId);
-        Equal("SH0001", plan.ShotCode);
+        Equal("_SH0001", plan.ShotCode);
         Equal("FOQN_S02_EP_01_SH0001", plan.TechnicalName);
-        Equal("S02/EP_01/FOQN_S02_EP_01_SH0001/comp", plan.RelativeDirectory);
+        Equal("_S02_/EP_01/FOQN_S02_EP_01_SH0001/comp", plan.RelativeDirectory);
         Equal("FOQN_S02_EP_01_SH0001_LIGHT_v001",
             RenderOutputPlanner.FileStem(
                 plan.TechnicalName,
@@ -13371,7 +13377,7 @@ static void ProductionOutputGeneratesExactShotPlans()
             episode,
             "actor_alex",
             12);
-        Equal("SH0012", database.GetShotSettings(created.Id).Slug);
+        Equal("_SH0012", database.GetShotSettings(created.Id).Slug);
         Equal(
             "FOQN_S02_EP_01_SH0012",
             database.GetProductionOutputShotPlan(created.Id).TechnicalName);
@@ -13379,22 +13385,22 @@ static void ProductionOutputGeneratesExactShotPlans()
             plan.ProjectId,
             "project.shotPrefix",
             "PL");
-        Equal("SH0001", database.GetShotSettings("shot_001").Slug);
-        Equal("SH0012", database.GetShotSettings(created.Id).Slug);
+        Equal("_SH0001", database.GetShotSettings("shot_001").Slug);
+        Equal("_SH0012", database.GetShotSettings(created.Id).Slug);
         var prefixed = database.AddShot(
             episode,
             "actor_alex",
             13);
         Equal("PL0013", database.GetShotSettings(prefixed.Id).Slug);
-        database.UpdateShotField(created.Id, "shot.slug", "CHAT-12_A");
-        Equal("CHAT-12_A", database.GetShotSettings(created.Id).Slug);
+        database.UpdateShotField(created.Id, "shot.slug", "_CHAT-12_A");
+        Equal("_CHAT-12_A", database.GetShotSettings(created.Id).Slug);
         Equal(
             "FOQN_S02_EP_01_CHAT-12_A",
             database.GetProductionOutputShotPlan(created.Id).TechnicalName);
         Throws<InvalidOperationException>(() => database.UpdateShotField(
             prefixed.Id,
             "shot.slug",
-            "CHAT-12_A"));
+            "_CHAT-12_A"));
         Throws<InvalidOperationException>(() => database.UpdateShotField(
             prefixed.Id,
             "shot.slug",
