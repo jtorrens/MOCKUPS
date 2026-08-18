@@ -92,7 +92,16 @@ export function resolveComponentCollectionItem(
       ? presence.sourceKeyframeFrame + exitDurationFrames
       : undefined;
     const rawInputs = requiredRecord(item, "inputs", `${itemPath}.inputs`);
-    const inputResolution = resolveAnimatedInputs(timeline, animation, rawInputs, rawId, frame, themeTokens, payload.frameRate);
+    const inputResolution = resolveAnimatedInputs(
+      timeline,
+      animation,
+      rawInputs,
+      rawId,
+      frame,
+      themeTokens,
+      payload.frameRate,
+      exitFrame === undefined ? undefined : exitFrame + exitDurationFrames,
+    );
     const reflowStartFrame = removalReflowStartFrame ?? inputResolution.changeFrame;
     const activationFrame = present ? presence.sourceKeyframeFrame : undefined;
     const localFrame = exitFrame === undefined
@@ -167,6 +176,7 @@ function resolveAnimatedInputs(
   screenFrame: number,
   themeTokens: Record<string, unknown>,
   frameRate: number,
+  presenceEndFrame?: number,
 ) {
   const definitions = runtimeInputDefinitions(inputs);
   const runtimeFieldIds = runtimeFieldIdMap(inputs);
@@ -190,7 +200,7 @@ function resolveAnimatedInputs(
       })),
   ];
   const localFrame = (fieldId: string, frame = screenFrame) => timeline.ownsTarget(targetId)
-    ? Math.floor(timeline.localFrame(fieldId, targetId, frame))
+    ? Math.floor(timeline.temporalLocalFrame(fieldId, targetId, frame, presenceEndFrame))
     : frame;
   const resolved: Record<string, unknown> = { ...inputs };
   for (const field of fields) {
@@ -212,6 +222,7 @@ function resolveAnimatedInputs(
     screenFrame,
     themeTokens,
     frameRate,
+    presenceEndFrame,
   );
   const sourceFrames = fields.flatMap((field) => {
     const source = resolveParameterAnimation(
@@ -311,6 +322,7 @@ function resolveAnimatedActions(
   screenFrame: number,
   themeTokens: Record<string, unknown>,
   frameRate: number,
+  presenceEndFrame?: number,
 ) {
   const actions = embeddedRuntimeActions(values);
   for (const { action, id, playJsonKey, timeJsonKey, timeUnit, completion } of actions) {
@@ -332,7 +344,12 @@ function resolveAnimatedActions(
       throw new Error(`Embedded runtime action '${id}' play value '${playJsonKey}' has no stable field id`);
     }
     const ownerFrame = timeline.ownsTarget(targetId)
-      ? Math.floor(timeline.localFrame(playFieldId, targetId, screenFrame))
+      ? Math.floor(timeline.temporalLocalFrame(
+          playFieldId,
+          targetId,
+          screenFrame,
+          presenceEndFrame,
+        ))
       : screenFrame;
     const resolvedPlay = resolveParameterAnimation(
       animation,

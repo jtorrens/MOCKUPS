@@ -191,6 +191,14 @@ test("a declared owner motion phase precedes every relative item field and seria
   assert.equal(timeline.screenFrame("text", "first", 0), 5);
   assert.equal(timeline.itemStartFrame("second"), 9);
   assert.equal(timeline.screenFrame("text", "second", 0), 14);
+  assert.equal(timeline.temporalLocalFrame("text", "first", 0), 0);
+  assert.equal(timeline.temporalLocalFrame("text", "first", 4), 0);
+  assert.equal(timeline.temporalLocalFrame("text", "first", 5), 0);
+  assert.equal(timeline.temporalLocalFrame("text", "first", 9), 4);
+  assert.equal(
+    timeline.temporalOwnerFrame("first", 16, 20),
+    timeline.temporalOwnerFrame("first", 15, 20),
+  );
 });
 
 test("finite runtime action durations require positive JSON numbers", () => {

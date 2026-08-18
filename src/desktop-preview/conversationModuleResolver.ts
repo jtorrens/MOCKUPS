@@ -187,7 +187,7 @@ export function resolveConversationModuleFrame(
     animation,
     "headerSubtitle",
     "",
-    timeline.localFrame("headerSubtitle", "", screenFrame),
+    timeline.temporalLocalFrame("headerSubtitle", "", screenFrame),
     preview.headerSubtitle,
   ).value;
 
@@ -209,21 +209,32 @@ export function resolveConversationModuleFrame(
         `module.core.chat.messages[${index}] has unsupported direction '${direction}'`,
       );
     }
+    message.timelineStartFrame = timeline.itemStartFrame(targetId);
+    message.timelineEndFrame = timeline.itemEndFrame(targetId);
+    const presenceEndFrame = timeline.itemPresenceEndFrame(targetId, automaticEndFrame);
+    message.presenceEndFrame = presenceEndFrame;
+    message.hasExplicitPresenceEnd = timeline.itemHasExplicitPresenceEnd(targetId);
+    message.timelineTemporalFrame = timeline.temporalOwnerFrame(
+      targetId,
+      screenFrame,
+      message.hasExplicitPresenceEnd ? presenceEndFrame : undefined,
+    );
     const resolve = (fieldId: string, baseValue: unknown) =>
       resolveParameterAnimation(
         animation,
         fieldId,
         targetId,
-        timeline.localFrame(fieldId, targetId, screenFrame),
+        timeline.temporalLocalFrame(
+          fieldId,
+          targetId,
+          screenFrame,
+          message.hasExplicitPresenceEnd ? presenceEndFrame : undefined,
+        ),
         baseValue,
       );
 
     const resolvedText = resolve("text", message.text);
     message.text = resolvedText.value;
-    message.timelineStartFrame = timeline.itemStartFrame(targetId);
-    message.timelineEndFrame = timeline.itemEndFrame(targetId);
-    message.presenceEndFrame = timeline.itemPresenceEndFrame(targetId, automaticEndFrame);
-    message.hasExplicitPresenceEnd = timeline.itemHasExplicitPresenceEnd(targetId);
     const textCompletionFrame = timeline.fieldCompletionFrame("text", targetId);
     const textOriginFrame = timeline.screenFrame("text", targetId, 0);
     const textUsesTrackCompletion = timeline.usesTrackCompletion("text", targetId);
@@ -248,11 +259,24 @@ export function resolveConversationModuleFrame(
     message.writeOnFrame = naturalWriteOnFrame(
       optionalString(message, "text"),
       message.writeOnTiming,
-      Math.max(0, screenFrame - textOriginFrame),
+      Math.max(0, timeline.temporalLocalFrame(
+        "text",
+        targetId,
+        screenFrame,
+        message.hasExplicitPresenceEnd ? presenceEndFrame : undefined,
+      )),
       optionalNumber(message, "writeOnDurationFrames", 0),
       `${targetId}:${optionalString(message, "text")}`,
     );
-    const composerElapsedFrame = Math.max(0, screenFrame - textOriginFrame);
+    const composerElapsedFrame = Math.max(
+      0,
+      timeline.temporalLocalFrame(
+        "text",
+        targetId,
+        screenFrame,
+        message.hasExplicitPresenceEnd ? presenceEndFrame : undefined,
+      ),
+    );
     message.composerWriteOnFrame = naturalWriteOnFrame(
       optionalString(message, "text"),
       message.writeOnTiming,
@@ -268,7 +292,12 @@ export function resolveConversationModuleFrame(
     if (playing.animated && playing.value === true && playing.sourceKeyframeFrame !== undefined) {
       const elapsed = Math.max(
         0,
-        timeline.localFrame("isPlaying", targetId, screenFrame) - playing.sourceKeyframeFrame,
+        timeline.temporalLocalFrame(
+          "isPlaying",
+          targetId,
+          screenFrame,
+          message.hasExplicitPresenceEnd ? presenceEndFrame : undefined,
+        ) - playing.sourceKeyframeFrame,
       );
       const duration = Math.max(1, Math.floor(optionalNumber(message, "playDurationFrames", 1)));
       message.isPlaying = elapsed < duration;
@@ -281,7 +310,12 @@ export function resolveConversationModuleFrame(
       && typeof fullScreen.value === "boolean"
       && fullScreen.previousValue !== fullScreen.value;
     if (fullScreenChanged) {
-      const ownerFrame = timeline.localFrame("fullScreen", targetId, screenFrame);
+      const ownerFrame = timeline.temporalLocalFrame(
+        "fullScreen",
+        targetId,
+        screenFrame,
+        message.hasExplicitPresenceEnd ? presenceEndFrame : undefined,
+      );
       message.fullScreenTransition = true;
       message.motionElapsedMs = Math.max(
         0,
@@ -312,6 +346,7 @@ type ResolvedConversationMessage = Omit<
   composerWriteOnFrame: number;
   timelineStartFrame: number;
   timelineTextStartFrame: number;
+  timelineTemporalFrame: number;
   timelineRevealAtFrame: number;
   presenceEndFrame: number;
   hasExplicitPresenceEnd: boolean;
@@ -404,6 +439,10 @@ function conversationMessages(preview: JsonRecord): ResolvedConversationMessage[
           optionalNumber(message, "timelineStartFrame", 0),
         )),
       ),
+      timelineTemporalFrame: Math.max(
+        0,
+        Math.floor(optionalNumber(message, "timelineTemporalFrame", 0)),
+      ),
       timelineRevealAtFrame: Math.max(
         0,
         Math.floor(optionalNumber(message, "timelineRevealAtFrame", 0)),
@@ -456,9 +495,8 @@ function visibleMessages(
     const isSystemMessage = message.state === "system";
     const isOutgoingMessage = message.state === "outgoing";
     const isIncomingMessage = message.state === "incoming";
-    const textStartFrame = message.timelineTextStartFrame;
     const effectiveWriteOnFrames = isSystemMessage ? 0 : message.writeOnDurationFrames;
-    const revealEndFrame = textStartFrame + effectiveWriteOnFrames;
+    const actionFrame = message.timelineTemporalFrame;
     const revealAfterWriteOn = isOutgoingMessage
       && timing.bubbleRevealMode === "afterWriteOn"
       && !writesInBubble;
@@ -492,28 +530,28 @@ function visibleMessages(
         : {};
     const incomingTyping = isIncomingMessage
       && timing.incomingRevealMode === "typingIndicator"
-      && frame >= textStartFrame
-      && frame < revealEndFrame;
+      && actionFrame < effectiveWriteOnFrames;
     const incomingWriteOn = isIncomingMessage
       && timing.incomingRevealMode === "writeOn"
       && effectiveWriteOnFrames > 0
-      && frame < revealEndFrame;
-    const messageIsWriting = frame < revealEndFrame
-      && frame >= textStartFrame
+      && actionFrame < effectiveWriteOnFrames;
+    const messageIsWriting = actionFrame < effectiveWriteOnFrames
       && effectiveWriteOnFrames > 0
       && (isOutgoingMessage || incomingWriteOn || incomingTyping);
     return [{
       ...message,
       visibleAtFrame: visibleAt,
-      text: frame < textStartFrame
-        ? ""
-        : incomingTyping ? timing.typingIndicatorText : message.text,
+      text: incomingTyping
+        ? timing.typingIndicatorText
+        : actionFrame <= 0 && effectiveWriteOnFrames > 0
+          ? ""
+          : message.text,
       mediaType: messageIsWriting ? "none" as const : message.mediaType,
       mediaSource: messageIsWriting ? "" : message.mediaSource,
       isTypingIndicator: incomingTyping,
       writeOnTrigger: (isOutgoingMessage || incomingWriteOn)
         && !revealAfterWriteOn
-        && frame >= textStartFrame
+        && actionFrame >= 0
         && effectiveWriteOnFrames > 0,
       writeOnDurationFrames: effectiveWriteOnFrames,
       presenceMotion: messageMotion,
@@ -532,14 +570,13 @@ function composerState(
     const effectiveWriteOnFrames = message.state === "system"
       ? 0
       : message.composerWriteOnDurationFrames;
-    const endFrame = startFrame + effectiveWriteOnFrames;
     const holdEndFrame = message.timelineRevealAtFrame;
     const composerVisible = message.state === "outgoing"
       && frame >= startFrame
       && frame < holdEndFrame;
     if (composerVisible) {
       const graphemes = textGraphemes(message.text);
-      const writeOnInProgress = frame < endFrame;
+      const writeOnInProgress = message.timelineTemporalFrame < effectiveWriteOnFrames;
       const textLength = writeOnInProgress
         ? simpleWriteOnFrameVisibleCount(message.text, {
             enabled: true,

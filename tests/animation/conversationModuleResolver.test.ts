@@ -110,6 +110,55 @@ test("only group incoming messages expose per-message Actor identity", () => {
   assert.equal(conversationMessageActorIdentityVisible("individual", "incoming"), false);
 });
 
+test("a message owner phase freezes incoming content at its initial write state", () => {
+  const current = payload(2, [], [{
+    id: "incoming",
+    direction: "incoming",
+    text: "hello",
+    mediaType: "image",
+    mediaSource: "media/image.png",
+    writeOnDurationFrames: 8,
+  }]);
+  const motion = {
+    transition: "slide",
+    direction: "bottom",
+    bounds: "parent",
+    fade: true,
+    translate: true,
+    scale: false,
+  };
+  const preview = JSON.parse(current.designPreviewJson) as Record<string, unknown>;
+  preview.conversationType = "individual";
+  preview.incomingRevealMode = "typingIndicator";
+  const collections = preview.collections as Array<Record<string, unknown>>;
+  collections[0]!.animationTimeline = {
+    ...(collections[0]!.animationTimeline as Record<string, unknown>),
+    ownerPhase: {
+      kind: "resolvedMotion",
+      motion,
+    },
+  };
+  const resolved = resolveConversationModule({
+    ...current,
+    configJson: JSON.stringify({
+      conversation: {
+        showKeyboard: false,
+        showTextInputBar: false,
+        messageMotion: motion,
+      },
+    }),
+    designPreviewJson: JSON.stringify(preview),
+    runtimeContractJson: JSON.stringify(preview),
+    themeTokensJson: JSON.stringify({
+      motion: { transitions: { slide: { delayMs: 0, durationMs: 200, easing: "linear", intensity: 1 } } },
+    }),
+  });
+  const message = resolved.visibleMessages[0]!;
+  assert.equal(message.isTypingIndicator, true);
+  assert.equal(message.mediaType, "none");
+  assert.equal(message.text, "•••");
+});
+
 test("Conversation requires its current messages collection", () => {
   const current = payload(0, [], []);
   const preview = JSON.parse(current.designPreviewJson) as Record<string, unknown>;

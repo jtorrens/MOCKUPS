@@ -15,6 +15,7 @@ type ItemTiming = {
   effectiveSpan: number;
   naturalSequence: number;
   effectiveSequence: number;
+  phase: number;
   fields: Map<string, FieldTiming>;
 };
 
@@ -23,6 +24,7 @@ export class RuntimeOwnerTimeline {
   readonly durationFrames: number;
   private readonly items = new Map<string, ItemTiming>();
   private readonly topFields = new Map<string, FieldTiming>();
+  private readonly topPhase: number;
 
   constructor(
     private readonly contract: JsonRecord,
@@ -33,6 +35,12 @@ export class RuntimeOwnerTimeline {
     private readonly frameRate = 0,
   ) {
     validateTransientAnimationDocument(animation);
+    this.topPhase = ownerPhaseFrames(
+      optionalObject(contract, "animationTimeline", "runtime owner animation timeline"),
+      runtime,
+      themeTokens,
+      frameRate,
+    );
     let naturalEnd = Math.max(1, declaredBaseDuration(contract));
     const collections = optionalObjectArray(contract, "collections", "runtime owner contract");
     const collectionKeys = new Set<string>();
@@ -84,6 +92,7 @@ export class RuntimeOwnerTimeline {
           effectiveSpan,
           naturalSequence: durations.sequence,
           effectiveSequence,
+          phase,
           fields: new Map(),
         });
         if (sequenceItems) cursor = start + effectiveSequence;
@@ -94,12 +103,6 @@ export class RuntimeOwnerTimeline {
     const topInputs = optionalObjectArray(contract, "inputs", "runtime owner contract");
     topInputs.forEach(validateFieldTimeline);
     validateUniqueFieldIds(topInputs, "runtime owner inputs");
-    const topPhase = ownerPhaseFrames(
-      optionalObject(contract, "animationTimeline", "runtime owner animation timeline"),
-      runtime,
-      this.themeTokens,
-      this.frameRate,
-    );
     for (const definition of topInputs) {
       const fieldId = requiredString(definition, "id", "runtime owner input");
       const timing = this.resolveFieldTiming(
@@ -108,7 +111,7 @@ export class RuntimeOwnerTimeline {
         "",
         topInputs,
         new Set(),
-        topPhase,
+        this.topPhase,
       );
       this.topFields.set(fieldId, timing);
       naturalEnd = Math.max(naturalEnd, timing.endExclusive);
@@ -137,10 +140,60 @@ export class RuntimeOwnerTimeline {
     return ownerNatural - this.itemField(item, fieldId).origin;
   }
 
+  /**
+   * The only clock available to a resolver while its temporal owner is in an
+   * enter/exit Motion. It is frozen at zero during In and at its last visible
+   * action frame during Out.
+   */
+  temporalLocalFrame(
+    fieldId: string,
+    targetId: string,
+    screenFrame: number,
+    presenceEndFrame?: number,
+  ) {
+    if (!targetId) return this.temporalOwnerFrame("", screenFrame, presenceEndFrame) - this.topField(fieldId).origin + this.topPhase;
+    const item = this.items.get(targetId);
+    if (!item) return 0;
+    return this.temporalOwnerFrame(targetId, screenFrame, presenceEndFrame)
+      - this.itemField(item, fieldId).origin
+      + item.phase;
+  }
+
+  temporalOwnerFrame(targetId: string, screenFrame: number, presenceEndFrame?: number) {
+    if (!targetId) {
+      const rootNatural = unscale(Math.max(0, screenFrame), this.naturalDuration, this.durationFrames);
+      return Math.max(0, rootNatural - this.topPhase);
+    }
+    const item = this.items.get(targetId);
+    if (!item) return 0;
+    const ownerFrameAt = (candidateFrame: number) => {
+      const rootNatural = unscale(Math.max(0, candidateFrame), this.naturalDuration, this.durationFrames);
+      const ownerEffective = rootNatural - item.rootStart;
+      const ownerNatural = unscale(ownerEffective, item.naturalSpan, item.effectiveSpan);
+      return item.phase > 0 ? Math.max(0, ownerNatural - item.phase) : ownerNatural;
+    };
+    const entered = ownerFrameAt(screenFrame);
+    if (item.phase <= 0 || !presenceEndFrame || presenceEndFrame <= 0) return entered;
+    const entryDuration = Math.max(0, this.itemPhaseEndFrame(targetId) - this.itemStartFrame(targetId));
+    const exitStart = Math.max(this.itemStartFrame(targetId), presenceEndFrame - entryDuration);
+    return screenFrame < exitStart ? entered : ownerFrameAt(exitStart);
+  }
+
   itemStartFrame(targetId: string) {
     const item = this.items.get(targetId);
     return item
       ? round(scale(item.rootStart, this.naturalDuration, this.durationFrames))
+      : 0;
+  }
+
+  itemPhaseEndFrame(targetId: string) {
+    const item = this.items.get(targetId);
+    return item
+      ? round(scale(
+          item.rootStart + scale(item.phase, item.naturalSpan, item.effectiveSpan),
+          this.naturalDuration,
+          this.durationFrames,
+        ))
       : 0;
   }
 
@@ -232,12 +285,7 @@ export class RuntimeOwnerTimeline {
           "",
           fields,
           new Set(),
-          ownerPhaseFrames(
-            optionalObject(this.contract, "animationTimeline", "runtime owner animation timeline"),
-            this.runtime,
-            this.themeTokens,
-            this.frameRate,
-          ),
+          this.topPhase,
         )
       : { origin: 0, completion: 0, endExclusive: 0 };
     this.topFields.set(fieldId, timing);
@@ -256,12 +304,7 @@ export class RuntimeOwnerTimeline {
           optionalString(item.item, "id"),
           fields,
           new Set(),
-          ownerPhaseFrames(
-            optionalObject(item.collection, "animationTimeline", "runtime owner collection animation timeline"),
-            item.item,
-            this.themeTokens,
-            this.frameRate,
-          ),
+          item.phase,
         )
       : { origin: 0, completion: 0, endExclusive: 0 };
     item.fields.set(fieldId, timing);
