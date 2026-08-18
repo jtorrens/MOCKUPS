@@ -194,6 +194,8 @@ internal sealed class DictionaryFieldControl : Grid
 
     public string FieldId => _definition.Id;
 
+    public bool IsEditable => _definition.IsEditable;
+
     public string Value => _value;
 
     public bool RequiresLocalHorizontalViewport => _valueControl switch

@@ -33,4 +33,18 @@ internal sealed class EditorActiveFieldControls
             control.RefreshPreview();
         }
     }
+
+    public void RefreshReadOnlyValues(Func<string, FieldValue> read)
+    {
+        foreach (var control in _controlsByFieldId.Values)
+        {
+            if (control.IsEditable) continue;
+            var current = read(control.FieldId);
+            control.SetValue(
+                current.IsInherited
+                    ? current.Definition.InheritedValue
+                    : current.Value);
+            control.MarkCurrentValueCommitted();
+        }
+    }
 }

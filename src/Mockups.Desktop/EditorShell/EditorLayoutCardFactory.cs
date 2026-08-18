@@ -295,6 +295,8 @@ internal sealed class EditorLayoutCardFactory
                     node,
                     field.Definition.Id,
                     control.Value);
+                _activeFieldControls.RefreshReadOnlyValues(
+                    (fieldId) => _fieldValues.Create(node, fieldId));
                 _inlinePreviews.Refresh(node, _activeFieldControls.ControlsByFieldId);
                 _activeFieldControls.RefreshPreviews();
                 _refreshPreview();
