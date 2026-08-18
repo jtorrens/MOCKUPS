@@ -309,7 +309,21 @@ internal sealed class ShotReferenceVideoController : IDisposable
         var localPath = string.IsNullOrWhiteSpace(_document.SourcePath)
             ? ""
             : _projectPaths.ResolveProjectPath(_document.SourcePath);
-        var source = File.Exists(localPath) ? _mediaSource.Use(localPath) : "";
+        string source = "";
+        if (File.Exists(localPath))
+        {
+            try
+            {
+                source = _mediaSource.Use(
+                    ReferenceVideoPlaybackCache.Resolve(localPath));
+            }
+            catch (Exception exception)
+            {
+                _messages.Error(
+                    "Reference video",
+                    $"The associated video could not be prepared for playback: {exception.Message}");
+            }
+        }
         if (!force && source.Equals(_loadedSource, StringComparison.Ordinal)) return;
         _loadedSource = source;
         _videoDurationFrames = 0;

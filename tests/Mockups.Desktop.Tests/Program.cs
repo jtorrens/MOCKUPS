@@ -157,6 +157,7 @@ var tests = new (string Name, Action Run)[]
     ("Preview references share Project media path resolution", PreviewReferencesShareProjectMediaPathResolution),
     ("Shot reference picker stores relative and absolute video paths", ShotReferencePickerStoresRelativeAndAbsolutePaths),
     ("Shot reference video source streams exact local byte ranges", ShotReferenceVideoSourceStreamsByteRanges),
+    ("Shot reference playback uses a browser-compatible temporary document", ShotReferencePlaybackUsesBrowserCompatibleTemporaryDocument),
     ("SQLite contexts retain independent Project roots", SqliteContextsRetainIndependentProjectRoots),
     ("SQLite session exposes distinct focused application ports", SqliteSessionExposesDistinctFocusedPorts),
     ("visual persistence writers require operation coordination", VisualPersistenceWritersRequireOperationCoordination),
@@ -3480,6 +3481,49 @@ static void ShotReferenceVideoSourceStreamsByteRanges()
     finally
     {
         File.Delete(path);
+    }
+}
+
+static void ShotReferencePlaybackUsesBrowserCompatibleTemporaryDocument()
+{
+    var sourcePath = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-reference-playback-{Guid.NewGuid():N}.mov");
+    try
+    {
+        var create = new ProcessStartInfo
+        {
+            FileName = RenderJobExecutor.ResolveFfmpegExecutable(),
+            UseShellExecute = false,
+            RedirectStandardError = true,
+            CreateNoWindow = true,
+        };
+        create.ArgumentList.Add("-hide_banner");
+        create.ArgumentList.Add("-loglevel");
+        create.ArgumentList.Add("error");
+        create.ArgumentList.Add("-f");
+        create.ArgumentList.Add("lavfi");
+        create.ArgumentList.Add("-i");
+        create.ArgumentList.Add("color=c=red:s=16x16:r=25:d=1");
+        create.ArgumentList.Add("-c:v");
+        create.ArgumentList.Add("mpeg4");
+        create.ArgumentList.Add("-y");
+        create.ArgumentList.Add(sourcePath);
+        using (var process = Process.Start(create)!)
+        {
+            process.WaitForExit();
+            Equal(0, process.ExitCode);
+        }
+
+        var playbackPath = ReferenceVideoPlaybackCache.Resolve(sourcePath);
+        True(File.Exists(playbackPath));
+        True(playbackPath.EndsWith(".mp4", StringComparison.Ordinal));
+        True(new FileInfo(playbackPath).Length > 0);
+        Equal(playbackPath, ReferenceVideoPlaybackCache.Resolve(sourcePath));
+    }
+    finally
+    {
+        File.Delete(sourcePath);
     }
 }
 
