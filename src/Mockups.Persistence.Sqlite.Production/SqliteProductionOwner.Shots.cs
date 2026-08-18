@@ -56,6 +56,7 @@ internal sealed partial class SqliteProductionOwner
             shot.Id,
             shot.ShotNumber,
             episode.Slug,
+            shot.Slug,
             projectSettings.ProductionOutput);
     }
 
@@ -118,6 +119,10 @@ internal sealed partial class SqliteProductionOwner
             "new-shot",
             shotNumber,
             episode.Slug,
+            ProductionOutputContract.CreateShotCode(
+                project.ProductionOutput.ShotPrefix,
+                shotNumber,
+                project.ProductionOutput.ShotNumberPadding),
             project.ProductionOutput);
     }
 

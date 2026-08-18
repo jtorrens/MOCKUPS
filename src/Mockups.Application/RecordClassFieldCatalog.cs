@@ -71,6 +71,7 @@ public static class RecordClassFieldCatalog
         ["project.productionRoot"] = new("project.productionRoot", "Local Production Root", ValueKind.DirectoryPath),
         ["project.productionCode"] = new("project.productionCode", "Production Code", ValueKind.StringSingleLine),
         ["project.productionSeasonCode"] = new("project.productionSeasonCode", "Season Code", ValueKind.StringSingleLine),
+        ["project.episodePrefix"] = new("project.episodePrefix", "Episode Prefix", ValueKind.StringSingleLine),
         ["project.outputNameSeparator"] = new(
             "project.outputNameSeparator",
             "Name Separator",
@@ -107,10 +108,10 @@ public static class RecordClassFieldCatalog
             ValueKind.StringReadOnly,
             IsEditable: false),
 
-        ["episode.slug"] = new("episode.slug", "Slug", ValueKind.StringSingleLine),
+        ["episode.slug"] = new("episode.slug", "Episode Code", ValueKind.StringSingleLine),
         ["episode.sortOrder"] = new("episode.sortOrder", "Sort Order", ValueKind.Integer),
 
-        ["shot.slug"] = new("shot.slug", "Shot Code", ValueKind.StringReadOnly, IsEditable: false),
+        ["shot.slug"] = new("shot.slug", "Shot Code", ValueKind.StringSingleLine),
         ["shot.version"] = new("shot.version", "Version", ValueKind.Integer),
         ["shot.sortOrder"] = new("shot.sortOrder", "Sort Order", ValueKind.Integer),
         ["shot.durationFrames"] = new("shot.durationFrames", "Duration", ValueKind.Integer, IsEditable: false, Unit: "frames"),

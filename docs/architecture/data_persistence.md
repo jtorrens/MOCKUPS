@@ -25,8 +25,11 @@ nullable restricted foreign keys. `NULL` means inherit the corresponding
 required Actor default; a local value must resolve inside the Shot Project.
 Blank, missing and cross-Project override references are invalid current data.
 `shots.shot_number` is a positive stable identity owned by MOCKUPS and unique
-inside its Episode. `shots.slug` stores its generated Shot code. The Project
-stores the portable Production Output naming and route contract.
+inside its Episode. `shots.slug` stores the explicit Shot Code, which is unique
+inside its Episode and accepts letters, numbers, hyphen and underscore. It is
+not an identifier and is never regenerated after creation. The Project stores
+the portable Production Output naming and route contract; its optional Episode
+and Shot prefixes generate initial codes only.
 `shots.reference_video_json` is one required current Shot-owned object. It
 stores a Project-relative or absolute video path, a nullable non-negative
 Project-FPS In frame and stable video-relative markers with non-negative frames

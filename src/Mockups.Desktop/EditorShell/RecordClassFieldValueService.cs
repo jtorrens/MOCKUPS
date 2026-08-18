@@ -265,6 +265,8 @@ internal sealed class RecordClassFieldValueService
                 settings.ProductionOutput.TechnicalCode,
             "project.productionSeasonCode" =>
                 settings.ProductionOutput.SeasonCode,
+            "project.episodePrefix" =>
+                settings.ProductionOutput.EpisodePrefix,
             "project.outputNameSeparator" =>
                 settings.ProductionOutput.NameSeparator,
             "project.shotPrefix" =>
@@ -282,7 +284,13 @@ internal sealed class RecordClassFieldValueService
                     projectId,
                     "example",
                     1,
-                    "EP_01",
+                    ProductionOutputContract.CreateEpisodeCode(
+                        settings.ProductionOutput.EpisodePrefix,
+                        1),
+                    ProductionOutputContract.CreateShotCode(
+                        settings.ProductionOutput.ShotPrefix,
+                        1,
+                        settings.ProductionOutput.ShotNumberPadding),
                     settings.ProductionOutput).TechnicalName,
             _ => throw new InvalidOperationException($"Unknown project field '{fieldId}'."),
         };

@@ -15,6 +15,7 @@ internal static class CurrentSqliteSchema
           media_root TEXT NOT NULL DEFAULT '',
           production_code TEXT NOT NULL,
           production_season_code TEXT NOT NULL,
+          episode_prefix TEXT NOT NULL DEFAULT 'EP',
           output_name_separator TEXT NOT NULL DEFAULT '_'
             CHECK(output_name_separator IN ('_', '-', '')),
           shot_prefix TEXT NOT NULL DEFAULT 'SH',
@@ -62,6 +63,9 @@ internal static class CurrentSqliteSchema
 
         CREATE UNIQUE INDEX IF NOT EXISTS idx_shots_episode_number
           ON shots(episode_id, shot_number);
+
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_shots_episode_code
+          ON shots(episode_id, slug);
 
         CREATE TABLE IF NOT EXISTS apps (
           id TEXT PRIMARY KEY,
@@ -190,7 +194,7 @@ internal static class CurrentSqliteSchema
           layout_json TEXT NOT NULL
         );
 
-        PRAGMA user_version = 9;
+        PRAGMA user_version = 10;
         """;
 
 }

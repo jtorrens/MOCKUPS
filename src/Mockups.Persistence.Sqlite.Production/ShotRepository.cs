@@ -207,6 +207,7 @@ internal sealed class ShotRepository : IShotRepository
 
         var column = fieldId switch
         {
+            "shot.slug" => "slug",
             "shot.version" => "version",
             "shot.sortOrder" => "sort_order",
             "shot.fps" => "fps_override",
@@ -220,6 +221,12 @@ internal sealed class ShotRepository : IShotRepository
         object nextValue = fieldId is "shot.version" or "shot.sortOrder" or "shot.fps"
             ? NumericText.Int32(value, 0)
             : value;
+        if (fieldId == "shot.slug")
+        {
+            nextValue = ProductionOutputContract.RequireShotCode(
+                value,
+                $"Shot '{shotId}' code");
+        }
         if (fieldId is "shot.canvas" or "shot.metadata")
         {
             JsonPath.ParseRequiredObject(value, $"Shot '{shotId}' {column}");
@@ -230,6 +237,14 @@ internal sealed class ShotRepository : IShotRepository
         }
 
         var current = Get(connection, shotId);
+        if (fieldId == "shot.slug")
+        {
+            RequireAvailableShotCode(
+                connection,
+                current.EpisodeId,
+                shotId,
+                (string)nextValue);
+        }
         if (fieldId == "shot.ownerActorId")
         {
             ProjectReferenceIntegrity.RequireSameProjectReference(
@@ -296,22 +311,6 @@ internal sealed class ShotRepository : IShotRepository
             "UPDATE shots SET duration_frames = $duration WHERE id = $id",
             ("$id", shotId),
             ("$duration", durationFrames));
-    }
-
-    public void UpdateGeneratedCodes(
-        SqliteConnection connection,
-        SqliteTransaction transaction,
-        IReadOnlyDictionary<string, string> shotCodes)
-    {
-        foreach (var (shotId, shotCode) in shotCodes)
-        {
-            _context.Execute(
-                connection,
-                transaction,
-                "UPDATE shots SET slug = $slug WHERE id = $id",
-                ("$id", shotId),
-                ("$slug", shotCode));
-        }
     }
 
     public void UpdateNode(SqliteConnection connection, string shotId, string name, string notes)
@@ -507,6 +506,30 @@ internal sealed class ShotRepository : IShotRepository
         {
             throw new InvalidOperationException(
                 $"Shot number {shotNumber} already exists in this Episode.");
+        }
+    }
+
+    private static void RequireAvailableShotCode(
+        SqliteConnection connection,
+        string episodeId,
+        string shotId,
+        string shotCode)
+    {
+        if (SqliteCommandExecutor.ScalarLong(
+                connection,
+                """
+                SELECT COUNT(*)
+                FROM shots
+                WHERE episode_id = $episodeId
+                  AND slug = $shotCode
+                  AND id <> $shotId
+                """,
+                ("$episodeId", episodeId),
+                ("$shotCode", shotCode),
+                ("$shotId", shotId)) != 0)
+        {
+            throw new InvalidOperationException(
+                $"Shot code '{shotCode}' already exists in this Episode.");
         }
     }
 

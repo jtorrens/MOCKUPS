@@ -13379,15 +13379,51 @@ static void ProductionOutputGeneratesExactShotPlans()
             plan.ProjectId,
             "project.shotPrefix",
             "PL");
-        Equal("PL0001", database.GetShotSettings("shot_001").Slug);
-        Equal("PL0012", database.GetShotSettings(created.Id).Slug);
+        Equal("SH0001", database.GetShotSettings("shot_001").Slug);
+        Equal("SH0012", database.GetShotSettings(created.Id).Slug);
+        var prefixed = database.AddShot(
+            episode,
+            "actor_alex",
+            13);
+        Equal("PL0013", database.GetShotSettings(prefixed.Id).Slug);
+        database.UpdateShotField(created.Id, "shot.slug", "CHAT-12_A");
+        Equal("CHAT-12_A", database.GetShotSettings(created.Id).Slug);
         Equal(
-            "FOQN_S02_EP_01_PL0012",
+            "FOQN_S02_EP_01_CHAT-12_A",
             database.GetProductionOutputShotPlan(created.Id).TechnicalName);
+        Throws<InvalidOperationException>(() => database.UpdateShotField(
+            prefixed.Id,
+            "shot.slug",
+            "CHAT-12_A"));
+        Throws<InvalidOperationException>(() => database.UpdateShotField(
+            prefixed.Id,
+            "shot.slug",
+            "not allowed"));
+        database.UpdateProjectField(
+            plan.ProjectId,
+            "project.shotPrefix",
+            "");
+        var unprefixed = database.AddShot(
+            episode,
+            "actor_alex",
+            14);
+        Equal("0014", database.GetShotSettings(unprefixed.Id).Slug);
         database.UpdateProjectField(
             plan.ProjectId,
             "project.shotPrefix",
             "SH");
+        database.UpdateProjectField(
+            plan.ProjectId,
+            "project.episodePrefix",
+            "");
+        var episodesRoot = Descendants(database.LoadProjectTree())
+            .Single((node) => node.Kind == ProjectTreeNodeKind.EpisodesRoot);
+        var unprefixedEpisode = database.AddChild(episodesRoot);
+        Equal("03", database.GetEpisodeSettings(unprefixedEpisode.Id).Slug);
+        database.UpdateProjectField(
+            plan.ProjectId,
+            "project.episodePrefix",
+            "EP");
 
         var draft = new RenderJobSnapshotFactory(
                 RenderSnapshots(database),

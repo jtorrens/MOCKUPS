@@ -223,19 +223,13 @@ internal sealed partial class SqliteCurrentDatabaseValidator
             }
             try
             {
-                var plan = ProductionOutputContract.Resolve(
+                _ = ProductionOutputContract.Resolve(
                     shot.ProjectId,
                     shot.Id,
                     shot.ShotNumber,
                     episode.Slug,
+                    shot.Slug,
                     project.ProductionOutput);
-                if (!shot.Slug.Equals(
-                        plan.ShotCode,
-                        StringComparison.Ordinal))
-                {
-                    throw new InvalidOperationException(
-                        $"Shot '{shot.Id}' code must be '{plan.ShotCode}'.");
-                }
             }
             catch (InvalidOperationException exception)
             {

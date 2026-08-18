@@ -244,11 +244,6 @@ internal interface IShotRepository
         int durationFrames,
         SqliteTransaction? transaction = null);
 
-    void UpdateGeneratedCodes(
-        SqliteConnection connection,
-        SqliteTransaction transaction,
-        IReadOnlyDictionary<string, string> shotCodes);
-
     void UpdateNode(SqliteConnection connection, string shotId, string name, string notes);
 
     void Delete(SqliteConnection connection, string shotId);

@@ -33,6 +33,7 @@ internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
               media_root,
               production_code,
               production_season_code,
+              episode_prefix,
               output_name_separator,
               shot_prefix,
               shot_number_padding,
@@ -55,10 +56,11 @@ internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
                 reader.GetString(4),
                 reader.GetString(5),
                 reader.GetString(6),
-                reader.GetInt32(7),
+                reader.GetString(7),
                 reader.GetInt32(8),
                 reader.GetInt32(9),
-                reader.GetString(10)),
+                reader.GetInt32(10),
+                reader.GetString(11)),
             $"Project '{projectId}' Production output");
         return new ProjectSettings(
             SqliteCommandExecutor.ReadString(reader, 0),
@@ -87,6 +89,11 @@ internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
                     output with
                     {
                         SeasonCode = value.Trim().ToUpperInvariant(),
+                    },
+                "project.episodePrefix" =>
+                    output with
+                    {
+                        EpisodePrefix = value.Trim().ToUpperInvariant(),
                     },
                 "project.outputNameSeparator" =>
                     output with { NameSeparator = value },
@@ -124,6 +131,7 @@ internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
             {
                 "project.productionCode" => output.TechnicalCode,
                 "project.productionSeasonCode" => output.SeasonCode,
+                "project.episodePrefix" => output.EpisodePrefix,
                 "project.outputNameSeparator" => output.NameSeparator,
                 "project.shotPrefix" => output.ShotPrefix,
                 "project.shotNumberPadding" =>
@@ -144,6 +152,7 @@ internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
                 "project.productionCode" => "production_code",
                 "project.productionSeasonCode" =>
                     "production_season_code",
+                "project.episodePrefix" => "episode_prefix",
                 "project.outputNameSeparator" =>
                     "output_name_separator",
                 "project.shotPrefix" => "shot_prefix",
@@ -170,32 +179,6 @@ internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
                     or "project.outputFramePadding"
                         ? NumericText.Int32(normalized, 0)
                         : normalized));
-            if (fieldId is "project.shotPrefix"
-                or "project.shotNumberPadding")
-            {
-                var episodeCodes = QueryEpisodes(connection)
-                    .Where((episode) =>
-                        episode.ProjectId == projectId)
-                    .ToDictionary(
-                        (episode) => episode.Id,
-                        (episode) => episode.Slug,
-                        StringComparer.Ordinal);
-                var shotCodes = _shotRepository.QueryAll(connection)
-                    .Where((shot) => shot.ProjectId == projectId)
-                    .ToDictionary(
-                        (shot) => shot.Id,
-                        (shot) => ProductionOutputContract.Resolve(
-                            projectId,
-                            shot.Id,
-                            shot.ShotNumber,
-                            episodeCodes[shot.EpisodeId],
-                            output).ShotCode,
-                        StringComparer.Ordinal);
-                _shotRepository.UpdateGeneratedCodes(
-                    connection,
-                    transaction,
-                    shotCodes);
-            }
             transaction.Commit();
         }
     }
@@ -280,7 +263,10 @@ internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
         var sortOrder = SqliteCommandExecutor.NextSortOrder(connection, "episodes", "project_id", projectId);
         var id = $"episode_{Guid.NewGuid():N}";
         var name = $"Episode {sortOrder + 1}";
-        var slug = $"EP_{sortOrder + 1:00}";
+        var slug = ProductionOutputContract.CreateEpisodeCode(
+            GetProjectSettings(connection, projectId)
+                .ProductionOutput.EpisodePrefix,
+            sortOrder + 1);
         const string notes = "New Episode created in MOCKUPS.";
         _context.Execute(
             connection,
@@ -308,7 +294,10 @@ internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
             ?? throw new InvalidOperationException($"Missing episode '{sourceEpisodeId}'.");
         var id = $"episode_{Guid.NewGuid():N}";
         var sortOrder = SqliteCommandExecutor.NextSortOrder(connection, "episodes", "project_id", source.ProjectId);
-        var slug = $"EP_{sortOrder + 1:00}";
+        var slug = ProductionOutputContract.CreateEpisodeCode(
+            GetProjectSettings(connection, source.ProjectId)
+                .ProductionOutput.EpisodePrefix,
+            sortOrder + 1);
         _context.Execute(
             connection,
             """
