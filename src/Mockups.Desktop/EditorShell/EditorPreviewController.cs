@@ -174,6 +174,7 @@ internal sealed class EditorPreviewController : IDisposable
     private readonly IEditorShellMessageSink _messages;
     private readonly Func<bool> _isDark;
     private readonly Func<ProjectTreeNode?> _selectedNode;
+    private readonly Func<string, ProjectTreeNode?> _findNodeById;
     private readonly Func<string, bool> _selectNodeById;
     private readonly TextBlock _designContextText;
     private readonly Button _designContextHistoryButton;
@@ -281,6 +282,13 @@ internal sealed class EditorPreviewController : IDisposable
 
     public void SetProductionShotFrame(int frame) => SetShotPreviewFrame(frame);
 
+    public EditorWorkspace PreviewAuthoringWorkspace =>
+        PreviewWorkspace();
+
+    public ProjectTreeNode PreviewAuthoringNode(
+        ProjectTreeNode selectedNode) =>
+        LockedContextNode() ?? selectedNode;
+
     public IReadOnlyList<PreviewScreenTimelineReferenceMarker>
         ProductionScreenReferenceMarkers(string moduleInstanceId)
     {
@@ -324,7 +332,7 @@ internal sealed class EditorPreviewController : IDisposable
     private PreviewNodeKey? _lastDesignPreviewNode;
     private PreviewNodeKey? _lastProductionPreviewNode;
     private PreviewNodeKey? _activeDesignPreviewNode;
-    private PreviewNodeKey? _lockedDesignPreviewNode;
+    private PreviewContextLock? _lockedPreviewContext;
     private DesignPreviewHistoryEntry?
         _activeProductionHistoryEntry;
     private readonly List<DesignPreviewHistoryEntry> _designHistory = [];
@@ -341,7 +349,6 @@ internal sealed class EditorPreviewController : IDisposable
     private string _referenceSource = "";
     private string _referenceViewMode = "preview";
     private int _referenceStartPreviewFrame;
-    private bool _isDesignPreviewContextLocked;
     private bool _isRefreshingOptions;
     private bool? _renderedLockState;
     private readonly PreviewPreparationCancellation _designPlaybackPreparation = new();
@@ -408,6 +415,7 @@ internal sealed class EditorPreviewController : IDisposable
         Panel previewTitle,
         Func<bool> isDark,
         Func<ProjectTreeNode?> selectedNode,
+        Func<string, ProjectTreeNode?> findNodeById,
         Func<string, bool> selectNodeById,
         Action<PreviewAuthoringNavigationTarget> navigateAuthoringTarget,
         Window owner)
@@ -445,6 +453,7 @@ internal sealed class EditorPreviewController : IDisposable
         _messages = messages;
         _isDark = isDark;
         _selectedNode = selectedNode;
+        _findNodeById = findNodeById;
         _selectNodeById = selectNodeById;
         _designContextText = designContextText;
         _designContextHistoryButton = designContextHistoryButton;
@@ -527,12 +536,14 @@ internal sealed class EditorPreviewController : IDisposable
 
     private void AddCurrentDesignContextToHistory()
     {
-        if (_workspace == EditorWorkspace.Production)
+        if (PreviewWorkspace() == EditorWorkspace.Production)
         {
             AddCurrentProductionContextToHistory();
             return;
         }
-        var key = _activeDesignPreviewNode ?? _lockedDesignPreviewNode ?? _lastDesignPreviewNode;
+        var key = _activeDesignPreviewNode
+            ?? LockedNode(EditorWorkspace.Design)
+            ?? _lastDesignPreviewNode;
         if (key is null)
         {
             return;
@@ -598,7 +609,7 @@ internal sealed class EditorPreviewController : IDisposable
 
     private void ToggleDesignContextHistory()
     {
-        if (_workspace == EditorWorkspace.Production)
+        if (PreviewWorkspace() == EditorWorkspace.Production)
         {
             if (_productionHistory.Count == 0) return;
             RenderProductionContextHistoryItems();
@@ -796,24 +807,25 @@ internal sealed class EditorPreviewController : IDisposable
 
     private void RefreshDesignContextHistoryChrome()
     {
-        var history = _workspace == EditorWorkspace.Production ? _productionHistory : _designHistory;
+        var previewWorkspace = PreviewWorkspace();
+        var history = previewWorkspace == EditorWorkspace.Production ? _productionHistory : _designHistory;
         _designContextHistoryButton.Content = EditorIcons.CreateSemantic(
-            _workspace == EditorWorkspace.Production ? "Recent production contexts" : "Recent design contexts",
+            previewWorkspace == EditorWorkspace.Production ? "Recent production contexts" : "Recent design contexts",
             EditorIcons.Collapse,
             15);
         _designContextHistoryButton.IsEnabled = history.Count > 0;
         _designContextHistoryButton.Opacity = history.Count > 0 ? 1 : 0.38;
         var canAddCurrentContext = _activeDesignPreviewNode is not null
-            || _lockedDesignPreviewNode is not null
+            || LockedNode(EditorWorkspace.Design) is not null
             || _lastDesignPreviewNode is not null
-            || (_workspace == EditorWorkspace.Production && ProductionContextNode() is not null);
+            || (previewWorkspace == EditorWorkspace.Production && ProductionContextNode() is not null);
         _designContextAddHistoryButton.IsEnabled = canAddCurrentContext;
         _designContextAddHistoryButton.Opacity = canAddCurrentContext ? 1 : 0.38;
         ToolTip.SetTip(
             _designContextHistoryButton,
             history.Count > 0
-                ? _workspace == EditorWorkspace.Production ? "Recent production contexts" : "Recent design contexts"
-                : _workspace == EditorWorkspace.Production ? "No recent production contexts" : "No recent design contexts");
+                ? previewWorkspace == EditorWorkspace.Production ? "Recent production contexts" : "Recent design contexts"
+                : previewWorkspace == EditorWorkspace.Production ? "No recent production contexts" : "No recent design contexts");
         ToolTip.SetTip(
             _designContextAddHistoryButton,
             canAddCurrentContext ? "Add current design context to history" : "No design context to add");
@@ -1609,7 +1621,7 @@ internal sealed class EditorPreviewController : IDisposable
     {
         CancelPlaybackPreparation();
         _productionPayloadPreparation.Cancel();
-        if (_workspace != EditorWorkspace.Production
+        if (PreviewWorkspace() != EditorWorkspace.Production
             || ProductionContextNode() is not { } selected)
         {
             return;
@@ -1652,7 +1664,7 @@ internal sealed class EditorPreviewController : IDisposable
 
     private void RefreshCore()
     {
-        if (_workspace == EditorWorkspace.Production)
+        if (PreviewWorkspace() == EditorWorkspace.Production)
         {
             _ = RefreshProductionCoreAsync();
             return;
@@ -3045,21 +3057,21 @@ internal sealed class EditorPreviewController : IDisposable
 
     private DesignPreviewPayload? DesignPreviewPayloadForSelection()
     {
-        if (_workspace == EditorWorkspace.Production)
+        if (PreviewWorkspace() == EditorWorkspace.Production)
         {
             return null;
         }
-        if (_isDesignPreviewContextLocked && _lockedDesignPreviewNode is not null)
+        if (LockedNode(EditorWorkspace.Design) is { } lockedNode)
         {
-            var lockedPayload = DesignPreviewPayloadFactory.Create(_previewPayloadData, _lockedDesignPreviewNode.ToNode(), _selectedThemeId, _selectedMode, _shotPreviewFrame);
+            var lockedPayload = DesignPreviewPayloadFactory.Create(_previewPayloadData, lockedNode.ToNode(), _selectedThemeId, _selectedMode, _shotPreviewFrame);
             if (lockedPayload is not null)
             {
-                _activeDesignPreviewNode = _lockedDesignPreviewNode;
+                _activeDesignPreviewNode = lockedNode;
                 return lockedPayload;
             }
 
-            _isDesignPreviewContextLocked = false;
-            _lockedDesignPreviewNode = null;
+            throw new InvalidOperationException(
+                $"Locked Design Preview context '{lockedNode.Id}' is no longer renderable.");
         }
 
         var selectedNode = _selectedNode();
@@ -3148,7 +3160,7 @@ internal sealed class EditorPreviewController : IDisposable
     private void UpdateShotTimelineControls()
     {
         var shotId = ProductionShotId();
-        if (_workspace != EditorWorkspace.Production || string.IsNullOrWhiteSpace(shotId))
+        if (PreviewWorkspace() != EditorWorkspace.Production || string.IsNullOrWhiteSpace(shotId))
         {
             StopShotPlayback();
             _shotTimelineControls.IsVisible = false;
@@ -3228,7 +3240,7 @@ internal sealed class EditorPreviewController : IDisposable
     private void SyncReferenceVideo()
     {
         var shotId = ProductionShotId();
-        if (_workspace != EditorWorkspace.Production
+        if (PreviewWorkspace() != EditorWorkspace.Production
             || string.IsNullOrWhiteSpace(shotId)
             || _productionSessionSnapshot is null
             || !_productionSessionSnapshot.ShotsById.TryGetValue(
@@ -3828,7 +3840,7 @@ internal sealed class EditorPreviewController : IDisposable
             : _designInputsPanel.PlaybackFrameRate;
 
     private int CurrentNavigationFrame() =>
-        _workspace == EditorWorkspace.Production && !string.IsNullOrWhiteSpace(ProductionShotId())
+        PreviewWorkspace() == EditorWorkspace.Production && !string.IsNullOrWhiteSpace(ProductionShotId())
             ? _shotPreviewFrame
             : _designInputsPanel.CurrentPreviewFrame;
 
@@ -3841,24 +3853,31 @@ internal sealed class EditorPreviewController : IDisposable
 
     private void ToggleDesignPreviewContextLock()
     {
-        if (_isDesignPreviewContextLocked)
+        if (_lockedPreviewContext is not null)
         {
-            _isDesignPreviewContextLocked = false;
-            _lockedDesignPreviewNode = null;
+            _lockedPreviewContext = null;
             UpdateDesignContextChrome(null);
             Refresh();
             return;
         }
 
-        var currentNode = _activeDesignPreviewNode ?? _lastDesignPreviewNode;
-        if (currentNode is null)
+        var target = PreviewWorkspace() switch
+        {
+            EditorWorkspace.Design =>
+                _activeDesignPreviewNode ?? _lastDesignPreviewNode,
+            EditorWorkspace.Production =>
+                ActiveProductionScreenPreviewNode(),
+            _ => null,
+        };
+        if (target is null)
         {
             UpdateDesignContextChrome(null);
             return;
         }
 
-        _lockedDesignPreviewNode = currentNode;
-        _isDesignPreviewContextLocked = true;
+        _lockedPreviewContext = new PreviewContextLock(
+            PreviewWorkspace(),
+            target);
         UpdateDesignContextChrome(null);
         Refresh();
     }
@@ -3866,13 +3885,13 @@ internal sealed class EditorPreviewController : IDisposable
     private void UpdateDesignContextChrome(DesignPreviewPayload? payload)
     {
         _activeProductionModuleInstanceId = RuntimeContextValue(payload, "moduleInstanceId");
-        _designContextText.Text = _workspace == EditorWorkspace.Production
-            && _selectedNode()?.Kind == ProjectTreeNodeKind.Shot
+        _designContextText.Text = PreviewWorkspace() == EditorWorkspace.Production
+            && ProductionContextNode()?.Kind == ProjectTreeNodeKind.Shot
             && !string.IsNullOrWhiteSpace(payload?.Name)
                 ? $"Active Screen: {payload.Name}"
                 : payload?.Name ?? "";
-        var productionNodes = ProductionNodePath(_selectedNode());
-        var previewItems = _workspace == EditorWorkspace.Production
+        var productionNodes = ProductionNodePath(ProductionContextNode());
+        var previewItems = PreviewWorkspace() == EditorWorkspace.Production
             ? productionNodes.Select((node, index) => new EditorBreadcrumbItem(
                 node.Name,
                 index == productionNodes.Count - 1 ? null : () => _selectNodeById(node.Id)))
@@ -3885,7 +3904,7 @@ internal sealed class EditorPreviewController : IDisposable
         _designContextText.Opacity = 1;
         var productionContext = !string.IsNullOrWhiteSpace(ProductionShotId());
         _designContextAddHistoryButton.IsVisible = true;
-        _designContextLockButton.IsVisible = _workspace != EditorWorkspace.Production;
+        _designContextLockButton.IsVisible = true;
         RefreshDesignContextHistoryChrome();
         ToolTip.SetTip(
             _designContextText,
@@ -3895,29 +3914,30 @@ internal sealed class EditorPreviewController : IDisposable
 
         _designContextLockButton.IsEnabled = _activeDesignPreviewNode is not null
             || _lastDesignPreviewNode is not null
-            || _lockedDesignPreviewNode is not null;
-        if (_renderedLockState != _isDesignPreviewContextLocked)
+            || _lockedPreviewContext is not null
+            || ActiveProductionScreenPreviewNode() is not null;
+        if (_renderedLockState != (_lockedPreviewContext is not null))
         {
             _designContextLockButton.Content = EditorIcons.CreateSemantic(
-                _isDesignPreviewContextLocked ? "Release design context" : "Keep current design context",
-                _isDesignPreviewContextLocked ? EditorIcons.Lock : EditorIcons.Unlock,
+                _lockedPreviewContext is not null ? "Release preview context" : "Keep current preview context",
+                _lockedPreviewContext is not null ? EditorIcons.Lock : EditorIcons.Unlock,
                 15);
-            _renderedLockState = _isDesignPreviewContextLocked;
+            _renderedLockState = _lockedPreviewContext is not null;
         }
         if (_designContextLockButton.Content is Control lockIcon)
         {
             EditorIcons.ApplyBrush(
                 lockIcon,
-                _isDesignPreviewContextLocked
+                _lockedPreviewContext is not null
                     ? EditorNavigationVisuals.VariantLockBrush(true)
                     : null);
         }
 
         ToolTip.SetTip(
             _designContextLockButton,
-            _isDesignPreviewContextLocked
-                ? "Release design context"
-                : "Keep current design context");
+            _lockedPreviewContext is not null
+                ? "Release preview context"
+                : "Keep current preview context");
     }
 
     private void NavigateToActiveDesignContext()
@@ -3927,7 +3947,9 @@ internal sealed class EditorPreviewController : IDisposable
             _selectNodeById(_activeProductionModuleInstanceId);
             return;
         }
-        var node = _activeDesignPreviewNode ?? _lockedDesignPreviewNode ?? _lastDesignPreviewNode;
+        var node = _activeDesignPreviewNode
+            ?? LockedNode(EditorWorkspace.Design)
+            ?? _lastDesignPreviewNode;
         if (node is null)
         {
             return;
@@ -3938,7 +3960,6 @@ internal sealed class EditorPreviewController : IDisposable
 
     private string ProductionShotId()
     {
-        if (_workspace != EditorWorkspace.Production) return "";
         return ProductionContextNode() switch
         {
             { Kind: ProjectTreeNodeKind.Shot } shot => shot.Id,
@@ -3953,6 +3974,14 @@ internal sealed class EditorPreviewController : IDisposable
 
     private ProjectTreeNode? ProductionContextNode()
     {
+        if (LockedNode(EditorWorkspace.Production) is { } locked)
+        {
+            return _findNodeById(locked.Id) ?? locked.ToNode();
+        }
+        if (_workspace != EditorWorkspace.Production)
+        {
+            return null;
+        }
         var selected = _selectedNode();
         return selected?.Kind is ProjectTreeNodeKind.Shot or ProjectTreeNodeKind.ModuleInstance
             ? selected
@@ -3960,6 +3989,40 @@ internal sealed class EditorPreviewController : IDisposable
     }
 
     private ProjectTreeNode? ProductionPayloadNode() => ProductionContextNode();
+
+    private EditorWorkspace PreviewWorkspace() =>
+        _lockedPreviewContext?.Workspace ?? _workspace;
+
+    private PreviewNodeKey? LockedNode(EditorWorkspace workspace) =>
+        _lockedPreviewContext?.Workspace == workspace
+            ? _lockedPreviewContext.Node
+            : null;
+
+    private ProjectTreeNode? LockedContextNode() =>
+        _lockedPreviewContext is { } locked
+            ? _findNodeById(locked.Node.Id) ?? locked.Node.ToNode()
+            : null;
+
+    private PreviewNodeKey? ActiveProductionScreenPreviewNode()
+    {
+        var context = ProductionContextNode();
+        if (context?.Kind == ProjectTreeNodeKind.ModuleInstance)
+        {
+            return PreviewNodeKey.From(context);
+        }
+        if (context?.Kind != ProjectTreeNodeKind.Shot)
+        {
+            return null;
+        }
+
+        var shot = PreparedProductionSession().Shot(context.Id);
+        var index = ActiveShotSlotIndex(context.Id);
+        return index >= 0 && index < shot.Screens.Count
+            ? new PreviewNodeKey(
+                ProjectTreeNodeKind.ModuleInstance,
+                shot.Screens[index].ScreenId)
+            : null;
+    }
 
     private static string RuntimeContextValue(DesignPreviewPayload? payload, string key)
     {
@@ -3984,7 +4047,7 @@ internal sealed class EditorPreviewController : IDisposable
 
     private void UpdateProductionPreviewSetup()
     {
-        var production = _workspace == EditorWorkspace.Production;
+        var production = PreviewWorkspace() == EditorWorkspace.Production;
         if (_previewSetupBorder is { } previewSetupBorder)
         {
             previewSetupBorder.Padding = production
@@ -4052,7 +4115,7 @@ internal sealed class EditorPreviewController : IDisposable
     private void ApplyPreviewSetupLayout(double availableWidth)
     {
         if (_previewSetupGrid is not { } setupGrid
-            || _workspace == EditorWorkspace.Production)
+            || PreviewWorkspace() == EditorWorkspace.Production)
         {
             return;
         }
@@ -4293,6 +4356,10 @@ internal sealed class EditorPreviewController : IDisposable
             return new ProjectTreeNode(Kind, Id, "", "", "");
         }
     }
+
+    private sealed record PreviewContextLock(
+        EditorWorkspace Workspace,
+        PreviewNodeKey Node);
 
     private sealed record DesignPreviewHistoryEntry(
         PreviewNodeKey Key,

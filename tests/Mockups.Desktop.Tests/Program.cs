@@ -193,6 +193,7 @@ var tests = new (string Name, Action Run)[]
     ("List Item and List expose their runtime model in the real editor", ListRuntimeEditorVisualTreeExposesDynamicSetsAndState),
     ("Conversation Module exposes its Test Values Runtime in the real editor", ConversationModuleEditorVisualTreeExposesTestValues),
     ("pinned Module Variant Preview survives changing editor selection", PinnedModuleVariantPreviewSurvivesEditorSelection),
+    ("pinned Production Preview keeps its active Screen while editing Design", PinnedProductionPreviewKeepsActiveScreenWhileEditingDesign),
     ("Chat List Module exposes its fixed List boundary and exact Runtime in the real editor", ChatListModuleEditorVisualTreeExposesExactListRuntime),
     ("Design Preview transient snapshots remain immutable across later edits", DesignPreviewTransientSnapshotsRemainImmutable),
     ("List Runtime updates follow stable item identity after reorder", ListRuntimeUpdatesFollowStableIdentityAfterReorder),
@@ -8094,6 +8095,121 @@ static void PinnedModuleVariantPreviewSurvivesEditorSelection()
                     "Module variant has no parent module",
                     StringComparison.Ordinal));
 
+                window.Hide();
+            },
+            CancellationToken.None).GetAwaiter().GetResult();
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void PinnedProductionPreviewKeepsActiveScreenWhileEditingDesign()
+{
+    var source = ParityDatabasePath();
+    var temporary = Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        $".mockups-headless-pinned-production-preview-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        using var session = HeadlessUnitTestSession.StartNew(
+            typeof(HeadlessTestApplication));
+        session.Dispatch(
+            () =>
+            {
+                var window = CreateTestWindow(temporary);
+                window.Width = 3000;
+                window.Height = 900;
+                window.Show();
+                Required(window.FindControl<Button>("ProductionWorkspaceButton"))
+                    .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                True(SpinWait.SpinUntil(
+                    () =>
+                    {
+                        Dispatcher.UIThread.RunJobs();
+                        return WindowSession(window).Workspace
+                            == EditorWorkspace.Production;
+                    },
+                    TimeSpan.FromSeconds(10)));
+
+                var nodes = WindowSession(window).TreeRoots
+                    .SelectMany(DescendantsAndSelf)
+                    .ToList();
+                var shot = nodes.First((node) =>
+                    node.Kind == ProjectTreeNodeKind.Shot);
+                var designNode = nodes.First((node) =>
+                    node.Kind == ProjectTreeNodeKind.ComponentClass);
+                var selectNode = typeof(MainWindow).GetMethod(
+                    "SelectNodeById",
+                    BindingFlags.Instance | BindingFlags.NonPublic,
+                    binder: null,
+                    types: [typeof(string)],
+                    modifiers: null)
+                    ?? throw new InvalidOperationException(
+                        "Missing MainWindow node selection boundary.");
+                True((bool)(selectNode.Invoke(window, [shot.Id]) ?? false));
+
+                var preview = typeof(MainWindow)
+                    .GetField("_previewController", BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?.GetValue(window) as EditorPreviewController
+                    ?? throw new InvalidOperationException("Missing Preview controller.");
+                var prepared = typeof(EditorPreviewController)
+                    .GetField("_productionSessionSnapshot", BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?? throw new InvalidOperationException("Missing prepared Production Preview session.");
+                True(SpinWait.SpinUntil(
+                    () =>
+                    {
+                        Dispatcher.UIThread.RunJobs();
+                        return prepared.GetValue(preview) is not null;
+                    },
+                    TimeSpan.FromSeconds(10)));
+
+                var lockButton = Required(window.FindControl<Button>("PreviewContextLockButton"));
+                True(SpinWait.SpinUntil(
+                    () =>
+                    {
+                        Dispatcher.UIThread.RunJobs();
+                        return lockButton.IsVisible && lockButton.IsEnabled;
+                    },
+                    TimeSpan.FromSeconds(10)));
+                lockButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Dispatcher.UIThread.RunJobs();
+
+                Required(window.FindControl<Button>("DesignWorkspaceButton"))
+                    .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                True(SpinWait.SpinUntil(
+                    () =>
+                    {
+                        Dispatcher.UIThread.RunJobs();
+                        return WindowSession(window).Workspace
+                            == EditorWorkspace.Design;
+                    },
+                    TimeSpan.FromSeconds(10)));
+                True((bool)(selectNode.Invoke(window, [designNode.Id]) ?? false));
+                Dispatcher.UIThread.RunJobs();
+
+                var productionShotId = typeof(EditorPreviewController)
+                    .GetMethod("ProductionShotId", BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?.Invoke(preview, []) as string
+                    ?? throw new InvalidOperationException("Missing Preview Production Shot context.");
+                Equal(shot.Id, productionShotId);
+                var lockedNode = typeof(EditorPreviewController)
+                    .GetMethod("ProductionContextNode", BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?.Invoke(preview, []) as ProjectTreeNode
+                    ?? throw new InvalidOperationException("Missing locked Preview Screen context.");
+                Equal(ProjectTreeNodeKind.ModuleInstance, lockedNode.Kind);
+                Equal(EditorWorkspace.Production, preview.PreviewAuthoringWorkspace);
+                Equal(
+                    lockedNode.Id,
+                    preview.PreviewAuthoringNode(
+                        Required(WindowSession(window).SelectedNode)).Id);
+                var snapshot = prepared.GetValue(preview)
+                    as ProductionPreviewSessionSnapshot
+                    ?? throw new InvalidOperationException("Missing Production Preview session.");
+                Equal(shot.Id, snapshot.Screen(lockedNode.Id).ShotId);
                 window.Hide();
             },
             CancellationToken.None).GetAwaiter().GetResult();

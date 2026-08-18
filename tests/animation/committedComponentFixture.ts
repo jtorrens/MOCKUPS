@@ -64,10 +64,15 @@ export function committedComponentFixture(
     const selectedReference = `${component.id}::variant::${variantId}`;
     const preview = JSON.parse(component.design_preview_json) as Record<string, unknown>;
     const paletteRows = database.prepare(
-      "SELECT token, value_hex, is_neutral FROM palette_colors WHERE project_id = 'project_foqn_s2'",
-    ).all() as Array<{ token: string; value_hex: string; is_neutral: number }>;
+      "SELECT id, token, value_hex, is_neutral FROM palette_colors WHERE project_id = 'project_foqn_s2'",
+    ).all() as Array<{
+      id: string;
+      token: string;
+      value_hex: string;
+      is_neutral: number;
+    }>;
     const palette = Object.fromEntries(
-      paletteRows.map((row) => [row.token, row.value_hex]),
+      paletteRows.map((row) => [row.id, row.value_hex]),
     );
     resolveActors(preview, database, palette);
     const theme = database.prepare(
@@ -118,7 +123,7 @@ export function committedComponentFixture(
       ],
       paletteColors: palette,
       paletteNeutralColors: Object.fromEntries(
-        paletteRows.map((row) => [row.token, row.is_neutral === 1]),
+        paletteRows.map((row) => [row.id, row.is_neutral === 1]),
       ),
       themeMode: "light",
       themeTokensJson: theme.tokens_json,

@@ -127,6 +127,9 @@ public partial class MainWindow : SukiWindow
             PreviewTitlePanel,
             () => _themeController.IsDark,
             () => Session.SelectedNode,
+            (nodeId) => EditorNodeSelectionState.FindNodeById(
+                Session.TreeRoots,
+                nodeId),
             (nodeId) => NavigateToNodeById(
                 nodeId,
                 "preview-context"),
@@ -861,10 +864,11 @@ public partial class MainWindow : SukiWindow
             return;
         }
 
-        var workspace = Session.Workspace;
+        var previewNode = _previewController.PreviewAuthoringNode(node);
+        var workspace = _previewController.PreviewAuthoringWorkspace;
         if (!EditorCollectionCardFactory
                 .SupportsPreviewAuthoringSurface(
-                    node,
+                    previewNode,
                     workspace))
         {
             _screenTimeline.Clear();
@@ -878,7 +882,7 @@ public partial class MainWindow : SukiWindow
 
         if (workspace == EditorWorkspace.Production)
         {
-            _screenTimeline.BeginScreen(node.Id);
+            _screenTimeline.BeginScreen(previewNode.Id);
         }
         else
         {
@@ -889,7 +893,7 @@ public partial class MainWindow : SukiWindow
             ? "Screen Payload"
             : "Test Values";
         RenderPreviewAuthoringSurface(
-            node,
+            previewNode,
             new EditorPreviewAuthoringSurface(
                 header,
                 new Border
@@ -900,10 +904,10 @@ public partial class MainWindow : SukiWindow
         try
         {
             var transientState = _previewController
-                .CaptureDesignPreviewTransientState(node);
+                .CaptureDesignPreviewTransientState(previewNode);
             var prepared = await _collectionCards
                 .PreparePreviewAuthoringSurfaceAsync(
-                    node,
+                    previewNode,
                     workspace,
                     transientState);
             if (!_workspaceCoordinator.IsCurrent(
@@ -919,7 +923,7 @@ public partial class MainWindow : SukiWindow
                 _screenTimeline.ShowPrepared(prepared);
             }
             RenderPreviewAuthoringSurface(
-                node,
+                previewNode,
                 prepared is null
                     ? null
                     : EditorCollectionCardFactory
@@ -937,7 +941,7 @@ public partial class MainWindow : SukiWindow
                     node.Id))
             {
                 RenderPreviewAuthoringSurface(
-                    node,
+                    previewNode,
                     null);
                 _screenTimeline.Clear();
                 _messages.Error(
