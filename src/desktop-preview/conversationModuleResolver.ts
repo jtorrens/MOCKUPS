@@ -20,6 +20,7 @@ import { naturalWriteOnFrame } from "./behaviorTiming.js";
 import type {
   ConversationMessageContract,
   ConversationModuleContract,
+  ConversationIncomingRevealMode,
   ConversationTimingContract,
   ConversationTypingIndicatorAnimation,
 } from "./conversationModuleContract.js";
@@ -49,6 +50,16 @@ export function resolveConversationModule(
   const screenFrame = rootScreenFrame(payload);
   const resolvedMessages = conversationMessages(preview);
   const timing = conversationTiming(conversation, preview);
+  const showKeyboard = requiredBoolean(
+    conversation,
+    "showKeyboard",
+    "module.core.chat.showKeyboard",
+  );
+  const showTextInputBar = requiredBoolean(
+    conversation,
+    "showTextInputBar",
+    "module.core.chat.showTextInputBar",
+  );
   const messageMotion = requiredMotionContract(
     conversation,
     "messageMotion",
@@ -75,6 +86,7 @@ export function resolveConversationModule(
     payload,
     messageMotion,
     automaticEndFrame,
+    !showKeyboard && !showTextInputBar,
   )
     .map((message) => ({
       ...message,
@@ -124,9 +136,9 @@ export function resolveConversationModule(
     },
   ).progress;
   const keyboardVisible = composer.keyboardVisible
-    && requiredBoolean(conversation, "showKeyboard", "module.core.chat.showKeyboard");
+    && showKeyboard;
   const textInputVisible = composer.textInputVisible
-    && requiredBoolean(conversation, "showTextInputBar", "module.core.chat.showTextInputBar");
+    && showTextInputBar;
   const textInputConfig = textInputVisible
     ? resolvedTextInputConfig(payload, conversation, composer.text)
     : undefined;
@@ -305,13 +317,18 @@ function conversationTiming(
 ): ConversationTimingContract {
   const incomingRevealMode = optionalString(preview, "incomingRevealMode")
     || optionalString(conversation, "incomingRevealMode");
+  const resolvedIncomingRevealMode = incomingRevealMode || "writeOn";
+  if (resolvedIncomingRevealMode !== "writeOn"
+    && resolvedIncomingRevealMode !== "typingIndicator") {
+    throw new Error(
+      `Unsupported Conversation incoming reveal mode ${resolvedIncomingRevealMode}`,
+    );
+  }
   const bubbleRevealMode = optionalString(preview, "bubbleRevealMode")
     || optionalString(conversation, "bubbleRevealMode");
   return {
     bubbleRevealMode: bubbleRevealMode === "afterWriteOn" ? "afterWriteOn" : "duringWriteOn",
-    incomingRevealMode: incomingRevealMode === "writeOn" || incomingRevealMode === "typingIndicator"
-      ? incomingRevealMode
-      : "instant",
+    incomingRevealMode: resolvedIncomingRevealMode as ConversationIncomingRevealMode,
     textInputVisible: optionalBooleanWithFallback(preview, conversation, "textInputVisible", true),
     keyboardVisible: optionalBooleanWithFallback(preview, conversation, "keyboardVisible", true),
     typingIndicatorText: optionalString(preview, "typingIndicatorText")
@@ -415,6 +432,7 @@ function visibleMessages(
   payload: DesignPreviewPayload,
   messageMotion: ComponentMotionContract,
   automaticEndFrame: number,
+  writesInBubble: boolean,
 ) {
   return messages.flatMap((message) => {
     const startFrame = message.timelineStartFrame;
@@ -423,7 +441,9 @@ function visibleMessages(
     const isIncomingMessage = message.state === "incoming";
     const effectiveWriteOnFrames = isSystemMessage ? 0 : message.writeOnDurationFrames;
     const revealEndFrame = startFrame + effectiveWriteOnFrames;
-    const revealAfterWriteOn = isOutgoingMessage && timing.bubbleRevealMode === "afterWriteOn";
+    const revealAfterWriteOn = isOutgoingMessage
+      && timing.bubbleRevealMode === "afterWriteOn"
+      && !writesInBubble;
     const visibleAt = revealAfterWriteOn ? message.timelineRevealAtFrame : startFrame;
     if (frame < visibleAt || frame >= message.presenceEndFrame) return [];
     const motionDurationFrames = Math.ceil(

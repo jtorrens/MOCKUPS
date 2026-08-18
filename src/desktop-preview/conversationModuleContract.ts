@@ -4,7 +4,7 @@ import type {
   ComponentMotionFrameContract,
 } from "./previewComponentContracts.js";
 
-export type ConversationIncomingRevealMode = "instant" | "writeOn" | "typingIndicator";
+export type ConversationIncomingRevealMode = "writeOn" | "typingIndicator";
 export type ConversationTypingIndicatorAnimation = "none" | "pulsating" | "wave";
 
 export interface ConversationTimingContract {

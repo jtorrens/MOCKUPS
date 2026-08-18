@@ -379,6 +379,61 @@ test("animated media playing is always finite", () => {
   assert.equal(at(99).playbackFrame, 3);
 });
 
+test("Conversation writes outgoing text in Bubble when its composer slots are absent", () => {
+  const source = committedConversationPayload(true);
+  const config = JSON.parse(source.configJson) as {
+    conversation: Record<string, unknown>;
+  };
+  config.conversation.showKeyboard = false;
+  config.conversation.showTextInputBar = false;
+  config.conversation.bubbleRevealMode = "afterWriteOn";
+  source.configJson = JSON.stringify(config);
+  const runtime = JSON.parse(source.designPreviewJson) as {
+    messages: Array<Record<string, unknown>>;
+  };
+  runtime.messages = [{
+    id: "outgoing",
+    direction: "outgoing",
+    text: "Writing in Bubble",
+    delayAfterPreviousFrames: 0,
+    postWriteOnHoldFrames: 0,
+    visibleDurationFrames: 0,
+    isPlaying: false,
+    writeOnTiming: {
+      mode: "fixed",
+      fixedFrames: 12,
+      paceToken: "theme.motion.naturalPace.normal",
+    },
+  }];
+  source.designPreviewJson = JSON.stringify(runtime);
+  const instance = JSON.parse(source.instanceJson) as Record<string, unknown>;
+  instance.context = { screenFrame: 1 };
+  source.instanceJson = JSON.stringify(instance);
+  source.localFrame = 1;
+
+  const resolved = resolveConversationModule(source);
+  assert.equal(resolved.composer.keyboardVisible, false);
+  assert.equal(resolved.composer.textInputVisible, false);
+  assert.equal(resolved.visibleMessages[0]?.text, "Writing in Bubble");
+  assert.equal(resolved.visibleMessages[0]?.writeOnTrigger, true);
+});
+
+test("Conversation rejects the retired incoming instant reveal mode", () => {
+  const source = committedConversationPayload();
+  const config = JSON.parse(source.configJson) as {
+    conversation: Record<string, unknown>;
+  };
+  config.conversation.incomingRevealMode = "instant";
+  source.configJson = JSON.stringify(config);
+  const runtime = JSON.parse(source.designPreviewJson) as Record<string, unknown>;
+  runtime.incomingRevealMode = "instant";
+  source.designPreviewJson = JSON.stringify(runtime);
+  assert.throws(
+    () => resolveConversationModule(source),
+    /Unsupported Conversation incoming reveal mode instant/,
+  );
+});
+
 test("Conversation Header keeps its upward bleed and can use the resolved Actor color", () => {
   const source = committedConversationPayload();
   const config = JSON.parse(source.configJson) as {
