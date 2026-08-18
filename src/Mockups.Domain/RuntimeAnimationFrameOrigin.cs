@@ -144,8 +144,14 @@ public static class RuntimeAnimationFrameOrigin
         JsonObject animation,
         string fieldId,
         string targetId,
-        JsonObject? themeTokens = null) =>
-        Model(contract, runtime, animation, themeTokens: themeTokens).FieldReferenceDurationFrames(fieldId, targetId);
+        JsonObject? themeTokens = null,
+        int frameRate = 0) =>
+        Model(
+            contract,
+            runtime,
+            animation,
+            themeTokens: themeTokens,
+            frameRate: frameRate).FieldReferenceDurationFrames(fieldId, targetId);
 
     public static int CollectionDurationFrames(
         JsonObject collection,

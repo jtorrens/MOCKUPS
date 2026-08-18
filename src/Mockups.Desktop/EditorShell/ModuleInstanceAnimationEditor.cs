@@ -173,7 +173,8 @@ internal sealed class ModuleInstanceAnimationEditor
             animation,
             input.Id,
             targetId,
-            themeTokens);
+            themeTokens,
+            source.FrameRate);
         document.AddWriteOnTrack(
             input.Id,
             targetId,
@@ -1285,7 +1286,7 @@ internal sealed class ModuleInstanceAnimationEditor
                 input,
                 DesignPreviewTestValues.Value(preview, input),
                 RuntimeAnimationFrameOrigin.FieldOwnerFrameOrigin(preview, preview, animation, input.Id, "", themeTokens, frameRate),
-                RuntimeAnimationFrameOrigin.FieldReferenceDurationFrames(preview, preview, animation, input.Id, "", themeTokens),
+                RuntimeAnimationFrameOrigin.FieldReferenceDurationFrames(preview, preview, animation, input.Id, "", themeTokens, frameRate),
                 (ownerFrame) => RuntimeAnimationFrameOrigin.ScreenFrameForOwnerFrame(
                     preview, preview, animation, "", ownerFrame, themeTokens, frameRate),
                 (screenFrame) => RuntimeAnimationFrameOrigin.OwnerLocalFrame(
@@ -1312,7 +1313,7 @@ internal sealed class ModuleInstanceAnimationEditor
                         targetInput,
                         DesignPreviewTestValues.CollectionValue(item, targetInput),
                         RuntimeAnimationFrameOrigin.FieldOwnerFrameOrigin(preview, preview, animation, targetInput.Id, targetId, themeTokens, frameRate),
-                        RuntimeAnimationFrameOrigin.FieldReferenceDurationFrames(preview, preview, animation, targetInput.Id, targetId, themeTokens),
+                        RuntimeAnimationFrameOrigin.FieldReferenceDurationFrames(preview, preview, animation, targetInput.Id, targetId, themeTokens, frameRate),
                         (ownerFrame) => RuntimeAnimationFrameOrigin.ScreenFrameForOwnerFrame(
                             preview, preview, animation, targetId, ownerFrame, themeTokens, frameRate),
                         (screenFrame) => RuntimeAnimationFrameOrigin.OwnerLocalFrame(
@@ -1335,7 +1336,7 @@ internal sealed class ModuleInstanceAnimationEditor
                             input,
                             DesignPreviewTestValues.Value(runtimeContract, input),
                             RuntimeAnimationFrameOrigin.FieldOwnerFrameOrigin(preview, preview, animation, input.Id, targetId, themeTokens, frameRate),
-                            RuntimeAnimationFrameOrigin.FieldReferenceDurationFrames(preview, preview, animation, input.Id, targetId, themeTokens),
+                            RuntimeAnimationFrameOrigin.FieldReferenceDurationFrames(preview, preview, animation, input.Id, targetId, themeTokens, frameRate),
                             (ownerFrame) => RuntimeAnimationFrameOrigin.ScreenFrameForOwnerFrame(
                                 preview, preview, animation, targetId, ownerFrame, themeTokens, frameRate),
                             (screenFrame) => RuntimeAnimationFrameOrigin.OwnerLocalFrame(
