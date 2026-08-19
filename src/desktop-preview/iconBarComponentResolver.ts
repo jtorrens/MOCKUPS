@@ -2,7 +2,6 @@ import {
   embeddedComponentConfig,
 } from "./componentPreviewDefaults.js";
 import {
-  optionalString,
   parseObject,
   requiredNumberPair,
   requiredRecord,
@@ -37,7 +36,11 @@ export function resolveIconBarComponentFromRecords(
   id: string,
 ): IconBarDesignContract {
   const iconBar = requiredRecord(config, "iconBar", "component.iconBar");
-  const state = iconBarState(optionalString(inputs, "state") || "idle");
+  const state = iconBarState(requiredString(
+    inputs,
+    "state",
+    "component.iconBar.input.state",
+  ));
   const sizePair = requiredNumberPair(inputs, "size", "component.iconBar.input.size");
   const sizeSource = requiredString(iconBar, "sizeSource", "component.iconBar.sizeSource");
   if (sizeSource !== "shared" && sizeSource !== "perRow") throw new Error(`Unsupported icon bar size source ${sizeSource}`);
