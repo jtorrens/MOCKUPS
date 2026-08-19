@@ -30,6 +30,22 @@ test("retired archive changes select only their absence contract", () => {
   );
 });
 
+test("every retired cleanup artifact selects only its absence contract", () => {
+  for (const file of [
+    "scripts/migratePaletteColorReferencesToIds.mjs",
+    "scripts/icon-themes/download-lucide-theme.cjs",
+    "assets/icons/components/Render Presets.svg",
+    "docs/WINDOWS_PC_TEST_HANDOFF.md",
+  ]) {
+    const plan = planScopedValidation(repositoryRoot, [file]);
+    assert.deepEqual(
+      plan.map((step) => step.id),
+      ["retired", "diff-check"],
+      file,
+    );
+  }
+});
+
 test("a focused SVG service change selects only its direct regressions", () => {
   const plan = planScopedValidation(
     repositoryRoot,

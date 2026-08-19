@@ -18,6 +18,34 @@ const canonicalArchitectureDocuments = [
   "validation.md",
 ] as const;
 
+const activeDocumentationFiles = new Set<string>([
+  "docs/README.md",
+  "docs/architecture/README.md",
+  ...canonicalArchitectureDocuments.map(
+    (document) => `docs/architecture/${document}`,
+  ),
+]);
+
+function collectActiveDocumentationFiles(
+  root: string,
+  relativeDirectory = "docs",
+): string[] {
+  const files: string[] = [];
+  for (const entry of readdirSync(path.join(root, relativeDirectory), {
+    withFileTypes: true,
+  })) {
+    if (entry.name === ".DS_Store") continue;
+    const relativePath = `${relativeDirectory}/${entry.name}`;
+    if (relativePath === "docs/old") continue;
+    if (entry.isDirectory()) {
+      files.push(...collectActiveDocumentationFiles(root, relativePath));
+    } else {
+      files.push(relativePath);
+    }
+  }
+  return files;
+}
+
 export function checkDocumentationContracts({
   root,
   readText,
@@ -35,6 +63,14 @@ export function checkDocumentationContracts({
       addViolation(
         `docs/architecture/${entry}`,
         "active architecture contains a file or directory outside the canonical set",
+      );
+    }
+  }
+  for (const relativePath of collectActiveDocumentationFiles(root)) {
+    if (!activeDocumentationFiles.has(relativePath)) {
+      addViolation(
+        relativePath,
+        "active documentation contains a file outside the canonical index",
       );
     }
   }
@@ -61,6 +97,25 @@ export function checkDocumentationContracts({
       archiveRuleOwner,
       "open, search, read, quote, summarize, cite",
       `${archiveRuleOwner} must prohibit historical archive consultation`,
+    );
+  }
+  const schemaSource = readText(
+    "src/Mockups.Persistence.Sqlite.Core/CurrentSqliteSchema.cs",
+  );
+  const schemaVersionMatches = [
+    ...schemaSource.matchAll(/\bPRAGMA\s+user_version\s*=\s*(\d+)\s*;/gu),
+  ];
+  if (schemaVersionMatches.length !== 1) {
+    addViolation(
+      "src/Mockups.Persistence.Sqlite.Core/CurrentSqliteSchema.cs",
+      "current SQLite schema must declare exactly one numeric user_version",
+    );
+  } else {
+    const schemaVersion = schemaVersionMatches[0]?.[1] ?? "";
+    assertDocumentContains(
+      "docs/architecture/data_persistence.md",
+      `Schema version \`${schemaVersion}\` is the only current schema.`,
+      "normative persistence documentation must match the executable SQLite schema version",
     );
   }
   for (const requiredTerm of [

@@ -1,11 +1,20 @@
 import type { ArchitectureValidationContext } from "./validationContext.js";
 import { repositoryFileExists } from "./validationContext.js";
 
-const retiredPaths = [
+export const retiredPaths = [
   "archive/react-legacy",
+  "assets/icons/components/Render Presets.svg",
+  "assets/system/system_icons/components/Render Presets.svg",
+  "docs/WINDOWS_PC_TEST_HANDOFF.md",
+  "docs/pc-mac/2026-07-30_windows_design_preview_patch_timeout.md",
+  "docs/pc-mac/2026-07-30_windows_unicode_preview_transport.md",
   "index.html",
   "remotion.config.ts",
   "scripts/checkDesktopPreviewArchitecture.ts",
+  "scripts/icon-themes/add-editor-material-icons-prompt-weight.cjs",
+  "scripts/icon-themes/download-lucide-theme.cjs",
+  "scripts/icon-themes/download-material-symbols-theme.cjs",
+  "scripts/migratePaletteColorReferencesToIds.mjs",
   "spikes/desktop-editor-shell",
   "src/debug-server",
   "src/debug-ui",
@@ -19,6 +28,11 @@ const retiredPaths = [
   "src/visual/validation",
   "vite.config.ts",
 ] as const;
+
+export function isRetiredRepositoryPath(relativePath: string) {
+  return retiredPaths.some((retiredPath) =>
+    relativePath === retiredPath || relativePath.startsWith(`${retiredPath}/`));
+}
 
 export function checkRetiredContracts(
   context: ArchitectureValidationContext,

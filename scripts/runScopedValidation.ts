@@ -4,6 +4,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
+import { isRetiredRepositoryPath } from "./validation/checkRetiredContracts.js";
+
 export type ScopedValidationLevel = "changed" | "revision";
 
 export type ValidationStep = {
@@ -175,6 +177,24 @@ export function planScopedValidation(
   let database = false;
 
   for (const file of files) {
+    if (isRetiredRepositoryPath(file)) {
+      architectureRetired = true;
+      continue;
+    }
+    if (file === "scripts/validation/checkDocumentationContracts.ts") {
+      architectureContracts = true;
+      architecturePipeline = true;
+      tooling = true;
+      typecheck = true;
+      continue;
+    }
+    if (file === "scripts/validation/checkRetiredContracts.ts") {
+      architectureRetired = true;
+      architecturePipeline = true;
+      tooling = true;
+      typecheck = true;
+      continue;
+    }
     if (file === "src/Mockups.Desktop/Common/SvgReplacementService.cs") {
       desktopCompile = true;
       add(npmStep(
