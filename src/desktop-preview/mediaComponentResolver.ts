@@ -10,12 +10,12 @@ import type {
   MediaTextOverlayMode,
 } from "./mediaComponentContract.js";
 import {
-  optionalNumber,
   optionalString,
   parseObject,
   requiredBoolean,
   requiredNumber,
   requiredNumberPair,
+  requiredPossiblyEmptyString,
   requiredPlacement,
   requiredRecord,
   requiredString,
@@ -149,10 +149,18 @@ export function resolveMediaComponentFromRecords(
     requiredNumber(inputs, "controlsElapsedMs", "component.media.input.controlsElapsedMs"),
   );
   const motion = requiredMotionContract(media, "motion", "component.media.motion");
-  const fullScreenTransitionElapsedMs = optionalNumber(inputs, "motionElapsedMs", 0);
+  const fullScreenTransitionElapsedMs = requiredNumber(
+    inputs,
+    "motionElapsedMs",
+    "component.media.input.motionElapsedMs",
+  );
   return {
     id,
-    sourceUri: optionalString(inputs, "mediaSource"),
+    sourceUri: requiredPossiblyEmptyString(
+      inputs,
+      "mediaSource",
+      "component.media.input.mediaSource",
+    ),
     mediaKind: mediaKind(requiredString(inputs, "mediaType", "component.media.input.mediaType")),
     playbackState,
     currentTimeSeconds,

@@ -165,6 +165,24 @@ test("Media full-screen uses the complete root Screen frame", () => {
   assert.equal(node.style?.rootOverlayTranslationFactor, 0);
 });
 
+test("Media requires its complete prepared source and Motion clock", () => {
+  for (const key of ["mediaSource", "motionElapsedMs"]) {
+    const source = withInputDefaults(committedComponentFixture("media"));
+    const preview = JSON.parse(source.designPreviewJson) as Record<string, unknown>;
+    delete preview[key];
+    assert.throws(
+      () => resolveMediaComponent(withDocument(source, preview)),
+      new RegExp(`component\\.media\\.input\\.${key}`),
+      key,
+    );
+  }
+  const source = withInputDefaults(committedComponentFixture("media"));
+  assert.equal(
+    resolveMediaComponent(withValues(source, { mediaSource: "" })).sourceUri,
+    "",
+  );
+});
+
 test("Bubble resolves write-on and embedded video state from the same owner frame", () => {
   const source = withInputDefaults(committedComponentFixture("bubble"));
   const text = "Resolver owned";
