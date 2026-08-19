@@ -22,6 +22,7 @@ export {
   expandBoxXY,
   interpolateBox,
   interpolateRenderableGeometry,
+  minimumContainerSizeForPlacedChild,
   placeChild,
   previewScreenBox,
   rootPreviewScreenBox,

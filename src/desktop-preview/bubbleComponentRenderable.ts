@@ -16,6 +16,7 @@ import {
   boxEdgeReservationInsets,
   cssColorWithAlpha,
   iconTokenStyle,
+  minimumContainerSizeForPlacedChild,
   placeChild,
   previewScreenBox,
   renderScale,
@@ -146,6 +147,18 @@ export function bubbleComponentToRenderable(
       )
     : undefined;
   const avatarReservation = boxEdgeReservationInsets(baseSurfaceBox, baseAvatarBox);
+  const avatarMinimumSurfaceSize = bubble.avatarSlot.reserveTextSpace
+    ? minimumContainerSizeForPlacedChild(
+        baseSurfaceBox,
+        bubble.avatarSlot.avatar
+          ? {
+              width: bubble.avatarSlot.avatar.size * scale,
+              height: bubble.avatarSlot.avatar.size * scale,
+            }
+          : undefined,
+        scalePlacement(bubble.avatarSlot.placement, scale),
+      )
+    : baseSurfaceBox;
   const contentPadding = {
     left: paddingX + avatarReservation.left,
     top: paddingY + labelIntrusion.top + avatarReservation.top,
@@ -169,6 +182,7 @@ export function bubbleComponentToRenderable(
     Math.max(0, labelMinimumSurfaceWidth - contentPadding.left - contentPadding.right),
     statusGap,
     inlineStatusWidth,
+    Math.max(0, avatarMinimumSurfaceSize.height - contentPadding.top - contentPadding.bottom),
   );
   const localSurfaceBox = {
     x: 0,
@@ -361,6 +375,7 @@ function bubbleContentLayout(
   minimumContentWidth = 0,
   statusGap = 0,
   inlineStatusWidth?: number,
+  minimumContentHeight = 0,
 ) {
   const statusIsInline = statusSize !== undefined && inlineStatusWidth !== undefined;
   const statusBlockHeight = statusSize && !statusIsInline ? statusGap + statusSize.height : 0;
@@ -392,7 +407,7 @@ function bubbleContentLayout(
       statusSize?.width ?? 0,
       inlineStatusWidth ?? 0,
     );
-    const height = textSize.height + statusBlockHeight;
+    const height = Math.max(minimumContentHeight, textSize.height + statusBlockHeight);
     const boxes = textAndStatusBoxes(
       padding.left,
       padding.top,
@@ -414,7 +429,10 @@ function bubbleContentLayout(
   if (position === "top" || position === "bottom") {
     const mediaGap = verticalGap;
     const width = Math.max(minimumContentWidth, textSize.width, statusSize?.width ?? 0, mediaSize.width);
-    const height = textSize.height + mediaGap + mediaSize.height + statusBlockHeight;
+    const height = Math.max(
+      minimumContentHeight,
+      textSize.height + mediaGap + mediaSize.height + statusBlockHeight,
+    );
     const textX = mediaSize.width > textSize.width
       ? padding.left
       : padding.left + (width - textSize.width) / 2;
@@ -442,7 +460,7 @@ function bubbleContentLayout(
   const rowWidth = textSize.width + horizontalGap + mediaSize.width;
   const width = Math.max(minimumContentWidth, rowWidth, statusSize?.width ?? 0);
   const rowHeight = Math.max(textSize.height, mediaSize.height);
-  const height = rowHeight + statusBlockHeight;
+  const height = Math.max(minimumContentHeight, rowHeight + statusBlockHeight);
   const textX = position === "left"
     ? padding.left + mediaSize.width + horizontalGap
     : padding.left;

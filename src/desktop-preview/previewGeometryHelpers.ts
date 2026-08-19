@@ -239,6 +239,56 @@ export function boxEdgeReservationInsets(
   };
 }
 
+/**
+ * Computes the minimum box dimensions required to keep a child placed with an
+ * interior alignment inside its parent. Outside-edge placement deliberately
+ * remains overflow and therefore does not enlarge its parent.
+ */
+export function minimumContainerSizeForPlacedChild(
+  container: RenderableBox,
+  childSize: { width: number; height: number } | undefined,
+  placement: AlignmentPlacementContract,
+) {
+  if (!childSize || placement.mode === "outsideEdge") {
+    return { width: container.width, height: container.height };
+  }
+  return {
+    width: minimumAxisSizeForPlacedChild(
+      container.width,
+      childSize.width,
+      placement.alignX,
+      placement.offsetX,
+      placement.mode,
+    ),
+    height: minimumAxisSizeForPlacedChild(
+      container.height,
+      childSize.height,
+      placement.alignY,
+      placement.offsetY,
+      placement.mode,
+    ),
+  };
+}
+
+function minimumAxisSizeForPlacedChild(
+  currentSize: number,
+  childSize: number,
+  alignment: number,
+  offset: number,
+  mode: "center" | "insideEdge",
+) {
+  const align = Math.max(0, Math.min(1, alignment));
+  const startInset = mode === "center" ? childSize / 2 : childSize;
+  const endInset = mode === "center" ? childSize / 2 : 0;
+  const minimumAtStart = align > 0
+    ? (startInset - offset) / align
+    : Number.NEGATIVE_INFINITY;
+  const minimumAtEnd = align < 1
+    ? (endInset + offset) / (1 - align)
+    : Number.NEGATIVE_INFINITY;
+  return Math.max(currentSize, childSize, minimumAtStart, minimumAtEnd);
+}
+
 export function translateBox(box: RenderableBox, origin: { x: number; y: number }): RenderableBox {
   return {
     x: box.x + origin.x,

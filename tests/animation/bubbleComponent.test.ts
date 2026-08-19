@@ -68,6 +68,26 @@ test("Bubble reserves message text for an Avatar anchored to any Bubble edge", (
   }
 });
 
+test("Bubble minimum height contains a reserved interior Avatar without message text", () => {
+  const payload = committedComponentFixture("bubble", "default_copy");
+  const config = JSON.parse(payload.configJson) as {
+    bubble: { avatarSlot: { overrides: Record<string, unknown>; reserveTextSpace?: boolean } };
+  };
+  config.bubble.avatarSlot.reserveTextSpace = true;
+  config.bubble.avatarSlot.overrides = {
+    avatar: { defaultSize: 96 },
+  };
+  payload.configJson = JSON.stringify(config);
+  const preview = JSON.parse(payload.designPreviewJson) as Record<string, unknown>;
+  preview.sampleText = "";
+  payload.designPreviewJson = JSON.stringify(preview);
+
+  const rendered = bubbleComponentToRenderable(payload, resolveBubbleComponent(payload));
+  const surface = requiredNode(rendered, "component.bubble.surface");
+  const avatar = requiredNode(rendered, "component.bubble.avatar");
+  assert.ok(surface.box!.height >= avatar.box!.height);
+});
+
 test("Bubble requires an explicit Avatar text-space reservation choice", () => {
   const payload = committedComponentFixture("bubble", "default_copy");
   const config = JSON.parse(payload.configJson) as {
