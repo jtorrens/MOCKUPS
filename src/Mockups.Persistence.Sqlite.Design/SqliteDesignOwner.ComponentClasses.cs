@@ -19,6 +19,9 @@ internal sealed partial class SqliteDesignOwner
                     componentClassId)));
     }
 
+    public string GetComponentClassDesignPreviewJson(string componentClassId) =>
+        GetComponentClassSettings(componentClassId).DesignPreviewJson;
+
     internal ComponentClassSettings GetComponentClassSettings(
         SqliteConnection connection,
         string componentClassId) =>

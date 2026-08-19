@@ -228,6 +228,10 @@ internal sealed class SqliteRuntimeInputOwnerPort(
         string variantReference) =>
         target.GetComponentVariantRuntimeInputs(variantReference);
 
+    public string GetComponentClassDesignPreviewJson(
+        string componentClassId) =>
+        target.GetComponentClassDesignPreviewJson(componentClassId);
+
     public ModuleSettings GetModuleSettings(string moduleId) =>
         target.GetModuleSettings(moduleId);
 

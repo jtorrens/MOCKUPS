@@ -114,18 +114,42 @@ internal sealed class RuntimeInputOwnerDocumentStore
         _operations.ExecuteAsync(
             () =>
             {
+                if (source.DesignPreviewOwnerKind == RuntimeInputDesignPreviewOwnerKind.None)
+                {
+                    throw new InvalidOperationException(
+                        "A Module Instance has no isolated Design Preview document.");
+                }
+                var confirmedJson = source.DesignPreviewOwnerKind switch
+                {
+                    RuntimeInputDesignPreviewOwnerKind.Module =>
+                        _database.GetModuleSettings(source.DesignPreviewOwnerId).DesignPreviewJson,
+                    RuntimeInputDesignPreviewOwnerKind.ComponentClass =>
+                        _database.GetComponentClassDesignPreviewJson(source.DesignPreviewOwnerId),
+                    _ => throw new InvalidOperationException(
+                        "A Module Instance has no isolated Design Preview document."),
+                };
+                var confirmed = JsonPath.ParseRequiredObject(
+                    confirmedJson,
+                    "Persisted Design Preview document");
+                var proposed = JsonPath.ParseRequiredObject(
+                    designPreviewJson,
+                    "Proposed Design Preview document");
+                if (JsonNode.DeepEquals(confirmed, proposed))
+                {
+                    return;
+                }
                 switch (source.DesignPreviewOwnerKind)
                 {
                     case RuntimeInputDesignPreviewOwnerKind.Module:
                         _database.UpdateModuleDesignPreviewJson(
                             source.DesignPreviewOwnerId,
                             designPreviewJson);
-                        return;
+                        break;
                     case RuntimeInputDesignPreviewOwnerKind.ComponentClass:
                         _database.UpdateComponentClassDesignPreviewJson(
                             source.DesignPreviewOwnerId,
                             designPreviewJson);
-                        return;
+                        break;
                     default:
                         throw new InvalidOperationException(
                             "A Module Instance has no isolated Design Preview document.");

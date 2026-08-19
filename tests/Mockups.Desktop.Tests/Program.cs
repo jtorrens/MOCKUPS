@@ -6721,6 +6721,10 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
                     + $"(bottom={finalFieldBottom:0.##}, viewport={runtimeScroll.Viewport.Height:0.##}, "
                     + $"extent={runtimeScroll.Extent.Height:0.##}, offset={runtimeScroll.Offset.Y:0.##}).");
             }
+            runtimeButtons[2].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            _ = RequiredField(listItemSurface, "buttonInputs");
+
             var listSurface = SelectComponent("component_project_foqn_s2_list");
             SequenceEqual(
                 ["Default", "Calls", "Chats"],
@@ -6754,6 +6758,29 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
             }
             var listSettings = database.GetComponentClassSettings(
                 "component_project_foqn_s2_list");
+            var listCollectionDefinition = RuntimeInputDefinitionReader.ReadCollections(
+                    listPreview,
+                    JsonPath.ParseRequiredObject(listSettings.ConfigJson, "List config"))
+                .Single((collection) => collection.Id == "items");
+            var rebasedItem = listItems[0] is JsonObject originalListItem
+                ? originalListItem.DeepClone().AsObject()
+                : throw new InvalidOperationException("List Runtime item must be an object.");
+            var originalBoundaryRuntime = JsonPath.RequiredObject(
+                    rebasedItem,
+                    "listItemInputs",
+                    "List Item boundary Runtime")
+                .DeepClone();
+            var idMappings = StructuredCollectionItemIdentity.RebaseNestedItems(
+                rebasedItem,
+                listCollectionDefinition);
+            Equal(0, idMappings.Count);
+            True(JsonNode.DeepEquals(
+                originalBoundaryRuntime,
+                JsonPath.RequiredObject(
+                    rebasedItem,
+                    "listItemInputs",
+                    "Rebased List Item boundary Runtime")));
+
             var listRuntimeLabels = listSurface.GetVisualDescendants()
                 .OfType<TextBlock>()
                 .Select((text) => text.Text ?? "")
@@ -6951,10 +6978,85 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
             nestedRuntimeButtons[1].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             Dispatcher.UIThread.RunJobs();
             _ = RequiredField(listSurface, "sampleText");
+            nestedRuntimeButtons[2].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            _ = RequiredField(listSurface, "buttonInputs");
 
             Equal(1, ActionButtons(listSurface, "Duplicate item").Count);
             Equal(1, ActionButtons(listSurface, "Delete").Count);
             Equal(1, ActionButtons(listSurface, "Add item").Count);
+            ActionButtons(listSurface, "Add item").Single()
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            var previewController = typeof(MainWindow)
+                .GetField("_previewController", BindingFlags.Instance | BindingFlags.NonPublic)
+                ?.GetValue(window) as EditorPreviewController
+                ?? throw new InvalidOperationException("Missing Preview controller.");
+            var selectedNode = Required(WindowSession(window).SelectedNode);
+            var effectiveListPreview = previewController.ApplyDesignPreviewTransientTestValues(
+                selectedNode,
+                JsonPath.ParseRequiredObject(listSettings.DesignPreviewJson, "List Design Preview"));
+            var effectiveListItemCount = DesignPreviewTestValues.CollectionItems(
+                effectiveListPreview,
+                listCollectionDefinition).Count;
+            if (effectiveListItemCount != listItems.Count + 1)
+            {
+                var inputSession = typeof(EditorPreviewController)
+                    .GetField("_designInputsPanel", BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?.GetValue(previewController)
+                    ?? throw new InvalidOperationException("Missing Design Preview input session.");
+                var transientScopes = typeof(ComponentPreviewInputSession)
+                    .GetField(
+                        "_transientCollectionTestValuesByScope",
+                        BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?.GetValue(inputSession) as System.Collections.IDictionary;
+                var scopeKeys = transientScopes is null
+                    ? ""
+                    : string.Join(
+                        ",",
+                        transientScopes.Keys.Cast<object>().Select((key) => key.ToString()));
+                throw new InvalidOperationException(
+                    $"List add stored {effectiveListItemCount} items instead of {listItems.Count + 1}; "
+                    + $"selected={selectedNode?.Kind}:{selectedNode?.Id}; scopes={scopeKeys}.");
+            }
+            listSurface = SelectComponent("component_project_foqn_s2_list");
+            var addedItemLabels = listSurface.GetVisualDescendants()
+                .OfType<TextBlock>()
+                .Select((text) => text.Text ?? "")
+                .Where((label) =>
+                    label.StartsWith("Item ", StringComparison.Ordinal)
+                    && int.TryParse(label.AsSpan(5), out _))
+                .ToList();
+            SequenceEqual(
+                Enumerable.Range(1, listItems.Count + 1).Select((index) => $"Item {index}"),
+                addedItemLabels);
+            Equal("1", RequiredField(listSurface, "activeSet").Value);
+            Equal("normal", RequiredField(listSurface, "state").Value);
+            SequenceEqual(
+                ["Set 1", "Set 2", "Set 3"],
+                listSurface.GetVisualDescendants()
+                    .OfType<TextBlock>()
+                    .Select((text) => text.Text ?? "")
+                    .Where((label) => label.StartsWith("Set ", StringComparison.Ordinal)));
+
+            ActionButtons(listSurface, "Duplicate item").Last()
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            listSurface = SelectComponent("component_project_foqn_s2_list");
+            Equal(
+                listItems.Count + 2,
+                listSurface.GetVisualDescendants()
+                    .OfType<TextBlock>()
+                    .Count((text) =>
+                        text.Text?.StartsWith("Item ", StringComparison.Ordinal) == true
+                        && int.TryParse(text.Text.AsSpan(5), out _)));
+            Equal("1", RequiredField(listSurface, "activeSet").Value);
+            Equal("normal", RequiredField(listSurface, "state").Value);
+            Equal(1, ActionButtons(listSurface, "Delete").Count);
+            True(ActionButtons(listSurface, "Move up").Last().IsEnabled);
+            ActionButtons(listSurface, "Move up").Last()
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
 
             window.Hide();
         }, CancellationToken.None).GetAwaiter().GetResult();
@@ -10550,7 +10652,9 @@ static void RuntimeInputOwnerStorePreservesCurrentDocuments()
             database.Production,
             operations);
         var nodes = Descendants(database.LoadProjectTree()).ToList();
-        var module = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Module);
+        var module = nodes.Single((node) =>
+            node.Kind == ProjectTreeNodeKind.Module
+            && node.Id == "module_core_chat");
         var moduleVariant = module.Children.First((node) => node.Kind == ProjectTreeNodeKind.ModuleVariant);
         var componentClass = nodes.First((node) => node.Kind == ProjectTreeNodeKind.ComponentClass);
         var componentVariant = componentClass.Children.First((node) => node.Kind == ProjectTreeNodeKind.ComponentVariant);
@@ -10596,14 +10700,48 @@ static void RuntimeInputOwnerStorePreservesCurrentDocuments()
         var afterReads = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, afterReads);
 
+        var semanticallyEquivalentModulePreview = new JsonObject(
+            JsonPath.ParseRequiredObject(
+                    moduleSource.RuntimePreviewJson,
+                    "Module Design Preview")
+                .Reverse()
+                .Select((property) =>
+                    KeyValuePair.Create(property.Key, property.Value?.DeepClone())));
+        var reorderedModulePreviewJson = semanticallyEquivalentModulePreview.ToJsonString();
+        True(reorderedModulePreviewJson != moduleSource.RuntimePreviewJson);
+        True(JsonNode.DeepEquals(
+            JsonNode.Parse(reorderedModulePreviewJson),
+            JsonNode.Parse(moduleSource.RuntimePreviewJson)));
         store.SaveDesignPreviewJsonAsync(
             moduleSource,
-            moduleSource.RuntimePreviewJson).GetAwaiter().GetResult();
+            reorderedModulePreviewJson).GetAwaiter().GetResult();
         Equal(moduleSource.RuntimePreviewJson, database.GetModuleSettings(module.Id).DesignPreviewJson);
         store.SaveDesignPreviewJsonAsync(
             componentSource,
             componentSource.RuntimePreviewJson).GetAwaiter().GetResult();
         Equal(componentSource.RuntimePreviewJson, database.GetComponentClassSettings(componentClass.Id).DesignPreviewJson);
+        var afterEquivalentWrites = SHA256.HashData(File.ReadAllBytes(temporary));
+        SequenceEqual(before, afterEquivalentWrites);
+
+        var changedModulePreview = JsonPath.ParseRequiredObject(
+            moduleSource.RuntimePreviewJson,
+            "Changed Module Design Preview");
+        changedModulePreview["headerSubtitle"] = "away";
+        store.SaveDesignPreviewJsonAsync(
+            moduleSource,
+            changedModulePreview.ToJsonString()).GetAwaiter().GetResult();
+        Equal(
+            "away",
+            JsonPath.RequiredString(
+                JsonPath.ParseRequiredObject(
+                    database.GetModuleSettings(module.Id).DesignPreviewJson,
+                    "Persisted changed Module Design Preview"),
+                "headerSubtitle",
+                "Persisted changed Module Design Preview"));
+        store.SaveDesignPreviewJsonAsync(
+            moduleSource,
+            moduleSource.RuntimePreviewJson).GetAwaiter().GetResult();
+        Equal(moduleSource.RuntimePreviewJson, database.GetModuleSettings(module.Id).DesignPreviewJson);
         Throws<InvalidOperationException>(() =>
             store.SaveDesignPreviewJsonAsync(
                 instanceSource,

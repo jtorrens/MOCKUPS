@@ -136,6 +136,7 @@ public static class StructuredCollectionItemIdentity
                      new JsonObject()))
         {
             if (input.StructuredCollection is { } nested
+                && nested.CanEditStructure
                 && runtimeContract[nested.JsonKey] is JsonArray nestedItems)
             {
                 ValidateCollectionTargets(nestedItems, nested, $"{path}.{nested.JsonKey}", paths);
@@ -144,7 +145,7 @@ public static class StructuredCollectionItemIdentity
         foreach (var collection in RuntimeInputDefinitionReader.ReadCollections(
                      runtimeContract,
                      new JsonObject(),
-                     includeHidden: true))
+                     includeHidden: true).Where((collection) => collection.CanEditStructure))
         {
             if (runtimeContract[collection.JsonKey] is not JsonArray items)
             {
@@ -177,7 +178,7 @@ public static class StructuredCollectionItemIdentity
                      runtimeContract,
                      new JsonObject()))
         {
-            if (input.StructuredCollection is { } nested)
+            if (input.StructuredCollection is { CanEditStructure: true } nested)
             {
                 foreach (var item in (runtimeContract[nested.JsonKey] as JsonArray)
                              ?.OfType<JsonObject>() ?? [])
@@ -189,7 +190,7 @@ public static class StructuredCollectionItemIdentity
         foreach (var nested in RuntimeInputDefinitionReader.ReadCollections(
                      runtimeContract,
                      new JsonObject(),
-                     includeHidden: true))
+                     includeHidden: true).Where((collection) => collection.CanEditStructure))
         {
             foreach (var item in (runtimeContract[nested.JsonKey] as JsonArray)
                          ?.OfType<JsonObject>() ?? [])
@@ -235,21 +236,51 @@ public static class StructuredCollectionItemIdentity
         JsonObject runtimeContract,
         Dictionary<string, string> mappings)
     {
-        foreach (var input in RuntimeInputDefinitionReader.ReadInputs(
-                     runtimeContract,
-                     new JsonObject()))
+        var inputCollections = RuntimeInputDefinitionReader.ReadInputs(
+                runtimeContract,
+                new JsonObject())
+            .Where((input) => input.StructuredCollection is not null)
+            .Select((input) => input.StructuredCollection!)
+            .ToList();
+        var declaredCollections = RuntimeInputDefinitionReader.ReadCollections(
+                runtimeContract,
+                new JsonObject(),
+                includeHidden: true)
+            .ToList();
+        foreach (var structuredCollection in inputCollections
+                     .Where((collection) => collection.CanEditStructure))
         {
-            if (input.StructuredCollection is { } structuredCollection)
-            {
-                RebaseCollectionItems(runtimeContract, structuredCollection, mappings);
-            }
+            RebaseCollectionItems(runtimeContract, structuredCollection, mappings);
         }
-        foreach (var collection in RuntimeInputDefinitionReader.ReadCollections(
-                     runtimeContract,
-                     new JsonObject(),
-                     includeHidden: true))
+        foreach (var collection in declaredCollections.Where((collection) =>
+                     collection.CanEditStructure))
         {
             RebaseCollectionItems(runtimeContract, collection, mappings);
+        }
+        foreach (var collection in inputCollections.Concat(declaredCollections))
+        {
+            RebaseParentItemIds(runtimeContract, collection, mappings);
+        }
+    }
+
+    private static void RebaseParentItemIds(
+        JsonObject runtimeContract,
+        RuntimeInputCollectionDefinition collection,
+        IReadOnlyDictionary<string, string> mappings)
+    {
+        if (string.IsNullOrWhiteSpace(collection.UiParentCollectionJsonKey)
+            || string.IsNullOrWhiteSpace(collection.UiParentItemIdJsonKey))
+        {
+            return;
+        }
+        foreach (var item in (runtimeContract[collection.JsonKey] as JsonArray)
+                     ?.OfType<JsonObject>() ?? [])
+        {
+            var previous = item[collection.UiParentItemIdJsonKey]?.GetValue<string>() ?? "";
+            if (mappings.TryGetValue(previous, out var next))
+            {
+                item[collection.UiParentItemIdJsonKey] = next;
+            }
         }
     }
 

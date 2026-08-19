@@ -263,6 +263,121 @@ static void StructuredCollectionMutationsAreAtomicDocuments()
     Equal("message-a", animation["tracks"]![0]!["targetId"]!.GetValue<string>());
     Equal("untyped-a", animation["tracks"]![1]!["targetId"]!.GetValue<string>());
 
+    var fixedRuntimeCollection = RuntimeCollectionDefinition(
+        "fixedItems",
+        canEditStructure: false);
+    var editableRuntimeCollection = RuntimeCollectionDefinition(
+        "editableItems",
+        canEditStructure: true);
+    var editableChildRuntimeCollection = RuntimeCollectionDefinition(
+        "editableChildren",
+        canEditStructure: true,
+        uiParentCollectionJsonKey: "editableItems",
+        uiParentItemIdJsonKey: "parentId");
+    var runtimeOwner = new RuntimeInputCollectionDefinition(
+        "runtimeOwner",
+        "Runtime owners",
+        "runtimeOwners",
+        "Runtime owner",
+        [],
+        ItemRuntimeContractJsonKey: "runtime");
+    var runtimeContent = new JsonObject
+    {
+        ["runtimeOwners"] = new JsonArray
+        {
+            RuntimeOwner("owner-a", "editable-a"),
+            RuntimeOwner("owner-b", "editable-b"),
+        },
+    };
+    StructuredCollectionItemIdentity.ValidateUniqueTargetIds(
+        runtimeContent["runtimeOwners"]!.AsArray(),
+        runtimeOwner,
+        "Runtime boundary fixture");
+    var runtimeDuplicate = StructuredCollectionMutationEngine.Apply(
+        runtimeContent,
+        new JsonObject
+        {
+            ["schemaVersion"] = 2,
+            ["tracks"] = new JsonArray(),
+        },
+        runtimeOwner,
+        new DuplicateStructuredCollectionItem(
+            new StructuredCollectionAddress("runtimeOwners", [], "runtimeOwners"),
+            "owner-a"));
+    var duplicatedRuntime = runtimeDuplicate.Item!["runtime"]!.AsObject();
+    Equal(
+        "primary",
+        duplicatedRuntime["fixedItems"]![0]!["id"]!.GetValue<string>());
+    var duplicatedEditableId = duplicatedRuntime["editableItems"]![0]!["id"]!.GetValue<string>();
+    True(duplicatedEditableId != "editable-a");
+    True(!runtimeDuplicate.IdentityChange.RebasedItemIds.ContainsKey("primary"));
+    Equal(
+        duplicatedEditableId,
+        runtimeDuplicate.IdentityChange.RebasedItemIds["editable-a"]);
+    Equal(
+        duplicatedEditableId,
+        duplicatedRuntime["editableChildren"]![0]!["parentId"]!.GetValue<string>());
+    True(
+        duplicatedRuntime["editableChildren"]![0]!["id"]!.GetValue<string>()
+        != "editable-a-child");
+
+    JsonObject RuntimeOwner(string id, string editableId) => new()
+    {
+        ["id"] = id,
+        ["runtime"] = new JsonObject
+        {
+            ["inputs"] = new JsonArray(),
+            ["collections"] = new JsonArray
+            {
+                RuntimeCollectionContract(fixedRuntimeCollection),
+                RuntimeCollectionContract(editableRuntimeCollection),
+                RuntimeCollectionContract(editableChildRuntimeCollection),
+            },
+            ["fixedItems"] = new JsonArray
+            {
+                new JsonObject { ["id"] = "primary" },
+            },
+            ["editableItems"] = new JsonArray
+            {
+                new JsonObject { ["id"] = editableId },
+            },
+            ["editableChildren"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["id"] = $"{editableId}-child",
+                    ["parentId"] = editableId,
+                },
+            },
+        },
+    };
+
+    static RuntimeInputCollectionDefinition RuntimeCollectionDefinition(
+        string id,
+        bool canEditStructure,
+        string uiParentCollectionJsonKey = "",
+        string uiParentItemIdJsonKey = "") => new(
+            id,
+            id,
+            id,
+            "Item",
+            [],
+            UiParentCollectionJsonKey: uiParentCollectionJsonKey,
+            UiParentItemIdJsonKey: uiParentItemIdJsonKey,
+            CanEditStructure: canEditStructure);
+
+    static JsonObject RuntimeCollectionContract(RuntimeInputCollectionDefinition collection) => new()
+    {
+        ["id"] = collection.Id,
+        ["label"] = collection.Label,
+        ["jsonKey"] = collection.JsonKey,
+        ["itemLabel"] = collection.ItemLabel,
+        ["fields"] = new JsonArray(),
+        ["canEditStructure"] = collection.CanEditStructure,
+        ["uiParentCollectionJsonKey"] = collection.UiParentCollectionJsonKey,
+        ["uiParentItemIdJsonKey"] = collection.UiParentItemIdJsonKey,
+    };
+
     static JsonObject TestTrack(string id, string targetId) => new()
     {
         ["id"] = id,

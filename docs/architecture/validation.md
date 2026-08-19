@@ -131,7 +131,8 @@ proving simultaneous outgoing and incoming Motion, stable owner-local frames
   repeated navigation across existing items without reparenting controls,
   active-set edits resolving the selected embedded Actor,
   horizontal containment with compact Runtime navigation, and collision-free
-  rebasing of nested target ids;
+  rebasing of editable nested target ids while fixed boundary-local ids remain
+  unchanged across parent add/duplicate operations;
 - protected Default Variants remaining persistently locked while their edit
   unlock is session-only, with a new database session restoring the lock
   without a startup write;

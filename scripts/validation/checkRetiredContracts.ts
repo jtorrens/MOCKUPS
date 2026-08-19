@@ -30,4 +30,16 @@ export function checkRetiredContracts(
       );
     }
   }
+
+  const packageScripts = (JSON.parse(context.readText("package.json")) as {
+    scripts?: Record<string, string>;
+  }).scripts ?? {};
+  for (const [name, command] of Object.entries(packageScripts)) {
+    if (name.startsWith("legacy:") || command.includes("archive/react-legacy")) {
+      context.addViolation(
+        "package.json",
+        `script '${name}' must not expose the retired React implementation`,
+      );
+    }
+  }
 }

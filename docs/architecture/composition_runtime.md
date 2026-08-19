@@ -127,6 +127,12 @@ missing Button values. When a Module derives such a collection from a
 Component, its fixture also declares the exact Module-config path to that
 source Component Variant before resolving child-relative paths.
 
+Those structural ids are local to the embedded Runtime boundary. Duplicating
+an editable parent gives the parent a new stable id but preserves every fixed
+structural collection and its internal references exactly; only collections
+whose contract declares editable structure participate in the parent's generic
+identity rebase, animation-target map and global uniqueness validation.
+
 The parent persists only the projected Runtime object (for Icon Row,
 `buttonInputs`). Structural items, Variant references and local Overrides stay
 exclusively in the selected child Variant slot. Fields declared `calculated`

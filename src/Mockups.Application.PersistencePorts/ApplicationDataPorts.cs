@@ -338,6 +338,7 @@ public interface IRuntimeInputOwnerStore
     ComponentClassSettings GetComponentVariantSettings(
         EditorShell.ProjectTreeNode variantNode);
     JsonObject GetComponentVariantRuntimeInputs(string variantReference);
+    string GetComponentClassDesignPreviewJson(string componentClassId);
     ModuleSettings GetModuleSettings(string moduleId);
     ModuleSettings GetModuleVariantSettings(
         EditorShell.ProjectTreeNode variantNode);
