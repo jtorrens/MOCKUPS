@@ -34,6 +34,8 @@ test("every retired cleanup artifact selects only its absence contract", () => {
   for (const file of [
     "scripts/migratePaletteColorReferencesToIds.mjs",
     "scripts/icon-themes/download-lucide-theme.cjs",
+    "scripts/icon-themes/material-rounded-200/editor_audio.svg",
+    "scripts/icon-themes/_licenses/material-symbols-svg-200-apache-2.0.txt",
     "assets/icons/components/Render Presets.svg",
     "docs/WINDOWS_PC_TEST_HANDOFF.md",
   ]) {

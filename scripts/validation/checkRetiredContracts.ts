@@ -14,6 +14,8 @@ export const retiredPaths = [
   "scripts/icon-themes/add-editor-material-icons-prompt-weight.cjs",
   "scripts/icon-themes/download-lucide-theme.cjs",
   "scripts/icon-themes/download-material-symbols-theme.cjs",
+  "scripts/icon-themes/material-rounded-200",
+  "scripts/icon-themes/_licenses/material-symbols-svg-200-apache-2.0.txt",
   "scripts/migratePaletteColorReferencesToIds.mjs",
   "spikes/desktop-editor-shell",
   "src/debug-server",
