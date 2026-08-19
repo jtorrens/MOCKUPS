@@ -6,6 +6,45 @@ import { bubbleComponentToRenderable } from "../../src/desktop-preview/bubbleCom
 import type { RenderableNode } from "../../src/visual/renderable/types.js";
 import { committedComponentFixture } from "./committedComponentFixture.js";
 
+test("Bubble maps resolved alignment to tail side and visibility independently of message state", () => {
+  const source = committedComponentFixture("bubble", "default_copy");
+  const config = JSON.parse(source.configJson) as {
+    bubble: {
+      incomingAlignment: string;
+      surfaceSlot: { overrides: Record<string, unknown> };
+    };
+  };
+  const overrides = config.bubble.surfaceSlot.overrides as {
+    surface?: { tail?: Record<string, unknown> };
+  };
+  config.bubble.surfaceSlot.overrides = {
+    ...overrides,
+    surface: {
+      ...overrides.surface,
+      tail: {
+        ...overrides.surface?.tail,
+        enabled: true,
+      },
+    },
+  };
+  const preview = JSON.parse(source.designPreviewJson) as Record<string, unknown>;
+  preview.state = "incoming";
+
+  for (const expected of [
+    { alignment: "left", enabled: true, side: "left" },
+    { alignment: "center", enabled: false, side: "left" },
+    { alignment: "right", enabled: true, side: "right" },
+  ] as const) {
+    config.bubble.incomingAlignment = expected.alignment;
+    source.configJson = JSON.stringify(config);
+    source.designPreviewJson = JSON.stringify(preview);
+    const resolved = resolveBubbleComponent(source);
+    assert.equal(resolved.alignment, expected.alignment);
+    assert.equal(resolved.surface.tail.enabled, expected.enabled);
+    assert.equal(resolved.surface.tail.side, expected.side);
+  }
+});
+
 test("Bubble preserves the resolved Surface tail enabled value for every message direction", () => {
   const source = committedComponentFixture("bubble");
   const config = JSON.parse(source.configJson) as {
@@ -22,6 +61,30 @@ test("Bubble preserves the resolved Surface tail enabled value for every message
     source.designPreviewJson = JSON.stringify(preview);
     assert.equal(resolveBubbleComponent(source).surface.tail.enabled, false, state);
   }
+});
+
+test("Bubble strictly validates every state alignment", () => {
+  const missing = committedComponentFixture("bubble");
+  const missingConfig = JSON.parse(missing.configJson) as {
+    bubble: Record<string, unknown>;
+  };
+  delete missingConfig.bubble.systemAlignment;
+  missing.configJson = JSON.stringify(missingConfig);
+  assert.throws(
+    () => resolveBubbleComponent(missing),
+    /component\.bubble\.systemAlignment/,
+  );
+
+  const invalid = committedComponentFixture("bubble");
+  const invalidConfig = JSON.parse(invalid.configJson) as {
+    bubble: Record<string, unknown>;
+  };
+  invalidConfig.bubble.outgoingAlignment = "leading";
+  invalid.configJson = JSON.stringify(invalidConfig);
+  assert.throws(
+    () => resolveBubbleComponent(invalid),
+    /Unsupported bubble alignment leading/,
+  );
 });
 
 test("Bubble reserves message text for an Avatar anchored to any Bubble edge", () => {

@@ -122,8 +122,8 @@ test("Chat List wallpaper toggle either uses the exact App wallpaper or Theme ba
       },
     },
     modes: {
-      light: { wallpaper: { color: "gray_100" } },
-      dark: { wallpaper: { color: "gray_000" } },
+      light: { wallpaper: { color: "palette_project_foqn_s2_gray_100" } },
+      dark: { wallpaper: { color: "palette_project_foqn_s2_gray_000" } },
     },
   });
   assert.match(

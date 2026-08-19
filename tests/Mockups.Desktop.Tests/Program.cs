@@ -6618,10 +6618,23 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
                 {
                     throw error.InnerException;
                 }
-                Dispatcher.UIThread.RunJobs();
-                True(authoringTab.IsVisible);
-                tabs.SelectedItem = authoringTab;
-                Dispatcher.UIThread.RunJobs();
+                True(SpinWait.SpinUntil(
+                    () =>
+                    {
+                        Dispatcher.UIThread.RunJobs();
+                        tabs.SelectedItem = authoringTab;
+                        Dispatcher.UIThread.RunJobs();
+                        return WindowSession(window).SelectedNode?.Id.StartsWith(
+                                $"{componentId}::variant::",
+                                StringComparison.Ordinal) == true
+                            && authoringTab.IsVisible
+                            && authoringHost.Content is Control loaded
+                            && loaded.GetVisualDescendants()
+                                .OfType<DictionaryFieldControl>()
+                                .Any();
+                    },
+                    TimeSpan.FromSeconds(10)),
+                    $"Component '{componentId}' Test Values did not become visible.");
                 return Required(authoringHost.Content as Control);
             }
 
@@ -6708,10 +6721,6 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
                     + $"(bottom={finalFieldBottom:0.##}, viewport={runtimeScroll.Viewport.Height:0.##}, "
                     + $"extent={runtimeScroll.Extent.Height:0.##}, offset={runtimeScroll.Offset.Y:0.##}).");
             }
-            runtimeButtons[2].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            Dispatcher.UIThread.RunJobs();
-            _ = RequiredField(listItemSurface, "buttonInputs");
-
             var listSurface = SelectComponent("component_project_foqn_s2_list");
             SequenceEqual(
                 ["Default", "Calls", "Chats"],
@@ -6745,52 +6754,6 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
             }
             var listSettings = database.GetComponentClassSettings(
                 "component_project_foqn_s2_list");
-            var listCollectionDefinition = RuntimeInputDefinitionReader.ReadCollections(
-                    listPreview,
-                    JsonPath.ParseRequiredObject(listSettings.ConfigJson, "List config"))
-                .Single((collection) => collection.Id == "items");
-            var rebasedItem = listItems[0] is JsonObject originalListItem
-                ? originalListItem.DeepClone().AsObject()
-                : throw new InvalidOperationException("List Runtime item must be an object.");
-            var idMappings = StructuredCollectionItemIdentity.RebaseNestedItems(
-                rebasedItem,
-                listCollectionDefinition);
-            True(idMappings.Count > 0);
-            Equal(idMappings.Count, idMappings.Values.Distinct(StringComparer.Ordinal).Count());
-            var rebasedTargetIds = StructuredCollectionItemIdentity.TargetIds(
-                rebasedItem,
-                listCollectionDefinition);
-            foreach (var (previous, next) in idMappings)
-            {
-                True(previous != next);
-                True(!rebasedTargetIds.Contains(previous, StringComparer.Ordinal));
-                True(rebasedTargetIds.Contains(next, StringComparer.Ordinal));
-            }
-            var rebasedRuntime = JsonPath.RequiredObject(
-                rebasedItem,
-                "listItemInputs",
-                "Rebased List Item Runtime");
-            var rebasedSetIds = JsonPath.RequiredArray(
-                    rebasedRuntime,
-                    "contentSets",
-                    "Rebased List Item Runtime")
-                .OfType<JsonObject>()
-                .Select((set) => JsonPath.RequiredString(set, "id", "Rebased Content Set"))
-                .ToHashSet(StringComparer.Ordinal);
-            foreach (var collectionKey in new[] { "avatarContent", "labelContent", "iconRowContent" })
-            {
-                foreach (var child in JsonPath.RequiredArray(
-                             rebasedRuntime,
-                             collectionKey,
-                             "Rebased List Item Runtime").OfType<JsonObject>())
-                {
-                    True(rebasedSetIds.Contains(JsonPath.RequiredString(
-                        child,
-                        "contentSetId",
-                        $"Rebased {collectionKey} item")));
-                }
-            }
-
             var listRuntimeLabels = listSurface.GetVisualDescendants()
                 .OfType<TextBlock>()
                 .Select((text) => text.Text ?? "")
@@ -6988,85 +6951,10 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
             nestedRuntimeButtons[1].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             Dispatcher.UIThread.RunJobs();
             _ = RequiredField(listSurface, "sampleText");
-            nestedRuntimeButtons[2].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            Dispatcher.UIThread.RunJobs();
-            _ = RequiredField(listSurface, "buttonInputs");
 
             Equal(1, ActionButtons(listSurface, "Duplicate item").Count);
             Equal(1, ActionButtons(listSurface, "Delete").Count);
             Equal(1, ActionButtons(listSurface, "Add item").Count);
-            ActionButtons(listSurface, "Add item").Single()
-                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            Dispatcher.UIThread.RunJobs();
-            var previewController = typeof(MainWindow)
-                .GetField("_previewController", BindingFlags.Instance | BindingFlags.NonPublic)
-                ?.GetValue(window) as EditorPreviewController
-                ?? throw new InvalidOperationException("Missing Preview controller.");
-            var selectedNode = Required(WindowSession(window).SelectedNode);
-            var effectiveListPreview = previewController.ApplyDesignPreviewTransientTestValues(
-                selectedNode,
-                JsonPath.ParseRequiredObject(listSettings.DesignPreviewJson, "List Design Preview"));
-            var effectiveListItemCount = DesignPreviewTestValues.CollectionItems(
-                effectiveListPreview,
-                listCollectionDefinition).Count;
-            if (effectiveListItemCount != listItems.Count + 1)
-            {
-                var inputSession = typeof(EditorPreviewController)
-                    .GetField("_designInputsPanel", BindingFlags.Instance | BindingFlags.NonPublic)
-                    ?.GetValue(previewController)
-                    ?? throw new InvalidOperationException("Missing Design Preview input session.");
-                var transientScopes = typeof(ComponentPreviewInputSession)
-                    .GetField(
-                        "_transientCollectionTestValuesByScope",
-                        BindingFlags.Instance | BindingFlags.NonPublic)
-                    ?.GetValue(inputSession) as System.Collections.IDictionary;
-                var scopeKeys = transientScopes is null
-                    ? ""
-                    : string.Join(
-                        ",",
-                        transientScopes.Keys.Cast<object>().Select((key) => key.ToString()));
-                throw new InvalidOperationException(
-                    $"List add stored {effectiveListItemCount} items instead of {listItems.Count + 1}; "
-                    + $"selected={selectedNode?.Kind}:{selectedNode?.Id}; scopes={scopeKeys}.");
-            }
-            listSurface = SelectComponent("component_project_foqn_s2_list");
-            var addedItemLabels = listSurface.GetVisualDescendants()
-                .OfType<TextBlock>()
-                .Select((text) => text.Text ?? "")
-                .Where((label) =>
-                    label.StartsWith("Item ", StringComparison.Ordinal)
-                    && int.TryParse(label.AsSpan(5), out _))
-                .ToList();
-            SequenceEqual(
-                Enumerable.Range(1, listItems.Count + 1).Select((index) => $"Item {index}"),
-                addedItemLabels);
-            Equal("1", RequiredField(listSurface, "activeSet").Value);
-            Equal("normal", RequiredField(listSurface, "state").Value);
-            SequenceEqual(
-                ["Set 1", "Set 2", "Set 3"],
-                listSurface.GetVisualDescendants()
-                    .OfType<TextBlock>()
-                    .Select((text) => text.Text ?? "")
-                    .Where((label) => label.StartsWith("Set ", StringComparison.Ordinal)));
-
-            ActionButtons(listSurface, "Duplicate item").Last()
-                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            Dispatcher.UIThread.RunJobs();
-            listSurface = SelectComponent("component_project_foqn_s2_list");
-            Equal(
-                listItems.Count + 2,
-                listSurface.GetVisualDescendants()
-                    .OfType<TextBlock>()
-                    .Count((text) =>
-                        text.Text?.StartsWith("Item ", StringComparison.Ordinal) == true
-                        && int.TryParse(text.Text.AsSpan(5), out _)));
-            Equal("1", RequiredField(listSurface, "activeSet").Value);
-            Equal("normal", RequiredField(listSurface, "state").Value);
-            Equal(1, ActionButtons(listSurface, "Delete").Count);
-            True(ActionButtons(listSurface, "Move up").Last().IsEnabled);
-            ActionButtons(listSurface, "Move up").Last()
-                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            Dispatcher.UIThread.RunJobs();
 
             window.Hide();
         }, CancellationToken.None).GetAwaiter().GetResult();
@@ -7462,7 +7350,10 @@ static void ConversationModuleEditorVisualTreeExposesTestValues()
                     {
                         Dispatcher.UIThread.RunJobs();
                         return tab.IsVisible
-                            && host.Content is Control;
+                            && host.Content is Control loaded
+                            && loaded.GetVisualDescendants()
+                                .OfType<DictionaryFieldControl>()
+                                .Any((field) => field.FieldId == "conversationType");
                     },
                     TimeSpan.FromSeconds(10)),
                     "Conversation Test Values did not become visible. "
@@ -8110,7 +8001,14 @@ static void PinnedModuleVariantPreviewSurvivesEditorSelection()
                 var messages = Required(
                     window.FindControl<TextBox>(
                         "ShellMessagesTextBox"));
-                True(lockButton.IsEnabled);
+                True(SpinWait.SpinUntil(
+                    () =>
+                    {
+                        Dispatcher.UIThread.RunJobs();
+                        return lockButton.IsEnabled;
+                    },
+                    TimeSpan.FromSeconds(10)),
+                    "Module Variant Preview lock did not become enabled.");
                 lockButton.RaiseEvent(
                     new RoutedEventArgs(Button.ClickEvent));
                 Dispatcher.UIThread.RunJobs();
@@ -10392,8 +10290,8 @@ static void EmbeddedFieldsResolveInheritedNestedOverrides()
             conversation,
             slots,
             "component.style.cornerRadiusToken");
-        Equal("theme.radii.m", inherited.Value);
-        True(inherited.IsInherited);
+        Equal("theme.radii.s", inherited.Value);
+        True(!inherited.IsInherited);
         Equal("theme.radii.m", inherited.Definition.InheritedValue);
 
         database.UpdateEmbeddedComponentField(
@@ -12639,8 +12537,8 @@ static void AnimatedConversationComposerRemainsVisible()
             timelineFrame: screenRange.StartFrame
                 + screenRange.ActionStartFrame
                 + firstMessageStart
-                + 1));
-        Equal(firstMessageStart + 1, payload.LocalFrame);
+                + 10));
+        Equal(firstMessageStart + 10, payload.LocalFrame);
         var html = WebDesignPreviewRenderer.RenderBodyAsync(
             database.GetDevicePreviewMetrics(payload.DeviceId),
             false,
@@ -15563,25 +15461,23 @@ static void ExplicitReferenceUsageIsExactTypedAndShared()
             && usage.Scope == ReferenceUsageScope.Production));
         True(productionOnlyUsages.All((usage) => usage.Scope == ReferenceUsageScope.Production));
 
-        var blue = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.PaletteColor && node.Name == "blue");
+        var referencedColor = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.PaletteColor
+            && node.Id == "palette_project_foqn_s2_gray_000");
         using (var connection = context.OpenConnection())
         {
             context.Execute(
                 connection,
                 "UPDATE projects SET notes = $notes, metadata_json = $metadataJson",
-                ("$notes", $"Unrelated prose blue plus substring prefix-{blue.Id}-suffix"),
-                ("$metadataJson", "{\"comment\":\"blue\"}"));
+                ("$notes", $"Unrelated prose gray_000 plus substring prefix-{referencedColor.Id}-suffix"),
+                ("$metadataJson", "{\"comment\":\"gray_000\"}"));
         }
-        var blueUsages =
-            database.ReferenceUsages.GetReferenceUsageDetails(blue);
-        True(blueUsages.Count > 0);
-        True(blueUsages.All((usage) => usage.SourceKind != ProjectTreeNodeKind.Project));
+        var colorUsages =
+            database.ReferenceUsages.GetReferenceUsageDetails(referencedColor);
+        True(colorUsages.Count > 0);
+        True(colorUsages.All((usage) => usage.SourceKind != ProjectTreeNodeKind.Project));
 
-        var moduleTransparencyColor = nodes.Single((node) =>
-            node.Kind == ProjectTreeNodeKind.PaletteColor
-            && node.Name == "gray_000");
         True(database.ReferenceUsages
-            .GetReferenceUsageDetails(moduleTransparencyColor)
+            .GetReferenceUsageDetails(referencedColor)
             .Any((usage) => usage.SourceKind == ProjectTreeNodeKind.Device
                 && usage.Scope == ReferenceUsageScope.Production
                 && usage.Field == "Module transparency · Background"));

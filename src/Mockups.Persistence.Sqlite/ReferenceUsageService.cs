@@ -174,11 +174,11 @@ internal sealed class ReferenceUsageService :
 
         using (var command = connection.CreateCommand())
         {
-            command.CommandText = "SELECT id, project_id, token FROM palette_colors";
+            command.CommandText = "SELECT id, project_id FROM palette_colors";
             using var reader = command.ExecuteReader();
             while (reader.Read())
             {
-                catalog.Add(ProjectTreeNodeKind.PaletteColor, reader.GetString(2), reader.GetString(0), reader.GetString(1));
+                catalog.Add(ProjectTreeNodeKind.PaletteColor, reader.GetString(0), reader.GetString(0), reader.GetString(1));
             }
         }
 

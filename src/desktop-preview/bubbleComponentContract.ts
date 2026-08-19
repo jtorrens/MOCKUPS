@@ -10,6 +10,7 @@ import type { SurfaceDesignContract } from "./surfaceComponentContract.js";
 import type { TextBoxDesignContract } from "./textBoxComponentContract.js";
 
 export type BubbleState = "incoming" | "system" | "outgoing";
+export type BubbleAlignment = "left" | "center" | "right";
 export type BubbleMediaType = "none" | "image" | "video" | "audio";
 export type BubbleMediaPosition = "top" | "bottom" | "left" | "right";
 export type BubbleStatusState = "none" | "sent" | "delivered" | "read";
@@ -62,6 +63,7 @@ export interface BubbleStatusContract {
 export interface BubbleDesignContract {
   id: string;
   state: BubbleState;
+  alignment: BubbleAlignment;
   surface: SurfaceDesignContract;
   textBox: TextBoxDesignContract;
   mediaSlot: BubbleMediaSlotContract;

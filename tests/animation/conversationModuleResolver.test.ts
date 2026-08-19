@@ -2,6 +2,11 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import Database from "better-sqlite3";
 import type { DesignPreviewPayload } from "../../src/desktop-preview/designPreviewPayload.js";
+import {
+  numberToken,
+  renderableVisualBounds,
+  renderScale,
+} from "../../src/desktop-preview/componentRenderableCommon.js";
 import { conversationModuleToRenderable } from "../../src/desktop-preview/conversationModuleRenderable.js";
 import {
   conversationMessageActorIdentityVisible,
@@ -428,6 +433,102 @@ test("animated media playing is always finite", () => {
   assert.equal(at(99).playbackFrame, 3);
 });
 
+test("Conversation positions each message from the resolved Bubble alignment", () => {
+  const source = committedConversationPayload(true);
+  const config = JSON.parse(source.configJson) as {
+    conversation: {
+      bubbleSlot: { overrides: Record<string, unknown> };
+      screenGutter: string;
+    };
+  };
+  config.conversation.bubbleSlot.overrides = {
+    ...config.conversation.bubbleSlot.overrides,
+    bubble: {
+      incomingAlignment: "right",
+      systemAlignment: "left",
+      outgoingAlignment: "center",
+    },
+  };
+  source.configJson = JSON.stringify(config);
+  setConversationFrame(source, 239);
+
+  const bubbles = findNodes(
+    conversationModuleToRenderable(source),
+    "component.bubble",
+  );
+  assert.equal(bubbles.length, 3);
+  const [incoming, outgoing, system] = bubbles.map(renderableVisualBounds);
+  const [gutterToken] = config.conversation.screenGutter.split("|");
+  const gutter = numberToken(source, gutterToken!) * renderScale(source);
+  const screenLeft = source.previewFrame.screenX;
+  const screenRight = screenLeft + source.previewFrame.screenWidth;
+  const screenCenter = screenLeft + source.previewFrame.screenWidth / 2;
+
+  assert.ok(Math.abs(system!.x - (screenLeft + gutter)) < 0.001);
+  assert.ok(Math.abs((incoming!.x + incoming!.width) - (screenRight - gutter)) < 0.001);
+  assert.ok(Math.abs((outgoing!.x + outgoing!.width / 2) - screenCenter) < 0.001);
+});
+
+test("Conversation reserves outgoing Bubble final height throughout write-on", () => {
+  const source = committedConversationPayload(true);
+  const config = JSON.parse(source.configJson) as {
+    conversation: {
+      bubbleSlot: { overrides: Record<string, unknown> };
+      showHeader: boolean;
+      showStatusBar: boolean;
+    };
+  };
+  config.conversation.bubbleSlot.overrides = {
+    ...config.conversation.bubbleSlot.overrides,
+    bubble: {
+      outgoingAlignment: "center",
+    },
+  };
+  config.conversation.showHeader = false;
+  config.conversation.showStatusBar = false;
+  source.configJson = JSON.stringify(config);
+  source.previewFrame = {
+    ...source.previewFrame,
+    canvasHeight: 70,
+    screenHeight: 70,
+  };
+  const runtime = JSON.parse(source.designPreviewJson) as {
+    messages: Array<Record<string, unknown>>;
+  };
+  const outgoing = runtime.messages.find(({ direction }) => direction === "outgoing")!;
+  runtime.messages = [
+    {
+      ...outgoing,
+      id: "write-on-outgoing",
+      text: "A long outgoing message that wraps across several lines while it is written.",
+      delayAfterPreviousFrames: 0,
+      postWriteOnHoldFrames: 0,
+      writeOnTiming: {
+        mode: "fixed",
+        fixedFrames: 40,
+        paceToken: "theme.motion.naturalPace.normal",
+      },
+    },
+  ];
+  source.designPreviewJson = JSON.stringify(runtime);
+
+  setConversationFrame(source, 12);
+  const during = findNodes(
+    conversationModuleToRenderable(source),
+    "component.bubble",
+  ).map(renderableVisualBounds);
+  setConversationFrame(source, 40);
+  const complete = findNodes(
+    conversationModuleToRenderable(source),
+    "component.bubble",
+  ).map(renderableVisualBounds);
+
+  assert.equal(during.length, 1);
+  assert.equal(complete.length, 1);
+  assert.ok(during[0]!.height < complete[0]!.height);
+  assert.ok(Math.abs(during[0]!.y - complete[0]!.y) < 0.001);
+});
+
 test("Conversation writes outgoing text in Bubble when its composer slots are absent", () => {
   const source = committedConversationPayload(true);
   const config = JSON.parse(source.configJson) as {
@@ -456,9 +557,9 @@ test("Conversation writes outgoing text in Bubble when its composer slots are ab
   }];
   source.designPreviewJson = JSON.stringify(runtime);
   const instance = JSON.parse(source.instanceJson) as Record<string, unknown>;
-  instance.context = { screenFrame: 1 };
+  instance.context = { screenFrame: 10 };
   source.instanceJson = JSON.stringify(instance);
-  source.localFrame = 1;
+  source.localFrame = 10;
 
   const resolved = resolveConversationModule(source);
   assert.equal(resolved.composer.keyboardVisible, false);
@@ -711,6 +812,20 @@ function committedConversationPayload(keepMessages = false): DesignPreviewPayloa
   }
 }
 
+function setConversationFrame(source: DesignPreviewPayload, frame: number) {
+  const instance = JSON.parse(source.instanceJson) as Record<string, unknown>;
+  instance.context = { screenFrame: frame };
+  source.instanceJson = JSON.stringify(instance);
+  source.localFrame = frame;
+  source.screenTiming = {
+    screenFrame: frame,
+    transitionFrameCount: 0,
+    actionDelayFrames: 0,
+    actionDurationFrames: 240,
+    actionStartFrame: 0,
+  };
+}
+
 function findNode(root: RenderableNode, id: string): RenderableNode | undefined {
   if (root.id === id) return root;
   for (const child of root.children ?? []) {
@@ -718,6 +833,13 @@ function findNode(root: RenderableNode, id: string): RenderableNode | undefined 
     if (match) return match;
   }
   return undefined;
+}
+
+function findNodes(root: RenderableNode, id: string): RenderableNode[] {
+  return [
+    ...(root.id === id ? [root] : []),
+    ...(root.children ?? []).flatMap((child) => findNodes(child, id)),
+  ];
 }
 
 function findRootOverlay(root: RenderableNode): RenderableNode | undefined {

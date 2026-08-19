@@ -15,6 +15,7 @@ import {
   requiredStringPair,
 } from "./componentResolverCommon.js";
 import type {
+  BubbleAlignment,
   BubbleDesignContract,
   BubbleMediaPosition,
   BubbleMediaType,
@@ -59,6 +60,24 @@ export function resolveBubbleComponent(
   const maxWidth = screenPercentToDesignWidth(payload, maxWidthPercent);
   const padding = requiredStringPair(bubble, "padding", "component.bubble.padding");
   const state = bubbleState(requiredString(preview, "state", "component.bubble.input.state"));
+  const alignments: Record<BubbleState, BubbleAlignment> = {
+    incoming: bubbleAlignment(requiredString(
+      bubble,
+      "incomingAlignment",
+      "component.bubble.incomingAlignment",
+    )),
+    system: bubbleAlignment(requiredString(
+      bubble,
+      "systemAlignment",
+      "component.bubble.systemAlignment",
+    )),
+    outgoing: bubbleAlignment(requiredString(
+      bubble,
+      "outgoingAlignment",
+      "component.bubble.outgoingAlignment",
+    )),
+  };
+  const alignment = alignments[state];
   const actorIdentityVisible = typeof preview.actorIdentityVisible === "boolean"
     ? preview.actorIdentityVisible
     : true;
@@ -188,15 +207,16 @@ export function resolveBubbleComponent(
   return {
     id: "component.bubble",
     state,
+    alignment,
     maxWidth,
     padding: { xToken: padding.first, yToken: padding.second },
-    surface: bubbleSurfaceForState(
+    surface: bubbleSurfaceForAlignment(
       resolveSurfaceComponentAtSize(
         surfaceConfig,
         { width: maxWidth, height: 1 },
         "component.bubble.surface",
       ),
-      state,
+      alignment,
     ),
     textBox: {
       ...resolvedTextBox,
@@ -451,19 +471,24 @@ function initialsForName(value: string) {
   return initials || "A";
 }
 
-function bubbleSurfaceForState(
+function bubbleSurfaceForAlignment(
   surface: BubbleDesignContract["surface"],
-  state: BubbleState,
+  alignment: BubbleAlignment,
 ): SurfaceDesignContract {
-  const side: SurfaceDesignContract["tail"]["side"] =
-    state === "outgoing" ? "right" : "left";
+  const side: SurfaceDesignContract["tail"]["side"] = alignment === "right" ? "right" : "left";
   return {
     ...surface,
     tail: {
       ...surface.tail,
+      enabled: surface.tail.enabled && alignment !== "center",
       side,
     },
   };
+}
+
+function bubbleAlignment(value: string): BubbleAlignment {
+  if (value === "left" || value === "center" || value === "right") return value;
+  throw new Error(`Unsupported bubble alignment ${value}`);
 }
 
 function palettePair(

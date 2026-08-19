@@ -100,10 +100,13 @@
       },
       "incomingBackground": "gray_020|gray_080",
       "incomingText": "gray_010|gray_100",
+      "incomingAlignment": "left",
       "systemBackground": "gray_030|gray_070",
       "systemText": "gray_010|gray_100",
+      "systemAlignment": "center",
       "outgoingBackground": "aqua_green|aqua_green",
       "outgoingText": "gray_100|gray_100",
+      "outgoingAlignment": "right",
       "padding": "theme.spacing.l|theme.spacing.m",
       "mediaType": "none",
       "imageMediaSlot": {
@@ -219,10 +222,13 @@
         },
         "incomingBackground": "gray_020|gray_080",
         "incomingText": "gray_010|gray_100",
+        "incomingAlignment": "left",
         "systemBackground": "gray_030|gray_070",
         "systemText": "gray_010|gray_100",
+        "systemAlignment": "center",
         "outgoingBackground": "aqua_green|aqua_green",
         "outgoingText": "gray_100|gray_100",
+        "outgoingAlignment": "right",
         "padding": "theme.spacing.l|theme.spacing.m",
         "mediaType": "none",
         "imageMediaSlot": {
@@ -371,10 +377,13 @@
           },
           "incomingBackground": "gray_090|gray_010",
           "incomingText": "gray_010|gray_100",
+          "incomingAlignment": "left",
           "systemBackground": "gray_070|gray_050",
           "systemText": "gray_010|gray_100",
+          "systemAlignment": "center",
           "outgoingBackground": "aqua_green|aqua_green",
           "outgoingText": "gray_100|gray_100",
+          "outgoingAlignment": "right",
           "padding": "theme.spacing.m|theme.spacing.m",
           "mediaType": "image",
           "imageMediaSlot": {
@@ -1391,6 +1400,57 @@
       "embeddedSlot": null
     },
     {
+      "id": "component.bubble.incomingAlignment",
+      "label": "Incoming alignment",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "bubble",
+        "incomingAlignment"
+      ],
+      "defaultValue": "left",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "left",
+          "label": "Left",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "center",
+          "label": "Center",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "right",
+          "label": "Right",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
       "id": "component.bubble.incomingBackground",
       "label": "Incoming background",
       "valueKind": "PaletteColorPair",
@@ -1645,6 +1705,57 @@
         "label": "Video media",
         "recordClassId": "component.media"
       }
+    },
+    {
+      "id": "component.bubble.outgoingAlignment",
+      "label": "Outgoing alignment",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "bubble",
+        "outgoingAlignment"
+      ],
+      "defaultValue": "right",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "left",
+          "label": "Left",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "center",
+          "label": "Center",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "right",
+          "label": "Right",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
     },
     {
       "id": "component.bubble.outgoingBackground",
@@ -3170,6 +3281,57 @@
       }
     },
     {
+      "id": "component.bubble.systemAlignment",
+      "label": "System alignment",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "bubble",
+        "systemAlignment"
+      ],
+      "defaultValue": "center",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "left",
+          "label": "Left",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "center",
+          "label": "Center",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "right",
+          "label": "Right",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
       "id": "component.bubble.systemBackground",
       "label": "System background",
       "valueKind": "PaletteColorPair",
@@ -3384,11 +3546,45 @@
         ]
       },
       {
+        "id": "bubbleAlignment",
+        "label": "Alignment",
+        "subtitle": "Incoming, system and outgoing placement",
+        "icon": "alignment",
+        "order": 50,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "bubbleAlignment",
+            "label": "Alignment",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.bubble.incomingAlignment",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.bubble.systemAlignment",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.bubble.outgoingAlignment",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
         "id": "bubbleColors",
         "label": "Colors",
         "subtitle": "Incoming, system and outgoing palette colors",
         "icon": "color",
-        "order": 50,
+        "order": 60,
         "visible": true,
         "defaultOpen": false,
         "groups": [
@@ -3437,7 +3633,7 @@
         "label": "Actor label",
         "subtitle": "Optional embedded actor label",
         "icon": "label",
-        "order": 60,
+        "order": 70,
         "visible": true,
         "defaultOpen": false,
         "groups": [
@@ -3476,7 +3672,7 @@
         "label": "Avatar",
         "subtitle": "Optional embedded actor avatar",
         "icon": "avatar",
-        "order": 70,
+        "order": 80,
         "visible": true,
         "defaultOpen": false,
         "groups": [
@@ -3515,7 +3711,7 @@
         "label": "Status",
         "subtitle": "Message status text and state icons",
         "icon": "status",
-        "order": 80,
+        "order": 90,
         "visible": true,
         "defaultOpen": false,
         "groupLayout": "separatedSections",

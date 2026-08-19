@@ -1,8 +1,13 @@
 import type { RenderableBox, RenderableNode } from "../visual/renderable/types.js";
 import { avatarComponentToRenderableAt } from "./avatarComponentRenderable.js";
 import { resolveAvatarComponentFromRecords } from "./avatarComponentResolver.js";
+import { bubbleComponentToRenderable } from "./bubbleComponentRenderable.js";
+import { resolveBubbleComponent } from "./bubbleComponentResolver.js";
 import { componentVariantConfig, embeddedComponentConfig } from "./componentPreviewDefaults.js";
-import { componentClassToRenderable } from "./componentRenderableBoundary.js";
+import {
+  componentClassToRenderable,
+  resolveComponentRenderable,
+} from "./componentRenderableBoundary.js";
 import {
   optionalNumber,
   optionalString,
@@ -239,56 +244,61 @@ function messageNodes(
     "bubbleSlot",
     "module.core.chat.bubbleSlot",
   );
-  const bubbleNode = (message: ConversationMessageContract, writeOnTrigger: boolean) => childRenderable(
-    payload,
-    componentBaseConfigs,
-    "bubble",
-    "component.bubble",
-    requiredString(bubbleSlot, "variantReference", "module.core.chat.bubbleSlot"),
-    {
-      state: message.state,
-      sampleText: message.text,
-      actor: message.actor,
-      actorIdentityVisible: message.actorIdentityVisible,
-      mediaType: message.mediaType,
-      mediaSource: message.mediaSource,
-      viewportSize: message.viewportSize,
-      mediaScale: message.mediaScale,
-      mediaOffset: message.mediaOffset,
-      isPlaying: message.isPlaying,
-      currentTimeSeconds: message.playbackTimeSeconds,
-      durationSeconds: message.durationSeconds,
-      playbackMode: message.playbackMode,
-      isFullScreen: message.isFullScreen,
-      fullScreenTransition: message.fullScreenTransition,
-      fullframeOrientation: message.fullframeOrientation,
-      controlsElapsedMs: message.controlsElapsedMs,
-      motionElapsedMs: message.fullScreenMotionElapsedMs,
-      maxWidth: optionalNumber(conversation, "bubbleMaxWidth", 66),
-      textSizeToken: message.isTypingIndicator ? timing.typingIndicatorSizeToken : undefined,
-      textAnimationMode: message.isTypingIndicator ? timing.typingIndicatorAnimation : undefined,
-      textAnimationElapsedMs: message.isTypingIndicator ? motionElapsedMs : undefined,
-      typingIndicator: message.isTypingIndicator,
-      writeOnTrigger,
-      writeOnFrame: message.writeOnFrame,
-      writeOnDurationFrames: message.writeOnDurationFrames,
-      statusState: message.statusVisible ? message.statusState : "none",
-      statusText: message.statusVisible ? message.statusText : "",
-    },
-    embeddedComponentConfig(
-      componentBaseConfigs,
-      bubbleSlot,
-      "bubble",
-      "module.core.chat.bubbleSlot",
-    ),
-  );
+  const bubbleNode = (message: ConversationMessageContract, writeOnTrigger: boolean) =>
+    resolveComponentRenderable(
+      childPayload(
+        payload,
+        "bubble",
+        "component.bubble",
+        requiredString(bubbleSlot, "variantReference", "module.core.chat.bubbleSlot"),
+        {
+          state: message.state,
+          sampleText: message.text,
+          actor: message.actor,
+          actorIdentityVisible: message.actorIdentityVisible,
+          mediaType: message.mediaType,
+          mediaSource: message.mediaSource,
+          viewportSize: message.viewportSize,
+          mediaScale: message.mediaScale,
+          mediaOffset: message.mediaOffset,
+          isPlaying: message.isPlaying,
+          currentTimeSeconds: message.playbackTimeSeconds,
+          durationSeconds: message.durationSeconds,
+          playbackMode: message.playbackMode,
+          isFullScreen: message.isFullScreen,
+          fullScreenTransition: message.fullScreenTransition,
+          fullframeOrientation: message.fullframeOrientation,
+          controlsElapsedMs: message.controlsElapsedMs,
+          motionElapsedMs: message.fullScreenMotionElapsedMs,
+          maxWidth: optionalNumber(conversation, "bubbleMaxWidth", 66),
+          textSizeToken: message.isTypingIndicator ? timing.typingIndicatorSizeToken : undefined,
+          textAnimationMode: message.isTypingIndicator ? timing.typingIndicatorAnimation : undefined,
+          textAnimationElapsedMs: message.isTypingIndicator ? motionElapsedMs : undefined,
+          typingIndicator: message.isTypingIndicator,
+          writeOnTrigger,
+          writeOnFrame: message.writeOnFrame,
+          writeOnDurationFrames: message.writeOnDurationFrames,
+          statusState: message.statusVisible ? message.statusState : "none",
+          statusText: message.statusVisible ? message.statusText : "",
+        },
+        embeddedComponentConfig(
+          componentBaseConfigs,
+          bubbleSlot,
+          "bubble",
+          "module.core.chat.bubbleSlot",
+        ),
+      ),
+      resolveBubbleComponent,
+      bubbleComponentToRenderable,
+    );
   const entries = messages.map((message) => {
-    const node = bubbleNode(message, message.writeOnTrigger);
+    const bubble = bubbleNode(message, message.writeOnTrigger);
+    const node = bubble.renderable;
     const bounds = renderableVisualBounds(node);
     const finalBounds = message.state === "outgoing" && message.writeOnTrigger
-      ? renderableVisualBounds(bubbleNode(message, false))
+      ? renderableVisualBounds(bubbleNode(message, false).renderable)
       : bounds;
-    return { node, bounds, finalBounds };
+    return { node, bounds, finalBounds, alignment: bubble.resolved.alignment };
   });
   const totalHeight = entries.reduce((sum, entry) => sum + entry.finalBounds.height, 0)
     + Math.max(0, entries.length - 1) * gap;
@@ -315,13 +325,13 @@ function messageNodes(
   const scrollOffset = lerp(previousOverflow, targetOverflow, scrollProgress);
   let y = top + gap - scrollOffset;
   return entries.map((entry, index) => {
-    const { node, bounds, finalBounds } = entry;
+    const { node, bounds, finalBounds, alignment } = entry;
     const message = messages[index]!;
-    const offsetX = message.state === "outgoing"
+    const offsetX = alignment === "right"
       ? screen.x + screen.width - gutter.x - (finalBounds.x + finalBounds.width)
-      : message.state === "system"
-        ? screen.x + screen.width / 2 - (bounds.x + bounds.width / 2)
-        : screen.x + gutter.x - bounds.x;
+      : alignment === "center"
+        ? screen.x + screen.width / 2 - (finalBounds.x + finalBounds.width / 2)
+        : screen.x + gutter.x - finalBounds.x;
     const translated = translateRenderableNode(node, { x: offsetX, y: y - bounds.y });
     y += finalBounds.height + gap;
     if (!translated.box || !message.presenceMotionFrame || !message.presenceMotionKind) {
@@ -370,15 +380,32 @@ function childRenderable(
   designPreviewPatch: JsonRecord,
   resolvedConfig?: JsonRecord,
 ) {
-  const config = resolvedConfig
-    ?? componentVariantConfig(componentBaseConfigs, componentType, variantReference);
-  return componentClassToRenderable(authoringVariantPayload({
+  return componentClassToRenderable(childPayload(
+    payload,
+    componentType,
+    childRecordClassId,
+    variantReference,
+    designPreviewPatch,
+    resolvedConfig
+      ?? componentVariantConfig(componentBaseConfigs, componentType, variantReference),
+  ));
+}
+
+function childPayload(
+  payload: DesignPreviewPayload,
+  componentType: string,
+  childRecordClassId: string,
+  variantReference: string,
+  designPreviewPatch: JsonRecord,
+  config: JsonRecord,
+) {
+  return authoringVariantPayload({
     ...payload,
     kind: "componentClass",
     componentType,
     configJson: JSON.stringify(config),
     designPreviewJson: JSON.stringify(designPreviewPatch),
-  }, variantReference, childRecordClassId));
+  }, variantReference, childRecordClassId);
 }
 
 function headerNode(
