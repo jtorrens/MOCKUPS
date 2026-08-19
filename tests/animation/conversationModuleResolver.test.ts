@@ -26,6 +26,24 @@ function payload(
     const { writeOnDurationFrames = 0, ...authoredMessage } = message;
     return {
       delayAfterPreviousFrames: 0,
+      statusVisible: false,
+      statusState: "none",
+      statusText: "",
+      mediaType: "none",
+      mediaSource: "",
+      viewportSize: "240|160",
+      mediaScale: 1,
+      mediaOffset: "0|0",
+      isPlaying: false,
+      currentTimeSeconds: 0,
+      durationSeconds: 12,
+      playbackMode: "once",
+      playDurationFrames: 72,
+      isFullScreen: false,
+      fullScreenTransition: false,
+      fullframeOrientation: "portrait",
+      controlsElapsedMs: 0,
+      visibleDurationFrames: 0,
       writeOnTiming: {
         mode: "fixed",
         fixedFrames: writeOnDurationFrames,
@@ -548,7 +566,9 @@ test("Conversation writes outgoing text in Bubble when its composer slots are ab
   const runtime = JSON.parse(source.designPreviewJson) as {
     messages: Array<Record<string, unknown>>;
   };
+  const outgoing = runtime.messages.find(({ direction }) => direction === "outgoing")!;
   runtime.messages = [{
+    ...outgoing,
     id: "outgoing",
     direction: "outgoing",
     text: "Writing in Bubble",
@@ -628,6 +648,50 @@ test("Conversation rejects unsupported prepared Runtime timing options", () => {
     runtime[key] = "legacy";
     source.designPreviewJson = JSON.stringify(runtime);
     assert.throws(() => resolveConversationModule(source), expected, key);
+  }
+});
+
+test("Conversation requires every authored field in each prepared Runtime message", () => {
+  const requiredKeys = [
+    "direction",
+    "text",
+    "delayAfterPreviousFrames",
+    "writeOnTiming",
+    "postWriteOnHoldFrames",
+    "statusVisible",
+    "statusState",
+    "statusText",
+    "mediaType",
+    "mediaSource",
+    "viewportSize",
+    "mediaScale",
+    "mediaOffset",
+    "isPlaying",
+    "currentTimeSeconds",
+    "durationSeconds",
+    "playbackMode",
+    "playDurationFrames",
+    "isFullScreen",
+    "fullScreenTransition",
+    "fullframeOrientation",
+    "controlsElapsedMs",
+    "visibleDurationFrames",
+  ];
+  const source = committedConversationPayload(true);
+  const complete = JSON.parse(source.designPreviewJson) as {
+    messages: Array<Record<string, unknown>>;
+  };
+  const first = complete.messages[0]!;
+  for (const key of requiredKeys) {
+    const runtime = structuredClone(complete);
+    runtime.messages[0] = { ...first };
+    delete runtime.messages[0]![key];
+    source.designPreviewJson = JSON.stringify(runtime);
+    assert.throws(
+      () => resolveConversationModule(source),
+      new RegExp(`module\\.core\\.chat\\.messages\\[0\\].*${key}`),
+      key,
+    );
   }
 });
 

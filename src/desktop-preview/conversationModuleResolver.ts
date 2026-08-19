@@ -1,9 +1,9 @@
 import {
   optionalBoolean,
   optionalNumber,
-  optionalString,
   parseObject,
   requiredBoolean,
+  requiredNumber,
   requiredPossiblyEmptyString,
   requiredRecord,
   requiredString,
@@ -171,6 +171,8 @@ export function resolveConversationModuleFrame(
   const animation = optionalObject(instance, "animation", "Preview instance envelope");
   const screenFrame = rootScreenFrame(payload);
   const themeTokens = parseObject(payload.themeTokensJson);
+  const messages = requiredObjectArray(preview, "messages", "module.conversation runtime");
+  messages.forEach(validateConversationMessageRuntime);
   const timeline = new RuntimeOwnerTimeline(
     preview,
     preview,
@@ -192,7 +194,6 @@ export function resolveConversationModuleFrame(
     preview.headerSubtitle,
   ).value;
 
-  const messages = requiredObjectArray(preview, "messages", "module.conversation runtime");
   preview.messages = messages.map((value, index) => {
     const message = { ...value };
     const targetId = requiredString(
@@ -240,7 +241,11 @@ export function resolveConversationModuleFrame(
     const textOriginFrame = timeline.screenFrame("text", targetId, 0);
     const textUsesTrackCompletion = timeline.usesTrackCompletion("text", targetId);
     const postHold = direction === "outgoing"
-      ? Math.max(0, optionalNumber(message, "postWriteOnHoldFrames", 0))
+      ? Math.max(0, requiredNumber(
+          message,
+          "postWriteOnHoldFrames",
+          `module.core.chat.messages[${index}].postWriteOnHoldFrames`,
+        ))
       : 0;
     message.timelineRevealAtFrame = timeline.itemOwnerFrame(
       targetId,
@@ -257,8 +262,13 @@ export function resolveConversationModuleFrame(
     message.composerWriteOnDurationFrames = textUsesTrackCompletion
       ? 0
       : Math.max(0, textCompletionFrame - textOriginFrame);
+    const messageText = requiredPossiblyEmptyString(
+      message,
+      "text",
+      `module.core.chat.messages[${index}].text`,
+    );
     message.writeOnFrame = naturalWriteOnFrame(
-      optionalString(message, "text"),
+      messageText,
       message.writeOnTiming,
       Math.max(0, timeline.temporalLocalFrame(
         "text",
@@ -267,7 +277,7 @@ export function resolveConversationModuleFrame(
         message.hasExplicitPresenceEnd ? presenceEndFrame : undefined,
       )),
       optionalNumber(message, "writeOnDurationFrames", 0),
-      `${targetId}:${optionalString(message, "text")}`,
+      `${targetId}:${messageText}`,
     );
     const composerElapsedFrame = Math.max(
       0,
@@ -279,11 +289,11 @@ export function resolveConversationModuleFrame(
       ),
     );
     message.composerWriteOnFrame = naturalWriteOnFrame(
-      optionalString(message, "text"),
+      messageText,
       message.writeOnTiming,
       composerElapsedFrame,
       optionalNumber(message, "composerWriteOnDurationFrames", 0),
-      `${targetId}:${optionalString(message, "text")}`,
+      `${targetId}:${messageText}`,
     );
     message.statusVisible = resolve("statusVisible", message.statusVisible).value;
     message.statusState = resolve("status", message.statusState).value;
@@ -300,7 +310,11 @@ export function resolveConversationModuleFrame(
           message.hasExplicitPresenceEnd ? presenceEndFrame : undefined,
         ) - playing.sourceKeyframeFrame,
       );
-      const duration = Math.max(1, Math.floor(optionalNumber(message, "playDurationFrames", 1)));
+      const duration = Math.max(1, Math.floor(requiredNumber(
+        message,
+        "playDurationFrames",
+        `module.core.chat.messages[${index}].playDurationFrames`,
+      )));
       message.isPlaying = elapsed < duration;
       message.playbackFrame = Math.min(elapsed, duration);
     }
@@ -423,9 +437,13 @@ function conversationMessages(preview: JsonRecord): ResolvedConversationMessage[
     return {
       actor: optionalObject(message, "actor", path),
       state: requiredString(message, "direction", path),
-      text: optionalString(message, "text"),
-      statusState: optionalString(message, "statusState") || "none",
-      statusText: optionalString(message, "statusText"),
+      text: requiredPossiblyEmptyString(message, "text", `${path}.text`),
+      statusState: conversationStatusState(requiredString(
+        message,
+        "statusState",
+        `${path}.statusState`,
+      )),
+      statusText: requiredPossiblyEmptyString(message, "statusText", `${path}.statusText`),
       composerWriteOnDurationFrames: Math.max(
         0,
         Math.floor(optionalNumber(
@@ -469,25 +487,47 @@ function conversationMessages(preview: JsonRecord): ResolvedConversationMessage[
       ),
       writeOnTrigger: false,
       writeOnFrame: Math.max(0, Math.floor(optionalNumber(message, "writeOnFrame", 0))),
-      statusVisible: optionalBoolean(message, "statusVisible")
-        || optionalString(message, "statusState") !== "none",
+      statusVisible: requiredBoolean(message, "statusVisible", `${path}.statusVisible`),
       visibleAtFrame: 0,
-      mediaType: messageMediaType(message),
-      mediaSource: optionalString(message, "mediaSource"),
-      viewportSize: optionalString(message, "viewportSize") || "240|160",
-      mediaScale: optionalNumber(message, "mediaScale", 1),
-      mediaOffset: optionalString(message, "mediaOffset") || "0|0",
-      isPlaying: optionalBoolean(message, "isPlaying"),
-      playbackMode: playbackMode(optionalString(message, "playbackMode")),
+      mediaType: messageMediaType(message, path),
+      mediaSource: requiredPossiblyEmptyString(message, "mediaSource", `${path}.mediaSource`),
+      viewportSize: requiredString(message, "viewportSize", `${path}.viewportSize`),
+      mediaScale: requiredNumber(message, "mediaScale", `${path}.mediaScale`),
+      mediaOffset: requiredString(message, "mediaOffset", `${path}.mediaOffset`),
+      isPlaying: requiredBoolean(message, "isPlaying", `${path}.isPlaying`),
+      playbackMode: playbackMode(requiredString(
+        message,
+        "playbackMode",
+        `${path}.playbackMode`,
+      )),
       playbackFrame: Math.max(0, Math.floor(optionalNumber(message, "playbackFrame", 0))),
-      durationSeconds: Math.max(1, optionalNumber(message, "durationSeconds", 12)),
-      isFullScreen: optionalBoolean(message, "isFullScreen"),
-      fullScreenTransition: optionalBoolean(message, "fullScreenTransition"),
+      durationSeconds: Math.max(
+        1,
+        requiredNumber(message, "durationSeconds", `${path}.durationSeconds`),
+      ),
+      isFullScreen: requiredBoolean(message, "isFullScreen", `${path}.isFullScreen`),
+      fullScreenTransition: requiredBoolean(
+        message,
+        "fullScreenTransition",
+        `${path}.fullScreenTransition`,
+      ),
       fullScreenMotionElapsedMs: optionalNumber(message, "motionElapsedMs", 0),
-      fullframeOrientation: optionalString(message, "fullframeOrientation") || "portrait",
-      controlsElapsedMs: optionalNumber(message, "controlsElapsedMs", 0),
+      fullframeOrientation: conversationFullframeOrientation(requiredString(
+        message,
+        "fullframeOrientation",
+        `${path}.fullframeOrientation`,
+      )),
+      controlsElapsedMs: requiredNumber(
+        message,
+        "controlsElapsedMs",
+        `${path}.controlsElapsedMs`,
+      ),
       isTypingIndicator: false,
-      currentTimeSeconds: optionalNumber(message, "currentTimeSeconds", 0),
+      currentTimeSeconds: requiredNumber(
+        message,
+        "currentTimeSeconds",
+        `${path}.currentTimeSeconds`,
+      ),
     };
   });
 }
@@ -611,15 +651,68 @@ function composerState(
   };
 }
 
-function messageMediaType(message: JsonRecord): ResolvedConversationMessage["mediaType"] {
-  const mediaType = optionalString(message, "mediaType");
+function messageMediaType(
+  message: JsonRecord,
+  path: string,
+): ResolvedConversationMessage["mediaType"] {
+  const mediaType = requiredString(message, "mediaType", `${path}.mediaType`);
   return mediaType === "image" || mediaType === "video" || mediaType === "audio"
     ? mediaType
-    : "none";
+    : mediaType === "none"
+      ? "none"
+      : unsupportedConversationValue("media type", mediaType);
 }
 
 function playbackMode(value: string): ResolvedConversationMessage["playbackMode"] {
-  return value === "loop" ? "loop" : "once";
+  if (value === "once" || value === "loop") return value;
+  return unsupportedConversationValue("playback mode", value);
+}
+
+function conversationStatusState(value: string) {
+  if (value === "none" || value === "sent" || value === "delivered" || value === "read") {
+    return value;
+  }
+  return unsupportedConversationValue("status state", value);
+}
+
+function conversationFullframeOrientation(value: string) {
+  if (value === "portrait" || value === "landscape") return value;
+  return unsupportedConversationValue("fullframe orientation", value);
+}
+
+function unsupportedConversationValue(label: string, value: string): never {
+  throw new Error(`Unsupported Conversation ${label} ${value}`);
+}
+
+function validateConversationMessageRuntime(message: JsonRecord, index: number) {
+  const path = `module.core.chat.messages[${index}]`;
+  requiredString(message, "direction", `${path}.direction`);
+  requiredPossiblyEmptyString(message, "text", `${path}.text`);
+  requiredNumber(message, "delayAfterPreviousFrames", `${path}.delayAfterPreviousFrames`);
+  requiredRecord(message, "writeOnTiming", `${path}.writeOnTiming`);
+  requiredNumber(message, "postWriteOnHoldFrames", `${path}.postWriteOnHoldFrames`);
+  requiredBoolean(message, "statusVisible", `${path}.statusVisible`);
+  conversationStatusState(requiredString(message, "statusState", `${path}.statusState`));
+  requiredPossiblyEmptyString(message, "statusText", `${path}.statusText`);
+  messageMediaType(message, path);
+  requiredPossiblyEmptyString(message, "mediaSource", `${path}.mediaSource`);
+  requiredString(message, "viewportSize", `${path}.viewportSize`);
+  requiredNumber(message, "mediaScale", `${path}.mediaScale`);
+  requiredString(message, "mediaOffset", `${path}.mediaOffset`);
+  requiredBoolean(message, "isPlaying", `${path}.isPlaying`);
+  requiredNumber(message, "currentTimeSeconds", `${path}.currentTimeSeconds`);
+  requiredNumber(message, "durationSeconds", `${path}.durationSeconds`);
+  playbackMode(requiredString(message, "playbackMode", `${path}.playbackMode`));
+  requiredNumber(message, "playDurationFrames", `${path}.playDurationFrames`);
+  requiredBoolean(message, "isFullScreen", `${path}.isFullScreen`);
+  requiredBoolean(message, "fullScreenTransition", `${path}.fullScreenTransition`);
+  conversationFullframeOrientation(requiredString(
+    message,
+    "fullframeOrientation",
+    `${path}.fullframeOrientation`,
+  ));
+  requiredNumber(message, "controlsElapsedMs", `${path}.controlsElapsedMs`);
+  requiredNumber(message, "visibleDurationFrames", `${path}.visibleDurationFrames`);
 }
 
 function messagePlaybackTimeSeconds(

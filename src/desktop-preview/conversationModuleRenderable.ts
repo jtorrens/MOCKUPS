@@ -116,6 +116,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
         {
           text: composer.text,
           currentCharacter: composer.currentCharacter,
+          trigger: composer.currentCharacter > 0,
           motionElapsedMs: contract.motionElapsedMs,
         },
         embeddedComponentConfig(
