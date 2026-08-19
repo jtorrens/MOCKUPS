@@ -212,6 +212,29 @@ test("Component Stack resolves ordered Replace and Overlay states deterministica
   assert.deepEqual(resolved.slots[0]?.alternatives.map((item) => item.id), ["password", "notification"]);
 });
 
+test("Component Stack prepares an initial clock for every embedded Runtime action", () => {
+  const state = alternative("media", "stub::variant::media", true);
+  state.inputs = {
+    id: "media",
+    trigger: false,
+    inputs: [{ id: "trigger", jsonKey: "trigger" }],
+    actions: [{
+      id: "fullScreen",
+      label: "Full screen",
+      playInputId: "trigger",
+      timeJsonKey: "motionElapsedMs",
+      timeUnit: "milliseconds",
+      completionBehavior: "reset",
+    }],
+  };
+
+  const resolved = resolveComponentStackComponent(payload([state]));
+  assert.equal(
+    resolved.slots[0]?.alternatives[0]?.component?.inputs.motionElapsedMs,
+    0,
+  );
+});
+
 test("Component Stack uses a child Variant boundary Motion for both entry and exit", () => {
   const source = payload([
     alternative("list", "stub::variant::list", true),

@@ -340,6 +340,7 @@ function resolveAnimatedActions(
       || actionPlayFieldId
       || optionalString(playDefinition ?? {}, "id");
     if (!Object.hasOwn(values, playJsonKey)) continue;
+    if (!Object.hasOwn(values, timeJsonKey)) values[timeJsonKey] = 0;
     if (!playFieldId) {
       throw new Error(`Embedded runtime action '${id}' play value '${playJsonKey}' has no stable field id`);
     }
