@@ -13,6 +13,7 @@ import {
 import {
   boundedCenterBox,
   boxEdgeIntrusionInsets,
+  boxEdgeReservationInsets,
   cssColorWithAlpha,
   iconTokenStyle,
   placeChild,
@@ -134,11 +135,22 @@ export function bubbleComponentToRenderable(
       )
     : undefined;
   const labelIntrusion = boxEdgeIntrusionInsets(baseSurfaceBox, baseLabelBox);
+  const baseAvatarBox = bubble.avatarSlot.reserveTextSpace && bubble.avatarSlot.avatar
+    ? placeChild(
+        baseSurfaceBox,
+        {
+          width: bubble.avatarSlot.avatar.size * scale,
+          height: bubble.avatarSlot.avatar.size * scale,
+        },
+        scalePlacement(bubble.avatarSlot.placement, scale),
+      )
+    : undefined;
+  const avatarReservation = boxEdgeReservationInsets(baseSurfaceBox, baseAvatarBox);
   const contentPadding = {
-    left: paddingX,
-    top: paddingY + labelIntrusion.top,
-    right: paddingX,
-    bottom: paddingY + labelIntrusion.bottom,
+    left: paddingX + avatarReservation.left,
+    top: paddingY + labelIntrusion.top + avatarReservation.top,
+    right: paddingX + avatarReservation.right,
+    bottom: paddingY + labelIntrusion.bottom + avatarReservation.bottom,
     gapX: paddingX,
     gapY: paddingY,
   };

@@ -16,6 +16,7 @@ export {
 export {
   boundedCenterBox,
   boxEdgeIntrusionInsets,
+  boxEdgeReservationInsets,
   centerBox,
   expandBox,
   expandBoxXY,

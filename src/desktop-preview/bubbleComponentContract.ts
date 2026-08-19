@@ -33,6 +33,7 @@ export interface BubbleActorLabelSlotContract {
 
 export interface BubbleAvatarSlotContract {
   showAvatar: boolean;
+  reserveTextSpace: boolean;
   placement: AlignmentPlacementContract;
   avatar?: AvatarDesignContract;
 }

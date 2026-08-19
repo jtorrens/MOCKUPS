@@ -199,6 +199,46 @@ export function boxEdgeIntrusionInsets(
   };
 }
 
+/**
+ * Returns the content space occupied by a child anchored at a container edge.
+ * Unlike `boxEdgeIntrusionInsets`, the child may be completely inside the
+ * container. A centred child reserves no edge because it does not establish an
+ * edge-owned content boundary.
+ */
+export function boxEdgeReservationInsets(
+  container: RenderableBox,
+  child: RenderableBox | undefined,
+) {
+  if (!child) {
+    return { left: 0, top: 0, right: 0, bottom: 0 };
+  }
+
+  const containerRight = container.x + container.width;
+  const containerBottom = container.y + container.height;
+  const childRight = child.x + child.width;
+  const childBottom = child.y + child.height;
+  const overlapsX = childRight > container.x && child.x < containerRight;
+  const overlapsY = childBottom > container.y && child.y < containerBottom;
+  const childCenterX = child.x + child.width / 2;
+  const childCenterY = child.y + child.height / 2;
+  const containerCenterX = container.x + container.width / 2;
+  const containerCenterY = container.y + container.height / 2;
+  return {
+    left: overlapsX && childCenterX < containerCenterX
+      ? Math.max(0, Math.min(containerRight, childRight) - container.x)
+      : 0,
+    top: overlapsY && childCenterY < containerCenterY
+      ? Math.max(0, Math.min(containerBottom, childBottom) - container.y)
+      : 0,
+    right: overlapsX && childCenterX > containerCenterX
+      ? Math.max(0, containerRight - Math.max(container.x, child.x))
+      : 0,
+    bottom: overlapsY && childCenterY > containerCenterY
+      ? Math.max(0, containerBottom - Math.max(container.y, child.y))
+      : 0,
+  };
+}
+
 export function translateBox(box: RenderableBox, origin: { x: number; y: number }): RenderableBox {
   return {
     x: box.x + origin.x,

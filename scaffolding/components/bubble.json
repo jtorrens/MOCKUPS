@@ -123,6 +123,7 @@
         "variantReference": "component_project_foqn_s2_avatar::variant::default",
         "overrides": {},
         "showAvatar": false,
+        "reserveTextSpace": false,
         "placement": {
           "mode": "outsideEdge",
           "alignX": 0,
@@ -241,6 +242,7 @@
           "variantReference": "component_project_foqn_s2_avatar::variant::default",
           "overrides": {},
           "showAvatar": false,
+          "reserveTextSpace": false,
           "placement": {
             "mode": "outsideEdge",
             "alignX": 0,
@@ -410,6 +412,7 @@
               }
             },
             "showAvatar": true,
+            "reserveTextSpace": false,
             "placement": {
               "mode": "center",
               "alignX": 0,
@@ -1335,6 +1338,30 @@
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.bubble.avatar.reserveTextSpace",
+      "label": "Reserve message text space",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "bubble",
+        "avatarSlot",
+        "reserveTextSpace"
+      ],
+      "defaultValue": "false",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "Reserves the Avatar's overlap at a Bubble edge for message text.",
       "valuePattern": "",
       "valuePatternMessage": "",
       "embeddedSlot": null
@@ -3470,8 +3497,13 @@
                 "visible": true
               },
               {
-                "id": "component.bubble.avatar.editor",
+                "id": "component.bubble.avatar.reserveTextSpace",
                 "order": 30,
+                "visible": true
+              },
+              {
+                "id": "component.bubble.avatar.editor",
+                "order": 40,
                 "visible": true
               }
             ]

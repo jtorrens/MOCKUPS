@@ -254,6 +254,11 @@ export function resolveBubbleComponent(
     },
     avatarSlot: {
       showAvatar: avatarVisible,
+      reserveTextSpace: requiredBoolean(
+        avatarSlot,
+        "reserveTextSpace",
+        "component.bubble.avatar.reserveTextSpace",
+      ),
       placement: requiredPlacement(
         avatarSlot,
         "placement",
