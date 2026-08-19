@@ -464,6 +464,33 @@ For any editor or Preview change, exercise at least:
 Component-specific changes add an isolated Design case and a Production case
 that reaches the same owner through a Screen payload.
 
+## Windows package validation
+
+For a Windows release, or a revision that changes WebView, child-process or
+Preview transport behavior, validate from a clean `main` checkout on Windows
+10 or Windows 11 with Node.js, the .NET 10 SDK and the current Microsoft Edge
+WebView2 Runtime installed:
+
+```powershell
+npm ci
+npm run desktop:db:validate
+npm run desktop:publish:win
+Copy-Item ".\data\mockups.sqlite" ".\data\.windows-smoke.sqlite"
+& ".\out\desktop\win-x64\Mockups.Desktop.Host.exe" --db ".\data\.windows-smoke.sqlite"
+```
+
+The smoke test uses only that ignored disposable database. Confirm Design and
+Production navigation, editor-to-Preview updates, playback, timeline input,
+panel visibility restoration and routed navigation. Preview text must preserve
+Spanish punctuation and accents, `áéíóúüñ¿¡`, a single-code-point emoji and a
+multi-code-point emoji. Repeated selection changes must commit without a
+five-second Preview pause, retain the last valid Preview on failure and leave
+no MOCKUPS or Preview process after normal close.
+
+After closing, remove only `data\.windows-smoke.sqlite`, confirm the worktree is
+clean and report the tested commit, Windows version, CPU architecture, display
+scale, tool versions, command results and any screenshots or exact failures.
+
 ## Delivery gate
 
 A revision is ready for review only when:
