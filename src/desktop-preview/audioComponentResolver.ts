@@ -7,7 +7,6 @@ import { resolveAvatarComponentFromRecords } from "./avatarComponentResolver.js"
 import { resolveBadgeComponentFromRecords } from "./badgeComponentResolver.js";
 import { literalLabelPreview, resolveLabelComponentFromRecords, staticLabelFrameContext } from "./labelComponentResolver.js";
 import {
-  optionalNumber,
   optionalString,
   parseObject,
   requiredBoolean,
@@ -69,7 +68,11 @@ export function resolveAudioComponentFromRecords(
     ),
   );
   const currentTimeSeconds = normalizePlaybackTime(
-    optionalNumber(inputs, "currentTimeSeconds", 0),
+    requiredNumber(
+      inputs,
+      "currentTimeSeconds",
+      "component.audio.input.currentTimeSeconds",
+    ),
     durationSeconds,
     optionalString(inputs, "playbackMode") === "loop",
   );

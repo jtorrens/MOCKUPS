@@ -45,6 +45,16 @@ test("Audio playback resolves clamped and looped progress", () => {
   })).playback.currentTimeSeconds, 3);
 });
 
+test("Audio requires its prepared Runtime playback time", () => {
+  const source = withInputDefaults(committedComponentFixture("audio"));
+  const preview = JSON.parse(source.designPreviewJson) as Record<string, unknown>;
+  delete preview.currentTimeSeconds;
+  assert.throws(
+    () => resolveAudioComponent(withDocument(source, preview)),
+    /component\.audio\.input\.currentTimeSeconds/,
+  );
+});
+
 test("Notification display changes resolve their reflow state and source label", () => {
   const source = withInputDefaults(committedComponentFixture("notification"));
   const theme = JSON.parse(source.themeTokensJson) as {
