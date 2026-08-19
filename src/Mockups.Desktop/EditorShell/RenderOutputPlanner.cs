@@ -12,6 +12,7 @@ internal sealed record RenderOutputPlan(
 
 internal static class RenderOutputPlanner
 {
+    public const int MaximumVersion = 99_999_999;
     public static string SuggestedBaseName(string value)
     {
         var builder = new StringBuilder();
@@ -97,34 +98,70 @@ internal static class RenderOutputPlanner
                 "At least one render appearance is required.");
         }
 
-        for (var version = 1; version <= 99_999_999; version++)
+        for (var version = 1; version <= MaximumVersion; version++)
         {
-            var paths = uniqueAppearances.ToDictionary(
-                (appearance) => appearance,
-                (appearance) =>
-                {
-                    var stem = FileStem(
-                        baseName,
-                        appearance,
-                        version,
-                        versionPadding);
-                    return Path.Combine(
-                        directory,
-                        mode.Kind == "mov"
-                            ? $"{stem}.{mode.Extension}"
-                            : stem);
-                },
-                StringComparer.Ordinal);
-            if (paths.Values.All((path) =>
+            var plan = Plan(
+                rootPath,
+                relativeDirectory,
+                baseName,
+                uniqueAppearances,
+                mode,
+                version,
+                versionPadding);
+            if (plan.OutputPaths.Values.All((path) =>
                 !File.Exists(path)
                 && !Directory.Exists(path)
                 && !reserved.Contains(Path.GetFullPath(path))))
             {
-                return new RenderOutputPlan(version, paths);
+                return plan;
             }
         }
         throw new InvalidOperationException(
             "No free output version could be resolved.");
+    }
+
+    public static RenderOutputPlan Plan(
+        string rootPath,
+        string relativeDirectory,
+        string baseName,
+        IReadOnlyList<string> appearances,
+        RenderOutputModeDefinition mode,
+        int version,
+        int versionPadding)
+    {
+        var directory = RenderOutputPathSecurity.RequirePlannedDirectory(
+            rootPath,
+            relativeDirectory);
+        if (version is < 1 or > MaximumVersion)
+        {
+            throw new InvalidOperationException(
+                "The selected output version is outside the supported range.");
+        }
+        var uniqueAppearances = appearances
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+        if (uniqueAppearances.Count == 0)
+        {
+            throw new InvalidOperationException(
+                "At least one render appearance is required.");
+        }
+        var paths = uniqueAppearances.ToDictionary(
+            (appearance) => appearance,
+            (appearance) =>
+            {
+                var stem = FileStem(
+                    baseName,
+                    appearance,
+                    version,
+                    versionPadding);
+                return Path.Combine(
+                    directory,
+                    mode.Kind == "mov"
+                        ? $"{stem}.{mode.Extension}"
+                        : stem);
+            },
+            StringComparer.Ordinal);
+        return new RenderOutputPlan(version, paths);
     }
 }
 
@@ -241,10 +278,17 @@ internal static class RenderOutputPathSecurity
             throw new InvalidOperationException(
                 "The queued output path does not match its frozen Production Output route and MOCKUPS name.");
         }
-        if (File.Exists(expected) || Directory.Exists(expected))
+        if ((mode.Kind == "mov" && Directory.Exists(expected))
+            || (mode.Kind != "mov" && File.Exists(expected)))
         {
             throw new IOException(
-                "The queued output already exists. Add a new render to resolve another version.");
+                "The queued output has the wrong existing filesystem type.");
+        }
+        if ((File.Exists(expected) || Directory.Exists(expected))
+            && !output.OverwriteExisting)
+        {
+            throw new IOException(
+                "The queued output already exists and was not approved for replacement.");
         }
     }
 

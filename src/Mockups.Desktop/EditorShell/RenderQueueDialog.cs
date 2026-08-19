@@ -69,6 +69,16 @@ internal sealed class RenderQueueDialog
             MinHeight = 36,
             VerticalContentAlignment = VerticalAlignment.Center,
         });
+        var outputVersion = EditorNumericUpDownBehavior.Configure(new NumericUpDown
+        {
+            Minimum = 1,
+            Maximum = RenderOutputPlanner.MaximumVersion,
+            Increment = 1,
+            Value = 1,
+            MinHeight = 36,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Width = 142,
+        });
         var actorValue = new TextBlock
         {
             Text = "Loading…",
@@ -105,6 +115,7 @@ internal sealed class RenderQueueDialog
             outputMode,
             route,
             baseName,
+            outputVersion,
         };
         foreach (var control in draftControls)
         {
@@ -113,11 +124,14 @@ internal sealed class RenderQueueDialog
 
         RenderQueueShotDraft? currentDraft = null;
         RenderOutputPlan? currentPlan = null;
-        void RefreshProposal()
+        var currentPlanReplacesExisting = false;
+        var isProposingVersion = false;
+        void RefreshProposal(bool proposeVersion = false)
         {
             if (currentDraft is null)
             {
                 currentPlan = null;
+                currentPlanReplacesExisting = false;
                 proposal.Text = "";
                 add.IsEnabled = false;
                 return;
@@ -126,6 +140,7 @@ internal sealed class RenderQueueDialog
             {
                 validation.Foreground = null;
                 currentPlan = null;
+                currentPlanReplacesExisting = false;
                 if (device.SelectedItem is null
                     || theme.SelectedItem is null
                     || appearance.SelectedItem is null
@@ -148,22 +163,52 @@ internal sealed class RenderQueueDialog
                         StringComparison.Ordinal));
                 var mode = RenderOutputModes.Require(
                     outputMode.SelectedItem.Value);
-                currentPlan = RenderOutputPlanner.Suggest(
+                var appearances = RenderQueueAppearance.Expand(
+                    appearance.SelectedItem.Value);
+                if (proposeVersion)
+                {
+                    var suggested = RenderOutputPlanner.Suggest(
+                        currentDraft.RootPath,
+                        routeContract.RelativeDirectory,
+                        baseName.Text ?? "",
+                        appearances,
+                        mode,
+                        routeContract.VersionPadding,
+                        _queue.ActiveOutputPaths());
+                    isProposingVersion = true;
+                    outputVersion.Value = suggested.Version;
+                    isProposingVersion = false;
+                }
+                var selectedVersion = decimal.ToInt32(outputVersion.Value ?? 1);
+                currentPlan = RenderOutputPlanner.Plan(
                     currentDraft.RootPath,
                     routeContract.RelativeDirectory,
                     baseName.Text ?? "",
-                    RenderQueueAppearance.Expand(
-                        appearance.SelectedItem.Value),
+                    appearances,
                     mode,
-                    routeContract.VersionPadding,
-                    _queue.ActiveOutputPaths());
+                    selectedVersion,
+                    routeContract.VersionPadding);
+                var activePaths = _queue.ActiveOutputPaths();
+                if (currentPlan.OutputPaths.Values.Any((path) =>
+                    activePaths.Contains(Path.GetFullPath(path))))
+                {
+                    throw new InvalidOperationException(
+                        "Another queued render already owns this output version.");
+                }
+                currentPlanReplacesExisting = currentPlan.OutputPaths.Values.Any(
+                    (path) => File.Exists(path) || Directory.Exists(path));
                 var names = currentPlan.OutputPaths
                     .OrderBy((pair) => pair.Key, StringComparer.Ordinal)
                     .Select((pair) => Path.GetFileName(pair.Value));
                 proposal.Text =
                     $"Version v{currentPlan.Version.ToString().PadLeft(routeContract.VersionPadding, '0')} · "
-                    + string.Join(" · ", names);
-                validation.Text = currentDraft.RouteStatusMessage;
+                    + string.Join(" · ", names)
+                    + (currentPlanReplacesExisting
+                        ? " · replaces existing output"
+                        : "");
+                validation.Text = currentPlanReplacesExisting
+                    ? "This version already exists. Adding it requires confirmation before the existing output is replaced."
+                    : currentDraft.RouteStatusMessage;
                 add.IsEnabled = true;
             }
             catch (Exception exception)
@@ -185,11 +230,20 @@ internal sealed class RenderQueueDialog
             route,
         })
         {
-            combo.SelectionChanged += (_, _) => RefreshProposal();
+            combo.SelectionChanged += (_, _) => RefreshProposal(proposeVersion: true);
         }
-        baseName.TextChanged += (_, _) => RefreshProposal();
+        baseName.TextChanged += (_, _) => RefreshProposal(proposeVersion: true);
+        outputVersion.PropertyChanged += (_, change) =>
+        {
+            if (isProposingVersion
+                || change.Property != NumericUpDown.ValueProperty)
+            {
+                return;
+            }
+            RefreshProposal();
+        };
 
-        add.Click += (_, _) =>
+        add.Click += async (_, _) =>
         {
             if (currentDraft is null
                 || currentPlan is null
@@ -206,6 +260,28 @@ internal sealed class RenderQueueDialog
             validation.Text = "Adding batch to the local queue…";
             try
             {
+                if (currentPlanReplacesExisting)
+                {
+                    var names = string.Join(
+                        "\n",
+                        currentPlan.OutputPaths.Values
+                            .OrderBy((path) => path, StringComparer.Ordinal)
+                            .Select(Path.GetFileName));
+                    var confirmed = await new EditorDialogService(
+                        dialog,
+                        EditorSukiWindowTheme.IsDark(dialog)).ConfirmAction(
+                            "Replace render output",
+                            "Replace the existing render output?",
+                            $"The following exact files or sequences will be replaced when this batch runs:\n{names}",
+                            "Replace output",
+                            width: 520,
+                            height: 280);
+                    if (!confirmed)
+                    {
+                        RefreshProposal();
+                        return;
+                    }
+                }
                 var preparation = _snapshots.PlanBatch(
                     currentDraft,
                     device.SelectedItem.Value,
@@ -214,7 +290,8 @@ internal sealed class RenderQueueDialog
                     outputMode.SelectedItem.Value,
                     route.SelectedItem.Value,
                     baseName.Text ?? "",
-                    currentPlan);
+                    currentPlan,
+                    currentPlanReplacesExisting);
                 _queue.EnqueuePreparingBatch(
                     preparation.Summaries,
                     (batchRoot, progress, cancellationToken) =>
@@ -258,6 +335,7 @@ internal sealed class RenderQueueDialog
                 Field("Output", outputMode),
                 Field("Route", route),
                 Field("Base name", baseName),
+                Field("Version", outputVersion),
                 proposal,
                 validation,
                 new StackPanel
@@ -344,7 +422,7 @@ internal sealed class RenderQueueDialog
                     control.IsEnabled = true;
                 }
                 route.IsEnabled = currentDraft.Routes.Count > 0;
-                RefreshProposal();
+                RefreshProposal(proposeVersion: true);
             }
             catch (OperationCanceledException)
                 when (cancellation.IsCancellationRequested)

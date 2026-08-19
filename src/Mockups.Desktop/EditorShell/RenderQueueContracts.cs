@@ -137,7 +137,8 @@ internal sealed record RenderOutputTarget(
     int VersionPadding,
     string OutputModeId,
     string OutputPath,
-    int FramePadding = 8);
+    int FramePadding = 8,
+    bool OverwriteExisting = false);
 
 internal sealed record RenderFrameStoreReference(
     string BatchRootPath,

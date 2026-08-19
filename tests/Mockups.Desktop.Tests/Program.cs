@@ -12305,6 +12305,31 @@ static void RenderOutputNamingReservesOneBatchVersion()
             "SHOT_010_DARK_v002.mov",
             Path.GetFileName(
                 plan.OutputPaths[RenderQueueAppearance.Dark]));
+        var selected = RenderOutputPlanner.Plan(
+            root,
+            "shots/output",
+            "SHOT_010",
+            [RenderQueueAppearance.Light],
+            RenderOutputModes.Require(
+                RenderOutputModes.MovProRes422Hq),
+            1,
+            3);
+        Equal(1, selected.Version);
+        var existingOutput = new RenderOutputTarget(
+            "production",
+            "output",
+            root,
+            "shots/output",
+            "SHOT_010",
+            RenderQueueAppearance.Light,
+            selected.Version,
+            3,
+            RenderOutputModes.MovProRes422Hq,
+            selected.OutputPaths[RenderQueueAppearance.Light]);
+        Throws<IOException>(() =>
+            RenderOutputPathSecurity.RequireOutputTarget(existingOutput));
+        RenderOutputPathSecurity.RequireOutputTarget(
+            existingOutput with { OverwriteExisting = true });
         Equal(
             "SHOT_010_GFX",
             RenderOutputPlanner.SuggestedBaseName(
@@ -12335,6 +12360,15 @@ static void MovH264ModesMatchCreditosProfiles()
     Equal("mov", light.Extension);
     Equal("mov", standard.Extension);
     Equal("mov", high.Extension);
+
+    SequenceEqual(
+        new[]
+        {
+            "-color_primaries", "bt709",
+            "-color_trc", "iec61966-2-1",
+            "-colorspace", "bt709",
+        },
+        RenderColorMetadata.FfmpegArguments);
 
     SequenceEqual(
         new[]

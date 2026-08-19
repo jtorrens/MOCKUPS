@@ -75,13 +75,16 @@ internal sealed class RenderJobExecutor : IRenderJobExecutor
                 "-start_number", "0",
                 "-i", Path.Combine(frameDirectory, "frame_%08d.png"),
                 .. profileArgs,
+                .. RenderColorMetadata.FfmpegArguments,
                 "-an",
                 temporaryOutput,
             ],
                 cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
             RenderOutputPathSecurity.RequireOutputTarget(snapshot.Output);
-            File.Move(temporaryOutput, snapshot.Output.OutputPath);
+            RenderOutputPublisher.PublishFile(
+                temporaryOutput,
+                snapshot.Output);
         }
         finally
         {
@@ -131,6 +134,7 @@ internal sealed class RenderJobExecutor : IRenderJobExecutor
                     "-i", Path.Combine(source, "frame_%08d.png"),
                     "-vf", RenderAlphaPremultiplication.Filter,
                     "-c:v", "png",
+                    .. RenderColorMetadata.FfmpegArguments,
                     "-start_number", "1",
                     Path.Combine(
                         converted,
@@ -166,6 +170,7 @@ internal sealed class RenderJobExecutor : IRenderJobExecutor
                     "-compression", "zip1",
                     "-format", "half",
                     "-pix_fmt", "gbrapf32le",
+                    .. RenderColorMetadata.FfmpegArguments,
                     "-start_number", "1",
                     Path.Combine(
                         converted,
@@ -181,7 +186,9 @@ internal sealed class RenderJobExecutor : IRenderJobExecutor
             }
             cancellationToken.ThrowIfCancellationRequested();
             RenderOutputPathSecurity.RequireOutputTarget(snapshot.Output);
-            Directory.Move(moveSource, snapshot.Output.OutputPath);
+            RenderOutputPublisher.PublishDirectory(
+                moveSource,
+                snapshot.Output);
             if (moveSource.Equals(temporaryRoot, StringComparison.Ordinal))
             {
                 temporaryRoot = "";
@@ -366,10 +373,53 @@ internal static class RenderRasterDimensions
         );
 }
 
+internal static class RenderOutputPublisher
+{
+    public static void PublishFile(
+        string temporaryPath,
+        RenderOutputTarget output)
+    {
+        RenderOutputPathSecurity.RequireOutputTarget(output);
+        File.Move(
+            temporaryPath,
+            output.OutputPath,
+            output.OverwriteExisting);
+    }
+
+    public static void PublishDirectory(
+        string temporaryPath,
+        RenderOutputTarget output)
+    {
+        RenderOutputPathSecurity.RequireOutputTarget(output);
+        if (Directory.Exists(output.OutputPath))
+        {
+            if (!output.OverwriteExisting)
+            {
+                throw new IOException(
+                    "The queued output already exists and was not approved for replacement.");
+            }
+            Directory.Delete(output.OutputPath, recursive: true);
+        }
+        Directory.Move(temporaryPath, output.OutputPath);
+    }
+}
+
 internal static class RenderAlphaPremultiplication
 {
     public const string Filter =
         "geq=r='r(X,Y)*alpha(X,Y)/255':g='g(X,Y)*alpha(X,Y)/255':b='b(X,Y)*alpha(X,Y)/255':a='alpha(X,Y)'";
+}
+
+internal static class RenderColorMetadata
+{
+    // Preview is rasterized from the CSS sRGB working space. MOV outputs keep
+    // that transfer while declaring the Rec.709 primaries shared by sRGB.
+    public static readonly IReadOnlyList<string> FfmpegArguments =
+    [
+        "-color_primaries", "bt709",
+        "-color_trc", "iec61966-2-1",
+        "-colorspace", "bt709",
+    ];
 }
 
 internal static class RenderMovEncodingProfiles

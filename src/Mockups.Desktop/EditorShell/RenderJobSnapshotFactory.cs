@@ -170,7 +170,8 @@ internal sealed class RenderJobSnapshotFactory
         string outputModeId,
         string structureEntryId,
         string baseName,
-        RenderOutputPlan outputPlan)
+        RenderOutputPlan outputPlan,
+        bool overwriteExisting)
     {
         var device = draft.Devices.SingleOrDefault((option) =>
             option.Value.Equals(deviceId, StringComparison.Ordinal))
@@ -214,7 +215,8 @@ internal sealed class RenderJobSnapshotFactory
                 route.VersionPadding,
                 outputModeId,
                 outputPlan.OutputPaths[requestedAppearance],
-                route.FramePadding);
+                route.FramePadding,
+                overwriteExisting);
             return new RenderJobSummary(
                 context,
                 device.Label,
