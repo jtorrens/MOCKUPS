@@ -19,6 +19,17 @@ test("an unclassified path stops instead of selecting the full repository suite"
   );
 });
 
+test("retired archive changes select only their absence contract", () => {
+  const plan = planScopedValidation(
+    repositoryRoot,
+    ["archive/react-legacy/src/retired.ts"],
+  );
+  assert.deepEqual(
+    plan.map((step) => step.id),
+    ["retired", "diff-check"],
+  );
+});
+
 test("a focused SVG service change selects only its direct regressions", () => {
   const plan = planScopedValidation(
     repositoryRoot,

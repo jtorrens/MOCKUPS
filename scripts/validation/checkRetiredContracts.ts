@@ -2,6 +2,7 @@ import type { ArchitectureValidationContext } from "./validationContext.js";
 import { repositoryFileExists } from "./validationContext.js";
 
 const retiredPaths = [
+  "archive/react-legacy",
   "index.html",
   "remotion.config.ts",
   "scripts/checkDesktopPreviewArchitecture.ts",

@@ -167,6 +167,7 @@ export function planScopedValidation(
   let architectureContracts = false;
   let architectureGenerated = false;
   let architecturePipeline = false;
+  let architectureRetired = false;
   let architectureBoundaries = false;
   let scaffoldingComponent = false;
   let scaffoldingModule = false;
@@ -200,6 +201,10 @@ export function planScopedValidation(
       || file.startsWith("docs/architecture/")
       || file === "docs/README.md") {
       architectureContracts = true;
+      continue;
+    }
+    if (file.startsWith("archive/")) {
+      architectureRetired = true;
       continue;
     }
     if (file.startsWith("docs/")
@@ -506,6 +511,13 @@ export function planScopedValidation(
       "pipeline",
       "validate:pipeline",
       "validation orchestration changed",
+    ));
+  }
+  if (architectureRetired) {
+    add(npmStep(
+      "retired",
+      "validate:retired",
+      "retired implementation paths must remain absent",
     ));
   }
   if (architectureBoundaries) {
