@@ -44,6 +44,7 @@ export function resolveBubbleComponent(
 ): BubbleDesignContract {
   const config = parseObject(payload.configJson);
   const preview = parseObject(payload.designPreviewJson);
+  validateBubbleRuntimeDocument(preview);
   const componentBaseConfigs = parseObject(payload.componentBaseConfigsJson);
   const bubble = requiredRecord(config, "bubble", "component.bubble");
   const surfaceSlot = requiredRecord(bubble, "surfaceSlot", "component.bubble");
@@ -91,9 +92,13 @@ export function resolveBubbleComponent(
     "component.bubble.input.sampleText",
   );
   const writeOnPlan: SimpleWriteOnFramePlan = {
-    enabled: optionalBoolean(preview, "writeOnTrigger"),
-    frame: optionalNumber(preview, "writeOnFrame", 0),
-    durationFrames: optionalNumber(preview, "writeOnDurationFrames", 30),
+    enabled: requiredBoolean(preview, "writeOnTrigger", "component.bubble.input.writeOnTrigger"),
+    frame: requiredNumber(preview, "writeOnFrame", "component.bubble.input.writeOnFrame"),
+    durationFrames: requiredNumber(
+      preview,
+      "writeOnDurationFrames",
+      "component.bubble.input.writeOnDurationFrames",
+    ),
   };
   const visibleText = simpleWriteOnFrameText(fullText, writeOnPlan);
   const surfaceConfig = embeddedComponentConfig(
@@ -300,8 +305,16 @@ export function resolveBubbleComponent(
         : undefined,
     },
     status: {
-      text: optionalString(preview, "statusText"),
-      state: bubbleStatusState(optionalString(preview, "statusState") || "none"),
+      text: requiredPossiblyEmptyString(
+        preview,
+        "statusText",
+        "component.bubble.input.statusText",
+      ),
+      state: bubbleStatusState(requiredString(
+        preview,
+        "statusState",
+        "component.bubble.input.statusState",
+      )),
       sizeToken: requiredString(status, "sizeToken", "component.bubble.status.sizeToken"),
       textSizeToken: requiredString(status, "textSizeToken", "component.bubble.status.textSizeToken"),
       gapToken: requiredString(status, "gapToken", "component.bubble.status.gapToken"),
@@ -331,15 +344,27 @@ export function resolveBubbleComponent(
 function resolveBubbleActorPreview(preview: Record<string, unknown>) {
   const actor = Object.hasOwn(preview, "actor")
     ? requiredRecord(preview, "actor", "component.bubble")
-    : defaultActorPreview(optionalString(preview, "actorName") || "Alex Q");
+    : defaultActorPreview(requiredString(
+        preview,
+        "actorName",
+        "component.bubble.input.actorName",
+      ));
   const avatar = requiredRecord(actor, "avatar", "component.bubble.actor");
   return {
     id: requiredString(actor, "id", "component.bubble.actor.id"),
     displayName: requiredString(actor, "displayName", "component.bubble.actor.displayName"),
-    shortName: optionalString(actor, "shortName"),
+    shortName: requiredPossiblyEmptyString(
+      actor,
+      "shortName",
+      "component.bubble.actor.shortName",
+    ),
     initials: requiredString(actor, "initials", "component.bubble.actor.initials"),
     avatar: {
-      imageUri: optionalString(avatar, "imageUri"),
+      imageUri: requiredPossiblyEmptyString(
+        avatar,
+        "imageUri",
+        "component.bubble.actor.avatar.imageUri",
+      ),
       backgroundColor: requiredString(
         avatar,
         "backgroundColor",
@@ -350,10 +375,10 @@ function resolveBubbleActorPreview(preview: Record<string, unknown>) {
         "textColor",
         "component.bubble.actor.avatar.textColor",
       ),
-      scale: optionalNumber(avatar, "scale", 1),
-      offsetX: optionalNumber(avatar, "offsetX", 0),
-      offsetY: optionalNumber(avatar, "offsetY", 0),
-      baseSize: optionalNumber(avatar, "baseSize", 256),
+      scale: requiredNumber(avatar, "scale", "component.bubble.actor.avatar.scale"),
+      offsetX: requiredNumber(avatar, "offsetX", "component.bubble.actor.avatar.offsetX"),
+      offsetY: requiredNumber(avatar, "offsetY", "component.bubble.actor.avatar.offsetY"),
+      baseSize: requiredNumber(avatar, "baseSize", "component.bubble.actor.avatar.baseSize"),
     },
   };
 }
@@ -401,27 +426,55 @@ function bubbleStatusState(value: string): BubbleStatusState {
 function bubbleMediaInputs(
   preview: Record<string, unknown>,
   mediaType: "image" | "video",
-  maxWidth: number,
+  _maxWidth: number,
 ) {
-  const width = Math.max(1, optionalNumber(preview, "mediaWidth", Math.min(maxWidth, 240)));
-  const height = Math.max(1, optionalNumber(preview, "mediaHeight", 160));
-  const viewportSize = optionalString(preview, "viewportSize") || `${width}|${height}`;
   return {
     ...preview,
     mediaType,
-    mediaSource: optionalString(preview, "mediaSource"),
-    viewportSize,
-    mediaOffset: optionalString(preview, "mediaOffset") || "0|0",
-    mediaScale: optionalNumber(preview, "mediaScale", 1),
-    isPlaying: optionalBoolean(preview, "isPlaying"),
-    isFullScreen: optionalBoolean(preview, "isFullScreen"),
-    fullScreenTransition: optionalBoolean(preview, "fullScreenTransition"),
-    currentTimeSeconds: optionalNumber(preview, "currentTimeSeconds", 0),
-    durationSeconds: Math.max(1, optionalNumber(preview, "durationSeconds", 12)),
+    mediaSource: requiredPossiblyEmptyString(
+      preview,
+      "mediaSource",
+      "component.bubble.input.mediaSource",
+    ),
+    viewportSize: requiredString(preview, "viewportSize", "component.bubble.input.viewportSize"),
+    mediaOffset: requiredString(preview, "mediaOffset", "component.bubble.input.mediaOffset"),
+    mediaScale: requiredNumber(preview, "mediaScale", "component.bubble.input.mediaScale"),
+    isPlaying: requiredBoolean(preview, "isPlaying", "component.bubble.input.isPlaying"),
+    isFullScreen: requiredBoolean(
+      preview,
+      "isFullScreen",
+      "component.bubble.input.isFullScreen",
+    ),
+    fullScreenTransition: requiredBoolean(
+      preview,
+      "fullScreenTransition",
+      "component.bubble.input.fullScreenTransition",
+    ),
+    currentTimeSeconds: requiredNumber(
+      preview,
+      "currentTimeSeconds",
+      "component.bubble.input.currentTimeSeconds",
+    ),
+    durationSeconds: Math.max(
+      1,
+      requiredNumber(preview, "durationSeconds", "component.bubble.input.durationSeconds"),
+    ),
     playbackMode: optionalString(preview, "playbackMode") || "once",
-    fullframeOrientation: optionalString(preview, "fullframeOrientation") || "portrait",
-    controlsElapsedMs: optionalNumber(preview, "controlsElapsedMs", 0),
-    motionElapsedMs: optionalNumber(preview, "motionElapsedMs", 0),
+    fullframeOrientation: requiredString(
+      preview,
+      "fullframeOrientation",
+      "component.bubble.input.fullframeOrientation",
+    ),
+    controlsElapsedMs: requiredNumber(
+      preview,
+      "controlsElapsedMs",
+      "component.bubble.input.controlsElapsedMs",
+    ),
+    motionElapsedMs: requiredNumber(
+      preview,
+      "motionElapsedMs",
+      "component.bubble.input.motionElapsedMs",
+    ),
   };
 }
 
@@ -437,11 +490,56 @@ function bubbleAudioInputs(
     // Bubble owns this child-input binding at its Audio slot boundary.
     // It is explicit composition data, not an Audio resolver fallback.
     showBadge: false,
-    isPlaying: optionalBoolean(preview, "isPlaying"),
-    durationSeconds: Math.max(1, optionalNumber(preview, "durationSeconds", 65)),
-    currentTimeSeconds: optionalNumber(preview, "currentTimeSeconds", 0),
+    isPlaying: requiredBoolean(preview, "isPlaying", "component.bubble.input.isPlaying"),
+    durationSeconds: Math.max(
+      1,
+      requiredNumber(preview, "durationSeconds", "component.bubble.input.durationSeconds"),
+    ),
+    currentTimeSeconds: requiredNumber(
+      preview,
+      "currentTimeSeconds",
+      "component.bubble.input.currentTimeSeconds",
+    ),
     playbackMode: optionalString(preview, "playbackMode") || "once",
   };
+}
+
+function validateBubbleRuntimeDocument(preview: Record<string, unknown>) {
+  requiredString(preview, "state", "component.bubble.input.state");
+  requiredPossiblyEmptyString(preview, "sampleText", "component.bubble.input.sampleText");
+  requiredNumber(preview, "maxWidth", "component.bubble.input.maxWidth");
+  requiredNumber(
+    preview,
+    "writeOnDurationFrames",
+    "component.bubble.input.writeOnDurationFrames",
+  );
+  requiredBoolean(preview, "writeOnTrigger", "component.bubble.input.writeOnTrigger");
+  requiredNumber(preview, "writeOnFrame", "component.bubble.input.writeOnFrame");
+  requiredPossiblyEmptyString(preview, "actorId", "component.bubble.input.actorId");
+  requiredPossiblyEmptyString(preview, "actorName", "component.bubble.input.actorName");
+  requiredPossiblyEmptyString(preview, "statusText", "component.bubble.input.statusText");
+  requiredString(preview, "statusState", "component.bubble.input.statusState");
+  requiredString(preview, "mediaType", "component.bubble.input.mediaType");
+  requiredPossiblyEmptyString(preview, "mediaSource", "component.bubble.input.mediaSource");
+  requiredString(preview, "viewportSize", "component.bubble.input.viewportSize");
+  requiredNumber(preview, "mediaScale", "component.bubble.input.mediaScale");
+  requiredString(preview, "mediaOffset", "component.bubble.input.mediaOffset");
+  requiredBoolean(preview, "isPlaying", "component.bubble.input.isPlaying");
+  requiredNumber(preview, "currentTimeSeconds", "component.bubble.input.currentTimeSeconds");
+  requiredNumber(preview, "durationSeconds", "component.bubble.input.durationSeconds");
+  requiredBoolean(preview, "isFullScreen", "component.bubble.input.isFullScreen");
+  requiredBoolean(
+    preview,
+    "fullScreenTransition",
+    "component.bubble.input.fullScreenTransition",
+  );
+  requiredString(
+    preview,
+    "fullframeOrientation",
+    "component.bubble.input.fullframeOrientation",
+  );
+  requiredNumber(preview, "controlsElapsedMs", "component.bubble.input.controlsElapsedMs");
+  requiredNumber(preview, "motionElapsedMs", "component.bubble.input.motionElapsedMs");
 }
 
 function defaultActorPreview(displayName: string) {

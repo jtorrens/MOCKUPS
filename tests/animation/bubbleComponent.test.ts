@@ -109,6 +109,46 @@ test("Bubble does not recover a missing Runtime media type from Variant config",
   );
 });
 
+test("Bubble requires every field in its complete prepared Runtime snapshot", () => {
+  const requiredKeys = [
+    "state",
+    "sampleText",
+    "maxWidth",
+    "writeOnDurationFrames",
+    "writeOnTrigger",
+    "writeOnFrame",
+    "actorId",
+    "actorName",
+    "statusText",
+    "statusState",
+    "mediaType",
+    "mediaSource",
+    "viewportSize",
+    "mediaScale",
+    "mediaOffset",
+    "isPlaying",
+    "currentTimeSeconds",
+    "durationSeconds",
+    "isFullScreen",
+    "fullScreenTransition",
+    "fullframeOrientation",
+    "controlsElapsedMs",
+    "motionElapsedMs",
+  ];
+  const source = committedComponentFixture("bubble");
+  const complete = JSON.parse(source.designPreviewJson) as Record<string, unknown>;
+  for (const key of requiredKeys) {
+    const preview = { ...complete };
+    delete preview[key];
+    source.designPreviewJson = JSON.stringify(preview);
+    assert.throws(
+      () => resolveBubbleComponent(source),
+      new RegExp(`component\\.bubble\\.input\\.${key}`),
+      key,
+    );
+  }
+});
+
 test("Bubble reserves message text for an Avatar anchored to any Bubble edge", () => {
   const placements = [
     {

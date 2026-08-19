@@ -254,6 +254,8 @@ function messageNodes(
         {
           state: message.state,
           sampleText: message.text,
+          actorId: message.actor?.id ?? "",
+          actorName: message.actor?.displayName ?? "",
           actor: message.actor,
           actorIdentityVisible: message.actorIdentityVisible,
           mediaType: message.mediaType,
