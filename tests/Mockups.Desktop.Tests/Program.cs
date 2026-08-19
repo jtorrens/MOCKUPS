@@ -88,6 +88,7 @@ var tests = new (string Name, Action Run)[]
     ("dictionary field context boundary preserves current data read-only", DictionaryFieldContextBoundaryPreservesCurrentData),
     ("Typography Style keeps only its explicit inherited sentinels", TypographyStyleKeepsOnlyExplicitSentinels),
     ("embedded Component document store preserves Variant and local Override ownership", EmbeddedComponentDocumentStorePreservesOwnership),
+    ("embedded fields resolve inherited nested Overrides before owner-local Overrides", EmbeddedFieldsResolveInheritedNestedOverrides),
     ("failed Runtime Override persistence restores the confirmed document", FailedRuntimeOverridePersistenceRestoresConfirmedDocument),
     ("editor presentation context boundary preserves current data read-only", EditorPresentationContextBoundaryPreservesCurrentData),
     ("Production Screen presentation boundary preserves exact current data read-only", ProductionScreenPresentationBoundaryPreservesCurrentData),
@@ -10357,6 +10358,57 @@ static void EmbeddedComponentDocumentStorePreservesOwnership()
         True(store.CreateFieldValue(runtimeContext, "component.audio.padding").IsInherited);
         var afterRuntimeOverride = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(beforeRuntimeOverride, afterRuntimeOverride);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void EmbeddedFieldsResolveInheritedNestedOverrides()
+{
+    var sourcePath = ParityDatabasePath();
+    var temporary = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-embedded-inherited-overrides-{Guid.NewGuid():N}.sqlite");
+    File.Copy(sourcePath, temporary, overwrite: true);
+    try
+    {
+        var database = new SqliteProjectTestContext(temporary);
+        var conversation = Descendants(database.LoadProjectTree())
+            .Single((node) => node.Kind == ProjectTreeNodeKind.ModuleVariant
+                && node.Id == "module_core_chat::variant::foqn_chats_sin_cabecera_copy");
+        conversation = NodeCommands(database).SaveModuleVariant(
+            conversation,
+            "Nested inherited override test");
+        var slots = new[]
+        {
+            EmbeddedComponentSlotCatalog.Get("module.core.chat.bubbleVariant"),
+            EmbeddedComponentSlotCatalog.Get("component.bubble.actorLabel.editor"),
+            EmbeddedComponentSlotCatalog.Get("component.label.surface.editor"),
+        };
+
+        var inherited = database.CreateEmbeddedComponentFieldValue(
+            conversation,
+            slots,
+            "component.style.cornerRadiusToken");
+        Equal("theme.radii.m", inherited.Value);
+        True(inherited.IsInherited);
+        Equal("theme.radii.m", inherited.Definition.InheritedValue);
+
+        database.UpdateEmbeddedComponentField(
+            conversation,
+            slots,
+            "component.style.cornerRadiusToken",
+            "theme.radii.none");
+
+        var local = database.CreateEmbeddedComponentFieldValue(
+            conversation,
+            slots,
+            "component.style.cornerRadiusToken");
+        Equal("theme.radii.none", local.Value);
+        True(!local.IsInherited);
+        Equal("theme.radii.m", local.Definition.InheritedValue);
     }
     finally
     {

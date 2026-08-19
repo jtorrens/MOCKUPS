@@ -158,14 +158,13 @@ internal sealed partial class SqliteDesignOwner
         }
 
         using var connection = OpenConnection();
-        var effectiveOwnerConfig = ParseJsonObject(baseConfigJson);
-        ComponentConfigOverrideMerger.MergeInto(
-            effectiveOwnerConfig,
-            overrides);
+        var baseOwnerConfig = ParseJsonObject(baseConfigJson);
         var inheritedConfig = EffectiveEmbeddedBaseConfig(
             connection,
             projectId,
-            effectiveOwnerConfig,
+            baseOwnerConfig,
+            overrides,
+            applyOwnerLocalOverrides: true,
             slots);
         var inheritedValue = ComponentConfigFieldValue(
             inheritedConfig.ToJsonString(),
@@ -309,6 +308,8 @@ internal sealed partial class SqliteDesignOwner
             connection,
             settings.ProjectId,
             config,
+            config,
+            applyOwnerLocalOverrides: false,
             [slot]);
         var inheritedValue = ComponentConfigFieldValue(
             inheritedConfig.ToJsonString(),
@@ -372,6 +373,8 @@ internal sealed partial class SqliteDesignOwner
             connection,
             projectId,
             config,
+            config,
+            applyOwnerLocalOverrides: false,
             slots);
         var inheritedValue = ComponentConfigFieldValue(
             inheritedConfig.ToJsonString(),
@@ -439,9 +442,35 @@ internal sealed partial class SqliteDesignOwner
     private JsonObject EffectiveEmbeddedBaseConfig(
         SqliteConnection connection,
         string projectId,
-        JsonObject ownerConfig,
+        JsonObject baseOwnerConfig,
+        JsonObject ownerLocalConfig,
+        bool applyOwnerLocalOverrides,
         IReadOnlyList<EmbeddedComponentSlotDefinition> slots)
     {
+        var ownerConfig = baseOwnerConfig.DeepClone().AsObject();
+        var localOverrides = EmbeddedOverrides(
+            ownerLocalConfig,
+            slots,
+            createIfMissing: false);
+        if (applyOwnerLocalOverrides)
+        {
+            var ownerOverrides = ownerLocalConfig.DeepClone().AsObject();
+            RemoveLocalOverride(
+                ownerOverrides,
+                slots,
+                localOverrides);
+            ComponentConfigOverrideMerger.MergeInto(
+                ownerConfig,
+                ownerOverrides);
+        }
+        else
+        {
+            RemoveLocalOverride(
+                ownerConfig,
+                slots,
+                localOverrides);
+        }
+
         JsonObject? currentContainer = ownerConfig;
         JsonObject? current = null;
         for (var index = 0; index < slots.Count; index++)
@@ -461,7 +490,7 @@ internal sealed partial class SqliteDesignOwner
                     slots[index].EmbeddedComponentType,
                     variantReference));
             var overrides = slotNode?["overrides"] as JsonObject;
-            if (index < slots.Count - 1 && overrides is not null)
+            if (overrides is not null)
             {
                 ComponentConfigOverrideMerger.MergeInto(
                     child,
@@ -473,5 +502,27 @@ internal sealed partial class SqliteDesignOwner
         }
 
         return current ?? [];
+    }
+
+    private static void RemoveLocalOverride(
+        JsonObject config,
+        IReadOnlyList<EmbeddedComponentSlotDefinition> slots,
+        JsonObject? localOverrides)
+    {
+        if (localOverrides is null)
+        {
+            return;
+        }
+
+        var target = EmbeddedOverrides(
+            config,
+            slots,
+            createIfMissing: false);
+        if (target is not null)
+        {
+            ComponentConfigOverrideMerger.RemoveOverlay(
+                target,
+                localOverrides);
+        }
     }
 }

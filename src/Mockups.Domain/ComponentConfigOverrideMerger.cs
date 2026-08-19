@@ -20,6 +20,31 @@ public static class ComponentConfigOverrideMerger
         }
     }
 
+    /// <summary>
+    /// Removes the fields supplied by an overlay from an already effective
+    /// document. This is the inverse needed when an embedded editor exposes
+    /// the inherited value separately from its owner-local override.
+    /// </summary>
+    public static void RemoveOverlay(JsonObject target, JsonObject overlay)
+    {
+        foreach (var pair in overlay)
+        {
+            if (pair.Value is JsonObject overlayObject
+                && target[pair.Key] is JsonObject targetObject
+                && !IsExactComponentVariantSlot(overlayObject))
+            {
+                RemoveOverlay(targetObject, overlayObject);
+                if (targetObject.Count == 0)
+                {
+                    target.Remove(pair.Key);
+                }
+                continue;
+            }
+
+            target.Remove(pair.Key);
+        }
+    }
+
     private static bool IsExactComponentVariantSlot(JsonObject value)
     {
         if (value.Count != 2
