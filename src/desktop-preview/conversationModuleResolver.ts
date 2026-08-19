@@ -4,6 +4,7 @@ import {
   optionalString,
   parseObject,
   requiredBoolean,
+  requiredPossiblyEmptyString,
   requiredRecord,
   requiredString,
 } from "./componentResolverCommon.js";
@@ -49,7 +50,7 @@ export function resolveConversationModule(
   const conversation = requiredRecord(config, "conversation", "module config");
   const screenFrame = rootScreenFrame(payload);
   const resolvedMessages = conversationMessages(preview);
-  const timing = conversationTiming(conversation, preview);
+  const timing = conversationTiming(preview);
   const showKeyboard = requiredBoolean(
     conversation,
     "showKeyboard",
@@ -355,54 +356,64 @@ type ResolvedConversationMessage = Omit<
   currentTimeSeconds: number;
 };
 
-function conversationTiming(
-  conversation: JsonRecord,
-  preview: JsonRecord,
-): ConversationTimingContract {
-  const incomingRevealMode = optionalString(preview, "incomingRevealMode")
-    || optionalString(conversation, "incomingRevealMode");
-  const resolvedIncomingRevealMode = incomingRevealMode || "writeOn";
-  if (resolvedIncomingRevealMode !== "writeOn"
-    && resolvedIncomingRevealMode !== "typingIndicator") {
+function conversationTiming(preview: JsonRecord): ConversationTimingContract {
+  const incomingRevealMode = requiredString(
+    preview,
+    "incomingRevealMode",
+    "module.core.chat.input.incomingRevealMode",
+  );
+  if (incomingRevealMode !== "writeOn"
+    && incomingRevealMode !== "typingIndicator") {
     throw new Error(
-      `Unsupported Conversation incoming reveal mode ${resolvedIncomingRevealMode}`,
+      `Unsupported Conversation incoming reveal mode ${incomingRevealMode}`,
     );
   }
-  const bubbleRevealMode = optionalString(preview, "bubbleRevealMode")
-    || optionalString(conversation, "bubbleRevealMode");
+  const bubbleRevealMode = requiredString(
+    preview,
+    "bubbleRevealMode",
+    "module.core.chat.input.bubbleRevealMode",
+  );
+  if (bubbleRevealMode !== "afterWriteOn" && bubbleRevealMode !== "duringWriteOn") {
+    throw new Error(`Unsupported Conversation bubble reveal mode ${bubbleRevealMode}`);
+  }
   return {
-    bubbleRevealMode: bubbleRevealMode === "afterWriteOn" ? "afterWriteOn" : "duringWriteOn",
-    incomingRevealMode: resolvedIncomingRevealMode as ConversationIncomingRevealMode,
-    textInputVisible: optionalBooleanWithFallback(preview, conversation, "textInputVisible", true),
-    keyboardVisible: optionalBooleanWithFallback(preview, conversation, "keyboardVisible", true),
-    typingIndicatorText: optionalString(preview, "typingIndicatorText")
-      || optionalString(conversation, "typingIndicatorText")
-      || "•••",
-    typingIndicatorSizeToken: optionalString(preview, "typingIndicatorSizeToken")
-      || optionalString(conversation, "typingIndicatorSizeToken")
-      || "theme.typography.sizes.m",
+    bubbleRevealMode,
+    incomingRevealMode: incomingRevealMode as ConversationIncomingRevealMode,
+    textInputVisible: requiredBoolean(
+      preview,
+      "textInputVisible",
+      "module.core.chat.input.textInputVisible",
+    ),
+    keyboardVisible: requiredBoolean(
+      preview,
+      "keyboardVisible",
+      "module.core.chat.input.keyboardVisible",
+    ),
+    typingIndicatorText: requiredPossiblyEmptyString(
+      preview,
+      "typingIndicatorText",
+      "module.core.chat.input.typingIndicatorText",
+    ),
+    typingIndicatorSizeToken: requiredString(
+      preview,
+      "typingIndicatorSizeToken",
+      "module.core.chat.input.typingIndicatorSizeToken",
+    ),
     typingIndicatorAnimation: typingIndicatorAnimation(
-      optionalString(preview, "typingIndicatorAnimation")
-        || optionalString(conversation, "typingIndicatorAnimation"),
+      requiredString(
+        preview,
+        "typingIndicatorAnimation",
+        "module.core.chat.input.typingIndicatorAnimation",
+      ),
     ),
   };
 }
 
 function typingIndicatorAnimation(
-  value: string | undefined,
+  value: string,
 ): ConversationTypingIndicatorAnimation {
-  return value === "none" || value === "wave" ? value : "pulsating";
-}
-
-function optionalBooleanWithFallback(
-  primary: JsonRecord,
-  secondary: JsonRecord,
-  key: string,
-  fallback: boolean,
-) {
-  if (typeof primary[key] === "boolean") return primary[key];
-  if (typeof secondary[key] === "boolean") return secondary[key];
-  return fallback;
+  if (value === "none" || value === "pulsating" || value === "wave") return value;
+  throw new Error(`Unsupported Conversation typing indicator animation ${value}`);
 }
 
 function conversationMessages(preview: JsonRecord): ResolvedConversationMessage[] {

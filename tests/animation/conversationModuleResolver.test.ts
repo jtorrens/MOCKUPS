@@ -63,6 +63,13 @@ function payload(
     configJson: "{}",
     designPreviewJson: JSON.stringify({
       headerSubtitle: "base header",
+      bubbleRevealMode: "afterWriteOn",
+      incomingRevealMode: "typingIndicator",
+      textInputVisible: true,
+      keyboardVisible: true,
+      typingIndicatorText: "•••",
+      typingIndicatorSizeToken: "theme.typography.sizes.m",
+      typingIndicatorAnimation: "pulsating",
       messages: completeMessages,
       inputs: [{ id: "headerSubtitle", jsonKey: "headerSubtitle", animationTimeline: { origin: { kind: "ownerStart" } } }],
       collections: [{
@@ -582,6 +589,46 @@ test("Conversation rejects the retired incoming instant reveal mode", () => {
     () => resolveConversationModule(source),
     /Unsupported Conversation incoming reveal mode instant/,
   );
+});
+
+test("Conversation timing requires one complete prepared Runtime document", () => {
+  for (const key of [
+    "bubbleRevealMode",
+    "incomingRevealMode",
+    "textInputVisible",
+    "keyboardVisible",
+    "typingIndicatorText",
+    "typingIndicatorSizeToken",
+    "typingIndicatorAnimation",
+  ]) {
+    const source = committedConversationPayload();
+    const config = JSON.parse(source.configJson) as {
+      conversation: Record<string, unknown>;
+    };
+    config.conversation[key] = key.endsWith("Visible") ? true : "legacy-value";
+    source.configJson = JSON.stringify(config);
+    const runtime = JSON.parse(source.designPreviewJson) as Record<string, unknown>;
+    delete runtime[key];
+    source.designPreviewJson = JSON.stringify(runtime);
+    assert.throws(
+      () => resolveConversationModule(source),
+      new RegExp(`module\\.core\\.chat\\.input\\.${key}`),
+      key,
+    );
+  }
+});
+
+test("Conversation rejects unsupported prepared Runtime timing options", () => {
+  for (const [key, expected] of [
+    ["bubbleRevealMode", /Unsupported Conversation bubble reveal mode legacy/],
+    ["typingIndicatorAnimation", /Unsupported Conversation typing indicator animation legacy/],
+  ] as const) {
+    const source = committedConversationPayload();
+    const runtime = JSON.parse(source.designPreviewJson) as Record<string, unknown>;
+    runtime[key] = "legacy";
+    source.designPreviewJson = JSON.stringify(runtime);
+    assert.throws(() => resolveConversationModule(source), expected, key);
+  }
 });
 
 test("Conversation Header keeps its upward bleed and can use the resolved Actor color", () => {

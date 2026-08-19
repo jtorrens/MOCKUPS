@@ -8,6 +8,7 @@ import {
   optionalString,
   parseObject,
   requiredBoolean,
+  requiredNumber,
   requiredPlacement,
   requiredPossiblyEmptyString,
   requiredRecord,
@@ -55,7 +56,7 @@ export function resolveBubbleComponent(
   const status = requiredRecord(bubble, "status", "component.bubble");
   const maxWidthPercent = Math.min(
     100,
-    Math.max(1, optionalNumber(preview, "maxWidth", 66)),
+    Math.max(1, requiredNumber(preview, "maxWidth", "component.bubble.input.maxWidth")),
   );
   const maxWidth = screenPercentToDesignWidth(payload, maxWidthPercent);
   const padding = requiredStringPair(bubble, "padding", "component.bubble.padding");
@@ -116,8 +117,7 @@ export function resolveBubbleComponent(
     },
   });
   const mediaType = bubbleMediaType(
-    optionalString(preview, "mediaType")
-      || requiredString(bubble, "mediaType", "component.bubble.mediaType"),
+    requiredString(preview, "mediaType", "component.bubble.input.mediaType"),
   );
   const imageMediaConfig = mediaType === "image"
     ? embeddedComponentConfig(

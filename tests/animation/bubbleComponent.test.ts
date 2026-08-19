@@ -87,6 +87,28 @@ test("Bubble strictly validates every state alignment", () => {
   );
 });
 
+test("Bubble requires the prepared Runtime max width", () => {
+  const source = committedComponentFixture("bubble");
+  const preview = JSON.parse(source.designPreviewJson) as Record<string, unknown>;
+  delete preview.maxWidth;
+  source.designPreviewJson = JSON.stringify(preview);
+  assert.throws(
+    () => resolveBubbleComponent(source),
+    /component\.bubble\.input\.maxWidth/,
+  );
+});
+
+test("Bubble does not recover a missing Runtime media type from Variant config", () => {
+  const source = committedComponentFixture("bubble");
+  const preview = JSON.parse(source.designPreviewJson) as Record<string, unknown>;
+  delete preview.mediaType;
+  source.designPreviewJson = JSON.stringify(preview);
+  assert.throws(
+    () => resolveBubbleComponent(source),
+    /component\.bubble\.input\.mediaType/,
+  );
+});
+
 test("Bubble reserves message text for an Avatar anchored to any Bubble edge", () => {
   const placements = [
     {
