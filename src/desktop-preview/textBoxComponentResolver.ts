@@ -137,7 +137,11 @@ export function resolveTextBoxComponentFromRecords(
       Math.floor(requiredNumber(textBox, "maxLines", "component.textBox.maxLines")),
     ),
     padding: { xToken: padding.first, yToken: padding.second },
-    text: optionalString(inputs, "sampleText"),
+    text: requiredPossiblyEmptyString(
+      inputs,
+      "sampleText",
+      "component.textBox.input.sampleText",
+    ),
     placeholder: requiredPossiblyEmptyString(
       textBox,
       "placeholder",

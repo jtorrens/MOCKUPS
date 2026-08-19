@@ -195,6 +195,31 @@ test("Text Box rejects Variant-owned values at its Runtime boundary", () => {
   }
 });
 
+test("Text Box requires its prepared Runtime text while accepting an explicit empty value", () => {
+  const missing = inputs() as Record<string, unknown>;
+  delete missing.sampleText;
+  assert.throws(
+    () => resolveTextBoxComponentFromRecords(
+      config,
+      missing,
+      bases,
+      "component.textBox",
+      { localFrame: 0, frameRate: 25 },
+    ),
+    /component\.textBox\.input\.sampleText/,
+  );
+  assert.equal(
+    resolveTextBoxComponentFromRecords(
+      config,
+      { ...inputs(), sampleText: "" },
+      bases,
+      "component.textBox",
+      { localFrame: 0, frameRate: 25 },
+    ).text,
+    "",
+  );
+});
+
 test("the committed Text Input Bar resolves its migrated structured Button item", () => {
   const database = new Database(
     parityDatabasePath(),
