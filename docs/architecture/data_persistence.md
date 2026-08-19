@@ -5,7 +5,7 @@ Status: normative.
 ## Database scope
 
 The desktop application persists one complete Project workspace in SQLite.
-Schema version `8` is the only current schema. Every row belongs directly or
+Schema version `12` is the only current schema. Every row belongs directly or
 indirectly to a Project and cross-Project lookup is invalid.
 
 The current tables are:
