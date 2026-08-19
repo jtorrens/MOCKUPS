@@ -51,6 +51,17 @@ internal static class RenderOutputPlanner
         return result;
     }
 
+    public static int RequireVersion(string value)
+    {
+        if (!int.TryParse(value, out var version)
+            || version is < 1 or > MaximumVersion)
+        {
+            throw new InvalidOperationException(
+                "Enter a whole-number output version within the supported range.");
+        }
+        return version;
+    }
+
     public static string FileStem(
         string baseName,
         string appearance,
@@ -132,11 +143,7 @@ internal static class RenderOutputPlanner
         var directory = RenderOutputPathSecurity.RequirePlannedDirectory(
             rootPath,
             relativeDirectory);
-        if (version is < 1 or > MaximumVersion)
-        {
-            throw new InvalidOperationException(
-                "The selected output version is outside the supported range.");
-        }
+        _ = RequireVersion(version.ToString());
         var uniqueAppearances = appearances
             .Distinct(StringComparer.Ordinal)
             .ToList();

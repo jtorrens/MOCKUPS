@@ -12315,6 +12315,9 @@ static void RenderOutputNamingReservesOneBatchVersion()
             1,
             3);
         Equal(1, selected.Version);
+        Equal(1, RenderOutputPlanner.RequireVersion("1"));
+        Throws<InvalidOperationException>(() =>
+            RenderOutputPlanner.RequireVersion("one"));
         var existingOutput = new RenderOutputTarget(
             "production",
             "output",

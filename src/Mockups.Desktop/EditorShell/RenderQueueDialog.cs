@@ -69,14 +69,11 @@ internal sealed class RenderQueueDialog
             MinHeight = 36,
             VerticalContentAlignment = VerticalAlignment.Center,
         });
-        var outputVersion = EditorNumericUpDownBehavior.Configure(new NumericUpDown
+        var outputVersion = EditorTextBoxBehavior.Configure(new TextBox
         {
-            Minimum = 1,
-            Maximum = RenderOutputPlanner.MaximumVersion,
-            Increment = 1,
-            Value = 1,
+            Text = "1",
             MinHeight = 36,
-            HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalContentAlignment = VerticalAlignment.Center,
             Width = 142,
         });
         var actorValue = new TextBlock
@@ -176,10 +173,11 @@ internal sealed class RenderQueueDialog
                         routeContract.VersionPadding,
                         _queue.ActiveOutputPaths());
                     isProposingVersion = true;
-                    outputVersion.Value = suggested.Version;
+                    outputVersion.Text = suggested.Version.ToString();
                     isProposingVersion = false;
                 }
-                var selectedVersion = decimal.ToInt32(outputVersion.Value ?? 1);
+                var selectedVersion = RenderOutputPlanner.RequireVersion(
+                    outputVersion.Text ?? "");
                 currentPlan = RenderOutputPlanner.Plan(
                     currentDraft.RootPath,
                     routeContract.RelativeDirectory,
@@ -233,13 +231,9 @@ internal sealed class RenderQueueDialog
             combo.SelectionChanged += (_, _) => RefreshProposal(proposeVersion: true);
         }
         baseName.TextChanged += (_, _) => RefreshProposal(proposeVersion: true);
-        outputVersion.PropertyChanged += (_, change) =>
+        outputVersion.TextChanged += (_, _) =>
         {
-            if (isProposingVersion
-                || change.Property != NumericUpDown.ValueProperty)
-            {
-                return;
-            }
+            if (isProposingVersion) return;
             RefreshProposal();
         };
 
