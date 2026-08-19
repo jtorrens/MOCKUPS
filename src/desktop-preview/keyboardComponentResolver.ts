@@ -8,12 +8,11 @@ import {
   embeddedComponentConfig,
 } from "./componentPreviewDefaults.js";
 import {
-  optionalBoolean,
-  optionalString,
   parseObject,
   requiredBoolean,
   optionalNumber,
   requiredNumber,
+  requiredPossiblyEmptyString,
   requiredRecord,
   requiredString,
   requiredTypographyStyle,
@@ -45,8 +44,16 @@ export function resolveKeyboardComponent(
     "language",
     "component.keyboard.language",
   );
-  const fullText = optionalString(preview, "text");
-  const currentCharacterIndex = optionalNumber(preview, "currentCharacter", 1);
+  const fullText = requiredPossiblyEmptyString(
+    preview,
+    "text",
+    "component.keyboard.input.text",
+  );
+  const currentCharacterIndex = requiredNumber(
+    preview,
+    "currentCharacter",
+    "component.keyboard.input.currentCharacter",
+  );
   const currentCharacter = characterAtPosition(fullText, currentCharacterIndex);
   const pressedKey = currentCharacter;
   const mode = keyboardMode(currentCharacter);
@@ -164,7 +171,11 @@ export function resolveKeyboardComponent(
     rows,
     motion,
     motionFrame: resolveMotionFrame(payload, motion, {
-      trigger: optionalBoolean(preview, "trigger"),
+      trigger: requiredBoolean(
+        preview,
+        "trigger",
+        "component.keyboard.input.trigger",
+      ),
       elapsedMs: optionalNumber(preview, "motionElapsedMs", 0),
     }),
   };

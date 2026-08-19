@@ -85,6 +85,24 @@ test("Keyboard resolves the pressed grapheme and entrance Motion from runtime st
   assert.ok(resolved.motionFrame.progress > 0);
 });
 
+test("Keyboard requires its complete prepared Runtime input", () => {
+  for (const key of ["text", "currentCharacter", "trigger"]) {
+    const source = withInputDefaults(committedComponentFixture("keyboard"));
+    const preview = JSON.parse(source.designPreviewJson) as Record<string, unknown>;
+    delete preview[key];
+    assert.throws(
+      () => resolveKeyboardComponent(withDocument(source, preview)),
+      new RegExp(`component\\.keyboard\\.input\\.${key}`),
+      key,
+    );
+  }
+  const source = withInputDefaults(committedComponentFixture("keyboard"));
+  assert.equal(
+    resolveKeyboardComponent(withValues(source, { text: "" })).pressedKey,
+    "",
+  );
+});
+
 test("Keypad resolves the exact pushed key and preserves all other key states", () => {
   const source = withInputDefaults(committedComponentFixture("keypad"));
   const resolved = resolveKeypadComponent(withValues(source, {
