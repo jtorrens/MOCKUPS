@@ -56,11 +56,7 @@ export function measureTextBoxComponent(
   const hasLeftIcons = textBox.leftIconRow.items.length > 0;
   const hasRightIcons = textBox.rightIconRow.items.length > 0;
   const contentText = visibleText(textBox);
-  const cursorWidth = inlineCursorMeasuredWidth(textBox, typography.fontSize, scale);
-  const contentSize = withInlineCursorWidth(
-    measuredMultilineTextSize(contentText, typography),
-    cursorWidth,
-  );
+  const contentSize = measuredMultilineTextSize(contentText, typography);
   const contentVisualHeight = textContentVisualHeight(contentSize.lineCount, typography);
   if (textBox.dimensionMode === "fixed") {
     const width = textBox.size.width * scale;
@@ -101,19 +97,16 @@ export function measureTextBoxComponent(
       width,
       minimumHeight,
     );
-    let wrappedContentSize = withInlineCursorWidth(
-      measuredWrappedTextSize(
-        contentText,
-        typography,
-        resolvedWrapWidth(Math.max(1, width - paddingX * 2 - iconTextInset(
-          hasLeftIcons,
-          hasRightIcons,
-          leftIconSize.width,
-          rightIconSize.width,
-          iconGap,
-        ).total)),
-      ),
-      cursorWidth,
+    let wrappedContentSize = measuredWrappedTextSize(
+      contentText,
+      typography,
+      resolvedWrapWidth(Math.max(1, width - paddingX * 2 - iconTextInset(
+        hasLeftIcons,
+        hasRightIcons,
+        leftIconSize.width,
+        rightIconSize.width,
+        iconGap,
+      ).total)),
     );
     let height = growingHeight(
       minimumHeight,
@@ -132,13 +125,10 @@ export function measureTextBoxComponent(
       rightIconSize.width,
       iconGap,
     );
-    wrappedContentSize = withInlineCursorWidth(
-      measuredWrappedTextSize(
-        contentText,
-        typography,
-        resolvedWrapWidth(Math.max(1, width - paddingX * 2 - iconInset.total)),
-      ),
-      cursorWidth,
+    wrappedContentSize = measuredWrappedTextSize(
+      contentText,
+      typography,
+      resolvedWrapWidth(Math.max(1, width - paddingX * 2 - iconInset.total)),
     );
     height = growingHeight(
       minimumHeight,
@@ -184,13 +174,10 @@ export function measureTextBoxComponent(
   let naturalWidth = measuredContentWidth(contentSize.width) + paddingX * 2 + iconInset.total;
   let wraps = naturalWidth > maximumWidth;
   let measuredContentSize = wraps
-    ? withInlineCursorWidth(
-        measuredWrappedTextSize(
-          contentText,
-          typography,
-          resolvedWrapWidth(Math.max(1, maximumWidth - paddingX * 2 - iconInset.total)),
-        ),
-        cursorWidth,
+    ? measuredWrappedTextSize(
+        contentText,
+        typography,
+        resolvedWrapWidth(Math.max(1, maximumWidth - paddingX * 2 - iconInset.total)),
       )
     : contentSize;
 
@@ -211,13 +198,10 @@ export function measureTextBoxComponent(
   naturalWidth = measuredContentWidth(contentSize.width) + paddingX * 2 + iconInset.total;
   wraps = naturalWidth > maximumWidth;
   measuredContentSize = wraps
-    ? withInlineCursorWidth(
-        measuredWrappedTextSize(
-          contentText,
-          typography,
-          resolvedWrapWidth(Math.max(1, maximumWidth - paddingX * 2 - iconInset.total)),
-        ),
-        cursorWidth,
+    ? measuredWrappedTextSize(
+        contentText,
+        typography,
+        resolvedWrapWidth(Math.max(1, maximumWidth - paddingX * 2 - iconInset.total)),
       )
     : contentSize;
   width = wraps ? maximumWidth : Math.max(1, naturalWidth);
@@ -520,15 +504,6 @@ function inlineCursorShouldRender(textBox: TextBoxDesignContract) {
     && (textBox.text.length > 0 || textBox.placeholder.length === 0);
 }
 
-function inlineCursorMeasuredWidth(
-  textBox: TextBoxDesignContract,
-  fontSize: number,
-  scale: number,
-) {
-  if (!inlineCursorShouldRender(textBox)) return 0;
-  return Math.max(1, textBox.cursor.width * scale) + Math.max(1, fontSize * 0.01);
-}
-
 function inlineCursorMetadata(
   payload: DesignPreviewPayload,
   textBox: TextBoxDesignContract,
@@ -543,17 +518,6 @@ function inlineCursorMetadata(
         },
       }
     : undefined;
-}
-
-function withInlineCursorWidth<T extends { width: number }>(
-  size: T,
-  cursorWidth: number,
-) {
-  if (cursorWidth <= 0) return size;
-  return {
-    ...size,
-    width: size.width + cursorWidth,
-  };
 }
 
 function effectiveCornerTextInset(cornerRadius: number, width: number, height: number) {

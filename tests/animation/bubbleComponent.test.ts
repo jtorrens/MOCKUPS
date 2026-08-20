@@ -149,6 +149,36 @@ test("Bubble requires every field in its complete prepared Runtime snapshot", ()
   }
 });
 
+test("Bubble write-on Cursor never changes the measured Bubble width", () => {
+  const source = committedComponentFixture("bubble");
+  const preview = JSON.parse(source.designPreviewJson) as Record<string, unknown>;
+  Object.assign(preview, {
+    sampleText: "Cursor measurement remains stable",
+    mediaType: "none",
+    statusState: "none",
+    statusText: "",
+    writeOnTrigger: true,
+    writeOnDurationFrames: 20,
+    writeOnFrame: 4,
+  });
+  source.designPreviewJson = JSON.stringify(preview);
+
+  const withCursor = resolveBubbleComponent(source);
+  assert.equal(withCursor.textBox.cursorVisible, true);
+  const withoutCursor = {
+    ...withCursor,
+    textBox: {
+      ...withCursor.textBox,
+      cursorVisible: false,
+    },
+  };
+
+  assert.equal(
+    bubbleComponentToRenderable(source, withCursor).box?.width,
+    bubbleComponentToRenderable(source, withoutCursor).box?.width,
+  );
+});
+
 test("Bubble reserves message text for an Avatar anchored to any Bubble edge", () => {
   const placements = [
     {

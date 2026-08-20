@@ -143,6 +143,10 @@ contract and is applied identically to Module and Component parents.
 Text Input Bar forwards only its explicit runtime text. Bubble and Text Input
 Bar customize their selected Text Box slot through local Overrides.
 
+Cursor is an inline Text Box decoration. It is painted inside the resolved text
+viewport and never contributes to intrinsic width, wrapping or height. Showing,
+hiding or fading Cursor therefore cannot resize an owning Text Box or Bubble.
+
 ## Incoming Call Notification
 
 Incoming Call Notification owns one bounded Surface frame and two fixed child
