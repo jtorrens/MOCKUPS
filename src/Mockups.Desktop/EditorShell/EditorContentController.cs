@@ -60,17 +60,28 @@ internal sealed class EditorContentController : IDisposable
 
     public bool TryBuildSpecial(ProjectTreeNode dataNode)
     {
-        if (_specialCards(dataNode) is { } specialCards)
+        if (PrepareSpecial(dataNode) is { } specialCards)
         {
-            _preparation.Cancel();
-            HidePeerViews();
-            ResetRegistries();
-            _cardHost.Replace(specialCards, resetExpansion: false);
-            CommittedOwnerId = dataNode.Id;
+            CommitSpecial(dataNode, specialCards);
             return true;
         }
 
         return false;
+    }
+
+    public IReadOnlyList<InstantEditorCard>? PrepareSpecial(
+        ProjectTreeNode dataNode) =>
+        _specialCards(dataNode);
+
+    public void CommitSpecial(
+        ProjectTreeNode dataNode,
+        IReadOnlyList<InstantEditorCard> specialCards)
+    {
+        _preparation.Cancel();
+        HidePeerViews();
+        ResetRegistries();
+        _cardHost.Replace(specialCards, resetExpansion: false);
+        CommittedOwnerId = dataNode.Id;
     }
 
     public void ShowLoading()

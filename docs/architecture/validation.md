@@ -119,7 +119,9 @@ proving simultaneous outgoing and incoming Motion, stable owner-local frames
 - headless Avalonia editor view-state navigation across record classes and
   embedded breadcrumb levels, including card expansion and post-layout scroll
   restoration by exact `recordClassId`, plus the header Back/Forward controls
-  restoring both embedded breadcrumbs and root editor view state;
+  restoring both embedded breadcrumbs and root editor view state, atomic
+  same-owner field refresh without navigation or Preview-authoring loading
+  swaps, and fixed Preview contexts retaining their exact breadcrumbs;
 - headless Avalonia List Item/List authoring surfaces, including Variant
   selection, numeric active-set and state Runtime values, shared List item
   dimensions, General plus promoted Content Set sections, compact Avatar/Label/

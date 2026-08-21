@@ -65,6 +65,39 @@ internal sealed class EditorNavigationRenderer
         _persistentAction = persistentAction;
     }
 
+    internal static bool HasSamePresentation(
+        IReadOnlyList<ProjectTreeNode> previous,
+        IReadOnlyList<ProjectTreeNode> current)
+    {
+        if (previous.Count != current.Count)
+        {
+            return false;
+        }
+
+        for (var index = 0; index < previous.Count; index++)
+        {
+            if (!HasSamePresentation(previous[index], current[index]))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool HasSamePresentation(
+        ProjectTreeNode previous,
+        ProjectTreeNode current) =>
+        previous.Kind == current.Kind
+        && previous.Id.Equals(current.Id, StringComparison.Ordinal)
+        && previous.Name.Equals(current.Name, StringComparison.Ordinal)
+        && previous.Notes.Equals(current.Notes, StringComparison.Ordinal)
+        && string.Equals(previous.ColorHex, current.ColorHex, StringComparison.Ordinal)
+        && previous.IsUsed == current.IsUsed
+        && previous.IsProtected == current.IsProtected
+        && previous.IsLocked == current.IsLocked
+        && HasSamePresentation(previous.Children, current.Children);
+
     public void Rebuild(
         StackPanel target,
         IReadOnlyList<ProjectTreeNode> treeRoots,

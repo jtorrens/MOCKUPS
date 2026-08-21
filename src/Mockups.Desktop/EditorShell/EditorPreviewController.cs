@@ -350,6 +350,7 @@ internal sealed class EditorPreviewController : IDisposable
     private int _referenceStartPreviewFrame;
     private bool _isRefreshingOptions;
     private bool? _renderedLockState;
+    private string _activePreviewContextName = "";
     private readonly PreviewPreparationCancellation _designPlaybackPreparation = new();
     private readonly PreviewPreparationCancellation
         _visualContextPreparation = new();
@@ -3853,7 +3854,6 @@ internal sealed class EditorPreviewController : IDisposable
         if (_lockedPreviewContext is not null)
         {
             _lockedPreviewContext = null;
-            UpdateDesignContextChrome(null);
             Refresh();
             return;
         }
@@ -3872,27 +3872,70 @@ internal sealed class EditorPreviewController : IDisposable
             return;
         }
 
+        var workspace = PreviewWorkspace();
+        var path = workspace == EditorWorkspace.Production
+            ? ProductionNodePath(ProductionContextNode())
+                .Select((node) => new PreviewContextPathItem(
+                    node.Id,
+                    node.Name))
+                .ToArray()
+            :
+            [
+                new PreviewContextPathItem(
+                    target.Id,
+                    string.IsNullOrWhiteSpace(
+                        _activePreviewContextName)
+                            ? target.Id
+                            : _activePreviewContextName),
+            ];
         _lockedPreviewContext = new PreviewContextLock(
-            PreviewWorkspace(),
-            target);
-        UpdateDesignContextChrome(null);
+            workspace,
+            target,
+            _designContextText.Text ?? "",
+            path);
         Refresh();
     }
 
     private void UpdateDesignContextChrome(DesignPreviewPayload? payload)
     {
+        if (!string.IsNullOrWhiteSpace(payload?.Name))
+        {
+            _activePreviewContextName = payload.Name;
+        }
+        var lockedContext = _lockedPreviewContext;
         _activeProductionModuleInstanceId = RuntimeContextValue(payload, "moduleInstanceId");
-        _designContextText.Text = PreviewWorkspace() == EditorWorkspace.Production
+        var resolvedContextText = PreviewWorkspace() == EditorWorkspace.Production
             && ProductionContextNode()?.Kind == ProjectTreeNodeKind.Shot
             && !string.IsNullOrWhiteSpace(payload?.Name)
                 ? $"Active Screen: {payload.Name}"
                 : payload?.Name ?? "";
-        var productionNodes = ProductionNodePath(ProductionContextNode());
-        var previewItems = PreviewWorkspace() == EditorWorkspace.Production
-            ? productionNodes.Select((node, index) => new EditorBreadcrumbItem(
-                node.Name,
-                index == productionNodes.Count - 1 ? null : () => _selectNodeById(node.Id)))
-            : [new EditorBreadcrumbItem(string.IsNullOrWhiteSpace(payload?.Name) ? "Preview" : payload.Name)];
+        _designContextText.Text = string.IsNullOrWhiteSpace(
+                resolvedContextText)
+            ? lockedContext?.ContextText ?? ""
+            : resolvedContextText;
+        var productionNodes = ProductionNodePath(
+            ProductionContextNode());
+        var previewItems = lockedContext is not null
+            ? lockedContext.Path.Select((item, index) =>
+                new EditorBreadcrumbItem(
+                    item.Name,
+                    index == lockedContext.Path.Count - 1
+                        ? null
+                        : () => _selectNodeById(item.Id)))
+            : PreviewWorkspace() == EditorWorkspace.Production
+                ? productionNodes
+                    .Select((node, index) => new EditorBreadcrumbItem(
+                        node.Name,
+                        index == productionNodes.Count - 1
+                            ? null
+                            : () => _selectNodeById(node.Id)))
+                :
+                [
+                    new EditorBreadcrumbItem(
+                        string.IsNullOrWhiteSpace(payload?.Name)
+                            ? "Preview"
+                            : payload.Name),
+                ];
         EditorBreadcrumbBar.Render(
             _previewTitle,
             previewItems.Any() ? previewItems : [new EditorBreadcrumbItem("Production Preview")]);
@@ -4356,7 +4399,13 @@ internal sealed class EditorPreviewController : IDisposable
 
     private sealed record PreviewContextLock(
         EditorWorkspace Workspace,
-        PreviewNodeKey Node);
+        PreviewNodeKey Node,
+        string ContextText,
+        IReadOnlyList<PreviewContextPathItem> Path);
+
+    private sealed record PreviewContextPathItem(
+        string Id,
+        string Name);
 
     private sealed record DesignPreviewHistoryEntry(
         PreviewNodeKey Key,

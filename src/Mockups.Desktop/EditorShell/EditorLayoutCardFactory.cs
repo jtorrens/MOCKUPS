@@ -299,7 +299,6 @@ internal sealed class EditorLayoutCardFactory
                     (fieldId) => _fieldValues.Create(node, fieldId));
                 _inlinePreviews.Refresh(node, _activeFieldControls.ControlsByFieldId);
                 _activeFieldControls.RefreshPreviews();
-                _refreshPreview();
                 _scheduleActiveEditorReload(node);
             }
             catch (Exception exception)

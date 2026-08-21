@@ -5712,6 +5712,10 @@ static void SameOwnerEditorRefreshKeepsCardsMounted()
                 .GetField("_activeFieldControls", BindingFlags.Instance | BindingFlags.NonPublic)
                 ?.GetValue(window) as EditorActiveFieldControls
                 ?? throw new InvalidOperationException("Missing MainWindow active field controls.");
+            var navigationCards = Required(
+                window.FindControl<StackPanel>("NavigationCardsPanel"));
+            var previewAuthoringHost = Required(
+                window.FindControl<ContentControl>("PreviewAuthoringDataHost"));
 
             ProjectTreeNode Component(string recordClassId) => treeRoots
                 .SelectMany(DescendantsAndSelf)
@@ -5748,6 +5752,29 @@ static void SameOwnerEditorRefreshKeepsCardsMounted()
                 }
             }
 
+            void WaitForStablePreviewAuthoring()
+            {
+                var timeout = Stopwatch.StartNew();
+                while (true)
+                {
+                    Layout();
+                    if (previewAuthoringHost.Content is not null
+                        && !previewAuthoringHost
+                            .GetVisualDescendants()
+                            .OfType<EditorLoadingScrim>()
+                            .Any())
+                    {
+                        return;
+                    }
+                    if (timeout.Elapsed >= TimeSpan.FromSeconds(10))
+                    {
+                        throw new TimeoutException(
+                            "Preview authoring preparation did not complete.");
+                    }
+                    Thread.Sleep(10);
+                }
+            }
+
             void Select(ProjectTreeNode node)
             {
                 if (!(bool)(selectNode.Invoke(window, [node.Id]) ?? false))
@@ -5764,6 +5791,9 @@ static void SameOwnerEditorRefreshKeepsCardsMounted()
                 string cardId,
                 string context)
             {
+                WaitForStablePreviewAuthoring();
+                var navigationRoot = navigationCards.Children.FirstOrDefault();
+                var authoringContent = previewAuthoringHost.Content;
                 reloadActiveEditor.Invoke(window, [owner.Id]);
                 var timeout = Stopwatch.StartNew();
                 while (true)
@@ -5775,12 +5805,34 @@ static void SameOwnerEditorRefreshKeepsCardsMounted()
                         throw new InvalidOperationException(
                             $"{context} replaced the current card with the loading card.");
                     }
+                    if (previewAuthoringHost
+                        .GetVisualDescendants()
+                        .OfType<EditorLoadingScrim>()
+                        .Any())
+                    {
+                        throw new InvalidOperationException(
+                            $"{context} replaced Preview authoring with a loading surface.");
+                    }
+                    if (!ReferenceEquals(
+                            navigationCards.Children.FirstOrDefault(),
+                            navigationRoot))
+                    {
+                        throw new InvalidOperationException(
+                            $"{context} rebuilt unchanged navigation.");
+                    }
 
                     var candidate = editorContent.Cards.Single((card) =>
                         card.SessionStateId == cardId);
                     if (!ReferenceEquals(candidate, currentCard))
                     {
                         return candidate;
+                    }
+                    if (!ReferenceEquals(
+                            previewAuthoringHost.Content,
+                            authoringContent))
+                    {
+                        throw new InvalidOperationException(
+                            $"{context} changed Preview authoring before the editor candidate committed.");
                     }
                     if (timeout.Elapsed >= TimeSpan.FromSeconds(10))
                     {
@@ -8286,6 +8338,16 @@ static void PinnedModuleVariantPreviewSurvivesEditorSelection()
                 var messages = Required(
                     window.FindControl<TextBox>(
                         "ShellMessagesTextBox"));
+                var previewTitle = Required(
+                    window.FindControl<StackPanel>(
+                        "PreviewTitlePanel"));
+                string PreviewBreadcrumb() => string.Join(
+                    " › ",
+                    previewTitle
+                        .GetVisualDescendants()
+                        .OfType<TextBlock>()
+                        .Select((text) => text.Text)
+                        .Where((text) => !string.IsNullOrWhiteSpace(text)));
                 True(SpinWait.SpinUntil(
                     () =>
                     {
@@ -8294,9 +8356,15 @@ static void PinnedModuleVariantPreviewSurvivesEditorSelection()
                     },
                     TimeSpan.FromSeconds(10)),
                     "Module Variant Preview lock did not become enabled.");
+                var pinnedBreadcrumb = PreviewBreadcrumb();
+                True(!string.IsNullOrWhiteSpace(pinnedBreadcrumb));
+                True(!pinnedBreadcrumb.Equals(
+                    "Preview",
+                    StringComparison.Ordinal));
                 lockButton.RaiseEvent(
                     new RoutedEventArgs(Button.ClickEvent));
                 Dispatcher.UIThread.RunJobs();
+                Equal(pinnedBreadcrumb, PreviewBreadcrumb());
                 True(!(messages.Text ?? "").Contains(
                     "Module variant has no parent module",
                     StringComparison.Ordinal));
@@ -8306,6 +8374,7 @@ static void PinnedModuleVariantPreviewSurvivesEditorSelection()
                     [other.Id]) ?? false));
                 Dispatcher.UIThread.RunJobs();
                 True(WindowSession(window).SelectedNode?.Id != pinned.Id);
+                Equal(pinnedBreadcrumb, PreviewBreadcrumb());
                 True(!(messages.Text ?? "").Contains(
                     "Module variant has no parent module",
                     StringComparison.Ordinal));
@@ -8383,15 +8452,30 @@ static void PinnedProductionPreviewKeepsActiveScreenWhileEditingDesign()
                     TimeSpan.FromSeconds(10)));
 
                 var lockButton = Required(window.FindControl<Button>("PreviewContextLockButton"));
+                var previewTitle = Required(
+                    window.FindControl<StackPanel>(
+                        "PreviewTitlePanel"));
+                string PreviewBreadcrumb() => string.Join(
+                    " › ",
+                    previewTitle
+                        .GetVisualDescendants()
+                        .OfType<TextBlock>()
+                        .Select((text) => text.Text)
+                        .Where((text) => !string.IsNullOrWhiteSpace(text)));
                 True(SpinWait.SpinUntil(
                     () =>
                     {
                         Dispatcher.UIThread.RunJobs();
-                        return lockButton.IsVisible && lockButton.IsEnabled;
+                        return lockButton.IsVisible
+                            && lockButton.IsEnabled
+                            && !string.IsNullOrWhiteSpace(
+                                PreviewBreadcrumb());
                     },
                     TimeSpan.FromSeconds(10)));
+                var pinnedBreadcrumb = PreviewBreadcrumb();
                 lockButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 Dispatcher.UIThread.RunJobs();
+                Equal(pinnedBreadcrumb, PreviewBreadcrumb());
 
                 Required(window.FindControl<Button>("DesignWorkspaceButton"))
                     .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
@@ -8405,6 +8489,7 @@ static void PinnedProductionPreviewKeepsActiveScreenWhileEditingDesign()
                     TimeSpan.FromSeconds(10)));
                 True((bool)(selectNode.Invoke(window, [designNode.Id]) ?? false));
                 Dispatcher.UIThread.RunJobs();
+                Equal(pinnedBreadcrumb, PreviewBreadcrumb());
 
                 var productionShotId = typeof(EditorPreviewController)
                     .GetMethod("ProductionShotId", BindingFlags.Instance | BindingFlags.NonPublic)

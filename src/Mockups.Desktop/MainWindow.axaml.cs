@@ -737,32 +737,12 @@ public partial class MainWindow : SukiWindow
                 return;
             }
 
-            _editorContent.CommitRoot(
+            CommitPreparedRootEditor(
                 layoutNode,
                 dataNode,
+                revision,
                 prepared,
-                restoreState?.ExpandedCardIds);
-            _editorHeader.SetRootTitle(
-                layoutNode.Name,
-                prepared.Header);
-            if (dataNode.Kind is
-                ProjectTreeNodeKind.ComponentVariant
-                or ProjectTreeNodeKind.ModuleVariant)
-            {
-                _ = PrepareRootOverridesAsync(
-                    layoutNode,
-                    dataNode,
-                    revision);
-            }
-            RestoreRootEditorViewState(
-                dataNode,
                 restoreState);
-            _authoringFocusController.ApplyRoot(
-                dataNode,
-                prepared.Cards,
-                _editorContent.Cards);
-            ApplyPendingEditorCardExpansion(dataNode.Id);
-            ApplyUiTextScale();
         }
         catch (OperationCanceledException)
         {
@@ -779,6 +759,41 @@ public partial class MainWindow : SukiWindow
                     exception);
             }
         }
+    }
+
+    private void CommitPreparedRootEditor(
+        ProjectTreeNode layoutNode,
+        ProjectTreeNode dataNode,
+        long revision,
+        EditorPreparedRootContent prepared,
+        EditorViewState? restoreState)
+    {
+        _editorContent.CommitRoot(
+            layoutNode,
+            dataNode,
+            prepared,
+            restoreState?.ExpandedCardIds);
+        _editorHeader.SetRootTitle(
+            layoutNode.Name,
+            prepared.Header);
+        if (dataNode.Kind is
+            ProjectTreeNodeKind.ComponentVariant
+            or ProjectTreeNodeKind.ModuleVariant)
+        {
+            _ = PrepareRootOverridesAsync(
+                layoutNode,
+                dataNode,
+                revision);
+        }
+        RestoreRootEditorViewState(
+            dataNode,
+            restoreState);
+        _authoringFocusController.ApplyRoot(
+            dataNode,
+            prepared.Cards,
+            _editorContent.Cards);
+        ApplyPendingEditorCardExpansion(dataNode.Id);
+        ApplyUiTextScale();
     }
 
     private async Task PrepareRootOverridesAsync(
@@ -858,9 +873,85 @@ public partial class MainWindow : SukiWindow
         }
     }
 
+    private sealed record PreparedPreviewAuthoringCandidate(
+        ProjectTreeNode SelectedNode,
+        ProjectTreeNode PreviewNode,
+        EditorWorkspace Workspace,
+        bool SupportsSurface,
+        EditorPreparedPreviewAuthoringSurface? Prepared);
+
+    private async Task<PreparedPreviewAuthoringCandidate>
+        PreparePreviewAuthoringSurfaceCandidateAsync(
+            ProjectTreeNode node)
+    {
+        var previewNode = _previewController.PreviewAuthoringNode(node);
+        var workspace = _previewController.PreviewAuthoringWorkspace;
+        var supportsSurface = EditorCollectionCardFactory
+            .SupportsPreviewAuthoringSurface(
+                previewNode,
+                workspace);
+        if (!supportsSurface)
+        {
+            _collectionCards.CancelPreviewAuthoringPreparation();
+            return new PreparedPreviewAuthoringCandidate(
+                node,
+                previewNode,
+                workspace,
+                false,
+                null);
+        }
+
+        var transientState = _previewController
+            .CaptureDesignPreviewTransientState(previewNode);
+        var prepared = await _collectionCards
+            .PreparePreviewAuthoringSurfaceAsync(
+                previewNode,
+                workspace,
+                transientState);
+        return new PreparedPreviewAuthoringCandidate(
+            node,
+            previewNode,
+            workspace,
+            true,
+            prepared);
+    }
+
+    private void CommitPreviewAuthoringSurfaceCandidate(
+        PreparedPreviewAuthoringCandidate candidate)
+    {
+        if (!candidate.SupportsSurface)
+        {
+            _screenTimeline.Clear();
+            RenderPreviewAuthoringSurface(
+                candidate.SelectedNode,
+                null);
+            return;
+        }
+
+        if (candidate.Workspace == EditorWorkspace.Production
+            && candidate.Prepared is { } productionPrepared)
+        {
+            _screenTimeline.BeginScreen(candidate.PreviewNode.Id);
+            _screenTimeline.ShowPrepared(productionPrepared);
+        }
+        else
+        {
+            _screenTimeline.Clear();
+        }
+
+        RenderPreviewAuthoringSurface(
+            candidate.PreviewNode,
+            candidate.Prepared is null
+                ? null
+                : EditorCollectionCardFactory
+                    .CreatePreparedPreviewAuthoringSurface(
+                        candidate.Prepared));
+    }
+
     private async Task RefreshPreviewAuthoringSurfaceAsync(
         ProjectTreeNode node,
-        long revision)
+        long revision,
+        bool preserveCurrentSurfaceWhilePreparing = false)
     {
         if (!_workspaceCoordinator.IsCurrent(
                 revision,
@@ -869,52 +960,33 @@ public partial class MainWindow : SukiWindow
             return;
         }
 
-        var previewNode = _previewController.PreviewAuthoringNode(node);
-        var workspace = _previewController.PreviewAuthoringWorkspace;
-        if (!EditorCollectionCardFactory
-                .SupportsPreviewAuthoringSurface(
-                    previewNode,
-                    workspace))
-        {
-            _screenTimeline.Clear();
-            _collectionCards
-                .CancelPreviewAuthoringPreparation();
-            RenderPreviewAuthoringSurface(
-                node,
-                null);
-            return;
-        }
-
-        if (workspace == EditorWorkspace.Production)
-        {
-            _screenTimeline.BeginScreen(previewNode.Id);
-        }
-        else
-        {
-            _screenTimeline.Clear();
-        }
-
-        var header = workspace == EditorWorkspace.Production
-            ? "Screen Payload"
-            : "Test Values";
-        RenderPreviewAuthoringSurface(
-            previewNode,
-            new EditorPreviewAuthoringSurface(
-                header,
-                new Border
-                {
-                    Padding = new Thickness(4),
-                    Child = new EditorLoadingScrim(),
-                }));
         try
         {
-            var transientState = _previewController
-                .CaptureDesignPreviewTransientState(previewNode);
-            var prepared = await _collectionCards
-                .PreparePreviewAuthoringSurfaceAsync(
+            var previewNode = _previewController.PreviewAuthoringNode(node);
+            var workspace = _previewController.PreviewAuthoringWorkspace;
+            var supportsSurface = EditorCollectionCardFactory
+                .SupportsPreviewAuthoringSurface(
                     previewNode,
-                    workspace,
-                    transientState);
+                    workspace);
+            if (!preserveCurrentSurfaceWhilePreparing
+                && supportsSurface)
+            {
+                var header = workspace == EditorWorkspace.Production
+                    ? "Screen Payload"
+                    : "Test Values";
+                RenderPreviewAuthoringSurface(
+                    previewNode,
+                    new EditorPreviewAuthoringSurface(
+                        header,
+                        new Border
+                        {
+                            Padding = new Thickness(4),
+                            Child = new EditorLoadingScrim(),
+                        }));
+            }
+
+            var candidate = await
+                PreparePreviewAuthoringSurfaceCandidateAsync(node);
             if (!_workspaceCoordinator.IsCurrent(
                     revision,
                     node.Id))
@@ -922,18 +994,7 @@ public partial class MainWindow : SukiWindow
                 return;
             }
 
-            if (prepared is not null
-                && workspace == EditorWorkspace.Production)
-            {
-                _screenTimeline.ShowPrepared(prepared);
-            }
-            RenderPreviewAuthoringSurface(
-                previewNode,
-                prepared is null
-                    ? null
-                    : EditorCollectionCardFactory
-                        .CreatePreparedPreviewAuthoringSurface(
-                            prepared));
+            CommitPreviewAuthoringSurfaceCandidate(candidate);
         }
         catch (OperationCanceledException)
         {
@@ -945,10 +1006,13 @@ public partial class MainWindow : SukiWindow
                     revision,
                     node.Id))
             {
-                RenderPreviewAuthoringSurface(
-                    previewNode,
-                    null);
-                _screenTimeline.Clear();
+                if (!preserveCurrentSurfaceWhilePreparing)
+                {
+                    RenderPreviewAuthoringSurface(
+                        node,
+                        null);
+                    _screenTimeline.Clear();
+                }
                 _messages.Error(
                     "Prepare Preview authoring",
                     exception);
@@ -1037,30 +1101,10 @@ public partial class MainWindow : SukiWindow
                 return;
             }
 
-            _editorContent.CommitEmbedded(
+            CommitPreparedEmbeddedEditor(
                 current,
                 prepared,
-                restoreState?.ExpandedCardIds);
-            _editorHeader.SetEmbeddedTitle(
-                current,
-                prepared.Header);
-            if (restoreState is not null)
-            {
-                _editorViewState.RestoreState(
-                    restoreState,
-                    _editorContent.Cards);
-            }
-            else
-            {
-                _editorViewState.Restore(
-                    current.RecordClassId,
-                    _editorContent.Cards);
-            }
-            _authoringFocusController.ApplyEmbedded(
-                current,
-                prepared.Cards,
-                _editorContent.Cards);
-            ApplyUiTextScale();
+                restoreState);
         }
         catch (OperationCanceledException)
         {
@@ -1075,6 +1119,37 @@ public partial class MainWindow : SukiWindow
                     exception);
             }
         }
+    }
+
+    private void CommitPreparedEmbeddedEditor(
+        EditorEmbeddedContext context,
+        EditorPreparedEmbeddedContent prepared,
+        EditorViewState? restoreState)
+    {
+        _editorContent.CommitEmbedded(
+            context,
+            prepared,
+            restoreState?.ExpandedCardIds);
+        _editorHeader.SetEmbeddedTitle(
+            context,
+            prepared.Header);
+        if (restoreState is not null)
+        {
+            _editorViewState.RestoreState(
+                restoreState,
+                _editorContent.Cards);
+        }
+        else
+        {
+            _editorViewState.Restore(
+                context.RecordClassId,
+                _editorContent.Cards);
+        }
+        _authoringFocusController.ApplyEmbedded(
+            context,
+            prepared.Cards,
+            _editorContent.Cards);
+        ApplyUiTextScale();
     }
 
     private void CaptureActiveEditorViewState()
@@ -1143,36 +1218,132 @@ public partial class MainWindow : SukiWindow
         }
 
         _treeExpansion.ExpandAncestors(refreshedOwner);
-        RebuildNavigationCards();
+        var navigationChanged = !EditorNavigationRenderer
+            .HasSamePresentation(
+                transition.Previous.TreeRoots,
+                transition.Current.TreeRoots);
+        _ = PrepareActiveEditorRefreshAsync(
+            transition,
+            refreshedOwner,
+            viewState,
+            navigationChanged);
+    }
 
-        if (transition.Current.EmbeddedEditor is { } embeddedContext)
+    private async Task PrepareActiveEditorRefreshAsync(
+        EditorSessionTransition transition,
+        ProjectTreeNode owner,
+        EditorViewState? viewState,
+        bool navigationChanged)
+    {
+        var revision = transition.Current.Revision;
+        try
         {
-            if (!_editorContent.CommittedOwnerId.Equals(
-                    embeddedContext.OwnerNode.Id,
-                    StringComparison.Ordinal))
+            var previewAuthoringTask =
+                PreparePreviewAuthoringSurfaceCandidateAsync(owner);
+            if (transition.Current.EmbeddedEditor is { } embedded)
             {
-                _editorContent.ShowLoading();
-            }
-            _ = PrepareEmbeddedEditorAsync(
-                embeddedContext,
-                transition.Current.Revision,
-                viewState);
-            _editorHeader.SetEmbeddedTitle(
-                embeddedContext,
-                EditorPreparedHeader.Loading(
-                    embeddedContext.OwnerNode.Id));
-            RefreshPreviewDevice();
-        }
-        else
-        {
-            RenderRootSelection(
-                transition,
-                rebuildTree: false,
-                restoreState: viewState,
-                preserveCurrentContentWhilePreparing: true);
-        }
+                var editorTask = _editorContent
+                    .PrepareEmbeddedAsync(embedded);
+                await Task.WhenAll(
+                    editorTask,
+                    previewAuthoringTask);
+                if (Session.Revision != revision
+                    || Session.EmbeddedEditor is not { } current
+                    || !current.OwnerNode.Id.Equals(
+                        embedded.OwnerNode.Id,
+                        StringComparison.Ordinal)
+                    || !current.RecordClassId.Equals(
+                        embedded.RecordClassId,
+                        StringComparison.Ordinal))
+                {
+                    return;
+                }
 
-        ApplyUiTextScale();
+                CommitPreparedEmbeddedEditor(
+                    current,
+                    await editorTask,
+                    viewState);
+            }
+            else
+            {
+                var layoutNode = EditorNodeSelectionState
+                    .EditorNodeForSelection(owner);
+                if (_editorContent.PrepareSpecial(owner) is { } specialCards)
+                {
+                    await previewAuthoringTask;
+                    if (!_workspaceCoordinator.IsCurrent(
+                            revision,
+                            owner.Id))
+                    {
+                        return;
+                    }
+                    _editorContent.CommitSpecial(
+                        owner,
+                        specialCards);
+                    RestoreRootEditorViewState(
+                        owner,
+                        viewState);
+                    ApplyPendingEditorCardExpansion(owner.Id);
+                }
+                else
+                {
+                    var editorTask = _editorContent
+                        .PrepareRootAsync(
+                            layoutNode,
+                            owner);
+                    await Task.WhenAll(
+                        editorTask,
+                        previewAuthoringTask);
+                    if (!_workspaceCoordinator.IsCurrent(
+                            revision,
+                            owner.Id)
+                        || Session.EmbeddedEditor is not null)
+                    {
+                        return;
+                    }
+
+                    CommitPreparedRootEditor(
+                        layoutNode,
+                        owner,
+                        revision,
+                        await editorTask,
+                        viewState);
+                }
+            }
+
+            if (!_workspaceCoordinator.IsCurrent(
+                    revision,
+                    owner.Id))
+            {
+                return;
+            }
+            CommitPreviewAuthoringSurfaceCandidate(
+                await previewAuthoringTask);
+            if (navigationChanged)
+            {
+                RebuildNavigationCards();
+            }
+            ApplyUiTextScale();
+            _previewController.ScheduleSelectionRefresh(() =>
+                _workspaceCoordinator.IsCurrent(
+                    revision,
+                    owner.Id));
+        }
+        catch (OperationCanceledException)
+        {
+            // A newer editor refresh owns the complete shell candidate.
+        }
+        catch (Exception exception)
+        {
+            if (_workspaceCoordinator.IsCurrent(
+                    revision,
+                    owner.Id))
+            {
+                _messages.Error(
+                    "Refresh active editor",
+                    exception);
+            }
+        }
     }
 
     private void ReturnToEmbeddedOwner(ProjectTreeNode ownerNode)
