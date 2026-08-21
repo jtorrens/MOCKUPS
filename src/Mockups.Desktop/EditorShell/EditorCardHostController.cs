@@ -31,10 +31,13 @@ internal sealed class EditorCardHostController
     public void Replace(
         IReadOnlyList<InstantEditorCard> cards,
         Control? header = null,
-        bool resetExpansion = true)
+        bool resetExpansion = true,
+        IReadOnlyCollection<string>? restoredExpandedCardIds = null)
     {
         var candidateCards = cards.ToList();
         var candidateWrappers = candidateCards.Select(CreateWrapper).ToList();
+        var expandedCardIds = restoredExpandedCardIds?.ToHashSet(
+            StringComparer.Ordinal);
 
         _host.Children.Clear();
         _cards.Clear();
@@ -45,7 +48,12 @@ internal sealed class EditorCardHostController
         }
         foreach (var card in candidateCards)
         {
-            if (resetExpansion)
+            if (expandedCardIds is not null)
+            {
+                card.RestoreExpansion(
+                    expandedCardIds.Contains(card.SessionStateId));
+            }
+            else if (resetExpansion)
             {
                 card.IsExpanded = false;
             }

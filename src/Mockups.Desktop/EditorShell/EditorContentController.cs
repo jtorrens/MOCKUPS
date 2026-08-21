@@ -113,7 +113,8 @@ internal sealed class EditorContentController : IDisposable
     public void CommitRoot(
         ProjectTreeNode layoutNode,
         ProjectTreeNode dataNode,
-        EditorPreparedRootContent prepared)
+        EditorPreparedRootContent prepared,
+        IReadOnlyCollection<string>? restoredExpandedCardIds = null)
     {
         ResetRegistries();
         var cards = prepared.Cards
@@ -125,7 +126,9 @@ internal sealed class EditorContentController : IDisposable
                 card.Fields))
             .Concat(_collectionCards.Create(dataNode))
             .ToList();
-        _cardHost.Replace(cards);
+        _cardHost.Replace(
+            cards,
+            restoredExpandedCardIds: restoredExpandedCardIds);
         HidePeerViews();
         CommittedOwnerId = dataNode.Id;
     }
@@ -169,7 +172,8 @@ internal sealed class EditorContentController : IDisposable
 
     public void CommitEmbedded(
         EditorEmbeddedContext context,
-        EditorPreparedEmbeddedContent prepared)
+        EditorPreparedEmbeddedContent prepared,
+        IReadOnlyCollection<string>? restoredExpandedCardIds = null)
     {
         HidePeerViews();
         ResetRegistries();
@@ -194,7 +198,9 @@ internal sealed class EditorContentController : IDisposable
                 prepared.DictionaryContext,
                 card.Fields));
         }
-        _cardHost.Replace(cards);
+        _cardHost.Replace(
+            cards,
+            restoredExpandedCardIds: restoredExpandedCardIds);
         CommittedOwnerId = context.OwnerNode.Id;
     }
 

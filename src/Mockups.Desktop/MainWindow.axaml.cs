@@ -661,7 +661,8 @@ public partial class MainWindow : SukiWindow
         EditorSessionTransition transition,
         bool rebuildTree,
         EditorShellContextTransaction? transaction = null,
-        EditorViewState? restoreState = null)
+        EditorViewState? restoreState = null,
+        bool preserveCurrentContentWhilePreparing = false)
     {
         var node = transition.Current.SelectedNode
             ?? throw new InvalidOperationException(
@@ -682,7 +683,13 @@ public partial class MainWindow : SukiWindow
         }
         else
         {
-            _editorContent.ShowLoading();
+            if (!preserveCurrentContentWhilePreparing
+                || !_editorContent.CommittedOwnerId.Equals(
+                    node.Id,
+                    StringComparison.Ordinal))
+            {
+                _editorContent.ShowLoading();
+            }
             _ = PrepareRootEditorAsync(
                 editorNode,
                 node,
@@ -733,7 +740,8 @@ public partial class MainWindow : SukiWindow
             _editorContent.CommitRoot(
                 layoutNode,
                 dataNode,
-                prepared);
+                prepared,
+                restoreState?.ExpandedCardIds);
             _editorHeader.SetRootTitle(
                 layoutNode.Name,
                 prepared.Header);
@@ -1031,7 +1039,8 @@ public partial class MainWindow : SukiWindow
 
             _editorContent.CommitEmbedded(
                 current,
-                prepared);
+                prepared,
+                restoreState?.ExpandedCardIds);
             _editorHeader.SetEmbeddedTitle(
                 current,
                 prepared.Header);
@@ -1138,7 +1147,12 @@ public partial class MainWindow : SukiWindow
 
         if (transition.Current.EmbeddedEditor is { } embeddedContext)
         {
-            _editorContent.ShowLoading();
+            if (!_editorContent.CommittedOwnerId.Equals(
+                    embeddedContext.OwnerNode.Id,
+                    StringComparison.Ordinal))
+            {
+                _editorContent.ShowLoading();
+            }
             _ = PrepareEmbeddedEditorAsync(
                 embeddedContext,
                 transition.Current.Revision,
@@ -1154,7 +1168,8 @@ public partial class MainWindow : SukiWindow
             RenderRootSelection(
                 transition,
                 rebuildTree: false,
-                restoreState: viewState);
+                restoreState: viewState,
+                preserveCurrentContentWhilePreparing: true);
         }
 
         ApplyUiTextScale();

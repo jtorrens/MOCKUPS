@@ -188,6 +188,7 @@ var tests = new (string Name, Action Run)[]
     ("editor view state follows the exact record class across records", EditorViewStateFollowsRecordClass),
     ("editor view state round-trips per class and clamps scroll", EditorViewStateRoundTripsPerClass),
     ("editor view state survives real editor and breadcrumb navigation", EditorViewStateSurvivesRealNavigation),
+    ("same-owner editor refresh keeps root and embedded cards mounted", SameOwnerEditorRefreshKeepsCardsMounted),
     ("Preview shell remains usable at 1040 and 1440 widths", PreviewShellLayoutIsResponsive),
     ("Preview controls detach into one topmost session window", PreviewControlsDetachIntoTopmostSessionWindow),
     ("navigation panel restores its width and opens for routed selection", NavigationPanelRestoresWidthAndOpensForRoutedSelection),
@@ -5659,6 +5660,188 @@ static void EditorViewStateSurvivesRealNavigation()
             EqualOffset(
                 avatarOffset,
                 "Design history forward navigation");
+
+            window.Hide();
+        }, CancellationToken.None).GetAwaiter().GetResult();
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void SameOwnerEditorRefreshKeepsCardsMounted()
+{
+    var source = ParityDatabasePath();
+    var temporary = Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        $".mockups-headless-editor-refresh-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        using var session = HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApplication));
+        session.Dispatch(() =>
+        {
+            var window = CreateTestWindow(temporary);
+            window.Width = 1440;
+            window.Height = 640;
+            window.Show();
+
+            var treeRoots = WindowSession(window).TreeRoots;
+            var selectNode = typeof(MainWindow).GetMethod(
+                "SelectNodeById",
+                BindingFlags.Instance | BindingFlags.NonPublic,
+                binder: null,
+                types: [typeof(string)],
+                modifiers: null)
+                ?? throw new InvalidOperationException("Missing MainWindow node selection boundary.");
+            var showEmbedded = typeof(MainWindow).GetMethod(
+                "ShowEmbeddedContext",
+                BindingFlags.Instance | BindingFlags.NonPublic)
+                ?? throw new InvalidOperationException("Missing MainWindow embedded navigation boundary.");
+            var reloadActiveEditor = typeof(MainWindow).GetMethod(
+                "ReloadActiveEditor",
+                BindingFlags.Instance | BindingFlags.NonPublic)
+                ?? throw new InvalidOperationException("Missing MainWindow editor refresh boundary.");
+            var editorContent = typeof(MainWindow)
+                .GetField("_editorContent", BindingFlags.Instance | BindingFlags.NonPublic)
+                ?.GetValue(window) as EditorContentController
+                ?? throw new InvalidOperationException("Missing MainWindow editor content owner.");
+            var activeFieldControls = typeof(MainWindow)
+                .GetField("_activeFieldControls", BindingFlags.Instance | BindingFlags.NonPublic)
+                ?.GetValue(window) as EditorActiveFieldControls
+                ?? throw new InvalidOperationException("Missing MainWindow active field controls.");
+
+            ProjectTreeNode Component(string recordClassId) => treeRoots
+                .SelectMany(DescendantsAndSelf)
+                .Single((node) =>
+                    node.Kind == ProjectTreeNodeKind.ComponentClass
+                    && node.RecordClassId == recordClassId);
+
+            void Layout()
+            {
+                Dispatcher.UIThread.RunJobs();
+                var size = new Size(window.Width, window.Height);
+                window.Measure(size);
+                window.Arrange(new Rect(size));
+                Dispatcher.UIThread.RunJobs();
+            }
+
+            void WaitForPreparedEditor()
+            {
+                var timeout = Stopwatch.StartNew();
+                while (true)
+                {
+                    Layout();
+                    if (editorContent.Cards.Count > 0
+                        && editorContent.Cards.All((card) =>
+                            card.SessionStateId != "editor:loading"))
+                    {
+                        return;
+                    }
+                    if (timeout.Elapsed >= TimeSpan.FromSeconds(10))
+                    {
+                        throw new TimeoutException("Editor preparation did not complete.");
+                    }
+                    Thread.Sleep(10);
+                }
+            }
+
+            void Select(ProjectTreeNode node)
+            {
+                if (!(bool)(selectNode.Invoke(window, [node.Id]) ?? false))
+                {
+                    throw new InvalidOperationException(
+                        $"Could not select editor fixture '{node.RecordClassId}'.");
+                }
+                WaitForPreparedEditor();
+            }
+
+            InstantEditorCard RefreshWithoutUnmounting(
+                ProjectTreeNode owner,
+                InstantEditorCard currentCard,
+                string cardId,
+                string context)
+            {
+                reloadActiveEditor.Invoke(window, [owner.Id]);
+                var timeout = Stopwatch.StartNew();
+                while (true)
+                {
+                    Layout();
+                    if (editorContent.Cards.Any((card) =>
+                            card.SessionStateId == "editor:loading"))
+                    {
+                        throw new InvalidOperationException(
+                            $"{context} replaced the current card with the loading card.");
+                    }
+
+                    var candidate = editorContent.Cards.Single((card) =>
+                        card.SessionStateId == cardId);
+                    if (!ReferenceEquals(candidate, currentCard))
+                    {
+                        return candidate;
+                    }
+                    if (timeout.Elapsed >= TimeSpan.FromSeconds(10))
+                    {
+                        throw new TimeoutException(
+                            $"{context} did not commit its refreshed editor snapshot.");
+                    }
+                    Thread.Sleep(10);
+                }
+            }
+
+            var cursor = Component("component.cursor");
+            Select(cursor);
+            var cursorOwner = Required(WindowSession(window).SelectedNode);
+            var cursorCard = editorContent.Cards.Single((card) =>
+                card.SessionStateId == "layout:cursor");
+            cursorCard.RestoreExpansion(true);
+            Layout();
+            if (!cursorCard.IsExpanded)
+            {
+                throw new InvalidOperationException(
+                    "Cursor card did not remain expanded before its same-owner refresh.");
+            }
+            True(activeFieldControls.ControlsByFieldId.TryGetValue(
+                "component.cursor.minimumFade",
+                out var minimumFade));
+            Equal("0.15", Required(minimumFade).Value);
+
+            cursorCard = RefreshWithoutUnmounting(
+                cursorOwner,
+                cursorCard,
+                "layout:cursor",
+                "Root same-owner refresh");
+            if (!cursorCard.IsExpanded)
+            {
+                throw new InvalidOperationException(
+                    "Cursor card did not remain expanded after its same-owner refresh.");
+            }
+            True(activeFieldControls.ControlsByFieldId.TryGetValue(
+                "component.cursor.minimumFade",
+                out minimumFade));
+            Equal("0.15", Required(minimumFade).Value);
+
+            var avatar = Component("component.avatar");
+            Select(avatar);
+            var avatarOwner = Required(WindowSession(window).SelectedNode);
+            var embeddedContext = new EditorEmbeddedContext(
+                avatarOwner,
+                [EmbeddedComponentSlotCatalog.Get("component.avatar.label.editor")]);
+            showEmbedded.Invoke(window, [embeddedContext]);
+            WaitForPreparedEditor();
+            var labelCard = editorContent.Cards.Single((card) =>
+                card.SessionStateId == "embedded:label");
+            labelCard.RestoreExpansion(true);
+            Layout();
+
+            labelCard = RefreshWithoutUnmounting(
+                avatarOwner,
+                labelCard,
+                "embedded:label",
+                "Embedded same-owner refresh");
+            True(labelCard.IsExpanded);
 
             window.Hide();
         }, CancellationToken.None).GetAwaiter().GetResult();

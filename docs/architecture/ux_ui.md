@@ -56,6 +56,11 @@ aligned with status and lifecycle actions.
 Changing between records of the same class keeps the same open card and scroll
 level. Returning to another editor restores that editor class's session point.
 This memory lasts only for the current application session.
+Committing a field refreshes the current root or embedded editor from a newly
+prepared snapshot while its existing cards remain mounted. The replacement is
+applied in one visual turn with the captured expansion and scroll state; the
+loading card is reserved for transitions that do not already present that exact
+owner.
 
 Component and Module headers expose compact Back and Forward actions after the
 Variant actions. They traverse the exact sequence of Design editor visits,
