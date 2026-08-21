@@ -4387,16 +4387,9 @@ internal sealed class EditorPreviewController : IDisposable
         string deviceId,
         DesignPreviewPayload? payload)
     {
-        if (PreviewWorkspace() == EditorWorkspace.Production)
+        var shotId = ProductionPayloadShotId(payload);
+        if (!string.IsNullOrWhiteSpace(shotId))
         {
-            var shotId = RuntimeContextValue(
-                payload,
-                "shotId");
-            if (string.IsNullOrWhiteSpace(shotId))
-            {
-                throw new InvalidOperationException(
-                    "Production Preview payload requires its exact Shot id before resolving Device metrics.");
-            }
             var shot = PreparedProductionSession().Shot(
                 shotId);
             if (!shot.DeviceId.Equals(
@@ -4418,6 +4411,24 @@ internal sealed class EditorPreviewController : IDisposable
         }
 
         return snapshot.DeviceMetrics(deviceId);
+    }
+
+    internal static string ProductionPayloadShotId(
+        DesignPreviewPayload? payload)
+    {
+        if (payload?.Kind != "moduleInstance")
+        {
+            return "";
+        }
+        var shotId = RuntimeContextValue(
+            payload,
+            "shotId");
+        if (string.IsNullOrWhiteSpace(shotId))
+        {
+            throw new InvalidOperationException(
+                "Production Preview payload requires its exact Shot id before resolving Device metrics.");
+        }
+        return shotId;
     }
 
     internal static FieldOption? PreferredResourceOption(

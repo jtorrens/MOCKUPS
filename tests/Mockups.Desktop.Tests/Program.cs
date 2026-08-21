@@ -14368,6 +14368,30 @@ static void ShotDeviceSettingsOverridesPreserveOwnership()
             .Shot(shotNode.Id);
         Equal(alternateDeviceId, preview.DeviceId);
         Equal(123d, preview.DeviceMetrics.CornerRadius);
+        var screen = shotNode.Children.First((node) =>
+            node.Kind == ProjectTreeNodeKind.ModuleInstance);
+        var productionPayload = Required(CreatePreviewPayload(
+            database,
+            screen,
+            actor.DefaultThemeId));
+        Equal(
+            shotNode.Id,
+            EditorPreviewController.ProductionPayloadShotId(
+                productionPayload));
+        Equal(
+            "",
+            EditorPreviewController.ProductionPayloadShotId(
+                productionPayload with
+                {
+                    Kind = "componentClass",
+                    InstanceJson = "{}",
+                }));
+        Throws<InvalidOperationException>(() =>
+            EditorPreviewController.ProductionPayloadShotId(
+                productionPayload with
+                {
+                    InstanceJson = "{}",
+                }));
 
         var renderDraft = new RenderJobSnapshotFactory(
                 RenderSnapshots(database),
