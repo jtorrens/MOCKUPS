@@ -884,7 +884,9 @@ public partial class MainWindow : SukiWindow
         PreparePreviewAuthoringSurfaceCandidateAsync(
             ProjectTreeNode node)
     {
-        var previewNode = _previewController.PreviewAuthoringNode(node);
+        var previewNode = _previewController.PreviewAuthoringNode(
+            node,
+            Session.TreeRoots);
         var workspace = _previewController.PreviewAuthoringWorkspace;
         var supportsSurface = EditorCollectionCardFactory
             .SupportsPreviewAuthoringSurface(
@@ -962,7 +964,9 @@ public partial class MainWindow : SukiWindow
 
         try
         {
-            var previewNode = _previewController.PreviewAuthoringNode(node);
+            var previewNode = _previewController.PreviewAuthoringNode(
+                node,
+                Session.TreeRoots);
             var workspace = _previewController.PreviewAuthoringWorkspace;
             var supportsSurface = EditorCollectionCardFactory
                 .SupportsPreviewAuthoringSurface(

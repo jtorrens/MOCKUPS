@@ -285,8 +285,26 @@ internal sealed class EditorPreviewController : IDisposable
         PreviewWorkspace();
 
     public ProjectTreeNode PreviewAuthoringNode(
-        ProjectTreeNode selectedNode) =>
-        LockedContextNode() ?? selectedNode;
+        ProjectTreeNode selectedNode,
+        IReadOnlyList<ProjectTreeNode> treeRoots)
+    {
+        if (_lockedPreviewContext is not { } locked)
+        {
+            return selectedNode;
+        }
+
+        var resolved = EditorNodeSelectionState.FindNodeById(
+            treeRoots,
+            locked.Node.Id);
+        if (resolved is null || resolved.Kind != locked.Node.Kind)
+        {
+            throw new InvalidOperationException(
+                $"Locked Preview context '{locked.Node.Kind}:{locked.Node.Id}' "
+                + "is not present in the current project tree.");
+        }
+
+        return resolved;
+    }
 
     public IReadOnlyList<PreviewScreenTimelineReferenceMarker>
         ProductionScreenReferenceMarkers(string moduleInstanceId)

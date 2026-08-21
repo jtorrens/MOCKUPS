@@ -8502,10 +8502,34 @@ static void PinnedProductionPreviewKeepsActiveScreenWhileEditingDesign()
                     ?? throw new InvalidOperationException("Missing locked Preview Screen context.");
                 Equal(ProjectTreeNodeKind.ModuleInstance, lockedNode.Kind);
                 Equal(EditorWorkspace.Production, preview.PreviewAuthoringWorkspace);
-                Equal(
-                    lockedNode.Id,
-                    preview.PreviewAuthoringNode(
-                        Required(WindowSession(window).SelectedNode)).Id);
+                var canonicalLockedNode = preview.PreviewAuthoringNode(
+                    Required(WindowSession(window).SelectedNode),
+                    WindowSession(window).TreeRoots);
+                Equal(lockedNode.Id, canonicalLockedNode.Id);
+                var canonicalRoot = canonicalLockedNode;
+                while (canonicalRoot.Parent is { } parent)
+                {
+                    canonicalRoot = parent;
+                }
+                Equal(ProjectTreeNodeKind.Project, canonicalRoot.Kind);
+                var prepareAuthoring = typeof(MainWindow).GetMethod(
+                    "PreparePreviewAuthoringSurfaceCandidateAsync",
+                    BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?? throw new InvalidOperationException(
+                        "Missing Preview authoring preparation boundary.");
+                var authoringTask = prepareAuthoring.Invoke(
+                    window,
+                    [Required(WindowSession(window).SelectedNode)]) as Task
+                    ?? throw new InvalidOperationException(
+                        "Preview authoring preparation did not return a task.");
+                True(SpinWait.SpinUntil(
+                    () =>
+                    {
+                        Dispatcher.UIThread.RunJobs();
+                        return authoringTask.IsCompleted;
+                    },
+                    TimeSpan.FromSeconds(10)));
+                authoringTask.GetAwaiter().GetResult();
                 var snapshot = prepared.GetValue(preview)
                     as ProductionPreviewSessionSnapshot
                     ?? throw new InvalidOperationException("Missing Production Preview session.");
