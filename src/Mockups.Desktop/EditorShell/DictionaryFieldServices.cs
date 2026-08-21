@@ -25,6 +25,8 @@ internal sealed record DictionaryFieldServices(
     Func<FieldDefinition, string, int>? ResolveBehaviorTimingFrames = null,
     Func<string, Task<bool>>? ConfirmStopRuntimeInputForwarding = null,
     Func<string, JsonObject, Func<JsonObject, Task>, Task>? OpenRuntimeComponentOverrides = null,
+    Func<FieldDefinition, string, Task>?
+        OpenRecordReferenceOverrides = null,
     Func<string, Task<bool>>? ConfirmStructuredCollectionItemDelete = null,
     Func<string, IReadOnlyList<string>, Task<bool>>? ConfirmDiscardForwardedRuntimeInputs = null,
     Action<string, string>? SetRuntimeTestValue = null,

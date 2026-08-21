@@ -25,6 +25,8 @@ internal sealed class EditorLayoutCardFactory
     private readonly Func<string, Task> _openComponentVariantReference;
     private readonly Func<ProjectTreeNode, Task> _toggleVariantLock;
     private readonly Action<EditorEmbeddedContext> _openRuntimeComponentOverrides;
+    private readonly Func<ProjectTreeNode, FieldDefinition, string, Task>
+        _openRecordReferenceOverrides;
     private readonly Action<ProjectTreeNode> _scheduleActiveEditorReload;
     private readonly Action _refreshPreview;
     private readonly EditorSessionUiState _sessionUiState;
@@ -44,6 +46,8 @@ internal sealed class EditorLayoutCardFactory
         Func<string, Task> openComponentVariantReference,
         Func<ProjectTreeNode, Task> toggleVariantLock,
         Action<EditorEmbeddedContext> openRuntimeComponentOverrides,
+        Func<ProjectTreeNode, FieldDefinition, string, Task>
+            openRecordReferenceOverrides,
         Action<ProjectTreeNode> scheduleActiveEditorReload,
         Action refreshPreview,
         EditorSessionUiState sessionUiState)
@@ -62,6 +66,8 @@ internal sealed class EditorLayoutCardFactory
         _openComponentVariantReference = openComponentVariantReference;
         _toggleVariantLock = toggleVariantLock;
         _openRuntimeComponentOverrides = openRuntimeComponentOverrides;
+        _openRecordReferenceOverrides =
+            openRecordReferenceOverrides;
         _scheduleActiveEditorReload = scheduleActiveEditorReload;
         _refreshPreview = refreshPreview;
         _sessionUiState = sessionUiState;
@@ -256,6 +262,146 @@ internal sealed class EditorLayoutCardFactory
                 && !field.Id.Equals("component.type", StringComparison.Ordinal));
     }
 
+    public InstantEditorCard CreateRecordReferenceOverrides(
+        RecordReferenceOverrideSource source,
+        EditorLayoutCard layoutCard,
+        EditorDictionaryContextSnapshot dictionaryContext,
+        IReadOnlyDictionary<string, FieldValue> preparedFields,
+        EditorActiveFieldControls activeFieldControls)
+    {
+        var body = new StackPanel
+        {
+            Spacing = EditorUiDensity.Card(12),
+        };
+        var controls = new List<DictionaryFieldControl>();
+        var headerIcon = EditorIcons.CreateSemantic(
+            layoutCard.Label,
+            layoutCard.Icon,
+            18);
+        var visibleGroups = layoutCard.VisibleGroups.ToList();
+        var groupLayout = ParseGroupLayout(
+            layoutCard.GroupLayout);
+        var useSectionChrome = visibleGroups.Count > 1;
+        var exclusiveGroupCards =
+            new List<InstantEditorCard>();
+        var organizedGroups =
+            new List<(EditorLayoutGroup Group, Control Content,
+                EditorSubcardLayout Layout)>();
+
+        foreach (var group in visibleGroups)
+        {
+            var groupControls =
+                new List<DictionaryFieldControl>();
+            var groupPanel = new StackPanel
+            {
+                Spacing = EditorUiDensity.Card(12),
+            };
+            foreach (var layoutField in group.VisibleFields)
+            {
+                if (!preparedFields.TryGetValue(
+                        layoutField.Id,
+                        out var field))
+                {
+                    continue;
+                }
+                var services = _dictionaryFieldServices
+                    .ForPreparedNode(
+                        source.OwnerNode,
+                        dictionaryContext,
+                        (fieldId) => activeFieldControls
+                            .ValueOrStored(
+                                fieldId,
+                                (storedId) => PreparedStoredValue(
+                                    preparedFields,
+                                    storedId)));
+                var control = new DictionaryFieldControl(
+                    field,
+                    services);
+                activeFieldControls.Register(control);
+                control.ValueCommitted += async (_, value) =>
+                {
+                    try
+                    {
+                        await _fieldCommitCoordinator.CommitAsync(
+                            control,
+                            value,
+                            (draft) => draft,
+                            () => source.CurrentStoredValue(
+                                field.Definition.Id),
+                            (stored) => source.Persist(
+                                field.Definition.Id,
+                                stored));
+                        activeFieldControls.RefreshPreviews();
+                        _scheduleActiveEditorReload(
+                            source.OwnerNode);
+                    }
+                    catch (Exception exception)
+                    {
+                        _messages.Error(
+                            $"Record override {field.Definition.Id}",
+                            exception);
+                    }
+                };
+                controls.Add(control);
+                groupControls.Add(control);
+                groupPanel.Children.Add(control);
+            }
+            if (groupPanel.Children.Count > 0)
+            {
+                organizedGroups.Add((
+                    group,
+                    GroupContent(
+                        group,
+                        groupPanel,
+                        groupControls),
+                    EffectiveGroupLayout(
+                        group,
+                        groupLayout)));
+            }
+        }
+
+        ComposeOrganizedGroups(
+            body,
+            layoutCard,
+            $"record-overrides:{source.OwnerNode.Id}:{layoutCard.Id}",
+            organizedGroups,
+            useSectionChrome,
+            exclusiveGroupCards);
+        var card = new InstantEditorCard(
+            EditorCardHeader.Create(
+                layoutCard.Label,
+                EditorCardHeader.Subtitle(layoutCard),
+                headerIcon),
+            new Border
+            {
+                Padding = EditorUiDensity.CardThickness(10),
+                Child = body,
+            },
+            layoutCard.DefaultOpen)
+        {
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            SessionStateId =
+                $"record-overrides:{layoutCard.Id}",
+        };
+        if (organizedGroups.Any((item) =>
+                item.Layout
+                == EditorSubcardLayout.VerticalCards))
+        {
+            EditorGroupBlock.ApplyContentSeparator(card);
+        }
+        EditorCardHeader.SetOverrideState(
+            headerIcon,
+            controls);
+        foreach (var control in controls)
+        {
+            control.ValueChanged += (_, _) =>
+                EditorCardHeader.SetOverrideState(
+                    headerIcon,
+                    controls);
+        }
+        return card;
+    }
+
     internal DictionaryFieldControl CreateDirectFieldControl(
         ProjectTreeNode node,
         FieldValue field,
@@ -278,7 +424,12 @@ internal sealed class EditorLayoutCardFactory
             _openComponentVariantReference,
             supportsEmbeddedOverrides && hasEmbeddedSlot ? (id) => _openEmbeddedComponentEditor(node, id) : null,
             supportsEmbeddedOverrides ? (definition, input) => _openEmbeddedComponentSlotEditor(node, ComponentInputSlot(definition, input)) : null,
-            _openRuntimeComponentOverrides);
+            _openRuntimeComponentOverrides,
+            (definition, referenceId) =>
+                _openRecordReferenceOverrides(
+                    node,
+                    definition,
+                    referenceId));
         var control = new DictionaryFieldControl(field, services);
         _activeFieldControls.Register(control);
         control.ValueCommitted += async (_, value) =>

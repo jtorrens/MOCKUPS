@@ -22,6 +22,7 @@ internal sealed record ShotRecord(
     int ExplicitDurationFrames,
     string OwnerActorId,
     string? DeviceOverrideId,
+    string DeviceOverridesJson,
     string? ThemeOverrideId,
     string CanvasJson,
     string ReferenceVideoJson,
@@ -237,6 +238,11 @@ internal interface IShotRepository
         SqliteConnection connection,
         string shotId,
         string fieldId);
+
+    void UpdateDeviceOverrides(
+        SqliteConnection connection,
+        string shotId,
+        string overridesJson);
 
     void UpdateField(SqliteConnection connection, string shotId, string fieldId, string value);
 

@@ -422,6 +422,9 @@ Database validation is read-only and confirms:
   by repository writes;
 - required Shot Actor, independent nullable Device/Theme overrides and their
   exact effective Production context;
+- strict Shot-local Device settings override documents, complete declared
+  Device field coverage, per-field Restore, preservation across Device changes
+  and identical effective metrics in Preview and Render preparation;
 - exact Production Output settings and derivable Shot plans;
 - declared font, icon and media assets;
 - manifest-to-row agreement.

@@ -67,6 +67,7 @@ internal sealed partial class SqliteCurrentDatabaseValidator
         ("projects", "metadata_json", "object"),
         ("episodes", "metadata_json", "object"),
         ("shots", "canvas_json", "object"),
+        ("shots", "device_overrides_json", "object"),
         ("shots", "reference_video_json", "object"),
         ("shots", "metadata_json", "object"),
         ("apps", "config_json", "object"),
@@ -100,6 +101,7 @@ internal sealed partial class SqliteCurrentDatabaseValidator
         ValidatePhysicalSchema(connection);
         ValidateCurrentJsonColumns(connection);
         ValidateCurrentDeviceMetrics(connection);
+        ValidateCurrentShotDeviceOverrides(connection);
         ValidateCurrentScreenTransitions(
             connection);
         ValidateCurrentProductionOutput(connection);
@@ -113,6 +115,39 @@ internal sealed partial class SqliteCurrentDatabaseValidator
         ValidateCurrentComponentVariants(connection);
         ValidateCurrentModuleVariantsAndAnimations(connection);
         ValidateForeignKeyIntegrity(connection);
+    }
+
+    private void ValidateCurrentShotDeviceOverrides(
+        SqliteConnection connection)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText =
+            """
+            SELECT s.id, s.device_overrides_json,
+                   d.project_id, d.name, d.manufacturer,
+                   d.model, d.os_family, d.metrics_json
+            FROM shots s
+            JOIN actors a ON a.id = s.owner_actor_id
+            JOIN devices d
+              ON d.id = COALESCE(
+                  s.device_override_id,
+                  a.default_device_id)
+            """;
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            var shotId = reader.GetString(0);
+            _ = DeviceSettingsFieldContract.ApplyOverrides(
+                new DeviceSettings(
+                    reader.GetString(2),
+                    reader.GetString(3),
+                    reader.GetString(4),
+                    reader.GetString(5),
+                    reader.GetString(6),
+                    reader.GetString(7)),
+                reader.GetString(1),
+                $"Shot '{shotId}' device_overrides_json");
+        }
     }
 
     private void ValidateCurrentDeviceMetrics(SqliteConnection connection)

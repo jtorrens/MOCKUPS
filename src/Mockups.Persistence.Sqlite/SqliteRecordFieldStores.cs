@@ -62,6 +62,29 @@ internal sealed partial class SqliteProductionRecordFieldStore :
         }
     }
 
+    public void UpdateShotDeviceOverrides(
+        string shotId,
+        string overridesJson)
+    {
+        var shot = _production.GetShotSettings(shotId);
+        var actor = _resources.GetActorSettings(
+            shot.OwnerActorId);
+        var deviceId = shot.EffectiveDeviceId(
+            actor.DefaultDeviceId);
+        if (string.IsNullOrWhiteSpace(deviceId))
+        {
+            throw new InvalidOperationException(
+                $"Shot '{shotId}' has no effective Device.");
+        }
+        _ = DeviceSettingsFieldContract.ApplyOverrides(
+            _resources.GetDeviceSettings(deviceId),
+            overridesJson,
+            $"Shot '{shotId}' Device overrides");
+        _production.UpdateShotDeviceOverrides(
+            shotId,
+            overridesJson);
+    }
+
     public string GetShotRenderName(string shotId) =>
         _production.GetShotRenderName(shotId);
 

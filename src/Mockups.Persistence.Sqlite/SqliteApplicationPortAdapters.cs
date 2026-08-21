@@ -57,6 +57,13 @@ internal sealed class SqliteProductionRecordFieldPort(
         string value) =>
         target.UpdateShotField(shotId, fieldId, value);
 
+    public void UpdateShotDeviceOverrides(
+        string shotId,
+        string overridesJson) =>
+        target.UpdateShotDeviceOverrides(
+            shotId,
+            overridesJson);
+
     public string GetShotRenderName(string shotId) =>
         target.GetShotRenderName(shotId);
 

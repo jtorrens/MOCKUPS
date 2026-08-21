@@ -67,7 +67,8 @@ public sealed record NumberDefinition(
 public sealed record RecordReferenceDefinition(
     string TableId,
     string Filter = "",
-    bool AllowEmpty = false);
+    bool AllowEmpty = false,
+    string OverrideRecordClassId = "");
 
 public sealed record AnimationFieldDefinition(
     IReadOnlyList<string> Interpolations,

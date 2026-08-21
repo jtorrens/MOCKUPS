@@ -339,7 +339,10 @@ each Shot's frame rate, ordered Screens, exact effective frame ranges and
 action-shifted keyframes, Shot reference-video document, plus each Screen's transition Motion, action delay,
 action duration and Variant config and each Shot's exact Actor plus effective
 Device and Theme context. Each effective resource is the independent Shot
-override when present and otherwise the corresponding Actor default. Production navigation,
+override when present and otherwise the corresponding Actor default. The
+prepared effective Device also applies the complete Shot-local Device settings
+override document before geometry and Module transparency are resolved.
+Production navigation,
 context presentation, validation,
 playhead controls, appearance selection, history subtitles and playback timing
 consume only that catalog. They never recalculate or query the timeline or Shot

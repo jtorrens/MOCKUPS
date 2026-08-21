@@ -65,6 +65,13 @@ are consumed consistently by Preview, playback, Module Theme-token resolution
 and Render Queue initialization. Reference Usage reports only explicit Shot
 override edges; inherited resources remain Actor edges.
 
+The Device reference also exposes the shared Overrides action. Its sparse
+Shot-local document can override every editable Device setting while leaving
+the Device record unchanged. Those values remain local when the selected or
+inherited Device changes and are then applied over the new Device. The standard
+field Restore action removes one local value and immediately resumes inheriting
+that setting from the current Device.
+
 Duplicating an Episode preserves every current Shot number because the copies
 belong to a different Episode. Duplicating one Shot requires a new number in
 the same Episode and creates a new stable id.

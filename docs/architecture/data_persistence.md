@@ -24,6 +24,12 @@ The current tables are:
 nullable restricted foreign keys. `NULL` means inherit the corresponding
 required Actor default; a local value must resolve inside the Shot Project.
 Blank, missing and cross-Project override references are invalid current data.
+`shots.device_overrides_json` is a required object containing sparse Shot-local
+Device field values. Every key is an exact current Device dictionary field id
+and every value is its current scalar storage string. Selection changes never
+clear this document; restoring a field removes that key. The effective Device
+is the selected reference—local or inherited from the Actor—with this document
+applied by the shared Device field contract.
 `shots.shot_number` is a positive stable identity owned by MOCKUPS and unique
 inside its Episode. `shots.slug` stores the explicit Shot Code, which is unique
 inside its Episode and accepts letters, numbers, hyphen and underscore. It is
@@ -211,7 +217,8 @@ Module Instance Runtime writes belong to
 `SqliteModuleInstanceCollectionStore`, scalar fields to
 `SqliteProductionRecordFieldStore`, and animation/read models to the Production
 owner. The session composes one Runtime Input store instance.
-Shot scalar writes and inherited Device/Theme field projection belong to
+Shot scalar writes, inherited Device/Theme field projection and its local
+Device settings override document belong to
 `SqliteProductionRecordFieldStore`. App and Module scalar fields belong to
 `SqliteDesignRecordFieldStore`; Palette, Device, Actor, Theme, Icon Theme and
 Production Font scalar fields belong to `SqliteResourceRecordFieldStore`.
@@ -363,6 +370,7 @@ object
   projects.metadata_json
   episodes.metadata_json
   shots.canvas_json
+  shots.device_overrides_json
   shots.reference_video_json
   shots.metadata_json
   apps.config_json

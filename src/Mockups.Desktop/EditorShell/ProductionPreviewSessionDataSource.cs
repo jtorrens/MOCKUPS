@@ -1,4 +1,5 @@
 using Mockups.DesktopEditorShell.Data;
+using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,6 +27,8 @@ internal sealed record ProductionPreviewShotSnapshot(
     int FrameRate,
     int DurationFrames,
     ProductionShotContext Context,
+    string DeviceId,
+    DevicePreviewMetrics DeviceMetrics,
     ShotReferenceVideoDocument ReferenceVideo,
     IReadOnlyList<ProductionPreviewScreenSnapshot> Screens)
 {
@@ -79,6 +82,7 @@ internal sealed class ProductionPreviewSessionDataSource
         _timelineDataSource;
     private readonly ProductionShotContextService
         _shotContexts;
+    private readonly ActorPreviewDataSource _actors;
 
     public ProductionPreviewSessionDataSource(
         IPreviewInputRepository database,
@@ -88,6 +92,7 @@ internal sealed class ProductionPreviewSessionDataSource
     {
         _database = database;
         _timeline = timeline;
+        _actors = new ActorPreviewDataSource(actors);
         _timelineDataSource =
             new ModuleInstanceTimelineDataSource(
                 timeline,
@@ -167,6 +172,19 @@ internal sealed class ProductionPreviewSessionDataSource
 
             var shotSettings = _database.GetShotSettings(
                 shotNode.Id);
+            var actor = _actors.LoadContext(
+                shotSettings.OwnerActorId);
+            var deviceId = shotSettings.EffectiveDeviceId(
+                actor.DefaultDeviceId);
+            if (string.IsNullOrWhiteSpace(deviceId))
+            {
+                throw new InvalidOperationException(
+                    $"Shot '{shotNode.Id}' has no effective Device.");
+            }
+            var effectiveDevice = shotSettings.EffectiveDeviceSettings(
+                _database.GetDeviceSettings(deviceId));
+            var deviceMetrics = DeviceSettingsFieldContract
+                .PreviewMetrics(effectiveDevice);
             var shot =
                 new ProductionPreviewShotSnapshot(
                     shotNode.Id,
@@ -174,6 +192,8 @@ internal sealed class ProductionPreviewSessionDataSource
                     shotSettings.DurationFrames,
                     _shotContexts.Resolve(
                         shotNode.Id),
+                    deviceId,
+                    deviceMetrics,
                     shotSettings.ReferenceVideo,
                     shotScreens);
             if (!shots.TryAdd(

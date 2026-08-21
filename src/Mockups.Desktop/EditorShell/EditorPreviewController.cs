@@ -1915,7 +1915,9 @@ internal sealed class EditorPreviewController : IDisposable
             _showCanonicalFrame
                 ? CanonicalPreviewMetrics()
                 : ApplyPreviewOrientation(
-                    PreparedDeviceMetrics(deviceId));
+                    PreparedDeviceMetrics(
+                        deviceId,
+                        designPayload));
         var themeName =
             _themeComboBox.SelectedItem?.Label
             ?? "No theme";
@@ -2166,7 +2168,9 @@ internal sealed class EditorPreviewController : IDisposable
         var deviceId = PreviewDeviceId(designPayload);
         if (string.IsNullOrWhiteSpace(deviceId)) return true;
         var metrics = ApplyPreviewOrientation(
-            PreparedDeviceMetrics(deviceId));
+            PreparedDeviceMetrics(
+                deviceId,
+                designPayload));
         var payload = designPayload;
         var projectFps = payload.FrameRate;
         var previewFps = PreviewPlaybackTiming.PreviewFrameRate(projectFps);
@@ -4380,8 +4384,30 @@ internal sealed class EditorPreviewController : IDisposable
     }
 
     private DevicePreviewMetrics PreparedDeviceMetrics(
-        string deviceId)
+        string deviceId,
+        DesignPreviewPayload? payload)
     {
+        if (PreviewWorkspace() == EditorWorkspace.Production)
+        {
+            var shotId = RuntimeContextValue(
+                payload,
+                "shotId");
+            if (string.IsNullOrWhiteSpace(shotId))
+            {
+                throw new InvalidOperationException(
+                    "Production Preview payload requires its exact Shot id before resolving Device metrics.");
+            }
+            var shot = PreparedProductionSession().Shot(
+                shotId);
+            if (!shot.DeviceId.Equals(
+                    deviceId,
+                    StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    $"Production Preview Shot '{shotId}' resolved Device '{shot.DeviceId}', not '{deviceId}'.");
+            }
+            return shot.DeviceMetrics;
+        }
         if (_visualContextSnapshot is not { } snapshot
             || !snapshot.ProjectId.Equals(
                 _projectId,

@@ -94,7 +94,9 @@ internal sealed class EditorDictionaryFieldServices
         Func<string, Task>? openComponentVariantReference = null,
         Func<string, Task>? openEmbeddedComponent = null,
         Func<FieldDefinition, ComponentInputBindingDefinition, Task>? openComponentInputBinding = null,
-        Action<EditorEmbeddedContext>? openRuntimeComponentOverrides = null)
+        Action<EditorEmbeddedContext>? openRuntimeComponentOverrides = null,
+        Func<FieldDefinition, string, Task>?
+            openRecordReferenceOverrides = null)
     {
         int ResolveBehaviorTimingFrames(
             FieldDefinition definition,
@@ -182,6 +184,8 @@ internal sealed class EditorDictionaryFieldServices
                 openRuntimeComponentOverrides is null
                     ? null
                     : OpenRuntimeOverrides,
+            OpenRecordReferenceOverrides:
+                openRecordReferenceOverrides,
             ConfirmStructuredCollectionItemDelete:
                 _domainDialogs.ConfirmRuntimeCollectionItemDelete,
             ConfirmDiscardForwardedRuntimeInputs:
@@ -197,7 +201,9 @@ internal sealed class EditorDictionaryFieldServices
         Func<string, Task>? openComponentVariantReference = null,
         Func<string, Task>? openEmbeddedComponent = null,
         Func<FieldDefinition, ComponentInputBindingDefinition, Task>? openComponentInputBinding = null,
-        Action<EditorEmbeddedContext>? openRuntimeComponentOverrides = null)
+        Action<EditorEmbeddedContext>? openRuntimeComponentOverrides = null,
+        Func<FieldDefinition, string, Task>?
+            openRecordReferenceOverrides = null)
     {
         var projectId = ProjectAncestor(node).Id;
         string IconThemeId()
@@ -267,6 +273,8 @@ internal sealed class EditorDictionaryFieldServices
             ResolveBehaviorTimingFrames: ResolveBehaviorTimingFrames,
             ConfirmStopRuntimeInputForwarding: _domainDialogs.ConfirmStopRuntimeInputForwarding,
             OpenRuntimeComponentOverrides: openRuntimeComponentOverrides is null ? null : OpenRuntimeOverrides,
+            OpenRecordReferenceOverrides:
+                openRecordReferenceOverrides,
             ConfirmStructuredCollectionItemDelete: _domainDialogs.ConfirmRuntimeCollectionItemDelete,
             ConfirmDiscardForwardedRuntimeInputs: _domainDialogs.ConfirmDiscardForwardedRuntimeInputs,
             SetRuntimeTestValue: _setRuntimeTestValue,

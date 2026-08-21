@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Mockups.DesktopEditorShell.EditorShell;
 
 namespace Mockups.DesktopEditorShell.Data;
 
@@ -35,6 +36,7 @@ public sealed record ShotSettings(
     int ExplicitDurationFrames,
     string OwnerActorId,
     string? DeviceOverrideId,
+    string DeviceOverridesJson,
     string? ThemeOverrideId,
     string CanvasJson,
     string ReferenceVideoJson,
@@ -47,6 +49,13 @@ public sealed record ShotSettings(
 
     public string EffectiveDeviceId(string actorDefaultDeviceId) =>
         DeviceOverrideId ?? actorDefaultDeviceId;
+
+    public DeviceSettings EffectiveDeviceSettings(
+        DeviceSettings inherited) =>
+        DeviceSettingsFieldContract.ApplyOverrides(
+            inherited,
+            DeviceOverridesJson,
+            $"Shot '{Slug}' Device overrides");
 
     public string EffectiveThemeId(string actorDefaultThemeId) =>
         ThemeOverrideId ?? actorDefaultThemeId;

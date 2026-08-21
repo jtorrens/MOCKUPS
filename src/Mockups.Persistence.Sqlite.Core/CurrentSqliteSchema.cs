@@ -56,6 +56,7 @@ internal static class CurrentSqliteSchema
             CHECK(explicit_duration_frames > 0),
           owner_actor_id TEXT NOT NULL REFERENCES actors(id) ON DELETE RESTRICT,
           device_override_id TEXT REFERENCES devices(id) ON DELETE RESTRICT,
+          device_overrides_json TEXT NOT NULL DEFAULT '{}',
           theme_override_id TEXT REFERENCES themes(id) ON DELETE RESTRICT,
           canvas_json TEXT NOT NULL DEFAULT '{}',
           metadata_json TEXT NOT NULL DEFAULT '{}',

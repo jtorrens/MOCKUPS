@@ -130,7 +130,10 @@ public static class RecordClassFieldCatalog
             "shot.deviceOverrideId",
             "Device override",
             ValueKind.RecordReference,
-            RecordReference: new RecordReferenceDefinition("devices", AllowEmpty: true)),
+            RecordReference: new RecordReferenceDefinition(
+                "devices",
+                AllowEmpty: true,
+                OverrideRecordClassId: "device")),
         ["shot.themeOverrideId"] = new(
             "shot.themeOverrideId",
             "Theme override",

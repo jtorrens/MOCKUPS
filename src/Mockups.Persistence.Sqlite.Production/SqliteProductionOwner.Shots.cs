@@ -28,10 +28,25 @@ internal sealed partial class SqliteProductionOwner
             record.ExplicitDurationFrames,
             record.OwnerActorId,
             record.DeviceOverrideId,
+            record.DeviceOverridesJson,
             record.ThemeOverrideId,
             record.CanvasJson,
             record.ReferenceVideoJson,
             record.MetadataJson);
+    }
+
+    public void UpdateShotDeviceOverrides(
+        string shotId,
+        string overridesJson)
+    {
+        lock (WriteGate)
+        {
+            using var connection = OpenConnection();
+            _shotRepository.UpdateDeviceOverrides(
+                connection,
+                shotId,
+                overridesJson);
+        }
     }
 
     public string GetShotRenderName(string shotId)

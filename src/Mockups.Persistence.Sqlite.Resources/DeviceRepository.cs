@@ -1,9 +1,9 @@
 using Microsoft.Data.Sqlite;
 using Mockups.DesktopEditorShell.Common;
+using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.Data;
 
@@ -25,84 +25,25 @@ internal sealed class DeviceRepository : IDeviceRepository
     public void UpdateField(string deviceId, string fieldId, string value)
     {
         using var connection = _context.OpenConnection();
-        switch (fieldId)
-        {
-            case "device.manufacturer":
-                _context.Execute(connection, "UPDATE devices SET manufacturer = $value WHERE id = $id", ("$id", deviceId), ("$value", value));
-                return;
-            case "device.model":
-                _context.Execute(connection, "UPDATE devices SET model = $value WHERE id = $id", ("$id", deviceId), ("$value", value));
-                return;
-            case "device.osFamily":
-                _context.Execute(connection, "UPDATE devices SET os_family = $value WHERE id = $id", ("$id", deviceId), ("$value", value));
-                return;
-        }
-
-        if (!fieldId.StartsWith("device.metrics.", StringComparison.Ordinal))
-        {
-            throw new InvalidOperationException($"Unknown device field '{fieldId}'.");
-        }
-
-        var settings = GetSettings(connection, deviceId);
-        var metrics = JsonPath.ParseRequiredObject(settings.MetricsJson, $"Device '{deviceId}' metrics_json");
-        switch (fieldId)
-        {
-            case "device.metrics.canvas.size":
-                JsonPath.SetPair(metrics, value, ["canvas", "width"], ["canvas", "height"]);
-                break;
-            case "device.metrics.screen.position":
-                JsonPath.SetPair(metrics, value, ["screen", "x"], ["screen", "y"]);
-                break;
-            case "device.metrics.screen.size":
-                JsonPath.SetPair(metrics, value, ["screen", "width"], ["screen", "height"]);
-                break;
-            case "device.metrics.cornerRadius":
-                JsonPath.Set(metrics, ["cornerRadius"], JsonPath.NumberNode(value));
-                break;
-            case "device.metrics.safeArea.bottom":
-                JsonPath.Set(metrics, ["safeArea", "bottom"], JsonPath.NumberNode(value));
-                break;
-            case "device.metrics.statusBar.height":
-                JsonPath.Set(metrics, ["statusBar", "height"], JsonPath.NumberNode(value));
-                break;
-            case "device.metrics.moduleTransparency.enabled":
-                JsonPath.Set(
-                    metrics,
-                    ["moduleTransparency", "enabled"],
-                    JsonValue.Create(BooleanText.ParseRequired(value, fieldId))!);
-                break;
-            case "device.metrics.moduleTransparency.mode":
-                JsonPath.Set(metrics, ["moduleTransparency", "mode"], JsonValue.Create(value)!);
-                break;
-            case "device.metrics.moduleTransparency.paletteColor":
-                JsonPath.Set(metrics, ["moduleTransparency", "paletteColor"], JsonValue.Create(value)!);
-                break;
-            case "device.metrics.moduleTransparency.backgroundOpacity":
-                JsonPath.Set(metrics, ["moduleTransparency", "backgroundOpacity"], JsonPath.NumberNode(value));
-                break;
-            case "device.metrics.moduleTransparency.fixedStart":
-                JsonPath.Set(metrics, ["moduleTransparency", "fixedStart"], JsonPath.NumberNode(value));
-                break;
-            case "device.metrics.moduleTransparency.minimumOpaqueExtent":
-                JsonPath.Set(metrics, ["moduleTransparency", "minimumOpaqueExtent"], JsonPath.NumberNode(value));
-                break;
-            case "device.metrics.moduleTransparency.gradientHeight":
-                JsonPath.Set(metrics, ["moduleTransparency", "gradientHeight"], JsonPath.NumberNode(value));
-                break;
-            case "device.metrics.moduleTransparency.variableOffset":
-                JsonPath.Set(metrics, ["moduleTransparency", "variableOffset"], JsonPath.NumberNode(value));
-                break;
-            default:
-                throw new InvalidOperationException($"Unknown device metrics field '{fieldId}'.");
-        }
-
-        _ = DeviceMetricRules.PreviewValues(metrics);
-
+        var next = DeviceSettingsFieldContract.ApplyField(
+            GetSettings(connection, deviceId),
+            fieldId,
+            value);
         _context.Execute(
             connection,
-            "UPDATE devices SET metrics_json = $metricsJson WHERE id = $id",
+            """
+            UPDATE devices
+            SET manufacturer = $manufacturer,
+                model = $model,
+                os_family = $osFamily,
+                metrics_json = $metricsJson
+            WHERE id = $id
+            """,
             ("$id", deviceId),
-            ("$metricsJson", metrics.ToJsonString()));
+            ("$manufacturer", next.Manufacturer),
+            ("$model", next.Model),
+            ("$osFamily", next.OsFamily),
+            ("$metricsJson", next.MetricsJson));
     }
 
     public IReadOnlyList<ResourceOption> GetOptions(string projectId)

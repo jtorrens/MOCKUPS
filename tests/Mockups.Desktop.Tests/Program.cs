@@ -127,6 +127,8 @@ var tests = new (string Name, Action Run)[]
     ("Shots require an explicit replaceable owner Actor", ShotActorContextIsExplicit),
     ("Production Shot context boundary preserves explicit resolved context read-only", ProductionShotContextBoundaryPreservesResolvedContext),
     ("Shot Device and Theme overrides resolve independently across Production", ShotResourceOverridesResolveIndependently),
+    ("Shot Device settings overrides preserve local ownership across Device changes", ShotDeviceSettingsOverridesPreserveOwnership),
+    ("declared RecordReference Overrides use the shared action", DeclaredRecordReferenceOverridesUseSharedAction),
     ("Preview payload rejects incomplete Production context without selector fallbacks", PreviewPayloadRejectsIncompleteProductionContext),
     ("Production payload preserves its explicit Actor and animation documents", ProductionPayloadPreservesActorAndAnimation),
     ("Shot Screen transitions reuse simultaneous boundary Motion", ShotScreenTransitionsReuseBoundaryMotion),
@@ -14258,6 +14260,255 @@ static void ShotResourceOverridesResolveIndependently()
     }
 }
 
+static void ShotDeviceSettingsOverridesPreserveOwnership()
+{
+    var sourcePath = ParityDatabasePath();
+    var temporary = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-shot-device-settings-overrides-{Guid.NewGuid():N}.sqlite");
+    File.Copy(sourcePath, temporary, overwrite: true);
+    try
+    {
+        var database = new SqliteProjectTestContext(temporary);
+        var tree = database.LoadProjectTree();
+        var shotNode = Descendants(tree)
+            .Single((node) => node.Id == "shot_001");
+        var shot = database.GetShotSettings(shotNode.Id);
+        var actor = database.GetActorSettings(shot.OwnerActorId);
+        var initialDeviceId = shot.EffectiveDeviceId(
+            actor.DefaultDeviceId);
+        var alternateDeviceId = database.GetDeviceOptions(
+                shot.ProjectId)
+            .Select((option) => option.Value)
+            .First((id) => !id.Equals(
+                initialDeviceId,
+                StringComparison.Ordinal));
+        var values = new RecordClassFieldValueService(
+            ProductionRecordFields(database),
+            DesignRecordFields(database),
+            ResourceRecordFields(database),
+            database.Production,
+            database.Resources);
+
+        var prepared = values.CreateShotDeviceOverrideFields(
+            shotNode,
+            initialDeviceId,
+            DeviceSettingsFieldContract.OverrideableFieldIds);
+        SequenceEqual(
+            DeviceSettingsFieldContract.OverrideableFieldIds,
+            prepared.Keys);
+        True(prepared.Values.All((field) =>
+            field.Definition.CanInherit
+            && field.IsInherited));
+
+        var referenceField = values.CreateFieldValue(
+            shotNode,
+            "shot.deviceOverrideId");
+        Equal(
+            "device",
+            referenceField.Definition.RecordReference?
+                .OverrideRecordClassId);
+        values.CommitShotDeviceOverrideField(
+            shotNode,
+            initialDeviceId,
+            "device.manufacturer",
+            "Shot-local manufacturer");
+        values.CommitShotDeviceOverrideField(
+            shotNode,
+            initialDeviceId,
+            "device.metrics.cornerRadius",
+            "123");
+        var overridden = database.GetShotSettings(shotNode.Id);
+        var overrideJson = JsonPath.ParseRequiredObject(
+            overridden.DeviceOverridesJson,
+            "Shot Device settings test");
+        Equal(2, overrideJson.Count);
+        Equal(
+            "Shot-local manufacturer",
+            overrideJson["device.manufacturer"]?.GetValue<string>());
+        Equal(
+            "123",
+            overrideJson["device.metrics.cornerRadius"]?.GetValue<string>());
+        True(values.CreateFieldValue(
+            shotNode,
+            "shot.deviceOverrideId").IsHighlighted);
+
+        database.UpdateShotField(
+            shotNode.Id,
+            "shot.deviceOverrideId",
+            alternateDeviceId);
+        var changedDevice = database.GetShotSettings(shotNode.Id);
+        Equal(
+            overridden.DeviceOverridesJson,
+            changedDevice.DeviceOverridesJson);
+        var effective = changedDevice.EffectiveDeviceSettings(
+            database.GetDeviceSettings(alternateDeviceId));
+        Equal("Shot-local manufacturer", effective.Manufacturer);
+        Equal(
+            "123",
+            DeviceSettingsFieldContract.FieldValue(
+                effective,
+                "device.metrics.cornerRadius"));
+        var previewSettings = database.PreviewInputs
+            .GetShotSettings(shotNode.Id);
+        Equal(
+            "123",
+            DeviceSettingsFieldContract.FieldValue(
+                previewSettings.EffectiveDeviceSettings(
+                    database.PreviewInputs.GetDeviceSettings(
+                        alternateDeviceId)),
+                "device.metrics.cornerRadius"));
+
+        var preview = new ProductionPreviewSessionDataSource(
+                database.PreviewInputs,
+                database.Production,
+                database.Resources,
+                database.Resources)
+            .LoadSnapshot(database.LoadProjectTree())
+            .Shot(shotNode.Id);
+        Equal(alternateDeviceId, preview.DeviceId);
+        Equal(123d, preview.DeviceMetrics.CornerRadius);
+
+        var renderDraft = new RenderJobSnapshotFactory(
+                RenderSnapshots(database),
+                database.ProjectPaths)
+            .LoadDraftAsync(shotNode)
+            .GetAwaiter()
+            .GetResult();
+        Equal(
+            changedDevice.DeviceOverridesJson,
+            renderDraft.DeviceOverridesJson);
+        var renderRoot = Path.Combine(
+            Path.GetTempPath(),
+            $"mockups-shot-device-render-{Guid.NewGuid():N}");
+        try
+        {
+            var route = renderDraft.Routes.Single();
+            Directory.CreateDirectory(Path.Combine(
+                renderRoot,
+                route.RelativeDirectory));
+            var mode = RenderOutputModes.Require(
+                RenderOutputModes.MovProRes422Hq);
+            var outputPlan = RenderOutputPlanner.Plan(
+                renderRoot,
+                route.RelativeDirectory,
+                renderDraft.SuggestedBaseName,
+                [RenderQueueAppearance.Light],
+                mode,
+                1,
+                route.VersionPadding);
+            var preparation = new RenderJobSnapshotFactory(
+                    RenderSnapshots(database),
+                    database.ProjectPaths)
+                .PlanBatch(
+                    renderDraft with { RootPath = renderRoot },
+                    alternateDeviceId,
+                    renderDraft.ThemeId,
+                    RenderQueueAppearance.Light,
+                    mode.Id,
+                    route.EntryId,
+                    renderDraft.SuggestedBaseName,
+                    outputPlan,
+                    overwriteExisting: false);
+            Equal(123d, preparation.Metrics.CornerRadius);
+        }
+        finally
+        {
+            Directory.Delete(renderRoot, recursive: true);
+        }
+
+        values.CommitShotDeviceOverrideField(
+            shotNode,
+            alternateDeviceId,
+            "device.manufacturer",
+            "inherited");
+        var restored = database.GetShotSettings(shotNode.Id);
+        var restoredJson = JsonPath.ParseRequiredObject(
+            restored.DeviceOverridesJson,
+            "Restored Shot Device settings test");
+        True(!restoredJson.ContainsKey("device.manufacturer"));
+        True(restoredJson.ContainsKey(
+            "device.metrics.cornerRadius"));
+        Equal(
+            database.GetDeviceSettings(alternateDeviceId)
+                .Manufacturer,
+            restored.EffectiveDeviceSettings(
+                database.GetDeviceSettings(alternateDeviceId))
+                .Manufacturer);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+
+    AssertRejectedDatabaseIsReadOnly(
+        "shot-device-overrides-wrong-root",
+        (connection) =>
+        {
+            using var command = connection.CreateCommand();
+            command.CommandText =
+                "UPDATE shots SET device_overrides_json = '[]' WHERE id = 'shot_001'";
+            command.ExecuteNonQuery();
+        });
+    AssertRejectedDatabaseIsReadOnly(
+        "shot-device-overrides-unknown-field",
+        (connection) =>
+        {
+            using var command = connection.CreateCommand();
+            command.CommandText =
+                "UPDATE shots SET device_overrides_json = '{\"device.unknown\":\"value\"}' WHERE id = 'shot_001'";
+            command.ExecuteNonQuery();
+        });
+    AssertRejectedDatabaseIsReadOnly(
+        "shot-device-overrides-invalid-value",
+        (connection) =>
+        {
+            using var command = connection.CreateCommand();
+            command.CommandText =
+                "UPDATE shots SET device_overrides_json = '{\"device.metrics.cornerRadius\":\"invalid\"}' WHERE id = 'shot_001'";
+            command.ExecuteNonQuery();
+        });
+}
+
+static void DeclaredRecordReferenceOverridesUseSharedAction()
+{
+    using var session = HeadlessUnitTestSession.StartNew(
+        typeof(HeadlessTestApplication));
+    session.Dispatch(() =>
+    {
+        var definition = new FieldDefinition(
+            "shot.deviceOverrideId",
+            "Device override",
+            ValueKind.RecordReference,
+            Options:
+            [
+                new FieldOption(
+                    "device_exact",
+                    "Exact Device"),
+            ],
+            RecordReference: new RecordReferenceDefinition(
+                "devices",
+                OverrideRecordClassId: "device"));
+        var openedReference = "";
+        var control = new DictionaryRecordReferenceControl(
+            definition,
+            "device_exact",
+            isHighlighted: true,
+            (_, referenceId) =>
+            {
+                openedReference = referenceId;
+                return Task.CompletedTask;
+            });
+        var action = control.Children
+            .OfType<Button>()
+            .Single();
+        True(action.IsEnabled);
+        action.RaiseEvent(new RoutedEventArgs(
+            Button.ClickEvent));
+        Equal("device_exact", openedReference);
+    }, CancellationToken.None).GetAwaiter().GetResult();
+}
+
 static void PreviewPayloadRejectsIncompleteProductionContext()
 {
     var sourcePath = ParityDatabasePath();
@@ -15358,6 +15609,7 @@ static void ForwardActionsUseSharedPresentation()
 
 var isolatedUiTests = new HashSet<string>(StringComparer.Ordinal)
 {
+    "declared RecordReference Overrides use the shared action",
     "collapsed editor cards defer their snapshot until expansion",
     "flat Variant Overrides include only local inherited fields",
     "rapid visual selection commits only the latest prepared editor",

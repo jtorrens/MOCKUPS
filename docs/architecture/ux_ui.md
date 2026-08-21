@@ -325,6 +325,12 @@ Overrides are local and visible through the shared action. The UI never hides a
 class change, silently replaces a Variant or manufactures Overrides from
 position.
 
+Declared `RecordReference` Overrides use this same action and standard
+inherited controls. In the Shot Device row, changing the selected Device keeps
+the Shot-local values; each field's Restore action removes only that local
+value. The Shot and Device editors contain no override-specific controls or
+branches.
+
 Component and Module Variant editors also expose a flat `Overrides (N)` peer
 view. It shows the standard controls for every locally overridden inherited
 field owned by that Variant, across its declared embedded boundaries. It hides

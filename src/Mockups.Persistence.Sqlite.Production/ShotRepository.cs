@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using Mockups.DesktopEditorShell.Common;
+using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Collections.Generic;
 
@@ -102,6 +103,7 @@ internal sealed class ShotRepository : IShotRepository
             240,
             actorId,
             null,
+            "{}",
             null,
             "{}",
             ShotReferenceVideoDocument.Empty.ToJson(),
@@ -317,6 +319,22 @@ internal sealed class ShotRepository : IShotRepository
             ("$id", shotId));
     }
 
+    public void UpdateDeviceOverrides(
+        SqliteConnection connection,
+        string shotId,
+        string overridesJson)
+    {
+        _ = Get(connection, shotId);
+        _ = DeviceSettingsFieldContract.ParseOverrides(
+            overridesJson,
+            $"Shot '{shotId}' device_overrides_json");
+        _context.Execute(
+            connection,
+            "UPDATE shots SET device_overrides_json = $value WHERE id = $id",
+            ("$id", shotId),
+            ("$value", overridesJson));
+    }
+
     public void UpdateDuration(
         SqliteConnection connection,
         string shotId,
@@ -417,12 +435,14 @@ internal sealed class ShotRepository : IShotRepository
             INSERT INTO shots (
               id, episode_id, name, slug, version, notes, sort_order, fps_override,
               duration_frames, duration_policy, explicit_duration_frames,
-              owner_actor_id, device_override_id, theme_override_id,
+              owner_actor_id, device_override_id, device_overrides_json,
+              theme_override_id,
               canvas_json, reference_video_json, metadata_json, shot_number)
             VALUES (
               $id, $episodeId, $name, $slug, $version, $notes, $sortOrder, $fpsOverride,
               $durationFrames, $durationPolicy, $explicitDurationFrames,
-              $ownerActorId, $deviceOverrideId, $themeOverrideId,
+              $ownerActorId, $deviceOverrideId, $deviceOverridesJson,
+              $themeOverrideId,
               $canvasJson, $referenceVideoJson, $metadataJson, $shotNumber)
             """,
             ("$id", record.Id),
@@ -438,6 +458,7 @@ internal sealed class ShotRepository : IShotRepository
             ("$explicitDurationFrames", record.ExplicitDurationFrames),
             ("$ownerActorId", record.OwnerActorId),
             ("$deviceOverrideId", (object?)record.DeviceOverrideId ?? DBNull.Value),
+            ("$deviceOverridesJson", record.DeviceOverridesJson),
             ("$themeOverrideId", (object?)record.ThemeOverrideId ?? DBNull.Value),
             ("$canvasJson", record.CanvasJson),
             ("$referenceVideoJson", record.ReferenceVideoJson),
@@ -471,10 +492,11 @@ internal sealed class ShotRepository : IShotRepository
             reader.GetInt32(12),
             SqliteCommandExecutor.ReadString(reader, 13),
             reader.IsDBNull(14) ? null : reader.GetString(14),
-            reader.IsDBNull(15) ? null : reader.GetString(15),
-            SqliteCommandExecutor.ReadString(reader, 16),
+            reader.GetString(15),
+            reader.IsDBNull(16) ? null : reader.GetString(16),
             SqliteCommandExecutor.ReadString(reader, 17),
-            SqliteCommandExecutor.ReadString(reader, 18));
+            SqliteCommandExecutor.ReadString(reader, 18),
+            SqliteCommandExecutor.ReadString(reader, 19));
         Validate(record);
         return record;
     }
@@ -504,6 +526,9 @@ internal sealed class ShotRepository : IShotRepository
             throw new InvalidOperationException(
                 $"Shot '{record.Id}' Theme override must be null or an exact reference.");
         }
+        _ = DeviceSettingsFieldContract.ParseOverrides(
+            record.DeviceOverridesJson,
+            $"Shot '{record.Id}' device_overrides_json");
         if (record.ShotNumber <= 0)
         {
             throw new InvalidOperationException(
@@ -589,8 +614,9 @@ internal sealed class ShotRepository : IShotRepository
                s.version, s.notes,
                s.sort_order, s.fps_override, s.duration_frames, s.duration_policy,
                s.explicit_duration_frames, s.owner_actor_id,
-               s.device_override_id, s.theme_override_id,
-               s.canvas_json, s.reference_video_json, s.metadata_json
+               s.device_override_id, s.device_overrides_json,
+               s.theme_override_id, s.canvas_json,
+               s.reference_video_json, s.metadata_json
         FROM shots s
         JOIN episodes e ON e.id = s.episode_id
         """;

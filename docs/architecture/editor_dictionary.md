@@ -99,6 +99,14 @@ A fixed boundary exposes Variant, class navigation and Overrides, never a
 Component selector. A polymorphic boundary exposes Component selection only
 when its declared selector explicitly contains `*`.
 
+A `RecordReference` may declaratively name the record class whose editable
+fields support owner-local Overrides. The registered reference control then
+adds the same compact Overrides action and the generic layout/card projection
+renders that referenced class. Editors do not add buttons, construct controls
+or branch on a concrete owner/reference pair. Restore and commit continue
+through the normal inherited-field contract; only the declared persistence
+adapter owns the sparse local document.
+
 A new fixed boundary resolves one exact class and its protected Default
 Variant. Zero or multiple matches fail. A new polymorphic boundary remains
 unselected until the user chooses a class, then crosses into that class's

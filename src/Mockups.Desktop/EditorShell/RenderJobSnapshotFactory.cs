@@ -43,6 +43,7 @@ internal sealed record RenderQueueShotDraft(
     string ActorId,
     string ActorName,
     string DeviceId,
+    string DeviceOverridesJson,
     string ThemeId,
     int ShotNumber,
     int Fps,
@@ -143,6 +144,7 @@ internal sealed class RenderJobSnapshotFactory
             shotSettings.OwnerActorId,
             actor.DisplayName,
             deviceId,
+            shotSettings.DeviceOverridesJson,
             themeId,
             shotSettings.ShotNumber,
             shotSettings.Fps,
@@ -195,7 +197,11 @@ internal sealed class RenderJobSnapshotFactory
                 "The output version plan does not match the selected appearances.");
         }
         var safeBaseName = RenderOutputPlanner.RequireBaseName(baseName);
-        var metrics = _database.GetDevicePreviewMetrics(deviceId);
+        var metrics = DeviceSettingsFieldContract.PreviewMetrics(
+            DeviceSettingsFieldContract.ApplyOverrides(
+                _database.GetDeviceSettings(deviceId),
+                draft.DeviceOverridesJson,
+                $"Shot '{draft.Shot.Id}' Device overrides"));
         var context = new RenderShotContext(
             draft.ProjectId,
             draft.Shot.Id,

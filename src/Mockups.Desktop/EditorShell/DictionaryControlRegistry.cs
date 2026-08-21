@@ -158,6 +158,15 @@ internal static class DictionaryControlRegistry
             throw new InvalidOperationException($"Record reference field '{request.Definition.Id}' is missing a table id.");
         }
 
-        return new DictionaryOptionTokenControl(request.Definition, request.Value);
+        return string.IsNullOrWhiteSpace(
+                request.Definition.RecordReference.OverrideRecordClassId)
+            ? new DictionaryOptionTokenControl(
+                request.Definition,
+                request.Value)
+            : new DictionaryRecordReferenceControl(
+                request.Definition,
+                request.Value,
+                request.IsHighlighted,
+                request.Services.OpenRecordReferenceOverrides);
     }
 }

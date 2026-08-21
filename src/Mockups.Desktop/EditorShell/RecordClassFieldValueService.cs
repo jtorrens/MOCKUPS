@@ -3,6 +3,7 @@ using Mockups.DesktopEditorShell.Data;
 using Mockups.DesktopEditorShell.Integrations.ProductionOutput;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -119,7 +120,7 @@ internal sealed class RecordClassFieldValueService
             var localValue = isDevice
                 ? settings.DeviceOverrideId
                 : settings.ThemeOverrideId;
-            return ValidateFieldValue(new FieldValue(
+            var resourceOverrideResult = ValidateFieldValue(new FieldValue(
                 new FieldDefinition(
                     field.Id,
                     field.Label,
@@ -141,6 +142,12 @@ internal sealed class RecordClassFieldValueService
                     MotionTiming: field.MotionTiming),
                 localValue ?? inheritedValue,
                 IsInherited: localValue is null));
+            return isDevice
+                && DeviceSettingsFieldContract.ParseOverrides(
+                    settings.DeviceOverridesJson,
+                    $"Shot '{node.Id}' Device overrides").Count > 0
+                    ? resourceOverrideResult with { IsHighlighted = true }
+                    : resourceOverrideResult;
         }
 
         var isEditable = field.IsEditable
@@ -244,6 +251,121 @@ internal sealed class RecordClassFieldValueService
             default:
                 throw new InvalidOperationException($"Record class field '{fieldId}' is not supported for '{node.Kind}'.");
         }
+    }
+
+    public IReadOnlyDictionary<string, FieldValue>
+        CreateShotDeviceOverrideFields(
+            ProjectTreeNode shotNode,
+            string deviceId,
+            IEnumerable<string> fieldIds)
+    {
+        if (shotNode.Kind != ProjectTreeNodeKind.Shot)
+        {
+            throw new InvalidOperationException(
+                "Device overrides require a Shot owner.");
+        }
+        var shot = _production.GetShotSettings(shotNode.Id);
+        var actor = _resources.GetActorSettings(
+            shot.OwnerActorId);
+        var effectiveDeviceId = shot.EffectiveDeviceId(
+            actor.DefaultDeviceId);
+        if (!effectiveDeviceId.Equals(
+                deviceId,
+                StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"Shot '{shotNode.Id}' effective Device changed while its overrides were opening.");
+        }
+        var inherited = _resources.GetDeviceSettings(deviceId);
+        var overrides = DeviceSettingsFieldContract.ParseOverrides(
+            shot.DeviceOverridesJson,
+            $"Shot '{shotNode.Id}' Device overrides");
+        var fields = new Dictionary<string, FieldValue>(
+            StringComparer.Ordinal);
+        foreach (var fieldId in fieldIds.Distinct(
+                     StringComparer.Ordinal))
+        {
+            if (!DeviceSettingsFieldContract.OverrideableFieldIds
+                    .Contains(fieldId, StringComparer.Ordinal))
+            {
+                continue;
+            }
+            var descriptor = RecordClassFieldCatalog.Get(fieldId);
+            var inheritedValue =
+                DeviceSettingsFieldContract.FieldValue(
+                    inherited,
+                    fieldId);
+            var hasOverride = overrides[fieldId] is JsonValue;
+            var value = hasOverride
+                ? overrides[fieldId]!.GetValue<string>()
+                : inheritedValue;
+            fields[fieldId] = ValidateFieldValue(new FieldValue(
+                new FieldDefinition(
+                    descriptor.Id,
+                    descriptor.Label,
+                    descriptor.ValueKind,
+                    IsEditable: descriptor.IsEditable,
+                    DefaultValue: inheritedValue,
+                    CommitAsDefault: false,
+                    CanInherit: true,
+                    InheritedValue: inheritedValue,
+                    Options: ResolveOptions(shotNode, descriptor),
+                    PairLabels: descriptor.PairLabels,
+                    ImagePreview: descriptor.ImagePreview,
+                    Number: descriptor.Number,
+                    RecordReference: descriptor.RecordReference,
+                    ComponentInputBindings:
+                        descriptor.ComponentInputBindings,
+                    RuntimeInputComponentVariantFieldId:
+                        descriptor.RuntimeInputComponentVariantFieldId,
+                    RuntimeCollectionComponentVariantFieldId:
+                        descriptor.RuntimeCollectionComponentVariantFieldId,
+                    Unit: descriptor.Unit,
+                    MotionTiming: descriptor.MotionTiming),
+                value,
+                IsInherited: !hasOverride));
+        }
+        return fields;
+    }
+
+    public string CurrentShotDeviceOverrideStoredValue(
+        string shotId,
+        string fieldId)
+    {
+        var shot = _production.GetShotSettings(shotId);
+        var overrides = DeviceSettingsFieldContract.ParseOverrides(
+            shot.DeviceOverridesJson,
+            $"Shot '{shotId}' Device overrides");
+        return overrides[fieldId] is JsonValue value
+            ? value.GetValue<string>()
+            : "inherited";
+    }
+
+    public void CommitShotDeviceOverrideField(
+        ProjectTreeNode shotNode,
+        string deviceId,
+        string fieldId,
+        string value)
+    {
+        var current = CreateShotDeviceOverrideFields(
+            shotNode,
+            deviceId,
+            [fieldId])[fieldId];
+        FieldOptionContract.ValidateValue(
+            current.Definition,
+            value,
+            $"Shot Device override '{fieldId}'");
+        var shot = _production.GetShotSettings(shotNode.Id);
+        var inherited = _resources.GetDeviceSettings(deviceId);
+        var next = DeviceSettingsFieldContract.SetOverride(
+            inherited,
+            shot.DeviceOverridesJson,
+            fieldId,
+            value,
+            $"Shot '{shotNode.Id}' Device overrides");
+        _production.UpdateShotDeviceOverrides(
+            shotNode.Id,
+            next);
     }
 
     private static FieldValue ValidateFieldValue(FieldValue fieldValue)
