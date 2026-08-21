@@ -218,8 +218,12 @@ Module Instance Runtime writes belong to
 `SqliteProductionRecordFieldStore`, and animation/read models to the Production
 owner. The session composes one Runtime Input store instance.
 Shot scalar writes, inherited Device/Theme field projection and its local
-Device settings override document belong to
-`SqliteProductionRecordFieldStore`. App and Module scalar fields belong to
+Device settings override document remain Production-owned. The sparse document
+is exposed independently through `IRecordReferenceOverrideStore`; its session
+adapter cannot be cast to the Production scalar-field adapter. The generic
+editor supplies the metadata-declared owner, document id and field set, while
+the focused persistence implementation alone maps that declared document to
+the concrete Shot row and validates its effective Device. App and Module scalar fields belong to
 `SqliteDesignRecordFieldStore`; Palette, Device, Actor, Theme, Icon Theme and
 Production Font scalar fields belong to `SqliteResourceRecordFieldStore`.
 Default database path discovery belongs to

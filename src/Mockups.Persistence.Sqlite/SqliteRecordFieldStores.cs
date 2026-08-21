@@ -62,29 +62,6 @@ internal sealed partial class SqliteProductionRecordFieldStore :
         }
     }
 
-    public void UpdateShotDeviceOverrides(
-        string shotId,
-        string overridesJson)
-    {
-        var shot = _production.GetShotSettings(shotId);
-        var actor = _resources.GetActorSettings(
-            shot.OwnerActorId);
-        var deviceId = shot.EffectiveDeviceId(
-            actor.DefaultDeviceId);
-        if (string.IsNullOrWhiteSpace(deviceId))
-        {
-            throw new InvalidOperationException(
-                $"Shot '{shotId}' has no effective Device.");
-        }
-        _ = DeviceSettingsFieldContract.ApplyOverrides(
-            _resources.GetDeviceSettings(deviceId),
-            overridesJson,
-            $"Shot '{shotId}' Device overrides");
-        _production.UpdateShotDeviceOverrides(
-            shotId,
-            overridesJson);
-    }
-
     public string GetShotRenderName(string shotId) =>
         _production.GetShotRenderName(shotId);
 
@@ -107,6 +84,76 @@ internal sealed partial class SqliteProductionRecordFieldStore :
             ModuleInstanceProjectActorIds(
                 connection,
                 moduleInstanceId));
+    }
+}
+
+internal sealed class SqliteRecordReferenceOverrideStore :
+    IRecordReferenceOverrideStore
+{
+    private const string ShotDeviceOverrides =
+        "shot.deviceOverrides";
+    private readonly SqliteProductionOwner _production;
+    private readonly SqliteResourceOwner _resources;
+
+    internal SqliteRecordReferenceOverrideStore(
+        SqliteProductionOwner production,
+        SqliteResourceOwner resources)
+    {
+        _production = production;
+        _resources = resources;
+    }
+
+    public string GetOverrideDocument(
+        ProjectTreeNode ownerNode,
+        string documentFieldId)
+    {
+        RequireShotDeviceDocument(
+            ownerNode,
+            documentFieldId);
+        return _production.GetShotSettings(
+            ownerNode.Id).DeviceOverridesJson;
+    }
+
+    public void UpdateOverrideDocument(
+        ProjectTreeNode ownerNode,
+        string documentFieldId,
+        string overridesJson)
+    {
+        RequireShotDeviceDocument(
+            ownerNode,
+            documentFieldId);
+        var shot = _production.GetShotSettings(
+            ownerNode.Id);
+        var actor = _resources.GetActorSettings(
+            shot.OwnerActorId);
+        var deviceId = shot.EffectiveDeviceId(
+            actor.DefaultDeviceId);
+        if (string.IsNullOrWhiteSpace(deviceId))
+        {
+            throw new InvalidOperationException(
+                $"Shot '{ownerNode.Id}' has no effective Device.");
+        }
+        _ = DeviceSettingsFieldContract.ApplyOverrides(
+            _resources.GetDeviceSettings(deviceId),
+            overridesJson,
+            $"Shot '{ownerNode.Id}' Device overrides");
+        _production.UpdateShotDeviceOverrides(
+            ownerNode.Id,
+            overridesJson);
+    }
+
+    private static void RequireShotDeviceDocument(
+        ProjectTreeNode ownerNode,
+        string documentFieldId)
+    {
+        if (ownerNode.Kind != ProjectTreeNodeKind.Shot
+            || !documentFieldId.Equals(
+                ShotDeviceOverrides,
+                StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"RecordReference Overrides document '{documentFieldId}' is not owned by '{ownerNode.RecordClassId}'.");
+        }
     }
 }
 

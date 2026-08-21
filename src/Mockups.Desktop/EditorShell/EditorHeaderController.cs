@@ -169,6 +169,28 @@ internal sealed class EditorHeaderController
         {
             new(context.OwnerNode.Name, () => _returnToEmbeddedOwner(context.OwnerNode)),
         };
+        if (context.RecordReferenceOverride is
+            { } reference)
+        {
+            items.Add(new EditorBreadcrumbItem(
+                $"Overrides: {reference.ReferenceNode.Name}"));
+            EditorBreadcrumbBar.Render(
+                _breadcrumbPanel,
+                items,
+                null);
+            SetHeaderActions(
+                CreateDesignNavigationButtons());
+            SetContextStrip(
+                new EditorContextStripMetadata(
+                    [
+                        new EditorContextIdentity(
+                            "Overrides",
+                            reference.ReferenceNode.Name),
+                    ],
+                    null,
+                    OverrideCount()));
+            return;
+        }
         if (context.RuntimeSource is not null)
         {
             items.Add(context.Slots.Count == 0

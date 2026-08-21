@@ -10,6 +10,7 @@ internal sealed record DesktopApplicationDataPorts(
     IEditorNavigationDataSource Navigation,
     ICoreFieldStore CoreFields,
     IProductionRecordFieldStore ProductionRecordFields,
+    IRecordReferenceOverrideStore RecordReferenceOverrides,
     IDesignRecordFieldStore DesignRecordFields,
     IResourceRecordFieldStore ResourceRecordFields,
     IComponentClassFieldStore ComponentFields,
@@ -58,6 +59,7 @@ internal sealed record DesktopApplicationServices(
             new CoreFieldValueService(data.CoreFields),
             new RecordClassFieldValueService(
                 data.ProductionRecordFields,
+                data.RecordReferenceOverrides,
                 data.DesignRecordFields,
                 data.ResourceRecordFields,
                 data.Timeline,

@@ -38,15 +38,24 @@ public interface IProductionRecordFieldStore
     void UpdateEpisodeField(string episodeId, string fieldId, string value);
     ShotSettings GetShotSettings(string shotId);
     void UpdateShotField(string shotId, string fieldId, string value);
-    void UpdateShotDeviceOverrides(
-        string shotId,
-        string overridesJson);
     string GetShotRenderName(string shotId);
     string GetModuleInstanceVariantReference(string moduleInstanceId);
     void UpdateModuleInstanceField(
         string moduleInstanceId,
         string fieldId,
         string value);
+}
+
+public interface IRecordReferenceOverrideStore
+{
+    string GetOverrideDocument(
+        EditorShell.ProjectTreeNode ownerNode,
+        string documentFieldId);
+
+    void UpdateOverrideDocument(
+        EditorShell.ProjectTreeNode ownerNode,
+        string documentFieldId,
+        string overridesJson);
 }
 
 public interface IDesignRecordFieldStore

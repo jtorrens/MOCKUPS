@@ -263,7 +263,7 @@ internal sealed class EditorLayoutCardFactory
     }
 
     public InstantEditorCard CreateRecordReferenceOverrides(
-        RecordReferenceOverrideSource source,
+        EditorEmbeddedContext context,
         EditorLayoutCard layoutCard,
         EditorDictionaryContextSnapshot dictionaryContext,
         IReadOnlyDictionary<string, FieldValue> preparedFields,
@@ -306,7 +306,7 @@ internal sealed class EditorLayoutCardFactory
                 }
                 var services = _dictionaryFieldServices
                     .ForPreparedNode(
-                        source.OwnerNode,
+                        context.OwnerNode,
                         dictionaryContext,
                         (fieldId) => activeFieldControls
                             .ValueOrStored(
@@ -326,14 +326,18 @@ internal sealed class EditorLayoutCardFactory
                             control,
                             value,
                             (draft) => draft,
-                            () => source.CurrentStoredValue(
-                                field.Definition.Id),
-                            (stored) => source.Persist(
+                            () => _fieldValues
+                                .CurrentRecordReferenceOverrideStoredValue(
+                                    context,
+                                    field.Definition.Id),
+                            (stored) => _fieldValues
+                                .PersistRecordReferenceOverride(
+                                context,
                                 field.Definition.Id,
                                 stored));
                         activeFieldControls.RefreshPreviews();
                         _scheduleActiveEditorReload(
-                            source.OwnerNode);
+                            context.OwnerNode);
                     }
                     catch (Exception exception)
                     {
@@ -363,7 +367,7 @@ internal sealed class EditorLayoutCardFactory
         ComposeOrganizedGroups(
             body,
             layoutCard,
-            $"record-overrides:{source.OwnerNode.Id}:{layoutCard.Id}",
+            $"record-overrides:{context.OwnerNode.Id}:{layoutCard.Id}",
             organizedGroups,
             useSectionChrome,
             exclusiveGroupCards);

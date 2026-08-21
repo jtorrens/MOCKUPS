@@ -63,6 +63,10 @@ internal static class SqliteProjectSessionFactory
                 production,
                 design,
                 resources);
+        var recordReferenceOverrides =
+            new SqliteRecordReferenceOverrideStore(
+                production,
+                resources);
         var designRecordFields =
             new SqliteDesignRecordFieldStore(
                 design);
@@ -97,6 +101,8 @@ internal static class SqliteProjectSessionFactory
             new SqliteCoreFieldPort(coreFields),
             new SqliteProductionRecordFieldPort(
                 productionRecordFields),
+            new SqliteRecordReferenceOverridePort(
+                recordReferenceOverrides),
             new SqliteDesignRecordFieldPort(
                 designRecordFields),
             new SqliteResourceRecordFieldPort(

@@ -158,15 +158,34 @@ internal static class DictionaryControlRegistry
             throw new InvalidOperationException($"Record reference field '{request.Definition.Id}' is missing a table id.");
         }
 
-        return string.IsNullOrWhiteSpace(
-                request.Definition.RecordReference.OverrideRecordClassId)
-            ? new DictionaryOptionTokenControl(
+        var reference = request.Definition.RecordReference;
+        var declaresOverrides =
+            !string.IsNullOrWhiteSpace(
+                reference.OverrideRecordClassId)
+            || !string.IsNullOrWhiteSpace(
+                reference.OverrideDocumentFieldId)
+            || reference.OverrideFieldIds is
+                { Count: > 0 };
+        if (!declaresOverrides)
+        {
+            return new DictionaryOptionTokenControl(
                 request.Definition,
-                request.Value)
-            : new DictionaryRecordReferenceControl(
-                request.Definition,
-                request.Value,
-                request.IsHighlighted,
-                request.Services.OpenRecordReferenceOverrides);
+                request.Value);
+        }
+        if (string.IsNullOrWhiteSpace(
+                reference.OverrideRecordClassId)
+            || string.IsNullOrWhiteSpace(
+                reference.OverrideDocumentFieldId)
+            || reference.OverrideFieldIds is not
+                { Count: > 0 })
+        {
+            throw new InvalidOperationException(
+                $"Record reference field '{request.Definition.Id}' has an incomplete Overrides contract.");
+        }
+        return new DictionaryRecordReferenceControl(
+            request.Definition,
+            request.Value,
+            request.IsHighlighted,
+            request.Services.OpenRecordReferenceOverrides);
     }
 }

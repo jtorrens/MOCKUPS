@@ -305,7 +305,10 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
                 workspaceSelections[operation.Workspace] = selected.Id;
             }
             var embedded = operation.Intent == EditorTreeLoadIntent.ActiveEditor
-                ? RebaseEmbeddedEditor(previous.EmbeddedEditor, selected)
+                ? RebaseEmbeddedEditor(
+                    previous.EmbeddedEditor,
+                    selected,
+                    roots)
                 : null;
             var revision = previous.Revision + 1;
             _state = new EditorSessionState(
@@ -607,7 +610,12 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
             InvalidateActiveTreeLoad();
             var previous = _state;
             var revision = previous.Revision + 1;
-            var rebased = context with { OwnerNode = owner };
+            var rebased = RebaseEmbeddedEditor(
+                    context,
+                    owner,
+                    _state.TreeRoots)
+                ?? throw new InvalidOperationException(
+                    "Embedded editor context could not be rebased to the active tree.");
             _state = new EditorSessionState(
                 previous.TreeRoots,
                 previous.Workspace,
@@ -895,7 +903,8 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
 
     private static EditorEmbeddedContext? RebaseEmbeddedEditor(
         EditorEmbeddedContext? embedded,
-        ProjectTreeNode? selected)
+        ProjectTreeNode? selected,
+        IReadOnlyList<ProjectTreeNode> treeRoots)
     {
         if (embedded is null
             || selected is null
@@ -905,7 +914,30 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
         {
             return null;
         }
-        return embedded with { OwnerNode = selected };
+        if (embedded.RecordReferenceOverride is not
+            { } reference)
+        {
+            return embedded with { OwnerNode = selected };
+        }
+        var referenceNode =
+            EditorNodeSelectionState.FindNodeById(
+                treeRoots,
+                reference.ReferenceNode.Id);
+        if (referenceNode is null
+            || !referenceNode.RecordClassId.Equals(
+                reference.ReferenceNode.RecordClassId,
+                StringComparison.Ordinal))
+        {
+            return null;
+        }
+        return embedded with
+        {
+            OwnerNode = selected,
+            RecordReferenceOverride = reference with
+            {
+                ReferenceNode = referenceNode,
+            },
+        };
     }
 
     private static ProjectTreeNode Root(ProjectTreeNode node)
@@ -1012,10 +1044,10 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
         node = resolved;
         embedded = location.Embedded is null
             ? null
-            : location.Embedded with
-            {
-                OwnerNode = resolved,
-            };
+            : RebaseEmbeddedEditor(
+                location.Embedded,
+                resolved,
+                _state.TreeRoots);
         return embedded is null
             || embedded.OwnerNode.Id.Equals(
                 node.Id,

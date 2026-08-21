@@ -73,6 +73,10 @@ internal sealed class SqliteProjectTestContext
                 Production,
                 Design,
                 Resources);
+        RecordReferenceOverrides =
+            new SqliteRecordReferenceOverrideStore(
+                Production,
+                Resources);
         DesignRecordFields =
             new SqliteDesignRecordFieldStore(
                 Design);
@@ -139,6 +143,12 @@ internal sealed class SqliteProjectTestContext
     internal SqliteEditorNodeCommandStore NodeCommands { get; }
 
     internal IProductionRecordFieldStore ProductionRecordFields
+    {
+        get;
+    }
+
+    internal IRecordReferenceOverrideStore
+        RecordReferenceOverrides
     {
         get;
     }

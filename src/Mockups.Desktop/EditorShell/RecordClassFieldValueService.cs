@@ -11,6 +11,8 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class RecordClassFieldValueService
 {
     private readonly IProductionRecordFieldStore _production;
+    private readonly IRecordReferenceOverrideStore
+        _recordReferenceOverrides;
     private readonly IDesignRecordFieldStore _design;
     private readonly IResourceRecordFieldStore _resources;
     private readonly IModuleInstanceTimelineStore _timeline;
@@ -19,6 +21,7 @@ internal sealed class RecordClassFieldValueService
 
     public RecordClassFieldValueService(
         IProductionRecordFieldStore production,
+        IRecordReferenceOverrideStore recordReferenceOverrides,
         IDesignRecordFieldStore design,
         IResourceRecordFieldStore resources,
         IModuleInstanceTimelineStore timeline,
@@ -26,6 +29,8 @@ internal sealed class RecordClassFieldValueService
         ProductionOutputRootStore? productionOutputRoots = null)
     {
         _production = production;
+        _recordReferenceOverrides =
+            recordReferenceOverrides;
         _design = design;
         _resources = resources;
         _timeline = timeline;
@@ -254,118 +259,168 @@ internal sealed class RecordClassFieldValueService
     }
 
     public IReadOnlyDictionary<string, FieldValue>
-        CreateShotDeviceOverrideFields(
-            ProjectTreeNode shotNode,
-            string deviceId,
+        CreateRecordReferenceOverrideFields(
+            EditorEmbeddedContext context,
             IEnumerable<string> fieldIds)
     {
-        if (shotNode.Kind != ProjectTreeNodeKind.Shot)
-        {
-            throw new InvalidOperationException(
-                "Device overrides require a Shot owner.");
-        }
-        var shot = _production.GetShotSettings(shotNode.Id);
-        var actor = _resources.GetActorSettings(
-            shot.OwnerActorId);
-        var effectiveDeviceId = shot.EffectiveDeviceId(
-            actor.DefaultDeviceId);
-        if (!effectiveDeviceId.Equals(
-                deviceId,
-                StringComparison.Ordinal))
-        {
-            throw new InvalidOperationException(
-                $"Shot '{shotNode.Id}' effective Device changed while its overrides were opening.");
-        }
-        var inherited = _resources.GetDeviceSettings(deviceId);
-        var overrides = DeviceSettingsFieldContract.ParseOverrides(
-            shot.DeviceOverridesJson,
-            $"Shot '{shotNode.Id}' Device overrides");
+        var definition = RequireRecordReferenceOverride(
+            context);
+        var overrides = ParseRecordReferenceOverrides(
+            context,
+            definition);
+        var allowedFieldIds = definition.OverrideFieldIds!
+            .ToHashSet(StringComparer.Ordinal);
         var fields = new Dictionary<string, FieldValue>(
             StringComparer.Ordinal);
         foreach (var fieldId in fieldIds.Distinct(
                      StringComparer.Ordinal))
         {
-            if (!DeviceSettingsFieldContract.OverrideableFieldIds
-                    .Contains(fieldId, StringComparer.Ordinal))
+            if (!allowedFieldIds.Contains(fieldId))
             {
                 continue;
             }
-            var descriptor = RecordClassFieldCatalog.Get(fieldId);
-            var inheritedValue =
-                DeviceSettingsFieldContract.FieldValue(
-                    inherited,
-                    fieldId);
-            var hasOverride = overrides[fieldId] is JsonValue;
+            var inherited = CreateFieldValue(
+                context.RecordReferenceOverride!.ReferenceNode,
+                fieldId);
+            var inheritedValue = inherited.Value;
+            var hasOverride = overrides[fieldId]
+                is JsonValue;
             var value = hasOverride
                 ? overrides[fieldId]!.GetValue<string>()
                 : inheritedValue;
             fields[fieldId] = ValidateFieldValue(new FieldValue(
-                new FieldDefinition(
-                    descriptor.Id,
-                    descriptor.Label,
-                    descriptor.ValueKind,
-                    IsEditable: descriptor.IsEditable,
-                    DefaultValue: inheritedValue,
-                    CommitAsDefault: false,
-                    CanInherit: true,
-                    InheritedValue: inheritedValue,
-                    Options: ResolveOptions(shotNode, descriptor),
-                    PairLabels: descriptor.PairLabels,
-                    ImagePreview: descriptor.ImagePreview,
-                    Number: descriptor.Number,
-                    RecordReference: descriptor.RecordReference,
-                    ComponentInputBindings:
-                        descriptor.ComponentInputBindings,
-                    RuntimeInputComponentVariantFieldId:
-                        descriptor.RuntimeInputComponentVariantFieldId,
-                    RuntimeCollectionComponentVariantFieldId:
-                        descriptor.RuntimeCollectionComponentVariantFieldId,
-                    Unit: descriptor.Unit,
-                    MotionTiming: descriptor.MotionTiming),
+                inherited.Definition with
+                {
+                    DefaultValue = inheritedValue,
+                    CommitAsDefault = false,
+                    CanInherit = true,
+                    InheritedValue = inheritedValue,
+                },
                 value,
                 IsInherited: !hasOverride));
         }
         return fields;
     }
 
-    public string CurrentShotDeviceOverrideStoredValue(
-        string shotId,
+    public string CurrentRecordReferenceOverrideStoredValue(
+        EditorEmbeddedContext context,
         string fieldId)
     {
-        var shot = _production.GetShotSettings(shotId);
-        var overrides = DeviceSettingsFieldContract.ParseOverrides(
-            shot.DeviceOverridesJson,
-            $"Shot '{shotId}' Device overrides");
+        var definition = RequireRecordReferenceOverride(
+            context);
+        RequireOverrideField(definition, fieldId);
+        var overrides = ParseRecordReferenceOverrides(
+            context,
+            definition);
         return overrides[fieldId] is JsonValue value
             ? value.GetValue<string>()
             : "inherited";
     }
 
-    public void CommitShotDeviceOverrideField(
-        ProjectTreeNode shotNode,
-        string deviceId,
+    public void CommitRecordReferenceOverrideField(
+        EditorEmbeddedContext context,
         string fieldId,
         string value)
     {
-        var current = CreateShotDeviceOverrideFields(
-            shotNode,
-            deviceId,
+        var definition = RequireRecordReferenceOverride(
+            context);
+        RequireOverrideField(definition, fieldId);
+        var current = CreateRecordReferenceOverrideFields(
+            context,
             [fieldId])[fieldId];
         FieldOptionContract.ValidateValue(
             current.Definition,
             value,
-            $"Shot Device override '{fieldId}'");
-        var shot = _production.GetShotSettings(shotNode.Id);
-        var inherited = _resources.GetDeviceSettings(deviceId);
-        var next = DeviceSettingsFieldContract.SetOverride(
-            inherited,
-            shot.DeviceOverridesJson,
-            fieldId,
-            value,
-            $"Shot '{shotNode.Id}' Device overrides");
-        _production.UpdateShotDeviceOverrides(
-            shotNode.Id,
-            next);
+            $"RecordReference override '{fieldId}'");
+        var overrides = ParseRecordReferenceOverrides(
+            context,
+            definition);
+        if (value == current.Definition.InheritedStorageValue)
+        {
+            overrides.Remove(fieldId);
+        }
+        else
+        {
+            overrides[fieldId] = value;
+        }
+        _recordReferenceOverrides.UpdateOverrideDocument(
+            context.OwnerNode,
+            definition.OverrideDocumentFieldId,
+            overrides.ToJsonString());
+    }
+
+    private static RecordReferenceDefinition
+        RequireRecordReferenceOverride(
+            EditorEmbeddedContext context)
+    {
+        var reference = context.RecordReferenceOverride
+            ?? throw new InvalidOperationException(
+                "The editor context is not a RecordReference Overrides context.");
+        var definition = RecordClassFieldCatalog.Get(
+                reference.ReferenceFieldId)
+            .RecordReference
+            ?? throw new InvalidOperationException(
+                $"Field '{reference.ReferenceFieldId}' is not a RecordReference.");
+        if (string.IsNullOrWhiteSpace(
+                definition.OverrideRecordClassId)
+            || string.IsNullOrWhiteSpace(
+                definition.OverrideDocumentFieldId)
+            || definition.OverrideFieldIds is null
+            || definition.OverrideFieldIds.Count == 0)
+        {
+            throw new InvalidOperationException(
+                $"RecordReference '{reference.ReferenceFieldId}' does not declare a complete Overrides contract.");
+        }
+        if (!reference.ReferenceNode.RecordClassId.Equals(
+                definition.OverrideRecordClassId,
+                StringComparison.Ordinal)
+            || !reference.OverrideDocumentFieldId.Equals(
+                definition.OverrideDocumentFieldId,
+                StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"RecordReference Overrides context '{reference.ReferenceFieldId}' does not match its declared contract.");
+        }
+        return definition;
+    }
+
+    private JsonObject ParseRecordReferenceOverrides(
+        EditorEmbeddedContext context,
+        RecordReferenceDefinition definition)
+    {
+        var owner =
+            $"{context.OwnerNode.RecordClassId} '{context.OwnerNode.Id}' RecordReference Overrides";
+        var overrides = JsonPath.ParseRequiredObject(
+            _recordReferenceOverrides.GetOverrideDocument(
+                context.OwnerNode,
+                definition.OverrideDocumentFieldId),
+            owner);
+        var allowed = definition.OverrideFieldIds!
+            .ToHashSet(StringComparer.Ordinal);
+        foreach (var (fieldId, node) in overrides)
+        {
+            if (!allowed.Contains(fieldId)
+                || node is not JsonValue value
+                || !value.TryGetValue<string>(out _))
+            {
+                throw new InvalidOperationException(
+                    $"{owner} contains invalid field '{fieldId}'.");
+            }
+        }
+        return overrides;
+    }
+
+    private static void RequireOverrideField(
+        RecordReferenceDefinition definition,
+        string fieldId)
+    {
+        if (!definition.OverrideFieldIds!.Contains(
+                fieldId,
+                StringComparer.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"Field '{fieldId}' is not declared by this RecordReference Overrides contract.");
+        }
     }
 
     private static FieldValue ValidateFieldValue(FieldValue fieldValue)

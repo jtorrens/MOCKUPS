@@ -1729,6 +1729,7 @@ static void ResourceScalarReadsRejectWrongShapes()
         var context = new SqliteProjectContext(temporary);
         var fields = new RecordClassFieldValueService(
             ProductionRecordFields(database),
+            RecordReferenceOverrides(database),
             DesignRecordFields(database),
             ResourceRecordFields(database),
             database.Production,
@@ -3609,6 +3610,10 @@ static void SqliteSessionExposesDistinctFocusedPorts()
         typeof(SqliteProductionRecordFieldStore)
             .GetInterfaces());
     SequenceEqual(
+        new[] { typeof(IRecordReferenceOverrideStore) },
+        typeof(SqliteRecordReferenceOverrideStore)
+            .GetInterfaces());
+    SequenceEqual(
         new[] { typeof(IDesignRecordFieldStore) },
         typeof(SqliteDesignRecordFieldStore)
             .GetInterfaces());
@@ -3661,6 +3666,8 @@ static void SqliteSessionExposesDistinctFocusedPorts()
         (project.CoreFields, typeof(ICoreFieldStore)),
         (project.ProductionRecordFields,
             typeof(IProductionRecordFieldStore)),
+        (project.RecordReferenceOverrides,
+            typeof(IRecordReferenceOverrideStore)),
         (project.DesignRecordFields,
             typeof(IDesignRecordFieldStore)),
         (project.ResourceRecordFields,
@@ -3755,6 +3762,10 @@ static void SqliteSessionExposesDistinctFocusedPorts()
         IDesignRecordFieldStore);
     True(project.ProductionRecordFields is not
         IResourceRecordFieldStore);
+    True(project.ProductionRecordFields is not
+        IRecordReferenceOverrideStore);
+    True(project.RecordReferenceOverrides is not
+        IProductionRecordFieldStore);
     True(project.DesignRecordFields is not
         IProductionRecordFieldStore);
     True(project.DesignRecordFields is not
@@ -5349,6 +5360,11 @@ static IProductionRecordFieldStore ProductionRecordFields(
     SqliteProjectTestContext database) =>
     new SqliteProductionRecordFieldPort(
         database.ProductionRecordFields);
+
+static IRecordReferenceOverrideStore RecordReferenceOverrides(
+    SqliteProjectTestContext database) =>
+    new SqliteRecordReferenceOverridePort(
+        database.RecordReferenceOverrides);
 
 static IDesignRecordFieldStore DesignRecordFields(
     SqliteProjectTestContext database) =>
@@ -7378,6 +7394,7 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
             var database = new SqliteProjectTestContext(temporary);
             var fieldValues = new RecordClassFieldValueService(
                 ProductionRecordFields(database),
+                RecordReferenceOverrides(database),
                 DesignRecordFields(database),
                 ResourceRecordFields(database),
                 database.Production,
@@ -14158,6 +14175,7 @@ static void ShotResourceOverridesResolveIndependently()
             .First((id) => !id.Equals(actor.DefaultThemeId, StringComparison.Ordinal));
         var values = new RecordClassFieldValueService(
             ProductionRecordFields(database),
+            RecordReferenceOverrides(database),
             DesignRecordFields(database),
             ResourceRecordFields(database),
             database.Production,
@@ -14285,14 +14303,27 @@ static void ShotDeviceSettingsOverridesPreserveOwnership()
                 StringComparison.Ordinal));
         var values = new RecordClassFieldValueService(
             ProductionRecordFields(database),
+            RecordReferenceOverrides(database),
             DesignRecordFields(database),
             ResourceRecordFields(database),
             database.Production,
             database.Resources);
 
-        var prepared = values.CreateShotDeviceOverrideFields(
+        var referenceField = values.CreateFieldValue(
             shotNode,
-            initialDeviceId,
+            "shot.deviceOverrideId");
+        var referenceContract = Required(
+            referenceField.Definition.RecordReference);
+        var initialContext = EditorEmbeddedContext
+            .ForRecordReferenceOverride(
+                shotNode,
+                Descendants(tree).Single((node) =>
+                    node.Id == initialDeviceId),
+                referenceField.Definition.Id,
+                referenceContract.OverrideDocumentFieldId);
+        var prepared = values
+            .CreateRecordReferenceOverrideFields(
+            initialContext,
             DeviceSettingsFieldContract.OverrideableFieldIds);
         SequenceEqual(
             DeviceSettingsFieldContract.OverrideableFieldIds,
@@ -14301,21 +14332,21 @@ static void ShotDeviceSettingsOverridesPreserveOwnership()
             field.Definition.CanInherit
             && field.IsInherited));
 
-        var referenceField = values.CreateFieldValue(
-            shotNode,
-            "shot.deviceOverrideId");
         Equal(
             "device",
-            referenceField.Definition.RecordReference?
-                .OverrideRecordClassId);
-        values.CommitShotDeviceOverrideField(
-            shotNode,
-            initialDeviceId,
+            referenceContract.OverrideRecordClassId);
+        Equal(
+            "shot.deviceOverrides",
+            referenceContract.OverrideDocumentFieldId);
+        SequenceEqual(
+            DeviceSettingsFieldContract.OverrideableFieldIds,
+            Required(referenceContract.OverrideFieldIds));
+        values.CommitRecordReferenceOverrideField(
+            initialContext,
             "device.manufacturer",
             "Shot-local manufacturer");
-        values.CommitShotDeviceOverrideField(
-            shotNode,
-            initialDeviceId,
+        values.CommitRecordReferenceOverrideField(
+            initialContext,
             "device.metrics.cornerRadius",
             "123");
         var overridden = database.GetShotSettings(shotNode.Id);
@@ -14441,9 +14472,15 @@ static void ShotDeviceSettingsOverridesPreserveOwnership()
             Directory.Delete(renderRoot, recursive: true);
         }
 
-        values.CommitShotDeviceOverrideField(
-            shotNode,
-            alternateDeviceId,
+        var alternateContext = EditorEmbeddedContext
+            .ForRecordReferenceOverride(
+                shotNode,
+                Descendants(tree).Single((node) =>
+                    node.Id == alternateDeviceId),
+                referenceField.Definition.Id,
+                referenceContract.OverrideDocumentFieldId);
+        values.CommitRecordReferenceOverrideField(
+            alternateContext,
             "device.manufacturer",
             "inherited");
         var restored = database.GetShotSettings(shotNode.Id);
@@ -14496,41 +14533,191 @@ static void ShotDeviceSettingsOverridesPreserveOwnership()
 
 static void DeclaredRecordReferenceOverridesUseSharedAction()
 {
-    using var session = HeadlessUnitTestSession.StartNew(
-        typeof(HeadlessTestApplication));
-    session.Dispatch(() =>
+    var source = ParityDatabasePath();
+    var temporary = Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        $".mockups-record-reference-overrides-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
     {
-        var definition = new FieldDefinition(
-            "shot.deviceOverrideId",
-            "Device override",
-            ValueKind.RecordReference,
-            Options:
-            [
-                new FieldOption(
-                    "device_exact",
-                    "Exact Device"),
-            ],
-            RecordReference: new RecordReferenceDefinition(
-                "devices",
-                OverrideRecordClassId: "device"));
-        var openedReference = "";
-        var control = new DictionaryRecordReferenceControl(
-            definition,
-            "device_exact",
-            isHighlighted: true,
-            (_, referenceId) =>
+        using var session = HeadlessUnitTestSession.StartNew(
+            typeof(HeadlessTestApplication));
+        session.Dispatch(() =>
+        {
+            var window = CreateTestWindow(temporary);
+            window.Width = 1440;
+            window.Height = 800;
+            window.Show();
+            var selectNode = typeof(MainWindow).GetMethod(
+                "SelectNodeById",
+                BindingFlags.Instance
+                | BindingFlags.NonPublic,
+                binder: null,
+                types: [typeof(string)],
+                modifiers: null)
+                ?? throw new InvalidOperationException(
+                    "Missing MainWindow node selection boundary.");
+            var returnToOwner = typeof(MainWindow).GetMethod(
+                "ReturnToEmbeddedOwner",
+                BindingFlags.Instance
+                | BindingFlags.NonPublic)
+                ?? throw new InvalidOperationException(
+                    "Missing MainWindow breadcrumb owner boundary.");
+            var editorContent = typeof(MainWindow)
+                .GetField(
+                    "_editorContent",
+                    BindingFlags.Instance
+                    | BindingFlags.NonPublic)
+                ?.GetValue(window) as EditorContentController
+                ?? throw new InvalidOperationException(
+                    "Missing prepared editor content owner.");
+            var activeFields = typeof(MainWindow)
+                .GetField(
+                    "_activeFieldControls",
+                    BindingFlags.Instance
+                    | BindingFlags.NonPublic)
+                ?.GetValue(window) as EditorActiveFieldControls
+                ?? throw new InvalidOperationException(
+                    "Missing active dictionary field owner.");
+
+            void Layout()
             {
-                openedReference = referenceId;
-                return Task.CompletedTask;
-            });
-        var action = control.Children
-            .OfType<Button>()
-            .Single();
-        True(action.IsEnabled);
-        action.RaiseEvent(new RoutedEventArgs(
-            Button.ClickEvent));
-        Equal("device_exact", openedReference);
-    }, CancellationToken.None).GetAwaiter().GetResult();
+                Dispatcher.UIThread.RunJobs();
+                var size = new Size(
+                    window.Width,
+                    window.Height);
+                window.Measure(size);
+                window.Arrange(new Rect(size));
+                Dispatcher.UIThread.RunJobs();
+            }
+
+            void WaitForEditor(string ownerId)
+            {
+                var timeout = Stopwatch.StartNew();
+                while (true)
+                {
+                    Layout();
+                    if (editorContent.CommittedOwnerId.Equals(
+                            ownerId,
+                            StringComparison.Ordinal)
+                        && editorContent.Cards.Count > 0
+                        && editorContent.Cards.All((card) =>
+                            card.SessionStateId
+                            != "editor:loading"))
+                    {
+                        return;
+                    }
+                    if (timeout.Elapsed
+                        >= TimeSpan.FromSeconds(10))
+                    {
+                        throw new TimeoutException(
+                            "RecordReference Overrides editor did not prepare. "
+                            + $"Embedded={WindowSession(window).EmbeddedEditor?.RecordClassId ?? "none"}; "
+                            + $"Committed={editorContent.CommittedOwnerId}; "
+                            + $"Cards={string.Join(",", editorContent.Cards.Select((card) => card.SessionStateId))}. "
+                            + (window.FindControl<TextBox>(
+                                    "ShellMessagesTextBox")?.Text
+                                ?? "No shell message."));
+                    }
+                    Thread.Sleep(10);
+                }
+            }
+
+            Button OverridesAction() =>
+                window.GetVisualDescendants()
+                    .OfType<Button>()
+                    .Single((button) =>
+                        Avalonia.Automation
+                            .AutomationProperties
+                            .GetName(button)
+                        == "Edit overrides for Device override");
+
+            Required(window.FindControl<Button>(
+                    "ProductionWorkspaceButton"))
+                .RaiseEvent(new RoutedEventArgs(
+                    Button.ClickEvent));
+            var workspaceTimeout = Stopwatch.StartNew();
+            while (WindowSession(window).Workspace
+                    != EditorWorkspace.Production
+                && workspaceTimeout.Elapsed
+                    < TimeSpan.FromSeconds(10))
+            {
+                Layout();
+                Thread.Sleep(10);
+            }
+            Equal(
+                EditorWorkspace.Production,
+                WindowSession(window).Workspace);
+            True((bool)(selectNode.Invoke(
+                window,
+                ["shot_001"]) ?? false));
+            WaitForEditor("shot_001");
+            Equal(0, window.OwnedWindows.Count);
+            var action = OverridesAction();
+            True(action.IsEnabled);
+            action.RaiseEvent(new RoutedEventArgs(
+                Button.ClickEvent));
+            WaitForEditor("shot_001");
+
+            var context = Required(
+                WindowSession(window).EmbeddedEditor);
+            var reference = Required(
+                context.RecordReferenceOverride);
+            Equal(
+                "shot.deviceOverrideId",
+                reference.ReferenceFieldId);
+            Equal(
+                "shot.deviceOverrides",
+                reference.OverrideDocumentFieldId);
+            Equal("device", context.RecordClassId);
+            Equal(0, window.OwnedWindows.Count);
+            SequenceEqual(
+                [
+                    "record-overrides:general",
+                    "record-overrides:moduleTransparency",
+                ],
+                editorContent.Cards.Select((card) =>
+                    card.SessionStateId));
+            SequenceEqual(
+                DeviceSettingsFieldContract
+                    .OverrideableFieldIds
+                    .OrderBy((id) => id),
+                activeFields.ControlsByFieldId.Keys
+                    .OrderBy((id) => id));
+            var breadcrumb = Required(
+                window.FindControl<StackPanel>(
+                    "EditorBreadcrumbPanel"));
+            True(breadcrumb.GetVisualDescendants()
+                .OfType<TextBlock>()
+                .Any((text) => text.Text?.StartsWith(
+                    "Overrides:",
+                    StringComparison.Ordinal) == true));
+
+            var transparencyCard = editorContent.Cards
+                .Single((card) => card.SessionStateId
+                    == "record-overrides:moduleTransparency");
+            transparencyCard.RestoreExpansion(true);
+            Layout();
+            returnToOwner.Invoke(
+                window,
+                [context.OwnerNode]);
+            WaitForEditor("shot_001");
+            OverridesAction().RaiseEvent(
+                new RoutedEventArgs(Button.ClickEvent));
+            WaitForEditor("shot_001");
+            transparencyCard = editorContent.Cards
+                .Single((card) => card.SessionStateId
+                    == "record-overrides:moduleTransparency");
+            True(transparencyCard.IsExpanded);
+            Equal(0, window.OwnedWindows.Count);
+            window.Hide();
+        }, CancellationToken.None).GetAwaiter().GetResult();
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
 }
 
 static void PreviewPayloadRejectsIncompleteProductionContext()
@@ -14965,6 +15152,7 @@ static void ShotScreenTransitionsReuseBoundaryMotion()
         var values =
             new RecordClassFieldValueService(
                 ProductionRecordFields(database),
+                RecordReferenceOverrides(database),
                 DesignRecordFields(database),
                 ResourceRecordFields(database),
                 database.Production,
@@ -19245,6 +19433,7 @@ static void LockScreenComposesRuntimeStack()
             && database.GetModuleInstanceSettings(node.Id).ModuleId == module.Id);
         var values = new RecordClassFieldValueService(
             ProductionRecordFields(database),
+            RecordReferenceOverrides(database),
             DesignRecordFields(database),
             ResourceRecordFields(database),
             database.Production,

@@ -144,6 +144,43 @@ internal sealed class EditorContentPreparationService : IDisposable
         return _operations.ExecuteAsync(
             () =>
             {
+                if (context.IsRecordReferenceOverride)
+                {
+                    var referenceLayout =
+                        _layouts.LoadEditorLayout(
+                            context.RecordClassId);
+                    var referenceFields = _fieldValues
+                        .CreateRecordReferenceOverrideFields(
+                            context,
+                            referenceLayout.Cards
+                                .SelectMany(AllFieldIds));
+                    var referenceCards =
+                        VisibleCards(referenceLayout)
+                            .Where((card) =>
+                                card.VisibleGroups
+                                    .SelectMany((group) =>
+                                        group.VisibleFields)
+                                    .Any((field) =>
+                                        referenceFields
+                                            .ContainsKey(
+                                                field.Id)))
+                            .Select((card) =>
+                                new EditorPreparedLayoutCard(
+                                    card,
+                                    referenceFields))
+                            .ToList();
+                    return new EditorPreparedEmbeddedContent(
+                        null,
+                        referenceCards,
+                        _dictionaryFields.PrepareContext(
+                            context.OwnerNode,
+                            selectedThemeId,
+                            referenceFields,
+                            cancellationToken),
+                        _header.PrepareEmbedded(
+                            context,
+                            cancellationToken));
+                }
                 EditorPreparedLayoutCard? ownerCard = null;
                 if (!context.IsRuntimeRoot
                     && EmbeddedOwnerSettingsCatalog.TryGet(

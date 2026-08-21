@@ -58,6 +58,10 @@ It includes:
   coordination, field and dictionary snapshot-only visual card construction
   and a headless rapid selection test proving that only the latest owner
   reaches the visual state;
+- declared `RecordReference` Overrides using a distinct non-castable focused
+  persistence port plus headless activation of the real shared action, proving
+  one coordinator-owned context, exact reference breadcrumb, central cards,
+  session view-memory restoration and no owned modal window;
 - Preview authoring exposes no synchronous Runtime Input visual-construction
   or fallback-load method; the cancellable prepared surface is its only
   compiled entrypoint;
@@ -351,6 +355,8 @@ That structural suite also requires:
   own port;
 - Production, Design and Resource record-field adapters are pairwise
   non-castable and expose only their owner-specific contract;
+- the generic `RecordReference` Override adapter exposes only its focused
+  document contract and is non-castable with every scalar record-field adapter;
 - Component-field adapters cannot be cast to Component-document adapters, and
   animation-write adapters cannot be cast to timeline-read adapters;
 - test fixtures reach navigation through the focused navigation owner;
@@ -467,6 +473,9 @@ For any editor or Preview change, exercise at least:
 15. Shot reference Browse, missing/out-of-range `Sin media`, Set In, muted and
     audible playback, shared Shot/Screen scrubbing, marker add/drag/text/delete
     and marker ticks across Screen boundaries.
+16. Shot Device Overrides opening in the central contextual editor with the
+    exact breadcrumb, per-field Restore, retained card/scroll memory on return
+    and no modal window.
 
 Component-specific changes add an isolated Design case and a Production case
 that reaches the same owner through a Screen payload.

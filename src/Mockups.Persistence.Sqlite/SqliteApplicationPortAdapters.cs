@@ -57,13 +57,6 @@ internal sealed class SqliteProductionRecordFieldPort(
         string value) =>
         target.UpdateShotField(shotId, fieldId, value);
 
-    public void UpdateShotDeviceOverrides(
-        string shotId,
-        string overridesJson) =>
-        target.UpdateShotDeviceOverrides(
-            shotId,
-            overridesJson);
-
     public string GetShotRenderName(string shotId) =>
         target.GetShotRenderName(shotId);
 
@@ -80,6 +73,27 @@ internal sealed class SqliteProductionRecordFieldPort(
             moduleInstanceId,
             fieldId,
             value);
+}
+
+internal sealed class SqliteRecordReferenceOverridePort(
+    IRecordReferenceOverrideStore target)
+    : IRecordReferenceOverrideStore
+{
+    public string GetOverrideDocument(
+        ProjectTreeNode ownerNode,
+        string documentFieldId) =>
+        target.GetOverrideDocument(
+            ownerNode,
+            documentFieldId);
+
+    public void UpdateOverrideDocument(
+        ProjectTreeNode ownerNode,
+        string documentFieldId,
+        string overridesJson) =>
+        target.UpdateOverrideDocument(
+            ownerNode,
+            documentFieldId,
+            overridesJson);
 }
 
 internal sealed class SqliteDesignRecordFieldPort(

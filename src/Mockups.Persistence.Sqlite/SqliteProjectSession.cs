@@ -10,6 +10,7 @@ public sealed class SqliteProjectSession
         IEditorNavigationDataSource navigation,
         ICoreFieldStore coreFields,
         IProductionRecordFieldStore productionRecordFields,
+        IRecordReferenceOverrideStore recordReferenceOverrides,
         IDesignRecordFieldStore designRecordFields,
         IResourceRecordFieldStore resourceRecordFields,
         IComponentClassFieldStore componentFields,
@@ -38,6 +39,7 @@ public sealed class SqliteProjectSession
         Navigation = navigation;
         CoreFields = coreFields;
         ProductionRecordFields = productionRecordFields;
+        RecordReferenceOverrides = recordReferenceOverrides;
         DesignRecordFields = designRecordFields;
         ResourceRecordFields = resourceRecordFields;
         ComponentFields = componentFields;
@@ -70,6 +72,11 @@ public sealed class SqliteProjectSession
     public ICoreFieldStore CoreFields { get; }
 
     public IProductionRecordFieldStore ProductionRecordFields
+    {
+        get;
+    }
+
+    public IRecordReferenceOverrideStore RecordReferenceOverrides
     {
         get;
     }

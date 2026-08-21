@@ -325,11 +325,20 @@ Overrides are local and visible through the shared action. The UI never hides a
 class change, silently replaces a Variant or manufactures Overrides from
 position.
 
+Every Overrides action that reveals editable dictionary fields is contextual
+editor navigation. It publishes one exact coordinated context, breadcrumb,
+central card set and session view-memory key. It never opens a modal, utility
+window, parallel panel or temporary editor. Modals remain bounded confirmation,
+selection, import or search workflows and never host persistent dictionary
+authoring.
+
 Declared `RecordReference` Overrides use this same action and standard
-inherited controls. In the Shot Device row, changing the selected Device keeps
-the Shot-local values; each field's Restore action removes only that local
-value. The Shot and Device editors contain no override-specific controls or
-branches.
+inherited controls. Their metadata declares the referenced class, sparse local
+document and exact field set; shell and shared editor services never route by a
+concrete field, record or owner pair. In the Shot Device row, changing the
+selected Device keeps the Shot-local values; each field's Restore action
+removes only that local value. The Shot and Device editors contain no
+override-specific controls or branches.
 
 Component and Module Variant editors also expose a flat `Overrides (N)` peer
 view. It shows the standard controls for every locally overridden inherited

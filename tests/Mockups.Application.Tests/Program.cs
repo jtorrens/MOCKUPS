@@ -17,6 +17,7 @@ var tests = new (string Name, Action Run)[]
     ("typed reference navigation changes workspace and exact Production", ReferenceNavigationChangesWorkspace),
     ("invalid node selection leaves the session unchanged", InvalidSelectionIsRejected),
     ("active editor refresh rebases embedded context to the new tree", ActiveEditorRefreshRebasesEmbeddedContext),
+    ("active editor refresh rebases declared RecordReference Overrides identities", ActiveEditorRefreshRebasesRecordReferenceOverrides),
     ("Design navigation history restores exact visited owners", DesignNavigationHistoryRestoresVisitedOwners),
     ("Design navigation history unwinds embedded breadcrumbs", DesignNavigationHistoryUnwindsEmbeddedBreadcrumbs),
     ("new Design navigation truncates forward history", NewDesignNavigationTruncatesForwardHistory),
@@ -1307,6 +1308,48 @@ static void ActiveEditorRefreshRebasesEmbeddedContext()
     var refreshed = Required(coordinator.State.EmbeddedEditor);
     True(!ReferenceEquals(oldOwner, refreshed.OwnerNode));
     Equal(coordinator.State.SelectedNode, refreshed.OwnerNode);
+}
+
+static void ActiveEditorRefreshRebasesRecordReferenceOverrides()
+{
+    var source = new MutableNavigationDataSource(CreateTree());
+    using var coordinator =
+        new EditorWorkspaceCoordinator(source);
+    coordinator.ReloadTree();
+    var owner = Required(coordinator.State.SelectedNode);
+    var reference = EditorNodeSelectionState.FindNodeById(
+            coordinator.State.TreeRoots,
+            "shot-a")
+        ?? throw new InvalidOperationException(
+            "Missing RecordReference fixture.");
+    coordinator.ShowEmbeddedEditor(
+        EditorEmbeddedContext.ForRecordReferenceOverride(
+            owner,
+            reference,
+            "fixture.reference",
+            "fixture.overrides"));
+    var previous = Required(
+        coordinator.State.EmbeddedEditor);
+
+    source.Tree = CreateTree();
+    coordinator.ReloadTree(
+        "active-editor",
+        EditorTreeLoadIntent.ActiveEditor);
+
+    var refreshed = Required(
+        coordinator.State.EmbeddedEditor);
+    True(!ReferenceEquals(
+        previous.OwnerNode,
+        refreshed.OwnerNode));
+    True(!ReferenceEquals(
+        previous.RecordReferenceOverride!.ReferenceNode,
+        refreshed.RecordReferenceOverride!.ReferenceNode));
+    Equal("shot-a",
+        refreshed.RecordReferenceOverride.ReferenceNode.Id);
+    Equal("fixture.reference",
+        refreshed.RecordReferenceOverride.ReferenceFieldId);
+    Equal("fixture.overrides",
+        refreshed.RecordReferenceOverride.OverrideDocumentFieldId);
 }
 
 static void DesignNavigationHistoryRestoresVisitedOwners()

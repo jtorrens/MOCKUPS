@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -96,4 +97,29 @@ internal sealed class EditorFieldValueRouter
         }
         return Task.CompletedTask;
     }
+
+    public IReadOnlyDictionary<string, FieldValue>
+        CreateRecordReferenceOverrideFields(
+            EditorEmbeddedContext context,
+            IEnumerable<string> fieldIds) =>
+        _recordClassFields.CreateRecordReferenceOverrideFields(
+            context,
+            fieldIds);
+
+    public string CurrentRecordReferenceOverrideStoredValue(
+        EditorEmbeddedContext context,
+        string fieldId) =>
+        _recordClassFields
+            .CurrentRecordReferenceOverrideStoredValue(
+                context,
+                fieldId);
+
+    public void PersistRecordReferenceOverride(
+        EditorEmbeddedContext context,
+        string fieldId,
+        string value) =>
+        _recordClassFields.CommitRecordReferenceOverrideField(
+            context,
+            fieldId,
+            value);
 }

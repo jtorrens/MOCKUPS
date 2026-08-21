@@ -205,6 +205,22 @@ Reusable editor organization is metadata-driven:
 Do not infer presentation from hierarchy depth, record class, label or position.
 Dictionary controls own their compound visuals.
 
+Every Overrides action that exposes editable dictionary fields navigates through
+the contextual editor owned by `EditorWorkspaceCoordinator`. It preserves the
+exact owner, breadcrumb, Back/Forward eligibility, card/section memory and
+scroll state. Overrides never opens a modal, tool window, parallel panel or
+temporary editor. Modals are limited to bounded confirmation, selection,
+import and search workflows; they do not host persistent dictionary editing.
+
+A declared reference Override names its referenced record class, sparse local
+document and exact field set in metadata. The shell, shared editor services and
+dictionary controls never select its document owner by concrete field id,
+record type, table, owner pair or a one-entry registry. The focused persistence
+adapter owns concrete row/document mapping behind one generic reference-
+Override port. Tests must activate the real shared action and prove the
+coordinated context, breadcrumb, central cards, view memory and absence of a
+modal; a callback-only button test is insufficient.
+
 Preview utility tabs remain one horizontal row at the supported 1040 px minimum
 and 1440 px default window widths. The shell reserves the policy-owned Preview
 minimum; Preview Setup reflows by measured width through the shared layout

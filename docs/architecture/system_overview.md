@@ -278,7 +278,11 @@ The session exposes Production, Design and Resource record fields, child
 creation, node commands, Module Instance collections, Icon Theme assets, Theme
 tokens, Component documents, Runtime Input owner and instance writes, animation
 and Reference Usage as separate capabilities. Record-field adapters are
-pairwise non-castable. The
+pairwise non-castable. Declared `RecordReference` sparse Override documents use
+their own focused port and adapter; neither it nor a record-field adapter can
+be cast to the other. The contextual editor consumes that generic port while
+only the focused persistence implementation maps a declared document identity
+to its concrete owner row. The
 desktop composition passes those capabilities independently; it has no
 dialog-, header- or collection-wide persistence store. Actor Preview is backed
 directly by the Resources owner. Component Preview and Variant History are

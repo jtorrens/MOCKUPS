@@ -56,6 +56,14 @@ internal sealed class EditorHeaderPreparationService
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        if (context.IsRecordReferenceOverride)
+        {
+            return new EditorPreparedHeader(
+                context.OwnerNode.Id,
+                null,
+                "",
+                "");
+        }
         var activeVariantName =
             _embeddedDocuments.ActiveVariantName(context);
         cancellationToken.ThrowIfCancellationRequested();

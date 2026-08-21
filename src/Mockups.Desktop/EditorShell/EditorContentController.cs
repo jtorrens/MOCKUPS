@@ -191,6 +191,23 @@ internal sealed class EditorContentController : IDisposable
         var cards = new List<InstantEditorCard>();
         var ownerLayoutRecordClassId = OwnerLayoutRecordClassId(context.OwnerNode);
 
+        if (context.IsRecordReferenceOverride)
+        {
+            cards.AddRange(prepared.Cards.Select((card) =>
+                _layoutCards.CreateRecordReferenceOverrides(
+                    context,
+                    card.Layout,
+                    prepared.DictionaryContext,
+                    card.Fields,
+                    _activeFieldControls)));
+            _cardHost.Replace(
+                cards,
+                restoredExpandedCardIds:
+                    restoredExpandedCardIds);
+            CommittedOwnerId = context.OwnerNode.Id;
+            return;
+        }
+
         if (prepared.OwnerCard is { } ownerCard)
         {
             cards.Add(_layoutCards.Create(

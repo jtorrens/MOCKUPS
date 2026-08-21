@@ -70,7 +70,9 @@ Shot-local document can override every editable Device setting while leaving
 the Device record unchanged. Those values remain local when the selected or
 inherited Device changes and are then applied over the new Device. The standard
 field Restore action removes one local value and immediately resumes inheriting
-that setting from the current Device.
+that setting from the current Device. The action opens the referenced Device
+layout in the central contextual editor under the exact Shot breadcrumb; it
+never opens a modal and introduces no Shot/Device editor branch.
 
 Duplicating an Episode preserves every current Shot number because the copies
 belong to a different Episode. Duplicating one Shot requires a new number in

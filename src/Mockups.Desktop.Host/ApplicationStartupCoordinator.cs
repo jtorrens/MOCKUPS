@@ -144,6 +144,7 @@ public sealed class ApplicationStartupCoordinator
                 project.Navigation,
                 project.CoreFields,
                 project.ProductionRecordFields,
+                project.RecordReferenceOverrides,
                 project.DesignRecordFields,
                 project.ResourceRecordFields,
                 project.ComponentFields,

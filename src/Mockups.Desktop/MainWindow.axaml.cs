@@ -92,7 +92,10 @@ public partial class MainWindow : SukiWindow
             new EditorAuthoringFocusController(
                 _editorViewState.CancelPendingRestore,
                 _messages);
-        _embeddedEditors = new EditorEmbeddedEditorController(ShowEmbeddedContext, _messages);
+        _embeddedEditors = new EditorEmbeddedEditorController(
+            ShowEmbeddedContext,
+            () => Session.TreeRoots,
+            _messages);
         var previewAuthoringNavigator = new PreviewAuthoringNavigator(
             () => Session.SelectedNode,
             (nodeId) => NavigateToNodeById(
@@ -257,11 +260,6 @@ public partial class MainWindow : SukiWindow
             componentClassFieldValues,
             inlinePreviews,
             fieldPostCommitEffects);
-        var recordOverrideSources =
-            new RecordReferenceOverrideSourceFactory(
-                recordClassFieldValues);
-        RecordReferenceOverridesDialogController?
-            recordOverrides = null;
         var layoutCards = new EditorLayoutCardFactory(
             fieldValues,
             componentClassFieldValues,
@@ -277,31 +275,10 @@ public partial class MainWindow : SukiWindow
             OpenComponentVariantReference,
             _nodeCommands.ToggleVariantLock,
             ShowEmbeddedContext,
-            async (node, definition, referenceId) =>
-            {
-                if (recordOverrides is null)
-                {
-                    throw new InvalidOperationException(
-                        "Record reference Overrides are not initialized.");
-                }
-                await recordOverrides.Show(
-                    recordOverrideSources.Create(
-                        node,
-                        definition,
-                        referenceId),
-                    definition);
-            },
+            _embeddedEditors.OpenRecordReferenceOverrides,
             ScheduleActiveEditorReload,
             previewAuthoringRefresh.Notify,
             _editorSessionUiState);
-        recordOverrides =
-            new RecordReferenceOverridesDialogController(
-                this,
-                data.Layouts,
-                dictionaryFieldServices,
-                layoutCards,
-                application.Operations,
-                () => Session.TreeRoots);
         _embeddedUsageNavigator = new EditorEmbeddedUsageNavigator(
             data.Components,
             this,
