@@ -14,6 +14,7 @@ export interface DeviceModuleTransparencyPayload {
   paletteColor: string;
   backgroundOpacity: number;
   fixedStart: number;
+  minimumOpaqueExtent: number;
   gradientHeight: number;
   variableOffset: number;
 }

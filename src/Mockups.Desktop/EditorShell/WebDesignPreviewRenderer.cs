@@ -244,6 +244,7 @@ internal static class WebDesignPreviewRenderer
                     paletteColor = metrics.ModuleTransparency.PaletteColor,
                     backgroundOpacity = metrics.ModuleTransparency.BackgroundOpacity,
                     fixedStart = metrics.ModuleTransparency.FixedStart,
+                    minimumOpaqueExtent = metrics.ModuleTransparency.MinimumOpaqueExtent,
                     gradientHeight = metrics.ModuleTransparency.GradientHeight,
                     variableOffset = metrics.ModuleTransparency.VariableOffset,
                 },

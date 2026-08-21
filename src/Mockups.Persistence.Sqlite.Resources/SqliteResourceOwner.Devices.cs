@@ -70,6 +70,7 @@ internal sealed partial class SqliteResourceOwner
                 context),
             "device.metrics.moduleTransparency.backgroundOpacity" => JsonPath.RequiredNumberString(metrics, ["moduleTransparency", "backgroundOpacity"], context),
             "device.metrics.moduleTransparency.fixedStart" => JsonPath.RequiredNumberString(metrics, ["moduleTransparency", "fixedStart"], context),
+            "device.metrics.moduleTransparency.minimumOpaqueExtent" => JsonPath.RequiredNumberString(metrics, ["moduleTransparency", "minimumOpaqueExtent"], context),
             "device.metrics.moduleTransparency.gradientHeight" => JsonPath.RequiredNumberString(metrics, ["moduleTransparency", "gradientHeight"], context),
             "device.metrics.moduleTransparency.variableOffset" => JsonPath.RequiredNumberString(metrics, ["moduleTransparency", "variableOffset"], context),
             _ => throw new InvalidOperationException($"Unknown device metrics field '{fieldId}'."),

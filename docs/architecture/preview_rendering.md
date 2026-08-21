@@ -186,8 +186,9 @@ fallback background nodes identify themselves only through the generic
 removes those nodes, measures the bottommost visible foreground paint in the
 current frame after transforms and clipping, and resolves the gradient start.
 Fixed mode uses the authored Device coordinate directly; variable mode adds
-the signed offset to that pre-background measurement before constructing the
-mask. The boundary then inserts the resolved Palette surface with only its
+the signed offset to that pre-background measurement and takes the larger of
+that result and the authored minimum fully-opaque extent before constructing
+the mask. The boundary then inserts the resolved Palette surface with only its
 authored background opacity, composes the unmodified Module foreground over
 it, and attaches one fully-opaque-to-transparent vertical mask to the complete
 Module root. Neither route branches on Module identity.

@@ -21,6 +21,7 @@ public sealed record DeviceModuleTransparencyOverride(
     string PaletteColor,
     double BackgroundOpacity,
     double FixedStart,
+    double MinimumOpaqueExtent,
     double GradientHeight,
     double VariableOffset)
 {
@@ -29,6 +30,7 @@ public sealed record DeviceModuleTransparencyOverride(
         "fixed",
         "gray_000",
         1,
+        0,
         0,
         1,
         0);

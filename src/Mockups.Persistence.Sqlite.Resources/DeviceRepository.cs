@@ -83,6 +83,9 @@ internal sealed class DeviceRepository : IDeviceRepository
             case "device.metrics.moduleTransparency.fixedStart":
                 JsonPath.Set(metrics, ["moduleTransparency", "fixedStart"], JsonPath.NumberNode(value));
                 break;
+            case "device.metrics.moduleTransparency.minimumOpaqueExtent":
+                JsonPath.Set(metrics, ["moduleTransparency", "minimumOpaqueExtent"], JsonPath.NumberNode(value));
+                break;
             case "device.metrics.moduleTransparency.gradientHeight":
                 JsonPath.Set(metrics, ["moduleTransparency", "gradientHeight"], JsonPath.NumberNode(value));
                 break;

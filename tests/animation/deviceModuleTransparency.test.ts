@@ -32,6 +32,7 @@ const payload: DesignPreviewPayload = {
       paletteColor: "gray_020",
       backgroundOpacity: 0.75,
       fixedStart: 80,
+      minimumOpaqueExtent: 70,
       gradientHeight: 40,
       variableOffset: 0,
     },
@@ -90,7 +91,7 @@ test("enabled Device module transparency leaves the Preview canvas transparent",
   assert.equal(previewCanvasBackground(payload), undefined);
 });
 
-test("variable Device module transparency measures the last pre-background pixel each frame", () => {
+test("variable Device module transparency keeps the mask opaque through its minimum extent", () => {
   const rendered = applyDeviceModuleTransparency({
     ...payload,
     previewFrame: {
@@ -98,6 +99,28 @@ test("variable Device module transparency measures the last pre-background pixel
       moduleTransparency: {
         ...payload.previewFrame.moduleTransparency,
         mode: "variable",
+        variableOffset: -5,
+      },
+    },
+  }, module);
+  assert.deepEqual(rendered.style?.opacityMask, {
+    axis: "vertical",
+    start: 70,
+    end: 110,
+    beforeOpacity: 1,
+    afterOpacity: 0,
+  });
+});
+
+test("variable Device module transparency advances beyond the minimum with visible content", () => {
+  const rendered = applyDeviceModuleTransparency({
+    ...payload,
+    previewFrame: {
+      ...payload.previewFrame,
+      moduleTransparency: {
+        ...payload.previewFrame.moduleTransparency,
+        mode: "variable",
+        minimumOpaqueExtent: 40,
         variableOffset: -5,
       },
     },
@@ -133,8 +156,13 @@ test("Device module transparency rejects incomplete and legacy payloads", () => 
     paletteColor: "gray_020",
     opacity: 0.75,
     fixedStart: 80,
+    minimumOpaqueExtent: 70,
     gradientHeight: 40,
     variableOffset: 0,
+  }));
+  assert.throws(() => requiredDeviceModuleTransparency({
+    ...payload.previewFrame.moduleTransparency,
+    minimumOpaqueExtent: -1,
   }));
   assert.throws(() => requiredDeviceModuleTransparency({
     ...payload.previewFrame.moduleTransparency,

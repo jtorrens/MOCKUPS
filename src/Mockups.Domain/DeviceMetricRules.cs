@@ -55,6 +55,7 @@ public static class DeviceMetricRules
                 ["paletteColor"] = "gray_000",
                 ["backgroundOpacity"] = 1,
                 ["fixedStart"] = Math.Round(height * 0.5),
+                ["minimumOpaqueExtent"] = Math.Round(height * 0.5),
                 ["gradientHeight"] = Math.Max(1, Math.Round(height * 0.25)),
                 ["variableOffset"] = 0,
             },
@@ -96,7 +97,7 @@ public static class DeviceMetricRules
             "Device metrics");
         RequireExactKeys(
             moduleTransparency,
-            ["enabled", "mode", "paletteColor", "backgroundOpacity", "fixedStart", "gradientHeight", "variableOffset"],
+            ["enabled", "mode", "paletteColor", "backgroundOpacity", "fixedStart", "minimumOpaqueExtent", "gradientHeight", "variableOffset"],
             [],
             "Device metrics.moduleTransparency");
         if (JsonPath.OptionalObject(metrics, "frame", "Device metrics") is { } frame)
@@ -147,6 +148,9 @@ public static class DeviceMetricRules
         var moduleTransparencyFixedStart = RequiredNonNegativeNumber(
             metrics,
             ["moduleTransparency", "fixedStart"]);
+        var moduleTransparencyMinimumOpaqueExtent = RequiredNonNegativeNumber(
+            metrics,
+            ["moduleTransparency", "minimumOpaqueExtent"]);
         var moduleTransparencyGradientHeight = RequiredPositiveNumber(
             metrics,
             ["moduleTransparency", "gradientHeight"]);
@@ -172,6 +176,7 @@ public static class DeviceMetricRules
                 moduleTransparencyPaletteColor,
                 moduleTransparencyBackgroundOpacity,
                 moduleTransparencyFixedStart,
+                moduleTransparencyMinimumOpaqueExtent,
                 moduleTransparencyGradientHeight,
                 moduleTransparencyVariableOffset));
     }

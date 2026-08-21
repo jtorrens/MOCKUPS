@@ -99,7 +99,7 @@ export function committedComponentFixture(
         screenY: 0,
         screenWidth: 360,
         screenHeight: 720,
-        moduleTransparency: { enabled: false, mode: "fixed", paletteColor: "gray_000", backgroundOpacity: 1, fixedStart: 0, gradientHeight: 1, variableOffset: 0 },
+        moduleTransparency: { enabled: false, mode: "fixed", paletteColor: "gray_000", backgroundOpacity: 1, fixedStart: 0, minimumOpaqueExtent: 0, gradientHeight: 1, variableOffset: 0 },
       },
       iconAssetRoot: iconTheme.asset_root,
       iconMappingJson: iconTheme.mapping_json,

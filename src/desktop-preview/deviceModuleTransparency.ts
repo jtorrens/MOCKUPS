@@ -24,7 +24,10 @@ export function applyDeviceModuleTransparency(
   const contentBottom = bottomVisiblePixel(content, screen);
   const start = policy.mode === "fixed"
     ? screen.y + policy.fixedStart
-    : contentBottom + policy.variableOffset;
+    : Math.max(
+        screen.y + policy.minimumOpaqueExtent,
+        contentBottom + policy.variableOffset,
+      );
   const end = start + policy.gradientHeight;
   const background: RenderableNode = {
     id: "device.moduleTransparency.background",
@@ -70,6 +73,7 @@ export function requiredDeviceModuleTransparency(
     "paletteColor",
     "backgroundOpacity",
     "fixedStart",
+    "minimumOpaqueExtent",
     "gradientHeight",
     "variableOffset",
   ] as const;
@@ -92,6 +96,7 @@ export function requiredDeviceModuleTransparency(
   }
   const backgroundOpacity = finiteNumber(value.backgroundOpacity, "backgroundOpacity");
   const fixedStart = finiteNumber(value.fixedStart, "fixedStart");
+  const minimumOpaqueExtent = finiteNumber(value.minimumOpaqueExtent, "minimumOpaqueExtent");
   const gradientHeight = finiteNumber(value.gradientHeight, "gradientHeight");
   const variableOffset = finiteNumber(value.variableOffset, "variableOffset");
   if (backgroundOpacity < 0 || backgroundOpacity > 1) {
@@ -99,6 +104,9 @@ export function requiredDeviceModuleTransparency(
   }
   if (fixedStart < 0) {
     throw new Error("Preview Device moduleTransparency.fixedStart must be non-negative.");
+  }
+  if (minimumOpaqueExtent < 0) {
+    throw new Error("Preview Device moduleTransparency.minimumOpaqueExtent must be non-negative.");
   }
   if (gradientHeight <= 0) {
     throw new Error("Preview Device moduleTransparency.gradientHeight must be positive.");
@@ -109,6 +117,7 @@ export function requiredDeviceModuleTransparency(
     paletteColor: value.paletteColor,
     backgroundOpacity,
     fixedStart,
+    minimumOpaqueExtent,
     gradientHeight,
     variableOffset,
   };

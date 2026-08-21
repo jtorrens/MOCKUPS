@@ -411,7 +411,8 @@ Database validation is read-only and confirms:
 - exact JSON root kinds;
 - exact Device metric objects and nested properties, including rejection of
   retired geometry and scale fields, incomplete Module transparency policies,
-  separation of background opacity from the global gradient mask,
+  separation of background opacity from the global gradient mask, the required
+  minimum fully-opaque extent for variable starts,
   and Palette tokens that do not exist in the same Project;
 - complete Component and Module Variants;
 - full reference formats and same-Project integrity through the same guard used

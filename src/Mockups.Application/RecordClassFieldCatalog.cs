@@ -289,6 +289,12 @@ public static class RecordClassFieldCatalog
             ValueKind.Decimal,
             Number: new NumberDefinition(0, 100000, 0.1m, 3),
             Unit: "device px"),
+        ["device.metrics.moduleTransparency.minimumOpaqueExtent"] = new(
+            "device.metrics.moduleTransparency.minimumOpaqueExtent",
+            "Fully opaque until",
+            ValueKind.Decimal,
+            Number: new NumberDefinition(0, 100000, 0.1m, 3),
+            Unit: "device px"),
         ["device.metrics.moduleTransparency.gradientHeight"] = new(
             "device.metrics.moduleTransparency.gradientHeight",
             "Gradient height",
