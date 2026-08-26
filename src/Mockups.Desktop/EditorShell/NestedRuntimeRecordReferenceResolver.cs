@@ -68,6 +68,128 @@ internal sealed class NestedRuntimeRecordReferenceResolver
         }
     }
 
+    public JsonObject CreateAnimationCatalog(
+        JsonObject values,
+        JsonObject config,
+        JsonObject animation,
+        string projectId,
+        string themeMode,
+        IReadOnlyDictionary<string, string> paletteColors)
+    {
+        var catalog = new JsonObject();
+        var tracks = JsonPath.RequiredArray(
+            animation,
+            "tracks",
+            "Runtime animation document");
+        CollectAnimationReferences(
+            catalog,
+            tracks,
+            values,
+            RuntimeInputDefinitionReader.ReadInputs(values, config),
+            "",
+            projectId,
+            themeMode,
+            paletteColors);
+
+        foreach (var collection in RuntimeInputDefinitionReader.ReadCollections(values, config))
+        {
+            if (values[collection.JsonKey] is not JsonArray items) continue;
+            foreach (var item in items.OfType<JsonObject>())
+            {
+                var targetId = JsonPath.RequiredString(
+                    item,
+                    "id",
+                    $"Runtime collection '{collection.Id}' item");
+                CollectAnimationReferences(
+                    catalog,
+                    tracks,
+                    item,
+                    collection.Fields,
+                    targetId,
+                    projectId,
+                    themeMode,
+                    paletteColors);
+            }
+        }
+
+        return catalog;
+    }
+
+    private void CollectAnimationReferences(
+        JsonObject catalog,
+        JsonArray tracks,
+        JsonObject values,
+        IReadOnlyList<ComponentInputDefinition> inputs,
+        string targetId,
+        string projectId,
+        string themeMode,
+        IReadOnlyDictionary<string, string> paletteColors)
+    {
+        foreach (var input in inputs)
+        {
+            if (input.Kind == ComponentInputKind.RecordReference)
+            {
+                var track = tracks.OfType<JsonObject>().SingleOrDefault((candidate) =>
+                    JsonPath.RequiredString(candidate, "fieldId", "Runtime animation track")
+                        .Equals(input.Id, StringComparison.Ordinal)
+                    && (candidate["targetId"]?.GetValue<string>() ?? "")
+                        .Equals(targetId, StringComparison.Ordinal));
+                if (track is not null)
+                {
+                    foreach (var keyframe in JsonPath.RequiredArray(
+                                 track,
+                                 "keyframes",
+                                 $"Runtime animation track '{input.Id}'").OfType<JsonObject>())
+                    {
+                        var recordId = JsonPath.RequiredString(
+                            keyframe,
+                            "value",
+                            $"Runtime animation track '{input.Id}' keyframe");
+                        if (!_recordInputResolver.ProjectId(input.TableId, recordId, input.Id)
+                                .Equals(projectId, StringComparison.Ordinal))
+                        {
+                            throw new InvalidOperationException(
+                                $"Runtime animation track '{input.Id}' references record '{recordId}' outside Project '{projectId}'.");
+                        }
+                        var table = catalog[input.TableId] as JsonObject;
+                        if (table is null)
+                        {
+                            table = new JsonObject();
+                            catalog[input.TableId] = table;
+                        }
+                        table[recordId] = _recordInputResolver.ResolvedPreviewValue(
+                            input.TableId,
+                            recordId,
+                            themeMode,
+                            paletteColors,
+                            input.Id);
+                    }
+                }
+            }
+
+            if (input.StructuredCollection is null
+                || values[input.JsonKey] is not JsonArray nestedItems)
+            {
+                continue;
+            }
+            foreach (var nestedItem in nestedItems.OfType<JsonObject>())
+            {
+                CollectAnimationReferences(
+                    catalog,
+                    tracks,
+                    nestedItem,
+                    input.StructuredCollection.Fields,
+                    JsonPath.RequiredString(
+                        nestedItem,
+                        "id",
+                        $"Runtime structured collection '{input.Id}' item"),
+                    projectId,
+                    themeMode,
+                    paletteColors);
+            }
+        }
+    }
+
     private void Visit(
         JsonNode? node,
         string themeMode,

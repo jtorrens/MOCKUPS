@@ -58,6 +58,19 @@ internal sealed class ProductionPreviewRuntimeResolver
         var timelineFrameBefore =
             ResolvedTimelineFrame(preview);
         var config = ParseObject(payload.ConfigJson);
+        var instance = ParseObject(payload.InstanceJson);
+        var animation = JsonPath.RequiredObject(
+            instance,
+            "animation",
+            "Production Preview instance envelope");
+        var runtimeRecordReferences =
+            _nestedRecordInputResolver.CreateAnimationCatalog(
+                preview,
+                config,
+                animation,
+                payload.ProjectId,
+                themeMode,
+                payload.PaletteColors);
         _nestedRecordInputResolver.Resolve(config, themeMode, payload.PaletteColors);
         var inputs = RuntimeInputDefinitionReader.ReadInputs(preview, config);
 
@@ -96,6 +109,7 @@ internal sealed class ProductionPreviewRuntimeResolver
         {
             ConfigJson = config.ToJsonString(),
             DesignPreviewJson = preview.ToJsonString(),
+            RuntimeRecordReferencesJson = runtimeRecordReferences.ToJsonString(),
         };
         var timelineFrameAfter =
             ResolvedTimelineFrame(preview);

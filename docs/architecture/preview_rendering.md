@@ -68,6 +68,11 @@ Override or Runtime value source. Theme-token and Palette resolution remains
 the subsequent declared visual-resolution stage; it is not a parallel config
 or Runtime path.
 
+Animatable Runtime record references are prepared once as an exact catalog of
+the declared keyframe ids. Frame resolution selects the already prepared
+record by its resolved stable id; it never re-reads persistence per frame,
+derives a record from the Shot context or falls back to another Actor.
+
 For a Shot frame inside a Screen boundary transition, the prepared payload also
 contains the exact outgoing and incoming Screen payloads, their complete Motion
 documents and the shared non-negative elapsed interval. The outgoing payload is

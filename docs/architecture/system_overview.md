@@ -314,11 +314,14 @@ Module Instance collection commands do not inherit timeline reads. The Shot
 collection surface declares collection mutation, Production timeline and
 Resources Theme-token capabilities independently.
 
-Module Instance animation persistence is also backed directly by Production.
-Animation writes do not inherit timeline reads, and Runtime Input Instance
-writes inherit neither capability. The Runtime collection editor receives
-payload writes, animation writes, timeline reads and Theme-token reads as four
-distinct dependencies.
+Module Instance animation rows and their final write remain owned by
+Production. The focused SQLite animation store validates animatable declared
+record references against the exact same-Project Resources catalog before it
+delegates that complete write; it exposes only the animation port and is not a
+general cross-owner facade. Animation writes do not inherit timeline reads,
+and Runtime Input Instance writes inherit neither capability. The Runtime
+collection editor receives payload writes, animation writes, timeline reads
+and Theme-token reads as four distinct dependencies.
 
 Cross-owner Runtime Input Instance mutation is implemented by the focused
 `SqliteRuntimeInputInstanceStore`. It

@@ -273,8 +273,11 @@ does not inherit `IModuleInstanceAnimationStore`; animation is an independent
 Production-owned port. Consumers that reconcile animation after a stable-id
 payload edit must declare both capabilities.
 `IModuleInstanceAnimationStore` owns only animation writes and does not inherit
-timeline reads. Animation authoring declares the Production timeline
-capability independently for its prepared snapshot.
+timeline reads. Production owns the animation row and final write. The focused
+SQLite adapter composes the effective Runtime declarations with the exact
+same-Project Resources ids to validate animated record-reference keyframes,
+then delegates the complete write to Production. Animation authoring declares
+the Production timeline capability independently for its prepared snapshot.
 The visual animation owner submits serialized semantic commands. A command is
 applied to the latest confirmed document only when it reaches the front of the
 queue; persistence success supplies the next confirmed snapshot and failure
@@ -545,8 +548,9 @@ owner-declared JSON paths. Text scanning, substring matching and arbitrary JSON
 search are not reference discovery.
 
 Lifecycle operations prepare and validate a complete write before committing.
-Changes that affect several fields, such as changing a conversation message
-direction and Actor ownership, are atomic.
+A conversation message Actor is required independently from direction, so a
+direction write changes only that scalar and never clears or manufactures the
+Actor reference.
 
 ## Parity artifacts
 

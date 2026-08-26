@@ -41,6 +41,7 @@ import {
   forwardedRuntimeInputPatch,
 } from "./runtimeInputForwarding.js";
 import { renderScale } from "./previewGeometryHelpers.js";
+import { resolvedRuntimeRecordReference } from "./runtimeRecordReferenceCatalog.js";
 
 export function resolveConversationModule(
   payload: DesignPreviewPayload,
@@ -193,6 +194,25 @@ export function resolveConversationModuleFrame(
     timeline.temporalLocalFrame("headerSubtitle", "", screenFrame),
     preview.headerSubtitle,
   ).value;
+  const resolvedActorId = resolveParameterAnimation(
+    animation,
+    "actor",
+    "",
+    timeline.temporalLocalFrame("actor", "", screenFrame),
+    preview.actorId,
+  );
+  if (resolvedActorId.animated) {
+    if (typeof resolvedActorId.value !== "string" || !resolvedActorId.value.trim()) {
+      throw new Error("module.core.chat.input.actor animation must resolve a non-empty Actor id");
+    }
+    preview.actorId = resolvedActorId.value;
+    preview.actor = resolvedRuntimeRecordReference(
+      payload,
+      "actors",
+      resolvedActorId.value,
+      "module.core.chat.input.actor",
+    );
+  }
 
   preview.messages = messages.map((value, index) => {
     const message = { ...value };
@@ -201,16 +221,30 @@ export function resolveConversationModuleFrame(
       "id",
       `module.core.chat.messages[${index}]`,
     );
-    const direction = requiredString(
+    const authoredDirection = requiredString(
       message,
       "direction",
       `module.core.chat.messages[${index}]`,
     );
+    const resolvedDirection = resolveParameterAnimation(
+      animation,
+      "direction",
+      targetId,
+      timeline.temporalLocalFrame("direction", targetId, screenFrame),
+      authoredDirection,
+    ).value;
+    if (typeof resolvedDirection !== "string") {
+      throw new Error(
+        `module.core.chat.messages[${index}] direction animation must resolve a string`,
+      );
+    }
+    const direction = resolvedDirection;
     if (direction !== "incoming" && direction !== "outgoing" && direction !== "system") {
       throw new Error(
         `module.core.chat.messages[${index}] has unsupported direction '${direction}'`,
       );
     }
+    message.direction = direction;
     message.timelineStartFrame = timeline.itemStartFrame(targetId);
     message.timelineEndFrame = timeline.itemEndFrame(targetId);
     const presenceEndFrame = timeline.itemPresenceEndFrame(targetId, automaticEndFrame);
@@ -435,7 +469,7 @@ function conversationMessages(preview: JsonRecord): ResolvedConversationMessage[
   return messages.map((message, index) => {
     const path = `module.core.chat.messages[${index}]`;
     return {
-      actor: optionalObject(message, "actor", path),
+      actor: requiredRecord(message, "actor", path),
       state: requiredString(message, "direction", path),
       text: requiredPossiblyEmptyString(message, "text", `${path}.text`),
       statusState: conversationStatusState(requiredString(
@@ -686,6 +720,8 @@ function unsupportedConversationValue(label: string, value: string): never {
 
 function validateConversationMessageRuntime(message: JsonRecord, index: number) {
   const path = `module.core.chat.messages[${index}]`;
+  requiredString(message, "actorId", `${path}.actorId`);
+  requiredRecord(message, "actor", `${path}.actor`);
   requiredString(message, "direction", `${path}.direction`);
   requiredPossiblyEmptyString(message, "text", `${path}.text`);
   requiredNumber(message, "delayAfterPreviousFrames", `${path}.delayAfterPreviousFrames`);

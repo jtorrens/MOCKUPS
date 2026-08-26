@@ -139,6 +139,13 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ["conversation", "showHeader"],
             "",
             []),
+        ["module.core.chat.showHeaderSeparator"] = new(
+            "module.core.chat",
+            "module.core.chat.showHeaderSeparator",
+            ValueKind.Boolean,
+            ["conversation", "showHeaderSeparator"],
+            "",
+            []),
         ["module.core.chat.showKeyboard"] = new(
             "module.core.chat",
             "module.core.chat.showKeyboard",

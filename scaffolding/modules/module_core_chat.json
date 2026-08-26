@@ -43,6 +43,7 @@
   "config": {
     "conversation": {
       "showHeader": true,
+      "showHeaderSeparator": true,
       "headerHeight": 40,
       "showStatusBar": true,
       "showNavigationBar": true,
@@ -243,6 +244,15 @@
         "defaultValue": "actor_alex",
         "tableId": "actors",
         "resolvedJsonKey": "actor",
+        "animatable": true,
+        "animationInterpolations": [
+          "hold"
+        ],
+        "animationTimeline": {
+          "origin": {
+            "kind": "ownerStart"
+          }
+        },
         "valueKind": "RecordReference"
       },
       {
@@ -484,7 +494,7 @@
         "playbackMode": "once",
         "playDurationFrames": 72,
         "playbackFrame": 0,
-        "actorId": "",
+        "actorId": "actor_a60e98e107eb40a9bdb88a9c784cd548",
         "writeOnTiming": {
           "mode": "fixed",
           "fixedFrames": 42,
@@ -516,7 +526,7 @@
         "playbackMode": "once",
         "playDurationFrames": 72,
         "playbackFrame": 0,
-        "actorId": "",
+        "actorId": "actor_a60e98e107eb40a9bdb88a9c784cd548",
         "writeOnTiming": {
           "mode": "fixed",
           "fixedFrames": 0,
@@ -573,16 +583,7 @@
             "uiParentGroupId": "",
             "uiOrder": 10,
             "uiSectionLabel": "",
-            "valueKind": "RecordReference",
-            "enabledWhenItemJsonKey": "direction",
-            "enabledWhenItemValues": [
-              "incoming",
-              "system"
-            ],
-            "allowEmptyWhenItemJsonKey": "direction",
-            "allowEmptyWhenItemValues": [
-              "system"
-            ]
+            "valueKind": "RecordReference"
           },
           {
             "id": "direction",
@@ -610,12 +611,14 @@
             "uiOrder": 11,
             "uiSectionLabel": "",
             "valueKind": "OptionToken",
-            "transition": {
-              "targetInputId": "actor",
-              "triggerValues": [
-                "outgoing"
-              ],
-              "replacementValue": ""
+            "animatable": true,
+            "animationInterpolations": [
+              "hold"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
             }
           },
           {
@@ -1189,6 +1192,7 @@
     "config": {
       "conversation": {
         "showHeader": true,
+        "showHeaderSeparator": true,
         "headerHeight": 40,
         "showStatusBar": true,
         "showNavigationBar": true,
@@ -1676,6 +1680,31 @@
         "label": "Header surface",
         "recordClassId": "component.surface"
       }
+    },
+    {
+      "id": "module.core.chat.showHeaderSeparator",
+      "label": "Show separator",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "conversation",
+        "showHeaderSeparator"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
     },
     {
       "id": "module.core.chat.headerUseActorColor",
@@ -2260,6 +2289,11 @@
               {
                 "id": "module.core.chat.headerHeight",
                 "order": 20,
+                "visible": true
+              },
+              {
+                "id": "module.core.chat.showHeaderSeparator",
+                "order": 25,
                 "visible": true
               },
               {

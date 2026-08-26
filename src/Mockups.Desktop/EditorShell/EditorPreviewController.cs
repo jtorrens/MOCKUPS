@@ -3775,6 +3775,7 @@ internal sealed class EditorPreviewController : IDisposable
             payload.ComponentType,
             payload.DesignPreviewJson,
             payload.RuntimeContractJson,
+            payload.RuntimeRecordReferencesJson,
             payload.ThemeMode,
             payload.ComponentBaseConfigsJson,
             payload.AppConfigJson,

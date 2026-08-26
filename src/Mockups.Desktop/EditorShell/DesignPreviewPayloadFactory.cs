@@ -51,7 +51,9 @@ internal sealed record DesignPreviewPayload(
     int LocalFrame = 0,
     string OwnerId = "",
     ScreenTimingPayload? ScreenTiming = null,
-    ScreenTransitionPayload? ScreenTransition = null);
+    ScreenTransitionPayload? ScreenTransition = null,
+    string RuntimeRecordReferencesJson = "{}",
+    string ProjectId = "");
 
 internal static class DesignPreviewPayloadFactory
 {
@@ -169,21 +171,19 @@ internal static class DesignPreviewPayloadFactory
             runtimePreview[timelineFrameJsonKey] = Math.Max(0, screenFrame.Value);
         }
         var runtimeActorId = runtimePreview["actorId"]?.GetValue<string>();
-        var ownerActorId = string.IsNullOrWhiteSpace(runtimeActorId) ? instance.OwnerActorId : runtimeActorId;
-        if (string.IsNullOrWhiteSpace(ownerActorId))
+        if (string.IsNullOrWhiteSpace(runtimeActorId))
         {
             throw new InvalidOperationException(
-                $"Module Instance '{moduleInstanceId}' has no effective Production Actor.");
+                $"Module Instance '{moduleInstanceId}' has no explicit chat Actor.");
         }
         runtimePreview["actor"] = dataSource.CreateActorPreview(
-            ownerActorId,
+            runtimeActorId,
             effectiveThemeMode,
             theme.PaletteColors);
         ModuleRuntimeDocumentContracts.PrepareProduction(
             instance.RecordClassId,
             $"Module Instance '{moduleInstanceId}' Production payload",
-            runtimePreview,
-            instance.OwnerActorId);
+            runtimePreview);
         var instanceJson = new JsonObject
         {
             ["animation"] = JsonPath.ParseRequiredObject(
@@ -217,7 +217,8 @@ internal static class DesignPreviewPayloadFactory
             instanceJson.ToJsonString(),
             deviceId,
             instance.FrameRate,
-            LocalFrame: Math.Max(0, screenFrame ?? 0));
+            LocalFrame: Math.Max(0, screenFrame ?? 0),
+            ProjectId: instance.ProjectId);
     }
 
     private static DesignPreviewPayload
@@ -423,7 +424,8 @@ internal static class DesignPreviewPayloadFactory
             runtimePreviewJson,
             effectiveThemeMode,
             settings.ComponentBaseConfigsJson,
-            settings.AppConfigJson);
+            settings.AppConfigJson,
+            ProjectId: settings.ProjectId);
     }
 
     private static string ResolveEffectiveThemeMode(
@@ -471,7 +473,8 @@ internal static class DesignPreviewPayloadFactory
             designPreviewJson,
             designPreviewJson,
             effectiveThemeMode,
-            settings.ComponentBaseConfigsJson);
+            settings.ComponentBaseConfigsJson,
+            ProjectId: settings.ProjectId);
     }
 
     private static string ResolveActionDurationsJson(

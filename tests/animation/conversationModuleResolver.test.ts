@@ -25,6 +25,21 @@ function payload(
   const completeMessages = messages.map((message) => {
     const { writeOnDurationFrames = 0, ...authoredMessage } = message;
     return {
+      actorId: "actor_test",
+      actor: {
+        id: "actor_test",
+        displayName: "Test Actor",
+        shortName: "Test",
+        avatar: {
+          imageUri: "",
+          backgroundColor: "#ffffff",
+          textColor: "#000000",
+          scale: 1,
+          offsetX: 0,
+          offsetY: 0,
+          baseSize: 640,
+        },
+      },
       delayAfterPreviousFrames: 0,
       statusVisible: false,
       statusState: "none",
@@ -56,6 +71,8 @@ function payload(
     };
   });
   const fields = [
+    { id: "actor", jsonKey: "actorId" },
+    { id: "direction", jsonKey: "direction", animationTimeline: { origin: { kind: "ownerStart" } } },
     { id: "text", jsonKey: "text", animationTimeline: { origin: { kind: "ownerStart" }, completion: { baseDurationFieldId: "writeOn", minimumEnabledKeyframes: 2 } } },
     { id: "delay", jsonKey: "delayAfterPreviousFrames" },
     {
@@ -89,7 +106,10 @@ function payload(
       typingIndicatorSizeToken: "theme.typography.sizes.m",
       typingIndicatorAnimation: "pulsating",
       messages: completeMessages,
-      inputs: [{ id: "headerSubtitle", jsonKey: "headerSubtitle", animationTimeline: { origin: { kind: "ownerStart" } } }],
+      inputs: [
+        { id: "actor", jsonKey: "actorId", animationTimeline: { origin: { kind: "ownerStart" } } },
+        { id: "headerSubtitle", jsonKey: "headerSubtitle", animationTimeline: { origin: { kind: "ownerStart" } } },
+      ],
       collections: [{
         id: "messages",
         jsonKey: "messages",
@@ -359,15 +379,39 @@ test("message arrival follows text completion while finite media continues indep
   assert.equal(resolvedMedia[1]!.text, "second start");
 });
 
-test("actor and direction are never rewritten by animation tracks", () => {
+test("message direction resolves hold keyframes without replacing its Actor", () => {
   const messages = [{ id: "m1", actorId: "sam", direction: "incoming", text: "hello" }];
-  const tracks = [
-    track("actorId", "m1", [{ id: "a0", frame: 0, value: "alex" }]),
-    track("direction", "m1", [{ id: "d0", frame: 0, value: "outgoing" }]),
-  ];
-  const message = (resolveConversationModuleFrame(payload(0, tracks, messages)).messages as Array<Record<string, unknown>>)[0]!;
-  assert.equal(message.actorId, "sam");
-  assert.equal(message.direction, "incoming");
+  const tracks = [track("direction", "m1", [
+    { id: "d0", frame: 0, value: "incoming", interpolation: "hold" },
+    { id: "d1", frame: 5, value: "outgoing", interpolation: "hold" },
+  ])];
+  const before = (resolveConversationModuleFrame(payload(4, tracks, messages)).messages as Array<Record<string, unknown>>)[0]!;
+  const after = (resolveConversationModuleFrame(payload(5, tracks, messages)).messages as Array<Record<string, unknown>>)[0]!;
+  assert.equal(before.actorId, "sam");
+  assert.equal(before.direction, "incoming");
+  assert.equal(after.actorId, "sam");
+  assert.equal(after.direction, "outgoing");
+});
+
+test("chat Actor resolves hold keyframes through the prepared record catalog", () => {
+  const source = payload(5, [track("actor", "", [
+    { id: "a0", frame: 0, value: "actor_alex", interpolation: "hold" },
+    { id: "a1", frame: 5, value: "actor_sam", interpolation: "hold" },
+  ])], []);
+  source.designPreviewJson = JSON.stringify({
+    ...JSON.parse(source.designPreviewJson),
+    actorId: "actor_alex",
+    actor: { id: "actor_alex", displayName: "Alex" },
+  });
+  source.runtimeRecordReferencesJson = JSON.stringify({
+    actors: {
+      actor_alex: { id: "actor_alex", displayName: "Alex" },
+      actor_sam: { id: "actor_sam", displayName: "Sam" },
+    },
+  });
+  const resolved = resolveConversationModuleFrame(source);
+  assert.equal(resolved.actorId, "actor_sam");
+  assert.deepEqual(resolved.actor, { id: "actor_sam", displayName: "Sam" });
 });
 
 test("delivery, status and full-screen fields resolve independently", () => {
@@ -698,7 +742,10 @@ test("Conversation requires every authored field in each prepared Runtime messag
 test("Conversation Header keeps its upward bleed and can use the resolved Actor color", () => {
   const source = committedConversationPayload();
   const config = JSON.parse(source.configJson) as {
-    conversation: { headerUseActorColor: boolean };
+    conversation: {
+      headerUseActorColor: boolean;
+      showHeaderSeparator: boolean;
+    };
   };
   const actorColor = (
     JSON.parse(source.designPreviewJson) as {
@@ -727,7 +774,18 @@ test("Conversation Header keeps its upward bleed and can use the resolved Actor 
   assert.equal(headerNode.box.y, statusNode.box.height);
   assert.notEqual(surfaceColorNode.style?.background, actorColor);
 
+  config.conversation.showHeaderSeparator = false;
+  source.configJson = JSON.stringify(config);
+  assert.equal(
+    findNode(
+      conversationModuleToRenderable(source),
+      "module.core.chat.header.separator",
+    ),
+    undefined,
+  );
+
   config.conversation.headerUseActorColor = true;
+  config.conversation.showHeaderSeparator = true;
   source.configJson = JSON.stringify(config);
   const actorColorNode = findNode(
     conversationModuleToRenderable(source),
@@ -820,7 +878,8 @@ test("a nested full-screen Media keeps the exact root Screen coordinates", () =>
   const runtime = JSON.parse(source.designPreviewJson) as Record<string, unknown>;
   runtime.messages = [{
     id: "fullscreen-image",
-    actorId: "",
+    actorId: runtime.actorId,
+    actor: runtime.actor,
     direction: "outgoing",
     text: "Image",
     delayAfterPreviousFrames: 0,

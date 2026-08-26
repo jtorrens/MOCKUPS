@@ -374,9 +374,11 @@ references according to the collection contract. All structural actions use
 the shared collection command surface for both Variant and Runtime authoring;
 an editor never implements a collection type's lifecycle locally.
 
-For conversation messages, direction controls Actor requirements visibly.
-Incoming requires an Actor, outgoing derives the Shot owner at payload
-resolution, and system may optionally reference an Actor.
+Every conversation message exposes one required Actor independently from its
+incoming, outgoing or system direction. Changing direction preserves that
+selection. Direction and the chat-level Actor expose standard animation
+activation and discrete `hold` keyframes; resolving a direction keyframe
+immediately applies the complete corresponding Bubble appearance.
 
 ## Animation UX
 

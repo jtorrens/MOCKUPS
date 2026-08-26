@@ -52,4 +52,17 @@ internal sealed class ComponentPreviewRecordInputResolver
                 $"Unsupported record reference input table '{tableId}' for '{inputId}'."),
         };
     }
+
+    public string ProjectId(
+        string tableId,
+        string recordId,
+        string inputId)
+    {
+        return tableId switch
+        {
+            "actors" => _actorDataSource.LoadContext(recordId).ProjectId,
+            _ => throw new InvalidOperationException(
+                $"Unsupported record reference input table '{tableId}' for '{inputId}'."),
+        };
+    }
 }

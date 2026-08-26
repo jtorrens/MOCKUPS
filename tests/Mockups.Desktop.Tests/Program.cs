@@ -11159,7 +11159,6 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
             message.Remove("type");
             message["text"] = name;
             message["direction"] = "system";
-            message["actorId"] = "";
             return message;
         }
 
@@ -13050,14 +13049,16 @@ static void AnimatedConversationComposerRemainsVisible()
             firstMessage,
             "delayAfterPreviousFrames",
             "Conversation composer first message");
-        var payload = Required(CreatePreviewPayload(
+        var payload = new ProductionPreviewRuntimeResolver(
+            database.Resources,
+            database.ProjectPaths).Resolve(Required(CreatePreviewPayload(
             database,
             conversation,
             theme.Id,
             timelineFrame: screenRange.StartFrame
                 + screenRange.ActionStartFrame
                 + firstMessageStart
-                + 10));
+                + 10)), "light");
         Equal(firstMessageStart + 10, payload.LocalFrame);
         var html = WebDesignPreviewRenderer.RenderBodyAsync(
             database.GetDevicePreviewMetrics(payload.DeviceId),
@@ -15841,8 +15842,9 @@ static void ConversationMessageActorsFollowDirectionContract()
                 && database.GetModuleSettings(database.GetModuleInstanceSettings(node.Id).ModuleId).RecordClassId
                     == ModuleRuntimeDocumentContracts.ConversationRecordClassId);
         var instance = database.GetModuleInstanceSettings(screen.Id);
-        var shotOwnerActorId = database.GetShotSettings(instance.ShotId).OwnerActorId;
         var content = JsonPath.ParseRequiredObject(instance.ContentJson, $"Screen '{screen.Id}' content_json");
+        var chatActorId = content["actorId"]?.GetValue<string>() ?? "";
+        True(!string.IsNullOrWhiteSpace(chatActorId));
         var messages = content["messages"]?.AsArray()
             ?? throw new InvalidOperationException("Conversation instance has no messages.");
         var incoming = messages.OfType<JsonObject>().Single((message) => message["direction"]?.GetValue<string>() == "incoming");
@@ -15850,12 +15852,11 @@ static void ConversationMessageActorsFollowDirectionContract()
         True(!string.IsNullOrWhiteSpace(incomingActorId));
         True(messages.OfType<JsonObject>()
             .Where((message) => message["direction"]?.GetValue<string>() == "outgoing")
-            .All((message) => string.IsNullOrWhiteSpace(message["actorId"]?.GetValue<string>())));
+            .All((message) => message["actorId"]?.GetValue<string>() == chatActorId));
 
         var system = incoming.DeepClone().AsObject();
         system.Remove("id");
         system["direction"] = "system";
-        system["actorId"] = "";
         database.MutateModuleInstanceStructuredCollection(
             screen.Id,
             new AddStructuredCollectionItem(
@@ -15883,9 +15884,9 @@ static void ConversationMessageActorsFollowDirectionContract()
         var incomingActorOptions = incomingActorDefinition.Options ?? [];
         var systemActorOptions = systemActorDefinition.Options ?? [];
         True(incomingActorOptions.All((option) => !string.IsNullOrWhiteSpace(option.Value)));
-        True(systemActorOptions.Any((option) => string.IsNullOrWhiteSpace(option.Value)));
+        True(systemActorOptions.All((option) => !string.IsNullOrWhiteSpace(option.Value)));
         True(incomingActorDefinition.RecordReference?.AllowEmpty == false);
-        True(systemActorDefinition.RecordReference?.AllowEmpty == true);
+        True(systemActorDefinition.RecordReference?.AllowEmpty == false);
 
         var payload = Required(DesignPreviewPayloadFactory.Create(
             new DesignPreviewPayloadDataSource(
@@ -15900,7 +15901,7 @@ static void ConversationMessageActorsFollowDirectionContract()
             ?? throw new InvalidOperationException("Prepared Conversation payload has no messages.");
         True(preparedMessages.OfType<JsonObject>()
             .Where((message) => message["direction"]?.GetValue<string>() == "outgoing")
-            .All((message) => message["actorId"]?.GetValue<string>() == shotOwnerActorId));
+            .All((message) => message["actorId"]?.GetValue<string>() == chatActorId));
 
         var resolved = new ProductionPreviewRuntimeResolver(
             database.Resources,
@@ -15913,13 +15914,78 @@ static void ConversationMessageActorsFollowDirectionContract()
                 .Single((message) => message["direction"]?.GetValue<string>() == "incoming")["actor"]?["id"]?.GetValue<string>());
         True(resolvedMessages.OfType<JsonObject>()
             .Where((message) => message["direction"]?.GetValue<string>() == "outgoing")
-            .All((message) => message["actor"]?["id"]?.GetValue<string>() == shotOwnerActorId));
+            .All((message) => message["actor"]?["id"]?.GetValue<string>() == chatActorId));
         var resolvedSystemActor = resolvedMessages.OfType<JsonObject>()
             .Single((message) => message["direction"]?.GetValue<string>() == "system")["actor"] as JsonObject
             ?? throw new InvalidOperationException("System message Actor must resolve as an object.");
-        Equal(0, resolvedSystemActor.Count);
+        Equal(incomingActorId, resolvedSystemActor["id"]?.GetValue<string>());
         True(resolvedMessages.OfType<JsonObject>()
             .All((message) => message["actor"]?["id"]?.GetValue<string>() != "sample_actor"));
+
+        var animationStore = new SqliteModuleInstanceAnimationStore(
+            database.Production,
+            database.Resources);
+        var actorAnimation = new JsonObject
+        {
+                ["schemaVersion"] = 2,
+                ["tracks"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["id"] = "chat-actor-track",
+                        ["fieldId"] = "actor",
+                        ["keyframes"] = new JsonArray
+                        {
+                            new JsonObject
+                            {
+                                ["id"] = "chat-actor-origin",
+                                ["frame"] = 0,
+                                ["value"] = chatActorId,
+                                ["interpolation"] = "hold",
+                                ["enabled"] = true,
+                            },
+                            new JsonObject
+                            {
+                                ["id"] = "chat-actor-cut",
+                                ["frame"] = 5,
+                                ["value"] = incomingActorId,
+                                ["interpolation"] = "hold",
+                                ["enabled"] = true,
+                            },
+                        },
+                    },
+                },
+            };
+        animationStore.UpdateModuleInstanceAnimationJson(
+            screen.Id,
+            actorAnimation.ToJsonString());
+        var animatedPayload = Required(DesignPreviewPayloadFactory.Create(
+            new DesignPreviewPayloadDataSource(
+                database.PreviewInputs,
+                database.Production,
+                database.Resources,
+                database.Resources,
+                database.ProjectPaths),
+            screen,
+            null,
+            timelineFrame: 5));
+        var animatedResolved = new ProductionPreviewRuntimeResolver(
+            database.Resources,
+            database.ProjectPaths).Resolve(animatedPayload, "light");
+        var actorCatalog = JsonPath.ParseRequiredObject(
+            animatedResolved.RuntimeRecordReferencesJson,
+            "Animated Runtime record catalog");
+        Equal(
+            incomingActorId,
+            actorCatalog["actors"]?[incomingActorId]?["id"]?.GetValue<string>());
+
+        var invalidActorAnimation = actorAnimation.DeepClone().AsObject();
+        invalidActorAnimation["tracks"]![0]!["keyframes"]![1]!["value"] = "missing_actor";
+        var beforeRejectedAnimationWrite = SHA256.HashData(File.ReadAllBytes(temporary));
+        Throws<InvalidOperationException>(() => animationStore.UpdateModuleInstanceAnimationJson(
+            screen.Id,
+            invalidActorAnimation.ToJsonString()));
+        SequenceEqual(beforeRejectedAnimationWrite, SHA256.HashData(File.ReadAllBytes(temporary)));
 
         var resolvedPreview = DesignPreviewTestValues.Parse(resolved.DesignPreviewJson);
         resolvedPreview["conversationFrame"] = 100000;
@@ -15937,15 +16003,6 @@ static void ConversationMessageActorsFollowDirectionContract()
         True(!html.Contains("preview-error", StringComparison.Ordinal));
 
         var incomingId = incoming["id"]?.GetValue<string>() ?? "";
-        var beforeRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
-        Throws<InvalidOperationException>(() => database.UpdateModuleInstanceRuntimeCollectionValue(
-            screen.Id,
-            "messages",
-            incomingId,
-            "direction",
-            JsonValue.Create("outgoing")));
-        SequenceEqual(beforeRejectedWrite, SHA256.HashData(File.ReadAllBytes(temporary)));
-
         using var operations = new EditorOperationCoordinator();
         var store = new RuntimeInputInstanceDocumentStore(
             new SqliteRuntimeInputInstanceStore(
@@ -15964,7 +16021,6 @@ static void ConversationMessageActorsFollowDirectionContract()
             new Dictionary<string, JsonNode?>
             {
                 ["direction"] = JsonValue.Create("outgoing"),
-                ["actorId"] = JsonValue.Create(""),
             }).GetAwaiter().GetResult();
         var updated = JsonPath.ParseRequiredObject(
             database.GetModuleInstanceSettings(screen.Id).ContentJson,
@@ -15973,7 +16029,33 @@ static void ConversationMessageActorsFollowDirectionContract()
             .Single((message) => message["id"]?.GetValue<string>() == incomingId)
             ?? throw new InvalidOperationException("Missing atomically updated message.");
         Equal("outgoing", updatedMessage["direction"]?.GetValue<string>());
-        Equal("", updatedMessage["actorId"]?.GetValue<string>());
+        Equal(incomingActorId, updatedMessage["actorId"]?.GetValue<string>());
+
+        store.UpdateCollectionValuesAsync(
+            screen.Id,
+            "messages",
+            incomingId,
+            new Dictionary<string, JsonNode?>
+            {
+                ["direction"] = JsonValue.Create("incoming"),
+            }).GetAwaiter().GetResult();
+        var restored = JsonPath.ParseRequiredObject(
+            database.GetModuleInstanceSettings(screen.Id).ContentJson,
+            $"Screen '{screen.Id}' restored content_json");
+        var restoredMessage = restored["messages"]?.AsArray().OfType<JsonObject>()
+            .Single((message) => message["id"]?.GetValue<string>() == incomingId)
+            ?? throw new InvalidOperationException("Missing restored message.");
+        Equal("incoming", restoredMessage["direction"]?.GetValue<string>());
+        Equal(incomingActorId, restoredMessage["actorId"]?.GetValue<string>());
+
+        var beforeRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
+        Throws<InvalidOperationException>(() => database.UpdateModuleInstanceRuntimeCollectionValue(
+            screen.Id,
+            "messages",
+            incomingId,
+            "actorId",
+            JsonValue.Create("")));
+        SequenceEqual(beforeRejectedWrite, SHA256.HashData(File.ReadAllBytes(temporary)));
     }
     finally
     {
@@ -15983,12 +16065,12 @@ static void ConversationMessageActorsFollowDirectionContract()
 
 static void InvalidConversationMessageActorsFailReadOnly()
 {
-    AssertRejectedDatabaseIsReadOnly("conversation-outgoing-actor", (connection) =>
+    AssertRejectedDatabaseIsReadOnly("conversation-outgoing-without-actor", (connection) =>
     {
         using var command = connection.CreateCommand();
         command.CommandText = """
             UPDATE module_instances
-            SET content_json = json_set(content_json, '$.messages[0].actorId', 'actor_sam')
+            SET content_json = json_set(content_json, '$.messages[0].actorId', '')
             WHERE module_id = 'module_core_chat' AND shot_id = 'shot_001'
             """;
         Equal(1, command.ExecuteNonQuery());
@@ -16012,6 +16094,16 @@ static void InvalidConversationMessageActorsFailReadOnly()
                 content_json,
                 '$.messages[0].direction', 'system',
                 '$.messages[0].actorId', 'missing_actor')
+            WHERE module_id = 'module_core_chat' AND shot_id = 'shot_001'
+            """;
+        Equal(1, command.ExecuteNonQuery());
+    });
+    AssertRejectedDatabaseIsReadOnly("conversation-animation-missing-actor", (connection) =>
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            UPDATE module_instances
+            SET animation_json = '{"schemaVersion":2,"tracks":[{"id":"chat-actor-track","fieldId":"actor","keyframes":[{"id":"chat-actor-origin","frame":0,"value":"missing_actor","interpolation":"hold","enabled":true}]}]}'
             WHERE module_id = 'module_core_chat' AND shot_id = 'shot_001'
             """;
         Equal(1, command.ExecuteNonQuery());
@@ -18431,8 +18523,11 @@ static void AnimatableFieldVocabularyIsConstrained()
     var messageAnimated = messageFields
         .Where(field => field["animatable"]?.GetValue<bool>() == true)
         .Select(field => field["id"]!.GetValue<string>());
-    SequenceEqual(new[] { "headerSubtitle" }, screenAnimated);
-    SequenceEqual(new[] { "text", "statusVisible", "status", "statusText", "isPlaying", "fullScreen" }, messageAnimated);
+    SequenceEqual(new[] { "actor", "headerSubtitle" }, screenAnimated);
+    SequenceEqual(new[] { "direction", "text", "statusVisible", "status", "statusText", "isPlaying", "fullScreen" }, messageAnimated);
+    Equal(
+        "ownerStart",
+        screenFields.Single(field => field["id"]!.GetValue<string>() == "actor")["animationTimeline"]!["origin"]!["kind"]!.GetValue<string>());
     Equal(
         "ownerStart",
         messageFields.Single(field => field["id"]!.GetValue<string>() == "text")["animationTimeline"]!["origin"]!["kind"]!.GetValue<string>());
@@ -18442,7 +18537,10 @@ static void AnimatableFieldVocabularyIsConstrained()
         Equal("fieldCompletion", origin["kind"]!.GetValue<string>());
         Equal("text", origin["fieldId"]!.GetValue<string>());
     }
-    foreach (var forbidden in new[] { "actor", "direction", "delay", "writeOn", "postWriteOnHold", "mediaSource" })
+    Equal(
+        "ownerStart",
+        messageFields.Single(field => field["id"]!.GetValue<string>() == "direction")["animationTimeline"]!["origin"]!["kind"]!.GetValue<string>());
+    foreach (var forbidden in new[] { "actor", "delay", "writeOn", "postWriteOnHold", "mediaSource" })
         True(messageFields.Single(field => field["id"]!.GetValue<string>() == forbidden)["animatable"] is null);
 }
 

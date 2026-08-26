@@ -311,14 +311,20 @@ Design or Production workspace and selects the exact tree item.
 The Actor attached to a conversation message describes the message owner and
 is independent from the Shot owner:
 
-- an incoming message requires an explicit same-Project Actor;
-- an outgoing message stores no duplicated Actor and resolves the exact Shot
-  owner in the Production payload;
-- a system message may optionally refer to an explicit same-Project Actor.
+- every incoming, outgoing and system message requires and retains one explicit
+  same-Project Actor;
+- changing message direction never clears, replaces or derives that Actor;
+- the Conversation chat Actor is a separate required Runtime Input and never
+  derives from the Shot owner.
 
-Changing direction clears or requires the Actor as one atomic prepared
-collection write. Design sample Actors are fixtures and never repair persisted
-Production messages.
+Message direction and the chat Actor are independent discrete animation
+targets. Both use `hold`. A direction keyframe changes the complete resolved
+Bubble presentation for that frame—including side, alignment, colors, Actor
+identity, avatar and name—without rewriting the message Actor. A chat-Actor
+keyframe changes the header Actor and therefore its automatic Actor color when
+enabled; it does not change Shot Theme, Shot ownership or message direction.
+Design sample Actors are fixtures and never repair persisted Production
+messages.
 
 An outgoing message with an explicit animated `text` track keeps the
 track-owned write interval for composer presence even though that track

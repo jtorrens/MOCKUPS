@@ -17,6 +17,7 @@ internal static class ConversationModuleConfigContract
         var owner = $"{context}.conversation";
 
         JsonPath.RequiredBoolean(conversation, "showHeader", owner);
+        JsonPath.RequiredBoolean(conversation, "showHeaderSeparator", owner);
         JsonPath.RequiredBoolean(conversation, "useAppWallpaper", owner);
         RequireNonNegative(JsonPath.RequiredNumber(conversation, "headerHeight", owner), $"{owner}.headerHeight");
         RequireSlot(conversation, "headerSurfaceSlot", owner);

@@ -109,6 +109,12 @@ separate boundary Motion for the complete List.
 Parameter animation is persisted only as version 2 tracks identified by stable
 `fieldId` and `targetId`. A track is relative to its declared owner.
 
+Discrete Conversation direction and chat-Actor tracks use `hold`. Direction is
+message-owner-relative and changes presentation without changing the message's
+stable Actor reference. The chat Actor is Screen-owner-relative, resolves
+through the prepared Runtime record-reference catalog and remains independent
+from the Shot Actor.
+
 The common owner timeline derives:
 
 - effective origin;

@@ -86,6 +86,10 @@ internal static class SqliteProjectSessionFactory
                 design,
                 production,
                 resources);
+        var animations =
+            new SqliteModuleInstanceAnimationStore(
+                production,
+                resources);
 
         new SqliteCurrentDatabaseValidator(
             context,
@@ -134,7 +138,7 @@ internal static class SqliteProjectSessionFactory
             new SqliteRuntimeInputOwnerPort(design),
             new SqliteRuntimeInputInstancePort(
                 runtimeInputInstances),
-            new SqliteModuleInstanceAnimationPort(production),
+            new SqliteModuleInstanceAnimationPort(animations),
             new SqliteReferenceUsagePort(referenceUsages),
             new SqliteEditorLayoutPort(
                 new SqliteEditorLayoutStore(context)),

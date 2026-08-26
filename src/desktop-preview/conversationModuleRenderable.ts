@@ -612,7 +612,11 @@ function headerNode(
       avatar,
       leftRowNode,
       rightRowNode,
-      {
+      ...(requiredBoolean(
+        conversation,
+        "showHeaderSeparator",
+        "module.core.chat.showHeaderSeparator",
+      ) ? [({
         id: "module.core.chat.header.separator",
         type: "surface",
         frame: 0,
@@ -625,7 +629,7 @@ function headerNode(
         style: {
           background: selectedColor(payload, "theme.colors.divider"),
         },
-      },
+      } satisfies RenderableNode)] : []),
     ],
   };
 }

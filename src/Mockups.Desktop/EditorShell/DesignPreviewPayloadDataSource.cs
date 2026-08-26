@@ -38,6 +38,7 @@ internal sealed record DesignPreviewModuleSource(
 
 internal sealed record DesignPreviewModuleInstanceSource(
     string Name,
+    string ProjectId,
     string ShotId,
     string RecordClassId,
     string ConfigJson,
@@ -45,7 +46,6 @@ internal sealed record DesignPreviewModuleInstanceSource(
     string ComponentBaseConfigsJson,
     string AppConfigJson,
     string AnimationJson,
-    string OwnerActorId,
     int FrameRate);
 
 internal sealed record DesignPreviewShotSlot(
@@ -208,6 +208,7 @@ internal sealed class DesignPreviewPayloadDataSource
         var shot = _database.GetShotSettings(instance.ShotId);
         return new DesignPreviewModuleInstanceSource(
             instance.Name,
+            module.ProjectId,
             instance.ShotId,
             module.RecordClassId,
             module.ConfigJson,
@@ -215,7 +216,6 @@ internal sealed class DesignPreviewPayloadDataSource
             _database.GetComponentClassBaseConfigsJson(module.ProjectId),
             app.ConfigJson,
             instance.AnimationJson,
-            shot.OwnerActorId,
             shot.Fps);
     }
 

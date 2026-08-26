@@ -167,6 +167,7 @@ internal static class WebDesignPreviewRenderer
             configJson = payload.ConfigJson,
             designPreviewJson = payload.DesignPreviewJson,
             runtimeContractJson = payload.RuntimeContractJson,
+            runtimeRecordReferencesJson = payload.RuntimeRecordReferencesJson,
             showMarks,
             themeMode = payload.ThemeMode,
             themeTokensJson = payload.ThemeTokensJson,

@@ -2573,6 +2573,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 payload.ThemeNavigationBarVariantReference,
                 payload.ComponentBaseConfigsJson,
                 payload.AppConfigJson,
+                payload.RuntimeRecordReferencesJson,
                 StablePreviewJson(payload.DesignPreviewJson));
         }
 

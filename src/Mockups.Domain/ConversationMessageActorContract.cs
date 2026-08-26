@@ -23,12 +23,11 @@ public static class ModuleRuntimeDocumentContracts
     public static void PrepareProduction(
         string recordClassId,
         string owner,
-        JsonObject content,
-        string shotOwnerActorId)
+        JsonObject content)
     {
         if (recordClassId.Equals(ConversationRecordClassId, StringComparison.Ordinal))
         {
-            ConversationMessageActorContract.PrepareProduction(owner, content, shotOwnerActorId);
+            ConversationMessageActorContract.PrepareProduction(owner, content);
         }
     }
 }
@@ -48,21 +47,13 @@ public static class ConversationMessageActorContract
                 ?? throw new InvalidOperationException($"{owner} message at index {index} must be an object.");
             var context = MessageContext(owner, message, index);
             var direction = RequiredString(message, "direction", context);
-            var actorId = RequiredString(message, "actorId", context, allowEmpty: true);
+            var actorId = RequiredString(message, "actorId", context);
             switch (direction)
             {
                 case "incoming":
-                    RequireProjectActor(actorId, projectActorIds, context, optional: false);
-                    break;
                 case "outgoing":
-                    if (!string.IsNullOrWhiteSpace(actorId))
-                    {
-                        throw new InvalidOperationException(
-                            $"{context} is outgoing and must not persist an Actor reference.");
-                    }
-                    break;
                 case "system":
-                    RequireProjectActor(actorId, projectActorIds, context, optional: true);
+                    RequireProjectActor(actorId, projectActorIds, context);
                     break;
                 default:
                     throw new InvalidOperationException(
@@ -73,13 +64,8 @@ public static class ConversationMessageActorContract
 
     public static void PrepareProduction(
         string owner,
-        JsonObject content,
-        string shotOwnerActorId)
+        JsonObject content)
     {
-        if (string.IsNullOrWhiteSpace(shotOwnerActorId))
-        {
-            throw new InvalidOperationException($"{owner} has no exact Shot owner Actor.");
-        }
         var messages = content["messages"] as JsonArray
             ?? throw new InvalidOperationException($"{owner} requires a current messages array.");
         for (var index = 0; index < messages.Count; index++)
@@ -88,14 +74,12 @@ public static class ConversationMessageActorContract
                 ?? throw new InvalidOperationException($"{owner} message at index {index} must be an object.");
             var context = MessageContext(owner, message, index);
             var direction = RequiredString(message, "direction", context);
-            _ = RequiredString(message, "actorId", context, allowEmpty: true);
+            _ = RequiredString(message, "actorId", context);
             switch (direction)
             {
                 case "incoming":
                 case "system":
-                    break;
                 case "outgoing":
-                    message["actorId"] = shotOwnerActorId;
                     break;
                 default:
                     throw new InvalidOperationException(
@@ -107,13 +91,11 @@ public static class ConversationMessageActorContract
     private static void RequireProjectActor(
         string actorId,
         IReadOnlySet<string> projectActorIds,
-        string context,
-        bool optional)
+        string context)
     {
         if (string.IsNullOrWhiteSpace(actorId))
         {
-            if (optional) return;
-            throw new InvalidOperationException($"{context} requires an explicit incoming Actor.");
+            throw new InvalidOperationException($"{context} requires an explicit Actor.");
         }
         if (!projectActorIds.Contains(actorId))
         {

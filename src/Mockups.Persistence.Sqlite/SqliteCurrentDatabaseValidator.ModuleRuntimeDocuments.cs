@@ -1,4 +1,5 @@
 using Microsoft.Data.Sqlite;
+using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Linq;
 
@@ -35,6 +36,21 @@ internal sealed partial class SqliteCurrentDatabaseValidator
                     instance.Id,
                     content,
                     projectActorIds);
+                RuntimeInputAnimationRecordReferenceContract.Validate(
+                    ParseRequiredObject(
+                        _productionOwner.GetModuleInstanceRuntimePreviewJson(instance.Id),
+                        $"Module Instance '{instance.Id}' Runtime Preview"),
+                    ParseRequiredObject(
+                        instance.AnimationJson,
+                        $"Module Instance '{instance.Id}' animation_json"),
+                    new System.Collections.Generic.Dictionary<
+                        string,
+                        System.Collections.Generic.IReadOnlySet<string>>(
+                        StringComparer.Ordinal)
+                    {
+                        ["actors"] = projectActorIds,
+                    },
+                    $"Module Instance '{instance.Id}' animation_json");
             }
             catch (InvalidOperationException exception)
             {

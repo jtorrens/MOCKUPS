@@ -61,6 +61,7 @@ export interface DesignPreviewPayload {
   configJson: string;
   designPreviewJson: string;
   runtimeContractJson: string;
+  runtimeRecordReferencesJson?: string;
   previewFrame: PreviewFramePayload;
   rootPreviewFrame?: PreviewFramePayload;
   iconAssetRoot?: string;
