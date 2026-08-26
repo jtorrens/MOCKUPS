@@ -906,7 +906,7 @@ test("Conversation uses one reflow timing when a message appears", () => {
   const started = resolveConversationModule(source);
   assert.deepEqual(started.visibleMessages.map(({ id }) => id), ["first", "second"]);
   assert.deepEqual(started.messageReflow?.fromMessages.map(({ id }) => id), ["first"]);
-  assert.equal(started.messageReflow?.progress, 0);
+  assert.ok((started.messageReflow?.progress ?? 0) > 0);
 
   setConversationFrame(source, appearanceFrame! + 4);
   const moving = resolveConversationModule(source);
@@ -943,7 +943,7 @@ test("Conversation uses the same reflow timing after a message Out completes", (
     started.messageReflow?.fromMessages.map(({ id }) => id),
     ["leaving", "remaining"],
   );
-  assert.equal(started.messageReflow?.progress, 0);
+  assert.ok((started.messageReflow?.progress ?? 0) > 0);
 
   const remainingY = (frame: number) => {
     setConversationFrame(source, frame);

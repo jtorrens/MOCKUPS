@@ -67,7 +67,10 @@ Conversation owns message geometry separately from message presence. Its
 vertical reflow after an explicit message Out and the vertical auto-scroll
 needed when a newly visible message exceeds the viewport. The Bubble remains
 the owner of its resolved appearance and the Conversation message Motion
-remains the owner of Enter/Exit; neither owns sibling displacement.
+remains the owner of Enter/Exit; neither owns sibling displacement. At the
+discrete frame boundary, the first frame of the new message layout consumes
+the first reflow sample so no unchanged hold frame separates Exit completion
+from sibling movement.
 
 ## Temporal ownership
 

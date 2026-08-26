@@ -618,7 +618,7 @@ function resolveMessageReflow(
   return {
     progress: resolveReflowProgress(
       reflowTiming,
-      (frame - startFrame) / Math.max(1, payload.frameRate) * 1000,
+      (frame - startFrame + 1) / Math.max(1, payload.frameRate) * 1000,
     ),
     fromMessages,
   };
