@@ -243,6 +243,13 @@ public static class RuntimeAnimationFrameOrigin
                     }
                     if (sequenceItems) cursor = start + effectiveSequence;
                     naturalEnd = Math.Max(naturalEnd, start + effectiveSpan);
+                    var presenceDuration = PresenceDuration(collection, item);
+                    if (presenceDuration is > 0)
+                    {
+                        naturalEnd = Math.Max(
+                            naturalEnd,
+                            start + presenceDuration.Value);
+                    }
                 }
                 if (sequenceItems) naturalEnd = Math.Max(naturalEnd, cursor);
             }
@@ -302,11 +309,14 @@ public static class RuntimeAnimationFrameOrigin
         public bool OwnerHasExplicitPresenceEnd(string targetId) =>
             _items.TryGetValue(targetId, out var item) && PresenceDuration(item) is > 0;
 
-        private static double? PresenceDuration(ItemTiming item)
+        private static double? PresenceDuration(ItemTiming item) =>
+            PresenceDuration(item.Collection, item.Item);
+
+        private static double? PresenceDuration(JsonObject collection, JsonObject item)
         {
-            var durationFieldId = Text(Timeline(item.Collection)["presenceDurationFieldId"]);
+            var durationFieldId = Text(Timeline(collection)["presenceDurationFieldId"]);
             if (string.IsNullOrWhiteSpace(durationFieldId)) return null;
-            return FieldValue(item.Item, Fields(item.Collection, item.Item), durationFieldId);
+            return FieldValue(item, Fields(collection, item), durationFieldId);
         }
 
         public double OwnerLocalFrame(string targetId, int screenFrame)

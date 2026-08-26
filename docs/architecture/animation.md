@@ -55,8 +55,12 @@ the Screen. A positive value is the number of Screen frames from the item's In
 to its explicit Out. The collection's shared item Motion runs forward at In and
 backward so that it completes at an explicit Out. An automatic Out coincident
 with the Screen end does not start a redundant item exit; Screen Motion owns
-that boundary. Conversation messages use this contract and share one Motion
-recipe from the Conversation Module Variant.
+that boundary. For a calculated owner, its effective duration includes the
+latest positive explicit Out across every declared collection; changing an Out
+therefore extends that Screen without changing collection sequencing or local
+keyframes. An explicit Screen duration remains authoritative. Conversation
+messages use this contract and share one Motion recipe from the Conversation
+Module Variant.
 
 ## Temporal ownership
 
@@ -267,11 +271,12 @@ Tracks belonging to another item never enter the selected section.
 
 The Screen Timeline viewport is independent of the Screen duration contract.
 At `1:1` it presents the declared Screen range. Session-only zoom can expand the
-viewport around the current playhead to expose item exits and, later, keyframes
-outside that range without clamping or retiming them. Collection item entry
-cannot move before Screen frame zero; its outgoing edge may exceed the declared
-Screen duration. Viewport scale never changes completion dependencies or the
-Screen's calculated or explicit duration.
+viewport around the current playhead to expose a prospective item Out during a
+drag and keyframes outside that range without clamping or retiming them.
+Collection item entry cannot move before Screen frame zero. Committing a later
+explicit item Out extends a calculated Screen to that Out; an explicit Screen
+keeps its authoritative duration and may retain an Out beyond its range.
+Viewport scale itself never changes completion dependencies or duration.
 
 Parallel Stack slot lanes default to the complete Screen range. A child
 collection with `ownerOrigin.kind: firstMatchingValue` is presented as State

@@ -283,6 +283,9 @@ arrival derived from write-on/hold/delay, while a zero visible duration keeps
 it through the Screen end and a positive duration defines an explicit Out.
 Only an explicit pre-boundary Out runs the shared Motion in reverse. Presence
 never delays the next message and never retimes or rewrites message keyframes.
+For the calculated Conversation Screen, the latest positive message Out extends
+the action duration and therefore the reachable playhead range. An explicit
+Screen duration remains authoritative.
 
 ## Playback
 

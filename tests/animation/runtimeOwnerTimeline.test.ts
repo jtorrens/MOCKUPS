@@ -112,7 +112,7 @@ test("serial collection offsets may overlap the preceding item", () => {
   assert.equal(timeline.itemStartFrame("second"), 6);
 });
 
-test("collection presence duration is independent from serial completion", () => {
+test("explicit collection presence extends owner duration without changing serial completion", () => {
   const presenceContract = {
     collections: [{
       jsonKey: "items",
@@ -143,6 +143,7 @@ test("collection presence duration is independent from serial completion", () =>
   assert.equal(timeline.itemPresenceEndFrame("first", 100), 100);
   assert.equal(timeline.itemStartFrame("second"), 11);
   assert.equal(timeline.itemPresenceEndFrame("second", 100), 31);
+  assert.equal(timeline.durationFrames, 31);
   assert.equal(timeline.itemHasExplicitPresenceEnd("first"), false);
   assert.equal(timeline.itemHasExplicitPresenceEnd("second"), true);
 });

@@ -97,6 +97,10 @@ export class RuntimeOwnerTimeline {
         });
         if (sequenceItems) cursor = start + effectiveSequence;
         naturalEnd = Math.max(naturalEnd, start + effectiveSpan);
+        const presenceDuration = this.presenceDuration(collection, item);
+        if (presenceDuration !== undefined && presenceDuration > 0) {
+          naturalEnd = Math.max(naturalEnd, start + presenceDuration);
+        }
       }
       if (sequenceItems) naturalEnd = Math.max(naturalEnd, cursor);
     }
@@ -207,15 +211,8 @@ export class RuntimeOwnerTimeline {
   itemPresenceEndFrame(targetId: string, automaticEndFrame: number) {
     const item = this.items.get(targetId);
     if (!item) return 0;
-    const timeline = optionalObject(
-      item.collection,
-      "animationTimeline",
-      "runtime owner collection animation timeline",
-    );
-    const durationFieldId = optionalString(timeline, "presenceDurationFieldId");
-    if (!durationFieldId) return this.itemEndFrame(targetId);
-    const fields = itemFields(item.collection, item.item);
-    const duration = fieldValue(item.item, fields, durationFieldId);
+    const duration = this.presenceDuration(item.collection, item.item);
+    if (duration === undefined) return this.itemEndFrame(targetId);
     return duration > 0
       ? this.itemStartFrame(targetId) + round(duration)
       : Math.max(this.itemStartFrame(targetId) + 1, automaticEndFrame);
@@ -224,14 +221,19 @@ export class RuntimeOwnerTimeline {
   itemHasExplicitPresenceEnd(targetId: string) {
     const item = this.items.get(targetId);
     if (!item) return false;
+    return (this.presenceDuration(item.collection, item.item) ?? 0) > 0;
+  }
+
+  private presenceDuration(collection: JsonRecord, item: JsonRecord) {
     const timeline = optionalObject(
-      item.collection,
+      collection,
       "animationTimeline",
       "runtime owner collection animation timeline",
     );
     const durationFieldId = optionalString(timeline, "presenceDurationFieldId");
-    if (!durationFieldId) return false;
-    return fieldValue(item.item, itemFields(item.collection, item.item), durationFieldId) > 0;
+    return durationFieldId
+      ? fieldValue(item, itemFields(collection, item), durationFieldId)
+      : undefined;
   }
 
   itemOwnerFrame(targetId: string, naturalOwnerFrame: number) {

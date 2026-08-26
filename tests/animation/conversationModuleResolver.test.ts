@@ -769,7 +769,7 @@ test("Conversation Header keeps its upward bleed and can use the resolved Actor 
   });
 });
 
-test("Conversation message presence ends explicitly without changing Screen-end persistence", () => {
+test("Conversation message presence ends at its explicit resolved Out", () => {
   const source = committedConversationPayload(true);
   const runtime = JSON.parse(source.designPreviewJson) as {
     messages: Array<Record<string, unknown>>;

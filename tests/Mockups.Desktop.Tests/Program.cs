@@ -229,6 +229,7 @@ var tests = new (string Name, Action Run)[]
     ("later targets move after prior finite media", LaterTargetsFollowFiniteMedia),
     ("duration uses half-open keyframe endpoints", DurationUsesHalfOpenEndpoints),
     ("duration combines declared sequence and animation", DurationCombinesSequenceAndAnimation),
+    ("explicit collection presence extends calculated duration", ExplicitCollectionPresenceExtendsCalculatedDuration),
     ("animated media actions are finite", AnimatedMediaActionsAreFinite),
     ("field completion dependencies reject cycles", FieldCompletionDependenciesRejectCycles),
     ("target and Screen retime preserve authored keyframes", RetimePreservesAuthoredKeyframes),
@@ -11238,6 +11239,19 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
             testBId,
             "text",
             JsonValue.Create("B2")).GetAwaiter().GetResult();
+        var durationBeforePresenceResize =
+            database.GetModuleInstanceSettings(screen.Id).DurationFrames;
+        var explicitPresenceDuration = durationBeforePresenceResize + 600;
+        store.UpdateCollectionValueAsync(
+            screen.Id,
+            collectionKey,
+            testBId,
+            "visibleDurationFrames",
+            JsonValue.Create(explicitPresenceDuration)).GetAwaiter().GetResult();
+        var durationAfterPresenceResize =
+            database.GetModuleInstanceSettings(screen.Id).DurationFrames;
+        True(durationAfterPresenceResize >= explicitPresenceDuration);
+        True(durationAfterPresenceResize > durationBeforePresenceResize);
         store.MutateStructuredCollectionAsync(
             screen.Id,
             new MoveStructuredCollectionItem(
@@ -17768,6 +17782,43 @@ static void DurationCombinesSequenceAndAnimation()
         """;
     // m2 begins at 5 + 4 = 9; its local frame 5 occupies the half-open end at 15.
     Equal(15, RuntimeTimeline.DurationFrames(contract, runtime, animation, 1));
+}
+
+static void ExplicitCollectionPresenceExtendsCalculatedDuration()
+{
+    var contract = """
+        {
+          "collections":[{
+            "jsonKey":"messages",
+            "animationTimeline":{
+              "sequence":"serial",
+              "preDurationFieldIds":["delay"],
+              "sequenceCompletionFieldIds":["text"],
+              "presenceDurationFieldId":"visibleDuration"
+            },
+            "fields":[
+              {"id":"delay","jsonKey":"delay"},
+              {"id":"visibleDuration","jsonKey":"visibleDurationFrames"},
+              {"id":"text","jsonKey":"text","animationTimeline":{"completion":{"baseDurationFieldId":"write"}}},
+              {"id":"write","jsonKey":"writeFrames"}
+            ]
+          }]
+        }
+        """;
+    var runtime = """
+        {"messages":[
+          {"id":"first","delay":2,"visibleDurationFrames":0,"text":"One","writeFrames":6},
+          {"id":"second","delay":3,"visibleDurationFrames":20,"text":"Two","writeFrames":4}
+        ]}
+        """;
+
+    Equal(31, RuntimeTimeline.DurationFrames(contract, runtime, "{}", 1));
+    Equal(11, RuntimeAnimationFrameOrigin.ScreenFrame(
+        Object(contract),
+        Object(runtime),
+        new JsonObject(),
+        "text",
+        "second"));
 }
 
 static void AnimatedMediaActionsAreFinite()

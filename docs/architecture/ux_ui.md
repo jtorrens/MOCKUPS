@@ -211,8 +211,10 @@ exactly the declared Screen range. Moving right zooms in; moving left zooms out
 and reveals additional time before and after that range. Each scale change
 anchors on the current playhead position. Scale and viewport are session-only.
 Collection item entry remains at or after Screen frame zero, while an item's
-outgoing edge may extend beyond the declared Screen range and becomes directly
-editable when the expanded viewport reveals it.
+outgoing edge may be dragged beyond the current Screen range when the expanded
+viewport reveals it. After commit, a calculated Screen expands through the
+latest explicit collection-item Out; an explicit Screen keeps its declared
+range.
 
 The visible Preview utility headers remain in one horizontal row at the
 supported 1040 px minimum and the 1440 px default window widths. The Preview

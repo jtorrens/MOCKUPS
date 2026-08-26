@@ -164,7 +164,8 @@ proving simultaneous outgoing and incoming Motion, stable owner-local frames
   labels, explicit Play/Pause transport glyph contrast, and an always-openable
   Shot add action;
 - explicit Conversation text tracks retaining Keyboard and Text Input Bar
-  presence for the outgoing write interval;
+  presence for the outgoing write interval, plus positive message Out values
+  extending calculated Screen duration without changing serial arrival;
 - architecture enforcement;
 - desktop application build.
 
