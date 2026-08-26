@@ -17265,14 +17265,29 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
         anchorFrame: 40,
         zoom: 0);
     Equal(
-        new PreviewScreenTimelineViewport(-20, 111),
+        new PreviewScreenTimelineViewport(-20, 121),
         fitViewport);
+    Equal(
+        PreviewScreenTimelineMath.AuthoringHorizonFrames,
+        fitViewport.MaximumFrame - snapshot.MaximumFrame);
+    True(PreviewScreenTimelineMath.Fraction(
+        snapshot.MaximumFrame,
+        fitViewport.MinimumFrame,
+        fitViewport.MaximumFrame) < 1);
+    var terminalViewport = PreviewScreenTimelineMath.Viewport(
+        snapshot,
+        anchorFrame: snapshot.MaximumFrame,
+        zoom: 1);
+    Equal(
+        PreviewScreenTimelineMath.AuthoringMaximumFrame(snapshot),
+        terminalViewport.MaximumFrame);
     var zoomedOutViewport = PreviewScreenTimelineMath.Viewport(
         snapshot,
         anchorFrame: 40,
         zoom: -1);
     True(zoomedOutViewport.MinimumFrame < snapshot.MinimumFrame);
-    True(zoomedOutViewport.MaximumFrame > snapshot.MaximumFrame);
+    True(zoomedOutViewport.MaximumFrame
+        > PreviewScreenTimelineMath.AuthoringMaximumFrame(snapshot));
     var zoomedInViewport = PreviewScreenTimelineMath.Viewport(
         snapshot,
         anchorFrame: 40,

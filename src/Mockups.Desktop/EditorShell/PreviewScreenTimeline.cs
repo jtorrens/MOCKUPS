@@ -88,6 +88,13 @@ internal sealed record PreviewScreenTimelineViewport(
 internal static class PreviewScreenTimelineMath
 {
     public const double SnapDistancePixels = 7;
+    public const int AuthoringHorizonFrames = 10;
+
+    public static int AuthoringMaximumFrame(
+        PreviewScreenTimelineSnapshot snapshot) =>
+        snapshot.MaximumFrame > int.MaxValue - AuthoringHorizonFrames
+            ? int.MaxValue
+            : snapshot.MaximumFrame + AuthoringHorizonFrames;
 
     public static double Fraction(
         int frame,
@@ -254,26 +261,39 @@ internal static class PreviewScreenTimelineMath
         int anchorFrame,
         double zoom)
     {
+        var authoringMaximumFrame = AuthoringMaximumFrame(snapshot);
         var value = Math.Clamp(zoom, -1, 1);
         if (Math.Abs(value) < 0.0001)
             return new PreviewScreenTimelineViewport(
                 snapshot.MinimumFrame,
-                snapshot.MaximumFrame);
+                authoringMaximumFrame);
         var baseSpan = Math.Max(
             1,
-            snapshot.MaximumFrame - snapshot.MinimumFrame);
+            authoringMaximumFrame - snapshot.MinimumFrame);
         var scale = Math.Pow(8, value);
         var visibleSpan = Math.Max(8, baseSpan / scale);
         var anchorFraction = Fraction(
             anchorFrame,
             snapshot.MinimumFrame,
-            snapshot.MaximumFrame);
+            authoringMaximumFrame);
         var minimum = anchorFrame - anchorFraction * visibleSpan;
+        var maximum = minimum + visibleSpan;
+        var requiredTrailingMaximum = Math.Min(
+            authoringMaximumFrame,
+            anchorFrame > int.MaxValue - AuthoringHorizonFrames
+                ? int.MaxValue
+                : anchorFrame + AuthoringHorizonFrames);
+        if (maximum < requiredTrailingMaximum)
+        {
+            var correction = requiredTrailingMaximum - maximum;
+            minimum += correction;
+            maximum += correction;
+        }
         return new PreviewScreenTimelineViewport(
             (int)Math.Floor(minimum),
             Math.Max(
                 (int)Math.Floor(minimum) + 1,
-                (int)Math.Ceiling(minimum + visibleSpan)));
+                (int)Math.Ceiling(maximum)));
     }
 
     private static double SnapThresholdFrames(

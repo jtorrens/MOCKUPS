@@ -171,8 +171,12 @@ authored action delay when it calculates effective Screen and Shot duration.
 An explicit policy declares a positive default and is edited only on the
 Screen instance. Child keyframes and composition cannot extend it silently.
 
-The authoring `+` horizon is session-only for both policies. It is not duration
-and is never persisted.
+The authoring horizon is session-only for both policies. The Screen timeline
+always reserves trailing frames to the right independently from the playhead
+anchor and zoom; extending a lane grows only its semantic duration, and the
+refreshed viewport reserves a new trailing horizon. The compact animation
+track may additionally expose its `+` action. Neither form of horizon is
+duration or persisted data.
 
 ## Behavioral timing
 

@@ -186,7 +186,11 @@ block outline also becomes amber; when its detent is the playhead, the playhead
 becomes amber as well. Collection collapse and zoom remain session-only.
 Releasing an editable block commits through the collection's declared offset
 or presence-duration field and refreshes Preview from the newly prepared
-payload. An outgoing-edge edit never creates or changes retime.
+payload. The viewport always retains a session-only authoring horizon to the
+right of the effective Screen range, including when the playhead is at the
+last frame or zoom changes. Growing a terminal block therefore reveals a new
+trailing horizon after refresh; the horizon itself is never persisted. An
+outgoing-edge edit never creates or changes retime.
 
 Selecting General or any item lane highlights the complete lane, including its
 label, and opens one Keyframes section after the final visible lane. The section
