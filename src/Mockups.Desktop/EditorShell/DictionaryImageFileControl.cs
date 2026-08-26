@@ -48,7 +48,10 @@ internal sealed class DictionaryImageFileControl : Grid, IDictionaryValueControl
 
             SetLocalValue(_textBox.Text ?? "");
         };
-        EditorTextBoxBehavior.AttachDeferredCommit(_textBox, CommitValue);
+        EditorTextBoxBehavior.AttachCommit(
+            _textBox,
+            definition,
+            CommitValue);
 
         var pathRow = new Grid
         {

@@ -29,7 +29,10 @@ internal sealed class DictionaryPathControl : Grid, IDictionaryValueControl
 
             SetLocalValue(_textBox.Text ?? "");
         };
-        EditorTextBoxBehavior.AttachDeferredCommit(_textBox, CommitValue);
+        EditorTextBoxBehavior.AttachCommit(
+            _textBox,
+            definition,
+            CommitValue);
         Children.Add(_textBox);
 
         _browseButton = new DictionaryPathBrowseButton(definition.ValueKind, value, definition.IsEditable, browsePath);

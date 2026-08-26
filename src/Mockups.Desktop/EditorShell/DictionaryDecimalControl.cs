@@ -9,7 +9,6 @@ internal sealed class DictionaryDecimalControl : Grid, IDictionaryValueControl
 {
     private readonly FieldDefinition _definition;
     private readonly NumericUpDown _numeric;
-    private readonly EditorDeferredCommit _commit;
     private bool _isUpdating;
     private string _value;
     private string _lastCommittedValue;
@@ -39,18 +38,22 @@ internal sealed class DictionaryDecimalControl : Grid, IDictionaryValueControl
             _numeric.Maximum = maximum;
         }
 
-        _commit = new EditorDeferredCommit(CommitValue);
-
         _numeric.PropertyChanged += (_, change) =>
         {
             if (change.Property != NumericUpDown.ValueProperty || _isUpdating) return;
 
-            _commit.Cancel();
             if (_numeric.Value is not { } numericValue) return;
 
             SetLocalValue(Format(numericValue));
-            _commit.Schedule();
         };
+        EditorTextBoxBehavior.AttachCommit(
+            _numeric,
+            definition,
+            CommitValue);
+        EditorContinuousCommitBehavior.Attach(
+            _numeric,
+            definition,
+            CommitValue);
         Children.Add(_numeric);
     }
 
@@ -60,7 +63,6 @@ internal sealed class DictionaryDecimalControl : Grid, IDictionaryValueControl
 
     public void SetValue(string value)
     {
-        _commit.Cancel();
         var normalized = Normalize(value);
         if (_value == normalized) return;
 

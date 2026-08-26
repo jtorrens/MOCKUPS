@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -39,6 +40,101 @@ public enum ValueKind
     MotionTiming,
     BehaviorTiming,
     Boolean,
+}
+
+public enum TextEntryCommitTrigger
+{
+    None,
+    EnterOrFocusLoss,
+    FocusLoss,
+}
+
+public enum ContinuousCommitTrigger
+{
+    None,
+    InteractionEnd,
+}
+
+public sealed record ValueKindCommitPolicy(
+    TextEntryCommitTrigger TextEntry,
+    ContinuousCommitTrigger Continuous,
+    bool DiscreteImmediate);
+
+public static class ValueKindCommitContract
+{
+    public static ValueKindCommitPolicy Require(ValueKind kind) => kind switch
+    {
+        ValueKind.StringSingleLine
+            or ValueKind.IntegerPair
+            or ValueKind.DirectoryPath
+            or ValueKind.JsonFilePath
+            or ValueKind.ImageFilePath
+            or ValueKind.MediaFilePath
+            or ValueKind.VideoFilePath
+            or ValueKind.HexColor => new(
+                TextEntryCommitTrigger.EnterOrFocusLoss,
+                ContinuousCommitTrigger.None,
+                false),
+        ValueKind.Integer
+            or ValueKind.Decimal => new(
+                TextEntryCommitTrigger.EnterOrFocusLoss,
+                ContinuousCommitTrigger.InteractionEnd,
+                false),
+        ValueKind.StringMultiline => new(
+            TextEntryCommitTrigger.FocusLoss,
+            ContinuousCommitTrigger.None,
+            false),
+        ValueKind.Alpha
+            or ValueKind.HueDegrees
+            => new(
+                TextEntryCommitTrigger.EnterOrFocusLoss,
+                ContinuousCommitTrigger.InteractionEnd,
+                false),
+        ValueKind.PaletteColorAlphaPair
+            or ValueKind.AlignmentPlacement
+            or ValueKind.MotionTiming => new(
+                TextEntryCommitTrigger.EnterOrFocusLoss,
+                ContinuousCommitTrigger.InteractionEnd,
+                true),
+        ValueKind.StringReadOnly => new(
+            TextEntryCommitTrigger.None,
+            ContinuousCommitTrigger.None,
+            false),
+        ValueKind.Boolean
+            or ValueKind.OptionToken
+            or ValueKind.RecordReference
+            or ValueKind.ThemeToken
+            or ValueKind.ThemeTokenPair
+            or ValueKind.TypographyStyle
+            or ValueKind.TypographySystemStyle
+            or ValueKind.PaletteColorToken
+            or ValueKind.PaletteColorPair
+            or ValueKind.IconToken
+            or ValueKind.IconTokenList
+            or ValueKind.EmbeddedComponent
+            or ValueKind.ComponentVariant
+            or ValueKind.ComponentVariantSlot
+            or ValueKind.ComponentInputBindings
+            or ValueKind.StructuredCollection
+            or ValueKind.Motion
+            or ValueKind.BehaviorTiming => new(
+                TextEntryCommitTrigger.None,
+                ContinuousCommitTrigger.None,
+                true),
+        _ => throw new InvalidOperationException(
+            $"Value kind '{kind}' has no commit policy."),
+    };
+
+    public static ValueKindCommitPolicy Require(FieldDefinition definition)
+    {
+        var policy = Require(definition.ValueKind);
+        return definition.Number?.UseSlider == true
+            ? policy with
+            {
+                Continuous = ContinuousCommitTrigger.InteractionEnd,
+            }
+            : policy;
+    }
 }
 
 public sealed record FieldOption(

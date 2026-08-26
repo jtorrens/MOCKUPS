@@ -35,7 +35,10 @@ internal sealed class DictionaryHexColorControl : Grid, IDictionaryValueControl
             SetLocalValue(DictionaryFieldColorValue.NormalizeHex(_textBox.Text ?? ""));
             UpdateColorControlsFromValue();
         };
-        EditorTextBoxBehavior.AttachDeferredCommit(_textBox, CommitValue);
+        EditorTextBoxBehavior.AttachCommit(
+            _textBox,
+            definition,
+            CommitValue);
         SetColumn(_textBox, 1);
         Children.Add(_textBox);
 

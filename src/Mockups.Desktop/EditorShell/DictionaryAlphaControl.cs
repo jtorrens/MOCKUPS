@@ -11,24 +11,24 @@ internal sealed class DictionaryAlphaControl : Grid, IDictionaryValueControl
 {
     private readonly Slider _slider;
     private readonly TextBox _box;
-    private readonly EditorDeferredCommit _textCommit;
+    private readonly FieldDefinition _definition;
     private bool _isUpdating;
 
-    public DictionaryAlphaControl(string value, bool isEditable)
+    public DictionaryAlphaControl(FieldDefinition definition, string value)
     {
+        _definition = definition;
         var boxWidth = EditorUiDensity.TextAwareWidth(78);
         ColumnDefinitions = new ColumnDefinitions($"*,{boxWidth.ToString(CultureInfo.InvariantCulture)}");
         ColumnSpacing = 10;
         VerticalAlignment = VerticalAlignment.Center;
 
         var alpha = PaletteAlphaPair.ParseAlphaRequired(value, "Alpha dictionary value");
-        _slider = CreateSlider(alpha, isEditable);
-        _box = CreateAlphaBox(alpha, isEditable);
+        _slider = CreateSlider(alpha, definition.IsEditable);
+        _box = CreateAlphaBox(alpha, definition.IsEditable);
         SetColumn(_box, 1);
         Children.Add(_slider);
         Children.Add(_box);
 
-        _textCommit = new EditorDeferredCommit(CommitValue);
         Hook();
     }
 
@@ -40,7 +40,6 @@ internal sealed class DictionaryAlphaControl : Grid, IDictionaryValueControl
 
     public void SetValue(string value)
     {
-        _textCommit.Cancel();
         var alpha = PaletteAlphaPair.ParseAlphaRequired(value, "Alpha dictionary value");
         _isUpdating = true;
         SetAlpha(_slider, _box, alpha);
@@ -61,9 +60,12 @@ internal sealed class DictionaryAlphaControl : Grid, IDictionaryValueControl
             _slider.Value = snapped;
             _box.Text = PaletteAlphaPair.FormatAlpha(snapped);
             _isUpdating = false;
-            CommitValue();
+            ValueChanged?.Invoke(this, Value);
         };
-        _box.LostFocus += (_, _) => CommitBoxValue(normalizeText: true, immediate: true);
+        EditorContinuousCommitBehavior.Attach(
+            _slider,
+            _definition,
+            CommitValue);
         _box.TextChanged += (_, _) =>
         {
             if (_isUpdating)
@@ -72,25 +74,22 @@ internal sealed class DictionaryAlphaControl : Grid, IDictionaryValueControl
             }
             if (!PaletteAlphaPair.TryParseAlpha(_box.Text, out var value))
             {
-                _textCommit.Cancel();
                 return;
             }
 
             _isUpdating = true;
             _slider.Value = value;
             _isUpdating = false;
-            _textCommit.Schedule();
+            ValueChanged?.Invoke(this, Value);
         };
-        _box.KeyDown += (_, args) =>
-        {
-            if (args.Key == Avalonia.Input.Key.Enter)
-            {
-                CommitBoxValue(normalizeText: true, immediate: true);
-            }
-        };
+        EditorTextBoxBehavior.AttachCommit(
+            _box,
+            _definition,
+            () => CommitBoxValue(normalizeText: true),
+            () => PaletteAlphaPair.TryParseAlpha(_box.Text, out _));
     }
 
-    private void CommitBoxValue(bool normalizeText, bool immediate)
+    private void CommitBoxValue(bool normalizeText)
     {
         if (_isUpdating)
         {
@@ -112,14 +111,7 @@ internal sealed class DictionaryAlphaControl : Grid, IDictionaryValueControl
             _slider.Value = value;
         }
         _isUpdating = false;
-        if (immediate)
-        {
-            _textCommit.CommitNow();
-        }
-        else
-        {
-            _textCommit.Schedule();
-        }
+        CommitValue();
     }
 
     private void CommitValue()

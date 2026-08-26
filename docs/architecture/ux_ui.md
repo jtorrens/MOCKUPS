@@ -414,7 +414,9 @@ temporary values.
 ## Input behavior
 
 Text and numeric fields follow standard desktop selection for mouse, Wacom Pen,
-touch and keyboard. Double click selects the full numeric value. Every desktop
+touch and keyboard. Double click selects the full numeric value. Single-line
+text and numeric drafts persist on Enter or focus loss; multiline drafts
+persist on focus loss. A typing pause never commits. Every desktop
 slider uses the shared input behavior: native mouse, touch and keyboard remain
 intact, while primary Wacom Pen press owns a stable capture across the full
 track from the initial press. Pen motion keeps only the latest value and applies

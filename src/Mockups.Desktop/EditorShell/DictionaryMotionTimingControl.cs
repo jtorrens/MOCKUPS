@@ -13,7 +13,6 @@ internal sealed class DictionaryMotionTimingControl : Grid, IDictionaryValueCont
     private readonly NumericUpDown _delay;
     private readonly EditorInstantComboBox _easing;
     private readonly NumericUpDown _intensity;
-    private readonly EditorDeferredCommit _numericCommit;
     private readonly FieldOption[] _easingOptions;
     private MotionTimingValue _value;
     private bool _isUpdating;
@@ -38,8 +37,6 @@ internal sealed class DictionaryMotionTimingControl : Grid, IDictionaryValueCont
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
         _intensity = CreateIntensity(definition.IsEditable);
-        _numericCommit = new EditorDeferredCommit(CommitNumericDraft);
-
         var durationDefinition = new FieldDefinition(
             $"{definition.Id}.durationMs",
             "Duration",
@@ -94,13 +91,11 @@ internal sealed class DictionaryMotionTimingControl : Grid, IDictionaryValueCont
         {
             if (_isUpdating || change.Property != NumericUpDown.ValueProperty) return;
             SetLocal(_value with { DurationMs = ValueAsInt(_duration.Value) }, commit: false);
-            _numericCommit.Schedule();
         };
         _delay.PropertyChanged += (_, change) =>
         {
             if (_isUpdating || change.Property != NumericUpDown.ValueProperty) return;
             SetLocal(_value with { DelayMs = ValueAsInt(_delay.Value) }, commit: false);
-            _numericCommit.Schedule();
         };
         _easing.SelectionChanged += (_, _) =>
         {
@@ -111,8 +106,10 @@ internal sealed class DictionaryMotionTimingControl : Grid, IDictionaryValueCont
         {
             if (_isUpdating || change.Property != NumericUpDown.ValueProperty) return;
             SetLocal(_value with { Intensity = _intensity.Value }, commit: false);
-            _numericCommit.Schedule();
         };
+        AttachNumericCommit(_duration, durationDefinition);
+        AttachNumericCommit(_delay, delayDefinition);
+        AttachNumericCommit(_intensity, intensityDefinition);
 
         UpdateControls();
     }
@@ -123,7 +120,6 @@ internal sealed class DictionaryMotionTimingControl : Grid, IDictionaryValueCont
 
     public void SetValue(string value)
     {
-        _numericCommit.Cancel();
         _value = MotionTimingValue.Parse(value);
         _lastCommittedValue = _value.ToJsonString();
         UpdateControls();
@@ -144,6 +140,20 @@ internal sealed class DictionaryMotionTimingControl : Grid, IDictionaryValueCont
 
     private void CommitNumericDraft() =>
         SetLocal(_value, commit: true);
+
+    private void AttachNumericCommit(
+        NumericUpDown control,
+        FieldDefinition definition)
+    {
+        EditorTextBoxBehavior.AttachCommit(
+            control,
+            definition,
+            CommitNumericDraft);
+        EditorContinuousCommitBehavior.Attach(
+            control,
+            definition,
+            CommitNumericDraft);
+    }
 
     private void UpdateControls()
     {

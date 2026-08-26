@@ -28,6 +28,7 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
     private readonly TextBox _offsetXBox;
     private readonly TextBox _offsetYBox;
     private readonly List<AnchorButton> _anchorButtons = [];
+    private readonly FieldDefinition _definition;
     private AlignmentPlacementValue _value;
     private bool _isUpdating;
     private bool _isExpanded;
@@ -36,6 +37,7 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
 
     public DictionaryAlignmentPlacementControl(FieldDefinition definition, string value)
     {
+        _definition = definition;
         _value = AlignmentPlacementValue.Parse(value);
         HorizontalAlignment = HorizontalAlignment.Stretch;
 
@@ -188,34 +190,47 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
         {
             if (args.Property == RangeBase.ValueProperty && !_isUpdating)
             {
-                SetLocal(_value with { AlignX = Snap(_alignXSlider.Value) }, commit: true);
+                SetLocal(_value with { AlignX = Snap(_alignXSlider.Value) }, commit: false);
             }
         };
         _alignYSlider.PropertyChanged += (_, args) =>
         {
             if (args.Property == RangeBase.ValueProperty && !_isUpdating)
             {
-                SetLocal(_value with { AlignY = Snap(_alignYSlider.Value) }, commit: true);
+                SetLocal(_value with { AlignY = Snap(_alignYSlider.Value) }, commit: false);
             }
         };
-        HookDecimalBox(_alignXBox, (number) => SetLocal(_value with { AlignX = Clamp01(number) }, commit: true));
-        HookDecimalBox(_alignYBox, (number) => SetLocal(_value with { AlignY = Clamp01(number) }, commit: true));
+        HookDecimalBox(_alignXBox, (number) => SetLocal(_value with { AlignX = Clamp01(number) }, commit: false));
+        HookDecimalBox(_alignYBox, (number) => SetLocal(_value with { AlignY = Clamp01(number) }, commit: false));
         _offsetXSlider.PropertyChanged += (_, args) =>
         {
             if (args.Property == RangeBase.ValueProperty && !_isUpdating)
             {
-                SetLocal(_value with { OffsetX = SnapOffset(_offsetXSlider.Value) }, commit: true);
+                SetLocal(_value with { OffsetX = SnapOffset(_offsetXSlider.Value) }, commit: false);
             }
         };
         _offsetYSlider.PropertyChanged += (_, args) =>
         {
             if (args.Property == RangeBase.ValueProperty && !_isUpdating)
             {
-                SetLocal(_value with { OffsetY = SnapOffset(_offsetYSlider.Value) }, commit: true);
+                SetLocal(_value with { OffsetY = SnapOffset(_offsetYSlider.Value) }, commit: false);
             }
         };
-        HookIntegerBox(_offsetXBox, (number) => SetLocal(_value with { OffsetX = number }, commit: true));
-        HookIntegerBox(_offsetYBox, (number) => SetLocal(_value with { OffsetY = number }, commit: true));
+        HookIntegerBox(_offsetXBox, (number) => SetLocal(_value with { OffsetX = number }, commit: false));
+        HookIntegerBox(_offsetYBox, (number) => SetLocal(_value with { OffsetY = number }, commit: false));
+        foreach (var slider in new[]
+                 {
+                     _alignXSlider,
+                     _alignYSlider,
+                     _offsetXSlider,
+                     _offsetYSlider,
+                 })
+        {
+            EditorContinuousCommitBehavior.Attach(
+                slider,
+                _definition,
+                CommitCurrent);
+        }
     }
 
     private Grid CreateAnchorGrid(bool isEditable)
@@ -279,6 +294,9 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
             ValueCommitted?.Invoke(this, formatted);
         }
     }
+
+    private void CommitCurrent() =>
+        ValueCommitted?.Invoke(this, _value.ToJsonString());
 
     private void UpdateControls()
     {
@@ -385,58 +403,78 @@ internal sealed class DictionaryAlignmentPlacementControl : Grid, IDictionaryVal
         grid.Children.Add(box);
     }
 
-    private static void HookDecimalBox(TextBox box, Action<double> commit)
+    private void HookDecimalBox(TextBox box, Action<double> update)
     {
         void Commit()
         {
             if (double.TryParse(box.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var invariant))
             {
-                commit(invariant);
+                update(invariant);
                 return;
             }
 
             if (double.TryParse(box.Text, out var local))
             {
-                commit(local);
+                update(local);
             }
         }
 
-        var deferred = new EditorDeferredCommit(Commit);
-        box.TextChanged += (_, _) => deferred.Schedule();
-        box.LostFocus += (_, _) => deferred.CommitNow();
-        box.KeyDown += (_, args) =>
+        bool Valid() => double.TryParse(
+                box.Text,
+                NumberStyles.Float,
+                CultureInfo.InvariantCulture,
+                out _)
+            || double.TryParse(box.Text, out _);
+        box.TextChanged += (_, _) =>
         {
-            if (args.Key != Key.Enter) return;
-            deferred.CommitNow();
-            args.Handled = true;
+            if (Valid()) Commit();
         };
+        EditorTextBoxBehavior.AttachCommit(
+            box,
+            _definition,
+            () =>
+            {
+                Commit();
+                CommitCurrent();
+            },
+            Valid);
     }
 
-    private static void HookIntegerBox(TextBox box, Action<int> commit)
+    private void HookIntegerBox(TextBox box, Action<int> update)
     {
         void Commit()
         {
             if (int.TryParse(box.Text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var invariant))
             {
-                commit(invariant);
+                update(invariant);
                 return;
             }
 
             if (int.TryParse(box.Text, out var local))
             {
-                commit(local);
+                update(local);
             }
         }
 
-        var deferred = new EditorDeferredCommit(Commit);
-        box.TextChanged += (_, _) => deferred.Schedule();
-        box.LostFocus += (_, _) => deferred.CommitNow();
-        box.KeyDown += (_, args) =>
+        bool Valid() => int.TryParse(
+                box.Text,
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out _)
+            || int.TryParse(box.Text, out _);
+        box.TextChanged += (_, _) =>
         {
-            if (args.Key != Key.Enter) return;
-            deferred.CommitNow();
-            args.Handled = true;
+            if (Valid()) Commit();
         };
+        EditorTextBoxBehavior.AttachCommit(
+            box,
+            _definition,
+            () =>
+            {
+                Commit();
+                CommitCurrent();
+            },
+            Valid);
     }
 
     private static TextBlock Label(string text)

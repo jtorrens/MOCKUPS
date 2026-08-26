@@ -12,7 +12,6 @@ internal sealed class DictionaryNumberSliderControl : Grid, IDictionaryValueCont
     private readonly FieldDefinition _definition;
     private readonly Slider _slider;
     private readonly TextBox _box;
-    private readonly EditorDeferredCommit _textCommit;
     private bool _isUpdating;
     private string _value;
     private string _lastCommittedValue;
@@ -56,7 +55,6 @@ internal sealed class DictionaryNumberSliderControl : Grid, IDictionaryValueCont
         Children.Add(_slider);
         Children.Add(_box);
 
-        _textCommit = new EditorDeferredCommit(CommitValue);
         Hook();
     }
 
@@ -68,7 +66,6 @@ internal sealed class DictionaryNumberSliderControl : Grid, IDictionaryValueCont
 
     public void SetValue(string value)
     {
-        _textCommit.Cancel();
         var normalized = Normalize(value);
         if (_value == normalized) return;
 
@@ -87,8 +84,11 @@ internal sealed class DictionaryNumberSliderControl : Grid, IDictionaryValueCont
             }
 
             SetLocalValue(Format(Snap((decimal)_slider.Value)));
-            CommitValue();
         };
+        EditorContinuousCommitBehavior.Attach(
+            _slider,
+            _definition,
+            CommitValue);
         _box.TextChanged += (_, _) =>
         {
             if (_isUpdating)
@@ -98,7 +98,6 @@ internal sealed class DictionaryNumberSliderControl : Grid, IDictionaryValueCont
 
             if (!DictionaryNumericValueContract.TryParseDraft(_definition, _box.Text, out var parsed))
             {
-                _textCommit.Cancel();
                 return;
             }
             var normalized = Format(parsed);
@@ -112,24 +111,19 @@ internal sealed class DictionaryNumberSliderControl : Grid, IDictionaryValueCont
             _slider.Value = (double)Clamp(parsed);
             _isUpdating = false;
             ValueChanged?.Invoke(this, _value);
-            _textCommit.Schedule();
         };
-        _box.LostFocus += (_, _) =>
-        {
-            _box.Text = _value;
-            _textCommit.CommitNow();
-        };
-        _box.KeyDown += (_, args) =>
-        {
-            if (args.Key != Avalonia.Input.Key.Enter)
+        EditorTextBoxBehavior.AttachCommit(
+            _box,
+            _definition,
+            () =>
             {
-                return;
-            }
-
-            _box.Text = _value;
-            _textCommit.CommitNow();
-            args.Handled = true;
-        };
+                _box.Text = _value;
+                CommitValue();
+            },
+            () => DictionaryNumericValueContract.TryParseDraft(
+                _definition,
+                _box.Text,
+                out _));
     }
 
     private void SetLocalValue(string value)

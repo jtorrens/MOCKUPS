@@ -79,8 +79,9 @@ var tests = new (string Name, Action Run)[]
     ("Runtime Input readers reject filtered definition metadata", RuntimeInputDefinitionReadersAreStrict),
     ("pair fields require explicit presentation labels", PairFieldsRequireExplicitLabels),
     ("numeric dictionary fields separate current values from drafts", NumericDictionaryFieldsSeparateCurrentValuesFromDrafts),
-    ("valid integer pairs commit after a short editing pause", ValidIntegerPairsCommitAfterEditingPause),
-    ("dictionary free-form number inputs commit after a short editing pause", DictionaryFreeFormNumberInputsCommitAfterEditingPause),
+    ("ValueKind owns the complete editor commit policy", ValueKindsOwnCommitPolicy),
+    ("valid integer pairs commit only on confirmation", ValidIntegerPairsCommitOnlyOnConfirmation),
+    ("dictionary free-form inputs commit only on confirmation", DictionaryFreeFormInputsCommitOnlyOnConfirmation),
     ("fixed Component collection boundaries preserve sequential Override commits", FixedComponentCollectionBoundariesPreserveSequentialOverrides),
     ("Design Preview actions reject incomplete declarative contracts", PreviewActionContractsAreStrict),
     ("Runtime Input forwarding envelopes reject invalid current shapes", RuntimeInputForwardingEnvelopesAreStrict),
@@ -2302,7 +2303,26 @@ static void NumericDictionaryFieldsSeparateCurrentValuesFromDrafts()
     True(!DictionaryNumericValueContract.TryParseDraft(decimalField, "2", out _));
 }
 
-static void ValidIntegerPairsCommitAfterEditingPause()
+static void ValueKindsOwnCommitPolicy()
+{
+    foreach (var kind in Enum.GetValues<ValueKind>())
+    {
+        _ = ValueKindCommitContract.Require(kind);
+    }
+    Equal(
+        TextEntryCommitTrigger.EnterOrFocusLoss,
+        ValueKindCommitContract.Require(ValueKind.StringSingleLine).TextEntry);
+    Equal(
+        TextEntryCommitTrigger.FocusLoss,
+        ValueKindCommitContract.Require(ValueKind.StringMultiline).TextEntry);
+    Equal(
+        ContinuousCommitTrigger.InteractionEnd,
+        ValueKindCommitContract.Require(ValueKind.Alpha).Continuous);
+    True(ValueKindCommitContract.Require(ValueKind.OptionToken).DiscreteImmediate);
+    True(!ValueKindCommitContract.Require(ValueKind.StringSingleLine).DiscreteImmediate);
+}
+
+static void ValidIntegerPairsCommitOnlyOnConfirmation()
 {
     var control = new DictionaryIntegerPairControl(
         new FieldDefinition(
@@ -2324,25 +2344,45 @@ static void ValidIntegerPairsCommitAfterEditingPause()
         ?? throw new InvalidOperationException("Missing first Integer Pair editor.");
 
     first.Text = "300";
-    for (var attempt = 0; attempt < 10 && committed.Length == 0; attempt++)
-    {
-        Thread.Sleep(100);
-        Dispatcher.UIThread.RunJobs();
-    }
+    Thread.Sleep(500);
+    Dispatcher.UIThread.RunJobs();
+    Equal("", committed);
+    first.RaiseEvent(new FocusChangedEventArgs(InputElement.LostFocusEvent));
+    Dispatcher.UIThread.RunJobs();
     Equal("300|48", committed);
     Equal(1, commitCount);
 
     first.Text = "";
-    for (var attempt = 0; attempt < 5; attempt++)
-    {
-        Thread.Sleep(100);
-        Dispatcher.UIThread.RunJobs();
-    }
+    Thread.Sleep(500);
+    Dispatcher.UIThread.RunJobs();
+    first.RaiseEvent(new FocusChangedEventArgs(InputElement.LostFocusEvent));
+    Dispatcher.UIThread.RunJobs();
     Equal(1, commitCount);
 }
 
-static void DictionaryFreeFormNumberInputsCommitAfterEditingPause()
+static void DictionaryFreeFormInputsCommitOnlyOnConfirmation()
 {
+    var textDefinition = new FieldDefinition(
+        "core.name",
+        "Name",
+        ValueKind.StringSingleLine);
+    var textControl = new DictionaryTextControl(
+        textDefinition,
+        "Shot 01");
+    var textCommits = new List<string>();
+    textControl.ValueCommitted += (_, value) => textCommits.Add(value);
+    var textBox = typeof(DictionaryTextControl)
+        .GetField("_textBox", BindingFlags.Instance | BindingFlags.NonPublic)
+        ?.GetValue(textControl) as TextBox
+        ?? throw new InvalidOperationException("Missing text dictionary editor.");
+    textBox.Text = "Shot renamed";
+    Thread.Sleep(500);
+    Dispatcher.UIThread.RunJobs();
+    Equal(0, textCommits.Count);
+    textBox.RaiseEvent(new FocusChangedEventArgs(InputElement.LostFocusEvent));
+    Dispatcher.UIThread.RunJobs();
+    Equal("Shot renamed", textCommits.Single());
+
     var definition = new FieldDefinition(
         "test.gradientHeight",
         "Gradient height",
@@ -2357,18 +2397,13 @@ static void DictionaryFreeFormNumberInputsCommitAfterEditingPause()
         ?? throw new InvalidOperationException("Missing Number Slider text editor.");
 
     box.Text = "42";
-    Thread.Sleep(100);
+    Thread.Sleep(500);
     Dispatcher.UIThread.RunJobs();
     Equal(0, commits.Count);
-
-    for (var attempt = 0; attempt < 10 && commits.Count == 0; attempt++)
-    {
-        Thread.Sleep(100);
-        Dispatcher.UIThread.RunJobs();
-    }
+    box.RaiseEvent(new FocusChangedEventArgs(InputElement.LostFocusEvent));
+    Dispatcher.UIThread.RunJobs();
     Equal(1, commits.Count);
     Equal("42", commits.Single());
-
 }
 
 static void FixedComponentCollectionBoundariesPreserveSequentialOverrides()
@@ -4872,6 +4907,10 @@ static void ExplicitOverrideEditsReconcileCurrentInheritedValue()
             pairTextBoxes[1].Text = "0";
             Dispatcher.UIThread.RunJobs();
             True(!pairControl.HasLocalOverride);
+            pairTextBoxes[1].RaiseEvent(
+                new FocusChangedEventArgs(
+                    InputElement.LostFocusEvent));
+            Dispatcher.UIThread.RunJobs();
             True(SpinWait.SpinUntil(
                 () =>
                 {
@@ -14219,6 +14258,10 @@ static void ShotManagerOutputResolvesExactAssociations()
             node.Id == "shot_001");
         fields.CommitFieldValue(
             projectNode,
+            "project.shotManaged",
+            "false");
+        fields.CommitFieldValue(
+            projectNode,
             "project.shotManagerJsonPath",
             productionJson);
         fields.CommitFieldValue(
@@ -16930,7 +16973,14 @@ static void RenderQueueNavigationAndSurfaceAreAlwaysAvailable()
 
 static void ProductionOutputActionOwnsConfiguration()
 {
-    var database = new SqliteProjectTestContext(ParityDatabasePath());
+    var temporary = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-production-output-action-{Guid.NewGuid():N}.sqlite");
+    File.Copy(ParityDatabasePath(), temporary, overwrite: true);
+    var database = new SqliteProjectTestContext(temporary);
+    database.ProductionRecordFields.SetShotManagerProductionEnabled(
+        "project_foqn_s2",
+        false);
     var layout = EditorLayouts(database).LoadEditorLayout("project");
     var card = layout.Cards.Single((candidate) =>
         candidate.Id == "production-output");
@@ -16993,6 +17043,7 @@ static void ProductionOutputActionOwnsConfiguration()
     }
     finally
     {
+        File.Delete(temporary);
         File.Delete(rootsPath);
         File.Delete(shotManagerDocumentsPath);
         Directory.Delete(outputRoot, recursive: true);

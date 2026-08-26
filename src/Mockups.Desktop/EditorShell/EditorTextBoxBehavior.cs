@@ -32,24 +32,54 @@ internal static class EditorTextBoxBehavior
         EnsureInteractionState(textBox).SelectAllOnDoubleClick = true;
     }
 
-    public static void AttachDeferredCommit(
-        TextBox textBox,
+    public static void AttachCommit(
+        InputElement input,
+        FieldDefinition definition,
         Action commit,
-        bool commitOnEnter = true,
-        Func<bool>? canCommit = null,
-        bool commitAfterTextChange = true)
+        Func<bool>? canCommit = null)
     {
-        var deferred = new EditorDeferredCommit(commit, canCommit);
-        if (commitAfterTextChange)
-        {
-            textBox.TextChanged += (_, _) => deferred.Schedule();
-        }
-        textBox.LostFocus += (_, _) => deferred.CommitNow();
-        textBox.KeyDown += (_, args) =>
-        {
-            if (args.Key != Key.Enter || !commitOnEnter) return;
+        AttachCommit(
+            input,
+            ValueKindCommitContract.Require(definition).TextEntry,
+            commit,
+            canCommit);
+    }
 
-            Dispatcher.UIThread.Post(deferred.CommitNow);
+    public static void AttachCommit(
+        InputElement input,
+        ValueKind valueKind,
+        Action commit,
+        Func<bool>? canCommit = null)
+    {
+        AttachCommit(
+            input,
+            ValueKindCommitContract.Require(valueKind).TextEntry,
+            commit,
+            canCommit);
+    }
+
+    private static void AttachCommit(
+        InputElement input,
+        TextEntryCommitTrigger trigger,
+        Action commit,
+        Func<bool>? canCommit)
+    {
+        if (trigger == TextEntryCommitTrigger.None) return;
+        bool CanCommit() => canCommit?.Invoke() ?? true;
+        input.LostFocus += (_, _) =>
+        {
+            if (CanCommit()) commit();
+        };
+        input.KeyDown += (_, args) =>
+        {
+            if (args.Key != Key.Enter
+                || trigger != TextEntryCommitTrigger.EnterOrFocusLoss)
+                return;
+
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (CanCommit()) commit();
+            });
         };
     }
 

@@ -54,6 +54,10 @@ It includes:
   plus compiled constructor enforcement for every visual persistence writer
   and post-commit presentation reader, and failed Runtime Override persistence
   retaining the confirmed document without an early Preview publication;
+- exhaustive `ValueKind` commit-policy coverage, free-form text and numeric
+  drafts remaining unpersisted across a typing pause, confirmation on Enter or
+  focus loss, and continuous controls committing only their final interaction
+  value;
 - prepared root and embedded editor content, including compiled operation
   coordination, field and dictionary snapshot-only visual card construction
   and a headless rapid selection test proving that only the latest owner

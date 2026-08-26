@@ -13,15 +13,11 @@ internal sealed class DictionaryIntegerPairControl : Grid, IDictionaryValueContr
     private readonly TextBox _firstTextBox;
     private readonly TextBox _secondTextBox;
     private readonly FieldDefinition _definition;
-    private readonly EditorDeferredCommit _validDraftCommit;
     private bool _isUpdating;
 
     public DictionaryIntegerPairControl(FieldDefinition definition, string value)
     {
         _definition = definition;
-        _validDraftCommit = new EditorDeferredCommit(
-            CommitCurrentValue,
-            HasValidDraft);
         ColumnSpacing = 8;
         RowSpacing = 8;
         VerticalAlignment = VerticalAlignment.Center;
@@ -38,20 +34,20 @@ internal sealed class DictionaryIntegerPairControl : Grid, IDictionaryValueContr
 
         _firstTextBox = DictionaryTextBoxFactory.CreateCompactPair(pair.First);
         _firstTextBox.TextChanged += (_, _) => SetValueFromTextBoxes();
-        EditorTextBoxBehavior.AttachDeferredCommit(
+        EditorTextBoxBehavior.AttachCommit(
             _firstTextBox,
+            definition,
             CommitValue,
-            canCommit: HasValidDraft,
-            commitAfterTextChange: false);
+            canCommit: HasValidDraft);
         _secondLabel = CreateLabel(labels.Second);
 
         _secondTextBox = DictionaryTextBoxFactory.CreateCompactPair(pair.Second);
         _secondTextBox.TextChanged += (_, _) => SetValueFromTextBoxes();
-        EditorTextBoxBehavior.AttachDeferredCommit(
+        EditorTextBoxBehavior.AttachCommit(
             _secondTextBox,
+            definition,
             CommitValue,
-            canCommit: HasValidDraft,
-            commitAfterTextChange: false);
+            canCommit: HasValidDraft);
         Children.Add(_firstLabel);
         Children.Add(_firstTextBox);
         Children.Add(_secondLabel);
@@ -66,7 +62,6 @@ internal sealed class DictionaryIntegerPairControl : Grid, IDictionaryValueContr
 
     public void SetValue(string value)
     {
-        _validDraftCommit.Cancel();
         var pair = DictionaryFieldPairText.ParseRequired(
             ValueKind.IntegerPair,
             value,
@@ -92,12 +87,11 @@ internal sealed class DictionaryIntegerPairControl : Grid, IDictionaryValueContr
         ValueChanged?.Invoke(this, DictionaryFieldPairText.Join(
             _firstTextBox.Text ?? "",
             _secondTextBox.Text ?? ""));
-        _validDraftCommit.Schedule();
     }
 
     private void CommitValue()
     {
-        _validDraftCommit.CommitNow();
+        CommitCurrentValue();
     }
 
     private void CommitCurrentValue()

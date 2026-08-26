@@ -22,10 +22,10 @@ internal sealed class DictionaryTextControl : Grid, IDictionaryValueControl
 
             SetLocalValue(_textBox.Text ?? "");
         };
-        EditorTextBoxBehavior.AttachDeferredCommit(
+        EditorTextBoxBehavior.AttachCommit(
             _textBox,
-            CommitValue,
-            commitOnEnter: _definition.ValueKind != ValueKind.StringMultiline);
+            _definition,
+            CommitValue);
         Children.Add(_textBox);
     }
 

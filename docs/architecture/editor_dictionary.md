@@ -20,6 +20,13 @@ or file controls for values that belong to the dictionary. When a new value
 shape is needed, its `ValueKind`, validation, registered control, serialization
 and commit behavior are defined first.
 
+`ValueKindCommitContract` is the single owner of persistence timing. Free-form
+single-line text, paths, colors and numeric entry remain local until Enter or
+focus loss; multiline text commits on focus loss so Enter remains content.
+Continuous controls publish transient values while moving and commit once when
+the interaction ends. Discrete selectors commit immediately. Controls and
+concrete editors never add a timer, debounce or field-specific trigger.
+
 Structured collections have an owning collection editor. Scalar fields inside
 each item still use dictionary definitions and controls. Their Add, Duplicate,
 Move and Delete actions call the same typed collection mutation owner used by
@@ -193,7 +200,9 @@ shared behavior adapts primary Pen drag so Wacom selection follows the same
 standard. A double click selects the complete value in numeric fields.
 
 Editor-specific selection handlers and per-field input interaction variants
-are not allowed.
+are not allowed. The same rule applies to commit timing: typing never opens a
+persistence operation, slider movement never writes intermediate values, and
+the registered type policy determines the confirmation boundary.
 
 ## Forward presentation
 

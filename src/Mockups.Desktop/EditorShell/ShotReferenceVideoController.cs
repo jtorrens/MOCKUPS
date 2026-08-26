@@ -126,8 +126,9 @@ internal sealed class ShotReferenceVideoController : IDisposable
         _setShotFrame = setShotFrame;
         _toggleShotPlayback = toggleShotPlayback;
         _markerStrip.SizeChanged += (_, _) => RebuildMarkers();
-        EditorTextBoxBehavior.AttachDeferredCommit(
+        EditorTextBoxBehavior.AttachCommit(
             _markerText,
+            ValueKind.StringSingleLine,
             CommitSelectedMarkerText);
         _deleteMarker.Click += async (_, _) => await DeleteSelectedMarkerAsync();
         _audioButton.Click += (_, _) =>

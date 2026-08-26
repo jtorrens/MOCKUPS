@@ -13,13 +13,14 @@ internal sealed class HueDegreesControl : Grid, IDictionaryValueControl
 {
     private readonly Slider _slider;
     private readonly TextBox _textBox;
-    private readonly EditorDeferredCommit _textCommit;
+    private readonly FieldDefinition _definition;
     private bool _isUpdating;
     private string _value;
     private string _lastCommittedValue;
 
-    public HueDegreesControl(string value, bool isEditable)
+    public HueDegreesControl(FieldDefinition definition, string value)
     {
+        _definition = definition;
         _value = NormalizeHueRequired(value);
         _lastCommittedValue = _value;
         var boxWidth = EditorUiDensity.TextAwareWidth(78);
@@ -61,7 +62,7 @@ internal sealed class HueDegreesControl : Grid, IDictionaryValueControl
             TickFrequency = 30,
             IsSnapToTickEnabled = false,
             Value = HueNumber(_value),
-            IsEnabled = isEditable,
+            IsEnabled = definition.IsEditable,
             VerticalAlignment = VerticalAlignment.Center,
             Background = Brushes.Transparent,
         });
@@ -71,21 +72,22 @@ internal sealed class HueDegreesControl : Grid, IDictionaryValueControl
 
             SetLocalValue(Math.Round(_slider.Value).ToString(CultureInfo.InvariantCulture));
         };
-        _slider.LostFocus += (_, _) => CommitValue();
-        _slider.PointerReleased += (_, _) => CommitValue();
+        EditorContinuousCommitBehavior.Attach(
+            _slider,
+            _definition,
+            CommitValue);
         sliderHost.Children.Add(_slider);
         Grid.SetColumn(sliderHost, 0);
 
         _textBox = new TextBox
         {
             Text = _value,
-            IsReadOnly = !isEditable,
+            IsReadOnly = !definition.IsEditable,
             MinHeight = 36,
             Width = boxWidth,
             VerticalContentAlignment = VerticalAlignment.Center,
         };
         EditorNumericTextStyle.Apply(_textBox);
-        _textCommit = new EditorDeferredCommit(CommitValue);
         _textBox.TextChanged += (_, _) =>
         {
             if (_isUpdating) return;
@@ -93,25 +95,17 @@ internal sealed class HueDegreesControl : Grid, IDictionaryValueControl
             if (TryNormalizeHue(_textBox.Text ?? "", out var normalized))
             {
                 SetLocalValue(normalized);
-                _textCommit.Schedule();
             }
-            else
+        };
+        EditorTextBoxBehavior.AttachCommit(
+            _textBox,
+            _definition,
+            () =>
             {
-                _textCommit.Cancel();
-            }
-        };
-        _textBox.LostFocus += (_, _) =>
-        {
-            UpdateControls();
-            _textCommit.CommitNow();
-        };
-        _textBox.KeyDown += (_, args) =>
-        {
-            if (args.Key != Key.Enter) return;
-
-            _textCommit.CommitNow();
-            args.Handled = true;
-        };
+                UpdateControls();
+                CommitValue();
+            },
+            () => TryNormalizeHue(_textBox.Text ?? "", out _));
         Grid.SetColumn(_textBox, 1);
 
         Children.Add(sliderHost);

@@ -311,7 +311,10 @@ Icon Theme resource writes, Runtime Input edits and Module Instance animation
 writes use the separate session-owned `EditorOperationCoordinator`. Repository
 work remains synchronous behind that boundary, while control updates,
 navigation and error presentation resume on the visual context only after
-completion. Runtime collection actions expose task-returning callbacks, so a
+completion. Free-form dictionary drafts do not submit those operations while
+typing: their `ValueKind` commits only at its declared confirmation boundary;
+continuous controls submit the final value when interaction ends. Runtime
+collection actions expose task-returning callbacks, so a
 visual action cannot report completion before its queued document write.
 Post-commit Theme and Production Font presentation reads use that same
 boundary before navigation notes are refreshed.

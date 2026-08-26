@@ -16,11 +16,12 @@ internal sealed class DictionaryPaletteAlphaPairControl : Grid, IDictionaryValue
     private readonly Slider _secondAlphaSlider;
     private readonly TextBox _firstAlphaBox;
     private readonly TextBox _secondAlphaBox;
-    private readonly EditorDeferredCommit _textCommit;
+    private readonly FieldDefinition _definition;
     private bool _isUpdating;
 
     public DictionaryPaletteAlphaPairControl(FieldDefinition definition, string value)
     {
+        _definition = definition;
         ColumnDefinitions = new ColumnDefinitions("Auto,Auto");
         ColumnSpacing = 10;
         VerticalAlignment = VerticalAlignment.Center;
@@ -35,8 +36,6 @@ internal sealed class DictionaryPaletteAlphaPairControl : Grid, IDictionaryValue
         _secondAlphaSlider = DictionaryAlphaControl.CreateSlider(pair.Second.Alpha, definition.IsEditable);
         _firstAlphaBox = DictionaryAlphaControl.CreateAlphaBox(pair.First.Alpha, definition.IsEditable);
         _secondAlphaBox = DictionaryAlphaControl.CreateAlphaBox(pair.Second.Alpha, definition.IsEditable);
-        _textCommit = new EditorDeferredCommit(CommitValue);
-
         Hook(_firstColorControl);
         Hook(_secondColorControl);
         Hook(_firstAlphaSlider, _firstAlphaBox);
@@ -56,7 +55,6 @@ internal sealed class DictionaryPaletteAlphaPairControl : Grid, IDictionaryValue
 
     public void SetValue(string value)
     {
-        _textCommit.Cancel();
         var pair = PaletteAlphaPair.Split(value);
         _isUpdating = true;
         _firstColorControl.SetValue(pair.First.ColorToken);
@@ -85,17 +83,12 @@ internal sealed class DictionaryPaletteAlphaPairControl : Grid, IDictionaryValue
             slider.Value = snapped;
             box.Text = PaletteAlphaPair.FormatAlpha(snapped);
             _isUpdating = false;
-            CommitValue();
+            RaiseValueChanged();
         };
-        box.LostFocus += (_, _) =>
-        {
-            if (_isUpdating)
-            {
-                return;
-            }
-
-            CommitBoxValue(slider, box, normalizeText: true, immediate: true);
-        };
+        EditorContinuousCommitBehavior.Attach(
+            slider,
+            _definition,
+            CommitValue);
         box.TextChanged += (_, _) =>
         {
             if (_isUpdating)
@@ -104,31 +97,25 @@ internal sealed class DictionaryPaletteAlphaPairControl : Grid, IDictionaryValue
             }
             if (!PaletteAlphaPair.TryParseAlpha(box.Text, out var value))
             {
-                _textCommit.Cancel();
                 return;
             }
 
             _isUpdating = true;
             slider.Value = value;
             _isUpdating = false;
-            _textCommit.Schedule();
+            RaiseValueChanged();
         };
-        box.KeyDown += (_, args) =>
-        {
-            if (args.Key != Avalonia.Input.Key.Enter)
-            {
-                return;
-            }
-
-            CommitBoxValue(slider, box, normalizeText: true, immediate: true);
-        };
+        EditorTextBoxBehavior.AttachCommit(
+            box,
+            _definition,
+            () => CommitBoxValue(slider, box, normalizeText: true),
+            () => PaletteAlphaPair.TryParseAlpha(box.Text, out _));
     }
 
     private void CommitBoxValue(
         Slider slider,
         TextBox box,
-        bool normalizeText,
-        bool immediate)
+        bool normalizeText)
     {
         if (!PaletteAlphaPair.TryParseAlpha(box.Text, out var value))
         {
@@ -145,14 +132,7 @@ internal sealed class DictionaryPaletteAlphaPairControl : Grid, IDictionaryValue
             slider.Value = value;
         }
         _isUpdating = false;
-        if (immediate)
-        {
-            _textCommit.CommitNow();
-        }
-        else
-        {
-            _textCommit.Schedule();
-        }
+        CommitValue();
     }
 
     private void CommitValue()
@@ -162,12 +142,19 @@ internal sealed class DictionaryPaletteAlphaPairControl : Grid, IDictionaryValue
             return;
         }
 
-        var value = PaletteAlphaPair.Join(
-            new PaletteAlphaValue(_firstColorControl.Value, _firstAlphaSlider.Value),
-            new PaletteAlphaValue(_secondColorControl.Value, _secondAlphaSlider.Value));
+        var value = CurrentValue();
         ValueChanged?.Invoke(this, value);
         ValueCommitted?.Invoke(this, value);
     }
+
+    private void RaiseValueChanged()
+    {
+        if (!_isUpdating) ValueChanged?.Invoke(this, CurrentValue());
+    }
+
+    private string CurrentValue() => PaletteAlphaPair.Join(
+            new PaletteAlphaValue(_firstColorControl.Value, _firstAlphaSlider.Value),
+            new PaletteAlphaValue(_secondColorControl.Value, _secondAlphaSlider.Value));
 
     private static Border CreateGroup(
         string label,
