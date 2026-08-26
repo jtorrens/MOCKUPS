@@ -174,9 +174,12 @@ Screen instance. Child keyframes and composition cannot extend it silently.
 The authoring horizon is session-only for both policies. The Screen timeline
 always reserves trailing frames to the right independently from the playhead
 anchor and zoom; extending a lane grows only its semantic duration, and the
-refreshed viewport reserves a new trailing horizon. The compact animation
-track may additionally expose its `+` action. Neither form of horizon is
-duration or persisted data.
+Screen timeline projects the resulting calculated extent live while dragging
+and expands its viewport as needed to preserve the trailing horizon.
+On release the declared mutation is persisted, the common owner recalculates
+the effective Screen and Shot durations, and the refreshed viewport reserves a
+new trailing horizon. The compact animation track may additionally expose its
+`+` action. Neither form of horizon is duration or persisted data.
 
 ## Behavioral timing
 

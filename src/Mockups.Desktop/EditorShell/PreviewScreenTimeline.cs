@@ -96,6 +96,29 @@ internal static class PreviewScreenTimelineMath
             ? int.MaxValue
             : snapshot.MaximumFrame + AuthoringHorizonFrames;
 
+    public static int PreviewContentDuration(
+        int confirmedContentDuration,
+        IEnumerable<int> durationAffectingEndFrames) =>
+        Math.Max(
+            Math.Max(1, confirmedContentDuration),
+            durationAffectingEndFrames.DefaultIfEmpty(1).Max());
+
+    public static PreviewScreenTimelineViewport EnsureAuthoringHorizon(
+        PreviewScreenTimelineSnapshot snapshot,
+        PreviewScreenTimelineViewport viewport,
+        int previewContentDuration)
+    {
+        var contentMaximum = previewContentDuration > int.MaxValue - snapshot.PostRollFrames
+            ? int.MaxValue
+            : previewContentDuration + snapshot.PostRollFrames - 1;
+        var requiredMaximum = contentMaximum > int.MaxValue - AuthoringHorizonFrames
+            ? int.MaxValue
+            : contentMaximum + AuthoringHorizonFrames;
+        return requiredMaximum <= viewport.MaximumFrame
+            ? viewport
+            : viewport with { MaximumFrame = requiredMaximum };
+    }
+
     public static double Fraction(
         int frame,
         int minimumFrame,
@@ -808,8 +831,10 @@ internal sealed class PreviewScreenTimelineSurface : Border
     private PreviewScreenTimelineViewport? _viewport;
     private int? _playheadSnapFrame;
     private int _frame;
+    private int _previewContentDurationFrames;
     private Func<string, AnimationTargetEditorContent>? _animationContent;
     private PreviewScreenTimelineLane? _selectedLane;
+    private PreviewScreenTimelineLane? _generalLane;
 
     public PreviewScreenTimelineSurface(
         Action<int> setFrame,
@@ -840,6 +865,8 @@ internal sealed class PreviewScreenTimelineSurface : Border
         _playheadSnapFrame = null;
         _animationContent = null;
         _selectedLane = null;
+        _generalLane = null;
+        _previewContentDurationFrames = 0;
         _rowsByLane.Clear();
         _keyframeFrames.Clear();
         _content.Children.Clear();
@@ -862,6 +889,8 @@ internal sealed class PreviewScreenTimelineSurface : Border
         _playheadSnapFrame = null;
         _animationContent = null;
         _selectedLane = null;
+        _generalLane = null;
+        _previewContentDurationFrames = 0;
         _rowsByLane.Clear();
         _keyframeFrames.Clear();
         _content.Children.Clear();
@@ -879,6 +908,8 @@ internal sealed class PreviewScreenTimelineSurface : Border
         _playheadSnapFrame = null;
         _animationContent = null;
         _selectedLane = null;
+        _generalLane = null;
+        _previewContentDurationFrames = 0;
         _rowsByLane.Clear();
         _keyframeFrames.Clear();
         _content.Children.Clear();
@@ -899,6 +930,7 @@ internal sealed class PreviewScreenTimelineSurface : Border
         IReadOnlyList<PreviewScreenTimelineReferenceMarker>? referenceMarkers = null)
     {
         _snapshot = snapshot;
+        _previewContentDurationFrames = snapshot.ContentDurationFrames;
         _animationContent = animationContent;
         _referenceMarkers = referenceMarkers ?? [];
         _frame = Math.Clamp(frame, snapshot.MinimumFrame, snapshot.MaximumFrame);
@@ -944,6 +976,7 @@ internal sealed class PreviewScreenTimelineSurface : Border
                 snapshot.ContentDurationFrames,
                 [new PreviewScreenTimelineInterval(0, snapshot.ContentDurationFrames)]),
             isGeneral: true);
+        _generalLane = general;
         var generalRow = AddTimelineRow(
             timeline,
             "General",
@@ -1070,11 +1103,43 @@ internal sealed class PreviewScreenTimelineSurface : Border
             isGeneral,
             LaneSnapTargets);
         lane.EditCommitted += async (_, edit) => await CommitLaneEditAsync(item, edit);
+        lane.AuthoringExtentChanged += (_, pointerX) =>
+            RefreshPreviewContentDuration(lane, pointerX);
         lane.SelectionRequested += (_, _) => SelectLane(lane);
         lane.SnapGuideChanged += (_, snapFrame) =>
             _overlay?.SetSnapGuide(snapFrame);
         _lanes.Add(lane);
         return lane;
+    }
+
+    private void RefreshPreviewContentDuration(
+        PreviewScreenTimelineLane activeLane,
+        double pointerX)
+    {
+        if (_snapshot is null || _viewport is null) return;
+        var next = PreviewScreenTimelineMath.PreviewContentDuration(
+            _snapshot.ContentDurationFrames,
+            _lanes
+                .Where((lane) => lane.AffectsScreenDuration)
+                .Select((lane) => lane.EndFrame));
+        if (next == _previewContentDurationFrames) return;
+        _previewContentDurationFrames = next;
+        _generalLane?.SetAuthoringEndFrame(next);
+        _backdrop?.SetContentEndFrame(next);
+        var nextViewport = PreviewScreenTimelineMath.EnsureAuthoringHorizon(
+            _snapshot,
+            _viewport,
+            next);
+        if (nextViewport != _viewport)
+        {
+            _viewport = nextViewport;
+            _ruler?.SetViewport(nextViewport);
+            foreach (var lane in _lanes) lane.SetViewport(nextViewport);
+            _backdrop?.SetViewport(nextViewport);
+            _overlay?.SetViewport(nextViewport);
+            activeLane.RebaseActiveDrag(pointerX);
+        }
+        UpdateFrameText();
     }
 
     private void SelectLane(PreviewScreenTimelineLane lane)
@@ -1416,9 +1481,9 @@ internal sealed class PreviewScreenTimelineSurface : Border
         if (_snapshot is null || _frameText is null) return;
         _frameText.Text = _frame < 0
             ? $"{_frame} f · preroll"
-            : _frame >= _snapshot.ContentDurationFrames
-                ? $"+{_frame - _snapshot.ContentDurationFrames + 1} f · postroll"
-                : $"{_frame}/{_snapshot.ContentDurationFrames - 1}";
+            : _frame >= _previewContentDurationFrames
+                ? $"+{_frame - _previewContentDurationFrames + 1} f · postroll"
+                : $"{_frame}/{_previewContentDurationFrames - 1}";
     }
 
     private void UpdatePlayButton(bool isPlaying)
@@ -1724,16 +1789,41 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
     public bool IsSelected => _isSelected;
     public int StartFrame => _startFrame;
     public int EndFrame => _endFrame;
-    public IReadOnlyList<int> SnapFrames => _intervals
-        .SelectMany(interval => new[] { interval.StartFrame, interval.EndFrame })
-        .Distinct()
-        .ToList();
+    public bool AffectsScreenDuration => _movesOwnerOrigin;
+    public IReadOnlyList<int> SnapFrames => _isGeneral
+        ? [0, Snapshot.ContentDurationFrames]
+        : _intervals
+            .SelectMany(interval => new[] { interval.StartFrame, interval.EndFrame })
+            .Distinct()
+            .ToList();
     public event EventHandler<PreviewScreenTimelineLaneEdit>? EditCommitted;
+    public event Action<object?, double>? AuthoringExtentChanged;
     public event EventHandler<int?>? SnapGuideChanged;
     public event EventHandler? SelectionRequested;
 
     public void RequestSelection() =>
         SelectionRequested?.Invoke(this, EventArgs.Empty);
+
+    public void SetAuthoringEndFrame(int endFrame)
+    {
+        _endFrame = Math.Max(_startFrame + 1, endFrame);
+        if (_intervals.Count == 1)
+        {
+            _intervals[0] = _intervals[0] with
+            {
+                EndFrame = _endFrame,
+            };
+        }
+        InvalidateVisual();
+    }
+
+    public void RebaseActiveDrag(double pointerX)
+    {
+        if (_dragMode == DragMode.None) return;
+        _dragStartFrame = RawFrameAt(pointerX);
+        _dragStartValue = _startFrame;
+        _dragEndValue = _endFrame;
+    }
 
     public void SetSelection(
         bool isSelected,
@@ -1890,7 +1980,8 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
     private void OnPointerMoved(object? sender, PointerEventArgs args)
     {
         if (_dragMode == DragMode.None) return;
-        var pointerFrame = RawFrameAt(args.GetPosition(this).X);
+        var pointerX = args.GetPosition(this).X;
+        var pointerFrame = RawFrameAt(pointerX);
         int? snapFrame;
         if (_dragMode is DragMode.Move or DragMode.StateMove)
         {
@@ -1925,7 +2016,7 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
         {
             var next = PreviewScreenTimelineMath.ResizeEndWithSnap(
                 _startFrame,
-                pointerFrame,
+                _dragEndValue + pointerFrame - _dragStartFrame,
                 Bounds.Width,
                 Viewport.MinimumFrame,
                 Viewport.MaximumFrame,
@@ -1936,7 +2027,7 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
         else
         {
             var next = PreviewScreenTimelineMath.SnapFrame(
-                args.GetPosition(this).X,
+                pointerX,
                 Bounds.Width,
                 Viewport.MinimumFrame,
                 Viewport.MaximumFrame,
@@ -1961,6 +2052,7 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
         SnapGuideChanged?.Invoke(this, snapFrame);
         _activeSnapFrame = snapFrame;
         InvalidateVisual();
+        AuthoringExtentChanged?.Invoke(this, pointerX);
         args.Handled = true;
     }
 
@@ -2168,19 +2260,28 @@ internal sealed class PreviewScreenTimelineZoomVisual : Control
 
 internal sealed class PreviewScreenTimelineBackdrop : PreviewScreenTimelineTrack
 {
+    private int _contentEndFrame;
+
     public PreviewScreenTimelineBackdrop(
         PreviewScreenTimelineSnapshot snapshot,
         PreviewScreenTimelineViewport viewport)
         : base(snapshot, viewport)
     {
+        _contentEndFrame = snapshot.ContentDurationFrames;
         IsHitTestVisible = false;
+    }
+
+    public void SetContentEndFrame(int frame)
+    {
+        _contentEndFrame = Math.Max(1, frame);
+        InvalidateVisual();
     }
 
     public override void Render(DrawingContext context)
     {
         base.Render(context);
         var zeroX = X(0);
-        var endX = X(Snapshot.ContentDurationFrames);
+        var endX = X(_contentEndFrame);
         PreviewScreenTimelineHatch.Draw(
             context,
             new Rect(0, 0, zeroX, Bounds.Height));

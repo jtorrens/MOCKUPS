@@ -188,9 +188,13 @@ Releasing an editable block commits through the collection's declared offset
 or presence-duration field and refreshes Preview from the newly prepared
 payload. The viewport always retains a session-only authoring horizon to the
 right of the effective Screen range, including when the playhead is at the
-last frame or zoom changes. Growing a terminal block therefore reveals a new
-trailing horizon after refresh; the horizon itself is never persisted. An
-outgoing-edge edit never creates or changes retime.
+last frame or zoom changes. While a duration-affecting item boundary is dragged,
+General, the content boundary and the frame counter project the growing
+calculated Screen extent immediately, and the scale rebases the active drag so
+the same boundary retains a trailing horizon without jumping in frame value.
+Releasing it persists the declared item field, recalculates the Screen and Shot
+through the common timeline owner and confirms that extent. The horizon itself
+is never persisted. An outgoing-edge edit never creates or changes retime.
 
 Selecting General or any item lane highlights the complete lane, including its
 label, and opens one Keyframes section after the final visible lane. The section
