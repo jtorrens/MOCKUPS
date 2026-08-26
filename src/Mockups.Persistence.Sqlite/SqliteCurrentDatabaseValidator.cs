@@ -231,6 +231,8 @@ internal sealed partial class SqliteCurrentDatabaseValidator
             .ToDictionary(
                 (episode) => episode.Id,
                 StringComparer.Ordinal);
+        var episodeAssociations = new Dictionary<string, ShotManagerEpisodeAssociation>(
+            StringComparer.Ordinal);
         foreach (var episode in episodes.Values)
         {
             try
@@ -242,6 +244,19 @@ internal sealed partial class SqliteCurrentDatabaseValidator
             catch (InvalidOperationException exception)
             {
                 throw InvalidCurrentDatabase(exception.Message);
+            }
+            var association = _productionOwner
+                .GetEpisodeSettings(episode.Id)
+                .ShotManagerEpisode;
+            episodeAssociations[episode.Id] = association;
+            if (association.IsAssociated
+                && (!projects[episode.ProjectId].ShotManagerOutput.Enabled
+                    || !association.ReferenceProductionId.Equals(
+                        projects[episode.ProjectId].ShotManagerOutput.ProductionId,
+                        StringComparison.Ordinal)))
+            {
+                throw InvalidCurrentDatabase(
+                    $"Episode '{episode.Id}' has a Shot Manager association with invalid Project provenance.");
             }
         }
         foreach (var shot in _productionOwner.ShotRepository.QueryAll(
@@ -255,6 +270,16 @@ internal sealed partial class SqliteCurrentDatabaseValidator
                     out var episode))
             {
                 continue;
+            }
+            var episodeAssociation = episodeAssociations[episode.Id];
+            if (shot.ShotManagerAssociationState == "associated"
+                && (!episodeAssociation.IsAssociated
+                    || !shot.ShotManagerReferenceProductionId.Equals(
+                        project.ShotManagerOutput.ProductionId,
+                        StringComparison.Ordinal)))
+            {
+                throw InvalidCurrentDatabase(
+                    $"Shot '{shot.Id}' has a Shot Manager association with invalid Episode or Project provenance.");
             }
             try
             {

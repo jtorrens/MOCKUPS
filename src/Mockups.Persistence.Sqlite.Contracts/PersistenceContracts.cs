@@ -26,7 +26,11 @@ internal sealed record ShotRecord(
     string? ThemeOverrideId,
     string CanvasJson,
     string ReferenceVideoJson,
-    string MetadataJson);
+    string MetadataJson,
+    string ShotManagerAssociationState,
+    string ShotManagerReferenceProductionId,
+    string ShotManagerShotId,
+    string ShotManagerCanonicalName);
 
 internal static class ShotRecordReferenceVideo
 {
@@ -180,9 +184,25 @@ internal interface IProjectEpisodeRepository
 
     void UpdateProjectField(string projectId, string fieldId, string value);
 
+    void ConnectShotManagerProduction(
+        string projectId,
+        ShotManagerReadonlyProduction production,
+        string workstreamName,
+        string folderName);
+
+    void SetShotManagerProductionEnabled(string projectId, bool enabled);
+
+    void RefreshShotManagerProduction(
+        string projectId,
+        ShotManagerReadonlyProduction production);
+
     EpisodeSettings GetEpisodeSettings(string episodeId);
 
     void UpdateEpisodeField(string episodeId, string fieldId, string value);
+
+    void AssociateShotManagerEpisode(
+        string episodeId,
+        ShotManagerReadonlyEpisode? episode);
 
     IReadOnlyList<ProjectRecord> QueryProjects(SqliteConnection connection);
 
@@ -245,6 +265,11 @@ internal interface IShotRepository
         string overridesJson);
 
     void UpdateField(SqliteConnection connection, string shotId, string fieldId, string value);
+
+    void AssociateShotManagerShot(
+        SqliteConnection connection,
+        string shotId,
+        ShotManagerReadonlyShot? shot);
 
     void UpdateDuration(
         SqliteConnection connection,

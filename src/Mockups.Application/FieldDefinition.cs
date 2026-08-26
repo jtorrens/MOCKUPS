@@ -12,6 +12,7 @@ public enum ValueKind
     HueDegrees,
     IntegerPair,
     DirectoryPath,
+    JsonFilePath,
     ImageFilePath,
     MediaFilePath,
     VideoFilePath,

@@ -60,16 +60,21 @@ internal sealed class RenderJobSnapshotFactory
 {
     private readonly IRenderSnapshotDataSource _database;
     private readonly ProductionOutputRootStore _roots;
+    private readonly ProductionOutputPlanResolver _outputPlans;
     private readonly DesignPreviewPayloadDataSource _payloadData;
     private readonly ProductionPreviewPayloadPreparer _productionPayloads;
 
     public RenderJobSnapshotFactory(
         IRenderSnapshotDataSource database,
         IProjectPathResolver projectPaths,
-        ProductionOutputRootStore? roots = null)
+        ProductionOutputRootStore? roots = null,
+        ShotManagerDocumentStore? shotManagerDocuments = null)
     {
         _database = database;
         _roots = roots ?? new ProductionOutputRootStore();
+        _outputPlans = new ProductionOutputPlanResolver(
+            _roots,
+            shotManagerDocuments ?? new ShotManagerDocumentStore());
         _payloadData = new DesignPreviewPayloadDataSource(
             database,
             database,
@@ -101,7 +106,9 @@ internal sealed class RenderJobSnapshotFactory
             throw new InvalidOperationException(
                 $"Actor '{actor.DisplayName}' must define a default Device and Theme before rendering.");
         }
-        var plan = _database.GetProductionOutputShotPlan(shot.Id);
+        var resolvedOutput = _outputPlans.Resolve(
+            _database.GetProductionOutputShotContext(shot.Id));
+        var plan = resolvedOutput.Plan;
         var screenNodes = shot.Children
             .Where((node) =>
                 node.Kind
@@ -134,9 +141,11 @@ internal sealed class RenderJobSnapshotFactory
             throw new InvalidOperationException(
                 $"Render preparation Shot '{shot.Id}' has no Screens.");
         }
-        var rootPath = _roots.Get(shotSettings.ProjectId) ?? "";
+        var rootPath = resolvedOutput.RootPath;
         var status = string.IsNullOrWhiteSpace(rootPath)
-            ? "Configure this Project's local Production Output root before rendering."
+            ? resolvedOutput.IsShotManaged
+                ? "Choose this workstation's Shot Manager production.json before rendering."
+                : "Configure this Project's local Production Output root before rendering."
             : "";
         return Task.FromResult(new RenderQueueShotDraft(
             shot,

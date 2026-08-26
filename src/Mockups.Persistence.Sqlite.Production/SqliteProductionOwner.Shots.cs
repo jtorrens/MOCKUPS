@@ -32,7 +32,14 @@ internal sealed partial class SqliteProductionOwner
             record.ThemeOverrideId,
             record.CanvasJson,
             record.ReferenceVideoJson,
-            record.MetadataJson);
+            record.MetadataJson,
+            ShotManagerReadonlyContract.RequireShotAssociation(
+                new ShotManagerShotAssociation(
+                    record.ShotManagerAssociationState == "associated",
+                    record.ShotManagerReferenceProductionId,
+                    record.ShotManagerShotId,
+                    record.ShotManagerCanonicalName),
+                $"Shot '{shotId}' Shot Manager association"));
     }
 
     public void UpdateShotDeviceOverrides(
@@ -49,12 +56,7 @@ internal sealed partial class SqliteProductionOwner
         }
     }
 
-    public string GetShotRenderName(string shotId)
-    {
-        return GetProductionOutputShotPlan(shotId).TechnicalName;
-    }
-
-    public ProductionOutputShotPlan GetProductionOutputShotPlan(
+    public ProductionOutputShotContext GetProductionOutputShotContext(
         string shotId)
     {
         using var connection = OpenConnection();
@@ -68,13 +70,24 @@ internal sealed partial class SqliteProductionOwner
             _projectEpisodeRepository.GetProjectSettings(
                 connection,
                 shot.ProjectId);
-        return ProductionOutputContract.Resolve(
+        var episodeSettings =
+            _projectEpisodeRepository.GetEpisodeSettings(episode.Id);
+        return new ProductionOutputShotContext(
             shot.ProjectId,
             shot.Id,
             shot.ShotNumber,
             episode.Slug,
             shot.Slug,
-            projectSettings.ProductionOutput);
+            projectSettings.ProductionOutput,
+            projectSettings.ShotManagerOutput,
+            episodeSettings.ShotManagerEpisode,
+            ShotManagerReadonlyContract.RequireShotAssociation(
+                new ShotManagerShotAssociation(
+                    shot.ShotManagerAssociationState == "associated",
+                    shot.ShotManagerReferenceProductionId,
+                    shot.ShotManagerShotId,
+                    shot.ShotManagerCanonicalName),
+                $"Shot '{shotId}' Shot Manager association"));
     }
 
     internal ShotRecord CreateShot(
@@ -185,4 +198,13 @@ internal sealed partial class SqliteProductionOwner
             value);
         return changesContext;
     }
+
+    internal void AssociateShotManagerShot(
+        SqliteConnection connection,
+        string shotId,
+        ShotManagerReadonlyShot? shot) =>
+        _shotRepository.AssociateShotManagerShot(
+            connection,
+            shotId,
+            shot);
 }

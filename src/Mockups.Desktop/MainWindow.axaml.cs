@@ -192,8 +192,10 @@ public partial class MainWindow : SukiWindow
             this,
             ProductionActionButton,
             data.RenderSnapshots,
+            data.ProductionRecordFields,
             data.ProjectPaths,
             application.ProductionOutputRoots,
+            application.ShotManagerDocuments,
             () => _themeController.IsDark,
             OpenSelectedProductionCard);
         _navigationRenderer = new EditorNavigationRenderer(

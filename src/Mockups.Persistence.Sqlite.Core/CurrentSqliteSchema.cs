@@ -24,6 +24,14 @@ internal static class CurrentSqliteSchema
           output_frame_padding INTEGER NOT NULL DEFAULT 8
             CHECK(output_frame_padding BETWEEN 1 AND 8),
           output_relative_directory_template TEXT NOT NULL,
+          production_output_mode TEXT NOT NULL DEFAULT 'manual'
+            CHECK(production_output_mode IN ('manual', 'shot_manager')),
+          shot_manager_production_id TEXT NOT NULL DEFAULT '',
+          shot_manager_production_slug TEXT NOT NULL DEFAULT '',
+          shot_manager_season_slug TEXT NOT NULL DEFAULT '',
+          shot_manager_workstream_name TEXT NOT NULL DEFAULT '',
+          shot_manager_folder_name TEXT NOT NULL DEFAULT '',
+          shot_manager_folder_suffix TEXT NOT NULL DEFAULT '',
           metadata_json TEXT NOT NULL DEFAULT '{}'
         );
 
@@ -34,6 +42,12 @@ internal static class CurrentSqliteSchema
           slug TEXT NOT NULL DEFAULT '',
           notes TEXT NOT NULL DEFAULT '',
           sort_order INTEGER NOT NULL DEFAULT 0,
+          shot_manager_association_state TEXT NOT NULL DEFAULT 'free'
+            CHECK(shot_manager_association_state IN ('associated', 'free')),
+          shot_manager_reference_production_id TEXT NOT NULL DEFAULT '',
+          shot_manager_episode_id TEXT NOT NULL DEFAULT '',
+          shot_manager_episode_order INTEGER,
+          shot_manager_episode_slug TEXT NOT NULL DEFAULT '',
           metadata_json TEXT NOT NULL DEFAULT '{}'
         );
 
@@ -61,6 +75,11 @@ internal static class CurrentSqliteSchema
           canvas_json TEXT NOT NULL DEFAULT '{}',
           metadata_json TEXT NOT NULL DEFAULT '{}',
           shot_number INTEGER NOT NULL DEFAULT 1 CHECK(shot_number > 0),
+          shot_manager_association_state TEXT NOT NULL DEFAULT 'free'
+            CHECK(shot_manager_association_state IN ('associated', 'free')),
+          shot_manager_reference_production_id TEXT NOT NULL DEFAULT '',
+          shot_manager_shot_id TEXT NOT NULL DEFAULT '',
+          shot_manager_canonical_name TEXT NOT NULL DEFAULT '',
           reference_video_json TEXT NOT NULL DEFAULT '{"sourcePath":"","inFrame":null,"markers":[]}'
         );
 
@@ -197,7 +216,7 @@ internal static class CurrentSqliteSchema
           layout_json TEXT NOT NULL
         );
 
-        PRAGMA user_version = 12;
+        PRAGMA user_version = 13;
         """;
 
 }

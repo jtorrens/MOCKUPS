@@ -1,4 +1,5 @@
 using Mockups.DesktopEditorShell.Common;
+using Mockups.DesktopEditorShell.Data;
 using Mockups.DesktopEditorShell.EditorShell;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
@@ -40,10 +41,83 @@ var tests = new (string Name, Action Run)[]
     ("Runtime scalar patterns validate defaults and authored values", RuntimeScalarPatternsValidateValues),
     ("Runtime contract transitions retain only current values and animation owners", RuntimeContractTransitionsRetainCurrentOwners),
     ("structured collection mutations update nested content and animation together", StructuredCollectionMutationsAreAtomicDocuments),
+    ("Shot Manager readonly documents expose only the strict stable projection", ShotManagerReadonlyDocumentsAreStrict),
     ("editor operations execute away from the caller thread", EditorOperationsRunOnWorker),
     ("editor operations preserve their submission order", EditorOperationsAreSerialized),
     ("disposing editor operations cancels queued work", DisposeCancelsQueuedEditorOperations),
 };
+
+static void ShotManagerReadonlyDocumentsAreStrict()
+{
+    const string productionId = "11111111-1111-4111-8111-111111111111";
+    const string episodeId = "22222222-2222-4222-8222-222222222222";
+    const string shotId = "33333333-3333-4333-8333-333333333333";
+    const string current = """
+        {
+          "schema": "ignored",
+          "schemaVersion": 200,
+          "productionId": "11111111-1111-4111-8111-111111111111",
+          "productionSlug": "FOQ2",
+          "seasonSlug": "",
+          "episodes": [
+            { "id": "22222222-2222-4222-8222-222222222222", "order": 1, "slug": "" }
+          ],
+          "workstreams": [
+            {
+              "name": "FUSION",
+              "folders": [
+                { "name": "renders", "suffix": "" }
+              ]
+            }
+          ],
+          "shots": [
+            {
+              "id": "33333333-3333-4333-8333-333333333333",
+              "episodeId": "22222222-2222-4222-8222-222222222222",
+              "canonicalName": "FOQ2_201_005_010"
+            }
+          ],
+          "additional": true
+        }
+        """;
+    var production = ShotManagerReadonlyContract.ParseRequired(
+        current,
+        "Shot Manager test");
+    Equal(productionId, production.ProductionId);
+    Equal("FOQ2", production.ProductionSlug);
+    Equal("", production.SeasonSlug);
+    Equal(1, production.Episodes.Count);
+    Equal(shotId, production.Shots.Single().Id);
+
+    Throws<InvalidOperationException>(() =>
+        ShotManagerReadonlyContract.ParseRequired(
+            current.Replace(
+                "\"seasonSlug\": \"\",",
+                "",
+                StringComparison.Ordinal),
+            "Missing season slug"));
+    Throws<InvalidOperationException>(() =>
+        ShotManagerReadonlyContract.ParseRequired(
+            current.Replace(
+                $"\"episodeId\": \"{episodeId}\"",
+                "\"episodeId\": \"44444444-4444-4444-8444-444444444444\"",
+                StringComparison.Ordinal),
+            "Missing Episode reference"));
+    Throws<InvalidOperationException>(() =>
+        ShotManagerReadonlyContract.ParseRequired(
+            current.Replace(
+                $"\"id\": \"{shotId}\"",
+                "\"id\": \"not-a-uuid\"",
+                StringComparison.Ordinal),
+            "Malformed Shot identity"));
+    Throws<InvalidOperationException>(() =>
+        ShotManagerReadonlyContract.ParseRequired(
+            current.Replace(
+                "\"name\": \"renders\"",
+                "\"name\": \"../renders\"",
+                StringComparison.Ordinal),
+            "Unsafe folder"));
+}
 
 static void StructuredCollectionMutationsAreAtomicDocuments()
 {

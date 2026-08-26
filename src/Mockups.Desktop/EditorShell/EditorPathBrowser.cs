@@ -50,6 +50,9 @@ internal sealed class EditorPathBrowser
                     _storageProvider,
                     _projectPaths,
                     currentPath),
+                ValueKind.JsonFilePath => BrowseJsonFile(
+                    _storageProvider,
+                    currentPath),
                 _ => BrowseDirectory(currentPath),
             });
         }
@@ -90,6 +93,39 @@ internal sealed class EditorPathBrowser
         }
 
         var files = await _storageProvider.OpenFilePickerAsync(options);
+        return files.Count > 0 ? files[0].Path.LocalPath : null;
+    }
+
+    private static async Task<string?> BrowseJsonFile(
+        IStorageProvider storageProvider,
+        string currentPath)
+    {
+        var options = new FilePickerOpenOptions
+        {
+            Title = "Select Shot Manager production.json",
+            AllowMultiple = false,
+            FileTypeFilter =
+            [
+                new FilePickerFileType("JSON")
+                {
+                    Patterns = ["*.json"],
+                    AppleUniformTypeIdentifiers = ["public.json"],
+                    MimeTypes = ["application/json"],
+                },
+            ],
+        };
+        if (!string.IsNullOrWhiteSpace(currentPath))
+        {
+            var parent = Path.GetDirectoryName(
+                Path.GetFullPath(currentPath));
+            if (!string.IsNullOrWhiteSpace(parent)
+                && Directory.Exists(parent))
+            {
+                options.SuggestedStartLocation =
+                    await storageProvider.TryGetFolderFromPathAsync(parent);
+            }
+        }
+        var files = await storageProvider.OpenFilePickerAsync(options);
         return files.Count > 0 ? files[0].Path.LocalPath : null;
     }
 

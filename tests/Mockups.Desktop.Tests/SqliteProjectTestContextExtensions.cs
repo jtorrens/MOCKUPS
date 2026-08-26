@@ -143,11 +143,6 @@ internal static class SqliteProjectTestContextExtensions
         string shotId) =>
         engine.Production.GetShotSettings(shotId);
 
-    internal static string GetShotRenderName(
-        this SqliteProjectTestContext engine,
-        string shotId) =>
-        engine.Production.GetShotRenderName(shotId);
-
     internal static ProjectSettings GetProjectSettings(
         this SqliteProjectTestContext engine,
         string projectId) =>
@@ -181,5 +176,11 @@ internal static class SqliteProjectTestContextExtensions
     internal static ProductionOutputShotPlan GetProductionOutputShotPlan(
         this SqliteProjectTestContext engine,
         string shotId) =>
-        engine.Production.GetProductionOutputShotPlan(shotId);
+        ProductionOutputContract.ResolveManual(
+            engine.Production.GetProductionOutputShotContext(shotId));
+
+    internal static ProductionOutputShotContext GetProductionOutputShotContext(
+        this SqliteProjectTestContext engine,
+        string shotId) =>
+        engine.Production.GetProductionOutputShotContext(shotId);
 }

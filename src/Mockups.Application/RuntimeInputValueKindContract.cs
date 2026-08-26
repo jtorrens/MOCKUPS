@@ -28,6 +28,7 @@ public static class RuntimeInputValueKindContract
         ValueKind.StringSingleLine
             or ValueKind.StringReadOnly
             or ValueKind.DirectoryPath
+            or ValueKind.JsonFilePath
             or ValueKind.ImageFilePath
             or ValueKind.ThemeTokenPair
             or ValueKind.TypographyStyle

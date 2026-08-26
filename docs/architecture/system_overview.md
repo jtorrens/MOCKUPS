@@ -21,8 +21,11 @@ creates one immutable child job per requested appearance. Output mode, route,
 name and version belong to that queued job; they are not authored Shot or
 Project records.
 
-MOCKUPS owns the Production hierarchy and derives technical Shot names and
-portable output routes from one Project-owned Production Output contract.
+MOCKUPS owns its Production hierarchy and derives technical Shot names and
+portable output routes from either its Project-owned manual contract or the
+portable values captured by exact associations to a workstation-local,
+read-only Shot Manager document. The document is required to create or refresh
+associations, not to resolve an already captured association offline.
 
 ## System map
 
@@ -37,11 +40,11 @@ SQLite current project data
         │       ├── structured collections
         │       └── owner-relative animation
         │
-        ├── Project-owned Production Output
-        │       ├── strict portable naming contract
-        │       ├── stable Episode and Shot codes
-        │       ├── workstation-local root
-        │       └── validated folder materialization
+        ├── Production Output resolution
+        │       ├── Project-owned manual naming contract
+        │       ├── portable Shot Manager associations
+        │       ├── workstation-local root and production.json location
+        │       └── safe additive route materialization
         │
         ├── Preview payload preparation
         │       ├── explicit context and forwarding
@@ -454,7 +457,7 @@ shell
 → SQLite context
 
 Production Output card
-→ Project-owned portable contract + workstation-local root
+→ manual contract + local root, or portable associations + local production.json
 → derived Shot plan
 → Render Queue folder materializer
 

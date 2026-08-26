@@ -533,9 +533,9 @@ internal sealed class SqliteRenderSnapshotPort(
     SqliteProductionOwner output)
     : IRenderSnapshotDataSource
 {
-    public ProductionOutputShotPlan GetProductionOutputShotPlan(
+    public ProductionOutputShotContext GetProductionOutputShotContext(
         string shotId) =>
-        output.GetProductionOutputShotPlan(shotId);
+        output.GetProductionOutputShotContext(shotId);
 
     public string GetModuleInstanceThemeTokensJson(
         string moduleInstanceId) =>

@@ -28,6 +28,8 @@ public enum FieldOptionSource
 {
     None,
     ModuleVariants,
+    ShotManagerWorkstreams,
+    ShotManagerFolders,
 }
 
 public static class RecordClassFieldCatalog
@@ -69,6 +71,30 @@ public static class RecordClassFieldCatalog
         ["project.defaultFps"] = new("project.defaultFps", "Default FPS", ValueKind.Integer),
         ["project.mediaRoot"] = new("project.mediaRoot", "Media Root", ValueKind.DirectoryPath),
         ["project.productionRoot"] = new("project.productionRoot", "Local Production Root", ValueKind.DirectoryPath),
+        ["project.shotManaged"] = new("project.shotManaged", "Shot Managed", ValueKind.Boolean),
+        ["project.shotManagerJsonPath"] = new(
+            "project.shotManagerJsonPath",
+            "Shot Manager production.json",
+            ValueKind.JsonFilePath),
+        ["project.shotManagerRoot"] = new(
+            "project.shotManagerRoot",
+            "Shot Manager Production Root",
+            ValueKind.DirectoryPath),
+        ["project.shotManagerWorkstream"] = new(
+            "project.shotManagerWorkstream",
+            "Workstream",
+            ValueKind.OptionToken,
+            OptionSource: FieldOptionSource.ShotManagerWorkstreams),
+        ["project.shotManagerFolder"] = new(
+            "project.shotManagerFolder",
+            "Output Folder",
+            ValueKind.OptionToken,
+            OptionSource: FieldOptionSource.ShotManagerFolders),
+        ["project.shotManagerFolderSuffix"] = new(
+            "project.shotManagerFolderSuffix",
+            "Folder Suffix",
+            ValueKind.StringReadOnly,
+            IsEditable: false),
         ["project.productionCode"] = new("project.productionCode", "Production Code", ValueKind.StringSingleLine),
         ["project.productionSeasonCode"] = new("project.productionSeasonCode", "Season Code", ValueKind.StringSingleLine),
         ["project.episodePrefix"] = new("project.episodePrefix", "Episode Prefix", ValueKind.StringSingleLine),
@@ -100,6 +126,13 @@ public static class RecordClassFieldCatalog
 
         ["episode.slug"] = new("episode.slug", "Episode Code", ValueKind.StringSingleLine),
         ["episode.sortOrder"] = new("episode.sortOrder", "Sort Order", ValueKind.Integer),
+        ["episode.shotManagerEpisodeId"] = new(
+            "episode.shotManagerEpisodeId",
+            "Shot Manager Episode",
+            ValueKind.RecordReference,
+            RecordReference: new RecordReferenceDefinition(
+                "shot_manager_episodes",
+                AllowEmpty: true)),
 
         ["shot.slug"] = new("shot.slug", "Shot Code", ValueKind.StringSingleLine),
         ["shot.version"] = new("shot.version", "Version", ValueKind.Integer),
@@ -149,6 +182,13 @@ public static class RecordClassFieldCatalog
             "Reference video",
             ValueKind.VideoFilePath),
         ["shot.renderName"] = new("shot.renderName", "Render Name", ValueKind.StringReadOnly, IsEditable: false),
+        ["shot.shotManagerShotId"] = new(
+            "shot.shotManagerShotId",
+            "Shot Manager Shot",
+            ValueKind.RecordReference,
+            RecordReference: new RecordReferenceDefinition(
+                "shot_manager_shots",
+                AllowEmpty: true)),
         ["shot.canvas"] = new("shot.canvas", "Canvas", ValueKind.StringMultiline),
         ["shot.metadata"] = new("shot.metadata", "Metadata", ValueKind.StringMultiline),
 

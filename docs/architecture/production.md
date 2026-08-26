@@ -80,11 +80,11 @@ the same Episode and creates a new stable id.
 
 ## Production Output ownership
 
-MOCKUPS is the sole owner of Projects, Episodes and Shots. A Project stores one
-portable Production Output contract: Production and Season codes, optional
-Episode and Shot prefixes, number/version/frame padding and one relative route
-template containing exactly `SEASON_CODE`, `EPISODE_CODE` and
-`SHOT_NAME`.
+MOCKUPS is the sole owner of its Projects, Episodes and Shots. A Project chooses
+one explicit output mode. Manual mode uses the portable Production Output
+contract: Production and Season codes, optional Episode and Shot prefixes,
+number/version/frame padding and one relative route template containing exactly
+`SEASON_CODE`, `EPISODE_CODE` and `SHOT_NAME`.
 
 Episode codes are explicit current authored values; the optional Episode Prefix
 only supplies their default at creation. Shot creation asks for one positive
@@ -108,15 +108,63 @@ and stored outside SQLite. It must already exist. The portable database never
 stores an absolute workstation path. Deleting a Shot removes authored content
 but never deletes an existing Production Output folder.
 
+Shot Managed mode associates the Project with one stable external
+`productionId`, plus one portable workstream and one folder chosen from that
+workstream. The workstation-local, read-only `production.json` is required to
+create or refresh associations. Unknown properties and schema-version changes
+are tolerated, while the fields consumed by MOCKUPS remain strict. Its local
+path and Production root remain workstation state. The selected production
+and destination values—including production/season slugs and the folder's
+optional suffix—are captured portably; the suffix participates in the
+technical render name.
+
+Each MOCKUPS Episode is `associated` or `free`. Its retained reference captures
+the external Production id, Episode id, order and optional slug. The captured
+order, formatted to three digits, supplies the relative Episode directory;
+the Episode slug is not used for automatic naming. Each Shot is likewise
+`associated` or `free`, and its retained reference captures the Production id,
+Shot id and canonical name. Associated output resolves as:
+
+```text
+canonicalName + optional folder suffix
+→ NNN/workstream/folder
+```
+
+The external canonical Shot name is deliberately authoritative so a later
+change to Production, Season or Episode slugs cannot silently rename automatic
+output. MOCKUPS may use any subset of the external Episodes or Shots. An
+free Shot uses the complete manual Production Output contract. Changing an
+Episode association makes its child Shots free while retaining their external
+references; explicitly clearing a selector removes that reference. Duplicating
+an Episode or Shot starts free without an external reference.
+
+An associated Production resolves from captured values when `production.json`
+is offline. No new association or refresh is possible until it reconnects.
+Reconnecting the same `productionId` refreshes Project, Episode and Shot values
+atomically. Missing referenced items become free but retain their references;
+the same identities automatically recover if they return on a later refresh.
+Selecting a different Production is explicit and makes all descendants free.
+Relocating the local Production root does not change portable associations.
+Already queued snapshots and existing renders are immutable and are never
+moved or reconstructed after an association or external document changes.
+
 ## Render Queue
 
 The Render action is a persistent icon on every Shot row. It always opens an
 add modal with that exact Shot selected. Actor, Device, Theme and local Shot
 details load independently of routing. The modal derives the route and
-technical name from the exact Project contract, Episode code and stable Shot
-number. If the local root is unavailable, the modal keeps the details visible,
-explains the prerequisite and disables enqueue. Output never falls back to a
-free folder picker.
+technical name from the exact manual contract or exact Shot Manager
+associations. An associated Shot needs only its existing local root to resolve
+offline; `production.json` is not a render-time dependency. If the applicable
+root is unavailable, the modal keeps the details visible, explains the
+prerequisite and disables enqueue. Output never falls back to a free folder
+picker.
+
+The Production root must already exist and resolve to a real directory. At job
+start MOCKUPS may safely create missing Episode/workstream/folder
+subdirectories inside that root. Existing symbolic links, files in the route,
+or paths that escape the root are rejected. Materialization is additive and
+never recreates a missing root or moves an earlier render.
 
 The add modal exposes:
 
@@ -124,7 +172,7 @@ The add modal exposes:
 - Device and Theme initialized from the Shot's effective resources, with
   additional same-Project job-only overrides;
 - Light, Dark or Both;
-- the Project-owned Production Output route;
+- the resolved Production Output route;
 - a job-owned output mode;
 - an editable safe base name.
 

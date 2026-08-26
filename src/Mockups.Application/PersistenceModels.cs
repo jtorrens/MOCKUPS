@@ -7,11 +7,13 @@ public sealed record ProjectSettings(
     string Slug,
     int DefaultFps,
     string MediaRoot,
-    ProductionOutputSettings ProductionOutput);
+    ProductionOutputSettings ProductionOutput,
+    ShotManagerOutputSettings ShotManagerOutput);
 
 public sealed record EpisodeSettings(
     string Slug,
-    int SortOrder);
+    int SortOrder,
+    ShotManagerEpisodeAssociation ShotManagerEpisode);
 
 public sealed record EpisodeRecord(
     string Id,
@@ -40,7 +42,8 @@ public sealed record ShotSettings(
     string? ThemeOverrideId,
     string CanvasJson,
     string ReferenceVideoJson,
-    string MetadataJson)
+    string MetadataJson,
+    ShotManagerShotAssociation ShotManagerShot)
 {
     public ShotReferenceVideoDocument ReferenceVideo =>
         ShotReferenceVideoDocument.ParseRequired(
@@ -60,6 +63,17 @@ public sealed record ShotSettings(
     public string EffectiveThemeId(string actorDefaultThemeId) =>
         ThemeOverrideId ?? actorDefaultThemeId;
 }
+
+public sealed record ProductionOutputShotContext(
+    string ProjectId,
+    string ShotId,
+    int ShotNumber,
+    string EpisodeCode,
+    string ShotCode,
+    ProductionOutputSettings ManualOutput,
+    ShotManagerOutputSettings ShotManagerOutput,
+    ShotManagerEpisodeAssociation ShotManagerEpisode,
+    ShotManagerShotAssociation ShotManagerShot);
 
 public sealed record AppSettings(
     string ProjectId,

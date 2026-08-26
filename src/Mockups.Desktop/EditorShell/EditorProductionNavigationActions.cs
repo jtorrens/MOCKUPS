@@ -18,14 +18,18 @@ internal sealed class EditorProductionNavigationActions : IDisposable
         Window owner,
         Button actionButton,
         IRenderSnapshotDataSource database,
+        IProductionRecordFieldStore production,
         IProjectPathResolver projectPaths,
         ProductionOutputRootStore productionOutputRoots,
+        ShotManagerDocumentStore shotManagerDocuments,
         Func<bool> isDark,
         Action<string> openProductionCard)
     {
         _productionOutput = new ProductionOutputNavigationAction(
             actionButton,
             productionOutputRoots,
+            shotManagerDocuments,
+            production,
             isDark,
             () => openProductionCard(
                 ProductionOutputNavigationAction.CardSessionStateId));
@@ -33,7 +37,8 @@ internal sealed class EditorProductionNavigationActions : IDisposable
         var snapshots = new RenderJobSnapshotFactory(
             database,
             projectPaths,
-            productionOutputRoots);
+            productionOutputRoots,
+            shotManagerDocuments);
         _renderQueue = new RenderQueueController(
             owner,
             database,

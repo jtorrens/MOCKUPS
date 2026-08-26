@@ -5,7 +5,7 @@ Status: normative.
 ## Database scope
 
 The desktop application persists one complete Project workspace in SQLite.
-Schema version `12` is the only current schema. Every row belongs directly or
+Schema version `13` is the only current schema. Every row belongs directly or
 indirectly to a Project and cross-Project lookup is invalid.
 
 The current tables are:
@@ -34,9 +34,18 @@ applied by the shared Device field contract.
 inside its Episode. `shots.slug` stores the explicit Shot Code, which is unique
 inside its Episode and accepts letters, numbers, hyphen and underscore. It is
 not an identifier and is never regenerated after creation. The Project stores
-the portable Production Output naming and route contract. Its naming segments
-are concatenated literally; optional Episode and Shot prefixes generate initial
-codes only and may contain letters, numbers, hyphen and underscore.
+the manual portable Production Output naming and route contract plus its
+explicit output mode. In Shot Managed mode the portable row stores the selected
+external Production id/slugs and workstream/folder name/suffix; it never stores
+the workstation's absolute `production.json` path or root. Episodes store an
+`associated|free` state plus retained Production id, Episode id, order and
+slug. Shots store the same state plus retained Production id, Shot id and
+canonical name. An associated Shot requires an associated owning Episode with
+matching provenance. Changing the Episode association makes every child Shot
+free while retaining its reference.
+Manual naming segments are concatenated literally; optional Episode and Shot
+prefixes generate initial codes only and may contain letters, numbers, hyphen
+and underscore.
 `shots.reference_video_json` is one required current Shot-owned object. It
 stores a Project-relative or absolute video path, a nullable non-negative
 Project-FPS In frame and stable video-relative markers with non-negative frames
@@ -104,10 +113,12 @@ including local inheritance removal and nested slot traversal, also executes
 inside Design. Composition routes the authored owner and supplies resolved
 option data only.
 `Mockups.Persistence.Sqlite.Production` owns Project/Episode, Shot and Screen
-persistence. `SqliteProductionOwner` also owns the derived Production Output
-operations; the aggregate delegates those operations and no
-longer constructs Production repositories itself. Shot settings and portable
-render-name resolution and Shot field writes execute in Production as well.
+persistence. `SqliteProductionOwner` also owns the authored Production Output
+context; the aggregate delegates those operations and no longer constructs
+Production repositories itself. Shot settings, portable manual render-name
+resolution, external association fields and Shot field writes execute in
+Production as well. Desktop composition resolves that context against either
+the manual contract or its workstation-local, read-only Shot Manager document.
 Screen reads, identity, transition projection, ordering, renaming and effective
 Module Variant resolution execute there through `IModuleVariantCatalog`, a
 read-only contract implemented by Design and declared in Contracts. Batch
@@ -403,9 +414,14 @@ array
   production_fonts.files_json
 ```
 
-The `projects` row stores the portable Production Output contract. Validation
-requires one exact naming grammar and one portable relative route template.
-The resolved Shot plan is derived data and is never cached in a second table.
+The `projects` row stores the portable manual Production Output contract, its
+explicit `manual` or `shot_manager` mode, and the captured Shot Manager
+Production/destination values. Episode and Shot rows store their explicit
+association state and retained reference values. Validation requires one exact
+manual naming grammar and portable route template, a complete captured
+Production/destination in Shot Managed mode, matching Production provenance,
+and no associated Shot without its exact associated Episode. The resolved Shot
+plan is derived data and is never cached in a second table.
 
 ## Local render state
 
@@ -418,7 +434,17 @@ each workstation contains:
   documents and assets plus one ordered manifest per Light/Dark child;
 - terminal history, compacted after completion;
 - the last selected output route per Project;
-- the absolute Production Output root per stable Project id.
+- the absolute Production Output root per stable Project id;
+- the absolute Shot Manager `production.json` path and relocatable Production
+  root per stable Project id;
+- the workstation's pending enable/workstream setup state.
+
+The local Shot Manager document store accepts only an existing regular file
+named exactly `production.json`. It is parsed strictly when connecting or
+refreshing. Its containing directory initially supplies the absolute
+Production root, which may later be relocated locally. Render resolution uses
+the portable captured association values and therefore remains available when
+the JSON is disconnected; offline state cannot create or refresh associations.
 
 Snapshot preparation writes one resolved frame document at a time and never
 retains the complete Shot frame set in memory. Fonts, media and repeated frame

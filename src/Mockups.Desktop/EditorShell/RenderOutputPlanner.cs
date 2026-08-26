@@ -187,7 +187,6 @@ internal static class RenderOutputPathSecurity
     public static void EnsureOutputDirectory(
         RenderOutputTarget output)
     {
-        RequireOutputTarget(output);
         _ = ResolveDirectory(
             output.RootPath,
             output.RelativeDirectory,

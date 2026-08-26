@@ -15,6 +15,31 @@ internal sealed partial class SqliteProductionOwner
         _projectEpisodeRepository.UpdateProjectField(projectId, fieldId, value);
     }
 
+    public void ConnectShotManagerProduction(
+        string projectId,
+        ShotManagerReadonlyProduction production,
+        string workstreamName,
+        string folderName) =>
+        _projectEpisodeRepository.ConnectShotManagerProduction(
+            projectId,
+            production,
+            workstreamName,
+            folderName);
+
+    public void SetShotManagerProductionEnabled(
+        string projectId,
+        bool enabled) =>
+        _projectEpisodeRepository.SetShotManagerProductionEnabled(
+            projectId,
+            enabled);
+
+    public void RefreshShotManagerProduction(
+        string projectId,
+        ShotManagerReadonlyProduction production) =>
+        _projectEpisodeRepository.RefreshShotManagerProduction(
+            projectId,
+            production);
+
     public EpisodeSettings GetEpisodeSettings(string episodeId)
     {
         return _projectEpisodeRepository.GetEpisodeSettings(episodeId);
@@ -24,6 +49,13 @@ internal sealed partial class SqliteProductionOwner
     {
         _projectEpisodeRepository.UpdateEpisodeField(episodeId, fieldId, value);
     }
+
+    public void AssociateShotManagerEpisode(
+        string episodeId,
+        ShotManagerReadonlyEpisode? episode) =>
+        _projectEpisodeRepository.AssociateShotManagerEpisode(
+            episodeId,
+            episode);
 
     internal IReadOnlyList<ProjectRecord> QueryProjectRows(SqliteConnection connection)
     {

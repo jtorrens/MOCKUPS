@@ -107,7 +107,11 @@ internal sealed class ShotRepository : IShotRepository
             null,
             "{}",
             ShotReferenceVideoDocument.Empty.ToJson(),
-            "{}");
+            "{}",
+            "free",
+            "",
+            "",
+            "");
         Insert(connection, record);
         return Get(connection, record.Id);
     }
@@ -145,6 +149,10 @@ internal sealed class ShotRepository : IShotRepository
                 "episode_id",
                 source.EpisodeId),
             OwnerActorId = actorId,
+            ShotManagerAssociationState = "free",
+            ShotManagerReferenceProductionId = "",
+            ShotManagerShotId = "",
+            ShotManagerCanonicalName = "",
         };
         Insert(connection, duplicate);
         return Get(connection, id);
@@ -167,6 +175,10 @@ internal sealed class ShotRepository : IShotRepository
                     EpisodeId = targetEpisodeId,
                     ProjectId = targetProjectId,
                     SortOrder = index,
+                    ShotManagerAssociationState = "free",
+                    ShotManagerReferenceProductionId = "",
+                    ShotManagerShotId = "",
+                    ShotManagerCanonicalName = "",
                 });
         }
     }
@@ -298,6 +310,44 @@ internal sealed class ShotRepository : IShotRepository
             $"UPDATE shots SET {column} = $value WHERE id = $id",
             ("$id", shotId),
             ("$value", nextValue));
+    }
+
+    public void AssociateShotManagerShot(
+        SqliteConnection connection,
+        string shotId,
+        ShotManagerReadonlyShot? shot)
+    {
+        var current = Get(connection, shotId);
+        if (shot is null)
+        {
+            _context.Execute(
+                connection,
+                "UPDATE shots SET shot_manager_association_state = 'free', shot_manager_reference_production_id = '', shot_manager_shot_id = '', shot_manager_canonical_name = '' WHERE id = $id",
+                ("$id", shotId));
+            return;
+        }
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT p.production_output_mode, p.shot_manager_production_id, e.shot_manager_association_state, e.shot_manager_episode_id FROM episodes e JOIN projects p ON p.id = e.project_id WHERE e.id = $episodeId";
+        command.Parameters.AddWithValue("$episodeId", current.EpisodeId);
+        using var reader = command.ExecuteReader();
+        if (!reader.Read())
+            throw new InvalidOperationException(
+                $"Missing Episode '{current.EpisodeId}'.");
+        var productionId = reader.GetString(1);
+        var episodeId = reader.GetString(3);
+        if (reader.GetString(0) != "shot_manager"
+            || reader.GetString(2) != "associated"
+            || !shot.EpisodeId.Equals(episodeId, StringComparison.Ordinal))
+            throw new InvalidOperationException(
+                "A Shot Manager Shot requires its exact associated Episode.");
+        reader.Close();
+        _context.Execute(
+            connection,
+            "UPDATE shots SET shot_manager_association_state = 'associated', shot_manager_reference_production_id = $productionId, shot_manager_shot_id = $shotId, shot_manager_canonical_name = $canonicalName WHERE id = $id",
+            ("$id", shotId),
+            ("$productionId", productionId),
+            ("$shotId", shot.Id),
+            ("$canonicalName", shot.CanonicalName));
     }
 
     public void ClearResourceOverride(
@@ -437,13 +487,21 @@ internal sealed class ShotRepository : IShotRepository
               duration_frames, duration_policy, explicit_duration_frames,
               owner_actor_id, device_override_id, device_overrides_json,
               theme_override_id,
-              canvas_json, reference_video_json, metadata_json, shot_number)
+              canvas_json, reference_video_json, metadata_json, shot_number,
+              shot_manager_association_state,
+              shot_manager_reference_production_id,
+              shot_manager_shot_id,
+              shot_manager_canonical_name)
             VALUES (
               $id, $episodeId, $name, $slug, $version, $notes, $sortOrder, $fpsOverride,
               $durationFrames, $durationPolicy, $explicitDurationFrames,
               $ownerActorId, $deviceOverrideId, $deviceOverridesJson,
               $themeOverrideId,
-              $canvasJson, $referenceVideoJson, $metadataJson, $shotNumber)
+              $canvasJson, $referenceVideoJson, $metadataJson, $shotNumber,
+              $shotManagerAssociationState,
+              $shotManagerReferenceProductionId,
+              $shotManagerShotId,
+              $shotManagerCanonicalName)
             """,
             ("$id", record.Id),
             ("$episodeId", record.EpisodeId),
@@ -463,7 +521,11 @@ internal sealed class ShotRepository : IShotRepository
             ("$canvasJson", record.CanvasJson),
             ("$referenceVideoJson", record.ReferenceVideoJson),
             ("$metadataJson", record.MetadataJson),
-            ("$shotNumber", record.ShotNumber));
+            ("$shotNumber", record.ShotNumber),
+            ("$shotManagerAssociationState", record.ShotManagerAssociationState),
+            ("$shotManagerReferenceProductionId", record.ShotManagerReferenceProductionId),
+            ("$shotManagerShotId", record.ShotManagerShotId),
+            ("$shotManagerCanonicalName", record.ShotManagerCanonicalName));
     }
 
     private static IReadOnlyList<ShotRecord> ReadAll(SqliteCommand command)
@@ -496,7 +558,11 @@ internal sealed class ShotRepository : IShotRepository
             reader.IsDBNull(16) ? null : reader.GetString(16),
             SqliteCommandExecutor.ReadString(reader, 17),
             SqliteCommandExecutor.ReadString(reader, 18),
-            SqliteCommandExecutor.ReadString(reader, 19));
+            SqliteCommandExecutor.ReadString(reader, 19),
+            SqliteCommandExecutor.ReadString(reader, 20),
+            SqliteCommandExecutor.ReadString(reader, 21),
+            SqliteCommandExecutor.ReadString(reader, 22),
+            SqliteCommandExecutor.ReadString(reader, 23));
         Validate(record);
         return record;
     }
@@ -548,6 +614,16 @@ internal sealed class ShotRepository : IShotRepository
         _ = ShotReferenceVideoDocument.ParseRequired(
             record.ReferenceVideoJson,
             $"Shot '{record.Id}' reference_video_json");
+        if (record.ShotManagerAssociationState is not ("associated" or "free"))
+            throw new InvalidOperationException(
+                $"Shot '{record.Id}' has an invalid Shot Manager state.");
+        _ = ShotManagerReadonlyContract.RequireShotAssociation(
+            new ShotManagerShotAssociation(
+                record.ShotManagerAssociationState == "associated",
+                record.ShotManagerReferenceProductionId,
+                record.ShotManagerShotId,
+                record.ShotManagerCanonicalName),
+            $"Shot '{record.Id}' Shot Manager association");
     }
 
     private static string RequiredProjectId(SqliteConnection connection, string episodeId)
@@ -616,7 +692,11 @@ internal sealed class ShotRepository : IShotRepository
                s.explicit_duration_frames, s.owner_actor_id,
                s.device_override_id, s.device_overrides_json,
                s.theme_override_id, s.canvas_json,
-               s.reference_video_json, s.metadata_json
+               s.reference_video_json, s.metadata_json,
+               s.shot_manager_association_state,
+               s.shot_manager_reference_production_id,
+               s.shot_manager_shot_id,
+               s.shot_manager_canonical_name
         FROM shots s
         JOIN episodes e ON e.id = s.episode_id
         """;

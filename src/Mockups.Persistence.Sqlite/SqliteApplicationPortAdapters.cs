@@ -39,6 +39,27 @@ internal sealed class SqliteProductionRecordFieldPort(
         string value) =>
         target.UpdateProjectField(projectId, fieldId, value);
 
+    public void ConnectShotManagerProduction(
+        string projectId,
+        ShotManagerReadonlyProduction production,
+        string workstreamName,
+        string folderName) =>
+        target.ConnectShotManagerProduction(
+            projectId,
+            production,
+            workstreamName,
+            folderName);
+
+    public void SetShotManagerProductionEnabled(
+        string projectId,
+        bool enabled) =>
+        target.SetShotManagerProductionEnabled(projectId, enabled);
+
+    public void RefreshShotManagerProduction(
+        string projectId,
+        ShotManagerReadonlyProduction production) =>
+        target.RefreshShotManagerProduction(projectId, production);
+
     public EpisodeSettings GetEpisodeSettings(string episodeId) =>
         target.GetEpisodeSettings(episodeId);
 
@@ -47,6 +68,11 @@ internal sealed class SqliteProductionRecordFieldPort(
         string fieldId,
         string value) =>
         target.UpdateEpisodeField(episodeId, fieldId, value);
+
+    public void AssociateShotManagerEpisode(
+        string episodeId,
+        ShotManagerReadonlyEpisode? episode) =>
+        target.AssociateShotManagerEpisode(episodeId, episode);
 
     public ShotSettings GetShotSettings(string shotId) =>
         target.GetShotSettings(shotId);
@@ -57,8 +83,14 @@ internal sealed class SqliteProductionRecordFieldPort(
         string value) =>
         target.UpdateShotField(shotId, fieldId, value);
 
-    public string GetShotRenderName(string shotId) =>
-        target.GetShotRenderName(shotId);
+    public void AssociateShotManagerShot(
+        string shotId,
+        ShotManagerReadonlyShot? shot) =>
+        target.AssociateShotManagerShot(shotId, shot);
+
+    public ProductionOutputShotContext GetProductionOutputShotContext(
+        string shotId) =>
+        target.GetProductionOutputShotContext(shotId);
 
     public string GetModuleInstanceVariantReference(
         string moduleInstanceId) =>

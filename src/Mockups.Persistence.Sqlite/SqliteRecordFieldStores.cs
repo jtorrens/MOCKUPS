@@ -32,6 +32,27 @@ internal sealed partial class SqliteProductionRecordFieldStore :
         string value) =>
         _production.UpdateProjectField(projectId, fieldId, value);
 
+    public void ConnectShotManagerProduction(
+        string projectId,
+        ShotManagerReadonlyProduction production,
+        string workstreamName,
+        string folderName) =>
+        _production.ConnectShotManagerProduction(
+            projectId,
+            production,
+            workstreamName,
+            folderName);
+
+    public void SetShotManagerProductionEnabled(
+        string projectId,
+        bool enabled) =>
+        _production.SetShotManagerProductionEnabled(projectId, enabled);
+
+    public void RefreshShotManagerProduction(
+        string projectId,
+        ShotManagerReadonlyProduction production) =>
+        _production.RefreshShotManagerProduction(projectId, production);
+
     public EpisodeSettings GetEpisodeSettings(string episodeId) =>
         _production.GetEpisodeSettings(episodeId);
 
@@ -40,6 +61,11 @@ internal sealed partial class SqliteProductionRecordFieldStore :
         string fieldId,
         string value) =>
         _production.UpdateEpisodeField(episodeId, fieldId, value);
+
+    public void AssociateShotManagerEpisode(
+        string episodeId,
+        ShotManagerReadonlyEpisode? episode) =>
+        _production.AssociateShotManagerEpisode(episodeId, episode);
 
     public ShotSettings GetShotSettings(string shotId) =>
         _production.GetShotSettings(shotId);
@@ -62,8 +88,23 @@ internal sealed partial class SqliteProductionRecordFieldStore :
         }
     }
 
-    public string GetShotRenderName(string shotId) =>
-        _production.GetShotRenderName(shotId);
+    public void AssociateShotManagerShot(
+        string shotId,
+        ShotManagerReadonlyShot? shot)
+    {
+        lock (_context.WriteGate)
+        {
+            using var connection = _context.OpenConnection();
+            _production.AssociateShotManagerShot(
+                connection,
+                shotId,
+                shot);
+        }
+    }
+
+    public ProductionOutputShotContext GetProductionOutputShotContext(
+        string shotId) =>
+        _production.GetProductionOutputShotContext(shotId);
 
     public string GetModuleInstanceVariantReference(
         string moduleInstanceId) =>

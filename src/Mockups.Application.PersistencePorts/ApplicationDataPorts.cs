@@ -34,11 +34,26 @@ public interface IProductionRecordFieldStore
 {
     ProjectSettings GetProjectSettings(string projectId);
     void UpdateProjectField(string projectId, string fieldId, string value);
+    void ConnectShotManagerProduction(
+        string projectId,
+        ShotManagerReadonlyProduction production,
+        string workstreamName,
+        string folderName);
+    void SetShotManagerProductionEnabled(string projectId, bool enabled);
+    void RefreshShotManagerProduction(
+        string projectId,
+        ShotManagerReadonlyProduction production);
     EpisodeSettings GetEpisodeSettings(string episodeId);
     void UpdateEpisodeField(string episodeId, string fieldId, string value);
+    void AssociateShotManagerEpisode(
+        string episodeId,
+        ShotManagerReadonlyEpisode? episode);
     ShotSettings GetShotSettings(string shotId);
     void UpdateShotField(string shotId, string fieldId, string value);
-    string GetShotRenderName(string shotId);
+    void AssociateShotManagerShot(
+        string shotId,
+        ShotManagerReadonlyShot? shot);
+    ProductionOutputShotContext GetProductionOutputShotContext(string shotId);
     string GetModuleInstanceVariantReference(string moduleInstanceId);
     void UpdateModuleInstanceField(
         string moduleInstanceId,
@@ -465,5 +480,5 @@ public interface IRenderSnapshotDataSource :
     IModuleInstanceTimelineStore,
     IModuleInstanceThemeTokenQuery
 {
-    ProductionOutputShotPlan GetProductionOutputShotPlan(string shotId);
+    ProductionOutputShotContext GetProductionOutputShotContext(string shotId);
 }

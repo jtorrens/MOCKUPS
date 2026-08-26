@@ -148,9 +148,13 @@ proving simultaneous outgoing and incoming Motion, stable owner-local frames
   while preserving matching stable-id values;
 - generic Runtime action completion, visual-tree reattachment, repeat from the
   captured origin, Restore and exact prepared-frame reuse;
-- Project-owned Production Output naming, stable Episode/Shot codes,
-  portable route derivation, unsafe-path rejection and retained output folders
-  on Shot deletion;
+- manual Production Output naming, stable Episode/Shot codes, portable route
+  derivation, strict read-only Shot Manager projection, exact Episode/Shot
+  association states and retained provenance, canonical naming plus folder
+  suffix, external Episode-order routing, atomic same-Production refresh,
+  offline resolution, missing-item free/recovery behavior, explicit manual
+  behavior for free Shots, unsafe-path rejection, safe additive subdirectory
+  creation and retained output folders on Shot deletion;
 - Render Queue naming and shared Light/Dark version resolution, incremental
   content-addressed frame snapshots, bounded one-frame consumption, local
   recovery, strict stored-route containment,
@@ -465,11 +469,15 @@ For any editor or Preview change, exercise at least:
 10. Usage navigation across Design and Production;
 11. tree/editor Rename consistency and destructive confirmation links;
 12. resizable panels, compact layout and scroll restoration.
-13. Production Output card, generated Shot nomenclature, workstation-local
-    root and retained output folders on Shot deletion.
+13. Production Output mode switch, manual nomenclature and root, local Shot
+    Manager `production.json`, workstream/folder selectors, Episode-filtered
+    Shot association, canonical generated nomenclature, explicit unassociated
+    manual behavior, broken-association errors and retained output folders on
+    Shot deletion.
 14. Shot Render action on a pre-association Shot, Actor loaded before routing,
     automatic route proposal, Device/Theme overrides, Light/Dark/Both naming,
-    job-start folder creation, queue progress, cancel/retry/pause and output
+    manual job-start folder creation, managed missing-folder rejection, queue
+    progress, cancel/retry/pause and output
     reveal.
 15. Shot reference Browse, missing/out-of-range `Sin media`, Set In, muted and
     audible playback, shared Shot/Screen scrubbing, marker add/drag/text/delete

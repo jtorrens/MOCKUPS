@@ -116,6 +116,7 @@ var tests = new (string Name, Action Run)[]
     ("Shot repository preserves its focused Production contract", ShotRepositoryPreservesFocusedContract),
     ("Shot reference video documents preserve In and stable video markers", ShotReferenceVideoDocumentsAreStrict),
     ("Production Output generates exact Shot names and portable render routes", ProductionOutputGeneratesExactShotPlans),
+    ("Shot Manager output captures exact associations and resolves offline", ShotManagerOutputResolvesExactAssociations),
     ("Render output naming reserves one version for Light and Dark", RenderOutputNamingReservesOneBatchVersion),
     ("MOV H.264 modes match the Créditos encoding profiles", MovH264ModesMatchCreditosProfiles),
     ("Production render overrides Device and Theme while respecting forced Screen appearance", ProductionRenderOverridesRespectScreenAppearance),
@@ -14120,6 +14121,310 @@ static void ProductionOutputGeneratesExactShotPlans()
     }
 }
 
+static void ShotManagerOutputResolvesExactAssociations()
+{
+    const string productionId = "11111111-1111-4111-8111-111111111111";
+    const string otherProductionId = "99999999-9999-4999-8999-999999999999";
+    const string episodeOneId = "22222222-2222-4222-8222-222222222222";
+    const string episodeTwoId = "33333333-3333-4333-8333-333333333333";
+    const string shotId = "44444444-4444-4444-8444-444444444444";
+    const string unusedShotId = "55555555-5555-4555-8555-555555555555";
+    var temporary = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-shot-manager-{Guid.NewGuid():N}.sqlite");
+    var manualRoot = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-shot-manager-manual-{Guid.NewGuid():N}");
+    var productionRoot = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-shot-manager-production-{Guid.NewGuid():N}");
+    var rootsPath = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-shot-manager-roots-{Guid.NewGuid():N}.json");
+    var documentsPath = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-shot-manager-documents-{Guid.NewGuid():N}.json");
+    var otherProductionRoot = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-shot-manager-other-{Guid.NewGuid():N}");
+    var productionJson = Path.Combine(productionRoot, "production.json");
+    var otherProductionJson = Path.Combine(otherProductionRoot, "production.json");
+    File.Copy(ParityDatabasePath(), temporary, overwrite: true);
+    Directory.CreateDirectory(manualRoot);
+    Directory.CreateDirectory(productionRoot);
+    Directory.CreateDirectory(otherProductionRoot);
+    try
+    {
+        static string Document(
+            string suffix,
+            string canonicalName = "FOQ2_201_005_010",
+            bool includeShot = true,
+            string exactProductionId = productionId) => $$"""
+            {
+              "schemaVersion": 999,
+              "productionId": "{{exactProductionId}}",
+              "productionSlug": "FOQ2",
+              "seasonSlug": "_S02_",
+              "episodes": [
+                { "id": "{{episodeOneId}}", "order": 1, "slug": "01" },
+                { "id": "{{episodeTwoId}}", "order": 2, "slug": "" }
+              ],
+              "workstreams": [
+                {
+                  "name": "FUSION",
+                  "folders": [
+                    { "name": "renders-final", "suffix": "{{suffix}}" },
+                    { "name": "comps", "suffix": "_comp" }
+                  ]
+                }
+              ],
+              "shots": [
+                {{(includeShot ? $$"""
+                {
+                  "id": "{{shotId}}",
+                  "episodeId": "{{episodeOneId}}",
+                  "canonicalName": "{{canonicalName}}"
+                },
+                """ : "")}}
+                {
+                  "id": "{{unusedShotId}}",
+                  "episodeId": "{{episodeOneId}}",
+                  "canonicalName": "FOQ2_201_005_020"
+                }
+              ],
+              "ignored": { "owner": "Shot Manager" }
+            }
+            """;
+
+        File.WriteAllText(productionJson, Document("_render"));
+        var database = new SqliteProjectTestContext(temporary);
+        var roots = new ProductionOutputRootStore(rootsPath);
+        roots.Set("project_foqn_s2", manualRoot);
+        var documents = new ShotManagerDocumentStore(documentsPath);
+        var fields = new RecordClassFieldValueService(
+            ProductionRecordFields(database),
+            RecordReferenceOverrides(database),
+            DesignRecordFields(database),
+            ResourceRecordFields(database),
+            database.Production,
+            database.Resources,
+            roots,
+            documents);
+        var tree = database.LoadProjectTree();
+        var projectNode = tree.Single((node) =>
+            node.Id == "project_foqn_s2");
+        var episodeNode = DescendantsAndSelf(projectNode).Single((node) =>
+            node.Id == "episode_001");
+        var shotNode = DescendantsAndSelf(projectNode).Single((node) =>
+            node.Id == "shot_001");
+        fields.CommitFieldValue(
+            projectNode,
+            "project.shotManagerJsonPath",
+            productionJson);
+        fields.CommitFieldValue(
+            projectNode,
+            "project.shotManaged",
+            "true");
+        fields.CommitFieldValue(
+            projectNode,
+            "project.shotManagerWorkstream",
+            "FUSION");
+        fields.CommitFieldValue(
+            projectNode,
+            "project.shotManagerFolder",
+            "renders-final");
+        fields.CommitFieldValue(
+            episodeNode,
+            "episode.shotManagerEpisodeId",
+            episodeOneId);
+        fields.CommitFieldValue(
+            shotNode,
+            "shot.shotManagerShotId",
+            shotId);
+
+        var projectAssociation = database.GetProjectSettings(
+            "project_foqn_s2").ShotManagerOutput;
+        True(projectAssociation.Enabled);
+        Equal(productionId, projectAssociation.ProductionId);
+        Equal("_render", projectAssociation.FolderSuffix);
+        var episodeAssociation = database.GetEpisodeSettings(
+            "episode_001").ShotManagerEpisode;
+        True(episodeAssociation.IsAssociated);
+        Equal(1, episodeAssociation.EpisodeOrder);
+        var shotAssociation = database.GetShotSettings(
+            "shot_001").ShotManagerShot;
+        True(shotAssociation.IsAssociated);
+        Equal("FOQ2_201_005_010", shotAssociation.CanonicalName);
+
+        var resolver = new ProductionOutputPlanResolver(roots, documents);
+        var resolved = resolver.Resolve(
+            database.GetProductionOutputShotContext("shot_001"));
+        True(resolved.IsShotManaged);
+        Equal(Path.GetFullPath(productionRoot), resolved.RootPath);
+        Equal("FOQ2_201_005_010_render", resolved.Plan.TechnicalName);
+        Equal("001/FUSION/renders-final", resolved.Plan.RelativeDirectory);
+
+        True(fields.CreateFieldValue(
+                projectNode,
+                "project.shotManagerWorkstream")
+            .Definition.Options?.Any((option) =>
+                option.Value == "FUSION") == true);
+        True(fields.CreateFieldValue(
+                episodeNode,
+                "episode.shotManagerEpisodeId")
+            .Definition.Options?.Any((option) =>
+                option.Value == episodeOneId
+                && option.Label == "001") == true);
+        Equal(
+            shotId,
+            fields.CreateFieldValue(
+                shotNode,
+                "shot.shotManagerShotId").Value);
+        Equal(
+            "FOQ2_201_005_010_render",
+            fields.CreateFieldValue(
+                shotNode,
+                "shot.renderName").Value);
+        var managedDraft = new RenderJobSnapshotFactory(
+                RenderSnapshots(database),
+                database.ProjectPaths,
+                roots,
+                documents)
+            .LoadDraftAsync(shotNode)
+            .GetAwaiter()
+            .GetResult();
+        Equal(Path.GetFullPath(productionRoot), managedDraft.RootPath);
+        Equal("FOQ2_201_005_010_render", managedDraft.SuggestedBaseName);
+        Equal(1, managedDraft.Routes.Count);
+        Equal(
+            "001/FUSION/renders-final",
+            managedDraft.Routes[0].RelativeDirectory);
+        Equal("", managedDraft.RouteStatusMessage);
+        var declaredDirectory = Path.Combine(
+            productionRoot,
+            "001",
+            "FUSION",
+            "renders-final");
+        True(!Directory.Exists(declaredDirectory));
+        var mode = RenderOutputModes.Require(
+            RenderOutputModes.MovProRes422Hq);
+        RenderOutputPathSecurity.EnsureOutputDirectory(
+            new RenderOutputTarget(
+                "project_foqn_s2",
+                managedDraft.Routes[0].EntryId,
+                productionRoot,
+                managedDraft.Routes[0].RelativeDirectory,
+                managedDraft.SuggestedBaseName,
+                RenderQueueAppearance.Light,
+                1,
+                managedDraft.Routes[0].VersionPadding,
+                mode.Id,
+                Path.Combine(
+                    declaredDirectory,
+                    "FOQ2_201_005_010_render_LIGHT_v001.mov"),
+                managedDraft.Routes[0].FramePadding));
+        True(Directory.Exists(declaredDirectory));
+
+        File.WriteAllText(
+            productionJson,
+            Document("_new", "FOQ2_201_005_011"));
+        fields.CommitFieldValue(
+            projectNode,
+            "project.shotManagerJsonPath",
+            productionJson);
+        Equal(
+            "FOQ2_201_005_011_new",
+            resolver.Resolve(database.GetProductionOutputShotContext("shot_001"))
+                .Plan.TechnicalName);
+
+        File.Delete(productionJson);
+        Equal(
+            "FOQ2_201_005_011_new",
+            resolver.Resolve(database.GetProductionOutputShotContext("shot_001"))
+                .Plan.TechnicalName);
+        Throws<InvalidOperationException>(() => fields.CommitFieldValue(
+            shotNode,
+            "shot.shotManagerShotId",
+            unusedShotId));
+        File.WriteAllText(
+            productionJson,
+            Document("_new", "FOQ2_201_005_011"));
+
+        File.WriteAllText(
+            otherProductionJson,
+            Document("_other", exactProductionId: otherProductionId));
+        Throws<InvalidOperationException>(() => fields.CommitFieldValue(
+            projectNode,
+            "project.shotManagerJsonPath",
+            otherProductionJson));
+        Equal(
+            productionId,
+            database.GetProjectSettings("project_foqn_s2")
+                .ShotManagerOutput.ProductionId);
+
+        File.WriteAllText(
+            productionJson,
+            Document("_new", "FOQ2_201_005_011", includeShot: false));
+        fields.CommitFieldValue(
+            projectNode,
+            "project.shotManagerJsonPath",
+            productionJson);
+        shotAssociation = database.GetShotSettings("shot_001")
+            .ShotManagerShot;
+        True(!shotAssociation.IsAssociated);
+        Equal(shotId, shotAssociation.ShotId);
+        True(!resolver.Resolve(
+            database.GetProductionOutputShotContext("shot_001"))
+            .IsShotManaged);
+
+        File.WriteAllText(
+            productionJson,
+            Document("_restored", "FOQ2_201_005_012"));
+        fields.CommitFieldValue(
+            projectNode,
+            "project.shotManagerJsonPath",
+            productionJson);
+        shotAssociation = database.GetShotSettings("shot_001")
+            .ShotManagerShot;
+        True(shotAssociation.IsAssociated);
+        Equal("FOQ2_201_005_012", shotAssociation.CanonicalName);
+
+        fields.CommitFieldValue(
+            shotNode,
+            "shot.shotManagerShotId",
+            "");
+        var manual = resolver.Resolve(
+            database.GetProductionOutputShotContext("shot_001"));
+        True(!manual.IsShotManaged);
+        Equal(Path.GetFullPath(manualRoot), manual.RootPath);
+        Equal(
+            database.GetProductionOutputShotPlan("shot_001").TechnicalName,
+            manual.Plan.TechnicalName);
+
+        fields.CommitFieldValue(
+            shotNode,
+            "shot.shotManagerShotId",
+            shotId);
+        fields.CommitFieldValue(
+            episodeNode,
+            "episode.shotManagerEpisodeId",
+            episodeTwoId);
+        shotAssociation = database.GetShotSettings("shot_001")
+            .ShotManagerShot;
+        True(!shotAssociation.IsAssociated);
+        Equal(shotId, shotAssociation.ShotId);
+    }
+    finally
+    {
+        File.Delete(temporary);
+        File.Delete(rootsPath);
+        File.Delete(documentsPath);
+        Directory.Delete(manualRoot, recursive: true);
+        Directory.Delete(productionRoot, recursive: true);
+        Directory.Delete(otherProductionRoot, recursive: true);
+    }
+}
+
 static void ProductionShotContextBoundaryPreservesResolvedContext()
 {
     var sourcePath = ParityDatabasePath();
@@ -16636,10 +16941,21 @@ static void ProductionOutputActionOwnsConfiguration()
         field.Id == "project.productionRoot"));
     True(card.Groups.SelectMany((group) => group.Fields).Any((field) =>
         field.Id == "project.outputRelativeDirectoryTemplate"));
+    True(card.Groups.SelectMany((group) => group.Fields).Any((field) =>
+        field.Id == "project.shotManaged"));
+    True(card.Groups.SelectMany((group) => group.Fields).Any((field) =>
+        field.Id == "project.shotManagerJsonPath"));
+    True(card.Groups.SelectMany((group) => group.Fields).Any((field) =>
+        field.Id == "project.shotManagerWorkstream"));
+    True(card.Groups.SelectMany((group) => group.Fields).Any((field) =>
+        field.Id == "project.shotManagerFolder"));
 
     var rootsPath = Path.Combine(
         Path.GetTempPath(),
         $"mockups-production-output-action-{Guid.NewGuid():N}.json");
+    var shotManagerDocumentsPath = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-shot-manager-action-{Guid.NewGuid():N}.json");
     var outputRoot = Path.Combine(
         Path.GetTempPath(),
         $"mockups-production-output-action-files-{Guid.NewGuid():N}");
@@ -16653,18 +16969,22 @@ static void ProductionOutputActionOwnsConfiguration()
         {
             var button = new Button();
             var roots = new ProductionOutputRootStore(rootsPath);
+            var shotManagerDocuments = new ShotManagerDocumentStore(
+                shotManagerDocumentsPath);
             var opened = false;
             var action = new ProductionOutputNavigationAction(
                 button,
                 roots,
+                shotManagerDocuments,
+                database.ProductionRecordFields,
                 () => true,
                 () => opened = true);
             action.Refresh("project_foqn_s2");
-            True(!action.HasLocalRoot);
+            True(!action.HasLocalOutput);
 
             roots.Set("project_foqn_s2", outputRoot);
             action.Refresh("project_foqn_s2");
-            True(action.HasLocalRoot);
+            True(action.HasLocalOutput);
             button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             True(opened);
             True((ToolTip.GetTip(button)?.ToString() ?? "")
@@ -16674,6 +16994,7 @@ static void ProductionOutputActionOwnsConfiguration()
     finally
     {
         File.Delete(rootsPath);
+        File.Delete(shotManagerDocumentsPath);
         Directory.Delete(outputRoot, recursive: true);
     }
 }

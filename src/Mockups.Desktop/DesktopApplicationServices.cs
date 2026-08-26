@@ -44,12 +44,14 @@ internal sealed record DesktopApplicationServices(
     ProductionShotContextService ProductionShotContext,
     EditorWorkspaceCoordinator WorkspaceCoordinator,
     EditorOperationCoordinator Operations,
-    ProductionOutputRootStore ProductionOutputRoots)
+    ProductionOutputRootStore ProductionOutputRoots,
+    ShotManagerDocumentStore ShotManagerDocuments)
 {
     public static DesktopApplicationServices Create(
         DesktopApplicationDataPorts data)
     {
         var productionOutputRoots = new ProductionOutputRootStore();
+        var shotManagerDocuments = new ShotManagerDocumentStore();
         var operations = new EditorOperationCoordinator();
         return new(
             data,
@@ -64,7 +66,8 @@ internal sealed record DesktopApplicationServices(
                 data.ResourceRecordFields,
                 data.Timeline,
                 data.ModuleInstanceThemes,
-                productionOutputRoots),
+                productionOutputRoots,
+                shotManagerDocuments),
             new ComponentClassFieldValueService(
                 data.ComponentFields,
                 data.Components),
@@ -74,6 +77,7 @@ internal sealed record DesktopApplicationServices(
                     data.ActorPreview)),
             new EditorWorkspaceCoordinator(data.Navigation),
             operations,
-            productionOutputRoots);
+            productionOutputRoots,
+            shotManagerDocuments);
     }
 }

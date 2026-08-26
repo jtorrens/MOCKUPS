@@ -3,6 +3,7 @@ using Mockups.DesktopEditorShell.Data;
 using Mockups.DesktopEditorShell.Integrations.ProductionOutput;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.Json.Nodes;
 
@@ -17,6 +18,8 @@ internal sealed class RecordClassFieldValueService
     private readonly IResourceRecordFieldStore _resources;
     private readonly IModuleInstanceTimelineStore _timeline;
     private readonly ProductionOutputRootStore _productionOutputRoots;
+    private readonly ShotManagerDocumentStore _shotManagerDocuments;
+    private readonly ProductionOutputPlanResolver _productionOutputPlans;
     private readonly ModuleInstanceTimelineDataSource _timelineDataSource;
 
     public RecordClassFieldValueService(
@@ -26,7 +29,8 @@ internal sealed class RecordClassFieldValueService
         IResourceRecordFieldStore resources,
         IModuleInstanceTimelineStore timeline,
         IModuleInstanceThemeTokenQuery moduleInstanceThemes,
-        ProductionOutputRootStore? productionOutputRoots = null)
+        ProductionOutputRootStore? productionOutputRoots = null,
+        ShotManagerDocumentStore? shotManagerDocuments = null)
     {
         _production = production;
         _recordReferenceOverrides =
@@ -36,6 +40,11 @@ internal sealed class RecordClassFieldValueService
         _timeline = timeline;
         _productionOutputRoots =
             productionOutputRoots ?? new ProductionOutputRootStore();
+        _shotManagerDocuments =
+            shotManagerDocuments ?? new ShotManagerDocumentStore();
+        _productionOutputPlans = new ProductionOutputPlanResolver(
+            _productionOutputRoots,
+            _shotManagerDocuments);
         _timelineDataSource =
             new ModuleInstanceTimelineDataSource(
                 timeline,
@@ -212,8 +221,80 @@ internal sealed class RecordClassFieldValueService
                     _productionOutputRoots.Set(node.Id, value);
                     return;
                 }
+                if (fieldId == "project.shotManagerJsonPath")
+                {
+                    var candidate = _shotManagerDocuments.ValidateDocument(value);
+                    var association = _production.GetProjectSettings(node.Id)
+                        .ShotManagerOutput;
+                    if (association.Enabled)
+                    {
+                        if (!association.ProductionId.Equals(
+                                candidate.Production.ProductionId,
+                                StringComparison.Ordinal))
+                            throw new InvalidOperationException(
+                                "Disable Shot Managed before connecting another Production.");
+                        _production.RefreshShotManagerProduction(
+                            node.Id,
+                            candidate.Production);
+                    }
+                    _shotManagerDocuments.SetValidated(node.Id, candidate);
+                    return;
+                }
+                if (fieldId == "project.shotManagerRoot")
+                {
+                    _shotManagerDocuments.SetRoot(node.Id, value);
+                    return;
+                }
                 if (fieldId == "project.outputExample")
                 {
+                    return;
+                }
+                if (fieldId == "project.shotManagerFolderSuffix")
+                {
+                    return;
+                }
+                if (fieldId == "project.shotManaged")
+                {
+                    var enabled = BooleanText.ParseRequired(
+                        value,
+                        "Shot Managed");
+                    var association = _production.GetProjectSettings(node.Id)
+                        .ShotManagerOutput;
+                    _shotManagerDocuments.SetRequestedEnabled(
+                        node.Id,
+                        enabled);
+                    if (!enabled || !string.IsNullOrEmpty(
+                            association.ProductionId))
+                        _production.SetShotManagerProductionEnabled(
+                            node.Id,
+                            enabled);
+                    return;
+                }
+                if (fieldId == "project.shotManagerWorkstream")
+                {
+                    _shotManagerDocuments.SetPendingWorkstream(
+                        node.Id,
+                        value);
+                    return;
+                }
+                if (fieldId == "project.shotManagerFolder")
+                {
+                    var live = _shotManagerDocuments.Open(node.Id);
+                    var location = _shotManagerDocuments.GetLocation(node.Id);
+                    var currentAssociation = _production.GetProjectSettings(node.Id)
+                        .ShotManagerOutput;
+                    var workstream = string.IsNullOrWhiteSpace(
+                            location.PendingWorkstreamName)
+                        ? currentAssociation.WorkstreamName
+                        : location.PendingWorkstreamName;
+                    _production.ConnectShotManagerProduction(
+                        node.Id,
+                        live.Production,
+                        workstream,
+                        value);
+                    _shotManagerDocuments.SetRequestedEnabled(
+                        node.Id,
+                        true);
                     return;
                 }
                 _production.UpdateProjectField(node.Id, fieldId, value);
@@ -231,9 +312,37 @@ internal sealed class RecordClassFieldValueService
                 _production.UpdateModuleInstanceField(node.Id, fieldId, value);
                 return;
             case ProjectTreeNodeKind.Episode when fieldId.StartsWith("episode.", StringComparison.Ordinal):
+                if (fieldId == "episode.shotManagerEpisodeId")
+                {
+                    var projectId = RequiredProjectId(node);
+                    var episode = string.IsNullOrEmpty(value)
+                        ? null
+                        : _shotManagerDocuments.Open(projectId)
+                            .Production.Episodes.SingleOrDefault((candidate) =>
+                                candidate.Id.Equals(value, StringComparison.Ordinal))
+                            ?? throw new InvalidOperationException(
+                                $"Shot Manager Episode '{value}' is not available.");
+                    _production.AssociateShotManagerEpisode(
+                        node.Id,
+                        episode);
+                    return;
+                }
                 _production.UpdateEpisodeField(node.Id, fieldId, value);
                 return;
             case ProjectTreeNodeKind.Shot when fieldId.StartsWith("shot.", StringComparison.Ordinal):
+                if (fieldId == "shot.shotManagerShotId")
+                {
+                    var projectId = RequiredProjectId(node);
+                    var shot = string.IsNullOrEmpty(value)
+                        ? null
+                        : _shotManagerDocuments.Open(projectId)
+                            .Production.Shots.SingleOrDefault((candidate) =>
+                                candidate.Id.Equals(value, StringComparison.Ordinal))
+                            ?? throw new InvalidOperationException(
+                                $"Shot Manager Shot '{value}' is not available.");
+                    _production.AssociateShotManagerShot(node.Id, shot);
+                    return;
+                }
                 _production.UpdateShotField(node.Id, fieldId, value);
                 return;
             case ProjectTreeNodeKind.PaletteColor when fieldId.StartsWith("palette.", StringComparison.Ordinal):
@@ -442,6 +551,26 @@ internal sealed class RecordClassFieldValueService
             "project.mediaRoot" => settings.MediaRoot,
             "project.productionRoot" =>
                 _productionOutputRoots.Get(projectId) ?? "",
+            "project.shotManaged" =>
+                BoolToString(
+                    settings.ShotManagerOutput.Enabled
+                    || _shotManagerDocuments.GetLocation(projectId)
+                        .RequestedEnabled),
+            "project.shotManagerJsonPath" =>
+                _shotManagerDocuments.Get(projectId) ?? "",
+            "project.shotManagerRoot" =>
+                _shotManagerDocuments.GetRoot(projectId) ?? "",
+            "project.shotManagerWorkstream" =>
+                string.IsNullOrWhiteSpace(
+                        _shotManagerDocuments.GetLocation(projectId)
+                            .PendingWorkstreamName)
+                    ? settings.ShotManagerOutput.WorkstreamName
+                    : _shotManagerDocuments.GetLocation(projectId)
+                        .PendingWorkstreamName,
+            "project.shotManagerFolder" =>
+                settings.ShotManagerOutput.FolderName,
+            "project.shotManagerFolderSuffix" =>
+                settings.ShotManagerOutput.FolderSuffix,
             "project.productionCode" =>
                 settings.ProductionOutput.TechnicalCode,
             "project.productionSeasonCode" =>
@@ -482,6 +611,10 @@ internal sealed class RecordClassFieldValueService
         {
             "episode.slug" => settings.Slug,
             "episode.sortOrder" => settings.SortOrder.ToString(),
+            "episode.shotManagerEpisodeId" =>
+                settings.ShotManagerEpisode.IsAssociated
+                    ? settings.ShotManagerEpisode.EpisodeId
+                    : "",
             _ => throw new InvalidOperationException($"Unknown episode field '{fieldId}'."),
         };
     }
@@ -558,7 +691,11 @@ internal sealed class RecordClassFieldValueService
             "shot.deviceOverrideId" => settings.DeviceOverrideId ?? "",
             "shot.themeOverrideId" => settings.ThemeOverrideId ?? "",
             "shot.referenceVideoPath" => settings.ReferenceVideo.SourcePath,
-            "shot.renderName" => _production.GetShotRenderName(shotId),
+            "shot.renderName" => ShotRenderName(shotId),
+            "shot.shotManagerShotId" =>
+                settings.ShotManagerShot.IsAssociated
+                    ? settings.ShotManagerShot.ShotId
+                    : "",
             "shot.canvas" => settings.CanvasJson,
             "shot.metadata" => settings.MetadataJson,
             _ => throw new InvalidOperationException($"Unknown shot field '{fieldId}'."),
@@ -645,6 +782,34 @@ internal sealed class RecordClassFieldValueService
             return _design.GetModuleVariantOptions(
                 _timeline.GetModuleInstanceSettings(node.Id).ModuleId);
         }
+        if (field.OptionSource == FieldOptionSource.ShotManagerWorkstreams)
+        {
+            var shotManagerProjectId = RequiredProjectId(node);
+            var current = _production.GetProjectSettings(shotManagerProjectId)
+                .ShotManagerOutput.WorkstreamName;
+            var pending = _shotManagerDocuments.GetLocation(
+                    shotManagerProjectId)
+                .PendingWorkstreamName;
+            return ShotManagerWorkstreamOptions(
+                shotManagerProjectId,
+                string.IsNullOrWhiteSpace(pending) ? current : pending);
+        }
+        if (field.OptionSource == FieldOptionSource.ShotManagerFolders)
+        {
+            var shotManagerProjectId = RequiredProjectId(node);
+            var settings = _production.GetProjectSettings(
+                    shotManagerProjectId)
+                .ShotManagerOutput;
+            var pending = _shotManagerDocuments.GetLocation(
+                    shotManagerProjectId)
+                .PendingWorkstreamName;
+            return ShotManagerFolderOptions(
+                shotManagerProjectId,
+                string.IsNullOrWhiteSpace(pending)
+                    ? settings.WorkstreamName
+                    : pending,
+                settings.FolderName);
+        }
 
         var requiresProjectOptions = field.ValueKind is ValueKind.ComponentVariant
             or ValueKind.ComponentVariantSlot
@@ -684,6 +849,18 @@ internal sealed class RecordClassFieldValueService
                     string.IsNullOrWhiteSpace(field.RecordReference.Filter)
                         ? null
                         : field.RecordReference.Filter),
+                "shot_manager_episodes" =>
+                    ShotManagerEpisodeOptions(
+                        projectId,
+                        _production.GetEpisodeSettings(node.Id)
+                            .ShotManagerEpisode.IsAssociated
+                                ? _production.GetEpisodeSettings(node.Id)
+                                    .ShotManagerEpisode.EpisodeId
+                                : ""),
+                "shot_manager_shots" =>
+                    ShotManagerShotOptions(
+                        projectId,
+                        _production.GetShotSettings(node.Id)),
                 _ => throw new InvalidOperationException(
                     $"Record field '{field.Id}' has unsupported option table '{field.RecordReference.TableId}'."),
             };
@@ -731,6 +908,154 @@ internal sealed class RecordClassFieldValueService
     }
 
     private static string BoolToString(bool value) => BooleanText.Format(value);
+
+    private string ShotRenderName(string shotId)
+    {
+        try
+        {
+            return _productionOutputPlans.Resolve(
+                _production.GetProductionOutputShotContext(shotId))
+                .Plan.TechnicalName;
+        }
+        catch (Exception exception)
+        {
+            return $"Unavailable — {exception.Message}";
+        }
+    }
+
+    private IReadOnlyList<FieldOption> ShotManagerWorkstreamOptions(
+        string projectId,
+        string current)
+    {
+        var options = new List<FieldOption>
+        {
+            new("", "Select Workstream…"),
+        };
+        try
+        {
+            options.AddRange(_shotManagerDocuments.Open(projectId)
+                .Production.Workstreams
+                .OrderBy((workstream) => workstream.Name, StringComparer.Ordinal)
+                .Select((workstream) => new FieldOption(
+                    workstream.Name,
+                    workstream.Name)));
+        }
+        catch (Exception exception) when (IsUnavailableShotManagerDocument(exception))
+        {
+        }
+        return IncludeMissing(options, current, "Missing Workstream");
+    }
+
+    private IReadOnlyList<FieldOption> ShotManagerFolderOptions(
+        string projectId,
+        string workstreamName,
+        string current)
+    {
+        var options = new List<FieldOption>
+        {
+            new("", "Select output folder…"),
+        };
+        try
+        {
+            var workstream = _shotManagerDocuments.Open(projectId)
+                .Production.Workstreams.Single((candidate) =>
+                    candidate.Name.Equals(
+                        workstreamName,
+                        StringComparison.OrdinalIgnoreCase));
+            options.AddRange(workstream.Folders
+                .OrderBy((folder) => folder.Name, StringComparer.Ordinal)
+                .Select((folder) => new FieldOption(
+                    folder.Name,
+                    string.IsNullOrEmpty(folder.Suffix)
+                        ? folder.Name
+                        : $"{folder.Name} · {folder.Suffix}")));
+        }
+        catch (Exception exception) when (IsUnavailableShotManagerDocument(exception))
+        {
+        }
+        return IncludeMissing(options, current, "Missing folder");
+    }
+
+    private IReadOnlyList<FieldOption> ShotManagerEpisodeOptions(
+        string projectId,
+        string current)
+    {
+        var options = new List<FieldOption>
+        {
+            new("", "Free · Manual output"),
+        };
+        try
+        {
+            options.AddRange(_shotManagerDocuments.Open(projectId)
+                .Production.Episodes
+                .OrderBy((episode) => episode.Order)
+                .ThenBy((episode) => episode.Id, StringComparer.Ordinal)
+                .Select((episode) => new FieldOption(
+                    episode.Id,
+                    episode.Order.ToString("D3"))));
+        }
+        catch (Exception exception) when (IsUnavailableShotManagerDocument(exception))
+        {
+        }
+        return IncludeMissing(options, current, "Missing Episode");
+    }
+
+    private IReadOnlyList<FieldOption> ShotManagerShotOptions(
+        string projectId,
+        ShotSettings settings)
+    {
+        var options = new List<FieldOption>
+        {
+            new("", "Free · Manual output"),
+        };
+        try
+        {
+            var episodeId = _production.GetEpisodeSettings(
+                    settings.EpisodeId)
+                .ShotManagerEpisode;
+            options.AddRange(_shotManagerDocuments.Open(projectId)
+                .Production.Shots
+                .Where((shot) => shot.EpisodeId.Equals(
+                    episodeId.IsAssociated ? episodeId.EpisodeId : "",
+                    StringComparison.Ordinal))
+                .OrderBy((shot) => shot.CanonicalName, StringComparer.Ordinal)
+                .Select((shot) => new FieldOption(
+                    shot.Id,
+                    shot.CanonicalName)));
+        }
+        catch (Exception exception) when (IsUnavailableShotManagerDocument(exception))
+        {
+        }
+        return IncludeMissing(
+            options,
+            settings.ShotManagerShot.IsAssociated
+                ? settings.ShotManagerShot.ShotId
+                : "",
+            "Missing Shot");
+    }
+
+    private static IReadOnlyList<FieldOption> IncludeMissing(
+        List<FieldOption> options,
+        string current,
+        string label)
+    {
+        if (!string.IsNullOrWhiteSpace(current)
+            && !options.Any((option) => option.Value.Equals(
+                current,
+                StringComparison.Ordinal)))
+        {
+            options.Add(new FieldOption(
+                current,
+                $"{label} · {current}"));
+        }
+        return options;
+    }
+
+    private static bool IsUnavailableShotManagerDocument(
+        Exception exception) =>
+        exception is InvalidOperationException
+            or IOException
+            or UnauthorizedAccessException;
 
     private static string JsonString(string json, string key)
     {

@@ -131,6 +131,16 @@ public static partial class ProductionOutputContract
             settings.FramePadding);
     }
 
+    public static ProductionOutputShotPlan ResolveManual(
+        ProductionOutputShotContext context) =>
+        Resolve(
+            context.ProjectId,
+            context.ShotId,
+            context.ShotNumber,
+            context.EpisodeCode,
+            context.ShotCode,
+            context.ManualOutput);
+
     public static string RequireEpisodeCode(
         string value,
         string context)

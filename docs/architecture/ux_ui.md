@@ -274,15 +274,30 @@ available: it still opens the add modal, shows the local Actor and defaults,
 derives the route from the Project contract and stable Shot number, and
 explains a missing workstation root in place.
 
+The Project Production Output card exposes the explicit Shot Managed switch.
+Manual mode keeps the workstation root and current naming/route fields. Shot
+Managed mode browses a workstation-local `production.json` and presents only
+workstreams and folders declared by that document, without interpreting their
+meaning. Its resolved optional suffix is informative. Episode association is
+an optional selector ordered and labelled by external Episode order. Shot
+association is an optional selector filtered by the owning Episode's exact
+external id and labelled with canonical Shot names. Clearing a Shot association
+immediately restores manual output; missing referenced items become visibly
+free while retaining their identity for later recovery. Project state
+distinguishes not associated, setup incomplete, associated and connected, and
+associated but disconnected. A disconnected association keeps its captured
+route and naming values but cannot create or refresh selectors.
+
 That modal owns only creation of a new batch. Actor is informative and
 immutable. Device, Theme, appearance, output mode, predefined route and base
-name are explicit. The route control shows the Project-owned relative
-directory, proposes the first available option
+name are explicit. The route control shows the resolved relative directory,
+whether manual or Shot Managed, and proposes the first available option
 when no prior selection applies and has no arbitrary folder alternative. The
 proposed automatic version and final
 child names update before enqueue. A missing physical route directory does not
-disable the form: the render worker creates it from the selected stored route
-when the job starts.
+disable the form: the render worker safely creates missing subdirectories from
+the frozen manual or Shot Managed route when the job starts. The root itself
+must already exist; symbolic links, files in the route and escapes are rejected.
 
 Confirming the modal closes it immediately and creates visible `PREPARING`
 Light/Dark children. Preparation uses the stable determinate job bar and shows
