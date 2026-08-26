@@ -42,6 +42,10 @@ import {
 } from "./runtimeInputForwarding.js";
 import { renderScale } from "./previewGeometryHelpers.js";
 import { resolvedRuntimeRecordReference } from "./runtimeRecordReferenceCatalog.js";
+import {
+  requiredReflowTiming,
+  resolveReflowProgress,
+} from "./previewReflowHelpers.js";
 
 export function resolveConversationModule(
   payload: DesignPreviewPayload,
@@ -81,6 +85,16 @@ export function resolveConversationModule(
     payload.screenTiming?.actionDurationFrames
       ?? optionalNumber(preview, "timelineDurationFrames", 1),
   );
+  const decorateMessage = (
+    message: UndecoratedConversationMessage,
+  ): ConversationMessageContract => ({
+    ...message,
+    actorIdentityVisible: conversationMessageActorIdentityVisible(
+      conversationType,
+      message.state,
+    ),
+    playbackTimeSeconds: messagePlaybackTimeSeconds(message, payload.frameRate),
+  });
   const visible = visibleMessages(
     resolvedMessages,
     screenFrame,
@@ -89,15 +103,7 @@ export function resolveConversationModule(
     messageMotion,
     automaticEndFrame,
     !showKeyboard && !showTextInputBar,
-  )
-    .map((message) => ({
-      ...message,
-      actorIdentityVisible: conversationMessageActorIdentityVisible(
-        conversationType,
-        message.state,
-      ),
-      playbackTimeSeconds: messagePlaybackTimeSeconds(message, payload.frameRate),
-    }));
+  ).map(decorateMessage);
   const motionElapsedMs = screenFrame / Math.max(1, payload.frameRate) * 1000;
   const viewportMotion = conversation.messageViewportMotion
     ? requiredMotionContract(
@@ -117,26 +123,25 @@ export function resolveConversationModule(
     trigger: optionalBoolean(preview, "composerTransitionTrigger"),
     elapsedMs: optionalNumber(preview, "composerTransitionElapsedMs", 0),
   }).progress;
-  const latestAppearanceFrame = visible.reduce(
-    (latest, message) => Math.max(latest, message.visibleAtFrame),
-    0,
+  const reflowTiming = requiredReflowTiming(
+    requiredRecord(
+      conversation,
+      "messageReflowTiming",
+      "module.core.chat.messageReflowTiming",
+    ),
+    "module.core.chat.messageReflowTiming",
   );
-  const scrollMotionProgress = resolveMotionFrame(
+  const messageReflow = resolveMessageReflow(
+    resolvedMessages,
+    screenFrame,
+    timing,
     payload,
-    {
-      transition: "slide",
-      direction: "bottom",
-      bounds: "parent",
-      fade: false,
-      translate: true,
-      scale: false,
-    },
-    {
-      trigger: latestAppearanceFrame > 0,
-      elapsedMs: Math.max(0, screenFrame - latestAppearanceFrame)
-        / Math.max(1, payload.frameRate) * 1000,
-    },
-  ).progress;
+    messageMotion,
+    automaticEndFrame,
+    !showKeyboard && !showTextInputBar,
+    reflowTiming,
+    decorateMessage,
+  );
   const keyboardVisible = composer.keyboardVisible
     && showKeyboard;
   const textInputVisible = composer.textInputVisible
@@ -159,7 +164,7 @@ export function resolveConversationModule(
     messages: requiredObjectArray(preview, "messages", "module.conversation runtime"),
     visibleMessages: visible,
     viewportMotionProgress,
-    scrollMotionProgress,
+    ...(messageReflow ? { messageReflow } : {}),
     ...(textInputConfig ? { textInputConfig } : {}),
   };
 }
@@ -404,6 +409,12 @@ type ResolvedConversationMessage = Omit<
   currentTimeSeconds: number;
 };
 
+type UndecoratedConversationMessage = ResolvedConversationMessage & {
+  presenceMotion: ComponentMotionContract;
+  presenceMotionKind?: "enter" | "exit";
+  presenceMotionFrame?: ConversationMessageContract["presenceMotionFrame"];
+};
+
 function conversationTiming(preview: JsonRecord): ConversationTimingContract {
   const incomingRevealMode = requiredString(
     preview,
@@ -469,6 +480,7 @@ function conversationMessages(preview: JsonRecord): ResolvedConversationMessage[
   return messages.map((message, index) => {
     const path = `module.core.chat.messages[${index}]`;
     return {
+      id: requiredString(message, "id", `${path}.id`),
       actor: requiredRecord(message, "actor", path),
       state: requiredString(message, "direction", path),
       text: requiredPossiblyEmptyString(message, "text", `${path}.text`),
@@ -566,6 +578,63 @@ function conversationMessages(preview: JsonRecord): ResolvedConversationMessage[
   });
 }
 
+function resolveMessageReflow(
+  messages: ResolvedConversationMessage[],
+  frame: number,
+  timing: ConversationTimingContract,
+  payload: DesignPreviewPayload,
+  messageMotion: ComponentMotionContract,
+  automaticEndFrame: number,
+  writesInBubble: boolean,
+  reflowTiming: { durationMs: number; easing: string; intensity: number },
+  decorateMessage: (
+    message: UndecoratedConversationMessage,
+  ) => ConversationMessageContract,
+) {
+  const durationFrames = reflowTiming.durationMs / 1000
+    * Math.max(1, payload.frameRate);
+  if (durationFrames <= 0) return undefined;
+  const events = messages.flatMap((message) => {
+    const visibleAt = messageVisibleAtFrame(message, timing, writesInBubble);
+    const appearance = visibleAt > 0 ? [visibleAt] : [];
+    const disappearance = message.hasExplicitPresenceEnd
+      && message.presenceEndFrame < automaticEndFrame
+      ? [message.presenceEndFrame]
+      : [];
+    return [...appearance, ...disappearance];
+  }).filter((eventFrame) => eventFrame <= frame && frame < eventFrame + durationFrames)
+    .sort((a, b) => b - a);
+  const startFrame = events[0];
+  if (startFrame === undefined) return undefined;
+  const fromMessages = visibleMessages(
+    messages,
+    Math.max(0, startFrame - 1),
+    timing,
+    payload,
+    messageMotion,
+    automaticEndFrame,
+    writesInBubble,
+  ).map(decorateMessage);
+  return {
+    progress: resolveReflowProgress(
+      reflowTiming,
+      (frame - startFrame) / Math.max(1, payload.frameRate) * 1000,
+    ),
+    fromMessages,
+  };
+}
+
+function messageVisibleAtFrame(
+  message: ResolvedConversationMessage,
+  timing: ConversationTimingContract,
+  writesInBubble: boolean,
+) {
+  const revealAfterWriteOn = message.state === "outgoing"
+    && timing.bubbleRevealMode === "afterWriteOn"
+    && !writesInBubble;
+  return revealAfterWriteOn ? message.timelineRevealAtFrame : message.timelineStartFrame;
+}
+
 function visibleMessages(
   messages: ResolvedConversationMessage[],
   frame: number,
@@ -576,7 +645,6 @@ function visibleMessages(
   writesInBubble: boolean,
 ) {
   return messages.flatMap((message) => {
-    const startFrame = message.timelineStartFrame;
     const isSystemMessage = message.state === "system";
     const isOutgoingMessage = message.state === "outgoing";
     const isIncomingMessage = message.state === "incoming";
@@ -585,7 +653,7 @@ function visibleMessages(
     const revealAfterWriteOn = isOutgoingMessage
       && timing.bubbleRevealMode === "afterWriteOn"
       && !writesInBubble;
-    const visibleAt = revealAfterWriteOn ? message.timelineRevealAtFrame : startFrame;
+    const visibleAt = messageVisibleAtFrame(message, timing, writesInBubble);
     if (frame < visibleAt || frame >= message.presenceEndFrame) return [];
     const motionDurationFrames = Math.ceil(
       motionTotalDurationMs(payload, messageMotion)

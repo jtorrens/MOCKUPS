@@ -8,7 +8,10 @@ import type {
   CollectionStackItemSizingMode,
 } from "./collectionStackComponentContract.js";
 import type { ComponentCollectionSizingMode } from "./componentCollectionContract.js";
-import { easingProgress } from "./previewMotionHelpers.js";
+import {
+  requiredThemeReflowTiming,
+  resolveReflowProgress,
+} from "./previewReflowHelpers.js";
 
 export function resolveCollectionStackComponent(payload: DesignPreviewPayload): CollectionStackDesignContract {
   const preview = parseObject(payload.designPreviewJson);
@@ -62,12 +65,10 @@ function resolveDistributionReflow(
   if (fromDistributionMode !== "flow" && fromDistributionMode !== "stacked") return undefined;
   const root = parseObject(payload.themeTokensJson);
   const motion = requiredRecord(root, "motion", "theme.motion");
-  const durationMs = requiredNumber(motion, "reflowDurationMs", "theme.motion.reflowDurationMs");
-  const easing = requiredString(motion, "reflowEasing", "theme.motion.reflowEasing");
-  const intensity = optionalNumber(motion, "reflowIntensity", 1);
+  const timing = requiredThemeReflowTiming(motion);
   const elapsedMs = Math.max(0, optionalNumber(preview, "distributionElapsedMs", 0));
   return {
-    progress: easingProgress(easing, durationMs <= 0 ? 1 : elapsedMs / durationMs, intensity),
+    progress: resolveReflowProgress(timing, elapsedMs),
     fromItems: allItems.length > 0 ? allItems : items,
     fromDistributionMode,
   };
@@ -79,9 +80,8 @@ function resolveReflow(
 ) {
   const root = parseObject(payload.themeTokensJson);
   const motion = requiredRecord(root, "motion", "theme.motion");
-  const durationMs = requiredNumber(motion, "reflowDurationMs", "theme.motion.reflowDurationMs");
-  const easing = requiredString(motion, "reflowEasing", "theme.motion.reflowEasing");
-  const durationFrames = Math.max(0, durationMs / 1000 * Math.max(1, payload.frameRate));
+  const timing = requiredThemeReflowTiming(motion);
+  const durationFrames = Math.max(0, timing.durationMs / 1000 * Math.max(1, payload.frameRate));
   if (durationFrames <= 0) return undefined;
   const frame = Math.max(0, payload.localFrame);
   const starts = allItems
@@ -96,7 +96,10 @@ function resolveReflow(
       ? { ...item, inputs: item.reflowFromInputs }
       : item);
   return {
-    progress: easingProgress(easing, (frame - start) / durationFrames, 1),
+    progress: resolveReflowProgress(
+      timing,
+      (frame - start) / Math.max(1, payload.frameRate) * 1000,
+    ),
     fromItems,
   };
 }

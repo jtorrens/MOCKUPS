@@ -60,6 +60,14 @@ internal static class ConversationModuleConfigContract
 
         MotionVariantValue.Parse(
             JsonPath.RequiredObject(conversation, "messageMotion", owner).ToJsonString());
+        var messageReflowTiming = MotionTimingValue.Parse(
+            JsonPath.RequiredObject(conversation, "messageReflowTiming", owner).ToJsonString());
+        if (messageReflowTiming.DurationMs is not > 0
+            || string.IsNullOrWhiteSpace(messageReflowTiming.Easing))
+        {
+            throw new InvalidOperationException(
+                $"{owner}.messageReflowTiming requires a positive duration and easing.");
+        }
         MotionVariantValue.Parse(
             JsonPath.RequiredObject(
                 conversation,

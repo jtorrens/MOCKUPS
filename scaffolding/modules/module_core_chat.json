@@ -200,6 +200,10 @@
         "translate": false,
         "scale": false
       },
+      "messageReflowTiming": {
+        "durationMs": 240,
+        "easing": "ease-out"
+      },
       "messageViewportMotion": {
         "transition": "slide",
         "direction": "bottom",
@@ -1349,6 +1353,10 @@
           "translate": false,
           "scale": false
         },
+        "messageReflowTiming": {
+          "durationMs": 240,
+          "easing": "ease-out"
+        },
         "messageViewportMotion": {
           "transition": "slide",
           "direction": "bottom",
@@ -2169,6 +2177,41 @@
       "motionTiming": null,
       "unit": "",
       "embeddedSlot": null
+    },
+    {
+      "id": "module.core.chat.messageReflowTiming",
+      "label": "Messages reflow timing",
+      "valueKind": "MotionTiming",
+      "jsonPath": [
+        "conversation",
+        "messageReflowTiming"
+      ],
+      "defaultValue": "{\"durationMs\":240,\"easing\":\"ease-out\"}",
+      "isEditable": true,
+      "options": [
+        { "value": "linear", "label": "Linear" },
+        { "value": "ease-in", "label": "Ease in" },
+        { "value": "ease-out", "label": "Ease out" },
+        { "value": "ease", "label": "Ease" },
+        { "value": "spring", "label": "Spring" },
+        { "value": "bounce", "label": "Bounce" }
+      ],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": {
+        "showDelay": false,
+        "showIntensity": false
+      },
+      "unit": "",
+      "embeddedSlot": null
     }
   ],
   "editorLayout": {
@@ -2260,6 +2303,11 @@
               {
                 "id": "module.core.chat.messageMotion",
                 "order": 35,
+                "visible": true
+              },
+              {
+                "id": "module.core.chat.messageReflowTiming",
+                "order": 37,
                 "visible": true
               }
             ]

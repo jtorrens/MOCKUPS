@@ -303,6 +303,12 @@ the effective track duration remain separate: the former paints the message,
 while the latter keeps Text Input Bar and Keyboard present for the outgoing
 write interval.
 
+Conversation Preview prepares message layout transitions by stable message id.
+At an appearance or completed explicit disappearance it resolves the previous
+and target vertical layouts once, then interpolates both sibling displacement
+and viewport overflow with the Conversation Variant's single reflow timing.
+The generic renderer only paints the resulting geometry.
+
 ## Preview sessions
 
 Design and Production Preview keep only temporary presentation state:

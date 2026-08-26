@@ -387,6 +387,10 @@ incoming, outgoing or system direction. Changing direction preserves that
 selection. Direction and the chat-level Actor expose standard animation
 activation and discrete `hold` keyframes; resolving a direction keyframe
 immediately applies the complete corresponding Bubble appearance.
+The Conversation Layout card exposes `Messages reflow timing` as duration and
+easing only. It controls both the upward/downward displacement that closes a
+message gap and the auto-scroll that accommodates a newly visible message;
+message presence and composer viewport Motion remain separate fields.
 
 ## Animation UX
 

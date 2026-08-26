@@ -37,6 +37,7 @@ import {
 } from "./previewAuthoringTarget.js";
 import type {
   ConversationMessageContract,
+  ConversationModuleContract,
   ConversationTimingContract,
 } from "./conversationModuleContract.js";
 import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
@@ -205,7 +206,7 @@ export function conversationModuleToRenderable(payload: DesignPreviewPayload): R
       bottom,
       timing,
       contract.motionElapsedMs,
-      contract.scrollMotionProgress,
+      contract.messageReflow,
     ),
   });
 
@@ -234,7 +235,7 @@ function messageNodes(
   bottom: number,
   timing: ConversationTimingContract,
   motionElapsedMs: number,
-  resolvedScrollProgress: number,
+  messageReflow: ConversationModuleContract["messageReflow"],
 ) {
   const gap = numberToken(payload, optionalString(conversation, "messageGap") || "theme.spacing.m")
     * renderScale(payload);
@@ -294,15 +295,16 @@ function messageNodes(
       resolveBubbleComponent,
       bubbleComponentToRenderable,
     );
-  const entries = messages.map((message) => {
+  const resolveEntries = (sourceMessages: ConversationMessageContract[]) => sourceMessages.map((message) => {
     const bubble = bubbleNode(message, message.writeOnTrigger);
     const node = bubble.renderable;
     const bounds = renderableVisualBounds(node);
     const finalBounds = message.state === "outgoing" && message.writeOnTrigger
       ? renderableVisualBounds(bubbleNode(message, false).renderable)
       : bounds;
-    return { node, bounds, finalBounds, alignment: bubble.resolved.alignment };
+    return { id: message.id, node, bounds, finalBounds, alignment: bubble.resolved.alignment };
   });
+  const entries = resolveEntries(messages);
   const totalHeight = entries.reduce((sum, entry) => sum + entry.finalBounds.height, 0)
     + Math.max(0, entries.length - 1) * gap;
   const viewportHeight = Math.max(0, bottom - top);
@@ -313,20 +315,19 @@ function messageNodes(
     height: viewportHeight,
   };
   const targetOverflow = Math.max(0, gap + totalHeight - viewportHeight);
-  const latestAppearanceFrame = messages.reduce(
-    (latest, message) => Math.max(latest, message.visibleAtFrame),
-    0,
-  );
-  const previousEntries = entries.filter((_, index) =>
-    messages[index]!.visibleAtFrame < latestAppearanceFrame);
+  const previousEntries = messageReflow
+    ? resolveEntries(messageReflow.fromMessages)
+    : entries;
   const previousHeight = previousEntries.reduce((sum, entry) => sum + entry.finalBounds.height, 0)
     + Math.max(0, previousEntries.length - 1) * gap;
   const previousOverflow = Math.max(0, gap + previousHeight - viewportHeight);
-  const scrollProgress = targetOverflow !== previousOverflow
-    ? resolvedScrollProgress
-    : 1;
-  const scrollOffset = lerp(previousOverflow, targetOverflow, scrollProgress);
-  let y = top + gap - scrollOffset;
+  const scrollProgress = messageReflow?.progress ?? 1;
+  const previousYById = new Map<string, number>();
+  let previousY = top + gap - previousOverflow;
+  previousEntries.forEach((entry) => {
+    previousYById.set(entry.id, previousY);
+    previousY += entry.finalBounds.height + gap;
+  });
   return entries.map((entry, index) => {
     const { node, bounds, finalBounds, alignment } = entry;
     const message = messages[index]!;
@@ -335,8 +336,13 @@ function messageNodes(
       : alignment === "center"
         ? screen.x + screen.width / 2 - (finalBounds.x + finalBounds.width / 2)
         : screen.x + gutter.x - finalBounds.x;
-    const translated = translateRenderableNode(node, { x: offsetX, y: y - bounds.y });
-    y += finalBounds.height + gap;
+    const targetY = top + gap - targetOverflow
+      + entries.slice(0, index).reduce((sum, current) => sum + current.finalBounds.height + gap, 0);
+    const priorY = previousYById.get(message.id);
+    const resolvedY = priorY === undefined
+      ? targetY
+      : lerp(priorY, targetY, scrollProgress);
+    const translated = translateRenderableNode(node, { x: offsetX, y: resolvedY - bounds.y });
     if (!translated.box || !message.presenceMotionFrame || !message.presenceMotionKind) {
       return translated;
     }

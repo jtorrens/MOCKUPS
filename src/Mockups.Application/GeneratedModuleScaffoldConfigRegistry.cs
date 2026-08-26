@@ -118,6 +118,13 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ["conversation", "messageMotion"],
             "",
             []),
+        ["module.core.chat.messageReflowTiming"] = new(
+            "module.core.chat",
+            "module.core.chat.messageReflowTiming",
+            ValueKind.MotionTiming,
+            ["conversation", "messageReflowTiming"],
+            "",
+            []),
         ["module.core.chat.messageViewportMotion"] = new(
             "module.core.chat",
             "module.core.chat.messageViewportMotion",

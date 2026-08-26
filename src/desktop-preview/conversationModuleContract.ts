@@ -25,6 +25,7 @@ export interface ConversationComposerContract {
 }
 
 export interface ConversationMessageContract {
+  id: string;
   actor: JsonRecord;
   actorIdentityVisible: boolean;
   state: string;
@@ -67,6 +68,9 @@ export interface ConversationModuleContract {
   messages: JsonRecord[];
   visibleMessages: ConversationMessageContract[];
   viewportMotionProgress: number;
-  scrollMotionProgress: number;
+  messageReflow?: {
+    progress: number;
+    fromMessages: ConversationMessageContract[];
+  };
   textInputConfig?: JsonRecord;
 }

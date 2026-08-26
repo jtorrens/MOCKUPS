@@ -62,6 +62,13 @@ keyframes. An explicit Screen duration remains authoritative. Conversation
 messages use this contract and share one Motion recipe from the Conversation
 Module Variant.
 
+Conversation owns message geometry separately from message presence. Its
+`Messages reflow timing` is one duration/easing contract for both keyed
+vertical reflow after an explicit message Out and the vertical auto-scroll
+needed when a newly visible message exceeds the viewport. The Bubble remains
+the owner of its resolved appearance and the Conversation message Motion
+remains the owner of Enter/Exit; neither owns sibling displacement.
+
 ## Temporal ownership
 
 Every temporal entity follows one rule:

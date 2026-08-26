@@ -195,6 +195,7 @@ test("a message owner phase freezes incoming content at its initial write state"
         showKeyboard: false,
         showTextInputBar: false,
         messageMotion: motion,
+        messageReflowTiming: { durationMs: 240, easing: "linear" },
       },
     }),
     designPreviewJson: JSON.stringify(preview),
@@ -871,6 +872,98 @@ test("Conversation message presence ends at its explicit resolved Out", () => {
   assert.equal(at(99).length, 1);
   assert.equal(at(99)[0]?.presenceMotionKind, undefined);
   assert.equal(at(100).length, 0);
+});
+
+test("Conversation uses one reflow timing when a message appears", () => {
+  const source = committedConversationPayload(true);
+  const runtime = JSON.parse(source.designPreviewJson) as {
+    messages: Array<Record<string, unknown>>;
+  };
+  const original = runtime.messages[0]!;
+  const message = (id: string, delayAfterPreviousFrames: number) => ({
+    ...original,
+    id,
+    direction: "incoming",
+    delayAfterPreviousFrames,
+    postWriteOnHoldFrames: 0,
+    visibleDurationFrames: 0,
+    writeOnTiming: {
+      mode: "fixed",
+      fixedFrames: 0,
+      paceToken: "theme.motion.naturalPace.normal",
+    },
+  });
+  runtime.messages = [message("first", 0), message("second", 10)];
+  source.designPreviewJson = JSON.stringify(runtime);
+
+  const appearanceFrame = Array.from({ length: 30 }, (_, frame) => frame)
+    .find((frame) => {
+      setConversationFrame(source, frame);
+      return resolveConversationModule(source).visibleMessages.length === 2;
+    });
+  assert.notEqual(appearanceFrame, undefined);
+  setConversationFrame(source, appearanceFrame!);
+  const started = resolveConversationModule(source);
+  assert.deepEqual(started.visibleMessages.map(({ id }) => id), ["first", "second"]);
+  assert.deepEqual(started.messageReflow?.fromMessages.map(({ id }) => id), ["first"]);
+  assert.equal(started.messageReflow?.progress, 0);
+
+  setConversationFrame(source, appearanceFrame! + 4);
+  const moving = resolveConversationModule(source);
+  assert.ok((moving.messageReflow?.progress ?? 0) > 0);
+  assert.ok((moving.messageReflow?.progress ?? 1) < 1);
+});
+
+test("Conversation uses the same reflow timing after a message Out completes", () => {
+  const source = committedConversationPayload(true);
+  const runtime = JSON.parse(source.designPreviewJson) as {
+    messages: Array<Record<string, unknown>>;
+  };
+  const original = runtime.messages[0]!;
+  const message = (id: string, visibleDurationFrames: number) => ({
+    ...original,
+    id,
+    direction: "incoming",
+    delayAfterPreviousFrames: 0,
+    postWriteOnHoldFrames: 0,
+    visibleDurationFrames,
+    writeOnTiming: {
+      mode: "fixed",
+      fixedFrames: 0,
+      paceToken: "theme.motion.naturalPace.normal",
+    },
+  });
+  runtime.messages = [message("leaving", 10), message("remaining", 0)];
+  source.designPreviewJson = JSON.stringify(runtime);
+
+  setConversationFrame(source, 10);
+  const started = resolveConversationModule(source);
+  assert.deepEqual(started.visibleMessages.map(({ id }) => id), ["remaining"]);
+  assert.deepEqual(
+    started.messageReflow?.fromMessages.map(({ id }) => id),
+    ["leaving", "remaining"],
+  );
+  assert.equal(started.messageReflow?.progress, 0);
+
+  const remainingY = (frame: number) => {
+    setConversationFrame(source, frame);
+    const bubble = findNodes(
+      conversationModuleToRenderable(source),
+      "component.bubble",
+    )[0];
+    assert.ok(bubble);
+    return renderableVisualBounds(bubble).y;
+  };
+  const startY = remainingY(10);
+  const middleY = remainingY(14);
+  const finalY = remainingY(18);
+  assert.ok(startY > middleY);
+  assert.ok(middleY > finalY);
+
+  setConversationFrame(source, 14);
+  const moving = resolveConversationModule(source);
+  assert.ok((moving.messageReflow?.progress ?? 0) > 0);
+  assert.ok((moving.messageReflow?.progress ?? 1) < 1);
 });
 
 test("a nested full-screen Media keeps the exact root Screen coordinates", () => {
