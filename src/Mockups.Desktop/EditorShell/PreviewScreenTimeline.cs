@@ -103,6 +103,39 @@ internal static class PreviewScreenTimelineMath
             Math.Max(1, confirmedContentDuration),
             durationAffectingEndFrames.DefaultIfEmpty(1).Max());
 
+    public static IReadOnlyList<int> NavigationFrames(
+        PreviewScreenTimelineSnapshot snapshot,
+        IEnumerable<int> visibleLayerBoundaries,
+        IReadOnlySet<string> visibleTargetIds) =>
+        visibleLayerBoundaries
+            .Concat(snapshot.Keyframes
+                .Where((keyframe) => visibleTargetIds.Contains(
+                    keyframe.TargetId))
+                .Select((keyframe) => keyframe.ScreenFrame))
+            .Append(snapshot.MinimumFrame)
+            .Append(snapshot.MaximumFrame)
+            .Select((frame) => Math.Clamp(
+                frame,
+                snapshot.MinimumFrame,
+                snapshot.MaximumFrame))
+            .Distinct()
+            .Order()
+            .ToList();
+
+    public static int AdjacentNavigationFrame(
+        int currentFrame,
+        int direction,
+        IReadOnlyList<int> navigationFrames) =>
+        direction < 0
+            ? navigationFrames
+                .Where((frame) => frame < currentFrame)
+                .DefaultIfEmpty(currentFrame)
+                .Max()
+            : navigationFrames
+                .Where((frame) => frame > currentFrame)
+                .DefaultIfEmpty(currentFrame)
+                .Min();
+
     public static PreviewScreenTimelineViewport EnsureAuthoringHorizon(
         PreviewScreenTimelineSnapshot snapshot,
         PreviewScreenTimelineViewport viewport,
@@ -781,6 +814,12 @@ internal sealed class PreviewScreenTimelineController : IDisposable
             _referenceMarkers(_screenId));
     }
 
+    public bool TryStepFrame(int delta) =>
+        _surface.TryStepFrame(delta);
+
+    public bool TryMoveToNavigationFrame(int direction) =>
+        _surface.TryMoveToNavigationFrame(direction);
+
     public void Dispose()
     {
         _playbackState.Changed -= RefreshFrame;
@@ -1086,6 +1125,44 @@ internal sealed class PreviewScreenTimelineSurface : Border
             || _referenceMarkers.SequenceEqual(markers)) return;
         _referenceMarkers = markers;
         _ruler?.SetReferenceMarkers(markers);
+    }
+
+    public bool TryStepFrame(int delta)
+    {
+        if (_snapshot is null) return false;
+        var next = Math.Clamp(
+            _frame + delta,
+            _snapshot.MinimumFrame,
+            _snapshot.MaximumFrame);
+        _playheadSnapFrame = null;
+        if (next != _frame) _setFrame(next);
+        return true;
+    }
+
+    public bool TryMoveToNavigationFrame(int direction)
+    {
+        if (_snapshot is null) return false;
+        var next = PreviewScreenTimelineMath.AdjacentNavigationFrame(
+            _frame,
+            direction,
+            NavigationFrames());
+        _playheadSnapFrame = null;
+        if (next != _frame) _setFrame(next);
+        return true;
+    }
+
+    internal IReadOnlyList<int> NavigationFrames()
+    {
+        if (_snapshot is null) return [];
+        var visibleLanes = _lanes
+            .Where((lane) => lane.IsVisible)
+            .ToList();
+        return PreviewScreenTimelineMath.NavigationFrames(
+            _snapshot,
+            visibleLanes.SelectMany((lane) => lane.SnapFrames),
+            visibleLanes
+                .Select((lane) => lane.TargetId)
+                .ToHashSet(StringComparer.Ordinal));
     }
 
     private PreviewScreenTimelineLane CreateLane(

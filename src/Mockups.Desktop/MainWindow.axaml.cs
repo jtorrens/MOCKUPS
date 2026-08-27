@@ -134,6 +134,7 @@ public partial class MainWindow : SukiWindow
                 nodeId,
                 "preview-context"),
             (target) => previewAuthoringNavigator.Navigate(target),
+            PreviewPanelBorder,
             this);
         _screenTimeline = new PreviewScreenTimelineController(
             PreviewTimelineHost,
@@ -143,6 +144,9 @@ public partial class MainWindow : SukiWindow
             _previewController.ToggleProductionPlayback,
             _previewController.PlaybackState,
             _previewController.ProductionScreenReferenceMarkers);
+        _previewController.ConfigureScreenTimelineKeyboardNavigation(
+            _screenTimeline.TryStepFrame,
+            _screenTimeline.TryMoveToNavigationFrame);
         _previewControlsDock =
             new PreviewControlsDockController(
                 this,

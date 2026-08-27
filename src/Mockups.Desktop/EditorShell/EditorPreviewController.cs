@@ -5,6 +5,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using System;
@@ -65,6 +66,7 @@ internal sealed class EditorPreviewController : IDisposable
     private readonly ProductionPreviewSessionDataSource _productionPreviewData;
     private readonly IProductionRecordFieldStore _productionRecordFields;
     private readonly Window _owner;
+    private readonly Control _previewPanel;
     private readonly EditorInstantComboBox _deviceComboBox;
     private readonly EditorInstantComboBox _themeComboBox;
     private readonly EditorInstantComboBox _modeComboBox;
@@ -406,6 +408,8 @@ internal sealed class EditorPreviewController : IDisposable
         _productionSessionSnapshot;
     private readonly ShotReferenceVideoController
         _referenceVideoController;
+    private Func<int, bool>? _stepScreenTimelineFrame;
+    private Func<int, bool>? _moveToScreenTimelineNavigationFrame;
 
     public EditorPreviewController(
         IPreviewInputRepository preview,
@@ -435,6 +439,7 @@ internal sealed class EditorPreviewController : IDisposable
         Func<ProjectTreeNode?> selectedNode,
         Func<string, bool> selectNodeById,
         Action<PreviewAuthoringNavigationTarget> navigateAuthoringTarget,
+        Control previewPanel,
         Window owner)
     {
         _projectPaths = projectPaths;
@@ -456,6 +461,7 @@ internal sealed class EditorPreviewController : IDisposable
                 moduleInstanceThemes,
                 actors);
         _owner = owner;
+        _previewPanel = previewPanel;
         _referenceVideoController = new ShotReferenceVideoController(
             owner,
             projectPaths,
@@ -547,7 +553,19 @@ internal sealed class EditorPreviewController : IDisposable
         WebDesignPreviewRenderer.Shutdown();
         PlaybackState.Changed -= SyncReferenceVideo;
         PlaybackState.Changed -= RefreshShotPlaybackButton;
+        _owner.RemoveHandler(InputElement.KeyDownEvent, OnOwnerKeyDown);
+        _previewPanel.RemoveHandler(
+            InputElement.KeyDownEvent,
+            OnPreviewPanelKeyDown);
         _referenceVideoController.Dispose();
+    }
+
+    public void ConfigureScreenTimelineKeyboardNavigation(
+        Func<int, bool> stepFrame,
+        Func<int, bool> moveToNavigationFrame)
+    {
+        _stepScreenTimelineFrame = stepFrame;
+        _moveToScreenTimelineNavigationFrame = moveToNavigationFrame;
     }
 
     private void AddCurrentDesignContextToHistory()
@@ -1407,6 +1425,11 @@ internal sealed class EditorPreviewController : IDisposable
         _owner.AddHandler(
             InputElement.KeyDownEvent,
             OnOwnerKeyDown,
+            RoutingStrategies.Tunnel,
+            handledEventsToo: true);
+        _previewPanel.AddHandler(
+            InputElement.KeyDownEvent,
+            OnPreviewPanelKeyDown,
             RoutingStrategies.Tunnel,
             handledEventsToo: true);
         var shotFrameMagnet = new TimelineSliderMagnet(
@@ -2692,6 +2715,40 @@ internal sealed class EditorPreviewController : IDisposable
         }
 
         args.Handled = true;
+    }
+
+    private void OnPreviewPanelKeyDown(object? sender, KeyEventArgs args)
+    {
+        if (args.KeyModifiers != KeyModifiers.None
+            || PreviewInputOwnsNavigationKeys(args.Source))
+        {
+            return;
+        }
+
+        var handled = args.Key switch
+        {
+            Key.Left => _stepScreenTimelineFrame?.Invoke(-1) == true,
+            Key.Right => _stepScreenTimelineFrame?.Invoke(1) == true,
+            Key.PageUp =>
+                _moveToScreenTimelineNavigationFrame?.Invoke(-1) == true,
+            Key.PageDown =>
+                _moveToScreenTimelineNavigationFrame?.Invoke(1) == true,
+            _ => false,
+        };
+        if (handled) args.Handled = true;
+    }
+
+    private static bool PreviewInputOwnsNavigationKeys(object? source)
+    {
+        if (source is not Visual visual) return false;
+        return visual
+            .GetVisualAncestors()
+            .Prepend(visual)
+            .Any((candidate) => candidate is TextBox
+                or NumericUpDown
+                or RangeBase
+                or ComboBox
+                or EditorInstantComboBox);
     }
 
     private bool StopPreviewFromEscape()

@@ -6740,6 +6740,57 @@ static void PreviewShellVisualTreeIsResponsive()
                 .GetVisualDescendants()
                 .OfType<TextBlock>()
                 .Any((text) => text.Text == "General · Keyframes"));
+            previewController.SetProductionScreenTimelineFrame(
+                productionScreen.Id,
+                0);
+            Dispatcher.UIThread.RunJobs();
+            var selectedTimelineTab = tabs.SelectedItem;
+            var rightKey = new KeyEventArgs
+            {
+                RoutedEvent = InputElement.KeyDownEvent,
+                Key = Key.Right,
+            };
+            tabs.RaiseEvent(rightKey);
+            Dispatcher.UIThread.RunJobs();
+            True(rightKey.Handled);
+            Equal(selectedTimelineTab, tabs.SelectedItem);
+            Equal(
+                1,
+                previewController.ProductionScreenTimelineFrame(
+                    productionScreen.Id));
+
+            var nextNavigationFrame = timelineSurface
+                .NavigationFrames()
+                .First((frame) => frame > 1);
+            var pageDownKey = new KeyEventArgs
+            {
+                RoutedEvent = InputElement.KeyDownEvent,
+                Key = Key.PageDown,
+            };
+            tabs.RaiseEvent(pageDownKey);
+            Dispatcher.UIThread.RunJobs();
+            True(pageDownKey.Handled);
+            Equal(selectedTimelineTab, tabs.SelectedItem);
+            Equal(
+                nextNavigationFrame,
+                previewController.ProductionScreenTimelineFrame(
+                    productionScreen.Id));
+
+            var previousNavigationFrame = timelineSurface
+                .NavigationFrames()
+                .Last((frame) => frame < nextNavigationFrame);
+            var pageUpKey = new KeyEventArgs
+            {
+                RoutedEvent = InputElement.KeyDownEvent,
+                Key = Key.PageUp,
+            };
+            tabs.RaiseEvent(pageUpKey);
+            Dispatcher.UIThread.RunJobs();
+            True(pageUpKey.Handled);
+            Equal(
+                previousNavigationFrame,
+                previewController.ProductionScreenTimelineFrame(
+                    productionScreen.Id));
             var itemTimelineLane = timelineLanes.First((lane) =>
                 !string.IsNullOrWhiteSpace(lane.TargetId));
             itemTimelineLane.RequestSelection();
@@ -17222,6 +17273,41 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
         Mutation: null);
     Equal(-20, snapshot.MinimumFrame);
     Equal(111, snapshot.MaximumFrame);
+    var navigationSnapshot = snapshot with
+    {
+        Keyframes =
+        [
+            new PreviewScreenTimelineKeyframe(
+                "opacity",
+                "visible_item",
+                12,
+                32,
+                IsProtected: false),
+            new PreviewScreenTimelineKeyframe(
+                "opacity",
+                "collapsed_item",
+                28,
+                48,
+                IsProtected: false),
+        ],
+    };
+    var navigationFrames = PreviewScreenTimelineMath.NavigationFrames(
+        navigationSnapshot,
+        visibleLayerBoundaries: [0, 25, 100],
+        visibleTargetIds: new HashSet<string>(StringComparer.Ordinal)
+        {
+            "",
+            "visible_item",
+        });
+    SequenceEqual([-20, 0, 25, 32, 100, 111], navigationFrames);
+    Equal(32, PreviewScreenTimelineMath.AdjacentNavigationFrame(
+        25,
+        1,
+        navigationFrames));
+    Equal(25, PreviewScreenTimelineMath.AdjacentNavigationFrame(
+        32,
+        -1,
+        navigationFrames));
     Equal(-20, PreviewScreenTimelineMath.Frame(
         0,
         500,
