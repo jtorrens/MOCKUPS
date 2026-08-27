@@ -179,6 +179,46 @@ test("Bubble write-on Cursor never changes the measured Bubble width", () => {
   );
 });
 
+test("Bubble remeasures wrapped lines from the current resolved text", () => {
+  const renderedAt = (
+    sampleText: string,
+    writeOnTrigger: boolean,
+    writeOnFrame: number,
+  ) => {
+    const source = committedComponentFixture("bubble");
+    const preview = JSON.parse(source.designPreviewJson) as Record<string, unknown>;
+    Object.assign(preview, {
+      sampleText,
+      maxWidth: 40,
+      mediaType: "none",
+      statusState: "none",
+      statusText: "",
+      writeOnTrigger,
+      writeOnDurationFrames: 20,
+      writeOnFrame,
+    });
+    source.designPreviewJson = JSON.stringify(preview);
+    const resolved = resolveBubbleComponent(source);
+    const width = bubbleComponentToRenderable(source, resolved).box?.width;
+    assert.notEqual(width, undefined);
+    return {
+      text: resolved.textBox.text,
+      width: width!,
+      maximumWidth: resolved.maxWidth,
+    };
+  };
+
+  const beforeWrap = renderedAt("A broadword broadword", true, 16);
+  const afterWrap = renderedAt("A broadword broadword", true, 17);
+  assert.equal(beforeWrap.text, "A broadword broad");
+  assert.equal(afterWrap.text, "A broadword broadw");
+  assert.ok(afterWrap.width < beforeWrap.width);
+  assert.ok(afterWrap.width < afterWrap.maximumWidth);
+
+  const animatedValue = renderedAt(afterWrap.text, false, 0);
+  assert.equal(animatedValue.width, afterWrap.width);
+});
+
 test("Bubble reserves message text for an Avatar anchored to any Bubble edge", () => {
   const placements = [
     {

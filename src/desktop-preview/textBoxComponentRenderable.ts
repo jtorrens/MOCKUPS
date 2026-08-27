@@ -181,7 +181,9 @@ export function measureTextBoxComponent(
       )
     : contentSize;
 
-  width = wraps ? maximumWidth : Math.max(1, naturalWidth);
+  width = wraps
+    ? fittedWrappedWidth(measuredContentSize.width, paddingX, iconInset.total, maximumWidth)
+    : Math.max(1, naturalWidth);
   height = Math.max(
     1,
     textContentVisualHeight(measuredContentSize.lineCount, typography) + paddingY * 2,
@@ -204,7 +206,9 @@ export function measureTextBoxComponent(
         resolvedWrapWidth(Math.max(1, maximumWidth - paddingX * 2 - iconInset.total)),
       )
     : contentSize;
-  width = wraps ? maximumWidth : Math.max(1, naturalWidth);
+  width = wraps
+    ? fittedWrappedWidth(measuredContentSize.width, paddingX, iconInset.total, maximumWidth)
+    : Math.max(1, naturalWidth);
   height = Math.max(
     1,
     textContentVisualHeight(measuredContentSize.lineCount, typography) + paddingY * 2,
@@ -579,4 +583,16 @@ function resolvedWrapWidth(width: number) {
 
 function measuredContentWidth(width: number) {
   return Math.max(1, width);
+}
+
+function fittedWrappedWidth(
+  measuredLineWidth: number,
+  paddingX: number,
+  iconInset: number,
+  maximumWidth: number,
+) {
+  return Math.min(
+    maximumWidth,
+    measuredContentWidth(measuredLineWidth) + paddingX * 2 + iconInset,
+  );
 }

@@ -147,6 +147,13 @@ Cursor is an inline Text Box decoration. It is painted inside the resolved text
 viewport and never contributes to intrinsic width, wrapping or height. Showing,
 hiding or fading Cursor therefore cannot resize an owning Text Box or Bubble.
 
+Text Box measures only the text resolved for the current frame. When a word
+crosses the wrap boundary, the common text layout first detects the overflow
+and then remeasures the resulting line fragments; content-sized Text Box width
+comes from the widest resulting line rather than the pre-wrap candidate or the
+maximum allowed width. Write-on and parameter-animated text use this same
+current-value contract and never inspect a future text value.
+
 ## Incoming Call Notification
 
 Incoming Call Notification owns one bounded Surface frame and two fixed child
