@@ -222,7 +222,7 @@ public partial class MainWindow : SukiWindow
             new PreviewAuthoringRefreshCoordinator(
                 () => Session.Workspace,
                 _previewController.NotifyAuthoredPreviewInputsChanged,
-                RefreshPreviewOptions);
+                RefreshProductionAuthoringAsync);
         var fieldPostCommitEffects = new EditorFieldPostCommitEffects(
             data.Presentation,
             application.Operations,
@@ -535,6 +535,18 @@ public partial class MainWindow : SukiWindow
                 exception);
             return false;
         }
+    }
+
+    private async Task RefreshProductionAuthoringAsync()
+    {
+        var selected = Session.SelectedNode;
+        if (selected is null) return;
+        var revision = Session.Revision;
+        if (!await RefreshPreviewOptionsAsync()) return;
+        await RefreshPreviewAuthoringSurfaceAsync(
+            selected,
+            revision,
+            preserveCurrentSurfaceWhilePreparing: true);
     }
 
     private async Task<bool> LoadProjectTreeAsync()

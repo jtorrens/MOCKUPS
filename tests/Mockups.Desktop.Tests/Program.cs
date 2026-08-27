@@ -170,7 +170,7 @@ var tests = new (string Name, Action Run)[]
     ("MainWindow retains only shell-owned services", MainWindowRetainsOnlyShellServices),
     ("Desktop build identity is embedded in the window title", DesktopBuildIdentityIsEmbedded),
     ("post-commit presentation reads run through operation coordination", PostCommitPresentationReadsUseOperationCoordination),
-    ("Production authoring changes refresh the prepared session", ProductionAuthoringChangesRefreshPreparedSession),
+    ("Production authoring refreshes the prepared session before Screen Timeline", ProductionAuthoringRefreshesSessionBeforeTimeline),
     ("Preview authoring preparation is task-based cancellable and snapshot-owned", PreviewAuthoringPreparationUsesOperationBoundary),
     ("Variant history reads persistence through the operation boundary", VariantHistoryReadsThroughOperationBoundary),
     ("collapsed editor cards defer their snapshot until expansion", CollapsedEditorCardsDeferSnapshots),
@@ -3996,24 +3996,29 @@ static void PostCommitPresentationReadsUseOperationCoordination()
         threadId != callerThread));
 }
 
-static void ProductionAuthoringChangesRefreshPreparedSession()
+static void ProductionAuthoringRefreshesSessionBeforeTimeline()
 {
     var workspace = EditorWorkspace.Design;
     var previewRefreshes = 0;
-    var productionSessionRefreshes = 0;
+    var productionRefreshOrder = new List<string>();
     var refresh = new PreviewAuthoringRefreshCoordinator(
         () => workspace,
         () => previewRefreshes++,
-        () => productionSessionRefreshes++);
+        async () =>
+        {
+            productionRefreshOrder.Add("session");
+            await Task.Yield();
+            productionRefreshOrder.Add("timeline");
+        });
 
-    refresh.Notify();
+    refresh.NotifyAsync().GetAwaiter().GetResult();
     Equal(1, previewRefreshes);
-    Equal(0, productionSessionRefreshes);
+    Equal(0, productionRefreshOrder.Count);
 
     workspace = EditorWorkspace.Production;
-    refresh.Notify();
+    refresh.NotifyAsync().GetAwaiter().GetResult();
     Equal(1, previewRefreshes);
-    Equal(1, productionSessionRefreshes);
+    SequenceEqual(["session", "timeline"], productionRefreshOrder);
 }
 
 static void PreviewAuthoringPreparationUsesOperationBoundary()
