@@ -187,6 +187,10 @@ without cropping or adding a border. The worker premultiplies RGB against black
 by the clean raster alpha before every output conversion. PNG, EXR and ProRes
 4444 preserve that alpha channel; ProRes 422 and H.264 discard alpha after the
 same premultiplication and therefore represent transparent pixels over black.
+Every MOV frame and its QuickTime `colr` atom declare limited range, BT.709
+primaries, the CSS sRGB transfer and BT.709 matrix coefficients. ProRes 4444
+additionally writes the QuickTime video-media graphics mode as premultiplied
+against black; the other MOV profiles retain copy mode and contain no alpha.
 No output contains audio.
 
 MOCKUPS proposes:

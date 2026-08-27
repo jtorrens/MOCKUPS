@@ -120,6 +120,8 @@ var tests = new (string Name, Action Run)[]
     ("Shot Manager output captures exact associations and resolves offline", ShotManagerOutputResolvesExactAssociations),
     ("Render output naming reserves one version for Light and Dark", RenderOutputNamingReservesOneBatchVersion),
     ("MOV H.264 modes match the Créditos encoding profiles", MovH264ModesMatchCreditosProfiles),
+    ("MOV outputs carry exact color range and alpha association metadata", MovOutputsCarryExactMetadata),
+    ("Render executor publishes MOV with exact alpha association metadata", RenderExecutorPublishesMovWithExactMetadata),
     ("Production render overrides Device and Theme while respecting forced Screen appearance", ProductionRenderOverridesRespectScreenAppearance),
     ("Render snapshot store interns repeated font assets", RenderSnapshotStoreInternsAssets),
     ("Render Queue persists and completes batch children independently", RenderQueueChildrenAreIndependent),
@@ -12897,18 +12899,30 @@ static void MovH264ModesMatchCreditosProfiles()
             "-colorspace", "bt709",
         },
         RenderColorMetadata.FfmpegArguments);
+    SequenceEqual(
+        new[]
+        {
+            "-color_range", "tv",
+            "-color_primaries", "bt709",
+            "-color_trc", "iec61966-2-1",
+            "-colorspace", "bt709",
+        },
+        RenderColorMetadata.MovFfmpegArguments);
+
+    var limitedFilter =
+        $"{RenderAlphaPremultiplication.Filter},{RenderColorMetadata.LimitedSrgbBt709FrameFilter}";
 
     SequenceEqual(
         new[]
         {
-            "-vf", RenderAlphaPremultiplication.Filter,
+            "-vf", limitedFilter,
             "-c:v", "libx264",
             "-preset", "medium",
             "-b:v", "8M",
             "-maxrate", "10M",
             "-bufsize", "16M",
             "-pix_fmt", "yuv420p",
-            "-movflags", "+faststart",
+            "-movflags", "+faststart+write_colr",
         },
         RenderMovEncodingProfiles.Arguments(
             light.EncodingProfile,
@@ -12917,14 +12931,14 @@ static void MovH264ModesMatchCreditosProfiles()
     SequenceEqual(
         new[]
         {
-            "-vf", RenderAlphaPremultiplication.Filter,
+            "-vf", limitedFilter,
             "-c:v", "libx264",
             "-preset", "medium",
             "-b:v", "20M",
             "-maxrate", "25M",
             "-bufsize", "40M",
             "-pix_fmt", "yuv420p",
-            "-movflags", "+faststart",
+            "-movflags", "+faststart+write_colr",
         },
         RenderMovEncodingProfiles.Arguments(
             standard.EncodingProfile,
@@ -12933,14 +12947,14 @@ static void MovH264ModesMatchCreditosProfiles()
     SequenceEqual(
         new[]
         {
-            "-vf", RenderAlphaPremultiplication.Filter,
+            "-vf", limitedFilter,
             "-c:v", "libx264",
             "-preset", "slow",
             "-b:v", "40M",
             "-maxrate", "50M",
             "-bufsize", "80M",
             "-pix_fmt", "yuv420p",
-            "-movflags", "+faststart",
+            "-movflags", "+faststart+write_colr",
         },
         RenderMovEncodingProfiles.Arguments(
             high.EncodingProfile,
@@ -12956,14 +12970,14 @@ static void MovH264ModesMatchCreditosProfiles()
     SequenceEqual(
         new[]
         {
-            "-vf", $"{RenderAlphaPremultiplication.Filter},scale=1180:2558:flags=lanczos",
+            "-vf", $"{RenderAlphaPremultiplication.Filter},scale=1180:2558:flags=lanczos,{RenderColorMetadata.LimitedSrgbBt709FrameFilter}",
             "-c:v", "libx264",
             "-preset", "medium",
             "-b:v", "20M",
             "-maxrate", "25M",
             "-bufsize", "40M",
             "-pix_fmt", "yuv420p",
-            "-movflags", "+faststart",
+            "-movflags", "+faststart+write_colr",
         },
         RenderMovEncodingProfiles.Arguments(
             standard.EncodingProfile,
@@ -12980,6 +12994,131 @@ static void MovH264ModesMatchCreditosProfiles()
             standard.EncodingProfile,
             0,
             2556));
+}
+
+static void MovOutputsCarryExactMetadata()
+{
+    var root = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-mov-metadata-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(root);
+    try
+    {
+        var ffmpeg = RenderJobExecutor.ResolveFfmpegExecutable();
+        var ffprobe = Path.Combine(
+            Path.GetDirectoryName(ffmpeg) ?? "",
+            OperatingSystem.IsWindows() ? "ffprobe.exe" : "ffprobe");
+        True(File.Exists(ffprobe));
+        foreach (var modeId in new[]
+                 {
+                     RenderOutputModes.MovProRes422Hq,
+                     RenderOutputModes.MovProRes4444,
+                     RenderOutputModes.MovH264Standard,
+                 })
+        {
+            var mode = RenderOutputModes.Require(modeId);
+            var output = Path.Combine(root, $"{modeId}.mov");
+            IReadOnlyList<string> arguments =
+            [
+                "-v", "error",
+                "-y",
+                "-f", "lavfi",
+                "-i", "color=c=white@0.5:s=64x64:d=0.04,format=rgba",
+                .. RenderMovEncodingProfiles.Arguments(
+                    mode.EncodingProfile,
+                    64,
+                    64),
+                .. RenderColorMetadata.MovFfmpegArguments,
+                "-an",
+                output,
+            ];
+            RunChildProcess(ffmpeg, arguments);
+            if (mode.PreservesAlpha)
+            {
+                QuickTimeAlphaAssociation.WritePremultipliedBlack(
+                    output);
+            }
+
+            var probe = JsonNode.Parse(RunChildProcess(
+                    ffprobe,
+                    [
+                        "-v", "error",
+                        "-select_streams", "v:0",
+                        "-show_entries",
+                        "stream=codec_name,profile,pix_fmt,color_range,color_space,color_transfer,color_primaries",
+                        "-of", "json",
+                        output,
+                    ]))?["streams"]?[0]?.AsObject()
+                ?? throw new InvalidOperationException(
+                    $"Missing ffprobe video stream for '{modeId}'.");
+            Equal("tv", probe["color_range"]?.GetValue<string>() ?? "");
+            Equal("bt709", probe["color_space"]?.GetValue<string>() ?? "");
+            Equal("bt709", probe["color_primaries"]?.GetValue<string>() ?? "");
+            Equal("iec61966-2-1", probe["color_transfer"]?.GetValue<string>() ?? "");
+
+            if (modeId == RenderOutputModes.MovProRes422Hq)
+            {
+                Equal("prores", probe["codec_name"]?.GetValue<string>() ?? "");
+                Equal("HQ", probe["profile"]?.GetValue<string>() ?? "");
+                Equal("yuv422p10le", probe["pix_fmt"]?.GetValue<string>() ?? "");
+                Equal(
+                    QuickTimeAlphaAssociation.Copy,
+                    QuickTimeAlphaAssociation.ReadGraphicsMode(output));
+            }
+            else if (modeId == RenderOutputModes.MovProRes4444)
+            {
+                Equal("prores", probe["codec_name"]?.GetValue<string>() ?? "");
+                Equal("4444", probe["profile"]?.GetValue<string>() ?? "");
+                True((probe["pix_fmt"]?.GetValue<string>() ?? "")
+                    .StartsWith("yuva444p", StringComparison.Ordinal));
+                Equal(
+                    QuickTimeAlphaAssociation.PremultipliedBlack,
+                    QuickTimeAlphaAssociation.ReadGraphicsMode(output));
+            }
+            else
+            {
+                Equal("h264", probe["codec_name"]?.GetValue<string>() ?? "");
+                Equal("High", probe["profile"]?.GetValue<string>() ?? "");
+                Equal("yuv420p", probe["pix_fmt"]?.GetValue<string>() ?? "");
+                Equal(
+                    QuickTimeAlphaAssociation.Copy,
+                    QuickTimeAlphaAssociation.ReadGraphicsMode(output));
+            }
+        }
+    }
+    finally
+    {
+        Directory.Delete(root, recursive: true);
+    }
+}
+
+static string RunChildProcess(
+    string executable,
+    IReadOnlyList<string> arguments)
+{
+    var start = DesktopChildProcess.CreateHiddenStartInfo(
+        executable,
+        Directory.GetCurrentDirectory());
+    foreach (var argument in arguments)
+    {
+        start.ArgumentList.Add(argument);
+    }
+    using var process = Process.Start(start)
+        ?? throw new InvalidOperationException(
+            $"Child process '{executable}' could not start.");
+    var stdout = process.StandardOutput.ReadToEndAsync();
+    var stderr = process.StandardError.ReadToEndAsync();
+    process.WaitForExit();
+    var output = stdout.GetAwaiter().GetResult();
+    var error = stderr.GetAwaiter().GetResult();
+    if (process.ExitCode != 0)
+    {
+        throw new InvalidOperationException(
+            string.IsNullOrWhiteSpace(error)
+                ? $"Child process '{executable}' ended with exit code {process.ExitCode}."
+                : error);
+    }
+    return output;
 }
 
 static void ProductionRenderOverridesRespectScreenAppearance()
@@ -13944,6 +14083,135 @@ static void RenderExecutorPublishesCleanPngSequence()
                 "*.mockups-*",
                 SearchOption.TopDirectoryOnly)
             .Length == 0);
+    }
+    finally
+    {
+        Directory.Delete(root, recursive: true);
+    }
+}
+
+static void RenderExecutorPublishesMovWithExactMetadata()
+{
+    var root = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-render-mov-executor-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(root);
+    try
+    {
+        var mode = RenderOutputModes.Require(
+            RenderOutputModes.MovProRes4444);
+        var outputPlan = RenderOutputPlanner.Suggest(
+            root,
+            "output",
+            "SHOT_031",
+            [RenderQueueAppearance.Light],
+            mode,
+            3);
+        var snapshot = new RenderJobSnapshot(
+            RenderJobSnapshot.CurrentSchema,
+            RenderJobSnapshot.CurrentVersion,
+            new RenderShotContext(
+                "project",
+                "shot",
+                "Shot 031",
+                "actor",
+                "Actor"),
+            "device",
+            "Device",
+            "theme",
+            "Theme",
+            RenderQueueAppearance.Light,
+            new DevicePreviewMetrics(
+                "Device",
+                64,
+                64,
+                0,
+                0,
+                64,
+                64,
+                0,
+                0,
+                0,
+                0,
+                0,
+                DeviceModuleTransparencyOverride.Disabled),
+            25,
+            StoreRenderFrames(
+                Path.Combine(
+                    root,
+                    Guid.NewGuid().ToString()),
+                RenderQueueAppearance.Light,
+                [
+                    """
+                    <!doctype html>
+                    <html>
+                      <body style="margin:0">
+                        <div
+                          data-renderable-id="design_preview.surface"
+                          style="width:64px;height:64px;background:rgba(255,0,0,.5)">
+                        </div>
+                      </body>
+                    </html>
+                    """,
+                ]),
+            new RenderOutputTarget(
+                "production",
+                "output",
+                root,
+                "output",
+                "SHOT_031",
+                RenderQueueAppearance.Light,
+                outputPlan.Version,
+                3,
+                mode.Id,
+                outputPlan.OutputPaths[RenderQueueAppearance.Light]));
+
+        Equal(
+            Path.Combine(
+                root,
+                "output",
+                $"SHOT_031_LIGHT_v{outputPlan.Version:D3}.mov"),
+            snapshot.Output.OutputPath);
+
+        using var executor = new RenderJobExecutor();
+        executor.ExecuteAsync(
+                snapshot,
+                new Progress<RenderQueueExecutionProgress>(),
+                CancellationToken.None)
+            .GetAwaiter()
+            .GetResult();
+
+        True(File.Exists(snapshot.Output.OutputPath));
+        Equal(
+            QuickTimeAlphaAssociation.PremultipliedBlack,
+            QuickTimeAlphaAssociation.ReadGraphicsMode(
+                snapshot.Output.OutputPath));
+        var ffprobe = Path.Combine(
+            Path.GetDirectoryName(
+                RenderJobExecutor.ResolveFfmpegExecutable()) ?? "",
+            OperatingSystem.IsWindows() ? "ffprobe.exe" : "ffprobe");
+        var probe = JsonNode.Parse(RunChildProcess(
+                ffprobe,
+                [
+                    "-v", "error",
+                    "-select_streams", "v:0",
+                    "-show_entries",
+                    "stream=color_range,color_space,color_transfer,color_primaries",
+                    "-of", "json",
+                    snapshot.Output.OutputPath,
+                ]))?["streams"]?[0]?.AsObject()
+            ?? throw new InvalidOperationException(
+                "Missing ffprobe video stream for executor MOV output.");
+        Equal("tv", probe["color_range"]?.GetValue<string>() ?? "");
+        Equal("bt709", probe["color_space"]?.GetValue<string>() ?? "");
+        Equal("bt709", probe["color_primaries"]?.GetValue<string>() ?? "");
+        Equal("iec61966-2-1", probe["color_transfer"]?.GetValue<string>() ?? "");
+        Equal(
+            0,
+            Directory.GetFiles(
+                Path.GetDirectoryName(snapshot.Output.OutputPath) ?? root,
+                "*.mockups-*",
+                SearchOption.TopDirectoryOnly).Length);
     }
     finally
     {

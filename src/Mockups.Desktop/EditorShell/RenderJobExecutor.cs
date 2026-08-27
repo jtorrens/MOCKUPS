@@ -1,5 +1,6 @@
 using Mockups.DesktopEditorShell.Common;
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -75,11 +76,16 @@ internal sealed class RenderJobExecutor : IRenderJobExecutor
                 "-start_number", "0",
                 "-i", Path.Combine(frameDirectory, "frame_%08d.png"),
                 .. profileArgs,
-                .. RenderColorMetadata.FfmpegArguments,
+                .. RenderColorMetadata.MovFfmpegArguments,
                 "-an",
                 temporaryOutput,
             ],
                 cancellationToken);
+            if (mode.PreservesAlpha)
+            {
+                QuickTimeAlphaAssociation.WritePremultipliedBlack(
+                    temporaryOutput);
+            }
             cancellationToken.ThrowIfCancellationRequested();
             RenderOutputPathSecurity.RequireOutputTarget(snapshot.Output);
             RenderOutputPublisher.PublishFile(
@@ -420,6 +426,18 @@ internal static class RenderColorMetadata
         "-color_trc", "iec61966-2-1",
         "-colorspace", "bt709",
     ];
+
+    public static readonly IReadOnlyList<string> MovFfmpegArguments =
+    [
+        "-color_range", "tv",
+        .. FfmpegArguments,
+    ];
+
+    public const string LimitedSrgbBt709FrameFilter =
+        "setparams=range=limited:color_primaries=bt709:color_trc=iec61966-2-1:colorspace=bt709";
+
+    public const string LimitedSrgbBt709PremultipliedFrameFilter =
+        LimitedSrgbBt709FrameFilter + ":alpha_mode=premultiplied";
 }
 
 internal static class RenderMovEncodingProfiles
@@ -442,6 +460,7 @@ internal static class RenderMovEncodingProfiles
                 "-profile:v", "3",
                 "-pix_fmt", "yuv422p10le",
                 "-vendor", "apl0",
+                "-movflags", "+write_colr",
             ],
             "prores_4444" =>
             [
@@ -451,6 +470,7 @@ internal static class RenderMovEncodingProfiles
                 "-pix_fmt", "yuva444p10le",
                 "-alpha_bits", "16",
                 "-vendor", "apl0",
+                "-movflags", "+write_colr",
             ],
             "h264_light" =>
             [
@@ -461,7 +481,7 @@ internal static class RenderMovEncodingProfiles
                 "-maxrate", "10M",
                 "-bufsize", "16M",
                 "-pix_fmt", "yuv420p",
-                "-movflags", "+faststart",
+                "-movflags", "+faststart+write_colr",
             ],
             "h264_standard" =>
             [
@@ -472,7 +492,7 @@ internal static class RenderMovEncodingProfiles
                 "-maxrate", "25M",
                 "-bufsize", "40M",
                 "-pix_fmt", "yuv420p",
-                "-movflags", "+faststart",
+                "-movflags", "+faststart+write_colr",
             ],
             "h264_high" =>
             [
@@ -483,7 +503,7 @@ internal static class RenderMovEncodingProfiles
                 "-maxrate", "50M",
                 "-bufsize", "80M",
                 "-pix_fmt", "yuv420p",
-                "-movflags", "+faststart",
+                "-movflags", "+faststart+write_colr",
             ],
             _ => throw new InvalidOperationException(
                 $"Unsupported MOV encoding profile '{encodingProfile}'."),
@@ -527,9 +547,20 @@ internal static class RenderMovEncodingProfiles
             encodingProfile,
             sourceWidth,
             sourceHeight);
-        return output == (sourceWidth, sourceHeight)
-            ? RenderAlphaPremultiplication.Filter
-            : $"{RenderAlphaPremultiplication.Filter},scale={output.Width}:{output.Height}:flags=lanczos";
+        var filters = new List<string>
+        {
+            RenderAlphaPremultiplication.Filter,
+        };
+        if (output != (sourceWidth, sourceHeight))
+        {
+            filters.Add(
+                $"scale={output.Width}:{output.Height}:flags=lanczos");
+        }
+        filters.Add(encodingProfile == "prores_4444"
+            ? RenderColorMetadata
+                .LimitedSrgbBt709PremultipliedFrameFilter
+            : RenderColorMetadata.LimitedSrgbBt709FrameFilter);
+        return string.Join(',', filters);
     }
 
     private static int NearestEven(double value) =>
@@ -538,4 +569,147 @@ internal static class RenderMovEncodingProfiles
             2 * (int)Math.Round(
                 value / 2d,
                 MidpointRounding.AwayFromZero));
+}
+
+internal static class QuickTimeAlphaAssociation
+{
+    public const ushort Copy = 0x0000;
+    public const ushort PremultipliedBlack = 0x0102;
+
+    private static readonly HashSet<string> ContainerAtoms =
+    [
+        "moov",
+        "trak",
+        "mdia",
+        "minf",
+    ];
+
+    public static void WritePremultipliedBlack(string path)
+    {
+        using var stream = new FileStream(
+            path,
+            FileMode.Open,
+            FileAccess.ReadWrite,
+            FileShare.None);
+        var atom = RequireVideoMediaHeader(stream);
+        var current = ReadGraphicsMode(stream, atom);
+        if (current is not Copy and not PremultipliedBlack)
+        {
+            throw new InvalidOperationException(
+                $"QuickTime video media header uses unsupported graphics mode 0x{current:X4}.");
+        }
+        Span<byte> value = stackalloc byte[2];
+        BinaryPrimitives.WriteUInt16BigEndian(
+            value,
+            PremultipliedBlack);
+        stream.Position = atom.Offset + 12;
+        stream.Write(value);
+        stream.Flush(flushToDisk: true);
+    }
+
+    public static ushort ReadGraphicsMode(string path)
+    {
+        using var stream = new FileStream(
+            path,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.Read);
+        return ReadGraphicsMode(
+            stream,
+            RequireVideoMediaHeader(stream));
+    }
+
+    private static ushort ReadGraphicsMode(
+        FileStream stream,
+        QuickTimeAtom atom)
+    {
+        Span<byte> header = stackalloc byte[6];
+        stream.Position = atom.Offset + 8;
+        stream.ReadExactly(header);
+        if (BinaryPrimitives.ReadUInt32BigEndian(header) != 1)
+        {
+            throw new InvalidOperationException(
+                "QuickTime video media header must use version 0 and flag 1.");
+        }
+        return BinaryPrimitives.ReadUInt16BigEndian(header[4..]);
+    }
+
+    private static QuickTimeAtom RequireVideoMediaHeader(
+        FileStream stream)
+    {
+        var atoms = new List<QuickTimeAtom>();
+        ReadAtoms(stream, 0, stream.Length, atoms);
+        if (atoms.Count != 1)
+        {
+            throw new InvalidOperationException(
+                $"QuickTime MOV requires exactly one video media header; found {atoms.Count}.");
+        }
+        return atoms[0];
+    }
+
+    private static void ReadAtoms(
+        FileStream stream,
+        long start,
+        long end,
+        List<QuickTimeAtom> videoMediaHeaders)
+    {
+        var offset = start;
+        Span<byte> header = stackalloc byte[16];
+        while (offset < end)
+        {
+            if (end - offset < 8)
+            {
+                throw new InvalidOperationException(
+                    "QuickTime atom header is truncated.");
+            }
+            stream.Position = offset;
+            stream.ReadExactly(header[..8]);
+            var compactSize = BinaryPrimitives.ReadUInt32BigEndian(header);
+            var type = System.Text.Encoding.ASCII.GetString(header[4..8]);
+            var headerSize = 8L;
+            long size;
+            if (compactSize == 1)
+            {
+                stream.ReadExactly(header[8..16]);
+                size = checked((long)BinaryPrimitives.ReadUInt64BigEndian(
+                    header[8..16]));
+                headerSize = 16;
+            }
+            else
+            {
+                size = compactSize == 0
+                    ? end - offset
+                    : compactSize;
+            }
+            if (size < headerSize || size > end - offset)
+            {
+                throw new InvalidOperationException(
+                    $"QuickTime atom '{type}' has invalid size {size}.");
+            }
+            var atom = new QuickTimeAtom(offset, size, type);
+            if (type == "vmhd")
+            {
+                if (size < 20)
+                {
+                    throw new InvalidOperationException(
+                        "QuickTime video media header is incomplete.");
+                }
+                videoMediaHeaders.Add(atom);
+            }
+            else if (ContainerAtoms.Contains(type))
+            {
+                ReadAtoms(
+                    stream,
+                    offset + headerSize,
+                    offset + size,
+                    videoMediaHeaders);
+            }
+            offset += size;
+        }
+    }
+
+    private sealed record QuickTimeAtom(
+        long Offset,
+        long Size,
+        string Type);
 }

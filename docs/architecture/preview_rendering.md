@@ -296,6 +296,10 @@ already generated lossless raster. The renderer still knows nothing about
 queue state, output naming, Production Output paths or codecs.
 The worker's output boundary converts the straight-alpha Chromium raster to
 black-premultiplied RGB while retaining alpha in alpha-capable formats.
+MOV conversion also owns complete frame and container color metadata. It
+propagates limited range, BT.709 primaries, CSS sRGB transfer and BT.709 matrix
+coefficients into encoded frames and the QuickTime `colr` atom. An alpha-capable
+MOV tags its QuickTime video-media graphics mode as black-premultiplied.
 
 Conversation keeps composer presence under its temporal owner. When an
 explicit `text` track replaces the base write-on, the resolved bubble text and
