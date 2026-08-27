@@ -21,7 +21,9 @@ internal sealed partial class SqliteProductionOwner
             var contract = ResolveModuleInstanceContract(
                 instance.ModuleId,
                 instance.MetadataJson);
-            if (RuntimeDurationContract.Policy(contract)
+            if (RuntimeDurationContract.RequireAllowedPolicy(
+                    contract,
+                    instance.DurationPolicy)
                 == RuntimeDurationPolicy.Explicit)
             {
                 continue;

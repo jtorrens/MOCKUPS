@@ -110,6 +110,7 @@ internal sealed partial class SqliteCurrentDatabaseValidator
         ValidateCurrentDefinitionLifecycle(connection);
         ValidateCurrentPreviewManifest(connection);
         ValidateCurrentRuntimeInputContracts(connection);
+        ValidateCurrentScreenDurationPolicies(connection);
         ValidateCurrentReferences(connection);
         ValidateCurrentModuleRuntimeDocuments(connection);
         ValidateCurrentComponentVariants(connection);
@@ -391,6 +392,36 @@ internal sealed partial class SqliteCurrentDatabaseValidator
                         throw InvalidCurrentDatabase(exception.Message);
                     }
                 }
+            }
+        }
+    }
+
+    private void ValidateCurrentScreenDurationPolicies(
+        SqliteConnection connection)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText =
+            """
+            SELECT mi.id, mi.duration_policy, m.design_preview_json
+            FROM module_instances mi
+            JOIN modules m ON m.id = mi.module_id
+            """;
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            var screenId = reader.GetString(0);
+            try
+            {
+                RuntimeDurationContract.RequireAllowedPolicy(
+                    JsonPath.ParseRequiredObject(
+                        reader.GetString(2),
+                        $"Screen '{screenId}' Module duration contract"),
+                    reader.GetString(1));
+            }
+            catch (InvalidOperationException exception)
+            {
+                throw InvalidCurrentDatabase(
+                    $"Screen '{screenId}' duration policy is invalid: {exception.Message}");
             }
         }
     }

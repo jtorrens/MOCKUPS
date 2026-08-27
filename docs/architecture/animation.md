@@ -169,17 +169,26 @@ or recalculate the Shot timeline.
 
 ## Duration policies
 
-A Module declares one Screen duration policy:
+A Module declares the allowed Screen duration policies and one default:
 
 - `calculated`: finite actions and collections determine Screen extent;
 - `explicit`: the Module Instance frame count is authoritative.
+
+Each Screen instance stores its selected allowed policy. A Module that declares
+only one policy keeps that policy fixed; a Module that declares both lets the
+instance switch between them. Switching to explicit preserves the current
+effective duration as its initial editable frame count. Switching back to
+calculated immediately restores the common owner calculation.
 
 Those policies determine action duration, not the parent-owned entry interval.
 The common Screen timeline prepends the resolved entry transition and the
 authored action delay when it calculates effective Screen and Shot duration.
 
-An explicit policy declares a positive default and is edited only on the
-Screen instance. Child keyframes and composition cannot extend it silently.
+An explicit default declares a positive frame count. Once selected, duration is
+edited only on the Screen instance, through either its Duration field or the
+right edge of the General timeline lane. Both surfaces write the same value.
+Child keyframes and composition cannot extend it silently; content beyond an
+explicit Screen end is clipped without retiming or rewriting child animation.
 
 The authoring horizon is session-only for both policies. The Screen timeline
 always reserves trailing frames to the right independently from the playhead

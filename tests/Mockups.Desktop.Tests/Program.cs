@@ -17567,6 +17567,26 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
     True(
         derivedPresence.Collections[0].Items[0]
             .SerialEdit?.CanResizeEnd == false);
+    var explicitDurationContract = Object(contract);
+    explicitDurationContract["animationTimeline"] = new JsonObject
+    {
+        ["durationPolicy"] = "explicit",
+        ["defaultDurationFrames"] = 100,
+    };
+    var explicitDuration = PreviewScreenTimelineSnapshotFactory.Create(
+        surface with
+        {
+            AnimationSnapshot = surface.AnimationSnapshot! with
+            {
+                Source = surface.AnimationSnapshot.Source with
+                {
+                    EffectiveContractJson =
+                        explicitDurationContract.ToJsonString(),
+                },
+            },
+        },
+        new PreviewScreenTimelineRange(20, 100, 12));
+    True(explicitDuration.IsDurationEditable);
 
     var stateNode = new ProjectTreeNode(
         ProjectTreeNodeKind.ModuleInstance,
@@ -18087,11 +18107,38 @@ static void RuntimeOwnerTimelineRejectsFilteredEnvelopes()
 static void ScreenDurationPolicyIsContractOwned()
 {
     Equal(RuntimeDurationPolicy.Calculated, RuntimeDurationContract.Policy("{}"));
+    SequenceEqual(
+        [RuntimeDurationPolicy.Calculated],
+        RuntimeDurationContract.AllowedPolicies("{}").ToList());
     var explicitContract = Object("""
         {"animationTimeline":{"durationPolicy":"explicit","defaultDurationFrames":240}}
         """);
     Equal(RuntimeDurationPolicy.Explicit, RuntimeDurationContract.Policy(explicitContract));
+    SequenceEqual(
+        [RuntimeDurationPolicy.Explicit],
+        RuntimeDurationContract.AllowedPolicies(explicitContract).ToList());
     Equal(240, RuntimeDurationContract.InitialDurationFrames(explicitContract.ToJsonString()));
+    var selectableContract = Object("""
+        {"animationTimeline":{"durationPolicy":"calculated","durationPolicyOptions":["calculated","explicit"]}}
+        """);
+    SequenceEqual(
+        [RuntimeDurationPolicy.Calculated, RuntimeDurationPolicy.Explicit],
+        RuntimeDurationContract.AllowedPolicies(selectableContract).ToList());
+    Equal(
+        RuntimeDurationPolicy.Explicit,
+        RuntimeDurationContract.Policy(
+            RuntimeDurationContract.ApplyPolicy(
+                selectableContract,
+                "explicit")));
+    Throws<InvalidOperationException>(() => RuntimeDurationContract.ApplyPolicy(
+        selectableContract,
+        "legacy"));
+    Throws<InvalidOperationException>(() => RuntimeDurationContract.AllowedPolicies(
+        "{\"animationTimeline\":{\"durationPolicy\":\"calculated\",\"durationPolicyOptions\":[]}}"));
+    Throws<InvalidOperationException>(() => RuntimeDurationContract.AllowedPolicies(
+        "{\"animationTimeline\":{\"durationPolicy\":\"calculated\",\"durationPolicyOptions\":[\"explicit\"]}}"));
+    Throws<InvalidOperationException>(() => RuntimeDurationContract.AllowedPolicies(
+        "{\"animationTimeline\":{\"durationPolicy\":\"calculated\",\"durationPolicyOptions\":[\"calculated\",\"calculated\"]}}"));
     Throws<InvalidOperationException>(() => RuntimeDurationContract.InitialDurationFrames(
         "{\"animationTimeline\":{\"durationPolicy\":\"explicit\"}}"));
     Throws<InvalidOperationException>(() => RuntimeDurationContract.Policy(
@@ -20088,6 +20135,14 @@ static void LockScreenComposesRuntimeStack()
             ResourceRecordFields(database),
             database.Production,
             database.Resources);
+        var lockPolicy = values.CreateFieldValue(
+            lockScreenInstance,
+            "moduleInstance.durationPolicy");
+        Equal("explicit", lockPolicy.Value);
+        True(!lockPolicy.Definition.IsEditable);
+        SequenceEqual(
+            ["explicit"],
+            lockPolicy.Definition.Options!.Select((option) => option.Value).ToList());
         True(values.CreateFieldValue(lockScreenInstance, "moduleInstance.durationFrames").Definition.IsEditable);
         Equal(
             240,
@@ -20107,11 +20162,67 @@ static void LockScreenComposesRuntimeStack()
 
         var conversationInstance = nodes.First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance
             && database.GetModuleSettings(database.GetModuleInstanceSettings(node.Id).ModuleId).RecordClassId == "module.core.chat");
+        var calculatedDuration = ModuleInstanceTimeline.DurationFrames(
+            new ModuleInstanceTimelineDataSource(
+                database.Production,
+                database.Resources),
+            conversationInstance.Id);
+        var conversationPolicy = values.CreateFieldValue(
+            conversationInstance,
+            "moduleInstance.durationPolicy");
+        Equal("calculated", conversationPolicy.Value);
+        True(conversationPolicy.Definition.IsEditable);
+        SequenceEqual(
+            ["calculated", "explicit"],
+            conversationPolicy.Definition.Options!.Select((option) => option.Value).ToList());
+        SequenceEqual(
+            ["Calculated", "Free"],
+            conversationPolicy.Definition.Options!.Select((option) => option.Label).ToList());
         True(!values.CreateFieldValue(conversationInstance, "moduleInstance.durationFrames").Definition.IsEditable);
         Throws<InvalidOperationException>(() => database.UpdateModuleInstanceField(
             conversationInstance.Id,
             "moduleInstance.durationFrames",
             "180"));
+        database.UpdateModuleInstanceField(
+            conversationInstance.Id,
+            "moduleInstance.durationPolicy",
+            "explicit");
+        Equal(
+            "explicit",
+            database.GetModuleInstanceSettings(conversationInstance.Id).DurationPolicy);
+        Equal(
+            calculatedDuration,
+            ModuleInstanceTimeline.DurationFrames(
+                new ModuleInstanceTimelineDataSource(
+                    database.Production,
+                    database.Resources),
+                conversationInstance.Id));
+        True(values.CreateFieldValue(conversationInstance, "moduleInstance.durationFrames").Definition.IsEditable);
+        database.UpdateModuleInstanceField(
+            conversationInstance.Id,
+            "moduleInstance.durationFrames",
+            "180");
+        Equal(
+            180,
+            ModuleInstanceTimeline.DurationFrames(
+                new ModuleInstanceTimelineDataSource(
+                    database.Production,
+                    database.Resources),
+                conversationInstance.Id));
+        database.UpdateModuleInstanceField(
+            conversationInstance.Id,
+            "moduleInstance.durationPolicy",
+            "calculated");
+        Equal(
+            "calculated",
+            database.GetModuleInstanceSettings(conversationInstance.Id).DurationPolicy);
+        Equal(
+            calculatedDuration,
+            ModuleInstanceTimeline.DurationFrames(
+                new ModuleInstanceTimelineDataSource(
+                    database.Production,
+                    database.Resources),
+                conversationInstance.Id));
 
         var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
         var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);

@@ -173,7 +173,12 @@ internal sealed class RecordClassFieldValueService
                 && field.Id == "moduleInstance.durationFrames"
                 && RuntimeDurationContract.Policy(
                     _timeline.GetModuleInstanceEffectiveContractJson(node.Id))
-                    == RuntimeDurationPolicy.Explicit);
+                    == RuntimeDurationPolicy.Explicit)
+            || (node.Kind == ProjectTreeNodeKind.ModuleInstance
+                && field.Id == "moduleInstance.durationPolicy"
+                && RuntimeDurationContract.AllowedPolicies(
+                    _timeline.GetModuleInstanceEffectiveContractJson(node.Id))
+                    .Count > 1);
         var result = new FieldValue(
             new FieldDefinition(
                 field.Id,
@@ -660,6 +665,7 @@ internal sealed class RecordClassFieldValueService
                 _timeline.GetModuleInstanceModuleName(moduleInstanceId),
             "moduleInstance.variant" => _production.GetModuleInstanceVariantReference(moduleInstanceId),
             "moduleInstance.sortOrder" => settings.SortOrder.ToString(),
+            "moduleInstance.durationPolicy" => settings.DurationPolicy,
             "moduleInstance.durationFrames" =>
                 ModuleInstanceTimeline
                     .ScreenRange(
@@ -776,6 +782,18 @@ internal sealed class RecordClassFieldValueService
         ProjectTreeNode node,
         RecordClassFieldDescriptor field)
     {
+        if (node.Kind == ProjectTreeNodeKind.ModuleInstance
+            && field.Id == "moduleInstance.durationPolicy")
+        {
+            return RuntimeDurationContract.AllowedPolicies(
+                    _timeline.GetModuleInstanceEffectiveContractJson(node.Id))
+                .Select((policy) => new FieldOption(
+                    RuntimeDurationContract.FormatPolicy(policy),
+                    policy == RuntimeDurationPolicy.Calculated
+                        ? "Calculated"
+                        : "Free"))
+                .ToList();
+        }
         if (field.Options is { Count: > 0 }) return field.Options;
         if (field.OptionSource == FieldOptionSource.ModuleVariants)
         {

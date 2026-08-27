@@ -336,6 +336,7 @@ public partial class MainWindow : SukiWindow
             data.ActorPreview,
             data.RuntimeInputOwners,
             data.Timeline,
+            data.ProductionRecordFields,
             data.RuntimeInputInstances,
             data.Animation,
             data.ModuleInstanceThemes,

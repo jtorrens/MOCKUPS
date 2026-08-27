@@ -258,7 +258,8 @@ A Screen is a persisted Module Instance. It owns:
 - non-negative action delay in frames;
 - Runtime Input payload in `content_json`;
 - behavior and animation documents;
-- duration when the Module policy is explicit;
+- selected duration policy from the Module's allowed policies;
+- duration when that selected policy is explicit;
 - current metadata.
 
 The transition document is one complete boundary Motion. At a boundary between
@@ -337,9 +338,13 @@ arrival derived from write-on/hold/delay, while a zero visible duration keeps
 it through the Screen end and a positive duration defines an explicit Out.
 Only an explicit pre-boundary Out runs the shared Motion in reverse. Presence
 never delays the next message and never retimes or rewrites message keyframes.
-For the calculated Conversation Screen, the latest positive message Out extends
-the action duration and therefore the reachable playhead range. An explicit
-Screen duration remains authoritative.
+For a calculated Conversation Screen, the latest positive message Out extends
+the action duration and therefore the reachable playhead range. Conversation
+also allows an explicit duration on each Screen instance. Its Duration field
+and General timeline lane are the same authoring value, may end before or after
+the messages, and clip message content at the Screen boundary without retiming
+it. Conversation header presence follows the Screen boundary, so an explicit
+duration can keep the header after the final message disappears.
 
 ## Playback
 

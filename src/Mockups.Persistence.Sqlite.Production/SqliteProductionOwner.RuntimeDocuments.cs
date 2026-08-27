@@ -397,9 +397,10 @@ internal sealed partial class SqliteProductionOwner
                     projectActorIds);
                 return;
             case "moduleInstance.durationFrames":
-                if (RuntimeDurationContract.Policy(
-                        GetModuleInstanceEffectiveContractJson(
-                            moduleInstanceId))
+                if (RuntimeDurationContract.ParsePolicy(
+                        _moduleInstanceRepository
+                            .Get(connection, moduleInstanceId)
+                            .DurationPolicy)
                     != RuntimeDurationPolicy.Explicit)
                 {
                     throw new InvalidOperationException(
@@ -410,6 +411,22 @@ internal sealed partial class SqliteProductionOwner
                     connection,
                     moduleInstanceId,
                     Math.Max(1, NumericText.Int32(value, 1)));
+                SynchronizeTimelineDurations(connection);
+                return;
+            case "moduleInstance.durationPolicy":
+                var instance = _moduleInstanceRepository.Get(
+                    connection,
+                    moduleInstanceId);
+                var contract = ResolveModuleInstanceContract(
+                    instance.ModuleId,
+                    instance.MetadataJson);
+                var policy = RuntimeDurationContract.RequireAllowedPolicy(
+                    contract,
+                    value);
+                _moduleInstanceRepository.UpdateDurationPolicy(
+                    connection,
+                    moduleInstanceId,
+                    RuntimeDurationContract.FormatPolicy(policy));
                 SynchronizeTimelineDurations(connection);
                 return;
             case "moduleInstance.transition":
@@ -478,6 +495,9 @@ internal sealed partial class SqliteProductionOwner
         var initialDuration =
             RuntimeDurationContract.InitialDurationFrames(
                 moduleSettings.DesignPreviewJson);
+        var initialDurationPolicy = RuntimeDurationContract.FormatPolicy(
+            RuntimeDurationContract.Policy(
+                moduleSettings.DesignPreviewJson));
         _moduleInstanceThemeContextService.RequireShotContext(
             connection,
             shot.Id);
@@ -500,6 +520,7 @@ internal sealed partial class SqliteProductionOwner
                 $"{module.Name} module instance.",
                 index,
                 initialDuration,
+                initialDurationPolicy,
                 0,
                 MotionVariantValue.NoneValue.ToJsonString(),
                 "{}",

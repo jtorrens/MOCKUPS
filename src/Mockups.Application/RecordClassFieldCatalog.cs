@@ -264,6 +264,16 @@ public static class RecordClassFieldCatalog
             ValueKind.ComponentVariant,
             OptionSource: FieldOptionSource.ModuleVariants),
         ["moduleInstance.sortOrder"] = new("moduleInstance.sortOrder", "Sort Order", ValueKind.Integer, IsEditable: false),
+        ["moduleInstance.durationPolicy"] = new(
+            "moduleInstance.durationPolicy",
+            "Duration mode",
+            ValueKind.OptionToken,
+            IsEditable: false,
+            Options:
+            [
+                new("calculated", "Calculated"),
+                new("explicit", "Free"),
+            ]),
         ["moduleInstance.durationFrames"] = new(
             "moduleInstance.durationFrames",
             "Duration",

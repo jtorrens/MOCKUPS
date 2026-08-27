@@ -35,6 +35,7 @@ internal sealed record RuntimeInputSurface(
 
 internal sealed record RuntimeInputTimelineMutation(
     Func<string, string, IReadOnlyDictionary<string, JsonNode?>, Task> UpdateCollectionValuesAsync,
+    Func<int, Task> UpdateDurationFramesAsync,
     Func<
         Func<ModuleInstanceAnimationDocument, bool>,
         Task<ModuleInstanceAnimationCommandResult>>
@@ -46,6 +47,7 @@ internal sealed class RuntimeInputsCollectionEditor
     private readonly ComponentPreviewInputDataSource _previewInputData;
     private readonly RuntimeInputOwnerDocumentStore _ownerDocuments;
     private readonly RuntimeInputInstanceDocumentStore _instanceDocuments;
+    private readonly IProductionRecordFieldStore _productionRecordFields;
     private readonly RuntimeInputOptionsDataSource _runtimeInputOptions;
     private readonly EditorDictionaryFieldServices _dictionaryServices;
     private readonly Action _onChanged;
@@ -89,6 +91,7 @@ internal sealed class RuntimeInputsCollectionEditor
         IActorPreviewRepository actors,
         IRuntimeInputOwnerStore ownerStore,
         IModuleInstanceTimelineStore timeline,
+        IProductionRecordFieldStore productionRecordFields,
         IRuntimeInputInstanceStore instanceStore,
         IModuleInstanceAnimationStore animationStore,
         IModuleInstanceThemeTokenQuery moduleInstanceThemes,
@@ -135,6 +138,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 timeline,
                 moduleInstanceThemes,
                 operations);
+        _productionRecordFields = productionRecordFields;
         _runtimeInputOptions =
             new RuntimeInputOptionsDataSource(dictionary, actors);
         _dictionaryServices = dictionaryServices;
@@ -313,6 +317,15 @@ internal sealed class RuntimeInputsCollectionEditor
                         itemId,
                         values);
                     _onChanged();
+                },
+                (durationFrames) =>
+                {
+                    _productionRecordFields.UpdateModuleInstanceField(
+                        owner.Node.Id,
+                        "moduleInstance.durationFrames",
+                        Math.Max(1, durationFrames).ToString());
+                    _onChanged();
+                    return Task.CompletedTask;
                 },
                 async (mutation) =>
                 {

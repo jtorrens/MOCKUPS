@@ -148,6 +148,7 @@ internal sealed record ModuleInstanceRecord(
     string Notes,
     int SortOrder,
     int DurationFrames,
+    string DurationPolicy,
     int ActionDelayFrames,
     string TransitionJson,
     string ContentJson,
@@ -599,6 +600,12 @@ internal interface IModuleInstanceRepository
         SqliteConnection connection,
         string moduleInstanceId,
         int durationFrames,
+        SqliteTransaction? transaction = null);
+
+    void UpdateDurationPolicy(
+        SqliteConnection connection,
+        string moduleInstanceId,
+        string durationPolicy,
         SqliteTransaction? transaction = null);
 
     void SwapSortOrder(

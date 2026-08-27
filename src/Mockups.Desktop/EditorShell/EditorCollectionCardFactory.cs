@@ -25,6 +25,7 @@ internal sealed class EditorCollectionCardFactory : IDisposable
     private readonly IActorPreviewRepository _actors;
     private readonly IRuntimeInputOwnerStore _runtimeInputOwners;
     private readonly IModuleInstanceTimelineStore _timeline;
+    private readonly IProductionRecordFieldStore _productionRecordFields;
     private readonly IRuntimeInputInstanceStore _runtimeInputInstances;
     private readonly IModuleInstanceAnimationStore _animation;
     private readonly IModuleInstanceThemeTokenQuery _moduleInstanceThemes;
@@ -70,6 +71,7 @@ internal sealed class EditorCollectionCardFactory : IDisposable
         IActorPreviewRepository actors,
         IRuntimeInputOwnerStore runtimeInputOwners,
         IModuleInstanceTimelineStore timeline,
+        IProductionRecordFieldStore productionRecordFields,
         IRuntimeInputInstanceStore runtimeInputInstances,
         IModuleInstanceAnimationStore animation,
         IModuleInstanceThemeTokenQuery moduleInstanceThemes,
@@ -112,6 +114,7 @@ internal sealed class EditorCollectionCardFactory : IDisposable
         _actors = actors;
         _runtimeInputOwners = runtimeInputOwners;
         _timeline = timeline;
+        _productionRecordFields = productionRecordFields;
         _runtimeInputInstances = runtimeInputInstances;
         _animation = animation;
         _moduleInstanceThemes = moduleInstanceThemes;
@@ -350,6 +353,7 @@ internal sealed class EditorCollectionCardFactory : IDisposable
             _actors,
             _runtimeInputOwners,
             _timeline,
+            _productionRecordFields,
             _runtimeInputInstances,
             _animation,
             _moduleInstanceThemes,

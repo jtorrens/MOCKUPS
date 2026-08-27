@@ -123,6 +123,8 @@ internal static class CurrentSqliteSchema
           notes TEXT NOT NULL DEFAULT '',
           sort_order INTEGER NOT NULL DEFAULT 0,
           duration_frames INTEGER NOT NULL DEFAULT 240,
+          duration_policy TEXT NOT NULL DEFAULT 'calculated'
+            CHECK(duration_policy IN ('calculated', 'explicit')),
           action_delay_frames INTEGER NOT NULL DEFAULT 0,
           transition_json TEXT NOT NULL DEFAULT '{"transition":"none","direction":"bottom","bounds":"screen","fade":false,"translate":false,"scale":false}',
           content_json TEXT NOT NULL DEFAULT '{}',
@@ -216,7 +218,7 @@ internal static class CurrentSqliteSchema
           layout_json TEXT NOT NULL
         );
 
-        PRAGMA user_version = 13;
+        PRAGMA user_version = 14;
         """;
 
 }

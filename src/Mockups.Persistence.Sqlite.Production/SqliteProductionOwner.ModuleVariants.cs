@@ -19,6 +19,7 @@ internal sealed partial class SqliteProductionOwner
             record.Notes,
             record.SortOrder,
             record.DurationFrames,
+            record.DurationPolicy,
             record.ActionDelayFrames,
             record.TransitionJson,
             record.ContentJson,
@@ -170,9 +171,12 @@ internal sealed partial class SqliteProductionOwner
         string moduleInstanceId)
     {
         var instance = GetModuleInstanceSettings(moduleInstanceId);
-        return ResolveModuleInstanceContract(
+        var contract = ResolveModuleInstanceContract(
             instance.ModuleId,
-            instance.MetadataJson).ToJsonString();
+            instance.MetadataJson);
+        return RuntimeDurationContract.ApplyPolicy(
+            contract,
+            instance.DurationPolicy).ToJsonString();
     }
 
     public string GetModuleInstanceVariantReference(

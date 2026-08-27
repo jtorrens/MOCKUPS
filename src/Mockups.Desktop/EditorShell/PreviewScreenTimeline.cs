@@ -36,6 +36,8 @@ internal sealed record PreviewScreenTimelineStateEdit(
     string TargetId,
     Func<int, int> LocalFrameForScreenFrame);
 
+internal sealed record PreviewScreenTimelineDurationEdit;
+
 internal sealed record PreviewScreenTimelineItem(
     string Id,
     string Label,
@@ -43,7 +45,8 @@ internal sealed record PreviewScreenTimelineItem(
     int EndFrame,
     IReadOnlyList<PreviewScreenTimelineInterval> Intervals,
     PreviewScreenTimelineSerialEdit? SerialEdit = null,
-    PreviewScreenTimelineStateEdit? StateEdit = null);
+    PreviewScreenTimelineStateEdit? StateEdit = null,
+    PreviewScreenTimelineDurationEdit? DurationEdit = null);
 
 internal sealed record PreviewScreenTimelineCollection(
     string Id,
@@ -70,7 +73,8 @@ internal sealed record PreviewScreenTimelineSnapshot(
     int PostRollFrames,
     IReadOnlyList<PreviewScreenTimelineCollection> Collections,
     IReadOnlyList<PreviewScreenTimelineKeyframe> Keyframes,
-    RuntimeInputTimelineMutation? Mutation)
+    RuntimeInputTimelineMutation? Mutation,
+    bool IsDurationEditable = false)
 {
     public int MinimumFrame => -PreRollFrames;
     public int MaximumFrame => ContentDurationFrames + PostRollFrames - 1;
@@ -456,7 +460,11 @@ internal static class PreviewScreenTimelineSnapshotFactory
             range.PostRollFrames,
             collections,
             keyframes,
-            surface.TimelineMutation);
+            surface.TimelineMutation,
+            IsDurationEditable:
+                RuntimeDurationContract.Policy(
+                    animationSnapshot.Source.EffectiveContractJson)
+                == RuntimeDurationPolicy.Explicit);
     }
 
     private static IReadOnlyList<PreviewScreenTimelineKeyframe> CreateKeyframes(
@@ -1013,7 +1021,10 @@ internal sealed class PreviewScreenTimelineSurface : Border
                 "General",
                 0,
                 snapshot.ContentDurationFrames,
-                [new PreviewScreenTimelineInterval(0, snapshot.ContentDurationFrames)]),
+                [new PreviewScreenTimelineInterval(0, snapshot.ContentDurationFrames)],
+                DurationEdit: snapshot.IsDurationEditable
+                    ? new PreviewScreenTimelineDurationEdit()
+                    : null),
             isGeneral: true);
         _generalLane = general;
         var generalRow = AddTimelineRow(
@@ -1195,10 +1206,14 @@ internal sealed class PreviewScreenTimelineSurface : Border
     {
         if (_snapshot is null || _viewport is null) return;
         var next = PreviewScreenTimelineMath.PreviewContentDuration(
-            _snapshot.ContentDurationFrames,
-            _lanes
-                .Where((lane) => lane.AffectsScreenDuration)
-                .Select((lane) => lane.EndFrame));
+            activeLane.OwnsScreenDuration
+                ? 1
+                : _snapshot.ContentDurationFrames,
+            activeLane.OwnsScreenDuration
+                ? [activeLane.EndFrame]
+                : _lanes
+                    .Where((lane) => lane.AffectsScreenDuration)
+                    .Select((lane) => lane.EndFrame));
         if (next == _previewContentDurationFrames) return;
         _previewContentDurationFrames = next;
         _generalLane?.SetAuthoringEndFrame(next);
@@ -1265,6 +1280,13 @@ internal sealed class PreviewScreenTimelineSurface : Border
         PreviewScreenTimelineLaneEdit edit)
     {
         if (_snapshot?.Mutation is not { } mutation) return;
+        if (item.DurationEdit is not null
+            && edit.Mode == PreviewScreenTimelineLaneEditMode.Exit)
+        {
+            await mutation.UpdateDurationFramesAsync(
+                edit.EndFrame);
+            return;
+        }
         if (item.SerialEdit is { } serial)
         {
             if (edit.Mode == PreviewScreenTimelineLaneEditMode.Move)
@@ -1809,6 +1831,8 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
     private readonly bool _isEditable;
     private readonly bool _canResizeEnd;
     private readonly bool _movesOwnerOrigin;
+    private readonly bool _ownsScreenDuration;
+    private readonly bool _canMove;
     private readonly int _authoredStartFrame;
     private readonly Func<PreviewScreenTimelineLane, IReadOnlyList<int>>
         _snapTargets;
@@ -1839,10 +1863,15 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
         _targetId = isGeneral ? "" : item.Id;
         _isGeneral = isGeneral;
         _isStateLane = item.StateEdit is not null;
-        _isEditable = item.SerialEdit is not null || item.StateEdit is not null;
+        _isEditable = item.SerialEdit is not null
+            || item.StateEdit is not null
+            || item.DurationEdit is not null;
         _canResizeEnd = item.StateEdit is not null
-            || item.SerialEdit?.CanResizeEnd == true;
+            || item.SerialEdit?.CanResizeEnd == true
+            || item.DurationEdit is not null;
         _movesOwnerOrigin = item.SerialEdit is not null;
+        _ownsScreenDuration = item.DurationEdit is not null;
+        _canMove = item.SerialEdit is not null || item.StateEdit is not null;
         _authoredStartFrame = item.StartFrame;
         _snapTargets = snapTargets;
         _startFrame = Math.Max(0, item.StartFrame);
@@ -1867,6 +1896,7 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
     public int StartFrame => _startFrame;
     public int EndFrame => _endFrame;
     public bool AffectsScreenDuration => _movesOwnerOrigin;
+    public bool OwnsScreenDuration => _ownsScreenDuration;
     public IReadOnlyList<int> SnapFrames => _isGeneral
         ? [0, Snapshot.ContentDurationFrames]
         : _intervals
@@ -1949,7 +1979,8 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
                 4,
                 4);
             if (!_isEditable) continue;
-            if (!_isStateLane || interval.StartKeyframeFrame is not null)
+            if ((_isStateLane && interval.StartKeyframeFrame is not null)
+                || (!_isStateLane && _canMove))
             {
                 context.DrawLine(new Pen(Brushes.White, 2),
                     new Point(left + 4, 7), new Point(left + 4, Bounds.Height - 7));
@@ -2033,7 +2064,9 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
             _dragMode = _canResizeEnd
                 && right - x <= ExitHandleWidth
                     ? DragMode.Exit
-                    : DragMode.Move;
+                    : _canMove
+                        ? DragMode.Move
+                        : DragMode.None;
         }
         if (_dragMode == DragMode.None) return;
         _dragStartFrame = RawFrameAt(x);

@@ -25,7 +25,7 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
     {
         using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT id, shot_id, app_id, module_id, name, notes, sort_order, duration_frames, action_delay_frames,
+            SELECT id, shot_id, app_id, module_id, name, notes, sort_order, duration_frames, duration_policy, action_delay_frames,
                    transition_json, content_json, behavior_json, animation_json, metadata_json
             FROM module_instances
             WHERE id = $id
@@ -44,7 +44,7 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
     {
         using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT id, shot_id, app_id, module_id, name, notes, sort_order, duration_frames, action_delay_frames,
+            SELECT id, shot_id, app_id, module_id, name, notes, sort_order, duration_frames, duration_policy, action_delay_frames,
                    transition_json, content_json, behavior_json, animation_json, metadata_json
             FROM module_instances
             ORDER BY shot_id, sort_order, name, id
@@ -56,7 +56,7 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
     {
         using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT id, shot_id, app_id, module_id, name, notes, sort_order, duration_frames, action_delay_frames,
+            SELECT id, shot_id, app_id, module_id, name, notes, sort_order, duration_frames, duration_policy, action_delay_frames,
                    transition_json, content_json, behavior_json, animation_json, metadata_json
             FROM module_instances
             WHERE shot_id = $shotId
@@ -94,10 +94,10 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
             """
             INSERT INTO module_instances (
               id, shot_id, app_id, module_id, name, notes, sort_order, duration_frames,
-              action_delay_frames, transition_json, content_json, behavior_json, animation_json, metadata_json)
+              duration_policy, action_delay_frames, transition_json, content_json, behavior_json, animation_json, metadata_json)
             VALUES (
               $id, $shotId, $appId, $moduleId, $name, $notes, $sortOrder, $durationFrames,
-              $actionDelayFrames, $transitionJson, $contentJson, $behaviorJson, $animationJson, $metadataJson)
+              $durationPolicy, $actionDelayFrames, $transitionJson, $contentJson, $behaviorJson, $animationJson, $metadataJson)
             """,
             ("$id", record.Id),
             ("$shotId", record.ShotId),
@@ -107,6 +107,7 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
             ("$notes", record.Notes),
             ("$sortOrder", record.SortOrder),
             ("$durationFrames", record.DurationFrames),
+            ("$durationPolicy", record.DurationPolicy),
             ("$actionDelayFrames", record.ActionDelayFrames),
             ("$transitionJson", record.TransitionJson),
             ("$contentJson", record.ContentJson),
@@ -128,9 +129,9 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
             """
             INSERT INTO module_instances (
               id, shot_id, app_id, module_id, name, notes, sort_order, duration_frames,
-              action_delay_frames, transition_json, content_json, behavior_json, animation_json, metadata_json)
+              duration_policy, action_delay_frames, transition_json, content_json, behavior_json, animation_json, metadata_json)
             SELECT $id, shot_id, app_id, module_id, $name, notes, $sortOrder, duration_frames,
-                   action_delay_frames, transition_json, content_json, behavior_json, animation_json, metadata_json
+                   duration_policy, action_delay_frames, transition_json, content_json, behavior_json, animation_json, metadata_json
             FROM module_instances
             WHERE id = $sourceId
             """,
@@ -256,6 +257,22 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
             ("$id", moduleInstanceId));
     }
 
+    public void UpdateDurationPolicy(
+        SqliteConnection connection,
+        string moduleInstanceId,
+        string durationPolicy,
+        SqliteTransaction? transaction = null)
+    {
+        _ = RuntimeDurationContract.ParsePolicy(durationPolicy);
+        _ = Get(connection, moduleInstanceId);
+        _context.Execute(
+            connection,
+            transaction,
+            "UPDATE module_instances SET duration_policy = $policy WHERE id = $id",
+            ("$policy", durationPolicy),
+            ("$id", moduleInstanceId));
+    }
+
     public void SwapSortOrder(
         SqliteConnection connection,
         string firstId,
@@ -346,12 +363,13 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
             SqliteCommandExecutor.ReadString(reader, 5),
             reader.GetInt32(6),
             reader.GetInt32(7),
-            reader.GetInt32(8),
-            SqliteCommandExecutor.ReadString(reader, 9),
+            reader.GetString(8),
+            reader.GetInt32(9),
             SqliteCommandExecutor.ReadString(reader, 10),
             SqliteCommandExecutor.ReadString(reader, 11),
             SqliteCommandExecutor.ReadString(reader, 12),
-            SqliteCommandExecutor.ReadString(reader, 13));
+            SqliteCommandExecutor.ReadString(reader, 13),
+            SqliteCommandExecutor.ReadString(reader, 14));
         Validate(record);
         return record;
     }
@@ -362,6 +380,7 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
         {
             throw new InvalidOperationException($"Module instance '{record.Id}' duration must be positive.");
         }
+        _ = RuntimeDurationContract.ParsePolicy(record.DurationPolicy);
         if (record.ActionDelayFrames < 0)
         {
             throw new InvalidOperationException(

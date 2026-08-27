@@ -111,6 +111,7 @@ public sealed record ModuleInstanceSettings(
     string Notes,
     int SortOrder,
     int DurationFrames,
+    string DurationPolicy,
     int ActionDelayFrames,
     string TransitionJson,
     string ContentJson,

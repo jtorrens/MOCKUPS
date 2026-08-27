@@ -5,7 +5,7 @@ Status: normative.
 ## Database scope
 
 The desktop application persists one complete Project workspace in SQLite.
-Schema version `13` is the only current schema. Every row belongs directly or
+Schema version `14` is the only current schema. Every row belongs directly or
 indirectly to a Project and cross-Project lookup is invalid.
 
 The current tables are:
@@ -128,9 +128,10 @@ operations. Screen creation, Runtime payload edits, collection identity
 operations, Variant transitions and their animation cleanup also execute in
 Production. Composition supplies the valid same-Project Actor id set required
 by strict owner-specific Runtime documents; this does not grant Production a
-Resources reference. Production owns calculated Screen duration resolution
-and Shot duration synchronization. Composition invokes that operation only
-after a cross-owner write that can affect the timeline.
+Resources reference. Production owns each Screen's selected Module-allowed
+duration policy, calculated Screen duration resolution and Shot duration
+synchronization. Composition invokes that operation only after a cross-owner
+write that can affect the timeline.
 
 Every structured Runtime collection lifecycle operation is one generic
 Application mutation addressed by a typed stable collection/item path. Add,
