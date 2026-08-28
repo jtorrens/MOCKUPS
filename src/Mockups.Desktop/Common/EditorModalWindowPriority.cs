@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Threading;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -9,6 +10,7 @@ internal static class EditorModalWindowPriority
     public static void Configure(Window dialog, Window owner)
     {
         List<OwnedWindowState>? displacedWindows = null;
+        dialog.Topmost = true;
         dialog.Opened += (_, _) =>
         {
             displacedWindows = owner.OwnedWindows
@@ -25,8 +27,15 @@ internal static class EditorModalWindowPriority
                 displaced.Window.IsEnabled = false;
                 displaced.Window.Topmost = false;
             }
-            dialog.Topmost = true;
-            dialog.Activate();
+            Dispatcher.UIThread.Post(
+                () =>
+                {
+                    if (dialog.IsVisible)
+                    {
+                        dialog.Activate();
+                    }
+                },
+                DispatcherPriority.Background);
         };
         dialog.Closed += (_, _) =>
         {

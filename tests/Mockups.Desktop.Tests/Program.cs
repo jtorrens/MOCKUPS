@@ -6301,9 +6301,11 @@ static void PreviewControlsDetachIntoTopmostSessionWindow()
         EditorSukiWindowTheme.ApplyDialogChrome(
             dialog,
             owner);
+        True(dialog.Topmost);
         dialog.Show(owner);
         Dispatcher.UIThread.RunJobs();
         True(dialog.Topmost);
+        True(dialog.IsActive);
         True(!floating.Topmost);
         True(!floating.IsEnabled);
         dialog.Close();
