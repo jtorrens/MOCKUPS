@@ -246,7 +246,8 @@ internal interface IShotRepository
         string name,
         string actorId,
         int shotNumber,
-        string shotCode);
+        string shotCode,
+        SqliteTransaction? transaction = null);
 
     void DuplicateForEpisode(
         SqliteConnection connection,
@@ -559,14 +560,19 @@ internal interface IModuleInstanceRepository
 
     string UniqueName(SqliteConnection connection, string shotId, string requestedName);
 
-    void Insert(SqliteConnection connection, ModuleInstanceRecord record);
+    void Insert(
+        SqliteConnection connection,
+        ModuleInstanceRecord record,
+        SqliteTransaction? transaction = null);
 
     ModuleInstanceRecord Duplicate(
         SqliteConnection connection,
         string sourceId,
         string id,
+        string targetShotId,
         string name,
-        int sortOrder);
+        int sortOrder,
+        SqliteTransaction? transaction = null);
 
     void UpdateContent(SqliteConnection connection, string moduleInstanceId, string contentJson);
 

@@ -76,7 +76,11 @@ never opens a modal and introduces no Shot/Device editor branch.
 
 Duplicating an Episode preserves every current Shot number because the copies
 belong to a different Episode. Duplicating one Shot requires a new number in
-the same Episode and creates a new stable id.
+the same Episode and creates a new stable id. It copies the complete ordered
+Screen aggregate with new Screen ids and otherwise exact Screen documents.
+The duplicated Shot preserves its authored Actor, resources, Overrides,
+reference video and timing, but always starts free of Shot Manager association
+and must be associated explicitly.
 
 ## Production Output ownership
 

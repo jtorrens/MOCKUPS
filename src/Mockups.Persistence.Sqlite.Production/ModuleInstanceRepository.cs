@@ -86,11 +86,15 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
         return candidate;
     }
 
-    public void Insert(SqliteConnection connection, ModuleInstanceRecord record)
+    public void Insert(
+        SqliteConnection connection,
+        ModuleInstanceRecord record,
+        SqliteTransaction? transaction = null)
     {
         Validate(record);
         _context.Execute(
             connection,
+            transaction,
             """
             INSERT INTO module_instances (
               id, shot_id, app_id, module_id, name, notes, sort_order, duration_frames,
@@ -120,22 +124,26 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
         SqliteConnection connection,
         string sourceId,
         string id,
+        string targetShotId,
         string name,
-        int sortOrder)
+        int sortOrder,
+        SqliteTransaction? transaction = null)
     {
         _ = Get(connection, sourceId);
         _context.Execute(
             connection,
+            transaction,
             """
             INSERT INTO module_instances (
               id, shot_id, app_id, module_id, name, notes, sort_order, duration_frames,
               duration_policy, action_delay_frames, transition_json, content_json, behavior_json, animation_json, metadata_json)
-            SELECT $id, shot_id, app_id, module_id, $name, notes, $sortOrder, duration_frames,
+            SELECT $id, $shotId, app_id, module_id, $name, notes, $sortOrder, duration_frames,
                    duration_policy, action_delay_frames, transition_json, content_json, behavior_json, animation_json, metadata_json
             FROM module_instances
             WHERE id = $sourceId
             """,
             ("$id", id),
+            ("$shotId", targetShotId),
             ("$name", name),
             ("$sortOrder", sortOrder),
             ("$sourceId", sourceId));

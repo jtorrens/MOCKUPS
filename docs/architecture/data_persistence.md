@@ -133,6 +133,14 @@ duration policy, calculated Screen duration resolution and Shot duration
 synchronization. Composition invokes that operation only after a cross-owner
 write that can affect the timeline.
 
+Shot duplication is one Production-owned aggregate transaction. It persists
+the new Shot and duplicates every ordered Screen through the same generic
+Screen duplication contract, assigning new Shot and Screen identities while
+preserving each Screen document exactly. The duplicate retains the authored
+Shot context and local documents but clears every Shot Manager association
+field so reassociation is always explicit. Failure to duplicate any Screen
+rolls back the complete new Shot.
+
 Every structured Runtime collection lifecycle operation is one generic
 Application mutation addressed by a typed stable collection/item path. Add,
 duplicate, move and delete use discriminated commands; insertion is expressed

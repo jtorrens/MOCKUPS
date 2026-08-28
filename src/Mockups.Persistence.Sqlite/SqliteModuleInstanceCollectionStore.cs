@@ -105,6 +105,7 @@ internal sealed class SqliteModuleInstanceCollectionStore
             connection,
             node.Id,
             id,
+            settings.ShotId,
             copyName,
             sortOrder);
         _production.SynchronizeTimelineDurations(connection);

@@ -378,6 +378,7 @@ internal sealed class SqliteEditorNodeCommandStore
             connection,
             node.Id,
             id,
+            settings.ShotId,
             copyName,
             sortOrder);
         _production.SynchronizeTimelineDurations(connection);

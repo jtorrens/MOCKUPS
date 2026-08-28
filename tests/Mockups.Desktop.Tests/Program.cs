@@ -115,6 +115,7 @@ var tests = new (string Name, Action Run)[]
     ("resource scalar reads reject wrong current JSON shapes", ResourceScalarReadsRejectWrongShapes),
     ("Module Instance repository preserves Screen rows and prepared documents", ModuleInstanceRepositoryPreservesFocusedContract),
     ("Shot repository preserves its focused Production contract", ShotRepositoryPreservesFocusedContract),
+    ("Shot duplication copies Screens and clears Shot Manager", ShotDuplicationCopiesScreensAndClearsShotManager),
     ("Shot reference video documents preserve In and stable video markers", ShotReferenceVideoDocumentsAreStrict),
     ("Production Output generates exact Shot names and portable render routes", ProductionOutputGeneratesExactShotPlans),
     ("Shot Manager output captures exact associations and resolves offline", ShotManagerOutputResolvesExactAssociations),
@@ -12567,6 +12568,7 @@ static void ModuleInstanceRepositoryPreservesFocusedContract()
                 connection,
                 original.Id,
                 duplicateId,
+                original.ShotId,
                 duplicateName,
                 repository.NextSortOrder(connection, original.ShotId));
             Equal(original.ModuleId, duplicate.ModuleId);
@@ -12748,6 +12750,138 @@ static void ShotRepositoryPreservesFocusedContract()
         }
         var afterRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(beforeRejectedWrite, afterRejectedWrite);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void ShotDuplicationCopiesScreensAndClearsShotManager()
+{
+    var source = ParityDatabasePath();
+    var temporary = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-shot-duplicate-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SqliteProjectTestContext(temporary);
+        var context = new SqliteProjectContext(temporary);
+        IShotRepository shots = new ShotRepository(context);
+        IModuleInstanceRepository screens =
+            new ModuleInstanceRepository(context);
+        var tree = database.LoadProjectTree();
+        var sourceNode = Descendants(tree).Single((node) =>
+            node.Id == "shot_001");
+        var sourceShot = shots.Get(sourceNode.Id);
+        IReadOnlyList<ModuleInstanceRecord> sourceScreens;
+        using (var connection = context.OpenConnection())
+        {
+            sourceScreens = screens.QueryByShot(
+                connection,
+                sourceNode.Id);
+            True(sourceScreens.Count > 0);
+            context.Execute(
+                connection,
+                """
+                UPDATE shots
+                SET shot_manager_association_state = 'associated',
+                    shot_manager_reference_production_id = '11111111-1111-4111-8111-111111111111',
+                    shot_manager_shot_id = '22222222-2222-4222-8222-222222222222',
+                    shot_manager_canonical_name = 'DUPLICATE_TEST'
+                WHERE id = $id
+                """,
+                ("$id", sourceNode.Id));
+        }
+
+        var duplicateNode = NodeCommands(database).DuplicateShot(
+            sourceNode,
+            database.SuggestShotNumber(sourceShot.EpisodeId));
+        var duplicateShot = database.GetShotSettings(duplicateNode.Id);
+        Equal(sourceShot.OwnerActorId, duplicateShot.OwnerActorId);
+        True(!duplicateShot.ShotManagerShot.IsAssociated);
+        Equal("", duplicateShot.ShotManagerShot.ReferenceProductionId);
+        Equal("", duplicateShot.ShotManagerShot.ShotId);
+        Equal("", duplicateShot.ShotManagerShot.CanonicalName);
+
+        using (var connection = context.OpenConnection())
+        {
+            var associatedSource = shots.Get(connection, sourceNode.Id);
+            var duplicateRecord = shots.Get(connection, duplicateNode.Id);
+            Equal(
+                associatedSource with
+                {
+                    Id = duplicateRecord.Id,
+                    Name = duplicateRecord.Name,
+                    Slug = duplicateRecord.Slug,
+                    ShotNumber = duplicateRecord.ShotNumber,
+                    SortOrder = duplicateRecord.SortOrder,
+                    ShotManagerAssociationState = "free",
+                    ShotManagerReferenceProductionId = "",
+                    ShotManagerShotId = "",
+                    ShotManagerCanonicalName = "",
+                },
+                duplicateRecord);
+            var duplicateScreens = screens.QueryByShot(
+                connection,
+                duplicateNode.Id);
+            Equal(sourceScreens.Count, duplicateScreens.Count);
+            for (var index = 0; index < sourceScreens.Count; index++)
+            {
+                var sourceScreen = sourceScreens[index];
+                var duplicateScreen = duplicateScreens[index];
+                True(!sourceScreen.Id.Equals(
+                    duplicateScreen.Id,
+                    StringComparison.Ordinal));
+                Equal(
+                    sourceScreen with
+                    {
+                        Id = duplicateScreen.Id,
+                        ShotId = duplicateNode.Id,
+                    },
+                    duplicateScreen);
+            }
+        }
+        var reloadedDuplicate = Descendants(database.LoadProjectTree())
+            .Single((node) => node.Id == duplicateNode.Id);
+        Equal(
+            sourceScreens.Count,
+            reloadedDuplicate.Children.Count((node) =>
+                node.Kind == ProjectTreeNodeKind.ModuleInstance));
+
+        IReadOnlyList<string> beforeRejectedIds;
+        using (var connection = context.OpenConnection())
+        {
+            beforeRejectedIds = shots.QueryByEpisode(
+                    connection,
+                    sourceShot.EpisodeId)
+                .Select((shot) => shot.Id)
+                .ToList();
+            context.Execute(
+                connection,
+                """
+                CREATE TRIGGER reject_duplicated_screen
+                BEFORE INSERT ON module_instances
+                BEGIN
+                  SELECT RAISE(ABORT, 'forced Screen duplication failure');
+                END
+                """);
+        }
+        Throws<SqliteException>(() =>
+            NodeCommands(database).DuplicateShot(
+                sourceNode,
+                database.SuggestShotNumber(sourceShot.EpisodeId)));
+        using (var connection = context.OpenConnection())
+        {
+            context.Execute(
+                connection,
+                "DROP TRIGGER reject_duplicated_screen");
+            SequenceEqual(
+                beforeRejectedIds,
+                shots.QueryByEpisode(connection, sourceShot.EpisodeId)
+                    .Select((shot) => shot.Id));
+        }
     }
     finally
     {

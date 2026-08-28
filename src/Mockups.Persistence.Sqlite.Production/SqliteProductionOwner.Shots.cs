@@ -1,4 +1,5 @@
 using Microsoft.Data.Sqlite;
+using System;
 using System.Linq;
 
 namespace Mockups.DesktopEditorShell.Data;
@@ -116,19 +117,40 @@ internal sealed partial class SqliteProductionOwner
         string actorId,
         int shotNumber)
     {
-        var source = _shotRepository.Get(connection, sourceShotId);
-        var plan = ResolveNewShotPlan(
-            connection,
-            source.EpisodeId,
-            shotNumber);
-        return _shotRepository.Duplicate(
-            connection,
-            sourceShotId,
-            id,
-            name,
-            actorId,
-            shotNumber,
-            plan.ShotCode);
+        lock (WriteGate)
+        {
+            using var transaction = connection.BeginTransaction();
+            var source = _shotRepository.Get(connection, sourceShotId);
+            var sourceScreens = _moduleInstanceRepository.QueryByShot(
+                connection,
+                sourceShotId);
+            var plan = ResolveNewShotPlan(
+                connection,
+                source.EpisodeId,
+                shotNumber);
+            var duplicate = _shotRepository.Duplicate(
+                connection,
+                sourceShotId,
+                id,
+                name,
+                actorId,
+                shotNumber,
+                plan.ShotCode,
+                transaction);
+            foreach (var sourceScreen in sourceScreens)
+            {
+                _moduleInstanceRepository.Duplicate(
+                    connection,
+                    sourceScreen.Id,
+                    $"module_instance_{Guid.NewGuid():N}",
+                    duplicate.Id,
+                    sourceScreen.Name,
+                    sourceScreen.SortOrder,
+                    transaction);
+            }
+            transaction.Commit();
+            return duplicate;
+        }
     }
 
     private ProductionOutputShotPlan ResolveNewShotPlan(

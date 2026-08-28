@@ -123,7 +123,8 @@ internal sealed class ShotRepository : IShotRepository
         string name,
         string actorId,
         int shotNumber,
-        string shotCode)
+        string shotCode,
+        SqliteTransaction? transaction = null)
     {
         var source = Get(connection, sourceId);
         ProjectReferenceIntegrity.RequireSameProjectReference(
@@ -154,7 +155,7 @@ internal sealed class ShotRepository : IShotRepository
             ShotManagerShotId = "",
             ShotManagerCanonicalName = "",
         };
-        Insert(connection, duplicate);
+        Insert(connection, duplicate, transaction);
         return Get(connection, id);
     }
 
@@ -441,7 +442,10 @@ internal sealed class ShotRepository : IShotRepository
             ("$id", shotId));
     }
 
-    private void Insert(SqliteConnection connection, ShotRecord record)
+    private void Insert(
+        SqliteConnection connection,
+        ShotRecord record,
+        SqliteTransaction? transaction = null)
     {
         Validate(record);
         var projectId = RequiredProjectId(connection, record.EpisodeId);
@@ -469,7 +473,7 @@ internal sealed class ShotRepository : IShotRepository
             ProjectReferenceKind.Theme,
             record.ThemeOverrideId ?? "",
             $"Shot '{record.Id}' Theme override");
-        InsertRow(connection, transaction: null, record);
+        InsertRow(connection, transaction, record);
     }
 
     private void InsertRow(
