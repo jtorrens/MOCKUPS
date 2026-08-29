@@ -159,9 +159,10 @@ proving simultaneous outgoing and incoming Motion, stable owner-local frames
   offline resolution, missing-item free/recovery behavior, explicit manual
   behavior for free Shots, unsafe-path rejection, safe additive subdirectory
   creation and retained output folders on Shot deletion;
-- Render Queue naming and shared Light/Dark version resolution, incremental
-  content-addressed frame snapshots, bounded one-frame consumption, local
-  recovery, strict stored-route containment,
+- Render Queue naming and shared Light/Dark version resolution, persisted live
+  plans with no enqueue-time preparation, job-start resolution of the latest
+  Shot and Screens, transient content-addressed frame preparation and cleanup,
+  bounded one-frame consumption, local recovery, strict stored-route containment,
   no-overwrite publication, sequential child jobs, permanent Production
   monitoring with explicit closed pending-batch launch, later enqueues retained
   for the next launch, stable monotonic progress controls, job-start route

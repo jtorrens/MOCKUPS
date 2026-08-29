@@ -148,11 +148,11 @@ wallpaper for every Module. Components do not interpret that policy.
 ## Render output resources
 
 Output mode and encoding profile are queue-job choices, not Project resources.
-Snapshot preparation copies the exact assets needed by its resolved frames into
-the queue-owned local store once per content hash. Light/Dark children share
-that batch asset store. The worker registers a referenced asset only when its
-current frame first needs it and therefore does not reinterpret current font,
-icon, media or wallpaper records after enqueue.
+At each job start, transient preparation resolves the latest Shot and Screens
+and copies the exact assets needed by those frames into that job's temporary
+store once per content hash. The worker registers a referenced asset only when
+its current frame first needs it. The complete temporary asset store is deleted
+after the job; enqueue persists no font, icon, media or wallpaper state.
 Before publication, RGB is multiplied by the raster alpha against black while
 the alpha channel remains unchanged. PNG, EXR and ProRes 4444 therefore carry
 premultiplied alpha; non-alpha MOV profiles retain the corresponding black

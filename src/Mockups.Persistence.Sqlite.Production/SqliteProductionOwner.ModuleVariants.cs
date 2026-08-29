@@ -75,6 +75,29 @@ internal sealed partial class SqliteProductionOwner
             .ToList();
     }
 
+    public ProjectTreeNode GetCurrentRenderShot(string shotId)
+    {
+        var shot = _shotRepository.Get(shotId);
+        var node = new ProjectTreeNode(
+            ProjectTreeNodeKind.Shot,
+            shot.Id,
+            shot.Name,
+            shot.Notes,
+            ProjectTreeNode.DefaultRecordClassId(
+                ProjectTreeNodeKind.Shot));
+        foreach (var screen in GetShotModuleInstanceSlots(shotId))
+        {
+            node.AddChild(new ProjectTreeNode(
+                ProjectTreeNodeKind.ModuleInstance,
+                screen.Id,
+                screen.Name,
+                "",
+                ProjectTreeNode.DefaultRecordClassId(
+                    ProjectTreeNodeKind.ModuleInstance)));
+        }
+        return node;
+    }
+
     public ProjectTreeNode RenameModuleInstance(
         ProjectTreeNode node,
         string name)

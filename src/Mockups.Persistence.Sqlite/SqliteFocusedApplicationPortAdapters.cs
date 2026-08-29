@@ -533,6 +533,9 @@ internal sealed class SqliteRenderSnapshotPort(
     SqliteProductionOwner output)
     : IRenderSnapshotDataSource
 {
+    public ProjectTreeNode GetCurrentRenderShot(string shotId) =>
+        output.GetCurrentRenderShot(shotId);
+
     public ProductionOutputShotContext GetProductionOutputShotContext(
         string shotId) =>
         output.GetProductionOutputShotContext(shotId);

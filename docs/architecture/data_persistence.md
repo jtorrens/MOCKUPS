@@ -440,16 +440,19 @@ plan is derived data and is never cached in a second table.
 Render Queue is deliberately outside SQLite. The application-data directory on
 each workstation contains:
 
-- the current local queue and compact references to immutable pending/active
-  snapshots;
-- a queue-owned local frame store containing content-addressed raster
-  documents and assets plus one ordered manifest per Light/Dark child;
+- the current local queue containing live Shot render plans and their output
+  targets, never resolved Shot, Screen, frame or asset snapshots;
 - terminal history, compacted after completion;
 - the last selected output route per Project;
 - the absolute Production Output root per stable Project id;
 - the absolute Shot Manager `production.json` path and relocatable Production
   root per stable Project id;
 - the workstation's pending enable/workstream setup state.
+
+Launching a pending job resolves current authoring data and creates its
+content-addressed frame documents and assets only in a unique temporary
+directory. That transient preparation is deleted after completion, failure or
+cancellation and is not part of local queue persistence.
 
 The local Shot Manager document store accepts only an existing regular file
 named exactly `production.json`. It is parsed strictly when connecting or

@@ -47,7 +47,8 @@ internal sealed class EditorProductionNavigationActions : IDisposable
             snapshots);
         _renderQueueSurface = new RenderQueueEditorSurface(
             owner,
-            _queue);
+            _queue,
+            snapshots);
     }
 
     public void Refresh(string? projectId)

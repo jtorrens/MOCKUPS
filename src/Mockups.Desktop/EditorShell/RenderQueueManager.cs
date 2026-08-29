@@ -11,35 +11,22 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class RenderQueueManager : IDisposable
 {
     private const int MaximumTerminalJobs = 50;
-    private const int MaximumRetrySnapshots = 5;
     private readonly object _gate = new();
     private readonly CancellationTokenSource _shutdown = new();
     private readonly string _path;
-    private readonly string _storageRoot;
     private readonly IRenderJobExecutor _executor;
-    private readonly Dictionary<string, CancellationTokenSource>
-        _preparationCancellations = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, Task> _preparationTasks =
-        new(StringComparer.Ordinal);
-    private readonly HashSet<string> _launchedJobIds =
-        new(StringComparer.Ordinal);
+    private readonly HashSet<string> _launchedJobIds = new(StringComparer.Ordinal);
     private RenderQueueDocument _document;
     private CancellationTokenSource? _activeCancellation;
+    private IRenderJobPreparer? _launchedPreparer;
     private Task? _workerTask;
     private bool _workerScheduled;
     private string _activeJobId = "";
     private int _disposeRequested;
 
-    public RenderQueueManager(
-        string? path = null,
-        IRenderJobExecutor? executor = null)
+    public RenderQueueManager(string? path = null, IRenderJobExecutor? executor = null)
     {
         _path = Path.GetFullPath(path ?? DefaultPath());
-        _storageRoot = Path.Combine(
-            Path.GetDirectoryName(_path)
-                ?? throw new InvalidOperationException(
-                    "The render queue has no parent directory."),
-            "render-queue-data");
         _executor = executor ?? new RenderJobExecutor();
         try
         {
@@ -47,7 +34,6 @@ internal sealed class RenderQueueManager : IDisposable
             RecoverInterruptedJobs();
             MaintainHistory();
             Save();
-            CleanupOrphanedStorage();
         }
         catch (Exception exception)
         {
@@ -58,23 +44,16 @@ internal sealed class RenderQueueManager : IDisposable
     }
 
     public event Action? Changed;
-
     public string? InitializationError { get; }
 
     public bool Paused
     {
-        get
-        {
-            lock (_gate) return _document.Paused;
-        }
+        get { lock (_gate) return _document.Paused; }
     }
 
     public bool HasLaunchedBatch
     {
-        get
-        {
-            lock (_gate) return _launchedJobIds.Count > 0;
-        }
+        get { lock (_gate) return _launchedJobIds.Count > 0; }
     }
 
     public bool CanRenderPending
@@ -85,9 +64,6 @@ internal sealed class RenderQueueManager : IDisposable
             {
                 return !_document.Paused
                     && _launchedJobIds.Count == 0
-                    && !_document.Jobs.Any((job) =>
-                        job.Status == RenderQueueStatus.Preparing
-                        && job.Snapshot is null)
                     && _document.Jobs.Any((job) =>
                         job.Status == RenderQueueStatus.Pending);
             }
@@ -96,19 +72,11 @@ internal sealed class RenderQueueManager : IDisposable
 
     public IReadOnlyList<RenderQueueJobView> Jobs()
     {
-        lock (_gate)
-        {
-            return _document.Jobs
-                .Select(ToView)
-                .ToList();
-        }
+        lock (_gate) return _document.Jobs.Select(ToView).ToList();
     }
 
     public IReadOnlySet<string> ActiveOutputPaths()
     {
-        var comparer = OperatingSystem.IsWindows()
-            ? StringComparer.OrdinalIgnoreCase
-            : StringComparer.Ordinal;
         lock (_gate)
         {
             return _document.Jobs
@@ -116,7 +84,7 @@ internal sealed class RenderQueueManager : IDisposable
                 .Select((job) => job.Summary.Output.OutputPath)
                 .Where((path) => !string.IsNullOrWhiteSpace(path))
                 .Select(Path.GetFullPath)
-                .ToHashSet(comparer);
+                .ToHashSet(PathComparer());
         }
     }
 
@@ -124,9 +92,7 @@ internal sealed class RenderQueueManager : IDisposable
     {
         lock (_gate)
         {
-            return _document.LastRouteByProject.TryGetValue(
-                projectId,
-                out var route)
+            return _document.LastRouteByProject.TryGetValue(projectId, out var route)
                 ? route
                 : null;
         }
@@ -144,27 +110,19 @@ internal sealed class RenderQueueManager : IDisposable
     }
 
     public IReadOnlyList<RenderQueueJobView> EnqueueBatch(
-        IReadOnlyList<RenderJobSnapshot> snapshots)
+        IReadOnlyList<RenderJobPlan> plans,
+        IReadOnlyList<RenderJobSummary> summaries)
     {
         RequireAvailable();
-        if (snapshots.Count == 0)
+        if (plans.Count == 0 || plans.Count != summaries.Count)
         {
             throw new InvalidOperationException(
-                "A render batch requires at least one child job.");
+                "A render batch requires one summary for each live plan.");
         }
-        foreach (var snapshot in snapshots)
-        {
-            snapshot.Validate();
-            RenderSnapshotStore.RequireContainedBatchRoot(
-                snapshot.FrameStore.BatchRootPath,
-                _storageRoot);
-            RenderOutputPathSecurity.RequireOutputTarget(snapshot.Output);
-        }
-        var comparer = OperatingSystem.IsWindows()
-            ? StringComparer.OrdinalIgnoreCase
-            : StringComparer.Ordinal;
-        var newPaths = snapshots.Select((snapshot) =>
-                Path.GetFullPath(snapshot.Output.OutputPath))
+        ValidatePlans(plans, summaries);
+        var comparer = PathComparer();
+        var newPaths = plans
+            .Select((plan) => Path.GetFullPath(plan.Output.OutputPath))
             .ToList();
         if (newPaths.Distinct(comparer).Count() != newPaths.Count)
         {
@@ -177,8 +135,7 @@ internal sealed class RenderQueueManager : IDisposable
         {
             var activePaths = _document.Jobs
                 .Where((job) => !RenderQueueStatus.IsTerminal(job.Status))
-                .Select((job) => Path.GetFullPath(
-                    job.Summary.Output.OutputPath))
+                .Select((job) => Path.GetFullPath(job.Summary.Output.OutputPath))
                 .ToHashSet(comparer);
             if (newPaths.Any(activePaths.Contains))
             {
@@ -187,7 +144,7 @@ internal sealed class RenderQueueManager : IDisposable
             }
             var now = DateTimeOffset.UtcNow.ToString("O");
             var batchId = Guid.NewGuid().ToString();
-            created = snapshots.Select((snapshot) => new RenderQueueJob
+            created = plans.Select((plan, index) => new RenderQueueJob
             {
                 Id = Guid.NewGuid().ToString(),
                 BatchId = batchId,
@@ -196,10 +153,10 @@ internal sealed class RenderQueueManager : IDisposable
                 Status = RenderQueueStatus.Pending,
                 Progress = new RenderQueueProgress(
                     0,
-                    snapshot.FrameStore.TotalFrames,
+                    summaries[index].TotalFrames,
                     "Pending"),
-                Snapshot = snapshot,
-                Summary = Summary(snapshot),
+                Plan = plan,
+                Summary = summaries[index],
             }).ToList();
             _document.Jobs.AddRange(created);
             Save();
@@ -208,247 +165,21 @@ internal sealed class RenderQueueManager : IDisposable
         return created.Select(ToView).ToList();
     }
 
-    public IReadOnlyList<RenderQueueJobView> EnqueuePreparingBatch(
-        IReadOnlyList<RenderJobSummary> summaries,
-        Func<
-            string,
-            IProgress<RenderSnapshotFreezeProgress>,
-            CancellationToken,
-            Task<IReadOnlyList<RenderJobSnapshot>>> freeze)
+    public int RenderPending(IRenderJobPreparer preparer)
     {
-        RequireAvailable();
-        if (summaries.Count == 0)
-        {
-            throw new InvalidOperationException(
-                "A render batch requires at least one child job.");
-        }
-        ValidateSummaries(summaries);
-        var newPaths = summaries
-            .Select((summary) => Path.GetFullPath(
-                summary.Output.OutputPath))
-            .ToList();
-        var comparer = OperatingSystem.IsWindows()
-            ? StringComparer.OrdinalIgnoreCase
-            : StringComparer.Ordinal;
-        if (newPaths.Distinct(comparer).Count() != newPaths.Count)
-        {
-            throw new InvalidOperationException(
-                "A render batch contains duplicate output paths.");
-        }
-
-        List<RenderQueueJob> created;
-        string batchId;
-        string batchRoot;
-        CancellationTokenSource preparationCancellation;
-        lock (_gate)
-        {
-            var activePaths = _document.Jobs
-                .Where((job) =>
-                    !RenderQueueStatus.IsTerminal(job.Status))
-                .Select((job) => Path.GetFullPath(
-                    job.Summary.Output.OutputPath))
-                .ToHashSet(comparer);
-            if (newPaths.Any(activePaths.Contains))
-            {
-                throw new InvalidOperationException(
-                    "Another queued render already owns one of these output paths.");
-            }
-            var now = DateTimeOffset.UtcNow.ToString("O");
-            batchId = Guid.NewGuid().ToString();
-            batchRoot = RenderSnapshotStore.BatchRoot(
-                _storageRoot,
-                batchId);
-            created = summaries.Select((summary) =>
-                new RenderQueueJob
-                {
-                    Id = Guid.NewGuid().ToString(),
-                    BatchId = batchId,
-                    CreatedAt = now,
-                    UpdatedAt = now,
-                    StartedAt = now,
-                    Status = RenderQueueStatus.Preparing,
-                    Progress = new RenderQueueProgress(
-                        0,
-                        summary.TotalFrames,
-                        "Waiting for snapshot"),
-                    Summary = summary,
-                }).ToList();
-            _document.Jobs.AddRange(created);
-            preparationCancellation =
-                CancellationTokenSource.CreateLinkedTokenSource(
-                    _shutdown.Token);
-            _preparationCancellations.Add(
-                batchId,
-                preparationCancellation);
-            Save();
-        }
-        NotifyChanged();
-        var start = new TaskCompletionSource(
-            TaskCreationOptions.RunContinuationsAsynchronously);
-        var task = PrepareBatchAsync(
-            start.Task,
-            batchId,
-            batchRoot,
-            created.Select((job) => job.Id).ToArray(),
-            freeze,
-            preparationCancellation);
-        lock (_gate)
-        {
-            _preparationTasks[batchId] = task;
-        }
-        start.SetResult();
-        return created.Select(ToView).ToList();
-    }
-
-    private async Task PrepareBatchAsync(
-        Task start,
-        string batchId,
-        string batchRoot,
-        IReadOnlyList<string> jobIds,
-        Func<
-            string,
-            IProgress<RenderSnapshotFreezeProgress>,
-            CancellationToken,
-            Task<IReadOnlyList<RenderJobSnapshot>>> freeze,
-        CancellationTokenSource preparationCancellation)
-    {
-        await start;
-        try
-        {
-            var progress = new SynchronousProgress<
-                RenderSnapshotFreezeProgress>((value) =>
-                    UpdatePreparationProgress(batchId, value));
-            var snapshots = await freeze(
-                batchRoot,
-                progress,
-                preparationCancellation.Token);
-            preparationCancellation.Token
-                .ThrowIfCancellationRequested();
-            CompletePreparation(
-                jobIds,
-                snapshots);
-        }
-        catch (OperationCanceledException)
-        {
-            if (!_shutdown.IsCancellationRequested)
-            {
-                FinishPreparation(
-                    batchId,
-                    RenderQueueStatus.Canceled,
-                    null);
-            }
-        }
-        catch (Exception exception)
-        {
-            FinishPreparation(
-                batchId,
-                RenderQueueStatus.Failed,
-                exception.Message);
-        }
-        finally
-        {
-            lock (_gate)
-            {
-                _preparationCancellations.Remove(batchId);
-                _preparationTasks.Remove(batchId);
-            }
-            preparationCancellation.Dispose();
-            CleanupOrphanedStorage();
-        }
-    }
-
-    private void CompletePreparation(
-        IReadOnlyList<string> jobIds,
-        IReadOnlyList<RenderJobSnapshot> snapshots)
-    {
-        if (snapshots.Count != jobIds.Count)
-        {
-            throw new InvalidOperationException(
-                "Render snapshot preparation returned an incomplete batch.");
-        }
-        foreach (var snapshot in snapshots)
-        {
-            snapshot.Validate();
-            RenderSnapshotStore.RequireContainedBatchRoot(
-                snapshot.FrameStore.BatchRootPath,
-                _storageRoot);
-            RenderOutputPathSecurity.RequireOutputTarget(
-                snapshot.Output);
-        }
-
-        lock (_gate)
-        {
-            var jobs = jobIds.Select((jobId) =>
-                    _document.Jobs.SingleOrDefault((candidate) =>
-                        candidate.Id.Equals(
-                            jobId,
-                            StringComparison.Ordinal))
-                    ?? throw new InvalidOperationException(
-                        "A preparing render child is unavailable."))
-                .ToList();
-            if (jobs.Any((job) =>
-                    job.Status != RenderQueueStatus.Preparing
-                    || job.Snapshot is not null
-                    || job.CancelRequested))
-            {
-                throw new OperationCanceledException(
-                    "Render snapshot preparation was canceled.");
-            }
-            foreach (var job in jobs)
-            {
-                var snapshot = snapshots.SingleOrDefault((candidate) =>
-                    candidate.RequestedAppearance.Equals(
-                        job.Summary.Appearance,
-                        StringComparison.Ordinal))
-                    ?? throw new InvalidOperationException(
-                        "Render snapshot preparation returned the wrong appearance.");
-                if (!snapshot.Output.OutputPath.Equals(
-                        job.Summary.Output.OutputPath,
-                        PathComparison())
-                    || snapshot.FrameStore.TotalFrames
-                        != job.Summary.TotalFrames)
-                {
-                    throw new InvalidOperationException(
-                        "Render snapshot preparation changed its queued output.");
-                }
-                job.Snapshot = snapshot;
-                job.Status = RenderQueueStatus.Pending;
-                job.StartedAt = null;
-                job.UpdatedAt = DateTimeOffset.UtcNow.ToString("O");
-                job.Progress = new RenderQueueProgress(
-                    0,
-                    job.Summary.TotalFrames,
-                    "Pending");
-            }
-            Save();
-        }
-        NotifyChanged();
-    }
-
-    public int RenderPending()
-    {
+        ArgumentNullException.ThrowIfNull(preparer);
         RequireAvailable();
         int count;
         lock (_gate)
         {
-            if (_document.Paused
-                || _launchedJobIds.Count > 0
-                || _document.Jobs.Any((job) =>
-                    job.Status == RenderQueueStatus.Preparing
-                    && job.Snapshot is null))
-            {
-                return 0;
-            }
+            if (_document.Paused || _launchedJobIds.Count > 0) return 0;
             var pendingIds = _document.Jobs
-                .Where((job) =>
-                    job.Status == RenderQueueStatus.Pending)
+                .Where((job) => job.Status == RenderQueueStatus.Pending)
                 .Select((job) => job.Id)
                 .ToList();
             count = pendingIds.Count;
-            foreach (var jobId in pendingIds)
-            {
-                _launchedJobIds.Add(jobId);
-            }
+            foreach (var jobId in pendingIds) _launchedJobIds.Add(jobId);
+            if (count > 0) _launchedPreparer = preparer;
         }
         if (count == 0) return 0;
         NotifyChanged();
@@ -456,124 +187,24 @@ internal sealed class RenderQueueManager : IDisposable
         return count;
     }
 
-    private void UpdatePreparationProgress(
-        string batchId,
-        RenderSnapshotFreezeProgress value)
-    {
-        lock (_gate)
-        {
-            var job = _document.Jobs.SingleOrDefault((candidate) =>
-                candidate.BatchId.Equals(
-                    batchId,
-                    StringComparison.Ordinal)
-                && candidate.Summary.Appearance.Equals(
-                    value.Appearance,
-                    StringComparison.Ordinal)
-                && candidate.Status
-                    == RenderQueueStatus.Preparing
-                && candidate.Snapshot is null);
-            if (job is null) return;
-            var total = Math.Max(0, value.Total);
-            var current = Math.Clamp(
-                value.Current,
-                0,
-                total);
-            if (total != job.Progress.Total
-                || current < job.Progress.Current)
-            {
-                return;
-            }
-            job.Progress = new RenderQueueProgress(
-                current,
-                total,
-                $"Freezing {DisplayAppearance(value.Appearance)}"
-                + (string.IsNullOrWhiteSpace(value.ScreenName)
-                    ? ""
-                    : $" · {value.ScreenName}"));
-            job.UpdatedAt = DateTimeOffset.UtcNow.ToString("O");
-        }
-        NotifyChanged();
-    }
-
-    private void FinishPreparation(
-        string batchId,
-        string status,
-        string? error)
-    {
-        lock (_gate)
-        {
-            var now = DateTimeOffset.UtcNow.ToString("O");
-            foreach (var job in _document.Jobs.Where((candidate) =>
-                         candidate.BatchId.Equals(
-                             batchId,
-                             StringComparison.Ordinal)
-                         && candidate.Status
-                             == RenderQueueStatus.Preparing
-                         && candidate.Snapshot is null))
-            {
-                job.Status = status;
-                job.Error = error;
-                job.CancelRequested = false;
-                job.CompletedAt = now;
-                job.UpdatedAt = now;
-                job.Progress = job.Progress with
-                {
-                    Phase = status == RenderQueueStatus.Canceled
-                        ? "Canceled"
-                        : "Snapshot error",
-                };
-            }
-            MaintainHistory();
-            Save();
-        }
-        NotifyChanged();
-    }
-
     public bool Cancel(string jobId)
     {
         RequireAvailable();
-        var changed = false;
-        CancellationTokenSource? preparationCancellation = null;
         lock (_gate)
         {
             var job = _document.Jobs.SingleOrDefault((candidate) =>
                 candidate.Id.Equals(jobId, StringComparison.Ordinal));
-            if (job is null || RenderQueueStatus.IsTerminal(job.Status))
-            {
-                return false;
-            }
+            if (job is null || RenderQueueStatus.IsTerminal(job.Status)) return false;
             job.CancelRequested = true;
             job.UpdatedAt = DateTimeOffset.UtcNow.ToString("O");
-            if (job.Status == RenderQueueStatus.Preparing
-                && job.Snapshot is null
-                && _preparationCancellations.TryGetValue(
-                    job.BatchId,
-                    out preparationCancellation))
-            {
-                foreach (var child in _document.Jobs.Where((candidate) =>
-                             candidate.BatchId.Equals(
-                                 job.BatchId,
-                                 StringComparison.Ordinal)
-                             && candidate.Status
-                                 == RenderQueueStatus.Preparing
-                             && candidate.Snapshot is null))
-                {
-                    child.CancelRequested = true;
-                    child.UpdatedAt = job.UpdatedAt;
-                    child.Progress = child.Progress with
-                    {
-                        Phase = "Canceling snapshot",
-                    };
-                }
-            }
-            else if (job.Status == RenderQueueStatus.Pending)
+            if (job.Status == RenderQueueStatus.Pending)
             {
                 _launchedJobIds.Remove(job.Id);
                 job.Status = RenderQueueStatus.Canceled;
                 job.CompletedAt = job.UpdatedAt;
                 job.Progress = job.Progress with { Phase = "Canceled" };
+                CompleteLaunchedBatchIfEmpty();
                 MaintainHistory();
-                Save();
             }
             else
             {
@@ -583,30 +214,31 @@ internal sealed class RenderQueueManager : IDisposable
                     _activeCancellation?.Cancel();
                 }
             }
-            changed = true;
+            Save();
         }
-        preparationCancellation?.Cancel();
-        if (changed) NotifyChanged();
-        return changed;
+        NotifyChanged();
+        return true;
     }
 
     public bool Retry(string jobId)
     {
         RequireAvailable();
-        RenderJobSnapshot? snapshot;
+        RenderJobPlan plan;
+        RenderJobSummary summary;
         lock (_gate)
         {
             var job = _document.Jobs.SingleOrDefault((candidate) =>
                 candidate.Id.Equals(jobId, StringComparison.Ordinal));
-            if (job?.Snapshot is null
+            if (job is null
                 || job.Status is not RenderQueueStatus.Failed
                     and not RenderQueueStatus.Canceled)
             {
                 return false;
             }
-            snapshot = job.Snapshot;
+            plan = job.Plan;
+            summary = job.Summary;
         }
-        EnqueueBatch([snapshot]);
+        EnqueueBatch([plan], [summary]);
         return true;
     }
 
@@ -618,16 +250,15 @@ internal sealed class RenderQueueManager : IDisposable
             var index = _document.Jobs.FindIndex((candidate) =>
                 candidate.Id.Equals(jobId, StringComparison.Ordinal));
             if (index < 0
-                || !RenderQueueStatus.IsTerminal(
-                    _document.Jobs[index].Status))
+                || !RenderQueueStatus.IsTerminal(_document.Jobs[index].Status))
             {
                 return false;
             }
             _document.Jobs.RemoveAt(index);
             _launchedJobIds.Remove(jobId);
+            CompleteLaunchedBatchIfEmpty();
             Save();
         }
-        CleanupOrphanedStorage();
         NotifyChanged();
         return true;
     }
@@ -641,11 +272,10 @@ internal sealed class RenderQueueManager : IDisposable
             removed = _document.Jobs.RemoveAll((job) =>
                 RenderQueueStatus.IsTerminal(job.Status));
             _launchedJobIds.RemoveWhere((jobId) =>
-                !_document.Jobs.Any((job) =>
-                    job.Id.Equals(jobId, StringComparison.Ordinal)));
+                !_document.Jobs.Any((job) => job.Id == jobId));
+            CompleteLaunchedBatchIfEmpty();
             if (removed > 0) Save();
         }
-        if (removed > 0) CleanupOrphanedStorage();
         if (removed > 0) NotifyChanged();
         return removed;
     }
@@ -666,20 +296,15 @@ internal sealed class RenderQueueManager : IDisposable
     private void Kick()
     {
         if (_shutdown.IsCancellationRequested
-            || !string.IsNullOrWhiteSpace(InitializationError))
-        {
-            return;
-        }
+            || !string.IsNullOrWhiteSpace(InitializationError)) return;
         lock (_gate)
         {
             if (_workerScheduled
                 || _document.Paused
+                || _launchedPreparer is null
                 || !_document.Jobs.Any((job) =>
                     job.Status == RenderQueueStatus.Pending
-                    && _launchedJobIds.Contains(job.Id)))
-            {
-                return;
-            }
+                    && _launchedJobIds.Contains(job.Id))) return;
             _workerScheduled = true;
             _workerTask = Task.Run(ProcessQueueAsync);
         }
@@ -692,6 +317,8 @@ internal sealed class RenderQueueManager : IDisposable
             while (!_shutdown.IsCancellationRequested)
             {
                 RenderQueueJob? job;
+                IRenderJobPreparer? preparer;
+                CancellationTokenSource cancellation;
                 lock (_gate)
                 {
                     if (_document.Paused)
@@ -701,17 +328,16 @@ internal sealed class RenderQueueManager : IDisposable
                     }
                     _launchedJobIds.RemoveWhere((jobId) =>
                         !_document.Jobs.Any((candidate) =>
-                            candidate.Id.Equals(
-                                jobId,
-                                StringComparison.Ordinal)
-                            && candidate.Status
-                                == RenderQueueStatus.Pending));
+                            candidate.Id == jobId
+                            && candidate.Status == RenderQueueStatus.Pending));
                     job = _document.Jobs.FirstOrDefault((candidate) =>
                         candidate.Status == RenderQueueStatus.Pending
                         && _launchedJobIds.Contains(candidate.Id));
-                    if (job is null)
+                    preparer = _launchedPreparer;
+                    if (job is null || preparer is null)
                     {
                         _launchedJobIds.Clear();
+                        _launchedPreparer = null;
                         _workerScheduled = false;
                         return;
                     }
@@ -723,24 +349,36 @@ internal sealed class RenderQueueManager : IDisposable
                     job.Progress = new RenderQueueProgress(
                         0,
                         job.Summary.TotalFrames,
-                        "Preparing");
+                        "Preparing current render");
                     _activeJobId = job.Id;
-                    _activeCancellation = CancellationTokenSource
+                    cancellation = CancellationTokenSource
                         .CreateLinkedTokenSource(_shutdown.Token);
+                    _activeCancellation = cancellation;
                     Save();
                 }
                 NotifyChanged();
-                var progress = new Progress<RenderQueueExecutionProgress>(
-                    (value) => UpdateProgress(job.Id, value));
+
+                var temporaryRoot = CreateTemporaryRoot();
                 try
                 {
-                    var snapshot = job.Snapshot
-                        ?? throw new InvalidOperationException(
-                            "The pending render job has no snapshot.");
+                    var preparationProgress =
+                        new SynchronousProgress<RenderSnapshotFreezeProgress>(
+                            (value) => UpdatePreparationProgress(job.Id, value));
+                    var snapshot = await preparer.PrepareAsync(
+                        job.Plan,
+                        temporaryRoot,
+                        preparationProgress,
+                        cancellation.Token);
+                    snapshot.Validate();
+                    ValidatePreparedSnapshot(job.Plan, snapshot);
+                    UpdatePreparedSummary(job.Id, snapshot);
+
+                    var executionProgress = new Progress<RenderQueueExecutionProgress>(
+                        (value) => UpdateProgress(job.Id, value));
                     await _executor.ExecuteAsync(
                         snapshot,
-                        progress,
-                        _activeCancellation.Token);
+                        executionProgress,
+                        cancellation.Token);
                     Finish(job.Id, RenderQueueStatus.Completed, null);
                 }
                 catch (OperationCanceledException)
@@ -754,18 +392,19 @@ internal sealed class RenderQueueManager : IDisposable
                 }
                 catch (Exception exception)
                 {
-                    Finish(
-                        job.Id,
-                        RenderQueueStatus.Failed,
-                        exception.Message);
+                    Finish(job.Id, RenderQueueStatus.Failed, exception.Message);
                 }
                 finally
                 {
+                    DeleteTemporaryRoot(temporaryRoot);
                     lock (_gate)
                     {
-                        _activeCancellation?.Dispose();
-                        _activeCancellation = null;
-                        _activeJobId = "";
+                        cancellation.Dispose();
+                        if (ReferenceEquals(_activeCancellation, cancellation))
+                        {
+                            _activeCancellation = null;
+                            _activeJobId = "";
+                        }
                     }
                 }
             }
@@ -776,30 +415,63 @@ internal sealed class RenderQueueManager : IDisposable
         }
         finally
         {
-            lock (_gate)
-            {
-                _workerScheduled = false;
-            }
+            lock (_gate) _workerScheduled = false;
         }
     }
 
-    private void UpdateProgress(
+    private void UpdatePreparationProgress(
         string jobId,
-        RenderQueueExecutionProgress value)
+        RenderSnapshotFreezeProgress value)
     {
         lock (_gate)
         {
             var job = _document.Jobs.SingleOrDefault((candidate) =>
-                candidate.Id.Equals(jobId, StringComparison.Ordinal));
+                candidate.Id == jobId
+                && candidate.Status == RenderQueueStatus.Preparing);
+            if (job is null) return;
+            var total = Math.Max(0, value.Total);
+            var current = Math.Clamp(value.Current, 0, total);
+            if (total == job.Progress.Total && current < job.Progress.Current) return;
+            job.Progress = new RenderQueueProgress(
+                current,
+                total,
+                $"Preparing current {DisplayAppearance(value.Appearance)}"
+                + (string.IsNullOrWhiteSpace(value.ScreenName)
+                    ? ""
+                    : $" · {value.ScreenName}"));
+            job.UpdatedAt = DateTimeOffset.UtcNow.ToString("O");
+        }
+        NotifyChanged();
+    }
+
+    private void UpdatePreparedSummary(string jobId, RenderJobSnapshot snapshot)
+    {
+        lock (_gate)
+        {
+            var job = _document.Jobs.Single((candidate) => candidate.Id == jobId);
+            job.Summary = Summary(snapshot);
+            job.Progress = new RenderQueueProgress(
+                0,
+                snapshot.FrameStore.TotalFrames,
+                "Prepared current render");
+            job.UpdatedAt = DateTimeOffset.UtcNow.ToString("O");
+            Save();
+        }
+        NotifyChanged();
+    }
+
+    private void UpdateProgress(string jobId, RenderQueueExecutionProgress value)
+    {
+        lock (_gate)
+        {
+            var job = _document.Jobs.SingleOrDefault((candidate) =>
+                candidate.Id == jobId);
             if (job is null || RenderQueueStatus.IsTerminal(job.Status)) return;
             var currentRank = ExecutionStatusRank(job.Status);
             var nextRank = ExecutionStatusRank(value.Status);
             if (nextRank < currentRank
                 || (nextRank == currentRank
-                    && value.Current < job.Progress.Current))
-            {
-                return;
-            }
+                    && value.Current < job.Progress.Current)) return;
             job.Status = value.Status;
             job.Progress = new RenderQueueProgress(
                 Math.Max(0, value.Current),
@@ -810,22 +482,20 @@ internal sealed class RenderQueueManager : IDisposable
         NotifyChanged();
     }
 
-    private static int ExecutionStatusRank(string status) =>
-        status switch
-        {
-            RenderQueueStatus.Pending => 0,
-            RenderQueueStatus.Preparing => 1,
-            RenderQueueStatus.Rendering => 2,
-            RenderQueueStatus.Encoding => 3,
-            _ => 4,
-        };
+    private static int ExecutionStatusRank(string status) => status switch
+    {
+        RenderQueueStatus.Pending => 0,
+        RenderQueueStatus.Preparing => 1,
+        RenderQueueStatus.Rendering => 2,
+        RenderQueueStatus.Encoding => 3,
+        _ => 4,
+    };
 
     private void Finish(string jobId, string status, string? error)
     {
         lock (_gate)
         {
-            var job = _document.Jobs.Single((candidate) =>
-                candidate.Id.Equals(jobId, StringComparison.Ordinal));
+            var job = _document.Jobs.Single((candidate) => candidate.Id == jobId);
             var now = DateTimeOffset.UtcNow.ToString("O");
             job.Status = status;
             job.Error = error;
@@ -844,10 +514,10 @@ internal sealed class RenderQueueManager : IDisposable
                 });
             job.CancelRequested = false;
             _launchedJobIds.Remove(jobId);
+            CompleteLaunchedBatchIfEmpty();
             MaintainHistory();
             Save();
         }
-        CleanupOrphanedStorage();
         NotifyChanged();
     }
 
@@ -856,7 +526,7 @@ internal sealed class RenderQueueManager : IDisposable
         lock (_gate)
         {
             var job = _document.Jobs.SingleOrDefault((candidate) =>
-                candidate.Id.Equals(jobId, StringComparison.Ordinal));
+                candidate.Id == jobId);
             if (job is null || RenderQueueStatus.IsTerminal(job.Status)) return;
             job.Status = RenderQueueStatus.Pending;
             job.StartedAt = null;
@@ -866,6 +536,8 @@ internal sealed class RenderQueueManager : IDisposable
                 0,
                 job.Summary.TotalFrames,
                 "Recovered after closing the app");
+            _launchedJobIds.Remove(jobId);
+            CompleteLaunchedBatchIfEmpty();
             Save();
         }
         NotifyChanged();
@@ -876,27 +548,16 @@ internal sealed class RenderQueueManager : IDisposable
         foreach (var job in _document.Jobs.Where((candidate) =>
             RenderQueueStatus.IsActive(candidate.Status)))
         {
-            var snapshotAvailable = job.Snapshot is not null;
-            job.Status = snapshotAvailable
-                ? RenderQueueStatus.Pending
-                : RenderQueueStatus.Failed;
-            job.StartedAt = snapshotAvailable
-                ? null
-                : job.StartedAt;
-            job.CompletedAt = snapshotAvailable
-                ? null
-                : DateTimeOffset.UtcNow.ToString("O");
-            job.Error = snapshotAvailable
-                ? null
-                : "Snapshot preparation was interrupted before the render became immutable.";
+            job.Status = RenderQueueStatus.Pending;
+            job.StartedAt = null;
+            job.CompletedAt = null;
+            job.Error = null;
             job.CancelRequested = false;
             job.UpdatedAt = DateTimeOffset.UtcNow.ToString("O");
             job.Progress = new RenderQueueProgress(
                 0,
                 job.Summary.TotalFrames,
-                snapshotAvailable
-                    ? "Recovered after closing the app"
-                    : "Snapshot interrupted");
+                "Recovered after closing the app");
         }
     }
 
@@ -905,30 +566,12 @@ internal sealed class RenderQueueManager : IDisposable
         var terminal = _document.Jobs
             .Where((job) => RenderQueueStatus.IsTerminal(job.Status))
             .ToList();
-        if (terminal.Count > MaximumTerminalJobs)
-        {
-            var remove = terminal
-                .Take(terminal.Count - MaximumTerminalJobs)
-                .Select((job) => job.Id)
-                .ToHashSet(StringComparer.Ordinal);
-            _document.Jobs.RemoveAll((job) => remove.Contains(job.Id));
-        }
-        foreach (var job in _document.Jobs.Where((candidate) =>
-            candidate.Status == RenderQueueStatus.Completed))
-        {
-            job.Snapshot = null;
-        }
-        var retryable = _document.Jobs
-            .Where((job) =>
-                job.Snapshot is not null
-                && job.Status is RenderQueueStatus.Failed
-                    or RenderQueueStatus.Canceled)
-            .ToList();
-        foreach (var job in retryable.Take(
-            Math.Max(0, retryable.Count - MaximumRetrySnapshots)))
-        {
-            job.Snapshot = null;
-        }
+        if (terminal.Count <= MaximumTerminalJobs) return;
+        var remove = terminal
+            .Take(terminal.Count - MaximumTerminalJobs)
+            .Select((job) => job.Id)
+            .ToHashSet(StringComparer.Ordinal);
+        _document.Jobs.RemoveAll((job) => remove.Contains(job.Id));
     }
 
     private RenderQueueDocument Load()
@@ -936,10 +579,9 @@ internal sealed class RenderQueueManager : IDisposable
         if (!File.Exists(_path)) return new RenderQueueDocument();
         var document = JsonSerializer.Deserialize<RenderQueueDocument>(
             File.ReadAllText(_path))
-            ?? throw new InvalidOperationException(
-                "The render queue document is empty.");
+            ?? throw new InvalidOperationException("The render queue document is empty.");
         if (document.Schema != "mockups_render_queue"
-            || document.Version != 1
+            || document.Version != 2
             || document.Jobs is null
             || document.LastRouteByProject is null)
         {
@@ -951,25 +593,21 @@ internal sealed class RenderQueueManager : IDisposable
             if (string.IsNullOrWhiteSpace(job.Id)
                 || string.IsNullOrWhiteSpace(job.BatchId)
                 || !RenderQueueStatus.IsKnown(job.Status)
-                || job.Summary.TotalFrames <= 0
-                || (job.Status == RenderQueueStatus.Pending
-                    && job.Snapshot is null)
-                || (job.Status is RenderQueueStatus.Rendering
-                        or RenderQueueStatus.Encoding
-                    && job.Snapshot is null)
-                || (job.Snapshot is not null
-                    && job.Snapshot.Schema
-                        != RenderJobSnapshot.CurrentSchema))
+                || job.Summary.TotalFrames <= 0)
             {
                 throw new InvalidOperationException(
                     "The render queue contains an incomplete job.");
             }
-            if (job.Snapshot is not null)
+            job.Plan.Validate();
+            RenderOutputPathSecurity.RequireOutputTarget(job.Plan.Output);
+            ValidateSummary(job.Summary);
+            if (!job.Plan.Output.OutputPath.Equals(
+                    job.Summary.Output.OutputPath,
+                    PathComparison())
+                || job.Plan.RequestedAppearance != job.Summary.Appearance)
             {
-                job.Snapshot.Validate();
-                RenderSnapshotStore.RequireContainedBatchRoot(
-                    job.Snapshot.FrameStore.BatchRootPath,
-                    _storageRoot);
+                throw new InvalidOperationException(
+                    "The render queue job plan and summary disagree.");
             }
         }
         return document;
@@ -997,6 +635,121 @@ internal sealed class RenderQueueManager : IDisposable
         }
     }
 
+    private static void ValidatePlans(
+        IReadOnlyList<RenderJobPlan> plans,
+        IReadOnlyList<RenderJobSummary> summaries)
+    {
+        if (plans.Select((plan) => plan.RequestedAppearance)
+                .Distinct(StringComparer.Ordinal).Count() != plans.Count)
+        {
+            throw new InvalidOperationException(
+                "A render batch contains duplicate appearances.");
+        }
+        for (var index = 0; index < plans.Count; index++)
+        {
+            var plan = plans[index];
+            var summary = summaries[index];
+            plan.Validate();
+            RenderOutputPathSecurity.RequireOutputTarget(plan.Output);
+            ValidateSummary(summary);
+            if (plan.ProjectId != summary.Context.ProjectId
+                || plan.ShotId != summary.Context.ShotId
+                || plan.RequestedAppearance != summary.Appearance
+                || !plan.Output.OutputPath.Equals(
+                    summary.Output.OutputPath,
+                    PathComparison()))
+            {
+                throw new InvalidOperationException(
+                    "A live render plan and its display summary disagree.");
+            }
+        }
+    }
+
+    private static void ValidateSummary(RenderJobSummary summary)
+    {
+        if (string.IsNullOrWhiteSpace(summary.Context.ProjectId)
+            || string.IsNullOrWhiteSpace(summary.Context.ShotId)
+            || string.IsNullOrWhiteSpace(summary.Context.ActorId)
+            || string.IsNullOrWhiteSpace(summary.DeviceName)
+            || string.IsNullOrWhiteSpace(summary.ThemeName)
+            || summary.Appearance is not RenderQueueAppearance.Light
+                and not RenderQueueAppearance.Dark
+            || summary.TotalFrames <= 0
+            || summary.Output.Appearance != summary.Appearance)
+        {
+            throw new InvalidOperationException("A render summary is incomplete.");
+        }
+        _ = RenderOutputModes.Require(summary.Output.OutputModeId);
+        RenderOutputPathSecurity.RequireOutputTarget(summary.Output);
+    }
+
+    private static void ValidatePreparedSnapshot(
+        RenderJobPlan plan,
+        RenderJobSnapshot snapshot)
+    {
+        if (snapshot.Context.ProjectId != plan.ProjectId
+            || snapshot.Context.ShotId != plan.ShotId
+            || snapshot.RequestedAppearance != plan.RequestedAppearance
+            || snapshot.Output != plan.Output)
+        {
+            throw new InvalidOperationException(
+                "Live render preparation changed the queued identity or output.");
+        }
+    }
+
+    private void CompleteLaunchedBatchIfEmpty()
+    {
+        if (_launchedJobIds.Count == 0) _launchedPreparer = null;
+    }
+
+    private static string CreateTemporaryRoot()
+    {
+        var root = Path.Combine(
+            Path.GetTempPath(),
+            "MOCKUPS-render-queue-runtime",
+            Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        return root;
+    }
+
+    private static void DeleteTemporaryRoot(string root)
+    {
+        try
+        {
+            var parent = Path.GetFullPath(Path.Combine(
+                Path.GetTempPath(),
+                "MOCKUPS-render-queue-runtime"));
+            var fullRoot = Path.GetFullPath(root);
+            var prefix = parent.EndsWith(Path.DirectorySeparatorChar)
+                ? parent
+                : parent + Path.DirectorySeparatorChar;
+            if (!fullRoot.StartsWith(prefix, PathComparison())) return;
+            if (Directory.Exists(fullRoot)) Directory.Delete(fullRoot, recursive: true);
+        }
+        catch
+        {
+            // A later workstation temp cleanup can retry a busy runtime folder.
+        }
+    }
+
+    private static RenderJobSummary Summary(RenderJobSnapshot snapshot) => new(
+        snapshot.Context,
+        snapshot.DeviceName,
+        snapshot.ThemeName,
+        snapshot.RequestedAppearance,
+        snapshot.FrameStore.TotalFrames,
+        snapshot.Output);
+
+    private static RenderQueueJobView ToView(RenderQueueJob job) => new(
+        job.Id,
+        job.BatchId,
+        job.CreatedAt,
+        job.Status,
+        job.Progress,
+        true,
+        job.Summary,
+        job.Error);
+
     private void RequireAvailable()
     {
         if (!string.IsNullOrWhiteSpace(InitializationError))
@@ -1004,116 +757,6 @@ internal sealed class RenderQueueManager : IDisposable
             throw new InvalidOperationException(InitializationError);
         }
     }
-
-    private static void ValidateSummaries(
-        IReadOnlyList<RenderJobSummary> summaries)
-    {
-        if (summaries.Select((summary) => summary.Appearance)
-                .Distinct(StringComparer.Ordinal)
-                .Count() != summaries.Count)
-        {
-            throw new InvalidOperationException(
-                "A render batch contains duplicate appearances.");
-        }
-        foreach (var summary in summaries)
-        {
-            if (string.IsNullOrWhiteSpace(
-                    summary.Context.ProjectId)
-                || string.IsNullOrWhiteSpace(
-                    summary.Context.ShotId)
-                || string.IsNullOrWhiteSpace(
-                    summary.Context.ActorId)
-                || string.IsNullOrWhiteSpace(
-                    summary.DeviceName)
-                || string.IsNullOrWhiteSpace(
-                    summary.ThemeName)
-                || summary.Appearance is not RenderQueueAppearance.Light
-                    and not RenderQueueAppearance.Dark
-                || summary.TotalFrames <= 0
-                || summary.Output.Appearance
-                    != summary.Appearance)
-            {
-                throw new InvalidOperationException(
-                    "A preparing render summary is incomplete.");
-            }
-            _ = RenderOutputModes.Require(
-                summary.Output.OutputModeId);
-            RenderOutputPathSecurity.RequireOutputTarget(
-                summary.Output);
-        }
-    }
-
-    private void CleanupOrphanedStorage()
-    {
-        try
-        {
-            if (!Directory.Exists(_storageRoot)) return;
-            HashSet<string> referenced;
-            HashSet<string> preparing;
-            lock (_gate)
-            {
-                referenced = _document.Jobs
-                    .Where((job) => job.Snapshot is not null)
-                    .Select((job) => Path.GetFullPath(
-                        job.Snapshot!.FrameStore.BatchRootPath))
-                    .ToHashSet(PathComparer());
-                preparing = _preparationCancellations.Keys
-                    .Select((batchId) => RenderSnapshotStore.BatchRoot(
-                        _storageRoot,
-                        batchId))
-                    .ToHashSet(PathComparer());
-            }
-            foreach (var directory in Directory.GetDirectories(
-                         _storageRoot,
-                         "*",
-                         SearchOption.TopDirectoryOnly))
-            {
-                var fullPath = Path.GetFullPath(directory);
-                if (referenced.Contains(fullPath)
-                    || preparing.Contains(fullPath)
-                    || !Guid.TryParse(
-                        Path.GetFileName(fullPath),
-                        out _))
-                {
-                    continue;
-                }
-                try
-                {
-                    RenderSnapshotStore.DeleteBatchRoot(
-                        fullPath,
-                        _storageRoot);
-                }
-                catch
-                {
-                    // A later queue cleanup can retry a busy local store.
-                }
-            }
-        }
-        catch
-        {
-            // Queue execution remains available if stale-file cleanup fails.
-        }
-    }
-
-    private static RenderJobSummary Summary(RenderJobSnapshot snapshot) =>
-        new(
-            snapshot.Context,
-            snapshot.DeviceName,
-            snapshot.ThemeName,
-            snapshot.RequestedAppearance,
-            snapshot.FrameStore.TotalFrames,
-            snapshot.Output);
-
-    private static RenderQueueJobView ToView(RenderQueueJob job) =>
-        new(
-            job.Id,
-            job.BatchId,
-            job.CreatedAt,
-            job.Status,
-            job.Progress,
-            job.Snapshot is not null,
-            job.Summary,
-            job.Error);
 
     private static string DefaultPath()
     {
@@ -1124,9 +767,7 @@ internal sealed class RenderQueueManager : IDisposable
     }
 
     private static string DisplayAppearance(string appearance) =>
-        appearance == RenderQueueAppearance.Light
-            ? "Light"
-            : "Dark";
+        appearance == RenderQueueAppearance.Light ? "Light" : "Dark";
 
     private static StringComparison PathComparison() =>
         OperatingSystem.IsWindows()
@@ -1140,42 +781,27 @@ internal sealed class RenderQueueManager : IDisposable
 
     private void NotifyChanged()
     {
-        try
-        {
-            Changed?.Invoke();
-        }
-        catch
-        {
-            // UI observers cannot break queue persistence or execution.
-        }
+        try { Changed?.Invoke(); }
+        catch { /* UI observers cannot break queue persistence or execution. */ }
     }
 
     public void Dispose()
     {
         if (Interlocked.Exchange(ref _disposeRequested, 1) != 0) return;
         _shutdown.Cancel();
-        Task[] tasks;
+        Task? worker;
         lock (_gate)
         {
             _activeCancellation?.Cancel();
-            foreach (var cancellation in
-                     _preparationCancellations.Values)
-            {
-                cancellation.Cancel();
-            }
-            tasks = _preparationTasks.Values
-                .Concat(_workerTask is null
-                    ? []
-                    : [_workerTask])
-                .ToArray();
+            worker = _workerTask;
         }
-        if (tasks.Length == 0)
+        if (worker is null)
         {
             _executor.Dispose();
             _shutdown.Dispose();
             return;
         }
-        _ = Task.WhenAll(tasks).ContinueWith(
+        _ = worker.ContinueWith(
             _ =>
             {
                 _executor.Dispose();
@@ -1186,8 +812,7 @@ internal sealed class RenderQueueManager : IDisposable
             TaskScheduler.Default);
     }
 
-    private sealed class SynchronousProgress<T>(
-        Action<T> report) : IProgress<T>
+    private sealed class SynchronousProgress<T>(Action<T> report) : IProgress<T>
     {
         public void Report(T value) => report(value);
     }

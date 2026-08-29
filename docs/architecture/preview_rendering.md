@@ -235,7 +235,7 @@ the interactive matte between black and a classic gray/white transparency
 checkerboard. `Alpha` forces a black matte and converts the already composed
 Preview visual to white while retaining its final alpha, yielding the exact
 white/gray-on-black channel view. Neither control changes payloads, Device or
-Theme data, frozen render documents or Render Queue output. When either
+Theme data, transient render documents or Render Queue output. When either
 inspection is active, Preview uses the HTML route for presentation even if the
 playback preference is raster, because the native raster surface is not an
 authoring output transform. Preview utility switches remain compact controls
@@ -282,21 +282,22 @@ or compensate by increasing Preview timeouts.
 ## Render Queue boundary
 
 Render Queue reuses the same prepared Production payload and generic web
-renderer, but it is not a second Preview mode. Enqueue resolves every Shot
-frame with an explicit Theme, Device and requested Light/Dark mode, renders a
-clean raster document, and streams that frozen document into the queue-owned
-content-addressed store. The visible queue receives `PREPARING` children before
-this stream starts; preparation never builds an in-memory list of frame HTML.
-Completed snapshots remain `PENDING` until the user launches the exact current
-pending set from the permanent Render Queue surface; enqueue never starts the
-worker.
+renderer, but it is not a second Preview mode. Enqueue stores only live plans
+and leaves them `PENDING`; it does not resolve payloads or create frame data.
+When the user launches the exact current pending set, each child independently
+reads the latest Shot and Screens at its own start and prepares its explicit
+Theme, Device and requested Light/Dark payloads into a temporary store.
 
-The queue worker receives no Project database port, repository or current tree
-selection. It uses the same document-to-raster owner as raster Preview through
-its own persistent Chromium session, reads one frozen document per request and
-then writes a MOV or image sequence. A repeated document hash reuses the
-already generated lossless raster. The renderer still knows nothing about
-queue state, output naming, Production Output paths or codecs.
+The queue manager receives no Project database port, repository or current tree
+selection. The preparation owner resolves the live plan through its focused
+Production and Preview ports, then hands the resulting transient snapshot to
+the worker. The worker uses the same document-to-raster owner as raster Preview
+through its own persistent Chromium session, reads one prepared document per
+request and then writes a MOV or image sequence. A repeated document hash within
+that job reuses the already generated lossless raster. The transient snapshot
+and assets are deleted after the job and never become queue persistence. The
+renderer still knows nothing about queue state, output naming, Production
+Output paths or codecs.
 The worker's output boundary converts the straight-alpha Chromium raster to
 black-premultiplied RGB while retaining alpha in alpha-capable formats.
 MOV conversion also owns complete frame and container color metadata. It

@@ -13623,6 +13623,17 @@ static void RenderQueueChildrenAreIndependent()
                 appearance,
                 1,
                 Output(appearance));
+        RenderJobPlan Plan(string appearance) =>
+            new(
+                RenderJobPlan.CurrentSchema,
+                RenderJobPlan.CurrentVersion,
+                context.ProjectId,
+                context.ShotId,
+                context.ShotName,
+                "device",
+                "theme",
+                appearance,
+                Output(appearance));
         RenderJobSnapshot Snapshot(
             string batchRoot,
             string appearance)
@@ -13656,43 +13667,33 @@ static void RenderQueueChildrenAreIndependent()
                 new ManualResetEventSlim();
             using var preparationStarted =
                 new ManualResetEventSlim();
-            var children = queue.EnqueuePreparingBatch(
-                [
-                    Summary(RenderQueueAppearance.Light),
-                    Summary(RenderQueueAppearance.Dark),
-                ],
-                async (batchRoot, _, cancellationToken) =>
+            var preparer = new DelegateRenderJobPreparer(
+                async (plan, batchRoot, _, cancellationToken) =>
                 {
                     preparationStarted.Set();
                     await Task.Run(
-                        () => releasePreparation.Wait(
-                            cancellationToken),
+                        () => releasePreparation.Wait(cancellationToken),
                         cancellationToken);
-                    return
-                    [
-                        Snapshot(
-                            batchRoot,
-                            RenderQueueAppearance.Light),
-                        Snapshot(
-                            batchRoot,
-                            RenderQueueAppearance.Dark),
-                    ];
+                    return Snapshot(batchRoot, plan.RequestedAppearance);
                 });
+            var children = queue.EnqueueBatch(
+                [
+                    Plan(RenderQueueAppearance.Light),
+                    Plan(RenderQueueAppearance.Dark),
+                ],
+                [
+                    Summary(RenderQueueAppearance.Light),
+                    Summary(RenderQueueAppearance.Dark),
+                ]);
             Equal(2, children.Count);
             Equal(children[0].BatchId, children[1].BatchId);
-            True(preparationStarted.Wait(
-                TimeSpan.FromSeconds(2)));
+            True(!preparationStarted.Wait(TimeSpan.FromMilliseconds(250)));
             True(queue.Jobs().All((job) =>
-                job.Status == RenderQueueStatus.Preparing
-                && !job.SnapshotAvailable));
+                job.Status == RenderQueueStatus.Pending
+                && job.PlanAvailable));
+            Equal(2, queue.RenderPending(preparer));
+            True(preparationStarted.Wait(TimeSpan.FromSeconds(2)));
             releasePreparation.Set();
-            True(SpinWait.SpinUntil(
-                () => queue.Jobs().All((job) =>
-                    job.Status == RenderQueueStatus.Pending),
-                TimeSpan.FromSeconds(5)));
-            True(queue.CanRenderPending);
-            True(!queue.HasLaunchedBatch);
-            Equal(2, queue.RenderPending());
             True(SpinWait.SpinUntil(
                 () => queue.Jobs().All((job) =>
                     RenderQueueStatus.IsTerminal(job.Status)),
@@ -13713,12 +13714,7 @@ static void RenderQueueChildrenAreIndependent()
             queuePath,
             new AppearanceFailingRenderExecutor(""));
         Equal(2, reopened.Jobs().Count);
-        True(reopened.Jobs().Single((job) =>
-            job.Summary.Appearance == RenderQueueAppearance.Light)
-            .SnapshotAvailable == false);
-        True(reopened.Jobs().Single((job) =>
-            job.Summary.Appearance == RenderQueueAppearance.Dark)
-            .SnapshotAvailable);
+        True(reopened.Jobs().All((job) => job.PlanAvailable));
     }
     finally
     {
@@ -13759,17 +13755,8 @@ static void RenderQueueRunsOnlyExplicitPendingBatch()
             0,
             0,
             DeviceModuleTransparencyOverride.Disabled);
-        RenderJobSnapshot Snapshot(string id, string appearance)
-        {
-            var batchRoot = Path.Combine(
-                stateRoot,
-                "render-queue-data",
-                Guid.NewGuid().ToString());
-            var frameStore = StoreRenderFrames(
-                batchRoot,
-                appearance,
-                ["<html>frame</html>"]);
-            var output = new RenderOutputTarget(
+        RenderOutputTarget Output(string id, string appearance) =>
+            new(
                 "production",
                 "output",
                 root,
@@ -13782,6 +13769,28 @@ static void RenderQueueRunsOnlyExplicitPendingBatch()
                 Path.Combine(
                     outputRoot,
                     $"{id}_{appearance.ToUpperInvariant()}_v001.mov"));
+        RenderJobPlan Plan(string id, string appearance) =>
+            new(
+                RenderJobPlan.CurrentSchema,
+                RenderJobPlan.CurrentVersion,
+                context.ProjectId,
+                context.ShotId,
+                context.ShotName,
+                "device",
+                "theme",
+                appearance,
+                Output(id, appearance));
+        RenderJobSummary Summary(string id, string appearance) =>
+            new(context, "Device", "Theme", appearance, 1, Output(id, appearance));
+        RenderJobSnapshot Snapshot(
+            string batchRoot,
+            string id,
+            string appearance)
+        {
+            var frameStore = StoreRenderFrames(
+                batchRoot,
+                appearance,
+                ["<html>frame</html>"]);
             return new RenderJobSnapshot(
                 RenderJobSnapshot.CurrentSchema,
                 RenderJobSnapshot.CurrentVersion,
@@ -13794,27 +13803,47 @@ static void RenderQueueRunsOnlyExplicitPendingBatch()
                 metrics,
                 25,
                 frameStore,
-                output);
+                Output(id, appearance));
         }
 
         var executor = new GatedRenderExecutor();
+        var preparationCount = 0;
+        var preparedRoots = new List<string>();
+        var preparer = new DelegateRenderJobPreparer(
+            (plan, batchRoot, _, _) =>
+            {
+                Interlocked.Increment(ref preparationCount);
+                lock (preparedRoots) preparedRoots.Add(batchRoot);
+                return Task.FromResult(Snapshot(
+                    batchRoot,
+                    Path.GetFileNameWithoutExtension(plan.Output.OutputPath)
+                        .Split('_')[0],
+                    plan.RequestedAppearance));
+            });
         using var queue = new RenderQueueManager(
             queuePath,
             executor);
         var first = queue.EnqueueBatch(
-            [Snapshot("first", RenderQueueAppearance.Light)]).Single();
+            [Plan("first", RenderQueueAppearance.Light)],
+            [Summary("first", RenderQueueAppearance.Light)]).Single();
         Equal(RenderQueueStatus.Pending, queue.Jobs().Single().Status);
         True(queue.CanRenderPending);
         True(!executor.FirstStarted.Wait(
             TimeSpan.FromMilliseconds(250)));
+        Equal(0, Volatile.Read(ref preparationCount));
+        var persistedPlan = File.ReadAllText(queuePath);
+        True(persistedPlan.Contains("\"Plan\"", StringComparison.Ordinal));
+        True(!persistedPlan.Contains("\"Snapshot\"", StringComparison.Ordinal));
+        True(!Directory.Exists(Path.Combine(stateRoot, "render-queue-data")));
 
-        Equal(1, queue.RenderPending());
+        Equal(1, queue.RenderPending(preparer));
         True(executor.FirstStarted.Wait(
             TimeSpan.FromSeconds(2)));
         True(queue.HasLaunchedBatch);
         var second = queue.EnqueueBatch(
-            [Snapshot("second", RenderQueueAppearance.Dark)]).Single();
-        Equal(0, queue.RenderPending());
+            [Plan("second", RenderQueueAppearance.Dark)],
+            [Summary("second", RenderQueueAppearance.Dark)]).Single();
+        Equal(0, queue.RenderPending(preparer));
         Equal(
             RenderQueueStatus.Pending,
             queue.Jobs().Single((job) =>
@@ -13835,13 +13864,22 @@ static void RenderQueueRunsOnlyExplicitPendingBatch()
         Equal(1, executor.ExecutionCount);
         True(queue.CanRenderPending);
 
-        Equal(1, queue.RenderPending());
+        Equal(1, queue.RenderPending(preparer));
         True(SpinWait.SpinUntil(
             () => queue.Jobs().Single((job) =>
                     job.Id.Equals(second.Id, StringComparison.Ordinal)).Status
                 == RenderQueueStatus.Completed,
             TimeSpan.FromSeconds(5)));
         Equal(2, executor.ExecutionCount);
+        True(SpinWait.SpinUntil(
+            () =>
+            {
+                lock (preparedRoots)
+                {
+                    return preparedRoots.All((path) => !Directory.Exists(path));
+                }
+            },
+            TimeSpan.FromSeconds(2)));
     }
     finally
     {
@@ -13986,9 +14024,29 @@ static void RenderQueueProgressControlIsStable()
                         RenderQueueAppearance.Dark],
                 },
             };
+            RenderJobPlan Plan(RenderJobSummary value) =>
+                new(
+                    RenderJobPlan.CurrentSchema,
+                    RenderJobPlan.CurrentVersion,
+                    value.Context.ProjectId,
+                    value.Context.ShotId,
+                    value.Context.ShotName,
+                    "device",
+                    "theme",
+                    value.Appearance,
+                    value.Output);
+            var preparer = new DelegateRenderJobPreparer(
+                async (_, _, _, cancellationToken) =>
+                {
+                    await Task.Delay(
+                        Timeout.InfiniteTimeSpan,
+                        cancellationToken);
+                    throw new InvalidOperationException();
+                });
             var monitor = new RenderQueueMonitorControl(
                 new Window(),
-                queue);
+                queue,
+                preparer);
             var window = new Window
             {
                 Width = 900,
@@ -13998,21 +14056,20 @@ static void RenderQueueProgressControlIsStable()
             window.Show();
             Dispatcher.UIThread.RunJobs();
 
-            var children = queue.EnqueuePreparingBatch(
-                [summary, darkSummary],
-                async (_, _, cancellationToken) =>
-                {
-                    await Task.Delay(
-                        Timeout.InfiniteTimeSpan,
-                        cancellationToken);
-                    return [];
-                });
+            var children = queue.EnqueueBatch(
+                [Plan(summary), Plan(darkSummary)],
+                [summary, darkSummary]);
             var child = children.Single((candidate) =>
                 candidate.Summary.Appearance
                     == RenderQueueAppearance.Light);
             var survivor = children.Single((candidate) =>
                 candidate.Summary.Appearance
                     == RenderQueueAppearance.Dark);
+            Equal(2, queue.RenderPending(preparer));
+            True(SpinWait.SpinUntil(
+                () => queue.Jobs().Single((job) => job.Id == child.Id).Status
+                    == RenderQueueStatus.Preparing,
+                TimeSpan.FromSeconds(2)));
             Dispatcher.UIThread.RunJobs();
             var first = monitor.GetVisualDescendants()
                 .OfType<ProgressBar>()
@@ -14038,7 +14095,7 @@ static void RenderQueueProgressControlIsStable()
             update.Invoke(
                 queue,
                 [
-                    child.BatchId,
+                    child.Id,
                     new RenderSnapshotFreezeProgress(
                         4,
                         10,
@@ -14060,7 +14117,7 @@ static void RenderQueueProgressControlIsStable()
                     text.Name
                         == $"RenderQueueStatus_{child.Id}");
             True(status.Text!.Contains(
-                "Freezing Light · Opening chat",
+                "Preparing current Light · Opening chat",
                 StringComparison.Ordinal));
             var preparationDetail = monitor.GetVisualDescendants()
                 .OfType<TextBlock>()
@@ -14073,7 +14130,7 @@ static void RenderQueueProgressControlIsStable()
             update.Invoke(
                 queue,
                 [
-                    child.BatchId,
+                    child.Id,
                     new RenderSnapshotFreezeProgress(
                         3,
                         10,
@@ -14176,15 +14233,9 @@ static void RenderQueueProgressControlIsStable()
                 survivingProgress,
                 survivingProgressAfterRemoval));
 
-            var later = queue.EnqueuePreparingBatch(
-                [summary],
-                async (_, _, cancellationToken) =>
-                {
-                    await Task.Delay(
-                        Timeout.InfiniteTimeSpan,
-                        cancellationToken);
-                    return [];
-                }).Single();
+            var later = queue.EnqueueBatch(
+                [Plan(summary)],
+                [summary]).Single();
             Dispatcher.UIThread.RunJobs();
             var laterProgress = monitor.GetVisualDescendants()
                 .OfType<ProgressBar>()
@@ -15433,10 +15484,10 @@ static void ShotDeviceSettingsOverridesPreserveOwnership()
                 mode,
                 1,
                 route.VersionPadding);
-            var preparation = new RenderJobSnapshotFactory(
-                    RenderSnapshots(database),
-                    database.ProjectPaths)
-                .PlanBatch(
+            var factory = new RenderJobSnapshotFactory(
+                RenderSnapshots(database),
+                new ProjectPathResolver(Directory.GetCurrentDirectory()));
+            var plan = factory.PlanBatch(
                     renderDraft with { RootPath = renderRoot },
                     alternateDeviceId,
                     renderDraft.ThemeId,
@@ -15446,7 +15497,21 @@ static void ShotDeviceSettingsOverridesPreserveOwnership()
                     renderDraft.SuggestedBaseName,
                     outputPlan,
                     overwriteExisting: false);
-            Equal(123d, preparation.Metrics.CornerRadius);
+            values.CommitRecordReferenceOverrideField(
+                EditorEmbeddedContext.ForRecordReferenceOverride(
+                    shotNode,
+                    Descendants(tree).Single((node) =>
+                        node.Id == alternateDeviceId),
+                    referenceField.Definition.Id,
+                    referenceContract.OverrideDocumentFieldId),
+                "device.metrics.cornerRadius",
+                "124");
+            var currentPreparation = factory.ResolveCurrentPreparationAsync(
+                    plan.Plans.Single(),
+                    CancellationToken.None)
+                .GetAwaiter()
+                .GetResult();
+            Equal(124d, currentPreparation.Metrics.CornerRadius);
         }
         finally
         {
@@ -17695,7 +17760,10 @@ static void RenderQueueNavigationAndSurfaceAreAlwaysAvailable()
                 new AppearanceFailingRenderExecutor(""));
             var monitor = new RenderQueueMonitorControl(
                 new Window(),
-                queue);
+                queue,
+                new DelegateRenderJobPreparer(
+                    (_, _, _, _) => throw new InvalidOperationException(
+                        "An empty queue cannot prepare a render.")));
             var window = new Window
             {
                 Width = 900,
@@ -21483,6 +21551,22 @@ internal sealed class AppearanceFailingRenderExecutor(
     }
 
     public void Dispose() { }
+}
+
+internal sealed class DelegateRenderJobPreparer(
+    Func<
+        RenderJobPlan,
+        string,
+        IProgress<RenderSnapshotFreezeProgress>,
+        CancellationToken,
+        Task<RenderJobSnapshot>> prepare) : IRenderJobPreparer
+{
+    public Task<RenderJobSnapshot> PrepareAsync(
+        RenderJobPlan plan,
+        string temporaryRoot,
+        IProgress<RenderSnapshotFreezeProgress> progress,
+        CancellationToken cancellationToken) =>
+        prepare(plan, temporaryRoot, progress, cancellationToken);
 }
 
 internal sealed class GatedRenderExecutor : IRenderJobExecutor

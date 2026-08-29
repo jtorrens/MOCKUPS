@@ -276,7 +276,7 @@ internal sealed class RenderQueueDialog
                         return;
                     }
                 }
-                var preparation = _snapshots.PlanBatch(
+                var plan = _snapshots.PlanBatch(
                     currentDraft,
                     device.SelectedItem.Value,
                     theme.SelectedItem.Value,
@@ -286,14 +286,7 @@ internal sealed class RenderQueueDialog
                     baseName.Text ?? "",
                     currentPlan,
                     currentPlanReplacesExisting);
-                _queue.EnqueuePreparingBatch(
-                    preparation.Summaries,
-                    (batchRoot, progress, cancellationToken) =>
-                        _snapshots.FreezeAsync(
-                            preparation,
-                            batchRoot,
-                            progress,
-                            cancellationToken));
+                _queue.EnqueueBatch(plan.Plans, plan.Summaries);
                 _queue.RememberRoute(
                     currentDraft.ProjectId,
                     route.SelectedItem.Value);

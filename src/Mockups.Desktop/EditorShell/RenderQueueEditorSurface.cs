@@ -17,13 +17,16 @@ internal sealed class RenderQueueEditorSurface
 {
     private readonly Window _owner;
     private readonly RenderQueueManager _queue;
+    private readonly IRenderJobPreparer _preparer;
 
     public RenderQueueEditorSurface(
         Window owner,
-        RenderQueueManager queue)
+        RenderQueueManager queue,
+        IRenderJobPreparer preparer)
     {
         _owner = owner;
         _queue = queue;
+        _preparer = preparer;
     }
 
     public IReadOnlyList<InstantEditorCard>? CreateCards(
@@ -46,7 +49,8 @@ internal sealed class RenderQueueEditorSurface
                     Padding = EditorUiDensity.CardThickness(10),
                     Child = new RenderQueueMonitorControl(
                         _owner,
-                        _queue),
+                        _queue,
+                        _preparer),
                 },
                 isExpanded: true)
             {
@@ -64,6 +68,7 @@ internal sealed class RenderQueueMonitorControl : StackPanel
 {
     private readonly Window _owner;
     private readonly RenderQueueManager _queue;
+    private readonly IRenderJobPreparer _preparer;
     private readonly TextBlock _summary;
     private readonly Button _renderPending;
     private readonly Button _pause;
@@ -76,10 +81,12 @@ internal sealed class RenderQueueMonitorControl : StackPanel
 
     public RenderQueueMonitorControl(
         Window owner,
-        RenderQueueManager queue)
+        RenderQueueManager queue,
+        IRenderJobPreparer preparer)
     {
         _owner = owner;
         _queue = queue;
+        _preparer = preparer;
         Name = "RenderQueueMonitor";
         Spacing = EditorUiDensity.Card(12);
 
@@ -465,7 +472,7 @@ internal sealed class RenderQueueMonitorControl : StackPanel
                 : "#0C000000"));
 
         var actionKey =
-            $"{job.Status}:{job.SnapshotAvailable}:{job.Summary.Output.OutputPath}";
+            $"{job.Status}:{job.PlanAvailable}:{job.Summary.Output.OutputPath}";
         if (actionKey.Equals(
                 row.ActionKey,
                 StringComparison.Ordinal))
@@ -483,7 +490,7 @@ internal sealed class RenderQueueMonitorControl : StackPanel
         {
             if ((job.Status is RenderQueueStatus.Failed
                     or RenderQueueStatus.Canceled)
-                && job.SnapshotAvailable)
+                && job.PlanAvailable)
             {
                 row.Actions.Children.Add(ActionButton(
                     "Retry",
@@ -528,7 +535,7 @@ internal sealed class RenderQueueMonitorControl : StackPanel
 
     private void RenderPending()
     {
-        _queue.RenderPending();
+        _queue.RenderPending(_preparer);
     }
 
     private void ClearFinished()

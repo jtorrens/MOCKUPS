@@ -480,5 +480,6 @@ public interface IRenderSnapshotDataSource :
     IModuleInstanceTimelineStore,
     IModuleInstanceThemeTokenQuery
 {
+    EditorShell.ProjectTreeNode GetCurrentRenderShot(string shotId);
     ProductionOutputShotContext GetProductionOutputShotContext(string shotId);
 }

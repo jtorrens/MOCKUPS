@@ -37,6 +37,10 @@ internal sealed record RenderBatchSnapshotPreparation(
     DevicePreviewMetrics Metrics,
     IReadOnlyList<RenderJobSummary> Summaries);
 
+internal sealed record RenderBatchPlan(
+    IReadOnlyList<RenderJobPlan> Plans,
+    IReadOnlyList<RenderJobSummary> Summaries);
+
 internal sealed record RenderQueueShotDraft(
     ProjectTreeNode Shot,
     string ProjectId,
@@ -56,7 +60,7 @@ internal sealed record RenderQueueShotDraft(
     IReadOnlyList<FieldOption> Themes,
     IReadOnlyList<RenderQueueRouteOption> Routes);
 
-internal sealed class RenderJobSnapshotFactory
+internal sealed class RenderJobSnapshotFactory : IRenderJobPreparer
 {
     private readonly IRenderSnapshotDataSource _database;
     private readonly ProductionOutputRootStore _roots;
@@ -173,7 +177,7 @@ internal sealed class RenderJobSnapshotFactory
             ]));
     }
 
-    public RenderBatchSnapshotPreparation PlanBatch(
+    public RenderBatchPlan PlanBatch(
         RenderQueueShotDraft draft,
         string deviceId,
         string themeId,
@@ -206,11 +210,6 @@ internal sealed class RenderJobSnapshotFactory
                 "The output version plan does not match the selected appearances.");
         }
         var safeBaseName = RenderOutputPlanner.RequireBaseName(baseName);
-        var metrics = DeviceSettingsFieldContract.PreviewMetrics(
-            DeviceSettingsFieldContract.ApplyOverrides(
-                _database.GetDeviceSettings(deviceId),
-                draft.DeviceOverridesJson,
-                $"Shot '{draft.Shot.Id}' Device overrides"));
         var context = new RenderShotContext(
             draft.ProjectId,
             draft.Shot.Id,
@@ -240,14 +239,87 @@ internal sealed class RenderJobSnapshotFactory
                 draft.TotalFrames,
                 output);
         }).ToList();
+        var plans = summaries.Select((summary) =>
+            new RenderJobPlan(
+                RenderJobPlan.CurrentSchema,
+                RenderJobPlan.CurrentVersion,
+                draft.ProjectId,
+                draft.Shot.Id,
+                draft.Shot.Name,
+                deviceId,
+                themeId,
+                summary.Appearance,
+                summary.Output)).ToList();
+        foreach (var plan in plans) plan.Validate();
+        return new RenderBatchPlan(plans, summaries);
+    }
+
+    public async Task<RenderJobSnapshot> PrepareAsync(
+        RenderJobPlan plan,
+        string temporaryRoot,
+        IProgress<RenderSnapshotFreezeProgress> progress,
+        CancellationToken cancellationToken)
+    {
+        var preparation = await ResolveCurrentPreparationAsync(
+            plan,
+            cancellationToken);
+        return (await FreezeAsync(
+            preparation,
+            temporaryRoot,
+            progress,
+            cancellationToken)).Single();
+    }
+
+    internal async Task<RenderBatchSnapshotPreparation>
+        ResolveCurrentPreparationAsync(
+            RenderJobPlan plan,
+            CancellationToken cancellationToken = default)
+    {
+        plan.Validate();
+        var shot = _database.GetCurrentRenderShot(plan.ShotId);
+        var draft = await LoadDraftAsync(
+            shot,
+            cancellationToken);
+        if (!draft.ProjectId.Equals(
+                plan.ProjectId,
+                StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "The current Shot no longer belongs to the planned Project.");
+        }
+        var device = draft.Devices.SingleOrDefault((option) =>
+            option.Value.Equals(plan.DeviceId, StringComparison.Ordinal))
+            ?? throw new InvalidOperationException(
+                "The planned Device is no longer available in the Shot Project.");
+        var theme = draft.Themes.SingleOrDefault((option) =>
+            option.Value.Equals(plan.ThemeId, StringComparison.Ordinal))
+            ?? throw new InvalidOperationException(
+                "The planned Theme is no longer available in the Shot Project.");
+        var metrics = DeviceSettingsFieldContract.PreviewMetrics(
+            DeviceSettingsFieldContract.ApplyOverrides(
+                _database.GetDeviceSettings(plan.DeviceId),
+                draft.DeviceOverridesJson,
+                $"Shot '{draft.Shot.Id}' Device overrides"));
+        var summary = new RenderJobSummary(
+            new RenderShotContext(
+                draft.ProjectId,
+                draft.Shot.Id,
+                draft.Shot.Name,
+                draft.ActorId,
+                draft.ActorName),
+            device.Label,
+            theme.Label,
+            plan.RequestedAppearance,
+            draft.TotalFrames,
+            plan.Output);
         return new RenderBatchSnapshotPreparation(
             draft,
-            deviceId,
+            plan.DeviceId,
             device.Label,
-            themeId,
+            plan.ThemeId,
             theme.Label,
             metrics,
-            summaries);
+            [summary]);
     }
 
     public async Task<IReadOnlyList<RenderJobSnapshot>> FreezeAsync(

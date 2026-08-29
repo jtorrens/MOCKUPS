@@ -53,7 +53,7 @@ test("documentation validation binds the normative schema version to executable 
     const document = readFileSync(documentPath, "utf8");
     writeFileSync(
       documentPath,
-      document.replace("Schema version `13`", "Schema version `12`"),
+      document.replace("Schema version `14`", "Schema version `13`"),
       "utf8",
     );
     assert.equal(

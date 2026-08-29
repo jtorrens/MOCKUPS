@@ -201,6 +201,40 @@ internal sealed record RenderJobSummary(
     int TotalFrames,
     RenderOutputTarget Output);
 
+internal sealed record RenderJobPlan(
+    string Schema,
+    int Version,
+    string ProjectId,
+    string ShotId,
+    string ShotName,
+    string DeviceId,
+    string ThemeId,
+    string RequestedAppearance,
+    RenderOutputTarget Output)
+{
+    public const string CurrentSchema = "mockups_render_job_plan";
+    public const int CurrentVersion = 1;
+
+    public void Validate()
+    {
+        if (Schema != CurrentSchema
+            || Version != CurrentVersion
+            || string.IsNullOrWhiteSpace(ProjectId)
+            || string.IsNullOrWhiteSpace(ShotId)
+            || string.IsNullOrWhiteSpace(ShotName)
+            || string.IsNullOrWhiteSpace(DeviceId)
+            || string.IsNullOrWhiteSpace(ThemeId)
+            || RequestedAppearance is not RenderQueueAppearance.Light
+                and not RenderQueueAppearance.Dark
+            || Output.Appearance != RequestedAppearance)
+        {
+            throw new InvalidOperationException(
+                "The live render job plan is incomplete or unsupported.");
+        }
+        _ = RenderOutputModes.Require(Output.OutputModeId);
+    }
+}
+
 internal sealed record RenderQueueProgress(
     int Current,
     int Total,
@@ -218,7 +252,17 @@ internal sealed class RenderQueueJob
     public RenderQueueProgress Progress { get; set; } =
         new(0, 0, "Pending");
     public bool CancelRequested { get; set; }
-    public RenderJobSnapshot? Snapshot { get; set; }
+    public RenderJobPlan Plan { get; init; } =
+        new(
+            RenderJobPlan.CurrentSchema,
+            RenderJobPlan.CurrentVersion,
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            new RenderOutputTarget("", "", "", "", "", "", 0, 3, "", "", 8));
     public RenderJobSummary Summary { get; set; } =
         new(
             new RenderShotContext("", "", "", "", ""),
@@ -233,7 +277,7 @@ internal sealed class RenderQueueJob
 internal sealed class RenderQueueDocument
 {
     public string Schema { get; init; } = "mockups_render_queue";
-    public int Version { get; init; } = 1;
+    public int Version { get; init; } = 2;
     public bool Paused { get; set; }
     public List<RenderQueueJob> Jobs { get; init; } = [];
     public Dictionary<string, string> LastRouteByProject { get; init; } =
@@ -246,7 +290,7 @@ internal sealed record RenderQueueJobView(
     string CreatedAt,
     string Status,
     RenderQueueProgress Progress,
-    bool SnapshotAvailable,
+    bool PlanAvailable,
     RenderJobSummary Summary,
     string? Error);
 
@@ -261,5 +305,14 @@ internal interface IRenderJobExecutor : IDisposable
     System.Threading.Tasks.Task ExecuteAsync(
         RenderJobSnapshot snapshot,
         IProgress<RenderQueueExecutionProgress> progress,
+        System.Threading.CancellationToken cancellationToken);
+}
+
+internal interface IRenderJobPreparer
+{
+    System.Threading.Tasks.Task<RenderJobSnapshot> PrepareAsync(
+        RenderJobPlan plan,
+        string temporaryRoot,
+        IProgress<RenderSnapshotFreezeProgress> progress,
         System.Threading.CancellationToken cancellationToken);
 }

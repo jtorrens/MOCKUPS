@@ -149,8 +149,9 @@ atomically. Missing referenced items become free but retain their references;
 the same identities automatically recover if they return on a later refresh.
 Selecting a different Production is explicit and makes all descendants free.
 Relocating the local Production root does not change portable associations.
-Already queued snapshots and existing renders are immutable and are never
-moved or reconstructed after an association or external document changes.
+Existing published renders are never moved after an association or external
+document changes. Queued jobs are live plans: their Shot and Screen content is
+resolved again only when the user launches them.
 
 ## Render Queue
 
@@ -214,28 +215,29 @@ Light or Dark keeps that mode even inside the opposite requested Shot job;
 `inherit` follows the job appearance. Device and Theme combinations are never
 rejected by family because Themes are authored visual fiction.
 
-Adding a batch first creates its visible `PREPARING` children. Snapshot
-preparation then resolves each Shot frame and writes its immutable raster
-document to the local queue store before releasing that frame from memory.
-Documents and referenced assets are content-addressed; identical documents,
-fonts and media are stored once for the batch and shared by its Light/Dark
-children. Only after every child manifest is complete do the jobs become
-`PENDING`. Enqueue never starts execution. Later editor changes do not modify
-that work.
+Adding a batch persists only one live plan per child: exact Shot id, selected
+Device and Theme ids, requested appearance and output target. It does not
+prepare frames, copy assets, capture duration or store resolved Shot or Screen
+documents. Every added child is immediately `PENDING`, and enqueue never starts
+preparation or execution.
 
-The worker uses the same raster-document pipeline as raster Preview but owns a
-separate persistent Chromium session. It reads one frozen document at a time
-and produces the clean Production canvas with no editor chrome or device frame.
-It releases that document before requesting the next. Identical
-documents reuse their existing lossless raster. The user starts execution with
-the Render Queue panel's **Render pending** action. That action captures the
-exact pending job ids available at activation and runs only that closed batch
-sequentially. Jobs enqueued or finishing snapshot preparation while the batch
-is active remain `PENDING` until a later activation. A running batch can be
-paused or its jobs canceled, and active work with a complete snapshot returns
-to Pending after application restart without restarting automatically.
-Interrupted incomplete preparation becomes a non-retryable failed batch and
-its partial local store is removed.
+The user starts work with the Render Queue panel's **Render pending** action.
+That action captures the exact pending job ids available at activation and runs
+only that closed batch sequentially. At the start of each child, the preparation
+owner reads the current Shot, its current ordered Screens, current durations,
+Actor context, Device overrides and authored Preview inputs. It creates the
+frame documents and referenced-asset store only under a unique temporary job
+directory. The worker then uses the same raster-document pipeline as raster
+Preview through its separate Chromium session and produces the clean Production
+canvas with no editor chrome or device frame. The complete temporary preparation
+is deleted after completion, failure or cancellation and is never written into
+the queue document.
+
+Jobs enqueued while a launched batch is active remain `PENDING` until a later
+activation. A paused or interrupted active child returns to Pending after
+application restart without restarting automatically; its next launch resolves
+current authored state again. Retry creates a new pending plan and therefore
+also renders the latest Shot and Screens rather than the earlier failed state.
 
 The selected route is stored by stable route id. Its relative directory,
 version padding and frame padding come from the resolved portable Project
@@ -254,10 +256,9 @@ Monitoring is separate from batch creation. The permanent Production
 Production Output root is not configured. It groups child jobs by
 batch and owns Render pending, pause/resume, cancel, retry, reveal, remove and
 clear-finished actions together with progress, error and output-path reporting.
-Render pending is enabled only when immutable pending jobs exist, no snapshot
-preparation is active and no previously launched batch remains active.
-Preparation
-reports its exact current and total frozen frame count through the same stable
+Render pending is enabled only when live pending plans exist and no previously
+launched batch remains active. Job-start preparation reports its exact current
+and total prepared frame count through the same stable
 determinate progress control used by later execution. The row names the Screen
 currently being prepared and shows prepared and remaining frame counts; these
 are preparation counts, not rendered frames. Rows update their existing
