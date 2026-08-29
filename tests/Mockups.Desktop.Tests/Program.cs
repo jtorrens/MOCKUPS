@@ -126,6 +126,7 @@ var tests = new (string Name, Action Run)[]
     ("Production render overrides Device and Theme while respecting forced Screen appearance", ProductionRenderOverridesRespectScreenAppearance),
     ("Render snapshot store interns repeated font assets", RenderSnapshotStoreInternsAssets),
     ("Render Queue persists and completes batch children independently", RenderQueueChildrenAreIndependent),
+    ("Render Queue runs only the explicitly launched pending batch", RenderQueueRunsOnlyExplicitPendingBatch),
     ("Render Queue shutdown never blocks the UI thread", RenderQueueShutdownNeverBlocksUiThread),
     ("Render Queue is a permanent Production surface and Shot action stays available", RenderQueueNavigationAndSurfaceAreAlwaysAvailable),
     ("Render executor publishes a clean PNG sequence", RenderExecutorPublishesCleanPngSequence),
@@ -13687,6 +13688,13 @@ static void RenderQueueChildrenAreIndependent()
             releasePreparation.Set();
             True(SpinWait.SpinUntil(
                 () => queue.Jobs().All((job) =>
+                    job.Status == RenderQueueStatus.Pending),
+                TimeSpan.FromSeconds(5)));
+            True(queue.CanRenderPending);
+            True(!queue.HasLaunchedBatch);
+            Equal(2, queue.RenderPending());
+            True(SpinWait.SpinUntil(
+                () => queue.Jobs().All((job) =>
                     RenderQueueStatus.IsTerminal(job.Status)),
                 TimeSpan.FromSeconds(5)));
             Equal(
@@ -13711,6 +13719,129 @@ static void RenderQueueChildrenAreIndependent()
         True(reopened.Jobs().Single((job) =>
             job.Summary.Appearance == RenderQueueAppearance.Dark)
             .SnapshotAvailable);
+    }
+    finally
+    {
+        Directory.Delete(root, recursive: true);
+    }
+}
+
+static void RenderQueueRunsOnlyExplicitPendingBatch()
+{
+    var root = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-render-pending-{Guid.NewGuid():N}");
+    var stateRoot = Path.Combine(root, "state");
+    var outputRoot = Path.Combine(root, "output");
+    var queuePath = Path.Combine(stateRoot, "queue.json");
+    Directory.CreateDirectory(outputRoot);
+    try
+    {
+        var mode = RenderOutputModes.Require(
+            RenderOutputModes.MovProRes422Hq);
+        var context = new RenderShotContext(
+            "project",
+            "shot",
+            "Shot",
+            "actor",
+            "Actor");
+        var metrics = new DevicePreviewMetrics(
+            "Device",
+            64,
+            64,
+            0,
+            0,
+            64,
+            64,
+            0,
+            0,
+            0,
+            0,
+            0,
+            DeviceModuleTransparencyOverride.Disabled);
+        RenderJobSnapshot Snapshot(string id, string appearance)
+        {
+            var batchRoot = Path.Combine(
+                stateRoot,
+                "render-queue-data",
+                Guid.NewGuid().ToString());
+            var frameStore = StoreRenderFrames(
+                batchRoot,
+                appearance,
+                ["<html>frame</html>"]);
+            var output = new RenderOutputTarget(
+                "production",
+                "output",
+                root,
+                "output",
+                id,
+                appearance,
+                1,
+                3,
+                mode.Id,
+                Path.Combine(
+                    outputRoot,
+                    $"{id}_{appearance.ToUpperInvariant()}_v001.mov"));
+            return new RenderJobSnapshot(
+                RenderJobSnapshot.CurrentSchema,
+                RenderJobSnapshot.CurrentVersion,
+                context,
+                "device",
+                "Device",
+                "theme",
+                "Theme",
+                appearance,
+                metrics,
+                25,
+                frameStore,
+                output);
+        }
+
+        var executor = new GatedRenderExecutor();
+        using var queue = new RenderQueueManager(
+            queuePath,
+            executor);
+        var first = queue.EnqueueBatch(
+            [Snapshot("first", RenderQueueAppearance.Light)]).Single();
+        Equal(RenderQueueStatus.Pending, queue.Jobs().Single().Status);
+        True(queue.CanRenderPending);
+        True(!executor.FirstStarted.Wait(
+            TimeSpan.FromMilliseconds(250)));
+
+        Equal(1, queue.RenderPending());
+        True(executor.FirstStarted.Wait(
+            TimeSpan.FromSeconds(2)));
+        True(queue.HasLaunchedBatch);
+        var second = queue.EnqueueBatch(
+            [Snapshot("second", RenderQueueAppearance.Dark)]).Single();
+        Equal(0, queue.RenderPending());
+        Equal(
+            RenderQueueStatus.Pending,
+            queue.Jobs().Single((job) =>
+                job.Id.Equals(second.Id, StringComparison.Ordinal)).Status);
+
+        executor.ReleaseFirst.Set();
+        True(SpinWait.SpinUntil(
+            () =>
+            {
+                var jobs = queue.Jobs();
+                return jobs.Single((job) => job.Id == first.Id).Status
+                        == RenderQueueStatus.Completed
+                    && jobs.Single((job) => job.Id == second.Id).Status
+                        == RenderQueueStatus.Pending
+                    && !queue.HasLaunchedBatch;
+            },
+            TimeSpan.FromSeconds(5)));
+        Equal(1, executor.ExecutionCount);
+        True(queue.CanRenderPending);
+
+        Equal(1, queue.RenderPending());
+        True(SpinWait.SpinUntil(
+            () => queue.Jobs().Single((job) =>
+                    job.Id.Equals(second.Id, StringComparison.Ordinal)).Status
+                == RenderQueueStatus.Completed,
+            TimeSpan.FromSeconds(5)));
+        Equal(2, executor.ExecutionCount);
     }
     finally
     {
@@ -17548,6 +17679,44 @@ static void RenderQueueNavigationAndSurfaceAreAlwaysAvailable()
         .First((node) => node.Kind == ProjectTreeNodeKind.Shot);
     True(RenderQueueController.OwnsNavigationAction(shot));
     True(!RenderQueueController.OwnsNavigationAction(queueNode));
+
+    var root = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-render-queue-surface-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(root);
+    try
+    {
+        using var session = HeadlessUnitTestSession.StartNew(
+            typeof(HeadlessTestApplication));
+        session.Dispatch(() =>
+        {
+            using var queue = new RenderQueueManager(
+                Path.Combine(root, "queue.json"),
+                new AppearanceFailingRenderExecutor(""));
+            var monitor = new RenderQueueMonitorControl(
+                new Window(),
+                queue);
+            var window = new Window
+            {
+                Width = 900,
+                Height = 500,
+                Content = monitor,
+            };
+            window.Show();
+            Dispatcher.UIThread.RunJobs();
+            var renderPending = monitor.GetVisualDescendants()
+                .OfType<Button>()
+                .Single((button) => button.Name
+                    == "RenderQueueRenderPendingButton");
+            Equal("Render pending", renderPending.Content);
+            True(!renderPending.IsEnabled);
+            window.Close();
+        }, CancellationToken.None).GetAwaiter().GetResult();
+    }
+    finally
+    {
+        Directory.Delete(root, recursive: true);
+    }
 }
 
 static void ProductionOutputActionOwnsConfiguration()
@@ -21314,6 +21483,43 @@ internal sealed class AppearanceFailingRenderExecutor(
     }
 
     public void Dispose() { }
+}
+
+internal sealed class GatedRenderExecutor : IRenderJobExecutor
+{
+    private int _executionCount;
+
+    public ManualResetEventSlim FirstStarted { get; } = new();
+    public ManualResetEventSlim ReleaseFirst { get; } = new();
+    public int ExecutionCount => Volatile.Read(ref _executionCount);
+
+    public async Task ExecuteAsync(
+        RenderJobSnapshot snapshot,
+        IProgress<RenderQueueExecutionProgress> progress,
+        CancellationToken cancellationToken)
+    {
+        var execution = Interlocked.Increment(
+            ref _executionCount);
+        if (execution == 1)
+        {
+            FirstStarted.Set();
+            await Task.Run(
+                () => ReleaseFirst.Wait(cancellationToken),
+                cancellationToken);
+        }
+        progress.Report(new RenderQueueExecutionProgress(
+            snapshot.FrameStore.TotalFrames,
+            snapshot.FrameStore.TotalFrames,
+            "Test execution",
+            RenderQueueStatus.Rendering));
+    }
+
+    public void Dispose()
+    {
+        ReleaseFirst.Set();
+        FirstStarted.Dispose();
+        ReleaseFirst.Dispose();
+    }
 }
 
 internal static class HeadlessTestApplication

@@ -21,6 +21,8 @@ internal sealed class RenderQueueManager : IDisposable
         _preparationCancellations = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Task> _preparationTasks =
         new(StringComparer.Ordinal);
+    private readonly HashSet<string> _launchedJobIds =
+        new(StringComparer.Ordinal);
     private RenderQueueDocument _document;
     private CancellationTokenSource? _activeCancellation;
     private Task? _workerTask;
@@ -53,7 +55,6 @@ internal sealed class RenderQueueManager : IDisposable
             InitializationError =
                 $"The local render queue could not be opened: {exception.Message}";
         }
-        Kick();
     }
 
     public event Action? Changed;
@@ -65,6 +66,31 @@ internal sealed class RenderQueueManager : IDisposable
         get
         {
             lock (_gate) return _document.Paused;
+        }
+    }
+
+    public bool HasLaunchedBatch
+    {
+        get
+        {
+            lock (_gate) return _launchedJobIds.Count > 0;
+        }
+    }
+
+    public bool CanRenderPending
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return !_document.Paused
+                    && _launchedJobIds.Count == 0
+                    && !_document.Jobs.Any((job) =>
+                        job.Status == RenderQueueStatus.Preparing
+                        && job.Snapshot is null)
+                    && _document.Jobs.Any((job) =>
+                        job.Status == RenderQueueStatus.Pending);
+            }
         }
     }
 
@@ -179,7 +205,6 @@ internal sealed class RenderQueueManager : IDisposable
             Save();
         }
         NotifyChanged();
-        Kick();
         return created.Select(ToView).ToList();
     }
 
@@ -398,7 +423,37 @@ internal sealed class RenderQueueManager : IDisposable
             Save();
         }
         NotifyChanged();
+    }
+
+    public int RenderPending()
+    {
+        RequireAvailable();
+        int count;
+        lock (_gate)
+        {
+            if (_document.Paused
+                || _launchedJobIds.Count > 0
+                || _document.Jobs.Any((job) =>
+                    job.Status == RenderQueueStatus.Preparing
+                    && job.Snapshot is null))
+            {
+                return 0;
+            }
+            var pendingIds = _document.Jobs
+                .Where((job) =>
+                    job.Status == RenderQueueStatus.Pending)
+                .Select((job) => job.Id)
+                .ToList();
+            count = pendingIds.Count;
+            foreach (var jobId in pendingIds)
+            {
+                _launchedJobIds.Add(jobId);
+            }
+        }
+        if (count == 0) return 0;
+        NotifyChanged();
         Kick();
+        return count;
     }
 
     private void UpdatePreparationProgress(
@@ -513,6 +568,7 @@ internal sealed class RenderQueueManager : IDisposable
             }
             else if (job.Status == RenderQueueStatus.Pending)
             {
+                _launchedJobIds.Remove(job.Id);
                 job.Status = RenderQueueStatus.Canceled;
                 job.CompletedAt = job.UpdatedAt;
                 job.Progress = job.Progress with { Phase = "Canceled" };
@@ -568,6 +624,7 @@ internal sealed class RenderQueueManager : IDisposable
                 return false;
             }
             _document.Jobs.RemoveAt(index);
+            _launchedJobIds.Remove(jobId);
             Save();
         }
         CleanupOrphanedStorage();
@@ -583,6 +640,9 @@ internal sealed class RenderQueueManager : IDisposable
         {
             removed = _document.Jobs.RemoveAll((job) =>
                 RenderQueueStatus.IsTerminal(job.Status));
+            _launchedJobIds.RemoveWhere((jobId) =>
+                !_document.Jobs.Any((job) =>
+                    job.Id.Equals(jobId, StringComparison.Ordinal)));
             if (removed > 0) Save();
         }
         if (removed > 0) CleanupOrphanedStorage();
@@ -600,7 +660,7 @@ internal sealed class RenderQueueManager : IDisposable
             Save();
         }
         NotifyChanged();
-        if (!value) Kick();
+        if (!value && HasLaunchedBatch) Kick();
     }
 
     private void Kick()
@@ -615,7 +675,8 @@ internal sealed class RenderQueueManager : IDisposable
             if (_workerScheduled
                 || _document.Paused
                 || !_document.Jobs.Any((job) =>
-                    job.Status == RenderQueueStatus.Pending))
+                    job.Status == RenderQueueStatus.Pending
+                    && _launchedJobIds.Contains(job.Id)))
             {
                 return;
             }
@@ -633,12 +694,24 @@ internal sealed class RenderQueueManager : IDisposable
                 RenderQueueJob? job;
                 lock (_gate)
                 {
-                    job = _document.Paused
-                        ? null
-                        : _document.Jobs.FirstOrDefault((candidate) =>
-                            candidate.Status == RenderQueueStatus.Pending);
+                    if (_document.Paused)
+                    {
+                        _workerScheduled = false;
+                        return;
+                    }
+                    _launchedJobIds.RemoveWhere((jobId) =>
+                        !_document.Jobs.Any((candidate) =>
+                            candidate.Id.Equals(
+                                jobId,
+                                StringComparison.Ordinal)
+                            && candidate.Status
+                                == RenderQueueStatus.Pending));
+                    job = _document.Jobs.FirstOrDefault((candidate) =>
+                        candidate.Status == RenderQueueStatus.Pending
+                        && _launchedJobIds.Contains(candidate.Id));
                     if (job is null)
                     {
+                        _launchedJobIds.Clear();
                         _workerScheduled = false;
                         return;
                     }
@@ -770,6 +843,7 @@ internal sealed class RenderQueueManager : IDisposable
                     _ => "Error",
                 });
             job.CancelRequested = false;
+            _launchedJobIds.Remove(jobId);
             MaintainHistory();
             Save();
         }

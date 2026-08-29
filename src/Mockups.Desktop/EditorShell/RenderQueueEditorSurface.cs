@@ -65,6 +65,7 @@ internal sealed class RenderQueueMonitorControl : StackPanel
     private readonly Window _owner;
     private readonly RenderQueueManager _queue;
     private readonly TextBlock _summary;
+    private readonly Button _renderPending;
     private readonly Button _pause;
     private readonly Button _clear;
     private readonly StackPanel _batches;
@@ -88,6 +89,10 @@ internal sealed class RenderQueueMonitorControl : StackPanel
             Opacity = 0.72,
             VerticalAlignment = VerticalAlignment.Center,
         };
+        _renderPending = ActionButton(
+            "Render pending",
+            RenderPending);
+        _renderPending.Name = "RenderQueueRenderPendingButton";
         _pause = ActionButton("Pause", TogglePause);
         _pause.Name = "RenderQueuePauseButton";
         _clear = ActionButton("Clear finished", ClearFinished);
@@ -98,7 +103,7 @@ internal sealed class RenderQueueMonitorControl : StackPanel
             Orientation = Orientation.Horizontal,
             HorizontalAlignment = HorizontalAlignment.Right,
             Spacing = 8,
-            Children = { _pause, _clear },
+            Children = { _renderPending, _pause, _clear },
         };
         var header = new Grid
         {
@@ -185,6 +190,9 @@ internal sealed class RenderQueueMonitorControl : StackPanel
                 _queue.InitializationError)
             && jobs.Any((job) =>
                 RenderQueueStatus.IsTerminal(job.Status));
+        _renderPending.IsEnabled = string.IsNullOrWhiteSpace(
+                _queue.InitializationError)
+            && _queue.CanRenderPending;
 
         var nextStructureKey = string.Join(
             "|",
@@ -516,6 +524,11 @@ internal sealed class RenderQueueMonitorControl : StackPanel
     private void TogglePause()
     {
         _queue.SetPaused(!_queue.Paused);
+    }
+
+    private void RenderPending()
+    {
+        _queue.RenderPending();
     }
 
     private void ClearFinished()

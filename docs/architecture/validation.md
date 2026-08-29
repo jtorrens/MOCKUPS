@@ -163,7 +163,8 @@ proving simultaneous outgoing and incoming Motion, stable owner-local frames
   content-addressed frame snapshots, bounded one-frame consumption, local
   recovery, strict stored-route containment,
   no-overwrite publication, sequential child jobs, permanent Production
-  monitoring with stable monotonic progress controls, job-start route
+  monitoring with explicit closed pending-batch launch, later enqueues retained
+  for the next launch, stable monotonic progress controls, job-start route
   materialization, exact ProRes/H.264 profiles, proportional even-dimension
   normalization for odd H.264 Device rasters, black-premultiplied alpha output,
   decoded ProRes 4444 opaque alpha remaining at its exact full-scale value,

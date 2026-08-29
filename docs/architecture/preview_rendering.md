@@ -287,6 +287,9 @@ frame with an explicit Theme, Device and requested Light/Dark mode, renders a
 clean raster document, and streams that frozen document into the queue-owned
 content-addressed store. The visible queue receives `PREPARING` children before
 this stream starts; preparation never builds an in-memory list of frame HTML.
+Completed snapshots remain `PENDING` until the user launches the exact current
+pending set from the permanent Render Queue surface; enqueue never starts the
+worker.
 
 The queue worker receives no Project database port, repository or current tree
 selection. It uses the same document-to-raster owner as raster Preview through

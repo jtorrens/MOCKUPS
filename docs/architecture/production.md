@@ -220,16 +220,22 @@ document to the local queue store before releasing that frame from memory.
 Documents and referenced assets are content-addressed; identical documents,
 fonts and media are stored once for the batch and shared by its Light/Dark
 children. Only after every child manifest is complete do the jobs become
-`PENDING`. Later editor changes do not modify that work.
+`PENDING`. Enqueue never starts execution. Later editor changes do not modify
+that work.
 
 The worker uses the same raster-document pipeline as raster Preview but owns a
 separate persistent Chromium session. It reads one frozen document at a time
 and produces the clean Production canvas with no editor chrome or device frame.
 It releases that document before requesting the next. Identical
-documents reuse their existing lossless raster. Jobs run sequentially, can be
-paused or canceled, and active work with a complete snapshot returns to
-Pending after application restart. Interrupted incomplete preparation becomes
-a non-retryable failed batch and its partial local store is removed.
+documents reuse their existing lossless raster. The user starts execution with
+the Render Queue panel's **Render pending** action. That action captures the
+exact pending job ids available at activation and runs only that closed batch
+sequentially. Jobs enqueued or finishing snapshot preparation while the batch
+is active remain `PENDING` until a later activation. A running batch can be
+paused or its jobs canceled, and active work with a complete snapshot returns
+to Pending after application restart without restarting automatically.
+Interrupted incomplete preparation becomes a non-retryable failed batch and
+its partial local store is removed.
 
 The selected route is stored by stable route id. Its relative directory,
 version padding and frame padding come from the resolved portable Project
@@ -246,8 +252,11 @@ still refuses an existing final output.
 Monitoring is separate from batch creation. The permanent Production
 **Render Queue** panel is available even when it is empty or the local
 Production Output root is not configured. It groups child jobs by
-batch and owns pause/resume, cancel, retry, reveal, remove and clear-finished
-actions together with progress, error and output-path reporting. Preparation
+batch and owns Render pending, pause/resume, cancel, retry, reveal, remove and
+clear-finished actions together with progress, error and output-path reporting.
+Render pending is enabled only when immutable pending jobs exist, no snapshot
+preparation is active and no previously launched batch remains active.
+Preparation
 reports its exact current and total frozen frame count through the same stable
 determinate progress control used by later execution. The row names the Screen
 currently being prepared and shows prepared and remaining frame counts; these
