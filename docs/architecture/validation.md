@@ -166,6 +166,7 @@ proving simultaneous outgoing and incoming Motion, stable owner-local frames
   monitoring with stable monotonic progress controls, job-start route
   materialization, exact ProRes/H.264 profiles, proportional even-dimension
   normalization for odd H.264 Device rasters, black-premultiplied alpha output,
+  decoded ProRes 4444 opaque alpha remaining at its exact full-scale value,
   interactive Preview Theme override through the Production Mode context
   control, session-only checkerboard and alpha-channel inspection with compact
   switches whose track and thumb follow the checked state without duplicate

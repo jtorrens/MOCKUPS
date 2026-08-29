@@ -413,7 +413,7 @@ internal static class RenderOutputPublisher
 internal static class RenderAlphaPremultiplication
 {
     public const string Filter =
-        "geq=r='r(X,Y)*alpha(X,Y)/255':g='g(X,Y)*alpha(X,Y)/255':b='b(X,Y)*alpha(X,Y)/255':a='alpha(X,Y)'";
+        "premultiply=inplace=1,setparams=alpha_mode=straight";
 }
 
 internal static class RenderColorMetadata

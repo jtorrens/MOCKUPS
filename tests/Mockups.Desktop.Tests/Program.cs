@@ -121,7 +121,7 @@ var tests = new (string Name, Action Run)[]
     ("Shot Manager output captures exact associations and resolves offline", ShotManagerOutputResolvesExactAssociations),
     ("Render output naming reserves one version for Light and Dark", RenderOutputNamingReservesOneBatchVersion),
     ("MOV H.264 modes match the Créditos encoding profiles", MovH264ModesMatchCreditosProfiles),
-    ("MOV outputs carry exact color range and alpha association metadata", MovOutputsCarryExactMetadata),
+    ("MOV outputs carry exact color metadata and full-scale opaque alpha", MovOutputsCarryExactMetadata),
     ("Render executor publishes MOV with exact alpha association metadata", RenderExecutorPublishesMovWithExactMetadata),
     ("Production render overrides Device and Theme while respecting forced Screen appearance", ProductionRenderOverridesRespectScreenAppearance),
     ("Render snapshot store interns repeated font assets", RenderSnapshotStoreInternsAssets),
@@ -13159,7 +13159,7 @@ static void MovOutputsCarryExactMetadata()
                 "-v", "error",
                 "-y",
                 "-f", "lavfi",
-                "-i", "color=c=white@0.5:s=64x64:d=0.04,format=rgba",
+                "-i", "color=c=white@1:s=64x64:d=0.04,format=rgba",
                 .. RenderMovEncodingProfiles.Arguments(
                     mode.EncodingProfile,
                     64,
@@ -13210,6 +13210,33 @@ static void MovOutputsCarryExactMetadata()
                 Equal(
                     QuickTimeAlphaAssociation.PremultipliedBlack,
                     QuickTimeAlphaAssociation.ReadGraphicsMode(output));
+
+                var decodedFrame = Path.Combine(root, "prores-4444-decoded.raw");
+                RunChildProcess(
+                    ffmpeg,
+                    [
+                        "-v", "error",
+                        "-y",
+                        "-i", output,
+                        "-frames:v", "1",
+                        "-pix_fmt", "yuva444p10le",
+                        "-f", "rawvideo",
+                        decodedFrame,
+                    ]);
+                var decodedBytes = File.ReadAllBytes(decodedFrame);
+                const int frameWidth = 64;
+                const int frameHeight = 64;
+                const int bytesPerSample = 2;
+                var planeBytes = frameWidth * frameHeight * bytesPerSample;
+                Equal(planeBytes * 4, decodedBytes.Length);
+                for (var offset = planeBytes * 3;
+                     offset < decodedBytes.Length;
+                     offset += bytesPerSample)
+                {
+                    Equal(
+                        (ushort)1023,
+                        BitConverter.ToUInt16(decodedBytes, offset));
+                }
             }
             else
             {
