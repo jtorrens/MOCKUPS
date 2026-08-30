@@ -219,6 +219,71 @@ test("Bubble remeasures wrapped lines from the current resolved text", () => {
   assert.equal(animatedValue.width, afterWrap.width);
 });
 
+test("Bubble reserves the Actor Label frame depth at its top edge", () => {
+  const renderedAt = (
+    mode: "center" | "insideEdge" | "outsideEdge",
+    offsetY: number,
+  ) => {
+    const payload = committedComponentFixture("bubble", "default_copy");
+    const config = JSON.parse(payload.configJson) as {
+      bubble: {
+        actorLabelSlot: Record<string, unknown>;
+        avatarSlot: Record<string, unknown>;
+      };
+    };
+    config.bubble.actorLabelSlot.showLabel = true;
+    config.bubble.actorLabelSlot.placement = {
+      mode,
+      alignX: 0,
+      alignY: 0,
+      offsetX: 32,
+      offsetY,
+    };
+    config.bubble.avatarSlot.showAvatar = true;
+    config.bubble.avatarSlot.reserveTextSpace = true;
+    config.bubble.avatarSlot.placement = {
+      mode: "insideEdge",
+      alignX: 0,
+      alignY: 0.5,
+      offsetX: 8,
+      offsetY: 0,
+    };
+    payload.configJson = JSON.stringify(config);
+
+    const rendered = bubbleComponentToRenderable(payload, resolveBubbleComponent(payload));
+    return {
+      surface: requiredNode(rendered, "component.bubble.surface").box!,
+      label: requiredNode(rendered, "component.bubble.actorLabel").box!,
+      avatar: requiredNode(rendered, "component.bubble.avatar").box!,
+      text: requiredNode(rendered, "component.bubble.textBox").box!,
+    };
+  };
+
+  const baseline = renderedAt("outsideEdge", 0);
+  for (const expected of [
+    { mode: "outsideEdge" as const, offsetY: 4, frameDepth: 4 },
+    { mode: "center" as const, offsetY: 4, frameDepthFromHeight: 0.5 },
+    { mode: "insideEdge" as const, offsetY: 4, frameDepthFromHeight: 1 },
+  ]) {
+    const layout = renderedAt(expected.mode, expected.offsetY);
+    const frameDepth = expected.frameDepth
+      ?? layout.label.height * expected.frameDepthFromHeight! + expected.offsetY;
+    approximatelyEqual(
+      layout.label.y + layout.label.height - layout.surface.y,
+      frameDepth,
+    );
+    approximatelyEqual(layout.surface.height - baseline.surface.height, frameDepth);
+    approximatelyEqual(
+      layout.text.y - layout.surface.y - (baseline.text.y - baseline.surface.y),
+      frameDepth,
+    );
+    approximatelyEqual(
+      layout.avatar.y - layout.surface.y - (baseline.avatar.y - baseline.surface.y),
+      frameDepth / 2,
+    );
+  }
+});
+
 test("Bubble reserves message text for an Avatar anchored to any Bubble edge", () => {
   const placements = [
     {
@@ -313,4 +378,11 @@ function findNode(node: RenderableNode, id: string): RenderableNode | undefined 
     if (found) return found;
   }
   return undefined;
+}
+
+function approximatelyEqual(actual: number, expected: number) {
+  assert.ok(
+    Math.abs(actual - expected) < 0.0001,
+    `Expected ${actual} to approximately equal ${expected}.`,
+  );
 }

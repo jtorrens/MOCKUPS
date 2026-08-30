@@ -12,7 +12,6 @@ import {
 } from "./avatarComponentRenderable.js";
 import {
   boundedCenterBox,
-  boxEdgeIntrusionInsets,
   boxEdgeReservationInsets,
   cssColorWithAlpha,
   iconTokenStyle,
@@ -135,7 +134,7 @@ export function bubbleComponentToRenderable(
         actorLabelPlacement,
       )
     : undefined;
-  const labelIntrusion = boxEdgeIntrusionInsets(baseSurfaceBox, baseLabelBox);
+  const labelReservation = boxEdgeReservationInsets(baseSurfaceBox, baseLabelBox);
   const baseAvatarBox = bubble.avatarSlot.reserveTextSpace && bubble.avatarSlot.avatar
     ? placeChild(
         baseSurfaceBox,
@@ -161,9 +160,9 @@ export function bubbleComponentToRenderable(
     : baseSurfaceBox;
   const contentPadding = {
     left: paddingX + avatarReservation.left,
-    top: paddingY + labelIntrusion.top + avatarReservation.top,
+    top: paddingY + labelReservation.top + avatarReservation.top,
     right: paddingX + avatarReservation.right,
-    bottom: paddingY + labelIntrusion.bottom + avatarReservation.bottom,
+    bottom: paddingY + labelReservation.bottom + avatarReservation.bottom,
     gapX: paddingX,
     gapY: paddingY,
   };
