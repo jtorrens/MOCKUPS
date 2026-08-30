@@ -181,6 +181,12 @@ The bridge translates only standard resolved values:
 - generic boxes, placement, text, images, SVGs, surfaces and shadows;
 - generic validation for unresolved values.
 
+Generic placement always resolves `mode` and alignment into the child's base
+position and edge ownership first. The X/Y offsets then translate that resolved
+position; they never reclassify a centred axis or transfer ownership to another
+edge. Content reservation uses the same pre-offset alignment ownership while
+measuring the translated child's actual depth at that edge.
+
 Device scaling derives from the required positive Screen width. Preview has no
 pixel-ratio or scale fallback and does not receive retired Device metrics.
 

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  boxEdgeReservationInsets,
   placeChild,
   screenPercentToDesignWidth,
   translateRenderableNode,
@@ -30,6 +31,32 @@ test("inside edge uses the padded box supplied by its parent", () => {
     placeChild(paddedParent, child, { mode: "insideEdge", alignX: 1, alignY: 0, offsetX: 0, offsetY: 0 }),
     { x: 82, y: 28, width: 20, height: 10 },
   );
+});
+
+test("edge reservation keeps alignment ownership when offsets translate the child", () => {
+  const container = { x: 0, y: 0, width: 100, height: 100 };
+  for (const offsetY of [-1, 0, 1]) {
+    const placement = {
+      mode: "insideEdge" as const,
+      alignX: 0,
+      alignY: 0.5,
+      offsetX: 8,
+      offsetY,
+    };
+    const placed = placeChild(container, { width: 20, height: 10 }, placement);
+    assert.deepEqual(placed, {
+      x: 8,
+      y: 45 + offsetY,
+      width: 20,
+      height: 10,
+    });
+    assert.deepEqual(boxEdgeReservationInsets(container, placed, placement), {
+      left: 28,
+      top: 0,
+      right: 0,
+      bottom: 0,
+    });
+  }
 });
 
 test("screen percentage resolves from the required Screen width", () => {

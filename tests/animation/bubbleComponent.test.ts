@@ -284,6 +284,51 @@ test("Bubble reserves the Actor Label frame depth at its top edge", () => {
   }
 });
 
+test("Bubble Avatar vertical offset translates without changing its centered edge reservation", () => {
+  const renderedAt = (offsetY: number) => {
+    const payload = committedComponentFixture("bubble", "default_copy");
+    const config = JSON.parse(payload.configJson) as {
+      bubble: {
+        actorLabelSlot: Record<string, unknown>;
+        avatarSlot: Record<string, unknown>;
+      };
+    };
+    config.bubble.actorLabelSlot.showLabel = false;
+    config.bubble.avatarSlot.showAvatar = true;
+    config.bubble.avatarSlot.reserveTextSpace = true;
+    config.bubble.avatarSlot.placement = {
+      mode: "insideEdge",
+      alignX: 0,
+      alignY: 0.5,
+      offsetX: 8,
+      offsetY,
+    };
+    payload.configJson = JSON.stringify(config);
+
+    const rendered = bubbleComponentToRenderable(payload, resolveBubbleComponent(payload));
+    return {
+      surface: requiredNode(rendered, "component.bubble.surface").box!,
+      avatar: requiredNode(rendered, "component.bubble.avatar").box!,
+      text: requiredNode(rendered, "component.bubble.textBox").box!,
+    };
+  };
+
+  const centered = renderedAt(0);
+  for (const offsetY of [-1, 1]) {
+    const shifted = renderedAt(offsetY);
+    approximatelyEqual(shifted.surface.width, centered.surface.width);
+    approximatelyEqual(shifted.surface.height, centered.surface.height);
+    approximatelyEqual(
+      shifted.text.y - shifted.surface.y,
+      centered.text.y - centered.surface.y,
+    );
+    approximatelyEqual(
+      shifted.avatar.y - shifted.surface.y,
+      centered.avatar.y - centered.surface.y + offsetY,
+    );
+  }
+});
+
 test("Bubble reserves message text for an Avatar anchored to any Bubble edge", () => {
   const placements = [
     {

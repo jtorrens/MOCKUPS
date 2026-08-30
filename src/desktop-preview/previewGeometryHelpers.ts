@@ -203,11 +203,13 @@ export function boxEdgeIntrusionInsets(
  * Returns the content space occupied by a child anchored at a container edge.
  * Unlike `boxEdgeIntrusionInsets`, the child may be completely inside the
  * container. A centred child reserves no edge because it does not establish an
- * edge-owned content boundary.
+ * edge-owned content boundary. Alignment establishes edge ownership before
+ * offset translation; an offset never reclassifies the child onto another edge.
  */
 export function boxEdgeReservationInsets(
   container: RenderableBox,
   child: RenderableBox | undefined,
+  placement: AlignmentPlacementContract,
 ) {
   if (!child) {
     return { left: 0, top: 0, right: 0, bottom: 0 };
@@ -219,24 +221,29 @@ export function boxEdgeReservationInsets(
   const childBottom = child.y + child.height;
   const overlapsX = childRight > container.x && child.x < containerRight;
   const overlapsY = childBottom > container.y && child.y < containerBottom;
-  const childCenterX = child.x + child.width / 2;
-  const childCenterY = child.y + child.height / 2;
-  const containerCenterX = container.x + container.width / 2;
-  const containerCenterY = container.y + container.height / 2;
+  const horizontalEdge = reservationEdge(placement.alignX);
+  const verticalEdge = reservationEdge(placement.alignY);
   return {
-    left: overlapsX && childCenterX < containerCenterX
+    left: overlapsX && horizontalEdge === "start"
       ? Math.max(0, Math.min(containerRight, childRight) - container.x)
       : 0,
-    top: overlapsY && childCenterY < containerCenterY
+    top: overlapsY && verticalEdge === "start"
       ? Math.max(0, Math.min(containerBottom, childBottom) - container.y)
       : 0,
-    right: overlapsX && childCenterX > containerCenterX
+    right: overlapsX && horizontalEdge === "end"
       ? Math.max(0, containerRight - Math.max(container.x, child.x))
       : 0,
-    bottom: overlapsY && childCenterY > containerCenterY
+    bottom: overlapsY && verticalEdge === "end"
       ? Math.max(0, containerBottom - Math.max(container.y, child.y))
       : 0,
   };
+}
+
+function reservationEdge(alignment: number): "start" | "end" | undefined {
+  const clamped = Math.max(0, Math.min(1, alignment));
+  if (clamped < 0.5) return "start";
+  if (clamped > 0.5) return "end";
+  return undefined;
 }
 
 /**

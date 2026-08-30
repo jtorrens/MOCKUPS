@@ -127,6 +127,7 @@ export function bubbleComponentToRenderable(
     height: baseContentLayout.height + basePadding.top + basePadding.bottom,
   };
   const actorLabelPlacement = scalePlacement(bubble.actorLabelSlot.placement, scale);
+  const avatarPlacement = scalePlacement(bubble.avatarSlot.placement, scale);
   const baseLabelBox = bubble.actorLabelSlot.label
     ? placeChild(
         baseSurfaceBox,
@@ -134,7 +135,11 @@ export function bubbleComponentToRenderable(
         actorLabelPlacement,
       )
     : undefined;
-  const labelReservation = boxEdgeReservationInsets(baseSurfaceBox, baseLabelBox);
+  const labelReservation = boxEdgeReservationInsets(
+    baseSurfaceBox,
+    baseLabelBox,
+    actorLabelPlacement,
+  );
   const baseAvatarBox = bubble.avatarSlot.reserveTextSpace && bubble.avatarSlot.avatar
     ? placeChild(
         baseSurfaceBox,
@@ -142,10 +147,14 @@ export function bubbleComponentToRenderable(
           width: bubble.avatarSlot.avatar.size * scale,
           height: bubble.avatarSlot.avatar.size * scale,
         },
-        scalePlacement(bubble.avatarSlot.placement, scale),
+        avatarPlacement,
       )
     : undefined;
-  const avatarReservation = boxEdgeReservationInsets(baseSurfaceBox, baseAvatarBox);
+  const avatarReservation = boxEdgeReservationInsets(
+    baseSurfaceBox,
+    baseAvatarBox,
+    avatarPlacement,
+  );
   const avatarMinimumSurfaceSize = bubble.avatarSlot.reserveTextSpace
     ? minimumContainerSizeForPlacedChild(
         baseSurfaceBox,
@@ -155,7 +164,7 @@ export function bubbleComponentToRenderable(
               height: bubble.avatarSlot.avatar.size * scale,
             }
           : undefined,
-        scalePlacement(bubble.avatarSlot.placement, scale),
+        avatarPlacement,
       )
     : baseSurfaceBox;
   const contentPadding = {
@@ -203,7 +212,7 @@ export function bubbleComponentToRenderable(
           width: bubble.avatarSlot.avatar.size * scale,
           height: bubble.avatarSlot.avatar.size * scale,
         },
-        scalePlacement(bubble.avatarSlot.placement, scale),
+        avatarPlacement,
       )
     : undefined;
   const localBounds = unionBoxes([
