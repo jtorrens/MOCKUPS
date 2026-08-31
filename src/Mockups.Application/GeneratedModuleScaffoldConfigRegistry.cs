@@ -279,6 +279,13 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ["lockScreen", "statusBarSlot"],
             "status_bar",
             []),
+        ["module.core.socialPost.headerHeight"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.headerHeight",
+            ValueKind.Integer,
+            ["socialPost", "headerHeight"],
+            "",
+            []),
         ["module.core.socialPost.headerSurface"] = new(
             "module.core.socialPost",
             "module.core.socialPost.headerSurface",

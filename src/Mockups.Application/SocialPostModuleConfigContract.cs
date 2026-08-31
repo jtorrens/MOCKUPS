@@ -21,6 +21,7 @@ internal static class SocialPostModuleConfigContract
             [
                 "useAppWallpaper",
                 "showHeader",
+                "headerHeight",
                 "showStatusBar",
                 "showNavigationBar",
                 "headerSurfaceSlot",
@@ -38,6 +39,12 @@ internal static class SocialPostModuleConfigContract
         })
         {
             JsonPath.RequiredBoolean(socialPost, key, owner);
+        }
+        var headerHeight = JsonPath.RequiredNumber(socialPost, "headerHeight", owner);
+        if (headerHeight < 0)
+        {
+            throw new InvalidOperationException(
+                $"{owner}.headerHeight must be non-negative.");
         }
         ValidateSlot(socialPost, "headerSurfaceSlot", owner);
         JsonPath.RequiredString(socialPost, "rowGapToken", owner);

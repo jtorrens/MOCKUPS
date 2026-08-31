@@ -11,7 +11,7 @@
   },
   "intent": {
     "responsibility": "Own the Social Post header as two fixed five-slot rows.",
-    "visualBoundary": "Render a Surface containing two intrinsic-height rows and Theme-owned system chrome.",
+    "visualBoundary": "Render a Surface with a configurable minimum header height, top bleed and two bottom-aligned intrinsic-height rows.",
     "runtimeBehavior": "The Variant selects each slot kind and child Variant; Runtime owns only actor, label and sublabel values.",
     "forwarding": "No child Runtime contract is exposed or forwarded.",
     "temporalOwnership": "The Screen owns header presence while child Components retain their local behavior.",
@@ -204,7 +204,8 @@
             "overrides": {}
           }
         }
-      ]
+      ],
+      "headerHeight": 120
     }
   },
   "designPreview": {
@@ -870,7 +871,8 @@
               "overrides": {}
             }
           }
-        ]
+        ],
+        "headerHeight": 120
       }
     }
   },
@@ -927,6 +929,38 @@
       "unit": "",
       "embeddedSlot": null,
       "structuredCollection": null
+    },
+    {
+      "id": "module.core.socialPost.headerHeight",
+      "label": "Header height",
+      "valueKind": "Integer",
+      "jsonPath": [
+        "socialPost",
+        "headerHeight"
+      ],
+      "defaultValue": "120",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": {
+        "minimum": 0,
+        "maximum": 240,
+        "increment": 1,
+        "decimalPlaces": 0,
+        "useSlider": false
+      },
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
     },
     {
       "id": "module.core.socialPost.showStatusBar",
@@ -1172,8 +1206,8 @@
               }
             ],
             "pairLabels": {
-              "first": "Left",
-              "second": "Right"
+              "first": "Horizontal",
+              "second": "Vertical"
             }
           },
           {
@@ -1630,13 +1664,18 @@
                 "visible": true
               },
               {
-                "id": "module.core.socialPost.headerSurface",
+                "id": "module.core.socialPost.headerHeight",
                 "order": 20,
                 "visible": true
               },
               {
-                "id": "module.core.socialPost.rowGapToken",
+                "id": "module.core.socialPost.headerSurface",
                 "order": 30,
+                "visible": true
+              },
+              {
+                "id": "module.core.socialPost.rowGapToken",
+                "order": 40,
                 "visible": true
               }
             ],

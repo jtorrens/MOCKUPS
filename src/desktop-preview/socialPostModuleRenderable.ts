@@ -80,11 +80,17 @@ function headerNode(
 ): RenderableNode {
   const screen = previewScreenBox(payload);
   const scale = renderScale(payload);
-  const first = renderRow(payload, componentBaseConfigs, contract.rows[0], contentY);
+  const first = renderRow(payload, componentBaseConfigs, contract.rows[0], 0);
   const gap = numberToken(payload, contract.rowGapToken) * scale;
-  const secondY = contentY + first.height + gap;
-  const second = renderRow(payload, componentBaseConfigs, contract.rows[1], secondY);
-  const headerHeight = first.height + gap + second.height;
+  const second = renderRow(payload, componentBaseConfigs, contract.rows[1], 0);
+  const rowsHeight = first.height + gap + second.height;
+  const headerHeight = Math.max(contract.headerHeight * scale, rowsHeight);
+  const rowsY = contentY + headerHeight - rowsHeight;
+  const firstNode = translateRenderableNode(first.node, { x: 0, y: rowsY });
+  const secondNode = translateRenderableNode(second.node, {
+    x: 0,
+    y: rowsY + first.height + gap,
+  });
   const surfaceBox = {
     x: screen.x,
     y: screen.y,
@@ -114,8 +120,8 @@ function headerNode(
     style: { overflow: "visible" },
     children: [
       surfaceComponentToRenderableAt(payload, surface, surfaceBox),
-      first.node,
-      second.node,
+      firstNode,
+      secondNode,
     ],
   };
 }
@@ -145,21 +151,27 @@ function renderRow(
       height: node.box.height,
     } satisfies MeasuredSlot];
   });
-  const rowHeight = measured.reduce((height, item) => Math.max(height, item.height), 0);
-  const [leftPadding, rightPadding] = spacingPair(payload, row.padding);
-  const leftEdge = screen.x + leftPadding;
-  const rightEdge = screen.x + screen.width - rightPadding;
+  const contentHeight = measured.reduce((height, item) => Math.max(height, item.height), 0);
+  const [horizontalPadding, verticalPadding] = spacingPair(payload, row.padding);
+  const rowHeight = contentHeight + verticalPadding * 2;
+  const contentY = y + verticalPadding;
+  const leftEdge = screen.x + horizontalPadding;
+  const rightEdge = screen.x + screen.width - horizontalPadding;
   const left = measured.find((item) => item.index === 1);
   const right = measured.find((item) => item.index === 5);
   const middle = measured.filter((item) => item.index >= 2 && item.index <= 4);
   const children: RenderableNode[] = [];
 
-  if (left) children.push(placeMeasuredSlot(left, leftEdge, rowY(row, y, rowHeight, left.height)));
+  if (left) children.push(placeMeasuredSlot(
+    left,
+    leftEdge,
+    rowY(row, contentY, contentHeight, left.height),
+  ));
   if (right) {
     children.push(placeMeasuredSlot(
       right,
       rightEdge - right.width,
-      rowY(row, y, rowHeight, right.height),
+      rowY(row, contentY, contentHeight, right.height),
     ));
   }
 
@@ -170,7 +182,11 @@ function renderRow(
   const middleGap = middle.length > 0 ? freeWidth / (middle.length + 1) : 0;
   let middleX = middleLeft + middleGap;
   for (const item of middle) {
-    children.push(placeMeasuredSlot(item, middleX, rowY(row, y, rowHeight, item.height)));
+    children.push(placeMeasuredSlot(
+      item,
+      middleX,
+      rowY(row, contentY, contentHeight, item.height),
+    ));
     middleX += item.width + middleGap;
   }
 

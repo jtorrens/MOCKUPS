@@ -26,6 +26,7 @@ export interface SocialPostModuleContract {
   id: "module.core.socialPost";
   useAppWallpaper: boolean;
   showHeader: boolean;
+  headerHeight: number;
   showStatusBar: boolean;
   showNavigationBar: boolean;
   headerSurfaceSlot: SocialPostComponentSlot;

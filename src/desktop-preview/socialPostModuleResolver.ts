@@ -12,6 +12,7 @@ import {
   parseObject,
   requiredBoolean,
   requiredComponentVariantSlot,
+  requiredNumber,
   requiredRecord,
   requiredString,
   stringValue,
@@ -34,6 +35,11 @@ export function resolveSocialPostModule(
       "module.core.socialPost.useAppWallpaper",
     ),
     showHeader: requiredBoolean(socialPost, "showHeader", "module.core.socialPost.showHeader"),
+    headerHeight: Math.max(0, requiredNumber(
+      socialPost,
+      "headerHeight",
+      "module.core.socialPost.headerHeight",
+    )),
     showStatusBar: requiredBoolean(
       socialPost,
       "showStatusBar",
