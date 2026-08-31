@@ -99,7 +99,7 @@ public static class RuntimeInputDocumentContract
                 ?? throw new InvalidOperationException(
                     $"Projected runtime collection default item at index {index} must be an object.");
             var next = defaultItem.DeepClone().AsObject();
-            if (collectionDefinition is not null)
+            if (collectionDefinition?["structureProjection"] is JsonObject)
             {
                 var persistedKeys = DefinitionObjects(
                         collectionDefinition,
