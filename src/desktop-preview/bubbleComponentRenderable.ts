@@ -315,6 +315,7 @@ export function bubbleComponentToRenderable(
           textBox,
           {
             surfaceVisible: false,
+            verticalTextAlignment: fixed ? "top" : "center",
             textColors: {
               textColor,
               placeholderColor: textColor,

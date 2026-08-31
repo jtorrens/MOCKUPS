@@ -36,6 +36,7 @@ export interface TextBoxRenderableOptions {
   surfaceVisible?: boolean;
   surfaceColors?: SurfaceColorOverride;
   textColors?: TextBoxColorOverride;
+  verticalTextAlignment?: "top" | "center";
 }
 
 export function measureTextBoxComponent(
@@ -286,6 +287,7 @@ export function textBoxComponentToRenderableAt(
   const textOverflowsFrame = textContentHeight > textFrame.height + 0.5;
   const scrollAnchorsToBottom = textOverflowsFrame && textBox.overflowMode === "scroll";
   const textContentY = wrappedLines.length === 1
+      && options.verticalTextAlignment !== "top"
       ? textFrame.y + Math.max(0, (textFrame.height - textContentHeight) * 0.5)
       : textFrame.y;
   const renderedTextY = scrollAnchorsToBottom
