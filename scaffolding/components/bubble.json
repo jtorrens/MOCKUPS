@@ -51,6 +51,7 @@
       "reliefBottomIntensity": -0.1
     },
     "bubble": {
+      "dimensionMode": "content",
       "surfaceSlot": {
         "variantReference": "component_project_foqn_s2_surface::variant::default",
         "overrides": {}
@@ -173,6 +174,7 @@
         "reliefBottomIntensity": -0.1
       },
       "bubble": {
+        "dimensionMode": "content",
         "surfaceSlot": {
           "variantReference": "component_project_foqn_s2_surface::variant::default",
           "overrides": {}
@@ -297,6 +299,7 @@
           "reliefBottomIntensity": -0.1
         },
         "bubble": {
+          "dimensionMode": "content",
           "surfaceSlot": {
             "variantReference": "component_project_foqn_s2_surface::variant::default_copy_3",
             "overrides": {
@@ -550,6 +553,33 @@
         "transition": null,
         "unit": "",
         "uiOrder": 12
+      },
+      {
+        "id": "fixedSize",
+        "label": "Size",
+        "jsonKey": "size",
+        "kind": "integerPair",
+        "valueKind": "IntegerPair",
+        "defaultValue": "320|200",
+        "minimum": 1,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "bubble.dimensionMode",
+        "visibleWhenValue": "fixed",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "layout",
+        "uiGroupLabel": "Layout",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 13
       },
       {
         "id": "writeOnDurationFrames",
@@ -1138,6 +1168,7 @@
     "state": "incoming",
     "actorName": "Alex Q",
     "maxWidth": 66,
+    "size": "320|200",
     "writeOnTrigger": false,
     "actions": [
       {
@@ -1798,6 +1829,48 @@
         "first": "Light",
         "second": "Dark"
       },
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.bubble.dimensionMode",
+      "label": "Dimension mode",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "bubble",
+        "dimensionMode"
+      ],
+      "defaultValue": "content",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "content",
+          "label": "Content + padding",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "fixed",
+          "label": "Fixed size",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
@@ -3463,6 +3536,11 @@
             "order": 10,
             "visible": true,
             "fields": [
+              {
+                "id": "component.bubble.dimensionMode",
+                "order": 5,
+                "visible": true
+              },
               {
                 "id": "component.bubble.surface.editor",
                 "order": 10,

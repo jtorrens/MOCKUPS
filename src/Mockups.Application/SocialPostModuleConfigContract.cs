@@ -31,6 +31,12 @@ internal static class SocialPostModuleConfigContract
                 "mediaPadding",
                 "mediaInputs",
                 "showMediaSeparator",
+                "messageBubbleSlot",
+                "messageTextInputBarSlot",
+                "messageKeyboardSlot",
+                "messagePadding",
+                "messageBubbleInputs",
+                "showMessageSeparator",
             ],
             owner);
 
@@ -41,6 +47,7 @@ internal static class SocialPostModuleConfigContract
             "showStatusBar",
             "showNavigationBar",
             "showMediaSeparator",
+            "showMessageSeparator",
         })
         {
             JsonPath.RequiredBoolean(socialPost, key, owner);
@@ -58,6 +65,13 @@ internal static class SocialPostModuleConfigContract
         ValidateMediaInputs(
             JsonPath.RequiredObject(socialPost, "mediaInputs", owner),
             $"{owner}.mediaInputs");
+        ValidateSlot(socialPost, "messageBubbleSlot", owner);
+        ValidateSlot(socialPost, "messageTextInputBarSlot", owner);
+        ValidateSlot(socialPost, "messageKeyboardSlot", owner);
+        JsonPath.RequiredString(socialPost, "messagePadding", owner);
+        ValidateMessageBubbleInputs(
+            JsonPath.RequiredObject(socialPost, "messageBubbleInputs", owner),
+            $"{owner}.messageBubbleInputs");
 
         var rows = JsonPath.RequiredArray(socialPost, "rows", owner);
         if (rows.Count != 2)
@@ -149,6 +163,63 @@ internal static class SocialPostModuleConfigContract
             $"{owner}.fullframeOrientation");
         JsonPath.RequiredNumber(inputs, "controlsElapsedMs", owner);
         JsonPath.RequiredNumber(inputs, "motionElapsedMs", owner);
+    }
+
+    private static void ValidateMessageBubbleInputs(JsonObject inputs, string owner)
+    {
+        RequireExactKeys(
+            inputs,
+            [
+                "state",
+                "actorId",
+                "actorName",
+                "actor",
+                "actorIdentityVisible",
+                "mediaType",
+                "mediaSource",
+                "viewportSize",
+                "mediaScale",
+                "mediaOffset",
+                "isPlaying",
+                "currentTimeSeconds",
+                "durationSeconds",
+                "playbackMode",
+                "isFullScreen",
+                "fullScreenTransition",
+                "fullframeOrientation",
+                "controlsElapsedMs",
+                "motionElapsedMs",
+                "statusState",
+                "statusText",
+                "typingIndicator",
+            ],
+            owner);
+        RequireOneOf(JsonPath.RequiredString(inputs, "state", owner),
+            ["incoming", "system", "outgoing"], $"{owner}.state");
+        JsonPath.RequiredString(inputs, "actorId", owner);
+        JsonPath.RequiredString(inputs, "actorName", owner);
+        JsonPath.RequiredObject(inputs, "actor", owner);
+        JsonPath.RequiredBoolean(inputs, "actorIdentityVisible", owner);
+        RequireOneOf(JsonPath.RequiredString(inputs, "mediaType", owner),
+            ["none", "image", "video", "audio"], $"{owner}.mediaType");
+        JsonPath.RequiredString(inputs, "mediaSource", owner);
+        JsonPath.RequiredString(inputs, "viewportSize", owner);
+        JsonPath.RequiredNumber(inputs, "mediaScale", owner);
+        JsonPath.RequiredString(inputs, "mediaOffset", owner);
+        JsonPath.RequiredBoolean(inputs, "isPlaying", owner);
+        JsonPath.RequiredNumber(inputs, "currentTimeSeconds", owner);
+        JsonPath.RequiredNumber(inputs, "durationSeconds", owner);
+        RequireOneOf(JsonPath.RequiredString(inputs, "playbackMode", owner),
+            ["once", "loop"], $"{owner}.playbackMode");
+        JsonPath.RequiredBoolean(inputs, "isFullScreen", owner);
+        JsonPath.RequiredBoolean(inputs, "fullScreenTransition", owner);
+        JsonPath.RequiredString(inputs, "fullframeOrientation", owner);
+        JsonPath.RequiredNumber(inputs, "controlsElapsedMs", owner);
+        JsonPath.RequiredNumber(inputs, "motionElapsedMs", owner);
+        RequireOneOf(JsonPath.RequiredString(inputs, "statusState", owner),
+            ["none", "sent", "delivered", "read"], $"{owner}.statusState");
+        JsonPath.RequiredString(inputs, "statusText", owner);
+        JsonPath.RequiredBoolean(inputs, "typingIndicator", owner);
     }
 
     private static void ValidateSlot(JsonObject owner, string key, string context) =>

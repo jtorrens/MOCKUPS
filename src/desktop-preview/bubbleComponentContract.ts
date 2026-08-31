@@ -62,6 +62,8 @@ export interface BubbleStatusContract {
 
 export interface BubbleDesignContract {
   id: string;
+  dimensionMode: "content" | "fixed";
+  size: { width: number; height: number };
   state: BubbleState;
   alignment: BubbleAlignment;
   surface: SurfaceDesignContract;

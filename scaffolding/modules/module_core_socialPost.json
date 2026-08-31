@@ -10,11 +10,11 @@
     "sortOrder": 2
   },
   "intent": {
-    "responsibility": "Own the Social Post header and its following Media section.",
-    "visualBoundary": "Render a Surface-backed header followed by one padded Media boundary and an optional full-width separator.",
-    "runtimeBehavior": "The Variant owns header structure, Media Variant, Media padding and separator visibility; Runtime owns row content plus Media source and height.",
-    "forwarding": "No child Runtime contract is exposed or forwarded.",
-    "temporalOwnership": "The Screen owns header presence while child Components retain their local behavior.",
+    "responsibility": "Own the Social Post header, Media and fixed Message composition.",
+    "visualBoundary": "Render a Surface-backed header, padded Media boundary and a flexible Message zone composed from Bubble, Text Input Bar and Keyboard.",
+    "runtimeBehavior": "The Variant owns structure, Component Variants, padding and separators; Runtime owns row content, Media source and height, message text, write-on and composer visibility.",
+    "forwarding": "Message text is explicitly supplied to the selected Bubble, Text Input Bar and Keyboard boundaries.",
+    "temporalOwnership": "The Screen owns message write-on while child Components retain their local rendering behavior.",
     "productionContext": "Resolve only through the exact Production Screen to Shot owner Actor to Theme and Device context."
   },
   "manifest": {
@@ -28,6 +28,9 @@
       "button",
       "label",
       "media",
+      "bubble",
+      "textInputBar",
+      "keyboard",
       "status_bar",
       "navigation_bar"
     ]
@@ -229,7 +232,49 @@
         "controlsElapsedMs": 0,
         "motionElapsedMs": 0
       },
-      "showMediaSeparator": true
+      "showMediaSeparator": true,
+      "messageBubbleSlot": {
+        "variantReference": "component_project_foqn_s2_bubble::variant::default_copy",
+        "overrides": {
+          "bubble": {
+            "dimensionMode": "fixed"
+          }
+        }
+      },
+      "messageTextInputBarSlot": {
+        "variantReference": "component_project_foqn_s2_textInputBar::variant::default_copy",
+        "overrides": {}
+      },
+      "messageKeyboardSlot": {
+        "variantReference": "component_project_foqn_s2_keyboard::variant::default_copy",
+        "overrides": {}
+      },
+      "messagePadding": "theme.spacing.s|theme.spacing.s",
+      "messageBubbleInputs": {
+        "state": "outgoing",
+        "actorId": "",
+        "actorName": "",
+        "actor": {},
+        "actorIdentityVisible": false,
+        "mediaType": "none",
+        "mediaSource": "",
+        "viewportSize": "1|1",
+        "mediaScale": 1,
+        "mediaOffset": "0|0",
+        "isPlaying": false,
+        "currentTimeSeconds": 0,
+        "durationSeconds": 0,
+        "playbackMode": "once",
+        "isFullScreen": false,
+        "fullScreenTransition": false,
+        "fullframeOrientation": "portrait",
+        "controlsElapsedMs": 0,
+        "motionElapsedMs": 0,
+        "statusState": "none",
+        "statusText": "",
+        "typingIndicator": false
+      },
+      "showMessageSeparator": true
     }
   },
   "designPreview": {
@@ -262,6 +307,115 @@
         "uiGroupId": "media",
         "uiGroupLabel": "Media",
         "uiOrder": 20
+      },
+      {
+        "id": "messageText",
+        "label": "Text",
+        "jsonKey": "messageText",
+        "kind": "multilineText",
+        "valueKind": "StringMultiline",
+        "defaultValue": "Escribe aquí el mensaje de la publicación.",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "message",
+        "uiGroupLabel": "Message",
+        "uiOrder": 10
+      },
+      {
+        "id": "messageWriteOnTiming",
+        "label": "Write-on timing",
+        "jsonKey": "messageWriteOnTiming",
+        "kind": "behaviorTiming",
+        "valueKind": "BehaviorTiming",
+        "defaultValue": "{\"mode\":\"fixed\",\"fixedFrames\":30,\"paceToken\":\"theme.motion.naturalPace.normal\"}",
+        "options": [
+          { "value": "theme.motion.naturalPace.verySlow", "label": "Very slow" },
+          { "value": "theme.motion.naturalPace.slow", "label": "Slow" },
+          { "value": "theme.motion.naturalPace.normal", "label": "Normal" },
+          { "value": "theme.motion.naturalPace.fast", "label": "Fast" },
+          { "value": "theme.motion.naturalPace.veryFast", "label": "Very fast" }
+        ],
+        "naturalTiming": {
+          "sourceFieldId": "messageText",
+          "unit": "grapheme",
+          "baseFramesPerUnit": 7
+        },
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "messageTiming",
+        "uiGroupLabel": "Timing",
+        "uiOrder": 20
+      },
+      {
+        "id": "messageTextInputVisible",
+        "label": "Show Text Input Bar",
+        "jsonKey": "messageTextInputVisible",
+        "kind": "boolean",
+        "valueKind": "Boolean",
+        "defaultValue": "true",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "messageComposer",
+        "uiGroupLabel": "Composer",
+        "uiOrder": 30
+      },
+      {
+        "id": "messageKeyboardVisible",
+        "label": "Show Keyboard",
+        "jsonKey": "messageKeyboardVisible",
+        "kind": "boolean",
+        "valueKind": "Boolean",
+        "defaultValue": "true",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "messageComposer",
+        "uiGroupLabel": "Composer",
+        "uiOrder": 40
+      },
+      {
+        "id": "messageBubbleRevealMode",
+        "label": "Bubble reveal",
+        "jsonKey": "messageBubbleRevealMode",
+        "kind": "option",
+        "valueKind": "OptionToken",
+        "defaultValue": "afterWriteOn",
+        "options": [
+          { "value": "duringWriteOn", "label": "During write-on" },
+          { "value": "afterWriteOn", "label": "After write-on" }
+        ],
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "messageTiming",
+        "uiGroupLabel": "Timing",
+        "uiOrder": 50
+      },
+      {
+        "id": "messageWriteOnTrigger",
+        "label": "Write message",
+        "jsonKey": "messageWriteOnTrigger",
+        "kind": "boolean",
+        "valueKind": "Boolean",
+        "defaultValue": "false",
+        "source": "runtime",
+        "uiOrigin": "self",
+        "actionOnly": true,
+        "uiOrder": 60
+      },
+      {
+        "id": "messageWriteOnFrame",
+        "label": "Write-on frame",
+        "jsonKey": "messageWriteOnFrame",
+        "kind": "number",
+        "valueKind": "Integer",
+        "defaultValue": "0",
+        "minimum": 0,
+        "maximum": 100000,
+        "increment": 1,
+        "unit": "frames",
+        "source": "runtime",
+        "uiOrigin": "self",
+        "actionOnly": true,
+        "uiOrder": 70
       }
     ],
     "collections": [
@@ -668,6 +822,29 @@
     ],
     "mediaSource": "media/image.14b3f25e7af16bda8755ce1c2c1efe6b.jpg",
     "mediaHeight": 180,
+    "messageText": "Escribe aquí el mensaje de la publicación.",
+    "messageWriteOnTiming": {
+      "mode": "fixed",
+      "fixedFrames": 30,
+      "paceToken": "theme.motion.naturalPace.normal"
+    },
+    "messageTextInputVisible": true,
+    "messageKeyboardVisible": true,
+    "messageBubbleRevealMode": "afterWriteOn",
+    "messageWriteOnTrigger": false,
+    "messageWriteOnFrame": 0,
+    "actions": [
+      {
+        "id": "writeMessage",
+        "label": "Write message",
+        "playInputId": "messageWriteOnTrigger",
+        "durationBehaviorTimingInputId": "messageWriteOnTiming",
+        "timeJsonKey": "messageWriteOnFrame",
+        "timeUnit": "frames",
+        "prewarmFrames": false,
+        "completionBehavior": "holdFinal"
+      }
+    ],
     "socialPostRows": [
       {
         "id": "row1",
@@ -900,7 +1077,49 @@
           "controlsElapsedMs": 0,
           "motionElapsedMs": 0
         },
-        "showMediaSeparator": true
+        "showMediaSeparator": true,
+        "messageBubbleSlot": {
+          "variantReference": "component_project_foqn_s2_bubble::variant::default_copy",
+          "overrides": {
+            "bubble": {
+              "dimensionMode": "fixed"
+            }
+          }
+        },
+        "messageTextInputBarSlot": {
+          "variantReference": "component_project_foqn_s2_textInputBar::variant::default_copy",
+          "overrides": {}
+        },
+        "messageKeyboardSlot": {
+          "variantReference": "component_project_foqn_s2_keyboard::variant::default_copy",
+          "overrides": {}
+        },
+        "messagePadding": "theme.spacing.s|theme.spacing.s",
+        "messageBubbleInputs": {
+          "state": "outgoing",
+          "actorId": "",
+          "actorName": "",
+          "actor": {},
+          "actorIdentityVisible": false,
+          "mediaType": "none",
+          "mediaSource": "",
+          "viewportSize": "1|1",
+          "mediaScale": 1,
+          "mediaOffset": "0|0",
+          "isPlaying": false,
+          "currentTimeSeconds": 0,
+          "durationSeconds": 0,
+          "playbackMode": "once",
+          "isFullScreen": false,
+          "fullScreenTransition": false,
+          "fullframeOrientation": "portrait",
+          "controlsElapsedMs": 0,
+          "motionElapsedMs": 0,
+          "statusState": "none",
+          "statusText": "",
+          "typingIndicator": false
+        },
+        "showMessageSeparator": true
       }
     }
   },
@@ -1237,6 +1456,141 @@
         "socialPost",
         "showMediaSeparator"
       ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null,
+      "structuredCollection": null
+    },
+    {
+      "id": "module.core.socialPost.messageBubble",
+      "label": "Bubble",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": ["socialPost", "messageBubbleSlot"],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_bubble::variant::default_copy\",\"overrides\":{\"bubble\":{\"dimensionMode\":\"fixed\"}}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "bubble",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "bubble",
+        "label": "Bubble",
+        "recordClassId": "component.bubble"
+      },
+      "structuredCollection": null
+    },
+    {
+      "id": "module.core.socialPost.messageTextInputBar",
+      "label": "Text Input Bar",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": ["socialPost", "messageTextInputBarSlot"],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_textInputBar::variant::default_copy\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "textInputBar",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "textInputBar",
+        "label": "Text Input Bar",
+        "recordClassId": "component.textInputBar"
+      },
+      "structuredCollection": null
+    },
+    {
+      "id": "module.core.socialPost.messageKeyboard",
+      "label": "Keyboard",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": ["socialPost", "messageKeyboardSlot"],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_keyboard::variant::default_copy\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "keyboard",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "keyboard",
+        "label": "Keyboard",
+        "recordClassId": "component.keyboard"
+      },
+      "structuredCollection": null
+    },
+    {
+      "id": "module.core.socialPost.messagePadding",
+      "label": "Padding",
+      "valueKind": "ThemeTokenPair",
+      "jsonPath": ["socialPost", "messagePadding"],
+      "defaultValue": "theme.spacing.s|theme.spacing.s",
+      "isEditable": true,
+      "options": [
+        { "value": "theme.spacing.none", "label": "spacing.none", "colorHex": null, "isNeutral": false, "groupValue": "", "groupLabel": "", "localLabel": "" },
+        { "value": "theme.spacing.xs", "label": "spacing.xs", "colorHex": null, "isNeutral": false, "groupValue": "", "groupLabel": "", "localLabel": "" },
+        { "value": "theme.spacing.s", "label": "spacing.s", "colorHex": null, "isNeutral": false, "groupValue": "", "groupLabel": "", "localLabel": "" },
+        { "value": "theme.spacing.m", "label": "spacing.m", "colorHex": null, "isNeutral": false, "groupValue": "", "groupLabel": "", "localLabel": "" },
+        { "value": "theme.spacing.l", "label": "spacing.l", "colorHex": null, "isNeutral": false, "groupValue": "", "groupLabel": "", "localLabel": "" },
+        { "value": "theme.spacing.xl", "label": "spacing.xl", "colorHex": null, "isNeutral": false, "groupValue": "", "groupLabel": "", "localLabel": "" },
+        { "value": "theme.spacing.xxl", "label": "spacing.xxl", "colorHex": null, "isNeutral": false, "groupValue": "", "groupLabel": "", "localLabel": "" }
+      ],
+      "optionSource": "None",
+      "pairLabels": { "first": "Horizontal", "second": "Vertical" },
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null,
+      "structuredCollection": null
+    },
+    {
+      "id": "module.core.socialPost.showMessageSeparator",
+      "label": "Show separator",
+      "valueKind": "Boolean",
+      "jsonPath": ["socialPost", "showMessageSeparator"],
       "defaultValue": "true",
       "isEditable": true,
       "options": [],
@@ -1855,11 +2209,36 @@
         ]
       },
       {
+        "id": "message",
+        "label": "Message",
+        "subtitle": "Bubble, composer and section spacing",
+        "icon": "message",
+        "order": 40,
+        "visible": true,
+        "defaultOpen": true,
+        "groups": [
+          {
+            "id": "message",
+            "label": "Message",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              { "id": "module.core.socialPost.messageBubble", "order": 10, "visible": true },
+              { "id": "module.core.socialPost.messageTextInputBar", "order": 20, "visible": true },
+              { "id": "module.core.socialPost.messageKeyboard", "order": 30, "visible": true },
+              { "id": "module.core.socialPost.messagePadding", "order": 40, "visible": true },
+              { "id": "module.core.socialPost.showMessageSeparator", "order": 50, "visible": true }
+            ],
+            "presentation": "separatedSections"
+          }
+        ]
+      },
+      {
         "id": "status-bar",
         "label": "Status Bar",
         "subtitle": "Theme status component",
         "icon": "status",
-        "order": 40,
+        "order": 50,
         "visible": true,
         "defaultOpen": false,
         "groups": [
@@ -1883,7 +2262,7 @@
         "label": "Navigation Bar",
         "subtitle": "Theme navigation component",
         "icon": "navigation",
-        "order": 50,
+        "order": 60,
         "visible": true,
         "defaultOpen": false,
         "groups": [

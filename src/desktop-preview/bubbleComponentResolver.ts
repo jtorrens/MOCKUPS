@@ -14,6 +14,7 @@ import {
   requiredRecord,
   requiredString,
   requiredStringPair,
+  requiredNumberPair,
 } from "./componentResolverCommon.js";
 import type {
   BubbleAlignment,
@@ -55,11 +56,22 @@ export function resolveBubbleComponent(
   const actorLabelSlot = requiredRecord(bubble, "actorLabelSlot", "component.bubble");
   const avatarSlot = requiredRecord(bubble, "avatarSlot", "component.bubble");
   const status = requiredRecord(bubble, "status", "component.bubble");
+  const dimensionMode = requiredString(
+    bubble,
+    "dimensionMode",
+    "component.bubble.dimensionMode",
+  );
+  if (dimensionMode !== "content" && dimensionMode !== "fixed") {
+    throw new Error(`Unsupported Bubble dimension mode ${dimensionMode}`);
+  }
   const maxWidthPercent = Math.min(
     100,
     Math.max(1, requiredNumber(preview, "maxWidth", "component.bubble.input.maxWidth")),
   );
   const maxWidth = screenPercentToDesignWidth(payload, maxWidthPercent);
+  const fixedSize = dimensionMode === "fixed"
+    ? requiredNumberPair(preview, "size", "component.bubble.input.size")
+    : { first: maxWidth, second: 1 };
   const padding = requiredStringPair(bubble, "padding", "component.bubble.padding");
   const state = bubbleState(requiredString(preview, "state", "component.bubble.input.state"));
   const alignments: Record<BubbleState, BubbleAlignment> = {
@@ -211,6 +223,11 @@ export function resolveBubbleComponent(
 
   return {
     id: "component.bubble",
+    dimensionMode,
+    size: {
+      width: Math.max(1, fixedSize.first),
+      height: Math.max(1, fixedSize.second),
+    },
     state,
     alignment,
     maxWidth,
@@ -218,7 +235,9 @@ export function resolveBubbleComponent(
     surface: bubbleSurfaceForAlignment(
       resolveSurfaceComponentAtSize(
         surfaceConfig,
-        { width: maxWidth, height: 1 },
+        dimensionMode === "fixed"
+          ? { width: Math.max(1, fixedSize.first), height: Math.max(1, fixedSize.second) }
+          : { width: maxWidth, height: 1 },
         "component.bubble.surface",
       ),
       alignment,

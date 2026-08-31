@@ -22,6 +22,25 @@ export interface SocialPostHeaderRow {
   slots: SocialPostHeaderSlot[];
 }
 
+export interface SocialPostMessageContract {
+  bubbleSlot: SocialPostComponentSlot;
+  textInputBarSlot: SocialPostComponentSlot;
+  keyboardSlot: SocialPostComponentSlot;
+  padding: string;
+  bubbleInputs: Record<string, unknown>;
+  text: string;
+  visibleText: string;
+  writeOnDurationFrames: number;
+  writeOnFrame: number;
+  writeOnTrigger: boolean;
+  currentCharacter: number;
+  textInputVisible: boolean;
+  keyboardVisible: boolean;
+  bubbleVisible: boolean;
+  bubbleWriteOnTrigger: boolean;
+  showSeparator: boolean;
+}
+
 export interface SocialPostModuleContract {
   id: "module.core.socialPost";
   useAppWallpaper: boolean;
@@ -38,4 +57,5 @@ export interface SocialPostModuleContract {
   mediaSource: string;
   mediaHeight: number;
   showMediaSeparator: boolean;
+  message: SocialPostMessageContract;
 }

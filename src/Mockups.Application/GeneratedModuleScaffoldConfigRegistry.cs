@@ -307,6 +307,34 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ["socialPost", "mediaPadding"],
             "",
             []),
+        ["module.core.socialPost.messageBubble"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.messageBubble",
+            ValueKind.ComponentVariantSlot,
+            ["socialPost", "messageBubbleSlot"],
+            "bubble",
+            []),
+        ["module.core.socialPost.messageKeyboard"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.messageKeyboard",
+            ValueKind.ComponentVariantSlot,
+            ["socialPost", "messageKeyboardSlot"],
+            "keyboard",
+            []),
+        ["module.core.socialPost.messagePadding"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.messagePadding",
+            ValueKind.ThemeTokenPair,
+            ["socialPost", "messagePadding"],
+            "",
+            []),
+        ["module.core.socialPost.messageTextInputBar"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.messageTextInputBar",
+            ValueKind.ComponentVariantSlot,
+            ["socialPost", "messageTextInputBarSlot"],
+            "textInputBar",
+            []),
         ["module.core.socialPost.rowGapToken"] = new(
             "module.core.socialPost",
             "module.core.socialPost.rowGapToken",
@@ -333,6 +361,13 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             "module.core.socialPost.showMediaSeparator",
             ValueKind.Boolean,
             ["socialPost", "showMediaSeparator"],
+            "",
+            []),
+        ["module.core.socialPost.showMessageSeparator"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.showMessageSeparator",
+            ValueKind.Boolean,
+            ["socialPost", "showMessageSeparator"],
             "",
             []),
         ["module.core.socialPost.showNavigationBar"] = new(

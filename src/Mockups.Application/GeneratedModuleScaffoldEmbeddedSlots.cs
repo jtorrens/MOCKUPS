@@ -114,5 +114,23 @@ public static class GeneratedModuleScaffoldEmbeddedSlots
             "Media",
             "component.media",
             ["socialPost", "mediaSlot"]),
+        new(
+            "module.core.socialPost.messageBubble",
+            "bubble",
+            "Bubble",
+            "component.bubble",
+            ["socialPost", "messageBubbleSlot"]),
+        new(
+            "module.core.socialPost.messageKeyboard",
+            "keyboard",
+            "Keyboard",
+            "component.keyboard",
+            ["socialPost", "messageKeyboardSlot"]),
+        new(
+            "module.core.socialPost.messageTextInputBar",
+            "textInputBar",
+            "Text Input Bar",
+            "component.textInputBar",
+            ["socialPost", "messageTextInputBarSlot"]),
     ];
 }

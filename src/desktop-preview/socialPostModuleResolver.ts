@@ -1,4 +1,5 @@
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
+import { naturalWriteOnFrame, resolveBehaviorTimingFrames } from "./behaviorTiming.js";
 import { requireComponentVariantType } from "./componentPreviewDefaults.js";
 import type {
   SocialPostComponentSlot,
@@ -18,6 +19,11 @@ import {
   requiredString,
   stringValue,
 } from "./componentResolverCommon.js";
+import { requiredObjectArray } from "./previewJsonHelpers.js";
+import {
+  simpleWriteOnFrameVisibleCount,
+  textGraphemes,
+} from "./previewTextRevealHelpers.js";
 
 export function resolveSocialPostModule(
   payload: DesignPreviewPayload,
@@ -26,8 +32,15 @@ export function resolveSocialPostModule(
   const socialPost = requiredRecord(config, "socialPost", "module.core.socialPost");
   const preview = parseObject(payload.designPreviewJson);
   const componentBaseConfigs = parseObject(payload.componentBaseConfigsJson);
+  const themeTokens = parseObject(payload.themeTokensJson);
   const rows = requiredRows(socialPost);
   const runtimeRows = requiredRuntimeRows(preview);
+  const message = resolveMessage(
+    socialPost,
+    preview,
+    componentBaseConfigs,
+    themeTokens,
+  );
 
   return {
     id: "module.core.socialPost",
@@ -97,6 +110,135 @@ export function resolveSocialPostModule(
       socialPost,
       "showMediaSeparator",
       "module.core.socialPost.showMediaSeparator",
+    ),
+    message,
+  };
+}
+
+function resolveMessage(
+  socialPost: Record<string, unknown>,
+  preview: Record<string, unknown>,
+  componentBaseConfigs: Record<string, unknown>,
+  themeTokens: Record<string, unknown>,
+) {
+  const text = requiredPossiblyEmptyString(
+    preview,
+    "messageText",
+    "module.core.socialPost.messageText",
+  );
+  const inputDefinitions = requiredObjectArray(
+    preview,
+    "inputs",
+    "module.core.socialPost Runtime contract",
+  );
+  const timingDefinition = inputDefinitions.find((definition) =>
+    definition.id === "messageWriteOnTiming"
+  );
+  if (!timingDefinition) {
+    throw new Error("Missing module.core.socialPost messageWriteOnTiming Runtime contract");
+  }
+  const durationFrames = resolveBehaviorTimingFrames(
+    preview,
+    timingDefinition,
+    inputDefinitions,
+    themeTokens,
+  );
+  const trigger = requiredBoolean(
+    preview,
+    "messageWriteOnTrigger",
+    "module.core.socialPost.messageWriteOnTrigger",
+  );
+  const actionFrame = Math.max(0, Math.floor(requiredNumber(
+    preview,
+    "messageWriteOnFrame",
+    "module.core.socialPost.messageWriteOnFrame",
+  )));
+  const timingValue = requiredRecord(
+    preview,
+    "messageWriteOnTiming",
+    "module.core.socialPost.messageWriteOnTiming",
+  );
+  const writeOnFrame = trigger
+    ? naturalWriteOnFrame(
+        text,
+        timingValue,
+        actionFrame,
+        durationFrames,
+        "module.core.socialPost.message",
+      )
+    : durationFrames;
+  const graphemes = textGraphemes(text);
+  const currentCharacter = trigger
+    ? simpleWriteOnFrameVisibleCount(text, {
+        enabled: true,
+        frame: writeOnFrame,
+        durationFrames,
+      })
+    : graphemes.length;
+  const complete = !trigger || actionFrame >= durationFrames;
+  const textInputVisible = requiredBoolean(
+    preview,
+    "messageTextInputVisible",
+    "module.core.socialPost.messageTextInputVisible",
+  );
+  const keyboardVisible = requiredBoolean(
+    preview,
+    "messageKeyboardVisible",
+    "module.core.socialPost.messageKeyboardVisible",
+  );
+  const revealMode = requiredString(
+    preview,
+    "messageBubbleRevealMode",
+    "module.core.socialPost.messageBubbleRevealMode",
+  );
+  if (revealMode !== "duringWriteOn" && revealMode !== "afterWriteOn") {
+    throw new Error(`Unsupported Social Post Bubble reveal mode '${revealMode}'`);
+  }
+  const writesInBubble = !textInputVisible;
+  return {
+    bubbleSlot: requiredTypedSlot(
+      socialPost,
+      componentBaseConfigs,
+      "messageBubbleSlot",
+      "bubble",
+    ),
+    textInputBarSlot: requiredTypedSlot(
+      socialPost,
+      componentBaseConfigs,
+      "messageTextInputBarSlot",
+      "textInputBar",
+    ),
+    keyboardSlot: requiredTypedSlot(
+      socialPost,
+      componentBaseConfigs,
+      "messageKeyboardSlot",
+      "keyboard",
+    ),
+    padding: requiredString(
+      socialPost,
+      "messagePadding",
+      "module.core.socialPost.messagePadding",
+    ),
+    bubbleInputs: structuredClone(requiredRecord(
+      socialPost,
+      "messageBubbleInputs",
+      "module.core.socialPost.messageBubbleInputs",
+    )),
+    text,
+    visibleText: graphemes.slice(0, currentCharacter).join(""),
+    writeOnDurationFrames: durationFrames,
+    writeOnFrame,
+    writeOnTrigger: trigger,
+    currentCharacter: complete ? 0 : currentCharacter,
+    textInputVisible,
+    keyboardVisible,
+    bubbleVisible: writesInBubble || revealMode === "duringWriteOn" || complete,
+    bubbleWriteOnTrigger: trigger && !complete
+      && (writesInBubble || revealMode === "duringWriteOn"),
+    showSeparator: requiredBoolean(
+      socialPost,
+      "showMessageSeparator",
+      "module.core.socialPost.showMessageSeparator",
     ),
   };
 }

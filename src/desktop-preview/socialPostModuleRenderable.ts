@@ -19,6 +19,7 @@ import { resolveSocialPostModule } from "./socialPostModuleResolver.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
 import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
 import { wallpaperRenderable } from "./wallpaperRenderable.js";
+import { resolvedTextInputBarRuntimeConfig } from "./textInputBarRuntimeConfig.js";
 
 interface MeasuredSlot {
   index: number;
@@ -62,12 +63,20 @@ export function socialPostModuleToRenderable(
     contract,
     header?.box ? header.box.y + header.box.height : contentY,
   );
+  const message = messageSectionNode(
+    payload,
+    componentBaseConfigs,
+    contract,
+    media.box ? media.box.y + media.box.height : contentY,
+    screen.y + screen.height - (navigation?.box?.height ?? 0),
+  );
   const backgroundNode = contract.useAppWallpaper
     ? wallpaperRenderable(payload, screen) ?? background(payload)
     : background(payload);
   const children: RenderableNode[] = [backgroundNode];
   if (header) children.push(header);
   children.push(media);
+  children.push(message);
   if (status) children.push(withZIndex(status, 20));
   if (navigation) children.push(withZIndex(navigation, 30));
   return {
@@ -75,6 +84,135 @@ export function socialPostModuleToRenderable(
     type: "group",
     frame: 0,
     box: screen,
+    style: { overflow: "hidden" },
+    children,
+  };
+}
+
+function messageSectionNode(
+  payload: DesignPreviewPayload,
+  componentBaseConfigs: Record<string, unknown>,
+  contract: SocialPostModuleContract,
+  y: number,
+  bottom: number,
+): RenderableNode {
+  const screen = previewScreenBox(payload);
+  const scale = renderScale(payload);
+  const message = contract.message;
+  const [horizontalPadding, verticalPadding] = spacingPair(payload, message.padding);
+  const separatorHeight = message.showSeparator ? Math.max(1, scale) : 0;
+  const separatorY = Math.max(y, bottom - separatorHeight);
+  const innerWidth = Math.max(1, screen.width - horizontalPadding * 2);
+  const innerWidthDesign = innerWidth / scale;
+  const contentBottom = Math.max(y, separatorY - verticalPadding);
+
+  const keyboard = message.keyboardVisible
+    ? componentNode(
+        payload,
+        componentBaseConfigs,
+        "keyboard",
+        message.keyboardSlot,
+        {
+          text: message.visibleText,
+          currentCharacter: message.currentCharacter,
+          trigger: message.currentCharacter > 0,
+          motionElapsedMs: message.writeOnFrame / Math.max(1, payload.frameRate) * 1000,
+        },
+      )
+    : undefined;
+  const keyboardNode = keyboard?.box
+    ? translateRenderableNode(keyboard, {
+        x: screen.x - keyboard.box.x,
+        y: contentBottom - keyboard.box.height - keyboard.box.y,
+      })
+    : keyboard;
+  const keyboardTop = keyboardNode?.box?.y ?? contentBottom;
+
+  const textInputConfig = message.textInputVisible
+    ? resolvedTextInputBarRuntimeConfig(
+        payload,
+        componentBaseConfigs,
+        message.textInputBarSlot,
+        message.visibleText,
+        innerWidthDesign,
+        "module.core.socialPost.messageTextInputBarSlot",
+      )
+    : undefined;
+  const textInput = message.textInputVisible
+    ? componentNode(
+        previewPayloadInBox(payload, {
+          x: screen.x + horizontalPadding,
+          y,
+          width: innerWidth,
+          height: Math.max(1, keyboardTop - y),
+        }),
+        componentBaseConfigs,
+        "textInputBar",
+        message.textInputBarSlot,
+        { availableWidth: innerWidthDesign },
+        textInputConfig,
+      )
+    : undefined;
+  const textInputNode = textInput?.box
+    ? translateRenderableNode(textInput, {
+        x: screen.x + horizontalPadding - textInput.box.x,
+        y: keyboardTop - textInput.box.height - textInput.box.y,
+      })
+    : textInput;
+  const bubbleBottom = textInputNode?.box?.y ?? keyboardTop;
+  const bubbleY = y + verticalPadding;
+  const bubbleHeight = Math.max(1, bubbleBottom - bubbleY);
+  const bubbleBox = {
+    x: screen.x + horizontalPadding,
+    y: bubbleY,
+    width: innerWidth,
+    height: bubbleHeight,
+  };
+  const bubble = message.bubbleVisible
+    ? componentNode(
+        previewPayloadInBox(payload, bubbleBox),
+        componentBaseConfigs,
+        "bubble",
+        message.bubbleSlot,
+        {
+          ...message.bubbleInputs,
+          sampleText: message.text,
+          maxWidth: 100,
+          size: `${innerWidthDesign}|${bubbleHeight / scale}`,
+          writeOnTrigger: message.bubbleWriteOnTrigger,
+          writeOnFrame: message.writeOnFrame,
+          writeOnDurationFrames: message.writeOnDurationFrames,
+        },
+      )
+    : undefined;
+  const children: RenderableNode[] = [];
+  if (bubble) children.push(bubble);
+  if (textInputNode) children.push(withZIndex(textInputNode, 10));
+  if (keyboardNode) children.push(withZIndex(keyboardNode, 20));
+  if (message.showSeparator) {
+    children.push({
+      id: "module.core.socialPost.message.separator",
+      type: "surface",
+      frame: 0,
+      box: {
+        x: screen.x,
+        y: separatorY,
+        width: screen.width,
+        height: separatorHeight,
+      },
+      style: { background: selectedColor(payload, "theme.colors.divider") },
+    });
+  }
+  return {
+    id: "module.core.socialPost.message",
+    type: "group",
+    frame: 0,
+    box: {
+      x: screen.x,
+      y,
+      width: screen.width,
+      height: Math.max(0, bottom - y),
+    },
     style: { overflow: "hidden" },
     children,
   };
@@ -319,11 +457,12 @@ function componentNode(
   componentType: string,
   slot: SocialPostComponentSlot,
   inputs: Record<string, unknown>,
+  resolvedConfig?: Record<string, unknown>,
 ) {
   return componentClassToRenderable({
     ...payload,
     componentType,
-    configJson: JSON.stringify(embeddedComponentConfig(
+    configJson: JSON.stringify(resolvedConfig ?? embeddedComponentConfig(
       componentBaseConfigs,
       slot,
       componentType,

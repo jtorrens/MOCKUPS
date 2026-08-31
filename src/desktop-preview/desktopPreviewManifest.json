@@ -415,6 +415,9 @@
         "button",
         "label",
         "media",
+        "bubble",
+        "textInputBar",
+        "keyboard",
         "status_bar",
         "navigation_bar"
       ]

@@ -60,13 +60,20 @@ export function bubbleComponentToRenderable(
   const scale = renderScale(payload);
   const paddingX = Math.max(0, numberToken(payload, bubble.padding.xToken) * scale);
   const paddingY = Math.max(0, numberToken(payload, bubble.padding.yToken) * scale);
+  const fixed = bubble.dimensionMode === "fixed";
+  const fixedWidth = Math.max(1, bubble.size.width * scale);
+  const fixedHeight = Math.max(1, bubble.size.height * scale);
   let textBoxForContent: typeof bubble.textBox = {
     ...bubble.textBox,
-    dimensionMode: "content" as const,
+    dimensionMode: fixed ? "fixed" as const : "content" as const,
     overflowMode: "clip" as const,
     size: {
-      width: Math.max(1, bubble.maxWidth - (paddingX * 2) / scale),
-      height: 1,
+      width: fixed
+        ? Math.max(1, bubble.size.width - (paddingX * 2) / scale)
+        : Math.max(1, bubble.maxWidth - (paddingX * 2) / scale),
+      height: fixed
+        ? Math.max(1, bubble.size.height - (paddingY * 2) / scale)
+        : 1,
     },
   };
   const statusSize = measureBubbleStatus(payload, bubble);
@@ -81,7 +88,7 @@ export function bubbleComponentToRenderable(
     : undefined;
   const statusGap = Math.max(0, numberToken(payload, bubble.status.gapToken) * scale);
   let measuredTextBox = measureTextBoxComponent(payload, textBoxForContent);
-  if (mediaSize
+  if (!fixed && mediaSize
       && (bubble.mediaSlot.position === "top" || bubble.mediaSlot.position === "bottom")
       && mediaSize.width > measuredTextBox.width) {
     textBoxForContent = {
@@ -123,8 +130,12 @@ export function bubbleComponentToRenderable(
   const baseSurfaceBox = {
     x: 0,
     y: 0,
-    width: baseContentLayout.width + basePadding.left + basePadding.right,
-    height: baseContentLayout.height + basePadding.top + basePadding.bottom,
+    width: fixed
+      ? fixedWidth
+      : baseContentLayout.width + basePadding.left + basePadding.right,
+    height: fixed
+      ? fixedHeight
+      : baseContentLayout.height + basePadding.top + basePadding.bottom,
   };
   const actorLabelPlacement = scalePlacement(bubble.actorLabelSlot.placement, scale);
   const avatarPlacement = scalePlacement(bubble.avatarSlot.placement, scale);
@@ -195,8 +206,12 @@ export function bubbleComponentToRenderable(
   const localSurfaceBox = {
     x: 0,
     y: 0,
-    width: contentLayout.width + contentPadding.left + contentPadding.right,
-    height: contentLayout.height + contentPadding.top + contentPadding.bottom,
+    width: fixed
+      ? fixedWidth
+      : contentLayout.width + contentPadding.left + contentPadding.right,
+    height: fixed
+      ? fixedHeight
+      : contentLayout.height + contentPadding.top + contentPadding.bottom,
   };
   const localLabelBox = bubble.actorLabelSlot.label
     ? placeChild(

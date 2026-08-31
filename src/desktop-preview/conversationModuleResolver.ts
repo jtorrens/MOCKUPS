@@ -35,11 +35,7 @@ import {
   resolveMotionFrame,
 } from "./previewMotionHelpers.js";
 import type { ComponentMotionContract } from "./previewComponentContracts.js";
-import { embeddedComponentConfig } from "./componentPreviewDefaults.js";
-import {
-  applyRuntimeInputForwarding,
-  forwardedRuntimeInputPatch,
-} from "./runtimeInputForwarding.js";
+import { resolvedTextInputBarRuntimeConfig } from "./textInputBarRuntimeConfig.js";
 import { renderScale } from "./previewGeometryHelpers.js";
 import { resolvedRuntimeRecordReference } from "./runtimeRecordReferenceCatalog.js";
 import {
@@ -843,25 +839,12 @@ function resolvedTextInputConfig(
     "textInputBarSlot",
     "module.core.chat.textInputBarSlot",
   );
-  const config = embeddedComponentConfig(
+  return resolvedTextInputBarRuntimeConfig(
+    payload,
     componentBaseConfigs,
     slot,
-    "textInputBar",
+    text,
+    payload.previewFrame.screenWidth / renderScale(payload),
     "module.core.chat.textInputBarSlot",
   );
-  const resolved = applyRuntimeInputForwarding({
-    ...payload,
-    kind: "componentClass",
-    componentType: "textInputBar",
-    configJson: JSON.stringify(config),
-    designPreviewJson: JSON.stringify({
-      ...forwardedRuntimeInputPatch(
-        config,
-        "forwarded.component.textInputBar.textBox.inputs.sampleText",
-        text,
-      ),
-      availableWidth: payload.previewFrame.screenWidth / renderScale(payload),
-    }),
-  });
-  return parseObject(resolved.configJson);
 }
