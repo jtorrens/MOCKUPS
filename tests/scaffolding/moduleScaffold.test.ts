@@ -354,6 +354,7 @@ function validSpec(): ModuleScaffoldSpec {
         runtimeInputComponentVariantFieldId: "",
         runtimeCollectionComponentVariantFieldId: "",
         componentInputBindings: null,
+        structuredCollection: null,
         imagePreview: null,
         recordReference: null,
         motionTiming: null,

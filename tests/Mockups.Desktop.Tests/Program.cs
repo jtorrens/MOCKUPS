@@ -274,8 +274,8 @@ var tests = new (string Name, Action Run)[]
     ("Forward actions use one compact right-pointing presentation", ForwardActionsUseSharedPresentation),
     ("Label subtext placement uses the current explicit alignment contract", LabelSubtextPlacementUsesCurrentContract),
     ("Password composes stateful atoms and BehaviorTiming", PasswordSeedOpensAndRenders),
-    ("Social Post composes four zones with optional chrome and composer", SocialPostComposesFourZones),
-    ("Social Post editor keeps child Runtime contracts internal", SocialPostEditorKeepsChildRuntimeInternal),
+    ("Social Post composes two structure-projected header rows", SocialPostComposesHeaderRows),
+    ("Social Post editor exposes its current generic header contract", SocialPostEditorExposesCurrentHeaderContract),
     ("Lock Screen composes its runtime Stack and optional system bars", LockScreenComposesRuntimeStack),
     ("forwarded child inputs become effective parent runtime inputs", ForwardedChildInputsBecomeParentRuntimeInputs),
     ("forwarded runtime collections expose slot state actions", ForwardedRuntimeCollectionsExposeSlotStateActions),
@@ -9538,7 +9538,7 @@ static void ModuleConfigsUseOwnerContracts()
         MutateModuleAndDefaultVariant(
             connection,
             "module_project_foqn_s2_social_post",
-            (config) => config["socialPost"]!.AsObject().Remove("headerPrimaryInputs"));
+            (config) => config["socialPost"]!.AsObject().Remove("rows"));
     });
 
     var source = ParityDatabasePath();
@@ -16982,7 +16982,7 @@ var isolatedUiTests = new HashSet<string>(StringComparer.Ordinal)
     "pinned Module Variant Preview survives changing editor selection",
     "pinned Production Preview keeps its active Screen while editing Design",
     "Chat List Module exposes its fixed List boundary and exact Runtime in the real editor",
-    "Social Post editor keeps child Runtime contracts internal",
+    "Social Post editor exposes its current generic header contract",
 };
 var exhaustiveTests = new HashSet<string>(StringComparer.Ordinal)
 {
@@ -20873,7 +20873,7 @@ static void PasswordSeedOpensAndRenders()
     }
 }
 
-static void SocialPostComposesFourZones()
+static void SocialPostComposesHeaderRows()
 {
     var database = new SqliteProjectTestContext(ParityDatabasePath());
     var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
@@ -20902,40 +20902,31 @@ static void SocialPostComposesFourZones()
     var settings = database.GetModuleSettings(module.Id);
     var config = JsonPath.ParseRequiredObject(settings.ConfigJson, "Social Post config");
     var socialPost = JsonPath.RequiredObject(config, "socialPost", "Social Post config");
-    foreach (var key in new[]
+    ComponentVariantSlotDocumentContract.Validate(
+        JsonPath.RequiredObject(socialPost, "headerSurfaceSlot", "Social Post config"),
+        "Social Post config.headerSurfaceSlot");
+    var rows = JsonPath.RequiredArray(socialPost, "rows", "Social Post config")
+        .OfType<JsonObject>()
+        .ToList();
+    Equal(2, rows.Count);
+    SequenceEqual(["row1", "row2"], rows.Select((row) => row["id"]?.GetValue<string>() ?? "").ToList());
+    foreach (var row in rows)
     {
-        "stackSlot",
-        "headerStackSlot",
-        "headerPrimarySlot",
-        "headerSecondaryIconRowSlot",
-        "mediaSlot",
-        "bubbleSlot",
-        "footerIconBarSlot",
-        "textInputBarSlot",
-        "keyboardSlot",
-    })
-    {
-        ComponentVariantSlotDocumentContract.Validate(
-            JsonPath.RequiredObject(socialPost, key, "Social Post config"),
-            $"Social Post config.{key}");
+        foreach (var slot in Enumerable.Range(1, 5))
+        {
+            foreach (var suffix in new[] { "AvatarSlot", "IconSlot", "LabelSlot" })
+            {
+                var key = $"slot{slot}{suffix}";
+                ComponentVariantSlotDocumentContract.Validate(
+                    JsonPath.RequiredObject(row, key, "Social Post row config"),
+                    $"Social Post row config.{key}");
+            }
+        }
     }
     True(JsonPath.RequiredBoolean(socialPost, "useAppWallpaper", "Social Post config"));
+    True(JsonPath.RequiredBoolean(socialPost, "showHeader", "Social Post config"));
     True(JsonPath.RequiredBoolean(socialPost, "showStatusBar", "Social Post config"));
     True(JsonPath.RequiredBoolean(socialPost, "showNavigationBar", "Social Post config"));
-    True(!JsonPath.RequiredBoolean(socialPost, "showTextInputBar", "Social Post config"));
-    True(!JsonPath.RequiredBoolean(socialPost, "showKeyboard", "Social Post config"));
-    var headerPrimaryInputs = JsonPath.RequiredObject(
-        socialPost,
-        "headerPrimaryInputs",
-        "Social Post primary header inputs");
-    JsonPath.RequiredArray(
-        headerPrimaryInputs,
-        "avatarContent",
-        "Social Post primary header inputs");
-    JsonPath.RequiredObject(
-        socialPost,
-        "headerSecondaryIconRowInputs",
-        "Social Post secondary header inputs");
     var fields = EditorLayouts(database).LoadEditorLayout("module.core.socialPost").Cards
         .SelectMany((card) => card.VisibleGroups)
         .SelectMany((group) => group.VisibleFields)
@@ -20943,15 +20934,12 @@ static void SocialPostComposesFourZones()
         .ToHashSet(StringComparer.Ordinal);
     foreach (var fieldId in new[]
     {
-        "module.core.socialPost.stack",
-        "module.core.socialPost.headerStack",
-        "module.core.socialPost.headerPrimary",
-        "module.core.socialPost.headerSecondaryIconRow",
-        "module.core.socialPost.media",
-        "module.core.socialPost.bubble",
-        "module.core.socialPost.footerIconBar",
-        "module.core.socialPost.textInputBar",
-        "module.core.socialPost.keyboard",
+        "module.core.socialPost.useAppWallpaper",
+        "module.core.socialPost.showHeader",
+        "module.core.socialPost.headerHeight",
+        "module.core.socialPost.headerSurface",
+        "module.core.socialPost.rowGapToken",
+        "module.core.socialPost.rows",
         "module.core.socialPost.showStatusBar",
         "module.core.socialPost.showNavigationBar",
     })
@@ -20959,14 +20947,18 @@ static void SocialPostComposesFourZones()
         True(fields.Contains(fieldId));
     }
     var preview = DesignPreviewTestValues.Parse(settings.DesignPreviewJson);
-    True(!string.IsNullOrWhiteSpace(preview["actorId"]?.GetValue<string>() ?? ""));
     var inputs = RuntimeInputDefinitionReader.ReadInputs(preview, config);
-    True(inputs.Any((input) => input.Id == "actor"));
-    True(inputs.Any((input) => input.Id == "caption"));
-    True(inputs.Any((input) => input.Id == "mediaSource"));
-    True(JsonPath.RequiredArray(preview, "inputs", "Social Post Runtime")
-        .OfType<JsonObject>()
-        .All((input) => input["id"]?.GetValue<string>() != "writeOnTrigger"));
+    Equal(0, inputs.Count);
+    var collection = RuntimeInputDefinitionReader.ReadCollections(preview, config).Single();
+    Equal("socialPostRows", collection.Id);
+    Equal("socialPostRows", collection.JsonKey);
+    var runtimeRows = JsonPath.RequiredArray(preview, "socialPostRows", "Social Post Runtime");
+    Equal(2, runtimeRows.Count);
+    SequenceEqual(
+        ["row1", "row2"],
+        runtimeRows.OfType<JsonObject>()
+            .Select((row) => row["id"]?.GetValue<string>() ?? "")
+            .ToList());
 
     var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
     var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
@@ -20984,13 +20976,18 @@ static void SocialPostComposesFourZones()
         false,
         resolved).GetAwaiter().GetResult();
     True(!html.Contains("preview-error", StringComparison.Ordinal));
-    foreach (var renderableId in new[] { "header", "media", "message", "actions" })
+    foreach (var renderableId in new[]
+    {
+        "module.core.socialPost.header",
+        "module.core.socialPost.header.row1",
+        "module.core.socialPost.header.row2",
+    })
     {
         True(html.Contains($"data-renderable-id=\"{renderableId}\"", StringComparison.Ordinal));
     }
 }
 
-static void SocialPostEditorKeepsChildRuntimeInternal()
+static void SocialPostEditorExposesCurrentHeaderContract()
 {
     var source = ParityDatabasePath();
     var temporary = Path.Combine(
@@ -21057,7 +21054,7 @@ static void SocialPostEditorKeepsChildRuntimeInternal()
                             selected.Id,
                             StringComparison.Ordinal)
                         && activeFields.ControlsByFieldId.ContainsKey(
-                            "module.core.socialPost.stack");
+                            "module.core.socialPost.headerSurface");
                 },
                 TimeSpan.FromSeconds(10)),
                 "Social Post editor did not prepare its clean Module fields. "

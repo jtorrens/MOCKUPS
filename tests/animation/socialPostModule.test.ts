@@ -34,8 +34,8 @@ function fixture() {
     assert.ok(defaultVariant);
     const runtime = JSON.parse(module.design_preview_json) as Record<string, unknown>;
     const avatarRuntime = JSON.parse(avatar.designPreviewJson) as Record<string, unknown>;
-    runtime.actorId = "actor_alex";
-    runtime.actor = avatarRuntime.actor;
+    const runtimeRows = runtime.socialPostRows as Array<Record<string, unknown>>;
+    runtimeRows[0]!.slot1Actor = avatarRuntime.actor;
     return {
       ...bubble,
       kind: "module" as const,
@@ -67,7 +67,7 @@ function fixture() {
   }
 }
 
-test("Social Post owns semantic Test Values without exposing a child Runtime contract", () => {
+test("Social Post owns two structure-projected Runtime rows", () => {
   const source = fixture();
   const contract = resolveSocialPostModule(source);
   const runtime = JSON.parse(source.runtimeContractJson) as {
@@ -77,68 +77,55 @@ test("Social Post owns semantic Test Values without exposing a child Runtime con
   const config = JSON.parse(source.configJson) as {
     socialPost: Record<string, unknown>;
   };
-  assert.equal(contract.bubbleSlot.variantReference,
-    "component_project_foqn_s2_bubble::variant::default");
   assert.equal(Object.hasOwn(config.socialPost, "runtimeContract"), false);
   assert.equal(Object.hasOwn(config.socialPost, "forwarding"), false);
-  assert.ok(runtime.inputs.some(({ id }) => id === "caption"));
-  assert.ok(runtime.inputs.some(({ id }) => id === "actor"));
-  assert.deepEqual(runtime.collections, []);
-  assert.equal(contract.bubbleInputs.sampleText,
-    (JSON.parse(source.designPreviewJson) as Record<string, unknown>).sampleText);
-  assert.equal(contract.bubbleInputs.mediaType, "none");
-  assert.equal(contract.mediaInputs.mediaType, "image");
+  assert.deepEqual(runtime.inputs, []);
+  assert.deepEqual(runtime.collections.map(({ id }) => id), ["socialPostRows"]);
+  assert.deepEqual(contract.rows.map(({ id }) => id), ["row1", "row2"]);
+  assert.equal(contract.rows[0].slots[0].kind, "avatar");
+  assert.equal(contract.rows[0].slots[0].inputs.actorId, "actor_alex");
+  assert.equal(contract.rows[0].slots[0].inputs.sampleText, "Alex Q");
+  assert.equal(contract.rows[1].slots[0].kind, "label");
+  assert.equal(contract.rows[1].slots[0].inputs.sampleText, "#FOQN");
 });
 
-test("Social Post renders one four-zone Component Stack", () => {
+test("Social Post renders its two header rows against one Surface", () => {
   const node = socialPostModuleToRenderable(fixture());
-  const stack = requiredNode(node, "componentStack");
-  const header = requiredNode(node, "header");
-  const media = requiredNode(node, "media");
-  const message = requiredNode(node, "message");
-  const actions = requiredNode(node, "actions");
+  const header = requiredNode(node, "module.core.socialPost.header");
+  const row1 = requiredNode(node, "module.core.socialPost.header.row1");
+  const row2 = requiredNode(node, "module.core.socialPost.header.row2");
+  const separator = requiredNode(node, "module.core.socialPost.header.row2.separator");
   assert.equal(node.id, "module.core.socialPost");
   assert.deepEqual(node.box, { x: 0, y: 0, width: 360, height: 720 });
-  assert.ok(stack.box);
   assert.ok(header.box);
-  assert.ok(media.box);
-  assert.ok(message.box);
-  assert.ok(actions.box);
-  assert.equal(header.box.y, stack.box.y);
-  assert.equal(media.box.y - (header.box.y + header.box.height), 4);
-  assert.equal(message.box.y - (media.box.y + media.box.height), 4);
-  assert.equal(actions.box.y - (message.box.y + message.box.height), 4);
-  assert.equal(actions.box.y + actions.box.height, stack.box.y + stack.box.height);
-  assert.ok(findNode(header, "collectionStack"));
-  assert.ok(findNode(media, "media"));
-  assert.ok(findNode(message, "component.bubble"));
-  assert.ok(findNode(actions, "component.iconBar"));
+  assert.ok(row1.box);
+  assert.ok(row2.box);
+  assert.ok(separator.box);
+  assert.equal(header.box.height, 130);
+  assert.equal(row2.box.y, row1.box.y + row1.box.height + 4);
+  assert.equal(separator.box.y + separator.box.height, row2.box.y + row2.box.height);
+  assert.ok(findNode(header, "component.avatar"));
+  assert.ok(findNode(header, "component.label"));
+  assert.equal(header.children?.[0]?.type, "surface");
 });
 
-test("Social Post independently hides system chrome and reveals the composer", () => {
+test("Social Post independently hides system chrome and its header", () => {
   const source = fixture();
   const config = JSON.parse(source.configJson) as {
     socialPost: {
       showStatusBar: boolean;
       showNavigationBar: boolean;
-      showTextInputBar: boolean;
-      showKeyboard: boolean;
+      showHeader: boolean;
     };
   };
   config.socialPost.showStatusBar = false;
   config.socialPost.showNavigationBar = false;
-  config.socialPost.showTextInputBar = true;
-  config.socialPost.showKeyboard = true;
+  config.socialPost.showHeader = false;
   source.configJson = JSON.stringify(config);
-  const runtime = JSON.parse(source.designPreviewJson) as Record<string, unknown>;
-  runtime.textInputVisible = true;
-  runtime.keyboardVisible = true;
-  source.designPreviewJson = JSON.stringify(runtime);
   const node = socialPostModuleToRenderable(source);
   assert.equal(findNode(node, "status_bar"), undefined);
   assert.equal(findNode(node, "navigation_bar"), undefined);
-  assert.ok(findNode(node, "component.textInputBar"));
-  assert.ok(findNode(node, "component.keyboard"));
+  assert.equal(findNode(node, "module.core.socialPost.header"), undefined);
 });
 
 test("Social Post selects App wallpaper or Theme background from one toggle", () => {
@@ -174,26 +161,27 @@ test("Social Post selects App wallpaper or Theme background from one toggle", ()
   );
 });
 
-test("Social Post rejects a wrong Bubble boundary and a missing owned Actor", () => {
+test("Social Post rejects a wrong Surface boundary and a missing row Actor", () => {
   const wrongBoundary = fixture();
   const wrongConfig = JSON.parse(wrongBoundary.configJson) as {
-    socialPost: { bubbleSlot: { variantReference: string } };
+    socialPost: { headerSurfaceSlot: { variantReference: string } };
   };
-  wrongConfig.socialPost.bubbleSlot.variantReference =
+  wrongConfig.socialPost.headerSurfaceSlot.variantReference =
     "component_project_foqn_s2_media::variant::default";
   wrongBoundary.configJson = JSON.stringify(wrongConfig);
   assert.throws(
     () => resolveSocialPostModule(wrongBoundary),
-    /bubbleSlot.*must resolve to Component 'bubble'/,
+    /headerSurfaceSlot.*must resolve to Component 'surface'/,
   );
 
   const missingActor = fixture();
   const runtime = JSON.parse(missingActor.designPreviewJson) as Record<string, unknown>;
-  delete runtime.actor;
+  const runtimeRows = runtime.socialPostRows as Array<Record<string, unknown>>;
+  delete runtimeRows[0]!.slot1Actor;
   missingActor.designPreviewJson = JSON.stringify(runtime);
   assert.throws(
     () => resolveSocialPostModule(missingActor),
-    /module\.core\.socialPost\.actor/,
+    /module\.core\.socialPost\.row1\.slot1Actor/,
   );
 });
 
