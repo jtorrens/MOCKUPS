@@ -414,6 +414,7 @@
         "avatar",
         "button",
         "label",
+        "media",
         "status_bar",
         "navigation_bar"
       ]

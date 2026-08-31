@@ -3,6 +3,7 @@ import { embeddedComponentConfig } from "./componentPreviewDefaults.js";
 import { componentClassToRenderable } from "./componentRenderableBoundary.js";
 import {
   numberToken,
+  previewPayloadInBox,
   previewScreenBox,
   selectedColor,
 } from "./componentRenderableCommon.js";
@@ -55,11 +56,18 @@ export function socialPostModuleToRenderable(
   const header = contract.showHeader
     ? headerNode(payload, componentBaseConfigs, contract, contentY)
     : undefined;
+  const media = mediaSectionNode(
+    payload,
+    componentBaseConfigs,
+    contract,
+    header?.box ? header.box.y + header.box.height : contentY,
+  );
   const backgroundNode = contract.useAppWallpaper
     ? wallpaperRenderable(payload, screen) ?? background(payload)
     : background(payload);
   const children: RenderableNode[] = [backgroundNode];
   if (header) children.push(header);
+  children.push(media);
   if (status) children.push(withZIndex(status, 20));
   if (navigation) children.push(withZIndex(navigation, 30));
   return {
@@ -68,6 +76,66 @@ export function socialPostModuleToRenderable(
     frame: 0,
     box: screen,
     style: { overflow: "hidden" },
+    children,
+  };
+}
+
+function mediaSectionNode(
+  payload: DesignPreviewPayload,
+  componentBaseConfigs: Record<string, unknown>,
+  contract: SocialPostModuleContract,
+  y: number,
+): RenderableNode {
+  const screen = previewScreenBox(payload);
+  const scale = renderScale(payload);
+  const [horizontalPadding, verticalPadding] = spacingPair(payload, contract.mediaPadding);
+  const mediaHeight = contract.mediaHeight * scale;
+  const mediaBox = {
+    x: screen.x + horizontalPadding,
+    y: y + verticalPadding,
+    width: Math.max(1, screen.width - horizontalPadding * 2),
+    height: mediaHeight,
+  };
+  const mediaInputs = {
+    ...contract.mediaInputs,
+    mediaSource: contract.mediaSource,
+    viewportSize: `${mediaBox.width / scale}|${contract.mediaHeight}`,
+  };
+  const media = componentNode(
+    previewPayloadInBox(payload, mediaBox),
+    componentBaseConfigs,
+    "media",
+    contract.mediaSlot,
+    mediaInputs,
+  );
+  const separatorHeight = contract.showMediaSeparator ? Math.max(1, scale) : 0;
+  const separatorY = mediaBox.y + mediaBox.height + verticalPadding;
+  const children: RenderableNode[] = [media];
+  if (contract.showMediaSeparator) {
+    children.push({
+      id: "module.core.socialPost.media.separator",
+      type: "surface",
+      frame: 0,
+      box: {
+        x: screen.x,
+        y: separatorY,
+        width: screen.width,
+        height: separatorHeight,
+      },
+      style: { background: selectedColor(payload, "theme.colors.divider") },
+    });
+  }
+  return {
+    id: "module.core.socialPost.media",
+    type: "group",
+    frame: 0,
+    box: {
+      x: screen.x,
+      y,
+      width: screen.width,
+      height: verticalPadding + mediaBox.height + verticalPadding + separatorHeight,
+    },
+    style: { overflow: "visible" },
     children,
   };
 }

@@ -27,6 +27,10 @@ internal static class SocialPostModuleConfigContract
                 "headerSurfaceSlot",
                 "rowGapToken",
                 "rows",
+                "mediaSlot",
+                "mediaPadding",
+                "mediaInputs",
+                "showMediaSeparator",
             ],
             owner);
 
@@ -36,6 +40,7 @@ internal static class SocialPostModuleConfigContract
             "showHeader",
             "showStatusBar",
             "showNavigationBar",
+            "showMediaSeparator",
         })
         {
             JsonPath.RequiredBoolean(socialPost, key, owner);
@@ -48,6 +53,11 @@ internal static class SocialPostModuleConfigContract
         }
         ValidateSlot(socialPost, "headerSurfaceSlot", owner);
         JsonPath.RequiredString(socialPost, "rowGapToken", owner);
+        ValidateSlot(socialPost, "mediaSlot", owner);
+        JsonPath.RequiredString(socialPost, "mediaPadding", owner);
+        ValidateMediaInputs(
+            JsonPath.RequiredObject(socialPost, "mediaInputs", owner),
+            $"{owner}.mediaInputs");
 
         var rows = JsonPath.RequiredArray(socialPost, "rows", owner);
         if (rows.Count != 2)
@@ -102,6 +112,43 @@ internal static class SocialPostModuleConfigContract
                 ValidateSlot(row, $"{prefix}LabelSlot", owner);
             }
         }
+    }
+
+    private static void ValidateMediaInputs(JsonObject inputs, string owner)
+    {
+        RequireExactKeys(
+            inputs,
+            [
+                "mediaType",
+                "mediaScale",
+                "mediaOffset",
+                "isPlaying",
+                "currentTimeSeconds",
+                "durationSeconds",
+                "isFullScreen",
+                "fullScreenTransition",
+                "fullframeOrientation",
+                "controlsElapsedMs",
+                "motionElapsedMs",
+            ],
+            owner);
+        RequireOneOf(
+            JsonPath.RequiredString(inputs, "mediaType", owner),
+            ["image", "video"],
+            $"{owner}.mediaType");
+        JsonPath.RequiredNumber(inputs, "mediaScale", owner);
+        JsonPath.RequiredString(inputs, "mediaOffset", owner);
+        JsonPath.RequiredBoolean(inputs, "isPlaying", owner);
+        JsonPath.RequiredNumber(inputs, "currentTimeSeconds", owner);
+        JsonPath.RequiredNumber(inputs, "durationSeconds", owner);
+        JsonPath.RequiredBoolean(inputs, "isFullScreen", owner);
+        JsonPath.RequiredBoolean(inputs, "fullScreenTransition", owner);
+        RequireOneOf(
+            JsonPath.RequiredString(inputs, "fullframeOrientation", owner),
+            ["portrait", "landscape"],
+            $"{owner}.fullframeOrientation");
+        JsonPath.RequiredNumber(inputs, "controlsElapsedMs", owner);
+        JsonPath.RequiredNumber(inputs, "motionElapsedMs", owner);
     }
 
     private static void ValidateSlot(JsonObject owner, string key, string context) =>

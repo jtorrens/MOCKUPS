@@ -10,9 +10,9 @@
     "sortOrder": 2
   },
   "intent": {
-    "responsibility": "Own the Social Post header as two fixed five-slot rows.",
-    "visualBoundary": "Render a Surface with a configurable minimum header height, top bleed and two bottom-aligned intrinsic-height rows.",
-    "runtimeBehavior": "The Variant owns row identity, slot kind and child Variant; one generic Runtime Collection owns only actor, label and sublabel values per stable row item.",
+    "responsibility": "Own the Social Post header and its following Media section.",
+    "visualBoundary": "Render a Surface-backed header followed by one padded Media boundary and an optional full-width separator.",
+    "runtimeBehavior": "The Variant owns header structure, Media Variant, Media padding and separator visibility; Runtime owns row content plus Media source and height.",
     "forwarding": "No child Runtime contract is exposed or forwarded.",
     "temporalOwnership": "The Screen owns header presence while child Components retain their local behavior.",
     "productionContext": "Resolve only through the exact Production Screen to Shot owner Actor to Theme and Device context."
@@ -27,6 +27,7 @@
       "avatar",
       "button",
       "label",
+      "media",
       "status_bar",
       "navigation_bar"
     ]
@@ -205,11 +206,60 @@
           }
         }
       ],
-      "headerHeight": 120
+      "headerHeight": 120,
+      "mediaSlot": {
+        "variantReference": "component_project_foqn_s2_media::variant::media_video_copy",
+        "overrides": {}
+      },
+      "mediaPadding": "theme.spacing.s|theme.spacing.s",
+      "mediaInputs": {
+        "mediaType": "image",
+        "mediaScale": 1,
+        "mediaOffset": "0|0",
+        "isPlaying": false,
+        "currentTimeSeconds": 0,
+        "durationSeconds": 0,
+        "isFullScreen": false,
+        "fullScreenTransition": false,
+        "fullframeOrientation": "portrait",
+        "controlsElapsedMs": 0,
+        "motionElapsedMs": 0
+      },
+      "showMediaSeparator": true
     }
   },
   "designPreview": {
-    "inputs": [],
+    "inputs": [
+      {
+        "id": "mediaSource",
+        "label": "Source",
+        "jsonKey": "mediaSource",
+        "kind": "mediaFilePath",
+        "valueKind": "MediaFilePath",
+        "defaultValue": "media/image.14b3f25e7af16bda8755ce1c2c1efe6b.jpg",
+        "source": "runtime",
+        "uiOrigin": "self",
+        "uiGroupId": "media",
+        "uiGroupLabel": "Media",
+        "uiOrder": 10
+      },
+      {
+        "id": "mediaHeight",
+        "label": "Height",
+        "jsonKey": "mediaHeight",
+        "kind": "number",
+        "valueKind": "Integer",
+        "defaultValue": "180",
+        "minimum": 1,
+        "maximum": 4096,
+        "increment": 1,
+        "source": "runtime",
+        "uiOrigin": "self",
+        "uiGroupId": "media",
+        "uiGroupLabel": "Media",
+        "uiOrder": 20
+      }
+    ],
     "collections": [
       {
         "id": "socialPostRows",
@@ -612,6 +662,8 @@
         }
       }
     ],
+    "mediaSource": "media/image.14b3f25e7af16bda8755ce1c2c1efe6b.jpg",
+    "mediaHeight": 180,
     "socialPostRows": [
       {
         "id": "row1",
@@ -652,7 +704,7 @@
     ]
   },
   "metadata": {
-    "note": "Social Post currently defines only its two-row header phase."
+    "note": "Social Post defines its two-row header and one padded Media section."
   },
   "defaultVariant": {
     "id": "default",
@@ -821,7 +873,26 @@
             }
           }
         ],
-        "headerHeight": 120
+        "headerHeight": 120,
+        "mediaSlot": {
+          "variantReference": "component_project_foqn_s2_media::variant::media_video_copy",
+          "overrides": {}
+        },
+        "mediaPadding": "theme.spacing.s|theme.spacing.s",
+        "mediaInputs": {
+          "mediaType": "image",
+          "mediaScale": 1,
+          "mediaOffset": "0|0",
+          "isPlaying": false,
+          "currentTimeSeconds": 0,
+          "durationSeconds": 0,
+          "isFullScreen": false,
+          "fullScreenTransition": false,
+          "fullframeOrientation": "portrait",
+          "controlsElapsedMs": 0,
+          "motionElapsedMs": 0
+        },
+        "showMediaSeparator": true
       }
     }
   },
@@ -1068,6 +1139,99 @@
           "localLabel": ""
         }
       ],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null,
+      "structuredCollection": null
+    },
+    {
+      "id": "module.core.socialPost.media",
+      "label": "Media",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "socialPost",
+        "mediaSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_media::variant::media_video_copy\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "media",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "media",
+        "label": "Media",
+        "recordClassId": "component.media"
+      },
+      "structuredCollection": null
+    },
+    {
+      "id": "module.core.socialPost.mediaPadding",
+      "label": "Padding",
+      "valueKind": "ThemeTokenPair",
+      "jsonPath": [
+        "socialPost",
+        "mediaPadding"
+      ],
+      "defaultValue": "theme.spacing.s|theme.spacing.s",
+      "isEditable": true,
+      "options": [
+        { "value": "theme.spacing.none", "label": "spacing.none", "colorHex": null, "isNeutral": false, "groupValue": "", "groupLabel": "", "localLabel": "" },
+        { "value": "theme.spacing.xs", "label": "spacing.xs", "colorHex": null, "isNeutral": false, "groupValue": "", "groupLabel": "", "localLabel": "" },
+        { "value": "theme.spacing.s", "label": "spacing.s", "colorHex": null, "isNeutral": false, "groupValue": "", "groupLabel": "", "localLabel": "" },
+        { "value": "theme.spacing.m", "label": "spacing.m", "colorHex": null, "isNeutral": false, "groupValue": "", "groupLabel": "", "localLabel": "" },
+        { "value": "theme.spacing.l", "label": "spacing.l", "colorHex": null, "isNeutral": false, "groupValue": "", "groupLabel": "", "localLabel": "" },
+        { "value": "theme.spacing.xl", "label": "spacing.xl", "colorHex": null, "isNeutral": false, "groupValue": "", "groupLabel": "", "localLabel": "" },
+        { "value": "theme.spacing.xxl", "label": "spacing.xxl", "colorHex": null, "isNeutral": false, "groupValue": "", "groupLabel": "", "localLabel": "" }
+      ],
+      "optionSource": "None",
+      "pairLabels": {
+        "first": "Horizontal",
+        "second": "Vertical"
+      },
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null,
+      "structuredCollection": null
+    },
+    {
+      "id": "module.core.socialPost.showMediaSeparator",
+      "label": "Show separator",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "socialPost",
+        "showMediaSeparator"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
       "optionSource": "None",
       "pairLabels": null,
       "number": null,
@@ -1648,11 +1812,46 @@
         ]
       },
       {
+        "id": "media",
+        "label": "Media",
+        "subtitle": "Source and runtime height",
+        "icon": "media",
+        "order": 30,
+        "visible": true,
+        "defaultOpen": true,
+        "groups": [
+          {
+            "id": "media",
+            "label": "Media",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "module.core.socialPost.media",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "module.core.socialPost.mediaPadding",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "module.core.socialPost.showMediaSeparator",
+                "order": 30,
+                "visible": true
+              }
+            ],
+            "presentation": "separatedSections"
+          }
+        ]
+      },
+      {
         "id": "status-bar",
         "label": "Status Bar",
         "subtitle": "Theme status component",
         "icon": "status",
-        "order": 30,
+        "order": 40,
         "visible": true,
         "defaultOpen": false,
         "groups": [
@@ -1676,7 +1875,7 @@
         "label": "Navigation Bar",
         "subtitle": "Theme navigation component",
         "icon": "navigation",
-        "order": 40,
+        "order": 50,
         "visible": true,
         "defaultOpen": false,
         "groups": [

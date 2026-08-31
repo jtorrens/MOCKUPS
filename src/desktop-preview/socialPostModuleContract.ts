@@ -32,4 +32,10 @@ export interface SocialPostModuleContract {
   headerSurfaceSlot: SocialPostComponentSlot;
   rowGapToken: string;
   rows: [SocialPostHeaderRow, SocialPostHeaderRow];
+  mediaSlot: SocialPostComponentSlot;
+  mediaPadding: string;
+  mediaInputs: Record<string, unknown>;
+  mediaSource: string;
+  mediaHeight: number;
+  showMediaSeparator: boolean;
 }

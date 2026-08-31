@@ -293,6 +293,20 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ["socialPost", "headerSurfaceSlot"],
             "surface",
             []),
+        ["module.core.socialPost.media"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.media",
+            ValueKind.ComponentVariantSlot,
+            ["socialPost", "mediaSlot"],
+            "media",
+            []),
+        ["module.core.socialPost.mediaPadding"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.mediaPadding",
+            ValueKind.ThemeTokenPair,
+            ["socialPost", "mediaPadding"],
+            "",
+            []),
         ["module.core.socialPost.rowGapToken"] = new(
             "module.core.socialPost",
             "module.core.socialPost.rowGapToken",
@@ -312,6 +326,13 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             "module.core.socialPost.showHeader",
             ValueKind.Boolean,
             ["socialPost", "showHeader"],
+            "",
+            []),
+        ["module.core.socialPost.showMediaSeparator"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.showMediaSeparator",
+            ValueKind.Boolean,
+            ["socialPost", "showMediaSeparator"],
             "",
             []),
         ["module.core.socialPost.showNavigationBar"] = new(

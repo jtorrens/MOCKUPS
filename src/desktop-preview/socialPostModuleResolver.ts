@@ -13,6 +13,7 @@ import {
   requiredBoolean,
   requiredComponentVariantSlot,
   requiredNumber,
+  requiredPossiblyEmptyString,
   requiredRecord,
   requiredString,
   stringValue,
@@ -66,6 +67,37 @@ export function resolveSocialPostModule(
       resolveRow(1, rows[0], runtimeRows[0], componentBaseConfigs),
       resolveRow(2, rows[1], runtimeRows[1], componentBaseConfigs),
     ],
+    mediaSlot: requiredTypedSlot(
+      socialPost,
+      componentBaseConfigs,
+      "mediaSlot",
+      "media",
+    ),
+    mediaPadding: requiredString(
+      socialPost,
+      "mediaPadding",
+      "module.core.socialPost.mediaPadding",
+    ),
+    mediaInputs: structuredClone(requiredRecord(
+      socialPost,
+      "mediaInputs",
+      "module.core.socialPost.mediaInputs",
+    )),
+    mediaSource: requiredPossiblyEmptyString(
+      preview,
+      "mediaSource",
+      "module.core.socialPost.mediaSource",
+    ),
+    mediaHeight: Math.max(1, requiredNumber(
+      preview,
+      "mediaHeight",
+      "module.core.socialPost.mediaHeight",
+    )),
+    showMediaSeparator: requiredBoolean(
+      socialPost,
+      "showMediaSeparator",
+      "module.core.socialPost.showMediaSeparator",
+    ),
   };
 }
 

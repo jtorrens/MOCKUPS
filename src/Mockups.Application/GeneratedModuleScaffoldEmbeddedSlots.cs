@@ -108,5 +108,11 @@ public static class GeneratedModuleScaffoldEmbeddedSlots
             "Header surface",
             "component.surface",
             ["socialPost", "headerSurfaceSlot"]),
+        new(
+            "module.core.socialPost.media",
+            "media",
+            "Media",
+            "component.media",
+            ["socialPost", "mediaSlot"]),
     ];
 }
