@@ -3,23 +3,23 @@ export interface SocialPostComponentSlot extends Record<string, unknown> {
   overrides: Record<string, unknown>;
 }
 
-export type SocialPostHeaderSlotKind = "none" | "avatar" | "icon" | "label";
+export type SocialPostRowSlotKind = "none" | "avatar" | "icon" | "label";
 export type SocialPostVerticalAlignment = "top" | "center" | "bottom";
 
-export interface SocialPostHeaderSlot {
+export interface SocialPostRowSlot {
   index: number;
-  kind: SocialPostHeaderSlotKind;
+  kind: SocialPostRowSlotKind;
   componentType?: "avatar" | "button" | "label";
   componentSlot?: SocialPostComponentSlot;
   inputs: Record<string, unknown>;
 }
 
-export interface SocialPostHeaderRow {
+export interface SocialPostRow {
   id: "row1" | "row2";
   padding: string;
   verticalAlignment: SocialPostVerticalAlignment;
   showSeparator: boolean;
-  slots: SocialPostHeaderSlot[];
+  slots: SocialPostRowSlot[];
 }
 
 export interface SocialPostMessageContract {
@@ -50,7 +50,7 @@ export interface SocialPostModuleContract {
   showNavigationBar: boolean;
   headerSurfaceSlot: SocialPostComponentSlot;
   rowGapToken: string;
-  rows: [SocialPostHeaderRow, SocialPostHeaderRow];
+  rows: [SocialPostRow, SocialPostRow];
   mediaSlot: SocialPostComponentSlot;
   mediaPadding: string;
   mediaInputs: Record<string, unknown>;
@@ -58,4 +58,8 @@ export interface SocialPostModuleContract {
   mediaHeight: number;
   showMediaSeparator: boolean;
   message: SocialPostMessageContract;
+  footerHeight: number;
+  footerSurfaceSlot: SocialPostComponentSlot;
+  footerRowGapToken: string;
+  footerRows: [SocialPostRow, SocialPostRow];
 }

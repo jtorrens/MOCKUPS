@@ -103,6 +103,12 @@ public static class GeneratedModuleScaffoldEmbeddedSlots
             "component.status_bar",
             ["lockScreen", "statusBarSlot"]),
         new(
+            "module.core.socialPost.footerSurface",
+            "surface",
+            "Header surface",
+            "component.surface",
+            ["socialPost", "footerSurfaceSlot"]),
+        new(
             "module.core.socialPost.headerSurface",
             "surface",
             "Header surface",

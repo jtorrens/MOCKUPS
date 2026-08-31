@@ -27,6 +27,10 @@ internal static class SocialPostModuleConfigContract
                 "headerSurfaceSlot",
                 "rowGapToken",
                 "rows",
+                "footerHeight",
+                "footerSurfaceSlot",
+                "footerRowGapToken",
+                "footerRows",
                 "mediaSlot",
                 "mediaPadding",
                 "mediaInputs",
@@ -60,6 +64,14 @@ internal static class SocialPostModuleConfigContract
         }
         ValidateSlot(socialPost, "headerSurfaceSlot", owner);
         JsonPath.RequiredString(socialPost, "rowGapToken", owner);
+        var footerHeight = JsonPath.RequiredNumber(socialPost, "footerHeight", owner);
+        if (footerHeight < 0)
+        {
+            throw new InvalidOperationException(
+                $"{owner}.footerHeight must be non-negative.");
+        }
+        ValidateSlot(socialPost, "footerSurfaceSlot", owner);
+        JsonPath.RequiredString(socialPost, "footerRowGapToken", owner);
         ValidateSlot(socialPost, "mediaSlot", owner);
         JsonPath.RequiredString(socialPost, "mediaPadding", owner);
         ValidateMediaInputs(
@@ -73,18 +85,24 @@ internal static class SocialPostModuleConfigContract
             JsonPath.RequiredObject(socialPost, "messageBubbleInputs", owner),
             $"{owner}.messageBubbleInputs");
 
-        var rows = JsonPath.RequiredArray(socialPost, "rows", owner);
+        ValidateRows(socialPost, "rows", owner);
+        ValidateRows(socialPost, "footerRows", owner);
+    }
+
+    private static void ValidateRows(JsonObject socialPost, string key, string owner)
+    {
+        var rows = JsonPath.RequiredArray(socialPost, key, owner);
         if (rows.Count != 2)
         {
             throw new InvalidOperationException(
-                $"{owner}.rows must contain exactly row1 and row2.");
+                $"{owner}.{key} must contain exactly row1 and row2.");
         }
         for (var rowIndex = 0; rowIndex < rows.Count; rowIndex++)
         {
             var rowId = $"row{rowIndex + 1}";
             var row = rows[rowIndex] as JsonObject
                 ?? throw new InvalidOperationException(
-                    $"{owner}.rows[{rowIndex}] must be an object.");
+                    $"{owner}.{key}[{rowIndex}] must be an object.");
             var rowKeys = new List<string>
             {
                 "id",
@@ -100,12 +118,12 @@ internal static class SocialPostModuleConfigContract
                 rowKeys.Add($"slot{slot}IconSlot");
                 rowKeys.Add($"slot{slot}LabelSlot");
             }
-            RequireExactKeys(row, rowKeys, $"{owner}.{rowId}");
+            RequireExactKeys(row, rowKeys, $"{owner}.{key}.{rowId}");
             if (!JsonPath.RequiredString(row, "id", owner)
                     .Equals(rowId, StringComparison.Ordinal))
             {
                 throw new InvalidOperationException(
-                    $"{owner}.rows[{rowIndex}] must have stable id '{rowId}'.");
+                    $"{owner}.{key}[{rowIndex}] must have stable id '{rowId}'.");
             }
             JsonPath.RequiredString(row, "label", owner);
             JsonPath.RequiredString(row, "padding", owner);

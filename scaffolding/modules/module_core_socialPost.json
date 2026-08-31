@@ -237,7 +237,21 @@
         "variantReference": "component_project_foqn_s2_bubble::variant::default_copy",
         "overrides": {
           "bubble": {
-            "dimensionMode": "fixed"
+            "dimensionMode": "fixed",
+            "outgoingBackground": "palette_project_foqn_s2_gray_100|palette_project_foqn_s2_gray_100",
+            "outgoingText": "palette_project_foqn_s2_gray_010|palette_project_foqn_s2_gray_010",
+            "surfaceSlot": {
+              "overrides": {
+                "style": {
+                  "borderWidth": 1
+                },
+                "surface": {
+                  "tail": {
+                    "enabled": false
+                  }
+                }
+              }
+            }
           }
         }
       },
@@ -274,7 +288,167 @@
         "statusText": "",
         "typingIndicator": false
       },
-      "showMessageSeparator": true
+      "showMessageSeparator": true,
+      "footerSurfaceSlot": {
+        "variantReference": "component_project_foqn_s2_surface::variant::default",
+        "overrides": {
+          "style": {
+            "cornerRadiusToken": "theme.radii.none"
+          }
+        }
+      },
+      "footerRowGapToken": "theme.spacing.s",
+      "footerRows": [
+        {
+          "id": "row1",
+          "label": "Row 1",
+          "padding": "theme.spacing.xl|theme.spacing.m",
+          "verticalAlignment": "center",
+          "showSeparator": false,
+          "slot1Kind": "avatar",
+          "slot1AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {
+              "avatar": {
+                "defaultSize": 50
+              }
+            }
+          },
+          "slot1IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot1LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          },
+          "slot2Kind": "label",
+          "slot2AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "slot2IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot2LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
+            "overrides": {}
+          },
+          "slot3Kind": "label",
+          "slot3AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "slot3IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot3LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
+            "overrides": {}
+          },
+          "slot4Kind": "label",
+          "slot4AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "slot4IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot4LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
+            "overrides": {}
+          },
+          "slot5Kind": "none",
+          "slot5AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "slot5IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot5LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          }
+        },
+        {
+          "id": "row2",
+          "label": "Row 2",
+          "padding": "theme.spacing.l|theme.spacing.s",
+          "verticalAlignment": "center",
+          "showSeparator": true,
+          "slot1Kind": "label",
+          "slot1AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "slot1IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot1LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          },
+          "slot2Kind": "label",
+          "slot2AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "slot2IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot2LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          },
+          "slot3Kind": "label",
+          "slot3AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "slot3IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot3LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          },
+          "slot4Kind": "none",
+          "slot4AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "slot4IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot4LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          },
+          "slot5Kind": "label",
+          "slot5AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "slot5IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot5LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          }
+        }
+      ],
+      "footerHeight": 130
     }
   },
   "designPreview": {
@@ -298,7 +472,7 @@
         "jsonKey": "mediaHeight",
         "kind": "number",
         "valueKind": "Integer",
-        "defaultValue": "180",
+        "defaultValue": "300",
         "minimum": 1,
         "maximum": 4096,
         "increment": 1,
@@ -329,11 +503,26 @@
         "valueKind": "BehaviorTiming",
         "defaultValue": "{\"mode\":\"fixed\",\"fixedFrames\":30,\"paceToken\":\"theme.motion.naturalPace.normal\"}",
         "options": [
-          { "value": "theme.motion.naturalPace.verySlow", "label": "Very slow" },
-          { "value": "theme.motion.naturalPace.slow", "label": "Slow" },
-          { "value": "theme.motion.naturalPace.normal", "label": "Normal" },
-          { "value": "theme.motion.naturalPace.fast", "label": "Fast" },
-          { "value": "theme.motion.naturalPace.veryFast", "label": "Very fast" }
+          {
+            "value": "theme.motion.naturalPace.verySlow",
+            "label": "Very slow"
+          },
+          {
+            "value": "theme.motion.naturalPace.slow",
+            "label": "Slow"
+          },
+          {
+            "value": "theme.motion.naturalPace.normal",
+            "label": "Normal"
+          },
+          {
+            "value": "theme.motion.naturalPace.fast",
+            "label": "Fast"
+          },
+          {
+            "value": "theme.motion.naturalPace.veryFast",
+            "label": "Very fast"
+          }
         ],
         "naturalTiming": {
           "sourceFieldId": "messageText",
@@ -352,7 +541,7 @@
         "jsonKey": "messageTextInputVisible",
         "kind": "boolean",
         "valueKind": "Boolean",
-        "defaultValue": "true",
+        "defaultValue": "false",
         "source": "runtime",
         "uiOrigin": "embedded",
         "uiGroupId": "messageComposer",
@@ -365,7 +554,7 @@
         "jsonKey": "messageKeyboardVisible",
         "kind": "boolean",
         "valueKind": "Boolean",
-        "defaultValue": "true",
+        "defaultValue": "false",
         "source": "runtime",
         "uiOrigin": "embedded",
         "uiGroupId": "messageComposer",
@@ -380,8 +569,14 @@
         "valueKind": "OptionToken",
         "defaultValue": "afterWriteOn",
         "options": [
-          { "value": "duringWriteOn", "label": "During write-on" },
-          { "value": "afterWriteOn", "label": "After write-on" }
+          {
+            "value": "duringWriteOn",
+            "label": "During write-on"
+          },
+          {
+            "value": "afterWriteOn",
+            "label": "After write-on"
+          }
         ],
         "source": "runtime",
         "uiOrigin": "embedded",
@@ -421,7 +616,7 @@
     "collections": [
       {
         "id": "socialPostRows",
-        "label": "Rows",
+        "label": "Header Rows",
         "jsonKey": "socialPostRows",
         "itemLabel": "Row",
         "storageCollectionJsonKey": "socialPostRows",
@@ -818,18 +1013,418 @@
             "slot5Kind": "slot5Kind"
           }
         }
+      },
+      {
+        "id": "socialPostFooterRows",
+        "label": "Footer Rows",
+        "jsonKey": "socialPostFooterRows",
+        "itemLabel": "Row",
+        "storageCollectionJsonKey": "socialPostFooterRows",
+        "fields": [
+          {
+            "id": "rowLabel",
+            "label": "Row",
+            "jsonKey": "label",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "source": "variant",
+            "showInEditor": false
+          },
+          {
+            "id": "slot1.kind",
+            "label": "Slot 1 content",
+            "jsonKey": "slot1Kind",
+            "kind": "option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ],
+            "source": "variant",
+            "showInEditor": false
+          },
+          {
+            "id": "slot1.actor",
+            "label": "Slot 1 actor",
+            "jsonKey": "slot1ActorId",
+            "kind": "recordReference",
+            "valueKind": "RecordReference",
+            "defaultValue": "actor_alex",
+            "tableId": "actors",
+            "resolvedJsonKey": "slot1Actor",
+            "enabledWhenItemJsonKey": "slot1Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ],
+            "uiOrder": 10
+          },
+          {
+            "id": "slot1.label",
+            "label": "Slot 1 label",
+            "jsonKey": "slot1Label",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot1Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 11
+          },
+          {
+            "id": "slot1.sublabel",
+            "label": "Slot 1 sublabel",
+            "jsonKey": "slot1Sublabel",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot1Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 12
+          },
+          {
+            "id": "slot2.kind",
+            "label": "Slot 2 content",
+            "jsonKey": "slot2Kind",
+            "kind": "option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ],
+            "source": "variant",
+            "showInEditor": false
+          },
+          {
+            "id": "slot2.actor",
+            "label": "Slot 2 actor",
+            "jsonKey": "slot2ActorId",
+            "kind": "recordReference",
+            "valueKind": "RecordReference",
+            "defaultValue": "actor_alex",
+            "tableId": "actors",
+            "resolvedJsonKey": "slot2Actor",
+            "enabledWhenItemJsonKey": "slot2Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ],
+            "uiOrder": 20
+          },
+          {
+            "id": "slot2.label",
+            "label": "Slot 2 label",
+            "jsonKey": "slot2Label",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot2Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 21
+          },
+          {
+            "id": "slot2.sublabel",
+            "label": "Slot 2 sublabel",
+            "jsonKey": "slot2Sublabel",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot2Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 22
+          },
+          {
+            "id": "slot3.kind",
+            "label": "Slot 3 content",
+            "jsonKey": "slot3Kind",
+            "kind": "option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ],
+            "source": "variant",
+            "showInEditor": false
+          },
+          {
+            "id": "slot3.actor",
+            "label": "Slot 3 actor",
+            "jsonKey": "slot3ActorId",
+            "kind": "recordReference",
+            "valueKind": "RecordReference",
+            "defaultValue": "actor_alex",
+            "tableId": "actors",
+            "resolvedJsonKey": "slot3Actor",
+            "enabledWhenItemJsonKey": "slot3Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ],
+            "uiOrder": 30
+          },
+          {
+            "id": "slot3.label",
+            "label": "Slot 3 label",
+            "jsonKey": "slot3Label",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot3Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 31
+          },
+          {
+            "id": "slot3.sublabel",
+            "label": "Slot 3 sublabel",
+            "jsonKey": "slot3Sublabel",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot3Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 32
+          },
+          {
+            "id": "slot4.kind",
+            "label": "Slot 4 content",
+            "jsonKey": "slot4Kind",
+            "kind": "option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ],
+            "source": "variant",
+            "showInEditor": false
+          },
+          {
+            "id": "slot4.actor",
+            "label": "Slot 4 actor",
+            "jsonKey": "slot4ActorId",
+            "kind": "recordReference",
+            "valueKind": "RecordReference",
+            "defaultValue": "actor_alex",
+            "tableId": "actors",
+            "resolvedJsonKey": "slot4Actor",
+            "enabledWhenItemJsonKey": "slot4Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ],
+            "uiOrder": 40
+          },
+          {
+            "id": "slot4.label",
+            "label": "Slot 4 label",
+            "jsonKey": "slot4Label",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot4Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 41
+          },
+          {
+            "id": "slot4.sublabel",
+            "label": "Slot 4 sublabel",
+            "jsonKey": "slot4Sublabel",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot4Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 42
+          },
+          {
+            "id": "slot5.kind",
+            "label": "Slot 5 content",
+            "jsonKey": "slot5Kind",
+            "kind": "option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ],
+            "source": "variant",
+            "showInEditor": false
+          },
+          {
+            "id": "slot5.actor",
+            "label": "Slot 5 actor",
+            "jsonKey": "slot5ActorId",
+            "kind": "recordReference",
+            "valueKind": "RecordReference",
+            "defaultValue": "actor_alex",
+            "tableId": "actors",
+            "resolvedJsonKey": "slot5Actor",
+            "enabledWhenItemJsonKey": "slot5Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ],
+            "uiOrder": 50
+          },
+          {
+            "id": "slot5.label",
+            "label": "Slot 5 label",
+            "jsonKey": "slot5Label",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot5Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 51
+          },
+          {
+            "id": "slot5.sublabel",
+            "label": "Slot 5 sublabel",
+            "jsonKey": "slot5Sublabel",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot5Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 52
+          }
+        ],
+        "itemPresentation": {
+          "titleFieldId": "rowLabel",
+          "firstItemBadge": "",
+          "subtitleFieldIds": [],
+          "subtitleMaxCharacters": 72,
+          "iconFieldId": "",
+          "fallbackIcon": "layout",
+          "iconValueMap": {}
+        },
+        "canEditStructure": false,
+        "fixedItemCount": 2,
+        "uiPresentation": "collection",
+        "itemRuntimePresentation": "card",
+        "structureProjection": {
+          "sourceConfigPath": "socialPost.footerRows",
+          "sourceIdJsonKey": "id",
+          "runtimeIdJsonKey": "id",
+          "fieldBindings": {
+            "label": "label",
+            "slot1Kind": "slot1Kind",
+            "slot2Kind": "slot2Kind",
+            "slot3Kind": "slot3Kind",
+            "slot4Kind": "slot4Kind",
+            "slot5Kind": "slot5Kind"
+          }
+        }
       }
     ],
     "mediaSource": "media/image.14b3f25e7af16bda8755ce1c2c1efe6b.jpg",
-    "mediaHeight": 180,
+    "mediaHeight": 300,
     "messageText": "Escribe aquí el mensaje de la publicación.",
     "messageWriteOnTiming": {
       "mode": "fixed",
       "fixedFrames": 30,
       "paceToken": "theme.motion.naturalPace.normal"
     },
-    "messageTextInputVisible": true,
-    "messageKeyboardVisible": true,
+    "messageTextInputVisible": false,
+    "messageKeyboardVisible": false,
     "messageBubbleRevealMode": "afterWriteOn",
     "messageWriteOnTrigger": false,
     "messageWriteOnFrame": 0,
@@ -846,6 +1441,44 @@
       }
     ],
     "socialPostRows": [
+      {
+        "id": "row1",
+        "slot1ActorId": "actor_alex",
+        "slot1Label": "Alex Q",
+        "slot1Sublabel": "@alexq · 2 min",
+        "slot2ActorId": "actor_alex",
+        "slot2Label": "250",
+        "slot2Sublabel": "Publicaciones",
+        "slot3ActorId": "actor_alex",
+        "slot3Label": "135",
+        "slot3Sublabel": "Seguidores",
+        "slot4ActorId": "actor_alex",
+        "slot4Label": "54",
+        "slot4Sublabel": "Siguiendo",
+        "slot5ActorId": "actor_alex",
+        "slot5Label": "",
+        "slot5Sublabel": ""
+      },
+      {
+        "id": "row2",
+        "slot1ActorId": "actor_alex",
+        "slot1Label": "#FOQN",
+        "slot1Sublabel": "",
+        "slot2ActorId": "actor_alex",
+        "slot2Label": "#ASDF",
+        "slot2Sublabel": "",
+        "slot3ActorId": "actor_alex",
+        "slot3Label": "",
+        "slot3Sublabel": "",
+        "slot4ActorId": "actor_alex",
+        "slot4Label": "",
+        "slot4Sublabel": "",
+        "slot5ActorId": "actor_alex",
+        "slot5Label": "",
+        "slot5Sublabel": ""
+      }
+    ],
+    "socialPostFooterRows": [
       {
         "id": "row1",
         "slot1ActorId": "actor_alex",
@@ -1082,7 +1715,21 @@
           "variantReference": "component_project_foqn_s2_bubble::variant::default_copy",
           "overrides": {
             "bubble": {
-              "dimensionMode": "fixed"
+              "dimensionMode": "fixed",
+              "outgoingBackground": "palette_project_foqn_s2_gray_100|palette_project_foqn_s2_gray_100",
+              "outgoingText": "palette_project_foqn_s2_gray_010|palette_project_foqn_s2_gray_010",
+              "surfaceSlot": {
+                "overrides": {
+                  "style": {
+                    "borderWidth": 1
+                  },
+                  "surface": {
+                    "tail": {
+                      "enabled": false
+                    }
+                  }
+                }
+              }
             }
           }
         },
@@ -1119,7 +1766,167 @@
           "statusText": "",
           "typingIndicator": false
         },
-        "showMessageSeparator": true
+        "showMessageSeparator": true,
+        "footerSurfaceSlot": {
+          "variantReference": "component_project_foqn_s2_surface::variant::default",
+          "overrides": {
+            "style": {
+              "cornerRadiusToken": "theme.radii.none"
+            }
+          }
+        },
+        "footerRowGapToken": "theme.spacing.s",
+        "footerRows": [
+          {
+            "id": "row1",
+            "label": "Row 1",
+            "padding": "theme.spacing.xl|theme.spacing.m",
+            "verticalAlignment": "center",
+            "showSeparator": false,
+            "slot1Kind": "avatar",
+            "slot1AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {
+                "avatar": {
+                  "defaultSize": 50
+                }
+              }
+            },
+            "slot1IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot1LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            },
+            "slot2Kind": "label",
+            "slot2AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "slot2IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot2LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
+              "overrides": {}
+            },
+            "slot3Kind": "label",
+            "slot3AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "slot3IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot3LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
+              "overrides": {}
+            },
+            "slot4Kind": "label",
+            "slot4AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "slot4IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot4LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
+              "overrides": {}
+            },
+            "slot5Kind": "none",
+            "slot5AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "slot5IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot5LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            }
+          },
+          {
+            "id": "row2",
+            "label": "Row 2",
+            "padding": "theme.spacing.l|theme.spacing.s",
+            "verticalAlignment": "center",
+            "showSeparator": true,
+            "slot1Kind": "label",
+            "slot1AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "slot1IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot1LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            },
+            "slot2Kind": "label",
+            "slot2AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "slot2IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot2LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            },
+            "slot3Kind": "label",
+            "slot3AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "slot3IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot3LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            },
+            "slot4Kind": "none",
+            "slot4AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "slot4IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot4LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            },
+            "slot5Kind": "label",
+            "slot5AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "slot5IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot5LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            }
+          }
+        ],
+        "footerHeight": 130
       }
     }
   },
@@ -1422,13 +2229,69 @@
       "defaultValue": "theme.spacing.s|theme.spacing.s",
       "isEditable": true,
       "options": [
-        { "value": "theme.spacing.none", "label": "spacing.none", "colorHex": null, "isNeutral": false, "groupValue": "", "groupLabel": "", "localLabel": "" },
-        { "value": "theme.spacing.xs", "label": "spacing.xs", "colorHex": null, "isNeutral": false, "groupValue": "", "groupLabel": "", "localLabel": "" },
-        { "value": "theme.spacing.s", "label": "spacing.s", "colorHex": null, "isNeutral": false, "groupValue": "", "groupLabel": "", "localLabel": "" },
-        { "value": "theme.spacing.m", "label": "spacing.m", "colorHex": null, "isNeutral": false, "groupValue": "", "groupLabel": "", "localLabel": "" },
-        { "value": "theme.spacing.l", "label": "spacing.l", "colorHex": null, "isNeutral": false, "groupValue": "", "groupLabel": "", "localLabel": "" },
-        { "value": "theme.spacing.xl", "label": "spacing.xl", "colorHex": null, "isNeutral": false, "groupValue": "", "groupLabel": "", "localLabel": "" },
-        { "value": "theme.spacing.xxl", "label": "spacing.xxl", "colorHex": null, "isNeutral": false, "groupValue": "", "groupLabel": "", "localLabel": "" }
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xl",
+          "label": "spacing.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xxl",
+          "label": "spacing.xxl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
       ],
       "optionSource": "None",
       "pairLabels": {
@@ -1478,7 +2341,10 @@
       "id": "module.core.socialPost.messageBubble",
       "label": "Bubble",
       "valueKind": "ComponentVariantSlot",
-      "jsonPath": ["socialPost", "messageBubbleSlot"],
+      "jsonPath": [
+        "socialPost",
+        "messageBubbleSlot"
+      ],
       "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_bubble::variant::default_copy\",\"overrides\":{\"bubble\":{\"dimensionMode\":\"fixed\"}}}",
       "isEditable": true,
       "options": [],
@@ -1505,7 +2371,10 @@
       "id": "module.core.socialPost.messageTextInputBar",
       "label": "Text Input Bar",
       "valueKind": "ComponentVariantSlot",
-      "jsonPath": ["socialPost", "messageTextInputBarSlot"],
+      "jsonPath": [
+        "socialPost",
+        "messageTextInputBarSlot"
+      ],
       "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_textInputBar::variant::default_copy\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
@@ -1532,7 +2401,10 @@
       "id": "module.core.socialPost.messageKeyboard",
       "label": "Keyboard",
       "valueKind": "ComponentVariantSlot",
-      "jsonPath": ["socialPost", "messageKeyboardSlot"],
+      "jsonPath": [
+        "socialPost",
+        "messageKeyboardSlot"
+      ],
       "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_keyboard::variant::default_copy\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
@@ -1559,20 +2431,82 @@
       "id": "module.core.socialPost.messagePadding",
       "label": "Padding",
       "valueKind": "ThemeTokenPair",
-      "jsonPath": ["socialPost", "messagePadding"],
+      "jsonPath": [
+        "socialPost",
+        "messagePadding"
+      ],
       "defaultValue": "theme.spacing.s|theme.spacing.s",
       "isEditable": true,
       "options": [
-        { "value": "theme.spacing.none", "label": "spacing.none", "colorHex": null, "isNeutral": false, "groupValue": "", "groupLabel": "", "localLabel": "" },
-        { "value": "theme.spacing.xs", "label": "spacing.xs", "colorHex": null, "isNeutral": false, "groupValue": "", "groupLabel": "", "localLabel": "" },
-        { "value": "theme.spacing.s", "label": "spacing.s", "colorHex": null, "isNeutral": false, "groupValue": "", "groupLabel": "", "localLabel": "" },
-        { "value": "theme.spacing.m", "label": "spacing.m", "colorHex": null, "isNeutral": false, "groupValue": "", "groupLabel": "", "localLabel": "" },
-        { "value": "theme.spacing.l", "label": "spacing.l", "colorHex": null, "isNeutral": false, "groupValue": "", "groupLabel": "", "localLabel": "" },
-        { "value": "theme.spacing.xl", "label": "spacing.xl", "colorHex": null, "isNeutral": false, "groupValue": "", "groupLabel": "", "localLabel": "" },
-        { "value": "theme.spacing.xxl", "label": "spacing.xxl", "colorHex": null, "isNeutral": false, "groupValue": "", "groupLabel": "", "localLabel": "" }
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xl",
+          "label": "spacing.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xxl",
+          "label": "spacing.xxl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
       ],
       "optionSource": "None",
-      "pairLabels": { "first": "Horizontal", "second": "Vertical" },
+      "pairLabels": {
+        "first": "Horizontal",
+        "second": "Vertical"
+      },
       "number": null,
       "componentVariantType": "",
       "synchronizedVariantReferenceJsonPaths": [],
@@ -1590,7 +2524,10 @@
       "id": "module.core.socialPost.showMessageSeparator",
       "label": "Show separator",
       "valueKind": "Boolean",
-      "jsonPath": ["socialPost", "showMessageSeparator"],
+      "jsonPath": [
+        "socialPost",
+        "showMessageSeparator"
+      ],
       "defaultValue": "true",
       "isEditable": true,
       "options": [],
@@ -1630,6 +2567,610 @@
       "componentInputBindings": null,
       "structuredCollection": {
         "id": "socialPostRows",
+        "label": "Rows",
+        "jsonKey": "rows",
+        "itemLabel": "Row",
+        "fields": [
+          {
+            "id": "label",
+            "label": "Row",
+            "jsonKey": "label",
+            "kind": "Text",
+            "valueKind": "StringReadOnly",
+            "defaultValue": "",
+            "showInEditor": false
+          },
+          {
+            "id": "padding",
+            "label": "Padding",
+            "jsonKey": "padding",
+            "kind": "Text",
+            "valueKind": "ThemeTokenPair",
+            "defaultValue": "theme.spacing.s|theme.spacing.s",
+            "options": [
+              {
+                "value": "theme.spacing.none",
+                "label": "spacing.none"
+              },
+              {
+                "value": "theme.spacing.xs",
+                "label": "spacing.xs"
+              },
+              {
+                "value": "theme.spacing.s",
+                "label": "spacing.s"
+              },
+              {
+                "value": "theme.spacing.m",
+                "label": "spacing.m"
+              },
+              {
+                "value": "theme.spacing.l",
+                "label": "spacing.l"
+              },
+              {
+                "value": "theme.spacing.xl",
+                "label": "spacing.xl"
+              },
+              {
+                "value": "theme.spacing.xxl",
+                "label": "spacing.xxl"
+              }
+            ],
+            "pairLabels": {
+              "first": "Horizontal",
+              "second": "Vertical"
+            }
+          },
+          {
+            "id": "verticalAlignment",
+            "label": "Vertical alignment",
+            "jsonKey": "verticalAlignment",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "center",
+            "options": [
+              {
+                "value": "top",
+                "label": "Top"
+              },
+              {
+                "value": "center",
+                "label": "Center"
+              },
+              {
+                "value": "bottom",
+                "label": "Bottom"
+              }
+            ]
+          },
+          {
+            "id": "showSeparator",
+            "label": "Show separator",
+            "jsonKey": "showSeparator",
+            "kind": "Boolean",
+            "valueKind": "Boolean",
+            "defaultValue": "true"
+          },
+          {
+            "id": "slot1.kind",
+            "label": "Slot 1 content",
+            "jsonKey": "slot1Kind",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ]
+          },
+          {
+            "id": "slot1.avatar",
+            "label": "Slot 1 avatar",
+            "jsonKey": "slot1AvatarSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
+            "componentType": "avatar",
+            "enabledWhenItemJsonKey": "slot1Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ]
+          },
+          {
+            "id": "slot1.icon",
+            "label": "Slot 1 icon",
+            "jsonKey": "slot1IconSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
+            "componentType": "button",
+            "enabledWhenItemJsonKey": "slot1Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
+            "id": "slot1.label",
+            "label": "Slot 1 label",
+            "jsonKey": "slot1LabelSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
+            "componentType": "label",
+            "enabledWhenItemJsonKey": "slot1Kind",
+            "enabledWhenItemValues": [
+              "label"
+            ]
+          },
+          {
+            "id": "slot2.kind",
+            "label": "Slot 2 content",
+            "jsonKey": "slot2Kind",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ]
+          },
+          {
+            "id": "slot2.avatar",
+            "label": "Slot 2 avatar",
+            "jsonKey": "slot2AvatarSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
+            "componentType": "avatar",
+            "enabledWhenItemJsonKey": "slot2Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ]
+          },
+          {
+            "id": "slot2.icon",
+            "label": "Slot 2 icon",
+            "jsonKey": "slot2IconSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
+            "componentType": "button",
+            "enabledWhenItemJsonKey": "slot2Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
+            "id": "slot2.label",
+            "label": "Slot 2 label",
+            "jsonKey": "slot2LabelSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
+            "componentType": "label",
+            "enabledWhenItemJsonKey": "slot2Kind",
+            "enabledWhenItemValues": [
+              "label"
+            ]
+          },
+          {
+            "id": "slot3.kind",
+            "label": "Slot 3 content",
+            "jsonKey": "slot3Kind",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ]
+          },
+          {
+            "id": "slot3.avatar",
+            "label": "Slot 3 avatar",
+            "jsonKey": "slot3AvatarSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
+            "componentType": "avatar",
+            "enabledWhenItemJsonKey": "slot3Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ]
+          },
+          {
+            "id": "slot3.icon",
+            "label": "Slot 3 icon",
+            "jsonKey": "slot3IconSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
+            "componentType": "button",
+            "enabledWhenItemJsonKey": "slot3Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
+            "id": "slot3.label",
+            "label": "Slot 3 label",
+            "jsonKey": "slot3LabelSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
+            "componentType": "label",
+            "enabledWhenItemJsonKey": "slot3Kind",
+            "enabledWhenItemValues": [
+              "label"
+            ]
+          },
+          {
+            "id": "slot4.kind",
+            "label": "Slot 4 content",
+            "jsonKey": "slot4Kind",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ]
+          },
+          {
+            "id": "slot4.avatar",
+            "label": "Slot 4 avatar",
+            "jsonKey": "slot4AvatarSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
+            "componentType": "avatar",
+            "enabledWhenItemJsonKey": "slot4Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ]
+          },
+          {
+            "id": "slot4.icon",
+            "label": "Slot 4 icon",
+            "jsonKey": "slot4IconSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
+            "componentType": "button",
+            "enabledWhenItemJsonKey": "slot4Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
+            "id": "slot4.label",
+            "label": "Slot 4 label",
+            "jsonKey": "slot4LabelSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
+            "componentType": "label",
+            "enabledWhenItemJsonKey": "slot4Kind",
+            "enabledWhenItemValues": [
+              "label"
+            ]
+          },
+          {
+            "id": "slot5.kind",
+            "label": "Slot 5 content",
+            "jsonKey": "slot5Kind",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ]
+          },
+          {
+            "id": "slot5.avatar",
+            "label": "Slot 5 avatar",
+            "jsonKey": "slot5AvatarSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
+            "componentType": "avatar",
+            "enabledWhenItemJsonKey": "slot5Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ]
+          },
+          {
+            "id": "slot5.icon",
+            "label": "Slot 5 icon",
+            "jsonKey": "slot5IconSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
+            "componentType": "button",
+            "enabledWhenItemJsonKey": "slot5Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
+            "id": "slot5.label",
+            "label": "Slot 5 label",
+            "jsonKey": "slot5LabelSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
+            "componentType": "label",
+            "enabledWhenItemJsonKey": "slot5Kind",
+            "enabledWhenItemValues": [
+              "label"
+            ]
+          }
+        ],
+        "itemPresentation": {
+          "titleFieldId": "label",
+          "firstItemBadge": "",
+          "subtitleFieldIds": [],
+          "subtitleMaxCharacters": 72,
+          "iconFieldId": "",
+          "fallbackIcon": "layout",
+          "iconValueMap": {}
+        },
+        "canEditStructure": false,
+        "fixedItemCount": 2,
+        "uiPresentation": "collection",
+        "itemRuntimePresentation": "card"
+      },
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.footerHeight",
+      "label": "Footer height",
+      "valueKind": "Integer",
+      "jsonPath": [
+        "socialPost",
+        "footerHeight"
+      ],
+      "defaultValue": "120",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": {
+        "minimum": 0,
+        "maximum": 240,
+        "increment": 1,
+        "decimalPlaces": 0,
+        "useSlider": false
+      },
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.footerSurface",
+      "label": "Footer surface",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "socialPost",
+        "footerSurfaceSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_surface::variant::default\",\"overrides\":{\"style\":{\"cornerRadiusToken\":\"theme.radii.none\"}}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "surface",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "surface",
+        "label": "Header surface",
+        "recordClassId": "component.surface"
+      },
+      "structuredCollection": null
+    },
+    {
+      "id": "module.core.socialPost.footerRowGapToken",
+      "label": "Gap between rows",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "socialPost",
+        "footerRowGapToken"
+      ],
+      "defaultValue": "theme.spacing.s",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xl",
+          "label": "spacing.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xxl",
+          "label": "spacing.xxl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null,
+      "structuredCollection": null
+    },
+    {
+      "id": "module.core.socialPost.footerRows",
+      "label": "Rows",
+      "valueKind": "StructuredCollection",
+      "jsonPath": [
+        "socialPost",
+        "footerRows"
+      ],
+      "defaultValue": "null",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": {
+        "id": "socialPostFooterRows",
         "label": "Rows",
         "jsonKey": "rows",
         "itemLabel": "Row",
@@ -2223,11 +3764,31 @@
             "order": 10,
             "visible": true,
             "fields": [
-              { "id": "module.core.socialPost.messageBubble", "order": 10, "visible": true },
-              { "id": "module.core.socialPost.messageTextInputBar", "order": 20, "visible": true },
-              { "id": "module.core.socialPost.messageKeyboard", "order": 30, "visible": true },
-              { "id": "module.core.socialPost.messagePadding", "order": 40, "visible": true },
-              { "id": "module.core.socialPost.showMessageSeparator", "order": 50, "visible": true }
+              {
+                "id": "module.core.socialPost.messageBubble",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "module.core.socialPost.messageTextInputBar",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "module.core.socialPost.messageKeyboard",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "module.core.socialPost.messagePadding",
+                "order": 40,
+                "visible": true
+              },
+              {
+                "id": "module.core.socialPost.showMessageSeparator",
+                "order": 50,
+                "visible": true
+              }
             ],
             "presentation": "separatedSections"
           }
@@ -2238,7 +3799,7 @@
         "label": "Status Bar",
         "subtitle": "Theme status component",
         "icon": "status",
-        "order": 50,
+        "order": 60,
         "visible": true,
         "defaultOpen": false,
         "groups": [
@@ -2262,7 +3823,7 @@
         "label": "Navigation Bar",
         "subtitle": "Theme navigation component",
         "icon": "navigation",
-        "order": 60,
+        "order": 70,
         "visible": true,
         "defaultOpen": false,
         "groups": [
@@ -2274,6 +3835,56 @@
             "fields": [
               {
                 "id": "module.core.socialPost.showNavigationBar",
+                "order": 10,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "footer",
+        "label": "Footer",
+        "subtitle": "Two rows · five slots each",
+        "icon": "footer",
+        "order": 50,
+        "visible": true,
+        "defaultOpen": true,
+        "groups": [
+          {
+            "id": "footer",
+            "label": "Footer",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "module.core.socialPost.footerHeight",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "module.core.socialPost.footerSurface",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "module.core.socialPost.footerRowGapToken",
+                "order": 30,
+                "visible": true
+              }
+            ],
+            "presentation": "separatedSections"
+          },
+          {
+            "id": "rows",
+            "label": "Rows",
+            "icon": "layout",
+            "presentation": "verticalCards",
+            "order": 100,
+            "visible": true,
+            "fields": [
+              {
+                "id": "module.core.socialPost.footerRows",
                 "order": 10,
                 "visible": true
               }

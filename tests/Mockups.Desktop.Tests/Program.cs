@@ -274,7 +274,7 @@ var tests = new (string Name, Action Run)[]
     ("Forward actions use one compact right-pointing presentation", ForwardActionsUseSharedPresentation),
     ("Label subtext placement uses the current explicit alignment contract", LabelSubtextPlacementUsesCurrentContract),
     ("Password composes stateful atoms and BehaviorTiming", PasswordSeedOpensAndRenders),
-    ("Social Post composes two structure-projected header rows", SocialPostComposesHeaderRows),
+    ("Social Post composes two structure-projected header and footer rows", SocialPostComposesHeaderRows),
     ("Social Post editor exposes its current generic header contract", SocialPostEditorExposesCurrentHeaderContract),
     ("Lock Screen composes its runtime Stack and optional system bars", LockScreenComposesRuntimeStack),
     ("forwarded child inputs become effective parent runtime inputs", ForwardedChildInputsBecomeParentRuntimeInputs),
@@ -20905,6 +20905,9 @@ static void SocialPostComposesHeaderRows()
     ComponentVariantSlotDocumentContract.Validate(
         JsonPath.RequiredObject(socialPost, "headerSurfaceSlot", "Social Post config"),
         "Social Post config.headerSurfaceSlot");
+    ComponentVariantSlotDocumentContract.Validate(
+        JsonPath.RequiredObject(socialPost, "footerSurfaceSlot", "Social Post config"),
+        "Social Post config.footerSurfaceSlot");
     var rows = JsonPath.RequiredArray(socialPost, "rows", "Social Post config")
         .OfType<JsonObject>()
         .ToList();
@@ -20923,10 +20926,17 @@ static void SocialPostComposesHeaderRows()
             }
         }
     }
-    True(JsonPath.RequiredBoolean(socialPost, "useAppWallpaper", "Social Post config"));
-    True(JsonPath.RequiredBoolean(socialPost, "showHeader", "Social Post config"));
-    True(JsonPath.RequiredBoolean(socialPost, "showStatusBar", "Social Post config"));
-    True(JsonPath.RequiredBoolean(socialPost, "showNavigationBar", "Social Post config"));
+    var footerRows = JsonPath.RequiredArray(socialPost, "footerRows", "Social Post config")
+        .OfType<JsonObject>()
+        .ToList();
+    Equal(2, footerRows.Count);
+    SequenceEqual(["row1", "row2"], footerRows
+        .Select((row) => row["id"]?.GetValue<string>() ?? "")
+        .ToList());
+    JsonPath.RequiredBoolean(socialPost, "useAppWallpaper", "Social Post config");
+    JsonPath.RequiredBoolean(socialPost, "showHeader", "Social Post config");
+    JsonPath.RequiredBoolean(socialPost, "showStatusBar", "Social Post config");
+    JsonPath.RequiredBoolean(socialPost, "showNavigationBar", "Social Post config");
     var fields = EditorLayouts(database).LoadEditorLayout("module.core.socialPost").Cards
         .SelectMany((card) => card.VisibleGroups)
         .SelectMany((group) => group.VisibleFields)
@@ -20940,6 +20950,10 @@ static void SocialPostComposesHeaderRows()
         "module.core.socialPost.headerSurface",
         "module.core.socialPost.rowGapToken",
         "module.core.socialPost.rows",
+        "module.core.socialPost.footerHeight",
+        "module.core.socialPost.footerSurface",
+        "module.core.socialPost.footerRowGapToken",
+        "module.core.socialPost.footerRows",
         "module.core.socialPost.showStatusBar",
         "module.core.socialPost.showNavigationBar",
     })
@@ -20948,15 +20962,41 @@ static void SocialPostComposesHeaderRows()
     }
     var preview = DesignPreviewTestValues.Parse(settings.DesignPreviewJson);
     var inputs = RuntimeInputDefinitionReader.ReadInputs(preview, config);
-    Equal(0, inputs.Count);
-    var collection = RuntimeInputDefinitionReader.ReadCollections(preview, config).Single();
-    Equal("socialPostRows", collection.Id);
-    Equal("socialPostRows", collection.JsonKey);
+    SequenceEqual(
+        [
+            "mediaSource",
+            "mediaHeight",
+            "messageText",
+            "messageWriteOnTiming",
+            "messageTextInputVisible",
+            "messageKeyboardVisible",
+            "messageBubbleRevealMode",
+            "messageWriteOnTrigger",
+            "messageWriteOnFrame",
+        ],
+        inputs.Select((input) => input.Id).ToList());
+    var collections = RuntimeInputDefinitionReader.ReadCollections(preview, config);
+    SequenceEqual(
+        ["socialPostRows", "socialPostFooterRows"],
+        collections.Select((collection) => collection.Id).ToList());
+    SequenceEqual(
+        ["socialPostRows", "socialPostFooterRows"],
+        collections.Select((collection) => collection.JsonKey).ToList());
     var runtimeRows = JsonPath.RequiredArray(preview, "socialPostRows", "Social Post Runtime");
     Equal(2, runtimeRows.Count);
     SequenceEqual(
         ["row1", "row2"],
         runtimeRows.OfType<JsonObject>()
+            .Select((row) => row["id"]?.GetValue<string>() ?? "")
+            .ToList());
+    var runtimeFooterRows = JsonPath.RequiredArray(
+        preview,
+        "socialPostFooterRows",
+        "Social Post Runtime");
+    Equal(2, runtimeFooterRows.Count);
+    SequenceEqual(
+        ["row1", "row2"],
+        runtimeFooterRows.OfType<JsonObject>()
             .Select((row) => row["id"]?.GetValue<string>() ?? "")
             .ToList());
 
@@ -20981,6 +21021,9 @@ static void SocialPostComposesHeaderRows()
         "module.core.socialPost.header",
         "module.core.socialPost.header.row1",
         "module.core.socialPost.header.row2",
+        "module.core.socialPost.footer",
+        "module.core.socialPost.footer.row1",
+        "module.core.socialPost.footer.row2",
     })
     {
         True(html.Contains($"data-renderable-id=\"{renderableId}\"", StringComparison.Ordinal));
@@ -21054,7 +21097,9 @@ static void SocialPostEditorExposesCurrentHeaderContract()
                             selected.Id,
                             StringComparison.Ordinal)
                         && activeFields.ControlsByFieldId.ContainsKey(
-                            "module.core.socialPost.headerSurface");
+                            "module.core.socialPost.headerSurface")
+                        && activeFields.ControlsByFieldId.ContainsKey(
+                            "module.core.socialPost.footerSurface");
                 },
                 TimeSpan.FromSeconds(10)),
                 "Social Post editor did not prepare its clean Module fields. "

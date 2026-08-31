@@ -3,9 +3,9 @@ import { naturalWriteOnFrame, resolveBehaviorTimingFrames } from "./behaviorTimi
 import { requireComponentVariantType } from "./componentPreviewDefaults.js";
 import type {
   SocialPostComponentSlot,
-  SocialPostHeaderRow,
-  SocialPostHeaderSlot,
-  SocialPostHeaderSlotKind,
+  SocialPostRow,
+  SocialPostRowSlot,
+  SocialPostRowSlotKind,
   SocialPostModuleContract,
   SocialPostVerticalAlignment,
 } from "./socialPostModuleContract.js";
@@ -33,8 +33,10 @@ export function resolveSocialPostModule(
   const preview = parseObject(payload.designPreviewJson);
   const componentBaseConfigs = parseObject(payload.componentBaseConfigsJson);
   const themeTokens = parseObject(payload.themeTokensJson);
-  const rows = requiredRows(socialPost);
-  const runtimeRows = requiredRuntimeRows(preview);
+  const rows = requiredRows(socialPost, "rows");
+  const runtimeRows = requiredRuntimeRows(preview, "socialPostRows");
+  const footerRows = requiredRows(socialPost, "footerRows");
+  const footerRuntimeRows = requiredRuntimeRows(preview, "socialPostFooterRows");
   const message = resolveMessage(
     socialPost,
     preview,
@@ -77,8 +79,8 @@ export function resolveSocialPostModule(
       "module.core.socialPost.rowGapToken",
     ),
     rows: [
-      resolveRow(1, rows[0], runtimeRows[0], componentBaseConfigs),
-      resolveRow(2, rows[1], runtimeRows[1], componentBaseConfigs),
+      resolveRow("header", 1, rows[0], runtimeRows[0], componentBaseConfigs),
+      resolveRow("header", 2, rows[1], runtimeRows[1], componentBaseConfigs),
     ],
     mediaSlot: requiredTypedSlot(
       socialPost,
@@ -112,6 +114,26 @@ export function resolveSocialPostModule(
       "module.core.socialPost.showMediaSeparator",
     ),
     message,
+    footerHeight: Math.max(0, requiredNumber(
+      socialPost,
+      "footerHeight",
+      "module.core.socialPost.footerHeight",
+    )),
+    footerSurfaceSlot: requiredTypedSlot(
+      socialPost,
+      componentBaseConfigs,
+      "footerSurfaceSlot",
+      "surface",
+    ),
+    footerRowGapToken: requiredString(
+      socialPost,
+      "footerRowGapToken",
+      "module.core.socialPost.footerRowGapToken",
+    ),
+    footerRows: [
+      resolveRow("footer", 1, footerRows[0], footerRuntimeRows[0], componentBaseConfigs),
+      resolveRow("footer", 2, footerRows[1], footerRuntimeRows[1], componentBaseConfigs),
+    ],
   };
 }
 
@@ -245,19 +267,20 @@ function resolveMessage(
 
 function requiredRuntimeRows(
   preview: Record<string, unknown>,
+  key: "socialPostRows" | "socialPostFooterRows",
 ): [Record<string, unknown>, Record<string, unknown>] {
-  const value = preview.socialPostRows;
+  const value = preview[key];
   if (!Array.isArray(value) || value.length !== 2) {
-    throw new Error("module.core.socialPost Runtime collection 'socialPostRows' must contain exactly row1 and row2");
+    throw new Error(`module.core.socialPost Runtime collection '${key}' must contain exactly row1 and row2`);
   }
   const rows = value.map((item, index) => {
     if (!item || typeof item !== "object" || Array.isArray(item)) {
-      throw new Error(`module.core.socialPost socialPostRows[${index}] must be an object`);
+      throw new Error(`module.core.socialPost ${key}[${index}] must be an object`);
     }
     const row = item as Record<string, unknown>;
     const expectedId = `row${index + 1}`;
-    if (requiredString(row, "id", `module.core.socialPost.socialPostRows[${index}].id`) !== expectedId) {
-      throw new Error(`module.core.socialPost socialPostRows[${index}] must have id '${expectedId}'`);
+    if (requiredString(row, "id", `module.core.socialPost.${key}[${index}].id`) !== expectedId) {
+      throw new Error(`module.core.socialPost ${key}[${index}] must have id '${expectedId}'`);
     }
     return row;
   });
@@ -266,19 +289,20 @@ function requiredRuntimeRows(
 
 function requiredRows(
   socialPost: Record<string, unknown>,
+  key: "rows" | "footerRows",
 ): [Record<string, unknown>, Record<string, unknown>] {
-  const value = socialPost.rows;
+  const value = socialPost[key];
   if (!Array.isArray(value) || value.length !== 2) {
-    throw new Error("module.core.socialPost.rows must contain exactly row1 and row2");
+    throw new Error(`module.core.socialPost.${key} must contain exactly row1 and row2`);
   }
   const rows = value.map((item, index) => {
     if (!item || typeof item !== "object" || Array.isArray(item)) {
-      throw new Error(`module.core.socialPost.rows[${index}] must be an object`);
+      throw new Error(`module.core.socialPost.${key}[${index}] must be an object`);
     }
     const row = item as Record<string, unknown>;
     const expectedId = `row${index + 1}`;
-    if (requiredString(row, "id", `module.core.socialPost.${expectedId}.id`) !== expectedId) {
-      throw new Error(`module.core.socialPost.rows[${index}] must have id '${expectedId}'`);
+    if (requiredString(row, "id", `module.core.socialPost.${key}.${expectedId}.id`) !== expectedId) {
+      throw new Error(`module.core.socialPost.${key}[${index}] must have id '${expectedId}'`);
     }
     return row;
   });
@@ -286,15 +310,17 @@ function requiredRows(
 }
 
 function resolveRow(
+  section: "header" | "footer",
   row: 1 | 2,
   rowConfig: Record<string, unknown>,
   runtimeRow: Record<string, unknown>,
   componentBaseConfigs: Record<string, unknown>,
-): SocialPostHeaderRow {
+): SocialPostRow {
+  const owner = `module.core.socialPost.${section}.row${row}`;
   const alignment = requiredString(
     rowConfig,
     "verticalAlignment",
-    `module.core.socialPost.row${row}.verticalAlignment`,
+    `${owner}.verticalAlignment`,
   );
   if (alignment !== "top" && alignment !== "center" && alignment !== "bottom") {
     throw new Error(`Unsupported Social Post row alignment '${alignment}'`);
@@ -304,15 +330,16 @@ function resolveRow(
     padding: requiredString(
       rowConfig,
       "padding",
-      `module.core.socialPost.row${row}.padding`,
+      `${owner}.padding`,
     ),
     verticalAlignment: alignment as SocialPostVerticalAlignment,
     showSeparator: requiredBoolean(
       rowConfig,
       "showSeparator",
-      `module.core.socialPost.row${row}.showSeparator`,
+      `${owner}.showSeparator`,
     ),
-    slots: [1, 2, 3, 4, 5].map((index) => resolveHeaderSlot(
+    slots: [1, 2, 3, 4, 5].map((index) => resolveRowSlot(
+      section,
       row,
       index,
       rowConfig,
@@ -322,19 +349,21 @@ function resolveRow(
   };
 }
 
-function resolveHeaderSlot(
+function resolveRowSlot(
+  section: "header" | "footer",
   row: 1 | 2,
   index: number,
   rowConfig: Record<string, unknown>,
   runtimeRow: Record<string, unknown>,
   componentBaseConfigs: Record<string, unknown>,
-): SocialPostHeaderSlot {
+): SocialPostRowSlot {
+  const owner = `module.core.socialPost.${section}.row${row}`;
   const configPrefix = `slot${index}`;
   const runtimePrefix = `slot${index}`;
   const kind = requiredString(
     rowConfig,
     `${configPrefix}Kind`,
-    `module.core.socialPost.row${row}.${configPrefix}Kind`,
+    `${owner}.${configPrefix}Kind`,
   );
   if (kind !== "none" && kind !== "avatar" && kind !== "icon" && kind !== "label") {
     throw new Error(`Unsupported Social Post slot kind '${kind}'`);
@@ -388,19 +417,19 @@ function resolveHeaderSlot(
   const actor = structuredClone(requiredRecord(
     runtimeRow,
     `${runtimePrefix}Actor`,
-    `module.core.socialPost.row${row}.${runtimePrefix}Actor`,
+    `${owner}.${runtimePrefix}Actor`,
   ));
   if (label.trim()) actor.displayName = label;
   return {
     index,
-    kind: kind as SocialPostHeaderSlotKind,
+    kind: kind as SocialPostRowSlotKind,
     componentType: "avatar",
     componentSlot: avatarSlot,
     inputs: {
       actorId: requiredString(
         runtimeRow,
         `${runtimePrefix}ActorId`,
-        `module.core.socialPost.row${row}.${runtimePrefix}ActorId`,
+        `${owner}.${runtimePrefix}ActorId`,
       ),
       actor,
       sampleText: label,

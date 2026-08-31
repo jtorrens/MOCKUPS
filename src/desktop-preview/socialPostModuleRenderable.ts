@@ -12,7 +12,7 @@ import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { renderScale, translateRenderableNode } from "./previewGeometryHelpers.js";
 import type {
   SocialPostComponentSlot,
-  SocialPostHeaderRow,
+  SocialPostRow,
   SocialPostModuleContract,
 } from "./socialPostModuleContract.js";
 import { resolveSocialPostModule } from "./socialPostModuleResolver.js";
@@ -55,7 +55,15 @@ export function socialPostModuleToRenderable(
     : undefined;
   const contentY = screen.y + (status?.box?.height ?? 0);
   const header = contract.showHeader
-    ? headerNode(payload, componentBaseConfigs, contract, contentY)
+    ? rowsSectionNode(payload, componentBaseConfigs, {
+        section: "header",
+        rows: contract.rows,
+        rowGapToken: contract.rowGapToken,
+        height: contract.headerHeight,
+        surfaceSlot: contract.headerSurfaceSlot,
+        edge: "top",
+        contentEdge: contentY,
+      })
     : undefined;
   const media = mediaSectionNode(
     payload,
@@ -63,12 +71,22 @@ export function socialPostModuleToRenderable(
     contract,
     header?.box ? header.box.y + header.box.height : contentY,
   );
+  const contentBottom = screen.y + screen.height - (navigation?.box?.height ?? 0);
+  const footer = rowsSectionNode(payload, componentBaseConfigs, {
+    section: "footer",
+    rows: contract.footerRows,
+    rowGapToken: contract.footerRowGapToken,
+    height: contract.footerHeight,
+    surfaceSlot: contract.footerSurfaceSlot,
+    edge: "bottom",
+    contentEdge: contentBottom,
+  });
   const message = messageSectionNode(
     payload,
     componentBaseConfigs,
     contract,
     media.box ? media.box.y + media.box.height : contentY,
-    screen.y + screen.height - (navigation?.box?.height ?? 0),
+    footer.box?.y ?? contentBottom,
   );
   const backgroundNode = contract.useAppWallpaper
     ? wallpaperRenderable(payload, screen) ?? background(payload)
@@ -77,6 +95,7 @@ export function socialPostModuleToRenderable(
   if (header) children.push(header);
   children.push(media);
   children.push(message);
+  children.push(footer);
   if (status) children.push(withZIndex(status, 20));
   if (navigation) children.push(withZIndex(navigation, 30));
   return {
@@ -278,20 +297,30 @@ function mediaSectionNode(
   };
 }
 
-function headerNode(
+function rowsSectionNode(
   payload: DesignPreviewPayload,
   componentBaseConfigs: Record<string, unknown>,
-  contract: SocialPostModuleContract,
-  contentY: number,
+  options: {
+    section: "header" | "footer";
+    rows: [SocialPostRow, SocialPostRow];
+    rowGapToken: string;
+    height: number;
+    surfaceSlot: SocialPostComponentSlot;
+    edge: "top" | "bottom";
+    contentEdge: number;
+  },
 ): RenderableNode {
   const screen = previewScreenBox(payload);
   const scale = renderScale(payload);
-  const first = renderRow(payload, componentBaseConfigs, contract.rows[0], 0);
-  const gap = numberToken(payload, contract.rowGapToken) * scale;
-  const second = renderRow(payload, componentBaseConfigs, contract.rows[1], 0);
+  const first = renderRow(payload, componentBaseConfigs, options.section, options.rows[0], 0);
+  const gap = numberToken(payload, options.rowGapToken) * scale;
+  const second = renderRow(payload, componentBaseConfigs, options.section, options.rows[1], 0);
   const rowsHeight = first.height + gap + second.height;
-  const headerHeight = Math.max(contract.headerHeight * scale, rowsHeight);
-  const rowsY = contentY + headerHeight - rowsHeight;
+  const sectionHeight = Math.max(options.height * scale, rowsHeight);
+  const sectionY = options.edge === "top"
+    ? options.contentEdge
+    : options.contentEdge - sectionHeight;
+  const rowsY = sectionY + sectionHeight - rowsHeight;
   const firstNode = translateRenderableNode(first.node, { x: 0, y: rowsY });
   const secondNode = translateRenderableNode(second.node, {
     x: 0,
@@ -299,29 +328,31 @@ function headerNode(
   });
   const surfaceBox = {
     x: screen.x,
-    y: screen.y,
+    y: options.edge === "top" ? screen.y : sectionY,
     width: screen.width,
-    height: Math.max(0, contentY + headerHeight - screen.y),
+    height: options.edge === "top"
+      ? Math.max(0, sectionY + sectionHeight - screen.y)
+      : Math.max(0, screen.y + screen.height - sectionY),
   };
   const surface = resolveSurfaceComponentAtSize(
     embeddedComponentConfig(
       componentBaseConfigs,
-      contract.headerSurfaceSlot,
+      options.surfaceSlot,
       "surface",
-      "module.core.socialPost.headerSurfaceSlot",
+      `module.core.socialPost.${options.section}SurfaceSlot`,
     ),
     { width: surfaceBox.width / scale, height: surfaceBox.height / scale },
-    "module.core.socialPost.header.surface",
+    `module.core.socialPost.${options.section}.surface`,
   );
   return {
-    id: "module.core.socialPost.header",
+    id: `module.core.socialPost.${options.section}`,
     type: "group",
     frame: 0,
     box: {
       x: screen.x,
-      y: contentY,
+      y: sectionY,
       width: screen.width,
-      height: headerHeight,
+      height: sectionHeight,
     },
     style: { overflow: "visible" },
     children: [
@@ -335,7 +366,8 @@ function headerNode(
 function renderRow(
   payload: DesignPreviewPayload,
   componentBaseConfigs: Record<string, unknown>,
-  row: SocialPostHeaderRow,
+  section: "header" | "footer",
+  row: SocialPostRow,
   y: number,
 ): RenderedRow {
   const screen = previewScreenBox(payload);
@@ -369,12 +401,14 @@ function renderRow(
   const children: RenderableNode[] = [];
 
   if (left) children.push(placeMeasuredSlot(
+    section,
     left,
     leftEdge,
     rowY(row, contentY, contentHeight, left.height),
   ));
   if (right) {
     children.push(placeMeasuredSlot(
+      section,
       right,
       rightEdge - right.width,
       rowY(row, contentY, contentHeight, right.height),
@@ -389,6 +423,7 @@ function renderRow(
   let middleX = middleLeft + middleGap;
   for (const item of middle) {
     children.push(placeMeasuredSlot(
+      section,
       item,
       middleX,
       rowY(row, contentY, contentHeight, item.height),
@@ -399,7 +434,7 @@ function renderRow(
   const separatorHeight = row.showSeparator ? Math.max(1, scale) : 0;
   if (row.showSeparator) {
     children.push({
-      id: `module.core.socialPost.header.${row.id}.separator`,
+      id: `module.core.socialPost.${section}.${row.id}.separator`,
       type: "surface",
       frame: 0,
       box: {
@@ -415,7 +450,7 @@ function renderRow(
   return {
     height,
     node: {
-      id: `module.core.socialPost.header.${row.id}`,
+      id: `module.core.socialPost.${section}.${row.id}`,
       type: "group",
       frame: 0,
       box: { x: screen.x, y, width: screen.width, height },
@@ -426,7 +461,7 @@ function renderRow(
 }
 
 function rowY(
-  row: SocialPostHeaderRow,
+  row: SocialPostRow,
   y: number,
   rowHeight: number,
   itemHeight: number,
@@ -436,13 +471,18 @@ function rowY(
   return y;
 }
 
-function placeMeasuredSlot(item: MeasuredSlot, x: number, y: number): RenderableNode {
+function placeMeasuredSlot(
+  section: "header" | "footer",
+  item: MeasuredSlot,
+  x: number,
+  y: number,
+): RenderableNode {
   const translated = translateRenderableNode(item.node, {
     x: x - (item.node.box?.x ?? 0),
     y: y - (item.node.box?.y ?? 0),
   });
   return {
-    id: `module.core.socialPost.header.slot.${item.index}.${translated.id}`,
+    id: `module.core.socialPost.${section}.slot.${item.index}.${translated.id}`,
     type: "group",
     frame: 0,
     box: translated.box,
