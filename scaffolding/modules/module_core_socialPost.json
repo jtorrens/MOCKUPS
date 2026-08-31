@@ -49,7 +49,7 @@
     "socialPost": {
       "useAppWallpaper": true,
       "showHeader": true,
-      "showStatusBar": true,
+      "showStatusBar": false,
       "showNavigationBar": true,
       "headerSurfaceSlot": {
         "variantReference": "component_project_foqn_s2_surface::variant::default",
@@ -64,13 +64,17 @@
         {
           "id": "row1",
           "label": "Row 1",
-          "padding": "theme.spacing.s|theme.spacing.s",
+          "padding": "theme.spacing.xl|theme.spacing.m",
           "verticalAlignment": "center",
-          "showSeparator": true,
+          "showSeparator": false,
           "slot1Kind": "avatar",
           "slot1AvatarSlot": {
             "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-            "overrides": {}
+            "overrides": {
+              "avatar": {
+                "defaultSize": 50
+              }
+            }
           },
           "slot1IconSlot": {
             "variantReference": "component_project_foqn_s2_button::variant::icon_only",
@@ -80,7 +84,7 @@
             "variantReference": "component_project_foqn_s2_label::variant::default",
             "overrides": {}
           },
-          "slot2Kind": "none",
+          "slot2Kind": "label",
           "slot2AvatarSlot": {
             "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
             "overrides": {}
@@ -90,10 +94,10 @@
             "overrides": {}
           },
           "slot2LabelSlot": {
-            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
             "overrides": {}
           },
-          "slot3Kind": "none",
+          "slot3Kind": "label",
           "slot3AvatarSlot": {
             "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
             "overrides": {}
@@ -103,10 +107,10 @@
             "overrides": {}
           },
           "slot3LabelSlot": {
-            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
             "overrides": {}
           },
-          "slot4Kind": "none",
+          "slot4Kind": "label",
           "slot4AvatarSlot": {
             "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
             "overrides": {}
@@ -116,10 +120,10 @@
             "overrides": {}
           },
           "slot4LabelSlot": {
-            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
             "overrides": {}
           },
-          "slot5Kind": "icon",
+          "slot5Kind": "none",
           "slot5AvatarSlot": {
             "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
             "overrides": {}
@@ -136,7 +140,7 @@
         {
           "id": "row2",
           "label": "Row 2",
-          "padding": "theme.spacing.s|theme.spacing.s",
+          "padding": "theme.spacing.l|theme.spacing.s",
           "verticalAlignment": "center",
           "showSeparator": true,
           "slot1Kind": "label",
@@ -165,7 +169,7 @@
             "variantReference": "component_project_foqn_s2_label::variant::default",
             "overrides": {}
           },
-          "slot3Kind": "none",
+          "slot3Kind": "label",
           "slot3AvatarSlot": {
             "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
             "overrides": {}
@@ -191,7 +195,7 @@
             "variantReference": "component_project_foqn_s2_label::variant::default",
             "overrides": {}
           },
-          "slot5Kind": "icon",
+          "slot5Kind": "label",
           "slot5AvatarSlot": {
             "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
             "overrides": {}
@@ -206,7 +210,7 @@
           }
         }
       ],
-      "headerHeight": 120,
+      "headerHeight": 130,
       "mediaSlot": {
         "variantReference": "component_project_foqn_s2_media::variant::media_video_copy",
         "overrides": {}
@@ -238,7 +242,7 @@
         "valueKind": "MediaFilePath",
         "defaultValue": "media/image.14b3f25e7af16bda8755ce1c2c1efe6b.jpg",
         "source": "runtime",
-        "uiOrigin": "self",
+        "uiOrigin": "embedded",
         "uiGroupId": "media",
         "uiGroupLabel": "Media",
         "uiOrder": 10
@@ -254,7 +258,7 @@
         "maximum": 4096,
         "increment": 1,
         "source": "runtime",
-        "uiOrigin": "self",
+        "uiOrigin": "embedded",
         "uiGroupId": "media",
         "uiGroupLabel": "Media",
         "uiOrder": 20
@@ -671,14 +675,14 @@
         "slot1Label": "Alex Q",
         "slot1Sublabel": "@alexq · 2 min",
         "slot2ActorId": "actor_alex",
-        "slot2Label": "",
-        "slot2Sublabel": "",
+        "slot2Label": "250",
+        "slot2Sublabel": "Publicaciones",
         "slot3ActorId": "actor_alex",
-        "slot3Label": "",
-        "slot3Sublabel": "",
+        "slot3Label": "135",
+        "slot3Sublabel": "Seguidores",
         "slot4ActorId": "actor_alex",
-        "slot4Label": "",
-        "slot4Sublabel": "",
+        "slot4Label": "54",
+        "slot4Sublabel": "Siguiendo",
         "slot5ActorId": "actor_alex",
         "slot5Label": "",
         "slot5Sublabel": ""
@@ -689,7 +693,7 @@
         "slot1Label": "#FOQN",
         "slot1Sublabel": "",
         "slot2ActorId": "actor_alex",
-        "slot2Label": "Social",
+        "slot2Label": "#ASDF",
         "slot2Sublabel": "",
         "slot3ActorId": "actor_alex",
         "slot3Label": "",
@@ -716,7 +720,7 @@
       "socialPost": {
         "useAppWallpaper": true,
         "showHeader": true,
-        "showStatusBar": true,
+        "showStatusBar": false,
         "showNavigationBar": true,
         "headerSurfaceSlot": {
           "variantReference": "component_project_foqn_s2_surface::variant::default",
@@ -731,13 +735,17 @@
           {
             "id": "row1",
             "label": "Row 1",
-            "padding": "theme.spacing.s|theme.spacing.s",
+            "padding": "theme.spacing.xl|theme.spacing.m",
             "verticalAlignment": "center",
-            "showSeparator": true,
+            "showSeparator": false,
             "slot1Kind": "avatar",
             "slot1AvatarSlot": {
               "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-              "overrides": {}
+              "overrides": {
+                "avatar": {
+                  "defaultSize": 50
+                }
+              }
             },
             "slot1IconSlot": {
               "variantReference": "component_project_foqn_s2_button::variant::icon_only",
@@ -747,7 +755,7 @@
               "variantReference": "component_project_foqn_s2_label::variant::default",
               "overrides": {}
             },
-            "slot2Kind": "none",
+            "slot2Kind": "label",
             "slot2AvatarSlot": {
               "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
               "overrides": {}
@@ -757,10 +765,10 @@
               "overrides": {}
             },
             "slot2LabelSlot": {
-              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
               "overrides": {}
             },
-            "slot3Kind": "none",
+            "slot3Kind": "label",
             "slot3AvatarSlot": {
               "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
               "overrides": {}
@@ -770,10 +778,10 @@
               "overrides": {}
             },
             "slot3LabelSlot": {
-              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
               "overrides": {}
             },
-            "slot4Kind": "none",
+            "slot4Kind": "label",
             "slot4AvatarSlot": {
               "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
               "overrides": {}
@@ -783,10 +791,10 @@
               "overrides": {}
             },
             "slot4LabelSlot": {
-              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
               "overrides": {}
             },
-            "slot5Kind": "icon",
+            "slot5Kind": "none",
             "slot5AvatarSlot": {
               "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
               "overrides": {}
@@ -803,7 +811,7 @@
           {
             "id": "row2",
             "label": "Row 2",
-            "padding": "theme.spacing.s|theme.spacing.s",
+            "padding": "theme.spacing.l|theme.spacing.s",
             "verticalAlignment": "center",
             "showSeparator": true,
             "slot1Kind": "label",
@@ -832,7 +840,7 @@
               "variantReference": "component_project_foqn_s2_label::variant::default",
               "overrides": {}
             },
-            "slot3Kind": "none",
+            "slot3Kind": "label",
             "slot3AvatarSlot": {
               "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
               "overrides": {}
@@ -858,7 +866,7 @@
               "variantReference": "component_project_foqn_s2_label::variant::default",
               "overrides": {}
             },
-            "slot5Kind": "icon",
+            "slot5Kind": "label",
             "slot5AvatarSlot": {
               "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
               "overrides": {}
@@ -873,7 +881,7 @@
             }
           }
         ],
-        "headerHeight": 120,
+        "headerHeight": 130,
         "mediaSlot": {
           "variantReference": "component_project_foqn_s2_media::variant::media_video_copy",
           "overrides": {}
