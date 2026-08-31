@@ -221,14 +221,16 @@ internal sealed class NestedRuntimeRecordReferenceResolver
         string themeMode,
         IReadOnlyDictionary<string, string> paletteColors)
     {
-        if (values["inputs"] is not JsonArray) return;
+        if (values["inputs"] is JsonArray)
+        {
+            ResolveDeclaredValues(
+                values,
+                RuntimeInputDefinitionReader.ReadInputs(values, new JsonObject()),
+                themeMode,
+                paletteColors);
+        }
 
-        ResolveDeclaredValues(
-            values,
-            RuntimeInputDefinitionReader.ReadInputs(values, new JsonObject()),
-            themeMode,
-            paletteColors);
-
+        if (values["collections"] is not JsonArray) return;
         foreach (var collection in RuntimeInputDefinitionReader.ReadCollections(
                      values,
                      new JsonObject()))

@@ -529,7 +529,6 @@ internal sealed class ComponentPreviewInputSession
         {
             EnsureRecordReferenceValues(inputs, effectiveProjectId);
             EnsureComponentVariantReferenceValues(inputs, effectiveProjectId);
-            ResolveCollectionRecordReferences(preview, config, themeMode, payload.PaletteColors);
         }
 
         foreach (var input in inputs)
@@ -559,8 +558,16 @@ internal sealed class ComponentPreviewInputSession
             }
         }
 
-        _nestedRecordInputResolver.Resolve(preview, themeMode, payload.PaletteColors);
         ReconcileRuntimeStructure(preview, config);
+        if (!string.IsNullOrWhiteSpace(effectiveProjectId))
+        {
+            ResolveCollectionRecordReferences(
+                preview,
+                config,
+                themeMode,
+                payload.PaletteColors);
+        }
+        _nestedRecordInputResolver.Resolve(preview, themeMode, payload.PaletteColors);
 
         var result = payload with
         {
