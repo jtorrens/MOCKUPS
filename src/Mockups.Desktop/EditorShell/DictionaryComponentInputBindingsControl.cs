@@ -268,8 +268,12 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
         {
             return declared;
         }
-        var variantReference = _services.GetFieldValue(_definition.RuntimeInputComponentVariantFieldId);
-        if (string.IsNullOrWhiteSpace(variantReference)) return declared;
+        var variantValue = _services.GetFieldValue(
+            _definition.RuntimeInputComponentVariantFieldId);
+        if (string.IsNullOrWhiteSpace(variantValue)) return declared;
+        var variantReference = DictionaryComponentVariantReference.Read(
+            variantValue,
+            _definition.RuntimeInputComponentVariantFieldId);
         var known = declared.Select((input) => input.Id).ToHashSet(StringComparer.Ordinal);
         declared.AddRange(_services.GetComponentVariantRuntimeInputs(variantReference)
             .Where((input) => known.Add(input.Id)));

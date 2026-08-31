@@ -496,10 +496,16 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
         {
             return null;
         }
-        var reference = _services.GetFieldValue(_definition.RuntimeCollectionComponentVariantFieldId);
-        return string.IsNullOrWhiteSpace(reference)
+        var value = _services.GetFieldValue(
+            _definition.RuntimeCollectionComponentVariantFieldId);
+        return string.IsNullOrWhiteSpace(value)
             ? null
-            : _services.GetComponentVariantRuntimeCollections(reference).FirstOrDefault();
+            : _services.GetComponentVariantRuntimeCollections(
+                DictionaryComponentVariantReference.Read(
+                    value,
+                    _definition
+                        .RuntimeCollectionComponentVariantFieldId))
+                .FirstOrDefault();
     }
 
     private string DefaultValue(

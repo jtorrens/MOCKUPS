@@ -275,6 +275,7 @@ var tests = new (string Name, Action Run)[]
     ("Label subtext placement uses the current explicit alignment contract", LabelSubtextPlacementUsesCurrentContract),
     ("Password composes stateful atoms and BehaviorTiming", PasswordSeedOpensAndRenders),
     ("Social Post composes four zones with optional chrome and composer", SocialPostComposesFourZones),
+    ("Social Post prepares its Component Stack inputs in the real editor", SocialPostEditorPreparesComponentStackInputs),
     ("Lock Screen composes its runtime Stack and optional system bars", LockScreenComposesRuntimeStack),
     ("forwarded child inputs become effective parent runtime inputs", ForwardedChildInputsBecomeParentRuntimeInputs),
     ("forwarded runtime collections expose slot state actions", ForwardedRuntimeCollectionsExposeSlotStateActions),
@@ -16983,6 +16984,7 @@ var isolatedUiTests = new HashSet<string>(StringComparer.Ordinal)
     "pinned Module Variant Preview survives changing editor selection",
     "pinned Production Preview keeps its active Screen while editing Design",
     "Chat List Module exposes its fixed List boundary and exact Runtime in the real editor",
+    "Social Post prepares its Component Stack inputs in the real editor",
 };
 var exhaustiveTests = new HashSet<string>(StringComparer.Ordinal)
 {
@@ -20240,6 +20242,25 @@ static void ComponentInputBindingsResolveRecordReferences()
                 tableId,
                 allowEmpty);
         });
+    const string slotVariantReference =
+        "component_project_foqn_s2_collectionStack::variant::default";
+    var runtimeVariantRequests = new List<string>();
+    var slotServices = services with
+    {
+        GetFieldValue = (fieldId) => fieldId == "owner.slot"
+            ? new JsonObject
+            {
+                ["variantReference"] = slotVariantReference,
+                ["overrides"] = new JsonObject(),
+            }.ToJsonString()
+            : throw new InvalidOperationException(
+                $"Unexpected Component Variant field '{fieldId}'."),
+        GetComponentVariantRuntimeInputs = (reference) =>
+        {
+            runtimeVariantRequests.Add(reference);
+            return [];
+        },
+    };
 
     using var session = HeadlessUnitTestSession.StartNew(
         typeof(HeadlessTestApplication));
@@ -20267,6 +20288,14 @@ static void ComponentInputBindingsResolveRecordReferences()
                 [optionalBinding.JsonKey] = "",
             }.ToJsonString(),
             services);
+        var slotOwned = new DictionaryComponentInputBindingsControl(
+            new FieldDefinition(
+                "owner.inputs",
+                "Slot-owned Component inputs",
+                ValueKind.ComponentInputBindings,
+                RuntimeInputComponentVariantFieldId: "owner.slot"),
+            "{}",
+            slotServices);
         var window = new Window
         {
             Content = new StackPanel
@@ -20275,6 +20304,7 @@ static void ComponentInputBindingsResolveRecordReferences()
                 {
                     required,
                     optional,
+                    slotOwned,
                 },
             },
         };
@@ -20299,6 +20329,7 @@ static void ComponentInputBindingsResolveRecordReferences()
 
     True(optionRequests.Contains(("actors", false)));
     True(optionRequests.Contains(("actors", true)));
+    SequenceEqual([slotVariantReference], runtimeVariantRequests);
 }
 
 static void CollectionStackSeedOpensAndRenders()
@@ -20851,7 +20882,25 @@ static void SocialPostComposesFourZones()
     var module = nodes.Single((node) =>
         node.Kind == ProjectTreeNodeKind.Module
         && database.GetModuleSettings(node.Id).RecordClassId == "module.core.socialPost");
-    Equal("app_core_chat", module.Parent?.Id ?? "");
+    var socialMedia = module.Parent
+        ?? throw new InvalidOperationException(
+            "Social Post has no Social Media app parent.");
+    Equal("app_project_foqn_s2_social_media", socialMedia.Id);
+    Equal("app.core.socialMedia", socialMedia.RecordClassId);
+    Equal("Social Media", socialMedia.Name);
+    var appSettings = database.GetAppSettings(socialMedia.Id);
+    Equal("social-media", appSettings.BundleKey);
+    Equal("media", appSettings.AppType);
+    var appFields = EditorLayouts(database)
+        .LoadEditorLayout("app.core.socialMedia")
+        .Cards
+        .SelectMany((card) => card.VisibleGroups)
+        .SelectMany((group) => group.VisibleFields)
+        .Select((field) => field.Id)
+        .ToHashSet(StringComparer.Ordinal);
+    True(appFields.Contains("app.wallpaper.color"));
+    True(appFields.Contains("app.wallpaper.images.light.filePath"));
+    True(appFields.Contains("app.wallpaper.images.dark.filePath"));
     var settings = database.GetModuleSettings(module.Id);
     var config = JsonPath.ParseRequiredObject(settings.ConfigJson, "Social Post config");
     var socialPost = JsonPath.RequiredObject(config, "socialPost", "Social Post config");
@@ -20939,6 +20988,90 @@ static void SocialPostComposesFourZones()
     foreach (var renderableId in new[] { "header", "media", "message", "actions" })
     {
         True(html.Contains($"data-renderable-id=\"{renderableId}\"", StringComparison.Ordinal));
+    }
+}
+
+static void SocialPostEditorPreparesComponentStackInputs()
+{
+    var source = ParityDatabasePath();
+    var temporary = Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        $".mockups-headless-social-post-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        using var session = HeadlessUnitTestSession.StartNew(
+            typeof(HeadlessTestApplication));
+        session.Dispatch(() =>
+        {
+            var window = CreateTestWindow(temporary);
+            window.Width = 3000;
+            window.Height = 900;
+            window.Show();
+            Dispatcher.UIThread.RunJobs();
+            var socialPost = WindowSession(window).TreeRoots
+                .SelectMany(DescendantsAndSelf)
+                .Single((node) =>
+                    node.Kind == ProjectTreeNodeKind.Module
+                    && node.Id
+                        == "module_project_foqn_s2_social_post");
+            Equal(
+                "app_project_foqn_s2_social_media",
+                socialPost.Parent?.Id ?? "");
+            var selectNode = typeof(MainWindow).GetMethod(
+                "SelectNodeById",
+                BindingFlags.Instance | BindingFlags.NonPublic,
+                binder: null,
+                types: [typeof(string)],
+                modifiers: null)
+                ?? throw new InvalidOperationException(
+                    "Missing MainWindow node selection boundary.");
+            True((bool)(selectNode.Invoke(
+                window,
+                [socialPost.Id]) ?? false));
+            var selected = Required(
+                WindowSession(window).SelectedNode);
+            Equal(ProjectTreeNodeKind.ModuleVariant, selected.Kind);
+            var editorContent = typeof(MainWindow)
+                .GetField(
+                    "_editorContent",
+                    BindingFlags.Instance | BindingFlags.NonPublic)
+                ?.GetValue(window) as EditorContentController
+                ?? throw new InvalidOperationException(
+                    "Missing prepared editor content owner.");
+            var activeFields = typeof(MainWindow)
+                .GetField(
+                    "_activeFieldControls",
+                    BindingFlags.Instance | BindingFlags.NonPublic)
+                ?.GetValue(window) as EditorActiveFieldControls
+                ?? throw new InvalidOperationException(
+                    "Missing active dictionary field owner.");
+            var messages = Required(
+                window.FindControl<TextBox>(
+                    "ShellMessagesTextBox"));
+            True(SpinWait.SpinUntil(
+                () =>
+                {
+                    Dispatcher.UIThread.RunJobs();
+                    return editorContent.CommittedOwnerId.Equals(
+                            selected.Id,
+                            StringComparison.Ordinal)
+                        && activeFields.ControlsByFieldId.ContainsKey(
+                            "module.core.socialPost.headerStackInputs");
+                },
+                TimeSpan.FromSeconds(10)),
+                "Social Post editor did not prepare its Collection Stack Runtime. "
+                + (messages.Text ?? ""));
+            True(!(messages.Text ?? "").Contains(
+                "Prepare editor",
+                StringComparison.Ordinal));
+            window.Hide();
+        }, CancellationToken.None).GetAwaiter().GetResult();
+    }
+    finally
+    {
+        File.Delete(temporary);
     }
 }
 

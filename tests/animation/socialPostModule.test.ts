@@ -26,7 +26,7 @@ function fixture() {
       WHERE record_class_id = 'module.core.socialPost'
     `).get() as ModuleRow | undefined;
     assert.ok(module);
-    assert.equal(module.app_id, "app_core_chat");
+    assert.equal(module.app_id, "app_project_foqn_s2_social_media");
     const metadata = JSON.parse(module.metadata_json) as {
       variants: Array<{ id: string; config: Record<string, unknown> }>;
     };
