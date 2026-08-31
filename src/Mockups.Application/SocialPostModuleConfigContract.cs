@@ -16,30 +16,18 @@ internal static class SocialPostModuleConfigContract
         ModuleAppearanceModeContract.Read(config, context);
         var socialPost = JsonPath.RequiredObject(config, "socialPost", context);
         var owner = $"{context}.socialPost";
-        var expected = new List<string>
-        {
-            "useAppWallpaper",
-            "showHeader",
-            "showStatusBar",
-            "showNavigationBar",
-            "headerSurfaceSlot",
-            "rowGapToken",
-        };
-        for (var row = 1; row <= 2; row++)
-        {
-            expected.Add($"row{row}Padding");
-            expected.Add($"row{row}VerticalAlignment");
-            expected.Add($"row{row}ShowSeparator");
-            for (var slot = 1; slot <= 5; slot++)
-            {
-                var prefix = $"row{row}Slot{slot}";
-                expected.Add($"{prefix}Kind");
-                expected.Add($"{prefix}AvatarSlot");
-                expected.Add($"{prefix}IconSlot");
-                expected.Add($"{prefix}LabelSlot");
-            }
-        }
-        RequireExactKeys(socialPost, expected, owner);
+        RequireExactKeys(
+            socialPost,
+            [
+                "useAppWallpaper",
+                "showHeader",
+                "showStatusBar",
+                "showNavigationBar",
+                "headerSurfaceSlot",
+                "rowGapToken",
+                "rows",
+            ],
+            owner);
 
         foreach (var key in new[]
         {
@@ -54,24 +42,57 @@ internal static class SocialPostModuleConfigContract
         ValidateSlot(socialPost, "headerSurfaceSlot", owner);
         JsonPath.RequiredString(socialPost, "rowGapToken", owner);
 
-        for (var row = 1; row <= 2; row++)
+        var rows = JsonPath.RequiredArray(socialPost, "rows", owner);
+        if (rows.Count != 2)
         {
-            JsonPath.RequiredString(socialPost, $"row{row}Padding", owner);
-            RequireOneOf(
-                JsonPath.RequiredString(socialPost, $"row{row}VerticalAlignment", owner),
-                ["top", "center", "bottom"],
-                $"{owner}.row{row}VerticalAlignment");
-            JsonPath.RequiredBoolean(socialPost, $"row{row}ShowSeparator", owner);
+            throw new InvalidOperationException(
+                $"{owner}.rows must contain exactly row1 and row2.");
+        }
+        for (var rowIndex = 0; rowIndex < rows.Count; rowIndex++)
+        {
+            var rowId = $"row{rowIndex + 1}";
+            var row = rows[rowIndex] as JsonObject
+                ?? throw new InvalidOperationException(
+                    $"{owner}.rows[{rowIndex}] must be an object.");
+            var rowKeys = new List<string>
+            {
+                "id",
+                "label",
+                "padding",
+                "verticalAlignment",
+                "showSeparator",
+            };
             for (var slot = 1; slot <= 5; slot++)
             {
-                var prefix = $"row{row}Slot{slot}";
+                rowKeys.Add($"slot{slot}Kind");
+                rowKeys.Add($"slot{slot}AvatarSlot");
+                rowKeys.Add($"slot{slot}IconSlot");
+                rowKeys.Add($"slot{slot}LabelSlot");
+            }
+            RequireExactKeys(row, rowKeys, $"{owner}.{rowId}");
+            if (!JsonPath.RequiredString(row, "id", owner)
+                    .Equals(rowId, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    $"{owner}.rows[{rowIndex}] must have stable id '{rowId}'.");
+            }
+            JsonPath.RequiredString(row, "label", owner);
+            JsonPath.RequiredString(row, "padding", owner);
+            RequireOneOf(
+                JsonPath.RequiredString(row, "verticalAlignment", owner),
+                ["top", "center", "bottom"],
+                $"{owner}.{rowId}.verticalAlignment");
+            JsonPath.RequiredBoolean(row, "showSeparator", owner);
+            for (var slot = 1; slot <= 5; slot++)
+            {
+                var prefix = $"slot{slot}";
                 RequireOneOf(
-                    JsonPath.RequiredString(socialPost, $"{prefix}Kind", owner),
+                    JsonPath.RequiredString(row, $"{prefix}Kind", owner),
                     ["none", "avatar", "icon", "label"],
-                    $"{owner}.{prefix}Kind");
-                ValidateSlot(socialPost, $"{prefix}AvatarSlot", owner);
-                ValidateSlot(socialPost, $"{prefix}IconSlot", owner);
-                ValidateSlot(socialPost, $"{prefix}LabelSlot", owner);
+                    $"{owner}.{rowId}.{prefix}Kind");
+                ValidateSlot(row, $"{prefix}AvatarSlot", owner);
+                ValidateSlot(row, $"{prefix}IconSlot", owner);
+                ValidateSlot(row, $"{prefix}LabelSlot", owner);
             }
         }
     }

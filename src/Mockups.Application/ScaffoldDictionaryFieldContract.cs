@@ -48,6 +48,7 @@ public static class ScaffoldDictionaryFieldContract
             ComponentInputBindings = descriptor.ComponentInputBindings is { Count: > 0 }
                 ? descriptor.ComponentInputBindings
                 : null,
+            StructuredCollection = descriptor.StructuredCollection,
         };
     }
 
@@ -79,6 +80,7 @@ public static class ScaffoldDictionaryFieldContract
             ComponentInputBindings = descriptor.ComponentInputBindings is { Count: > 0 }
                 ? descriptor.ComponentInputBindings
                 : null,
+            StructuredCollection = descriptor.StructuredCollection,
         };
     }
 }

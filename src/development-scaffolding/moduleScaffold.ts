@@ -30,6 +30,7 @@ export interface ModuleScaffoldField {
   runtimeInputComponentVariantFieldId: string;
   runtimeCollectionComponentVariantFieldId: string;
   componentInputBindings: JsonObject[] | null;
+  structuredCollection: JsonObject | null;
   imagePreview: JsonObject | null;
   recordReference: JsonObject | null;
   motionTiming: JsonObject | null;
@@ -1125,6 +1126,7 @@ function parseField(value: unknown, owner: string): ModuleScaffoldField {
     "runtimeInputComponentVariantFieldId",
     "runtimeCollectionComponentVariantFieldId",
     "componentInputBindings",
+    "structuredCollection",
     "imagePreview",
     "recordReference",
     "motionTiming",
@@ -1207,6 +1209,12 @@ function parseField(value: unknown, owner: string): ModuleScaffoldField {
         field.componentInputBindings,
         `${owner} componentInputBindings`,
       ) as JsonObject[],
+    structuredCollection: field.structuredCollection === null
+      ? null
+      : requiredJsonObject(
+        field.structuredCollection,
+        `${owner} structuredCollection`,
+      ),
     imagePreview: field.imagePreview === null
       ? null
       : requiredJsonObject(field.imagePreview, `${owner} imagePreview`),

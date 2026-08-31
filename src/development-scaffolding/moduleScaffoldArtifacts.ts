@@ -207,6 +207,7 @@ function renderField(field: ModuleScaffoldField) {
     componentVariantType: field.componentVariantType,
     unit: field.unit,
     componentInputBindings: field.componentInputBindings,
+    structuredCollection: field.structuredCollection,
     runtimeInputComponentVariantFieldId: field.runtimeInputComponentVariantFieldId,
     runtimeCollectionComponentVariantFieldId: field.runtimeCollectionComponentVariantFieldId,
     motionTiming: field.motionTiming,

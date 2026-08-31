@@ -24,6 +24,7 @@ export function resolveSocialPostModule(
   const socialPost = requiredRecord(config, "socialPost", "module.core.socialPost");
   const preview = parseObject(payload.designPreviewJson);
   const componentBaseConfigs = parseObject(payload.componentBaseConfigsJson);
+  const rows = requiredRows(socialPost);
 
   return {
     id: "module.core.socialPost",
@@ -55,22 +56,43 @@ export function resolveSocialPostModule(
       "module.core.socialPost.rowGapToken",
     ),
     rows: [
-      resolveRow(1, socialPost, preview, componentBaseConfigs),
-      resolveRow(2, socialPost, preview, componentBaseConfigs),
+      resolveRow(1, rows[0], preview, componentBaseConfigs),
+      resolveRow(2, rows[1], preview, componentBaseConfigs),
     ],
   };
 }
 
+function requiredRows(
+  socialPost: Record<string, unknown>,
+): [Record<string, unknown>, Record<string, unknown>] {
+  const value = socialPost.rows;
+  if (!Array.isArray(value) || value.length !== 2) {
+    throw new Error("module.core.socialPost.rows must contain exactly row1 and row2");
+  }
+  const rows = value.map((item, index) => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) {
+      throw new Error(`module.core.socialPost.rows[${index}] must be an object`);
+    }
+    const row = item as Record<string, unknown>;
+    const expectedId = `row${index + 1}`;
+    if (requiredString(row, "id", `module.core.socialPost.${expectedId}.id`) !== expectedId) {
+      throw new Error(`module.core.socialPost.rows[${index}] must have id '${expectedId}'`);
+    }
+    return row;
+  });
+  return [rows[0]!, rows[1]!];
+}
+
 function resolveRow(
   row: 1 | 2,
-  socialPost: Record<string, unknown>,
+  rowConfig: Record<string, unknown>,
   preview: Record<string, unknown>,
   componentBaseConfigs: Record<string, unknown>,
 ): SocialPostHeaderRow {
   const alignment = requiredString(
-    socialPost,
-    `row${row}VerticalAlignment`,
-    `module.core.socialPost.row${row}VerticalAlignment`,
+    rowConfig,
+    "verticalAlignment",
+    `module.core.socialPost.row${row}.verticalAlignment`,
   );
   if (alignment !== "top" && alignment !== "center" && alignment !== "bottom") {
     throw new Error(`Unsupported Social Post row alignment '${alignment}'`);
@@ -78,20 +100,20 @@ function resolveRow(
   return {
     id: `row${row}`,
     padding: requiredString(
-      socialPost,
-      `row${row}Padding`,
-      `module.core.socialPost.row${row}Padding`,
+      rowConfig,
+      "padding",
+      `module.core.socialPost.row${row}.padding`,
     ),
     verticalAlignment: alignment as SocialPostVerticalAlignment,
     showSeparator: requiredBoolean(
-      socialPost,
-      `row${row}ShowSeparator`,
-      `module.core.socialPost.row${row}ShowSeparator`,
+      rowConfig,
+      "showSeparator",
+      `module.core.socialPost.row${row}.showSeparator`,
     ),
     slots: [1, 2, 3, 4, 5].map((index) => resolveHeaderSlot(
       row,
       index,
-      socialPost,
+      rowConfig,
       preview,
       componentBaseConfigs,
     )),
@@ -101,36 +123,37 @@ function resolveRow(
 function resolveHeaderSlot(
   row: 1 | 2,
   index: number,
-  socialPost: Record<string, unknown>,
+  rowConfig: Record<string, unknown>,
   preview: Record<string, unknown>,
   componentBaseConfigs: Record<string, unknown>,
 ): SocialPostHeaderSlot {
-  const prefix = `row${row}Slot${index}`;
+  const configPrefix = `slot${index}`;
+  const runtimePrefix = `row${row}Slot${index}`;
   const kind = requiredString(
-    socialPost,
-    `${prefix}Kind`,
-    `module.core.socialPost.${prefix}Kind`,
+    rowConfig,
+    `${configPrefix}Kind`,
+    `module.core.socialPost.row${row}.${configPrefix}Kind`,
   );
   if (kind !== "none" && kind !== "avatar" && kind !== "icon" && kind !== "label") {
     throw new Error(`Unsupported Social Post slot kind '${kind}'`);
   }
 
   const avatarSlot = requiredTypedSlot(
-    socialPost,
+    rowConfig,
     componentBaseConfigs,
-    `${prefix}AvatarSlot`,
+    `${configPrefix}AvatarSlot`,
     "avatar",
   );
   const iconSlot = requiredTypedSlot(
-    socialPost,
+    rowConfig,
     componentBaseConfigs,
-    `${prefix}IconSlot`,
+    `${configPrefix}IconSlot`,
     "button",
   );
   const labelSlot = requiredTypedSlot(
-    socialPost,
+    rowConfig,
     componentBaseConfigs,
-    `${prefix}LabelSlot`,
+    `${configPrefix}LabelSlot`,
     "label",
   );
   if (kind === "none") return { index, kind, inputs: {} };
@@ -148,8 +171,8 @@ function resolveHeaderSlot(
       },
     };
   }
-  const label = stringValue(preview[`${prefix}Label`]);
-  const sublabel = stringValue(preview[`${prefix}Sublabel`]);
+  const label = stringValue(preview[`${runtimePrefix}Label`]);
+  const sublabel = stringValue(preview[`${runtimePrefix}Sublabel`]);
   if (kind === "label") {
     return {
       index,
@@ -162,8 +185,8 @@ function resolveHeaderSlot(
 
   const actor = structuredClone(requiredRecord(
     preview,
-    `${prefix}Actor`,
-    `module.core.socialPost.${prefix}Actor`,
+        `${runtimePrefix}Actor`,
+        `module.core.socialPost.${runtimePrefix}Actor`,
   ));
   if (label.trim()) actor.displayName = label;
   return {
@@ -174,8 +197,8 @@ function resolveHeaderSlot(
     inputs: {
       actorId: requiredString(
         preview,
-        `${prefix}ActorId`,
-        `module.core.socialPost.${prefix}ActorId`,
+        `${runtimePrefix}ActorId`,
+        `module.core.socialPost.${runtimePrefix}ActorId`,
       ),
       actor,
       sampleText: label,

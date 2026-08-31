@@ -465,7 +465,66 @@ public static class RuntimeInputDefinitionReader
     {
         var path = JsonString(input, "visibleWhenPath");
         var expected = JsonString(input, "visibleWhenValue");
-        if (string.IsNullOrWhiteSpace(path) && string.IsNullOrWhiteSpace(expected)) return true;
+        var collectionPath = JsonString(
+            input,
+            "visibleWhenCollectionPath");
+        var itemId = JsonString(input, "visibleWhenItemId");
+        var itemPath = JsonString(input, "visibleWhenItemPath");
+        var expectedValues = JsonStringArray(
+            input,
+            "visibleWhenValues");
+        var hasDirectCondition = !string.IsNullOrWhiteSpace(path)
+            || !string.IsNullOrWhiteSpace(expected);
+        var hasCollectionCondition =
+            !string.IsNullOrWhiteSpace(collectionPath)
+            || !string.IsNullOrWhiteSpace(itemId)
+            || !string.IsNullOrWhiteSpace(itemPath)
+            || expectedValues is { Count: > 0 };
+        if (!hasDirectCondition && !hasCollectionCondition) return true;
+        if (hasDirectCondition && hasCollectionCondition)
+        {
+            throw new InvalidOperationException(
+                "Runtime Input visibility cannot combine direct and collection-item conditions.");
+        }
+        if (hasCollectionCondition)
+        {
+            if (string.IsNullOrWhiteSpace(collectionPath)
+                || string.IsNullOrWhiteSpace(itemId)
+                || string.IsNullOrWhiteSpace(itemPath)
+                || expectedValues is not { Count: > 0 })
+            {
+                throw new InvalidOperationException(
+                    "Runtime Input collection-item visibility requires visibleWhenCollectionPath, visibleWhenItemId, visibleWhenItemPath and visibleWhenValues together.");
+            }
+            var collection = JsonPath.Get(
+                    config,
+                    collectionPath.Split(
+                        '.',
+                        StringSplitOptions.RemoveEmptyEntries))
+                as JsonArray
+                ?? throw new InvalidOperationException(
+                    $"Runtime Input visibility path '{collectionPath}' must resolve to a collection.");
+            var matches = collection
+                .OfType<JsonObject>()
+                .Where((item) =>
+                    item["id"] is JsonValue value
+                    && value.TryGetValue<string>(out var currentId)
+                    && currentId.Equals(itemId, StringComparison.Ordinal))
+                .ToList();
+            if (matches.Count != 1)
+            {
+                throw new InvalidOperationException(
+                    $"Runtime Input visibility requires exactly one collection item '{itemId}' at '{collectionPath}'.");
+            }
+            var collectionCurrent = JsonPath.Get(
+                matches[0],
+                itemPath.Split(
+                    '.',
+                    StringSplitOptions.RemoveEmptyEntries));
+            return collectionCurrent is JsonValue currentValue
+                && currentValue.TryGetValue<string>(out var itemText)
+                && expectedValues.Contains(itemText, StringComparer.Ordinal);
+        }
         if (string.IsNullOrWhiteSpace(path) || string.IsNullOrWhiteSpace(expected))
         {
             throw new InvalidOperationException(

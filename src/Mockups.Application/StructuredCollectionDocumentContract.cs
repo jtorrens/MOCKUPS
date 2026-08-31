@@ -14,6 +14,12 @@ public static class StructuredCollectionDocumentContract
         string owner)
     {
         RuntimeCollectionDocumentContract.Validate(items, owner);
+        if (definition.FixedItemCount > 0
+            && items.Count != definition.FixedItemCount)
+        {
+            throw new InvalidOperationException(
+                $"{owner} requires exactly {definition.FixedItemCount} items but contains {items.Count}.");
+        }
         var storedFields = definition.Fields
             .Where((field) => field.Source == ComponentInputSource.Runtime)
             .ToList();

@@ -18,6 +18,7 @@ public sealed record RecordClassFieldDescriptor(
     string ComponentVariantType = "",
     string Unit = "",
     IReadOnlyList<ComponentInputBindingDefinition>? ComponentInputBindings = null,
+    RuntimeInputCollectionDefinition? StructuredCollection = null,
     string RuntimeInputComponentVariantFieldId = "",
     string RuntimeCollectionComponentVariantFieldId = "",
     MotionTimingDefinition? MotionTiming = null,

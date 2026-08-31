@@ -59,142 +59,152 @@
         }
       },
       "rowGapToken": "theme.spacing.s",
-      "row1Padding": "theme.spacing.s|theme.spacing.s",
-      "row1VerticalAlignment": "center",
-      "row1ShowSeparator": true,
-      "row1Slot1Kind": "avatar",
-      "row1Slot1AvatarSlot": {
-        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-        "overrides": {}
-      },
-      "row1Slot1IconSlot": {
-        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-        "overrides": {}
-      },
-      "row1Slot1LabelSlot": {
-        "variantReference": "component_project_foqn_s2_label::variant::default",
-        "overrides": {}
-      },
-      "row1Slot2Kind": "none",
-      "row1Slot2AvatarSlot": {
-        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-        "overrides": {}
-      },
-      "row1Slot2IconSlot": {
-        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-        "overrides": {}
-      },
-      "row1Slot2LabelSlot": {
-        "variantReference": "component_project_foqn_s2_label::variant::default",
-        "overrides": {}
-      },
-      "row1Slot3Kind": "none",
-      "row1Slot3AvatarSlot": {
-        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-        "overrides": {}
-      },
-      "row1Slot3IconSlot": {
-        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-        "overrides": {}
-      },
-      "row1Slot3LabelSlot": {
-        "variantReference": "component_project_foqn_s2_label::variant::default",
-        "overrides": {}
-      },
-      "row1Slot4Kind": "none",
-      "row1Slot4AvatarSlot": {
-        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-        "overrides": {}
-      },
-      "row1Slot4IconSlot": {
-        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-        "overrides": {}
-      },
-      "row1Slot4LabelSlot": {
-        "variantReference": "component_project_foqn_s2_label::variant::default",
-        "overrides": {}
-      },
-      "row1Slot5Kind": "icon",
-      "row1Slot5AvatarSlot": {
-        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-        "overrides": {}
-      },
-      "row1Slot5IconSlot": {
-        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-        "overrides": {}
-      },
-      "row1Slot5LabelSlot": {
-        "variantReference": "component_project_foqn_s2_label::variant::default",
-        "overrides": {}
-      },
-      "row2Padding": "theme.spacing.s|theme.spacing.s",
-      "row2VerticalAlignment": "center",
-      "row2ShowSeparator": true,
-      "row2Slot1Kind": "label",
-      "row2Slot1AvatarSlot": {
-        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-        "overrides": {}
-      },
-      "row2Slot1IconSlot": {
-        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-        "overrides": {}
-      },
-      "row2Slot1LabelSlot": {
-        "variantReference": "component_project_foqn_s2_label::variant::default",
-        "overrides": {}
-      },
-      "row2Slot2Kind": "label",
-      "row2Slot2AvatarSlot": {
-        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-        "overrides": {}
-      },
-      "row2Slot2IconSlot": {
-        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-        "overrides": {}
-      },
-      "row2Slot2LabelSlot": {
-        "variantReference": "component_project_foqn_s2_label::variant::default",
-        "overrides": {}
-      },
-      "row2Slot3Kind": "none",
-      "row2Slot3AvatarSlot": {
-        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-        "overrides": {}
-      },
-      "row2Slot3IconSlot": {
-        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-        "overrides": {}
-      },
-      "row2Slot3LabelSlot": {
-        "variantReference": "component_project_foqn_s2_label::variant::default",
-        "overrides": {}
-      },
-      "row2Slot4Kind": "none",
-      "row2Slot4AvatarSlot": {
-        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-        "overrides": {}
-      },
-      "row2Slot4IconSlot": {
-        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-        "overrides": {}
-      },
-      "row2Slot4LabelSlot": {
-        "variantReference": "component_project_foqn_s2_label::variant::default",
-        "overrides": {}
-      },
-      "row2Slot5Kind": "icon",
-      "row2Slot5AvatarSlot": {
-        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-        "overrides": {}
-      },
-      "row2Slot5IconSlot": {
-        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-        "overrides": {}
-      },
-      "row2Slot5LabelSlot": {
-        "variantReference": "component_project_foqn_s2_label::variant::default",
-        "overrides": {}
-      }
+      "rows": [
+        {
+          "id": "row1",
+          "label": "Row 1",
+          "padding": "theme.spacing.s|theme.spacing.s",
+          "verticalAlignment": "center",
+          "showSeparator": true,
+          "slot1Kind": "avatar",
+          "slot1AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "slot1IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot1LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          },
+          "slot2Kind": "none",
+          "slot2AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "slot2IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot2LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          },
+          "slot3Kind": "none",
+          "slot3AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "slot3IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot3LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          },
+          "slot4Kind": "none",
+          "slot4AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "slot4IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot4LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          },
+          "slot5Kind": "icon",
+          "slot5AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "slot5IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot5LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          }
+        },
+        {
+          "id": "row2",
+          "label": "Row 2",
+          "padding": "theme.spacing.s|theme.spacing.s",
+          "verticalAlignment": "center",
+          "showSeparator": true,
+          "slot1Kind": "label",
+          "slot1AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "slot1IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot1LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          },
+          "slot2Kind": "label",
+          "slot2AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "slot2IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot2LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          },
+          "slot3Kind": "none",
+          "slot3AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "slot3IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot3LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          },
+          "slot4Kind": "none",
+          "slot4AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "slot4IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot4LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          },
+          "slot5Kind": "icon",
+          "slot5AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "slot5IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot5LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          }
+        }
+      ]
     }
   },
   "designPreview": {
@@ -207,7 +217,13 @@
         "defaultValue": "actor_alex",
         "tableId": "actors",
         "resolvedJsonKey": "row1Slot1Actor",
-        "valueKind": "RecordReference"
+        "valueKind": "RecordReference",
+        "visibleWhenCollectionPath": "socialPost.rows",
+        "visibleWhenItemId": "row1",
+        "visibleWhenItemPath": "slot1Kind",
+        "visibleWhenValues": [
+          "avatar"
+        ]
       },
       {
         "id": "row1Slot1.label",
@@ -215,7 +231,14 @@
         "jsonKey": "row1Slot1Label",
         "kind": "text",
         "defaultValue": "Alex Q",
-        "valueKind": "StringSingleLine"
+        "valueKind": "StringSingleLine",
+        "visibleWhenCollectionPath": "socialPost.rows",
+        "visibleWhenItemId": "row1",
+        "visibleWhenItemPath": "slot1Kind",
+        "visibleWhenValues": [
+          "avatar",
+          "label"
+        ]
       },
       {
         "id": "row1Slot1.sublabel",
@@ -223,7 +246,14 @@
         "jsonKey": "row1Slot1Sublabel",
         "kind": "text",
         "defaultValue": "@alexq · 2 min",
-        "valueKind": "StringSingleLine"
+        "valueKind": "StringSingleLine",
+        "visibleWhenCollectionPath": "socialPost.rows",
+        "visibleWhenItemId": "row1",
+        "visibleWhenItemPath": "slot1Kind",
+        "visibleWhenValues": [
+          "avatar",
+          "label"
+        ]
       },
       {
         "id": "row1Slot2.actor",
@@ -233,7 +263,13 @@
         "defaultValue": "actor_alex",
         "tableId": "actors",
         "resolvedJsonKey": "row1Slot2Actor",
-        "valueKind": "RecordReference"
+        "valueKind": "RecordReference",
+        "visibleWhenCollectionPath": "socialPost.rows",
+        "visibleWhenItemId": "row1",
+        "visibleWhenItemPath": "slot2Kind",
+        "visibleWhenValues": [
+          "avatar"
+        ]
       },
       {
         "id": "row1Slot2.label",
@@ -241,7 +277,14 @@
         "jsonKey": "row1Slot2Label",
         "kind": "text",
         "defaultValue": "",
-        "valueKind": "StringSingleLine"
+        "valueKind": "StringSingleLine",
+        "visibleWhenCollectionPath": "socialPost.rows",
+        "visibleWhenItemId": "row1",
+        "visibleWhenItemPath": "slot2Kind",
+        "visibleWhenValues": [
+          "avatar",
+          "label"
+        ]
       },
       {
         "id": "row1Slot2.sublabel",
@@ -249,7 +292,14 @@
         "jsonKey": "row1Slot2Sublabel",
         "kind": "text",
         "defaultValue": "",
-        "valueKind": "StringSingleLine"
+        "valueKind": "StringSingleLine",
+        "visibleWhenCollectionPath": "socialPost.rows",
+        "visibleWhenItemId": "row1",
+        "visibleWhenItemPath": "slot2Kind",
+        "visibleWhenValues": [
+          "avatar",
+          "label"
+        ]
       },
       {
         "id": "row1Slot3.actor",
@@ -259,7 +309,13 @@
         "defaultValue": "actor_alex",
         "tableId": "actors",
         "resolvedJsonKey": "row1Slot3Actor",
-        "valueKind": "RecordReference"
+        "valueKind": "RecordReference",
+        "visibleWhenCollectionPath": "socialPost.rows",
+        "visibleWhenItemId": "row1",
+        "visibleWhenItemPath": "slot3Kind",
+        "visibleWhenValues": [
+          "avatar"
+        ]
       },
       {
         "id": "row1Slot3.label",
@@ -267,7 +323,14 @@
         "jsonKey": "row1Slot3Label",
         "kind": "text",
         "defaultValue": "",
-        "valueKind": "StringSingleLine"
+        "valueKind": "StringSingleLine",
+        "visibleWhenCollectionPath": "socialPost.rows",
+        "visibleWhenItemId": "row1",
+        "visibleWhenItemPath": "slot3Kind",
+        "visibleWhenValues": [
+          "avatar",
+          "label"
+        ]
       },
       {
         "id": "row1Slot3.sublabel",
@@ -275,7 +338,14 @@
         "jsonKey": "row1Slot3Sublabel",
         "kind": "text",
         "defaultValue": "",
-        "valueKind": "StringSingleLine"
+        "valueKind": "StringSingleLine",
+        "visibleWhenCollectionPath": "socialPost.rows",
+        "visibleWhenItemId": "row1",
+        "visibleWhenItemPath": "slot3Kind",
+        "visibleWhenValues": [
+          "avatar",
+          "label"
+        ]
       },
       {
         "id": "row1Slot4.actor",
@@ -285,7 +355,13 @@
         "defaultValue": "actor_alex",
         "tableId": "actors",
         "resolvedJsonKey": "row1Slot4Actor",
-        "valueKind": "RecordReference"
+        "valueKind": "RecordReference",
+        "visibleWhenCollectionPath": "socialPost.rows",
+        "visibleWhenItemId": "row1",
+        "visibleWhenItemPath": "slot4Kind",
+        "visibleWhenValues": [
+          "avatar"
+        ]
       },
       {
         "id": "row1Slot4.label",
@@ -293,7 +369,14 @@
         "jsonKey": "row1Slot4Label",
         "kind": "text",
         "defaultValue": "",
-        "valueKind": "StringSingleLine"
+        "valueKind": "StringSingleLine",
+        "visibleWhenCollectionPath": "socialPost.rows",
+        "visibleWhenItemId": "row1",
+        "visibleWhenItemPath": "slot4Kind",
+        "visibleWhenValues": [
+          "avatar",
+          "label"
+        ]
       },
       {
         "id": "row1Slot4.sublabel",
@@ -301,7 +384,14 @@
         "jsonKey": "row1Slot4Sublabel",
         "kind": "text",
         "defaultValue": "",
-        "valueKind": "StringSingleLine"
+        "valueKind": "StringSingleLine",
+        "visibleWhenCollectionPath": "socialPost.rows",
+        "visibleWhenItemId": "row1",
+        "visibleWhenItemPath": "slot4Kind",
+        "visibleWhenValues": [
+          "avatar",
+          "label"
+        ]
       },
       {
         "id": "row1Slot5.actor",
@@ -311,7 +401,13 @@
         "defaultValue": "actor_alex",
         "tableId": "actors",
         "resolvedJsonKey": "row1Slot5Actor",
-        "valueKind": "RecordReference"
+        "valueKind": "RecordReference",
+        "visibleWhenCollectionPath": "socialPost.rows",
+        "visibleWhenItemId": "row1",
+        "visibleWhenItemPath": "slot5Kind",
+        "visibleWhenValues": [
+          "avatar"
+        ]
       },
       {
         "id": "row1Slot5.label",
@@ -319,7 +415,14 @@
         "jsonKey": "row1Slot5Label",
         "kind": "text",
         "defaultValue": "",
-        "valueKind": "StringSingleLine"
+        "valueKind": "StringSingleLine",
+        "visibleWhenCollectionPath": "socialPost.rows",
+        "visibleWhenItemId": "row1",
+        "visibleWhenItemPath": "slot5Kind",
+        "visibleWhenValues": [
+          "avatar",
+          "label"
+        ]
       },
       {
         "id": "row1Slot5.sublabel",
@@ -327,7 +430,14 @@
         "jsonKey": "row1Slot5Sublabel",
         "kind": "text",
         "defaultValue": "",
-        "valueKind": "StringSingleLine"
+        "valueKind": "StringSingleLine",
+        "visibleWhenCollectionPath": "socialPost.rows",
+        "visibleWhenItemId": "row1",
+        "visibleWhenItemPath": "slot5Kind",
+        "visibleWhenValues": [
+          "avatar",
+          "label"
+        ]
       },
       {
         "id": "row2Slot1.actor",
@@ -337,7 +447,13 @@
         "defaultValue": "actor_alex",
         "tableId": "actors",
         "resolvedJsonKey": "row2Slot1Actor",
-        "valueKind": "RecordReference"
+        "valueKind": "RecordReference",
+        "visibleWhenCollectionPath": "socialPost.rows",
+        "visibleWhenItemId": "row2",
+        "visibleWhenItemPath": "slot1Kind",
+        "visibleWhenValues": [
+          "avatar"
+        ]
       },
       {
         "id": "row2Slot1.label",
@@ -345,7 +461,14 @@
         "jsonKey": "row2Slot1Label",
         "kind": "text",
         "defaultValue": "#FOQN",
-        "valueKind": "StringSingleLine"
+        "valueKind": "StringSingleLine",
+        "visibleWhenCollectionPath": "socialPost.rows",
+        "visibleWhenItemId": "row2",
+        "visibleWhenItemPath": "slot1Kind",
+        "visibleWhenValues": [
+          "avatar",
+          "label"
+        ]
       },
       {
         "id": "row2Slot1.sublabel",
@@ -353,7 +476,14 @@
         "jsonKey": "row2Slot1Sublabel",
         "kind": "text",
         "defaultValue": "",
-        "valueKind": "StringSingleLine"
+        "valueKind": "StringSingleLine",
+        "visibleWhenCollectionPath": "socialPost.rows",
+        "visibleWhenItemId": "row2",
+        "visibleWhenItemPath": "slot1Kind",
+        "visibleWhenValues": [
+          "avatar",
+          "label"
+        ]
       },
       {
         "id": "row2Slot2.actor",
@@ -363,7 +493,13 @@
         "defaultValue": "actor_alex",
         "tableId": "actors",
         "resolvedJsonKey": "row2Slot2Actor",
-        "valueKind": "RecordReference"
+        "valueKind": "RecordReference",
+        "visibleWhenCollectionPath": "socialPost.rows",
+        "visibleWhenItemId": "row2",
+        "visibleWhenItemPath": "slot2Kind",
+        "visibleWhenValues": [
+          "avatar"
+        ]
       },
       {
         "id": "row2Slot2.label",
@@ -371,7 +507,14 @@
         "jsonKey": "row2Slot2Label",
         "kind": "text",
         "defaultValue": "Social",
-        "valueKind": "StringSingleLine"
+        "valueKind": "StringSingleLine",
+        "visibleWhenCollectionPath": "socialPost.rows",
+        "visibleWhenItemId": "row2",
+        "visibleWhenItemPath": "slot2Kind",
+        "visibleWhenValues": [
+          "avatar",
+          "label"
+        ]
       },
       {
         "id": "row2Slot2.sublabel",
@@ -379,7 +522,14 @@
         "jsonKey": "row2Slot2Sublabel",
         "kind": "text",
         "defaultValue": "",
-        "valueKind": "StringSingleLine"
+        "valueKind": "StringSingleLine",
+        "visibleWhenCollectionPath": "socialPost.rows",
+        "visibleWhenItemId": "row2",
+        "visibleWhenItemPath": "slot2Kind",
+        "visibleWhenValues": [
+          "avatar",
+          "label"
+        ]
       },
       {
         "id": "row2Slot3.actor",
@@ -389,7 +539,13 @@
         "defaultValue": "actor_alex",
         "tableId": "actors",
         "resolvedJsonKey": "row2Slot3Actor",
-        "valueKind": "RecordReference"
+        "valueKind": "RecordReference",
+        "visibleWhenCollectionPath": "socialPost.rows",
+        "visibleWhenItemId": "row2",
+        "visibleWhenItemPath": "slot3Kind",
+        "visibleWhenValues": [
+          "avatar"
+        ]
       },
       {
         "id": "row2Slot3.label",
@@ -397,7 +553,14 @@
         "jsonKey": "row2Slot3Label",
         "kind": "text",
         "defaultValue": "",
-        "valueKind": "StringSingleLine"
+        "valueKind": "StringSingleLine",
+        "visibleWhenCollectionPath": "socialPost.rows",
+        "visibleWhenItemId": "row2",
+        "visibleWhenItemPath": "slot3Kind",
+        "visibleWhenValues": [
+          "avatar",
+          "label"
+        ]
       },
       {
         "id": "row2Slot3.sublabel",
@@ -405,7 +568,14 @@
         "jsonKey": "row2Slot3Sublabel",
         "kind": "text",
         "defaultValue": "",
-        "valueKind": "StringSingleLine"
+        "valueKind": "StringSingleLine",
+        "visibleWhenCollectionPath": "socialPost.rows",
+        "visibleWhenItemId": "row2",
+        "visibleWhenItemPath": "slot3Kind",
+        "visibleWhenValues": [
+          "avatar",
+          "label"
+        ]
       },
       {
         "id": "row2Slot4.actor",
@@ -415,7 +585,13 @@
         "defaultValue": "actor_alex",
         "tableId": "actors",
         "resolvedJsonKey": "row2Slot4Actor",
-        "valueKind": "RecordReference"
+        "valueKind": "RecordReference",
+        "visibleWhenCollectionPath": "socialPost.rows",
+        "visibleWhenItemId": "row2",
+        "visibleWhenItemPath": "slot4Kind",
+        "visibleWhenValues": [
+          "avatar"
+        ]
       },
       {
         "id": "row2Slot4.label",
@@ -423,7 +599,14 @@
         "jsonKey": "row2Slot4Label",
         "kind": "text",
         "defaultValue": "",
-        "valueKind": "StringSingleLine"
+        "valueKind": "StringSingleLine",
+        "visibleWhenCollectionPath": "socialPost.rows",
+        "visibleWhenItemId": "row2",
+        "visibleWhenItemPath": "slot4Kind",
+        "visibleWhenValues": [
+          "avatar",
+          "label"
+        ]
       },
       {
         "id": "row2Slot4.sublabel",
@@ -431,7 +614,14 @@
         "jsonKey": "row2Slot4Sublabel",
         "kind": "text",
         "defaultValue": "",
-        "valueKind": "StringSingleLine"
+        "valueKind": "StringSingleLine",
+        "visibleWhenCollectionPath": "socialPost.rows",
+        "visibleWhenItemId": "row2",
+        "visibleWhenItemPath": "slot4Kind",
+        "visibleWhenValues": [
+          "avatar",
+          "label"
+        ]
       },
       {
         "id": "row2Slot5.actor",
@@ -441,7 +631,13 @@
         "defaultValue": "actor_alex",
         "tableId": "actors",
         "resolvedJsonKey": "row2Slot5Actor",
-        "valueKind": "RecordReference"
+        "valueKind": "RecordReference",
+        "visibleWhenCollectionPath": "socialPost.rows",
+        "visibleWhenItemId": "row2",
+        "visibleWhenItemPath": "slot5Kind",
+        "visibleWhenValues": [
+          "avatar"
+        ]
       },
       {
         "id": "row2Slot5.label",
@@ -449,7 +645,14 @@
         "jsonKey": "row2Slot5Label",
         "kind": "text",
         "defaultValue": "",
-        "valueKind": "StringSingleLine"
+        "valueKind": "StringSingleLine",
+        "visibleWhenCollectionPath": "socialPost.rows",
+        "visibleWhenItemId": "row2",
+        "visibleWhenItemPath": "slot5Kind",
+        "visibleWhenValues": [
+          "avatar",
+          "label"
+        ]
       },
       {
         "id": "row2Slot5.sublabel",
@@ -457,7 +660,14 @@
         "jsonKey": "row2Slot5Sublabel",
         "kind": "text",
         "defaultValue": "",
-        "valueKind": "StringSingleLine"
+        "valueKind": "StringSingleLine",
+        "visibleWhenCollectionPath": "socialPost.rows",
+        "visibleWhenItemId": "row2",
+        "visibleWhenItemPath": "slot5Kind",
+        "visibleWhenValues": [
+          "avatar",
+          "label"
+        ]
       }
     ],
     "row1Slot1ActorId": "actor_alex",
@@ -515,142 +725,152 @@
           }
         },
         "rowGapToken": "theme.spacing.s",
-        "row1Padding": "theme.spacing.s|theme.spacing.s",
-        "row1VerticalAlignment": "center",
-        "row1ShowSeparator": true,
-        "row1Slot1Kind": "avatar",
-        "row1Slot1AvatarSlot": {
-          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-          "overrides": {}
-        },
-        "row1Slot1IconSlot": {
-          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-          "overrides": {}
-        },
-        "row1Slot1LabelSlot": {
-          "variantReference": "component_project_foqn_s2_label::variant::default",
-          "overrides": {}
-        },
-        "row1Slot2Kind": "none",
-        "row1Slot2AvatarSlot": {
-          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-          "overrides": {}
-        },
-        "row1Slot2IconSlot": {
-          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-          "overrides": {}
-        },
-        "row1Slot2LabelSlot": {
-          "variantReference": "component_project_foqn_s2_label::variant::default",
-          "overrides": {}
-        },
-        "row1Slot3Kind": "none",
-        "row1Slot3AvatarSlot": {
-          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-          "overrides": {}
-        },
-        "row1Slot3IconSlot": {
-          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-          "overrides": {}
-        },
-        "row1Slot3LabelSlot": {
-          "variantReference": "component_project_foqn_s2_label::variant::default",
-          "overrides": {}
-        },
-        "row1Slot4Kind": "none",
-        "row1Slot4AvatarSlot": {
-          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-          "overrides": {}
-        },
-        "row1Slot4IconSlot": {
-          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-          "overrides": {}
-        },
-        "row1Slot4LabelSlot": {
-          "variantReference": "component_project_foqn_s2_label::variant::default",
-          "overrides": {}
-        },
-        "row1Slot5Kind": "icon",
-        "row1Slot5AvatarSlot": {
-          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-          "overrides": {}
-        },
-        "row1Slot5IconSlot": {
-          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-          "overrides": {}
-        },
-        "row1Slot5LabelSlot": {
-          "variantReference": "component_project_foqn_s2_label::variant::default",
-          "overrides": {}
-        },
-        "row2Padding": "theme.spacing.s|theme.spacing.s",
-        "row2VerticalAlignment": "center",
-        "row2ShowSeparator": true,
-        "row2Slot1Kind": "label",
-        "row2Slot1AvatarSlot": {
-          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-          "overrides": {}
-        },
-        "row2Slot1IconSlot": {
-          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-          "overrides": {}
-        },
-        "row2Slot1LabelSlot": {
-          "variantReference": "component_project_foqn_s2_label::variant::default",
-          "overrides": {}
-        },
-        "row2Slot2Kind": "label",
-        "row2Slot2AvatarSlot": {
-          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-          "overrides": {}
-        },
-        "row2Slot2IconSlot": {
-          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-          "overrides": {}
-        },
-        "row2Slot2LabelSlot": {
-          "variantReference": "component_project_foqn_s2_label::variant::default",
-          "overrides": {}
-        },
-        "row2Slot3Kind": "none",
-        "row2Slot3AvatarSlot": {
-          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-          "overrides": {}
-        },
-        "row2Slot3IconSlot": {
-          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-          "overrides": {}
-        },
-        "row2Slot3LabelSlot": {
-          "variantReference": "component_project_foqn_s2_label::variant::default",
-          "overrides": {}
-        },
-        "row2Slot4Kind": "none",
-        "row2Slot4AvatarSlot": {
-          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-          "overrides": {}
-        },
-        "row2Slot4IconSlot": {
-          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-          "overrides": {}
-        },
-        "row2Slot4LabelSlot": {
-          "variantReference": "component_project_foqn_s2_label::variant::default",
-          "overrides": {}
-        },
-        "row2Slot5Kind": "icon",
-        "row2Slot5AvatarSlot": {
-          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-          "overrides": {}
-        },
-        "row2Slot5IconSlot": {
-          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-          "overrides": {}
-        },
-        "row2Slot5LabelSlot": {
-          "variantReference": "component_project_foqn_s2_label::variant::default",
-          "overrides": {}
-        }
+        "rows": [
+          {
+            "id": "row1",
+            "label": "Row 1",
+            "padding": "theme.spacing.s|theme.spacing.s",
+            "verticalAlignment": "center",
+            "showSeparator": true,
+            "slot1Kind": "avatar",
+            "slot1AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "slot1IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot1LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            },
+            "slot2Kind": "none",
+            "slot2AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "slot2IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot2LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            },
+            "slot3Kind": "none",
+            "slot3AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "slot3IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot3LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            },
+            "slot4Kind": "none",
+            "slot4AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "slot4IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot4LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            },
+            "slot5Kind": "icon",
+            "slot5AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "slot5IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot5LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            }
+          },
+          {
+            "id": "row2",
+            "label": "Row 2",
+            "padding": "theme.spacing.s|theme.spacing.s",
+            "verticalAlignment": "center",
+            "showSeparator": true,
+            "slot1Kind": "label",
+            "slot1AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "slot1IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot1LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            },
+            "slot2Kind": "label",
+            "slot2AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "slot2IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot2LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            },
+            "slot3Kind": "none",
+            "slot3AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "slot3IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot3LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            },
+            "slot4Kind": "none",
+            "slot4AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "slot4IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot4LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            },
+            "slot5Kind": "icon",
+            "slot5AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "slot5IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot5LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            }
+          }
+        ]
       }
     }
   },
@@ -679,7 +899,8 @@
       "recordReference": null,
       "motionTiming": null,
       "unit": "",
-      "embeddedSlot": null
+      "embeddedSlot": null,
+      "structuredCollection": null
     },
     {
       "id": "module.core.socialPost.showHeader",
@@ -704,7 +925,8 @@
       "recordReference": null,
       "motionTiming": null,
       "unit": "",
-      "embeddedSlot": null
+      "embeddedSlot": null,
+      "structuredCollection": null
     },
     {
       "id": "module.core.socialPost.showStatusBar",
@@ -729,7 +951,8 @@
       "recordReference": null,
       "motionTiming": null,
       "unit": "",
-      "embeddedSlot": null
+      "embeddedSlot": null,
+      "structuredCollection": null
     },
     {
       "id": "module.core.socialPost.showNavigationBar",
@@ -754,7 +977,8 @@
       "recordReference": null,
       "motionTiming": null,
       "unit": "",
-      "embeddedSlot": null
+      "embeddedSlot": null,
+      "structuredCollection": null
     },
     {
       "id": "module.core.socialPost.headerSurface",
@@ -783,7 +1007,8 @@
         "componentType": "surface",
         "label": "Header surface",
         "recordClassId": "component.surface"
-      }
+      },
+      "structuredCollection": null
     },
     {
       "id": "module.core.socialPost.rowGapToken",
@@ -872,1607 +1097,460 @@
       "recordReference": null,
       "motionTiming": null,
       "unit": "",
-      "embeddedSlot": null
+      "embeddedSlot": null,
+      "structuredCollection": null
     },
     {
-      "id": "module.core.socialPost.row1Padding",
-      "label": "Left / right padding",
-      "valueKind": "ThemeTokenPair",
+      "id": "module.core.socialPost.rows",
+      "label": "Rows",
+      "valueKind": "StructuredCollection",
       "jsonPath": [
         "socialPost",
-        "row1Padding"
+        "rows"
       ],
-      "defaultValue": "theme.spacing.s|theme.spacing.s",
+      "defaultValue": "[{\"id\":\"row1\",\"label\":\"Row 1\",\"padding\":\"theme.spacing.s|theme.spacing.s\",\"verticalAlignment\":\"center\",\"showSeparator\":true,\"slot1Kind\":\"avatar\",\"slot1AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot1IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot1LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot2Kind\":\"none\",\"slot2AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot2IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot2LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot3Kind\":\"none\",\"slot3AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot3IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot3LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot4Kind\":\"none\",\"slot4AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot4IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot4LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot5Kind\":\"icon\",\"slot5AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot5IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot5LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"row2\",\"label\":\"Row 2\",\"padding\":\"theme.spacing.s|theme.spacing.s\",\"verticalAlignment\":\"center\",\"showSeparator\":true,\"slot1Kind\":\"label\",\"slot1AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot1IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot1LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot2Kind\":\"label\",\"slot2AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot2IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot2LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot3Kind\":\"none\",\"slot3AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot3IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot3LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot4Kind\":\"none\",\"slot4AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot4IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot4LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot5Kind\":\"icon\",\"slot5AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot5IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot5LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]",
       "isEditable": true,
-      "options": [
-        {
-          "value": "theme.spacing.none",
-          "label": "spacing.none",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.xs",
-          "label": "spacing.xs",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.s",
-          "label": "spacing.s",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.m",
-          "label": "spacing.m",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.l",
-          "label": "spacing.l",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.xl",
-          "label": "spacing.xl",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.xxl",
-          "label": "spacing.xxl",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        }
-      ],
+      "options": [],
       "optionSource": "None",
-      "pairLabels": {
-        "first": "Left",
-        "second": "Right"
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": {
+        "id": "socialPostRows",
+        "label": "Rows",
+        "jsonKey": "rows",
+        "itemLabel": "Row",
+        "fields": [
+          {
+            "id": "label",
+            "label": "Row",
+            "jsonKey": "label",
+            "kind": "Text",
+            "valueKind": "StringReadOnly",
+            "defaultValue": "",
+            "showInEditor": false
+          },
+          {
+            "id": "padding",
+            "label": "Padding",
+            "jsonKey": "padding",
+            "kind": "Text",
+            "valueKind": "ThemeTokenPair",
+            "defaultValue": "theme.spacing.s|theme.spacing.s",
+            "options": [
+              {
+                "value": "theme.spacing.none",
+                "label": "spacing.none"
+              },
+              {
+                "value": "theme.spacing.xs",
+                "label": "spacing.xs"
+              },
+              {
+                "value": "theme.spacing.s",
+                "label": "spacing.s"
+              },
+              {
+                "value": "theme.spacing.m",
+                "label": "spacing.m"
+              },
+              {
+                "value": "theme.spacing.l",
+                "label": "spacing.l"
+              },
+              {
+                "value": "theme.spacing.xl",
+                "label": "spacing.xl"
+              },
+              {
+                "value": "theme.spacing.xxl",
+                "label": "spacing.xxl"
+              }
+            ],
+            "pairLabels": {
+              "first": "Left",
+              "second": "Right"
+            }
+          },
+          {
+            "id": "verticalAlignment",
+            "label": "Vertical alignment",
+            "jsonKey": "verticalAlignment",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "center",
+            "options": [
+              {
+                "value": "top",
+                "label": "Top"
+              },
+              {
+                "value": "center",
+                "label": "Center"
+              },
+              {
+                "value": "bottom",
+                "label": "Bottom"
+              }
+            ]
+          },
+          {
+            "id": "showSeparator",
+            "label": "Show separator",
+            "jsonKey": "showSeparator",
+            "kind": "Boolean",
+            "valueKind": "Boolean",
+            "defaultValue": "true"
+          },
+          {
+            "id": "slot1.kind",
+            "label": "Slot 1 content",
+            "jsonKey": "slot1Kind",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ]
+          },
+          {
+            "id": "slot1.avatar",
+            "label": "Slot 1 avatar",
+            "jsonKey": "slot1AvatarSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
+            "componentType": "avatar",
+            "enabledWhenItemJsonKey": "slot1Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ]
+          },
+          {
+            "id": "slot1.icon",
+            "label": "Slot 1 icon",
+            "jsonKey": "slot1IconSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
+            "componentType": "button",
+            "enabledWhenItemJsonKey": "slot1Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
+            "id": "slot1.label",
+            "label": "Slot 1 label",
+            "jsonKey": "slot1LabelSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
+            "componentType": "label",
+            "enabledWhenItemJsonKey": "slot1Kind",
+            "enabledWhenItemValues": [
+              "label"
+            ]
+          },
+          {
+            "id": "slot2.kind",
+            "label": "Slot 2 content",
+            "jsonKey": "slot2Kind",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ]
+          },
+          {
+            "id": "slot2.avatar",
+            "label": "Slot 2 avatar",
+            "jsonKey": "slot2AvatarSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
+            "componentType": "avatar",
+            "enabledWhenItemJsonKey": "slot2Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ]
+          },
+          {
+            "id": "slot2.icon",
+            "label": "Slot 2 icon",
+            "jsonKey": "slot2IconSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
+            "componentType": "button",
+            "enabledWhenItemJsonKey": "slot2Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
+            "id": "slot2.label",
+            "label": "Slot 2 label",
+            "jsonKey": "slot2LabelSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
+            "componentType": "label",
+            "enabledWhenItemJsonKey": "slot2Kind",
+            "enabledWhenItemValues": [
+              "label"
+            ]
+          },
+          {
+            "id": "slot3.kind",
+            "label": "Slot 3 content",
+            "jsonKey": "slot3Kind",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ]
+          },
+          {
+            "id": "slot3.avatar",
+            "label": "Slot 3 avatar",
+            "jsonKey": "slot3AvatarSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
+            "componentType": "avatar",
+            "enabledWhenItemJsonKey": "slot3Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ]
+          },
+          {
+            "id": "slot3.icon",
+            "label": "Slot 3 icon",
+            "jsonKey": "slot3IconSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
+            "componentType": "button",
+            "enabledWhenItemJsonKey": "slot3Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
+            "id": "slot3.label",
+            "label": "Slot 3 label",
+            "jsonKey": "slot3LabelSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
+            "componentType": "label",
+            "enabledWhenItemJsonKey": "slot3Kind",
+            "enabledWhenItemValues": [
+              "label"
+            ]
+          },
+          {
+            "id": "slot4.kind",
+            "label": "Slot 4 content",
+            "jsonKey": "slot4Kind",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ]
+          },
+          {
+            "id": "slot4.avatar",
+            "label": "Slot 4 avatar",
+            "jsonKey": "slot4AvatarSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
+            "componentType": "avatar",
+            "enabledWhenItemJsonKey": "slot4Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ]
+          },
+          {
+            "id": "slot4.icon",
+            "label": "Slot 4 icon",
+            "jsonKey": "slot4IconSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
+            "componentType": "button",
+            "enabledWhenItemJsonKey": "slot4Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
+            "id": "slot4.label",
+            "label": "Slot 4 label",
+            "jsonKey": "slot4LabelSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
+            "componentType": "label",
+            "enabledWhenItemJsonKey": "slot4Kind",
+            "enabledWhenItemValues": [
+              "label"
+            ]
+          },
+          {
+            "id": "slot5.kind",
+            "label": "Slot 5 content",
+            "jsonKey": "slot5Kind",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ]
+          },
+          {
+            "id": "slot5.avatar",
+            "label": "Slot 5 avatar",
+            "jsonKey": "slot5AvatarSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
+            "componentType": "avatar",
+            "enabledWhenItemJsonKey": "slot5Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ]
+          },
+          {
+            "id": "slot5.icon",
+            "label": "Slot 5 icon",
+            "jsonKey": "slot5IconSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
+            "componentType": "button",
+            "enabledWhenItemJsonKey": "slot5Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
+            "id": "slot5.label",
+            "label": "Slot 5 label",
+            "jsonKey": "slot5LabelSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
+            "componentType": "label",
+            "enabledWhenItemJsonKey": "slot5Kind",
+            "enabledWhenItemValues": [
+              "label"
+            ]
+          }
+        ],
+        "itemPresentation": {
+          "titleFieldId": "label",
+          "firstItemBadge": "",
+          "subtitleFieldIds": [],
+          "subtitleMaxCharacters": 72,
+          "iconFieldId": "",
+          "fallbackIcon": "layout",
+          "iconValueMap": {}
+        },
+        "canEditStructure": false,
+        "fixedItemCount": 2,
+        "uiPresentation": "collection",
+        "itemRuntimePresentation": "card"
       },
-      "number": null,
-      "componentVariantType": "",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
       "imagePreview": null,
       "recordReference": null,
       "motionTiming": null,
       "unit": "",
       "embeddedSlot": null
-    },
-    {
-      "id": "module.core.socialPost.row1VerticalAlignment",
-      "label": "Vertical alignment",
-      "valueKind": "OptionToken",
-      "jsonPath": [
-        "socialPost",
-        "row1VerticalAlignment"
-      ],
-      "defaultValue": "center",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "top",
-          "label": "Top"
-        },
-        {
-          "value": "center",
-          "label": "Center"
-        },
-        {
-          "value": "bottom",
-          "label": "Bottom"
-        }
-      ],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "module.core.socialPost.row1ShowSeparator",
-      "label": "Show separator",
-      "valueKind": "Boolean",
-      "jsonPath": [
-        "socialPost",
-        "row1ShowSeparator"
-      ],
-      "defaultValue": "true",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "module.core.socialPost.row1Slot1.kind",
-      "label": "Content",
-      "valueKind": "OptionToken",
-      "jsonPath": [
-        "socialPost",
-        "row1Slot1Kind"
-      ],
-      "defaultValue": "avatar",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "none",
-          "label": "None"
-        },
-        {
-          "value": "avatar",
-          "label": "Avatar + label"
-        },
-        {
-          "value": "icon",
-          "label": "Icon"
-        },
-        {
-          "value": "label",
-          "label": "Label"
-        }
-      ],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "module.core.socialPost.row1Slot1.avatar",
-      "label": "Avatar variant",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "socialPost",
-        "row1Slot1AvatarSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "avatar",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": {
-        "componentType": "avatar",
-        "label": "Avatar variant",
-        "recordClassId": "component.avatar"
-      }
-    },
-    {
-      "id": "module.core.socialPost.row1Slot1.icon",
-      "label": "Icon variant",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "socialPost",
-        "row1Slot1IconSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "button",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": {
-        "componentType": "button",
-        "label": "Icon variant",
-        "recordClassId": "component.button"
-      }
-    },
-    {
-      "id": "module.core.socialPost.row1Slot1.label",
-      "label": "Label variant",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "socialPost",
-        "row1Slot1LabelSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "label",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": {
-        "componentType": "label",
-        "label": "Label variant",
-        "recordClassId": "component.label"
-      }
-    },
-    {
-      "id": "module.core.socialPost.row1Slot2.kind",
-      "label": "Content",
-      "valueKind": "OptionToken",
-      "jsonPath": [
-        "socialPost",
-        "row1Slot2Kind"
-      ],
-      "defaultValue": "none",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "none",
-          "label": "None"
-        },
-        {
-          "value": "avatar",
-          "label": "Avatar + label"
-        },
-        {
-          "value": "icon",
-          "label": "Icon"
-        },
-        {
-          "value": "label",
-          "label": "Label"
-        }
-      ],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "module.core.socialPost.row1Slot2.avatar",
-      "label": "Avatar variant",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "socialPost",
-        "row1Slot2AvatarSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "avatar",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": {
-        "componentType": "avatar",
-        "label": "Avatar variant",
-        "recordClassId": "component.avatar"
-      }
-    },
-    {
-      "id": "module.core.socialPost.row1Slot2.icon",
-      "label": "Icon variant",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "socialPost",
-        "row1Slot2IconSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "button",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": {
-        "componentType": "button",
-        "label": "Icon variant",
-        "recordClassId": "component.button"
-      }
-    },
-    {
-      "id": "module.core.socialPost.row1Slot2.label",
-      "label": "Label variant",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "socialPost",
-        "row1Slot2LabelSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "label",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": {
-        "componentType": "label",
-        "label": "Label variant",
-        "recordClassId": "component.label"
-      }
-    },
-    {
-      "id": "module.core.socialPost.row1Slot3.kind",
-      "label": "Content",
-      "valueKind": "OptionToken",
-      "jsonPath": [
-        "socialPost",
-        "row1Slot3Kind"
-      ],
-      "defaultValue": "none",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "none",
-          "label": "None"
-        },
-        {
-          "value": "avatar",
-          "label": "Avatar + label"
-        },
-        {
-          "value": "icon",
-          "label": "Icon"
-        },
-        {
-          "value": "label",
-          "label": "Label"
-        }
-      ],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "module.core.socialPost.row1Slot3.avatar",
-      "label": "Avatar variant",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "socialPost",
-        "row1Slot3AvatarSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "avatar",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": {
-        "componentType": "avatar",
-        "label": "Avatar variant",
-        "recordClassId": "component.avatar"
-      }
-    },
-    {
-      "id": "module.core.socialPost.row1Slot3.icon",
-      "label": "Icon variant",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "socialPost",
-        "row1Slot3IconSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "button",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": {
-        "componentType": "button",
-        "label": "Icon variant",
-        "recordClassId": "component.button"
-      }
-    },
-    {
-      "id": "module.core.socialPost.row1Slot3.label",
-      "label": "Label variant",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "socialPost",
-        "row1Slot3LabelSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "label",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": {
-        "componentType": "label",
-        "label": "Label variant",
-        "recordClassId": "component.label"
-      }
-    },
-    {
-      "id": "module.core.socialPost.row1Slot4.kind",
-      "label": "Content",
-      "valueKind": "OptionToken",
-      "jsonPath": [
-        "socialPost",
-        "row1Slot4Kind"
-      ],
-      "defaultValue": "none",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "none",
-          "label": "None"
-        },
-        {
-          "value": "avatar",
-          "label": "Avatar + label"
-        },
-        {
-          "value": "icon",
-          "label": "Icon"
-        },
-        {
-          "value": "label",
-          "label": "Label"
-        }
-      ],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "module.core.socialPost.row1Slot4.avatar",
-      "label": "Avatar variant",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "socialPost",
-        "row1Slot4AvatarSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "avatar",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": {
-        "componentType": "avatar",
-        "label": "Avatar variant",
-        "recordClassId": "component.avatar"
-      }
-    },
-    {
-      "id": "module.core.socialPost.row1Slot4.icon",
-      "label": "Icon variant",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "socialPost",
-        "row1Slot4IconSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "button",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": {
-        "componentType": "button",
-        "label": "Icon variant",
-        "recordClassId": "component.button"
-      }
-    },
-    {
-      "id": "module.core.socialPost.row1Slot4.label",
-      "label": "Label variant",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "socialPost",
-        "row1Slot4LabelSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "label",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": {
-        "componentType": "label",
-        "label": "Label variant",
-        "recordClassId": "component.label"
-      }
-    },
-    {
-      "id": "module.core.socialPost.row1Slot5.kind",
-      "label": "Content",
-      "valueKind": "OptionToken",
-      "jsonPath": [
-        "socialPost",
-        "row1Slot5Kind"
-      ],
-      "defaultValue": "icon",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "none",
-          "label": "None"
-        },
-        {
-          "value": "avatar",
-          "label": "Avatar + label"
-        },
-        {
-          "value": "icon",
-          "label": "Icon"
-        },
-        {
-          "value": "label",
-          "label": "Label"
-        }
-      ],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "module.core.socialPost.row1Slot5.avatar",
-      "label": "Avatar variant",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "socialPost",
-        "row1Slot5AvatarSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "avatar",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": {
-        "componentType": "avatar",
-        "label": "Avatar variant",
-        "recordClassId": "component.avatar"
-      }
-    },
-    {
-      "id": "module.core.socialPost.row1Slot5.icon",
-      "label": "Icon variant",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "socialPost",
-        "row1Slot5IconSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "button",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": {
-        "componentType": "button",
-        "label": "Icon variant",
-        "recordClassId": "component.button"
-      }
-    },
-    {
-      "id": "module.core.socialPost.row1Slot5.label",
-      "label": "Label variant",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "socialPost",
-        "row1Slot5LabelSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "label",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": {
-        "componentType": "label",
-        "label": "Label variant",
-        "recordClassId": "component.label"
-      }
-    },
-    {
-      "id": "module.core.socialPost.row2Padding",
-      "label": "Left / right padding",
-      "valueKind": "ThemeTokenPair",
-      "jsonPath": [
-        "socialPost",
-        "row2Padding"
-      ],
-      "defaultValue": "theme.spacing.s|theme.spacing.s",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "theme.spacing.none",
-          "label": "spacing.none",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.xs",
-          "label": "spacing.xs",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.s",
-          "label": "spacing.s",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.m",
-          "label": "spacing.m",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.l",
-          "label": "spacing.l",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.xl",
-          "label": "spacing.xl",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.xxl",
-          "label": "spacing.xxl",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        }
-      ],
-      "optionSource": "None",
-      "pairLabels": {
-        "first": "Left",
-        "second": "Right"
-      },
-      "number": null,
-      "componentVariantType": "",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "module.core.socialPost.row2VerticalAlignment",
-      "label": "Vertical alignment",
-      "valueKind": "OptionToken",
-      "jsonPath": [
-        "socialPost",
-        "row2VerticalAlignment"
-      ],
-      "defaultValue": "center",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "top",
-          "label": "Top"
-        },
-        {
-          "value": "center",
-          "label": "Center"
-        },
-        {
-          "value": "bottom",
-          "label": "Bottom"
-        }
-      ],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "module.core.socialPost.row2ShowSeparator",
-      "label": "Show separator",
-      "valueKind": "Boolean",
-      "jsonPath": [
-        "socialPost",
-        "row2ShowSeparator"
-      ],
-      "defaultValue": "true",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "module.core.socialPost.row2Slot1.kind",
-      "label": "Content",
-      "valueKind": "OptionToken",
-      "jsonPath": [
-        "socialPost",
-        "row2Slot1Kind"
-      ],
-      "defaultValue": "label",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "none",
-          "label": "None"
-        },
-        {
-          "value": "avatar",
-          "label": "Avatar + label"
-        },
-        {
-          "value": "icon",
-          "label": "Icon"
-        },
-        {
-          "value": "label",
-          "label": "Label"
-        }
-      ],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "module.core.socialPost.row2Slot1.avatar",
-      "label": "Avatar variant",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "socialPost",
-        "row2Slot1AvatarSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "avatar",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": {
-        "componentType": "avatar",
-        "label": "Avatar variant",
-        "recordClassId": "component.avatar"
-      }
-    },
-    {
-      "id": "module.core.socialPost.row2Slot1.icon",
-      "label": "Icon variant",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "socialPost",
-        "row2Slot1IconSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "button",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": {
-        "componentType": "button",
-        "label": "Icon variant",
-        "recordClassId": "component.button"
-      }
-    },
-    {
-      "id": "module.core.socialPost.row2Slot1.label",
-      "label": "Label variant",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "socialPost",
-        "row2Slot1LabelSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "label",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": {
-        "componentType": "label",
-        "label": "Label variant",
-        "recordClassId": "component.label"
-      }
-    },
-    {
-      "id": "module.core.socialPost.row2Slot2.kind",
-      "label": "Content",
-      "valueKind": "OptionToken",
-      "jsonPath": [
-        "socialPost",
-        "row2Slot2Kind"
-      ],
-      "defaultValue": "label",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "none",
-          "label": "None"
-        },
-        {
-          "value": "avatar",
-          "label": "Avatar + label"
-        },
-        {
-          "value": "icon",
-          "label": "Icon"
-        },
-        {
-          "value": "label",
-          "label": "Label"
-        }
-      ],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "module.core.socialPost.row2Slot2.avatar",
-      "label": "Avatar variant",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "socialPost",
-        "row2Slot2AvatarSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "avatar",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": {
-        "componentType": "avatar",
-        "label": "Avatar variant",
-        "recordClassId": "component.avatar"
-      }
-    },
-    {
-      "id": "module.core.socialPost.row2Slot2.icon",
-      "label": "Icon variant",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "socialPost",
-        "row2Slot2IconSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "button",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": {
-        "componentType": "button",
-        "label": "Icon variant",
-        "recordClassId": "component.button"
-      }
-    },
-    {
-      "id": "module.core.socialPost.row2Slot2.label",
-      "label": "Label variant",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "socialPost",
-        "row2Slot2LabelSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "label",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": {
-        "componentType": "label",
-        "label": "Label variant",
-        "recordClassId": "component.label"
-      }
-    },
-    {
-      "id": "module.core.socialPost.row2Slot3.kind",
-      "label": "Content",
-      "valueKind": "OptionToken",
-      "jsonPath": [
-        "socialPost",
-        "row2Slot3Kind"
-      ],
-      "defaultValue": "none",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "none",
-          "label": "None"
-        },
-        {
-          "value": "avatar",
-          "label": "Avatar + label"
-        },
-        {
-          "value": "icon",
-          "label": "Icon"
-        },
-        {
-          "value": "label",
-          "label": "Label"
-        }
-      ],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "module.core.socialPost.row2Slot3.avatar",
-      "label": "Avatar variant",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "socialPost",
-        "row2Slot3AvatarSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "avatar",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": {
-        "componentType": "avatar",
-        "label": "Avatar variant",
-        "recordClassId": "component.avatar"
-      }
-    },
-    {
-      "id": "module.core.socialPost.row2Slot3.icon",
-      "label": "Icon variant",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "socialPost",
-        "row2Slot3IconSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "button",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": {
-        "componentType": "button",
-        "label": "Icon variant",
-        "recordClassId": "component.button"
-      }
-    },
-    {
-      "id": "module.core.socialPost.row2Slot3.label",
-      "label": "Label variant",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "socialPost",
-        "row2Slot3LabelSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "label",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": {
-        "componentType": "label",
-        "label": "Label variant",
-        "recordClassId": "component.label"
-      }
-    },
-    {
-      "id": "module.core.socialPost.row2Slot4.kind",
-      "label": "Content",
-      "valueKind": "OptionToken",
-      "jsonPath": [
-        "socialPost",
-        "row2Slot4Kind"
-      ],
-      "defaultValue": "none",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "none",
-          "label": "None"
-        },
-        {
-          "value": "avatar",
-          "label": "Avatar + label"
-        },
-        {
-          "value": "icon",
-          "label": "Icon"
-        },
-        {
-          "value": "label",
-          "label": "Label"
-        }
-      ],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "module.core.socialPost.row2Slot4.avatar",
-      "label": "Avatar variant",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "socialPost",
-        "row2Slot4AvatarSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "avatar",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": {
-        "componentType": "avatar",
-        "label": "Avatar variant",
-        "recordClassId": "component.avatar"
-      }
-    },
-    {
-      "id": "module.core.socialPost.row2Slot4.icon",
-      "label": "Icon variant",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "socialPost",
-        "row2Slot4IconSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "button",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": {
-        "componentType": "button",
-        "label": "Icon variant",
-        "recordClassId": "component.button"
-      }
-    },
-    {
-      "id": "module.core.socialPost.row2Slot4.label",
-      "label": "Label variant",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "socialPost",
-        "row2Slot4LabelSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "label",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": {
-        "componentType": "label",
-        "label": "Label variant",
-        "recordClassId": "component.label"
-      }
-    },
-    {
-      "id": "module.core.socialPost.row2Slot5.kind",
-      "label": "Content",
-      "valueKind": "OptionToken",
-      "jsonPath": [
-        "socialPost",
-        "row2Slot5Kind"
-      ],
-      "defaultValue": "icon",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "none",
-          "label": "None"
-        },
-        {
-          "value": "avatar",
-          "label": "Avatar + label"
-        },
-        {
-          "value": "icon",
-          "label": "Icon"
-        },
-        {
-          "value": "label",
-          "label": "Label"
-        }
-      ],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "module.core.socialPost.row2Slot5.avatar",
-      "label": "Avatar variant",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "socialPost",
-        "row2Slot5AvatarSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "avatar",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": {
-        "componentType": "avatar",
-        "label": "Avatar variant",
-        "recordClassId": "component.avatar"
-      }
-    },
-    {
-      "id": "module.core.socialPost.row2Slot5.icon",
-      "label": "Icon variant",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "socialPost",
-        "row2Slot5IconSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "button",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": {
-        "componentType": "button",
-        "label": "Icon variant",
-        "recordClassId": "component.button"
-      }
-    },
-    {
-      "id": "module.core.socialPost.row2Slot5.label",
-      "label": "Label variant",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "socialPost",
-        "row2Slot5LabelSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "label",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": {
-        "componentType": "label",
-        "label": "Label variant",
-        "recordClassId": "component.label"
-      }
     }
   ],
   "editorLayout": {
@@ -2565,372 +1643,17 @@
             "presentation": "separatedSections"
           },
           {
-            "id": "row-1",
-            "label": "Row 1",
+            "id": "rows",
+            "label": "Rows",
             "icon": "layout",
             "presentation": "verticalCards",
             "order": 100,
             "visible": true,
             "fields": [
               {
-                "id": "module.core.socialPost.row1Padding",
+                "id": "module.core.socialPost.rows",
                 "order": 10,
                 "visible": true
-              },
-              {
-                "id": "module.core.socialPost.row1VerticalAlignment",
-                "order": 20,
-                "visible": true
-              },
-              {
-                "id": "module.core.socialPost.row1ShowSeparator",
-                "order": 30,
-                "visible": true
-              },
-              {
-                "id": "module.core.socialPost.row1Slot1.kind",
-                "order": 40,
-                "visible": true
-              },
-              {
-                "id": "module.core.socialPost.row1Slot1.avatar",
-                "order": 50,
-                "visible": true,
-                "visibleWhenFieldId": "module.core.socialPost.row1Slot1.kind",
-                "visibleWhenValues": [
-                  "avatar"
-                ]
-              },
-              {
-                "id": "module.core.socialPost.row1Slot1.icon",
-                "order": 60,
-                "visible": true,
-                "visibleWhenFieldId": "module.core.socialPost.row1Slot1.kind",
-                "visibleWhenValues": [
-                  "icon"
-                ]
-              },
-              {
-                "id": "module.core.socialPost.row1Slot1.label",
-                "order": 70,
-                "visible": true,
-                "visibleWhenFieldId": "module.core.socialPost.row1Slot1.kind",
-                "visibleWhenValues": [
-                  "label"
-                ]
-              },
-              {
-                "id": "module.core.socialPost.row1Slot2.kind",
-                "order": 80,
-                "visible": true
-              },
-              {
-                "id": "module.core.socialPost.row1Slot2.avatar",
-                "order": 90,
-                "visible": true,
-                "visibleWhenFieldId": "module.core.socialPost.row1Slot2.kind",
-                "visibleWhenValues": [
-                  "avatar"
-                ]
-              },
-              {
-                "id": "module.core.socialPost.row1Slot2.icon",
-                "order": 100,
-                "visible": true,
-                "visibleWhenFieldId": "module.core.socialPost.row1Slot2.kind",
-                "visibleWhenValues": [
-                  "icon"
-                ]
-              },
-              {
-                "id": "module.core.socialPost.row1Slot2.label",
-                "order": 110,
-                "visible": true,
-                "visibleWhenFieldId": "module.core.socialPost.row1Slot2.kind",
-                "visibleWhenValues": [
-                  "label"
-                ]
-              },
-              {
-                "id": "module.core.socialPost.row1Slot3.kind",
-                "order": 120,
-                "visible": true
-              },
-              {
-                "id": "module.core.socialPost.row1Slot3.avatar",
-                "order": 130,
-                "visible": true,
-                "visibleWhenFieldId": "module.core.socialPost.row1Slot3.kind",
-                "visibleWhenValues": [
-                  "avatar"
-                ]
-              },
-              {
-                "id": "module.core.socialPost.row1Slot3.icon",
-                "order": 140,
-                "visible": true,
-                "visibleWhenFieldId": "module.core.socialPost.row1Slot3.kind",
-                "visibleWhenValues": [
-                  "icon"
-                ]
-              },
-              {
-                "id": "module.core.socialPost.row1Slot3.label",
-                "order": 150,
-                "visible": true,
-                "visibleWhenFieldId": "module.core.socialPost.row1Slot3.kind",
-                "visibleWhenValues": [
-                  "label"
-                ]
-              },
-              {
-                "id": "module.core.socialPost.row1Slot4.kind",
-                "order": 160,
-                "visible": true
-              },
-              {
-                "id": "module.core.socialPost.row1Slot4.avatar",
-                "order": 170,
-                "visible": true,
-                "visibleWhenFieldId": "module.core.socialPost.row1Slot4.kind",
-                "visibleWhenValues": [
-                  "avatar"
-                ]
-              },
-              {
-                "id": "module.core.socialPost.row1Slot4.icon",
-                "order": 180,
-                "visible": true,
-                "visibleWhenFieldId": "module.core.socialPost.row1Slot4.kind",
-                "visibleWhenValues": [
-                  "icon"
-                ]
-              },
-              {
-                "id": "module.core.socialPost.row1Slot4.label",
-                "order": 190,
-                "visible": true,
-                "visibleWhenFieldId": "module.core.socialPost.row1Slot4.kind",
-                "visibleWhenValues": [
-                  "label"
-                ]
-              },
-              {
-                "id": "module.core.socialPost.row1Slot5.kind",
-                "order": 200,
-                "visible": true
-              },
-              {
-                "id": "module.core.socialPost.row1Slot5.avatar",
-                "order": 210,
-                "visible": true,
-                "visibleWhenFieldId": "module.core.socialPost.row1Slot5.kind",
-                "visibleWhenValues": [
-                  "avatar"
-                ]
-              },
-              {
-                "id": "module.core.socialPost.row1Slot5.icon",
-                "order": 220,
-                "visible": true,
-                "visibleWhenFieldId": "module.core.socialPost.row1Slot5.kind",
-                "visibleWhenValues": [
-                  "icon"
-                ]
-              },
-              {
-                "id": "module.core.socialPost.row1Slot5.label",
-                "order": 230,
-                "visible": true,
-                "visibleWhenFieldId": "module.core.socialPost.row1Slot5.kind",
-                "visibleWhenValues": [
-                  "label"
-                ]
-              }
-            ]
-          },
-          {
-            "id": "row-2",
-            "label": "Row 2",
-            "icon": "layout",
-            "presentation": "verticalCards",
-            "order": 200,
-            "visible": true,
-            "fields": [
-              {
-                "id": "module.core.socialPost.row2Padding",
-                "order": 10,
-                "visible": true
-              },
-              {
-                "id": "module.core.socialPost.row2VerticalAlignment",
-                "order": 20,
-                "visible": true
-              },
-              {
-                "id": "module.core.socialPost.row2ShowSeparator",
-                "order": 30,
-                "visible": true
-              },
-              {
-                "id": "module.core.socialPost.row2Slot1.kind",
-                "order": 40,
-                "visible": true
-              },
-              {
-                "id": "module.core.socialPost.row2Slot1.avatar",
-                "order": 50,
-                "visible": true,
-                "visibleWhenFieldId": "module.core.socialPost.row2Slot1.kind",
-                "visibleWhenValues": [
-                  "avatar"
-                ]
-              },
-              {
-                "id": "module.core.socialPost.row2Slot1.icon",
-                "order": 60,
-                "visible": true,
-                "visibleWhenFieldId": "module.core.socialPost.row2Slot1.kind",
-                "visibleWhenValues": [
-                  "icon"
-                ]
-              },
-              {
-                "id": "module.core.socialPost.row2Slot1.label",
-                "order": 70,
-                "visible": true,
-                "visibleWhenFieldId": "module.core.socialPost.row2Slot1.kind",
-                "visibleWhenValues": [
-                  "label"
-                ]
-              },
-              {
-                "id": "module.core.socialPost.row2Slot2.kind",
-                "order": 80,
-                "visible": true
-              },
-              {
-                "id": "module.core.socialPost.row2Slot2.avatar",
-                "order": 90,
-                "visible": true,
-                "visibleWhenFieldId": "module.core.socialPost.row2Slot2.kind",
-                "visibleWhenValues": [
-                  "avatar"
-                ]
-              },
-              {
-                "id": "module.core.socialPost.row2Slot2.icon",
-                "order": 100,
-                "visible": true,
-                "visibleWhenFieldId": "module.core.socialPost.row2Slot2.kind",
-                "visibleWhenValues": [
-                  "icon"
-                ]
-              },
-              {
-                "id": "module.core.socialPost.row2Slot2.label",
-                "order": 110,
-                "visible": true,
-                "visibleWhenFieldId": "module.core.socialPost.row2Slot2.kind",
-                "visibleWhenValues": [
-                  "label"
-                ]
-              },
-              {
-                "id": "module.core.socialPost.row2Slot3.kind",
-                "order": 120,
-                "visible": true
-              },
-              {
-                "id": "module.core.socialPost.row2Slot3.avatar",
-                "order": 130,
-                "visible": true,
-                "visibleWhenFieldId": "module.core.socialPost.row2Slot3.kind",
-                "visibleWhenValues": [
-                  "avatar"
-                ]
-              },
-              {
-                "id": "module.core.socialPost.row2Slot3.icon",
-                "order": 140,
-                "visible": true,
-                "visibleWhenFieldId": "module.core.socialPost.row2Slot3.kind",
-                "visibleWhenValues": [
-                  "icon"
-                ]
-              },
-              {
-                "id": "module.core.socialPost.row2Slot3.label",
-                "order": 150,
-                "visible": true,
-                "visibleWhenFieldId": "module.core.socialPost.row2Slot3.kind",
-                "visibleWhenValues": [
-                  "label"
-                ]
-              },
-              {
-                "id": "module.core.socialPost.row2Slot4.kind",
-                "order": 160,
-                "visible": true
-              },
-              {
-                "id": "module.core.socialPost.row2Slot4.avatar",
-                "order": 170,
-                "visible": true,
-                "visibleWhenFieldId": "module.core.socialPost.row2Slot4.kind",
-                "visibleWhenValues": [
-                  "avatar"
-                ]
-              },
-              {
-                "id": "module.core.socialPost.row2Slot4.icon",
-                "order": 180,
-                "visible": true,
-                "visibleWhenFieldId": "module.core.socialPost.row2Slot4.kind",
-                "visibleWhenValues": [
-                  "icon"
-                ]
-              },
-              {
-                "id": "module.core.socialPost.row2Slot4.label",
-                "order": 190,
-                "visible": true,
-                "visibleWhenFieldId": "module.core.socialPost.row2Slot4.kind",
-                "visibleWhenValues": [
-                  "label"
-                ]
-              },
-              {
-                "id": "module.core.socialPost.row2Slot5.kind",
-                "order": 200,
-                "visible": true
-              },
-              {
-                "id": "module.core.socialPost.row2Slot5.avatar",
-                "order": 210,
-                "visible": true,
-                "visibleWhenFieldId": "module.core.socialPost.row2Slot5.kind",
-                "visibleWhenValues": [
-                  "avatar"
-                ]
-              },
-              {
-                "id": "module.core.socialPost.row2Slot5.icon",
-                "order": 220,
-                "visible": true,
-                "visibleWhenFieldId": "module.core.socialPost.row2Slot5.kind",
-                "visibleWhenValues": [
-                  "icon"
-                ]
-              },
-              {
-                "id": "module.core.socialPost.row2Slot5.label",
-                "order": 230,
-                "visible": true,
-                "visibleWhenFieldId": "module.core.socialPost.row2Slot5.kind",
-                "visibleWhenValues": [
-                  "label"
-                ]
               }
             ]
           }

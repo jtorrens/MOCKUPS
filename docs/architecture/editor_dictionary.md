@@ -34,6 +34,11 @@ Runtime/Test Value collections. A collection item factory creates the exact
 declared item document before that mutation; controls do not append ids or
 embedded documents independently.
 
+Component and Module dictionary fields may both declare the same
+`StructuredCollection` contract. A fixed collection sets
+`canEditStructure: false` and an exact `fixedItemCount`; the common editor then
+shows its stable items without Add, Duplicate, Move or Delete actions.
+
 ## Field identity and metadata
 
 `FieldDefinition` is the canonical UI projection of an editable value. It

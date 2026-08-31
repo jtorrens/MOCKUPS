@@ -42,6 +42,12 @@ Preview controls do not create fields or reinterpret their ownership.
 and collection declarations. Persistence and Desktop consume its immutable
 definitions; visual sessions contain no parallel contract parser.
 
+A Runtime Input may conditionally appear from either one exact config path or
+one stable item in a Variant-owned collection. Collection-item visibility
+declares the collection path, stable item id, item-relative field path and all
+accepted values together. The generic Runtime reader resolves that declaration;
+concrete Components and Modules never add editor visibility branches.
+
 ### Calculated text
 
 Calculated text separates Runtime content from Variant presentation.
