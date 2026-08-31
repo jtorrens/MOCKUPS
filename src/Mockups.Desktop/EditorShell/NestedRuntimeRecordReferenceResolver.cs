@@ -228,5 +228,20 @@ internal sealed class NestedRuntimeRecordReferenceResolver
             RuntimeInputDefinitionReader.ReadInputs(values, new JsonObject()),
             themeMode,
             paletteColors);
+
+        foreach (var collection in RuntimeInputDefinitionReader.ReadCollections(
+                     values,
+                     new JsonObject()))
+        {
+            if (values[collection.JsonKey] is not JsonArray items) continue;
+            foreach (var item in items.OfType<JsonObject>())
+            {
+                ResolveDeclaredValues(
+                    item,
+                    collection.Fields,
+                    themeMode,
+                    paletteColors);
+            }
+        }
     }
 }
