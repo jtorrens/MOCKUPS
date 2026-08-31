@@ -496,12 +496,16 @@ public static class RuntimeInputDefinitionReader
                 throw new InvalidOperationException(
                     "Runtime Input collection-item visibility requires visibleWhenCollectionPath, visibleWhenItemId, visibleWhenItemPath and visibleWhenValues together.");
             }
-            var collection = JsonPath.Get(
-                    config,
-                    collectionPath.Split(
-                        '.',
-                        StringSplitOptions.RemoveEmptyEntries))
-                as JsonArray
+            var collectionNode = JsonPath.Get(
+                config,
+                collectionPath.Split(
+                    '.',
+                    StringSplitOptions.RemoveEmptyEntries));
+            if (collectionNode is null && config.Count == 0)
+            {
+                return false;
+            }
+            var collection = collectionNode as JsonArray
                 ?? throw new InvalidOperationException(
                     $"Runtime Input visibility path '{collectionPath}' must resolve to a collection.");
             var matches = collection
