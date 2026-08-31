@@ -26,6 +26,7 @@ export function resolveSocialPostModule(
   const preview = parseObject(payload.designPreviewJson);
   const componentBaseConfigs = parseObject(payload.componentBaseConfigsJson);
   const rows = requiredRows(socialPost);
+  const runtimeRows = requiredRuntimeRows(preview);
 
   return {
     id: "module.core.socialPost",
@@ -62,10 +63,31 @@ export function resolveSocialPostModule(
       "module.core.socialPost.rowGapToken",
     ),
     rows: [
-      resolveRow(1, rows[0], preview, componentBaseConfigs),
-      resolveRow(2, rows[1], preview, componentBaseConfigs),
+      resolveRow(1, rows[0], runtimeRows[0], componentBaseConfigs),
+      resolveRow(2, rows[1], runtimeRows[1], componentBaseConfigs),
     ],
   };
+}
+
+function requiredRuntimeRows(
+  preview: Record<string, unknown>,
+): [Record<string, unknown>, Record<string, unknown>] {
+  const value = preview.socialPostRows;
+  if (!Array.isArray(value) || value.length !== 2) {
+    throw new Error("module.core.socialPost Runtime collection 'socialPostRows' must contain exactly row1 and row2");
+  }
+  const rows = value.map((item, index) => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) {
+      throw new Error(`module.core.socialPost socialPostRows[${index}] must be an object`);
+    }
+    const row = item as Record<string, unknown>;
+    const expectedId = `row${index + 1}`;
+    if (requiredString(row, "id", `module.core.socialPost.socialPostRows[${index}].id`) !== expectedId) {
+      throw new Error(`module.core.socialPost socialPostRows[${index}] must have id '${expectedId}'`);
+    }
+    return row;
+  });
+  return [rows[0]!, rows[1]!];
 }
 
 function requiredRows(
@@ -92,7 +114,7 @@ function requiredRows(
 function resolveRow(
   row: 1 | 2,
   rowConfig: Record<string, unknown>,
-  preview: Record<string, unknown>,
+  runtimeRow: Record<string, unknown>,
   componentBaseConfigs: Record<string, unknown>,
 ): SocialPostHeaderRow {
   const alignment = requiredString(
@@ -120,7 +142,7 @@ function resolveRow(
       row,
       index,
       rowConfig,
-      preview,
+      runtimeRow,
       componentBaseConfigs,
     )),
   };
@@ -130,11 +152,11 @@ function resolveHeaderSlot(
   row: 1 | 2,
   index: number,
   rowConfig: Record<string, unknown>,
-  preview: Record<string, unknown>,
+  runtimeRow: Record<string, unknown>,
   componentBaseConfigs: Record<string, unknown>,
 ): SocialPostHeaderSlot {
   const configPrefix = `slot${index}`;
-  const runtimePrefix = `row${row}Slot${index}`;
+  const runtimePrefix = `slot${index}`;
   const kind = requiredString(
     rowConfig,
     `${configPrefix}Kind`,
@@ -177,8 +199,8 @@ function resolveHeaderSlot(
       },
     };
   }
-  const label = stringValue(preview[`${runtimePrefix}Label`]);
-  const sublabel = stringValue(preview[`${runtimePrefix}Sublabel`]);
+  const label = stringValue(runtimeRow[`${runtimePrefix}Label`]);
+  const sublabel = stringValue(runtimeRow[`${runtimePrefix}Sublabel`]);
   if (kind === "label") {
     return {
       index,
@@ -190,9 +212,9 @@ function resolveHeaderSlot(
   }
 
   const actor = structuredClone(requiredRecord(
-    preview,
-        `${runtimePrefix}Actor`,
-        `module.core.socialPost.${runtimePrefix}Actor`,
+    runtimeRow,
+    `${runtimePrefix}Actor`,
+    `module.core.socialPost.row${row}.${runtimePrefix}Actor`,
   ));
   if (label.trim()) actor.displayName = label;
   return {
@@ -202,9 +224,9 @@ function resolveHeaderSlot(
     componentSlot: avatarSlot,
     inputs: {
       actorId: requiredString(
-        preview,
+        runtimeRow,
         `${runtimePrefix}ActorId`,
-        `module.core.socialPost.${runtimePrefix}ActorId`,
+        `module.core.socialPost.row${row}.${runtimePrefix}ActorId`,
       ),
       actor,
       sampleText: label,

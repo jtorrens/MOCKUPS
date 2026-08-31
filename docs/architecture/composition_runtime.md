@@ -48,6 +48,16 @@ declares the collection path, stable item id, item-relative field path and all
 accepted values together. The generic Runtime reader resolves that declaration;
 concrete Components and Modules never add editor visibility branches.
 
+Runtime collections use the same item editor and stable-id value contract
+regardless of structural ownership. A Runtime-owned collection permits the
+declared add, duplicate, move and delete mutations. A Variant-owned collection
+declares `structureProjection`, resolves its item identity and structure from
+one exact config collection path, and sets `canEditStructure` to false. Runtime
+then persists only the declared Runtime fields for those projected items; fields
+bound by the structure projection remain Variant-owned. Preview preparation
+performs this projection before the generic Runtime collection editor, instance
+payload preparation and concrete resolver consume the document.
+
 ### Calculated text
 
 Calculated text separates Runtime content from Variant presentation.

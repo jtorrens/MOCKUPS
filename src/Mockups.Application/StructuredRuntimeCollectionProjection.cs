@@ -10,43 +10,75 @@ public static class StructuredRuntimeCollectionProjection
 {
     public static bool Apply(JsonObject preview, JsonObject config)
     {
-        if (preview["inputs"] is null) return false;
-        var inputs = preview["inputs"] as JsonArray
-            ?? throw new InvalidOperationException(
-                "Runtime Input definitions must be an array when present.");
         var changed = false;
-        for (var index = 0; index < inputs.Count; index++)
+        if (preview["inputs"] is { } inputsNode)
         {
-            var input = inputs[index] as JsonObject
+            var inputs = inputsNode as JsonArray
                 ?? throw new InvalidOperationException(
-                    $"Runtime Input definition at index {index} must be an object.");
-            if (input["structuredCollection"] is not JsonObject collection
-                || collection["structureProjection"] is null)
+                    "Runtime Input definitions must be an array when present.");
+            for (var index = 0; index < inputs.Count; index++)
             {
-                continue;
-            }
+                var input = inputs[index] as JsonObject
+                    ?? throw new InvalidOperationException(
+                        $"Runtime Input definition at index {index} must be an object.");
+                if (input["structuredCollection"] is not JsonObject collection
+                    || collection["structureProjection"] is null)
+                {
+                    continue;
+                }
 
-            var owner = $"Runtime Input '{JsonPath.RequiredString(input, "id", "Runtime Input definition")}'";
-            if (!JsonPath.RequiredString(input, "valueKind", owner)
-                    .Equals(ValueKind.StructuredCollection.ToString(), StringComparison.Ordinal))
-            {
-                throw new InvalidOperationException(
-                    $"{owner} structureProjection requires ValueKind StructuredCollection.");
+                var owner = $"Runtime Input '{JsonPath.RequiredString(input, "id", "Runtime Input definition")}'";
+                if (!JsonPath.RequiredString(input, "valueKind", owner)
+                        .Equals(ValueKind.StructuredCollection.ToString(), StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        $"{owner} structureProjection requires ValueKind StructuredCollection.");
+                }
+                changed |= ApplyProjection(preview, config, collection, owner);
             }
-            var jsonKey = JsonPath.RequiredString(input, "jsonKey", owner);
-            var current = preview[jsonKey] as JsonArray
+        }
+
+        if (preview["collections"] is { } collectionsNode)
+        {
+            var collections = collectionsNode as JsonArray
                 ?? throw new InvalidOperationException(
-                    $"{owner} Runtime value '{jsonKey}' must be an array.");
-            var next = Project(
-                current,
-                config,
-                collection,
-                $"{owner} structured collection");
-            if (JsonNode.DeepEquals(current, next)) continue;
-            preview[jsonKey] = next;
-            changed = true;
+                    "Runtime Input collections must be an array when present.");
+            for (var index = 0; index < collections.Count; index++)
+            {
+                var collection = collections[index] as JsonObject
+                    ?? throw new InvalidOperationException(
+                        $"Runtime Input collection at index {index} must be an object.");
+                if (collection["structureProjection"] is null) continue;
+                var owner = $"Runtime Input collection '{JsonPath.RequiredString(collection, "id", "Runtime Input collection")}'";
+                if (collection["canEditStructure"]?.GetValue<bool>() != false)
+                {
+                    throw new InvalidOperationException(
+                        $"{owner} structureProjection requires canEditStructure false.");
+                }
+                changed |= ApplyProjection(preview, config, collection, owner);
+            }
         }
         return changed;
+    }
+
+    private static bool ApplyProjection(
+        JsonObject preview,
+        JsonObject config,
+        JsonObject collection,
+        string owner)
+    {
+        var jsonKey = JsonPath.RequiredString(collection, "jsonKey", owner);
+        var current = preview[jsonKey] as JsonArray
+            ?? throw new InvalidOperationException(
+                $"{owner} Runtime value '{jsonKey}' must be an array.");
+        var next = Project(
+            current,
+            config,
+            collection,
+            $"{owner} structured collection");
+        if (JsonNode.DeepEquals(current, next)) return false;
+        preview[jsonKey] = next;
+        return true;
     }
 
     private static JsonArray Project(

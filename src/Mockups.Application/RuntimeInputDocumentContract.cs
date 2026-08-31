@@ -197,7 +197,8 @@ public static class RuntimeInputDocumentContract
                                 collection,
                                 "jsonKey",
                                 "Runtime collection definition"),
-                            "Effective Module Runtime contract"))
+                            "Effective Module Runtime contract"),
+                        collection)
                     : (OptionalCollection(
                             current,
                             storageKey,

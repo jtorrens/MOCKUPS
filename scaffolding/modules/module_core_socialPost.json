@@ -12,7 +12,7 @@
   "intent": {
     "responsibility": "Own the Social Post header as two fixed five-slot rows.",
     "visualBoundary": "Render a Surface with a configurable minimum header height, top bleed and two bottom-aligned intrinsic-height rows.",
-    "runtimeBehavior": "The Variant selects each slot kind and child Variant; Runtime owns only actor, label and sublabel values.",
+    "runtimeBehavior": "The Variant owns row identity, slot kind and child Variant; one generic Runtime Collection owns only actor, label and sublabel values per stable row item.",
     "forwarding": "No child Runtime contract is exposed or forwarded.",
     "temporalOwnership": "The Screen owns header presence while child Components retain their local behavior.",
     "productionContext": "Resolve only through the exact Production Screen to Shot owner Actor to Theme and Device context."
@@ -209,498 +209,447 @@
     }
   },
   "designPreview": {
-    "inputs": [
+    "inputs": [],
+    "collections": [
       {
-        "id": "row1Slot1.actor",
-        "label": "Row 1 slot 1 actor",
-        "jsonKey": "row1Slot1ActorId",
-        "kind": "recordReference",
-        "defaultValue": "actor_alex",
-        "tableId": "actors",
-        "resolvedJsonKey": "row1Slot1Actor",
-        "valueKind": "RecordReference",
-        "visibleWhenCollectionPath": "socialPost.rows",
-        "visibleWhenItemId": "row1",
-        "visibleWhenItemPath": "slot1Kind",
-        "visibleWhenValues": [
-          "avatar"
-        ]
-      },
-      {
-        "id": "row1Slot1.label",
-        "label": "Row 1 slot 1 label",
-        "jsonKey": "row1Slot1Label",
-        "kind": "text",
-        "defaultValue": "Alex Q",
-        "valueKind": "StringSingleLine",
-        "visibleWhenCollectionPath": "socialPost.rows",
-        "visibleWhenItemId": "row1",
-        "visibleWhenItemPath": "slot1Kind",
-        "visibleWhenValues": [
-          "avatar",
-          "label"
-        ]
-      },
-      {
-        "id": "row1Slot1.sublabel",
-        "label": "Row 1 slot 1 sublabel",
-        "jsonKey": "row1Slot1Sublabel",
-        "kind": "text",
-        "defaultValue": "@alexq · 2 min",
-        "valueKind": "StringSingleLine",
-        "visibleWhenCollectionPath": "socialPost.rows",
-        "visibleWhenItemId": "row1",
-        "visibleWhenItemPath": "slot1Kind",
-        "visibleWhenValues": [
-          "avatar",
-          "label"
-        ]
-      },
-      {
-        "id": "row1Slot2.actor",
-        "label": "Row 1 slot 2 actor",
-        "jsonKey": "row1Slot2ActorId",
-        "kind": "recordReference",
-        "defaultValue": "actor_alex",
-        "tableId": "actors",
-        "resolvedJsonKey": "row1Slot2Actor",
-        "valueKind": "RecordReference",
-        "visibleWhenCollectionPath": "socialPost.rows",
-        "visibleWhenItemId": "row1",
-        "visibleWhenItemPath": "slot2Kind",
-        "visibleWhenValues": [
-          "avatar"
-        ]
-      },
-      {
-        "id": "row1Slot2.label",
-        "label": "Row 1 slot 2 label",
-        "jsonKey": "row1Slot2Label",
-        "kind": "text",
-        "defaultValue": "",
-        "valueKind": "StringSingleLine",
-        "visibleWhenCollectionPath": "socialPost.rows",
-        "visibleWhenItemId": "row1",
-        "visibleWhenItemPath": "slot2Kind",
-        "visibleWhenValues": [
-          "avatar",
-          "label"
-        ]
-      },
-      {
-        "id": "row1Slot2.sublabel",
-        "label": "Row 1 slot 2 sublabel",
-        "jsonKey": "row1Slot2Sublabel",
-        "kind": "text",
-        "defaultValue": "",
-        "valueKind": "StringSingleLine",
-        "visibleWhenCollectionPath": "socialPost.rows",
-        "visibleWhenItemId": "row1",
-        "visibleWhenItemPath": "slot2Kind",
-        "visibleWhenValues": [
-          "avatar",
-          "label"
-        ]
-      },
-      {
-        "id": "row1Slot3.actor",
-        "label": "Row 1 slot 3 actor",
-        "jsonKey": "row1Slot3ActorId",
-        "kind": "recordReference",
-        "defaultValue": "actor_alex",
-        "tableId": "actors",
-        "resolvedJsonKey": "row1Slot3Actor",
-        "valueKind": "RecordReference",
-        "visibleWhenCollectionPath": "socialPost.rows",
-        "visibleWhenItemId": "row1",
-        "visibleWhenItemPath": "slot3Kind",
-        "visibleWhenValues": [
-          "avatar"
-        ]
-      },
-      {
-        "id": "row1Slot3.label",
-        "label": "Row 1 slot 3 label",
-        "jsonKey": "row1Slot3Label",
-        "kind": "text",
-        "defaultValue": "",
-        "valueKind": "StringSingleLine",
-        "visibleWhenCollectionPath": "socialPost.rows",
-        "visibleWhenItemId": "row1",
-        "visibleWhenItemPath": "slot3Kind",
-        "visibleWhenValues": [
-          "avatar",
-          "label"
-        ]
-      },
-      {
-        "id": "row1Slot3.sublabel",
-        "label": "Row 1 slot 3 sublabel",
-        "jsonKey": "row1Slot3Sublabel",
-        "kind": "text",
-        "defaultValue": "",
-        "valueKind": "StringSingleLine",
-        "visibleWhenCollectionPath": "socialPost.rows",
-        "visibleWhenItemId": "row1",
-        "visibleWhenItemPath": "slot3Kind",
-        "visibleWhenValues": [
-          "avatar",
-          "label"
-        ]
-      },
-      {
-        "id": "row1Slot4.actor",
-        "label": "Row 1 slot 4 actor",
-        "jsonKey": "row1Slot4ActorId",
-        "kind": "recordReference",
-        "defaultValue": "actor_alex",
-        "tableId": "actors",
-        "resolvedJsonKey": "row1Slot4Actor",
-        "valueKind": "RecordReference",
-        "visibleWhenCollectionPath": "socialPost.rows",
-        "visibleWhenItemId": "row1",
-        "visibleWhenItemPath": "slot4Kind",
-        "visibleWhenValues": [
-          "avatar"
-        ]
-      },
-      {
-        "id": "row1Slot4.label",
-        "label": "Row 1 slot 4 label",
-        "jsonKey": "row1Slot4Label",
-        "kind": "text",
-        "defaultValue": "",
-        "valueKind": "StringSingleLine",
-        "visibleWhenCollectionPath": "socialPost.rows",
-        "visibleWhenItemId": "row1",
-        "visibleWhenItemPath": "slot4Kind",
-        "visibleWhenValues": [
-          "avatar",
-          "label"
-        ]
-      },
-      {
-        "id": "row1Slot4.sublabel",
-        "label": "Row 1 slot 4 sublabel",
-        "jsonKey": "row1Slot4Sublabel",
-        "kind": "text",
-        "defaultValue": "",
-        "valueKind": "StringSingleLine",
-        "visibleWhenCollectionPath": "socialPost.rows",
-        "visibleWhenItemId": "row1",
-        "visibleWhenItemPath": "slot4Kind",
-        "visibleWhenValues": [
-          "avatar",
-          "label"
-        ]
-      },
-      {
-        "id": "row1Slot5.actor",
-        "label": "Row 1 slot 5 actor",
-        "jsonKey": "row1Slot5ActorId",
-        "kind": "recordReference",
-        "defaultValue": "actor_alex",
-        "tableId": "actors",
-        "resolvedJsonKey": "row1Slot5Actor",
-        "valueKind": "RecordReference",
-        "visibleWhenCollectionPath": "socialPost.rows",
-        "visibleWhenItemId": "row1",
-        "visibleWhenItemPath": "slot5Kind",
-        "visibleWhenValues": [
-          "avatar"
-        ]
-      },
-      {
-        "id": "row1Slot5.label",
-        "label": "Row 1 slot 5 label",
-        "jsonKey": "row1Slot5Label",
-        "kind": "text",
-        "defaultValue": "",
-        "valueKind": "StringSingleLine",
-        "visibleWhenCollectionPath": "socialPost.rows",
-        "visibleWhenItemId": "row1",
-        "visibleWhenItemPath": "slot5Kind",
-        "visibleWhenValues": [
-          "avatar",
-          "label"
-        ]
-      },
-      {
-        "id": "row1Slot5.sublabel",
-        "label": "Row 1 slot 5 sublabel",
-        "jsonKey": "row1Slot5Sublabel",
-        "kind": "text",
-        "defaultValue": "",
-        "valueKind": "StringSingleLine",
-        "visibleWhenCollectionPath": "socialPost.rows",
-        "visibleWhenItemId": "row1",
-        "visibleWhenItemPath": "slot5Kind",
-        "visibleWhenValues": [
-          "avatar",
-          "label"
-        ]
-      },
-      {
-        "id": "row2Slot1.actor",
-        "label": "Row 2 slot 1 actor",
-        "jsonKey": "row2Slot1ActorId",
-        "kind": "recordReference",
-        "defaultValue": "actor_alex",
-        "tableId": "actors",
-        "resolvedJsonKey": "row2Slot1Actor",
-        "valueKind": "RecordReference",
-        "visibleWhenCollectionPath": "socialPost.rows",
-        "visibleWhenItemId": "row2",
-        "visibleWhenItemPath": "slot1Kind",
-        "visibleWhenValues": [
-          "avatar"
-        ]
-      },
-      {
-        "id": "row2Slot1.label",
-        "label": "Row 2 slot 1 label",
-        "jsonKey": "row2Slot1Label",
-        "kind": "text",
-        "defaultValue": "#FOQN",
-        "valueKind": "StringSingleLine",
-        "visibleWhenCollectionPath": "socialPost.rows",
-        "visibleWhenItemId": "row2",
-        "visibleWhenItemPath": "slot1Kind",
-        "visibleWhenValues": [
-          "avatar",
-          "label"
-        ]
-      },
-      {
-        "id": "row2Slot1.sublabel",
-        "label": "Row 2 slot 1 sublabel",
-        "jsonKey": "row2Slot1Sublabel",
-        "kind": "text",
-        "defaultValue": "",
-        "valueKind": "StringSingleLine",
-        "visibleWhenCollectionPath": "socialPost.rows",
-        "visibleWhenItemId": "row2",
-        "visibleWhenItemPath": "slot1Kind",
-        "visibleWhenValues": [
-          "avatar",
-          "label"
-        ]
-      },
-      {
-        "id": "row2Slot2.actor",
-        "label": "Row 2 slot 2 actor",
-        "jsonKey": "row2Slot2ActorId",
-        "kind": "recordReference",
-        "defaultValue": "actor_alex",
-        "tableId": "actors",
-        "resolvedJsonKey": "row2Slot2Actor",
-        "valueKind": "RecordReference",
-        "visibleWhenCollectionPath": "socialPost.rows",
-        "visibleWhenItemId": "row2",
-        "visibleWhenItemPath": "slot2Kind",
-        "visibleWhenValues": [
-          "avatar"
-        ]
-      },
-      {
-        "id": "row2Slot2.label",
-        "label": "Row 2 slot 2 label",
-        "jsonKey": "row2Slot2Label",
-        "kind": "text",
-        "defaultValue": "Social",
-        "valueKind": "StringSingleLine",
-        "visibleWhenCollectionPath": "socialPost.rows",
-        "visibleWhenItemId": "row2",
-        "visibleWhenItemPath": "slot2Kind",
-        "visibleWhenValues": [
-          "avatar",
-          "label"
-        ]
-      },
-      {
-        "id": "row2Slot2.sublabel",
-        "label": "Row 2 slot 2 sublabel",
-        "jsonKey": "row2Slot2Sublabel",
-        "kind": "text",
-        "defaultValue": "",
-        "valueKind": "StringSingleLine",
-        "visibleWhenCollectionPath": "socialPost.rows",
-        "visibleWhenItemId": "row2",
-        "visibleWhenItemPath": "slot2Kind",
-        "visibleWhenValues": [
-          "avatar",
-          "label"
-        ]
-      },
-      {
-        "id": "row2Slot3.actor",
-        "label": "Row 2 slot 3 actor",
-        "jsonKey": "row2Slot3ActorId",
-        "kind": "recordReference",
-        "defaultValue": "actor_alex",
-        "tableId": "actors",
-        "resolvedJsonKey": "row2Slot3Actor",
-        "valueKind": "RecordReference",
-        "visibleWhenCollectionPath": "socialPost.rows",
-        "visibleWhenItemId": "row2",
-        "visibleWhenItemPath": "slot3Kind",
-        "visibleWhenValues": [
-          "avatar"
-        ]
-      },
-      {
-        "id": "row2Slot3.label",
-        "label": "Row 2 slot 3 label",
-        "jsonKey": "row2Slot3Label",
-        "kind": "text",
-        "defaultValue": "",
-        "valueKind": "StringSingleLine",
-        "visibleWhenCollectionPath": "socialPost.rows",
-        "visibleWhenItemId": "row2",
-        "visibleWhenItemPath": "slot3Kind",
-        "visibleWhenValues": [
-          "avatar",
-          "label"
-        ]
-      },
-      {
-        "id": "row2Slot3.sublabel",
-        "label": "Row 2 slot 3 sublabel",
-        "jsonKey": "row2Slot3Sublabel",
-        "kind": "text",
-        "defaultValue": "",
-        "valueKind": "StringSingleLine",
-        "visibleWhenCollectionPath": "socialPost.rows",
-        "visibleWhenItemId": "row2",
-        "visibleWhenItemPath": "slot3Kind",
-        "visibleWhenValues": [
-          "avatar",
-          "label"
-        ]
-      },
-      {
-        "id": "row2Slot4.actor",
-        "label": "Row 2 slot 4 actor",
-        "jsonKey": "row2Slot4ActorId",
-        "kind": "recordReference",
-        "defaultValue": "actor_alex",
-        "tableId": "actors",
-        "resolvedJsonKey": "row2Slot4Actor",
-        "valueKind": "RecordReference",
-        "visibleWhenCollectionPath": "socialPost.rows",
-        "visibleWhenItemId": "row2",
-        "visibleWhenItemPath": "slot4Kind",
-        "visibleWhenValues": [
-          "avatar"
-        ]
-      },
-      {
-        "id": "row2Slot4.label",
-        "label": "Row 2 slot 4 label",
-        "jsonKey": "row2Slot4Label",
-        "kind": "text",
-        "defaultValue": "",
-        "valueKind": "StringSingleLine",
-        "visibleWhenCollectionPath": "socialPost.rows",
-        "visibleWhenItemId": "row2",
-        "visibleWhenItemPath": "slot4Kind",
-        "visibleWhenValues": [
-          "avatar",
-          "label"
-        ]
-      },
-      {
-        "id": "row2Slot4.sublabel",
-        "label": "Row 2 slot 4 sublabel",
-        "jsonKey": "row2Slot4Sublabel",
-        "kind": "text",
-        "defaultValue": "",
-        "valueKind": "StringSingleLine",
-        "visibleWhenCollectionPath": "socialPost.rows",
-        "visibleWhenItemId": "row2",
-        "visibleWhenItemPath": "slot4Kind",
-        "visibleWhenValues": [
-          "avatar",
-          "label"
-        ]
-      },
-      {
-        "id": "row2Slot5.actor",
-        "label": "Row 2 slot 5 actor",
-        "jsonKey": "row2Slot5ActorId",
-        "kind": "recordReference",
-        "defaultValue": "actor_alex",
-        "tableId": "actors",
-        "resolvedJsonKey": "row2Slot5Actor",
-        "valueKind": "RecordReference",
-        "visibleWhenCollectionPath": "socialPost.rows",
-        "visibleWhenItemId": "row2",
-        "visibleWhenItemPath": "slot5Kind",
-        "visibleWhenValues": [
-          "avatar"
-        ]
-      },
-      {
-        "id": "row2Slot5.label",
-        "label": "Row 2 slot 5 label",
-        "jsonKey": "row2Slot5Label",
-        "kind": "text",
-        "defaultValue": "",
-        "valueKind": "StringSingleLine",
-        "visibleWhenCollectionPath": "socialPost.rows",
-        "visibleWhenItemId": "row2",
-        "visibleWhenItemPath": "slot5Kind",
-        "visibleWhenValues": [
-          "avatar",
-          "label"
-        ]
-      },
-      {
-        "id": "row2Slot5.sublabel",
-        "label": "Row 2 slot 5 sublabel",
-        "jsonKey": "row2Slot5Sublabel",
-        "kind": "text",
-        "defaultValue": "",
-        "valueKind": "StringSingleLine",
-        "visibleWhenCollectionPath": "socialPost.rows",
-        "visibleWhenItemId": "row2",
-        "visibleWhenItemPath": "slot5Kind",
-        "visibleWhenValues": [
-          "avatar",
-          "label"
-        ]
+        "id": "socialPostRows",
+        "label": "Rows",
+        "jsonKey": "socialPostRows",
+        "itemLabel": "Row",
+        "storageCollectionJsonKey": "socialPostRows",
+        "fields": [
+          {
+            "id": "rowLabel",
+            "label": "Row",
+            "jsonKey": "label",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "source": "variant",
+            "showInEditor": false
+          },
+          {
+            "id": "slot1.kind",
+            "label": "Slot 1 content",
+            "jsonKey": "slot1Kind",
+            "kind": "option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ],
+            "source": "variant",
+            "showInEditor": false
+          },
+          {
+            "id": "slot1.actor",
+            "label": "Slot 1 actor",
+            "jsonKey": "slot1ActorId",
+            "kind": "recordReference",
+            "valueKind": "RecordReference",
+            "defaultValue": "actor_alex",
+            "tableId": "actors",
+            "resolvedJsonKey": "slot1Actor",
+            "enabledWhenItemJsonKey": "slot1Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ],
+            "uiOrder": 10
+          },
+          {
+            "id": "slot1.label",
+            "label": "Slot 1 label",
+            "jsonKey": "slot1Label",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot1Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 11
+          },
+          {
+            "id": "slot1.sublabel",
+            "label": "Slot 1 sublabel",
+            "jsonKey": "slot1Sublabel",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot1Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 12
+          },
+          {
+            "id": "slot2.kind",
+            "label": "Slot 2 content",
+            "jsonKey": "slot2Kind",
+            "kind": "option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ],
+            "source": "variant",
+            "showInEditor": false
+          },
+          {
+            "id": "slot2.actor",
+            "label": "Slot 2 actor",
+            "jsonKey": "slot2ActorId",
+            "kind": "recordReference",
+            "valueKind": "RecordReference",
+            "defaultValue": "actor_alex",
+            "tableId": "actors",
+            "resolvedJsonKey": "slot2Actor",
+            "enabledWhenItemJsonKey": "slot2Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ],
+            "uiOrder": 20
+          },
+          {
+            "id": "slot2.label",
+            "label": "Slot 2 label",
+            "jsonKey": "slot2Label",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot2Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 21
+          },
+          {
+            "id": "slot2.sublabel",
+            "label": "Slot 2 sublabel",
+            "jsonKey": "slot2Sublabel",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot2Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 22
+          },
+          {
+            "id": "slot3.kind",
+            "label": "Slot 3 content",
+            "jsonKey": "slot3Kind",
+            "kind": "option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ],
+            "source": "variant",
+            "showInEditor": false
+          },
+          {
+            "id": "slot3.actor",
+            "label": "Slot 3 actor",
+            "jsonKey": "slot3ActorId",
+            "kind": "recordReference",
+            "valueKind": "RecordReference",
+            "defaultValue": "actor_alex",
+            "tableId": "actors",
+            "resolvedJsonKey": "slot3Actor",
+            "enabledWhenItemJsonKey": "slot3Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ],
+            "uiOrder": 30
+          },
+          {
+            "id": "slot3.label",
+            "label": "Slot 3 label",
+            "jsonKey": "slot3Label",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot3Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 31
+          },
+          {
+            "id": "slot3.sublabel",
+            "label": "Slot 3 sublabel",
+            "jsonKey": "slot3Sublabel",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot3Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 32
+          },
+          {
+            "id": "slot4.kind",
+            "label": "Slot 4 content",
+            "jsonKey": "slot4Kind",
+            "kind": "option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ],
+            "source": "variant",
+            "showInEditor": false
+          },
+          {
+            "id": "slot4.actor",
+            "label": "Slot 4 actor",
+            "jsonKey": "slot4ActorId",
+            "kind": "recordReference",
+            "valueKind": "RecordReference",
+            "defaultValue": "actor_alex",
+            "tableId": "actors",
+            "resolvedJsonKey": "slot4Actor",
+            "enabledWhenItemJsonKey": "slot4Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ],
+            "uiOrder": 40
+          },
+          {
+            "id": "slot4.label",
+            "label": "Slot 4 label",
+            "jsonKey": "slot4Label",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot4Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 41
+          },
+          {
+            "id": "slot4.sublabel",
+            "label": "Slot 4 sublabel",
+            "jsonKey": "slot4Sublabel",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot4Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 42
+          },
+          {
+            "id": "slot5.kind",
+            "label": "Slot 5 content",
+            "jsonKey": "slot5Kind",
+            "kind": "option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ],
+            "source": "variant",
+            "showInEditor": false
+          },
+          {
+            "id": "slot5.actor",
+            "label": "Slot 5 actor",
+            "jsonKey": "slot5ActorId",
+            "kind": "recordReference",
+            "valueKind": "RecordReference",
+            "defaultValue": "actor_alex",
+            "tableId": "actors",
+            "resolvedJsonKey": "slot5Actor",
+            "enabledWhenItemJsonKey": "slot5Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ],
+            "uiOrder": 50
+          },
+          {
+            "id": "slot5.label",
+            "label": "Slot 5 label",
+            "jsonKey": "slot5Label",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot5Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 51
+          },
+          {
+            "id": "slot5.sublabel",
+            "label": "Slot 5 sublabel",
+            "jsonKey": "slot5Sublabel",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot5Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 52
+          }
+        ],
+        "itemPresentation": {
+          "titleFieldId": "rowLabel",
+          "firstItemBadge": "",
+          "subtitleFieldIds": [],
+          "subtitleMaxCharacters": 72,
+          "iconFieldId": "",
+          "fallbackIcon": "layout",
+          "iconValueMap": {}
+        },
+        "canEditStructure": false,
+        "fixedItemCount": 2,
+        "uiPresentation": "collection",
+        "itemRuntimePresentation": "card",
+        "structureProjection": {
+          "sourceConfigPath": "socialPost.rows",
+          "sourceIdJsonKey": "id",
+          "runtimeIdJsonKey": "id",
+          "fieldBindings": {
+            "label": "label",
+            "slot1Kind": "slot1Kind",
+            "slot2Kind": "slot2Kind",
+            "slot3Kind": "slot3Kind",
+            "slot4Kind": "slot4Kind",
+            "slot5Kind": "slot5Kind"
+          }
+        }
       }
     ],
-    "row1Slot1ActorId": "actor_alex",
-    "row1Slot1Label": "Alex Q",
-    "row1Slot1Sublabel": "@alexq · 2 min",
-    "row1Slot2ActorId": "actor_alex",
-    "row1Slot2Label": "",
-    "row1Slot2Sublabel": "",
-    "row1Slot3ActorId": "actor_alex",
-    "row1Slot3Label": "",
-    "row1Slot3Sublabel": "",
-    "row1Slot4ActorId": "actor_alex",
-    "row1Slot4Label": "",
-    "row1Slot4Sublabel": "",
-    "row1Slot5ActorId": "actor_alex",
-    "row1Slot5Label": "",
-    "row1Slot5Sublabel": "",
-    "row2Slot1ActorId": "actor_alex",
-    "row2Slot1Label": "#FOQN",
-    "row2Slot1Sublabel": "",
-    "row2Slot2ActorId": "actor_alex",
-    "row2Slot2Label": "Social",
-    "row2Slot2Sublabel": "",
-    "row2Slot3ActorId": "actor_alex",
-    "row2Slot3Label": "",
-    "row2Slot3Sublabel": "",
-    "row2Slot4ActorId": "actor_alex",
-    "row2Slot4Label": "",
-    "row2Slot4Sublabel": "",
-    "row2Slot5ActorId": "actor_alex",
-    "row2Slot5Label": "",
-    "row2Slot5Sublabel": ""
+    "socialPostRows": [
+      {
+        "id": "row1",
+        "slot1ActorId": "actor_alex",
+        "slot1Label": "Alex Q",
+        "slot1Sublabel": "@alexq · 2 min",
+        "slot2ActorId": "actor_alex",
+        "slot2Label": "",
+        "slot2Sublabel": "",
+        "slot3ActorId": "actor_alex",
+        "slot3Label": "",
+        "slot3Sublabel": "",
+        "slot4ActorId": "actor_alex",
+        "slot4Label": "",
+        "slot4Sublabel": "",
+        "slot5ActorId": "actor_alex",
+        "slot5Label": "",
+        "slot5Sublabel": ""
+      },
+      {
+        "id": "row2",
+        "slot1ActorId": "actor_alex",
+        "slot1Label": "#FOQN",
+        "slot1Sublabel": "",
+        "slot2ActorId": "actor_alex",
+        "slot2Label": "Social",
+        "slot2Sublabel": "",
+        "slot3ActorId": "actor_alex",
+        "slot3Label": "",
+        "slot3Sublabel": "",
+        "slot4ActorId": "actor_alex",
+        "slot4Label": "",
+        "slot4Sublabel": "",
+        "slot5ActorId": "actor_alex",
+        "slot5Label": "",
+        "slot5Sublabel": ""
+      }
+    ]
   },
   "metadata": {
     "note": "Social Post currently defines only its two-row header phase."

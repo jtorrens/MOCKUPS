@@ -191,6 +191,7 @@ public static class RuntimeInputDefinitionReader
                     HelpText = JsonString(field, "helpText"),
                     ValuePattern = JsonString(field, "valuePattern"),
                     ValuePatternMessage = JsonString(field, "valuePatternMessage"),
+                    ShowInEditor = field["showInEditor"]?.GetValue<bool>() ?? true,
                 };
                 itemFields.Add(definition);
             }
@@ -346,7 +347,20 @@ public static class RuntimeInputDefinitionReader
     private static int FixedCollectionItemCount(JsonObject collection, JsonObject config)
     {
         var path = JsonString(collection, "fixedCountPath");
-        if (string.IsNullOrWhiteSpace(path)) return 0;
+        var declaredCount = collection["fixedItemCount"] is null
+            ? 0
+            : JsonDecimal(collection, "fixedItemCount", 0);
+        if (declaredCount < 0 || declaredCount != decimal.Truncate(declaredCount))
+        {
+            throw new InvalidOperationException(
+                $"Runtime Input collection '{JsonString(collection, "id")}' fixedItemCount must be a non-negative integer.");
+        }
+        if (!string.IsNullOrWhiteSpace(path) && declaredCount > 0)
+        {
+            throw new InvalidOperationException(
+                $"Runtime Input collection '{JsonString(collection, "id")}' cannot combine fixedItemCount and fixedCountPath.");
+        }
+        if (string.IsNullOrWhiteSpace(path)) return checked((int)declaredCount);
         var node = JsonPath.Get(config, path.Split('.', StringSplitOptions.RemoveEmptyEntries));
         if (node is null && config.Count == 0) return 0;
         if (node is not JsonValue value

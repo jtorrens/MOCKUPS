@@ -1727,7 +1727,8 @@ internal sealed class RuntimeInputsCollectionEditor
     }
 
     private static bool IsVisibleRuntimeValue(RuntimeInputOwner owner, ComponentInputDefinition input) =>
-        !input.ActionOnly || (owner.IsInstance && input.Animation is not null);
+        input.ShowInEditor
+        && (!input.ActionOnly || (owner.IsInstance && input.Animation is not null));
 
     private JsonObject DefaultCollectionItem(RuntimeInputOwner owner, RuntimeInputCollectionDefinition collection)
     {
