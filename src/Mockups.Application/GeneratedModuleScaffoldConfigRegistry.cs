@@ -1,5 +1,5 @@
 // Generated from scaffolding/modules/*.json. Do not edit manually.
-// Modules: module.core.chat, module.core.chatList, module.core.lockScreen
+// Modules: module.core.chat, module.core.chatList, module.core.lockScreen, module.core.socialPost
 using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Collections.Generic;
@@ -279,6 +279,146 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ["lockScreen", "statusBarSlot"],
             "status_bar",
             []),
+        ["module.core.socialPost.bubble"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.bubble",
+            ValueKind.ComponentVariantSlot,
+            ["socialPost", "bubbleSlot"],
+            "bubble",
+            [["socialPost", "runtimeContract", "variantReference"]]),
+        ["module.core.socialPost.footerIconBar"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.footerIconBar",
+            ValueKind.ComponentVariantSlot,
+            ["socialPost", "footerIconBarSlot"],
+            "iconBar",
+            []),
+        ["module.core.socialPost.footerIconBarInputs"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.footerIconBarInputs",
+            ValueKind.ComponentInputBindings,
+            ["socialPost", "footerIconBarInputs"],
+            "",
+            []),
+        ["module.core.socialPost.headerItems"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.headerItems",
+            ValueKind.StructuredCollection,
+            ["socialPost", "headerStackInputs", "items"],
+            "",
+            []),
+        ["module.core.socialPost.headerStack"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.headerStack",
+            ValueKind.ComponentVariantSlot,
+            ["socialPost", "headerStackSlot"],
+            "collectionStack",
+            []),
+        ["module.core.socialPost.headerStackInputs"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.headerStackInputs",
+            ValueKind.ComponentInputBindings,
+            ["socialPost", "headerStackInputs"],
+            "",
+            []),
+        ["module.core.socialPost.keyboard"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.keyboard",
+            ValueKind.ComponentVariantSlot,
+            ["socialPost", "keyboardSlot"],
+            "keyboard",
+            []),
+        ["module.core.socialPost.keyboardInputs"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.keyboardInputs",
+            ValueKind.ComponentInputBindings,
+            ["socialPost", "keyboardInputs"],
+            "",
+            []),
+        ["module.core.socialPost.media"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.media",
+            ValueKind.ComponentVariantSlot,
+            ["socialPost", "mediaSlot"],
+            "media",
+            []),
+        ["module.core.socialPost.mediaInputs"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.mediaInputs",
+            ValueKind.ComponentInputBindings,
+            ["socialPost", "mediaInputs"],
+            "",
+            []),
+        ["module.core.socialPost.navigationBar"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.navigationBar",
+            ValueKind.ComponentVariantSlot,
+            ["socialPost", "navigationBarSlot"],
+            "navigation_bar",
+            []),
+        ["module.core.socialPost.showKeyboard"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.showKeyboard",
+            ValueKind.Boolean,
+            ["socialPost", "showKeyboard"],
+            "",
+            []),
+        ["module.core.socialPost.showNavigationBar"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.showNavigationBar",
+            ValueKind.Boolean,
+            ["socialPost", "showNavigationBar"],
+            "",
+            []),
+        ["module.core.socialPost.showStatusBar"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.showStatusBar",
+            ValueKind.Boolean,
+            ["socialPost", "showStatusBar"],
+            "",
+            []),
+        ["module.core.socialPost.showTextInputBar"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.showTextInputBar",
+            ValueKind.Boolean,
+            ["socialPost", "showTextInputBar"],
+            "",
+            []),
+        ["module.core.socialPost.stack"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.stack",
+            ValueKind.ComponentVariantSlot,
+            ["socialPost", "stackSlot"],
+            "componentStack",
+            []),
+        ["module.core.socialPost.statusBar"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.statusBar",
+            ValueKind.ComponentVariantSlot,
+            ["socialPost", "statusBarSlot"],
+            "status_bar",
+            []),
+        ["module.core.socialPost.textInputBar"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.textInputBar",
+            ValueKind.ComponentVariantSlot,
+            ["socialPost", "textInputBarSlot"],
+            "textInputBar",
+            []),
+        ["module.core.socialPost.textInputBarInputs"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.textInputBarInputs",
+            ValueKind.ComponentInputBindings,
+            ["socialPost", "textInputBarInputs"],
+            "",
+            []),
+        ["module.core.socialPost.wallpaperEnabled"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.wallpaperEnabled",
+            ValueKind.Boolean,
+            ["socialPost", "wallpaperEnabled"],
+            "",
+            []),
     };
 
     public static bool TryValidate(
@@ -296,6 +436,9 @@ internal static class GeneratedModuleScaffoldConfigRegistry
                 return true;
             case "module.core.lockScreen":
                 LockScreenModuleConfigContract.Validate(config, context);
+                return true;
+            case "module.core.socialPost":
+                SocialPostModuleConfigContract.Validate(config, context);
                 return true;
             default:
                 return false;

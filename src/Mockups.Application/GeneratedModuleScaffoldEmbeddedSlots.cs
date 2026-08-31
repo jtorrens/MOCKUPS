@@ -1,5 +1,5 @@
 // Generated from scaffolding/modules/*.json. Do not edit manually.
-// Modules: module.core.chat, module.core.chatList, module.core.lockScreen
+// Modules: module.core.chat, module.core.chatList, module.core.lockScreen, module.core.socialPost
 namespace Mockups.DesktopEditorShell.EditorShell;
 
 public static class GeneratedModuleScaffoldEmbeddedSlots
@@ -102,5 +102,59 @@ public static class GeneratedModuleScaffoldEmbeddedSlots
             "Status bar",
             "component.status_bar",
             ["lockScreen", "statusBarSlot"]),
+        new(
+            "module.core.socialPost.bubble",
+            "bubble",
+            "Message Bubble",
+            "component.bubble",
+            ["socialPost", "bubbleSlot"]),
+        new(
+            "module.core.socialPost.footerIconBar",
+            "iconBar",
+            "Social Icon Bar",
+            "component.iconBar",
+            ["socialPost", "footerIconBarSlot"]),
+        new(
+            "module.core.socialPost.headerStack",
+            "collectionStack",
+            "Header Stack",
+            "component.collectionStack",
+            ["socialPost", "headerStackSlot"]),
+        new(
+            "module.core.socialPost.keyboard",
+            "keyboard",
+            "Keyboard",
+            "component.keyboard",
+            ["socialPost", "keyboardSlot"]),
+        new(
+            "module.core.socialPost.media",
+            "media",
+            "Media",
+            "component.media",
+            ["socialPost", "mediaSlot"]),
+        new(
+            "module.core.socialPost.navigationBar",
+            "navigation_bar",
+            "Navigation Bar",
+            "component.navigation_bar",
+            ["socialPost", "navigationBarSlot"]),
+        new(
+            "module.core.socialPost.stack",
+            "componentStack",
+            "Content Stack",
+            "component.componentStack",
+            ["socialPost", "stackSlot"]),
+        new(
+            "module.core.socialPost.statusBar",
+            "status_bar",
+            "Status Bar",
+            "component.status_bar",
+            ["socialPost", "statusBarSlot"]),
+        new(
+            "module.core.socialPost.textInputBar",
+            "textInputBar",
+            "Text Input Bar",
+            "component.textInputBar",
+            ["socialPost", "textInputBarSlot"]),
     ];
 }

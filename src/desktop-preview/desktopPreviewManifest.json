@@ -403,6 +403,25 @@
         "status_bar",
         "navigation_bar"
       ]
+    },
+    "module.core.socialPost": {
+      "label": "Social Post",
+      "contract": "./socialPostModuleContract",
+      "resolver": "./socialPostModuleResolver",
+      "renderable": "./socialPostModuleRenderable",
+      "embeds": [
+        "componentStack",
+        "collectionStack",
+        "listItem",
+        "iconRow",
+        "media",
+        "bubble",
+        "iconBar",
+        "textInputBar",
+        "keyboard",
+        "status_bar",
+        "navigation_bar"
+      ]
     }
   }
 }

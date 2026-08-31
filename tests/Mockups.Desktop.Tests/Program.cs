@@ -274,6 +274,7 @@ var tests = new (string Name, Action Run)[]
     ("Forward actions use one compact right-pointing presentation", ForwardActionsUseSharedPresentation),
     ("Label subtext placement uses the current explicit alignment contract", LabelSubtextPlacementUsesCurrentContract),
     ("Password composes stateful atoms and BehaviorTiming", PasswordSeedOpensAndRenders),
+    ("Social Post composes four zones with optional chrome and composer", SocialPostComposesFourZones),
     ("Lock Screen composes its runtime Stack and optional system bars", LockScreenComposesRuntimeStack),
     ("forwarded child inputs become effective parent runtime inputs", ForwardedChildInputsBecomeParentRuntimeInputs),
     ("forwarded runtime collections expose slot state actions", ForwardedRuntimeCollectionsExposeSlotStateActions),
@@ -9530,6 +9531,15 @@ static void ModuleConfigsUseOwnerContracts()
             connection,
             "module_project_foqn_s2_lock_screen",
             (config) => config["lockScreen"]!["stackInputs"]!["items"] = new JsonObject());
+    });
+    AssertRejectedDatabaseIsReadOnly("social-post-module-forwarding", (connection) =>
+    {
+        MutateModuleAndDefaultVariant(
+            connection,
+            "module_project_foqn_s2_social_post",
+            (config) => config["socialPost"]!["forwarding"]!["headerActor"]!
+                .AsObject()
+                .Remove("sourceInputId"));
     });
 
     var source = ParityDatabasePath();
@@ -20831,6 +20841,104 @@ static void PasswordSeedOpensAndRenders()
     finally
     {
         File.Delete(temporary);
+    }
+}
+
+static void SocialPostComposesFourZones()
+{
+    var database = new SqliteProjectTestContext(ParityDatabasePath());
+    var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
+    var module = nodes.Single((node) =>
+        node.Kind == ProjectTreeNodeKind.Module
+        && database.GetModuleSettings(node.Id).RecordClassId == "module.core.socialPost");
+    Equal("app_core_chat", module.Parent?.Id ?? "");
+    var settings = database.GetModuleSettings(module.Id);
+    var config = JsonPath.ParseRequiredObject(settings.ConfigJson, "Social Post config");
+    var socialPost = JsonPath.RequiredObject(config, "socialPost", "Social Post config");
+    foreach (var key in new[]
+    {
+        "stackSlot",
+        "headerStackSlot",
+        "mediaSlot",
+        "bubbleSlot",
+        "footerIconBarSlot",
+        "textInputBarSlot",
+        "keyboardSlot",
+        "statusBarSlot",
+        "navigationBarSlot",
+    })
+    {
+        ComponentVariantSlotDocumentContract.Validate(
+            JsonPath.RequiredObject(socialPost, key, "Social Post config"),
+            $"Social Post config.{key}");
+    }
+    True(JsonPath.RequiredBoolean(socialPost, "wallpaperEnabled", "Social Post config"));
+    True(JsonPath.RequiredBoolean(socialPost, "showStatusBar", "Social Post config"));
+    True(JsonPath.RequiredBoolean(socialPost, "showNavigationBar", "Social Post config"));
+    True(!JsonPath.RequiredBoolean(socialPost, "showTextInputBar", "Social Post config"));
+    True(!JsonPath.RequiredBoolean(socialPost, "showKeyboard", "Social Post config"));
+    var headerInputs = JsonPath.RequiredObject(
+        socialPost,
+        "headerStackInputs",
+        "Social Post config");
+    var headerItems = JsonPath.RequiredArray(
+        headerInputs,
+        "items",
+        "Social Post header inputs");
+    SequenceEqual(
+        ["social_header_primary", "social_header_info"],
+        headerItems.OfType<JsonObject>()
+            .Select((item) => JsonPath.RequiredString(item, "id", "Social Post header item"))
+            .ToList());
+    var fields = EditorLayouts(database).LoadEditorLayout("module.core.socialPost").Cards
+        .SelectMany((card) => card.VisibleGroups)
+        .SelectMany((group) => group.VisibleFields)
+        .Select((field) => field.Id)
+        .ToHashSet(StringComparer.Ordinal);
+    foreach (var fieldId in new[]
+    {
+        "module.core.socialPost.stack",
+        "module.core.socialPost.headerStack",
+        "module.core.socialPost.headerItems",
+        "module.core.socialPost.media",
+        "module.core.socialPost.mediaInputs",
+        "module.core.socialPost.bubble",
+        "module.core.socialPost.footerIconBar",
+        "module.core.socialPost.textInputBar",
+        "module.core.socialPost.keyboard",
+        "module.core.socialPost.statusBar",
+        "module.core.socialPost.navigationBar",
+    })
+    {
+        True(fields.Contains(fieldId));
+    }
+    var preview = DesignPreviewTestValues.Parse(settings.DesignPreviewJson);
+    Equal("actor_alex", preview["actorId"]?.GetValue<string>() ?? "");
+    var inputs = RuntimeInputDefinitionReader.ReadInputs(preview, config);
+    True(inputs.Any((input) => input.Id == "sampleText"));
+    True(JsonPath.RequiredArray(preview, "inputs", "Social Post Runtime")
+        .OfType<JsonObject>()
+        .Any((input) => input["id"]?.GetValue<string>() == "writeOnTrigger"));
+
+    var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
+    var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
+    var payload = Required(CreatePreviewPayload(database, module, theme.Id));
+    var session = new ComponentPreviewInputSession(
+        database.Design,
+        database.DictionaryContext,
+        database.Resources,
+        database.ProjectPaths,
+        () => { });
+    session.UpdateForPayload(payload, settings.ProjectId);
+    var resolved = session.ApplyInputs(payload, "light", settings.ProjectId);
+    var html = WebDesignPreviewRenderer.RenderBodyAsync(
+        database.GetDevicePreviewMetrics(device.Id),
+        false,
+        resolved).GetAwaiter().GetResult();
+    True(!html.Contains("preview-error", StringComparison.Ordinal));
+    foreach (var renderableId in new[] { "header", "media", "message", "actions" })
+    {
+        True(html.Contains($"data-renderable-id=\"{renderableId}\"", StringComparison.Ordinal));
     }
 }
 

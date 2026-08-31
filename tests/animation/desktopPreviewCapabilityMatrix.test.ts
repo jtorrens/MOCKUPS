@@ -58,6 +58,7 @@ const focusedCharacterizations = {
   "module.core.lockScreen":
     "tests/Mockups.Desktop.Tests/Program.cs",
   "module.core.chatList": "tests/animation/chatListModule.test.ts",
+  "module.core.socialPost": "tests/animation/socialPostModule.test.ts",
 } as const;
 
 test("the capability matrix covers every manifest owner exactly once", () => {
