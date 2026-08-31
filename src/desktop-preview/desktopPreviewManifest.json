@@ -413,6 +413,8 @@
         "componentStack",
         "collectionStack",
         "listItem",
+        "avatar",
+        "label",
         "iconRow",
         "media",
         "bubble",

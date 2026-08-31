@@ -275,7 +275,7 @@ var tests = new (string Name, Action Run)[]
     ("Label subtext placement uses the current explicit alignment contract", LabelSubtextPlacementUsesCurrentContract),
     ("Password composes stateful atoms and BehaviorTiming", PasswordSeedOpensAndRenders),
     ("Social Post composes four zones with optional chrome and composer", SocialPostComposesFourZones),
-    ("Social Post prepares its Component Stack inputs in the real editor", SocialPostEditorPreparesComponentStackInputs),
+    ("Social Post editor keeps child Runtime contracts internal", SocialPostEditorKeepsChildRuntimeInternal),
     ("Lock Screen composes its runtime Stack and optional system bars", LockScreenComposesRuntimeStack),
     ("forwarded child inputs become effective parent runtime inputs", ForwardedChildInputsBecomeParentRuntimeInputs),
     ("forwarded runtime collections expose slot state actions", ForwardedRuntimeCollectionsExposeSlotStateActions),
@@ -9533,14 +9533,12 @@ static void ModuleConfigsUseOwnerContracts()
             "module_project_foqn_s2_lock_screen",
             (config) => config["lockScreen"]!["stackInputs"]!["items"] = new JsonObject());
     });
-    AssertRejectedDatabaseIsReadOnly("social-post-module-forwarding", (connection) =>
+    AssertRejectedDatabaseIsReadOnly("social-post-module-header-composition", (connection) =>
     {
         MutateModuleAndDefaultVariant(
             connection,
             "module_project_foqn_s2_social_post",
-            (config) => config["socialPost"]!["forwarding"]!["headerActor"]!
-                .AsObject()
-                .Remove("sourceInputId"));
+            (config) => config["socialPost"]!.AsObject().Remove("headerPrimaryInputs"));
     });
 
     var source = ParityDatabasePath();
@@ -16984,7 +16982,7 @@ var isolatedUiTests = new HashSet<string>(StringComparer.Ordinal)
     "pinned Module Variant Preview survives changing editor selection",
     "pinned Production Preview keeps its active Screen while editing Design",
     "Chat List Module exposes its fixed List boundary and exact Runtime in the real editor",
-    "Social Post prepares its Component Stack inputs in the real editor",
+    "Social Post editor keeps child Runtime contracts internal",
 };
 var exhaustiveTests = new HashSet<string>(StringComparer.Ordinal)
 {
@@ -20908,37 +20906,36 @@ static void SocialPostComposesFourZones()
     {
         "stackSlot",
         "headerStackSlot",
+        "headerPrimarySlot",
+        "headerSecondaryIconRowSlot",
         "mediaSlot",
         "bubbleSlot",
         "footerIconBarSlot",
         "textInputBarSlot",
         "keyboardSlot",
-        "statusBarSlot",
-        "navigationBarSlot",
     })
     {
         ComponentVariantSlotDocumentContract.Validate(
             JsonPath.RequiredObject(socialPost, key, "Social Post config"),
             $"Social Post config.{key}");
     }
-    True(JsonPath.RequiredBoolean(socialPost, "wallpaperEnabled", "Social Post config"));
+    True(JsonPath.RequiredBoolean(socialPost, "useAppWallpaper", "Social Post config"));
     True(JsonPath.RequiredBoolean(socialPost, "showStatusBar", "Social Post config"));
     True(JsonPath.RequiredBoolean(socialPost, "showNavigationBar", "Social Post config"));
     True(!JsonPath.RequiredBoolean(socialPost, "showTextInputBar", "Social Post config"));
     True(!JsonPath.RequiredBoolean(socialPost, "showKeyboard", "Social Post config"));
-    var headerInputs = JsonPath.RequiredObject(
+    var headerPrimaryInputs = JsonPath.RequiredObject(
         socialPost,
-        "headerStackInputs",
-        "Social Post config");
-    var headerItems = JsonPath.RequiredArray(
-        headerInputs,
-        "items",
-        "Social Post header inputs");
-    SequenceEqual(
-        ["social_header_primary", "social_header_info"],
-        headerItems.OfType<JsonObject>()
-            .Select((item) => JsonPath.RequiredString(item, "id", "Social Post header item"))
-            .ToList());
+        "headerPrimaryInputs",
+        "Social Post primary header inputs");
+    JsonPath.RequiredArray(
+        headerPrimaryInputs,
+        "avatarContent",
+        "Social Post primary header inputs");
+    JsonPath.RequiredObject(
+        socialPost,
+        "headerSecondaryIconRowInputs",
+        "Social Post secondary header inputs");
     var fields = EditorLayouts(database).LoadEditorLayout("module.core.socialPost").Cards
         .SelectMany((card) => card.VisibleGroups)
         .SelectMany((group) => group.VisibleFields)
@@ -20948,26 +20945,28 @@ static void SocialPostComposesFourZones()
     {
         "module.core.socialPost.stack",
         "module.core.socialPost.headerStack",
-        "module.core.socialPost.headerItems",
+        "module.core.socialPost.headerPrimary",
+        "module.core.socialPost.headerSecondaryIconRow",
         "module.core.socialPost.media",
-        "module.core.socialPost.mediaInputs",
         "module.core.socialPost.bubble",
         "module.core.socialPost.footerIconBar",
         "module.core.socialPost.textInputBar",
         "module.core.socialPost.keyboard",
-        "module.core.socialPost.statusBar",
-        "module.core.socialPost.navigationBar",
+        "module.core.socialPost.showStatusBar",
+        "module.core.socialPost.showNavigationBar",
     })
     {
         True(fields.Contains(fieldId));
     }
     var preview = DesignPreviewTestValues.Parse(settings.DesignPreviewJson);
-    Equal("actor_alex", preview["actorId"]?.GetValue<string>() ?? "");
+    True(!string.IsNullOrWhiteSpace(preview["actorId"]?.GetValue<string>() ?? ""));
     var inputs = RuntimeInputDefinitionReader.ReadInputs(preview, config);
-    True(inputs.Any((input) => input.Id == "sampleText"));
+    True(inputs.Any((input) => input.Id == "actor"));
+    True(inputs.Any((input) => input.Id == "caption"));
+    True(inputs.Any((input) => input.Id == "mediaSource"));
     True(JsonPath.RequiredArray(preview, "inputs", "Social Post Runtime")
         .OfType<JsonObject>()
-        .Any((input) => input["id"]?.GetValue<string>() == "writeOnTrigger"));
+        .All((input) => input["id"]?.GetValue<string>() != "writeOnTrigger"));
 
     var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
     var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
@@ -20991,7 +20990,7 @@ static void SocialPostComposesFourZones()
     }
 }
 
-static void SocialPostEditorPreparesComponentStackInputs()
+static void SocialPostEditorKeepsChildRuntimeInternal()
 {
     var source = ParityDatabasePath();
     var temporary = Path.Combine(
@@ -21058,11 +21057,17 @@ static void SocialPostEditorPreparesComponentStackInputs()
                             selected.Id,
                             StringComparison.Ordinal)
                         && activeFields.ControlsByFieldId.ContainsKey(
-                            "module.core.socialPost.headerStackInputs");
+                            "module.core.socialPost.stack");
                 },
                 TimeSpan.FromSeconds(10)),
-                "Social Post editor did not prepare its Collection Stack Runtime. "
+                "Social Post editor did not prepare its clean Module fields. "
                 + (messages.Text ?? ""));
+            True(!activeFields.ControlsByFieldId.ContainsKey(
+                "module.core.socialPost.headerStackInputs"));
+            True(!activeFields.ControlsByFieldId.ContainsKey(
+                "module.core.socialPost.mediaInputs"));
+            True(!activeFields.ControlsByFieldId.ContainsKey(
+                "module.metadata"));
             True(!(messages.Text ?? "").Contains(
                 "Prepare editor",
                 StringComparison.Ordinal));

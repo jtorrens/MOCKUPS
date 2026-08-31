@@ -115,6 +115,18 @@ public static class GeneratedModuleScaffoldEmbeddedSlots
             "component.iconBar",
             ["socialPost", "footerIconBarSlot"]),
         new(
+            "module.core.socialPost.headerPrimary",
+            "listItem",
+            "Profile row",
+            "component.listItem",
+            ["socialPost", "headerPrimarySlot"]),
+        new(
+            "module.core.socialPost.headerSecondaryIconRow",
+            "iconRow",
+            "Tags and information",
+            "component.iconRow",
+            ["socialPost", "headerSecondaryIconRowSlot"]),
+        new(
             "module.core.socialPost.headerStack",
             "collectionStack",
             "Header Stack",
@@ -133,23 +145,11 @@ public static class GeneratedModuleScaffoldEmbeddedSlots
             "component.media",
             ["socialPost", "mediaSlot"]),
         new(
-            "module.core.socialPost.navigationBar",
-            "navigation_bar",
-            "Navigation Bar",
-            "component.navigation_bar",
-            ["socialPost", "navigationBarSlot"]),
-        new(
             "module.core.socialPost.stack",
             "componentStack",
             "Content Stack",
             "component.componentStack",
             ["socialPost", "stackSlot"]),
-        new(
-            "module.core.socialPost.statusBar",
-            "status_bar",
-            "Status Bar",
-            "component.status_bar",
-            ["socialPost", "statusBarSlot"]),
         new(
             "module.core.socialPost.textInputBar",
             "textInputBar",

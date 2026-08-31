@@ -32,13 +32,8 @@ function fixture() {
     };
     const defaultVariant = metadata.variants.find((variant) => variant.id === "default");
     assert.ok(defaultVariant);
-    const persistedRuntime = JSON.parse(module.design_preview_json) as {
-      animationTimeline: Record<string, unknown>;
-    };
-    const runtime = JSON.parse(bubble.designPreviewJson) as Record<string, unknown>;
+    const runtime = JSON.parse(module.design_preview_json) as Record<string, unknown>;
     const avatarRuntime = JSON.parse(avatar.designPreviewJson) as Record<string, unknown>;
-    runtime.componentType = "module.core.socialPost";
-    runtime.animationTimeline = persistedRuntime.animationTimeline;
     runtime.actorId = "actor_alex";
     runtime.actor = avatarRuntime.actor;
     return {
@@ -62,29 +57,37 @@ function fixture() {
       configJson: JSON.stringify(defaultVariant.config),
       designPreviewJson: JSON.stringify(runtime),
       runtimeContractJson: JSON.stringify(runtime),
+      themeStatusBarVariantReference:
+        "component_project_foqn_s2_status_bar::variant::default",
+      themeNavigationBarVariantReference:
+        "component_project_foqn_s2_navigation_bar::variant::default",
     };
   } finally {
     database.close();
   }
 }
 
-test("Social Post exposes the exact Bubble Runtime contract", () => {
+test("Social Post owns semantic Test Values without exposing a child Runtime contract", () => {
   const source = fixture();
   const contract = resolveSocialPostModule(source);
   const runtime = JSON.parse(source.runtimeContractJson) as {
     inputs: Array<{ id: string }>;
     collections: Array<{ id: string }>;
   };
+  const config = JSON.parse(source.configJson) as {
+    socialPost: Record<string, unknown>;
+  };
   assert.equal(contract.bubbleSlot.variantReference,
     "component_project_foqn_s2_bubble::variant::default");
-  assert.deepEqual(
-    runtime.inputs.map(({ id }) => id),
-    (JSON.parse(source.configJson) as {
-      socialPost: { runtimeContract: { inputIds: string[] } };
-    }).socialPost.runtimeContract.inputIds,
-  );
+  assert.equal(Object.hasOwn(config.socialPost, "runtimeContract"), false);
+  assert.equal(Object.hasOwn(config.socialPost, "forwarding"), false);
+  assert.ok(runtime.inputs.some(({ id }) => id === "caption"));
+  assert.ok(runtime.inputs.some(({ id }) => id === "actor"));
   assert.deepEqual(runtime.collections, []);
-  assert.deepEqual(contract.bubbleInputs, JSON.parse(source.designPreviewJson));
+  assert.equal(contract.bubbleInputs.sampleText,
+    (JSON.parse(source.designPreviewJson) as Record<string, unknown>).sampleText);
+  assert.equal(contract.bubbleInputs.mediaType, "none");
+  assert.equal(contract.mediaInputs.mediaType, "image");
 });
 
 test("Social Post renders one four-zone Component Stack", () => {
@@ -102,9 +105,9 @@ test("Social Post renders one four-zone Component Stack", () => {
   assert.ok(message.box);
   assert.ok(actions.box);
   assert.equal(header.box.y, stack.box.y);
-  assert.equal(media.box.y, header.box.y + header.box.height);
+  assert.equal(media.box.y - (header.box.y + header.box.height), 4);
   assert.equal(message.box.y - (media.box.y + media.box.height), 4);
-  assert.equal(actions.box.y, message.box.y + message.box.height);
+  assert.equal(actions.box.y - (message.box.y + message.box.height), 4);
   assert.equal(actions.box.y + actions.box.height, stack.box.y + stack.box.height);
   assert.ok(findNode(header, "collectionStack"));
   assert.ok(findNode(media, "media"));
@@ -127,6 +130,10 @@ test("Social Post independently hides system chrome and reveals the composer", (
   config.socialPost.showTextInputBar = true;
   config.socialPost.showKeyboard = true;
   source.configJson = JSON.stringify(config);
+  const runtime = JSON.parse(source.designPreviewJson) as Record<string, unknown>;
+  runtime.textInputVisible = true;
+  runtime.keyboardVisible = true;
+  source.designPreviewJson = JSON.stringify(runtime);
   const node = socialPostModuleToRenderable(source);
   assert.equal(findNode(node, "status_bar"), undefined);
   assert.equal(findNode(node, "navigation_bar"), undefined);
@@ -137,15 +144,15 @@ test("Social Post independently hides system chrome and reveals the composer", (
 test("Social Post selects App wallpaper or Theme background from one toggle", () => {
   const source = fixture();
   const config = JSON.parse(source.configJson) as {
-    socialPost: { wallpaperEnabled: boolean };
+    socialPost: { useAppWallpaper: boolean };
   };
-  config.socialPost.wallpaperEnabled = false;
+  config.socialPost.useAppWallpaper = false;
   source.configJson = JSON.stringify(config);
   assert.equal(
     socialPostModuleToRenderable(source).children?.[0]?.id,
     "module.core.socialPost.background",
   );
-  config.socialPost.wallpaperEnabled = true;
+  config.socialPost.useAppWallpaper = true;
   source.configJson = JSON.stringify(config);
   source.appConfigJson = JSON.stringify({
     wallpaper: {
@@ -167,7 +174,7 @@ test("Social Post selects App wallpaper or Theme background from one toggle", ()
   );
 });
 
-test("Social Post rejects a wrong Bubble boundary and reduced Runtime contract", () => {
+test("Social Post rejects a wrong Bubble boundary and a missing owned Actor", () => {
   const wrongBoundary = fixture();
   const wrongConfig = JSON.parse(wrongBoundary.configJson) as {
     socialPost: { bubbleSlot: { variantReference: string } };
@@ -180,15 +187,13 @@ test("Social Post rejects a wrong Bubble boundary and reduced Runtime contract",
     /bubbleSlot.*must resolve to Component 'bubble'/,
   );
 
-  const reduced = fixture();
-  const runtime = JSON.parse(reduced.runtimeContractJson) as {
-    inputs: Array<{ id: string }>;
-  };
-  runtime.inputs = runtime.inputs.slice(0, -1);
-  reduced.runtimeContractJson = JSON.stringify(runtime);
+  const missingActor = fixture();
+  const runtime = JSON.parse(missingActor.designPreviewJson) as Record<string, unknown>;
+  delete runtime.actor;
+  missingActor.designPreviewJson = JSON.stringify(runtime);
   assert.throws(
-    () => resolveSocialPostModule(reduced),
-    /runtimeContract\.inputIds must be exactly/,
+    () => resolveSocialPostModule(missingActor),
+    /module\.core\.socialPost\.actor/,
   );
 });
 

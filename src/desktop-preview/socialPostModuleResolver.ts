@@ -18,6 +18,7 @@ export function resolveSocialPostModule(
 ): SocialPostModuleContract {
   const config = parseObject(payload.configJson);
   const socialPost = requiredRecord(config, "socialPost", "module.core.socialPost");
+  const preview = parseObject(payload.designPreviewJson);
   const componentBaseConfigs = parseObject(payload.componentBaseConfigsJson);
   const stackSlot = requiredTypedSlot(socialPost, componentBaseConfigs, "stackSlot", "componentStack");
   const headerStackSlot = requiredTypedSlot(
@@ -25,6 +26,18 @@ export function resolveSocialPostModule(
     componentBaseConfigs,
     "headerStackSlot",
     "collectionStack",
+  );
+  const headerPrimarySlot = requiredTypedSlot(
+    socialPost,
+    componentBaseConfigs,
+    "headerPrimarySlot",
+    "listItem",
+  );
+  const headerSecondaryIconRowSlot = requiredTypedSlot(
+    socialPost,
+    componentBaseConfigs,
+    "headerSecondaryIconRowSlot",
+    "iconRow",
   );
   const mediaSlot = requiredTypedSlot(socialPost, componentBaseConfigs, "mediaSlot", "media");
   const bubbleSlot = requiredTypedSlot(socialPost, componentBaseConfigs, "bubbleSlot", "bubble");
@@ -46,54 +59,20 @@ export function resolveSocialPostModule(
     "keyboardSlot",
     "keyboard",
   );
-  const statusBarSlot = requiredTypedSlot(
-    socialPost,
-    componentBaseConfigs,
-    "statusBarSlot",
-    "status_bar",
-  );
-  const navigationBarSlot = requiredTypedSlot(
-    socialPost,
-    componentBaseConfigs,
-    "navigationBarSlot",
-    "navigation_bar",
-  );
-  const runtimeDeclaration = requiredRecord(
-    socialPost,
-    "runtimeContract",
-    "module.core.socialPost.runtimeContract",
-  );
-  requireExactValue(
-    requiredString(runtimeDeclaration, "mode", "module.core.socialPost.runtimeContract.mode"),
-    "exact",
-    "module.core.socialPost.runtimeContract.mode",
-  );
-  requireExactValue(
-    requiredString(
-      runtimeDeclaration,
-      "componentType",
-      "module.core.socialPost.runtimeContract.componentType",
-    ),
-    "bubble",
-    "module.core.socialPost.runtimeContract.componentType",
-  );
-  requireExactValue(
-    requiredString(
-      runtimeDeclaration,
-      "variantReference",
-      "module.core.socialPost.runtimeContract.variantReference",
-    ),
-    bubbleSlot.variantReference,
-    "module.core.socialPost.runtimeContract.variantReference",
-  );
-  const bubbleInputs = parseObject(payload.designPreviewJson);
-  const runtimeContract = parseObject(payload.runtimeContractJson);
-  requireExactDeclarationIds(runtimeDeclaration, runtimeContract, bubbleInputs, "inputs");
-  requireExactDeclarationIds(runtimeDeclaration, runtimeContract, bubbleInputs, "collections");
+  const actor = requiredRecord(preview, "actor", "module.core.socialPost.actor");
+  const actorName = requiredString(actor, "displayName", "module.core.socialPost.actor.displayName");
+  const inputText = requiredString(preview, "inputText", "module.core.socialPost.inputText");
 
   return {
     id: "module.core.socialPost",
-    wallpaperEnabled: requiredBoolean(socialPost, "wallpaperEnabled", "module.core.socialPost.wallpaperEnabled"),
+    useAppWallpaper: requiredBoolean(
+      socialPost,
+      "useAppWallpaper",
+      "module.core.socialPost.useAppWallpaper",
+    ),
+    screenGutter: requiredString(socialPost, "screenGutter", "module.core.socialPost.screenGutter"),
+    zoneGap: requiredString(socialPost, "zoneGap", "module.core.socialPost.zoneGap"),
+    showHeader: requiredBoolean(socialPost, "showHeader", "module.core.socialPost.showHeader"),
     showStatusBar: requiredBoolean(socialPost, "showStatusBar", "module.core.socialPost.showStatusBar"),
     showNavigationBar: requiredBoolean(
       socialPost,
@@ -104,159 +83,142 @@ export function resolveSocialPostModule(
       socialPost,
       "showTextInputBar",
       "module.core.socialPost.showTextInputBar",
-    ),
-    showKeyboard: requiredBoolean(socialPost, "showKeyboard", "module.core.socialPost.showKeyboard"),
+    ) && requiredBoolean(preview, "textInputVisible", "module.core.socialPost.textInputVisible"),
+    showKeyboard: requiredBoolean(socialPost, "showKeyboard", "module.core.socialPost.showKeyboard")
+      && requiredBoolean(preview, "keyboardVisible", "module.core.socialPost.keyboardVisible"),
     stackSlot,
     headerStackSlot,
+    headerPrimarySlot,
+    headerSecondaryIconRowSlot,
     mediaSlot,
     bubbleSlot,
     footerIconBarSlot,
     textInputBarSlot,
     keyboardSlot,
-    statusBarSlot,
-    navigationBarSlot,
-    headerStackInputs: forwardHeaderActor(
-      requiredRecord(socialPost, "headerStackInputs", "module.core.socialPost.headerStackInputs"),
-      requiredRecord(socialPost, "forwarding", "module.core.socialPost.forwarding"),
-      bubbleInputs,
+    headerStackInputs: resolvedHeaderInputs(
+      headerPrimarySlot,
+      requiredRecord(socialPost, "headerPrimaryInputs", "module.core.socialPost.headerPrimaryInputs"),
+      headerSecondaryIconRowSlot,
+      requiredRecord(
+        socialPost,
+        "headerSecondaryIconRowInputs",
+        "module.core.socialPost.headerSecondaryIconRowInputs",
+      ),
+      preview,
+      actor,
+      actorName,
     ),
     mediaInputs: {
-      ...requiredRecord(socialPost, "mediaInputs", "module.core.socialPost.mediaInputs"),
+      ...preview,
       motionElapsedMs: 0,
     },
-    bubbleInputs,
-    footerIconBarInputs: requiredRecord(
-      socialPost,
-      "footerIconBarInputs",
-      "module.core.socialPost.footerIconBarInputs",
-    ),
-    textInputBarInputs: requiredRecord(
-      socialPost,
-      "textInputBarInputs",
-      "module.core.socialPost.textInputBarInputs",
-    ),
-    keyboardInputs: requiredRecord(socialPost, "keyboardInputs", "module.core.socialPost.keyboardInputs"),
+    bubbleInputs: {
+      ...preview,
+      state: "incoming",
+      actorName,
+      maxWidth: 100,
+      writeOnDurationFrames: 0,
+      writeOnTrigger: false,
+      writeOnFrame: 0,
+      statusText: "",
+      statusState: "none",
+      mediaType: "none",
+      mediaSource: "",
+      isPlaying: false,
+      currentTimeSeconds: 0,
+      durationSeconds: 0,
+      isFullScreen: false,
+      fullScreenTransition: false,
+      controlsElapsedMs: 0,
+      motionElapsedMs: 0,
+    },
+    footerIconBarInputs: {
+      state: "idle",
+      size: "360|56",
+    },
+    textInputBarInputs: {
+      availableWidth: 360,
+      forwarded_component_textInputBar_textBox_inputs_sampleText: inputText,
+    },
+    keyboardInputs: {
+      text: inputText,
+      currentCharacter: inputText.length,
+      trigger: false,
+    },
   };
 }
 
-function forwardHeaderActor(
-  authoredHeaderInputs: Record<string, unknown>,
-  forwarding: Record<string, unknown>,
-  runtimeValues: Record<string, unknown>,
+function resolvedHeaderInputs(
+  primarySlot: SocialPostComponentSlot,
+  authoredPrimaryInputs: Record<string, unknown>,
+  secondarySlot: SocialPostComponentSlot,
+  authoredSecondaryInputs: Record<string, unknown>,
+  preview: Record<string, unknown>,
+  actor: Record<string, unknown>,
+  actorName: string,
 ) {
-  const declaration = requiredRecord(
-    forwarding,
-    "headerActor",
-    "module.core.socialPost.forwarding.headerActor",
-  );
-  const sourceInputId = requiredExactString(
-    declaration,
-    "sourceInputId",
-    "actorId",
-    "module.core.socialPost.forwarding.headerActor.sourceInputId",
-  );
-  const sourceResolvedJsonKey = requiredExactString(
-    declaration,
-    "sourceResolvedJsonKey",
-    "actor",
-    "module.core.socialPost.forwarding.headerActor.sourceResolvedJsonKey",
-  );
-  const targetItemId = requiredExactString(
-    declaration,
-    "targetItemId",
-    "social_header_primary",
-    "module.core.socialPost.forwarding.headerActor.targetItemId",
-  );
-  const targetContentSetId = requiredExactString(
-    declaration,
-    "targetContentSetId",
-    "set_a",
-    "module.core.socialPost.forwarding.headerActor.targetContentSetId",
-  );
-  const targetContentId = requiredExactString(
-    declaration,
-    "targetContentId",
-    "set_a_avatar",
-    "module.core.socialPost.forwarding.headerActor.targetContentId",
-  );
-  const targetInputJsonKey = requiredExactString(
-    declaration,
-    "targetInputJsonKey",
-    "actorId",
-    "module.core.socialPost.forwarding.headerActor.targetInputJsonKey",
-  );
-  const targetResolvedJsonKey = requiredExactString(
-    declaration,
-    "targetResolvedJsonKey",
-    "actor",
-    "module.core.socialPost.forwarding.headerActor.targetResolvedJsonKey",
-  );
-  const inputDefinitions = requiredObjectArray(
-    runtimeValues,
-    "inputs",
-    "module.core.socialPost Runtime values",
-  );
-  if (!inputDefinitions.some((definition) => requiredString(
-    definition,
-    "id",
-    "module.core.socialPost Runtime input id",
-  ) === sourceInputId)) {
-    throw new Error(`module.core.socialPost forwarding source '${sourceInputId}' is undeclared`);
+  const inputs = structuredClone(authoredPrimaryInputs);
+  const avatar = requiredObjectArray(inputs, "avatarContent", "module.core.socialPost.header avatar")
+    .find((item) => requiredString(item, "id", "module.core.socialPost.header avatar id")
+      === "set_a_avatar");
+  if (!avatar) throw new Error("module.core.socialPost header requires 'set_a_avatar'");
+  const avatarInputs = requiredRecord(avatar, "runtimeInputs", "module.core.socialPost.header avatar inputs");
+  avatarInputs.actorId = requiredString(preview, "actorId", "module.core.socialPost.actorId");
+  avatarInputs.actor = actor;
+  const label = requiredObjectArray(inputs, "labelContent", "module.core.socialPost.header label")
+    .find((item) => requiredString(item, "id", "module.core.socialPost.header label id")
+      === "set_a_label");
+  if (label) {
+    const labelInputs = requiredRecord(label, "runtimeInputs", "module.core.socialPost.header label inputs");
+    labelInputs.sampleText = actorName;
   }
-  const actorId = requiredString(
-    runtimeValues,
-    sourceInputId,
-    `module.core.socialPost Runtime value '${sourceInputId}'`,
-  );
-  const actor = requiredRecord(
-    runtimeValues,
-    sourceResolvedJsonKey,
-    `module.core.socialPost Runtime value '${sourceResolvedJsonKey}'`,
-  );
-  const resolved = structuredClone(authoredHeaderInputs);
-  const item = requiredObjectArray(resolved, "items", "module.core.socialPost.headerStackInputs")
-    .find((candidate) => requiredString(
-      candidate,
-      "id",
-      "module.core.socialPost.headerStackInputs item id",
-    ) === targetItemId);
-  if (!item) throw new Error(`module.core.socialPost forwarding target item '${targetItemId}' is missing`);
-  const inputs = requiredRecord(item, "inputs", `module.core.socialPost header item '${targetItemId}'`);
-  const avatarContent = requiredObjectArray(
-    inputs,
-    "avatarContent",
-    `module.core.socialPost header item '${targetItemId}' inputs`,
-  ).find((candidate) => requiredString(
-    candidate,
-    "id",
-    "module.core.socialPost header avatar content id",
-  ) === targetContentId && requiredString(
-    candidate,
-    "contentSetId",
-    "module.core.socialPost header avatar content set id",
-  ) === targetContentSetId);
-  if (!avatarContent) {
-    throw new Error(`module.core.socialPost forwarding target '${targetContentId}' is missing`);
-  }
-  const targetInputs = requiredRecord(
-    avatarContent,
-    "runtimeInputs",
-    `module.core.socialPost header avatar '${targetContentId}'`,
-  );
-  targetInputs[targetInputJsonKey] = actorId;
-  targetInputs[targetResolvedJsonKey] = actor;
-  return resolved;
-}
-
-function requiredExactString(
-  owner: Record<string, unknown>,
-  key: string,
-  expected: string,
-  path: string,
-) {
-  const value = requiredString(owner, key, path);
-  requireExactValue(value, expected, path);
-  return value;
+  const noMotion = {
+    transition: "none",
+    direction: "bottom",
+    bounds: "parent",
+    fade: false,
+    translate: false,
+    scale: false,
+  };
+  return {
+    distributionMode: "flow",
+    sizingMode: "content",
+    startGapToken: "theme.spacing.none",
+    endGapToken: "theme.spacing.s",
+    stackDirection: "down",
+    stackOffsetToken: "theme.spacing.none",
+    itemSizingMode: "intrinsic",
+    scaleRatio: 1,
+    opacityRatio: 1,
+    items: [
+      {
+        id: "social_header_primary",
+        name: "Profile",
+        variantReference: primarySlot.variantReference,
+        overrides: primarySlot.overrides,
+        inputs,
+        present: true,
+        presenceMotion: noMotion,
+        alignment: "center",
+        gapBeforeMode: "fixed",
+        gapBeforeToken: "theme.spacing.none",
+        gapBeforeWeight: 1,
+      },
+      {
+        id: "social_header_info",
+        name: "Tags and information",
+        variantReference: secondarySlot.variantReference,
+        overrides: secondarySlot.overrides,
+        inputs: structuredClone(authoredSecondaryInputs),
+        present: true,
+        presenceMotion: noMotion,
+        alignment: "start",
+        gapBeforeMode: "fixed",
+        gapBeforeToken: "theme.spacing.xs",
+        gapBeforeWeight: 1,
+      },
+    ],
+  };
 }
 
 function requiredTypedSlot(
@@ -269,42 +231,4 @@ function requiredTypedSlot(
   const slot = requiredComponentVariantSlot(owner, key, path);
   requireComponentVariantType(componentBaseConfigs, slot, componentType, path);
   return slot;
-}
-
-function requireExactDeclarationIds(
-  declaration: Record<string, unknown>,
-  runtimeContract: Record<string, unknown>,
-  runtimeValues: Record<string, unknown>,
-  key: "inputs" | "collections",
-) {
-  const declarationKey = key === "inputs" ? "inputIds" : "collectionIds";
-  const path = `module.core.socialPost.runtimeContract.${declarationKey}`;
-  const declared = declaration[declarationKey];
-  if (!Array.isArray(declared) || !declared.every((value) => typeof value === "string")) {
-    throw new Error(`${path} must be a string array`);
-  }
-  const contractIds = requiredObjectArray(runtimeContract, key, "module.core.socialPost Runtime contract")
-    .map((entry, index) => requiredString(
-      entry,
-      "id",
-      `module.core.socialPost Runtime contract.${key}[${index}].id`,
-    ));
-  const valueIds = requiredObjectArray(runtimeValues, key, "module.core.socialPost Runtime values")
-    .map((entry, index) => requiredString(
-      entry,
-      "id",
-      `module.core.socialPost Runtime values.${key}[${index}].id`,
-    ));
-  requireExactIds(declared, contractIds, path);
-  requireExactIds(valueIds, contractIds, `module.core.socialPost Runtime values.${key}`);
-}
-
-function requireExactIds(actual: readonly string[], expected: readonly string[], path: string) {
-  if (actual.length !== expected.length || actual.some((value, index) => value !== expected[index])) {
-    throw new Error(`${path} must be exactly ${expected.join(", ")}`);
-  }
-}
-
-function requireExactValue(actual: string, expected: string, path: string) {
-  if (actual !== expected) throw new Error(`${path} must be '${expected}'`);
 }

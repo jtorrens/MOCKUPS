@@ -2,6 +2,7 @@ import type { RenderableNode } from "../visual/renderable/types.js";
 import { embeddedComponentConfig } from "./componentPreviewDefaults.js";
 import { componentClassToRenderable } from "./componentRenderableBoundary.js";
 import {
+  numberToken,
   previewPayloadInBox,
   previewScreenBox,
   selectedColor,
@@ -28,11 +29,19 @@ export function socialPostModuleToRenderable(
   const contract = resolveSocialPostModule(payload);
   const screen = previewScreenBox(payload);
   const componentBaseConfigs = parseObject(payload.componentBaseConfigsJson);
-  const status = contract.showStatusBar
-    ? componentNode(payload, componentBaseConfigs, "status_bar", contract.statusBarSlot, {})
+  const themeStatusBarVariantReference = payload.themeStatusBarVariantReference?.trim() ?? "";
+  const themeNavigationBarVariantReference = payload.themeNavigationBarVariantReference?.trim() ?? "";
+  const status = contract.showStatusBar && themeStatusBarVariantReference
+    ? componentNode(payload, componentBaseConfigs, "status_bar", {
+        variantReference: themeStatusBarVariantReference,
+        overrides: {},
+      }, {})
     : undefined;
-  const navigation = contract.showNavigationBar
-    ? componentNode(payload, componentBaseConfigs, "navigation_bar", contract.navigationBarSlot, {})
+  const navigation = contract.showNavigationBar && themeNavigationBarVariantReference
+    ? componentNode(payload, componentBaseConfigs, "navigation_bar", {
+        variantReference: themeNavigationBarVariantReference,
+        overrides: {},
+      }, {})
     : undefined;
   const keyboard = contract.showKeyboard
     ? componentNode(
@@ -68,16 +77,25 @@ export function socialPostModuleToRenderable(
   const textInputNode = textInput?.box
     ? translateRenderableNode(textInput, { x: 0, y: textInputTargetY - textInput.box.y })
     : textInput;
-  const contentTop = screen.y + (status?.box?.height ?? 0);
+  const gutter = spacingPair(payload, contract.screenGutter);
+  const contentTop = screen.y + (status?.box?.height ?? 0) + gutter.y;
   const contentBottom = textInputNode?.box?.y
     ?? keyboardNode?.box?.y
-    ?? screen.y + screen.height - navigationHeight;
+    ?? screen.y + screen.height - navigationHeight - gutter.y;
   const contentBox = {
-    x: screen.x,
+    x: screen.x + gutter.x,
     y: contentTop,
-    width: screen.width,
+    width: Math.max(0, screen.width - gutter.x * 2),
     height: Math.max(0, contentBottom - contentTop),
   };
+  const zones = [
+    ...(contract.showHeader
+      ? [stackSlot("header", "content", contract.headerStackSlot, contract.headerStackInputs, contract.zoneGap)]
+      : []),
+    stackSlot("media", "fill", contract.mediaSlot, contract.mediaInputs, contract.zoneGap),
+    stackSlot("message", "content", contract.bubbleSlot, contract.bubbleInputs, contract.zoneGap),
+    stackSlot("actions", "content", contract.footerIconBarSlot, contract.footerIconBarInputs, contract.zoneGap),
+  ];
   const stackPayload = previewPayloadInBox(
     {
       ...componentPayload(
@@ -91,17 +109,12 @@ export function socialPostModuleToRenderable(
         sizingMode: "fill",
         startGapToken: "theme.spacing.none",
         endGapToken: "theme.spacing.none",
-        items: [
-          stackSlot("header", "content", contract.headerStackSlot, contract.headerStackInputs),
-          stackSlot("media", "fill", contract.mediaSlot, contract.mediaInputs),
-          stackSlot("message", "content", contract.bubbleSlot, contract.bubbleInputs),
-          stackSlot("actions", "content", contract.footerIconBarSlot, contract.footerIconBarInputs),
-        ],
+        items: zones,
       }),
     },
     contentBox,
   );
-  const backgroundNode = contract.wallpaperEnabled
+  const backgroundNode = contract.useAppWallpaper
     ? wallpaperRenderable(payload, screen) ?? background(payload)
     : background(payload);
   const children: RenderableNode[] = [
@@ -163,12 +176,13 @@ function stackSlot(
   sizeMode: "content" | "fill",
   slot: SocialPostComponentSlot,
   inputs: Record<string, unknown>,
+  gapToken: string,
 ) {
   return {
     id,
     sizeMode,
     gapBeforeMode: "fixed",
-    gapBeforeToken: id === "message" ? "theme.spacing.s" : "theme.spacing.none",
+    gapBeforeToken: id === "header" ? "theme.spacing.none" : gapToken,
     gapBeforeWeight: 1,
     alternatives: [{
       id: `${id}.default`,
@@ -187,6 +201,15 @@ function stackSlot(
       enterMotion: noMotion,
       exitMotion: noMotion,
     }],
+  };
+}
+
+function spacingPair(payload: DesignPreviewPayload, value: string) {
+  const [xToken = "theme.spacing.none", yToken = xToken] = value.split("|");
+  const scale = renderScale(payload);
+  return {
+    x: numberToken(payload, xToken) * scale,
+    y: numberToken(payload, yToken) * scale,
   };
 }
 

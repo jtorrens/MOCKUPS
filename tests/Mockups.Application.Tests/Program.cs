@@ -988,7 +988,7 @@ static void ComponentInputProjectionOwnershipCoversParents()
     var moduleOwners = ComponentInputBindingsProjectionCatalog.RecordOwners();
     var componentOwners = ComponentInputBindingsProjectionCatalog.ComponentOwners();
 
-    Equal(8, moduleOwners.Count);
+    Equal(3, moduleOwners.Count);
     Equal(7, componentOwners.Count);
     Equal(true, moduleOwners.Any((owner) => owner.Id.Equals(
         "module.core.chat.headerRightIconRow.inputs",
@@ -996,20 +996,8 @@ static void ComponentInputProjectionOwnershipCoversParents()
     Equal(true, moduleOwners.Any((owner) => owner.Id.Equals(
         "module.core.lockScreen.stackInputs",
         StringComparison.Ordinal)));
-    Equal(true, moduleOwners.Any((owner) => owner.Id.Equals(
-        "module.core.socialPost.headerStackInputs",
-        StringComparison.Ordinal)));
-    Equal(true, moduleOwners.Any((owner) => owner.Id.Equals(
-        "module.core.socialPost.mediaInputs",
-        StringComparison.Ordinal)));
-    Equal(true, moduleOwners.Any((owner) => owner.Id.Equals(
-        "module.core.socialPost.footerIconBarInputs",
-        StringComparison.Ordinal)));
-    Equal(true, moduleOwners.Any((owner) => owner.Id.Equals(
-        "module.core.socialPost.textInputBarInputs",
-        StringComparison.Ordinal)));
-    Equal(true, moduleOwners.Any((owner) => owner.Id.Equals(
-        "module.core.socialPost.keyboardInputs",
+    Equal(false, moduleOwners.Any((owner) => owner.Id.StartsWith(
+        "module.core.socialPost.",
         StringComparison.Ordinal)));
     Equal(true, componentOwners.Any((owner) => owner.Id.Equals(
         "component.iconBar.activeRightIconRow.inputs",

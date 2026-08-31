@@ -285,7 +285,7 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ValueKind.ComponentVariantSlot,
             ["socialPost", "bubbleSlot"],
             "bubble",
-            [["socialPost", "runtimeContract", "variantReference"]]),
+            []),
         ["module.core.socialPost.footerIconBar"] = new(
             "module.core.socialPost",
             "module.core.socialPost.footerIconBar",
@@ -293,19 +293,19 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ["socialPost", "footerIconBarSlot"],
             "iconBar",
             []),
-        ["module.core.socialPost.footerIconBarInputs"] = new(
+        ["module.core.socialPost.headerPrimary"] = new(
             "module.core.socialPost",
-            "module.core.socialPost.footerIconBarInputs",
-            ValueKind.ComponentInputBindings,
-            ["socialPost", "footerIconBarInputs"],
-            "",
+            "module.core.socialPost.headerPrimary",
+            ValueKind.ComponentVariantSlot,
+            ["socialPost", "headerPrimarySlot"],
+            "listItem",
             []),
-        ["module.core.socialPost.headerItems"] = new(
+        ["module.core.socialPost.headerSecondaryIconRow"] = new(
             "module.core.socialPost",
-            "module.core.socialPost.headerItems",
-            ValueKind.StructuredCollection,
-            ["socialPost", "headerStackInputs", "items"],
-            "",
+            "module.core.socialPost.headerSecondaryIconRow",
+            ValueKind.ComponentVariantSlot,
+            ["socialPost", "headerSecondaryIconRowSlot"],
+            "iconRow",
             []),
         ["module.core.socialPost.headerStack"] = new(
             "module.core.socialPost",
@@ -314,26 +314,12 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ["socialPost", "headerStackSlot"],
             "collectionStack",
             []),
-        ["module.core.socialPost.headerStackInputs"] = new(
-            "module.core.socialPost",
-            "module.core.socialPost.headerStackInputs",
-            ValueKind.ComponentInputBindings,
-            ["socialPost", "headerStackInputs"],
-            "",
-            []),
         ["module.core.socialPost.keyboard"] = new(
             "module.core.socialPost",
             "module.core.socialPost.keyboard",
             ValueKind.ComponentVariantSlot,
             ["socialPost", "keyboardSlot"],
             "keyboard",
-            []),
-        ["module.core.socialPost.keyboardInputs"] = new(
-            "module.core.socialPost",
-            "module.core.socialPost.keyboardInputs",
-            ValueKind.ComponentInputBindings,
-            ["socialPost", "keyboardInputs"],
-            "",
             []),
         ["module.core.socialPost.media"] = new(
             "module.core.socialPost",
@@ -342,19 +328,19 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ["socialPost", "mediaSlot"],
             "media",
             []),
-        ["module.core.socialPost.mediaInputs"] = new(
+        ["module.core.socialPost.screenGutter"] = new(
             "module.core.socialPost",
-            "module.core.socialPost.mediaInputs",
-            ValueKind.ComponentInputBindings,
-            ["socialPost", "mediaInputs"],
+            "module.core.socialPost.screenGutter",
+            ValueKind.ThemeTokenPair,
+            ["socialPost", "screenGutter"],
             "",
             []),
-        ["module.core.socialPost.navigationBar"] = new(
+        ["module.core.socialPost.showHeader"] = new(
             "module.core.socialPost",
-            "module.core.socialPost.navigationBar",
-            ValueKind.ComponentVariantSlot,
-            ["socialPost", "navigationBarSlot"],
-            "navigation_bar",
+            "module.core.socialPost.showHeader",
+            ValueKind.Boolean,
+            ["socialPost", "showHeader"],
+            "",
             []),
         ["module.core.socialPost.showKeyboard"] = new(
             "module.core.socialPost",
@@ -391,13 +377,6 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ["socialPost", "stackSlot"],
             "componentStack",
             []),
-        ["module.core.socialPost.statusBar"] = new(
-            "module.core.socialPost",
-            "module.core.socialPost.statusBar",
-            ValueKind.ComponentVariantSlot,
-            ["socialPost", "statusBarSlot"],
-            "status_bar",
-            []),
         ["module.core.socialPost.textInputBar"] = new(
             "module.core.socialPost",
             "module.core.socialPost.textInputBar",
@@ -405,18 +384,18 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ["socialPost", "textInputBarSlot"],
             "textInputBar",
             []),
-        ["module.core.socialPost.textInputBarInputs"] = new(
+        ["module.core.socialPost.useAppWallpaper"] = new(
             "module.core.socialPost",
-            "module.core.socialPost.textInputBarInputs",
-            ValueKind.ComponentInputBindings,
-            ["socialPost", "textInputBarInputs"],
+            "module.core.socialPost.useAppWallpaper",
+            ValueKind.Boolean,
+            ["socialPost", "useAppWallpaper"],
             "",
             []),
-        ["module.core.socialPost.wallpaperEnabled"] = new(
+        ["module.core.socialPost.zoneGap"] = new(
             "module.core.socialPost",
-            "module.core.socialPost.wallpaperEnabled",
-            ValueKind.Boolean,
-            ["socialPost", "wallpaperEnabled"],
+            "module.core.socialPost.zoneGap",
+            ValueKind.ThemeToken,
+            ["socialPost", "zoneGap"],
             "",
             []),
     };
