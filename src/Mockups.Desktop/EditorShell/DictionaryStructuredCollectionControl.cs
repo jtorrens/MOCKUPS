@@ -318,9 +318,11 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
         var options = input.ValueKind switch
         {
             ValueKind.RecordReference =>
-                _services.GetRecordReferenceOptions?.Invoke(input.TableId, input.AllowEmpty)
-                ?? throw new InvalidOperationException(
-                    $"Structured collection record reference '{input.Id}' has no options provider."),
+                DictionaryRecordReferenceOptions.Resolve(
+                    _services,
+                    input.TableId,
+                    input.AllowEmpty,
+                    $"Structured collection record reference '{input.Id}'"),
             ValueKind.ComponentVariant or ValueKind.ComponentVariantSlot
                 when !string.IsNullOrWhiteSpace(input.ComponentType) =>
                 ComponentVariantOptions(input, fixedBoundary),
@@ -339,7 +341,9 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                 ? new NumberDefinition(input.Minimum, input.Maximum, input.Increment, input.ValueKind == ValueKind.Integer ? 0 : 2)
                 : null,
             RecordReference: input.ValueKind == ValueKind.RecordReference
-                ? new RecordReferenceDefinition(input.TableId)
+                ? new RecordReferenceDefinition(
+                    input.TableId,
+                    AllowEmpty: input.AllowEmpty)
                 : null,
             SelectComponentClass: input.ValueKind is ValueKind.ComponentVariant or ValueKind.ComponentVariantSlot
                 && ComponentVariantOptionContract.SelectsComponentClass(input.ComponentType),

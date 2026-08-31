@@ -222,7 +222,39 @@ public sealed record ComponentInputBindingDefinition(
     AnimationFieldDefinition? Animation = null,
     BehaviorTimingDefinition? BehaviorTiming = null,
     bool ActionOnly = false,
-    RuntimeInputCollectionDefinition? StructuredCollection = null);
+    RuntimeInputCollectionDefinition? StructuredCollection = null,
+    bool AllowEmpty = false)
+{
+    public static ComponentInputBindingDefinition FromRuntimeInput(
+        ComponentInputDefinition input) =>
+        new(
+            input.Id,
+            input.Label,
+            input.JsonKey,
+            input.ValueKind,
+            ComponentInputBindingSource.Runtime,
+            input.DefaultValue,
+            input.Options,
+            new NumberDefinition(
+                input.Minimum,
+                input.Maximum,
+                input.Increment),
+            input.PairLabels,
+            input.ComponentType,
+            input.UiGroupId,
+            input.UiGroupLabel,
+            input.TableId,
+            input.ResolvedJsonKey,
+            input.UiParentGroupId,
+            input.UiOrder,
+            input.UiSectionLabel,
+            input.Transition,
+            input.Animation,
+            input.BehaviorTiming,
+            input.ActionOnly,
+            input.StructuredCollection,
+            input.AllowEmpty);
+}
 
 public enum ImagePreviewMode
 {

@@ -34,3 +34,25 @@ internal sealed record DictionaryFieldServices(
     Func<StructuredCollectionMutation, Task<StructuredCollectionMutationResult>>?
         MutateStructuredCollection = null,
     EditorSessionUiState? StructuredCollectionUiState = null);
+
+internal static class DictionaryRecordReferenceOptions
+{
+    public static IReadOnlyList<FieldOption> Resolve(
+        DictionaryFieldServices services,
+        string tableId,
+        bool allowEmpty,
+        string owner)
+    {
+        if (string.IsNullOrWhiteSpace(tableId))
+        {
+            throw new InvalidOperationException(
+                $"{owner} is missing its record-reference table id.");
+        }
+
+        return services.GetRecordReferenceOptions?.Invoke(
+                tableId,
+                allowEmpty)
+            ?? throw new InvalidOperationException(
+                $"{owner} has no record-reference options provider.");
+    }
+}

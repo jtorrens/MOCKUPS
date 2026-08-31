@@ -223,7 +223,9 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
                 PairLabels: input.PairLabels,
                 Number: input.Number,
                 RecordReference: input.ValueKind == ValueKind.RecordReference
-                    ? new RecordReferenceDefinition(input.TableId)
+                    ? new RecordReferenceDefinition(
+                        input.TableId,
+                        AllowEmpty: input.AllowEmpty)
                     : null,
                 StructuredCollection: input.StructuredCollection,
                 SelectComponentClass: input.ValueKind == ValueKind.ComponentVariant
@@ -233,6 +235,15 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
 
     private IReadOnlyList<FieldOption>? OptionsFor(ComponentInputBindingDefinition input)
     {
+        if (input.ValueKind == ValueKind.RecordReference)
+        {
+            return DictionaryRecordReferenceOptions.Resolve(
+                _services,
+                input.TableId,
+                input.AllowEmpty,
+                $"Component input binding '{input.Id}'");
+        }
+
         if (input.ValueKind == ValueKind.ComponentVariant && !string.IsNullOrWhiteSpace(input.ComponentType))
         {
             return _services.GetComponentVariantOptions?.Invoke(input.ComponentType) ?? [];

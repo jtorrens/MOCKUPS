@@ -56,33 +56,7 @@ internal sealed partial class SqliteDesignOwner
         return RuntimeInputDefinitionReader.ReadInputs(
                 effective,
                 config)
-            .Select((input) =>
-                new ComponentInputBindingDefinition(
-                    input.Id,
-                    input.Label,
-                    input.JsonKey,
-                    input.ValueKind,
-                    ComponentInputBindingSource.Runtime,
-                    input.DefaultValue,
-                    input.Options,
-                    new NumberDefinition(
-                        input.Minimum,
-                        input.Maximum,
-                        input.Increment),
-                    input.PairLabels,
-                    input.ComponentType,
-                    input.UiGroupId,
-                    input.UiGroupLabel,
-                    input.TableId,
-                    input.ResolvedJsonKey,
-                    input.UiParentGroupId,
-                    input.UiOrder,
-                    input.UiSectionLabel,
-                    input.Transition,
-                    input.Animation,
-                    input.BehaviorTiming,
-                    input.ActionOnly,
-                    input.StructuredCollection))
+            .Select(ComponentInputBindingDefinition.FromRuntimeInput)
             .ToList();
     }
 

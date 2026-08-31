@@ -265,6 +265,7 @@ var tests = new (string Name, Action Run)[]
     ("lifecycle actions stay consistent across navigation and editors", LifecycleActionsStayConsistentAcrossNavigationAndEditors),
     ("natural behavior timing uses graphemes and Theme pace", NaturalBehaviorTimingUsesGraphemesAndThemePace),
     ("timeline reference bands use contract-owned durations", TimelineReferenceBandsUseContractDurations),
+    ("Component input bindings resolve required and optional record references", ComponentInputBindingsResolveRecordReferences),
     ("Component Stack opens from Atoms and renders its empty seed", ComponentStackSeedOpensAndRenders),
     ("Collection Stack exposes one runtime-owned Default Variant", CollectionStackSeedOpensAndRenders),
     ("Notifications composes Notification items through Collection Stack", NotificationsSeedOpensAndRenders),
@@ -20162,6 +20163,132 @@ static void ComponentStackSeedOpensAndRenders()
     {
         File.Delete(temporary);
     }
+}
+
+static void ComponentInputBindingsResolveRecordReferences()
+{
+    var database = new SqliteProjectTestContext(ParityDatabasePath());
+    var nodes = database.LoadProjectTree()
+        .SelectMany(DescendantsAndSelf)
+        .ToList();
+    var stack = nodes.Single((node) =>
+        node.Kind == ProjectTreeNodeKind.ComponentClass
+        && database.GetComponentClassSettings(node.Id).ComponentType
+            == "componentStack");
+    var settings = database.GetComponentClassSettings(stack.Id);
+    var preview = DesignPreviewTestValues.Parse(
+        settings.DesignPreviewJson);
+    var authoredState = (preview["items"] as JsonArray)?[1]?
+            ["alternatives"]?[0] as JsonObject
+        ?? throw new InvalidOperationException(
+            "Missing authored Component Stack Audio state.");
+    var stateId = JsonPath.RequiredString(
+        authoredState,
+        "id",
+        "Component Stack Audio state");
+    var variantReference = JsonPath.RequiredString(
+        authoredState,
+        "variantReference",
+        "Component Stack Audio state");
+    var values = JsonPath.RequiredObject(
+        authoredState,
+        "inputs",
+        "Component Stack Audio state");
+    var actorId = JsonPath.RequiredString(
+        values,
+        "actorId",
+        "Component Stack Audio state inputs");
+    var actorBinding = database
+        .GetComponentVariantRuntimeInputBindings(
+            variantReference)
+        .Single((input) => input.Id == "actorId");
+    True(!actorBinding.AllowEmpty);
+
+    var optionalBinding =
+        ComponentInputBindingDefinition.FromRuntimeInput(
+            new ComponentInputDefinition(
+                "optionalActorId",
+                "Optional actor",
+                "optionalActorId",
+                ComponentInputKind.RecordReference,
+                ValueKind.RecordReference,
+                "",
+                TableId: "actors",
+                AllowEmpty: true));
+    True(optionalBinding.AllowEmpty);
+
+    var optionsData = new RuntimeInputOptionsDataSource(
+        database.DictionaryContext,
+        database.Resources);
+    var optionRequests = new List<(string TableId, bool AllowEmpty)>();
+    var services = new DictionaryFieldServices(
+        GetRecordReferenceOptions: (tableId, allowEmpty) =>
+        {
+            optionRequests.Add((tableId, allowEmpty));
+            return optionsData.RecordReferenceOptions(
+                settings.ProjectId,
+                tableId,
+                allowEmpty);
+        });
+
+    using var session = HeadlessUnitTestSession.StartNew(
+        typeof(HeadlessTestApplication));
+    session.Dispatch(() =>
+    {
+        var required = new DictionaryComponentInputBindingsControl(
+            new FieldDefinition(
+                $"alternatives.{stateId}.inputs",
+                "Component inputs",
+                ValueKind.ComponentInputBindings,
+                ComponentInputBindings: [actorBinding]),
+            new JsonObject
+            {
+                [actorBinding.JsonKey] = actorId,
+            }.ToJsonString(),
+            services);
+        var optional = new DictionaryComponentInputBindingsControl(
+            new FieldDefinition(
+                "alternatives.optional.inputs",
+                "Component inputs",
+                ValueKind.ComponentInputBindings,
+                ComponentInputBindings: [optionalBinding]),
+            new JsonObject
+            {
+                [optionalBinding.JsonKey] = "",
+            }.ToJsonString(),
+            services);
+        var window = new Window
+        {
+            Content = new StackPanel
+            {
+                Children =
+                {
+                    required,
+                    optional,
+                },
+            },
+        };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        var combos = window.GetVisualDescendants()
+            .OfType<EditorInstantComboBox>()
+            .ToList();
+        Equal(2, combos.Count);
+        True(combos.Any((combo) =>
+            combo.SelectedItem is FieldOption option
+            && option.Value == actorId));
+        True(combos.Any((combo) =>
+            combo.SelectedItem is FieldOption option
+            && option.Value.Length == 0));
+        True(combos.All((combo) =>
+            (combo.ItemsSource as IEnumerable<FieldOption>)?.Any()
+                == true));
+        window.Close();
+    }, CancellationToken.None).GetAwaiter().GetResult();
+
+    True(optionRequests.Contains(("actors", false)));
+    True(optionRequests.Contains(("actors", true)));
 }
 
 static void CollectionStackSeedOpensAndRenders()
