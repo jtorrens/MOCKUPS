@@ -152,6 +152,15 @@ Reusable layout is declared in metadata with stable ids:
 The shell composes these presentations generically. Hierarchy depth, record
 class, labels and position do not select a layout.
 
+A layout field may declare `visibleWhenFieldId` together with one or more
+`visibleWhenValues`. The generic editor presents that field only while the
+prepared value of the referenced dictionary field matches one of those exact
+values. Both properties are required together, the referenced field must be
+part of the same prepared editor context, and hiding a field never changes or
+removes its authored value. Concrete Components and Modules declare these
+conditions only in layout metadata; visual editors contain no owner-specific
+visibility rules.
+
 ## Flat Variant Overrides view
 
 Component and Module Variant editors expose `Editor` and `Overrides` as peer

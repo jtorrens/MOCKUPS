@@ -3,25 +3,33 @@ import { embeddedComponentConfig } from "./componentPreviewDefaults.js";
 import { componentClassToRenderable } from "./componentRenderableBoundary.js";
 import {
   numberToken,
-  previewPayloadInBox,
   previewScreenBox,
   selectedColor,
 } from "./componentRenderableCommon.js";
 import { parseObject } from "./componentResolverCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { renderScale, translateRenderableNode } from "./previewGeometryHelpers.js";
-import type { SocialPostComponentSlot } from "./socialPostModuleContract.js";
+import type {
+  SocialPostComponentSlot,
+  SocialPostHeaderRow,
+  SocialPostModuleContract,
+} from "./socialPostModuleContract.js";
 import { resolveSocialPostModule } from "./socialPostModuleResolver.js";
+import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
+import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
 import { wallpaperRenderable } from "./wallpaperRenderable.js";
 
-const noMotion = {
-  transition: "none",
-  direction: "bottom",
-  bounds: "parent",
-  fade: false,
-  translate: false,
-  scale: false,
-};
+interface MeasuredSlot {
+  index: number;
+  node: RenderableNode;
+  width: number;
+  height: number;
+}
+
+interface RenderedRow {
+  node: RenderableNode;
+  height: number;
+}
 
 export function socialPostModuleToRenderable(
   payload: DesignPreviewPayload,
@@ -29,101 +37,30 @@ export function socialPostModuleToRenderable(
   const contract = resolveSocialPostModule(payload);
   const screen = previewScreenBox(payload);
   const componentBaseConfigs = parseObject(payload.componentBaseConfigsJson);
-  const themeStatusBarVariantReference = payload.themeStatusBarVariantReference?.trim() ?? "";
-  const themeNavigationBarVariantReference = payload.themeNavigationBarVariantReference?.trim() ?? "";
-  const status = contract.showStatusBar && themeStatusBarVariantReference
+  const statusReference = payload.themeStatusBarVariantReference?.trim() ?? "";
+  const navigationReference = payload.themeNavigationBarVariantReference?.trim() ?? "";
+  const status = contract.showStatusBar && statusReference
     ? componentNode(payload, componentBaseConfigs, "status_bar", {
-        variantReference: themeStatusBarVariantReference,
+        variantReference: statusReference,
         overrides: {},
       }, {})
     : undefined;
-  const navigation = contract.showNavigationBar && themeNavigationBarVariantReference
+  const navigation = contract.showNavigationBar && navigationReference
     ? componentNode(payload, componentBaseConfigs, "navigation_bar", {
-        variantReference: themeNavigationBarVariantReference,
+        variantReference: navigationReference,
         overrides: {},
       }, {})
     : undefined;
-  const keyboard = contract.showKeyboard
-    ? componentNode(
-        payload,
-        componentBaseConfigs,
-        "keyboard",
-        contract.keyboardSlot,
-        contract.keyboardInputs,
-      )
+  const contentY = screen.y + (status?.box?.height ?? 0);
+  const header = contract.showHeader
+    ? headerNode(payload, componentBaseConfigs, contract, contentY)
     : undefined;
-  const navigationHeight = navigation?.box?.height ?? 0;
-  const keyboardTargetY = screen.y + screen.height
-    - navigationHeight
-    - (keyboard?.box?.height ?? 0);
-  const keyboardNode = keyboard?.box
-    ? translateRenderableNode(keyboard, { x: 0, y: keyboardTargetY - keyboard.box.y })
-    : keyboard;
-  const textInput = contract.showTextInputBar
-    ? componentNode(
-        payload,
-        componentBaseConfigs,
-        "textInputBar",
-        contract.textInputBarSlot,
-        {
-          ...contract.textInputBarInputs,
-          availableWidth: screen.width / renderScale(payload),
-        },
-      )
-    : undefined;
-  const composerBaseY = keyboardNode?.box?.y
-    ?? screen.y + screen.height - navigationHeight;
-  const textInputTargetY = composerBaseY - (textInput?.box?.height ?? 0);
-  const textInputNode = textInput?.box
-    ? translateRenderableNode(textInput, { x: 0, y: textInputTargetY - textInput.box.y })
-    : textInput;
-  const gutter = spacingPair(payload, contract.screenGutter);
-  const contentTop = screen.y + (status?.box?.height ?? 0) + gutter.y;
-  const contentBottom = textInputNode?.box?.y
-    ?? keyboardNode?.box?.y
-    ?? screen.y + screen.height - navigationHeight - gutter.y;
-  const contentBox = {
-    x: screen.x + gutter.x,
-    y: contentTop,
-    width: Math.max(0, screen.width - gutter.x * 2),
-    height: Math.max(0, contentBottom - contentTop),
-  };
-  const zones = [
-    ...(contract.showHeader
-      ? [stackSlot("header", "content", contract.headerStackSlot, contract.headerStackInputs, contract.zoneGap)]
-      : []),
-    stackSlot("media", "fill", contract.mediaSlot, contract.mediaInputs, contract.zoneGap),
-    stackSlot("message", "content", contract.bubbleSlot, contract.bubbleInputs, contract.zoneGap),
-    stackSlot("actions", "content", contract.footerIconBarSlot, contract.footerIconBarInputs, contract.zoneGap),
-  ];
-  const stackPayload = previewPayloadInBox(
-    {
-      ...componentPayload(
-        payload,
-        componentBaseConfigs,
-        "componentStack",
-        contract.stackSlot,
-        {},
-      ),
-      designPreviewJson: JSON.stringify({
-        sizingMode: "fill",
-        startGapToken: "theme.spacing.none",
-        endGapToken: "theme.spacing.none",
-        items: zones,
-      }),
-    },
-    contentBox,
-  );
   const backgroundNode = contract.useAppWallpaper
     ? wallpaperRenderable(payload, screen) ?? background(payload)
     : background(payload);
-  const children: RenderableNode[] = [
-    backgroundNode,
-    componentClassToRenderable(stackPayload),
-  ];
-  if (status) children.push(status);
-  if (textInputNode) children.push(withZIndex(textInputNode, 10));
-  if (keyboardNode) children.push(withZIndex(keyboardNode, 20));
+  const children: RenderableNode[] = [backgroundNode];
+  if (header) children.push(header);
+  if (status) children.push(withZIndex(status, 20));
   if (navigation) children.push(withZIndex(navigation, 30));
   return {
     id: contract.id,
@@ -135,6 +72,163 @@ export function socialPostModuleToRenderable(
   };
 }
 
+function headerNode(
+  payload: DesignPreviewPayload,
+  componentBaseConfigs: Record<string, unknown>,
+  contract: SocialPostModuleContract,
+  contentY: number,
+): RenderableNode {
+  const screen = previewScreenBox(payload);
+  const scale = renderScale(payload);
+  const first = renderRow(payload, componentBaseConfigs, contract.rows[0], contentY);
+  const gap = numberToken(payload, contract.rowGapToken) * scale;
+  const secondY = contentY + first.height + gap;
+  const second = renderRow(payload, componentBaseConfigs, contract.rows[1], secondY);
+  const headerHeight = first.height + gap + second.height;
+  const surfaceBox = {
+    x: screen.x,
+    y: screen.y,
+    width: screen.width,
+    height: Math.max(0, contentY + headerHeight - screen.y),
+  };
+  const surface = resolveSurfaceComponentAtSize(
+    embeddedComponentConfig(
+      componentBaseConfigs,
+      contract.headerSurfaceSlot,
+      "surface",
+      "module.core.socialPost.headerSurfaceSlot",
+    ),
+    { width: surfaceBox.width / scale, height: surfaceBox.height / scale },
+    "module.core.socialPost.header.surface",
+  );
+  return {
+    id: "module.core.socialPost.header",
+    type: "group",
+    frame: 0,
+    box: {
+      x: screen.x,
+      y: contentY,
+      width: screen.width,
+      height: headerHeight,
+    },
+    style: { overflow: "visible" },
+    children: [
+      surfaceComponentToRenderableAt(payload, surface, surfaceBox),
+      first.node,
+      second.node,
+    ],
+  };
+}
+
+function renderRow(
+  payload: DesignPreviewPayload,
+  componentBaseConfigs: Record<string, unknown>,
+  row: SocialPostHeaderRow,
+  y: number,
+): RenderedRow {
+  const screen = previewScreenBox(payload);
+  const scale = renderScale(payload);
+  const measured = row.slots.flatMap((slot) => {
+    if (!slot.componentType || !slot.componentSlot) return [];
+    const node = componentNode(
+      payload,
+      componentBaseConfigs,
+      slot.componentType,
+      slot.componentSlot,
+      slot.inputs,
+    );
+    if (!node.box) return [];
+    return [{
+      index: slot.index,
+      node,
+      width: node.box.width,
+      height: node.box.height,
+    } satisfies MeasuredSlot];
+  });
+  const rowHeight = measured.reduce((height, item) => Math.max(height, item.height), 0);
+  const [leftPadding, rightPadding] = spacingPair(payload, row.padding);
+  const leftEdge = screen.x + leftPadding;
+  const rightEdge = screen.x + screen.width - rightPadding;
+  const left = measured.find((item) => item.index === 1);
+  const right = measured.find((item) => item.index === 5);
+  const middle = measured.filter((item) => item.index >= 2 && item.index <= 4);
+  const children: RenderableNode[] = [];
+
+  if (left) children.push(placeMeasuredSlot(left, leftEdge, rowY(row, y, rowHeight, left.height)));
+  if (right) {
+    children.push(placeMeasuredSlot(
+      right,
+      rightEdge - right.width,
+      rowY(row, y, rowHeight, right.height),
+    ));
+  }
+
+  const middleLeft = leftEdge + (left?.width ?? 0);
+  const middleRight = rightEdge - (right?.width ?? 0);
+  const middleWidth = middle.reduce((width, item) => width + item.width, 0);
+  const freeWidth = Math.max(0, middleRight - middleLeft - middleWidth);
+  const middleGap = middle.length > 0 ? freeWidth / (middle.length + 1) : 0;
+  let middleX = middleLeft + middleGap;
+  for (const item of middle) {
+    children.push(placeMeasuredSlot(item, middleX, rowY(row, y, rowHeight, item.height)));
+    middleX += item.width + middleGap;
+  }
+
+  const separatorHeight = row.showSeparator ? Math.max(1, scale) : 0;
+  if (row.showSeparator) {
+    children.push({
+      id: `module.core.socialPost.header.${row.id}.separator`,
+      type: "surface",
+      frame: 0,
+      box: {
+        x: screen.x,
+        y: y + rowHeight,
+        width: screen.width,
+        height: separatorHeight,
+      },
+      style: { background: selectedColor(payload, "theme.colors.divider") },
+    });
+  }
+  const height = rowHeight + separatorHeight;
+  return {
+    height,
+    node: {
+      id: `module.core.socialPost.header.${row.id}`,
+      type: "group",
+      frame: 0,
+      box: { x: screen.x, y, width: screen.width, height },
+      style: { overflow: "visible" },
+      children,
+    },
+  };
+}
+
+function rowY(
+  row: SocialPostHeaderRow,
+  y: number,
+  rowHeight: number,
+  itemHeight: number,
+) {
+  if (row.verticalAlignment === "bottom") return y + rowHeight - itemHeight;
+  if (row.verticalAlignment === "center") return y + (rowHeight - itemHeight) * 0.5;
+  return y;
+}
+
+function placeMeasuredSlot(item: MeasuredSlot, x: number, y: number): RenderableNode {
+  const translated = translateRenderableNode(item.node, {
+    x: x - (item.node.box?.x ?? 0),
+    y: y - (item.node.box?.y ?? 0),
+  });
+  return {
+    id: `module.core.socialPost.header.slot.${item.index}.${translated.id}`,
+    type: "group",
+    frame: 0,
+    box: translated.box,
+    style: { overflow: "visible" },
+    children: [translated],
+  };
+}
+
 function componentNode(
   payload: DesignPreviewPayload,
   componentBaseConfigs: Record<string, unknown>,
@@ -142,23 +236,7 @@ function componentNode(
   slot: SocialPostComponentSlot,
   inputs: Record<string, unknown>,
 ) {
-  return componentClassToRenderable(componentPayload(
-    payload,
-    componentBaseConfigs,
-    componentType,
-    slot,
-    inputs,
-  ));
-}
-
-function componentPayload(
-  payload: DesignPreviewPayload,
-  componentBaseConfigs: Record<string, unknown>,
-  componentType: string,
-  slot: SocialPostComponentSlot,
-  inputs: Record<string, unknown>,
-): DesignPreviewPayload {
-  return {
+  return componentClassToRenderable({
     ...payload,
     componentType,
     configJson: JSON.stringify(embeddedComponentConfig(
@@ -168,49 +246,16 @@ function componentPayload(
       `module.core.socialPost.${componentType}`,
     )),
     designPreviewJson: JSON.stringify(inputs),
-  };
-}
-
-function stackSlot(
-  id: string,
-  sizeMode: "content" | "fill",
-  slot: SocialPostComponentSlot,
-  inputs: Record<string, unknown>,
-  gapToken: string,
-) {
-  return {
-    id,
-    sizeMode,
-    gapBeforeMode: "fixed",
-    gapBeforeToken: id === "header" ? "theme.spacing.none" : gapToken,
-    gapBeforeWeight: 1,
-    alternatives: [{
-      id: `${id}.default`,
-      variantReference: slot.variantReference,
-      overrides: slot.overrides,
-      inputs,
-      active: true,
-      behavior: "replace",
-      placement: {
-        mode: "center",
-        alignX: 0.5,
-        alignY: 0.5,
-        offsetX: 0,
-        offsetY: 0,
-      },
-      enterMotion: noMotion,
-      exitMotion: noMotion,
-    }],
-  };
+  });
 }
 
 function spacingPair(payload: DesignPreviewPayload, value: string) {
-  const [xToken = "theme.spacing.none", yToken = xToken] = value.split("|");
+  const [leftToken = "theme.spacing.none", rightToken = leftToken] = value.split("|");
   const scale = renderScale(payload);
-  return {
-    x: numberToken(payload, xToken) * scale,
-    y: numberToken(payload, yToken) * scale,
-  };
+  return [
+    numberToken(payload, leftToken) * scale,
+    numberToken(payload, rightToken) * scale,
+  ] as const;
 }
 
 function background(payload: DesignPreviewPayload): RenderableNode {
@@ -225,8 +270,5 @@ function background(payload: DesignPreviewPayload): RenderableNode {
 }
 
 function withZIndex(node: RenderableNode, zIndex: number): RenderableNode {
-  return {
-    ...node,
-    style: { ...node.style, zIndex },
-  };
+  return { ...node, style: { ...node.style, zIndex } };
 }

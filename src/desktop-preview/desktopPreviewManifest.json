@@ -410,17 +410,10 @@
       "resolver": "./socialPostModuleResolver",
       "renderable": "./socialPostModuleRenderable",
       "embeds": [
-        "componentStack",
-        "collectionStack",
-        "listItem",
+        "surface",
         "avatar",
+        "button",
         "label",
-        "iconRow",
-        "media",
-        "bubble",
-        "iconBar",
-        "textInputBar",
-        "keyboard",
         "status_bar",
         "navigation_bar"
       ]

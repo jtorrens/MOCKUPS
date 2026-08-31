@@ -102,7 +102,8 @@ internal sealed class EditorLayoutCardFactory
 
             _inlinePreviews.AddIfNeeded(node, layoutCard, groupPanel);
 
-            foreach (var layoutField in group.VisibleFields)
+            foreach (var layoutField in group.VisibleFieldsFor(
+                         preparedFields))
             {
                 var control = CreateDirectFieldControl(
                     node,
@@ -194,7 +195,8 @@ internal sealed class EditorLayoutCardFactory
                 Spacing = EditorUiDensity.Card(12),
             };
 
-            foreach (var layoutField in group.VisibleFields
+            foreach (var layoutField in group.VisibleFieldsFor(
+                             preparedFields)
                          .Where((field) => field.Id.StartsWith("component.", StringComparison.Ordinal)
                              && !field.Id.Equals("component.type", StringComparison.Ordinal)))
             {
@@ -254,10 +256,13 @@ internal sealed class EditorLayoutCardFactory
         return card;
     }
 
-    public static bool EmbeddedCardHasFields(EditorLayoutCard layoutCard)
+    public static bool EmbeddedCardHasFields(
+        EditorLayoutCard layoutCard,
+        IReadOnlyDictionary<string, FieldValue> preparedFields)
     {
         return layoutCard.VisibleGroups
-            .SelectMany((group) => group.VisibleFields)
+            .SelectMany((group) => group.VisibleFieldsFor(
+                preparedFields))
             .Any((field) => field.Id.StartsWith("component.", StringComparison.Ordinal)
                 && !field.Id.Equals("component.type", StringComparison.Ordinal));
     }
@@ -296,7 +301,8 @@ internal sealed class EditorLayoutCardFactory
             {
                 Spacing = EditorUiDensity.Card(12),
             };
-            foreach (var layoutField in group.VisibleFields)
+            foreach (var layoutField in group.VisibleFieldsFor(
+                         preparedFields))
             {
                 if (!preparedFields.TryGetValue(
                         layoutField.Id,

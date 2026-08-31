@@ -159,7 +159,8 @@ internal sealed class EditorContentPreparationService : IDisposable
                             .Where((card) =>
                                 card.VisibleGroups
                                     .SelectMany((group) =>
-                                        group.VisibleFields)
+                                        group.VisibleFieldsFor(
+                                            referenceFields))
                                     .Any((field) =>
                                         referenceFields
                                             .ContainsKey(
@@ -207,7 +208,8 @@ internal sealed class EditorContentPreparationService : IDisposable
                 var cards = VisibleCards(layout)
                     .Where((card) =>
                         EditorLayoutCardFactory.EmbeddedCardHasFields(
-                            card))
+                            card,
+                            embeddedFields))
                     .Select((card) => new EditorPreparedLayoutCard(
                         card,
                         embeddedFields))
@@ -410,7 +412,7 @@ internal sealed class EditorContentPreparationService : IDisposable
         fieldSets.Add(fields);
         var overrideFieldIds = VisibleCards(layout)
             .SelectMany((card) => card.VisibleGroups)
-            .SelectMany((group) => group.VisibleFields)
+            .SelectMany((group) => group.VisibleFieldsFor(fields))
             .Select((field) => field.Id)
             .Where((fieldId) =>
                 fields.TryGetValue(fieldId, out var field)

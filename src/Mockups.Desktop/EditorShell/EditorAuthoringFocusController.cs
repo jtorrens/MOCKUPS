@@ -89,7 +89,8 @@ internal sealed class EditorAuthoringFocusController
             .Where((prepared) =>
                 prepared.Layout.Visible
                 && prepared.Layout.VisibleGroups
-                    .SelectMany((group) => group.VisibleFields)
+                    .SelectMany((group) =>
+                        group.VisibleFieldsFor(prepared.Fields))
                     .Any((field) => field.Id.Equals(
                         pending.FieldId,
                         StringComparison.Ordinal)))

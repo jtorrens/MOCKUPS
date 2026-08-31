@@ -1,21 +1,21 @@
 {
   "schemaVersion": 1,
-  "intent": {
-    "responsibility": "Own one social post Screen with authored identity, selected media, caption and social actions.",
-    "visualBoundary": "Compose Theme chrome and optional composer around one fixed four-zone Component Stack: Header, Media, Bubble and social Icon Bar.",
-    "runtimeBehavior": "Own Social Post Test Values and project them into exact child Component Variant boundaries without exposing a child Runtime contract.",
-    "forwarding": "No child field is exposed to a parent Runtime; Social Post owns its semantic inputs and exact child projections.",
-    "temporalOwnership": "The Screen owns duration and chrome visibility while embedded Components retain their local behavior.",
-    "productionContext": "Resolve only through the exact Production Screen to Shot owner Actor to Theme and Device context."
-  },
   "module": {
     "moduleId": "module_project_foqn_s2_social_post",
     "appId": "app_project_foqn_s2_social_media",
     "projectId": "project_foqn_s2",
     "recordClassId": "module.core.socialPost",
     "name": "Social Post",
-    "notes": "Initial social post Module composed from current reusable Components.",
+    "notes": "Social Post header phase with two symmetric five-slot rows.",
     "sortOrder": 2
+  },
+  "intent": {
+    "responsibility": "Own the Social Post header as two fixed five-slot rows.",
+    "visualBoundary": "Render a Surface containing two intrinsic-height rows and Theme-owned system chrome.",
+    "runtimeBehavior": "The Variant selects each slot kind and child Variant; Runtime owns only actor, label and sublabel values.",
+    "forwarding": "No child Runtime contract is exposed or forwarded.",
+    "temporalOwnership": "The Screen owns header presence while child Components retain their local behavior.",
+    "productionContext": "Resolve only through the exact Production Screen to Shot owner Actor to Theme and Device context."
   },
   "manifest": {
     "label": "Social Post",
@@ -23,17 +23,10 @@
     "resolver": "./socialPostModuleResolver",
     "renderable": "./socialPostModuleRenderable",
     "embeds": [
-      "componentStack",
-      "collectionStack",
-      "listItem",
+      "surface",
       "avatar",
+      "button",
       "label",
-      "iconRow",
-      "media",
-      "bubble",
-      "iconBar",
-      "textInputBar",
-      "keyboard",
       "status_bar",
       "navigation_bar"
     ]
@@ -45,480 +38,161 @@
     "configContractExport": "SocialPostModuleConfigContract",
     "focusedTest": "tests/animation/socialPostModule.test.ts"
   },
+  "runtimeContract": {
+    "source": null,
+    "durationPolicy": "calculated",
+    "defaultDurationFrames": null
+  },
   "config": {
     "appearanceMode": "inherit",
     "socialPost": {
       "useAppWallpaper": true,
-      "screenGutter": "theme.spacing.none|theme.spacing.none",
-      "zoneGap": "theme.spacing.s",
       "showHeader": true,
       "showStatusBar": true,
       "showNavigationBar": true,
-      "showTextInputBar": false,
-      "showKeyboard": false,
-      "stackSlot": {
-        "variantReference": "component_project_foqn_s2_componentStack::variant::default",
-        "overrides": {}
-      },
-      "headerStackSlot": {
-        "variantReference": "component_project_foqn_s2_collectionStack::variant::default",
-        "overrides": {}
-      },
-      "headerPrimarySlot": {
-        "variantReference": "component_project_foqn_s2_list_item::variant::default",
-        "overrides": {}
-      },
-      "headerPrimaryInputs": {
-        "componentType": "listItem",
-        "sampleSize": 360,
-        "activeSet": 1,
-        "width": 360,
-        "height": 84,
-        "state": "normal",
-        "contentSets": [
-          {
-            "id": "set_a"
-          },
-          {
-            "id": "set_b"
-          },
-          {
-            "id": "set_c"
-          }
-        ],
-        "avatarContent": [
-          {
-            "id": "set_a_avatar",
-            "contentSetId": "set_a",
-            "runtimeInputs": {
-              "componentType": "avatar",
-              "sampleText": "Sample",
-              "sampleSize": 256,
-              "sampleSubtext": "@alexq",
-              "showBadge": false,
-              "badgeIconToken": "system_check",
-              "badgeText": "1",
-              "badgeContentMode": "icon",
-              "badgeSize": 20,
-              "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
-              "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
-              "actorId": "actor_alex"
-            }
-          },
-          {
-            "id": "set_b_avatar",
-            "contentSetId": "set_b",
-            "runtimeInputs": {
-              "componentType": "avatar",
-              "sampleText": "Sample",
-              "sampleSize": 256,
-              "sampleSubtext": "Subtitle",
-              "showBadge": false,
-              "badgeIconToken": "system_check",
-              "badgeText": "1",
-              "badgeContentMode": "icon",
-              "badgeSize": 20,
-              "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
-              "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
-              "actorId": "actor_alex_b"
-            }
-          },
-          {
-            "id": "set_c_avatar",
-            "contentSetId": "set_c",
-            "runtimeInputs": {
-              "componentType": "avatar",
-              "sampleText": "Sample",
-              "sampleSize": 256,
-              "sampleSubtext": "Subtitle",
-              "showBadge": false,
-              "badgeIconToken": "system_check",
-              "badgeText": "1",
-              "badgeContentMode": "icon",
-              "badgeSize": 20,
-              "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
-              "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
-              "actorId": "actor_sam"
-            }
-          }
-        ],
-        "labelContent": [
-          {
-            "id": "set_a_label",
-            "contentSetId": "set_a",
-            "runtimeInputs": {
-              "componentType": "label",
-              "sampleText": "Alex Q",
-              "sampleSize": 256,
-              "sampleSubtext": "@alexq · 2 min",
-              "textMode": "literal",
-              "textSizeMultiplier": 1,
-              "subtextMode": "literal",
-              "subtextSizeMultiplier": 1,
-              "textColorToken": "theme.colors.textPrimary",
-              "subtextColorToken": "theme.colors.textSecondary"
-            }
-          },
-          {
-            "id": "set_b_label",
-            "contentSetId": "set_b",
-            "runtimeInputs": {
-              "componentType": "label",
-              "sampleText": "+34 848 983 160",
-              "sampleSize": 256,
-              "sampleSubtext": "↙ Pamplona / Iruña",
-              "textMode": "literal",
-              "textSizeMultiplier": 1,
-              "subtextMode": "literal",
-              "subtextSizeMultiplier": 1,
-              "textColorToken": "theme.colors.badge",
-              "subtextColorToken": "theme.colors.textSecondary"
-            }
-          },
-          {
-            "id": "set_c_label",
-            "contentSetId": "set_c",
-            "runtimeInputs": {
-              "componentType": "label",
-              "sampleText": "Dave",
-              "sampleSize": 256,
-              "sampleSubtext": "Thank you pal 😁",
-              "textMode": "literal",
-              "textSizeMultiplier": 1,
-              "subtextMode": "literal",
-              "subtextSizeMultiplier": 1,
-              "textColorToken": "theme.colors.textPrimary",
-              "subtextColorToken": "theme.colors.textSecondary"
-            }
-          }
-        ],
-        "iconRowContent": [
-          {
-            "id": "set_a_iconRow",
-            "contentSetId": "set_a",
-            "runtimeInputs": {
-              "componentType": "iconRow",
-              "sampleText": "Sample",
-              "sampleSubtext": "",
-              "sampleSize": 256,
-              "buttonInputs": [
-                {
-                  "id": "primary",
-                  "state": "normal",
-                  "sampleText": "",
-                  "iconToken": "nav_back",
-                  "iconSizeToken": "theme.iconSizes.m",
-                  "textSizeToken": "theme.typography.sizes.s",
-                  "iconColorToken": "theme.colors.accent",
-                  "textColorToken": "theme.colors.textSecondary",
-                  "showBadge": false,
-                  "badgeContentMode": "text",
-                  "badgeIconToken": "system_check",
-                  "badgeText": "1",
-                  "badgeSize": 18,
-                  "badgeBackgroundPaletteColor": "green",
-                  "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100"
-                },
-                {
-                  "id": "secondary",
-                  "state": "normal",
-                  "sampleText": "",
-                  "iconToken": "phone_call",
-                  "iconSizeToken": "theme.iconSizes.m",
-                  "textSizeToken": "theme.typography.sizes.s",
-                  "iconColorToken": "theme.colors.accent",
-                  "textColorToken": "theme.colors.textSecondary",
-                  "showBadge": false,
-                  "badgeContentMode": "text",
-                  "badgeIconToken": "system_check",
-                  "badgeText": "1",
-                  "badgeSize": 18,
-                  "badgeBackgroundPaletteColor": "green",
-                  "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100"
-                }
-              ]
-            }
-          },
-          {
-            "id": "set_b_iconRow",
-            "contentSetId": "set_b",
-            "runtimeInputs": {
-              "componentType": "iconRow",
-              "sampleText": "Sample",
-              "sampleSubtext": "",
-              "sampleSize": 256,
-              "buttonInputs": [
-                {
-                  "id": "primary",
-                  "state": "normal",
-                  "sampleText": "",
-                  "iconToken": "nav_forward",
-                  "iconSizeToken": "theme.iconSizes.m",
-                  "textSizeToken": "theme.typography.sizes.s",
-                  "iconColorToken": "theme.colors.accent",
-                  "textColorToken": "theme.colors.textSecondary",
-                  "showBadge": false,
-                  "badgeContentMode": "text",
-                  "badgeIconToken": "system_check",
-                  "badgeText": "1",
-                  "badgeSize": 18,
-                  "badgeBackgroundPaletteColor": "green",
-                  "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100"
-                },
-                {
-                  "id": "secondary",
-                  "state": "normal",
-                  "sampleText": "",
-                  "iconToken": "phone_call",
-                  "iconSizeToken": "theme.iconSizes.m",
-                  "textSizeToken": "theme.typography.sizes.s",
-                  "iconColorToken": "theme.colors.accent",
-                  "textColorToken": "theme.colors.textSecondary",
-                  "showBadge": false,
-                  "badgeContentMode": "text",
-                  "badgeIconToken": "system_check",
-                  "badgeText": "1",
-                  "badgeSize": 18,
-                  "badgeBackgroundPaletteColor": "green",
-                  "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100"
-                }
-              ]
-            }
-          },
-          {
-            "id": "set_c_iconRow",
-            "contentSetId": "set_c",
-            "runtimeInputs": {
-              "componentType": "iconRow",
-              "sampleText": "Sample",
-              "sampleSubtext": "",
-              "sampleSize": 256,
-              "buttonInputs": [
-                {
-                  "id": "primary",
-                  "state": "normal",
-                  "sampleText": "19:18",
-                  "iconToken": "system_check",
-                  "iconSizeToken": "theme.iconSizes.m",
-                  "textSizeToken": "theme.typography.sizes.s",
-                  "iconColorToken": "theme.colors.accent",
-                  "textColorToken": "theme.colors.accent",
-                  "showBadge": false,
-                  "badgeContentMode": "text",
-                  "badgeIconToken": "system_check",
-                  "badgeText": "1",
-                  "badgeSize": 18,
-                  "badgeBackgroundPaletteColor": "green",
-                  "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100"
-                },
-                {
-                  "id": "secondary",
-                  "state": "active",
-                  "sampleText": "1",
-                  "iconToken": "system_check",
-                  "iconSizeToken": "theme.iconSizes.m",
-                  "textSizeToken": "theme.typography.sizes.s",
-                  "iconColorToken": "theme.colors.accent",
-                  "textColorToken": "theme.colors.accent",
-                  "showBadge": false,
-                  "badgeContentMode": "text",
-                  "badgeIconToken": "system_check",
-                  "badgeText": "1",
-                  "badgeSize": 18,
-                  "badgeBackgroundPaletteColor": "green",
-                  "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100"
-                }
-              ]
-            }
-          }
-        ]
-      },
-      "headerSecondaryIconRowSlot": {
-        "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+      "headerSurfaceSlot": {
+        "variantReference": "component_project_foqn_s2_surface::variant::default",
         "overrides": {
-          "iconRow": {
-            "items": [
-              {
-                "id": "tag_foqn",
-                "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                "state": "normal",
-                "iconToken": "system_check",
-                "text": "#FOQN",
-                "buttonOverrides": {},
-                "iconSizeToken": "theme.iconSizes.m",
-                "textSizeToken": "theme.typography.sizes.s"
-              },
-              {
-                "id": "tag_social",
-                "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                "state": "normal",
-                "iconToken": "chat_bubble",
-                "text": "Social",
-                "buttonOverrides": {},
-                "iconSizeToken": "theme.iconSizes.m",
-                "textSizeToken": "theme.typography.sizes.s"
-              }
-            ]
+          "style": {
+            "cornerRadiusToken": "theme.radii.none"
           }
         }
       },
-      "headerSecondaryIconRowInputs": {
-        "componentType": "iconRow",
-        "sampleText": "Sample",
-        "sampleSubtext": "",
-        "sampleSize": 256,
-        "buttonInputs": [
-          {
-            "id": "tag_foqn",
-            "state": "normal",
-            "sampleText": "#FOQN",
-            "iconToken": "system_check",
-            "iconSizeToken": "theme.iconSizes.m",
-            "textSizeToken": "theme.typography.sizes.s",
-            "showBadge": false,
-            "badgeContentMode": "icon",
-            "badgeIconToken": "system_check",
-            "badgeText": "1",
-            "badgeSize": 20,
-            "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
-            "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
-            "iconColorToken": "theme.colors.icon",
-            "textColorToken": "theme.colors.textPrimary"
-          },
-          {
-            "id": "tag_social",
-            "state": "normal",
-            "sampleText": "Social",
-            "iconToken": "chat_bubble",
-            "iconSizeToken": "theme.iconSizes.m",
-            "textSizeToken": "theme.typography.sizes.s",
-            "showBadge": false,
-            "badgeContentMode": "icon",
-            "badgeIconToken": "system_check",
-            "badgeText": "1",
-            "badgeSize": 20,
-            "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
-            "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
-            "iconColorToken": "theme.colors.icon",
-            "textColorToken": "theme.colors.textPrimary"
-          }
-        ]
-      },
-      "mediaSlot": {
-        "variantReference": "component_project_foqn_s2_media::variant::default",
+      "rowGapToken": "theme.spacing.s",
+      "row1Padding": "theme.spacing.s|theme.spacing.s",
+      "row1VerticalAlignment": "center",
+      "row1ShowSeparator": true,
+      "row1Slot1Kind": "avatar",
+      "row1Slot1AvatarSlot": {
+        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
         "overrides": {}
       },
-      "bubbleSlot": {
-        "variantReference": "component_project_foqn_s2_bubble::variant::default",
+      "row1Slot1IconSlot": {
+        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
         "overrides": {}
       },
-      "footerIconBarSlot": {
-        "variantReference": "component_project_foqn_s2_iconBar::variant::default",
-        "overrides": {
-          "iconBar": {
-            "idleLeftIconRowInputs": {
-              "buttonInputs": [
-                {
-                  "id": "social_like",
-                  "state": "normal",
-                  "sampleText": "24",
-                  "iconToken": "system_check",
-                  "iconSizeToken": "theme.iconSizes.m",
-                  "textSizeToken": "theme.typography.sizes.s",
-                  "showBadge": false,
-                  "badgeContentMode": "icon",
-                  "badgeIconToken": "system_check",
-                  "badgeText": "1",
-                  "badgeSize": 20,
-                  "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
-                  "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
-                  "iconColorToken": "theme.colors.icon",
-                  "textColorToken": "theme.colors.textPrimary"
-                },
-                {
-                  "id": "social_comment",
-                  "state": "normal",
-                  "sampleText": "8",
-                  "iconToken": "chat_bubble",
-                  "iconSizeToken": "theme.iconSizes.m",
-                  "textSizeToken": "theme.typography.sizes.s",
-                  "showBadge": false,
-                  "badgeContentMode": "icon",
-                  "badgeIconToken": "system_check",
-                  "badgeText": "1",
-                  "badgeSize": 20,
-                  "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
-                  "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
-                  "iconColorToken": "theme.colors.icon",
-                  "textColorToken": "theme.colors.textPrimary"
-                },
-                {
-                  "id": "social_share",
-                  "state": "normal",
-                  "sampleText": "",
-                  "iconToken": "app_share",
-                  "iconSizeToken": "theme.iconSizes.m",
-                  "textSizeToken": "theme.typography.sizes.s",
-                  "showBadge": false,
-                  "badgeContentMode": "icon",
-                  "badgeIconToken": "system_check",
-                  "badgeText": "1",
-                  "badgeSize": 20,
-                  "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
-                  "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
-                  "iconColorToken": "theme.colors.icon",
-                  "textColorToken": "theme.colors.textPrimary"
-                }
-              ]
-            },
-            "idleLeftIconRowSlot": {
-              "variantReference": "component_project_foqn_s2_iconRow::variant::default",
-              "overrides": {
-                "iconRow": {
-                  "items": [
-                    {
-                      "id": "social_like",
-                      "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                      "state": "normal",
-                      "iconToken": "system_check",
-                      "text": "24",
-                      "buttonOverrides": {},
-                      "iconSizeToken": "theme.iconSizes.m",
-                      "textSizeToken": "theme.typography.sizes.s"
-                    },
-                    {
-                      "id": "social_comment",
-                      "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                      "state": "normal",
-                      "iconToken": "chat_bubble",
-                      "text": "8",
-                      "buttonOverrides": {},
-                      "iconSizeToken": "theme.iconSizes.m",
-                      "textSizeToken": "theme.typography.sizes.s"
-                    },
-                    {
-                      "id": "social_share",
-                      "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                      "state": "normal",
-                      "iconToken": "app_share",
-                      "text": "",
-                      "buttonOverrides": {},
-                      "iconSizeToken": "theme.iconSizes.m",
-                      "textSizeToken": "theme.typography.sizes.s"
-                    }
-                  ]
-                }
-              }
-            }
-          }
-        }
-      },
-      "textInputBarSlot": {
-        "variantReference": "component_project_foqn_s2_textInputBar::variant::default",
+      "row1Slot1LabelSlot": {
+        "variantReference": "component_project_foqn_s2_label::variant::default",
         "overrides": {}
       },
-      "keyboardSlot": {
-        "variantReference": "component_project_foqn_s2_keyboard::variant::default",
+      "row1Slot2Kind": "none",
+      "row1Slot2AvatarSlot": {
+        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+        "overrides": {}
+      },
+      "row1Slot2IconSlot": {
+        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+        "overrides": {}
+      },
+      "row1Slot2LabelSlot": {
+        "variantReference": "component_project_foqn_s2_label::variant::default",
+        "overrides": {}
+      },
+      "row1Slot3Kind": "none",
+      "row1Slot3AvatarSlot": {
+        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+        "overrides": {}
+      },
+      "row1Slot3IconSlot": {
+        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+        "overrides": {}
+      },
+      "row1Slot3LabelSlot": {
+        "variantReference": "component_project_foqn_s2_label::variant::default",
+        "overrides": {}
+      },
+      "row1Slot4Kind": "none",
+      "row1Slot4AvatarSlot": {
+        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+        "overrides": {}
+      },
+      "row1Slot4IconSlot": {
+        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+        "overrides": {}
+      },
+      "row1Slot4LabelSlot": {
+        "variantReference": "component_project_foqn_s2_label::variant::default",
+        "overrides": {}
+      },
+      "row1Slot5Kind": "icon",
+      "row1Slot5AvatarSlot": {
+        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+        "overrides": {}
+      },
+      "row1Slot5IconSlot": {
+        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+        "overrides": {}
+      },
+      "row1Slot5LabelSlot": {
+        "variantReference": "component_project_foqn_s2_label::variant::default",
+        "overrides": {}
+      },
+      "row2Padding": "theme.spacing.s|theme.spacing.s",
+      "row2VerticalAlignment": "center",
+      "row2ShowSeparator": true,
+      "row2Slot1Kind": "label",
+      "row2Slot1AvatarSlot": {
+        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+        "overrides": {}
+      },
+      "row2Slot1IconSlot": {
+        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+        "overrides": {}
+      },
+      "row2Slot1LabelSlot": {
+        "variantReference": "component_project_foqn_s2_label::variant::default",
+        "overrides": {}
+      },
+      "row2Slot2Kind": "label",
+      "row2Slot2AvatarSlot": {
+        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+        "overrides": {}
+      },
+      "row2Slot2IconSlot": {
+        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+        "overrides": {}
+      },
+      "row2Slot2LabelSlot": {
+        "variantReference": "component_project_foqn_s2_label::variant::default",
+        "overrides": {}
+      },
+      "row2Slot3Kind": "none",
+      "row2Slot3AvatarSlot": {
+        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+        "overrides": {}
+      },
+      "row2Slot3IconSlot": {
+        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+        "overrides": {}
+      },
+      "row2Slot3LabelSlot": {
+        "variantReference": "component_project_foqn_s2_label::variant::default",
+        "overrides": {}
+      },
+      "row2Slot4Kind": "none",
+      "row2Slot4AvatarSlot": {
+        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+        "overrides": {}
+      },
+      "row2Slot4IconSlot": {
+        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+        "overrides": {}
+      },
+      "row2Slot4LabelSlot": {
+        "variantReference": "component_project_foqn_s2_label::variant::default",
+        "overrides": {}
+      },
+      "row2Slot5Kind": "icon",
+      "row2Slot5AvatarSlot": {
+        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+        "overrides": {}
+      },
+      "row2Slot5IconSlot": {
+        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+        "overrides": {}
+      },
+      "row2Slot5LabelSlot": {
+        "variantReference": "component_project_foqn_s2_label::variant::default",
         "overrides": {}
       }
     }
@@ -526,461 +200,299 @@
   "designPreview": {
     "inputs": [
       {
-        "id": "actor",
-        "label": "Actor",
-        "jsonKey": "actorId",
+        "id": "row1Slot1.actor",
+        "label": "Row 1 slot 1 actor",
+        "jsonKey": "row1Slot1ActorId",
         "kind": "recordReference",
         "defaultValue": "actor_alex",
         "tableId": "actors",
-        "resolvedJsonKey": "actor",
-        "animatable": true,
-        "animationInterpolations": [
-          "hold"
-        ],
-        "animationTimeline": {
-          "origin": {
-            "kind": "ownerStart"
-          }
-        },
+        "resolvedJsonKey": "row1Slot1Actor",
         "valueKind": "RecordReference"
       },
       {
-        "id": "caption",
-        "label": "Caption",
-        "jsonKey": "sampleText",
-        "kind": "multilineText",
-        "valueKind": "StringMultiline",
-        "defaultValue": "Escribe un mensaje…",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "source": "runtime",
-        "uiOrigin": "embedded",
-        "uiGroupId": "message",
-        "uiGroupLabel": "Message",
-        "uiParentGroupId": "",
-        "transition": null,
-        "unit": "",
-        "uiOrder": 11
-      },
-      {
-        "id": "mediaType",
-        "label": "Media type",
-        "jsonKey": "mediaType",
-        "kind": "option",
-        "valueKind": "OptionToken",
-        "defaultValue": "image",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [
-          {
-            "value": "none",
-            "label": "None"
-          },
-          {
-            "value": "image",
-            "label": "Image"
-          },
-          {
-            "value": "video",
-            "label": "Video"
-          },
-          {
-            "value": "audio",
-            "label": "Audio"
-          }
-        ],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "source": "runtime",
-        "uiOrigin": "embedded",
-        "uiGroupId": "media",
-        "uiGroupLabel": "Media",
-        "uiParentGroupId": "",
-        "transition": null,
-        "unit": "",
-        "uiOrder": 60
-      },
-      {
-        "id": "mediaSource",
-        "label": "Media source",
-        "jsonKey": "mediaSource",
-        "kind": "mediaFilePath",
-        "valueKind": "MediaFilePath",
-        "defaultValue": "",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "source": "runtime",
-        "uiOrigin": "embedded",
-        "uiGroupId": "media",
-        "uiGroupLabel": "Media",
-        "uiParentGroupId": "",
-        "transition": null,
-        "unit": "",
-        "uiOrder": 61
-      },
-      {
-        "id": "viewportSize",
-        "label": "Media viewport",
-        "jsonKey": "viewportSize",
-        "kind": "integerPair",
-        "valueKind": "IntegerPair",
-        "defaultValue": "240|160",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "source": "runtime",
-        "uiOrigin": "embedded",
-        "uiGroupId": "media",
-        "uiGroupLabel": "Media",
-        "uiParentGroupId": "",
-        "transition": null,
-        "unit": "",
-        "uiOrder": 62
-      },
-      {
-        "id": "mediaScale",
-        "label": "Media scale",
-        "jsonKey": "mediaScale",
-        "kind": "number",
-        "valueKind": "Decimal",
-        "defaultValue": "1",
-        "minimum": 0.05,
-        "maximum": 16,
-        "increment": 0.05,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "source": "runtime",
-        "uiOrigin": "embedded",
-        "uiGroupId": "media",
-        "uiGroupLabel": "Media",
-        "uiParentGroupId": "",
-        "transition": null,
-        "unit": "",
-        "uiOrder": 63
-      },
-      {
-        "id": "mediaOffset",
-        "label": "Media offset",
-        "jsonKey": "mediaOffset",
-        "kind": "integerPair",
-        "valueKind": "IntegerPair",
-        "defaultValue": "0|0",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "X",
-        "pairSecondLabel": "Y",
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "source": "runtime",
-        "uiOrigin": "embedded",
-        "uiGroupId": "media",
-        "uiGroupLabel": "Media",
-        "uiParentGroupId": "",
-        "transition": null,
-        "unit": "",
-        "uiOrder": 64
-      },
-      {
-        "id": "isPlaying",
-        "label": "Play/Pause",
-        "jsonKey": "isPlaying",
-        "kind": "boolean",
-        "valueKind": "Boolean",
-        "defaultValue": "false",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "source": "runtime",
-        "uiOrigin": "embedded",
-        "uiGroupId": "media",
-        "uiGroupLabel": "Media",
-        "uiParentGroupId": "",
-        "transition": null,
-        "unit": "",
-        "uiOrder": 65
-      },
-      {
-        "id": "currentTimeSeconds",
-        "label": "Current time",
-        "jsonKey": "currentTimeSeconds",
-        "kind": "number",
-        "valueKind": "Decimal",
-        "defaultValue": "0",
-        "minimum": 0,
-        "maximum": 86400,
-        "increment": 0.1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "source": "runtime",
-        "uiOrigin": "embedded",
-        "uiGroupId": "media",
-        "uiGroupLabel": "Media",
-        "uiParentGroupId": "",
-        "transition": null,
-        "unit": "s",
-        "uiOrder": 66
-      },
-      {
-        "id": "durationSeconds",
-        "label": "Duration",
-        "jsonKey": "durationSeconds",
-        "kind": "number",
-        "valueKind": "Decimal",
-        "defaultValue": "12",
-        "minimum": 0,
-        "maximum": 86400,
-        "increment": 0.1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "source": "runtime",
-        "uiOrigin": "embedded",
-        "uiGroupId": "media",
-        "uiGroupLabel": "Media",
-        "uiParentGroupId": "",
-        "transition": null,
-        "unit": "s",
-        "uiOrder": 67
-      },
-      {
-        "id": "isFullScreen",
-        "label": "Full screen",
-        "jsonKey": "isFullScreen",
-        "kind": "boolean",
-        "valueKind": "Boolean",
-        "defaultValue": "false",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "source": "runtime",
-        "uiOrigin": "embedded",
-        "uiGroupId": "media",
-        "uiGroupLabel": "Media",
-        "uiParentGroupId": "",
-        "transition": null,
-        "unit": "",
-        "uiOrder": 68
-      },
-      {
-        "id": "fullScreenTransition",
-        "label": "Full-screen transition",
-        "jsonKey": "fullScreenTransition",
-        "kind": "boolean",
-        "valueKind": "Boolean",
-        "defaultValue": "false",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "source": "runtime",
-        "uiOrigin": "embedded",
-        "uiGroupId": "media",
-        "uiGroupLabel": "Media",
-        "uiParentGroupId": "",
-        "transition": null,
-        "unit": "",
-        "uiOrder": 69
-      },
-      {
-        "id": "fullframeOrientation",
-        "label": "Fullframe orientation",
-        "jsonKey": "fullframeOrientation",
-        "kind": "option",
-        "valueKind": "OptionToken",
-        "defaultValue": "portrait",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [
-          {
-            "value": "portrait",
-            "label": "Portrait"
-          },
-          {
-            "value": "landscape",
-            "label": "Landscape"
-          }
-        ],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "source": "runtime",
-        "uiOrigin": "embedded",
-        "uiGroupId": "media",
-        "uiGroupLabel": "Media",
-        "uiParentGroupId": "",
-        "transition": null,
-        "unit": "",
-        "uiOrder": 70
-      },
-      {
-        "id": "controlsElapsedMs",
-        "label": "Controls elapsed",
-        "jsonKey": "controlsElapsedMs",
-        "kind": "number",
-        "valueKind": "Integer",
-        "defaultValue": "0",
-        "minimum": 0,
-        "maximum": 60000,
-        "increment": 10,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "source": "runtime",
-        "uiOrigin": "embedded",
-        "uiGroupId": "media",
-        "uiGroupLabel": "Media",
-        "uiParentGroupId": "",
-        "transition": null,
-        "unit": "ms",
-        "uiOrder": 71
-      },
-      {
-        "id": "textInput",
-        "label": "Text input while writing",
-        "jsonKey": "textInputVisible",
-        "kind": "boolean",
-        "defaultValue": "true",
-        "groupId": "timing",
-        "groupLabel": "Timing",
-        "groupOrder": 20,
-        "valueKind": "Boolean"
-      },
-      {
-        "id": "keyboard",
-        "label": "Keyboard while writing",
-        "jsonKey": "keyboardVisible",
-        "kind": "boolean",
-        "defaultValue": "true",
-        "groupId": "timing",
-        "groupLabel": "Timing",
-        "groupOrder": 20,
-        "valueKind": "Boolean"
-      },
-      {
-        "id": "inputText",
-        "label": "Composer text",
-        "jsonKey": "inputText",
+        "id": "row1Slot1.label",
+        "label": "Row 1 slot 1 label",
+        "jsonKey": "row1Slot1Label",
         "kind": "text",
-        "defaultValue": "Nuevo post",
-        "animatable": true,
-        "animationInterpolations": [
-          "hold",
-          "writeOn"
-        ],
-        "animationTimeline": {
-          "origin": {
-            "kind": "ownerStart"
-          }
-        },
+        "defaultValue": "Alex Q",
+        "valueKind": "StringSingleLine"
+      },
+      {
+        "id": "row1Slot1.sublabel",
+        "label": "Row 1 slot 1 sublabel",
+        "jsonKey": "row1Slot1Sublabel",
+        "kind": "text",
+        "defaultValue": "@alexq · 2 min",
+        "valueKind": "StringSingleLine"
+      },
+      {
+        "id": "row1Slot2.actor",
+        "label": "Row 1 slot 2 actor",
+        "jsonKey": "row1Slot2ActorId",
+        "kind": "recordReference",
+        "defaultValue": "actor_alex",
+        "tableId": "actors",
+        "resolvedJsonKey": "row1Slot2Actor",
+        "valueKind": "RecordReference"
+      },
+      {
+        "id": "row1Slot2.label",
+        "label": "Row 1 slot 2 label",
+        "jsonKey": "row1Slot2Label",
+        "kind": "text",
+        "defaultValue": "",
+        "valueKind": "StringSingleLine"
+      },
+      {
+        "id": "row1Slot2.sublabel",
+        "label": "Row 1 slot 2 sublabel",
+        "jsonKey": "row1Slot2Sublabel",
+        "kind": "text",
+        "defaultValue": "",
+        "valueKind": "StringSingleLine"
+      },
+      {
+        "id": "row1Slot3.actor",
+        "label": "Row 1 slot 3 actor",
+        "jsonKey": "row1Slot3ActorId",
+        "kind": "recordReference",
+        "defaultValue": "actor_alex",
+        "tableId": "actors",
+        "resolvedJsonKey": "row1Slot3Actor",
+        "valueKind": "RecordReference"
+      },
+      {
+        "id": "row1Slot3.label",
+        "label": "Row 1 slot 3 label",
+        "jsonKey": "row1Slot3Label",
+        "kind": "text",
+        "defaultValue": "",
+        "valueKind": "StringSingleLine"
+      },
+      {
+        "id": "row1Slot3.sublabel",
+        "label": "Row 1 slot 3 sublabel",
+        "jsonKey": "row1Slot3Sublabel",
+        "kind": "text",
+        "defaultValue": "",
+        "valueKind": "StringSingleLine"
+      },
+      {
+        "id": "row1Slot4.actor",
+        "label": "Row 1 slot 4 actor",
+        "jsonKey": "row1Slot4ActorId",
+        "kind": "recordReference",
+        "defaultValue": "actor_alex",
+        "tableId": "actors",
+        "resolvedJsonKey": "row1Slot4Actor",
+        "valueKind": "RecordReference"
+      },
+      {
+        "id": "row1Slot4.label",
+        "label": "Row 1 slot 4 label",
+        "jsonKey": "row1Slot4Label",
+        "kind": "text",
+        "defaultValue": "",
+        "valueKind": "StringSingleLine"
+      },
+      {
+        "id": "row1Slot4.sublabel",
+        "label": "Row 1 slot 4 sublabel",
+        "jsonKey": "row1Slot4Sublabel",
+        "kind": "text",
+        "defaultValue": "",
+        "valueKind": "StringSingleLine"
+      },
+      {
+        "id": "row1Slot5.actor",
+        "label": "Row 1 slot 5 actor",
+        "jsonKey": "row1Slot5ActorId",
+        "kind": "recordReference",
+        "defaultValue": "actor_alex",
+        "tableId": "actors",
+        "resolvedJsonKey": "row1Slot5Actor",
+        "valueKind": "RecordReference"
+      },
+      {
+        "id": "row1Slot5.label",
+        "label": "Row 1 slot 5 label",
+        "jsonKey": "row1Slot5Label",
+        "kind": "text",
+        "defaultValue": "",
+        "valueKind": "StringSingleLine"
+      },
+      {
+        "id": "row1Slot5.sublabel",
+        "label": "Row 1 slot 5 sublabel",
+        "jsonKey": "row1Slot5Sublabel",
+        "kind": "text",
+        "defaultValue": "",
+        "valueKind": "StringSingleLine"
+      },
+      {
+        "id": "row2Slot1.actor",
+        "label": "Row 2 slot 1 actor",
+        "jsonKey": "row2Slot1ActorId",
+        "kind": "recordReference",
+        "defaultValue": "actor_alex",
+        "tableId": "actors",
+        "resolvedJsonKey": "row2Slot1Actor",
+        "valueKind": "RecordReference"
+      },
+      {
+        "id": "row2Slot1.label",
+        "label": "Row 2 slot 1 label",
+        "jsonKey": "row2Slot1Label",
+        "kind": "text",
+        "defaultValue": "#FOQN",
+        "valueKind": "StringSingleLine"
+      },
+      {
+        "id": "row2Slot1.sublabel",
+        "label": "Row 2 slot 1 sublabel",
+        "jsonKey": "row2Slot1Sublabel",
+        "kind": "text",
+        "defaultValue": "",
+        "valueKind": "StringSingleLine"
+      },
+      {
+        "id": "row2Slot2.actor",
+        "label": "Row 2 slot 2 actor",
+        "jsonKey": "row2Slot2ActorId",
+        "kind": "recordReference",
+        "defaultValue": "actor_alex",
+        "tableId": "actors",
+        "resolvedJsonKey": "row2Slot2Actor",
+        "valueKind": "RecordReference"
+      },
+      {
+        "id": "row2Slot2.label",
+        "label": "Row 2 slot 2 label",
+        "jsonKey": "row2Slot2Label",
+        "kind": "text",
+        "defaultValue": "Social",
+        "valueKind": "StringSingleLine"
+      },
+      {
+        "id": "row2Slot2.sublabel",
+        "label": "Row 2 slot 2 sublabel",
+        "jsonKey": "row2Slot2Sublabel",
+        "kind": "text",
+        "defaultValue": "",
+        "valueKind": "StringSingleLine"
+      },
+      {
+        "id": "row2Slot3.actor",
+        "label": "Row 2 slot 3 actor",
+        "jsonKey": "row2Slot3ActorId",
+        "kind": "recordReference",
+        "defaultValue": "actor_alex",
+        "tableId": "actors",
+        "resolvedJsonKey": "row2Slot3Actor",
+        "valueKind": "RecordReference"
+      },
+      {
+        "id": "row2Slot3.label",
+        "label": "Row 2 slot 3 label",
+        "jsonKey": "row2Slot3Label",
+        "kind": "text",
+        "defaultValue": "",
+        "valueKind": "StringSingleLine"
+      },
+      {
+        "id": "row2Slot3.sublabel",
+        "label": "Row 2 slot 3 sublabel",
+        "jsonKey": "row2Slot3Sublabel",
+        "kind": "text",
+        "defaultValue": "",
+        "valueKind": "StringSingleLine"
+      },
+      {
+        "id": "row2Slot4.actor",
+        "label": "Row 2 slot 4 actor",
+        "jsonKey": "row2Slot4ActorId",
+        "kind": "recordReference",
+        "defaultValue": "actor_alex",
+        "tableId": "actors",
+        "resolvedJsonKey": "row2Slot4Actor",
+        "valueKind": "RecordReference"
+      },
+      {
+        "id": "row2Slot4.label",
+        "label": "Row 2 slot 4 label",
+        "jsonKey": "row2Slot4Label",
+        "kind": "text",
+        "defaultValue": "",
+        "valueKind": "StringSingleLine"
+      },
+      {
+        "id": "row2Slot4.sublabel",
+        "label": "Row 2 slot 4 sublabel",
+        "jsonKey": "row2Slot4Sublabel",
+        "kind": "text",
+        "defaultValue": "",
+        "valueKind": "StringSingleLine"
+      },
+      {
+        "id": "row2Slot5.actor",
+        "label": "Row 2 slot 5 actor",
+        "jsonKey": "row2Slot5ActorId",
+        "kind": "recordReference",
+        "defaultValue": "actor_alex",
+        "tableId": "actors",
+        "resolvedJsonKey": "row2Slot5Actor",
+        "valueKind": "RecordReference"
+      },
+      {
+        "id": "row2Slot5.label",
+        "label": "Row 2 slot 5 label",
+        "jsonKey": "row2Slot5Label",
+        "kind": "text",
+        "defaultValue": "",
+        "valueKind": "StringSingleLine"
+      },
+      {
+        "id": "row2Slot5.sublabel",
+        "label": "Row 2 slot 5 sublabel",
+        "jsonKey": "row2Slot5Sublabel",
+        "kind": "text",
+        "defaultValue": "",
         "valueKind": "StringSingleLine"
       }
     ],
-    "collections": [],
-    "actions": [],
-    "actorId": "actor_alex",
-    "sampleText": "Una foto seleccionada y un mensaje para compartir.",
-    "mediaType": "image",
-    "mediaSource": "media/gatos_V2-0012.mp4",
-    "viewportSize": "360|280",
-    "mediaScale": 1,
-    "mediaOffset": "0|0",
-    "isPlaying": false,
-    "currentTimeSeconds": 0,
-    "durationSeconds": 12,
-    "isFullScreen": false,
-    "fullScreenTransition": false,
-    "fullframeOrientation": "portrait",
-    "controlsElapsedMs": 0,
-    "textInputVisible": false,
-    "keyboardVisible": false,
-    "inputText": "Nuevo post"
+    "row1Slot1ActorId": "actor_alex",
+    "row1Slot1Label": "Alex Q",
+    "row1Slot1Sublabel": "@alexq · 2 min",
+    "row1Slot2ActorId": "actor_alex",
+    "row1Slot2Label": "",
+    "row1Slot2Sublabel": "",
+    "row1Slot3ActorId": "actor_alex",
+    "row1Slot3Label": "",
+    "row1Slot3Sublabel": "",
+    "row1Slot4ActorId": "actor_alex",
+    "row1Slot4Label": "",
+    "row1Slot4Sublabel": "",
+    "row1Slot5ActorId": "actor_alex",
+    "row1Slot5Label": "",
+    "row1Slot5Sublabel": "",
+    "row2Slot1ActorId": "actor_alex",
+    "row2Slot1Label": "#FOQN",
+    "row2Slot1Sublabel": "",
+    "row2Slot2ActorId": "actor_alex",
+    "row2Slot2Label": "Social",
+    "row2Slot2Sublabel": "",
+    "row2Slot3ActorId": "actor_alex",
+    "row2Slot3Label": "",
+    "row2Slot3Sublabel": "",
+    "row2Slot4ActorId": "actor_alex",
+    "row2Slot4Label": "",
+    "row2Slot4Sublabel": "",
+    "row2Slot5ActorId": "actor_alex",
+    "row2Slot5Label": "",
+    "row2Slot5Sublabel": ""
+  },
+  "metadata": {
+    "note": "Social Post currently defines only its two-row header phase."
   },
   "defaultVariant": {
     "id": "default",
@@ -991,490 +503,158 @@
       "appearanceMode": "inherit",
       "socialPost": {
         "useAppWallpaper": true,
-        "screenGutter": "theme.spacing.none|theme.spacing.none",
-        "zoneGap": "theme.spacing.s",
         "showHeader": true,
         "showStatusBar": true,
         "showNavigationBar": true,
-        "showTextInputBar": false,
-        "showKeyboard": false,
-        "stackSlot": {
-          "variantReference": "component_project_foqn_s2_componentStack::variant::default",
-          "overrides": {}
-        },
-        "headerStackSlot": {
-          "variantReference": "component_project_foqn_s2_collectionStack::variant::default",
-          "overrides": {}
-        },
-        "headerPrimarySlot": {
-          "variantReference": "component_project_foqn_s2_list_item::variant::default",
-          "overrides": {}
-        },
-        "headerPrimaryInputs": {
-          "componentType": "listItem",
-          "sampleSize": 360,
-          "activeSet": 1,
-          "width": 360,
-          "height": 84,
-          "state": "normal",
-          "contentSets": [
-            {
-              "id": "set_a"
-            },
-            {
-              "id": "set_b"
-            },
-            {
-              "id": "set_c"
-            }
-          ],
-          "avatarContent": [
-            {
-              "id": "set_a_avatar",
-              "contentSetId": "set_a",
-              "runtimeInputs": {
-                "componentType": "avatar",
-                "sampleText": "Sample",
-                "sampleSize": 256,
-                "sampleSubtext": "@alexq",
-                "showBadge": false,
-                "badgeIconToken": "system_check",
-                "badgeText": "1",
-                "badgeContentMode": "icon",
-                "badgeSize": 20,
-                "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
-                "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
-                "actorId": "actor_alex"
-              }
-            },
-            {
-              "id": "set_b_avatar",
-              "contentSetId": "set_b",
-              "runtimeInputs": {
-                "componentType": "avatar",
-                "sampleText": "Sample",
-                "sampleSize": 256,
-                "sampleSubtext": "Subtitle",
-                "showBadge": false,
-                "badgeIconToken": "system_check",
-                "badgeText": "1",
-                "badgeContentMode": "icon",
-                "badgeSize": 20,
-                "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
-                "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
-                "actorId": "actor_alex_b"
-              }
-            },
-            {
-              "id": "set_c_avatar",
-              "contentSetId": "set_c",
-              "runtimeInputs": {
-                "componentType": "avatar",
-                "sampleText": "Sample",
-                "sampleSize": 256,
-                "sampleSubtext": "Subtitle",
-                "showBadge": false,
-                "badgeIconToken": "system_check",
-                "badgeText": "1",
-                "badgeContentMode": "icon",
-                "badgeSize": 20,
-                "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
-                "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
-                "actorId": "actor_sam"
-              }
-            }
-          ],
-          "labelContent": [
-            {
-              "id": "set_a_label",
-              "contentSetId": "set_a",
-              "runtimeInputs": {
-                "componentType": "label",
-                "sampleText": "Alex Q",
-                "sampleSize": 256,
-                "sampleSubtext": "@alexq · 2 min",
-                "textMode": "literal",
-                "textSizeMultiplier": 1,
-                "subtextMode": "literal",
-                "subtextSizeMultiplier": 1,
-                "textColorToken": "theme.colors.textPrimary",
-                "subtextColorToken": "theme.colors.textSecondary"
-              }
-            },
-            {
-              "id": "set_b_label",
-              "contentSetId": "set_b",
-              "runtimeInputs": {
-                "componentType": "label",
-                "sampleText": "+34 848 983 160",
-                "sampleSize": 256,
-                "sampleSubtext": "↙ Pamplona / Iruña",
-                "textMode": "literal",
-                "textSizeMultiplier": 1,
-                "subtextMode": "literal",
-                "subtextSizeMultiplier": 1,
-                "textColorToken": "theme.colors.badge",
-                "subtextColorToken": "theme.colors.textSecondary"
-              }
-            },
-            {
-              "id": "set_c_label",
-              "contentSetId": "set_c",
-              "runtimeInputs": {
-                "componentType": "label",
-                "sampleText": "Dave",
-                "sampleSize": 256,
-                "sampleSubtext": "Thank you pal 😁",
-                "textMode": "literal",
-                "textSizeMultiplier": 1,
-                "subtextMode": "literal",
-                "subtextSizeMultiplier": 1,
-                "textColorToken": "theme.colors.textPrimary",
-                "subtextColorToken": "theme.colors.textSecondary"
-              }
-            }
-          ],
-          "iconRowContent": [
-            {
-              "id": "set_a_iconRow",
-              "contentSetId": "set_a",
-              "runtimeInputs": {
-                "componentType": "iconRow",
-                "sampleText": "Sample",
-                "sampleSubtext": "",
-                "sampleSize": 256,
-                "buttonInputs": [
-                  {
-                    "id": "primary",
-                    "state": "normal",
-                    "sampleText": "",
-                    "iconToken": "nav_back",
-                    "iconSizeToken": "theme.iconSizes.m",
-                    "textSizeToken": "theme.typography.sizes.s",
-                    "iconColorToken": "theme.colors.accent",
-                    "textColorToken": "theme.colors.textSecondary",
-                    "showBadge": false,
-                    "badgeContentMode": "text",
-                    "badgeIconToken": "system_check",
-                    "badgeText": "1",
-                    "badgeSize": 18,
-                    "badgeBackgroundPaletteColor": "green",
-                    "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100"
-                  },
-                  {
-                    "id": "secondary",
-                    "state": "normal",
-                    "sampleText": "",
-                    "iconToken": "phone_call",
-                    "iconSizeToken": "theme.iconSizes.m",
-                    "textSizeToken": "theme.typography.sizes.s",
-                    "iconColorToken": "theme.colors.accent",
-                    "textColorToken": "theme.colors.textSecondary",
-                    "showBadge": false,
-                    "badgeContentMode": "text",
-                    "badgeIconToken": "system_check",
-                    "badgeText": "1",
-                    "badgeSize": 18,
-                    "badgeBackgroundPaletteColor": "green",
-                    "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100"
-                  }
-                ]
-              }
-            },
-            {
-              "id": "set_b_iconRow",
-              "contentSetId": "set_b",
-              "runtimeInputs": {
-                "componentType": "iconRow",
-                "sampleText": "Sample",
-                "sampleSubtext": "",
-                "sampleSize": 256,
-                "buttonInputs": [
-                  {
-                    "id": "primary",
-                    "state": "normal",
-                    "sampleText": "",
-                    "iconToken": "nav_forward",
-                    "iconSizeToken": "theme.iconSizes.m",
-                    "textSizeToken": "theme.typography.sizes.s",
-                    "iconColorToken": "theme.colors.accent",
-                    "textColorToken": "theme.colors.textSecondary",
-                    "showBadge": false,
-                    "badgeContentMode": "text",
-                    "badgeIconToken": "system_check",
-                    "badgeText": "1",
-                    "badgeSize": 18,
-                    "badgeBackgroundPaletteColor": "green",
-                    "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100"
-                  },
-                  {
-                    "id": "secondary",
-                    "state": "normal",
-                    "sampleText": "",
-                    "iconToken": "phone_call",
-                    "iconSizeToken": "theme.iconSizes.m",
-                    "textSizeToken": "theme.typography.sizes.s",
-                    "iconColorToken": "theme.colors.accent",
-                    "textColorToken": "theme.colors.textSecondary",
-                    "showBadge": false,
-                    "badgeContentMode": "text",
-                    "badgeIconToken": "system_check",
-                    "badgeText": "1",
-                    "badgeSize": 18,
-                    "badgeBackgroundPaletteColor": "green",
-                    "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100"
-                  }
-                ]
-              }
-            },
-            {
-              "id": "set_c_iconRow",
-              "contentSetId": "set_c",
-              "runtimeInputs": {
-                "componentType": "iconRow",
-                "sampleText": "Sample",
-                "sampleSubtext": "",
-                "sampleSize": 256,
-                "buttonInputs": [
-                  {
-                    "id": "primary",
-                    "state": "normal",
-                    "sampleText": "19:18",
-                    "iconToken": "system_check",
-                    "iconSizeToken": "theme.iconSizes.m",
-                    "textSizeToken": "theme.typography.sizes.s",
-                    "iconColorToken": "theme.colors.accent",
-                    "textColorToken": "theme.colors.accent",
-                    "showBadge": false,
-                    "badgeContentMode": "text",
-                    "badgeIconToken": "system_check",
-                    "badgeText": "1",
-                    "badgeSize": 18,
-                    "badgeBackgroundPaletteColor": "green",
-                    "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100"
-                  },
-                  {
-                    "id": "secondary",
-                    "state": "active",
-                    "sampleText": "1",
-                    "iconToken": "system_check",
-                    "iconSizeToken": "theme.iconSizes.m",
-                    "textSizeToken": "theme.typography.sizes.s",
-                    "iconColorToken": "theme.colors.accent",
-                    "textColorToken": "theme.colors.accent",
-                    "showBadge": false,
-                    "badgeContentMode": "text",
-                    "badgeIconToken": "system_check",
-                    "badgeText": "1",
-                    "badgeSize": 18,
-                    "badgeBackgroundPaletteColor": "green",
-                    "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100"
-                  }
-                ]
-              }
-            }
-          ]
-        },
-        "headerSecondaryIconRowSlot": {
-          "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+        "headerSurfaceSlot": {
+          "variantReference": "component_project_foqn_s2_surface::variant::default",
           "overrides": {
-            "iconRow": {
-              "items": [
-                {
-                  "id": "tag_foqn",
-                  "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                  "state": "normal",
-                  "iconToken": "system_check",
-                  "text": "#FOQN",
-                  "buttonOverrides": {},
-                  "iconSizeToken": "theme.iconSizes.m",
-                  "textSizeToken": "theme.typography.sizes.s"
-                },
-                {
-                  "id": "tag_social",
-                  "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                  "state": "normal",
-                  "iconToken": "chat_bubble",
-                  "text": "Social",
-                  "buttonOverrides": {},
-                  "iconSizeToken": "theme.iconSizes.m",
-                  "textSizeToken": "theme.typography.sizes.s"
-                }
-              ]
+            "style": {
+              "cornerRadiusToken": "theme.radii.none"
             }
           }
         },
-        "headerSecondaryIconRowInputs": {
-          "componentType": "iconRow",
-          "sampleText": "Sample",
-          "sampleSubtext": "",
-          "sampleSize": 256,
-          "buttonInputs": [
-            {
-              "id": "tag_foqn",
-              "state": "normal",
-              "sampleText": "#FOQN",
-              "iconToken": "system_check",
-              "iconSizeToken": "theme.iconSizes.m",
-              "textSizeToken": "theme.typography.sizes.s",
-              "showBadge": false,
-              "badgeContentMode": "icon",
-              "badgeIconToken": "system_check",
-              "badgeText": "1",
-              "badgeSize": 20,
-              "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
-              "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
-              "iconColorToken": "theme.colors.icon",
-              "textColorToken": "theme.colors.textPrimary"
-            },
-            {
-              "id": "tag_social",
-              "state": "normal",
-              "sampleText": "Social",
-              "iconToken": "chat_bubble",
-              "iconSizeToken": "theme.iconSizes.m",
-              "textSizeToken": "theme.typography.sizes.s",
-              "showBadge": false,
-              "badgeContentMode": "icon",
-              "badgeIconToken": "system_check",
-              "badgeText": "1",
-              "badgeSize": 20,
-              "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
-              "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
-              "iconColorToken": "theme.colors.icon",
-              "textColorToken": "theme.colors.textPrimary"
-            }
-          ]
-        },
-        "mediaSlot": {
-          "variantReference": "component_project_foqn_s2_media::variant::default",
+        "rowGapToken": "theme.spacing.s",
+        "row1Padding": "theme.spacing.s|theme.spacing.s",
+        "row1VerticalAlignment": "center",
+        "row1ShowSeparator": true,
+        "row1Slot1Kind": "avatar",
+        "row1Slot1AvatarSlot": {
+          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
           "overrides": {}
         },
-        "bubbleSlot": {
-          "variantReference": "component_project_foqn_s2_bubble::variant::default",
+        "row1Slot1IconSlot": {
+          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
           "overrides": {}
         },
-        "footerIconBarSlot": {
-          "variantReference": "component_project_foqn_s2_iconBar::variant::default",
-          "overrides": {
-            "iconBar": {
-              "idleLeftIconRowInputs": {
-                "buttonInputs": [
-                  {
-                    "id": "social_like",
-                    "state": "normal",
-                    "sampleText": "24",
-                    "iconToken": "system_check",
-                    "iconSizeToken": "theme.iconSizes.m",
-                    "textSizeToken": "theme.typography.sizes.s",
-                    "showBadge": false,
-                    "badgeContentMode": "icon",
-                    "badgeIconToken": "system_check",
-                    "badgeText": "1",
-                    "badgeSize": 20,
-                    "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
-                    "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
-                    "iconColorToken": "theme.colors.icon",
-                    "textColorToken": "theme.colors.textPrimary"
-                  },
-                  {
-                    "id": "social_comment",
-                    "state": "normal",
-                    "sampleText": "8",
-                    "iconToken": "chat_bubble",
-                    "iconSizeToken": "theme.iconSizes.m",
-                    "textSizeToken": "theme.typography.sizes.s",
-                    "showBadge": false,
-                    "badgeContentMode": "icon",
-                    "badgeIconToken": "system_check",
-                    "badgeText": "1",
-                    "badgeSize": 20,
-                    "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
-                    "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
-                    "iconColorToken": "theme.colors.icon",
-                    "textColorToken": "theme.colors.textPrimary"
-                  },
-                  {
-                    "id": "social_share",
-                    "state": "normal",
-                    "sampleText": "",
-                    "iconToken": "app_share",
-                    "iconSizeToken": "theme.iconSizes.m",
-                    "textSizeToken": "theme.typography.sizes.s",
-                    "showBadge": false,
-                    "badgeContentMode": "icon",
-                    "badgeIconToken": "system_check",
-                    "badgeText": "1",
-                    "badgeSize": 20,
-                    "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
-                    "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
-                    "iconColorToken": "theme.colors.icon",
-                    "textColorToken": "theme.colors.textPrimary"
-                  }
-                ]
-              },
-              "idleLeftIconRowSlot": {
-                "variantReference": "component_project_foqn_s2_iconRow::variant::default",
-                "overrides": {
-                  "iconRow": {
-                    "items": [
-                      {
-                        "id": "social_like",
-                        "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                        "state": "normal",
-                        "iconToken": "system_check",
-                        "text": "24",
-                        "buttonOverrides": {},
-                        "iconSizeToken": "theme.iconSizes.m",
-                        "textSizeToken": "theme.typography.sizes.s"
-                      },
-                      {
-                        "id": "social_comment",
-                        "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                        "state": "normal",
-                        "iconToken": "chat_bubble",
-                        "text": "8",
-                        "buttonOverrides": {},
-                        "iconSizeToken": "theme.iconSizes.m",
-                        "textSizeToken": "theme.typography.sizes.s"
-                      },
-                      {
-                        "id": "social_share",
-                        "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                        "state": "normal",
-                        "iconToken": "app_share",
-                        "text": "",
-                        "buttonOverrides": {},
-                        "iconSizeToken": "theme.iconSizes.m",
-                        "textSizeToken": "theme.typography.sizes.s"
-                      }
-                    ]
-                  }
-                }
-              }
-            }
-          }
-        },
-        "textInputBarSlot": {
-          "variantReference": "component_project_foqn_s2_textInputBar::variant::default",
+        "row1Slot1LabelSlot": {
+          "variantReference": "component_project_foqn_s2_label::variant::default",
           "overrides": {}
         },
-        "keyboardSlot": {
-          "variantReference": "component_project_foqn_s2_keyboard::variant::default",
+        "row1Slot2Kind": "none",
+        "row1Slot2AvatarSlot": {
+          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+          "overrides": {}
+        },
+        "row1Slot2IconSlot": {
+          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+          "overrides": {}
+        },
+        "row1Slot2LabelSlot": {
+          "variantReference": "component_project_foqn_s2_label::variant::default",
+          "overrides": {}
+        },
+        "row1Slot3Kind": "none",
+        "row1Slot3AvatarSlot": {
+          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+          "overrides": {}
+        },
+        "row1Slot3IconSlot": {
+          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+          "overrides": {}
+        },
+        "row1Slot3LabelSlot": {
+          "variantReference": "component_project_foqn_s2_label::variant::default",
+          "overrides": {}
+        },
+        "row1Slot4Kind": "none",
+        "row1Slot4AvatarSlot": {
+          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+          "overrides": {}
+        },
+        "row1Slot4IconSlot": {
+          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+          "overrides": {}
+        },
+        "row1Slot4LabelSlot": {
+          "variantReference": "component_project_foqn_s2_label::variant::default",
+          "overrides": {}
+        },
+        "row1Slot5Kind": "icon",
+        "row1Slot5AvatarSlot": {
+          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+          "overrides": {}
+        },
+        "row1Slot5IconSlot": {
+          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+          "overrides": {}
+        },
+        "row1Slot5LabelSlot": {
+          "variantReference": "component_project_foqn_s2_label::variant::default",
+          "overrides": {}
+        },
+        "row2Padding": "theme.spacing.s|theme.spacing.s",
+        "row2VerticalAlignment": "center",
+        "row2ShowSeparator": true,
+        "row2Slot1Kind": "label",
+        "row2Slot1AvatarSlot": {
+          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+          "overrides": {}
+        },
+        "row2Slot1IconSlot": {
+          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+          "overrides": {}
+        },
+        "row2Slot1LabelSlot": {
+          "variantReference": "component_project_foqn_s2_label::variant::default",
+          "overrides": {}
+        },
+        "row2Slot2Kind": "label",
+        "row2Slot2AvatarSlot": {
+          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+          "overrides": {}
+        },
+        "row2Slot2IconSlot": {
+          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+          "overrides": {}
+        },
+        "row2Slot2LabelSlot": {
+          "variantReference": "component_project_foqn_s2_label::variant::default",
+          "overrides": {}
+        },
+        "row2Slot3Kind": "none",
+        "row2Slot3AvatarSlot": {
+          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+          "overrides": {}
+        },
+        "row2Slot3IconSlot": {
+          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+          "overrides": {}
+        },
+        "row2Slot3LabelSlot": {
+          "variantReference": "component_project_foqn_s2_label::variant::default",
+          "overrides": {}
+        },
+        "row2Slot4Kind": "none",
+        "row2Slot4AvatarSlot": {
+          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+          "overrides": {}
+        },
+        "row2Slot4IconSlot": {
+          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+          "overrides": {}
+        },
+        "row2Slot4LabelSlot": {
+          "variantReference": "component_project_foqn_s2_label::variant::default",
+          "overrides": {}
+        },
+        "row2Slot5Kind": "icon",
+        "row2Slot5AvatarSlot": {
+          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+          "overrides": {}
+        },
+        "row2Slot5IconSlot": {
+          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+          "overrides": {}
+        },
+        "row2Slot5LabelSlot": {
+          "variantReference": "component_project_foqn_s2_label::variant::default",
           "overrides": {}
         }
       }
     }
   },
   "additionalVariants": [],
-  "runtimeContract": {
-    "source": null,
-    "durationPolicy": "calculated",
-    "defaultDurationFrames": null
-  },
-  "metadata": {
-    "note": "Social Post owns its Test Values and composes four exact child zones without exposing child Runtime inputs."
-  },
   "dictionaryFields": [
     {
       "id": "module.core.socialPost.useAppWallpaper",
@@ -1502,85 +682,18 @@
       "embeddedSlot": null
     },
     {
-      "id": "module.core.socialPost.screenGutter",
-      "label": "Screen gutter",
-      "valueKind": "ThemeTokenPair",
+      "id": "module.core.socialPost.showHeader",
+      "label": "Header",
+      "valueKind": "Boolean",
       "jsonPath": [
         "socialPost",
-        "screenGutter"
+        "showHeader"
       ],
-      "defaultValue": "theme.spacing.none|theme.spacing.none",
+      "defaultValue": "true",
       "isEditable": true,
-      "options": [
-        {
-          "value": "theme.spacing.none",
-          "label": "spacing.none",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.xs",
-          "label": "spacing.xs",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.s",
-          "label": "spacing.s",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.m",
-          "label": "spacing.m",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.l",
-          "label": "spacing.l",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.xl",
-          "label": "spacing.xl",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.spacing.xxl",
-          "label": "spacing.xxl",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        }
-      ],
+      "options": [],
       "optionSource": "None",
-      "pairLabels": {
-        "first": "X",
-        "second": "Y"
-      },
+      "pairLabels": null,
       "number": null,
       "componentVariantType": "",
       "synchronizedVariantReferenceJsonPaths": [],
@@ -1594,12 +707,91 @@
       "embeddedSlot": null
     },
     {
-      "id": "module.core.socialPost.zoneGap",
-      "label": "Zone gap",
+      "id": "module.core.socialPost.showStatusBar",
+      "label": "Status bar",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "socialPost",
+        "showStatusBar"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.showNavigationBar",
+      "label": "Navigation bar",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "socialPost",
+        "showNavigationBar"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.headerSurface",
+      "label": "Header surface",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "socialPost",
+        "headerSurfaceSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_surface::variant::default\",\"overrides\":{\"style\":{\"cornerRadiusToken\":\"theme.radii.none\"}}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "surface",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "surface",
+        "label": "Header surface",
+        "recordClassId": "component.surface"
+      }
+    },
+    {
+      "id": "module.core.socialPost.rowGapToken",
+      "label": "Gap between rows",
       "valueKind": "ThemeToken",
       "jsonPath": [
         "socialPost",
-        "zoneGap"
+        "rowGapToken"
       ],
       "defaultValue": "theme.spacing.s",
       "isEditable": true,
@@ -1683,12 +875,142 @@
       "embeddedSlot": null
     },
     {
-      "id": "module.core.socialPost.showHeader",
-      "label": "Header",
+      "id": "module.core.socialPost.row1Padding",
+      "label": "Left / right padding",
+      "valueKind": "ThemeTokenPair",
+      "jsonPath": [
+        "socialPost",
+        "row1Padding"
+      ],
+      "defaultValue": "theme.spacing.s|theme.spacing.s",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xl",
+          "label": "spacing.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xxl",
+          "label": "spacing.xxl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": {
+        "first": "Left",
+        "second": "Right"
+      },
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.row1VerticalAlignment",
+      "label": "Vertical alignment",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "socialPost",
+        "row1VerticalAlignment"
+      ],
+      "defaultValue": "center",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "top",
+          "label": "Top"
+        },
+        {
+          "value": "center",
+          "label": "Center"
+        },
+        {
+          "value": "bottom",
+          "label": "Bottom"
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.row1ShowSeparator",
+      "label": "Show separator",
       "valueKind": "Boolean",
       "jsonPath": [
         "socialPost",
-        "showHeader"
+        "row1ShowSeparator"
       ],
       "defaultValue": "true",
       "isEditable": true,
@@ -1708,20 +1030,62 @@
       "embeddedSlot": null
     },
     {
-      "id": "module.core.socialPost.stack",
-      "label": "Content Stack",
+      "id": "module.core.socialPost.row1Slot1.kind",
+      "label": "Content",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "socialPost",
+        "row1Slot1Kind"
+      ],
+      "defaultValue": "avatar",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "none",
+          "label": "None"
+        },
+        {
+          "value": "avatar",
+          "label": "Avatar + label"
+        },
+        {
+          "value": "icon",
+          "label": "Icon"
+        },
+        {
+          "value": "label",
+          "label": "Label"
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.row1Slot1.avatar",
+      "label": "Avatar variant",
       "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "socialPost",
-        "stackSlot"
+        "row1Slot1AvatarSlot"
       ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_componentStack::variant::default\",\"overrides\":{}}",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "optionSource": "None",
       "pairLabels": null,
       "number": null,
-      "componentVariantType": "componentStack",
+      "componentVariantType": "avatar",
       "synchronizedVariantReferenceJsonPaths": [],
       "runtimeInputComponentVariantFieldId": "",
       "runtimeCollectionComponentVariantFieldId": "",
@@ -1731,26 +1095,26 @@
       "motionTiming": null,
       "unit": "",
       "embeddedSlot": {
-        "componentType": "componentStack",
-        "label": "Content Stack",
-        "recordClassId": "component.componentStack"
+        "componentType": "avatar",
+        "label": "Avatar variant",
+        "recordClassId": "component.avatar"
       }
     },
     {
-      "id": "module.core.socialPost.headerStack",
-      "label": "Header Stack",
+      "id": "module.core.socialPost.row1Slot1.icon",
+      "label": "Icon variant",
       "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "socialPost",
-        "headerStackSlot"
+        "row1Slot1IconSlot"
       ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_collectionStack::variant::default\",\"overrides\":{}}",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "optionSource": "None",
       "pairLabels": null,
       "number": null,
-      "componentVariantType": "collectionStack",
+      "componentVariantType": "button",
       "synchronizedVariantReferenceJsonPaths": [],
       "runtimeInputComponentVariantFieldId": "",
       "runtimeCollectionComponentVariantFieldId": "",
@@ -1760,26 +1124,26 @@
       "motionTiming": null,
       "unit": "",
       "embeddedSlot": {
-        "componentType": "collectionStack",
-        "label": "Header Stack",
-        "recordClassId": "component.collectionStack"
+        "componentType": "button",
+        "label": "Icon variant",
+        "recordClassId": "component.button"
       }
     },
     {
-      "id": "module.core.socialPost.headerPrimary",
-      "label": "Profile row",
+      "id": "module.core.socialPost.row1Slot1.label",
+      "label": "Label variant",
       "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "socialPost",
-        "headerPrimarySlot"
+        "row1Slot1LabelSlot"
       ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_list_item::variant::default\",\"overrides\":{}}",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "optionSource": "None",
       "pairLabels": null,
       "number": null,
-      "componentVariantType": "listItem",
+      "componentVariantType": "label",
       "synchronizedVariantReferenceJsonPaths": [],
       "runtimeInputComponentVariantFieldId": "",
       "runtimeCollectionComponentVariantFieldId": "",
@@ -1789,26 +1153,68 @@
       "motionTiming": null,
       "unit": "",
       "embeddedSlot": {
-        "componentType": "listItem",
-        "label": "Profile row",
-        "recordClassId": "component.listItem"
+        "componentType": "label",
+        "label": "Label variant",
+        "recordClassId": "component.label"
       }
     },
     {
-      "id": "module.core.socialPost.headerSecondaryIconRow",
-      "label": "Tags and information",
+      "id": "module.core.socialPost.row1Slot2.kind",
+      "label": "Content",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "socialPost",
+        "row1Slot2Kind"
+      ],
+      "defaultValue": "none",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "none",
+          "label": "None"
+        },
+        {
+          "value": "avatar",
+          "label": "Avatar + label"
+        },
+        {
+          "value": "icon",
+          "label": "Icon"
+        },
+        {
+          "value": "label",
+          "label": "Label"
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.row1Slot2.avatar",
+      "label": "Avatar variant",
       "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "socialPost",
-        "headerSecondaryIconRowSlot"
+        "row1Slot2AvatarSlot"
       ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_iconRow::variant::default\",\"overrides\":{\"iconRow\":{\"items\":[{\"id\":\"tag_foqn\",\"buttonVariantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"state\":\"normal\",\"iconToken\":\"system_check\",\"text\":\"#FOQN\",\"buttonOverrides\":{},\"iconSizeToken\":\"theme.iconSizes.m\",\"textSizeToken\":\"theme.typography.sizes.s\"},{\"id\":\"tag_social\",\"buttonVariantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"state\":\"normal\",\"iconToken\":\"chat_bubble\",\"text\":\"Social\",\"buttonOverrides\":{},\"iconSizeToken\":\"theme.iconSizes.m\",\"textSizeToken\":\"theme.typography.sizes.s\"}]}}}",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "optionSource": "None",
       "pairLabels": null,
       "number": null,
-      "componentVariantType": "iconRow",
+      "componentVariantType": "avatar",
       "synchronizedVariantReferenceJsonPaths": [],
       "runtimeInputComponentVariantFieldId": "",
       "runtimeCollectionComponentVariantFieldId": "",
@@ -1818,26 +1224,26 @@
       "motionTiming": null,
       "unit": "",
       "embeddedSlot": {
-        "componentType": "iconRow",
-        "label": "Tags and information",
-        "recordClassId": "component.iconRow"
+        "componentType": "avatar",
+        "label": "Avatar variant",
+        "recordClassId": "component.avatar"
       }
     },
     {
-      "id": "module.core.socialPost.media",
-      "label": "Media",
+      "id": "module.core.socialPost.row1Slot2.icon",
+      "label": "Icon variant",
       "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "socialPost",
-        "mediaSlot"
+        "row1Slot2IconSlot"
       ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_media::variant::default\",\"overrides\":{}}",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "optionSource": "None",
       "pairLabels": null,
       "number": null,
-      "componentVariantType": "media",
+      "componentVariantType": "button",
       "synchronizedVariantReferenceJsonPaths": [],
       "runtimeInputComponentVariantFieldId": "",
       "runtimeCollectionComponentVariantFieldId": "",
@@ -1847,26 +1253,26 @@
       "motionTiming": null,
       "unit": "",
       "embeddedSlot": {
-        "componentType": "media",
-        "label": "Media",
-        "recordClassId": "component.media"
+        "componentType": "button",
+        "label": "Icon variant",
+        "recordClassId": "component.button"
       }
     },
     {
-      "id": "module.core.socialPost.bubble",
-      "label": "Message Bubble",
+      "id": "module.core.socialPost.row1Slot2.label",
+      "label": "Label variant",
       "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "socialPost",
-        "bubbleSlot"
+        "row1Slot2LabelSlot"
       ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_bubble::variant::default\",\"overrides\":{}}",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "optionSource": "None",
       "pairLabels": null,
       "number": null,
-      "componentVariantType": "bubble",
+      "componentVariantType": "label",
       "synchronizedVariantReferenceJsonPaths": [],
       "runtimeInputComponentVariantFieldId": "",
       "runtimeCollectionComponentVariantFieldId": "",
@@ -1876,26 +1282,68 @@
       "motionTiming": null,
       "unit": "",
       "embeddedSlot": {
-        "componentType": "bubble",
-        "label": "Message Bubble",
-        "recordClassId": "component.bubble"
+        "componentType": "label",
+        "label": "Label variant",
+        "recordClassId": "component.label"
       }
     },
     {
-      "id": "module.core.socialPost.footerIconBar",
-      "label": "Social Icon Bar",
+      "id": "module.core.socialPost.row1Slot3.kind",
+      "label": "Content",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "socialPost",
+        "row1Slot3Kind"
+      ],
+      "defaultValue": "none",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "none",
+          "label": "None"
+        },
+        {
+          "value": "avatar",
+          "label": "Avatar + label"
+        },
+        {
+          "value": "icon",
+          "label": "Icon"
+        },
+        {
+          "value": "label",
+          "label": "Label"
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.row1Slot3.avatar",
+      "label": "Avatar variant",
       "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "socialPost",
-        "footerIconBarSlot"
+        "row1Slot3AvatarSlot"
       ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_iconBar::variant::default\",\"overrides\":{\"iconBar\":{\"idleLeftIconRowInputs\":{\"buttonInputs\":[{\"id\":\"social_like\",\"state\":\"normal\",\"sampleText\":\"24\",\"iconToken\":\"system_check\",\"iconSizeToken\":\"theme.iconSizes.m\",\"textSizeToken\":\"theme.typography.sizes.s\",\"showBadge\":false,\"badgeContentMode\":\"icon\",\"badgeIconToken\":\"system_check\",\"badgeText\":\"1\",\"badgeSize\":20,\"badgeBackgroundPaletteColor\":\"palette_project_foqn_s2_blue\",\"badgeContentPaletteColor\":\"palette_project_foqn_s2_gray_100\",\"iconColorToken\":\"theme.colors.icon\",\"textColorToken\":\"theme.colors.textPrimary\"},{\"id\":\"social_comment\",\"state\":\"normal\",\"sampleText\":\"8\",\"iconToken\":\"chat_bubble\",\"iconSizeToken\":\"theme.iconSizes.m\",\"textSizeToken\":\"theme.typography.sizes.s\",\"showBadge\":false,\"badgeContentMode\":\"icon\",\"badgeIconToken\":\"system_check\",\"badgeText\":\"1\",\"badgeSize\":20,\"badgeBackgroundPaletteColor\":\"palette_project_foqn_s2_blue\",\"badgeContentPaletteColor\":\"palette_project_foqn_s2_gray_100\",\"iconColorToken\":\"theme.colors.icon\",\"textColorToken\":\"theme.colors.textPrimary\"},{\"id\":\"social_share\",\"state\":\"normal\",\"sampleText\":\"\",\"iconToken\":\"app_share\",\"iconSizeToken\":\"theme.iconSizes.m\",\"textSizeToken\":\"theme.typography.sizes.s\",\"showBadge\":false,\"badgeContentMode\":\"icon\",\"badgeIconToken\":\"system_check\",\"badgeText\":\"1\",\"badgeSize\":20,\"badgeBackgroundPaletteColor\":\"palette_project_foqn_s2_blue\",\"badgeContentPaletteColor\":\"palette_project_foqn_s2_gray_100\",\"iconColorToken\":\"theme.colors.icon\",\"textColorToken\":\"theme.colors.textPrimary\"}]},\"idleLeftIconRowSlot\":{\"variantReference\":\"component_project_foqn_s2_iconRow::variant::default\",\"overrides\":{\"iconRow\":{\"items\":[{\"id\":\"social_like\",\"buttonVariantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"state\":\"normal\",\"iconToken\":\"system_check\",\"text\":\"24\",\"buttonOverrides\":{},\"iconSizeToken\":\"theme.iconSizes.m\",\"textSizeToken\":\"theme.typography.sizes.s\"},{\"id\":\"social_comment\",\"buttonVariantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"state\":\"normal\",\"iconToken\":\"chat_bubble\",\"text\":\"8\",\"buttonOverrides\":{},\"iconSizeToken\":\"theme.iconSizes.m\",\"textSizeToken\":\"theme.typography.sizes.s\"},{\"id\":\"social_share\",\"buttonVariantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"state\":\"normal\",\"iconToken\":\"app_share\",\"text\":\"\",\"buttonOverrides\":{},\"iconSizeToken\":\"theme.iconSizes.m\",\"textSizeToken\":\"theme.typography.sizes.s\"}]}}}}}}",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "optionSource": "None",
       "pairLabels": null,
       "number": null,
-      "componentVariantType": "iconBar",
+      "componentVariantType": "avatar",
       "synchronizedVariantReferenceJsonPaths": [],
       "runtimeInputComponentVariantFieldId": "",
       "runtimeCollectionComponentVariantFieldId": "",
@@ -1905,18 +1353,464 @@
       "motionTiming": null,
       "unit": "",
       "embeddedSlot": {
-        "componentType": "iconBar",
-        "label": "Social Icon Bar",
-        "recordClassId": "component.iconBar"
+        "componentType": "avatar",
+        "label": "Avatar variant",
+        "recordClassId": "component.avatar"
       }
     },
     {
-      "id": "module.core.socialPost.showStatusBar",
-      "label": "Status bar",
+      "id": "module.core.socialPost.row1Slot3.icon",
+      "label": "Icon variant",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "socialPost",
+        "row1Slot3IconSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "button",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "button",
+        "label": "Icon variant",
+        "recordClassId": "component.button"
+      }
+    },
+    {
+      "id": "module.core.socialPost.row1Slot3.label",
+      "label": "Label variant",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "socialPost",
+        "row1Slot3LabelSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "label",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "label",
+        "label": "Label variant",
+        "recordClassId": "component.label"
+      }
+    },
+    {
+      "id": "module.core.socialPost.row1Slot4.kind",
+      "label": "Content",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "socialPost",
+        "row1Slot4Kind"
+      ],
+      "defaultValue": "none",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "none",
+          "label": "None"
+        },
+        {
+          "value": "avatar",
+          "label": "Avatar + label"
+        },
+        {
+          "value": "icon",
+          "label": "Icon"
+        },
+        {
+          "value": "label",
+          "label": "Label"
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.row1Slot4.avatar",
+      "label": "Avatar variant",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "socialPost",
+        "row1Slot4AvatarSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "avatar",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "avatar",
+        "label": "Avatar variant",
+        "recordClassId": "component.avatar"
+      }
+    },
+    {
+      "id": "module.core.socialPost.row1Slot4.icon",
+      "label": "Icon variant",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "socialPost",
+        "row1Slot4IconSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "button",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "button",
+        "label": "Icon variant",
+        "recordClassId": "component.button"
+      }
+    },
+    {
+      "id": "module.core.socialPost.row1Slot4.label",
+      "label": "Label variant",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "socialPost",
+        "row1Slot4LabelSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "label",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "label",
+        "label": "Label variant",
+        "recordClassId": "component.label"
+      }
+    },
+    {
+      "id": "module.core.socialPost.row1Slot5.kind",
+      "label": "Content",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "socialPost",
+        "row1Slot5Kind"
+      ],
+      "defaultValue": "icon",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "none",
+          "label": "None"
+        },
+        {
+          "value": "avatar",
+          "label": "Avatar + label"
+        },
+        {
+          "value": "icon",
+          "label": "Icon"
+        },
+        {
+          "value": "label",
+          "label": "Label"
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.row1Slot5.avatar",
+      "label": "Avatar variant",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "socialPost",
+        "row1Slot5AvatarSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "avatar",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "avatar",
+        "label": "Avatar variant",
+        "recordClassId": "component.avatar"
+      }
+    },
+    {
+      "id": "module.core.socialPost.row1Slot5.icon",
+      "label": "Icon variant",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "socialPost",
+        "row1Slot5IconSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "button",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "button",
+        "label": "Icon variant",
+        "recordClassId": "component.button"
+      }
+    },
+    {
+      "id": "module.core.socialPost.row1Slot5.label",
+      "label": "Label variant",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "socialPost",
+        "row1Slot5LabelSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "label",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "label",
+        "label": "Label variant",
+        "recordClassId": "component.label"
+      }
+    },
+    {
+      "id": "module.core.socialPost.row2Padding",
+      "label": "Left / right padding",
+      "valueKind": "ThemeTokenPair",
+      "jsonPath": [
+        "socialPost",
+        "row2Padding"
+      ],
+      "defaultValue": "theme.spacing.s|theme.spacing.s",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xl",
+          "label": "spacing.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xxl",
+          "label": "spacing.xxl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": {
+        "first": "Left",
+        "second": "Right"
+      },
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.row2VerticalAlignment",
+      "label": "Vertical alignment",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "socialPost",
+        "row2VerticalAlignment"
+      ],
+      "defaultValue": "center",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "top",
+          "label": "Top"
+        },
+        {
+          "value": "center",
+          "label": "Center"
+        },
+        {
+          "value": "bottom",
+          "label": "Bottom"
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.row2ShowSeparator",
+      "label": "Show separator",
       "valueKind": "Boolean",
       "jsonPath": [
         "socialPost",
-        "showStatusBar"
+        "row2ShowSeparator"
       ],
       "defaultValue": "true",
       "isEditable": true,
@@ -1936,16 +1830,33 @@
       "embeddedSlot": null
     },
     {
-      "id": "module.core.socialPost.showNavigationBar",
-      "label": "Navigation bar",
-      "valueKind": "Boolean",
+      "id": "module.core.socialPost.row2Slot1.kind",
+      "label": "Content",
+      "valueKind": "OptionToken",
       "jsonPath": [
         "socialPost",
-        "showNavigationBar"
+        "row2Slot1Kind"
       ],
-      "defaultValue": "true",
+      "defaultValue": "label",
       "isEditable": true,
-      "options": [],
+      "options": [
+        {
+          "value": "none",
+          "label": "None"
+        },
+        {
+          "value": "avatar",
+          "label": "Avatar + label"
+        },
+        {
+          "value": "icon",
+          "label": "Icon"
+        },
+        {
+          "value": "label",
+          "label": "Label"
+        }
+      ],
       "optionSource": "None",
       "pairLabels": null,
       "number": null,
@@ -1961,45 +1872,20 @@
       "embeddedSlot": null
     },
     {
-      "id": "module.core.socialPost.showTextInputBar",
-      "label": "Text input bar",
-      "valueKind": "Boolean",
-      "jsonPath": [
-        "socialPost",
-        "showTextInputBar"
-      ],
-      "defaultValue": "false",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "module.core.socialPost.textInputBar",
-      "label": "Text Input Bar",
+      "id": "module.core.socialPost.row2Slot1.avatar",
+      "label": "Avatar variant",
       "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "socialPost",
-        "textInputBarSlot"
+        "row2Slot1AvatarSlot"
       ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_textInputBar::variant::default\",\"overrides\":{}}",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "optionSource": "None",
       "pairLabels": null,
       "number": null,
-      "componentVariantType": "textInputBar",
+      "componentVariantType": "avatar",
       "synchronizedVariantReferenceJsonPaths": [],
       "runtimeInputComponentVariantFieldId": "",
       "runtimeCollectionComponentVariantFieldId": "",
@@ -2009,22 +1895,97 @@
       "motionTiming": null,
       "unit": "",
       "embeddedSlot": {
-        "componentType": "textInputBar",
-        "label": "Text Input Bar",
-        "recordClassId": "component.textInputBar"
+        "componentType": "avatar",
+        "label": "Avatar variant",
+        "recordClassId": "component.avatar"
       }
     },
     {
-      "id": "module.core.socialPost.showKeyboard",
-      "label": "Keyboard",
-      "valueKind": "Boolean",
+      "id": "module.core.socialPost.row2Slot1.icon",
+      "label": "Icon variant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "socialPost",
-        "showKeyboard"
+        "row2Slot1IconSlot"
       ],
-      "defaultValue": "false",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "button",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "button",
+        "label": "Icon variant",
+        "recordClassId": "component.button"
+      }
+    },
+    {
+      "id": "module.core.socialPost.row2Slot1.label",
+      "label": "Label variant",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "socialPost",
+        "row2Slot1LabelSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "label",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "label",
+        "label": "Label variant",
+        "recordClassId": "component.label"
+      }
+    },
+    {
+      "id": "module.core.socialPost.row2Slot2.kind",
+      "label": "Content",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "socialPost",
+        "row2Slot2Kind"
+      ],
+      "defaultValue": "label",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "none",
+          "label": "None"
+        },
+        {
+          "value": "avatar",
+          "label": "Avatar + label"
+        },
+        {
+          "value": "icon",
+          "label": "Icon"
+        },
+        {
+          "value": "label",
+          "label": "Label"
+        }
+      ],
       "optionSource": "None",
       "pairLabels": null,
       "number": null,
@@ -2040,20 +2001,20 @@
       "embeddedSlot": null
     },
     {
-      "id": "module.core.socialPost.keyboard",
-      "label": "Keyboard variant",
+      "id": "module.core.socialPost.row2Slot2.avatar",
+      "label": "Avatar variant",
       "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "socialPost",
-        "keyboardSlot"
+        "row2Slot2AvatarSlot"
       ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_keyboard::variant::default\",\"overrides\":{}}",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "optionSource": "None",
       "pairLabels": null,
       "number": null,
-      "componentVariantType": "keyboard",
+      "componentVariantType": "avatar",
       "synchronizedVariantReferenceJsonPaths": [],
       "runtimeInputComponentVariantFieldId": "",
       "runtimeCollectionComponentVariantFieldId": "",
@@ -2063,9 +2024,454 @@
       "motionTiming": null,
       "unit": "",
       "embeddedSlot": {
-        "componentType": "keyboard",
-        "label": "Keyboard",
-        "recordClassId": "component.keyboard"
+        "componentType": "avatar",
+        "label": "Avatar variant",
+        "recordClassId": "component.avatar"
+      }
+    },
+    {
+      "id": "module.core.socialPost.row2Slot2.icon",
+      "label": "Icon variant",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "socialPost",
+        "row2Slot2IconSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "button",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "button",
+        "label": "Icon variant",
+        "recordClassId": "component.button"
+      }
+    },
+    {
+      "id": "module.core.socialPost.row2Slot2.label",
+      "label": "Label variant",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "socialPost",
+        "row2Slot2LabelSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "label",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "label",
+        "label": "Label variant",
+        "recordClassId": "component.label"
+      }
+    },
+    {
+      "id": "module.core.socialPost.row2Slot3.kind",
+      "label": "Content",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "socialPost",
+        "row2Slot3Kind"
+      ],
+      "defaultValue": "none",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "none",
+          "label": "None"
+        },
+        {
+          "value": "avatar",
+          "label": "Avatar + label"
+        },
+        {
+          "value": "icon",
+          "label": "Icon"
+        },
+        {
+          "value": "label",
+          "label": "Label"
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.row2Slot3.avatar",
+      "label": "Avatar variant",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "socialPost",
+        "row2Slot3AvatarSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "avatar",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "avatar",
+        "label": "Avatar variant",
+        "recordClassId": "component.avatar"
+      }
+    },
+    {
+      "id": "module.core.socialPost.row2Slot3.icon",
+      "label": "Icon variant",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "socialPost",
+        "row2Slot3IconSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "button",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "button",
+        "label": "Icon variant",
+        "recordClassId": "component.button"
+      }
+    },
+    {
+      "id": "module.core.socialPost.row2Slot3.label",
+      "label": "Label variant",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "socialPost",
+        "row2Slot3LabelSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "label",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "label",
+        "label": "Label variant",
+        "recordClassId": "component.label"
+      }
+    },
+    {
+      "id": "module.core.socialPost.row2Slot4.kind",
+      "label": "Content",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "socialPost",
+        "row2Slot4Kind"
+      ],
+      "defaultValue": "none",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "none",
+          "label": "None"
+        },
+        {
+          "value": "avatar",
+          "label": "Avatar + label"
+        },
+        {
+          "value": "icon",
+          "label": "Icon"
+        },
+        {
+          "value": "label",
+          "label": "Label"
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.row2Slot4.avatar",
+      "label": "Avatar variant",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "socialPost",
+        "row2Slot4AvatarSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "avatar",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "avatar",
+        "label": "Avatar variant",
+        "recordClassId": "component.avatar"
+      }
+    },
+    {
+      "id": "module.core.socialPost.row2Slot4.icon",
+      "label": "Icon variant",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "socialPost",
+        "row2Slot4IconSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "button",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "button",
+        "label": "Icon variant",
+        "recordClassId": "component.button"
+      }
+    },
+    {
+      "id": "module.core.socialPost.row2Slot4.label",
+      "label": "Label variant",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "socialPost",
+        "row2Slot4LabelSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "label",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "label",
+        "label": "Label variant",
+        "recordClassId": "component.label"
+      }
+    },
+    {
+      "id": "module.core.socialPost.row2Slot5.kind",
+      "label": "Content",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "socialPost",
+        "row2Slot5Kind"
+      ],
+      "defaultValue": "icon",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "none",
+          "label": "None"
+        },
+        {
+          "value": "avatar",
+          "label": "Avatar + label"
+        },
+        {
+          "value": "icon",
+          "label": "Icon"
+        },
+        {
+          "value": "label",
+          "label": "Label"
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.socialPost.row2Slot5.avatar",
+      "label": "Avatar variant",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "socialPost",
+        "row2Slot5AvatarSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "avatar",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "avatar",
+        "label": "Avatar variant",
+        "recordClassId": "component.avatar"
+      }
+    },
+    {
+      "id": "module.core.socialPost.row2Slot5.icon",
+      "label": "Icon variant",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "socialPost",
+        "row2Slot5IconSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "button",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "button",
+        "label": "Icon variant",
+        "recordClassId": "component.button"
+      }
+    },
+    {
+      "id": "module.core.socialPost.row2Slot5.label",
+      "label": "Label variant",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "socialPost",
+        "row2Slot5LabelSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "label",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "label",
+        "label": "Label variant",
+        "recordClassId": "component.label"
       }
     }
   ],
@@ -2074,7 +2480,7 @@
       {
         "id": "general",
         "label": "General",
-        "subtitle": "Identity",
+        "subtitle": "Identity and background",
         "icon": "general",
         "order": 10,
         "visible": true,
@@ -2115,44 +2521,10 @@
                 "id": "module.metadata",
                 "order": 60,
                 "visible": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "layout",
-        "label": "Layout",
-        "subtitle": "Screen and four-zone stack",
-        "icon": "layout",
-        "order": 20,
-        "visible": true,
-        "defaultOpen": false,
-        "groups": [
-          {
-            "id": "layout",
-            "label": "Layout",
-            "order": 10,
-            "visible": true,
-            "fields": [
+              },
               {
                 "id": "module.core.socialPost.useAppWallpaper",
-                "order": 10,
-                "visible": true
-              },
-              {
-                "id": "module.core.socialPost.screenGutter",
-                "order": 20,
-                "visible": true
-              },
-              {
-                "id": "module.core.socialPost.zoneGap",
-                "order": 30,
-                "visible": true
-              },
-              {
-                "id": "module.core.socialPost.stack",
-                "order": 40,
+                "order": 70,
                 "visible": true
               }
             ]
@@ -2162,9 +2534,9 @@
       {
         "id": "header",
         "label": "Header",
-        "subtitle": "Profile and information rows",
+        "subtitle": "Two rows · five slots each",
         "icon": "header",
-        "order": 30,
+        "order": 20,
         "visible": true,
         "defaultOpen": true,
         "groups": [
@@ -2180,91 +2552,385 @@
                 "visible": true
               },
               {
-                "id": "module.core.socialPost.headerStack",
+                "id": "module.core.socialPost.headerSurface",
                 "order": 20,
                 "visible": true
               },
               {
-                "id": "module.core.socialPost.headerPrimary",
+                "id": "module.core.socialPost.rowGapToken",
+                "order": 30,
+                "visible": true
+              }
+            ],
+            "presentation": "separatedSections"
+          },
+          {
+            "id": "row-1",
+            "label": "Row 1",
+            "icon": "layout",
+            "presentation": "verticalCards",
+            "order": 100,
+            "visible": true,
+            "fields": [
+              {
+                "id": "module.core.socialPost.row1Padding",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "module.core.socialPost.row1VerticalAlignment",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "module.core.socialPost.row1ShowSeparator",
                 "order": 30,
                 "visible": true
               },
               {
-                "id": "module.core.socialPost.headerSecondaryIconRow",
+                "id": "module.core.socialPost.row1Slot1.kind",
                 "order": 40,
                 "visible": true
+              },
+              {
+                "id": "module.core.socialPost.row1Slot1.avatar",
+                "order": 50,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.row1Slot1.kind",
+                "visibleWhenValues": [
+                  "avatar"
+                ]
+              },
+              {
+                "id": "module.core.socialPost.row1Slot1.icon",
+                "order": 60,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.row1Slot1.kind",
+                "visibleWhenValues": [
+                  "icon"
+                ]
+              },
+              {
+                "id": "module.core.socialPost.row1Slot1.label",
+                "order": 70,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.row1Slot1.kind",
+                "visibleWhenValues": [
+                  "label"
+                ]
+              },
+              {
+                "id": "module.core.socialPost.row1Slot2.kind",
+                "order": 80,
+                "visible": true
+              },
+              {
+                "id": "module.core.socialPost.row1Slot2.avatar",
+                "order": 90,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.row1Slot2.kind",
+                "visibleWhenValues": [
+                  "avatar"
+                ]
+              },
+              {
+                "id": "module.core.socialPost.row1Slot2.icon",
+                "order": 100,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.row1Slot2.kind",
+                "visibleWhenValues": [
+                  "icon"
+                ]
+              },
+              {
+                "id": "module.core.socialPost.row1Slot2.label",
+                "order": 110,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.row1Slot2.kind",
+                "visibleWhenValues": [
+                  "label"
+                ]
+              },
+              {
+                "id": "module.core.socialPost.row1Slot3.kind",
+                "order": 120,
+                "visible": true
+              },
+              {
+                "id": "module.core.socialPost.row1Slot3.avatar",
+                "order": 130,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.row1Slot3.kind",
+                "visibleWhenValues": [
+                  "avatar"
+                ]
+              },
+              {
+                "id": "module.core.socialPost.row1Slot3.icon",
+                "order": 140,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.row1Slot3.kind",
+                "visibleWhenValues": [
+                  "icon"
+                ]
+              },
+              {
+                "id": "module.core.socialPost.row1Slot3.label",
+                "order": 150,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.row1Slot3.kind",
+                "visibleWhenValues": [
+                  "label"
+                ]
+              },
+              {
+                "id": "module.core.socialPost.row1Slot4.kind",
+                "order": 160,
+                "visible": true
+              },
+              {
+                "id": "module.core.socialPost.row1Slot4.avatar",
+                "order": 170,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.row1Slot4.kind",
+                "visibleWhenValues": [
+                  "avatar"
+                ]
+              },
+              {
+                "id": "module.core.socialPost.row1Slot4.icon",
+                "order": 180,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.row1Slot4.kind",
+                "visibleWhenValues": [
+                  "icon"
+                ]
+              },
+              {
+                "id": "module.core.socialPost.row1Slot4.label",
+                "order": 190,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.row1Slot4.kind",
+                "visibleWhenValues": [
+                  "label"
+                ]
+              },
+              {
+                "id": "module.core.socialPost.row1Slot5.kind",
+                "order": 200,
+                "visible": true
+              },
+              {
+                "id": "module.core.socialPost.row1Slot5.avatar",
+                "order": 210,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.row1Slot5.kind",
+                "visibleWhenValues": [
+                  "avatar"
+                ]
+              },
+              {
+                "id": "module.core.socialPost.row1Slot5.icon",
+                "order": 220,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.row1Slot5.kind",
+                "visibleWhenValues": [
+                  "icon"
+                ]
+              },
+              {
+                "id": "module.core.socialPost.row1Slot5.label",
+                "order": 230,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.row1Slot5.kind",
+                "visibleWhenValues": [
+                  "label"
+                ]
               }
             ]
-          }
-        ]
-      },
-      {
-        "id": "media",
-        "label": "Media",
-        "subtitle": "Selected image or media",
-        "icon": "media",
-        "order": 40,
-        "visible": true,
-        "defaultOpen": true,
-        "groups": [
+          },
           {
-            "id": "media",
-            "label": "Media",
-            "order": 10,
+            "id": "row-2",
+            "label": "Row 2",
+            "icon": "layout",
+            "presentation": "verticalCards",
+            "order": 200,
             "visible": true,
             "fields": [
               {
-                "id": "module.core.socialPost.media",
+                "id": "module.core.socialPost.row2Padding",
                 "order": 10,
                 "visible": true
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "message",
-        "label": "Message",
-        "subtitle": "Caption bubble",
-        "icon": "bubble",
-        "order": 50,
-        "visible": true,
-        "defaultOpen": true,
-        "groups": [
-          {
-            "id": "message",
-            "label": "Message",
-            "order": 10,
-            "visible": true,
-            "fields": [
+              },
               {
-                "id": "module.core.socialPost.bubble",
-                "order": 10,
+                "id": "module.core.socialPost.row2VerticalAlignment",
+                "order": 20,
                 "visible": true
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "actions",
-        "label": "Social Icon Bar",
-        "subtitle": "Post actions",
-        "icon": "actions",
-        "order": 60,
-        "visible": true,
-        "defaultOpen": false,
-        "groups": [
-          {
-            "id": "actions",
-            "label": "Social Icon Bar",
-            "order": 10,
-            "visible": true,
-            "fields": [
+              },
               {
-                "id": "module.core.socialPost.footerIconBar",
-                "order": 10,
+                "id": "module.core.socialPost.row2ShowSeparator",
+                "order": 30,
                 "visible": true
+              },
+              {
+                "id": "module.core.socialPost.row2Slot1.kind",
+                "order": 40,
+                "visible": true
+              },
+              {
+                "id": "module.core.socialPost.row2Slot1.avatar",
+                "order": 50,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.row2Slot1.kind",
+                "visibleWhenValues": [
+                  "avatar"
+                ]
+              },
+              {
+                "id": "module.core.socialPost.row2Slot1.icon",
+                "order": 60,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.row2Slot1.kind",
+                "visibleWhenValues": [
+                  "icon"
+                ]
+              },
+              {
+                "id": "module.core.socialPost.row2Slot1.label",
+                "order": 70,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.row2Slot1.kind",
+                "visibleWhenValues": [
+                  "label"
+                ]
+              },
+              {
+                "id": "module.core.socialPost.row2Slot2.kind",
+                "order": 80,
+                "visible": true
+              },
+              {
+                "id": "module.core.socialPost.row2Slot2.avatar",
+                "order": 90,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.row2Slot2.kind",
+                "visibleWhenValues": [
+                  "avatar"
+                ]
+              },
+              {
+                "id": "module.core.socialPost.row2Slot2.icon",
+                "order": 100,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.row2Slot2.kind",
+                "visibleWhenValues": [
+                  "icon"
+                ]
+              },
+              {
+                "id": "module.core.socialPost.row2Slot2.label",
+                "order": 110,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.row2Slot2.kind",
+                "visibleWhenValues": [
+                  "label"
+                ]
+              },
+              {
+                "id": "module.core.socialPost.row2Slot3.kind",
+                "order": 120,
+                "visible": true
+              },
+              {
+                "id": "module.core.socialPost.row2Slot3.avatar",
+                "order": 130,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.row2Slot3.kind",
+                "visibleWhenValues": [
+                  "avatar"
+                ]
+              },
+              {
+                "id": "module.core.socialPost.row2Slot3.icon",
+                "order": 140,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.row2Slot3.kind",
+                "visibleWhenValues": [
+                  "icon"
+                ]
+              },
+              {
+                "id": "module.core.socialPost.row2Slot3.label",
+                "order": 150,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.row2Slot3.kind",
+                "visibleWhenValues": [
+                  "label"
+                ]
+              },
+              {
+                "id": "module.core.socialPost.row2Slot4.kind",
+                "order": 160,
+                "visible": true
+              },
+              {
+                "id": "module.core.socialPost.row2Slot4.avatar",
+                "order": 170,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.row2Slot4.kind",
+                "visibleWhenValues": [
+                  "avatar"
+                ]
+              },
+              {
+                "id": "module.core.socialPost.row2Slot4.icon",
+                "order": 180,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.row2Slot4.kind",
+                "visibleWhenValues": [
+                  "icon"
+                ]
+              },
+              {
+                "id": "module.core.socialPost.row2Slot4.label",
+                "order": 190,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.row2Slot4.kind",
+                "visibleWhenValues": [
+                  "label"
+                ]
+              },
+              {
+                "id": "module.core.socialPost.row2Slot5.kind",
+                "order": 200,
+                "visible": true
+              },
+              {
+                "id": "module.core.socialPost.row2Slot5.avatar",
+                "order": 210,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.row2Slot5.kind",
+                "visibleWhenValues": [
+                  "avatar"
+                ]
+              },
+              {
+                "id": "module.core.socialPost.row2Slot5.icon",
+                "order": 220,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.row2Slot5.kind",
+                "visibleWhenValues": [
+                  "icon"
+                ]
+              },
+              {
+                "id": "module.core.socialPost.row2Slot5.label",
+                "order": 230,
+                "visible": true,
+                "visibleWhenFieldId": "module.core.socialPost.row2Slot5.kind",
+                "visibleWhenValues": [
+                  "label"
+                ]
               }
             ]
           }
@@ -2275,7 +2941,7 @@
         "label": "Status Bar",
         "subtitle": "Theme status component",
         "icon": "status",
-        "order": 70,
+        "order": 30,
         "visible": true,
         "defaultOpen": false,
         "groups": [
@@ -2299,7 +2965,7 @@
         "label": "Navigation Bar",
         "subtitle": "Theme navigation component",
         "icon": "navigation",
-        "order": 80,
+        "order": 40,
         "visible": true,
         "defaultOpen": false,
         "groups": [
@@ -2312,64 +2978,6 @@
               {
                 "id": "module.core.socialPost.showNavigationBar",
                 "order": 10,
-                "visible": true
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "text-input",
-        "label": "Text Input Bar",
-        "subtitle": "Optional composer",
-        "icon": "text-input",
-        "order": 90,
-        "visible": true,
-        "defaultOpen": false,
-        "groups": [
-          {
-            "id": "text-input",
-            "label": "Text Input Bar",
-            "order": 10,
-            "visible": true,
-            "fields": [
-              {
-                "id": "module.core.socialPost.showTextInputBar",
-                "order": 10,
-                "visible": true
-              },
-              {
-                "id": "module.core.socialPost.textInputBar",
-                "order": 20,
-                "visible": true
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "keyboard",
-        "label": "Keyboard",
-        "subtitle": "Optional keyboard",
-        "icon": "keyboard",
-        "order": 100,
-        "visible": true,
-        "defaultOpen": false,
-        "groups": [
-          {
-            "id": "keyboard",
-            "label": "Keyboard",
-            "order": 10,
-            "visible": true,
-            "fields": [
-              {
-                "id": "module.core.socialPost.showKeyboard",
-                "order": 10,
-                "visible": true
-              },
-              {
-                "id": "module.core.socialPost.keyboard",
-                "order": 20,
                 "visible": true
               }
             ]

@@ -3,29 +3,32 @@ export interface SocialPostComponentSlot extends Record<string, unknown> {
   overrides: Record<string, unknown>;
 }
 
+export type SocialPostHeaderSlotKind = "none" | "avatar" | "icon" | "label";
+export type SocialPostVerticalAlignment = "top" | "center" | "bottom";
+
+export interface SocialPostHeaderSlot {
+  index: number;
+  kind: SocialPostHeaderSlotKind;
+  componentType?: "avatar" | "button" | "label";
+  componentSlot?: SocialPostComponentSlot;
+  inputs: Record<string, unknown>;
+}
+
+export interface SocialPostHeaderRow {
+  id: "row1" | "row2";
+  padding: string;
+  verticalAlignment: SocialPostVerticalAlignment;
+  showSeparator: boolean;
+  slots: SocialPostHeaderSlot[];
+}
+
 export interface SocialPostModuleContract {
   id: "module.core.socialPost";
   useAppWallpaper: boolean;
-  screenGutter: string;
-  zoneGap: string;
   showHeader: boolean;
   showStatusBar: boolean;
   showNavigationBar: boolean;
-  showTextInputBar: boolean;
-  showKeyboard: boolean;
-  stackSlot: SocialPostComponentSlot;
-  headerStackSlot: SocialPostComponentSlot;
-  headerPrimarySlot: SocialPostComponentSlot;
-  headerSecondaryIconRowSlot: SocialPostComponentSlot;
-  mediaSlot: SocialPostComponentSlot;
-  bubbleSlot: SocialPostComponentSlot;
-  footerIconBarSlot: SocialPostComponentSlot;
-  textInputBarSlot: SocialPostComponentSlot;
-  keyboardSlot: SocialPostComponentSlot;
-  headerStackInputs: Record<string, unknown>;
-  mediaInputs: Record<string, unknown>;
-  bubbleInputs: Record<string, unknown>;
-  footerIconBarInputs: Record<string, unknown>;
-  textInputBarInputs: Record<string, unknown>;
-  keyboardInputs: Record<string, unknown>;
+  headerSurfaceSlot: SocialPostComponentSlot;
+  rowGapToken: string;
+  rows: [SocialPostHeaderRow, SocialPostHeaderRow];
 }

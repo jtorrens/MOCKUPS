@@ -16,63 +16,79 @@ internal static class SocialPostModuleConfigContract
         ModuleAppearanceModeContract.Read(config, context);
         var socialPost = JsonPath.RequiredObject(config, "socialPost", context);
         var owner = $"{context}.socialPost";
-        RequireExactKeys(
-            socialPost,
-            [
-                "useAppWallpaper",
-                "screenGutter",
-                "zoneGap",
-                "showHeader",
-                "showStatusBar",
-                "showNavigationBar",
-                "showTextInputBar",
-                "showKeyboard",
-                "stackSlot",
-                "headerStackSlot",
-                "headerPrimarySlot",
-                "headerPrimaryInputs",
-                "headerSecondaryIconRowSlot",
-                "headerSecondaryIconRowInputs",
-                "mediaSlot",
-                "bubbleSlot",
-                "footerIconBarSlot",
-                "textInputBarSlot",
-                "keyboardSlot",
-            ],
-            owner);
+        var expected = new List<string>
+        {
+            "useAppWallpaper",
+            "showHeader",
+            "showStatusBar",
+            "showNavigationBar",
+            "headerSurfaceSlot",
+            "rowGapToken",
+        };
+        for (var row = 1; row <= 2; row++)
+        {
+            expected.Add($"row{row}Padding");
+            expected.Add($"row{row}VerticalAlignment");
+            expected.Add($"row{row}ShowSeparator");
+            for (var slot = 1; slot <= 5; slot++)
+            {
+                var prefix = $"row{row}Slot{slot}";
+                expected.Add($"{prefix}Kind");
+                expected.Add($"{prefix}AvatarSlot");
+                expected.Add($"{prefix}IconSlot");
+                expected.Add($"{prefix}LabelSlot");
+            }
+        }
+        RequireExactKeys(socialPost, expected, owner);
+
         foreach (var key in new[]
         {
             "useAppWallpaper",
             "showHeader",
             "showStatusBar",
             "showNavigationBar",
-            "showTextInputBar",
-            "showKeyboard",
         })
         {
             JsonPath.RequiredBoolean(socialPost, key, owner);
         }
-        JsonPath.RequiredString(socialPost, "screenGutter", owner);
-        JsonPath.RequiredString(socialPost, "zoneGap", owner);
-        foreach (var key in new[]
+        ValidateSlot(socialPost, "headerSurfaceSlot", owner);
+        JsonPath.RequiredString(socialPost, "rowGapToken", owner);
+
+        for (var row = 1; row <= 2; row++)
         {
-            "stackSlot",
-            "headerStackSlot",
-            "headerPrimarySlot",
-            "headerSecondaryIconRowSlot",
-            "mediaSlot",
-            "bubbleSlot",
-            "footerIconBarSlot",
-            "textInputBarSlot",
-            "keyboardSlot",
-        })
-        {
-            ComponentVariantSlotDocumentContract.Validate(
-                JsonPath.RequiredObject(socialPost, key, owner),
-                $"{owner}.{key}");
+            JsonPath.RequiredString(socialPost, $"row{row}Padding", owner);
+            RequireOneOf(
+                JsonPath.RequiredString(socialPost, $"row{row}VerticalAlignment", owner),
+                ["top", "center", "bottom"],
+                $"{owner}.row{row}VerticalAlignment");
+            JsonPath.RequiredBoolean(socialPost, $"row{row}ShowSeparator", owner);
+            for (var slot = 1; slot <= 5; slot++)
+            {
+                var prefix = $"row{row}Slot{slot}";
+                RequireOneOf(
+                    JsonPath.RequiredString(socialPost, $"{prefix}Kind", owner),
+                    ["none", "avatar", "icon", "label"],
+                    $"{owner}.{prefix}Kind");
+                ValidateSlot(socialPost, $"{prefix}AvatarSlot", owner);
+                ValidateSlot(socialPost, $"{prefix}IconSlot", owner);
+                ValidateSlot(socialPost, $"{prefix}LabelSlot", owner);
+            }
         }
-        JsonPath.RequiredObject(socialPost, "headerPrimaryInputs", owner);
-        JsonPath.RequiredObject(socialPost, "headerSecondaryIconRowInputs", owner);
+    }
+
+    private static void ValidateSlot(JsonObject owner, string key, string context) =>
+        ComponentVariantSlotDocumentContract.Validate(
+            JsonPath.RequiredObject(owner, key, context),
+            $"{context}.{key}");
+
+    private static void RequireOneOf(
+        string value,
+        IReadOnlyList<string> supported,
+        string owner)
+    {
+        if (supported.Contains(value, StringComparer.Ordinal)) return;
+        throw new InvalidOperationException(
+            $"{owner} must be one of: {string.Join(", ", supported)}.");
     }
 
     private static void RequireExactKeys(

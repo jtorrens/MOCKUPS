@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
@@ -84,6 +85,11 @@ public sealed class EditorLayoutGroup
         Fields.Where((layoutField) => layoutField.Visible)
             .OrderBy((layoutField) => layoutField.Order)
             .ThenBy((layoutField) => layoutField.Id);
+
+    public IEnumerable<EditorLayoutField> VisibleFieldsFor(
+        IReadOnlyDictionary<string, FieldValue> fields) =>
+        VisibleFields.Where((layoutField) =>
+            layoutField.IsVisibleFor(fields));
 }
 
 public sealed class EditorLayoutField
@@ -96,4 +102,43 @@ public sealed class EditorLayoutField
 
     [JsonPropertyName("visible")]
     public bool Visible { get; init; } = true;
+
+    [JsonPropertyName("visibleWhenFieldId")]
+    public string VisibleWhenFieldId { get; init; } = "";
+
+    [JsonPropertyName("visibleWhenValues")]
+    public List<string> VisibleWhenValues { get; init; } = [];
+
+    public bool IsVisibleFor(
+        IReadOnlyDictionary<string, FieldValue> fields)
+    {
+        if (!Visible)
+        {
+            return false;
+        }
+
+        var hasController =
+            !string.IsNullOrWhiteSpace(VisibleWhenFieldId);
+        var hasValues = VisibleWhenValues.Count > 0;
+        if (!hasController && !hasValues)
+        {
+            return true;
+        }
+        if (!hasController || !hasValues)
+        {
+            throw new InvalidOperationException(
+                $"Editor layout field '{Id}' must declare visibleWhenFieldId and visibleWhenValues together.");
+        }
+        if (!fields.TryGetValue(
+                VisibleWhenFieldId,
+                out var controller))
+        {
+            throw new InvalidOperationException(
+                $"Editor layout field '{Id}' visibility references missing field '{VisibleWhenFieldId}'.");
+        }
+
+        return VisibleWhenValues.Contains(
+            controller.Value,
+            StringComparer.Ordinal);
+    }
 }
