@@ -196,13 +196,13 @@ internal static class SocialPostModuleConfigContract
             owner);
         RequireOneOf(JsonPath.RequiredString(inputs, "state", owner),
             ["incoming", "system", "outgoing"], $"{owner}.state");
-        JsonPath.RequiredString(inputs, "actorId", owner);
-        JsonPath.RequiredString(inputs, "actorName", owner);
+        JsonPath.RequiredString(inputs, "actorId", owner, allowEmpty: true);
+        JsonPath.RequiredString(inputs, "actorName", owner, allowEmpty: true);
         JsonPath.RequiredObject(inputs, "actor", owner);
         JsonPath.RequiredBoolean(inputs, "actorIdentityVisible", owner);
         RequireOneOf(JsonPath.RequiredString(inputs, "mediaType", owner),
             ["none", "image", "video", "audio"], $"{owner}.mediaType");
-        JsonPath.RequiredString(inputs, "mediaSource", owner);
+        JsonPath.RequiredString(inputs, "mediaSource", owner, allowEmpty: true);
         JsonPath.RequiredString(inputs, "viewportSize", owner);
         JsonPath.RequiredNumber(inputs, "mediaScale", owner);
         JsonPath.RequiredString(inputs, "mediaOffset", owner);
@@ -218,7 +218,7 @@ internal static class SocialPostModuleConfigContract
         JsonPath.RequiredNumber(inputs, "motionElapsedMs", owner);
         RequireOneOf(JsonPath.RequiredString(inputs, "statusState", owner),
             ["none", "sent", "delivered", "read"], $"{owner}.statusState");
-        JsonPath.RequiredString(inputs, "statusText", owner);
+        JsonPath.RequiredString(inputs, "statusText", owner, allowEmpty: true);
         JsonPath.RequiredBoolean(inputs, "typingIndicator", owner);
     }
 
