@@ -59,12 +59,6 @@ export function resolveGalleryComponent(payload: DesignPreviewPayload): GalleryD
     "media",
     "component.gallery.mediaSlot",
   );
-  const selectedMediaConfig = embeddedComponentConfig(
-    baseConfigs,
-    requiredRecord(gallery, "selectedMediaSlot", "component.gallery"),
-    "media",
-    "component.gallery.selectedMediaSlot",
-  );
   const effectiveSelectedIndex = Math.min(
     Math.round(selectedIndex),
     Math.max(0, sources.length - 1),
@@ -78,7 +72,7 @@ export function resolveGalleryComponent(payload: DesignPreviewPayload): GalleryD
       selected,
       media: resolveMediaComponentFromRecords(
         payload,
-        selected ? selectedMediaConfig : normalMediaConfig,
+        normalMediaConfig,
         mediaInputs(sourceUri, itemWidth, itemHeight),
         baseConfigs,
         `component.gallery.item.${id}`,

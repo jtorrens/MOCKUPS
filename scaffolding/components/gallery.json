@@ -52,24 +52,6 @@
       "mediaSlot": {
         "variantReference": "component_project_foqn_s2_media::variant::default",
         "overrides": {}
-      },
-      "selectedMediaSlot": {
-        "variantReference": "component_project_foqn_s2_media::variant::default",
-        "overrides": {
-          "media": {
-            "surfaceSlot": {
-              "overrides": {
-                "surface": {
-                  "borderAlpha": 1
-                },
-                "style": {
-                  "borderWidth": 4,
-                  "borderColorToken": "theme.colors.accent"
-                }
-              }
-            }
-          }
-        }
       }
     }
   },
@@ -97,24 +79,6 @@
         "mediaSlot": {
           "variantReference": "component_project_foqn_s2_media::variant::default",
           "overrides": {}
-        },
-        "selectedMediaSlot": {
-          "variantReference": "component_project_foqn_s2_media::variant::default",
-          "overrides": {
-            "media": {
-              "surfaceSlot": {
-                "overrides": {
-                  "surface": {
-                    "borderAlpha": 1
-                  },
-                  "style": {
-                    "borderWidth": 4,
-                    "borderColorToken": "theme.colors.accent"
-                  }
-                }
-              }
-            }
-          }
         }
       }
     }
@@ -686,34 +650,6 @@
         "label": "Media item",
         "recordClassId": "component.media"
       }
-    },
-    {
-      "id": "component.gallery.selectedMedia.editor",
-      "label": "Selected media",
-      "valueKind": "ComponentVariant",
-      "jsonPath": [
-        "gallery",
-        "selectedMediaSlot",
-        "variantReference"
-      ],
-      "defaultValue": "default",
-      "isEditable": true,
-      "options": [],
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": {
-        "componentType": "media",
-        "label": "Selected media item",
-        "recordClassId": "component.media"
-      }
     }
   ],
   "editorLayout": {
@@ -844,11 +780,6 @@
               {
                 "id": "component.gallery.media.editor",
                 "order": 20,
-                "visible": true
-              },
-              {
-                "id": "component.gallery.selectedMedia.editor",
-                "order": 30,
                 "visible": true
               }
             ]

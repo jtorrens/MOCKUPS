@@ -180,12 +180,6 @@ public static class GeneratedComponentScaffoldEmbeddedSlots
             "component.media",
             ["gallery", "mediaSlot"]),
         new(
-            "component.gallery.selectedMedia.editor",
-            "media",
-            "Selected media item",
-            "component.media",
-            ["gallery", "selectedMediaSlot"]),
-        new(
             "component.gallery.surface.editor",
             "surface",
             "Gallery surface",

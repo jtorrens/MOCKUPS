@@ -84,12 +84,19 @@ function carouselItems(
 ) {
   const selected = Math.min(gallery.selectedIndex, Math.max(0, gallery.items.length - 1));
   const startX = content.x + content.width / 2 - itemWidth / 2 - selected * (itemWidth + gap);
-  return itemGroup(payload, gallery, content, (index) => ({
-    x: startX + index * (itemWidth + gap),
-    y: content.y + (content.height - itemHeight) / 2,
-    width: itemWidth,
-    height: itemHeight,
-  }));
+  return itemGroup(
+    payload,
+    gallery,
+    content,
+    (index) => ({
+      x: startX + index * (itemWidth + gap),
+      y: content.y + (content.height - itemHeight) / 2,
+      width: itemWidth,
+      height: itemHeight,
+    }),
+    (index) => 1 + (gallery.selectedScale - 1)
+      * Math.max(0, 1 - Math.abs(index - selected)),
+  );
 }
 
 function gridItems(
@@ -104,16 +111,22 @@ function gridItems(
   const gridWidth = columns * itemWidth + Math.max(0, columns - 1) * gap;
   const gridStartX = content.x + (content.width - gridWidth) / 2;
   const rowStep = itemHeight + gap;
-  return itemGroup(payload, gallery, content, (index) => {
-    const row = Math.floor(index / columns);
-    const column = index % columns;
-    return {
-      x: gridStartX + column * (itemWidth + gap),
-      y: content.y + (row - gallery.scrollRow) * rowStep,
-      width: itemWidth,
-      height: itemHeight,
-    };
-  });
+  return itemGroup(
+    payload,
+    gallery,
+    content,
+    (index) => {
+      const row = Math.floor(index / columns);
+      const column = index % columns;
+      return {
+        x: gridStartX + column * (itemWidth + gap),
+        y: content.y + (row - gallery.scrollRow) * rowStep,
+        width: itemWidth,
+        height: itemHeight,
+      };
+    },
+    (index) => gallery.items[index]?.selected ? gallery.selectedScale : 1,
+  );
 }
 
 function itemGroup(
@@ -121,6 +134,7 @@ function itemGroup(
   gallery: GalleryDesignContract,
   content: RenderableBox,
   boxAt: (index: number) => RenderableBox,
+  scaleAt: (index: number) => number,
 ): RenderableNode {
   return {
     id: `${gallery.id}.items`,
@@ -129,21 +143,24 @@ function itemGroup(
     box: content,
     style: { overflow: "visible" },
     children: gallery.items.map((item, index) => {
+      const itemBox = boxAt(index);
       const media = renderAuthoringSlot(
         payload,
         "component.gallery",
-        item.selected ? "component.gallery.selectedMedia.editor" : "component.gallery.media.editor",
+        "component.gallery.media.editor",
         "component.media",
         "component.media.surface.editor",
-        (slotPayload) => mediaComponentToRenderableAt(slotPayload, item.media, boxAt(index)),
+        (slotPayload) => mediaComponentToRenderableAt(slotPayload, item.media, itemBox),
       );
-      return item.selected
+      const itemScale = scaleAt(index);
+      const scaledMedia = Math.abs(itemScale - 1) > 0.000001
         ? {
             ...media,
-            transform: { ...media.transform, scale: gallery.selectedScale },
+            transform: { ...media.transform, scale: itemScale },
             style: { ...media.style, transformOrigin: "center", zIndex: 2 },
           }
         : media;
+      return scaledMedia;
     }),
   };
 }
