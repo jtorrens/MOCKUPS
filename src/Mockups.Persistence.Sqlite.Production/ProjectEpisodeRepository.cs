@@ -70,7 +70,9 @@ internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
         return new ProjectSettings(
             SqliteCommandExecutor.ReadString(reader, 0),
             reader.IsDBNull(1) ? 25 : reader.GetInt32(1),
-            SqliteCommandExecutor.ReadString(reader, 2),
+            ProjectMediaRootContract.Require(
+                SqliteCommandExecutor.ReadString(reader, 2),
+                $"Project '{projectId}'"),
             output,
             ShotManagerReadonlyContract.RequireSettings(
                 new ShotManagerOutputSettings(
@@ -145,6 +147,9 @@ internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
                 $"Project '{projectId}' Production output");
             normalized = fieldId switch
             {
+                "project.mediaRoot" => ProjectMediaRootContract.Require(
+                    value,
+                    $"Project '{projectId}'"),
                 "project.productionCode" => output.TechnicalCode,
                 "project.productionSeasonCode" => output.SeasonCode,
                 "project.episodePrefix" => output.EpisodePrefix,

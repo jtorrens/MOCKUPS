@@ -3,7 +3,6 @@ import { createHash } from "node:crypto";
 import {
   constants,
   copyFileSync,
-  cpSync,
   existsSync,
   mkdirSync,
   readFileSync,
@@ -45,21 +44,13 @@ export function workstationProjectPaths(
 ) {
   return {
     repositoryDatabase: path.join(root, "data", "mockups.sqlite"),
-    repositoryAssets: path.join(root, "assets"),
     workstationDatabase: path.join(workstationRoot, "mockups.sqlite"),
-    workstationAssets: path.join(workstationRoot, "assets"),
     workstationRoot,
   };
 }
 
 function digest(file) {
   return createHash("sha256").update(readFileSync(file)).digest("hex");
-}
-
-function databasesMatch(paths) {
-  return existsSync(paths.repositoryDatabase)
-    && existsSync(paths.workstationDatabase)
-    && digest(paths.repositoryDatabase) === digest(paths.workstationDatabase);
 }
 
 function requireFile(file, label) {
@@ -113,18 +104,6 @@ export function bootstrapWorkstationProject(
       constants.COPYFILE_EXCL,
     );
   }
-  if (!existsSync(paths.workstationAssets)) {
-    cpSync(paths.repositoryAssets, paths.workstationAssets, {
-      recursive: true,
-      force: false,
-      errorOnExist: true,
-    });
-  } else if (createdDatabase || databasesMatch(paths)) {
-    cpSync(paths.repositoryAssets, paths.workstationAssets, {
-      recursive: true,
-      force: true,
-    });
-  }
   if (createdDatabase) {
     validateDatabase(root, paths.workstationDatabase);
     requireDatabaseParity(paths);
@@ -168,12 +147,6 @@ export function snapshotWorkstationProject(
     paths.workstationDatabase,
     paths.repositoryDatabase,
   );
-  if (existsSync(paths.workstationAssets)) {
-    cpSync(paths.workstationAssets, paths.repositoryAssets, {
-      recursive: true,
-      force: true,
-    });
-  }
   validateDatabase(root, paths.repositoryDatabase);
   requireDatabaseParity(paths);
   return paths;

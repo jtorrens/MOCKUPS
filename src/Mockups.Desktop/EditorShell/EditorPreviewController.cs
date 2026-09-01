@@ -3826,6 +3826,7 @@ internal sealed class EditorPreviewController : IDisposable
             PaletteColors = payload.PaletteColors.OrderBy((entry) => entry.Key, StringComparer.Ordinal),
             PaletteNeutralColors = payload.PaletteNeutralColors.OrderBy((entry) => entry.Key, StringComparer.Ordinal),
             payload.ProjectMediaRoot,
+            payload.ProjectMediaFiles,
             payload.IconAssetRoot,
             payload.IconMappingJson,
             payload.FontFaces,

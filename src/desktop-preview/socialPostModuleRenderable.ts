@@ -1,4 +1,4 @@
-import type { RenderableNode } from "../visual/renderable/types.js";
+import type { RenderableBox, RenderableNode } from "../visual/renderable/types.js";
 import { embeddedComponentConfig } from "./componentPreviewDefaults.js";
 import { componentClassToRenderable } from "./componentRenderableBoundary.js";
 import {
@@ -9,7 +9,12 @@ import {
 } from "./componentRenderableCommon.js";
 import { parseObject } from "./componentResolverCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import { renderScale, translateRenderableNode } from "./previewGeometryHelpers.js";
+import {
+  renderableVisualBounds,
+  renderScale,
+  translateRenderableNode,
+} from "./previewGeometryHelpers.js";
+import { projectMediaType } from "./projectMediaDirectorySources.js";
 import type {
   SocialPostComponentSlot,
   SocialPostRow,
@@ -382,23 +387,73 @@ function mediaSectionNode(
     width: Math.max(1, screen.width - horizontalPadding * 2),
     height: mediaHeight,
   };
-  const mediaInputs = {
-    ...contract.mediaInputs,
-    mediaSource: contract.mediaSource,
-    mediaScale: contract.mediaScale,
-    mediaOffset: contract.mediaOffset,
-    viewportSize: `${mediaBox.width / scale}|${mediaHeightDesign}`,
-  };
-  const media = componentNode(
-    previewPayloadInBox(payload, mediaBox),
-    componentBaseConfigs,
-    "media",
-    contract.mediaSlot,
-    mediaInputs,
+  const pages = mediaPagerPages(contract.mediaSources, contract.gallerySelectedIndex);
+  const mediaPages = pages.map(({ index, sourceUri }) => {
+    const pageBox = {
+      ...mediaBox,
+      x: mediaBox.x + (index - contract.gallerySelectedIndex) * mediaBox.width,
+    };
+    const media = componentNode(
+      payload,
+      componentBaseConfigs,
+      "media",
+      contract.mediaSlot,
+      {
+        ...contract.mediaInputs,
+        mediaSource: sourceUri,
+        mediaType: projectMediaType(sourceUri),
+        mediaScale: contract.mediaScale,
+        mediaOffset: contract.mediaOffset,
+        viewportSize: `${mediaBox.width / scale}|${mediaHeightDesign}`,
+      },
+      undefined,
+      pageBox,
+    );
+    return {
+      id: `module.core.socialPost.media.page.${index}`,
+      type: "group" as const,
+      frame: 0,
+      box: pageBox,
+      style: { overflow: "visible" as const },
+      children: [media],
+    };
+  });
+  const visualOverflow = mediaPages.reduce(
+    (maximum, page) => {
+      const pageBox = page.box!;
+      const visual = renderableVisualBounds(page);
+      return {
+        left: Math.max(maximum.left, pageBox.x - visual.x),
+        top: Math.max(maximum.top, pageBox.y - visual.y),
+        right: Math.max(
+          maximum.right,
+          visual.x + visual.width - pageBox.x - pageBox.width,
+        ),
+        bottom: Math.max(
+          maximum.bottom,
+          visual.y + visual.height - pageBox.y - pageBox.height,
+        ),
+      };
+    },
+    { left: 0, top: 0, right: 0, bottom: 0 },
   );
+  const mediaViewportBox = {
+    x: mediaBox.x - visualOverflow.left,
+    y: mediaBox.y - visualOverflow.top,
+    width: mediaBox.width + visualOverflow.left + visualOverflow.right,
+    height: mediaBox.height + visualOverflow.top + visualOverflow.bottom,
+  };
+  const mediaViewport: RenderableNode = {
+    id: "module.core.socialPost.media.viewport",
+    type: "group",
+    frame: 0,
+    box: mediaViewportBox,
+    style: { overflow: "hidden" },
+    children: mediaPages,
+  };
   const separatorHeight = contract.showMediaSeparator ? Math.max(1, scale) : 0;
   const separatorY = mediaBox.y + mediaBox.height + verticalPadding;
-  const children: RenderableNode[] = [media];
+  const children: RenderableNode[] = [mediaViewport];
   if (contract.showMediaSeparator) {
     children.push({
       id: "module.core.socialPost.media.separator",
@@ -426,6 +481,18 @@ function mediaSectionNode(
     style: { overflow: "visible" },
     children,
   };
+}
+
+function mediaPagerPages(sources: string[], selectedIndex: number) {
+  if (sources.length === 0) return [{ index: 0, sourceUri: "" }];
+  const lowerIndex = Math.floor(selectedIndex);
+  const upperIndex = Math.ceil(selectedIndex);
+  return upperIndex === lowerIndex
+    ? [{ index: lowerIndex, sourceUri: sources[lowerIndex]! }]
+    : [
+        { index: lowerIndex, sourceUri: sources[lowerIndex]! },
+        { index: upperIndex, sourceUri: sources[upperIndex]! },
+      ];
 }
 
 function rowsSectionNode(
@@ -645,6 +712,7 @@ function componentNode(
   slot: SocialPostComponentSlot,
   inputs: Record<string, unknown>,
   resolvedConfig?: Record<string, unknown>,
+  assignedBox?: RenderableBox,
 ) {
   return componentClassToRenderable({
     ...payload,
@@ -656,7 +724,7 @@ function componentNode(
       `module.core.socialPost.${componentType}`,
     )),
     designPreviewJson: JSON.stringify(inputs),
-  });
+  }, assignedBox);
 }
 
 function spacingPair(payload: DesignPreviewPayload, value: string) {

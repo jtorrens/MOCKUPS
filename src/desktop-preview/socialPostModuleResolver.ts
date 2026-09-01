@@ -26,7 +26,7 @@ import { optionalObject, requiredObjectArray } from "./previewJsonHelpers.js";
 import { resolveParameterAnimation } from "./parameterAnimationResolver.js";
 import { rootScreenFrame } from "./previewFrameContext.js";
 import { RuntimeOwnerTimeline } from "./runtimeOwnerTimeline.js";
-import { galleryMediaSources } from "./galleryComponentResolver.js";
+import { projectMediaDirectorySources } from "./projectMediaDirectorySources.js";
 import {
   simpleWriteOnFrameVisibleCount,
   textGraphemes,
@@ -67,17 +67,14 @@ export function resolveSocialPostModule(
     "gallerySelectedIndex",
     "module.core.socialPost.gallerySelectedIndex",
   ));
-  const gallerySources = galleryMediaSources(
+  const gallerySources = projectMediaDirectorySources(
     payload.projectMediaFiles ?? [],
     galleryDirectory,
     payload.projectMediaRoot ?? "",
   );
-  const selectedGallerySource = gallerySources[
-    Math.min(
-      Math.round(gallerySelectedIndex),
-      Math.max(0, gallerySources.length - 1),
-    )
-  ] ?? "";
+  const effectiveGallerySelectedIndex = gallerySources.length > 0
+    ? Math.min(gallerySelectedIndex, gallerySources.length - 1)
+    : 0;
   const gallerySlot = requiredTypedSlot(
     socialPost,
     componentBaseConfigs,
@@ -162,13 +159,7 @@ export function resolveSocialPostModule(
       "mediaInputs",
       "module.core.socialPost.mediaInputs",
     )),
-    mediaSource: showGallery
-      ? selectedGallerySource
-      : requiredPossiblyEmptyString(
-          preview,
-          "mediaSource",
-          "module.core.socialPost.mediaSource",
-        ),
+    mediaSources: gallerySources,
     mediaHeight: Math.max(1, requiredNumber(
       preview,
       "mediaHeight",
@@ -193,7 +184,7 @@ export function resolveSocialPostModule(
     gallerySlot,
     galleryMode: galleryModeValue,
     galleryDirectory,
-    gallerySelectedIndex,
+    gallerySelectedIndex: effectiveGallerySelectedIndex,
     galleryScrollRow: Math.max(0, requiredNumber(
       preview,
       "galleryScrollRow",
@@ -247,6 +238,8 @@ function resolveSocialPostModuleFrame(payload: DesignPreviewPayload) {
     "showGallery",
     "gallerySelectedIndex",
     "galleryScrollRow",
+    "mediaScale",
+    "mediaOffset",
     "messageKeyboardVisible",
   ] as const) {
     const resolved = resolveParameterAnimation(
@@ -255,6 +248,7 @@ function resolveSocialPostModuleFrame(payload: DesignPreviewPayload) {
       "",
       timeline.temporalLocalFrame(fieldId, "", screenFrame),
       preview[fieldId],
+      fieldId === "mediaOffset" ? "integerPair" : undefined,
     );
     preview[fieldId] = resolved.value;
   }

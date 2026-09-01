@@ -394,10 +394,12 @@ gate remains valid while the source, contracts, generated artifacts, assets
 and staged parity database are unchanged; do not rerun it merely to reproduce
 the same result.
 
-The Desktop and development scaffolds author only the workstation Project. On
-macOS its database is `~/Library/Application Support/MOCKUPS/mockups.sqlite`
-and its Project assets are the sibling `assets` directory. Before validation or
-commit, close the Desktop and run `npm run desktop:db:snapshot`. The subsequent
+The Desktop and development scaffolds author only the workstation database. On
+macOS it is `~/Library/Application Support/MOCKUPS/mockups.sqlite`. Each
+Project's assets remain at the absolute external `media_root` selected for that
+Project; bootstrap and snapshot never copy them into or out of Application
+Support. Before validation or commit, close the Desktop and run `npm run
+desktop:db:snapshot`. The subsequent
 `npm run test:revision` fails if that database and `data/mockups.sqlite` differ,
 so a revision cannot silently validate a stale snapshot. Bootstrap is explicit
 and create-only; application startup never copies or repairs persistence.

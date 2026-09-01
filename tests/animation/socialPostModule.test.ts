@@ -83,7 +83,6 @@ test("Social Post owns two fixed structure-projected Runtime row sections", () =
   assert.equal(Object.hasOwn(config.socialPost, "forwarding"), false);
   assert.deepEqual(runtime.inputs.map(({ id }) => id), [
     "showMedia",
-    "mediaSource",
     "mediaHeight",
     "mediaScale",
     "mediaOffset",
@@ -121,6 +120,90 @@ test("Social Post owns two fixed structure-projected Runtime row sections", () =
       );
     }
   }
+});
+
+test("Social Post pages its main Media from the Gallery directory and selected index", () => {
+  const source = fixture();
+  source.projectMediaFiles = ["media/a.jpg", "media/b.jpg", "media/c.jpg"];
+  const runtime = JSON.parse(source.designPreviewJson) as Record<string, unknown>;
+  const config = JSON.parse(source.configJson) as {
+    socialPost: {
+      mediaSlot: { overrides: Record<string, unknown> };
+    };
+  };
+  config.socialPost.mediaSlot.overrides = {
+    media: {
+      surfaceSlot: {
+        overrides: { style: { shadowEnabled: true } },
+      },
+    },
+  };
+  source.configJson = JSON.stringify(config);
+  runtime.galleryDirectory = "media";
+  runtime.gallerySelectedIndex = 1.25;
+  source.designPreviewJson = JSON.stringify(runtime);
+  source.runtimeContractJson = JSON.stringify(runtime);
+
+  const contract = resolveSocialPostModule(source);
+  assert.deepEqual(contract.mediaSources, ["media/a.jpg", "media/b.jpg", "media/c.jpg"]);
+  assert.equal(contract.gallerySelectedIndex, 1.25);
+
+  const renderable = socialPostModuleToRenderable(source);
+  const viewport = requiredNode(renderable, "module.core.socialPost.media.viewport");
+  const outgoing = requiredNode(renderable, "module.core.socialPost.media.page.1");
+  const incoming = requiredNode(renderable, "module.core.socialPost.media.page.2");
+  const pageShadow = findNodeBy(outgoing, (node) => node.style?.shadow !== undefined);
+  assert.ok(pageShadow, "Expected the Media page override to enable its Surface shadow.");
+  assert.equal(viewport.style?.overflow, "hidden");
+  assert.ok(viewport.box);
+  assert.ok(outgoing.box);
+  assert.ok(incoming.box);
+  assert.equal(incoming.box.x - outgoing.box.x, outgoing.box.width);
+  const mediaOrigin = outgoing.box.x + outgoing.box.width * 0.25;
+  assert.ok(
+    viewport.box.x < mediaOrigin,
+    JSON.stringify({ viewport: viewport.box, outgoing: outgoing.box, mediaOrigin }),
+  );
+  assert.ok(viewport.box.x + viewport.box.width > mediaOrigin + outgoing.box.width);
+  assert.ok(
+    viewport.box.y < outgoing.box.y,
+    JSON.stringify({ viewport: viewport.box, outgoing: outgoing.box, pageShadow: pageShadow.box }),
+  );
+  assert.ok(
+    viewport.box.y + viewport.box.height > outgoing.box.y + outgoing.box.height,
+    JSON.stringify({ viewport: viewport.box, outgoing: outgoing.box }),
+  );
+});
+
+test("Social Post resolves animated Media scale and offset", () => {
+  const source = fixture();
+  source.localFrame = 5;
+  source.instanceJson = JSON.stringify({
+    animation: {
+      schemaVersion: 2,
+      tracks: [
+        {
+          id: "media-scale",
+          fieldId: "mediaScale",
+          keyframes: [
+            { id: "scale-0", frame: 0, value: 1, interpolation: "hold", enabled: true },
+            { id: "scale-10", frame: 10, value: 2, interpolation: "linear", enabled: true },
+          ],
+        },
+        {
+          id: "media-offset",
+          fieldId: "mediaOffset",
+          keyframes: [
+            { id: "offset-0", frame: 0, value: "0|0", interpolation: "hold", enabled: true },
+            { id: "offset-10", frame: 10, value: "20|-10", interpolation: "linear", enabled: true },
+          ],
+        },
+      ],
+    },
+  });
+  const contract = resolveSocialPostModule(source);
+  assert.equal(contract.mediaScale, 1.5);
+  assert.equal(contract.mediaOffset, "10|-5");
 });
 
 test("Social Post resolves animated text before distributing non-empty row slots", () => {
@@ -320,6 +403,18 @@ function findNodeWithPrefix(root: RenderableNode, prefix: string): RenderableNod
   if (root.id.startsWith(prefix)) return root;
   for (const child of root.children ?? []) {
     const found = findNodeWithPrefix(child, prefix);
+    if (found) return found;
+  }
+  return undefined;
+}
+
+function findNodeBy(
+  root: RenderableNode,
+  predicate: (node: RenderableNode) => boolean,
+): RenderableNode | undefined {
+  if (predicate(root)) return root;
+  for (const child of root.children ?? []) {
+    const found = findNodeBy(child, predicate);
     if (found) return found;
   }
   return undefined;

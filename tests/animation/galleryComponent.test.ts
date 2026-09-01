@@ -20,6 +20,22 @@ test("Carousel moves complete media cards and centers the selected card", () => 
   assert.equal(centerX(selected), centerX(renderable));
   assert.equal(selected.transform?.scale, gallery.selectedScale);
   assert.equal(hasNodeIdPrefix(renderable, "gallery.selection"), false);
+  assert.equal(renderable.style?.overflow, "visible");
+  const surfaceWithShadow = findNode(
+    renderable,
+    (node) => node.style?.shadow !== undefined,
+  );
+  assert.ok(surfaceWithShadow);
+  assert.equal(isDescendant(requiredNode(renderable, "gallery.fade.start"), surfaceWithShadow.id), false);
+  const fadeViewport = requiredNode(renderable, "gallery.fade.start");
+  const items = requiredNode(renderable, "gallery.items");
+  assert.ok(fadeViewport.box);
+  assert.ok(items.box);
+  assert.ok(fadeViewport.box.y < items.box.y);
+  assert.ok(
+    fadeViewport.box.y + fadeViewport.box.height
+      > items.box.y + items.box.height,
+  );
 
   const movingPayload = carouselPayload(1.25);
   const movingGallery = resolveGalleryComponent(movingPayload);
@@ -74,4 +90,20 @@ function centerX(node: RenderableNode) {
 function hasNodeIdPrefix(root: RenderableNode, prefix: string): boolean {
   return root.id.startsWith(prefix)
     || (root.children ?? []).some((child) => hasNodeIdPrefix(child, prefix));
+}
+
+function findNode(
+  root: RenderableNode,
+  predicate: (node: RenderableNode) => boolean,
+): RenderableNode | undefined {
+  if (predicate(root)) return root;
+  for (const child of root.children ?? []) {
+    const found = findNode(child, predicate);
+    if (found) return found;
+  }
+  return undefined;
+}
+
+function isDescendant(root: RenderableNode, id: string): boolean {
+  return root.id === id || (root.children ?? []).some((child) => isDescendant(child, id));
 }

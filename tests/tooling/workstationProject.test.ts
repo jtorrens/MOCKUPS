@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import {
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -44,26 +45,18 @@ test("bootstrap and snapshot keep one operational database aligned", () => {
   try {
     const paths = bootstrapWorkstationProject(repository, workstation, () => {});
     assert.equal(readFileSync(paths.workstationDatabase, "utf8"), "initial");
-    assert.equal(
-      readFileSync(path.join(paths.workstationAssets, "fixture.txt"), "utf8"),
-      "asset",
-    );
+    assert.equal(existsSync(path.join(workstation, "assets")), false);
     assert.equal(requireDatabaseParity(paths).length, 64);
 
     writeFileSync(paths.workstationDatabase, "authored");
-    writeFileSync(path.join(paths.workstationAssets, "fixture.txt"), "authored asset");
-    writeFileSync(path.join(paths.repositoryAssets, "fixture.txt"), "stale asset");
+    writeFileSync(path.join(repository, "assets", "fixture.txt"), "external asset");
     assert.throws(() => requireDatabaseParity(paths), /snapshot differ/u);
     bootstrapWorkstationProject(repository, workstation, () => {});
-    assert.equal(
-      readFileSync(path.join(paths.workstationAssets, "fixture.txt"), "utf8"),
-      "authored asset",
-    );
     snapshotWorkstationProject(repository, workstation, () => {});
     assert.equal(readFileSync(paths.repositoryDatabase, "utf8"), "authored");
     assert.equal(
-      readFileSync(path.join(paths.repositoryAssets, "fixture.txt"), "utf8"),
-      "authored asset",
+      readFileSync(path.join(repository, "assets", "fixture.txt"), "utf8"),
+      "external asset",
     );
     assert.equal(requireDatabaseParity(paths).length, 64);
   } finally {

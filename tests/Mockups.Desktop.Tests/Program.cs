@@ -166,6 +166,7 @@ var tests = new (string Name, Action Run)[]
     ("fixed structural Runtime collections reconcile by stable ids", FixedStructuralRuntimeCollectionsReconcileByStableIds),
     ("Incoming Call exposes exact Avatar and Icon Row Runtime boundaries", IncomingCallExposesExactChildRuntimeBoundaries),
     ("Preview references share Project media path resolution", PreviewReferencesShareProjectMediaPathResolution),
+    ("Project media roots are empty or absolute external paths", ProjectMediaRootsAreExternalAbsolutePaths),
     ("Shot reference picker stores relative and absolute video paths", ShotReferencePickerStoresRelativeAndAbsolutePaths),
     ("Shot reference video source streams exact local byte ranges", ShotReferenceVideoSourceStreamsByteRanges),
     ("Shot reference playback uses a browser-compatible temporary document", ShotReferencePlaybackUsesBrowserCompatibleTemporaryDocument),
@@ -3518,6 +3519,17 @@ static void PreviewReferencesShareProjectMediaPathResolution()
 
     var absolute = Path.GetFullPath(Path.Combine(mediaRoot, "absolute.png"));
     Equal(absolute, projectPaths.ResolveLocalPath(absolute, mediaRoot));
+}
+
+static void ProjectMediaRootsAreExternalAbsolutePaths()
+{
+    var absolute = Path.GetFullPath(Path.Combine(
+        Path.GetTempPath(),
+        "mockups-external-assets"));
+    Equal(absolute, ProjectMediaRootContract.Require(absolute, "Test Project"));
+    Equal("", ProjectMediaRootContract.Require("  ", "Test Project"));
+    Throws<InvalidOperationException>(() =>
+        ProjectMediaRootContract.Require("assets/FOQN_S2", "Test Project"));
 }
 
 static void ShotReferencePickerStoresRelativeAndAbsolutePaths()
@@ -20975,7 +20987,6 @@ static void SocialPostComposesHeaderRows()
     SequenceEqual(
         [
             "showMedia",
-            "mediaSource",
             "mediaHeight",
             "mediaScale",
             "mediaOffset",

@@ -48,6 +48,9 @@ export function galleryComponentToRenderableAt(
   const items = gallery.mode === "carousel"
     ? carouselItems(payload, gallery, content, itemWidth, itemHeight, gap)
     : gridItems(payload, gallery, content, itemWidth, itemHeight, gap);
+  const fadeViewport = gallery.mode === "carousel"
+    ? { x: content.x, y: surface.y, width: content.width, height: surface.height }
+    : { x: surface.x, y: content.y, width: surface.width, height: content.height };
   return {
     id: gallery.id,
     type: "group",
@@ -65,7 +68,7 @@ export function galleryComponentToRenderableAt(
       ),
       edgeFade(
         `${gallery.id}.fade`,
-        content,
+        fadeViewport,
         gallery.mode === "carousel" ? "horizontal" : "vertical",
         gallery.fadeExtent * scale,
         items,

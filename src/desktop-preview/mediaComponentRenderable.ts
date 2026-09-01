@@ -19,8 +19,11 @@ import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js"
 export function mediaComponentToRenderable(
   payload: DesignPreviewPayload,
   media: MediaDesignContract,
+  assignedBox?: RenderableBox,
 ): RenderableNode {
-  const boxes = mediaBoxes(payload, media);
+  const boxes = assignedBox
+    ? mediaBoxesFromInlineBox(payload, media, sizedInlineMediaBox(payload, media, assignedBox))
+    : mediaBoxes(payload, media);
   return mediaComponentToRenderableForBoxes(payload, media, boxes);
 }
 

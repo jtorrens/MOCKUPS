@@ -12,8 +12,8 @@
   "intent": {
     "responsibility": "Own the Social Post header, Media and fixed Message composition.",
     "visualBoundary": "Render a Surface-backed header, padded Media boundary and a flexible Message zone composed from Bubble, Text Input Bar and Keyboard.",
-    "runtimeBehavior": "The Variant owns structure, Component Variants, padding and separators; Runtime owns row content, Media source and height, message text, write-on and composer visibility.",
-    "forwarding": "Message text is explicitly supplied to the selected Bubble, Text Input Bar and Keyboard boundaries.",
+    "runtimeBehavior": "The Variant owns structure, Component Variants, padding and separators; Runtime owns row content, the Gallery directory and selected index, Media framing and height, message text, write-on and composer visibility.",
+    "forwarding": "The selected Gallery index explicitly drives both the Gallery position and the paged Media source; message text is explicitly supplied to the selected Bubble, Text Input Bar and Keyboard boundaries.",
     "temporalOwnership": "The Screen owns message write-on while child Components retain their local rendering behavior.",
     "productionContext": "Resolve only through the exact Production Screen to Shot owner Actor to Theme and Device context."
   },
@@ -493,19 +493,6 @@
         ]
       },
       {
-        "id": "mediaSource",
-        "label": "Source",
-        "jsonKey": "mediaSource",
-        "kind": "mediaFilePath",
-        "valueKind": "MediaFilePath",
-        "defaultValue": "media/image.14b3f25e7af16bda8755ce1c2c1efe6b.jpg",
-        "source": "runtime",
-        "uiOrigin": "embedded",
-        "uiGroupId": "media",
-        "uiGroupLabel": "Media",
-        "uiOrder": 10
-      },
-      {
         "id": "mediaHeight",
         "label": "Height",
         "jsonKey": "mediaHeight",
@@ -535,7 +522,12 @@
         "uiOrigin": "embedded",
         "uiGroupId": "media",
         "uiGroupLabel": "Media",
-        "uiOrder": 30
+        "uiOrder": 30,
+        "animatable": true,
+        "animationInterpolations": [
+          "linear",
+          "hold"
+        ]
       },
       {
         "id": "mediaOffset",
@@ -550,7 +542,12 @@
         "uiOrigin": "embedded",
         "uiGroupId": "media",
         "uiGroupLabel": "Media",
-        "uiOrder": 40
+        "uiOrder": 40,
+        "animatable": true,
+        "animationInterpolations": [
+          "linear",
+          "hold"
+        ]
       },
       {
         "id": "showGallery",
@@ -1787,7 +1784,6 @@
     "galleryDirectory": "media/fotos ep06/",
     "gallerySelectedIndex": 0,
     "galleryScrollRow": 0,
-    "mediaSource": "media/image.14b3f25e7af16bda8755ce1c2c1efe6b.jpg",
     "mediaHeight": 300,
     "mediaScale": 1,
     "mediaOffset": "0|0",

@@ -55,7 +55,7 @@ export interface SocialPostModuleContract {
   mediaSlot: SocialPostComponentSlot;
   mediaPadding: string;
   mediaInputs: Record<string, unknown>;
-  mediaSource: string;
+  mediaSources: string[];
   mediaHeight: number;
   mediaScale: number;
   mediaOffset: string;

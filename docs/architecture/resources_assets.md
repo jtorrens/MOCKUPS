@@ -10,11 +10,13 @@ those current records and resolved through the owning resource service.
 
 There are no cross-Project records and no cross-Project fallback.
 
-Relative asset paths are resolved by the immutable path resolver associated
-with the database context that owns the current desktop session. Preview,
-dictionary controls and resource workflows receive that resolver explicitly;
-they never read or configure a process-global Project root. Two contexts keep
-independent roots even when they coexist in one process.
+Each Project stores either no media root or one absolute external directory
+path in `projects.media_root`. The database location never owns or implies that
+asset location. Asset records store paths relative to that Project media root.
+Preview, dictionary controls and resource workflows receive the session path
+resolver explicitly; they never copy Project assets into application data or
+configure a process-global root. Two contexts keep independent roots even when
+they coexist in one process.
 
 A Shot reference video is not a Preview Split reference. The authoring picker
 stores a portable relative path when the selected supported video is inside

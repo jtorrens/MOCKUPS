@@ -456,7 +456,52 @@ function rasterImageSize(data: Buffer, mimeType: string) {
       offset += length;
     }
   }
+  if (mimeType === "image/heic" || mimeType === "image/heif") {
+    return heifPrimaryImageSize(data);
+  }
   return {};
+}
+
+function heifPrimaryImageSize(data: Buffer) {
+  const propertyType = Buffer.from("ispe");
+  let offset = 0;
+  let largest: { width: number; height: number } | undefined;
+  while ((offset = data.indexOf(propertyType, offset)) >= 0) {
+    const boxStart = offset - 4;
+    if (boxStart >= 0 && offset + 16 <= data.length) {
+      const boxSize = data.readUInt32BE(boxStart);
+      const width = data.readUInt32BE(offset + 8);
+      const height = data.readUInt32BE(offset + 12);
+      if (boxSize >= 20
+          && boxStart + boxSize <= data.length
+          && width > 0
+          && height > 0
+          && (!largest || width * height > largest.width * largest.height)) {
+        largest = { width, height };
+      }
+    }
+    offset += propertyType.length;
+  }
+  if (!largest) return {};
+  return heifQuarterTurn(data) % 2 === 1
+    ? { width: largest.height, height: largest.width }
+    : largest;
+}
+
+function heifQuarterTurn(data: Buffer) {
+  const propertyType = Buffer.from("irot");
+  let offset = 0;
+  while ((offset = data.indexOf(propertyType, offset)) >= 0) {
+    const boxStart = offset - 4;
+    if (boxStart >= 0 && offset + 5 <= data.length) {
+      const boxSize = data.readUInt32BE(boxStart);
+      if (boxSize >= 9 && boxStart + boxSize <= data.length) {
+        return data[offset + 4]! & 0x03;
+      }
+    }
+    offset += propertyType.length;
+  }
+  return 0;
 }
 
 function isJpegStartOfFrame(marker: number) {

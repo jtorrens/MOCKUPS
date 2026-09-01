@@ -370,14 +370,15 @@ dispatch UI effects.
 Presentation reads required after Theme or Production Font commits also cross
 that boundary; repository values are never requested by the visual callback.
 
-The context also creates one immutable `IProjectPathResolver` from its database
-location. The workstation database is
-`~/Library/Application Support/MOCKUPS/mockups.sqlite` on macOS, so its sibling
-`assets` directory is the operational Project asset root. That resolver travels
-explicitly with the desktop session and is the only authority for
-Project-relative media and asset paths. Opening another database creates
-another resolver; it cannot change the root observed by an already open
-context. There is no process-global current Project root.
+The context also creates one immutable `IProjectPathResolver`. The workstation
+database is `~/Library/Application Support/MOCKUPS/mockups.sqlite` on macOS,
+while each Project's optional `media_root` is an absolute external directory
+that may live anywhere available to that workstation. Application data never
+owns, copies or synchronizes Project assets. The resolver travels explicitly
+with the desktop session and resolves media-relative paths only against the
+owning Project's absolute media root. Opening another database creates another
+resolver; it cannot change the root observed by an already open context. There
+is no process-global current Project root.
 
 Repositories return current validated records. Interpretation, Variant
 selection, forwarding, animation, context resolution, Preview preparation and
@@ -579,9 +580,10 @@ same revision:
 `data/mockups.sqlite` is a versioned snapshot, never a second authoring
 database. Desktop startup and development scaffolding use the workstation
 database under the operating system application-data root. `npm run
-desktop:workstation:bootstrap` explicitly creates that operational Project from
-the repository snapshot only when it does not yet exist; startup itself remains
-read-only. After authoring, with MOCKUPS closed, `npm run desktop:db:snapshot`
+desktop:workstation:bootstrap` explicitly creates that operational database from
+the repository snapshot only when it does not yet exist; it never copies the
+external Project asset roots, and startup itself remains read-only. After
+authoring, with MOCKUPS closed, `npm run desktop:db:snapshot`
 atomically replaces the repository snapshot from the workstation database.
 `npm run desktop:db:parity` compares exact bytes and fails on divergence, and
 the revision gate performs the same check whenever a workstation database
@@ -596,6 +598,6 @@ the staged parity database. The copy path is supplied explicitly to every
 database-backed test, scaffold verifier and architecture check. Validation
 never swaps the worktree database, so an active workstation database may retain
 its local authoring state without affecting or being overwritten by the gate.
-The disposable workspace links the repository asset root at the same relative
-boundary, preserving strict Project font, icon and media resolution without
-copying or mutating those assets.
+The disposable workspace receives explicit Project asset roots, preserving
+strict Project font, icon and media resolution without copying or mutating
+those assets.

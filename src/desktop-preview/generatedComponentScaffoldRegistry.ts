@@ -104,8 +104,8 @@ export const generatedComponentScaffoldFactories = {
     listComponentToRenderable(payload, resolveListComponent(payload), assignedBox, renderChild),
   listItem: (payload, assignedBox) =>
     listItemComponentToRenderable(payload, resolveListItemComponent(payload), assignedBox),
-  media: (payload) =>
-    mediaComponentToRenderable(payload, resolveMediaComponent(payload)),
+  media: (payload, assignedBox) =>
+    mediaComponentToRenderable(payload, resolveMediaComponent(payload), assignedBox),
   navigation_bar: (payload) =>
     navigationBarComponentToRenderable(payload, resolveNavigationBarComponent(payload)),
   notification: (payload, assignedBox) =>

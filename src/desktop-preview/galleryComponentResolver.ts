@@ -1,4 +1,3 @@
-import path from "node:path";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { embeddedComponentConfig } from "./componentPreviewDefaults.js";
 import {
@@ -16,6 +15,10 @@ import type {
   GallerySizeMode,
 } from "./galleryComponentContract.js";
 import { resolveMediaComponentFromRecords } from "./mediaComponentResolver.js";
+import {
+  projectMediaDirectorySources,
+  projectMediaType,
+} from "./projectMediaDirectorySources.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
 
 export function resolveGalleryComponent(payload: DesignPreviewPayload): GalleryDesignContract {
@@ -42,7 +45,7 @@ export function resolveGalleryComponent(payload: DesignPreviewPayload): GalleryD
     "component.gallery.selectedIndex",
   ));
   const scrollRow = Math.max(0, requiredNumber(inputs, "scrollRow", "component.gallery.scrollRow"));
-  const sources = galleryMediaSources(
+  const sources = projectMediaDirectorySources(
     payload.projectMediaFiles ?? [],
     requiredString(inputs, "mediaDirectory", "component.gallery.mediaDirectory"),
     payload.projectMediaRoot ?? "",
@@ -112,14 +115,6 @@ export function resolveGalleryComponent(payload: DesignPreviewPayload): GalleryD
   };
 }
 
-export function galleryMediaSources(
-  files: string[],
-  directoryValue: string,
-  mediaRoot: string,
-) {
-  return directorySources(files, normalizeDirectory(directoryValue, mediaRoot));
-}
-
 function gallerySizeMode(value: string, axis: string): GallerySizeMode {
   if (value === "fixed" || value === "fill") return value;
   throw new Error(`Unsupported Gallery ${axis} mode ${value}`);
@@ -138,31 +133,14 @@ function positiveRatioPart(value: string, label: string) {
   return result;
 }
 
-function normalizeDirectory(value: string, mediaRoot: string) {
-  const trimmed = value.trim();
-  const relative = path.isAbsolute(trimmed) && mediaRoot
-    ? path.relative(mediaRoot, trimmed)
-    : trimmed;
-  return relative.replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
-}
-
-function directorySources(files: string[], directory: string) {
-  const prefix = directory ? `${directory}/` : "";
-  return files
-    .map((file) => file.replace(/\\/g, "/").replace(/^\/+/, ""))
-    .filter((file) => file.startsWith(prefix) && !file.slice(prefix.length).includes("/"))
-    .sort((left, right) => left.localeCompare(right, undefined, { numeric: true, sensitivity: "base" }));
-}
-
 function stableMediaId(sourceUri: string) {
   return sourceUri.replace(/[^a-zA-Z0-9_-]+/g, "_");
 }
 
 function mediaInputs(sourceUri: string, width: number, height: number) {
-  const mediaType = /\.(mp4|mov|m4v|webm)$/i.test(sourceUri) ? "video" : "image";
   return {
     mediaSource: sourceUri,
-    mediaType,
+    mediaType: projectMediaType(sourceUri),
     viewportSize: `${Math.max(1, Math.round(width))}|${Math.max(1, Math.round(height))}`,
     mediaScale: 1,
     mediaOffset: "0|0",

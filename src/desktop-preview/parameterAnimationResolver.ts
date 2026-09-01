@@ -19,6 +19,7 @@ export function resolveParameterAnimation(
   targetId: string,
   frame: number,
   baseValue: unknown,
+  valueKind?: "integerPair" | "decimalPair",
 ): ResolvedParameterAnimation {
   validateTransientAnimationDocument(animation);
   const track = optionalObjectArray(animation, "tracks", "runtime owner animation")
@@ -87,12 +88,42 @@ export function resolveParameterAnimation(
       previousValue: destinationIndex > 1 ? keyframes[destinationIndex - 2]!.value : baseValue,
     };
   }
+  if ((destination.interpolation === "linear" || destination.interpolation === "easeInOut")
+      && valueKind
+      && typeof source.value === "string"
+      && typeof destination.value === "string") {
+    const sourcePair = numericPair(source.value);
+    const destinationPair = numericPair(destination.value);
+    if (sourcePair && destinationPair) {
+      const p = destination.interpolation === "easeInOut"
+        ? progress * progress * (3 - 2 * progress)
+        : progress;
+      const interpolated = sourcePair.map((value, index) =>
+        value + (destinationPair[index]! - value) * p
+      );
+      return {
+        value: interpolated
+          .map((value) => valueKind === "integerPair" ? Math.round(value) : value)
+          .join("|"),
+        animated: true,
+        sourceKeyframeFrame: source.frame,
+        previousValue: destinationIndex > 1 ? keyframes[destinationIndex - 2]!.value : baseValue,
+      };
+    }
+  }
   return {
     value: source.value,
     animated: true,
     sourceKeyframeFrame: source.frame,
     previousValue: destinationIndex > 1 ? keyframes[destinationIndex - 2]!.value : baseValue,
   };
+}
+
+function numericPair(value: string): [number, number] | undefined {
+  const parts = value.split("|", 2).map((part) => Number(part.replace(",", ".")));
+  return parts.length === 2 && parts.every(Number.isFinite)
+    ? [parts[0]!, parts[1]!]
+    : undefined;
 }
 
 function rewriteText(source: string, destination: string, progress: number) {

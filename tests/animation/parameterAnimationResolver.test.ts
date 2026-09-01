@@ -67,6 +67,18 @@ test("ease-in-out uses smoothstep and discrete values hold", () => {
   assert.equal(resolveParameterAnimation(discrete, "value", "", 4, false).value, true);
 });
 
+test("declared numeric pairs interpolate without inferring string semantics", () => {
+  const data = animation([
+    { id: "k0", frame: 0, value: "0|10", interpolation: "hold" },
+    { id: "k1", frame: 4, value: "10|-10", interpolation: "linear" },
+  ]);
+  assert.equal(
+    resolveParameterAnimation(data, "value", "", 2, "0|0", "integerPair").value,
+    "5|0",
+  );
+  assert.equal(resolveParameterAnimation(data, "value", "", 2, "base").value, "0|10");
+});
+
 test("write-on rewrites by grapheme for deletion and insertion", () => {
   const data = animation([
     { id: "k0", frame: 0, value: "A👨‍👩‍👧‍👦é", interpolation: "hold" },

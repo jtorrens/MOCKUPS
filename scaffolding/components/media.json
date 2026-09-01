@@ -30,7 +30,7 @@
     "contractExport": "MediaDesignContract",
     "resolverExport": "resolveMediaComponent",
     "renderableExport": "mediaComponentToRenderable",
-    "registryMode": "simple",
+    "registryMode": "assignedBox",
     "focusedTest": "tests/animation/atomicTemporalComponents.test.ts",
     "configContractExport": null
   },
