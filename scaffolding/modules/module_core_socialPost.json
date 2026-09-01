@@ -28,6 +28,7 @@
       "button",
       "label",
       "media",
+      "gallery",
       "bubble",
       "textInputBar",
       "keyboard",
@@ -237,6 +238,16 @@
         "motionElapsedMs": 0
       },
       "showMediaSeparator": true,
+      "gallerySlot": {
+        "variantReference": "component_project_foqn_s2_gallery::variant::default",
+        "overrides": {
+          "gallery": {
+            "widthMode": "fill",
+            "heightMode": "fill"
+          }
+        }
+      },
+      "messageMinHeight": 160,
       "messageBubbleSlot": {
         "variantReference": "component_project_foqn_s2_bubble::variant::default_copy",
         "overrides": {
@@ -465,6 +476,23 @@
     },
     "inputs": [
       {
+        "id": "showMedia",
+        "label": "Show media",
+        "jsonKey": "showMedia",
+        "kind": "boolean",
+        "valueKind": "Boolean",
+        "defaultValue": "true",
+        "source": "runtime",
+        "uiOrigin": "self",
+        "uiGroupId": "media",
+        "uiGroupLabel": "Media",
+        "uiOrder": 5,
+        "animatable": true,
+        "animationInterpolations": [
+          "hold"
+        ]
+      },
+      {
         "id": "mediaSource",
         "label": "Source",
         "jsonKey": "mediaSource",
@@ -523,6 +551,78 @@
         "uiGroupId": "media",
         "uiGroupLabel": "Media",
         "uiOrder": 40
+      },
+      {
+        "id": "showGallery",
+        "label": "Show gallery",
+        "jsonKey": "showGallery",
+        "kind": "boolean",
+        "valueKind": "Boolean",
+        "defaultValue": "false",
+        "source": "runtime",
+        "uiOrigin": "self",
+        "uiGroupId": "gallery",
+        "uiGroupLabel": "Gallery",
+        "uiOrder": 10,
+        "animatable": true,
+        "animationInterpolations": [
+          "hold"
+        ]
+      },
+      {
+        "id": "galleryDirectory",
+        "label": "Directory",
+        "jsonKey": "galleryDirectory",
+        "kind": "mediaDirectoryPath",
+        "valueKind": "MediaDirectoryPath",
+        "defaultValue": "media/fotos ep06/",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "gallery",
+        "uiGroupLabel": "Gallery",
+        "uiOrder": 20
+      },
+      {
+        "id": "gallerySelectedIndex",
+        "label": "Selected photo",
+        "jsonKey": "gallerySelectedIndex",
+        "kind": "number",
+        "valueKind": "Decimal",
+        "defaultValue": "0",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 0.1,
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "gallery",
+        "uiGroupLabel": "Gallery",
+        "uiOrder": 30,
+        "animatable": true,
+        "animationInterpolations": [
+          "linear",
+          "hold"
+        ]
+      },
+      {
+        "id": "galleryScrollRow",
+        "label": "Visible row",
+        "jsonKey": "galleryScrollRow",
+        "kind": "number",
+        "valueKind": "Decimal",
+        "defaultValue": "0",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 0.1,
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "gallery",
+        "uiGroupLabel": "Gallery",
+        "uiOrder": 40,
+        "animatable": true,
+        "animationInterpolations": [
+          "linear",
+          "hold"
+        ]
       },
       {
         "id": "messageText",
@@ -616,7 +716,11 @@
         "uiOrigin": "embedded",
         "uiGroupId": "messageComposer",
         "uiGroupLabel": "Composer",
-        "uiOrder": 40
+        "uiOrder": 40,
+        "animatable": true,
+        "animationInterpolations": [
+          "hold"
+        ]
       },
       {
         "id": "messageBubbleRevealMode",
@@ -1678,6 +1782,11 @@
         }
       }
     ],
+    "showMedia": true,
+    "showGallery": false,
+    "galleryDirectory": "media/fotos ep06/",
+    "gallerySelectedIndex": 0,
+    "galleryScrollRow": 0,
     "mediaSource": "media/image.14b3f25e7af16bda8755ce1c2c1efe6b.jpg",
     "mediaHeight": 300,
     "mediaScale": 1,
@@ -1976,6 +2085,16 @@
           "motionElapsedMs": 0
         },
         "showMediaSeparator": true,
+        "gallerySlot": {
+          "variantReference": "component_project_foqn_s2_gallery::variant::default",
+          "overrides": {
+            "gallery": {
+              "widthMode": "fill",
+              "heightMode": "fill"
+            }
+          }
+        },
+        "messageMinHeight": 160,
         "messageBubbleSlot": {
           "variantReference": "component_project_foqn_s2_bubble::variant::default_copy",
           "overrides": {
@@ -2577,6 +2696,36 @@
       "structuredCollection": null
     },
     {
+      "id": "module.core.socialPost.gallery",
+      "label": "Gallery",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "socialPost",
+        "gallerySlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_gallery::variant::default\",\"overrides\":{\"gallery\":{\"widthMode\":\"fill\",\"heightMode\":\"fill\"}}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "gallery",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "gallery",
+        "label": "Gallery",
+        "recordClassId": "component.gallery"
+      },
+      "structuredCollection": null
+    },
+    {
       "id": "module.core.socialPost.showMediaSeparator",
       "label": "Show separator",
       "valueKind": "Boolean",
@@ -2601,6 +2750,38 @@
       "unit": "",
       "embeddedSlot": null,
       "structuredCollection": null
+    },
+    {
+      "id": "module.core.socialPost.messageMinHeight",
+      "label": "Minimum height",
+      "valueKind": "Integer",
+      "jsonPath": [
+        "socialPost",
+        "messageMinHeight"
+      ],
+      "defaultValue": "160",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": {
+        "minimum": 1,
+        "maximum": 4096,
+        "increment": 1,
+        "decimalPlaces": 0,
+        "useSlider": false
+      },
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "px",
+      "embeddedSlot": null
     },
     {
       "id": "module.core.socialPost.messageBubble",
@@ -4015,11 +4196,36 @@
         ]
       },
       {
+        "id": "gallery",
+        "label": "Gallery",
+        "subtitle": "Optional Gallery component",
+        "icon": "media",
+        "order": 40,
+        "visible": true,
+        "defaultOpen": true,
+        "groups": [
+          {
+            "id": "gallery",
+            "label": "Gallery",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "module.core.socialPost.gallery",
+                "order": 10,
+                "visible": true
+              }
+            ],
+            "presentation": "separatedSections"
+          }
+        ]
+      },
+      {
         "id": "message",
         "label": "Message",
         "subtitle": "Bubble, composer and section spacing",
         "icon": "message",
-        "order": 40,
+        "order": 50,
         "visible": true,
         "defaultOpen": true,
         "groups": [
@@ -4032,6 +4238,11 @@
               {
                 "id": "module.core.socialPost.messageBubble",
                 "order": 10,
+                "visible": true
+              },
+              {
+                "id": "module.core.socialPost.messageMinHeight",
+                "order": 15,
                 "visible": true
               },
               {
@@ -4064,7 +4275,7 @@
         "label": "Status Bar",
         "subtitle": "Theme status component",
         "icon": "status",
-        "order": 60,
+        "order": 70,
         "visible": true,
         "defaultOpen": false,
         "groups": [
@@ -4088,7 +4299,7 @@
         "label": "Navigation Bar",
         "subtitle": "Theme navigation component",
         "icon": "navigation",
-        "order": 70,
+        "order": 80,
         "visible": true,
         "defaultOpen": false,
         "groups": [
@@ -4112,7 +4323,7 @@
         "label": "Footer",
         "subtitle": "Two rows · five slots each",
         "icon": "footer",
-        "order": 50,
+        "order": 60,
         "visible": true,
         "defaultOpen": true,
         "groups": [

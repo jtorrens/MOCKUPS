@@ -25,16 +25,22 @@ export function galleryComponentToRenderableAt(
   available: RenderableBox,
 ): RenderableNode {
   const scale = renderScale(payload);
+  const containerPaddingX = numberToken(payload, gallery.containerPaddingXToken) * scale;
+  const containerPaddingY = numberToken(payload, gallery.containerPaddingYToken) * scale;
+  const paddingX = numberToken(payload, gallery.paddingXToken) * scale;
+  const paddingY = numberToken(payload, gallery.paddingYToken) * scale;
+  const carouselHeight = gallery.itemHeight * gallery.selectedScale * scale
+    + (containerPaddingY + paddingY) * 2;
   const root = sizedBox(
     available,
     gallery.widthMode === "fill" ? available.width : gallery.width * scale,
-    gallery.heightMode === "fill" ? available.height : gallery.height * scale,
+    gallery.mode === "carousel"
+      ? carouselHeight
+      : gallery.heightMode === "fill"
+        ? available.height
+        : gallery.height * scale,
   );
-  const containerPaddingX = numberToken(payload, gallery.containerPaddingXToken) * scale;
-  const containerPaddingY = numberToken(payload, gallery.containerPaddingYToken) * scale;
   const surface = insetBox(root, containerPaddingX, containerPaddingY);
-  const paddingX = numberToken(payload, gallery.paddingXToken) * scale;
-  const paddingY = numberToken(payload, gallery.paddingYToken) * scale;
   const content = insetBox(surface, paddingX, paddingY);
   const gap = numberToken(payload, gallery.gapToken) * scale;
   const itemWidth = gallery.itemWidth * scale;

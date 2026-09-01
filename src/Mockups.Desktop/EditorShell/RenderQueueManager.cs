@@ -599,8 +599,9 @@ internal sealed class RenderQueueManager : IDisposable
                     "The render queue contains an incomplete job.");
             }
             job.Plan.Validate();
-            RenderOutputPathSecurity.RequireOutputTarget(job.Plan.Output);
-            ValidateSummary(job.Summary);
+            RenderOutputPathSecurity.RequireOutputTargetContract(
+                job.Plan.Output);
+            ValidateSummaryContract(job.Summary);
             if (!job.Plan.Output.OutputPath.Equals(
                     job.Summary.Output.OutputPath,
                     PathComparison())
@@ -651,7 +652,7 @@ internal sealed class RenderQueueManager : IDisposable
             var summary = summaries[index];
             plan.Validate();
             RenderOutputPathSecurity.RequireOutputTarget(plan.Output);
-            ValidateSummary(summary);
+            ValidateLiveSummary(summary);
             if (plan.ProjectId != summary.Context.ProjectId
                 || plan.ShotId != summary.Context.ShotId
                 || plan.RequestedAppearance != summary.Appearance
@@ -665,7 +666,7 @@ internal sealed class RenderQueueManager : IDisposable
         }
     }
 
-    private static void ValidateSummary(RenderJobSummary summary)
+    private static void ValidateSummaryContract(RenderJobSummary summary)
     {
         if (string.IsNullOrWhiteSpace(summary.Context.ProjectId)
             || string.IsNullOrWhiteSpace(summary.Context.ShotId)
@@ -680,6 +681,12 @@ internal sealed class RenderQueueManager : IDisposable
             throw new InvalidOperationException("A render summary is incomplete.");
         }
         _ = RenderOutputModes.Require(summary.Output.OutputModeId);
+        RenderOutputPathSecurity.RequireOutputTargetContract(summary.Output);
+    }
+
+    private static void ValidateLiveSummary(RenderJobSummary summary)
+    {
+        ValidateSummaryContract(summary);
         RenderOutputPathSecurity.RequireOutputTarget(summary.Output);
     }
 

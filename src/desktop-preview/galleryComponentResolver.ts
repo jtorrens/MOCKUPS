@@ -36,13 +36,17 @@ export function resolveGalleryComponent(payload: DesignPreviewPayload): GalleryD
     "component.gallery.containerPadding",
   );
   const padding = requiredStringPair(gallery, "padding", "component.gallery.padding");
-  const selectedIndex = Math.max(0, Math.round(requiredNumber(inputs, "selectedIndex", "component.gallery.selectedIndex")));
+  const selectedIndex = Math.max(0, requiredNumber(
+    inputs,
+    "selectedIndex",
+    "component.gallery.selectedIndex",
+  ));
   const scrollRow = Math.max(0, requiredNumber(inputs, "scrollRow", "component.gallery.scrollRow"));
-  const directory = normalizeDirectory(
+  const sources = galleryMediaSources(
+    payload.projectMediaFiles ?? [],
     requiredString(inputs, "mediaDirectory", "component.gallery.mediaDirectory"),
     payload.projectMediaRoot ?? "",
   );
-  const sources = directorySources(payload.projectMediaFiles ?? [], directory);
   const surfaceConfig = embeddedComponentConfig(
     baseConfigs,
     requiredRecord(gallery, "surfaceSlot", "component.gallery"),
@@ -61,7 +65,10 @@ export function resolveGalleryComponent(payload: DesignPreviewPayload): GalleryD
     "media",
     "component.gallery.selectedMediaSlot",
   );
-  const effectiveSelectedIndex = Math.min(selectedIndex, Math.max(0, sources.length - 1));
+  const effectiveSelectedIndex = Math.min(
+    Math.round(selectedIndex),
+    Math.max(0, sources.length - 1),
+  );
   const items = sources.map((sourceUri, index): GalleryItemContract => {
     const selected = index === effectiveSelectedIndex;
     const id = stableMediaId(sourceUri);
@@ -109,6 +116,14 @@ export function resolveGalleryComponent(payload: DesignPreviewPayload): GalleryD
     ),
     items,
   };
+}
+
+export function galleryMediaSources(
+  files: string[],
+  directoryValue: string,
+  mediaRoot: string,
+) {
+  return directorySources(files, normalizeDirectory(directoryValue, mediaRoot));
 }
 
 function gallerySizeMode(value: string, axis: string): GallerySizeMode {

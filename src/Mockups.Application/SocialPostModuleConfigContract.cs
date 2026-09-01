@@ -35,6 +35,8 @@ internal static class SocialPostModuleConfigContract
                 "mediaPadding",
                 "mediaInputs",
                 "showMediaSeparator",
+                "gallerySlot",
+                "messageMinHeight",
                 "messageBubbleSlot",
                 "messageTextInputBarSlot",
                 "messageKeyboardSlot",
@@ -77,6 +79,16 @@ internal static class SocialPostModuleConfigContract
         ValidateMediaInputs(
             JsonPath.RequiredObject(socialPost, "mediaInputs", owner),
             $"{owner}.mediaInputs");
+        ValidateSlot(socialPost, "gallerySlot", owner);
+        var messageMinHeight = JsonPath.RequiredNumber(
+            socialPost,
+            "messageMinHeight",
+            owner);
+        if (messageMinHeight <= 0)
+        {
+            throw new InvalidOperationException(
+                $"{owner}.messageMinHeight must be positive.");
+        }
         ValidateSlot(socialPost, "messageBubbleSlot", owner);
         ValidateSlot(socialPost, "messageTextInputBarSlot", owner);
         ValidateSlot(socialPost, "messageKeyboardSlot", owner);

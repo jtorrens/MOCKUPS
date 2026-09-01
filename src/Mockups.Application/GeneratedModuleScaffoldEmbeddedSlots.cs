@@ -109,6 +109,12 @@ public static class GeneratedModuleScaffoldEmbeddedSlots
             "component.surface",
             ["socialPost", "footerSurfaceSlot"]),
         new(
+            "module.core.socialPost.gallery",
+            "gallery",
+            "Gallery",
+            "component.gallery",
+            ["socialPost", "gallerySlot"]),
+        new(
             "module.core.socialPost.headerSurface",
             "surface",
             "Header surface",

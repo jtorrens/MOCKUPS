@@ -428,6 +428,7 @@
         "button",
         "label",
         "media",
+        "gallery",
         "bubble",
         "textInputBar",
         "keyboard",

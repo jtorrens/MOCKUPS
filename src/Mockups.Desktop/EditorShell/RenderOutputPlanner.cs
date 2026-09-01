@@ -199,30 +199,13 @@ internal static class RenderOutputPathSecurity
         string relativeDirectory,
         bool createMissing)
     {
-        if (!Path.IsPathFullyQualified(rootPath))
-        {
-            throw new InvalidOperationException(
-                "The local Production Output root is unavailable.");
-        }
+        var declaredDirectory = ResolveDeclaredDirectory(
+            rootPath,
+            relativeDirectory);
         var root = Path.GetFullPath(rootPath);
         RequireRealDirectory(root, "Production Output root");
-        if (string.IsNullOrWhiteSpace(relativeDirectory)
-            || Path.IsPathFullyQualified(relativeDirectory)
-            || relativeDirectory.Contains('\\', StringComparison.Ordinal))
-        {
-            throw new InvalidOperationException(
-                "The Production Output route is not portable.");
-        }
-        var segments = relativeDirectory.Split('/');
-        if (segments.Any((segment) =>
-            string.IsNullOrWhiteSpace(segment)
-            || segment is "." or ".."))
-        {
-            throw new InvalidOperationException(
-                "The Production Output route is unsafe.");
-        }
         var current = root;
-        foreach (var segment in segments)
+        foreach (var segment in relativeDirectory.Split('/'))
         {
             current = Path.Combine(current, segment);
             if (Directory.Exists(current))
@@ -245,6 +228,35 @@ internal static class RenderOutputPathSecurity
                     "Production Output route");
             }
         }
+        return declaredDirectory;
+    }
+
+    private static string ResolveDeclaredDirectory(
+        string rootPath,
+        string relativeDirectory)
+    {
+        if (!Path.IsPathFullyQualified(rootPath))
+        {
+            throw new InvalidOperationException(
+                "The local Production Output root is unavailable.");
+        }
+        var root = Path.GetFullPath(rootPath);
+        if (string.IsNullOrWhiteSpace(relativeDirectory)
+            || Path.IsPathFullyQualified(relativeDirectory)
+            || relativeDirectory.Contains('\\', StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "The Production Output route is not portable.");
+        }
+        var segments = relativeDirectory.Split('/');
+        if (segments.Any((segment) =>
+            string.IsNullOrWhiteSpace(segment)
+            || segment is "." or ".."))
+        {
+            throw new InvalidOperationException(
+                "The Production Output route is unsafe.");
+        }
+        var current = segments.Aggregate(root, Path.Combine);
         var relative = Path.GetRelativePath(root, current);
         if (Path.IsPathFullyQualified(relative)
             || relative.Equals("..", StringComparison.Ordinal)
@@ -258,11 +270,39 @@ internal static class RenderOutputPathSecurity
         return current;
     }
 
+    public static void RequireOutputTargetContract(RenderOutputTarget output)
+    {
+        var directory = ResolveDeclaredDirectory(
+            output.RootPath,
+            output.RelativeDirectory);
+        _ = RequireMatchingOutputPath(output, directory);
+    }
+
     public static void RequireOutputTarget(RenderOutputTarget output)
     {
         var directory = RequirePlannedDirectory(
             output.RootPath,
             output.RelativeDirectory);
+        var (expected, mode) = RequireMatchingOutputPath(output, directory);
+        if ((mode.Kind == "mov" && Directory.Exists(expected))
+            || (mode.Kind != "mov" && File.Exists(expected)))
+        {
+            throw new IOException(
+                "The queued output has the wrong existing filesystem type.");
+        }
+        if ((File.Exists(expected) || Directory.Exists(expected))
+            && !output.OverwriteExisting)
+        {
+            throw new IOException(
+                "The queued output already exists and was not approved for replacement.");
+        }
+    }
+
+    private static (string Expected, RenderOutputModeDefinition Mode)
+        RequireMatchingOutputPath(
+            RenderOutputTarget output,
+            string directory)
+    {
         var expectedStem = RenderOutputPlanner.FileStem(
             output.BaseName,
             output.Appearance,
@@ -284,18 +324,7 @@ internal static class RenderOutputPathSecurity
             throw new InvalidOperationException(
                 "The queued output path does not match its frozen Production Output route and MOCKUPS name.");
         }
-        if ((mode.Kind == "mov" && Directory.Exists(expected))
-            || (mode.Kind != "mov" && File.Exists(expected)))
-        {
-            throw new IOException(
-                "The queued output has the wrong existing filesystem type.");
-        }
-        if ((File.Exists(expected) || Directory.Exists(expected))
-            && !output.OverwriteExisting)
-        {
-            throw new IOException(
-                "The queued output already exists and was not approved for replacement.");
-        }
+        return (expected, mode);
     }
 
     private static void RequireRealDirectory(string path, string label)

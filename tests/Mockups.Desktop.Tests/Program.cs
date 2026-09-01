@@ -15849,7 +15849,10 @@ static void PreviewPayloadRejectsIncompleteProductionContext()
 static void ProductionPayloadPreservesActorAndAnimation()
 {
     var sourcePath = ParityDatabasePath();
-    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-production-payload-owner-{Guid.NewGuid():N}.sqlite");
+    var temporary = Path.Combine(
+        Path.GetDirectoryName(sourcePath)
+            ?? throw new InvalidOperationException("Parity database has no parent directory."),
+        $".mockups-production-payload-owner-{Guid.NewGuid():N}.sqlite");
     File.Copy(sourcePath, temporary, overwrite: true);
     try
     {
@@ -20970,10 +20973,15 @@ static void SocialPostComposesHeaderRows()
     var inputs = RuntimeInputDefinitionReader.ReadInputs(preview, config);
     SequenceEqual(
         [
+            "showMedia",
             "mediaSource",
             "mediaHeight",
             "mediaScale",
             "mediaOffset",
+            "showGallery",
+            "galleryDirectory",
+            "gallerySelectedIndex",
+            "galleryScrollRow",
             "messageText",
             "messageWriteOnTiming",
             "messageTextInputVisible",

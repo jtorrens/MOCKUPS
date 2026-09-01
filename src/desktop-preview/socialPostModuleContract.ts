@@ -51,6 +51,7 @@ export interface SocialPostModuleContract {
   headerSurfaceSlot: SocialPostComponentSlot;
   rowGapToken: string;
   rows: [SocialPostRow, SocialPostRow];
+  showMedia: boolean;
   mediaSlot: SocialPostComponentSlot;
   mediaPadding: string;
   mediaInputs: Record<string, unknown>;
@@ -59,6 +60,13 @@ export interface SocialPostModuleContract {
   mediaScale: number;
   mediaOffset: string;
   showMediaSeparator: boolean;
+  showGallery: boolean;
+  gallerySlot: SocialPostComponentSlot;
+  galleryMode: "carousel" | "gallery";
+  galleryDirectory: string;
+  gallerySelectedIndex: number;
+  galleryScrollRow: number;
+  messageMinHeight: number;
   message: SocialPostMessageContract;
   footerHeight: number;
   footerSurfaceSlot: SocialPostComponentSlot;

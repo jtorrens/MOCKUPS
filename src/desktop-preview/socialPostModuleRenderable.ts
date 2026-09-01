@@ -33,6 +33,12 @@ interface RenderedRow {
   height: number;
 }
 
+interface SocialPostComposerLayout {
+  top: number;
+  keyboard?: RenderableNode;
+  textInput?: RenderableNode;
+}
+
 export function socialPostModuleToRenderable(
   payload: DesignPreviewPayload,
 ): RenderableNode {
@@ -65,12 +71,7 @@ export function socialPostModuleToRenderable(
         contentEdge: contentY,
       })
     : undefined;
-  const media = mediaSectionNode(
-    payload,
-    componentBaseConfigs,
-    contract,
-    header?.box ? header.box.y + header.box.height : contentY,
-  );
+  const bodyTop = header?.box ? header.box.y + header.box.height : contentY;
   const contentBottom = screen.y + screen.height - (navigation?.box?.height ?? 0);
   const footer = rowsSectionNode(payload, componentBaseConfigs, {
     section: "footer",
@@ -81,21 +82,97 @@ export function socialPostModuleToRenderable(
     edge: "bottom",
     contentEdge: contentBottom,
   });
+  const composer = composerLayoutNode(
+    payload,
+    componentBaseConfigs,
+    contract,
+    contentBottom,
+  );
+  const bodyBottom = contract.message.keyboardVisible || contract.message.textInputVisible
+    ? composer.top
+    : footer.box?.y ?? contentBottom;
+  const scale = renderScale(payload);
+  const bodyHeight = Math.max(0, bodyBottom - bodyTop);
+  const minimumMessageHeight = Math.min(
+    bodyHeight,
+    contract.messageMinHeight * scale,
+  );
+  const sectionCapacity = Math.max(0, bodyHeight - minimumMessageHeight);
+  const desiredMedia = contract.showMedia
+    ? mediaSectionNode(
+        payload,
+        componentBaseConfigs,
+        contract,
+        bodyTop,
+        contract.mediaHeight,
+      )
+    : undefined;
+  const desiredMediaHeight = desiredMedia?.box?.height ?? 0;
+  const provisionalGallery = contract.showGallery
+    ? gallerySectionNode(
+        payload,
+        componentBaseConfigs,
+        contract,
+        bodyTop,
+        bodyTop + Math.max(1, sectionCapacity - desiredMediaHeight),
+      )
+    : undefined;
+  const galleryRequiredHeight = provisionalGallery?.box?.height ?? 0;
+  const mediaHeightLimit = contract.showGallery
+    ? contract.galleryMode === "carousel"
+      ? Math.max(0, sectionCapacity - galleryRequiredHeight)
+      : Math.max(0, sectionCapacity - 1)
+    : sectionCapacity;
+  const desiredMediaChrome = desiredMedia
+    ? Math.max(0, desiredMediaHeight - contract.mediaHeight * scale)
+    : 0;
+  const availableMediaContentHeight = Math.max(
+    1,
+    (mediaHeightLimit - desiredMediaChrome) / scale,
+  );
+  const media = contract.showMedia
+    ? mediaSectionNode(
+        payload,
+        componentBaseConfigs,
+        contract,
+        bodyTop,
+        Math.min(contract.mediaHeight, availableMediaContentHeight),
+      )
+    : undefined;
+  const galleryTop = media?.box ? media.box.y + media.box.height : bodyTop;
+  const finalGalleryHeight = contract.galleryMode === "carousel"
+    ? galleryRequiredHeight
+    : Math.max(1, sectionCapacity - (media?.box?.height ?? 0));
+  const gallery = contract.showGallery
+    ? gallerySectionNode(
+        payload,
+        componentBaseConfigs,
+        contract,
+        galleryTop,
+        galleryTop + Math.max(1, finalGalleryHeight),
+      )
+    : undefined;
+  const messageTop = gallery?.box
+    ? gallery.box.y + gallery.box.height
+    : galleryTop;
   const message = messageSectionNode(
     payload,
     componentBaseConfigs,
     contract,
-    media.box ? media.box.y + media.box.height : contentY,
-    footer.box?.y ?? contentBottom,
+    messageTop,
+    bodyBottom,
   );
   const backgroundNode = contract.useAppWallpaper
     ? wallpaperRenderable(payload, screen) ?? background(payload)
     : background(payload);
   const children: RenderableNode[] = [backgroundNode];
   if (header) children.push(header);
-  children.push(media);
+  if (media) children.push(media);
+  if (gallery) children.push(gallery);
   children.push(message);
   children.push(footer);
+  if (composer.textInput) children.push(withZIndex(composer.textInput, 40));
+  if (composer.keyboard) children.push(withZIndex(composer.keyboard, 50));
   if (status) children.push(withZIndex(status, 20));
   if (navigation) children.push(withZIndex(navigation, 30));
   return {
@@ -124,63 +201,8 @@ function messageSectionNode(
   const innerWidth = Math.max(1, screen.width - horizontalPadding * 2);
   const innerWidthDesign = innerWidth / scale;
   const contentBottom = Math.max(y, separatorY - verticalPadding);
-
-  const keyboard = message.keyboardVisible
-    ? componentNode(
-        payload,
-        componentBaseConfigs,
-        "keyboard",
-        message.keyboardSlot,
-        {
-          text: message.visibleText,
-          currentCharacter: message.currentCharacter,
-          trigger: message.currentCharacter > 0,
-          motionElapsedMs: message.writeOnFrame / Math.max(1, payload.frameRate) * 1000,
-        },
-      )
-    : undefined;
-  const keyboardNode = keyboard?.box
-    ? translateRenderableNode(keyboard, {
-        x: screen.x - keyboard.box.x,
-        y: contentBottom - keyboard.box.height - keyboard.box.y,
-      })
-    : keyboard;
-  const keyboardTop = keyboardNode?.box?.y ?? contentBottom;
-
-  const textInputConfig = message.textInputVisible
-    ? resolvedTextInputBarRuntimeConfig(
-        payload,
-        componentBaseConfigs,
-        message.textInputBarSlot,
-        message.visibleText,
-        innerWidthDesign,
-        "module.core.socialPost.messageTextInputBarSlot",
-      )
-    : undefined;
-  const textInput = message.textInputVisible
-    ? componentNode(
-        previewPayloadInBox(payload, {
-          x: screen.x + horizontalPadding,
-          y,
-          width: innerWidth,
-          height: Math.max(1, keyboardTop - y),
-        }),
-        componentBaseConfigs,
-        "textInputBar",
-        message.textInputBarSlot,
-        { availableWidth: innerWidthDesign },
-        textInputConfig,
-      )
-    : undefined;
-  const textInputNode = textInput?.box
-    ? translateRenderableNode(textInput, {
-        x: screen.x + horizontalPadding - textInput.box.x,
-        y: keyboardTop - textInput.box.height - textInput.box.y,
-      })
-    : textInput;
-  const bubbleBottom = textInputNode?.box?.y ?? keyboardTop;
   const bubbleY = y + verticalPadding;
-  const bubbleHeight = Math.max(1, bubbleBottom - bubbleY);
+  const bubbleHeight = Math.max(1, contentBottom - bubbleY);
   const bubbleBox = {
     x: screen.x + horizontalPadding,
     y: bubbleY,
@@ -206,8 +228,6 @@ function messageSectionNode(
     : undefined;
   const children: RenderableNode[] = [];
   if (bubble) children.push(bubble);
-  if (textInputNode) children.push(withZIndex(textInputNode, 10));
-  if (keyboardNode) children.push(withZIndex(keyboardNode, 20));
   if (message.showSeparator) {
     children.push({
       id: "module.core.socialPost.message.separator",
@@ -237,16 +257,125 @@ function messageSectionNode(
   };
 }
 
+function composerLayoutNode(
+  payload: DesignPreviewPayload,
+  componentBaseConfigs: Record<string, unknown>,
+  contract: SocialPostModuleContract,
+  bottom: number,
+): SocialPostComposerLayout {
+  const screen = previewScreenBox(payload);
+  const scale = renderScale(payload);
+  const message = contract.message;
+  const [horizontalPadding] = spacingPair(payload, message.padding);
+  const innerWidth = Math.max(1, screen.width - horizontalPadding * 2);
+  const innerWidthDesign = innerWidth / scale;
+  const keyboard = message.keyboardVisible
+    ? componentNode(
+        payload,
+        componentBaseConfigs,
+        "keyboard",
+        message.keyboardSlot,
+        {
+          text: message.visibleText,
+          currentCharacter: message.currentCharacter,
+          trigger: message.currentCharacter > 0,
+          motionElapsedMs: message.writeOnFrame / Math.max(1, payload.frameRate) * 1000,
+        },
+      )
+    : undefined;
+  const keyboardNode = keyboard?.box
+    ? translateRenderableNode(keyboard, {
+        x: screen.x - keyboard.box.x,
+        y: bottom - keyboard.box.height - keyboard.box.y,
+      })
+    : keyboard;
+  const keyboardTop = keyboardNode?.box?.y ?? bottom;
+  const textInputConfig = message.textInputVisible
+    ? resolvedTextInputBarRuntimeConfig(
+        payload,
+        componentBaseConfigs,
+        message.textInputBarSlot,
+        message.visibleText,
+        innerWidthDesign,
+        "module.core.socialPost.messageTextInputBarSlot",
+      )
+    : undefined;
+  const textInput = message.textInputVisible
+    ? componentNode(
+        previewPayloadInBox(payload, {
+          x: screen.x + horizontalPadding,
+          y: screen.y,
+          width: innerWidth,
+          height: Math.max(1, keyboardTop - screen.y),
+        }),
+        componentBaseConfigs,
+        "textInputBar",
+        message.textInputBarSlot,
+        { availableWidth: innerWidthDesign },
+        textInputConfig,
+      )
+    : undefined;
+  const textInputNode = textInput?.box
+    ? translateRenderableNode(textInput, {
+        x: screen.x + horizontalPadding - textInput.box.x,
+        y: keyboardTop - textInput.box.height - textInput.box.y,
+      })
+    : textInput;
+  return {
+    top: textInputNode?.box?.y ?? keyboardTop,
+    keyboard: keyboardNode,
+    textInput: textInputNode,
+  };
+}
+
+function gallerySectionNode(
+  payload: DesignPreviewPayload,
+  componentBaseConfigs: Record<string, unknown>,
+  contract: SocialPostModuleContract,
+  y: number,
+  bottom: number,
+): RenderableNode {
+  const screen = previewScreenBox(payload);
+  const scale = renderScale(payload);
+  const box = {
+    x: screen.x,
+    y,
+    width: screen.width,
+    height: Math.max(1, bottom - y),
+  };
+  const gallery = componentNode(
+    previewPayloadInBox(payload, box),
+    componentBaseConfigs,
+    "gallery",
+    contract.gallerySlot,
+    {
+      mediaDirectory: contract.galleryDirectory,
+      viewportSize: `${box.width / scale}|${box.height / scale}`,
+      selectedIndex: contract.gallerySelectedIndex,
+      scrollRow: contract.galleryScrollRow,
+    },
+  );
+  return {
+    id: "module.core.socialPost.gallery",
+    type: "group",
+    frame: 0,
+    box: gallery.box ?? box,
+    style: { overflow: "visible" },
+    children: [gallery],
+  };
+}
+
 function mediaSectionNode(
   payload: DesignPreviewPayload,
   componentBaseConfigs: Record<string, unknown>,
   contract: SocialPostModuleContract,
   y: number,
+  mediaHeightDesign: number,
 ): RenderableNode {
   const screen = previewScreenBox(payload);
   const scale = renderScale(payload);
   const [horizontalPadding, verticalPadding] = spacingPair(payload, contract.mediaPadding);
-  const mediaHeight = contract.mediaHeight * scale;
+  const mediaHeight = mediaHeightDesign * scale;
   const mediaBox = {
     x: screen.x + horizontalPadding,
     y: y + verticalPadding,
@@ -258,7 +387,7 @@ function mediaSectionNode(
     mediaSource: contract.mediaSource,
     mediaScale: contract.mediaScale,
     mediaOffset: contract.mediaOffset,
-    viewportSize: `${mediaBox.width / scale}|${contract.mediaHeight}`,
+    viewportSize: `${mediaBox.width / scale}|${mediaHeightDesign}`,
   };
   const media = componentNode(
     previewPayloadInBox(payload, mediaBox),

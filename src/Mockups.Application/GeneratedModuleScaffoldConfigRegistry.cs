@@ -307,6 +307,13 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ["socialPost", "footerSurfaceSlot"],
             "surface",
             []),
+        ["module.core.socialPost.gallery"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.gallery",
+            ValueKind.ComponentVariantSlot,
+            ["socialPost", "gallerySlot"],
+            "gallery",
+            []),
         ["module.core.socialPost.headerHeight"] = new(
             "module.core.socialPost",
             "module.core.socialPost.headerHeight",
@@ -348,6 +355,13 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ValueKind.ComponentVariantSlot,
             ["socialPost", "messageKeyboardSlot"],
             "keyboard",
+            []),
+        ["module.core.socialPost.messageMinHeight"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.messageMinHeight",
+            ValueKind.Integer,
+            ["socialPost", "messageMinHeight"],
+            "",
             []),
         ["module.core.socialPost.messagePadding"] = new(
             "module.core.socialPost",

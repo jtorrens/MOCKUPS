@@ -82,10 +82,15 @@ test("Social Post owns two fixed structure-projected Runtime row sections", () =
   assert.equal(Object.hasOwn(config.socialPost, "runtimeContract"), false);
   assert.equal(Object.hasOwn(config.socialPost, "forwarding"), false);
   assert.deepEqual(runtime.inputs.map(({ id }) => id), [
+    "showMedia",
     "mediaSource",
     "mediaHeight",
     "mediaScale",
     "mediaOffset",
+    "showGallery",
+    "galleryDirectory",
+    "gallerySelectedIndex",
+    "galleryScrollRow",
     "messageText",
     "messageWriteOnTiming",
     "messageTextInputVisible",
