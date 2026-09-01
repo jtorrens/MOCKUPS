@@ -25,7 +25,7 @@ internal sealed class DictionaryIntegerPairControl : Grid, IDictionaryValueContr
         MinWidth = 0;
 
         var pair = DictionaryFieldPairText.ParseRequired(
-            ValueKind.IntegerPair,
+            definition.ValueKind,
             value,
             $"Field '{definition.Id}' value");
         var labels = DictionaryFieldPairText.Labels(definition);
@@ -63,7 +63,7 @@ internal sealed class DictionaryIntegerPairControl : Grid, IDictionaryValueContr
     public void SetValue(string value)
     {
         var pair = DictionaryFieldPairText.ParseRequired(
-            ValueKind.IntegerPair,
+            _definition.ValueKind,
             value,
             $"Field '{_definition.Id}' value");
         _isUpdating = true;
@@ -103,16 +103,27 @@ internal sealed class DictionaryIntegerPairControl : Grid, IDictionaryValueContr
 
     private bool HasValidDraft()
     {
-        return int.TryParse(
-                _firstTextBox.Text,
-                NumberStyles.Integer,
-                CultureInfo.InvariantCulture,
-                out _)
-            && int.TryParse(
-                _secondTextBox.Text,
-                NumberStyles.Integer,
-                CultureInfo.InvariantCulture,
-                out _);
+        return _definition.ValueKind == ValueKind.DecimalPair
+            ? decimal.TryParse(
+                    _firstTextBox.Text,
+                    NumberStyles.Number,
+                    CultureInfo.InvariantCulture,
+                    out _)
+                && decimal.TryParse(
+                    _secondTextBox.Text,
+                    NumberStyles.Number,
+                    CultureInfo.InvariantCulture,
+                    out _)
+            : int.TryParse(
+                    _firstTextBox.Text,
+                    NumberStyles.Integer,
+                    CultureInfo.InvariantCulture,
+                    out _)
+                && int.TryParse(
+                    _secondTextBox.Text,
+                    NumberStyles.Integer,
+                    CultureInfo.InvariantCulture,
+                    out _);
     }
 
     private static TextBlock CreateLabel(string text)

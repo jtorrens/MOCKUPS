@@ -176,6 +176,7 @@ internal static class WebDesignPreviewRenderer
             paletteColors = payload.PaletteColors,
             paletteNeutralColors = payload.PaletteNeutralColors,
             projectMediaRoot = payload.ProjectMediaRoot,
+            projectMediaFiles = payload.ProjectMediaFiles,
             fontFaces = payload.FontFaces.Select((face) => new
             {
                 fontId = face.FontId,

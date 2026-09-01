@@ -24,6 +24,8 @@ import { faceRecognitionComponentToRenderable } from "./faceRecognitionComponent
 import { resolveFaceRecognitionComponent } from "./faceRecognitionComponentResolver.js";
 import { fingerprintComponentToRenderable } from "./fingerprintComponentRenderable.js";
 import { resolveFingerprintComponent } from "./fingerprintComponentResolver.js";
+import { galleryComponentToRenderable } from "./galleryComponentRenderable.js";
+import { resolveGalleryComponent } from "./galleryComponentResolver.js";
 import { iconBarComponentToRenderable } from "./iconBarComponentRenderable.js";
 import { resolveIconBarComponent } from "./iconBarComponentResolver.js";
 import { iconRowComponentToRenderable } from "./iconRowComponentRenderable.js";
@@ -84,6 +86,8 @@ export const generatedComponentScaffoldFactories = {
     faceRecognitionComponentToRenderable(payload, resolveFaceRecognitionComponent(payload)),
   fingerprint: (payload) =>
     fingerprintComponentToRenderable(payload, resolveFingerprintComponent(payload)),
+  gallery: (payload) =>
+    galleryComponentToRenderable(payload, resolveGalleryComponent(payload)),
   iconBar: (payload) =>
     iconBarComponentToRenderable(payload, resolveIconBarComponent(payload)),
   iconRow: (payload) =>

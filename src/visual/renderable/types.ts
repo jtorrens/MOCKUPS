@@ -37,7 +37,7 @@ export interface RenderableFontFace {
 }
 
 export interface RenderableOpacityMask {
-  axis: "vertical";
+  axis: "horizontal" | "vertical";
   start: number;
   end: number;
   beforeOpacity: number;

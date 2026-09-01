@@ -8,6 +8,7 @@ public enum ComponentInputKind
     Text,
     Number,
     IntegerPair,
+    DecimalPair,
     Boolean,
     Option,
     RecordReference,

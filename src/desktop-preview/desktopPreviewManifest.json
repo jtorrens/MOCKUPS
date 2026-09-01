@@ -93,7 +93,8 @@
         "bubble",
         "status_bar",
         "navigation_bar",
-        "incomingCallNotification"
+        "incomingCallNotification",
+        "gallery"
       ]
     },
     "collectionStack": {
@@ -130,7 +131,8 @@
         "bubble",
         "status_bar",
         "navigation_bar",
-        "incomingCallNotification"
+        "incomingCallNotification",
+        "gallery"
       ]
     },
     "badge": {
@@ -360,6 +362,17 @@
         "surface",
         "avatar",
         "iconRow"
+      ]
+    },
+    "gallery": {
+      "category": "component",
+      "recordClassId": "component.gallery",
+      "contract": "./galleryComponentContract",
+      "resolver": "./galleryComponentResolver",
+      "renderable": "./galleryComponentRenderable",
+      "embeds": [
+        "surface",
+        "media"
       ]
     }
   },

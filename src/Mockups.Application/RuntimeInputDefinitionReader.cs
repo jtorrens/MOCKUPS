@@ -671,6 +671,7 @@ public static class RuntimeInputDefinitionReader
             "text" => ComponentInputKind.Text,
             "number" => ComponentInputKind.Number,
             "integerpair" => ComponentInputKind.IntegerPair,
+            "decimalpair" => ComponentInputKind.DecimalPair,
             "boolean" => ComponentInputKind.Boolean,
             "option" => ComponentInputKind.Option,
             "recordreference" => ComponentInputKind.RecordReference,
@@ -680,7 +681,7 @@ public static class RuntimeInputDefinitionReader
             "icon" => ComponentInputKind.Icon,
             "iconlist" => ComponentInputKind.IconList,
             "multilinetext" => ComponentInputKind.MultilineText,
-            "mediafilepath" or "behaviortiming" or "collection" => ComponentInputKind.Text,
+            "mediafilepath" or "mediadirectorypath" or "behaviortiming" or "collection" => ComponentInputKind.Text,
             _ => throw new InvalidOperationException(
                 $"Unsupported runtime input kind '{kind}'."),
         };

@@ -77,6 +77,7 @@ export const desktopPreviewComponentCapabilities = {
     [],
     ["mediaPlayback", "controlsFade", "fullScreenMotion"],
   ),
+  gallery: capabilities(),
   bubble: capabilities(
     ["writeOn", "play", "fullScreen"],
     [],

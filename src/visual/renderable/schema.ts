@@ -43,7 +43,7 @@ const RenderableStyleSchema = z.object({
   textShadow: RenderableShadowSchema.optional(),
   surfaceRelief: RenderableSurfaceReliefSchema.optional(),
   opacityMask: z.object({
-    axis: z.literal("vertical"),
+    axis: z.enum(["horizontal", "vertical"]),
     start: z.number(),
     end: z.number(),
     beforeOpacity: z.number().min(0).max(1),

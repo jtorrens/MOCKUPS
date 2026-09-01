@@ -1,0 +1,861 @@
+{
+  "schemaVersion": 1,
+  "intent": {
+    "responsibility": "Own a reusable media gallery that lays out Project media-directory contents as a centered carousel or vertically scrollable grid.",
+    "visualBoundary": "Own one base Surface, its padded viewport, deterministic media cells, selection treatment and edge fade.",
+    "runtimeBehavior": "Resolve the selected Project media directory, viewport size, selected item index and independent first visible gallery row.",
+    "forwarding": "Forward each catalog item source and fixed fill-crop viewport values explicitly into the declared Media slots.",
+    "temporalOwnership": "Selected index and first visible row are Component-owned Runtime values and animate on this Component timeline."
+  },
+  "component": {
+    "componentType": "gallery",
+    "category": "component",
+    "componentClassId": "component_project_foqn_s2_gallery",
+    "projectId": "project_foqn_s2",
+    "recordClassId": "component.gallery",
+    "name": "Gallery",
+    "notes": "Reusable carousel and media gallery"
+  },
+  "manifest": {
+    "contract": "./galleryComponentContract",
+    "resolver": "./galleryComponentResolver",
+    "renderable": "./galleryComponentRenderable",
+    "embeds": [
+      "surface",
+      "media"
+    ]
+  },
+  "owners": {
+    "contractExport": "GalleryDesignContract",
+    "resolverExport": "resolveGalleryComponent",
+    "renderableExport": "galleryComponentToRenderable",
+    "configContractExport": null,
+    "registryMode": "simple",
+    "focusedTest": "tests/animation/galleryComponent.test.ts"
+  },
+  "config": {
+    "gallery": {
+      "mode": "carousel",
+      "widthMode": "fixed",
+      "heightMode": "fixed",
+      "itemHeight": 144,
+      "aspectRatio": "1|1",
+      "gapToken": "theme.spacing.s",
+      "containerPadding": "theme.spacing.m|theme.spacing.m",
+      "padding": "theme.spacing.m|theme.spacing.m",
+      "fadeExtent": 0,
+      "selectedScale": 1.08,
+      "surfaceSlot": {
+        "variantReference": "component_project_foqn_s2_surface::variant::default",
+        "overrides": {}
+      },
+      "mediaSlot": {
+        "variantReference": "component_project_foqn_s2_media::variant::default",
+        "overrides": {}
+      },
+      "selectedMediaSlot": {
+        "variantReference": "component_project_foqn_s2_media::variant::default",
+        "overrides": {
+          "media": {
+            "surfaceSlot": {
+              "overrides": {
+                "surface": {
+                  "borderAlpha": 1
+                },
+                "style": {
+                  "borderWidth": 4,
+                  "borderColorToken": "theme.colors.accent"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "defaultVariant": {
+    "id": "default",
+    "name": "Default",
+    "protected": true,
+    "locked": true,
+    "config": {
+      "gallery": {
+        "mode": "carousel",
+        "widthMode": "fixed",
+        "heightMode": "fixed",
+        "itemHeight": 144,
+        "aspectRatio": "1|1",
+        "gapToken": "theme.spacing.s",
+        "containerPadding": "theme.spacing.m|theme.spacing.m",
+        "padding": "theme.spacing.m|theme.spacing.m",
+        "fadeExtent": 0,
+        "selectedScale": 1.08,
+        "surfaceSlot": {
+          "variantReference": "component_project_foqn_s2_surface::variant::default",
+          "overrides": {}
+        },
+        "mediaSlot": {
+          "variantReference": "component_project_foqn_s2_media::variant::default",
+          "overrides": {}
+        },
+        "selectedMediaSlot": {
+          "variantReference": "component_project_foqn_s2_media::variant::default",
+          "overrides": {
+            "media": {
+              "surfaceSlot": {
+                "overrides": {
+                  "surface": {
+                    "borderAlpha": 1
+                  },
+                  "style": {
+                    "borderWidth": 4,
+                    "borderColorToken": "theme.colors.accent"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "additionalVariants": [],
+  "designPreview": {
+    "componentType": "gallery",
+    "sampleSize": 360,
+    "mediaDirectory": "media",
+    "viewportSize": "360|320",
+    "selectedIndex": 0,
+    "scrollRow": 0,
+    "inputs": [
+      {
+        "id": "mediaDirectory",
+        "label": "Directory",
+        "jsonKey": "mediaDirectory",
+        "kind": "mediaDirectoryPath",
+        "valueKind": "MediaDirectoryPath",
+        "defaultValue": "",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "source": "runtime",
+        "uiOrigin": "self",
+        "uiGroupId": "source",
+        "uiGroupLabel": "Source",
+        "uiParentGroupId": "",
+        "uiOrder": 10,
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "transition": null,
+        "unit": ""
+      },
+      {
+        "id": "viewportSize",
+        "label": "Viewport",
+        "jsonKey": "viewportSize",
+        "kind": "integerPair",
+        "valueKind": "IntegerPair",
+        "defaultValue": "360|320",
+        "minimum": 1,
+        "maximum": 4096,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "source": "runtime",
+        "uiOrigin": "self",
+        "uiGroupId": "layout",
+        "uiGroupLabel": "Layout",
+        "uiParentGroupId": "",
+        "uiOrder": 20,
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "transition": null,
+        "unit": "px"
+      },
+      {
+        "id": "selectedIndex",
+        "label": "Selected index",
+        "jsonKey": "selectedIndex",
+        "kind": "number",
+        "valueKind": "Integer",
+        "defaultValue": "0",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "source": "runtime",
+        "uiOrigin": "self",
+        "uiGroupId": "selection",
+        "uiGroupLabel": "Selection",
+        "uiParentGroupId": "",
+        "uiOrder": 30,
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "transition": null,
+        "unit": "",
+        "animatable": true,
+        "animationInterpolations": [
+          "linear",
+          "hold"
+        ]
+      },
+      {
+        "id": "scrollRow",
+        "label": "First visible row",
+        "jsonKey": "scrollRow",
+        "kind": "number",
+        "valueKind": "Decimal",
+        "defaultValue": "0",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 0.1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "source": "runtime",
+        "uiOrigin": "self",
+        "uiGroupId": "scroll",
+        "uiGroupLabel": "Scroll",
+        "uiParentGroupId": "",
+        "uiOrder": 40,
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "transition": null,
+        "unit": "row",
+        "animatable": true,
+        "animationInterpolations": [
+          "linear",
+          "hold"
+        ]
+      }
+    ],
+    "collections": [],
+    "actions": []
+  },
+  "metadata": {
+    "note": "Gallery consumes the prepared Project media catalog and composes exact Surface and Media Variant boundaries."
+  },
+  "dictionaryFields": [
+    {
+      "id": "component.gallery.mode",
+      "label": "Mode",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "gallery",
+        "mode"
+      ],
+      "defaultValue": "carousel",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "carousel",
+          "label": "Carousel"
+        },
+        {
+          "value": "gallery",
+          "label": "Gallery"
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.gallery.itemHeight",
+      "label": "Media height",
+      "valueKind": "Integer",
+      "jsonPath": [
+        "gallery",
+        "itemHeight"
+      ],
+      "defaultValue": "144",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": {
+        "minimum": 1,
+        "maximum": 4096,
+        "increment": 1,
+        "decimalPlaces": 0,
+        "useSlider": false
+      },
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "px",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.gallery.widthMode",
+      "label": "Width",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "gallery",
+        "widthMode"
+      ],
+      "defaultValue": "fixed",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "fixed",
+          "label": "Fixed"
+        },
+        {
+          "value": "fill",
+          "label": "Fill"
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "Fixed uses the Runtime viewport width; Fill uses the width assigned by the device or parent.",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.gallery.heightMode",
+      "label": "Height",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "gallery",
+        "heightMode"
+      ],
+      "defaultValue": "fixed",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "fixed",
+          "label": "Fixed"
+        },
+        {
+          "value": "fill",
+          "label": "Fill"
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "Fixed uses the Runtime viewport height; Fill uses the height assigned by the device or parent.",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.gallery.aspectRatio",
+      "label": "Aspect ratio",
+      "valueKind": "DecimalPair",
+      "jsonPath": [
+        "gallery",
+        "aspectRatio"
+      ],
+      "defaultValue": "1|1",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": {
+        "first": "W",
+        "second": "H"
+      },
+      "number": {
+        "minimum": 0.01,
+        "maximum": 100,
+        "increment": 0.01,
+        "decimalPlaces": 2,
+        "useSlider": false
+      },
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "Width to height ratio.",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.gallery.gapToken",
+      "label": "Gap",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "gallery",
+        "gapToken"
+      ],
+      "defaultValue": "theme.spacing.s",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none"
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs"
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s"
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m"
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l"
+        },
+        {
+          "value": "theme.spacing.xl",
+          "label": "spacing.xl"
+        },
+        {
+          "value": "theme.spacing.xxl",
+          "label": "spacing.xxl"
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.gallery.padding",
+      "label": "Content padding",
+      "valueKind": "ThemeTokenPair",
+      "jsonPath": [
+        "gallery",
+        "padding"
+      ],
+      "defaultValue": "theme.spacing.m|theme.spacing.m",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none"
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs"
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s"
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m"
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l"
+        },
+        {
+          "value": "theme.spacing.xl",
+          "label": "spacing.xl"
+        },
+        {
+          "value": "theme.spacing.xxl",
+          "label": "spacing.xxl"
+        }
+      ],
+      "pairLabels": {
+        "first": "H",
+        "second": "V"
+      },
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.gallery.containerPadding",
+      "label": "Container padding",
+      "valueKind": "ThemeTokenPair",
+      "jsonPath": [
+        "gallery",
+        "containerPadding"
+      ],
+      "defaultValue": "theme.spacing.m|theme.spacing.m",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none"
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs"
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s"
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m"
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l"
+        },
+        {
+          "value": "theme.spacing.xl",
+          "label": "spacing.xl"
+        },
+        {
+          "value": "theme.spacing.xxl",
+          "label": "spacing.xxl"
+        }
+      ],
+      "pairLabels": {
+        "first": "H",
+        "second": "V"
+      },
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "Space between the Gallery Surface and the bounds assigned by its device or parent.",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.gallery.fadeExtent",
+      "label": "Edge fade",
+      "valueKind": "Integer",
+      "jsonPath": [
+        "gallery",
+        "fadeExtent"
+      ],
+      "defaultValue": "0",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": {
+        "minimum": 0,
+        "maximum": 2048,
+        "increment": 1,
+        "decimalPlaces": 0,
+        "useSlider": false
+      },
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "px",
+      "helpText": "Zero disables edge fade.",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.gallery.selectedScale",
+      "label": "Selected scale",
+      "valueKind": "Decimal",
+      "jsonPath": [
+        "gallery",
+        "selectedScale"
+      ],
+      "defaultValue": "1.08",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": {
+        "minimum": 0.1,
+        "maximum": 3,
+        "increment": 0.01,
+        "decimalPlaces": 2,
+        "useSlider": false
+      },
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.gallery.surface.editor",
+      "label": "Surface",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "gallery",
+        "surfaceSlot",
+        "variantReference"
+      ],
+      "defaultValue": "default",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "surface",
+        "label": "Gallery surface",
+        "recordClassId": "component.surface"
+      }
+    },
+    {
+      "id": "component.gallery.media.editor",
+      "label": "Media",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "gallery",
+        "mediaSlot",
+        "variantReference"
+      ],
+      "defaultValue": "default",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "media",
+        "label": "Media item",
+        "recordClassId": "component.media"
+      }
+    },
+    {
+      "id": "component.gallery.selectedMedia.editor",
+      "label": "Selected media",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "gallery",
+        "selectedMediaSlot",
+        "variantReference"
+      ],
+      "defaultValue": "default",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "media",
+        "label": "Selected media item",
+        "recordClassId": "component.media"
+      }
+    }
+  ],
+  "editorLayout": {
+    "cards": [
+      {
+        "id": "general",
+        "label": "General",
+        "subtitle": "Identity",
+        "icon": "general",
+        "order": 10,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "identity",
+            "label": "Identity",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "core.name",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.type",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "core.notes",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "layout",
+        "label": "Layout",
+        "subtitle": "Mode, sizing and spacing",
+        "icon": "layout",
+        "order": 20,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "layout",
+            "label": "Layout",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.gallery.mode",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.gallery.widthMode",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.gallery.heightMode",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "component.gallery.itemHeight",
+                "order": 40,
+                "visible": true
+              },
+              {
+                "id": "component.gallery.aspectRatio",
+                "order": 50,
+                "visible": true
+              },
+              {
+                "id": "component.gallery.gapToken",
+                "order": 60,
+                "visible": true
+              },
+              {
+                "id": "component.gallery.containerPadding",
+                "order": 70,
+                "visible": true
+              },
+              {
+                "id": "component.gallery.padding",
+                "order": 80,
+                "visible": true
+              },
+              {
+                "id": "component.gallery.fadeExtent",
+                "order": 90,
+                "visible": true
+              },
+              {
+                "id": "component.gallery.selectedScale",
+                "order": 100,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "components",
+        "label": "Components",
+        "subtitle": "Surface and media variants",
+        "icon": "component",
+        "order": 30,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "components",
+            "label": "Components",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.gallery.surface.editor",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.gallery.media.editor",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.gallery.selectedMedia.editor",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "assets": []
+}

@@ -36,6 +36,8 @@ internal static class GeneratedComponentScaffoldConfigRegistry
                 return true;
             case "fingerprint":
                 return true;
+            case "gallery":
+                return true;
             case "iconBar":
                 return true;
             case "iconRow":

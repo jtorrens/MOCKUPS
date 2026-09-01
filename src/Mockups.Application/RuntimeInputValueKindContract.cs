@@ -13,6 +13,7 @@ public static class RuntimeInputValueKindContract
     {
         ValueKind.Integer or ValueKind.Decimal or ValueKind.HueDegrees or ValueKind.Alpha => "number",
         ValueKind.IntegerPair => "integerPair",
+        ValueKind.DecimalPair => "decimalPair",
         ValueKind.Boolean => "boolean",
         ValueKind.OptionToken => "option",
         ValueKind.RecordReference => "recordReference",
@@ -23,6 +24,7 @@ public static class RuntimeInputValueKindContract
         ValueKind.IconTokenList => "iconList",
         ValueKind.StringMultiline => "multilineText",
         ValueKind.MediaFilePath or ValueKind.VideoFilePath => "mediaFilePath",
+        ValueKind.MediaDirectoryPath => "mediaDirectoryPath",
         ValueKind.StructuredCollection => "collection",
         ValueKind.BehaviorTiming => "behaviorTiming",
         ValueKind.StringSingleLine
@@ -200,6 +202,7 @@ public static class RuntimeInputValueKindContract
         ValueKind.Decimal or ValueKind.HueDegrees or ValueKind.Alpha =>
             JsonValue.Create(ParseNumber(valueKind, value, owner))!,
         ValueKind.IntegerPair => JsonValue.Create(ParseIntegerPair(value, owner))!,
+        ValueKind.DecimalPair => JsonValue.Create(ParseDecimalPair(value, owner))!,
         ValueKind.ThemeTokenPair or ValueKind.PaletteColorPair =>
             JsonValue.Create(ParseStringPair(value, owner))!,
         ValueKind.PaletteColorAlphaPair => JsonValue.Create(
@@ -395,6 +398,9 @@ public static class RuntimeInputValueKindContract
             case ValueKind.IntegerPair:
                 _ = ParseIntegerPair(RequireStringValue(value, owner), owner);
                 return;
+            case ValueKind.DecimalPair:
+                _ = ParseDecimalPair(RequireStringValue(value, owner), owner);
+                return;
             case ValueKind.ThemeTokenPair:
             case ValueKind.PaletteColorPair:
                 _ = ParseStringPair(RequireStringValue(value, owner), owner);
@@ -486,6 +492,18 @@ public static class RuntimeInputValueKindContract
             || !int.TryParse(parts.Second, NumberStyles.Integer, CultureInfo.InvariantCulture, out var second))
         {
             throw new InvalidOperationException($"{owner} must contain exactly two integers.");
+        }
+
+        return $"{first.ToString(CultureInfo.InvariantCulture)}|{second.ToString(CultureInfo.InvariantCulture)}";
+    }
+
+    private static string ParseDecimalPair(string value, string owner)
+    {
+        var parts = RequiredPair(value, owner);
+        if (!decimal.TryParse(parts.First, NumberStyles.Number, CultureInfo.InvariantCulture, out var first)
+            || !decimal.TryParse(parts.Second, NumberStyles.Number, CultureInfo.InvariantCulture, out var second))
+        {
+            throw new InvalidOperationException($"{owner} must contain exactly two decimals.");
         }
 
         return $"{first.ToString(CultureInfo.InvariantCulture)}|{second.ToString(CultureInfo.InvariantCulture)}";

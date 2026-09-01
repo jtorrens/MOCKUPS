@@ -16139,6 +16139,7 @@ static void ProductionPlaybackSelectsPreparedOwnerFrames()
             new Dictionary<string, string>(),
             new Dictionary<string, bool>(),
             "",
+            Array.Empty<string>(),
             "",
             "{}",
             Array.Empty<ProductionFontFace>(),

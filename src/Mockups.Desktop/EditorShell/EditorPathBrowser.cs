@@ -46,6 +46,11 @@ internal sealed class EditorPathBrowser
                     _projectPaths,
                     currentPath,
                     SelectedProjectMediaRoot()),
+                ValueKind.MediaDirectoryPath => BrowseMediaDirectory(
+                    _storageProvider,
+                    _projectPaths,
+                    currentPath,
+                    SelectedProjectMediaRoot()),
                 ValueKind.VideoFilePath => BrowseProjectVideoFile(
                     _storageProvider,
                     _projectPaths,
@@ -61,6 +66,13 @@ internal sealed class EditorPathBrowser
             await _showInfo(
                 "Reference video not associated",
                 $"The selected video could not be associated with this Shot. {exception.Message}");
+            return null;
+        }
+        catch (Exception exception) when (valueKind == ValueKind.MediaDirectoryPath)
+        {
+            await _showInfo(
+                "Media folder not associated",
+                $"The selected folder could not be associated with this Project. {exception.Message}");
             return null;
         }
     }
@@ -155,6 +167,45 @@ internal sealed class EditorPathBrowser
 
         var folders = await _storageProvider.OpenFolderPickerAsync(options);
         return folders.Count > 0 ? folders[0].Path.LocalPath : null;
+    }
+
+    private static async Task<string?> BrowseMediaDirectory(
+        IStorageProvider storageProvider,
+        IProjectPathResolver projectPaths,
+        string currentPath,
+        string? mediaRoot)
+    {
+        var options = new FolderPickerOpenOptions
+        {
+            Title = "Select media folder",
+            AllowMultiple = false,
+        };
+        var fullMediaRoot = string.IsNullOrWhiteSpace(mediaRoot)
+            ? null
+            : projectPaths.ResolveProjectPath(mediaRoot);
+        var currentFullPath = string.IsNullOrWhiteSpace(currentPath)
+            ? fullMediaRoot
+            : Path.IsPathFullyQualified(currentPath)
+                ? currentPath
+                : fullMediaRoot is not null
+                    ? Path.GetFullPath(Path.Combine(fullMediaRoot, currentPath))
+                    : projectPaths.ResolveProjectPath(currentPath);
+        if (!string.IsNullOrWhiteSpace(currentFullPath) && Directory.Exists(currentFullPath))
+        {
+            options.SuggestedStartLocation =
+                await storageProvider.TryGetFolderFromPathAsync(currentFullPath);
+        }
+
+        var folders = await storageProvider.OpenFolderPickerAsync(options);
+        if (folders.Count == 0) return null;
+        var selectedPath = folders[0].Path.LocalPath;
+        var relative = projectPaths.RelativePathIfInsideMediaRoot(selectedPath, mediaRoot);
+        if (string.IsNullOrWhiteSpace(relative) || Path.IsPathFullyQualified(relative))
+        {
+            throw new InvalidOperationException(
+                "The selected media folder must be inside the Project media root.");
+        }
+        return relative;
     }
 
     private string? SelectedProjectMediaRoot()

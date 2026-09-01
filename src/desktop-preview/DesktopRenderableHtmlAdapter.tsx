@@ -282,10 +282,11 @@ function nodeStyle(
 function opacityMaskCss(value: unknown, box: RenderableBox) {
   if (!isRecord(value)) return undefined;
   const mask = value as unknown as RenderableOpacityMask;
-  if (mask.axis !== "vertical") return undefined;
-  const start = mask.start - box.y;
-  const end = mask.end - box.y;
-  return `linear-gradient(to bottom, rgba(255,255,255,${mask.beforeOpacity}) ${start}px, rgba(255,255,255,${mask.afterOpacity}) ${end}px)`;
+  const origin = mask.axis === "horizontal" ? box.x : box.y;
+  const start = mask.start - origin;
+  const end = mask.end - origin;
+  const direction = mask.axis === "horizontal" ? "to right" : "to bottom";
+  return `linear-gradient(${direction}, rgba(255,255,255,${mask.beforeOpacity}) ${start}px, rgba(255,255,255,${mask.afterOpacity}) ${end}px)`;
 }
 
 function pathContent(node: RenderableNode): ReactNode {

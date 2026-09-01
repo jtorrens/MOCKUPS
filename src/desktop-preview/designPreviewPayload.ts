@@ -70,6 +70,7 @@ export interface DesignPreviewPayload {
   paletteColors?: Record<string, string>;
   paletteNeutralColors?: Record<string, boolean>;
   projectMediaRoot?: string;
+  projectMediaFiles?: string[];
   showMarks?: boolean;
   themeMode: string;
   themeTokensJson: string;

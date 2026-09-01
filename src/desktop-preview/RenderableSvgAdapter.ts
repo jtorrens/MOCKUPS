@@ -67,10 +67,13 @@ function opacityMaskMarkup(node: RenderableNode, svgId: string, paint: string) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return paint;
   const mask = value as unknown as RenderableOpacityMask;
   const box = node.box;
-  if (!box || mask.axis !== "vertical") return paint;
+  if (!box) return paint;
   const gradientId = `opacity-gradient-${safeId(svgId)}`;
   const maskId = `opacity-mask-${safeId(svgId)}`;
-  return `<defs><linearGradient id="${gradientId}" x1="0" y1="${number(mask.start)}" x2="0" y2="${number(mask.end)}" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="white" stop-opacity="${number(mask.beforeOpacity)}"/><stop offset="1" stop-color="white" stop-opacity="${number(mask.afterOpacity)}"/></linearGradient><mask id="${maskId}" maskUnits="userSpaceOnUse" x="${number(box.x)}" y="${number(box.y)}" width="${number(box.width)}" height="${number(box.height)}"><rect ${attributes({ x: box.x, y: box.y, width: box.width, height: box.height, fill: `url(#${gradientId})` })}/></mask></defs><g mask="url(#${maskId})">${paint}</g>`;
+  const gradientAxis = mask.axis === "horizontal"
+    ? `x1="${number(mask.start)}" y1="0" x2="${number(mask.end)}" y2="0"`
+    : `x1="0" y1="${number(mask.start)}" x2="0" y2="${number(mask.end)}"`;
+  return `<defs><linearGradient id="${gradientId}" ${gradientAxis} gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="white" stop-opacity="${number(mask.beforeOpacity)}"/><stop offset="1" stop-color="white" stop-opacity="${number(mask.afterOpacity)}"/></linearGradient><mask id="${maskId}" maskUnits="userSpaceOnUse" x="${number(box.x)}" y="${number(box.y)}" width="${number(box.width)}" height="${number(box.height)}"><rect ${attributes({ x: box.x, y: box.y, width: box.width, height: box.height, fill: `url(#${gradientId})` })}/></mask></defs><g mask="url(#${maskId})">${paint}</g>`;
 }
 
 function clipChildrenMarkup(node: RenderableNode, svgId: string, children: string) {

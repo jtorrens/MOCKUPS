@@ -64,6 +64,7 @@ internal static class DictionaryControlRegistry
             [ValueKind.Integer] = CreateNumberControl,
             [ValueKind.Decimal] = CreateNumberControl,
             [ValueKind.IntegerPair] = (request) => new DictionaryIntegerPairControl(request.Definition, request.Value),
+            [ValueKind.DecimalPair] = (request) => new DictionaryIntegerPairControl(request.Definition, request.Value),
             [ValueKind.DirectoryPath] = (request) => new DictionaryPathControl(
                 request.Definition,
                 request.Value,
@@ -73,6 +74,10 @@ internal static class DictionaryControlRegistry
                 request.Value,
                 request.Services.BrowsePath),
             [ValueKind.MediaFilePath] = (request) => new DictionaryPathControl(
+                request.Definition,
+                request.Value,
+                request.Services.BrowsePath),
+            [ValueKind.MediaDirectoryPath] = (request) => new DictionaryPathControl(
                 request.Definition,
                 request.Value,
                 request.Services.BrowsePath),

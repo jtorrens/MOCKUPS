@@ -7,6 +7,7 @@ public static class PairFieldLabelsContract
     public static bool IsPair(ValueKind valueKind)
     {
         return valueKind is ValueKind.IntegerPair
+            or ValueKind.DecimalPair
             or ValueKind.ThemeTokenPair
             or ValueKind.PaletteColorPair
             or ValueKind.PaletteColorAlphaPair;

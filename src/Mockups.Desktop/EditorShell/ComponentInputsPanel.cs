@@ -569,11 +569,15 @@ internal sealed class ComponentPreviewInputSession
         }
         _nestedRecordInputResolver.Resolve(preview, themeMode, payload.PaletteColors);
 
+        var preparedPreviewJson = preview.ToJsonString();
         var result = payload with
         {
             ConfigJson = config.ToJsonString(),
-            DesignPreviewJson = preview.ToJsonString(),
-            RuntimeContractJson = preview.ToJsonString(),
+            DesignPreviewJson = preparedPreviewJson,
+            RuntimeContractJson = preparedPreviewJson,
+            ProjectMediaFiles = PreviewMediaDirectoryCatalog.Resolve(
+                payload.ProjectMediaRoot,
+                preparedPreviewJson),
         };
         var moduleFrameActions = _actions
             .Where((action) =>

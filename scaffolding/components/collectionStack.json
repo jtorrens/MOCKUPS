@@ -48,7 +48,8 @@
       "bubble",
       "status_bar",
       "navigation_bar",
-      "incomingCallNotification"
+      "incomingCallNotification",
+      "gallery"
     ]
   },
   "owners": {

@@ -174,6 +174,24 @@ public static class GeneratedComponentScaffoldEmbeddedSlots
             "component.surface",
             ["codeIndicator", "states", "initial", "filledSurfaceSlot"]),
         new(
+            "component.gallery.media.editor",
+            "media",
+            "Media item",
+            "component.media",
+            ["gallery", "mediaSlot"]),
+        new(
+            "component.gallery.selectedMedia.editor",
+            "media",
+            "Selected media item",
+            "component.media",
+            ["gallery", "selectedMediaSlot"]),
+        new(
+            "component.gallery.surface.editor",
+            "surface",
+            "Gallery surface",
+            "component.surface",
+            ["gallery", "surfaceSlot"]),
+        new(
             "component.iconBar.activeCenterIconRow.editor",
             "iconRow",
             "Active center row",

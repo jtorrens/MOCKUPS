@@ -22,7 +22,9 @@ internal sealed class DictionaryPathBrowseButton : Grid
         _value = value;
         _browsePath = browsePath;
 
-        var objectName = valueKind == ValueKind.DirectoryPath ? "folder" : "file";
+        var objectName = valueKind is ValueKind.DirectoryPath or ValueKind.MediaDirectoryPath
+            ? "folder"
+            : "file";
         var button = new Button
         {
             Content = $"Browse {objectName}...",

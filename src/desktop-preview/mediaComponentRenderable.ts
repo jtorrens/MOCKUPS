@@ -52,6 +52,7 @@ function mediaComponentToRenderableForBoxes(
   media: MediaDesignContract,
   boxes: MediaRenderBoxes,
 ): RenderableNode {
+  const visualBox = mediaVisualBox(payload, media, boxes.media);
   const mediaSurfaceNode = renderAuthoringSlot(
     payload,
     "component.media",
@@ -60,12 +61,12 @@ function mediaComponentToRenderableForBoxes(
     "component.surface.backgroundColorToken",
     (slotPayload) => surfaceComponentToRenderableAt(slotPayload, media.surface, boxes.media),
   );
-  const mediaContentNode = mediaContent(payload, media, boxes.media);
-  const controlNodes = mediaControlNodes(payload, media, boxes.media);
+  const mediaContentNode = mediaContent(payload, media, visualBox);
+  const controlNodes = mediaControlNodes(payload, media, visualBox);
   const children = [
     ...mediaBars(payload, media, boxes),
     mediaSurfaceNode,
-    mediaVisualClipNode(payload, media, boxes.media, [mediaContentNode, ...controlNodes]),
+    mediaVisualClipNode(payload, media, visualBox, [mediaContentNode, ...controlNodes]),
   ];
   const transitionActive = media.motionFrame.active && media.motionFrame.progress < 1;
   const rootOverlay = media.displayState === "fullframe" || transitionActive;
@@ -94,19 +95,39 @@ function mediaComponentToRenderableForBoxes(
   return node;
 }
 
+function mediaVisualBox(
+  payload: DesignPreviewPayload,
+  media: MediaDesignContract,
+  box: RenderableBox,
+): RenderableBox {
+  const borderWidth = Math.max(0, media.surface.surface.borderWidth * renderScale(payload));
+  const insetX = Math.min(borderWidth, box.width / 2);
+  const insetY = Math.min(borderWidth, box.height / 2);
+  return {
+    x: box.x + insetX,
+    y: box.y + insetY,
+    width: Math.max(0, box.width - insetX * 2),
+    height: Math.max(0, box.height - insetY * 2),
+  };
+}
+
 function mediaVisualClipNode(
   payload: DesignPreviewPayload,
   media: MediaDesignContract,
   box: RenderableBox,
   children: RenderableNode[],
 ): RenderableNode {
+  const borderWidth = Math.max(0, media.surface.surface.borderWidth * renderScale(payload));
   return {
     id: `${media.id}.visualClip`,
     type: "group",
     frame: 0,
     box,
     style: {
-      borderRadius: numberToken(payload, media.surface.surface.cornerRadiusToken) * renderScale(payload),
+      borderRadius: Math.max(
+        0,
+        numberToken(payload, media.surface.surface.cornerRadiusToken) * renderScale(payload) - borderWidth,
+      ),
       overflow: "hidden",
     },
     children,
@@ -231,6 +252,9 @@ function mediaContent(
   const frame = mediaFrameUriForPath(payload, media.sourceUri, frameTimeSeconds);
   const uri = frame.uri;
   if (uri) {
+    const customPlacement = Math.abs(media.viewport.scale - 1) > 0.000001
+      || Math.abs(media.viewport.offsetX) > 0.000001
+      || Math.abs(media.viewport.offsetY) > 0.000001;
     return {
       id: `${media.id}.content`,
       type: "image",
@@ -251,9 +275,13 @@ function mediaContent(
               imageIntrinsicWidth: frame.width,
             }
           : {}),
-        imageOffsetX: media.viewport.offsetX,
-        imageOffsetY: media.viewport.offsetY,
-        imageScale: media.viewport.scale,
+        ...(customPlacement
+          ? {
+              imageOffsetX: media.viewport.offsetX,
+              imageOffsetY: media.viewport.offsetY,
+              imageScale: media.viewport.scale,
+            }
+          : {}),
       },
     };
   }

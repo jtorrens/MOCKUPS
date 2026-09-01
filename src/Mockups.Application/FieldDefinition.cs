@@ -12,10 +12,12 @@ public enum ValueKind
     Decimal,
     HueDegrees,
     IntegerPair,
+    DecimalPair,
     DirectoryPath,
     JsonFilePath,
     ImageFilePath,
     MediaFilePath,
+    MediaDirectoryPath,
     VideoFilePath,
     OptionToken,
     RecordReference,
@@ -66,10 +68,12 @@ public static class ValueKindCommitContract
     {
         ValueKind.StringSingleLine
             or ValueKind.IntegerPair
+            or ValueKind.DecimalPair
             or ValueKind.DirectoryPath
             or ValueKind.JsonFilePath
             or ValueKind.ImageFilePath
             or ValueKind.MediaFilePath
+            or ValueKind.MediaDirectoryPath
             or ValueKind.VideoFilePath
             or ValueKind.HexColor => new(
                 TextEntryCommitTrigger.EnterOrFocusLoss,
