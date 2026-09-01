@@ -171,15 +171,13 @@ internal static class DesignPreviewPayloadFactory
             runtimePreview[timelineFrameJsonKey] = Math.Max(0, screenFrame.Value);
         }
         var runtimeActorId = runtimePreview["actorId"]?.GetValue<string>();
-        if (string.IsNullOrWhiteSpace(runtimeActorId))
+        if (!string.IsNullOrWhiteSpace(runtimeActorId))
         {
-            throw new InvalidOperationException(
-                $"Module Instance '{moduleInstanceId}' has no explicit chat Actor.");
+            runtimePreview["actor"] = dataSource.CreateActorPreview(
+                runtimeActorId,
+                effectiveThemeMode,
+                theme.PaletteColors);
         }
-        runtimePreview["actor"] = dataSource.CreateActorPreview(
-            runtimeActorId,
-            effectiveThemeMode,
-            theme.PaletteColors);
         ModuleRuntimeDocumentContracts.PrepareProduction(
             instance.RecordClassId,
             $"Module Instance '{moduleInstanceId}' Production payload",

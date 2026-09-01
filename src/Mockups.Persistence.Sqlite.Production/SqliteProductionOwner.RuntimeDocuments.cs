@@ -304,7 +304,8 @@ internal sealed partial class SqliteProductionOwner
                                 collection,
                                 "jsonKey",
                                 "Runtime collection definition"),
-                            $"Module Instance '{moduleInstanceId}' effective Runtime contract"))
+                            $"Module Instance '{moduleInstanceId}' effective Runtime contract"),
+                        collection)
                 : RuntimeInputDocumentContract.OptionalCollection(
                       content,
                       storageKey,
@@ -501,52 +502,79 @@ internal sealed partial class SqliteProductionOwner
         _moduleInstanceThemeContextService.RequireShotContext(
             connection,
             shot.Id);
-        var index = _moduleInstanceRepository.NextSortOrder(
-            connection,
-            shot.Id);
-        var id = $"module_instance_{Guid.NewGuid():N}";
-        var name = _moduleInstanceRepository.UniqueName(
-            connection,
-            shot.Id,
-            requestedName);
-        _moduleInstanceRepository.Insert(
-            connection,
-            new ModuleInstanceRecord(
-                id,
-                shot.Id,
-                module.AppId,
-                module.Id,
-                name,
-                $"{module.Name} module instance.",
-                index,
-                initialDuration,
-                initialDurationPolicy,
-                0,
-                MotionVariantValue.NoneValue.ToJsonString(),
-                "{}",
-                "{}",
-                DefaultModuleAnimationJson(),
-                new JsonObject
-                {
-                    ["moduleVariantReference"] =
-                        draft.VariantReference,
-                }.ToJsonString()));
-        ReconcileModuleInstanceRuntimePayload(
-            connection,
-            id,
+        var metadata = new JsonObject
+        {
+            ["moduleVariantReference"] =
+                draft.VariantReference,
+        };
+        var contract = ResolveModuleInstanceContract(
+            module.Id,
+            metadata.ToJsonString());
+        var content =
+            RuntimeInputDocumentContract.CreateContentForContract(
+                new JsonObject(),
+                contract);
+        RuntimeInputDocumentContract.ValidateCurrentCollections(
+            contract,
+            content,
+            $"New Module Instance '{module.Id}' content_json");
+        RuntimeInputDocumentContract.ValidateCurrentValues(
+            contract,
+            content,
+            $"New Module Instance '{module.Id}' content_json");
+        ModuleRuntimeDocumentContracts.ValidateCurrent(
+            moduleSettings.RecordClassId,
+            $"New Module Instance '{module.Id}' content_json",
+            content,
             projectActorIds);
-        SynchronizeTimelineDurations(connection);
-        var duration = _moduleInstanceRepository
-            .Get(connection, id)
-            .DurationFrames;
-        return new ProjectTreeNode(
-            ProjectTreeNodeKind.ModuleInstance,
-            id,
-            name,
-            $"{module.Name} · {duration} frames · None",
-            ProjectTreeNode.DefaultRecordClassId(
-                ProjectTreeNodeKind.ModuleInstance),
-            shot);
+
+        lock (WriteGate)
+        {
+            using var transaction = connection.BeginTransaction();
+            var index = _moduleInstanceRepository.NextSortOrder(
+                connection,
+                shot.Id);
+            var id = $"module_instance_{Guid.NewGuid():N}";
+            var name = _moduleInstanceRepository.UniqueName(
+                connection,
+                shot.Id,
+                requestedName);
+            _moduleInstanceRepository.Insert(
+                connection,
+                new ModuleInstanceRecord(
+                    id,
+                    shot.Id,
+                    module.AppId,
+                    module.Id,
+                    name,
+                    $"{module.Name} module instance.",
+                    index,
+                    initialDuration,
+                    initialDurationPolicy,
+                    0,
+                    MotionVariantValue.NoneValue.ToJsonString(),
+                    content.ToJsonString(),
+                    "{}",
+                    DefaultModuleAnimationJson(),
+                    metadata.ToJsonString()),
+                transaction);
+            SynchronizeTimelineDurations(
+                connection,
+                shot.Id,
+                transaction);
+            var duration = _moduleInstanceRepository
+                .Get(connection, id)
+                .DurationFrames;
+            transaction.Commit();
+            return new ProjectTreeNode(
+                ProjectTreeNodeKind.ModuleInstance,
+                id,
+                name,
+                $"{module.Name} · {duration} frames · None",
+                ProjectTreeNode.DefaultRecordClassId(
+                    ProjectTreeNodeKind.ModuleInstance),
+                shot);
+        }
     }
 
     private void SaveModuleInstanceRuntimeContent(

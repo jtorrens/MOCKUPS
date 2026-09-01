@@ -300,7 +300,7 @@
       "footerRowGapToken": "theme.spacing.s",
       "footerRows": [
         {
-          "id": "row1",
+          "id": "footerRow1",
           "label": "Row 1",
           "padding": "theme.spacing.xl|theme.spacing.m",
           "verticalAlignment": "center",
@@ -376,7 +376,7 @@
           }
         },
         {
-          "id": "row2",
+          "id": "footerRow2",
           "label": "Row 2",
           "padding": "theme.spacing.l|theme.spacing.s",
           "verticalAlignment": "center",
@@ -1480,7 +1480,7 @@
     ],
     "socialPostFooterRows": [
       {
-        "id": "row1",
+        "id": "footerRow1",
         "slot1ActorId": "actor_alex",
         "slot1Label": "Alex Q",
         "slot1Sublabel": "@alexq · 2 min",
@@ -1498,7 +1498,7 @@
         "slot5Sublabel": ""
       },
       {
-        "id": "row2",
+        "id": "footerRow2",
         "slot1ActorId": "actor_alex",
         "slot1Label": "#FOQN",
         "slot1Sublabel": "",
@@ -1778,7 +1778,7 @@
         "footerRowGapToken": "theme.spacing.s",
         "footerRows": [
           {
-            "id": "row1",
+            "id": "footerRow1",
             "label": "Row 1",
             "padding": "theme.spacing.xl|theme.spacing.m",
             "verticalAlignment": "center",
@@ -1854,7 +1854,7 @@
             }
           },
           {
-            "id": "row2",
+            "id": "footerRow2",
             "label": "Row 2",
             "padding": "theme.spacing.l|theme.spacing.s",
             "verticalAlignment": "center",

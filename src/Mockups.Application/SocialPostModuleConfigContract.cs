@@ -92,14 +92,17 @@ internal static class SocialPostModuleConfigContract
     private static void ValidateRows(JsonObject socialPost, string key, string owner)
     {
         var rows = JsonPath.RequiredArray(socialPost, key, owner);
+        var idPrefix = key.Equals("footerRows", StringComparison.Ordinal)
+            ? "footerRow"
+            : "row";
         if (rows.Count != 2)
         {
             throw new InvalidOperationException(
-                $"{owner}.{key} must contain exactly row1 and row2.");
+                $"{owner}.{key} must contain exactly {idPrefix}1 and {idPrefix}2.");
         }
         for (var rowIndex = 0; rowIndex < rows.Count; rowIndex++)
         {
-            var rowId = $"row{rowIndex + 1}";
+            var rowId = $"{idPrefix}{rowIndex + 1}";
             var row = rows[rowIndex] as JsonObject
                 ?? throw new InvalidOperationException(
                     $"{owner}.{key}[{rowIndex}] must be an object.");

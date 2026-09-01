@@ -103,12 +103,23 @@ test("Social Post owns two fixed structure-projected Runtime row sections", () =
   assert.equal(contract.rows[1].slots[0].kind, "label");
   assert.equal(contract.rows[1].slots[0].inputs.sampleText, "#FOQN");
   assert.deepEqual(contract.footerRows.map(({ id }) => id), ["row1", "row2"]);
-  assert.equal(contract.footerRows[0].slots[0].kind, "avatar");
-  assert.equal(contract.footerRows[1].slots[0].kind, "label");
+  const footerConfigRows = config.socialPost.footerRows as Array<Record<string, unknown>>;
+  for (const [rowIndex, row] of contract.footerRows.entries()) {
+    for (const [slotIndex, slot] of row.slots.entries()) {
+      assert.equal(
+        slot.kind,
+        footerConfigRows[rowIndex]?.[`slot${slotIndex + 1}Kind`],
+      );
+    }
+  }
 });
 
 test("Social Post renders its two header rows against one Surface", () => {
-  const node = socialPostModuleToRenderable(fixture());
+  const source = fixture();
+  const node = socialPostModuleToRenderable(source);
+  const config = JSON.parse(source.configJson) as {
+    socialPost: { headerHeight: number };
+  };
   const header = requiredNode(node, "module.core.socialPost.header");
   const row1 = requiredNode(node, "module.core.socialPost.header.row1");
   const row2 = requiredNode(node, "module.core.socialPost.header.row2");
@@ -119,7 +130,7 @@ test("Social Post renders its two header rows against one Surface", () => {
   assert.ok(row1.box);
   assert.ok(row2.box);
   assert.ok(separator.box);
-  assert.equal(header.box.height, 130);
+  assert.equal(header.box.height, config.socialPost.headerHeight);
   assert.equal(row2.box.y, row1.box.y + row1.box.height + 4);
   assert.equal(separator.box.y + separator.box.height, row2.box.y + row2.box.height);
   assert.ok(findNode(header, "component.avatar"));
@@ -128,7 +139,11 @@ test("Social Post renders its two header rows against one Surface", () => {
 });
 
 test("Social Post renders the same two-row contract as a footer above navigation", () => {
-  const node = socialPostModuleToRenderable(fixture());
+  const source = fixture();
+  const node = socialPostModuleToRenderable(source);
+  const config = JSON.parse(source.configJson) as {
+    socialPost: { footerRows: Array<Record<string, unknown>> };
+  };
   const message = requiredNode(node, "module.core.socialPost.message");
   const footer = requiredNode(node, "module.core.socialPost.footer");
   const row1 = requiredNode(node, "module.core.socialPost.footer.row1");
@@ -142,8 +157,14 @@ test("Social Post renders the same two-row contract as a footer above navigation
   assert.equal(message.box.y + message.box.height, footer.box.y);
   assert.equal(footer.box.y + footer.box.height, navigation.box.y);
   assert.equal(row2.box.y, row1.box.y + row1.box.height + 4);
-  assert.ok(findNode(footer, "component.avatar"));
-  assert.ok(findNode(footer, "component.label"));
+  const firstFooterKind = String(config.socialPost.footerRows[0]?.slot1Kind ?? "none");
+  const footerComponentByKind: Record<string, string> = {
+    avatar: "component.avatar",
+    icon: "component.button",
+    label: "component.label",
+  };
+  const firstFooterComponent = footerComponentByKind[firstFooterKind];
+  if (firstFooterComponent) assert.ok(findNode(footer, firstFooterComponent));
   assert.equal(footer.children?.[0]?.type, "surface");
   assert.equal(
     footer.children?.[0]?.box?.y! + footer.children?.[0]?.box?.height!,

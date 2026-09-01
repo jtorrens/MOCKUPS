@@ -269,16 +269,19 @@ function requiredRuntimeRows(
   preview: Record<string, unknown>,
   key: "socialPostRows" | "socialPostFooterRows",
 ): [Record<string, unknown>, Record<string, unknown>] {
+  const idPrefix = key === "socialPostFooterRows" ? "footerRow" : "row";
   const value = preview[key];
   if (!Array.isArray(value) || value.length !== 2) {
-    throw new Error(`module.core.socialPost Runtime collection '${key}' must contain exactly row1 and row2`);
+    throw new Error(
+      `module.core.socialPost Runtime collection '${key}' must contain exactly ${idPrefix}1 and ${idPrefix}2`,
+    );
   }
   const rows = value.map((item, index) => {
     if (!item || typeof item !== "object" || Array.isArray(item)) {
       throw new Error(`module.core.socialPost ${key}[${index}] must be an object`);
     }
     const row = item as Record<string, unknown>;
-    const expectedId = `row${index + 1}`;
+    const expectedId = `${idPrefix}${index + 1}`;
     if (requiredString(row, "id", `module.core.socialPost.${key}[${index}].id`) !== expectedId) {
       throw new Error(`module.core.socialPost ${key}[${index}] must have id '${expectedId}'`);
     }
@@ -291,16 +294,19 @@ function requiredRows(
   socialPost: Record<string, unknown>,
   key: "rows" | "footerRows",
 ): [Record<string, unknown>, Record<string, unknown>] {
+  const idPrefix = key === "footerRows" ? "footerRow" : "row";
   const value = socialPost[key];
   if (!Array.isArray(value) || value.length !== 2) {
-    throw new Error(`module.core.socialPost.${key} must contain exactly row1 and row2`);
+    throw new Error(
+      `module.core.socialPost.${key} must contain exactly ${idPrefix}1 and ${idPrefix}2`,
+    );
   }
   const rows = value.map((item, index) => {
     if (!item || typeof item !== "object" || Array.isArray(item)) {
       throw new Error(`module.core.socialPost.${key}[${index}] must be an object`);
     }
     const row = item as Record<string, unknown>;
-    const expectedId = `row${index + 1}`;
+    const expectedId = `${idPrefix}${index + 1}`;
     if (requiredString(row, "id", `module.core.socialPost.${key}.${expectedId}.id`) !== expectedId) {
       throw new Error(`module.core.socialPost.${key}[${index}] must have id '${expectedId}'`);
     }

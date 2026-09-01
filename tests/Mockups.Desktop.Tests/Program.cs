@@ -275,6 +275,7 @@ var tests = new (string Name, Action Run)[]
     ("Label subtext placement uses the current explicit alignment contract", LabelSubtextPlacementUsesCurrentContract),
     ("Password composes stateful atoms and BehaviorTiming", PasswordSeedOpensAndRenders),
     ("Social Post composes two structure-projected header and footer rows", SocialPostComposesHeaderRows),
+    ("Social Post Screen creation persists projected Runtime rows atomically", SocialPostScreenCreationIsAtomic),
     ("Social Post editor exposes its current generic header contract", SocialPostEditorExposesCurrentHeaderContract),
     ("Lock Screen composes its runtime Stack and optional system bars", LockScreenComposesRuntimeStack),
     ("forwarded child inputs become effective parent runtime inputs", ForwardedChildInputsBecomeParentRuntimeInputs),
@@ -15873,12 +15874,8 @@ static void ProductionPayloadPreservesActorAndAnimation()
         foreach (var screen in screens)
         {
             var instance = database.GetModuleInstanceSettings(screen.Id);
-            var shot = database.GetShotSettings(instance.ShotId);
             var runtime = DesignPreviewTestValues.Parse(database.GetModuleInstanceRuntimePreviewJson(screen.Id));
             var runtimeActorId = runtime["actorId"]?.GetValue<string>();
-            var expectedActorId = string.IsNullOrWhiteSpace(runtimeActorId)
-                ? shot.OwnerActorId
-                : runtimeActorId;
             var payload = Required(DesignPreviewPayloadFactory.Create(dataSource, screen, null));
             var prepared =
                 preparer.PrepareRequired(
@@ -15890,10 +15887,18 @@ static void ProductionPayloadPreservesActorAndAnimation()
             Equal(payload.LocalFrame, prepared.LocalFrame);
             Equal(payload.InstanceJson, prepared.InstanceJson);
             var resolvedRuntime = DesignPreviewTestValues.Parse(payload.DesignPreviewJson);
-            var resolvedActor = resolvedRuntime["actor"] as JsonObject
-                ?? throw new InvalidOperationException($"Screen '{screen.Id}' has no resolved Actor.");
-            Equal(expectedActorId, resolvedActor["id"]?.GetValue<string>());
-            True(resolvedActor["id"]?.GetValue<string>() != "sample_actor");
+            if (string.IsNullOrWhiteSpace(runtimeActorId))
+            {
+                True(!resolvedRuntime.ContainsKey("actor"));
+            }
+            else
+            {
+                var resolvedActor = resolvedRuntime["actor"] as JsonObject
+                    ?? throw new InvalidOperationException(
+                        $"Screen '{screen.Id}' has no resolved Actor.");
+                Equal(runtimeActorId, resolvedActor["id"]?.GetValue<string>());
+                True(resolvedActor["id"]?.GetValue<string>() != "sample_actor");
+            }
 
             var payloadInstance = DesignPreviewTestValues.Parse(payload.InstanceJson);
             True(JsonNode.DeepEquals(
@@ -20930,7 +20935,7 @@ static void SocialPostComposesHeaderRows()
         .OfType<JsonObject>()
         .ToList();
     Equal(2, footerRows.Count);
-    SequenceEqual(["row1", "row2"], footerRows
+    SequenceEqual(["footerRow1", "footerRow2"], footerRows
         .Select((row) => row["id"]?.GetValue<string>() ?? "")
         .ToList());
     JsonPath.RequiredBoolean(socialPost, "useAppWallpaper", "Social Post config");
@@ -20995,7 +21000,7 @@ static void SocialPostComposesHeaderRows()
         "Social Post Runtime");
     Equal(2, runtimeFooterRows.Count);
     SequenceEqual(
-        ["row1", "row2"],
+        ["footerRow1", "footerRow2"],
         runtimeFooterRows.OfType<JsonObject>()
             .Select((row) => row["id"]?.GetValue<string>() ?? "")
             .ToList());
@@ -21027,6 +21032,169 @@ static void SocialPostComposesHeaderRows()
     })
     {
         True(html.Contains($"data-renderable-id=\"{renderableId}\"", StringComparison.Ordinal));
+    }
+}
+
+static void SocialPostScreenCreationIsAtomic()
+{
+    var source = ParityDatabasePath();
+    var temporary = Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        $".mockups-social-post-screen-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SqliteProjectTestContext(temporary);
+        var moduleInstances = ModuleInstances(database);
+        var shot = database.LoadProjectTree()
+            .SelectMany(DescendantsAndSelf)
+            .First((node) => node.Kind == ProjectTreeNodeKind.Shot);
+        var module = moduleInstances
+            .GetAvailableShotModules(shot.Id)
+            .Single((candidate) => candidate.RecordClassId == "module.core.socialPost");
+        var variant = moduleInstances
+            .GetModuleVariantOptions(module.Id)
+            .Single((candidate) => candidate.Value.EndsWith(
+                "::variant::default",
+                StringComparison.Ordinal));
+        var screen = moduleInstances.AddModuleInstance(
+            shot,
+            new ShotModuleInstanceDraft(
+                module,
+                variant.Value,
+                variant.Label,
+                $"{module.Name} · {variant.Label}"));
+        var content = JsonPath.ParseRequiredObject(
+            database.GetModuleInstanceSettings(screen.Id).ContentJson,
+            "Social Post Screen content");
+        foreach (var collectionKey in new[]
+                 {
+                     "socialPostRows",
+                     "socialPostFooterRows",
+                 })
+        {
+            var rows = JsonPath.RequiredArray(
+                    content,
+                    collectionKey,
+                    "Social Post Screen content")
+                .OfType<JsonObject>()
+                .ToList();
+            Equal(2, rows.Count);
+            SequenceEqual(
+                collectionKey.Equals("socialPostFooterRows", StringComparison.Ordinal)
+                    ? ["footerRow1", "footerRow2"]
+                    : ["row1", "row2"],
+                rows.Select((row) => row["id"]?.GetValue<string>() ?? "")
+                    .ToList());
+            foreach (var row in rows)
+            {
+                True(!row.ContainsKey("label"));
+                True(!row.ContainsKey("slot1Kind"));
+                True(row.ContainsKey("slot1ActorId"));
+                True(row.ContainsKey("slot1Label"));
+            }
+        }
+        var preview = JsonPath.ParseRequiredObject(
+            database.GetModuleInstanceRuntimePreviewJson(screen.Id),
+            "Social Post Screen Runtime preview");
+        Equal(
+            2,
+            JsonPath.RequiredArray(
+                preview,
+                "socialPostRows",
+                "Social Post Screen Runtime preview").Count);
+
+        var shotSettings = database.GetShotSettings(shot.Id);
+        var socialActorId = database.GetRequiredActorOptions(shotSettings.ProjectId)
+            .Select((option) => option.Value)
+            .First((actorId) => !actorId.Equals(
+                shotSettings.OwnerActorId,
+                StringComparison.Ordinal));
+        database.UpdateModuleInstanceRuntimeCollectionValue(
+            screen.Id,
+            "socialPostRows",
+            "row1",
+            "slot1ActorId",
+            JsonValue.Create(socialActorId));
+        var payloadData = new DesignPreviewPayloadDataSource(
+            database.PreviewInputs,
+            database.Production,
+            database.Resources,
+            database.Resources,
+            database.ProjectPaths);
+        var preparedPayload = new ProductionPreviewPayloadPreparer(
+                payloadData,
+                new ProductionPreviewRuntimeResolver(
+                    database.Resources,
+                    database.ProjectPaths))
+            .PrepareRequired(
+                screen,
+                null,
+                "light",
+                0);
+        var preparedRuntime = DesignPreviewTestValues.Parse(
+            preparedPayload.DesignPreviewJson);
+        True(!preparedRuntime.ContainsKey("actor"));
+        var preparedRow = JsonPath.RequiredArray(
+                preparedRuntime,
+                "socialPostRows",
+                "Prepared Social Post Screen Runtime")
+            .OfType<JsonObject>()
+            .Single((row) => row["id"]?.GetValue<string>() == "row1");
+        Equal(
+            socialActorId,
+            JsonPath.RequiredObject(
+                preparedRow,
+                "slot1Actor",
+                "Prepared Social Post row1")
+                ["id"]?.GetValue<string>());
+        True(!socialActorId.Equals(
+            shotSettings.OwnerActorId,
+            StringComparison.Ordinal));
+
+        var countBeforeRejectedAdd = database.LoadProjectTree()
+            .SelectMany(DescendantsAndSelf)
+            .Count((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance);
+        using (var connection = new SqliteConnection(
+                   new SqliteConnectionStringBuilder
+                   {
+                       DataSource = temporary,
+                       Mode = SqliteOpenMode.ReadWrite,
+                   }.ToString()))
+        {
+            connection.Open();
+            using var forceDuration = connection.CreateCommand();
+            forceDuration.CommandText =
+                "UPDATE shots SET duration_frames = 999 WHERE id = $shotId";
+            forceDuration.Parameters.AddWithValue("$shotId", shot.Id);
+            forceDuration.ExecuteNonQuery();
+            using var rejectSynchronization = connection.CreateCommand();
+            rejectSynchronization.CommandText = """
+                CREATE TRIGGER reject_screen_duration_sync
+                BEFORE UPDATE OF duration_frames ON shots
+                BEGIN
+                  SELECT RAISE(ABORT, 'forced duration synchronization failure');
+                END
+                """;
+            rejectSynchronization.ExecuteNonQuery();
+        }
+        Throws<SqliteException>(() => moduleInstances.AddModuleInstance(
+            shot,
+            new ShotModuleInstanceDraft(
+                module,
+                variant.Value,
+                variant.Label,
+                $"{module.Name} · rejected")));
+        Equal(
+            countBeforeRejectedAdd,
+            database.LoadProjectTree()
+                .SelectMany(DescendantsAndSelf)
+                .Count((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance));
+    }
+    finally
+    {
+        File.Delete(temporary);
     }
 }
 

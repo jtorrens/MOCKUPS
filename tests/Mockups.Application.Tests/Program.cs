@@ -796,6 +796,43 @@ static void ProjectedRuntimeCollectionsReconcileById()
     Equal("second", result[1]?["id"]?.GetValue<string>());
     Equal("authored", result[1]?["value"]?.GetValue<string>());
     Equal("Changed", result[1]?["label"]?.GetValue<string>());
+
+    var projectedDefinition = new JsonObject
+    {
+        ["fields"] = new JsonArray
+        {
+            new JsonObject
+            {
+                ["id"] = "label",
+                ["jsonKey"] = "label",
+                ["source"] = "variant",
+            },
+            new JsonObject
+            {
+                ["id"] = "value",
+                ["jsonKey"] = "value",
+                ["source"] = "runtime",
+            },
+        },
+        ["structureProjection"] = new JsonObject
+        {
+            ["fieldBindings"] = new JsonObject
+            {
+                ["label"] = "label",
+            },
+        },
+    };
+    var persisted =
+        RuntimeInputDocumentContract.ReconcileProjectedCollection(
+            current,
+            defaults,
+            projectedDefinition);
+
+    Equal(2, persisted.Count);
+    True(!persisted[0]!.AsObject().ContainsKey("label"));
+    True(!persisted[1]!.AsObject().ContainsKey("label"));
+    Equal("default", persisted[0]?["value"]?.GetValue<string>());
+    Equal("authored", persisted[1]?["value"]?.GetValue<string>());
 }
 
 static void ComponentInputBindingsProjectExactStructuredRuntimeValues()
