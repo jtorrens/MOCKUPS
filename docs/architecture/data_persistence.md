@@ -371,10 +371,13 @@ Presentation reads required after Theme or Production Font commits also cross
 that boundary; repository values are never requested by the visual callback.
 
 The context also creates one immutable `IProjectPathResolver` from its database
-location. That resolver travels explicitly with the desktop session and is the
-only authority for Project-relative media and asset paths. Opening another
-database creates another resolver; it cannot change the root observed by an
-already open context. There is no process-global current Project root.
+location. The workstation database is
+`~/Library/Application Support/MOCKUPS/mockups.sqlite` on macOS, so its sibling
+`assets` directory is the operational Project asset root. That resolver travels
+explicitly with the desktop session and is the only authority for
+Project-relative media and asset paths. Opening another database creates
+another resolver; it cannot change the root observed by an already open
+context. There is no process-global current Project root.
 
 Repositories return current validated records. Interpretation, Variant
 selection, forwarding, animation, context resolution, Preview preparation and
@@ -572,6 +575,18 @@ same revision:
 - `data/mockups.sqlite`;
 - affected files under `assets/FOQN_S2`;
 - affected files under `assets/system/system_icons`.
+
+`data/mockups.sqlite` is a versioned snapshot, never a second authoring
+database. Desktop startup and development scaffolding use the workstation
+database under the operating system application-data root. `npm run
+desktop:workstation:bootstrap` explicitly creates that operational Project from
+the repository snapshot only when it does not yet exist; startup itself remains
+read-only. After authoring, with MOCKUPS closed, `npm run desktop:db:snapshot`
+atomically replaces the repository snapshot from the workstation database.
+`npm run desktop:db:parity` compares exact bytes and fails on divergence, and
+the revision gate performs the same check whenever a workstation database
+exists. Neither bootstrap nor normal startup overwrites an existing
+workstation database.
 
 Tests that exercise destructive lifecycle behavior use disposable database
 copies. The committed Project keeps its intentional authoring content.

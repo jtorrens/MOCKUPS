@@ -153,6 +153,7 @@ var tests = new (string Name, Action Run)[]
     ("external Node processes share one executable resolution", ExternalNodeProcessesShareExecutableResolution),
     ("Desktop Preview startup rejects missing and stale bundle artifacts", DesktopPreviewBundleValidationIsStrict),
     ("startup classifies missing and invalid Preview bundles", StartupClassifiesPreviewBundleFailures),
+    ("default Desktop database belongs to the workstation application data root", DefaultDesktopDatabaseUsesApplicationData),
     ("startup classifies missing empty and invalid databases", StartupClassifiesDatabaseFailures),
     ("startup prepares a read-only session and honors cancellation", StartupPreparesReadOnlySessionAndHonorsCancellation),
     ("closing the editor cancels Preview work and releases its lifetime", ClosingEditorCancelsPreviewLifetime),
@@ -21933,6 +21934,17 @@ static string ParityDatabasePath()
     return string.IsNullOrWhiteSpace(configured)
         ? Path.Combine(Directory.GetCurrentDirectory(), "data", "mockups.sqlite")
         : Path.GetFullPath(configured);
+}
+
+static void DefaultDesktopDatabaseUsesApplicationData()
+{
+    Equal(
+        Path.Combine(
+            Environment.GetFolderPath(
+                Environment.SpecialFolder.LocalApplicationData),
+            "MOCKUPS",
+            "mockups.sqlite"),
+        SqlitePersistence.DefaultDatabasePath());
 }
 
 static MainWindow CreateTestWindow(string databasePath) =>

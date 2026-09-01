@@ -627,6 +627,26 @@ function run(): void {
   if (!existsSync(path.join(repositoryRoot, "package.json"))) {
     throw new Error("Scoped validation must run from the repository root.");
   }
+  if (level === "revision") {
+    process.stdout.write(
+      "\n[workstation-database-parity] "
+      + "node scripts/workstationProject.mjs check-if-present\n"
+      + "  a local operational database must match its repository snapshot\n",
+    );
+    if (!values.list) {
+      const parity = spawnSync(
+        process.execPath,
+        ["scripts/workstationProject.mjs", "check-if-present"],
+        {
+          cwd: repositoryRoot,
+          env: process.env,
+          stdio: "inherit",
+        },
+      );
+      if (parity.error) throw parity.error;
+      if (parity.status !== 0) process.exit(parity.status ?? 1);
+    }
+  }
   const files = values.file?.length
     ? values.file
     : discoverChangedFiles(repositoryRoot, level, values.base);

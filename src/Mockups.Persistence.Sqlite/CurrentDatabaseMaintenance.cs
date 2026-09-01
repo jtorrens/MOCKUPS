@@ -12,6 +12,8 @@ public static class CurrentDatabaseMaintenance
         if (args.Contains("--validate-current-database", StringComparer.Ordinal))
         {
             var path = OptionValue(args, "--source")
+                ?? Environment.GetEnvironmentVariable(
+                    "MOCKUPS_VALIDATION_DATABASE")
                 ?? SqlitePersistence.DefaultDatabasePath();
             _ = SqlitePersistence.OpenCurrent(path);
             Console.WriteLine($"Current desktop database validated read-only with SQLite {RuntimeVersion(path)}: {Path.GetFullPath(path)}");

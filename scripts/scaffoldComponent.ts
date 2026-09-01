@@ -14,7 +14,7 @@ import {
   materializeComponentScaffold,
   verifyComponentScaffoldImplementation,
 } from "../src/development-scaffolding/componentScaffoldWorkspace.js";
-import { parityDatabasePath } from "../src/development-scaffolding/parityDatabasePath.js";
+import { workstationProjectPaths } from "./workstationProject.mjs";
 
 const { values } = parseArgs({
   options: {
@@ -63,7 +63,7 @@ if (!values.spec) {
 const repositoryRoot = process.cwd();
 const databasePath = values.database
   ? path.resolve(values.database)
-  : parityDatabasePath(repositoryRoot);
+  : workstationProjectPaths(repositoryRoot).workstationDatabase;
 const specPath = resolveComponentScaffoldSpecPath(repositoryRoot, values.spec!);
 const spec = parseComponentScaffoldSpec(
   JSON.parse(readFileSync(specPath, "utf8")) as unknown,

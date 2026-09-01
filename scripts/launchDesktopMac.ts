@@ -3,6 +3,8 @@ import { spawn } from "node:child_process";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
+import { macDesktopInstallationPath } from "./installMacApp.mjs";
+
 export type MacDesktopLaunchMode = "development" | "packaged";
 
 export type MacDesktopLaunchSpec = {
@@ -32,7 +34,7 @@ export function macDesktopLaunchSpec(
     };
   }
 
-  const appPath = resolve(root, "out", "desktop", "MOCKUPS Editor.app");
+  const appPath = macDesktopInstallationPath();
   return {
     command: "caffeinate",
     args: [

@@ -18,12 +18,7 @@ test("macOS development launch wakes the display only for startup", () => {
 
 test("macOS packaged launch waits on the exact app bundle", () => {
   const spec = macDesktopLaunchSpec("packaged", repositoryRoot);
-  const appPath = path.join(
-    repositoryRoot,
-    "out",
-    "desktop",
-    "MOCKUPS Editor.app",
-  );
+  const appPath = path.join("/Applications", "MOCKUPS Editor.app");
 
   assert.deepEqual(spec.args, [
     "-du",

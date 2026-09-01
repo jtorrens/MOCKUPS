@@ -280,8 +280,10 @@ TypeScript, TSX and the Preview owner manifest are explicit MSBuild inputs, so a
 manifest-only owner change rebuilds the artifacts. Desktop startup rejects a
 missing or invalid bundle before opening the project database.
 `desktop:mac` runs that same prepared development command under the display
-wake policy. `desktop:open:mac` opens the existing packaged bundle and fails if
-it is absent. `desktop:launch:mac` packages the current revision first.
+wake policy. `desktop:open:mac` opens the installed bundle in `/Applications`
+and fails if it is absent. `desktop:launch:mac` bootstraps the workstation
+Project when necessary, packages the current revision, atomically installs it
+and then opens that installed artifact.
 Development launch and direct bundle opening are iteration paths only. Every
 final macOS UI handoff runs `npm run desktop:launch:mac`, regardless of whether
 the revision changed packaging, so the reviewed executable always rebuilds and
@@ -376,8 +378,9 @@ For each coherent phase:
    every check it selects for the exact revision scope;
 8. inspect the final diff, including parity artifacts;
 9. create a local commit;
-10. on macOS, always run `npm run desktop:launch:mac` and review the rebuilt
-   `out/desktop/MOCKUPS Editor.app`; on other platforms, open the validated
+10. on macOS, always run `npm run desktop:launch:mac`; it rebuilds the bundle,
+   atomically installs `/Applications/MOCKUPS Editor.app` and opens that exact
+   installed artifact. Review it there; on other platforms, open the validated
    desktop application when UI review is applicable;
 11. push only when the user asks.
 
@@ -390,6 +393,14 @@ a cross-owner integration, phase handoff, merge or publication. A completed
 gate remains valid while the source, contracts, generated artifacts, assets
 and staged parity database are unchanged; do not rerun it merely to reproduce
 the same result.
+
+The Desktop and development scaffolds author only the workstation Project. On
+macOS its database is `~/Library/Application Support/MOCKUPS/mockups.sqlite`
+and its Project assets are the sibling `assets` directory. Before validation or
+commit, close the Desktop and run `npm run desktop:db:snapshot`. The subsequent
+`npm run test:revision` fails if that database and `data/mockups.sqlite` differ,
+so a revision cannot silently validate a stale snapshot. Bootstrap is explicit
+and create-only; application startup never copies or repairs persistence.
 
 Only one task writes tracked project code or parity data in the shared checkout
 at a time. Read-only investigation may run independently.

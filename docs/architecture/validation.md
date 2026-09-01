@@ -260,12 +260,13 @@ selected command and its reason without running it. Repeated `--file <path>`
 arguments allow a deliberately narrower inspection when the shared workspace
 contains unrelated authoring data.
 
-The workstation's unstaged `data/mockups.sqlite` is excluded from automatic
-discovery because normal application authoring can keep it dirty and repository
-validation owns the staged parity artifact. Staging the database includes it
-automatically. During an intentional database edit,
-`--file data/mockups.sqlite` includes the active file explicitly before it is
-staged.
+The operational workstation database is outside the repository. Before a
+revision gate, `npm run desktop:db:snapshot` copies it atomically to
+`data/mockups.sqlite`; `test:revision` first compares exact bytes and fails if a
+local workstation database exists but the snapshot differs. The snapshot is
+then classified normally and must be staged with every intentional persistence
+change. `--file data/mockups.sqlite` may still select its exact validation owner
+before staging.
 
 The scoped owner is conservative about coverage but never selects `npm test`
 implicitly. A path without a declared validation owner stops immediately,
@@ -539,6 +540,7 @@ A revision is ready for review only when:
 - the worktree is clean after the local commit;
 - the latest validated app is open for UI review, or the handoff states why a
   UI launch is not applicable;
-- on macOS, the open app was rebuilt, packaged and launched through
-  `npm run desktop:launch:mac`; a development process or pre-existing bundle is
-  not a delivery artifact.
+- on macOS, the open app was rebuilt, installed at
+  `/Applications/MOCKUPS Editor.app` and launched through `npm run
+  desktop:launch:mac`; a development process or pre-existing bundle is not a
+  delivery artifact.

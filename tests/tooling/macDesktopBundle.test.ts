@@ -10,6 +10,12 @@ import {
   verifyMacDesktopBuildIdentity,
 } from "../../scripts/packageMacApp.mjs";
 import { macDesktopPublishArgs } from "../../scripts/publishMacDesktop.mjs";
+import {
+  installMacDesktopApp,
+  macDesktopInstallationPath,
+} from "../../scripts/installMacApp.mjs";
+import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 
 const repositoryRoot = process.cwd();
 
@@ -76,4 +82,39 @@ test("macOS publication rebuilds the exact self-contained Release target", () =>
     "-o",
     path.join(repositoryRoot, "out", "desktop", "osx-arm64"),
   ]);
+});
+
+test("macOS installation atomically replaces the Applications bundle", async () => {
+  const temporary = await mkdtemp(path.join(tmpdir(), "mockups-install-test-"));
+  const applications = path.join(temporary, "Applications");
+  const source = path.join(
+    temporary,
+    "out",
+    "desktop",
+    "MOCKUPS Editor.app",
+    "Contents",
+    "MacOS",
+  );
+  const destination = macDesktopInstallationPath(applications);
+  try {
+    await mkdir(source, { recursive: true });
+    await mkdir(destination, { recursive: true });
+    await writeFile(path.join(source, "Mockups.Desktop.Host"), "current");
+    await writeFile(path.join(destination, "obsolete"), "obsolete");
+
+    assert.equal(
+      await installMacDesktopApp(temporary, applications),
+      destination,
+    );
+    assert.equal(
+      await readFile(
+        path.join(destination, "Contents", "MacOS", "Mockups.Desktop.Host"),
+        "utf8",
+      ),
+      "current",
+    );
+    await assert.rejects(readFile(path.join(destination, "obsolete")));
+  } finally {
+    await rm(temporary, { recursive: true, force: true });
+  }
 });
