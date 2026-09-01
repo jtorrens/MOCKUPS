@@ -29,7 +29,8 @@ internal static class TimelineKeyframeDrag
             return existing;
         }
 
-        var step = precise ? 1 : 5;
+        _ = precise;
+        const int step = 1;
         return Math.Clamp(
             (int)Math.Round(clamped / step, MidpointRounding.AwayFromZero) * step,
             0,

@@ -84,6 +84,8 @@ test("Social Post owns two fixed structure-projected Runtime row sections", () =
   assert.deepEqual(runtime.inputs.map(({ id }) => id), [
     "mediaSource",
     "mediaHeight",
+    "mediaScale",
+    "mediaOffset",
     "messageText",
     "messageWriteOnTiming",
     "messageTextInputVisible",
@@ -102,6 +104,8 @@ test("Social Post owns two fixed structure-projected Runtime row sections", () =
   assert.equal(contract.rows[0].slots[0].inputs.sampleText, "Alex Q");
   assert.equal(contract.rows[1].slots[0].kind, "label");
   assert.equal(contract.rows[1].slots[0].inputs.sampleText, "#FOQN");
+  assert.equal(contract.mediaScale, 1);
+  assert.equal(contract.mediaOffset, "0|0");
   assert.deepEqual(contract.footerRows.map(({ id }) => id), ["row1", "row2"]);
   const footerConfigRows = config.socialPost.footerRows as Array<Record<string, unknown>>;
   for (const [rowIndex, row] of contract.footerRows.entries()) {
@@ -112,6 +116,56 @@ test("Social Post owns two fixed structure-projected Runtime row sections", () =
       );
     }
   }
+});
+
+test("Social Post resolves animated text before distributing non-empty row slots", () => {
+  const source = fixture();
+  source.instanceJson = JSON.stringify({
+    animation: {
+      schemaVersion: 2,
+      tracks: [
+        {
+          id: "message-text",
+          fieldId: "messageText",
+          keyframes: [
+            { id: "message-0", frame: 0, value: "", interpolation: "hold", enabled: true },
+            { id: "message-10", frame: 10, value: "Hello", interpolation: "writeOn", enabled: true },
+          ],
+        },
+        {
+          id: "row2-slot3-label",
+          fieldId: "slot3.label",
+          targetId: "row2",
+          keyframes: [
+            { id: "row-0", frame: 0, value: "", interpolation: "hold", enabled: true },
+            { id: "row-10", frame: 10, value: "#Tag", interpolation: "writeOn", enabled: true },
+          ],
+        },
+      ],
+    },
+  });
+
+  source.localFrame = 0;
+  const emptyFrame = resolveSocialPostModule(source);
+  assert.equal(emptyFrame.message.text, "");
+  assert.equal(emptyFrame.rows[1].slots[2].inputs.sampleText, "");
+  assert.equal(
+    findNodeWithPrefix(
+      socialPostModuleToRenderable(source),
+      "module.core.socialPost.header.row2.slot.3.",
+    ),
+    undefined,
+  );
+
+  source.localFrame = 5;
+  const animatedFrame = resolveSocialPostModule(source);
+  assert.equal(animatedFrame.message.text, "He");
+  assert.equal(animatedFrame.message.visibleText, "He");
+  assert.equal(animatedFrame.rows[1].slots[2].inputs.sampleText, "#T");
+  assert.ok(findNodeWithPrefix(
+    socialPostModuleToRenderable(source),
+    "module.core.socialPost.header.row2.slot.3.",
+  ));
 });
 
 test("Social Post renders its two header rows against one Surface", () => {
@@ -252,6 +306,15 @@ function findNode(root: RenderableNode, id: string): RenderableNode | undefined 
   if (root.id === id) return root;
   for (const child of root.children ?? []) {
     const found = findNode(child, id);
+    if (found) return found;
+  }
+  return undefined;
+}
+
+function findNodeWithPrefix(root: RenderableNode, prefix: string): RenderableNode | undefined {
+  if (root.id.startsWith(prefix)) return root;
+  for (const child of root.children ?? []) {
+    const found = findNodeWithPrefix(child, prefix);
     if (found) return found;
   }
   return undefined;

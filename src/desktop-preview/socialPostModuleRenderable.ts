@@ -256,6 +256,8 @@ function mediaSectionNode(
   const mediaInputs = {
     ...contract.mediaInputs,
     mediaSource: contract.mediaSource,
+    mediaScale: contract.mediaScale,
+    mediaOffset: contract.mediaOffset,
     viewportSize: `${mediaBox.width / scale}|${contract.mediaHeight}`,
   };
   const media = componentNode(
@@ -373,7 +375,7 @@ function renderRow(
   const screen = previewScreenBox(payload);
   const scale = renderScale(payload);
   const measured = row.slots.flatMap((slot) => {
-    if (!slot.componentType || !slot.componentSlot) return [];
+    if (!slot.componentType || !slot.componentSlot || !rowSlotHasContent(slot)) return [];
     const node = componentNode(
       payload,
       componentBaseConfigs,
@@ -402,6 +404,7 @@ function renderRow(
 
   if (left) children.push(placeMeasuredSlot(
     section,
+    row.id,
     left,
     leftEdge,
     rowY(row, contentY, contentHeight, left.height),
@@ -409,6 +412,7 @@ function renderRow(
   if (right) {
     children.push(placeMeasuredSlot(
       section,
+      row.id,
       right,
       rightEdge - right.width,
       rowY(row, contentY, contentHeight, right.height),
@@ -424,6 +428,7 @@ function renderRow(
   for (const item of middle) {
     children.push(placeMeasuredSlot(
       section,
+      row.id,
       item,
       middleX,
       rowY(row, contentY, contentHeight, item.height),
@@ -460,6 +465,18 @@ function renderRow(
   };
 }
 
+function rowSlotHasContent(slot: SocialPostRow["slots"][number]) {
+  if (slot.kind === "none") return false;
+  if (slot.kind !== "label") return true;
+  const label = typeof slot.inputs.sampleText === "string"
+    ? slot.inputs.sampleText.trim()
+    : "";
+  const sublabel = typeof slot.inputs.sampleSubtext === "string"
+    ? slot.inputs.sampleSubtext.trim()
+    : "";
+  return label.length > 0 || sublabel.length > 0;
+}
+
 function rowY(
   row: SocialPostRow,
   y: number,
@@ -473,6 +490,7 @@ function rowY(
 
 function placeMeasuredSlot(
   section: "header" | "footer",
+  rowId: SocialPostRow["id"],
   item: MeasuredSlot,
   x: number,
   y: number,
@@ -482,7 +500,7 @@ function placeMeasuredSlot(
     y: y - (item.node.box?.y ?? 0),
   });
   return {
-    id: `module.core.socialPost.${section}.slot.${item.index}.${translated.id}`,
+    id: `module.core.socialPost.${section}.${rowId}.slot.${item.index}.${translated.id}`,
     type: "group",
     frame: 0,
     box: translated.box,

@@ -158,6 +158,9 @@
       ]
     },
     "durationPolicy": "calculated",
+    "durationPolicyOptions": [
+      "calculated"
+    ],
     "defaultDurationFrames": null
   },
   "metadata": {

@@ -45,6 +45,10 @@
   "runtimeContract": {
     "source": null,
     "durationPolicy": "calculated",
+    "durationPolicyOptions": [
+      "calculated",
+      "explicit"
+    ],
     "defaultDurationFrames": null
   },
   "config": {
@@ -452,6 +456,13 @@
     }
   },
   "designPreview": {
+    "animationTimeline": {
+      "durationPolicy": "calculated",
+      "durationPolicyOptions": [
+        "calculated",
+        "explicit"
+      ]
+    },
     "inputs": [
       {
         "id": "mediaSource",
@@ -483,6 +494,37 @@
         "uiOrder": 20
       },
       {
+        "id": "mediaScale",
+        "label": "Scale",
+        "jsonKey": "mediaScale",
+        "kind": "number",
+        "valueKind": "Decimal",
+        "defaultValue": "1",
+        "minimum": 0.05,
+        "maximum": 16,
+        "increment": 0.05,
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "media",
+        "uiGroupLabel": "Media",
+        "uiOrder": 30
+      },
+      {
+        "id": "mediaOffset",
+        "label": "Offset",
+        "jsonKey": "mediaOffset",
+        "kind": "integerPair",
+        "valueKind": "IntegerPair",
+        "defaultValue": "0|0",
+        "pairFirstLabel": "X",
+        "pairSecondLabel": "Y",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "media",
+        "uiGroupLabel": "Media",
+        "uiOrder": 40
+      },
+      {
         "id": "messageText",
         "label": "Text",
         "jsonKey": "messageText",
@@ -493,7 +535,22 @@
         "uiOrigin": "embedded",
         "uiGroupId": "message",
         "uiGroupLabel": "Message",
-        "uiOrder": 10
+        "uiOrder": 10,
+        "animatable": true,
+        "animationInterpolations": [
+          "hold",
+          "writeOn"
+        ],
+        "animationTimeline": {
+          "origin": {
+            "kind": "ownerStart"
+          },
+          "completion": {
+            "baseDurationFieldId": "messageWriteOnTiming",
+            "trackOverride": "lastEnabledKeyframe",
+            "minimumEnabledKeyframes": 2
+          }
+        }
       },
       {
         "id": "messageWriteOnTiming",
@@ -620,6 +677,9 @@
         "jsonKey": "socialPostRows",
         "itemLabel": "Row",
         "storageCollectionJsonKey": "socialPostRows",
+        "animationTimeline": {
+          "sequenceItems": false
+        },
         "fields": [
           {
             "id": "rowLabel",
@@ -686,7 +746,17 @@
               "avatar",
               "label"
             ],
-            "uiOrder": 11
+            "uiOrder": 11,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
           },
           {
             "id": "slot1.sublabel",
@@ -700,7 +770,17 @@
               "avatar",
               "label"
             ],
-            "uiOrder": 12
+            "uiOrder": 12,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
           },
           {
             "id": "slot2.kind",
@@ -757,7 +837,17 @@
               "avatar",
               "label"
             ],
-            "uiOrder": 21
+            "uiOrder": 21,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
           },
           {
             "id": "slot2.sublabel",
@@ -771,7 +861,17 @@
               "avatar",
               "label"
             ],
-            "uiOrder": 22
+            "uiOrder": 22,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
           },
           {
             "id": "slot3.kind",
@@ -828,7 +928,17 @@
               "avatar",
               "label"
             ],
-            "uiOrder": 31
+            "uiOrder": 31,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
           },
           {
             "id": "slot3.sublabel",
@@ -842,7 +952,17 @@
               "avatar",
               "label"
             ],
-            "uiOrder": 32
+            "uiOrder": 32,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
           },
           {
             "id": "slot4.kind",
@@ -899,7 +1019,17 @@
               "avatar",
               "label"
             ],
-            "uiOrder": 41
+            "uiOrder": 41,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
           },
           {
             "id": "slot4.sublabel",
@@ -913,7 +1043,17 @@
               "avatar",
               "label"
             ],
-            "uiOrder": 42
+            "uiOrder": 42,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
           },
           {
             "id": "slot5.kind",
@@ -970,7 +1110,17 @@
               "avatar",
               "label"
             ],
-            "uiOrder": 51
+            "uiOrder": 51,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
           },
           {
             "id": "slot5.sublabel",
@@ -984,7 +1134,17 @@
               "avatar",
               "label"
             ],
-            "uiOrder": 52
+            "uiOrder": 52,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
           }
         ],
         "itemPresentation": {
@@ -1020,6 +1180,9 @@
         "jsonKey": "socialPostFooterRows",
         "itemLabel": "Row",
         "storageCollectionJsonKey": "socialPostFooterRows",
+        "animationTimeline": {
+          "sequenceItems": false
+        },
         "fields": [
           {
             "id": "rowLabel",
@@ -1086,7 +1249,17 @@
               "avatar",
               "label"
             ],
-            "uiOrder": 11
+            "uiOrder": 11,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
           },
           {
             "id": "slot1.sublabel",
@@ -1100,7 +1273,17 @@
               "avatar",
               "label"
             ],
-            "uiOrder": 12
+            "uiOrder": 12,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
           },
           {
             "id": "slot2.kind",
@@ -1157,7 +1340,17 @@
               "avatar",
               "label"
             ],
-            "uiOrder": 21
+            "uiOrder": 21,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
           },
           {
             "id": "slot2.sublabel",
@@ -1171,7 +1364,17 @@
               "avatar",
               "label"
             ],
-            "uiOrder": 22
+            "uiOrder": 22,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
           },
           {
             "id": "slot3.kind",
@@ -1228,7 +1431,17 @@
               "avatar",
               "label"
             ],
-            "uiOrder": 31
+            "uiOrder": 31,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
           },
           {
             "id": "slot3.sublabel",
@@ -1242,7 +1455,17 @@
               "avatar",
               "label"
             ],
-            "uiOrder": 32
+            "uiOrder": 32,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
           },
           {
             "id": "slot4.kind",
@@ -1299,7 +1522,17 @@
               "avatar",
               "label"
             ],
-            "uiOrder": 41
+            "uiOrder": 41,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
           },
           {
             "id": "slot4.sublabel",
@@ -1313,7 +1546,17 @@
               "avatar",
               "label"
             ],
-            "uiOrder": 42
+            "uiOrder": 42,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
           },
           {
             "id": "slot5.kind",
@@ -1370,7 +1613,17 @@
               "avatar",
               "label"
             ],
-            "uiOrder": 51
+            "uiOrder": 51,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
           },
           {
             "id": "slot5.sublabel",
@@ -1384,7 +1637,17 @@
               "avatar",
               "label"
             ],
-            "uiOrder": 52
+            "uiOrder": 52,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
           }
         ],
         "itemPresentation": {
@@ -1417,6 +1680,8 @@
     ],
     "mediaSource": "media/image.14b3f25e7af16bda8755ce1c2c1efe6b.jpg",
     "mediaHeight": 300,
+    "mediaScale": 1,
+    "mediaOffset": "0|0",
     "messageText": "Escribe aquí el mensaje de la publicación.",
     "messageWriteOnTiming": {
       "mode": "fixed",

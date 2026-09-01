@@ -1373,6 +1373,9 @@
   "runtimeContract": {
     "source": null,
     "durationPolicy": "calculated",
+    "durationPolicyOptions": [
+      "calculated"
+    ],
     "defaultDurationFrames": null
   },
   "metadata": {

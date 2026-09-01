@@ -332,6 +332,7 @@ function validSpec(): ModuleScaffoldSpec {
         collectionIds: ["items"],
       },
       durationPolicy: "calculated",
+      durationPolicyOptions: ["calculated"],
       defaultDurationFrames: null,
     },
     metadata: { note: "Test-only scaffold." },

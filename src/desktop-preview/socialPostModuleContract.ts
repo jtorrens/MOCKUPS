@@ -56,6 +56,8 @@ export interface SocialPostModuleContract {
   mediaInputs: Record<string, unknown>;
   mediaSource: string;
   mediaHeight: number;
+  mediaScale: number;
+  mediaOffset: string;
   showMediaSeparator: boolean;
   message: SocialPostMessageContract;
   footerHeight: number;

@@ -19,7 +19,10 @@ import {
   requiredString,
   stringValue,
 } from "./componentResolverCommon.js";
-import { requiredObjectArray } from "./previewJsonHelpers.js";
+import { optionalObject, requiredObjectArray } from "./previewJsonHelpers.js";
+import { resolveParameterAnimation } from "./parameterAnimationResolver.js";
+import { rootScreenFrame } from "./previewFrameContext.js";
+import { RuntimeOwnerTimeline } from "./runtimeOwnerTimeline.js";
 import {
   simpleWriteOnFrameVisibleCount,
   textGraphemes,
@@ -30,7 +33,8 @@ export function resolveSocialPostModule(
 ): SocialPostModuleContract {
   const config = parseObject(payload.configJson);
   const socialPost = requiredRecord(config, "socialPost", "module.core.socialPost");
-  const preview = parseObject(payload.designPreviewJson);
+  const resolvedFrame = resolveSocialPostModuleFrame(payload);
+  const preview = resolvedFrame.preview;
   const componentBaseConfigs = parseObject(payload.componentBaseConfigsJson);
   const themeTokens = parseObject(payload.themeTokensJson);
   const rows = requiredRows(socialPost, "rows");
@@ -42,6 +46,7 @@ export function resolveSocialPostModule(
     preview,
     componentBaseConfigs,
     themeTokens,
+    resolvedFrame.messageTextAnimated,
   );
 
   return {
@@ -108,6 +113,16 @@ export function resolveSocialPostModule(
       "mediaHeight",
       "module.core.socialPost.mediaHeight",
     )),
+    mediaScale: Math.max(0.01, requiredNumber(
+      preview,
+      "mediaScale",
+      "module.core.socialPost.mediaScale",
+    )),
+    mediaOffset: requiredString(
+      preview,
+      "mediaOffset",
+      "module.core.socialPost.mediaOffset",
+    ),
     showMediaSeparator: requiredBoolean(
       socialPost,
       "showMediaSeparator",
@@ -137,11 +152,86 @@ export function resolveSocialPostModule(
   };
 }
 
+function resolveSocialPostModuleFrame(payload: DesignPreviewPayload) {
+  const preview = parseObject(payload.designPreviewJson);
+  const instance = parseObject(payload.instanceJson);
+  const animation = optionalObject(instance, "animation", "Preview instance envelope");
+  const screenFrame = rootScreenFrame(payload);
+  const themeTokens = parseObject(payload.themeTokensJson);
+  const timeline = new RuntimeOwnerTimeline(
+    preview,
+    preview,
+    animation,
+    themeTokens,
+    0,
+    payload.frameRate,
+  );
+  const resolvedText = resolveParameterAnimation(
+    animation,
+    "messageText",
+    "",
+    timeline.temporalLocalFrame("messageText", "", screenFrame),
+    preview.messageText,
+  );
+  preview.messageText = requiredAnimatedString(
+    resolvedText.value,
+    "module.core.socialPost.messageText",
+  );
+  for (const collectionKey of ["socialPostRows", "socialPostFooterRows"] as const) {
+    preview[collectionKey] = requiredObjectArray(
+      preview,
+      collectionKey,
+      "module.core.socialPost Runtime",
+    ).map((value, index) => {
+      const row = { ...value };
+      const targetId = requiredString(
+        row,
+        "id",
+        `module.core.socialPost.${collectionKey}[${index}].id`,
+      );
+      for (let slot = 1; slot <= 5; slot += 1) {
+        resolveRowText("label", `slot${slot}Label`, slot);
+        resolveRowText("sublabel", `slot${slot}Sublabel`, slot);
+      }
+      return row;
+
+      function resolveRowText(
+        part: "label" | "sublabel",
+        jsonKey: string,
+        slot: number,
+      ) {
+        const fieldId = `slot${slot}.${part}`;
+        const resolved = resolveParameterAnimation(
+          animation,
+          fieldId,
+          targetId,
+          timeline.temporalLocalFrame(fieldId, targetId, screenFrame),
+          stringValue(row[jsonKey]),
+        );
+        row[jsonKey] = requiredAnimatedString(
+          resolved.value,
+          `module.core.socialPost.${collectionKey}.${targetId}.${fieldId}`,
+        );
+      }
+    });
+  }
+  return {
+    preview,
+    messageTextAnimated: resolvedText.animated,
+  };
+}
+
+function requiredAnimatedString(value: unknown, owner: string) {
+  if (typeof value === "string") return value;
+  throw new Error(`${owner} animation must resolve a string`);
+}
+
 function resolveMessage(
   socialPost: Record<string, unknown>,
   preview: Record<string, unknown>,
   componentBaseConfigs: Record<string, unknown>,
   themeTokens: Record<string, unknown>,
+  messageTextAnimated: boolean,
 ) {
   const text = requiredPossiblyEmptyString(
     preview,
@@ -165,11 +255,12 @@ function resolveMessage(
     inputDefinitions,
     themeTokens,
   );
-  const trigger = requiredBoolean(
+  const authoredTrigger = requiredBoolean(
     preview,
     "messageWriteOnTrigger",
     "module.core.socialPost.messageWriteOnTrigger",
   );
+  const trigger = !messageTextAnimated && authoredTrigger;
   const actionFrame = Math.max(0, Math.floor(requiredNumber(
     preview,
     "messageWriteOnFrame",

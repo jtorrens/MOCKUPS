@@ -1222,11 +1222,37 @@ internal sealed class ModuleInstanceAnimationEditor
                     };
                     marker.KeyDown += (_, args) =>
                     {
-                        if (args.Key != Key.Escape || !dragging) return;
-                        released = true;
-                        capturedPointer?.Capture(null);
-                        capturedPointer = null;
-                        Restore();
+                        if (args.Key == Key.Escape && dragging)
+                        {
+                            released = true;
+                            capturedPointer?.Capture(null);
+                            capturedPointer = null;
+                            Restore();
+                            args.Handled = true;
+                            return;
+                        }
+                        if (dragging || !canDrag
+                            || (args.Key != Key.Left && args.Key != Key.Right)) return;
+                        var destination = keyframe.Frame
+                            + (args.Key == Key.Left ? -1 : 1);
+                        var destinationTimelineFrame =
+                            AnimationTimelineCoordinateSpace.MarkerFrame(
+                                usesOwnerTimeline,
+                                target.Target?.OwnerFrameOrigin ?? 0,
+                                destination,
+                                target.Target?.ScreenFrameForOwnerFrame
+                                    ?? ((_) => destination));
+                        var occupied = target.Track!.Keyframes.Any((candidate) =>
+                            candidate.Id != keyframe.Id && candidate.Frame == destination);
+                        if (destination <= 0
+                            || destinationTimelineFrame > markerScale
+                            || occupied)
+                        {
+                            args.Handled = true;
+                            return;
+                        }
+                        previewFrame(destinationTimelineFrame);
+                        _ = moveKeyframe(target, keyframe, destination);
                         args.Handled = true;
                     };
                 }

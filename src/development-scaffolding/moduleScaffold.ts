@@ -100,6 +100,7 @@ export interface ModuleScaffoldSpec {
       collectionIds: string[];
     } | null;
     durationPolicy: ModuleDurationPolicy;
+    durationPolicyOptions: ModuleDurationPolicy[];
     defaultDurationFrames: number | null;
   };
   metadata: JsonObject;
@@ -293,7 +294,7 @@ export function parseModuleScaffoldSpec(value: unknown): ModuleScaffoldSpec {
   );
   requireExactKeys(
     runtimeContract,
-    ["source", "durationPolicy", "defaultDurationFrames"],
+    ["source", "durationPolicy", "durationPolicyOptions", "defaultDurationFrames"],
     "Module scaffold runtimeContract",
   );
   const source = runtimeContract.source === null
@@ -319,6 +320,15 @@ export function parseModuleScaffoldSpec(value: unknown): ModuleScaffoldSpec {
   if (durationPolicy !== "calculated" && durationPolicy !== "explicit") {
     throw new Error(`Unsupported Module duration policy '${durationPolicy}'.`);
   }
+  const durationPolicyOptions = stringArray(
+    runtimeContract.durationPolicyOptions,
+    "Module scaffold runtimeContract durationPolicyOptions",
+  ).map((policy) => {
+    if (policy !== "calculated" && policy !== "explicit") {
+      throw new Error(`Unsupported Module duration policy option '${policy}'.`);
+    }
+    return policy;
+  });
   const defaultDurationFrames = optionalInteger(
     runtimeContract.defaultDurationFrames,
     "Module scaffold runtimeContract defaultDurationFrames",
@@ -401,6 +411,7 @@ export function parseModuleScaffoldSpec(value: unknown): ModuleScaffoldSpec {
         collectionIds: stringArray(source.collectionIds, "Module runtime source collectionIds"),
       } : null,
       durationPolicy,
+      durationPolicyOptions,
       defaultDurationFrames,
     },
     metadata: requiredJsonObject(root.metadata, "Module scaffold metadata"),
@@ -752,6 +763,7 @@ export function moduleScaffoldTemplate(): ModuleScaffoldSpec {
         collectionIds: ["items"],
       },
       durationPolicy: "calculated",
+      durationPolicyOptions: ["calculated"],
       defaultDurationFrames: null,
     },
     metadata: { note: "Replace with the current Module note." },
@@ -931,12 +943,7 @@ function resolveRuntimeContract(
         sourceSpec.variantReferenceConfigPath;
     }
   }
-  designPreview.animationTimeline = spec.runtimeContract.durationPolicy === "explicit"
-    ? {
-      durationPolicy: "explicit",
-      defaultDurationFrames: spec.runtimeContract.defaultDurationFrames!,
-    }
-    : { durationPolicy: "calculated" };
+  designPreview.animationTimeline = durationTimeline(spec);
   validateDurationContract(spec, violations);
   return {
     designPreview,
@@ -963,19 +970,10 @@ function resolveOwnedRuntimeContract(
       `Module-owned designPreview componentType must equal '${spec.module.recordClassId}'.`,
     );
   }
-  if (spec.runtimeContract.durationPolicy === "explicit") {
-    const expectedTimeline = {
-      durationPolicy: "explicit",
-      defaultDurationFrames: spec.runtimeContract.defaultDurationFrames!,
-    };
-    if (canonicalJson(designPreview.animationTimeline)
-        !== canonicalJson(expectedTimeline)) {
-      violations.push("Module-owned designPreview has a different explicit duration contract.");
-    }
-  } else if (designPreview.animationTimeline !== undefined
-      && canonicalJson(designPreview.animationTimeline)
-        !== canonicalJson({ durationPolicy: "calculated" })) {
-    violations.push("Module-owned designPreview has a different calculated duration contract.");
+  const expectedTimeline = durationTimeline(spec);
+  if (canonicalJson(designPreview.animationTimeline)
+      !== canonicalJson(expectedTimeline)) {
+    violations.push("Module-owned designPreview has a different duration contract.");
   }
   return {
     designPreview,
@@ -990,6 +988,14 @@ function validateDurationContract(
   spec: ModuleScaffoldSpec,
   violations: string[],
 ) {
+  const options = spec.runtimeContract.durationPolicyOptions;
+  if (options.length === 0
+      || new Set(options).size !== options.length
+      || !options.includes(spec.runtimeContract.durationPolicy)) {
+    violations.push(
+      "Module durationPolicyOptions must contain unique policies including durationPolicy.",
+    );
+  }
   if (spec.runtimeContract.durationPolicy === "explicit") {
     if (!spec.runtimeContract.defaultDurationFrames
         || spec.runtimeContract.defaultDurationFrames <= 0) {
@@ -998,6 +1004,18 @@ function validateDurationContract(
   } else if (spec.runtimeContract.defaultDurationFrames !== null) {
     violations.push("Calculated Module duration must use null defaultDurationFrames.");
   }
+}
+
+function durationTimeline(spec: ModuleScaffoldSpec) {
+  return {
+    durationPolicy: spec.runtimeContract.durationPolicy,
+    ...(spec.runtimeContract.durationPolicy === "explicit"
+      ? { defaultDurationFrames: spec.runtimeContract.defaultDurationFrames! }
+      : {}),
+    ...(spec.runtimeContract.durationPolicyOptions.length > 1
+      ? { durationPolicyOptions: spec.runtimeContract.durationPolicyOptions }
+      : {}),
+  };
 }
 
 function validateFields(

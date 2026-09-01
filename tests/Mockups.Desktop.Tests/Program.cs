@@ -18479,7 +18479,7 @@ static void KeyframeMovesPreservePayloadAndProtectFrameZero()
 
 static void KeyframeDragSnapsToScreenGrid()
 {
-    Equal(10, TimelineKeyframeDrag.ResolveScreenFrame(12.1, precise: false, 100, 500, []));
+    Equal(12, TimelineKeyframeDrag.ResolveScreenFrame(12.1, precise: false, 100, 500, []));
     Equal(12, TimelineKeyframeDrag.ResolveScreenFrame(12.1, precise: true, 100, 500, []));
     Equal(13, TimelineKeyframeDrag.ResolveScreenFrame(12.8, precise: false, 100, 500, [13]));
     Equal(100, TimelineKeyframeDrag.ResolveScreenFrame(99.9, precise: false, 100, 500, []));
@@ -20971,6 +20971,8 @@ static void SocialPostComposesHeaderRows()
         [
             "mediaSource",
             "mediaHeight",
+            "mediaScale",
+            "mediaOffset",
             "messageText",
             "messageWriteOnTiming",
             "messageTextInputVisible",
