@@ -123,6 +123,7 @@ var tests = new (string Name, Action Run)[]
     ("MOV H.264 modes match the Créditos encoding profiles", MovH264ModesMatchCreditosProfiles),
     ("MOV outputs carry exact color metadata and full-scale opaque alpha", MovOutputsCarryExactMetadata),
     ("Render executor publishes MOV with exact alpha association metadata", RenderExecutorPublishesMovWithExactMetadata),
+    ("Chromium raster failures retain worker diagnostics", ChromiumRasterFailuresRetainWorkerDiagnostics),
     ("Production render overrides Device and Theme while respecting forced Screen appearance", ProductionRenderOverridesRespectScreenAppearance),
     ("Render snapshot store interns repeated font assets", RenderSnapshotStoreInternsAssets),
     ("Render Queue persists and completes batch children independently", RenderQueueChildrenAreIndependent),
@@ -13278,6 +13279,23 @@ static void MovOutputsCarryExactMetadata()
     {
         Directory.Delete(root, recursive: true);
     }
+}
+
+static void ChromiumRasterFailuresRetainWorkerDiagnostics()
+{
+    Equal(
+        "Chromium raster worker failed: Broken pipe",
+        ChromiumPreviewRasterizer.FormatFailure("Broken pipe", ""));
+    Equal(
+        $"Chromium raster worker failed: Broken pipe{Environment.NewLine}worker startup failed",
+        ChromiumPreviewRasterizer.FormatFailure(
+            "Broken pipe",
+            "  worker startup failed  "));
+    Equal(
+        $"Chromium raster worker output ended.{Environment.NewLine}worker exited",
+        ChromiumPreviewRasterizer.FormatFailure(
+            "Chromium raster worker output ended.",
+            "worker exited"));
 }
 
 static string RunChildProcess(

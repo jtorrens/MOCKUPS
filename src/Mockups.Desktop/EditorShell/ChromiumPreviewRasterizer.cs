@@ -16,6 +16,7 @@ internal sealed class ChromiumPreviewRasterizer : IDisposable
 {
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly HashSet<string> _registeredAssets = new(StringComparer.Ordinal);
+    private readonly object _stderrGate = new();
     private readonly StringBuilder _stderr = new();
     private Process? _process;
     private int _nextId;
@@ -84,10 +85,18 @@ internal sealed class ChromiumPreviewRasterizer : IDisposable
                 ("outputChars", File.Exists(outputPath) ? new FileInfo(outputPath).Length : 0));
             return new RasterResult(outputPath, response.RenderMs, response.CaptureMs);
         }
-        catch
+        catch (OperationCanceledException)
         {
             Restart();
             throw;
+        }
+        catch (Exception exception)
+        {
+            var message = FormatFailure(
+                exception.Message,
+                CaptureStandardError());
+            Restart();
+            throw new InvalidOperationException(message, exception);
         }
         finally
         {
@@ -106,14 +115,53 @@ internal sealed class ChromiumPreviewRasterizer : IDisposable
             redirectStandardInput: true);
         startInfo.ArgumentList.Add(script);
         _process = Process.Start(startInfo) ?? throw new InvalidOperationException("Could not start Chromium raster worker.");
-        _stderr.Clear();
+        lock (_stderrGate) _stderr.Clear();
         _process.ErrorDataReceived += (_, args) =>
         {
-            if (!string.IsNullOrWhiteSpace(args.Data)) _stderr.AppendLine(args.Data);
+            if (string.IsNullOrWhiteSpace(args.Data)) return;
+            lock (_stderrGate) _stderr.AppendLine(args.Data);
         };
         _process.BeginErrorReadLine();
         _registeredAssets.Clear();
         PreviewDebugLog.Write("preview.raster.chromium.start", ("script", script));
+    }
+
+    private string CaptureStandardError()
+    {
+        try
+        {
+            if (_process is { HasExited: true } process)
+            {
+                // Complete asynchronous ErrorDataReceived delivery before the
+                // worker is disposed and its diagnostic output is lost.
+                process.WaitForExit();
+            }
+        }
+        catch
+        {
+            // The original worker failure remains authoritative.
+        }
+
+        lock (_stderrGate) return _stderr.ToString();
+    }
+
+    internal static string FormatFailure(
+        string failure,
+        string standardError)
+    {
+        var trimmedFailure = failure.Trim();
+        var headline = trimmedFailure.StartsWith(
+            "Chromium raster worker",
+            StringComparison.Ordinal)
+            ? trimmedFailure
+            : $"Chromium raster worker failed: {trimmedFailure}";
+        var diagnostics = standardError.Trim();
+        if (diagnostics.Length == 0) return headline;
+        if (diagnostics.Length > 4000)
+        {
+            diagnostics = diagnostics[^4000..];
+        }
+        return $"{headline}{Environment.NewLine}{diagnostics}";
     }
 
     private static string ResolveScript()
