@@ -20939,6 +20939,10 @@ static void SocialPostComposesHeaderRows()
     {
         foreach (var slot in Enumerable.Range(1, 5))
         {
+            JsonPath.RequiredString(
+                row,
+                $"slot{slot}IconSizeToken",
+                "Social Post row config");
             foreach (var suffix in new[] { "AvatarSlot", "IconSlot", "LabelSlot" })
             {
                 var key = $"slot{slot}{suffix}";

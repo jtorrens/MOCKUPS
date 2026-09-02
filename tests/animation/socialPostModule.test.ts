@@ -108,6 +108,16 @@ test("Social Post owns two fixed structure-projected Runtime row sections", () =
   assert.equal(contract.rows[0].slots[0].inputs.sampleText, "Alex Q");
   assert.equal(contract.rows[1].slots[0].kind, "label");
   assert.equal(contract.rows[1].slots[0].inputs.sampleText, "#FOQN");
+  const headerConfigRows = config.socialPost.rows as Array<Record<string, unknown>>;
+  for (const [rowIndex, row] of contract.rows.entries()) {
+    for (const [slotIndex, slot] of row.slots.entries()) {
+      if (slot.kind !== "icon") continue;
+      assert.equal(
+        slot.inputs.iconSizeToken,
+        headerConfigRows[rowIndex]?.[`slot${slotIndex + 1}IconSizeToken`],
+      );
+    }
+  }
   assert.equal(contract.mediaScale, 1);
   assert.equal(contract.mediaOffset, "0|0");
   assert.deepEqual(contract.footerRows.map(({ id }) => id), ["row1", "row2"]);
@@ -118,6 +128,12 @@ test("Social Post owns two fixed structure-projected Runtime row sections", () =
         slot.kind,
         footerConfigRows[rowIndex]?.[`slot${slotIndex + 1}Kind`],
       );
+      if (slot.kind === "icon") {
+        assert.equal(
+          slot.inputs.iconSizeToken,
+          footerConfigRows[rowIndex]?.[`slot${slotIndex + 1}IconSizeToken`],
+        );
+      }
     }
   }
 });

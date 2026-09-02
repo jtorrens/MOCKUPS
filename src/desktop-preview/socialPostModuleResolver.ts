@@ -580,7 +580,11 @@ function resolveRowSlot(
       inputs: {
         state: "normal",
         sampleText: "",
-        iconSizeToken: "theme.iconSizes.m",
+        iconSizeToken: requiredString(
+          rowConfig,
+          `${configPrefix}IconSizeToken`,
+          `${owner}.${configPrefix}IconSizeToken`,
+        ),
         showBadge: false,
       },
     };

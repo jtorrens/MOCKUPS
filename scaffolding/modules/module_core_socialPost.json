@@ -143,7 +143,12 @@
           "slot5LabelSlot": {
             "variantReference": "component_project_foqn_s2_label::variant::default",
             "overrides": {}
-          }
+          },
+          "slot1IconSizeToken": "theme.iconSizes.m",
+          "slot2IconSizeToken": "theme.iconSizes.m",
+          "slot3IconSizeToken": "theme.iconSizes.m",
+          "slot4IconSizeToken": "theme.iconSizes.m",
+          "slot5IconSizeToken": "theme.iconSizes.m"
         },
         {
           "id": "row2",
@@ -215,7 +220,12 @@
           "slot5LabelSlot": {
             "variantReference": "component_project_foqn_s2_label::variant::default",
             "overrides": {}
-          }
+          },
+          "slot1IconSizeToken": "theme.iconSizes.m",
+          "slot2IconSizeToken": "theme.iconSizes.m",
+          "slot3IconSizeToken": "theme.iconSizes.m",
+          "slot4IconSizeToken": "theme.iconSizes.m",
+          "slot5IconSizeToken": "theme.iconSizes.m"
         }
       ],
       "headerHeight": 130,
@@ -388,7 +398,12 @@
           "slot5LabelSlot": {
             "variantReference": "component_project_foqn_s2_label::variant::default",
             "overrides": {}
-          }
+          },
+          "slot1IconSizeToken": "theme.iconSizes.m",
+          "slot2IconSizeToken": "theme.iconSizes.m",
+          "slot3IconSizeToken": "theme.iconSizes.m",
+          "slot4IconSizeToken": "theme.iconSizes.m",
+          "slot5IconSizeToken": "theme.iconSizes.m"
         },
         {
           "id": "footerRow2",
@@ -460,7 +475,12 @@
           "slot5LabelSlot": {
             "variantReference": "component_project_foqn_s2_label::variant::default",
             "overrides": {}
-          }
+          },
+          "slot1IconSizeToken": "theme.iconSizes.m",
+          "slot2IconSizeToken": "theme.iconSizes.m",
+          "slot3IconSizeToken": "theme.iconSizes.m",
+          "slot4IconSizeToken": "theme.iconSizes.m",
+          "slot5IconSizeToken": "theme.iconSizes.m"
         }
       ],
       "footerHeight": 130
@@ -1986,7 +2006,12 @@
             "slot5LabelSlot": {
               "variantReference": "component_project_foqn_s2_label::variant::default",
               "overrides": {}
-            }
+            },
+            "slot1IconSizeToken": "theme.iconSizes.m",
+            "slot2IconSizeToken": "theme.iconSizes.m",
+            "slot3IconSizeToken": "theme.iconSizes.m",
+            "slot4IconSizeToken": "theme.iconSizes.m",
+            "slot5IconSizeToken": "theme.iconSizes.m"
           },
           {
             "id": "row2",
@@ -2058,7 +2083,12 @@
             "slot5LabelSlot": {
               "variantReference": "component_project_foqn_s2_label::variant::default",
               "overrides": {}
-            }
+            },
+            "slot1IconSizeToken": "theme.iconSizes.m",
+            "slot2IconSizeToken": "theme.iconSizes.m",
+            "slot3IconSizeToken": "theme.iconSizes.m",
+            "slot4IconSizeToken": "theme.iconSizes.m",
+            "slot5IconSizeToken": "theme.iconSizes.m"
           }
         ],
         "headerHeight": 130,
@@ -2231,7 +2261,12 @@
             "slot5LabelSlot": {
               "variantReference": "component_project_foqn_s2_label::variant::default",
               "overrides": {}
-            }
+            },
+            "slot1IconSizeToken": "theme.iconSizes.m",
+            "slot2IconSizeToken": "theme.iconSizes.m",
+            "slot3IconSizeToken": "theme.iconSizes.m",
+            "slot4IconSizeToken": "theme.iconSizes.m",
+            "slot5IconSizeToken": "theme.iconSizes.m"
           },
           {
             "id": "footerRow2",
@@ -2303,7 +2338,12 @@
             "slot5LabelSlot": {
               "variantReference": "component_project_foqn_s2_label::variant::default",
               "overrides": {}
-            }
+            },
+            "slot1IconSizeToken": "theme.iconSizes.m",
+            "slot2IconSizeToken": "theme.iconSizes.m",
+            "slot3IconSizeToken": "theme.iconSizes.m",
+            "slot4IconSizeToken": "theme.iconSizes.m",
+            "slot5IconSizeToken": "theme.iconSizes.m"
           }
         ],
         "footerHeight": 130
@@ -2996,7 +3036,7 @@
         "socialPost",
         "rows"
       ],
-      "defaultValue": "[{\"id\":\"row1\",\"label\":\"Row 1\",\"padding\":\"theme.spacing.s|theme.spacing.s\",\"verticalAlignment\":\"center\",\"showSeparator\":true,\"slot1Kind\":\"avatar\",\"slot1AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot1IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot1LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot2Kind\":\"none\",\"slot2AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot2IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot2LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot3Kind\":\"none\",\"slot3AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot3IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot3LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot4Kind\":\"none\",\"slot4AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot4IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot4LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot5Kind\":\"icon\",\"slot5AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot5IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot5LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"row2\",\"label\":\"Row 2\",\"padding\":\"theme.spacing.s|theme.spacing.s\",\"verticalAlignment\":\"center\",\"showSeparator\":true,\"slot1Kind\":\"label\",\"slot1AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot1IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot1LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot2Kind\":\"label\",\"slot2AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot2IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot2LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot3Kind\":\"none\",\"slot3AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot3IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot3LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot4Kind\":\"none\",\"slot4AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot4IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot4LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot5Kind\":\"icon\",\"slot5AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot5IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot5LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]",
+      "defaultValue": "[{\"id\":\"row1\",\"label\":\"Row 1\",\"padding\":\"theme.spacing.s|theme.spacing.s\",\"verticalAlignment\":\"center\",\"showSeparator\":true,\"slot1Kind\":\"avatar\",\"slot1AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot1IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot1LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot2Kind\":\"none\",\"slot2AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot2IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot2LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot3Kind\":\"none\",\"slot3AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot3IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot3LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot4Kind\":\"none\",\"slot4AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot4IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot4LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot5Kind\":\"icon\",\"slot5AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot5IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot5LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot1IconSizeToken\":\"theme.iconSizes.m\",\"slot2IconSizeToken\":\"theme.iconSizes.m\",\"slot3IconSizeToken\":\"theme.iconSizes.m\",\"slot4IconSizeToken\":\"theme.iconSizes.m\",\"slot5IconSizeToken\":\"theme.iconSizes.m\"},{\"id\":\"row2\",\"label\":\"Row 2\",\"padding\":\"theme.spacing.s|theme.spacing.s\",\"verticalAlignment\":\"center\",\"showSeparator\":true,\"slot1Kind\":\"label\",\"slot1AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot1IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot1LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot2Kind\":\"label\",\"slot2AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot2IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot2LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot3Kind\":\"none\",\"slot3AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot3IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot3LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot4Kind\":\"none\",\"slot4AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot4IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot4LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot5Kind\":\"icon\",\"slot5AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot5IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot5LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot1IconSizeToken\":\"theme.iconSizes.m\",\"slot2IconSizeToken\":\"theme.iconSizes.m\",\"slot3IconSizeToken\":\"theme.iconSizes.m\",\"slot4IconSizeToken\":\"theme.iconSizes.m\",\"slot5IconSizeToken\":\"theme.iconSizes.m\"}]",
       "isEditable": true,
       "options": [],
       "optionSource": "None",
@@ -3147,6 +3187,40 @@
             ]
           },
           {
+            "id": "slot1.iconSize",
+            "label": "Slot 1 icon size",
+            "jsonKey": "slot1IconSizeToken",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "theme.iconSizes.m",
+            "options": [
+              {
+                "value": "theme.iconSizes.xs",
+                "label": "Extra small"
+              },
+              {
+                "value": "theme.iconSizes.s",
+                "label": "Small"
+              },
+              {
+                "value": "theme.iconSizes.m",
+                "label": "Medium"
+              },
+              {
+                "value": "theme.iconSizes.l",
+                "label": "Large"
+              },
+              {
+                "value": "theme.iconSizes.xl",
+                "label": "Extra large"
+              }
+            ],
+            "enabledWhenItemJsonKey": "slot1Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
             "id": "slot1.label",
             "label": "Slot 1 label",
             "jsonKey": "slot1LabelSlot",
@@ -3206,6 +3280,40 @@
             "valueKind": "ComponentVariantSlot",
             "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
             "componentType": "button",
+            "enabledWhenItemJsonKey": "slot2Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
+            "id": "slot2.iconSize",
+            "label": "Slot 2 icon size",
+            "jsonKey": "slot2IconSizeToken",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "theme.iconSizes.m",
+            "options": [
+              {
+                "value": "theme.iconSizes.xs",
+                "label": "Extra small"
+              },
+              {
+                "value": "theme.iconSizes.s",
+                "label": "Small"
+              },
+              {
+                "value": "theme.iconSizes.m",
+                "label": "Medium"
+              },
+              {
+                "value": "theme.iconSizes.l",
+                "label": "Large"
+              },
+              {
+                "value": "theme.iconSizes.xl",
+                "label": "Extra large"
+              }
+            ],
             "enabledWhenItemJsonKey": "slot2Kind",
             "enabledWhenItemValues": [
               "icon"
@@ -3277,6 +3385,40 @@
             ]
           },
           {
+            "id": "slot3.iconSize",
+            "label": "Slot 3 icon size",
+            "jsonKey": "slot3IconSizeToken",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "theme.iconSizes.m",
+            "options": [
+              {
+                "value": "theme.iconSizes.xs",
+                "label": "Extra small"
+              },
+              {
+                "value": "theme.iconSizes.s",
+                "label": "Small"
+              },
+              {
+                "value": "theme.iconSizes.m",
+                "label": "Medium"
+              },
+              {
+                "value": "theme.iconSizes.l",
+                "label": "Large"
+              },
+              {
+                "value": "theme.iconSizes.xl",
+                "label": "Extra large"
+              }
+            ],
+            "enabledWhenItemJsonKey": "slot3Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
             "id": "slot3.label",
             "label": "Slot 3 label",
             "jsonKey": "slot3LabelSlot",
@@ -3342,6 +3484,40 @@
             ]
           },
           {
+            "id": "slot4.iconSize",
+            "label": "Slot 4 icon size",
+            "jsonKey": "slot4IconSizeToken",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "theme.iconSizes.m",
+            "options": [
+              {
+                "value": "theme.iconSizes.xs",
+                "label": "Extra small"
+              },
+              {
+                "value": "theme.iconSizes.s",
+                "label": "Small"
+              },
+              {
+                "value": "theme.iconSizes.m",
+                "label": "Medium"
+              },
+              {
+                "value": "theme.iconSizes.l",
+                "label": "Large"
+              },
+              {
+                "value": "theme.iconSizes.xl",
+                "label": "Extra large"
+              }
+            ],
+            "enabledWhenItemJsonKey": "slot4Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
             "id": "slot4.label",
             "label": "Slot 4 label",
             "jsonKey": "slot4LabelSlot",
@@ -3401,6 +3577,40 @@
             "valueKind": "ComponentVariantSlot",
             "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
             "componentType": "button",
+            "enabledWhenItemJsonKey": "slot5Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
+            "id": "slot5.iconSize",
+            "label": "Slot 5 icon size",
+            "jsonKey": "slot5IconSizeToken",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "theme.iconSizes.m",
+            "options": [
+              {
+                "value": "theme.iconSizes.xs",
+                "label": "Extra small"
+              },
+              {
+                "value": "theme.iconSizes.s",
+                "label": "Small"
+              },
+              {
+                "value": "theme.iconSizes.m",
+                "label": "Medium"
+              },
+              {
+                "value": "theme.iconSizes.l",
+                "label": "Large"
+              },
+              {
+                "value": "theme.iconSizes.xl",
+                "label": "Extra large"
+              }
+            ],
             "enabledWhenItemJsonKey": "slot5Kind",
             "enabledWhenItemValues": [
               "icon"
@@ -3751,6 +3961,40 @@
             ]
           },
           {
+            "id": "slot1.iconSize",
+            "label": "Slot 1 icon size",
+            "jsonKey": "slot1IconSizeToken",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "theme.iconSizes.m",
+            "options": [
+              {
+                "value": "theme.iconSizes.xs",
+                "label": "Extra small"
+              },
+              {
+                "value": "theme.iconSizes.s",
+                "label": "Small"
+              },
+              {
+                "value": "theme.iconSizes.m",
+                "label": "Medium"
+              },
+              {
+                "value": "theme.iconSizes.l",
+                "label": "Large"
+              },
+              {
+                "value": "theme.iconSizes.xl",
+                "label": "Extra large"
+              }
+            ],
+            "enabledWhenItemJsonKey": "slot1Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
             "id": "slot1.label",
             "label": "Slot 1 label",
             "jsonKey": "slot1LabelSlot",
@@ -3810,6 +4054,40 @@
             "valueKind": "ComponentVariantSlot",
             "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
             "componentType": "button",
+            "enabledWhenItemJsonKey": "slot2Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
+            "id": "slot2.iconSize",
+            "label": "Slot 2 icon size",
+            "jsonKey": "slot2IconSizeToken",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "theme.iconSizes.m",
+            "options": [
+              {
+                "value": "theme.iconSizes.xs",
+                "label": "Extra small"
+              },
+              {
+                "value": "theme.iconSizes.s",
+                "label": "Small"
+              },
+              {
+                "value": "theme.iconSizes.m",
+                "label": "Medium"
+              },
+              {
+                "value": "theme.iconSizes.l",
+                "label": "Large"
+              },
+              {
+                "value": "theme.iconSizes.xl",
+                "label": "Extra large"
+              }
+            ],
             "enabledWhenItemJsonKey": "slot2Kind",
             "enabledWhenItemValues": [
               "icon"
@@ -3881,6 +4159,40 @@
             ]
           },
           {
+            "id": "slot3.iconSize",
+            "label": "Slot 3 icon size",
+            "jsonKey": "slot3IconSizeToken",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "theme.iconSizes.m",
+            "options": [
+              {
+                "value": "theme.iconSizes.xs",
+                "label": "Extra small"
+              },
+              {
+                "value": "theme.iconSizes.s",
+                "label": "Small"
+              },
+              {
+                "value": "theme.iconSizes.m",
+                "label": "Medium"
+              },
+              {
+                "value": "theme.iconSizes.l",
+                "label": "Large"
+              },
+              {
+                "value": "theme.iconSizes.xl",
+                "label": "Extra large"
+              }
+            ],
+            "enabledWhenItemJsonKey": "slot3Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
             "id": "slot3.label",
             "label": "Slot 3 label",
             "jsonKey": "slot3LabelSlot",
@@ -3946,6 +4258,40 @@
             ]
           },
           {
+            "id": "slot4.iconSize",
+            "label": "Slot 4 icon size",
+            "jsonKey": "slot4IconSizeToken",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "theme.iconSizes.m",
+            "options": [
+              {
+                "value": "theme.iconSizes.xs",
+                "label": "Extra small"
+              },
+              {
+                "value": "theme.iconSizes.s",
+                "label": "Small"
+              },
+              {
+                "value": "theme.iconSizes.m",
+                "label": "Medium"
+              },
+              {
+                "value": "theme.iconSizes.l",
+                "label": "Large"
+              },
+              {
+                "value": "theme.iconSizes.xl",
+                "label": "Extra large"
+              }
+            ],
+            "enabledWhenItemJsonKey": "slot4Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
             "id": "slot4.label",
             "label": "Slot 4 label",
             "jsonKey": "slot4LabelSlot",
@@ -4005,6 +4351,40 @@
             "valueKind": "ComponentVariantSlot",
             "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
             "componentType": "button",
+            "enabledWhenItemJsonKey": "slot5Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
+            "id": "slot5.iconSize",
+            "label": "Slot 5 icon size",
+            "jsonKey": "slot5IconSizeToken",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "theme.iconSizes.m",
+            "options": [
+              {
+                "value": "theme.iconSizes.xs",
+                "label": "Extra small"
+              },
+              {
+                "value": "theme.iconSizes.s",
+                "label": "Small"
+              },
+              {
+                "value": "theme.iconSizes.m",
+                "label": "Medium"
+              },
+              {
+                "value": "theme.iconSizes.l",
+                "label": "Large"
+              },
+              {
+                "value": "theme.iconSizes.xl",
+                "label": "Extra large"
+              }
+            ],
             "enabledWhenItemJsonKey": "slot5Kind",
             "enabledWhenItemValues": [
               "icon"

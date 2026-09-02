@@ -131,6 +131,7 @@ internal static class SocialPostModuleConfigContract
                 rowKeys.Add($"slot{slot}Kind");
                 rowKeys.Add($"slot{slot}AvatarSlot");
                 rowKeys.Add($"slot{slot}IconSlot");
+                rowKeys.Add($"slot{slot}IconSizeToken");
                 rowKeys.Add($"slot{slot}LabelSlot");
             }
             RequireExactKeys(row, rowKeys, $"{owner}.{key}.{rowId}");
@@ -156,6 +157,7 @@ internal static class SocialPostModuleConfigContract
                     $"{owner}.{rowId}.{prefix}Kind");
                 ValidateSlot(row, $"{prefix}AvatarSlot", owner);
                 ValidateSlot(row, $"{prefix}IconSlot", owner);
+                JsonPath.RequiredString(row, $"{prefix}IconSizeToken", owner);
                 ValidateSlot(row, $"{prefix}LabelSlot", owner);
             }
         }
