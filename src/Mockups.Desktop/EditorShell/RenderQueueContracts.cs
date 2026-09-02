@@ -48,7 +48,24 @@ internal sealed record RenderOutputModeDefinition(
     string Kind,
     string Extension,
     string EncodingProfile,
-    bool PreservesAlpha);
+    string ColorRange,
+    string AlphaMode)
+{
+    public bool PreservesAlpha =>
+        !AlphaMode.Equals(RenderOutputAlphaModes.None, StringComparison.Ordinal);
+}
+
+internal static class RenderOutputColorRanges
+{
+    public const string Full = "full";
+    public const string Legal = "legal";
+}
+
+internal static class RenderOutputAlphaModes
+{
+    public const string None = "none";
+    public const string PremultipliedBlack = "premultiplied_black";
+}
 
 internal static class RenderOutputModes
 {
@@ -68,55 +85,83 @@ internal static class RenderOutputModes
             "mov",
             "mov",
             "prores_422_hq",
-            false),
+            RenderOutputColorRanges.Legal,
+            RenderOutputAlphaModes.None),
         new(
             MovProRes4444,
             "MOV · ProRes 4444 (alpha)",
             "mov",
             "mov",
             "prores_4444",
-            true),
+            RenderOutputColorRanges.Legal,
+            RenderOutputAlphaModes.PremultipliedBlack),
         new(
             MovH264Light,
             "MOV · H.264 Light · 8 Mb/s",
             "mov",
             "mov",
             "h264_light",
-            false),
+            RenderOutputColorRanges.Legal,
+            RenderOutputAlphaModes.None),
         new(
             MovH264Standard,
             "MOV · H.264 Standard · 20 Mb/s",
             "mov",
             "mov",
             "h264_standard",
-            false),
+            RenderOutputColorRanges.Legal,
+            RenderOutputAlphaModes.None),
         new(
             MovH264High,
             "MOV · H.264 High · 40 Mb/s",
             "mov",
             "mov",
             "h264_high",
-            false),
+            RenderOutputColorRanges.Legal,
+            RenderOutputAlphaModes.None),
         new(
             PngSequence,
             "PNG sequence",
             "image_sequence",
             "png",
             "png",
-            true),
+            RenderOutputColorRanges.Full,
+            RenderOutputAlphaModes.PremultipliedBlack),
         new(
             ExrSequence,
             "EXR sequence",
             "image_sequence",
             "exr",
             "exr",
-            true),
+            RenderOutputColorRanges.Full,
+            RenderOutputAlphaModes.PremultipliedBlack),
     ];
 
     public static RenderOutputModeDefinition Require(string id) =>
         All.SingleOrDefault((mode) => mode.Id.Equals(id, StringComparison.Ordinal))
         ?? throw new InvalidOperationException(
             $"Unsupported render output mode '{id}'.");
+
+    public static string TechnicalSummary(string id)
+    {
+        var mode = Require(id);
+        var range = mode.ColorRange switch
+        {
+            RenderOutputColorRanges.Full => "Full",
+            RenderOutputColorRanges.Legal => "Legal",
+            _ => throw new InvalidOperationException(
+                $"Unsupported render color range '{mode.ColorRange}'."),
+        };
+        var alpha = mode.AlphaMode switch
+        {
+            RenderOutputAlphaModes.None => "",
+            RenderOutputAlphaModes.PremultipliedBlack =>
+                " · Alpha: Premultiplied black",
+            _ => throw new InvalidOperationException(
+                $"Unsupported render alpha mode '{mode.AlphaMode}'."),
+        };
+        return $"Color range: {range}{alpha}";
+    }
 }
 
 internal sealed record RenderShotContext(

@@ -198,6 +198,13 @@ additionally writes the QuickTime video-media graphics mode as premultiplied
 against black; the other MOV profiles retain copy mode and contain no alpha.
 No output contains audio.
 
+Each Render Queue output row presents the technical color range derived from
+its exact output mode. MOV modes report Legal range; PNG and EXR sequences
+report Full range. Alpha-capable outputs additionally report their
+black-premultiplied alpha contract, while modes without alpha omit an alpha
+label. These values belong to the output-mode catalog and are not duplicated
+in queued job state.
+
 MOCKUPS proposes:
 
 ```text

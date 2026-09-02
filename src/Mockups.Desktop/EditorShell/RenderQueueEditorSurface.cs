@@ -370,6 +370,15 @@ internal sealed class RenderQueueMonitorControl : StackPanel
                     FontWeight = FontWeight.SemiBold,
                     TextTrimming = TextTrimming.CharacterEllipsis,
                 },
+                new TextBlock
+                {
+                    Name = $"RenderQueueOutputTechnical_{job.Id}",
+                    Text = RenderOutputModes.TechnicalSummary(
+                        job.Summary.Output.OutputModeId),
+                    FontSize = 11,
+                    Opacity = 0.68,
+                    TextTrimming = TextTrimming.CharacterEllipsis,
+                },
                 status,
                 progressDetail,
                 progress,

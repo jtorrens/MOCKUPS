@@ -13052,6 +13052,15 @@ static void MovH264ModesMatchCreditosProfiles()
     Equal("mov", light.Extension);
     Equal("mov", standard.Extension);
     Equal("mov", high.Extension);
+    Equal(
+        "Color range: Legal",
+        RenderOutputModes.TechnicalSummary(RenderOutputModes.MovH264High));
+    Equal(
+        "Color range: Legal · Alpha: Premultiplied black",
+        RenderOutputModes.TechnicalSummary(RenderOutputModes.MovProRes4444));
+    Equal(
+        "Color range: Full · Alpha: Premultiplied black",
+        RenderOutputModes.TechnicalSummary(RenderOutputModes.PngSequence));
 
     SequenceEqual(
         new[]
@@ -14128,6 +14137,14 @@ static void RenderQueueProgressControlIsStable()
             True(initialDetail.Text!.Contains(
                 "0 prepared · 10 remaining · 10 total frames",
                 StringComparison.Ordinal));
+            var technical = monitor.GetVisualDescendants()
+                .OfType<TextBlock>()
+                .Single((text) =>
+                    text.Name
+                        == $"RenderQueueOutputTechnical_{child.Id}");
+            Equal(
+                "Color range: Full · Alpha: Premultiplied black",
+                technical.Text);
 
             var update = typeof(RenderQueueManager).GetMethod(
                 "UpdatePreparationProgress",
