@@ -311,6 +311,12 @@ propagates limited range, BT.709 primaries, CSS sRGB transfer and BT.709 matrix
 coefficients into encoded frames and the QuickTime `colr` atom. An alpha-capable
 MOV tags its QuickTime video-media graphics mode as black-premultiplied.
 
+The installed macOS application carries the exact Playwright runtime and
+Chromium Headless Shell revision used by its raster worker. Packaging verifies
+that bundled browser by launching it before signing and installation; raster
+execution selects that application-owned browser directory explicitly and does
+not depend on a developer checkout or a user Playwright cache.
+
 Conversation keeps composer presence under its temporal owner. When an
 explicit `text` track replaces the base write-on, the resolved bubble text and
 the effective track duration remain separate: the former paints the message,

@@ -7,6 +7,7 @@ import {
   macDesktopExecutableName,
   macDesktopIconFileName,
   macDesktopInfoPlist,
+  macDesktopPlaywrightLayout,
   verifyMacDesktopBuildIdentity,
 } from "../../scripts/packageMacApp.mjs";
 import { macDesktopPublishArgs } from "../../scripts/publishMacDesktop.mjs";
@@ -51,6 +52,39 @@ test("macOS bundle receives one final deep ad-hoc signature", () => {
     "--timestamp=none",
     appPath,
   ]);
+});
+
+test("macOS bundle carries its Playwright runtime and Chromium browser", () => {
+  const appPath = path.join(repositoryRoot, "out", "desktop", "MOCKUPS Editor.app");
+  const layout = macDesktopPlaywrightLayout(
+    repositoryRoot,
+    appPath,
+    "1228",
+    path.join(repositoryRoot, "browser-cache"),
+  );
+
+  assert.deepEqual(layout.packageSources, [
+    path.join(repositoryRoot, "node_modules", "playwright"),
+    path.join(repositoryRoot, "node_modules", "playwright-core"),
+  ]);
+  assert.equal(
+    layout.packageTarget,
+    path.join(appPath, "Contents", "MacOS", "desktop-preview", "node_modules"),
+  );
+  assert.equal(
+    layout.browserSource,
+    path.join(repositoryRoot, "browser-cache", "chromium_headless_shell-1228"),
+  );
+  assert.equal(
+    layout.browserTarget,
+    path.join(
+      appPath,
+      "Contents",
+      "Resources",
+      "playwright-browsers",
+      "chromium_headless_shell-1228",
+    ),
+  );
 });
 
 test("macOS packaging rejects a published build from another commit", () => {

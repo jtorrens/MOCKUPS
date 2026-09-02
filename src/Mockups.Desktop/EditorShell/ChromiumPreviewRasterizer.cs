@@ -113,6 +113,11 @@ internal sealed class ChromiumPreviewRasterizer : IDisposable
             DesktopChildProcess.ResolveNodeExecutable(),
             workingDirectory,
             redirectStandardInput: true);
+        var bundledBrowsers = ResolveBundledBrowserPath();
+        if (bundledBrowsers is not null)
+        {
+            startInfo.Environment["PLAYWRIGHT_BROWSERS_PATH"] = bundledBrowsers;
+        }
         startInfo.ArgumentList.Add(script);
         _process = Process.Start(startInfo) ?? throw new InvalidOperationException("Could not start Chromium raster worker.");
         lock (_stderrGate) _stderr.Clear();
@@ -124,6 +129,20 @@ internal sealed class ChromiumPreviewRasterizer : IDisposable
         _process.BeginErrorReadLine();
         _registeredAssets.Clear();
         PreviewDebugLog.Write("preview.raster.chromium.start", ("script", script));
+    }
+
+    private static string? ResolveBundledBrowserPath()
+    {
+        var candidates = new[]
+        {
+            Path.Combine(AppContext.BaseDirectory, "playwright-browsers"),
+            Path.GetFullPath(Path.Combine(
+                AppContext.BaseDirectory,
+                "..",
+                "Resources",
+                "playwright-browsers")),
+        };
+        return candidates.FirstOrDefault(Directory.Exists);
     }
 
     private string CaptureStandardError()

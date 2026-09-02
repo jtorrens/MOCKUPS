@@ -1,12 +1,49 @@
 import { execFileSync } from "node:child_process";
 import { constants } from "node:fs";
-import { access, chmod, cp, mkdir, rm, writeFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { access, chmod, cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { homedir } from "node:os";
+import { basename, dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 export const macDesktopExecutableName = "Mockups.Desktop.Host";
 export const macDesktopIconFileName = "mockups-app-icon.icns";
+
+export function macDesktopPlaywrightLayout(
+  root,
+  appDir,
+  revision,
+  browserCache = resolve(homedir(), "Library", "Caches", "ms-playwright"),
+) {
+  const browserDirectoryName = `chromium_headless_shell-${revision}`;
+  return {
+    packageSources: [
+      resolve(root, "node_modules", "playwright"),
+      resolve(root, "node_modules", "playwright-core"),
+    ],
+    packageTarget: resolve(
+      appDir,
+      "Contents",
+      "MacOS",
+      "desktop-preview",
+      "node_modules",
+    ),
+    browserSource: resolve(browserCache, browserDirectoryName),
+    browserTarget: resolve(
+      appDir,
+      "Contents",
+      "Resources",
+      "playwright-browsers",
+      browserDirectoryName,
+    ),
+    browserRoot: resolve(
+      appDir,
+      "Contents",
+      "Resources",
+      "playwright-browsers",
+    ),
+  };
+}
 
 export function macDesktopInfoPlist(
   executableName = macDesktopExecutableName,
@@ -111,6 +148,55 @@ export async function packageMacDesktopApp(root = repoRoot) {
   await mkdir(resourcesDir, { recursive: true });
   await cp(publishDir, macOsDir, { recursive: true });
   await cp(iconSourcePath, iconBundlePath);
+
+  const playwrightBrowsers = JSON.parse(await readFile(
+    resolve(root, "node_modules", "playwright-core", "browsers.json"),
+    "utf8",
+  ));
+  const headlessShell = playwrightBrowsers.browsers?.find(
+    (browser) => browser.name === "chromium-headless-shell",
+  );
+  if (!headlessShell?.revision) {
+    throw new Error(
+      "The installed Playwright runtime does not declare Chromium Headless Shell.",
+    );
+  }
+  const playwright = macDesktopPlaywrightLayout(
+    root,
+    appDir,
+    headlessShell.revision,
+  );
+  await mkdir(playwright.packageTarget, { recursive: true });
+  for (const source of playwright.packageSources) {
+    await access(source, constants.R_OK);
+    await cp(
+      source,
+      resolve(playwright.packageTarget, basename(source)),
+      { recursive: true },
+    );
+  }
+  await access(playwright.browserSource, constants.R_OK);
+  await mkdir(dirname(playwright.browserTarget), { recursive: true });
+  await cp(playwright.browserSource, playwright.browserTarget, {
+    recursive: true,
+  });
+
+  execFileSync(
+    process.execPath,
+    [
+      "-e",
+      "const {chromium}=require('playwright'); chromium.launch({headless:true}).then(async browser=>{await browser.close()}).catch(error=>{console.error(error);process.exit(1)})",
+    ],
+    {
+      cwd: resolve(macOsDir, "desktop-preview"),
+      env: {
+        ...process.env,
+        PLAYWRIGHT_BROWSERS_PATH: playwright.browserRoot,
+      },
+      stdio: "inherit",
+    },
+  );
+
   await chmod(executablePath, 0o755);
   await access(executablePath, constants.X_OK);
   await access(iconBundlePath, constants.R_OK);
