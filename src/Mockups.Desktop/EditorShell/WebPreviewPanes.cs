@@ -200,6 +200,41 @@ internal abstract class WebPreviewPane : Grid
         WebView.NavigateToString(PreviewAssetRegistry.Expand(html), new Uri("https://mockups.local/"));
     }
 
+    protected async Task EnsurePreviewViewportLayoutAsync()
+    {
+        for (var attempt = 0; attempt < 40; attempt++)
+        {
+            await Task.Delay(25);
+            try
+            {
+                var result = await WebView.InvokeScript("""
+                    (() => typeof window.mockupsReflowPreview === "function"
+                      ? window.mockupsReflowPreview()
+                      : "")();
+                    """);
+                var json = WebViewScriptResult.Text(result);
+                if (string.IsNullOrWhiteSpace(json)) continue;
+                if (JsonNode.Parse(json) is not JsonObject state) continue;
+                var width = state["width"]?.GetValue<double>() ?? 0;
+                var height = state["height"]?.GetValue<double>() ?? 0;
+                if (width <= 1 || height <= 1) continue;
+                PreviewDebugLog.Write(
+                    "preview.webview.reflow",
+                    ("attempt", attempt + 1),
+                    ("width", width),
+                    ("height", height));
+                return;
+            }
+            catch
+            {
+                // Navigation may still be replacing the document. Retry until
+                // the resident Preview shell exposes its layout contract.
+            }
+        }
+
+        PreviewDebugLog.Write("preview.webview.reflow", ("result", "unavailable"));
+    }
+
     protected async Task<bool> ReplacePreviewBodyAsync(string bodyContent, bool waitForCommit = false)
     {
         var stopwatch = Stopwatch.StartNew();
@@ -1123,6 +1158,14 @@ internal abstract class WebPreviewPane : Grid
                 const resizeObserver = new ResizeObserver(calculatePreviewFit);
                 resizeObserver.observe(host);
                 window.addEventListener("resize", calculatePreviewFit);
+                window.mockupsReflowPreview = () => {
+                  calculatePreviewFit();
+                  const bounds = viewport.getBoundingClientRect();
+                  return JSON.stringify({
+                    width: bounds.width,
+                    height: bounds.height,
+                  });
+                };
                 let previewBodyPatchSequence = 0;
                 window.mockupsPreviewPatchEvents = [];
                 const previewPatchStatuses = new Map();
@@ -2257,6 +2300,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 && await ReplacePreviewBodyAsync(htmlParts.BodyHtml, waitForCommit: !isAnimationOnlyUpdate);
             if (bodyCommitted)
             {
+                await EnsurePreviewViewportLayoutAsync();
                 HideResidentContextState();
                 await HideResidentNonRenderableStateAsync();
                 await UpdateReferenceOverlayAsync(reference);
@@ -2315,6 +2359,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             htmlParts.BodyHtml,
             htmlParts.FontStyleHtml,
             reference));
+        await EnsurePreviewViewportLayoutAsync();
         _hasResidentDocument = true;
         _residentShellIdentity = update.ShellIdentity;
         _lastRenderedUpdate = update;
