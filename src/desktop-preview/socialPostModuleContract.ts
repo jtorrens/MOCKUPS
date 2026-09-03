@@ -64,6 +64,7 @@ export interface SocialPostModuleContract {
   showMediaSeparator: boolean;
   showGallery: boolean;
   gallerySlot: SocialPostComponentSlot;
+  showGallerySeparator: boolean;
   galleryMode: "carousel" | "gallery";
   galleryDirectory: string;
   gallerySelectedIndex: number;

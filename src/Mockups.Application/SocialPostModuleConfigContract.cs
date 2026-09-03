@@ -39,6 +39,7 @@ internal static class SocialPostModuleConfigContract
                 "mediaInputs",
                 "showMediaSeparator",
                 "gallerySlot",
+                "showGallerySeparator",
                 "messageMinHeight",
                 "showMessage",
                 "messageBubbleSlot",
@@ -58,6 +59,7 @@ internal static class SocialPostModuleConfigContract
             "showNavigationBar",
             "showMedia",
             "showMediaSeparator",
+            "showGallerySeparator",
             "showMessage",
             "showMessageSeparator",
         })

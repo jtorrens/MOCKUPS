@@ -343,11 +343,12 @@ function gallerySectionNode(
 ): RenderableNode {
   const screen = previewScreenBox(payload);
   const scale = renderScale(payload);
+  const separatorHeight = contract.showGallerySeparator ? Math.max(1, scale) : 0;
   const box = {
     x: screen.x,
     y,
     width: screen.width,
-    height: Math.max(1, bottom - y),
+    height: Math.max(1, bottom - y - separatorHeight),
   };
   const gallery = componentNode(
     previewPayloadInBox(payload, box),
@@ -361,13 +362,34 @@ function gallerySectionNode(
       scrollRow: contract.galleryScrollRow,
     },
   );
+  const galleryBox = gallery.box ?? box;
+  const children: RenderableNode[] = [gallery];
+  if (contract.showGallerySeparator) {
+    children.push({
+      id: "module.core.socialPost.gallery.separator",
+      type: "surface",
+      frame: 0,
+      box: {
+        x: screen.x,
+        y: galleryBox.y + galleryBox.height,
+        width: screen.width,
+        height: separatorHeight,
+      },
+      style: { background: selectedColor(payload, "theme.colors.divider") },
+    });
+  }
   return {
     id: "module.core.socialPost.gallery",
     type: "group",
     frame: 0,
-    box: gallery.box ?? box,
+    box: {
+      x: galleryBox.x,
+      y: galleryBox.y,
+      width: galleryBox.width,
+      height: galleryBox.height + separatorHeight,
+    },
     style: { overflow: "visible" },
-    children: [gallery],
+    children,
   };
 }
 

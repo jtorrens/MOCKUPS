@@ -183,6 +183,11 @@ export function resolveSocialPostModule(
     ),
     showGallery,
     gallerySlot,
+    showGallerySeparator: requiredBoolean(
+      socialPost,
+      "showGallerySeparator",
+      "module.core.socialPost.showGallerySeparator",
+    ),
     galleryMode: galleryModeValue,
     galleryDirectory,
     gallerySelectedIndex: effectiveGallerySelectedIndex,
@@ -642,7 +647,11 @@ function resolveRowSlot(
 }
 
 function iconSlotWithIconContent(slot: SocialPostComponentSlot): SocialPostComponentSlot {
-  const buttonOverrides = optionalObject(slot.overrides, "button") ?? {};
+  const buttonOverrides = optionalObject(
+    slot.overrides,
+    "button",
+    "module.core.socialPost.iconSlot.overrides",
+  );
   return {
     variantReference: slot.variantReference,
     overrides: {

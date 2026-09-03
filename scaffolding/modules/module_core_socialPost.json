@@ -260,6 +260,7 @@
           }
         }
       },
+      "showGallerySeparator": true,
       "messageMinHeight": 160,
       "showMessage": true,
       "messageBubbleSlot": {
@@ -2066,6 +2067,9 @@
           "overrides": {}
         },
         "mediaPadding": "theme.spacing.s|theme.spacing.s",
+        "showMedia": true,
+        "mediaHeightMode": "fixed",
+        "mediaHeight": 300,
         "mediaInputs": {
           "mediaType": "image",
           "mediaScale": 1,
@@ -2089,7 +2093,9 @@
             }
           }
         },
+        "showGallerySeparator": true,
         "messageMinHeight": 160,
+        "showMessage": true,
         "messageBubbleSlot": {
           "variantReference": "component_project_foqn_s2_bubble::variant::default_copy",
           "overrides": {
@@ -2728,6 +2734,32 @@
         "label": "Gallery",
         "recordClassId": "component.gallery"
       },
+      "structuredCollection": null
+    },
+    {
+      "id": "module.core.socialPost.showGallerySeparator",
+      "label": "Show separator",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "socialPost",
+        "showGallerySeparator"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null,
       "structuredCollection": null
     },
     {
@@ -4674,6 +4706,11 @@
               {
                 "id": "module.core.socialPost.gallery",
                 "order": 10,
+                "visible": true
+              },
+              {
+                "id": "module.core.socialPost.showGallerySeparator",
+                "order": 20,
                 "visible": true
               }
             ],

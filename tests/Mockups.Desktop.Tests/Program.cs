@@ -20988,6 +20988,7 @@ static void SocialPostComposesHeaderRows()
     JsonPath.RequiredBoolean(socialPost, "showStatusBar", "Social Post config");
     JsonPath.RequiredBoolean(socialPost, "showNavigationBar", "Social Post config");
     JsonPath.RequiredBoolean(socialPost, "showMedia", "Social Post config");
+    JsonPath.RequiredBoolean(socialPost, "showGallerySeparator", "Social Post config");
     JsonPath.RequiredBoolean(socialPost, "showMessage", "Social Post config");
     JsonPath.RequiredString(socialPost, "mediaHeightMode", "Social Post config");
     JsonPath.RequiredNumber(socialPost, "mediaHeight", "Social Post config");
@@ -21011,6 +21012,7 @@ static void SocialPostComposesHeaderRows()
         "module.core.socialPost.showStatusBar",
         "module.core.socialPost.showNavigationBar",
         "module.core.socialPost.showMedia",
+        "module.core.socialPost.showGallerySeparator",
         "module.core.socialPost.showMessage",
         "module.core.socialPost.mediaHeightMode",
         "module.core.socialPost.mediaHeight",

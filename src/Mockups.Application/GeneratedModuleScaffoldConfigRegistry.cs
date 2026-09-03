@@ -405,6 +405,13 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ["socialPost", "rows"],
             "",
             []),
+        ["module.core.socialPost.showGallerySeparator"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.showGallerySeparator",
+            ValueKind.Boolean,
+            ["socialPost", "showGallerySeparator"],
+            "",
+            []),
         ["module.core.socialPost.showHeader"] = new(
             "module.core.socialPost",
             "module.core.socialPost.showHeader",

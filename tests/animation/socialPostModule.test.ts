@@ -123,6 +123,7 @@ test("Social Post owns two fixed structure-projected Runtime row sections", () =
   assert.equal(contract.mediaScale, 1);
   assert.equal(contract.mediaHeightMode, "fixed");
   assert.equal(contract.mediaOffset, "0|0");
+  assert.equal(contract.showGallerySeparator, true);
   assert.deepEqual(contract.footerRows.map(({ id }) => id), ["row1", "row2"]);
   const footerConfigRows = config.socialPost.footerRows as Array<Record<string, unknown>>;
   for (const [rowIndex, row] of contract.footerRows.entries()) {
@@ -240,6 +241,25 @@ test("Social Post hides its Message without reserving its minimum height", () =>
   const node = socialPostModuleToRenderable(source);
   assert.equal(findNode(node, "module.core.socialPost.message"), undefined);
   assert.equal(resolveSocialPostModule(source).message.show, false);
+});
+
+test("Social Post shows the Gallery separator only when its Variant enables it", () => {
+  const source = fixture();
+  const runtime = JSON.parse(source.designPreviewJson) as Record<string, unknown>;
+  runtime.showGallery = true;
+  source.designPreviewJson = JSON.stringify(runtime);
+  source.runtimeContractJson = JSON.stringify(runtime);
+
+  const visible = socialPostModuleToRenderable(source);
+  assert.ok(findNode(visible, "module.core.socialPost.gallery.separator"));
+
+  const config = JSON.parse(source.configJson) as {
+    socialPost: { showGallerySeparator: boolean };
+  };
+  config.socialPost.showGallerySeparator = false;
+  source.configJson = JSON.stringify(config);
+  const hidden = socialPostModuleToRenderable(source);
+  assert.equal(findNode(hidden, "module.core.socialPost.gallery.separator"), undefined);
 });
 
 test("Social Post resolves animated text before distributing non-empty row slots", () => {
