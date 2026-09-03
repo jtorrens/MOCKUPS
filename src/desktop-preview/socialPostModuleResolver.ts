@@ -139,7 +139,7 @@ export function resolveSocialPostModule(
       resolveRow("header", 2, rows[1], runtimeRows[1], componentBaseConfigs),
     ],
     showMedia: requiredBoolean(
-      preview,
+      socialPost,
       "showMedia",
       "module.core.socialPost.showMedia",
     ),
@@ -234,8 +234,6 @@ function resolveSocialPostModuleFrame(payload: DesignPreviewPayload) {
     payload.frameRate,
   );
   for (const fieldId of [
-    "showMedia",
-    "showMessage",
     "showGallery",
     "gallerySelectedIndex",
     "galleryScrollRow",
@@ -397,7 +395,7 @@ function resolveMessage(
   const writesInBubble = !textInputVisible;
   return {
     show: requiredBoolean(
-      preview,
+      socialPost,
       "showMessage",
       "module.core.socialPost.showMessage",
     ),

@@ -20998,6 +20998,8 @@ static void SocialPostComposesHeaderRows()
     JsonPath.RequiredBoolean(socialPost, "showHeader", "Social Post config");
     JsonPath.RequiredBoolean(socialPost, "showStatusBar", "Social Post config");
     JsonPath.RequiredBoolean(socialPost, "showNavigationBar", "Social Post config");
+    JsonPath.RequiredBoolean(socialPost, "showMedia", "Social Post config");
+    JsonPath.RequiredBoolean(socialPost, "showMessage", "Social Post config");
     var fields = EditorLayouts(database).LoadEditorLayout("module.core.socialPost").Cards
         .SelectMany((card) => card.VisibleGroups)
         .SelectMany((group) => group.VisibleFields)
@@ -21017,6 +21019,8 @@ static void SocialPostComposesHeaderRows()
         "module.core.socialPost.footerRows",
         "module.core.socialPost.showStatusBar",
         "module.core.socialPost.showNavigationBar",
+        "module.core.socialPost.showMedia",
+        "module.core.socialPost.showMessage",
     })
     {
         True(fields.Contains(fieldId));
@@ -21025,7 +21029,6 @@ static void SocialPostComposesHeaderRows()
     var inputs = RuntimeInputDefinitionReader.ReadInputs(preview, config);
     SequenceEqual(
         [
-            "showMedia",
             "mediaHeight",
             "mediaScale",
             "mediaOffset",
@@ -21033,7 +21036,6 @@ static void SocialPostComposesHeaderRows()
             "galleryDirectory",
             "gallerySelectedIndex",
             "galleryScrollRow",
-            "showMessage",
             "messageText",
             "messageWriteOnTiming",
             "messageTextInputVisible",

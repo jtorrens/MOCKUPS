@@ -82,7 +82,6 @@ test("Social Post owns two fixed structure-projected Runtime row sections", () =
   assert.equal(Object.hasOwn(config.socialPost, "runtimeContract"), false);
   assert.equal(Object.hasOwn(config.socialPost, "forwarding"), false);
   assert.deepEqual(runtime.inputs.map(({ id }) => id), [
-    "showMedia",
     "mediaHeight",
     "mediaScale",
     "mediaOffset",
@@ -90,7 +89,6 @@ test("Social Post owns two fixed structure-projected Runtime row sections", () =
     "galleryDirectory",
     "gallerySelectedIndex",
     "galleryScrollRow",
-    "showMessage",
     "messageText",
     "messageWriteOnTiming",
     "messageTextInputVisible",
@@ -225,10 +223,11 @@ test("Social Post resolves animated Media scale and offset", () => {
 
 test("Social Post hides its Message without reserving its minimum height", () => {
   const source = fixture();
-  const runtime = JSON.parse(source.designPreviewJson) as Record<string, unknown>;
-  runtime.showMessage = false;
-  source.designPreviewJson = JSON.stringify(runtime);
-  source.runtimeContractJson = JSON.stringify(runtime);
+  const config = JSON.parse(source.configJson) as {
+    socialPost: { showMessage: boolean };
+  };
+  config.socialPost.showMessage = false;
+  source.configJson = JSON.stringify(config);
 
   const node = socialPostModuleToRenderable(source);
   assert.equal(findNode(node, "module.core.socialPost.message"), undefined);

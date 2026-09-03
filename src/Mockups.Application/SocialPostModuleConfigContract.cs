@@ -33,10 +33,12 @@ internal static class SocialPostModuleConfigContract
                 "footerRows",
                 "mediaSlot",
                 "mediaPadding",
+                "showMedia",
                 "mediaInputs",
                 "showMediaSeparator",
                 "gallerySlot",
                 "messageMinHeight",
+                "showMessage",
                 "messageBubbleSlot",
                 "messageTextInputBarSlot",
                 "messageKeyboardSlot",
@@ -52,7 +54,9 @@ internal static class SocialPostModuleConfigContract
             "showHeader",
             "showStatusBar",
             "showNavigationBar",
+            "showMedia",
             "showMediaSeparator",
+            "showMessage",
             "showMessageSeparator",
         })
         {

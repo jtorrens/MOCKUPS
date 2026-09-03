@@ -234,6 +234,7 @@
         "overrides": {}
       },
       "mediaPadding": "theme.spacing.s|theme.spacing.s",
+      "showMedia": true,
       "mediaInputs": {
         "mediaType": "image",
         "mediaScale": 1,
@@ -258,6 +259,7 @@
         }
       },
       "messageMinHeight": 160,
+      "showMessage": true,
       "messageBubbleSlot": {
         "variantReference": "component_project_foqn_s2_bubble::variant::default_copy",
         "overrides": {
@@ -496,23 +498,6 @@
     },
     "inputs": [
       {
-        "id": "showMedia",
-        "label": "Show media",
-        "jsonKey": "showMedia",
-        "kind": "boolean",
-        "valueKind": "Boolean",
-        "defaultValue": "true",
-        "source": "runtime",
-        "uiOrigin": "self",
-        "uiGroupId": "media",
-        "uiGroupLabel": "Media",
-        "uiOrder": 5,
-        "animatable": true,
-        "animationInterpolations": [
-          "hold"
-        ]
-      },
-      {
         "id": "mediaHeight",
         "label": "Height",
         "jsonKey": "mediaHeight",
@@ -638,23 +623,6 @@
         "animatable": true,
         "animationInterpolations": [
           "linear",
-          "hold"
-        ]
-      },
-      {
-        "id": "showMessage",
-        "label": "Show message",
-        "jsonKey": "showMessage",
-        "kind": "boolean",
-        "valueKind": "Boolean",
-        "defaultValue": "true",
-        "source": "runtime",
-        "uiOrigin": "self",
-        "uiGroupId": "message",
-        "uiGroupLabel": "Message",
-        "uiOrder": 5,
-        "animatable": true,
-        "animationInterpolations": [
           "hold"
         ]
       },
@@ -1816,7 +1784,6 @@
         }
       }
     ],
-    "showMedia": true,
     "showGallery": false,
     "galleryDirectory": "media/fotos ep06/",
     "gallerySelectedIndex": 0,
@@ -1824,7 +1791,6 @@
     "mediaHeight": 300,
     "mediaScale": 1,
     "mediaOffset": "0|0",
-    "showMessage": true,
     "messageText": "Escribe aquí el mensaje de la publicación.",
     "messageWriteOnTiming": {
       "mode": "fixed",
@@ -2780,6 +2746,32 @@
       "structuredCollection": null
     },
     {
+      "id": "module.core.socialPost.showMedia",
+      "label": "Show media",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "socialPost",
+        "showMedia"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null,
+      "structuredCollection": null
+    },
+    {
       "id": "module.core.socialPost.showMediaSeparator",
       "label": "Show separator",
       "valueKind": "Boolean",
@@ -3007,6 +2999,32 @@
         "first": "Horizontal",
         "second": "Vertical"
       },
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null,
+      "structuredCollection": null
+    },
+    {
+      "id": "module.core.socialPost.showMessage",
+      "label": "Show message",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "socialPost",
+        "showMessage"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
       "number": null,
       "componentVariantType": "",
       "synchronizedVariantReferenceJsonPaths": [],
@@ -4570,6 +4588,11 @@
             "visible": true,
             "fields": [
               {
+                "id": "module.core.socialPost.showMedia",
+                "order": 5,
+                "visible": true
+              },
+              {
                 "id": "module.core.socialPost.media",
                 "order": 10,
                 "visible": true
@@ -4629,6 +4652,11 @@
             "order": 10,
             "visible": true,
             "fields": [
+              {
+                "id": "module.core.socialPost.showMessage",
+                "order": 5,
+                "visible": true
+              },
               {
                 "id": "module.core.socialPost.messageBubble",
                 "order": 10,

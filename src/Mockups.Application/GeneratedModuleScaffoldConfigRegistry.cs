@@ -398,11 +398,25 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ["socialPost", "showHeader"],
             "",
             []),
+        ["module.core.socialPost.showMedia"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.showMedia",
+            ValueKind.Boolean,
+            ["socialPost", "showMedia"],
+            "",
+            []),
         ["module.core.socialPost.showMediaSeparator"] = new(
             "module.core.socialPost",
             "module.core.socialPost.showMediaSeparator",
             ValueKind.Boolean,
             ["socialPost", "showMediaSeparator"],
+            "",
+            []),
+        ["module.core.socialPost.showMessage"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.showMessage",
+            ValueKind.Boolean,
+            ["socialPost", "showMessage"],
             "",
             []),
         ["module.core.socialPost.showMessageSeparator"] = new(
