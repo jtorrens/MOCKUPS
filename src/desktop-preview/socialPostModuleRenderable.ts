@@ -100,7 +100,7 @@ export function socialPostModuleToRenderable(
   const bodyHeight = Math.max(0, bodyBottom - bodyTop);
   const minimumMessageHeight = Math.min(
     bodyHeight,
-    contract.messageMinHeight * scale,
+    contract.message.show ? contract.messageMinHeight * scale : 0,
   );
   const sectionCapacity = Math.max(0, bodyHeight - minimumMessageHeight);
   const desiredMedia = contract.showMedia
@@ -160,13 +160,15 @@ export function socialPostModuleToRenderable(
   const messageTop = gallery?.box
     ? gallery.box.y + gallery.box.height
     : galleryTop;
-  const message = messageSectionNode(
-    payload,
-    componentBaseConfigs,
-    contract,
-    messageTop,
-    bodyBottom,
-  );
+  const message = contract.message.show
+    ? messageSectionNode(
+        payload,
+        componentBaseConfigs,
+        contract,
+        messageTop,
+        bodyBottom,
+      )
+    : undefined;
   const backgroundNode = contract.useAppWallpaper
     ? wallpaperRenderable(payload, screen) ?? background(payload)
     : background(payload);
@@ -174,7 +176,7 @@ export function socialPostModuleToRenderable(
   if (header) children.push(header);
   if (media) children.push(media);
   if (gallery) children.push(gallery);
-  children.push(message);
+  if (message) children.push(message);
   children.push(footer);
   if (composer.textInput) children.push(withZIndex(composer.textInput, 40));
   if (composer.keyboard) children.push(withZIndex(composer.keyboard, 50));

@@ -235,6 +235,7 @@ function resolveSocialPostModuleFrame(payload: DesignPreviewPayload) {
   );
   for (const fieldId of [
     "showMedia",
+    "showMessage",
     "showGallery",
     "gallerySelectedIndex",
     "galleryScrollRow",
@@ -395,6 +396,11 @@ function resolveMessage(
   }
   const writesInBubble = !textInputVisible;
   return {
+    show: requiredBoolean(
+      preview,
+      "showMessage",
+      "module.core.socialPost.showMessage",
+    ),
     bubbleSlot: requiredTypedSlot(
       socialPost,
       componentBaseConfigs,

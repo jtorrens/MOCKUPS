@@ -23,6 +23,7 @@ export interface SocialPostRow {
 }
 
 export interface SocialPostMessageContract {
+  show: boolean;
   bubbleSlot: SocialPostComponentSlot;
   textInputBarSlot: SocialPostComponentSlot;
   keyboardSlot: SocialPostComponentSlot;

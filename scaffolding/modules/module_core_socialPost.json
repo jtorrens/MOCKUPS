@@ -642,6 +642,23 @@
         ]
       },
       {
+        "id": "showMessage",
+        "label": "Show message",
+        "jsonKey": "showMessage",
+        "kind": "boolean",
+        "valueKind": "Boolean",
+        "defaultValue": "true",
+        "source": "runtime",
+        "uiOrigin": "self",
+        "uiGroupId": "message",
+        "uiGroupLabel": "Message",
+        "uiOrder": 5,
+        "animatable": true,
+        "animationInterpolations": [
+          "hold"
+        ]
+      },
+      {
         "id": "messageText",
         "label": "Text",
         "jsonKey": "messageText",
@@ -1807,6 +1824,7 @@
     "mediaHeight": 300,
     "mediaScale": 1,
     "mediaOffset": "0|0",
+    "showMessage": true,
     "messageText": "Escribe aquí el mensaje de la publicación.",
     "messageWriteOnTiming": {
       "mode": "fixed",

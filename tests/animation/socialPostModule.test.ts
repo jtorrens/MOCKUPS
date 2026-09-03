@@ -90,6 +90,7 @@ test("Social Post owns two fixed structure-projected Runtime row sections", () =
     "galleryDirectory",
     "gallerySelectedIndex",
     "galleryScrollRow",
+    "showMessage",
     "messageText",
     "messageWriteOnTiming",
     "messageTextInputVisible",
@@ -220,6 +221,18 @@ test("Social Post resolves animated Media scale and offset", () => {
   const contract = resolveSocialPostModule(source);
   assert.equal(contract.mediaScale, 1.5);
   assert.equal(contract.mediaOffset, "10|-5");
+});
+
+test("Social Post hides its Message without reserving its minimum height", () => {
+  const source = fixture();
+  const runtime = JSON.parse(source.designPreviewJson) as Record<string, unknown>;
+  runtime.showMessage = false;
+  source.designPreviewJson = JSON.stringify(runtime);
+  source.runtimeContractJson = JSON.stringify(runtime);
+
+  const node = socialPostModuleToRenderable(source);
+  assert.equal(findNode(node, "module.core.socialPost.message"), undefined);
+  assert.equal(resolveSocialPostModule(source).message.show, false);
 });
 
 test("Social Post resolves animated text before distributing non-empty row slots", () => {

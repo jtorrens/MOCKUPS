@@ -21033,6 +21033,7 @@ static void SocialPostComposesHeaderRows()
             "galleryDirectory",
             "gallerySelectedIndex",
             "galleryScrollRow",
+            "showMessage",
             "messageText",
             "messageWriteOnTiming",
             "messageTextInputVisible",
