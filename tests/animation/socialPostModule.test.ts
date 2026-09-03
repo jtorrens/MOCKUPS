@@ -82,7 +82,6 @@ test("Social Post owns two fixed structure-projected Runtime row sections", () =
   assert.equal(Object.hasOwn(config.socialPost, "runtimeContract"), false);
   assert.equal(Object.hasOwn(config.socialPost, "forwarding"), false);
   assert.deepEqual(runtime.inputs.map(({ id }) => id), [
-    "mediaHeight",
     "mediaScale",
     "mediaOffset",
     "showGallery",
@@ -118,6 +117,7 @@ test("Social Post owns two fixed structure-projected Runtime row sections", () =
     }
   }
   assert.equal(contract.mediaScale, 1);
+  assert.equal(contract.mediaHeightMode, "fixed");
   assert.equal(contract.mediaOffset, "0|0");
   assert.deepEqual(contract.footerRows.map(({ id }) => id), ["row1", "row2"]);
   const footerConfigRows = config.socialPost.footerRows as Array<Record<string, unknown>>;

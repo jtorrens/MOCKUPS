@@ -103,23 +103,23 @@ export function socialPostModuleToRenderable(
     contract.message.show ? contract.messageMinHeight * scale : 0,
   );
   const sectionCapacity = Math.max(0, bodyHeight - minimumMessageHeight);
-  const desiredMedia = contract.showMedia
+  const mediaChrome = contract.showMedia
     ? mediaSectionNode(
         payload,
         componentBaseConfigs,
         contract,
         bodyTop,
-        contract.mediaHeight,
+        1,
       )
     : undefined;
-  const desiredMediaHeight = desiredMedia?.box?.height ?? 0;
+  const mediaChromeHeight = Math.max(0, (mediaChrome?.box?.height ?? 0) - scale);
   const provisionalGallery = contract.showGallery
     ? gallerySectionNode(
         payload,
         componentBaseConfigs,
         contract,
         bodyTop,
-        bodyTop + Math.max(1, sectionCapacity - desiredMediaHeight),
+        bodyTop + Math.max(1, sectionCapacity),
       )
     : undefined;
   const galleryRequiredHeight = provisionalGallery?.box?.height ?? 0;
@@ -128,12 +128,9 @@ export function socialPostModuleToRenderable(
       ? Math.max(0, sectionCapacity - galleryRequiredHeight)
       : Math.max(0, sectionCapacity - 1)
     : sectionCapacity;
-  const desiredMediaChrome = desiredMedia
-    ? Math.max(0, desiredMediaHeight - contract.mediaHeight * scale)
-    : 0;
   const availableMediaContentHeight = Math.max(
     1,
-    (mediaHeightLimit - desiredMediaChrome) / scale,
+    (mediaHeightLimit - mediaChromeHeight) / scale,
   );
   const media = contract.showMedia
     ? mediaSectionNode(
@@ -141,7 +138,9 @@ export function socialPostModuleToRenderable(
         componentBaseConfigs,
         contract,
         bodyTop,
-        Math.min(contract.mediaHeight, availableMediaContentHeight),
+        contract.mediaHeightMode === "fill"
+          ? availableMediaContentHeight
+          : Math.min(contract.mediaHeight, availableMediaContentHeight),
       )
     : undefined;
   const galleryTop = media?.box ? media.box.y + media.box.height : bodyTop;

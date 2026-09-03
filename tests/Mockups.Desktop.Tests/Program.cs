@@ -21000,6 +21000,8 @@ static void SocialPostComposesHeaderRows()
     JsonPath.RequiredBoolean(socialPost, "showNavigationBar", "Social Post config");
     JsonPath.RequiredBoolean(socialPost, "showMedia", "Social Post config");
     JsonPath.RequiredBoolean(socialPost, "showMessage", "Social Post config");
+    JsonPath.RequiredString(socialPost, "mediaHeightMode", "Social Post config");
+    JsonPath.RequiredNumber(socialPost, "mediaHeight", "Social Post config");
     var fields = EditorLayouts(database).LoadEditorLayout("module.core.socialPost").Cards
         .SelectMany((card) => card.VisibleGroups)
         .SelectMany((group) => group.VisibleFields)
@@ -21021,6 +21023,8 @@ static void SocialPostComposesHeaderRows()
         "module.core.socialPost.showNavigationBar",
         "module.core.socialPost.showMedia",
         "module.core.socialPost.showMessage",
+        "module.core.socialPost.mediaHeightMode",
+        "module.core.socialPost.mediaHeight",
     })
     {
         True(fields.Contains(fieldId));
@@ -21029,7 +21033,6 @@ static void SocialPostComposesHeaderRows()
     var inputs = RuntimeInputDefinitionReader.ReadInputs(preview, config);
     SequenceEqual(
         [
-            "mediaHeight",
             "mediaScale",
             "mediaOffset",
             "showGallery",

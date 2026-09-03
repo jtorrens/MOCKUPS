@@ -235,6 +235,8 @@
       },
       "mediaPadding": "theme.spacing.s|theme.spacing.s",
       "showMedia": true,
+      "mediaHeightMode": "fixed",
+      "mediaHeight": 300,
       "mediaInputs": {
         "mediaType": "image",
         "mediaScale": 1,
@@ -497,22 +499,6 @@
       ]
     },
     "inputs": [
-      {
-        "id": "mediaHeight",
-        "label": "Height",
-        "jsonKey": "mediaHeight",
-        "kind": "number",
-        "valueKind": "Integer",
-        "defaultValue": "300",
-        "minimum": 1,
-        "maximum": 4096,
-        "increment": 1,
-        "source": "runtime",
-        "uiOrigin": "embedded",
-        "uiGroupId": "media",
-        "uiGroupLabel": "Media",
-        "uiOrder": 20
-      },
       {
         "id": "mediaScale",
         "label": "Scale",
@@ -1788,7 +1774,6 @@
     "galleryDirectory": "media/fotos ep06/",
     "gallerySelectedIndex": 0,
     "galleryScrollRow": 0,
-    "mediaHeight": 300,
     "mediaScale": 1,
     "mediaOffset": "0|0",
     "messageText": "Escribe aquí el mensaje de la publicación.",
@@ -2743,6 +2728,55 @@
         "label": "Gallery",
         "recordClassId": "component.gallery"
       },
+      "structuredCollection": null
+    },
+    {
+      "id": "module.core.socialPost.mediaHeightMode",
+      "label": "Height mode",
+      "valueKind": "OptionToken",
+      "jsonPath": ["socialPost", "mediaHeightMode"],
+      "defaultValue": "fixed",
+      "isEditable": true,
+      "options": [
+        { "value": "fixed", "label": "Fixed" },
+        { "value": "fill", "label": "Fill available" }
+      ],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null,
+      "structuredCollection": null
+    },
+    {
+      "id": "module.core.socialPost.mediaHeight",
+      "label": "Height",
+      "valueKind": "Integer",
+      "jsonPath": ["socialPost", "mediaHeight"],
+      "defaultValue": "300",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": { "minimum": 1, "maximum": 4096, "increment": 1, "decimalPlaces": 0, "useSlider": false },
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "px",
+      "embeddedSlot": null,
       "structuredCollection": null
     },
     {
@@ -4600,6 +4634,16 @@
               {
                 "id": "module.core.socialPost.mediaPadding",
                 "order": 20,
+                "visible": true
+              },
+              {
+                "id": "module.core.socialPost.mediaHeightMode",
+                "order": 25,
+                "visible": true
+              },
+              {
+                "id": "module.core.socialPost.mediaHeight",
+                "order": 26,
                 "visible": true
               },
               {

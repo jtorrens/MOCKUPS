@@ -335,6 +335,20 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ["socialPost", "mediaSlot"],
             "media",
             []),
+        ["module.core.socialPost.mediaHeight"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.mediaHeight",
+            ValueKind.Integer,
+            ["socialPost", "mediaHeight"],
+            "",
+            []),
+        ["module.core.socialPost.mediaHeightMode"] = new(
+            "module.core.socialPost",
+            "module.core.socialPost.mediaHeightMode",
+            ValueKind.OptionToken,
+            ["socialPost", "mediaHeightMode"],
+            "",
+            []),
         ["module.core.socialPost.mediaPadding"] = new(
             "module.core.socialPost",
             "module.core.socialPost.mediaPadding",

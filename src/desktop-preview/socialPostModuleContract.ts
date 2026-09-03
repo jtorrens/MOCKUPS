@@ -57,6 +57,7 @@ export interface SocialPostModuleContract {
   mediaPadding: string;
   mediaInputs: Record<string, unknown>;
   mediaSources: string[];
+  mediaHeightMode: "fixed" | "fill";
   mediaHeight: number;
   mediaScale: number;
   mediaOffset: string;

@@ -160,8 +160,9 @@ export function resolveSocialPostModule(
       "module.core.socialPost.mediaInputs",
     )),
     mediaSources: gallerySources,
+    mediaHeightMode: requiredMediaHeightMode(socialPost),
     mediaHeight: Math.max(1, requiredNumber(
-      preview,
+      socialPost,
       "mediaHeight",
       "module.core.socialPost.mediaHeight",
     )),
@@ -217,6 +218,16 @@ export function resolveSocialPostModule(
       resolveRow("footer", 2, footerRows[1], footerRuntimeRows[1], componentBaseConfigs),
     ],
   };
+}
+
+function requiredMediaHeightMode(socialPost: Record<string, unknown>): "fixed" | "fill" {
+  const value = requiredString(
+    socialPost,
+    "mediaHeightMode",
+    "module.core.socialPost.mediaHeightMode",
+  );
+  if (value === "fixed" || value === "fill") return value;
+  throw new Error(`Unsupported Social Post Media height mode '${value}'`);
 }
 
 function resolveSocialPostModuleFrame(payload: DesignPreviewPayload) {

@@ -34,6 +34,8 @@ internal static class SocialPostModuleConfigContract
                 "mediaSlot",
                 "mediaPadding",
                 "showMedia",
+                "mediaHeightMode",
+                "mediaHeight",
                 "mediaInputs",
                 "showMediaSeparator",
                 "gallerySlot",
@@ -80,6 +82,17 @@ internal static class SocialPostModuleConfigContract
         JsonPath.RequiredString(socialPost, "footerRowGapToken", owner);
         ValidateSlot(socialPost, "mediaSlot", owner);
         JsonPath.RequiredString(socialPost, "mediaPadding", owner);
+        var mediaHeightMode = JsonPath.RequiredString(socialPost, "mediaHeightMode", owner);
+        if (mediaHeightMode is not ("fixed" or "fill"))
+        {
+            throw new InvalidOperationException(
+                $"{owner}.mediaHeightMode must be 'fixed' or 'fill'.");
+        }
+        if (JsonPath.RequiredNumber(socialPost, "mediaHeight", owner) <= 0)
+        {
+            throw new InvalidOperationException(
+                $"{owner}.mediaHeight must be positive.");
+        }
         ValidateMediaInputs(
             JsonPath.RequiredObject(socialPost, "mediaInputs", owner),
             $"{owner}.mediaInputs");
