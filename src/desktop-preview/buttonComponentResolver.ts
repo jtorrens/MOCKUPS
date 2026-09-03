@@ -90,7 +90,7 @@ function resolveButtonStateStyle(
     iconColorToken: typeof preview.iconColorToken === "string" && preview.iconColorToken.trim()
       ? preview.iconColorToken
       : requiredString(style, "iconColorToken", `component.button.states.${state}.iconColorToken`),
-    label: contentMode === "icon" ? undefined : resolveLabelComponentFromRecords(
+    label: contentMode === "icon" || !text.trim() ? undefined : resolveLabelComponentFromRecords(
       embeddedComponentConfig(bases, labelSlot, "label", `component.button.states.${state}.labelSlot`),
       {
         ...literalLabelPreview(text),
