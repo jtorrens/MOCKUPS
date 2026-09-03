@@ -1085,34 +1085,23 @@ static void ActorPreviewSurfacesShareInitialsIdentity()
 
 static void DesignAuthoringContextExposesExactVariantState()
 {
-    var selectedVariantId = "";
     var metadata = new EditorContextStripMetadata(
         [new EditorContextIdentity("Component", "Text Box")],
-        new EditorContextVariantSelector(
-            [
-                new FieldOption("component.text_box::variant::default", "Default"),
-                new FieldOption("component.text_box::variant::search", "Search"),
-            ],
-            "component.text_box::variant::search",
-            (variantId) => selectedVariantId = variantId),
         2,
         IsUsed: true,
         IsProtected: true,
         IsLocked: true);
 
     True(metadata.AccessibleText.Contains("Component: Text Box", StringComparison.Ordinal));
-    True(metadata.AccessibleText.Contains("Variant: Search", StringComparison.Ordinal));
+    True(!metadata.AccessibleText.Contains("Variant:", StringComparison.Ordinal));
     True(metadata.AccessibleText.Contains("2 overrides", StringComparison.Ordinal));
     True(metadata.AccessibleText.Contains("Used", StringComparison.Ordinal));
     True(metadata.AccessibleText.Contains("Protected", StringComparison.Ordinal));
     True(metadata.AccessibleText.Contains("Locked", StringComparison.Ordinal));
     True(!metadata.AccessibleText.Contains("Saved", StringComparison.Ordinal));
 
-    metadata.VariantSelector!.Select("component.text_box::variant::default");
-    Equal("component.text_box::variant::default", selectedVariantId);
-
     var rootVariantMetadata = metadata with { Identities = [] };
-    True(rootVariantMetadata.AccessibleText.StartsWith("Variant: Search", StringComparison.Ordinal));
+    True(rootVariantMetadata.AccessibleText.StartsWith("2 overrides", StringComparison.Ordinal));
 }
 
 static void TypographyStyleKeepsOnlyExplicitSentinels()

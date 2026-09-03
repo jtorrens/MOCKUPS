@@ -11,14 +11,8 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed record EditorContextIdentity(string Type, string Name);
 
-internal sealed record EditorContextVariantSelector(
-    IReadOnlyList<FieldOption> Options,
-    string SelectedId,
-    Action<string> Select);
-
 internal sealed record EditorContextStripMetadata(
     IReadOnlyList<EditorContextIdentity> Identities,
-    EditorContextVariantSelector? VariantSelector,
     int OverrideCount,
     bool IsUsed = false,
     bool IsProtected = false,
@@ -32,11 +26,6 @@ internal sealed record EditorContextStripMetadata(
             var parts = Identities
                 .Select((identity) => $"{identity.Type}: {identity.Name}")
                 .ToList();
-            if (VariantSelector is not null)
-            {
-                parts.Add(
-                    $"Variant: {VariantSelector.Options.FirstOrDefault((option) => option.Value == VariantSelector.SelectedId)?.Label ?? VariantSelector.SelectedId}");
-            }
             parts.Add($"{OverrideCount} {(OverrideCount == 1 ? "override" : "overrides")}");
             if (IsUsed) parts.Add("Used");
             if (IsProtected) parts.Add("Protected");
@@ -62,10 +51,6 @@ internal static class EditorContextStrip
             content.Children.Add(Item($"{identity.Type}: ", identity.Name));
         }
 
-        if (metadata.VariantSelector is not null)
-        {
-            content.Children.Add(VariantSelector(metadata.VariantSelector));
-        }
         if (metadata.OverrideCount > 0)
         {
             content.Children.Add(Badge($"{metadata.OverrideCount} {(metadata.OverrideCount == 1 ? "override" : "overrides")}"));
@@ -99,48 +84,6 @@ internal static class EditorContextStrip
         };
         ToolTip.SetTip(border, metadata.AccessibleText);
         return border;
-    }
-
-    private static Control VariantSelector(EditorContextVariantSelector metadata)
-    {
-        var selectedOption = metadata.Options.FirstOrDefault((option) => option.Value == metadata.SelectedId);
-        var combo = new EditorInstantComboBox
-        {
-            ItemsSource = metadata.Options,
-            SelectedItem = selectedOption,
-            Width = 210,
-            Height = 30,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        combo.SelectionChanged += (_, _) =>
-        {
-            if (combo.SelectedItem is not { } selected
-                || selected.Value == metadata.SelectedId)
-            {
-                return;
-            }
-            metadata.Select(selected.Value);
-        };
-        EditorAccessibility.Describe(combo, "Select active Variant");
-
-        return new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            Spacing = 7,
-            Margin = new Thickness(0, 0, 12, 0),
-            VerticalAlignment = VerticalAlignment.Center,
-            Children =
-            {
-                new TextBlock
-                {
-                    Text = "Variant:",
-                    FontSize = 12,
-                    FontWeight = FontWeight.SemiBold,
-                    VerticalAlignment = VerticalAlignment.Center,
-                },
-                combo,
-            },
-        };
     }
 
     private static Control Item(string prefix, string value)

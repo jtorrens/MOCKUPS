@@ -114,6 +114,10 @@ test("Social Post owns two fixed structure-projected Runtime row sections", () =
         slot.inputs.iconSizeToken,
         headerConfigRows[rowIndex]?.[`slot${slotIndex + 1}IconSizeToken`],
       );
+      assert.equal(
+        (slot.componentSlot?.overrides.button as Record<string, unknown> | undefined)?.contentMode,
+        "icon",
+      );
     }
   }
   assert.equal(contract.mediaScale, 1);
@@ -131,6 +135,10 @@ test("Social Post owns two fixed structure-projected Runtime row sections", () =
         assert.equal(
           slot.inputs.iconSizeToken,
           footerConfigRows[rowIndex]?.[`slot${slotIndex + 1}IconSizeToken`],
+        );
+        assert.equal(
+          (slot.componentSlot?.overrides.button as Record<string, unknown> | undefined)?.contentMode,
+          "icon",
         );
       }
     }

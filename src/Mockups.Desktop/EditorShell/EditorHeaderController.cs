@@ -187,7 +187,6 @@ internal sealed class EditorHeaderController
                             "Overrides",
                             reference.ReferenceNode.Name),
                     ],
-                    null,
                     OverrideCount()));
             return;
         }
@@ -257,7 +256,6 @@ internal sealed class EditorHeaderController
         var statusNode = variantNode ?? selected;
         return new EditorContextStripMetadata(
             identities,
-            VariantSelectorFor(variantNode),
             OverrideCount(),
             statusNode.IsUsed,
             statusNode.IsProtected,
@@ -292,7 +290,7 @@ internal sealed class EditorHeaderController
         var component = EditorUiText.IdentifierLabel(context.ComponentType);
         var identities = new List<EditorContextIdentity> { new("Component", component) };
         if (!string.IsNullOrWhiteSpace(activeVariantName)) identities.Add(new EditorContextIdentity("Variant", activeVariantName));
-        return new EditorContextStripMetadata(identities, null, OverrideCount());
+        return new EditorContextStripMetadata(identities, OverrideCount());
     }
 
     private ProjectTreeNode? SelectedVariantNode(ProjectTreeNode selected)
@@ -308,32 +306,6 @@ internal sealed class EditorHeaderController
                 : null,
             _ => null,
         };
-    }
-
-    private EditorContextVariantSelector? VariantSelectorFor(ProjectTreeNode? selectedVariant)
-    {
-        if (selectedVariant?.Parent is not { } parent)
-        {
-            return null;
-        }
-
-        var variants = parent.Children
-            .Where((child) => child.Kind == selectedVariant.Kind)
-            .ToList();
-        var options = variants
-            .Select((variant) => new FieldOption(variant.Id, variant.Name))
-            .ToList();
-        return new EditorContextVariantSelector(
-            options,
-            selectedVariant.Id,
-            (variantId) =>
-            {
-                var next = variants.FirstOrDefault((variant) => variant.Id.Equals(variantId, StringComparison.Ordinal));
-                if (next is not null && next.Id != selectedVariant.Id)
-                {
-                    _showNode(next, true);
-                }
-            });
     }
 
     private int OverrideCount() => _activeFieldControls.ControlsByFieldId.Values.Count((control) => control.HasLocalOverride);

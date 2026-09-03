@@ -591,7 +591,7 @@ function resolveRowSlot(
       index,
       kind,
       componentType: "button",
-      componentSlot: iconSlot,
+      componentSlot: iconSlotWithIconContent(iconSlot),
       inputs: {
         state: "normal",
         sampleText: "",
@@ -637,6 +637,20 @@ function resolveRowSlot(
       sampleText: label,
       sampleSubtext: sublabel,
       showBadge: false,
+    },
+  };
+}
+
+function iconSlotWithIconContent(slot: SocialPostComponentSlot): SocialPostComponentSlot {
+  const buttonOverrides = optionalObject(slot.overrides, "button") ?? {};
+  return {
+    variantReference: slot.variantReference,
+    overrides: {
+      ...slot.overrides,
+      button: {
+        ...buttonOverrides,
+        contentMode: "icon",
+      },
     },
   };
 }
