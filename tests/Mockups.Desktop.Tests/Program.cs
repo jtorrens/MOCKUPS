@@ -7001,12 +7001,14 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
                 return Required(authoringHost.Content as Control);
             }
 
-            static IReadOnlyList<FieldOption> VariantOptions(Control context)
+            static void AssertNoVariantSelector(Control context)
             {
-                return context.GetVisualDescendants()
+                True(!context.GetVisualDescendants()
                     .OfType<EditorInstantComboBox>()
                     .Select((combo) => combo.ItemsSource?.ToList() ?? [])
-                    .Single((options) => options.Any((option) => option.Value.Contains("::variant::", StringComparison.Ordinal)));
+                    .Any((options) => options.Any((option) => option.Value.Contains(
+                        "::variant::",
+                        StringComparison.Ordinal))));
             }
 
             static DictionaryFieldControl RequiredField(Control root, string fieldId)
@@ -7025,9 +7027,7 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
             }
 
             var listItemSurface = SelectComponent("component_project_foqn_s2_list_item");
-            SequenceEqual(
-                ["Default", "Calls", "Chats"],
-                VariantOptions(contextHost).Select((option) => option.Label));
+            AssertNoVariantSelector(contextHost);
             Equal("360", RequiredField(listItemSurface, "width").Value);
             Equal("84", RequiredField(listItemSurface, "height").Value);
             Equal("1", RequiredField(listItemSurface, "activeSet").Value);
@@ -7089,9 +7089,7 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
             _ = RequiredField(listItemSurface, "buttonInputs");
 
             var listSurface = SelectComponent("component_project_foqn_s2_list");
-            SequenceEqual(
-                ["Default", "Calls", "Chats"],
-                VariantOptions(contextHost).Select((option) => option.Label));
+            AssertNoVariantSelector(contextHost);
             Equal("360", RequiredField(listSurface, "itemWidth").Value);
             Equal("84", RequiredField(listSurface, "itemHeight").Value);
             var database = new SqliteProjectTestContext(temporary);
