@@ -482,6 +482,13 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ["videoCall", "footerHeight"],
             "",
             []),
+        ["module.core.videoCall.footerLayoutMode"] = new(
+            "module.core.videoCall",
+            "module.core.videoCall.footerLayoutMode",
+            ValueKind.OptionToken,
+            ["videoCall", "footerLayoutMode"],
+            "",
+            []),
         ["module.core.videoCall.footerRowGapToken"] = new(
             "module.core.videoCall",
             "module.core.videoCall.footerRowGapToken",
@@ -536,6 +543,13 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             "module.core.videoCall.headerHeight",
             ValueKind.Integer,
             ["videoCall", "headerHeight"],
+            "",
+            []),
+        ["module.core.videoCall.headerLayoutMode"] = new(
+            "module.core.videoCall",
+            "module.core.videoCall.headerLayoutMode",
+            ValueKind.OptionToken,
+            ["videoCall", "headerLayoutMode"],
             "",
             []),
         ["module.core.videoCall.headerRowGapToken"] = new(

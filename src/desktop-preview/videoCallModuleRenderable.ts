@@ -27,12 +27,17 @@ export function videoCallModuleToRenderable(payload: DesignPreviewPayload): Rend
     ownerId: call.id, section: "footer", rows: call.footerRows, rowGapToken: call.footerRowGapToken,
     height: call.footerHeight, surfaceSlot: call.footerSurfaceSlot, edge: "bottom", contentEdge: contentBottom,
   }) : undefined;
-  const bodyTop = header?.box ? header.box.y + header.box.height : contentTop;
+  const bodyTop = header?.box && call.headerLayoutMode === "stack"
+    ? header.box.y + header.box.height
+    : contentTop;
+  const bodyBottom = footer?.box && call.footerLayoutMode === "stack"
+    ? footer.box.y
+    : contentBottom;
   const body: RenderableBox = {
     x: screen.x,
     y: bodyTop,
     width: screen.width,
-    height: Math.max(1, (footer?.box?.y ?? contentBottom) - bodyTop),
+    height: Math.max(1, bodyBottom - bodyTop),
   };
   const gridItems = call.participants.filter((item) => item.role === "grid");
   const gridBoxes = grid(gridItems, inset(payload, body, call.gridPadding), numberToken(payload, call.gridGapToken) * scale, call.gridColumns);

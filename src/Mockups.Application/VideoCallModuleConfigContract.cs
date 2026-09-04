@@ -18,8 +18,8 @@ internal static class VideoCallModuleConfigContract
         var owner = JsonPath.RequiredObject(config, "videoCall", context);
         RequireExactKeys(owner, [
             "useAppWallpaper", "conversationType", "backgroundColorToken",
-            "showHeader", "headerHeight", "headerSurfaceSlot", "headerRowGapToken", "headerRows",
-            "showFooter", "footerHeight", "footerSurfaceSlot", "footerRowGapToken", "footerRows",
+            "showHeader", "headerLayoutMode", "headerHeight", "headerSurfaceSlot", "headerRowGapToken", "headerRows",
+            "showFooter", "footerLayoutMode", "footerHeight", "footerSurfaceSlot", "footerRowGapToken", "footerRows",
             "showMainVideo", "mainParticipantSlot", "mainSizeMode", "mainSize", "mainPlacement", "mainPadding",
             "showPip", "pipParticipantSlot", "pipSize", "pipPlacement", "pipPadding",
             "showGridParticipants", "gridParticipantSlot", "gridPadding", "gridGapToken", "gridColumns",
@@ -29,6 +29,8 @@ internal static class VideoCallModuleConfigContract
         foreach (var key in new[] { "useAppWallpaper", "showHeader", "showFooter", "showMainVideo", "showPip", "showGridParticipants", "showParticipantNames", "showParticipantStatus", "showStatusBar", "showNavigationBar" })
             JsonPath.RequiredBoolean(owner, key, context);
         RequireOneOf(JsonPath.RequiredString(owner, "conversationType", context), ["individual", "group"], $"{context}.videoCall.conversationType");
+        RequireOneOf(JsonPath.RequiredString(owner, "headerLayoutMode", context), ["stack", "float"], $"{context}.videoCall.headerLayoutMode");
+        RequireOneOf(JsonPath.RequiredString(owner, "footerLayoutMode", context), ["stack", "float"], $"{context}.videoCall.footerLayoutMode");
         RequireOneOf(JsonPath.RequiredString(owner, "mainSizeMode", context), ["fill", "fixed"], $"{context}.videoCall.mainSizeMode");
         JsonPath.RequiredString(owner, "backgroundColorToken", context);
         foreach (var key in new[] { "headerRowGapToken", "footerRowGapToken", "gridGapToken" }) JsonPath.RequiredString(owner, key, context);

@@ -21,11 +21,13 @@ export interface VideoCallModuleContract {
   conversationType: "individual" | "group";
   backgroundColorToken: string;
   showHeader: boolean;
+  headerLayoutMode: "stack" | "float";
   headerHeight: number;
   headerSurfaceSlot: VideoCallComponentSlot;
   headerRowGapToken: string;
   headerRows: [SocialPostRow, SocialPostRow];
   showFooter: boolean;
+  footerLayoutMode: "stack" | "float";
   footerHeight: number;
   footerSurfaceSlot: VideoCallComponentSlot;
   footerRowGapToken: string;

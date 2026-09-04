@@ -45,6 +45,7 @@ export function resolveVideoCallModule(payload: DesignPreviewPayload): VideoCall
     conversationType: conversationType(requiredString(owner, "conversationType", "module.core.videoCall.conversationType")),
     backgroundColorToken: requiredString(owner, "backgroundColorToken", "module.core.videoCall.backgroundColorToken"),
     showHeader: requiredBoolean(owner, "showHeader", "module.core.videoCall.showHeader"),
+    headerLayoutMode: sectionLayoutMode(requiredString(owner, "headerLayoutMode", "module.core.videoCall.headerLayoutMode")),
     headerHeight: nonNegative(requiredNumber(owner, "headerHeight", "module.core.videoCall.headerHeight"), "headerHeight"),
     headerSurfaceSlot: typedSlot(owner, bases, "headerSurfaceSlot", "surface"),
     headerRowGapToken: requiredString(owner, "headerRowGapToken", "module.core.videoCall.headerRowGapToken"),
@@ -53,6 +54,7 @@ export function resolveVideoCallModule(payload: DesignPreviewPayload): VideoCall
       resolveRow("module.core.videoCall", "header", 2, headerRows[1], headerRuntimeRows[1], bases),
     ],
     showFooter: requiredBoolean(owner, "showFooter", "module.core.videoCall.showFooter"),
+    footerLayoutMode: sectionLayoutMode(requiredString(owner, "footerLayoutMode", "module.core.videoCall.footerLayoutMode")),
     footerHeight: nonNegative(requiredNumber(owner, "footerHeight", "module.core.videoCall.footerHeight"), "footerHeight"),
     footerSurfaceSlot: typedSlot(owner, bases, "footerSurfaceSlot", "surface"),
     footerRowGapToken: requiredString(owner, "footerRowGapToken", "module.core.videoCall.footerRowGapToken"),
@@ -94,6 +96,7 @@ function slotConfig(bases: Record<string, unknown>, slot: VideoCallComponentSlot
 function pair(owner: Record<string, unknown>, key: string) { const value = requiredStringPair(owner, key, `module.core.videoCall.${key}`); return { xToken: value.first, yToken: value.second }; }
 function participantRole(value: string): VideoCallParticipantRole { if (value === "main" || value === "pip" || value === "grid") return value; throw new Error(`Unsupported participant role '${value}'`); }
 function conversationType(value: string): VideoCallModuleContract["conversationType"] { if (value === "individual" || value === "group") return value; throw new Error(`Unsupported conversation type '${value}'`); }
+function sectionLayoutMode(value: string): "stack" | "float" { if (value === "stack" || value === "float") return value; throw new Error(`Unsupported section layout mode '${value}'`); }
 function sizeMode(value: string): VideoCallModuleContract["mainSizeMode"] { if (value === "fill" || value === "fixed") return value; throw new Error(`Unsupported main size mode '${value}'`); }
 function positive(value: number, path: string) { if (!Number.isFinite(value) || value <= 0) throw new Error(`${path} must be positive`); return value; }
 function nonNegative(value: number, path: string) { if (!Number.isFinite(value) || value < 0) throw new Error(`${path} must be non-negative`); return value; }
