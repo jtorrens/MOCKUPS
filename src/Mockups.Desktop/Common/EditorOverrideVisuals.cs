@@ -18,4 +18,20 @@ internal static class EditorOverrideVisuals
         button.Foreground = Brush;
         button.BorderThickness = new Thickness(1);
     }
+
+    public static void ApplyBoundaryActionButton(
+        Button button,
+        bool hasOverrides)
+    {
+        if (hasOverrides)
+        {
+            ApplyActionButton(button, isHighlighted: true);
+            return;
+        }
+
+        button.Background = Brushes.Transparent;
+        button.BorderBrush = Brushes.Transparent;
+        button.Foreground = Brushes.White;
+        button.BorderThickness = new Thickness(1);
+    }
 }

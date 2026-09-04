@@ -98,7 +98,9 @@ internal sealed class DictionaryComponentVariantControl : Grid, IDictionaryValue
                 IsEnabled = definition.IsEditable,
             };
             EditorAccessibility.Describe(_overrideButton, $"Edit overrides for {_definition.DisplayLabel}");
-            EditorOverrideVisuals.ApplyActionButton(_overrideButton, isHighlighted);
+            EditorOverrideVisuals.ApplyBoundaryActionButton(
+                _overrideButton,
+                isHighlighted);
             _overrideButton.Click += async (_, _) => await openEmbeddedComponent(_definition.Id);
 
             if (restoreEmbeddedComponentOverrides is null)
@@ -114,6 +116,7 @@ internal sealed class DictionaryComponentVariantControl : Grid, IDictionaryValue
                 Padding = new Thickness(0),
                 HorizontalContentAlignment = HorizontalAlignment.Center,
                 VerticalContentAlignment = VerticalAlignment.Center,
+                IsVisible = isHighlighted,
             };
             EditorAccessibility.Describe(
                 _restoreButton,
@@ -121,6 +124,9 @@ internal sealed class DictionaryComponentVariantControl : Grid, IDictionaryValue
             ToolTip.SetTip(
                 _restoreButton,
                 $"Restore all overrides for {_definition.DisplayLabel}");
+            EditorOverrideVisuals.ApplyBoundaryActionButton(
+                _restoreButton,
+                isHighlighted);
             _restoreButton.Click += async (_, _) =>
             {
                 await restoreEmbeddedComponentOverrides(_definition.Id);
@@ -174,11 +180,16 @@ internal sealed class DictionaryComponentVariantControl : Grid, IDictionaryValue
         _hasOverrides = isHighlighted;
         if (_overrideButton is not null)
         {
-            EditorOverrideVisuals.ApplyActionButton(_overrideButton, isHighlighted);
+            EditorOverrideVisuals.ApplyBoundaryActionButton(
+                _overrideButton,
+                isHighlighted);
         }
         if (_restoreButton is not null)
         {
-            EditorOverrideVisuals.ApplyActionButton(_restoreButton, isHighlighted);
+            _restoreButton.IsVisible = isHighlighted;
+            EditorOverrideVisuals.ApplyBoundaryActionButton(
+                _restoreButton,
+                isHighlighted);
         }
         UpdateOpenButton();
         if (changed)

@@ -106,11 +106,13 @@ local Override document.
 
 Variant selection, navigation to the class and local Overrides use the shared
 compact actions in one row. Every boundary that exposes Overrides also exposes
-Restore immediately to its right. Restore clears the complete local Overrides
-document below that boundary, preserves the exact Variant reference and any
-unrelated Runtime values, and leaves an empty object only where the current
-document contract requires it. Empty objects alone do not mark a boundary as
-overridden.
+Restore immediately to its right while local Overrides exist. Without local
+Overrides, the Overrides action is neutral white and Restore is absent. With
+local Overrides, the boundary label and both actions are amber. Restore clears
+the complete local Overrides document below that boundary, preserves the exact
+Variant reference and any unrelated Runtime values, and leaves an empty object
+only where the current document contract requires it. Empty objects alone do
+not mark a boundary as overridden.
 
 A fixed boundary exposes Variant, class navigation and Overrides, never a
 Component selector. A polymorphic boundary exposes Component selection only

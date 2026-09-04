@@ -7613,6 +7613,15 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
             restoreAll.RaiseEvent(
                 new RoutedEventArgs(Button.ClickEvent));
             Dispatcher.UIThread.RunJobs();
+            True(!restoreAll.IsVisible);
+            var neutralOverridesAction = restorableSlot
+                .GetVisualDescendants()
+                .OfType<Button>()
+                .Single((button) =>
+                    Avalonia.Automation.AutomationProperties
+                        .GetName(button)
+                    == "Edit overrides for List");
+            Equal(Brushes.White, neutralOverridesAction.Foreground);
             var restoredSlot = ComponentVariantSlotDocumentContract.Parse(
                 restoredSlotJson
                     ?? throw new InvalidOperationException(

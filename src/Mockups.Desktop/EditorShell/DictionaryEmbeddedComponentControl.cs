@@ -64,7 +64,9 @@ internal sealed class DictionaryEmbeddedComponentControl : Grid, IDictionaryValu
             VerticalContentAlignment = VerticalAlignment.Center,
             IsEnabled = definition.IsEditable,
         };
-        EditorOverrideVisuals.ApplyActionButton(button, isHighlighted);
+        EditorOverrideVisuals.ApplyBoundaryActionButton(
+            button,
+            isHighlighted);
         button.Click += async (_, _) =>
         {
             await openEmbeddedComponent(_definition.Id);
@@ -79,6 +81,7 @@ internal sealed class DictionaryEmbeddedComponentControl : Grid, IDictionaryValu
             HorizontalContentAlignment = HorizontalAlignment.Center,
             VerticalContentAlignment = VerticalAlignment.Center,
             IsEnabled = definition.IsEditable && isHighlighted,
+            IsVisible = isHighlighted,
         };
         EditorAccessibility.Describe(
             _restoreButton,
@@ -86,7 +89,7 @@ internal sealed class DictionaryEmbeddedComponentControl : Grid, IDictionaryValu
         ToolTip.SetTip(
             _restoreButton,
             $"Restore all overrides for {definition.DisplayLabel}");
-        EditorOverrideVisuals.ApplyActionButton(
+        EditorOverrideVisuals.ApplyBoundaryActionButton(
             _restoreButton,
             isHighlighted);
         _restoreButton.Click += async (_, _) =>
@@ -94,13 +97,14 @@ internal sealed class DictionaryEmbeddedComponentControl : Grid, IDictionaryValu
             await restoreEmbeddedComponentOverrides(_definition.Id);
             _isHighlighted = false;
             ApplyLabelBrush();
-            EditorOverrideVisuals.ApplyActionButton(
+            EditorOverrideVisuals.ApplyBoundaryActionButton(
                 button,
                 false);
-            EditorOverrideVisuals.ApplyActionButton(
+            EditorOverrideVisuals.ApplyBoundaryActionButton(
                 _restoreButton,
                 false);
             _restoreButton.IsEnabled = false;
+            _restoreButton.IsVisible = false;
             OverrideStateChanged?.Invoke(this, EventArgs.Empty);
         };
         actions.Children.Add(_restoreButton);

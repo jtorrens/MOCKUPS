@@ -63,7 +63,7 @@ internal sealed class DictionaryRecordReferenceControl : DockPanel,
         EditorAccessibility.Describe(
             _overridesButton,
             $"Edit overrides for {definition.DisplayLabel}");
-        EditorOverrideVisuals.ApplyActionButton(
+        EditorOverrideVisuals.ApplyBoundaryActionButton(
             _overridesButton,
             isHighlighted);
         _overridesButton.Click += async (_, _) =>
@@ -89,6 +89,7 @@ internal sealed class DictionaryRecordReferenceControl : DockPanel,
             Padding = new Thickness(0),
             HorizontalContentAlignment = HorizontalAlignment.Center,
             VerticalContentAlignment = VerticalAlignment.Center,
+            IsVisible = isHighlighted,
         };
         EditorAccessibility.Describe(
             _restoreButton,
@@ -96,7 +97,7 @@ internal sealed class DictionaryRecordReferenceControl : DockPanel,
         ToolTip.SetTip(
             _restoreButton,
             $"Restore all overrides for {definition.DisplayLabel}");
-        EditorOverrideVisuals.ApplyActionButton(
+        EditorOverrideVisuals.ApplyBoundaryActionButton(
             _restoreButton,
             isHighlighted);
         _restoreButton.Click += async (_, _) =>
@@ -160,12 +161,13 @@ internal sealed class DictionaryRecordReferenceControl : DockPanel,
     {
         var changed = _hasOverrides != active;
         _hasOverrides = active;
-        EditorOverrideVisuals.ApplyActionButton(
+        EditorOverrideVisuals.ApplyBoundaryActionButton(
             _overridesButton,
             active);
-        EditorOverrideVisuals.ApplyActionButton(
+        EditorOverrideVisuals.ApplyBoundaryActionButton(
             _restoreButton,
             active);
+        _restoreButton.IsVisible = active;
         _restoreButton.IsEnabled = _definition.IsEditable
             && active
             && !string.IsNullOrWhiteSpace(_value);
