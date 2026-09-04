@@ -1,6 +1,6 @@
 import type { CallParticipantDesignContract } from "./callParticipantComponentContract.js";
+import type { ModuleRow } from "./moduleRowSectionContract.js";
 import type { AlignmentPlacementContract, SpacingPairContract } from "./previewComponentContracts.js";
-import type { SocialPostRow } from "./socialPostModuleContract.js";
 
 export interface VideoCallComponentSlot extends Record<string, unknown> {
   variantReference: string;
@@ -27,7 +27,7 @@ export interface VideoCallModuleContract {
   headerHeight: number;
   headerSurfaceSlot: VideoCallComponentSlot;
   headerRowGapToken: string;
-  headerRows: [SocialPostRow, SocialPostRow];
+  headerRows: [ModuleRow, ModuleRow];
   showFooter: boolean;
   footerLayoutMode: "stack" | "float";
   footerFloatHorizontalPaddingToken: string;
@@ -35,7 +35,7 @@ export interface VideoCallModuleContract {
   footerHeight: number;
   footerSurfaceSlot: VideoCallComponentSlot;
   footerRowGapToken: string;
-  footerRows: [SocialPostRow, SocialPostRow];
+  footerRows: [ModuleRow, ModuleRow];
   showMainVideo: boolean;
   mainSizeMode: "fill" | "fixed";
   mainSize: { width: number; height: number };

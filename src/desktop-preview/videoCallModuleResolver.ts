@@ -3,7 +3,7 @@ import { componentVariantConfig, mergeComponentDefaults, requireComponentVariant
 import { parseObject, requiredBoolean, requiredComponentVariantSlot, requiredNumber, requiredNumberPair, requiredPlacement, requiredRecord, requiredString, requiredStringPair } from "./componentResolverCommon.js";
 import { requiredObjectArray } from "./previewJsonHelpers.js";
 import { resolveCallParticipantComponent } from "./callParticipantComponentResolver.js";
-import { requiredRows, requiredRuntimeRows, resolveRow } from "./socialPostModuleResolver.js";
+import { requiredRows, requiredRuntimeRows, resolveRow } from "./moduleRowSectionResolver.js";
 import type { VideoCallComponentSlot, VideoCallModuleContract, VideoCallParticipantRole } from "./videoCallModuleContract.js";
 
 export function resolveVideoCallModule(payload: DesignPreviewPayload): VideoCallModuleContract {

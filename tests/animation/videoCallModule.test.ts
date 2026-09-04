@@ -16,9 +16,16 @@ function fixture() {
     const metadata = JSON.parse(row.metadata_json) as { variants: Array<{ id: string; config: Record<string, unknown> }> };
     const variant = metadata.variants.find(item => item.id === "default");
     assert.ok(variant);
-    const preview = JSON.parse(row.design_preview_json) as { participants: Array<Record<string, unknown>> };
+    const preview = JSON.parse(row.design_preview_json) as {
+      participants: Array<Record<string, unknown>>;
+      videoCallHeaderRows: Array<Record<string, unknown>>;
+      videoCallFooterRows: Array<Record<string, unknown>>;
+    };
     const actor = (JSON.parse(base.designPreviewJson) as Record<string, unknown>).actor;
     for (const participant of preview.participants) participant.actor = actor;
+    for (const runtimeRow of [...preview.videoCallHeaderRows, ...preview.videoCallFooterRows]) {
+      for (const slot of [1, 2, 3, 4, 5]) runtimeRow[`slot${slot}Actor`] = actor;
+    }
     return { ...base, kind: "module" as const, componentType: "module.core.videoCall", configJson: JSON.stringify(variant.config), designPreviewJson: JSON.stringify(preview), runtimeContractJson: JSON.stringify(preview) };
   } finally { database.close(); }
 }
@@ -34,23 +41,47 @@ test("Video Call resolves group participants including connecting and connection
   assert.ok((node.children?.length ?? 0) > 4);
 });
 
-test("Video Call automatic layout expands one remote participant and keeps self view optional", () => {
+test("Video Call permits simultaneous participants with the same role", () => {
   const source = fixture();
-  const preview = JSON.parse(source.designPreviewJson) as { selfParticipantId: string; participants: Array<Record<string, unknown>> };
+  const preview = JSON.parse(source.designPreviewJson) as { participants: Array<Record<string, unknown>> };
   preview.participants = preview.participants.slice(0, 2);
-  preview.selfParticipantId = String(preview.participants[1]!.id);
-  const oneToOne = { ...source, designPreviewJson: JSON.stringify(preview) };
-  const node = videoCallModuleToRenderable(oneToOne);
-  assert.ok(node.children?.some(child => child.id === "component.callParticipant"));
+  for (const participant of preview.participants) participant.role = "main";
+  const duplicateMain = { ...source, designPreviewJson: JSON.stringify(preview) };
+  const call = resolveVideoCallModule(duplicateMain);
+  assert.deepEqual(call.participants.map(({ role }) => role), ["main", "main"]);
+  const node = videoCallModuleToRenderable(duplicateMain);
+  assert.equal(node.children?.filter(child => child.id === "component.callParticipant").length, 2);
 });
 
-test("Video Call master switches remove header, controls, self view and system chrome", () => {
+test("Video Call master switches remove every optional section", () => {
   const source = fixture();
   const config = JSON.parse(source.configJson) as { videoCall: Record<string, unknown> };
-  for (const key of ["showStatusBar", "showHeader", "showSelfView", "showControls", "showNavigationBar"]) config.videoCall[key] = false;
+  for (const key of ["showStatusBar", "showHeader", "showFooter", "showMainVideo", "showPip", "showGridParticipants", "showNavigationBar"]) config.videoCall[key] = false;
   const hidden = { ...source, configJson: JSON.stringify(config) };
   const call = resolveVideoCallModule(hidden);
-  assert.equal(call.visibility.showHeader, false);
+  assert.equal(call.showHeader, false);
+  assert.equal(call.showFooter, false);
   const node = videoCallModuleToRenderable(hidden);
-  assert.ok(!node.children?.some(child => child.id.includes("statusBar") || child.id.includes("navigationBar")));
+  assert.deepEqual(node.children?.map(({ id }) => id), ["module.core.videoCall.background"]);
+});
+
+test("Video Call centers row blocks and presents participants as one collection", () => {
+  const source = fixture();
+  const preview = JSON.parse(source.designPreviewJson) as {
+    collections: Array<Record<string, unknown>>;
+  };
+  const participants = preview.collections.find(collection => collection.id === "participants");
+  assert.ok(participants);
+  assert.equal("uiPresentation" in participants, false);
+  assert.equal("canEditStructure" in participants, false);
+
+  const node = videoCallModuleToRenderable(source);
+  const header = node.children?.find(child => child.id === "module.core.videoCall.header");
+  assert.ok(header?.box);
+  const rows = header.children?.filter(child => child.id === "module.core.videoCall.header.row1" || child.id === "module.core.videoCall.header.row2") ?? [];
+  assert.equal(rows.length, 2);
+  assert.ok(rows[0]?.box && rows[1]?.box);
+  const rowsCenter = (rows[0]!.box!.y + rows[1]!.box!.y + rows[1]!.box!.height) * 0.5;
+  const headerCenter = header.box.y + header.box.height * 0.5;
+  assert.ok(Math.abs(rowsCenter - headerCenter) < 0.001);
 });

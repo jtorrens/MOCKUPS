@@ -5,7 +5,9 @@ import { componentClassToRenderable } from "./componentRenderableBoundary.js";
 import { numberToken, placeChild, previewPayloadInBox, previewScreenBox, renderScale, scalePlacement, selectedColor } from "./componentRenderableCommon.js";
 import { parseObject } from "./componentResolverCommon.js";
 import { callParticipantComponentToRenderable } from "./callParticipantComponentRenderable.js";
-import { rowsSectionNode } from "./socialPostModuleRenderable.js";
+import { rowsSectionNode } from "./moduleRowSectionRenderable.js";
+import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
+import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
 import { resolveVideoCallModule } from "./videoCallModuleResolver.js";
 import type { VideoCallComponentSlot, VideoCallParticipant } from "./videoCallModuleContract.js";
 import { wallpaperRenderable } from "./wallpaperRenderable.js";
@@ -23,17 +25,23 @@ export function videoCallModuleToRenderable(payload: DesignPreviewPayload): Rend
   const footerFloats = call.footerLayoutMode === "float";
   const header = call.showHeader ? rowsSectionNode(payload, bases, {
     ownerId: call.id, section: "header", rows: call.headerRows, rowGapToken: call.headerRowGapToken,
-    height: call.headerHeight, surfaceSlot: call.headerSurfaceSlot, edge: "top", contentEdge: contentTop,
+    height: call.headerHeight,
+    renderSurface: (box) => sectionSurfaceNode(payload, bases, call.headerSurfaceSlot, "module.core.videoCall.headerSurfaceSlot", box),
+    edge: "top", contentEdge: contentTop,
     horizontalInset: headerFloats ? numberToken(payload, call.headerFloatHorizontalPaddingToken) * scale : 0,
     edgeOffset: headerFloats ? call.headerFloatOffsetY * scale : 0,
     bleedToScreenEdge: !headerFloats,
+    contentAlignment: "center",
   }) : undefined;
   const footer = call.showFooter ? rowsSectionNode(payload, bases, {
     ownerId: call.id, section: "footer", rows: call.footerRows, rowGapToken: call.footerRowGapToken,
-    height: call.footerHeight, surfaceSlot: call.footerSurfaceSlot, edge: "bottom", contentEdge: contentBottom,
+    height: call.footerHeight,
+    renderSurface: (box) => sectionSurfaceNode(payload, bases, call.footerSurfaceSlot, "module.core.videoCall.footerSurfaceSlot", box),
+    edge: "bottom", contentEdge: contentBottom,
     horizontalInset: footerFloats ? numberToken(payload, call.footerFloatHorizontalPaddingToken) * scale : 0,
     edgeOffset: footerFloats ? call.footerFloatOffsetY * scale : 0,
     bleedToScreenEdge: !footerFloats,
+    contentAlignment: "center",
   }) : undefined;
   const bodyTop = header?.box && !headerFloats
     ? header.box.y + header.box.height
@@ -92,4 +100,13 @@ function inset(payload: DesignPreviewPayload, box: RenderableBox, padding: { xTo
   return { x: box.x + x, y: box.y + y, width: Math.max(1, box.width - x * 2), height: Math.max(1, box.height - y * 2) };
 }
 function chrome(payload: DesignPreviewPayload, bases: Record<string, unknown>, type: string, slot: VideoCallComponentSlot) { return componentClassToRenderable({ ...payload, componentType: type, configJson: JSON.stringify(embeddedComponentConfig(bases, slot, type, `module.core.videoCall.${type}`)), designPreviewJson: "{}" }); }
+function sectionSurfaceNode(payload: DesignPreviewPayload, bases: Record<string, unknown>, slot: VideoCallComponentSlot, owner: string, box: RenderableBox) {
+  const scale = renderScale(payload);
+  const surface = resolveSurfaceComponentAtSize(
+    embeddedComponentConfig(bases, slot, "surface", owner),
+    { width: box.width / scale, height: box.height / scale },
+    owner,
+  );
+  return surfaceComponentToRenderableAt(payload, surface, box);
+}
 function background(payload: DesignPreviewPayload, box: RenderableBox, token: string): RenderableNode { return { id: "module.core.videoCall.background", type: "surface", frame: 0, box, style: { background: selectedColor(payload, token) }, metadata: { paintRole: "moduleBackground" } }; }

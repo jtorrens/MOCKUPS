@@ -1,26 +1,9 @@
-export interface SocialPostComponentSlot extends Record<string, unknown> {
-  variantReference: string;
-  overrides: Record<string, unknown>;
-}
+import type {
+  ModuleRow,
+  ModuleRowComponentSlot,
+} from "./moduleRowSectionContract.js";
 
-export type SocialPostRowSlotKind = "none" | "avatar" | "icon" | "label";
-export type SocialPostVerticalAlignment = "top" | "center" | "bottom";
-
-export interface SocialPostRowSlot {
-  index: number;
-  kind: SocialPostRowSlotKind;
-  componentType?: "avatar" | "button" | "label";
-  componentSlot?: SocialPostComponentSlot;
-  inputs: Record<string, unknown>;
-}
-
-export interface SocialPostRow {
-  id: "row1" | "row2";
-  padding: string;
-  verticalAlignment: SocialPostVerticalAlignment;
-  showSeparator: boolean;
-  slots: SocialPostRowSlot[];
-}
+export type SocialPostComponentSlot = ModuleRowComponentSlot;
 
 export interface SocialPostMessageContract {
   show: boolean;
@@ -51,7 +34,7 @@ export interface SocialPostModuleContract {
   showNavigationBar: boolean;
   headerSurfaceSlot: SocialPostComponentSlot;
   rowGapToken: string;
-  rows: [SocialPostRow, SocialPostRow];
+  rows: [ModuleRow, ModuleRow];
   showMedia: boolean;
   mediaSlot: SocialPostComponentSlot;
   mediaPadding: string;
@@ -80,5 +63,5 @@ export interface SocialPostModuleContract {
   footerHeight: number;
   footerSurfaceSlot: SocialPostComponentSlot;
   footerRowGapToken: string;
-  footerRows: [SocialPostRow, SocialPostRow];
+  footerRows: [ModuleRow, ModuleRow];
 }
