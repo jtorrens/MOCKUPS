@@ -22,6 +22,9 @@ internal static class GeneratedComponentScaffoldConfigRegistry
                 return true;
             case "button":
                 return true;
+            case "callParticipant":
+                CallParticipantComponentConfigContract.Validate(config, context);
+                return true;
             case "codeIndicator":
                 return true;
             case "collectionStack":

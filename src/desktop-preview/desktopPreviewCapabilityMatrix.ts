@@ -90,6 +90,7 @@ export const desktopPreviewComponentCapabilities = {
     [],
     ["presenceMotion"],
   ),
+  callParticipant: capabilities([], [], ["ownerTimeline", "mediaPlayback", "stateMotion"]),
 } as const satisfies Record<DesktopPreviewComponentClass, DesktopPreviewOwnerCapabilities>;
 
 export const desktopPreviewModuleCapabilities = {
@@ -108,5 +109,10 @@ export const desktopPreviewModuleCapabilities = {
     ["writeMessage", "play", "fullScreen"],
     [],
     ["ownerTimeline", "writeOn", "mediaPlayback", "fullScreenMotion", "stateMotion"],
+  ),
+  "module.core.videoCall": capabilities(
+    [],
+    [],
+    ["ownerTimeline", "mediaPlayback", "stateMotion"],
   ),
 } as const satisfies Record<DesktopPreviewModuleClass, DesktopPreviewOwnerCapabilities>;

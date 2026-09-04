@@ -1,5 +1,5 @@
 // Generated from scaffolding/modules/*.json. Do not edit manually.
-// Modules: module.core.chat, module.core.chatList, module.core.lockScreen, module.core.socialPost
+// Modules: module.core.chat, module.core.chatList, module.core.lockScreen, module.core.socialPost, module.core.videoCall
 namespace Mockups.DesktopEditorShell.EditorShell;
 
 public static class GeneratedModuleScaffoldEmbeddedSlots
@@ -144,5 +144,11 @@ public static class GeneratedModuleScaffoldEmbeddedSlots
             "Text Input Bar",
             "component.textInputBar",
             ["socialPost", "messageTextInputBarSlot"]),
+        new(
+            "module.core.videoCall.participant",
+            "callParticipant",
+            "Participant",
+            "component.callParticipant",
+            ["videoCall", "participantSlot"]),
     ];
 }

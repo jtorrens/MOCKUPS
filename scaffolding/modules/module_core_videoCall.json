@@ -1,0 +1,1474 @@
+{
+  "schemaVersion": 1,
+  "intent": {
+    "responsibility": "Own one complete one-to-one or group video-call Screen.",
+    "visualBoundary": "Own system chrome, optional header, participant layout, optional self view and optional call controls.",
+    "runtimeBehavior": "Runtime owns call title, layout mode, self participant identity, control states and an ordered participant collection.",
+    "forwarding": "Forward each participant collection item explicitly to the fixed Call Participant Variant and each control to its fixed Button Variant.",
+    "temporalOwnership": "The Screen owns participant presence; every participant Runtime field is resolved relative to that participant first appearance.",
+    "productionContext": "Use exact Screen → Shot → Actor → Theme/Device context."
+  },
+  "module": {
+    "moduleId": "module_project_foqn_s2_video_call",
+    "appId": "app_project_foqn_s2_video_call",
+    "projectId": "project_foqn_s2",
+    "recordClassId": "module.core.videoCall",
+    "name": "Video Call",
+    "notes": "Hybrid mobile video call for one-to-one and group layouts.",
+    "sortOrder": 1
+  },
+  "manifest": {
+    "label": "Video Call",
+    "contract": "./videoCallModuleContract",
+    "resolver": "./videoCallModuleResolver",
+    "renderable": "./videoCallModuleRenderable",
+    "embeds": [
+      "callParticipant",
+      "surface",
+      "label",
+      "button",
+      "status_bar",
+      "navigation_bar"
+    ]
+  },
+  "owners": {
+    "contractExport": "VideoCallModuleContract",
+    "resolverExport": "resolveVideoCallModule",
+    "renderableExport": "videoCallModuleToRenderable",
+    "configContractExport": "VideoCallModuleConfigContract",
+    "focusedTest": "tests/animation/videoCallModule.test.ts"
+  },
+  "config": {
+    "appearanceMode": "inherit",
+    "videoCall": {
+      "useAppWallpaper": false,
+      "showStatusBar": true,
+      "showHeader": true,
+      "showBackButton": true,
+      "showCallTitle": true,
+      "showParticipantCount": true,
+      "showDuration": true,
+      "showAddParticipant": true,
+      "showSelfView": true,
+      "showParticipantNames": true,
+      "showParticipantStatus": true,
+      "showControls": true,
+      "showNavigationBar": true,
+      "showCameraControl": true,
+      "showMicrophoneControl": true,
+      "showSpeakerControl": true,
+      "showMoreControl": true,
+      "showEndCallControl": true,
+      "screenPadding": "theme.spacing.s|theme.spacing.s",
+      "participantGapToken": "theme.spacing.s",
+      "headerHeight": 72,
+      "controlsHeight": 94,
+      "selfViewSize": "104|156",
+      "selfViewPlacement": {
+        "mode": "insideEdge",
+        "alignX": 1,
+        "alignY": 0,
+        "offsetX": -12,
+        "offsetY": 12
+      },
+      "backgroundColorToken": "theme.colors.background",
+      "participantSlot": {
+        "variantReference": "component_project_foqn_s2_call_participant::variant::default",
+        "overrides": {}
+      },
+      "titleLabelSlot": {
+        "variantReference": "component_project_foqn_s2_label::variant::default",
+        "overrides": {
+          "label": {
+            "dimensionMode": "content",
+            "padding": "theme.spacing.none|theme.spacing.none",
+            "textColorToken": "theme.colors.textPrimary",
+            "textAlign": "center"
+          }
+        }
+      },
+      "metaLabelSlot": {
+        "variantReference": "component_project_foqn_s2_label::variant::default",
+        "overrides": {
+          "label": {
+            "dimensionMode": "content",
+            "padding": "theme.spacing.none|theme.spacing.none",
+            "textColorToken": "theme.colors.textSecondary",
+            "textAlign": "center"
+          }
+        }
+      },
+      "backButtonSlot": {
+        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+        "overrides": {}
+      },
+      "addButtonSlot": {
+        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+        "overrides": {}
+      },
+      "cameraButtonSlot": {
+        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+        "overrides": {}
+      },
+      "microphoneButtonSlot": {
+        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+        "overrides": {}
+      },
+      "speakerButtonSlot": {
+        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+        "overrides": {}
+      },
+      "moreButtonSlot": {
+        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+        "overrides": {}
+      },
+      "endCallButtonSlot": {
+        "variantReference": "component_project_foqn_s2_button::variant::ios_decline",
+        "overrides": {}
+      },
+      "statusBarSlot": {
+        "variantReference": "component_project_foqn_s2_status_bar::variant::lock_screen",
+        "overrides": {}
+      },
+      "navigationBarSlot": {
+        "variantReference": "component_project_foqn_s2_navigation_bar::variant::lock_screen",
+        "overrides": {}
+      }
+    }
+  },
+  "designPreview": {
+    "componentType": "module.core.videoCall",
+    "sampleSize": 390,
+    "inputs": [
+      {
+        "id": "callTitle",
+        "label": "Call title",
+        "jsonKey": "callTitle",
+        "kind": "text",
+        "valueKind": "StringSingleLine",
+        "defaultValue": "Weekend crew",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "source": "runtime",
+        "uiOrigin": "self",
+        "uiGroupId": "call",
+        "uiGroupLabel": "Call",
+        "uiParentGroupId": "",
+        "uiOrder": 10,
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "transition": null,
+        "unit": ""
+      },
+      {
+        "id": "layoutMode",
+        "label": "Layout",
+        "jsonKey": "layoutMode",
+        "kind": "option",
+        "valueKind": "OptionToken",
+        "defaultValue": "automatic",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [
+          {
+            "value": "automatic",
+            "label": "Automatic"
+          },
+          {
+            "value": "spotlight",
+            "label": "Spotlight"
+          },
+          {
+            "value": "grid",
+            "label": "Grid"
+          }
+        ],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "source": "runtime",
+        "uiOrigin": "self",
+        "uiGroupId": "call",
+        "uiGroupLabel": "Call",
+        "uiParentGroupId": "",
+        "uiOrder": 20,
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "transition": null,
+        "unit": "",
+        "animatable": true,
+        "animationInterpolations": [
+          "hold"
+        ]
+      },
+      {
+        "id": "activeParticipantId",
+        "label": "Spotlight participant",
+        "jsonKey": "activeParticipantId",
+        "kind": "text",
+        "valueKind": "StringSingleLine",
+        "defaultValue": "participant_alex",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "source": "runtime",
+        "uiOrigin": "self",
+        "uiGroupId": "call",
+        "uiGroupLabel": "Call",
+        "uiParentGroupId": "",
+        "uiOrder": 30,
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "transition": null,
+        "unit": "",
+        "animatable": true,
+        "animationInterpolations": [
+          "hold"
+        ]
+      },
+      {
+        "id": "selfParticipantId",
+        "label": "Self participant",
+        "jsonKey": "selfParticipantId",
+        "kind": "text",
+        "valueKind": "StringSingleLine",
+        "defaultValue": "participant_sam",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "source": "runtime",
+        "uiOrigin": "self",
+        "uiGroupId": "call",
+        "uiGroupLabel": "Call",
+        "uiParentGroupId": "",
+        "uiOrder": 40,
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "transition": null,
+        "unit": ""
+      },
+      {
+        "id": "cameraEnabled",
+        "label": "Camera enabled",
+        "jsonKey": "cameraEnabled",
+        "kind": "boolean",
+        "valueKind": "Boolean",
+        "defaultValue": "true",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "source": "runtime",
+        "uiOrigin": "self",
+        "uiGroupId": "controls",
+        "uiGroupLabel": "Controls",
+        "uiParentGroupId": "",
+        "uiOrder": 50,
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "transition": null,
+        "unit": "",
+        "animatable": true,
+        "animationInterpolations": [
+          "hold"
+        ]
+      },
+      {
+        "id": "microphoneEnabled",
+        "label": "Microphone enabled",
+        "jsonKey": "microphoneEnabled",
+        "kind": "boolean",
+        "valueKind": "Boolean",
+        "defaultValue": "true",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "source": "runtime",
+        "uiOrigin": "self",
+        "uiGroupId": "controls",
+        "uiGroupLabel": "Controls",
+        "uiParentGroupId": "",
+        "uiOrder": 60,
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "transition": null,
+        "unit": "",
+        "animatable": true,
+        "animationInterpolations": [
+          "hold"
+        ]
+      },
+      {
+        "id": "speakerEnabled",
+        "label": "Speaker enabled",
+        "jsonKey": "speakerEnabled",
+        "kind": "boolean",
+        "valueKind": "Boolean",
+        "defaultValue": "true",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "source": "runtime",
+        "uiOrigin": "self",
+        "uiGroupId": "controls",
+        "uiGroupLabel": "Controls",
+        "uiParentGroupId": "",
+        "uiOrder": 70,
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "transition": null,
+        "unit": "",
+        "animatable": true,
+        "animationInterpolations": [
+          "hold"
+        ]
+      }
+    ],
+    "collections": [
+      {
+        "id": "participants",
+        "label": "Participants",
+        "jsonKey": "participants",
+        "itemLabel": "Participant",
+        "fields": [
+          {
+            "id": "present",
+            "label": "Present",
+            "jsonKey": "present",
+            "kind": "boolean",
+            "valueKind": "Boolean",
+            "defaultValue": "true",
+            "animatable": true,
+            "animationInterpolations": [
+              "hold"
+            ]
+          },
+          {
+            "id": "actorId",
+            "label": "Actor",
+            "jsonKey": "actorId",
+            "kind": "recordReference",
+            "valueKind": "RecordReference",
+            "defaultValue": "",
+            "tableId": "actors",
+            "resolvedJsonKey": "actor"
+          },
+          {
+            "id": "mediaType",
+            "label": "Media type",
+            "jsonKey": "mediaType",
+            "kind": "option",
+            "valueKind": "OptionToken",
+            "defaultValue": "image",
+            "options": [
+              {
+                "value": "image",
+                "label": "Image"
+              },
+              {
+                "value": "video",
+                "label": "Video"
+              }
+            ]
+          },
+          {
+            "id": "mediaSource",
+            "label": "Video source",
+            "jsonKey": "mediaSource",
+            "kind": "mediaFilePath",
+            "valueKind": "MediaFilePath",
+            "defaultValue": ""
+          },
+          {
+            "id": "videoPresent",
+            "label": "Video available",
+            "jsonKey": "videoPresent",
+            "kind": "boolean",
+            "valueKind": "Boolean",
+            "defaultValue": "false",
+            "animatable": true,
+            "animationInterpolations": [
+              "hold"
+            ]
+          },
+          {
+            "id": "statusTextOverride",
+            "label": "Status text",
+            "jsonKey": "statusTextOverride",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "animatable": true,
+            "animationInterpolations": [
+              "hold"
+            ]
+          },
+          {
+            "id": "microphoneState",
+            "label": "Microphone",
+            "jsonKey": "microphoneState",
+            "kind": "option",
+            "valueKind": "OptionToken",
+            "defaultValue": "on",
+            "options": [
+              {
+                "value": "on",
+                "label": "On"
+              },
+              {
+                "value": "muted",
+                "label": "Muted"
+              }
+            ],
+            "animatable": true,
+            "animationInterpolations": [
+              "hold"
+            ]
+          },
+          {
+            "id": "connectionState",
+            "label": "Connection",
+            "jsonKey": "connectionState",
+            "kind": "option",
+            "valueKind": "OptionToken",
+            "defaultValue": "connecting",
+            "options": [
+              {
+                "value": "connecting",
+                "label": "Connecting"
+              },
+              {
+                "value": "connected",
+                "label": "Connected"
+              },
+              {
+                "value": "weak",
+                "label": "Weak"
+              },
+              {
+                "value": "lost",
+                "label": "Lost"
+              }
+            ],
+            "animatable": true,
+            "animationInterpolations": [
+              "hold"
+            ]
+          },
+          {
+            "id": "speaking",
+            "label": "Speaking",
+            "jsonKey": "speaking",
+            "kind": "boolean",
+            "valueKind": "Boolean",
+            "defaultValue": "false",
+            "animatable": true,
+            "animationInterpolations": [
+              "hold"
+            ]
+          },
+          {
+            "id": "mediaScale",
+            "label": "Media scale",
+            "jsonKey": "mediaScale",
+            "kind": "number",
+            "valueKind": "Decimal",
+            "defaultValue": "1",
+            "minimum": 0.01,
+            "maximum": 10,
+            "increment": 0.01
+          },
+          {
+            "id": "mediaOffset",
+            "label": "Media offset",
+            "jsonKey": "mediaOffset",
+            "kind": "decimalPair",
+            "valueKind": "DecimalPair",
+            "defaultValue": "0|0",
+            "pairFirstLabel": "X",
+            "pairSecondLabel": "Y"
+          }
+        ],
+        "canEditStructure": true,
+        "uiPresentation": "itemSections"
+      }
+    ],
+    "actions": [],
+    "callTitle": "Weekend crew",
+    "layoutMode": "automatic",
+    "activeParticipantId": "participant_alex",
+    "selfParticipantId": "participant_sam",
+    "cameraEnabled": true,
+    "microphoneEnabled": true,
+    "speakerEnabled": true,
+    "participants": [
+      {
+        "id": "participant_alex",
+        "present": true,
+        "actorId": "actor_alex",
+        "mediaType": "image",
+        "mediaSource": "avatares/FOTO DE PEFIL DANI.png",
+        "videoPresent": true,
+        "statusTextOverride": "",
+        "microphoneState": "on",
+        "connectionState": "connected",
+        "speaking": true,
+        "mediaScale": 1,
+        "mediaOffset": "0|0"
+      },
+      {
+        "id": "participant_asia",
+        "present": true,
+        "actorId": "actor_alex_b",
+        "mediaType": "image",
+        "mediaSource": "avatares/FOTO DE PERFIL ASIA.png",
+        "videoPresent": true,
+        "statusTextOverride": "",
+        "microphoneState": "muted",
+        "connectionState": "connected",
+        "speaking": false,
+        "mediaScale": 1,
+        "mediaOffset": "0|0"
+      },
+      {
+        "id": "participant_jon",
+        "present": true,
+        "actorId": "actor_0cfce0abbaf84639b9fe20fcf5626c98",
+        "mediaType": "image",
+        "mediaSource": "avatares/FOTO DE PERFIL JON.png",
+        "videoPresent": false,
+        "statusTextOverride": "Connection lost",
+        "microphoneState": "on",
+        "connectionState": "lost",
+        "speaking": false,
+        "mediaScale": 1,
+        "mediaOffset": "0|0"
+      },
+      {
+        "id": "participant_sam",
+        "present": true,
+        "actorId": "actor_sam",
+        "mediaType": "image",
+        "mediaSource": "",
+        "videoPresent": false,
+        "statusTextOverride": "",
+        "microphoneState": "on",
+        "connectionState": "connecting",
+        "speaking": false,
+        "mediaScale": 1,
+        "mediaOffset": "0|0"
+      }
+    ],
+    "animationTimeline": {
+      "durationPolicy": "explicit",
+      "durationPolicyOptions": [
+        "explicit"
+      ],
+      "defaultDurationFrames": 300
+    }
+  },
+  "defaultVariant": {
+    "id": "default",
+    "name": "Hybrid",
+    "protected": true,
+    "locked": true,
+    "config": {
+      "appearanceMode": "inherit",
+      "videoCall": {
+        "useAppWallpaper": false,
+        "showStatusBar": true,
+        "showHeader": true,
+        "showBackButton": true,
+        "showCallTitle": true,
+        "showParticipantCount": true,
+        "showDuration": true,
+        "showAddParticipant": true,
+        "showSelfView": true,
+        "showParticipantNames": true,
+        "showParticipantStatus": true,
+        "showControls": true,
+        "showNavigationBar": true,
+        "showCameraControl": true,
+        "showMicrophoneControl": true,
+        "showSpeakerControl": true,
+        "showMoreControl": true,
+        "showEndCallControl": true,
+        "screenPadding": "theme.spacing.s|theme.spacing.s",
+        "participantGapToken": "theme.spacing.s",
+        "headerHeight": 72,
+        "controlsHeight": 94,
+        "selfViewSize": "104|156",
+        "selfViewPlacement": {
+          "mode": "insideEdge",
+          "alignX": 1,
+          "alignY": 0,
+          "offsetX": -12,
+          "offsetY": 12
+        },
+        "backgroundColorToken": "theme.colors.background",
+        "participantSlot": {
+          "variantReference": "component_project_foqn_s2_call_participant::variant::default",
+          "overrides": {}
+        },
+        "titleLabelSlot": {
+          "variantReference": "component_project_foqn_s2_label::variant::default",
+          "overrides": {
+            "label": {
+              "dimensionMode": "content",
+              "padding": "theme.spacing.none|theme.spacing.none",
+              "textColorToken": "theme.colors.textPrimary",
+              "textAlign": "center"
+            }
+          }
+        },
+        "metaLabelSlot": {
+          "variantReference": "component_project_foqn_s2_label::variant::default",
+          "overrides": {
+            "label": {
+              "dimensionMode": "content",
+              "padding": "theme.spacing.none|theme.spacing.none",
+              "textColorToken": "theme.colors.textSecondary",
+              "textAlign": "center"
+            }
+          }
+        },
+        "backButtonSlot": {
+          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+          "overrides": {}
+        },
+        "addButtonSlot": {
+          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+          "overrides": {}
+        },
+        "cameraButtonSlot": {
+          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+          "overrides": {}
+        },
+        "microphoneButtonSlot": {
+          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+          "overrides": {}
+        },
+        "speakerButtonSlot": {
+          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+          "overrides": {}
+        },
+        "moreButtonSlot": {
+          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+          "overrides": {}
+        },
+        "endCallButtonSlot": {
+          "variantReference": "component_project_foqn_s2_button::variant::ios_decline",
+          "overrides": {}
+        },
+        "statusBarSlot": {
+          "variantReference": "component_project_foqn_s2_status_bar::variant::lock_screen",
+          "overrides": {}
+        },
+        "navigationBarSlot": {
+          "variantReference": "component_project_foqn_s2_navigation_bar::variant::lock_screen",
+          "overrides": {}
+        }
+      }
+    }
+  },
+  "additionalVariants": [],
+  "runtimeContract": {
+    "source": null,
+    "durationPolicy": "explicit",
+    "durationPolicyOptions": [
+      "explicit"
+    ],
+    "defaultDurationFrames": 300
+  },
+  "metadata": {
+    "note": "Hybrid call Screen with exact participant tracks and optional chrome."
+  },
+  "dictionaryFields": [
+    {
+      "id": "module.core.videoCall.participant",
+      "label": "Participant",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "videoCall",
+        "participantSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_call_participant::variant::default\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "callParticipant",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "callParticipant",
+        "label": "Participant",
+        "recordClassId": "component.callParticipant"
+      }
+    },
+    {
+      "id": "module.core.videoCall.screenPadding",
+      "label": "Screen padding",
+      "valueKind": "ThemeTokenPair",
+      "jsonPath": [
+        "videoCall",
+        "screenPadding"
+      ],
+      "defaultValue": "theme.spacing.s|theme.spacing.s",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none"
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs"
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s"
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m"
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l"
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": {
+        "first": "X",
+        "second": "Y"
+      },
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.videoCall.participantGap",
+      "label": "Participant gap",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "videoCall",
+        "participantGapToken"
+      ],
+      "defaultValue": "theme.spacing.s",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none"
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs"
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s"
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m"
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l"
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.videoCall.showStatusBar",
+      "label": "Show status bar",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "videoCall",
+        "showStatusBar"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.videoCall.showHeader",
+      "label": "Show header",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "videoCall",
+        "showHeader"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.videoCall.showBackButton",
+      "label": "Show back button",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "videoCall",
+        "showBackButton"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.videoCall.showCallTitle",
+      "label": "Show call title",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "videoCall",
+        "showCallTitle"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.videoCall.showParticipantCount",
+      "label": "Show participant count",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "videoCall",
+        "showParticipantCount"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.videoCall.showDuration",
+      "label": "Show duration",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "videoCall",
+        "showDuration"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.videoCall.showAddParticipant",
+      "label": "Show add participant",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "videoCall",
+        "showAddParticipant"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.videoCall.showSelfView",
+      "label": "Show self view",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "videoCall",
+        "showSelfView"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.videoCall.showParticipantNames",
+      "label": "Show participant names",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "videoCall",
+        "showParticipantNames"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.videoCall.showParticipantStatus",
+      "label": "Show participant status",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "videoCall",
+        "showParticipantStatus"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.videoCall.showControls",
+      "label": "Show controls",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "videoCall",
+        "showControls"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.videoCall.showNavigationBar",
+      "label": "Show navigation bar",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "videoCall",
+        "showNavigationBar"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.videoCall.showCameraControl",
+      "label": "Show camera",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "videoCall",
+        "showCameraControl"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.videoCall.showMicrophoneControl",
+      "label": "Show microphone",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "videoCall",
+        "showMicrophoneControl"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.videoCall.showSpeakerControl",
+      "label": "Show speaker",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "videoCall",
+        "showSpeakerControl"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.videoCall.showMoreControl",
+      "label": "Show more",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "videoCall",
+        "showMoreControl"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.videoCall.showEndCallControl",
+      "label": "Show end call",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "videoCall",
+        "showEndCallControl"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    }
+  ],
+  "editorLayout": {
+    "cards": [
+      {
+        "id": "general",
+        "label": "General",
+        "subtitle": "Identity",
+        "icon": "general",
+        "order": 10,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "identity",
+            "label": "Identity",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "core.name",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "module.recordClassId",
+                "order": 20,
+                "visible": false
+              },
+              {
+                "id": "module.sortOrder",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "module.appearanceMode",
+                "order": 40,
+                "visible": true
+              },
+              {
+                "id": "core.notes",
+                "order": 50,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "composition",
+        "label": "Video Call",
+        "subtitle": "Layout and optional elements",
+        "icon": "layout",
+        "order": 20,
+        "visible": true,
+        "defaultOpen": true,
+        "groupLayout": "separatedSections",
+        "groups": [
+          {
+            "id": "layout",
+            "label": "Layout",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "module.core.videoCall.participant",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.screenPadding",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.participantGap",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          },
+          {
+            "id": "visibility",
+            "label": "Visibility",
+            "order": 20,
+            "visible": true,
+            "presentation": "verticalCards",
+            "fields": [
+              {
+                "id": "module.core.videoCall.showStatusBar",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.showHeader",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.showBackButton",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.showCallTitle",
+                "order": 40,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.showParticipantCount",
+                "order": 50,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.showDuration",
+                "order": 60,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.showAddParticipant",
+                "order": 70,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.showSelfView",
+                "order": 80,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.showParticipantNames",
+                "order": 90,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.showParticipantStatus",
+                "order": 100,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.showControls",
+                "order": 110,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.showNavigationBar",
+                "order": 120,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.showCameraControl",
+                "order": 130,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.showMicrophoneControl",
+                "order": 140,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.showSpeakerControl",
+                "order": 150,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.showMoreControl",
+                "order": 160,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.showEndCallControl",
+                "order": 170,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "assets": []
+}

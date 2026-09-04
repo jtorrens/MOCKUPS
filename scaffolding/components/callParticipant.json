@@ -1,0 +1,1219 @@
+{
+  "schemaVersion": 1,
+  "intent": {
+    "responsibility": "Own one participant tile in a live video call.",
+    "visualBoundary": "Own the participant Surface, Media, Avatar, status Label and name Label inside one assigned tile.",
+    "runtimeBehavior": "Runtime owns the Actor, media, video availability, status override, microphone, connection and speaking state.",
+    "forwarding": "Forward the exact Actor and Media values to fixed child Variant boundaries.",
+    "temporalOwnership": "The parent owns participant presence; video availability and participant state tracks are relative to the participant first appearance."
+  },
+  "component": {
+    "componentType": "callParticipant",
+    "category": "component",
+    "componentClassId": "component_project_foqn_s2_call_participant",
+    "projectId": "project_foqn_s2",
+    "recordClassId": "component.callParticipant",
+    "name": "Call Participant",
+    "notes": "Reusable participant tile for one-to-one and group video calls."
+  },
+  "manifest": {
+    "contract": "./callParticipantComponentContract",
+    "resolver": "./callParticipantComponentResolver",
+    "renderable": "./callParticipantComponentRenderable",
+    "embeds": [
+      "surface",
+      "media",
+      "avatar",
+      "label"
+    ]
+  },
+  "owners": {
+    "contractExport": "CallParticipantDesignContract",
+    "resolverExport": "resolveCallParticipantComponent",
+    "renderableExport": "callParticipantComponentToRenderable",
+    "configContractExport": "CallParticipantComponentConfigContract",
+    "registryMode": "assignedBox",
+    "focusedTest": "tests/animation/callParticipantComponent.test.ts"
+  },
+  "config": {
+    "boundaryMotion": {
+      "transition": "none",
+      "direction": "top",
+      "bounds": "parent",
+      "fade": true,
+      "translate": false,
+      "scale": false
+    },
+    "callParticipant": {
+      "showBackground": true,
+      "showMedia": true,
+      "showAvatarWhenVideoAbsent": true,
+      "showStatusWhenVideoAbsent": true,
+      "showName": true,
+      "showMicrophoneStatus": true,
+      "showConnectionStatus": true,
+      "showActiveSpeakerIndicator": true,
+      "defaultStatusText": "Connecting…",
+      "tilePadding": "theme.spacing.s|theme.spacing.s",
+      "avatarSize": 72,
+      "namePlacement": {
+        "mode": "insideEdge",
+        "alignX": 0,
+        "alignY": 1,
+        "offsetX": 12,
+        "offsetY": -12
+      },
+      "statusPlacement": {
+        "mode": "center",
+        "alignX": 0.5,
+        "alignY": 0.5,
+        "offsetX": 0,
+        "offsetY": 52
+      },
+      "microphonePlacement": {
+        "mode": "insideEdge",
+        "alignX": 1,
+        "alignY": 1,
+        "offsetX": -14,
+        "offsetY": -14
+      },
+      "connectionPlacement": {
+        "mode": "insideEdge",
+        "alignX": 1,
+        "alignY": 0,
+        "offsetX": -14,
+        "offsetY": 14
+      },
+      "microphoneOnIconToken": "media_mic",
+      "microphoneMutedIconToken": "media_volume_off",
+      "connectionWeakIconToken": "status_wifi",
+      "connectionLostIconToken": "media_video_off",
+      "activeSpeakerColorToken": "theme.colors.positive",
+      "activeSpeakerBorderWidth": 3,
+      "surfaceSlot": {
+        "variantReference": "component_project_foqn_s2_surface::variant::default",
+        "overrides": {
+          "style": {
+            "cornerRadiusToken": "theme.radii.xl"
+          },
+          "surface": {
+            "backgroundColorToken": "theme.colors.card",
+            "backgroundAlpha": 1,
+            "borderAlpha": 0
+          }
+        }
+      },
+      "mediaSlot": {
+        "variantReference": "component_project_foqn_s2_media::variant::media_video_copy",
+        "overrides": {}
+      },
+      "avatarSlot": {
+        "variantReference": "component_project_foqn_s2_avatar::variant::default",
+        "overrides": {}
+      },
+      "statusLabelSlot": {
+        "variantReference": "component_project_foqn_s2_label::variant::default",
+        "overrides": {
+          "label": {
+            "dimensionMode": "content",
+            "padding": "theme.spacing.s|theme.spacing.xs",
+            "textAlign": "center",
+            "textColorToken": "theme.colors.textPrimary",
+            "surfaceSlot": {
+              "variantReference": "component_project_foqn_s2_surface::variant::default",
+              "overrides": {
+                "style": {
+                  "cornerRadiusToken": "theme.radii.full"
+                },
+                "surface": {
+                  "backgroundColorToken": "theme.colors.background",
+                  "backgroundAlpha": 0.6,
+                  "borderAlpha": 0
+                }
+              }
+            }
+          }
+        }
+      },
+      "nameLabelSlot": {
+        "variantReference": "component_project_foqn_s2_label::variant::default",
+        "overrides": {
+          "label": {
+            "dimensionMode": "content",
+            "padding": "theme.spacing.s|theme.spacing.xs",
+            "textAlign": "left",
+            "textColorToken": "theme.colors.textPrimary",
+            "surfaceSlot": {
+              "variantReference": "component_project_foqn_s2_surface::variant::default",
+              "overrides": {
+                "style": {
+                  "cornerRadiusToken": "theme.radii.full"
+                },
+                "surface": {
+                  "backgroundColorToken": "theme.colors.background",
+                  "backgroundAlpha": 0.55,
+                  "borderAlpha": 0
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "defaultVariant": {
+    "id": "default",
+    "name": "Default",
+    "protected": true,
+    "locked": true,
+    "config": {
+      "boundaryMotion": {
+        "transition": "none",
+        "direction": "top",
+        "bounds": "parent",
+        "fade": true,
+        "translate": false,
+        "scale": false
+      },
+      "callParticipant": {
+        "showBackground": true,
+        "showMedia": true,
+        "showAvatarWhenVideoAbsent": true,
+        "showStatusWhenVideoAbsent": true,
+        "showName": true,
+        "showMicrophoneStatus": true,
+        "showConnectionStatus": true,
+        "showActiveSpeakerIndicator": true,
+        "defaultStatusText": "Connecting…",
+        "tilePadding": "theme.spacing.s|theme.spacing.s",
+        "avatarSize": 72,
+        "namePlacement": {
+          "mode": "insideEdge",
+          "alignX": 0,
+          "alignY": 1,
+          "offsetX": 12,
+          "offsetY": -12
+        },
+        "statusPlacement": {
+          "mode": "center",
+          "alignX": 0.5,
+          "alignY": 0.5,
+          "offsetX": 0,
+          "offsetY": 52
+        },
+        "microphonePlacement": {
+          "mode": "insideEdge",
+          "alignX": 1,
+          "alignY": 1,
+          "offsetX": -14,
+          "offsetY": -14
+        },
+        "connectionPlacement": {
+          "mode": "insideEdge",
+          "alignX": 1,
+          "alignY": 0,
+          "offsetX": -14,
+          "offsetY": 14
+        },
+        "microphoneOnIconToken": "media_mic",
+        "microphoneMutedIconToken": "media_volume_off",
+        "connectionWeakIconToken": "status_wifi",
+        "connectionLostIconToken": "media_video_off",
+        "activeSpeakerColorToken": "theme.colors.positive",
+        "activeSpeakerBorderWidth": 3,
+        "surfaceSlot": {
+          "variantReference": "component_project_foqn_s2_surface::variant::default",
+          "overrides": {
+            "style": {
+              "cornerRadiusToken": "theme.radii.xl"
+            },
+            "surface": {
+              "backgroundColorToken": "theme.colors.card",
+              "backgroundAlpha": 1,
+              "borderAlpha": 0
+            }
+          }
+        },
+        "mediaSlot": {
+          "variantReference": "component_project_foqn_s2_media::variant::media_video_copy",
+          "overrides": {}
+        },
+        "avatarSlot": {
+          "variantReference": "component_project_foqn_s2_avatar::variant::default",
+          "overrides": {}
+        },
+        "statusLabelSlot": {
+          "variantReference": "component_project_foqn_s2_label::variant::default",
+          "overrides": {
+            "label": {
+              "dimensionMode": "content",
+              "padding": "theme.spacing.s|theme.spacing.xs",
+              "textAlign": "center",
+              "textColorToken": "theme.colors.textPrimary",
+              "surfaceSlot": {
+                "variantReference": "component_project_foqn_s2_surface::variant::default",
+                "overrides": {
+                  "style": {
+                    "cornerRadiusToken": "theme.radii.full"
+                  },
+                  "surface": {
+                    "backgroundColorToken": "theme.colors.background",
+                    "backgroundAlpha": 0.6,
+                    "borderAlpha": 0
+                  }
+                }
+              }
+            }
+          }
+        },
+        "nameLabelSlot": {
+          "variantReference": "component_project_foqn_s2_label::variant::default",
+          "overrides": {
+            "label": {
+              "dimensionMode": "content",
+              "padding": "theme.spacing.s|theme.spacing.xs",
+              "textAlign": "left",
+              "textColorToken": "theme.colors.textPrimary",
+              "surfaceSlot": {
+                "variantReference": "component_project_foqn_s2_surface::variant::default",
+                "overrides": {
+                  "style": {
+                    "cornerRadiusToken": "theme.radii.full"
+                  },
+                  "surface": {
+                    "backgroundColorToken": "theme.colors.background",
+                    "backgroundAlpha": 0.55,
+                    "borderAlpha": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "additionalVariants": [],
+  "designPreview": {
+    "componentType": "callParticipant",
+    "sampleSize": 360,
+    "inputs": [
+      {
+        "id": "actorId",
+        "label": "Participant",
+        "jsonKey": "actorId",
+        "kind": "recordReference",
+        "valueKind": "RecordReference",
+        "defaultValue": "actor_alex",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "actors",
+        "resolvedJsonKey": "actor",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "source": "runtime",
+        "uiOrigin": "self",
+        "uiGroupId": "identity",
+        "uiGroupLabel": "Participant",
+        "uiParentGroupId": "",
+        "uiOrder": 10,
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "transition": null,
+        "unit": ""
+      },
+      {
+        "id": "viewportSize",
+        "label": "Tile size",
+        "jsonKey": "viewportSize",
+        "kind": "integerPair",
+        "valueKind": "IntegerPair",
+        "defaultValue": "360|360",
+        "minimum": 1,
+        "maximum": 4096,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "source": "calculated",
+        "uiOrigin": "self",
+        "uiGroupId": "",
+        "uiGroupLabel": "",
+        "uiParentGroupId": "",
+        "uiOrder": 20,
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "transition": null,
+        "unit": ""
+      },
+      {
+        "id": "mediaType",
+        "label": "Media type",
+        "jsonKey": "mediaType",
+        "kind": "option",
+        "valueKind": "OptionToken",
+        "defaultValue": "image",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [
+          {
+            "value": "image",
+            "label": "Image"
+          },
+          {
+            "value": "video",
+            "label": "Video"
+          }
+        ],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "source": "runtime",
+        "uiOrigin": "self",
+        "uiGroupId": "video",
+        "uiGroupLabel": "Video",
+        "uiParentGroupId": "",
+        "uiOrder": 30,
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "transition": null,
+        "unit": ""
+      },
+      {
+        "id": "mediaSource",
+        "label": "Video source",
+        "jsonKey": "mediaSource",
+        "kind": "mediaFilePath",
+        "valueKind": "MediaFilePath",
+        "defaultValue": "",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "source": "runtime",
+        "uiOrigin": "self",
+        "uiGroupId": "video",
+        "uiGroupLabel": "Video",
+        "uiParentGroupId": "",
+        "uiOrder": 40,
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "transition": null,
+        "unit": ""
+      },
+      {
+        "id": "videoPresent",
+        "label": "Video available",
+        "jsonKey": "videoPresent",
+        "kind": "boolean",
+        "valueKind": "Boolean",
+        "defaultValue": "false",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "source": "runtime",
+        "uiOrigin": "self",
+        "uiGroupId": "state",
+        "uiGroupLabel": "State",
+        "uiParentGroupId": "",
+        "uiOrder": 50,
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "transition": null,
+        "unit": "",
+        "animatable": true,
+        "animationInterpolations": [
+          "hold"
+        ]
+      },
+      {
+        "id": "statusTextOverride",
+        "label": "Status text",
+        "jsonKey": "statusTextOverride",
+        "kind": "text",
+        "valueKind": "StringSingleLine",
+        "defaultValue": "",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "source": "runtime",
+        "uiOrigin": "self",
+        "uiGroupId": "state",
+        "uiGroupLabel": "State",
+        "uiParentGroupId": "",
+        "uiOrder": 60,
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "transition": null,
+        "unit": "",
+        "animatable": true,
+        "animationInterpolations": [
+          "hold"
+        ]
+      },
+      {
+        "id": "microphoneState",
+        "label": "Microphone",
+        "jsonKey": "microphoneState",
+        "kind": "option",
+        "valueKind": "OptionToken",
+        "defaultValue": "on",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [
+          {
+            "value": "on",
+            "label": "On"
+          },
+          {
+            "value": "muted",
+            "label": "Muted"
+          }
+        ],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "source": "runtime",
+        "uiOrigin": "self",
+        "uiGroupId": "state",
+        "uiGroupLabel": "State",
+        "uiParentGroupId": "",
+        "uiOrder": 70,
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "transition": null,
+        "unit": "",
+        "animatable": true,
+        "animationInterpolations": [
+          "hold"
+        ]
+      },
+      {
+        "id": "connectionState",
+        "label": "Connection",
+        "jsonKey": "connectionState",
+        "kind": "option",
+        "valueKind": "OptionToken",
+        "defaultValue": "connecting",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [
+          {
+            "value": "connecting",
+            "label": "Connecting"
+          },
+          {
+            "value": "connected",
+            "label": "Connected"
+          },
+          {
+            "value": "weak",
+            "label": "Weak"
+          },
+          {
+            "value": "lost",
+            "label": "Lost"
+          }
+        ],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "source": "runtime",
+        "uiOrigin": "self",
+        "uiGroupId": "state",
+        "uiGroupLabel": "State",
+        "uiParentGroupId": "",
+        "uiOrder": 80,
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "transition": null,
+        "unit": "",
+        "animatable": true,
+        "animationInterpolations": [
+          "hold"
+        ]
+      },
+      {
+        "id": "speaking",
+        "label": "Speaking",
+        "jsonKey": "speaking",
+        "kind": "boolean",
+        "valueKind": "Boolean",
+        "defaultValue": "false",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "source": "runtime",
+        "uiOrigin": "self",
+        "uiGroupId": "state",
+        "uiGroupLabel": "State",
+        "uiParentGroupId": "",
+        "uiOrder": 90,
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "transition": null,
+        "unit": "",
+        "animatable": true,
+        "animationInterpolations": [
+          "hold"
+        ]
+      },
+      {
+        "id": "mediaScale",
+        "label": "Media scale",
+        "jsonKey": "mediaScale",
+        "kind": "number",
+        "valueKind": "Decimal",
+        "defaultValue": "1",
+        "minimum": 0.01,
+        "maximum": 10,
+        "increment": 0.01,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "source": "runtime",
+        "uiOrigin": "self",
+        "uiGroupId": "video",
+        "uiGroupLabel": "Video",
+        "uiParentGroupId": "",
+        "uiOrder": 100,
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "transition": null,
+        "unit": ""
+      },
+      {
+        "id": "mediaOffset",
+        "label": "Media offset",
+        "jsonKey": "mediaOffset",
+        "kind": "decimalPair",
+        "valueKind": "DecimalPair",
+        "defaultValue": "0|0",
+        "minimum": -4096,
+        "maximum": 4096,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "X",
+        "pairSecondLabel": "Y",
+        "source": "runtime",
+        "uiOrigin": "self",
+        "uiGroupId": "video",
+        "uiGroupLabel": "Video",
+        "uiParentGroupId": "",
+        "uiOrder": 110,
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "transition": null,
+        "unit": ""
+      }
+    ],
+    "collections": [],
+    "actions": [],
+    "actorId": "actor_alex",
+    "mediaType": "image",
+    "mediaSource": "",
+    "viewportSize": "360|360",
+    "videoPresent": false,
+    "statusTextOverride": "",
+    "microphoneState": "on",
+    "connectionState": "connecting",
+    "speaking": false,
+    "mediaScale": 1,
+    "mediaOffset": "0|0"
+  },
+  "metadata": {
+    "note": "Participant tile with owner-relative connection and video state."
+  },
+  "dictionaryFields": [
+    {
+      "id": "component.callParticipant.showBackground",
+      "label": "Show background",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "callParticipant",
+        "showBackground"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.callParticipant.showMedia",
+      "label": "Show media",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "callParticipant",
+        "showMedia"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.callParticipant.showAvatarWhenVideoAbsent",
+      "label": "Show fallback avatar",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "callParticipant",
+        "showAvatarWhenVideoAbsent"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.callParticipant.showStatusWhenVideoAbsent",
+      "label": "Show fallback status",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "callParticipant",
+        "showStatusWhenVideoAbsent"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.callParticipant.showName",
+      "label": "Show name",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "callParticipant",
+        "showName"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.callParticipant.showMicrophoneStatus",
+      "label": "Show microphone status",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "callParticipant",
+        "showMicrophoneStatus"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.callParticipant.showConnectionStatus",
+      "label": "Show connection status",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "callParticipant",
+        "showConnectionStatus"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.callParticipant.showActiveSpeakerIndicator",
+      "label": "Show active speaker",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "callParticipant",
+        "showActiveSpeakerIndicator"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.callParticipant.defaultStatusText",
+      "label": "Default status text",
+      "valueKind": "StringSingleLine",
+      "jsonPath": [
+        "callParticipant",
+        "defaultStatusText"
+      ],
+      "defaultValue": "Connecting…",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "Used when Runtime status text is empty.",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.callParticipant.tilePadding",
+      "label": "Tile padding",
+      "valueKind": "ThemeTokenPair",
+      "jsonPath": [
+        "callParticipant",
+        "tilePadding"
+      ],
+      "defaultValue": "theme.spacing.s|theme.spacing.s",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none"
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs"
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s"
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m"
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l"
+        },
+        {
+          "value": "theme.spacing.xl",
+          "label": "spacing.xl"
+        },
+        {
+          "value": "theme.spacing.xxl",
+          "label": "spacing.xxl"
+        }
+      ],
+      "pairLabels": {
+        "first": "X",
+        "second": "Y"
+      },
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.callParticipant.avatarSize",
+      "label": "Avatar size",
+      "valueKind": "Integer",
+      "jsonPath": [
+        "callParticipant",
+        "avatarSize"
+      ],
+      "defaultValue": "72",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": {
+        "minimum": 16,
+        "maximum": 512,
+        "increment": 1,
+        "decimalPlaces": 0,
+        "useSlider": false
+      },
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "px",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.callParticipant.surface",
+      "label": "Surface",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "callParticipant",
+        "surfaceSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_surface::variant::default\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "surface",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.callParticipant.media",
+      "label": "Media",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "callParticipant",
+        "mediaSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_media::variant::media_video_copy\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "media",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.callParticipant.avatar",
+      "label": "Avatar",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "callParticipant",
+        "avatarSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::default\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "avatar",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.callParticipant.statusLabel",
+      "label": "Status label",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "callParticipant",
+        "statusLabelSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "label",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.callParticipant.nameLabel",
+      "label": "Name label",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "callParticipant",
+        "nameLabelSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "label",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    }
+  ],
+  "editorLayout": {
+    "cards": [
+      {
+        "id": "general",
+        "label": "General",
+        "subtitle": "Identity",
+        "icon": "general",
+        "order": 10,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "identity",
+            "label": "Identity",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "core.name",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.type",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "core.notes",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "appearance",
+        "label": "Appearance",
+        "subtitle": "Fallback and child boundaries",
+        "icon": "layout",
+        "order": 20,
+        "visible": true,
+        "defaultOpen": false,
+        "groupLayout": "separatedSections",
+        "groups": [
+          {
+            "id": "content",
+            "label": "Content",
+            "order": 10,
+            "visible": true,
+            "presentation": "verticalCards",
+            "fields": [
+              {
+                "id": "component.callParticipant.showBackground",
+                "order": 1,
+                "visible": true
+              },
+              {
+                "id": "component.callParticipant.showMedia",
+                "order": 2,
+                "visible": true
+              },
+              {
+                "id": "component.callParticipant.showAvatarWhenVideoAbsent",
+                "order": 3,
+                "visible": true
+              },
+              {
+                "id": "component.callParticipant.showStatusWhenVideoAbsent",
+                "order": 4,
+                "visible": true
+              },
+              {
+                "id": "component.callParticipant.showName",
+                "order": 5,
+                "visible": true
+              },
+              {
+                "id": "component.callParticipant.showMicrophoneStatus",
+                "order": 6,
+                "visible": true
+              },
+              {
+                "id": "component.callParticipant.showConnectionStatus",
+                "order": 7,
+                "visible": true
+              },
+              {
+                "id": "component.callParticipant.showActiveSpeakerIndicator",
+                "order": 8,
+                "visible": true
+              },
+              {
+                "id": "component.callParticipant.defaultStatusText",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.callParticipant.tilePadding",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.callParticipant.avatarSize",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "component.callParticipant.surface",
+                "order": 40,
+                "visible": true
+              },
+              {
+                "id": "component.callParticipant.media",
+                "order": 50,
+                "visible": true
+              },
+              {
+                "id": "component.callParticipant.avatar",
+                "order": 60,
+                "visible": true
+              },
+              {
+                "id": "component.callParticipant.statusLabel",
+                "order": 70,
+                "visible": true
+              },
+              {
+                "id": "component.callParticipant.nameLabel",
+                "order": 80,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "assets": []
+}

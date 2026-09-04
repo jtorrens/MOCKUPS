@@ -198,6 +198,7 @@ public static class RecordClassFieldCatalog
         [
             new("chat", "Chat"),
             new("media", "Media"),
+            new("videoCall", "Video Call"),
             new("system", "System"),
             new("custom", "Custom"),
         ]),

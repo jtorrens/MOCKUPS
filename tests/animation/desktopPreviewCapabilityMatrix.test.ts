@@ -54,11 +54,13 @@ const focusedCharacterizations = {
   bubble: "tests/animation/atomicTemporalComponents.test.ts",
   incomingCallNotification:
     "tests/animation/incomingCallNotificationComponent.test.ts",
+  callParticipant: "tests/animation/callParticipantComponent.test.ts",
   "module.core.chat": "tests/animation/conversationModuleResolver.test.ts",
   "module.core.lockScreen":
     "tests/Mockups.Desktop.Tests/Program.cs",
   "module.core.chatList": "tests/animation/chatListModule.test.ts",
   "module.core.socialPost": "tests/animation/socialPostModule.test.ts",
+  "module.core.videoCall": "tests/animation/videoCallModule.test.ts",
 } as const;
 
 test("the capability matrix covers every manifest owner exactly once", () => {

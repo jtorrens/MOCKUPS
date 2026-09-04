@@ -1,5 +1,5 @@
 // Generated from scaffolding/modules/*.json. Do not edit manually.
-// Modules: module.core.chat, module.core.chatList, module.core.lockScreen, module.core.socialPost
+// Modules: module.core.chat, module.core.chatList, module.core.lockScreen, module.core.socialPost, module.core.videoCall
 using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Collections.Generic;
@@ -468,6 +468,146 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ["socialPost", "useAppWallpaper"],
             "",
             []),
+        ["module.core.videoCall.participant"] = new(
+            "module.core.videoCall",
+            "module.core.videoCall.participant",
+            ValueKind.ComponentVariantSlot,
+            ["videoCall", "participantSlot"],
+            "callParticipant",
+            []),
+        ["module.core.videoCall.participantGap"] = new(
+            "module.core.videoCall",
+            "module.core.videoCall.participantGap",
+            ValueKind.ThemeToken,
+            ["videoCall", "participantGapToken"],
+            "",
+            []),
+        ["module.core.videoCall.screenPadding"] = new(
+            "module.core.videoCall",
+            "module.core.videoCall.screenPadding",
+            ValueKind.ThemeTokenPair,
+            ["videoCall", "screenPadding"],
+            "",
+            []),
+        ["module.core.videoCall.showAddParticipant"] = new(
+            "module.core.videoCall",
+            "module.core.videoCall.showAddParticipant",
+            ValueKind.Boolean,
+            ["videoCall", "showAddParticipant"],
+            "",
+            []),
+        ["module.core.videoCall.showBackButton"] = new(
+            "module.core.videoCall",
+            "module.core.videoCall.showBackButton",
+            ValueKind.Boolean,
+            ["videoCall", "showBackButton"],
+            "",
+            []),
+        ["module.core.videoCall.showCallTitle"] = new(
+            "module.core.videoCall",
+            "module.core.videoCall.showCallTitle",
+            ValueKind.Boolean,
+            ["videoCall", "showCallTitle"],
+            "",
+            []),
+        ["module.core.videoCall.showCameraControl"] = new(
+            "module.core.videoCall",
+            "module.core.videoCall.showCameraControl",
+            ValueKind.Boolean,
+            ["videoCall", "showCameraControl"],
+            "",
+            []),
+        ["module.core.videoCall.showControls"] = new(
+            "module.core.videoCall",
+            "module.core.videoCall.showControls",
+            ValueKind.Boolean,
+            ["videoCall", "showControls"],
+            "",
+            []),
+        ["module.core.videoCall.showDuration"] = new(
+            "module.core.videoCall",
+            "module.core.videoCall.showDuration",
+            ValueKind.Boolean,
+            ["videoCall", "showDuration"],
+            "",
+            []),
+        ["module.core.videoCall.showEndCallControl"] = new(
+            "module.core.videoCall",
+            "module.core.videoCall.showEndCallControl",
+            ValueKind.Boolean,
+            ["videoCall", "showEndCallControl"],
+            "",
+            []),
+        ["module.core.videoCall.showHeader"] = new(
+            "module.core.videoCall",
+            "module.core.videoCall.showHeader",
+            ValueKind.Boolean,
+            ["videoCall", "showHeader"],
+            "",
+            []),
+        ["module.core.videoCall.showMicrophoneControl"] = new(
+            "module.core.videoCall",
+            "module.core.videoCall.showMicrophoneControl",
+            ValueKind.Boolean,
+            ["videoCall", "showMicrophoneControl"],
+            "",
+            []),
+        ["module.core.videoCall.showMoreControl"] = new(
+            "module.core.videoCall",
+            "module.core.videoCall.showMoreControl",
+            ValueKind.Boolean,
+            ["videoCall", "showMoreControl"],
+            "",
+            []),
+        ["module.core.videoCall.showNavigationBar"] = new(
+            "module.core.videoCall",
+            "module.core.videoCall.showNavigationBar",
+            ValueKind.Boolean,
+            ["videoCall", "showNavigationBar"],
+            "",
+            []),
+        ["module.core.videoCall.showParticipantCount"] = new(
+            "module.core.videoCall",
+            "module.core.videoCall.showParticipantCount",
+            ValueKind.Boolean,
+            ["videoCall", "showParticipantCount"],
+            "",
+            []),
+        ["module.core.videoCall.showParticipantNames"] = new(
+            "module.core.videoCall",
+            "module.core.videoCall.showParticipantNames",
+            ValueKind.Boolean,
+            ["videoCall", "showParticipantNames"],
+            "",
+            []),
+        ["module.core.videoCall.showParticipantStatus"] = new(
+            "module.core.videoCall",
+            "module.core.videoCall.showParticipantStatus",
+            ValueKind.Boolean,
+            ["videoCall", "showParticipantStatus"],
+            "",
+            []),
+        ["module.core.videoCall.showSelfView"] = new(
+            "module.core.videoCall",
+            "module.core.videoCall.showSelfView",
+            ValueKind.Boolean,
+            ["videoCall", "showSelfView"],
+            "",
+            []),
+        ["module.core.videoCall.showSpeakerControl"] = new(
+            "module.core.videoCall",
+            "module.core.videoCall.showSpeakerControl",
+            ValueKind.Boolean,
+            ["videoCall", "showSpeakerControl"],
+            "",
+            []),
+        ["module.core.videoCall.showStatusBar"] = new(
+            "module.core.videoCall",
+            "module.core.videoCall.showStatusBar",
+            ValueKind.Boolean,
+            ["videoCall", "showStatusBar"],
+            "",
+            []),
     };
 
     public static bool TryValidate(
@@ -488,6 +628,9 @@ internal static class GeneratedModuleScaffoldConfigRegistry
                 return true;
             case "module.core.socialPost":
                 SocialPostModuleConfigContract.Validate(config, context);
+                return true;
+            case "module.core.videoCall":
+                VideoCallModuleConfigContract.Validate(config, context);
                 return true;
             default:
                 return false;

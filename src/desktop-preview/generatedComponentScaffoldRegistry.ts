@@ -10,6 +10,8 @@ import { bubbleComponentToRenderable } from "./bubbleComponentRenderable.js";
 import { resolveBubbleComponent } from "./bubbleComponentResolver.js";
 import { buttonComponentToRenderable } from "./buttonComponentRenderable.js";
 import { resolveButtonComponent } from "./buttonComponentResolver.js";
+import { callParticipantComponentToRenderable } from "./callParticipantComponentRenderable.js";
+import { resolveCallParticipantComponent } from "./callParticipantComponentResolver.js";
 import { codeIndicatorComponentToRenderable } from "./codeIndicatorComponentRenderable.js";
 import { resolveCodeIndicatorComponent } from "./codeIndicatorComponentResolver.js";
 import { collectionStackComponentToRenderable } from "./collectionStackComponentRenderable.js";
@@ -72,6 +74,8 @@ export const generatedComponentScaffoldFactories = {
     bubbleComponentToRenderable(payload, resolveBubbleComponent(payload)),
   button: (payload) =>
     buttonComponentToRenderable(payload, resolveButtonComponent(payload)),
+  callParticipant: (payload, assignedBox) =>
+    callParticipantComponentToRenderable(payload, resolveCallParticipantComponent(payload), assignedBox),
   codeIndicator: (payload) =>
     codeIndicatorComponentToRenderable(payload, resolveCodeIndicatorComponent(payload)),
   collectionStack: (payload, _assignedBox, renderChild) =>
