@@ -48,7 +48,8 @@ internal static class CurrentSqliteSchema
           shot_manager_episode_id TEXT NOT NULL DEFAULT '',
           shot_manager_episode_order INTEGER,
           shot_manager_episode_slug TEXT NOT NULL DEFAULT '',
-          metadata_json TEXT NOT NULL DEFAULT '{}'
+          metadata_json TEXT NOT NULL DEFAULT '{}',
+          shot_manager_episode_path_segments_json TEXT NOT NULL DEFAULT '[]'
         );
 
         CREATE UNIQUE INDEX IF NOT EXISTS idx_episodes_id_project
@@ -218,7 +219,7 @@ internal static class CurrentSqliteSchema
           layout_json TEXT NOT NULL
         );
 
-        PRAGMA user_version = 14;
+        PRAGMA user_version = 15;
         """;
 
 }

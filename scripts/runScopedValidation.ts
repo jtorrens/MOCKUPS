@@ -629,6 +629,26 @@ function run(): void {
   }
   if (level === "revision") {
     process.stdout.write(
+      "\n[workstation-update-maintenance] "
+      + "node scripts/workstationProject.mjs require-update\n"
+      + "  MOCKUPS must remain closed for the complete repository update\n",
+    );
+    if (!values.list) {
+      const maintenance = spawnSync(
+        process.execPath,
+        ["scripts/workstationProject.mjs", "require-update"],
+        {
+          cwd: repositoryRoot,
+          env: process.env,
+          stdio: "inherit",
+        },
+      );
+      if (maintenance.error) throw maintenance.error;
+      if (maintenance.status !== 0) {
+        process.exit(maintenance.status ?? 1);
+      }
+    }
+    process.stdout.write(
       "\n[workstation-database-parity] "
       + "node scripts/workstationProject.mjs check-if-present\n"
       + "  a local operational database must match its repository snapshot\n",

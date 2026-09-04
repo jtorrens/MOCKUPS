@@ -294,7 +294,8 @@ immediately restores manual output; missing referenced items become visibly
 free while retaining their identity for later recovery. Project state
 distinguishes not associated, setup incomplete, associated and connected, and
 associated but disconnected. A disconnected association keeps its captured
-route and naming values but cannot create or refresh selectors.
+Episode path segments, destination and naming values but cannot create or
+refresh selectors.
 
 That modal owns only creation of a new batch. Actor is informative and
 immutable. Device, Theme, appearance, output mode, predefined route and base

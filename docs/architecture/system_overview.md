@@ -23,9 +23,10 @@ Project records.
 
 MOCKUPS owns its Production hierarchy and derives technical Shot names and
 portable output routes from either its Project-owned manual contract or the
-portable values captured by exact associations to a workstation-local,
-read-only Shot Manager document. The document is required to create or refresh
-associations, not to resolve an already captured association offline.
+portable destination and Episode path segments captured by exact associations
+to a workstation-local, read-only Shot Manager document. The document is
+required to create or refresh associations, not to resolve an already captured
+association offline.
 
 ## System map
 
@@ -461,6 +462,7 @@ shell
 
 Production Output card
 → manual contract + local root, or portable associations + local production.json
+→ exact captured Episode path segments + destination
 → derived Shot plan
 → Render Queue folder materializer
 

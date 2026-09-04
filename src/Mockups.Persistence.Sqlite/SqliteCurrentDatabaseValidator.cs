@@ -66,6 +66,7 @@ internal sealed partial class SqliteCurrentDatabaseValidator
     [
         ("projects", "metadata_json", "object"),
         ("episodes", "metadata_json", "object"),
+        ("episodes", "shot_manager_episode_path_segments_json", "array"),
         ("shots", "canvas_json", "object"),
         ("shots", "device_overrides_json", "object"),
         ("shots", "reference_video_json", "object"),

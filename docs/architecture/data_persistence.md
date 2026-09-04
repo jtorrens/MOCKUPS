@@ -5,7 +5,7 @@ Status: normative.
 ## Database scope
 
 The desktop application persists one complete Project workspace in SQLite.
-Schema version `14` is the only current schema. Every row belongs directly or
+Schema version `15` is the only current schema. Every row belongs directly or
 indirectly to a Project and cross-Project lookup is invalid.
 
 The current tables are:
@@ -38,8 +38,10 @@ the manual portable Production Output naming and route contract plus its
 explicit output mode. In Shot Managed mode the portable row stores the selected
 external Production id/slugs and workstream/folder name/suffix; it never stores
 the workstation's absolute `production.json` path or root. Episodes store an
-`associated|free` state plus retained Production id, Episode id, order and
-slug. Shots store the same state plus retained Production id, Shot id and
+`associated|free` state plus retained Production id, Episode id, order, slug
+and the exact `episodePathSegments` array captured from Shot Manager. Order is
+presentation metadata; managed route resolution uses only the captured path
+segments. Shots store the same state plus retained Production id, Shot id and
 canonical name. An associated Shot requires an associated owning Episode with
 matching provenance. Changing the Episode association makes every child Shot
 free while retaining its reference.
@@ -427,6 +429,7 @@ object
   themes.metadata_json
   editor_layouts.layout_json
 array
+  episodes.shot_manager_episode_path_segments_json
   production_fonts.files_json
 ```
 
@@ -438,6 +441,9 @@ manual naming grammar and portable route template, a complete captured
 Production/destination in Shot Managed mode, matching Production provenance,
 and no associated Shot without its exact associated Episode. The resolved Shot
 plan is derived data and is never cached in a second table.
+For a managed Shot its relative directory is the exact captured Episode path
+segments followed by the captured workstream and folder. Production, Season
+and Episode slugs and Episode order never reconstruct that path.
 
 ## Local render state
 
@@ -478,9 +484,11 @@ never copied into the portable Project. Interrupted active jobs with a complete
 snapshot return to Pending on the next application start; incomplete
 preparation fails explicitly and its orphaned local files are removed.
 
-Render planning derives the technical identity and route from the Project
-contract, Episode code and stable Shot number. Missing physical destination
-directories are never created by a persistence write.
+Manual render planning derives the technical identity and route from the
+Project contract, Episode code and stable Shot number. Managed render planning
+uses the captured canonical Shot name, folder suffix and exact Episode path
+segments. Missing physical destination directories are never created by a
+persistence write.
 
 Component and Module Variant arrays are required current data. Every Variant is
 a complete named snapshot with:
@@ -578,26 +586,41 @@ same revision:
 - affected files under `assets/system/system_icons`.
 
 `data/mockups.sqlite` is a versioned snapshot, never a second authoring
-database. Desktop startup and development scaffolding use the workstation
-database under the operating system application-data root. `npm run
-desktop:workstation:bootstrap` explicitly creates that operational database from
-the repository snapshot only when it does not yet exist; it never copies the
-external Project asset roots, and startup itself remains read-only. After
-authoring, with MOCKUPS closed, `npm run desktop:db:snapshot`
-atomically replaces the repository snapshot from the workstation database.
-`npm run desktop:db:parity` compares exact bytes and fails on divergence, and
-the revision gate performs the same check whenever a workstation database
-exists. Neither bootstrap nor normal startup overwrites an existing
-workstation database.
+database. The workstation database under the operating-system application-data
+root is the only canonical authoring database. `npm run
+desktop:workstation:bootstrap` explicitly creates it from the repository
+snapshot only when it does not yet exist; it never copies the external Project
+asset roots, and startup itself remains read-only.
 
-Tests that exercise destructive lifecycle behavior use disposable database
-copies. The committed Project keeps its intentional authoring content.
+Every repository-writing task starts with `npm run desktop:update:begin`. It
+atomically creates the shared workstation maintenance lock before checking for
+open database handles, validates the canonical database, and captures its exact
+bytes into `data/mockups.sqlite`. Desktop startup reads that lock and refuses to
+open the Project for the complete update. Desktop and maintenance also acquire
+opposing application/update markers before touching SQLite, closing the race
+between a startup check and the first database open. `npm run desktop:db:snapshot` and
+`npm run desktop:update:checkpoint` require the active lock and always copy in
+the single canonical-to-snapshot direction.
+
+When the schema or another persisted contract changes, the explicit
+maintenance workflow migrates only the canonical workstation database. A final
+checkpoint produces the repository snapshot from that migrated authority; the
+snapshot is never migrated independently. `npm run desktop:update:end` validates
+the canonical database, requires exact byte parity and only then removes the
+lock. Bootstrap and normal startup never overwrite an existing workstation
+database.
+
+Desktop tests first validate the staged snapshot, then build their disposable
+process-local source by creating required Production aggregates through the
+real generic mutation owners. Tests never require a mutable authored Shot or
+Screen to remain in the canonical Project. Destructive lifecycle tests copy
+that prepared source again before mutation.
 
 The complete repository gate also validates a disposable byte-for-byte copy of
 the staged parity database. The copy path is supplied explicitly to every
 database-backed test, scaffold verifier and architecture check. Validation
-never swaps the worktree database, so an active workstation database may retain
-its local authoring state without affecting or being overwritten by the gate.
+never swaps the worktree database. The maintenance lock keeps the canonical
+workstation database frozen while the staged snapshot is validated.
 The disposable workspace receives explicit Project asset roots, preserving
 strict Project font, icon and media resolution without copying or mutating
 those assets.

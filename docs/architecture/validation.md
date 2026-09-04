@@ -155,7 +155,7 @@ proving simultaneous outgoing and incoming Motion, stable owner-local frames
 - manual Production Output naming, stable Episode/Shot codes, portable route
   derivation, strict read-only Shot Manager projection, exact Episode/Shot
   association states and retained provenance, canonical naming plus folder
-  suffix, external Episode-order routing, atomic same-Production refresh,
+  suffix, exact external Episode-path-segment routing, atomic same-Production refresh,
   offline resolution, missing-item free/recovery behavior, explicit manual
   behavior for free Shots, unsafe-path rejection, safe additive subdirectory
   creation and retained output folders on Shot deletion;
@@ -260,13 +260,25 @@ selected command and its reason without running it. Repeated `--file <path>`
 arguments allow a deliberately narrower inspection when the shared workspace
 contains unrelated authoring data.
 
-The operational workstation database is outside the repository. Before a
-revision gate, `npm run desktop:db:snapshot` copies it atomically to
-`data/mockups.sqlite`; `test:revision` first compares exact bytes and fails if a
-local workstation database exists but the snapshot differs. The snapshot is
-then classified normally and must be staged with every intentional persistence
-change. `--file data/mockups.sqlite` may still select its exact validation owner
-before staging.
+The operational workstation database is outside the repository and is the
+canonical authoring authority. Every writing task starts with `npm run
+desktop:update:begin`, which creates the shared maintenance lock, proves the
+database is closed, validates it and atomically captures the baseline in
+`data/mockups.sqlite`. `test:revision` requires that lock and then compares the
+exact canonical and snapshot bytes. The snapshot is classified normally and
+must be staged with every intentional persistence change. `--file
+data/mockups.sqlite` may still select its exact validation owner before
+staging.
+
+Persisted-contract maintenance migrates only the canonical workstation
+database. `npm run desktop:update:checkpoint` validates and snapshots that
+migrated authority while the app remains blocked. After validation and commit,
+`npm run desktop:update:end` requires parity and releases the lock.
+
+Desktop tests validate the snapshot before preparing a disposable test source.
+Their required Production Shot and Screens are then created through the real
+generic mutation owners in that temporary source, so normal authoring changes
+cannot silently become test preconditions.
 
 The scoped owner is conservative about coverage but never selects `npm test`
 implicitly. A path without a declared validation owner stops immediately,

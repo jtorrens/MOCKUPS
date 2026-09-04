@@ -20,7 +20,8 @@ public sealed record ShotManagerEpisodeAssociation(
     string ReferenceProductionId,
     string EpisodeId,
     int? EpisodeOrder,
-    string EpisodeSlug);
+    string EpisodeSlug,
+    IReadOnlyList<string> EpisodePathSegments);
 
 public sealed record ShotManagerShotAssociation(
     bool IsAssociated,
@@ -31,7 +32,8 @@ public sealed record ShotManagerShotAssociation(
 public sealed record ShotManagerReadonlyEpisode(
     string Id,
     int Order,
-    string Slug);
+    string Slug,
+    IReadOnlyList<string> PathSegments);
 
 public sealed record ShotManagerReadonlyFolder(
     string Name,
@@ -107,13 +109,57 @@ public static class ShotManagerReadonlyContract
             RequireUuid(association.EpisodeId, $"{context}.episodeId");
             if (association.EpisodeOrder is null or <= 0)
                 throw new InvalidOperationException($"{context}.episodeOrder must be positive.");
+            RequirePathSegments(
+                association.EpisodePathSegments,
+                $"{context}.episodePathSegments");
         }
         else if (!string.IsNullOrEmpty(association.ReferenceProductionId)
             || association.EpisodeOrder is not null
-            || !string.IsNullOrEmpty(association.EpisodeSlug))
+            || !string.IsNullOrEmpty(association.EpisodeSlug)
+            || association.EpisodePathSegments.Count != 0)
             throw new InvalidOperationException($"{context} contains a partial Episode reference.");
         return association;
     }
+
+    public static IReadOnlyList<string> ParsePathSegments(
+        string json,
+        string context)
+    {
+        JsonDocument document;
+        try
+        {
+            document = JsonDocument.Parse(json);
+        }
+        catch (JsonException exception)
+        {
+            throw new InvalidOperationException(
+                $"{context} is not valid JSON.",
+                exception);
+        }
+
+        using (document)
+        {
+            if (document.RootElement.ValueKind != JsonValueKind.Array)
+                throw new InvalidOperationException($"{context} must be an array.");
+            return RequirePathSegments(
+                document.RootElement
+                    .EnumerateArray()
+                    .Select((item, index) => RequireSafeSegment(
+                        RequireString(item, $"{context}[{index}]"),
+                        $"{context}[{index}]"))
+                    .ToList(),
+                context,
+                allowEmpty: true);
+        }
+    }
+
+    public static string SerializePathSegments(
+        IReadOnlyList<string> pathSegments,
+        string context) =>
+        JsonSerializer.Serialize(RequirePathSegments(
+            pathSegments,
+            context,
+            allowEmpty: true));
 
     public static ShotManagerShotAssociation RequireShotAssociation(
         ShotManagerShotAssociation association,
@@ -190,7 +236,18 @@ public static class ShotManagerReadonlyContract
                             RequireString(episode, "id", owner, allowEmpty: false),
                             $"{owner}.id"),
                         RequirePositiveInteger(episode, "order", owner),
-                        RequireString(episode, "slug", owner, allowEmpty: true));
+                        RequireString(episode, "slug", owner, allowEmpty: true),
+                        RequirePathSegments(
+                            RequireArray(episode, "pathSegments", owner)
+                                .EnumerateArray()
+                                .Select((segment, segmentIndex) =>
+                                    RequireSafeSegment(
+                                        RequireString(
+                                            segment,
+                                            $"{owner}.pathSegments[{segmentIndex}]"),
+                                        $"{owner}.pathSegments[{segmentIndex}]"))
+                                .ToList(),
+                            $"{owner}.pathSegments"));
                 })
                 .ToList();
             RequireUnique(
@@ -301,9 +358,12 @@ public static class ShotManagerReadonlyContract
             allowEmpty: false);
         var relativeDirectory = string.Join(
             '/',
-            context.ShotManagerEpisode.EpisodeOrder!.Value.ToString("D3", CultureInfo.InvariantCulture),
-            context.ShotManagerOutput.WorkstreamName,
-            context.ShotManagerOutput.FolderName);
+            context.ShotManagerEpisode.EpisodePathSegments.Concat(
+                new[]
+                {
+                    context.ShotManagerOutput.WorkstreamName,
+                    context.ShotManagerOutput.FolderName,
+                }));
         return new ProductionOutputShotPlan(
             context.ProjectId,
             context.ShotId,
@@ -366,6 +426,21 @@ public static class ShotManagerReadonlyContract
         return result;
     }
 
+    private static string RequireString(JsonElement value, string context)
+    {
+        if (value.ValueKind != JsonValueKind.String)
+            throw new InvalidOperationException($"{context} must be a string.");
+        var result = value.GetString() ?? "";
+        if (string.IsNullOrWhiteSpace(result)
+            || !result.Equals(result.Trim(), StringComparison.Ordinal)
+            || result.Any(char.IsControl))
+        {
+            throw new InvalidOperationException(
+                $"{context} must preserve one exact non-empty trimmed string.");
+        }
+        return result;
+    }
+
     private static int RequirePositiveInteger(
         JsonElement owner,
         string property,
@@ -399,13 +474,30 @@ public static class ShotManagerReadonlyContract
 
     private static string RequireSafeSegment(string value, string context)
     {
-        if (value is "." or ".."
+        if (string.IsNullOrWhiteSpace(value)
+            || !value.Equals(value.Trim(), StringComparison.Ordinal)
+            || value.Any(char.IsControl)
+            || value is "." or ".."
             || value.IndexOfAny(['/', '\\', ':']) >= 0)
         {
             throw new InvalidOperationException(
                 $"{context} must be one safe path segment.");
         }
         return value;
+    }
+
+    private static IReadOnlyList<string> RequirePathSegments(
+        IReadOnlyList<string> pathSegments,
+        string context,
+        bool allowEmpty = false)
+    {
+        if (pathSegments is null || (!allowEmpty && pathSegments.Count == 0))
+            throw new InvalidOperationException($"{context} must contain at least one segment.");
+        return pathSegments
+            .Select((segment, index) => RequireSafeSegment(
+                segment,
+                $"{context}[{index}]"))
+            .ToArray();
     }
 
     private static string RequireArtifactFragment(

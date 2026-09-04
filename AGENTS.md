@@ -417,13 +417,29 @@ explicit confirmation before editing.
 ## Collaboration: serialize code-writing tasks
 
 Only one task may modify tracked project code or parity data in the shared
-checkout at a time. Before handing off:
+checkout at a time. Every writing task begins, before its first edit, with
+`npm run desktop:update:begin`. That command creates the shared workstation
+maintenance lock, proves that MOCKUPS is closed, validates the canonical local
+database and captures it into `data/mockups.sqlite`. If that initial snapshot
+changed, checkpoint it before mixing it with the new implementation.
 
-1. stop the desktop editor and every process that may write the parity database;
-2. run applicable checks;
+The maintenance lock remains active for the complete task and Desktop startup
+must refuse to open the Project while it exists. If the persisted schema,
+document vocabulary, stable ids or references change, migrate only the local
+canonical database through the explicit maintenance workflow. Then run `npm
+run desktop:update:checkpoint`; never migrate the repository snapshot
+independently.
+
+Before handing off:
+
+1. run `npm run desktop:update:checkpoint` after every intended canonical data
+   or persistence-contract change;
+2. run applicable checks while the maintenance lock remains active;
 3. commit and push all intended changes when requested;
 4. verify a clean worktree;
-5. report branch and final commit.
+5. run `npm run desktop:update:end`, which requires exact database parity before
+   releasing the lock;
+6. report branch and final commit.
 
 The next writing task fetches and verifies that exact state before editing.
 Parallel work is read-only or uses isolated worktrees and branches.

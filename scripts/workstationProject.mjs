@@ -9,6 +9,7 @@ import {
   renameSync,
   rmSync,
   statSync,
+  writeFileSync,
 } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
@@ -18,6 +19,11 @@ const repositoryRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "..",
 );
+
+export const workstationUpdateLockFileName =
+  ".mockups-update-maintenance.json";
+export const workstationApplicationLockFileName =
+  ".mockups-application-active.json";
 
 export function workstationProjectRoot(
   platform = process.platform,
@@ -45,6 +51,14 @@ export function workstationProjectPaths(
   return {
     repositoryDatabase: path.join(root, "data", "mockups.sqlite"),
     workstationDatabase: path.join(workstationRoot, "mockups.sqlite"),
+    workstationUpdateLock: path.join(
+      workstationRoot,
+      workstationUpdateLockFileName,
+    ),
+    workstationApplicationLock: path.join(
+      workstationRoot,
+      workstationApplicationLockFileName,
+    ),
     workstationRoot,
   };
 }
@@ -78,6 +92,25 @@ function validateCurrentDatabase(root, databasePath) {
   }
 }
 
+function requireCleanRepository(root) {
+  const status = spawnSync(
+    "git",
+    ["status", "--porcelain=v1", "--untracked-files=all"],
+    { cwd: root, encoding: "utf8" },
+  );
+  if (status.status !== 0) {
+    throw new Error(
+      status.stderr.trim()
+      || "Could not verify the repository working tree before maintenance.",
+    );
+  }
+  if (status.stdout.trim()) {
+    throw new Error(
+      "The repository must be clean before starting a MOCKUPS update.",
+    );
+  }
+}
+
 function copyDatabaseAtomically(source, destination) {
   const temporary = path.join(
     path.dirname(destination),
@@ -94,6 +127,7 @@ export function bootstrapWorkstationProject(
   validateDatabase = validateCurrentDatabase,
 ) {
   const paths = workstationProjectPaths(root, workstationRoot);
+  requireNoWorkstationUpdate(paths);
   requireFile(paths.repositoryDatabase, "Repository database snapshot");
   mkdirSync(paths.workstationRoot, { recursive: true });
   const createdDatabase = !existsSync(paths.workstationDatabase);
@@ -139,6 +173,7 @@ export function snapshotWorkstationProject(
   validateDatabase = validateCurrentDatabase,
 ) {
   const paths = workstationProjectPaths(root, workstationRoot);
+  requireWorkstationUpdate(paths);
   requireFile(paths.workstationDatabase, "Workstation database");
   requireClosedDatabase(paths.workstationDatabase);
   validateDatabase(root, paths.workstationDatabase);
@@ -152,6 +187,122 @@ export function snapshotWorkstationProject(
   return paths;
 }
 
+export function beginWorkstationUpdate(
+  root = repositoryRoot,
+  workstationRoot = workstationProjectRoot(),
+  validateDatabase = validateCurrentDatabase,
+  validateRepository = requireCleanRepository,
+) {
+  const paths = workstationProjectPaths(root, workstationRoot);
+  validateRepository(root);
+  requireFile(paths.workstationDatabase, "Workstation database");
+  mkdirSync(paths.workstationRoot, { recursive: true });
+  try {
+    writeFileSync(
+      paths.workstationUpdateLock,
+      `${JSON.stringify({
+        schemaVersion: 1,
+        state: "active",
+        repositoryRoot: path.resolve(root),
+        startedAt: new Date().toISOString(),
+      }, null, 2)}\n`,
+      { encoding: "utf8", flag: "wx" },
+    );
+  } catch (error) {
+    if (error?.code === "EEXIST") {
+      throw new Error(
+        `A MOCKUPS update is already active: ${paths.workstationUpdateLock}`,
+      );
+    }
+    throw error;
+  }
+
+  try {
+    if (existsSync(paths.workstationApplicationLock)) {
+      throw new Error(
+        `MOCKUPS is open: ${paths.workstationApplicationLock}`,
+      );
+    }
+    requireClosedDatabase(paths.workstationDatabase);
+    return snapshotWorkstationProject(
+      root,
+      workstationRoot,
+      validateDatabase,
+    );
+  } catch (error) {
+    rmSync(paths.workstationUpdateLock, { force: true });
+    throw error;
+  }
+}
+
+export function checkpointWorkstationUpdate(
+  root = repositoryRoot,
+  workstationRoot = workstationProjectRoot(),
+  validateDatabase = validateCurrentDatabase,
+) {
+  return snapshotWorkstationProject(
+    root,
+    workstationRoot,
+    validateDatabase,
+  );
+}
+
+export function endWorkstationUpdate(
+  root = repositoryRoot,
+  workstationRoot = workstationProjectRoot(),
+  validateDatabase = validateCurrentDatabase,
+  validateRepository = requireCleanRepository,
+) {
+  const paths = workstationProjectPaths(root, workstationRoot);
+  requireWorkstationUpdate(paths);
+  validateRepository(root);
+  requireClosedDatabase(paths.workstationDatabase);
+  validateDatabase(root, paths.workstationDatabase);
+  requireDatabaseParity(paths);
+  rmSync(paths.workstationUpdateLock);
+  return paths;
+}
+
+export function requireWorkstationUpdate(
+  paths = workstationProjectPaths(),
+) {
+  if (!existsSync(paths.workstationUpdateLock)) {
+    throw new Error(
+      "No MOCKUPS update maintenance is active. "
+      + "Run 'npm run desktop:update:begin' before changing the repository.",
+    );
+  }
+  return paths.workstationUpdateLock;
+}
+
+export function requireNoWorkstationUpdate(
+  paths = workstationProjectPaths(),
+) {
+  if (existsSync(paths.workstationUpdateLock)) {
+    throw new Error(
+      `MOCKUPS update maintenance is active: ${paths.workstationUpdateLock}`,
+    );
+  }
+}
+
+export function workstationUpdateStatus(
+  paths = workstationProjectPaths(),
+) {
+  const updateActive = existsSync(paths.workstationUpdateLock);
+  const repositoryExists = existsSync(paths.repositoryDatabase);
+  const workstationExists = existsSync(paths.workstationDatabase);
+  const databasesAligned = repositoryExists
+    && workstationExists
+    && digest(paths.repositoryDatabase) === digest(paths.workstationDatabase);
+  return {
+    updateActive,
+    repositoryExists,
+    workstationExists,
+    databasesAligned,
+    paths,
+  };
+}
+
 export function requireDatabaseParity(
   paths = workstationProjectPaths(),
 ) {
@@ -162,7 +313,7 @@ export function requireDatabaseParity(
   if (repositoryDigest !== workstationDigest) {
     throw new Error(
       "The workstation database and repository snapshot differ. "
-      + "Close MOCKUPS and run 'npm run desktop:db:snapshot' before validation.",
+      + "Run 'npm run desktop:update:checkpoint' during the active maintenance before validation.",
     );
   }
   return workstationDigest;
@@ -188,6 +339,42 @@ function run(command) {
     console.log(`Repository snapshot updated: ${paths.repositoryDatabase}`);
     return;
   }
+  if (command === "update-begin") {
+    const paths = beginWorkstationUpdate();
+    console.log(
+      `MOCKUPS update maintenance started: ${paths.workstationUpdateLock}`,
+    );
+    console.log(`Canonical baseline captured: ${paths.repositoryDatabase}`);
+    return;
+  }
+  if (command === "update-checkpoint") {
+    const paths = checkpointWorkstationUpdate();
+    console.log(`Canonical checkpoint updated: ${paths.repositoryDatabase}`);
+    return;
+  }
+  if (command === "update-end") {
+    const paths = endWorkstationUpdate();
+    console.log(`MOCKUPS update maintenance ended: ${paths.workstationRoot}`);
+    return;
+  }
+  if (command === "update-status") {
+    const status = workstationUpdateStatus();
+    console.log(`Update maintenance: ${status.updateActive ? "active" : "idle"}`);
+    console.log(
+      `Canonical snapshot: ${status.databasesAligned ? "aligned" : "pending"}`,
+    );
+    return;
+  }
+  if (command === "require-update") {
+    const lockPath = requireWorkstationUpdate();
+    console.log(`MOCKUPS update maintenance is active: ${lockPath}`);
+    return;
+  }
+  if (command === "require-idle") {
+    requireNoWorkstationUpdate();
+    console.log("No MOCKUPS update maintenance is active.");
+    return;
+  }
   if (command === "check") {
     const digestValue = requireDatabaseParity();
     console.log(`Workstation database matches repository snapshot: ${digestValue.slice(0, 12)}`);
@@ -201,7 +388,7 @@ function run(command) {
     return;
   }
   throw new Error(
-    "Usage: node scripts/workstationProject.mjs bootstrap|snapshot|check|check-if-present",
+    "Usage: node scripts/workstationProject.mjs bootstrap|snapshot|check|check-if-present|update-begin|update-checkpoint|update-end|update-status|require-update|require-idle",
   );
 }
 

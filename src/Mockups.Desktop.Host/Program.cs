@@ -31,13 +31,33 @@ internal static class Program
         }
 
         if (!DesktopVisualInstanceLease.TryRun(
-                () => BuildAvaloniaApp()
-                    .StartWithClassicDesktopLifetime(
-                        avaloniaArgs)))
+                () => RunVisualLifetime(
+                    avaloniaArgs)))
         {
             Console.Error.WriteLine(
                 "MOCKUPS is already open.");
         }
+    }
+
+    private static void RunVisualLifetime(
+        string[] avaloniaArgs)
+    {
+        var databasePath = DesktopEditorLaunchOptions.DatabasePath
+            ?? DesktopHost.DefaultDatabasePath();
+        using var workstationAccess =
+            WorkstationUpdateMaintenance
+                .TryAcquireApplicationAccess(
+                    databasePath);
+        if (workstationAccess is null)
+        {
+            Console.Error.WriteLine(
+                "MOCKUPS is closed while a repository update is active.");
+            return;
+        }
+
+        BuildAvaloniaApp()
+            .StartWithClassicDesktopLifetime(
+                avaloniaArgs);
     }
 
     public static AppBuilder BuildAvaloniaApp()

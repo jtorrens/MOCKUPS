@@ -123,16 +123,22 @@ optional suffix—are captured portably; the suffix participates in the
 technical render name.
 
 Each MOCKUPS Episode is `associated` or `free`. Its retained reference captures
-the external Production id, Episode id, order and optional slug. The captured
-order, formatted to three digits, supplies the relative Episode directory;
-the Episode slug is not used for automatic naming. Each Shot is likewise
-`associated` or `free`, and its retained reference captures the Production id,
-Shot id and canonical name. Associated output resolves as:
+the external Production id, Episode id, order, optional slug and exact
+`pathSegments`. Order remains available for selector ordering and labelling;
+neither it nor Production, Season or Episode slugs participate in managed route
+resolution. Each Shot is likewise `associated` or `free`, and its retained
+reference captures the Production id, Shot id and canonical name. Associated
+output resolves as:
 
 ```text
 canonicalName + optional folder suffix
-→ NNN/workstream/folder
+→ ...episodePathSegments/workstream/folder
 ```
+
+Shot Manager owns every physical segment through the Episode, including the
+Season directory. MOCKUPS preserves those segments exactly and only appends the
+selected workstream and folder. It never derives a managed path from season
+number, Season slug, Episode order or Episode slug.
 
 The external canonical Shot name is deliberately authoritative so a later
 change to Production, Season or Episode slugs cannot silently rename automatic
@@ -166,7 +172,7 @@ prerequisite and disables enqueue. Output never falls back to a free folder
 picker.
 
 The Production root must already exist and resolve to a real directory. At job
-start MOCKUPS may safely create missing Episode/workstream/folder
+start MOCKUPS may safely create missing Episode-path/workstream/folder
 subdirectories inside that root. Existing symbolic links, files in the route,
 or paths that escape the root are rejected. Materialization is additive and
 never recreates a missing root or moves an earlier render.

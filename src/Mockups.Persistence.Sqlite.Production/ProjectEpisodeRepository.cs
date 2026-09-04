@@ -205,7 +205,7 @@ internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
     {
         using var connection = _context.OpenConnection();
         using var command = connection.CreateCommand();
-        command.CommandText = "SELECT slug, sort_order, shot_manager_association_state, shot_manager_reference_production_id, shot_manager_episode_id, shot_manager_episode_order, shot_manager_episode_slug FROM episodes WHERE id = $id";
+        command.CommandText = "SELECT slug, sort_order, shot_manager_association_state, shot_manager_reference_production_id, shot_manager_episode_id, shot_manager_episode_order, shot_manager_episode_slug, shot_manager_episode_path_segments_json FROM episodes WHERE id = $id";
         command.Parameters.AddWithValue("$id", episodeId);
         using var reader = command.ExecuteReader();
         if (!reader.Read())
@@ -222,7 +222,10 @@ internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
                     SqliteCommandExecutor.ReadString(reader, 3),
                     SqliteCommandExecutor.ReadString(reader, 4),
                     reader.IsDBNull(5) ? null : reader.GetInt32(5),
-                    SqliteCommandExecutor.ReadString(reader, 6)),
+                    SqliteCommandExecutor.ReadString(reader, 6),
+                    ShotManagerReadonlyContract.ParsePathSegments(
+                        SqliteCommandExecutor.ReadString(reader, 7),
+                        $"Episode '{episodeId}' Shot Manager episodePathSegments")),
                 $"Episode '{episodeId}' Shot Manager association"));
     }
 
@@ -390,7 +393,7 @@ internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
                 _context.Execute(
                     connection,
                     transaction,
-                    "UPDATE episodes SET shot_manager_association_state = 'free', shot_manager_reference_production_id = '', shot_manager_episode_id = '', shot_manager_episode_order = NULL, shot_manager_episode_slug = '' WHERE id = $id",
+                    "UPDATE episodes SET shot_manager_association_state = 'free', shot_manager_reference_production_id = '', shot_manager_episode_id = '', shot_manager_episode_order = NULL, shot_manager_episode_slug = '', shot_manager_episode_path_segments_json = '[]' WHERE id = $id",
                     ("$id", episodeId));
             }
             else
@@ -401,12 +404,15 @@ internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
                 _context.Execute(
                     connection,
                     transaction,
-                    "UPDATE episodes SET shot_manager_association_state = 'associated', shot_manager_reference_production_id = $productionId, shot_manager_episode_id = $episodeId, shot_manager_episode_order = $episodeOrder, shot_manager_episode_slug = $episodeSlug WHERE id = $id",
+                    "UPDATE episodes SET shot_manager_association_state = 'associated', shot_manager_reference_production_id = $productionId, shot_manager_episode_id = $episodeId, shot_manager_episode_order = $episodeOrder, shot_manager_episode_slug = $episodeSlug, shot_manager_episode_path_segments_json = $episodePathSegmentsJson WHERE id = $id",
                     ("$id", episodeId),
                     ("$productionId", production.ProductionId),
                     ("$episodeId", episode.Id),
                     ("$episodeOrder", episode.Order),
-                    ("$episodeSlug", episode.Slug));
+                    ("$episodeSlug", episode.Slug),
+                    ("$episodePathSegmentsJson", ShotManagerReadonlyContract.SerializePathSegments(
+                        episode.PathSegments,
+                        $"Shot Manager Episode '{episode.Id}' pathSegments")));
             }
             _context.Execute(
                 connection,
@@ -647,10 +653,15 @@ internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
                 transaction,
                 external is null
                     ? "UPDATE episodes SET shot_manager_association_state = 'free' WHERE id = $id"
-                    : "UPDATE episodes SET shot_manager_association_state = 'associated', shot_manager_episode_order = $episodeOrder, shot_manager_episode_slug = $episodeSlug WHERE id = $id",
+                    : "UPDATE episodes SET shot_manager_association_state = 'associated', shot_manager_episode_order = $episodeOrder, shot_manager_episode_slug = $episodeSlug, shot_manager_episode_path_segments_json = $episodePathSegmentsJson WHERE id = $id",
                 ("$id", row.LocalId),
                 ("$episodeOrder", external?.Order),
-                ("$episodeSlug", external?.Slug));
+                ("$episodeSlug", external?.Slug),
+                ("$episodePathSegmentsJson", external is null
+                    ? null
+                    : ShotManagerReadonlyContract.SerializePathSegments(
+                        external.PathSegments,
+                        $"Shot Manager Episode '{external.Id}' pathSegments")));
         }
     }
 

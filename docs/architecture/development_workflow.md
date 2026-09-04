@@ -369,20 +369,28 @@ lease and continue to consume immutable snapshots without Project reads.
 For each coherent phase:
 
 1. confirm branch, expected commit and clean worktree;
-2. stop the desktop editor and any writer of the parity database;
-3. inspect the current owner and shared equivalent;
-4. implement the smallest complete owner change;
-5. update current documentation and enforcement together;
-6. run exact owner checks and the shared architecture guard while iterating;
-7. after the intended revision stops changing, run `npm run test:revision` and
+2. run `npm run desktop:update:begin` before the first edit; this closes the
+   authoring interval, captures the canonical baseline and blocks Desktop
+   startup until the task ends;
+3. if the captured baseline changed, checkpoint it before mixing it with the
+   new implementation;
+4. inspect the current owner and shared equivalent;
+5. implement the smallest complete owner change;
+6. update current documentation and enforcement together;
+7. for a persisted-contract change, migrate only the canonical workstation
+   database and run `npm run desktop:update:checkpoint`;
+8. run exact owner checks and the shared architecture guard while iterating;
+9. after the intended revision stops changing, run `npm run test:revision` and
    every check it selects for the exact revision scope;
-8. inspect the final diff, including parity artifacts;
-9. create a local commit;
-10. on macOS, always run `npm run desktop:launch:mac`; it rebuilds the bundle,
+10. inspect the final diff, including parity artifacts;
+11. create a local commit;
+12. run `npm run desktop:update:end`; it validates exact canonical/snapshot
+    parity before releasing the startup block;
+13. on macOS, always run `npm run desktop:launch:mac`; it rebuilds the bundle,
    atomically installs `/Applications/MOCKUPS Editor.app` and opens that exact
    installed artifact. Review it there; on other platforms, open the validated
    desktop application when UI review is applicable;
-11. push only when the user asks.
+14. push only when the user asks.
 
 Focused Preview files and exact or filtered desktop test names are iteration
 tools, not substitutes for the scope-selected revision gate. A manifest,
@@ -394,15 +402,14 @@ gate remains valid while the source, contracts, generated artifacts, assets
 and staged parity database are unchanged; do not rerun it merely to reproduce
 the same result.
 
-The Desktop and development scaffolds author only the workstation database. On
-macOS it is `~/Library/Application Support/MOCKUPS/mockups.sqlite`. Each
-Project's assets remain at the absolute external `media_root` selected for that
-Project; bootstrap and snapshot never copy them into or out of Application
-Support. Before validation or commit, close the Desktop and run `npm run
-desktop:db:snapshot`. The subsequent
-`npm run test:revision` fails if that database and `data/mockups.sqlite` differ,
-so a revision cannot silently validate a stale snapshot. Bootstrap is explicit
-and create-only; application startup never copies or repairs persistence.
+The Desktop and development scaffolds author only the canonical workstation
+database. On macOS it is `~/Library/Application Support/MOCKUPS/mockups.sqlite`.
+Each Project's assets remain at the absolute external `media_root` selected for
+that Project; bootstrap and snapshot never copy them into or out of Application
+Support. `test:revision` requires active update maintenance and exact parity, so
+the app cannot author concurrently and a revision cannot silently validate a
+stale snapshot. Bootstrap is explicit and create-only; application startup
+never copies or repairs persistence.
 
 Only one task writes tracked project code or parity data in the shared checkout
 at a time. Read-only investigation may run independently.

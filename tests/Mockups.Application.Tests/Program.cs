@@ -60,7 +60,12 @@ static void ShotManagerReadonlyDocumentsAreStrict()
           "productionSlug": "FOQ2",
           "seasonSlug": "",
           "episodes": [
-            { "id": "22222222-2222-4222-8222-222222222222", "order": 1, "slug": "" }
+            {
+              "id": "22222222-2222-4222-8222-222222222222",
+              "order": 1,
+              "slug": "",
+              "pathSegments": ["S02", "001"]
+            }
           ],
           "workstreams": [
             {
@@ -87,6 +92,9 @@ static void ShotManagerReadonlyDocumentsAreStrict()
     Equal("FOQ2", production.ProductionSlug);
     Equal("", production.SeasonSlug);
     Equal(1, production.Episodes.Count);
+    SequenceEqual(
+        new[] { "S02", "001" },
+        production.Episodes.Single().PathSegments);
     Equal(shotId, production.Shots.Single().Id);
 
     Throws<InvalidOperationException>(() =>
@@ -110,6 +118,20 @@ static void ShotManagerReadonlyDocumentsAreStrict()
                 "\"id\": \"not-a-uuid\"",
                 StringComparison.Ordinal),
             "Malformed Shot identity"));
+    Throws<InvalidOperationException>(() =>
+        ShotManagerReadonlyContract.ParseRequired(
+            current.Replace(
+                "\"pathSegments\": [\"S02\", \"001\"]",
+                "\"pathSegments\": [\"S02\", \"..\"]",
+                StringComparison.Ordinal),
+            "Unsafe Episode path"));
+    Throws<InvalidOperationException>(() =>
+        ShotManagerReadonlyContract.ParseRequired(
+            current.Replace(
+                "\"pathSegments\": [\"S02\", \"001\"]",
+                "\"ignoredPathSegments\": true",
+                StringComparison.Ordinal),
+            "Missing Episode path"));
     Throws<InvalidOperationException>(() =>
         ShotManagerReadonlyContract.ParseRequired(
             current.Replace(

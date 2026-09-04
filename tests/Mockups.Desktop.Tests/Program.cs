@@ -44,6 +44,19 @@ if (args.Length == 2
     return;
 }
 
+var desktopTestDatabasePath = CreateDesktopTestDatabase(
+    ParityDatabasePath());
+Environment.SetEnvironmentVariable(
+    "MOCKUPS_VALIDATION_DATABASE",
+    desktopTestDatabasePath);
+AppDomain.CurrentDomain.ProcessExit += (_, _) =>
+{
+    if (File.Exists(desktopTestDatabasePath))
+    {
+        File.Delete(desktopTestDatabasePath);
+    }
+};
+
 var selectedManifestOwners = new HashSet<string>(
     StringComparer.Ordinal);
 
@@ -155,6 +168,7 @@ var tests = new (string Name, Action Run)[]
     ("Desktop Preview startup rejects missing and stale bundle artifacts", DesktopPreviewBundleValidationIsStrict),
     ("startup classifies missing and invalid Preview bundles", StartupClassifiesPreviewBundleFailures),
     ("default Desktop database belongs to the workstation application data root", DefaultDesktopDatabaseUsesApplicationData),
+    ("active repository maintenance keeps the canonical database closed", ActiveRepositoryMaintenanceKeepsCanonicalDatabaseClosed),
     ("startup classifies missing empty and invalid databases", StartupClassifiesDatabaseFailures),
     ("startup prepares a read-only session and honors cancellation", StartupPreparesReadOnlySessionAndHonorsCancellation),
     ("closing the editor cancels Preview work and releases its lifetime", ClosingEditorCancelsPreviewLifetime),
@@ -788,6 +802,65 @@ static void StartupClassifiesDatabaseFailures()
         }
         var invalid = coordinator.Start(invalidPath);
         True(invalid is StartupResult.DatabaseInvalid);
+    }
+    finally
+    {
+        Directory.Delete(root, recursive: true);
+    }
+}
+
+static void ActiveRepositoryMaintenanceKeepsCanonicalDatabaseClosed()
+{
+    var root = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-startup-maintenance-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(root);
+    var databasePath = Path.Combine(root, "mockups.sqlite");
+    File.Copy(
+        ParityDatabasePath(),
+        databasePath,
+        overwrite: true);
+    var maintenancePath =
+        WorkstationUpdateMaintenance.LockFilePath(
+            databasePath);
+    var applicationPath = Path.Combine(
+        root,
+        WorkstationUpdateMaintenance.ApplicationLockFileName);
+    using (var access =
+           WorkstationUpdateMaintenance
+               .TryAcquireApplicationAccess(databasePath))
+    {
+        True(access is not null);
+        True(File.Exists(applicationPath));
+    }
+    True(!File.Exists(applicationPath));
+    File.WriteAllText(
+        maintenancePath,
+        "{\"schemaVersion\":1,\"state\":\"active\"}");
+    try
+    {
+        using var blockedAccess =
+            WorkstationUpdateMaintenance
+                .TryAcquireApplicationAccess(databasePath);
+        True(blockedAccess is null);
+        True(!File.Exists(applicationPath));
+        var before = SHA256.HashData(
+            File.ReadAllBytes(databasePath));
+        var coordinator = new ApplicationStartupCoordinator(
+            Path.Combine(
+                AppContext.BaseDirectory,
+                "desktop-preview"));
+
+        var result = coordinator.Start(databasePath);
+
+        True(result is StartupResult.UpdateMaintenanceActive);
+        Equal(
+            maintenancePath,
+            ((StartupResult.UpdateMaintenanceActive)result).Path);
+        SequenceEqual(
+            before,
+            SHA256.HashData(
+                File.ReadAllBytes(databasePath)));
     }
     finally
     {
@@ -9982,7 +10055,9 @@ static void ExtractedRepositoriesPreserveFocusedContract()
         var episode = Descendants(tree).First((node) => node.Kind == ProjectTreeNodeKind.Episode);
 
         Equal(database.GetProjectSettings(project.Id), projectEpisodeRepository.GetProjectSettings(project.Id));
-        Equal(database.GetEpisodeSettings(episode.Id), projectEpisodeRepository.GetEpisodeSettings(episode.Id));
+        EqualEpisodeSettings(
+            database.GetEpisodeSettings(episode.Id),
+            projectEpisodeRepository.GetEpisodeSettings(episode.Id));
 
         var facadeLayout = EditorLayouts(database).LoadEditorLayout("component.keypad");
         var repositoryLayout = layoutRepository.LoadEditorLayout("component.keypad");
@@ -10009,7 +10084,9 @@ static void ExtractedRepositoriesPreserveFocusedContract()
             "EP_99");
         Equal("EP_99", database.GetEpisodeSettings(episode.Id).Slug);
         database.UpdateEpisodeField(episode.Id, "episode.slug", originalEpisode.Slug);
-        Equal(originalEpisode, projectEpisodeRepository.GetEpisodeSettings(episode.Id));
+        EqualEpisodeSettings(
+            originalEpisode,
+            projectEpisodeRepository.GetEpisodeSettings(episode.Id));
 
         var originalProjectName = project.Name;
         project.Name = $"{project.Name} repository";
@@ -11280,8 +11357,8 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
             database.Resources,
             operations);
         var screen = Descendants(database.LoadProjectTree())
-            .First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance
-                && database.GetModuleInstanceVariantSettings(node.Id).RecordClassId == "module.core.chat");
+            .Single((node) => node.Id
+                == "module_instance_900f1616432d4f63a97f2a74dd647e08");
         var animationJson =
             database.GetModuleInstanceSettings(
                 screen.Id).AnimationJson;
@@ -14977,15 +15054,28 @@ static void ShotManagerOutputResolvesExactAssociations()
             string suffix,
             string canonicalName = "FOQ2_201_005_010",
             bool includeShot = true,
-            string exactProductionId = productionId) => $$"""
+            string exactProductionId = productionId,
+            string episodeOneDirectory = "001",
+            int episodeOneOrder = 1,
+            string seasonSlug = "_S02_") => $$"""
             {
               "schemaVersion": 999,
               "productionId": "{{exactProductionId}}",
               "productionSlug": "FOQ2",
-              "seasonSlug": "_S02_",
+              "seasonSlug": "{{seasonSlug}}",
               "episodes": [
-                { "id": "{{episodeOneId}}", "order": 1, "slug": "01" },
-                { "id": "{{episodeTwoId}}", "order": 2, "slug": "" }
+                {
+                  "id": "{{episodeOneId}}",
+                  "order": {{episodeOneOrder}},
+                  "slug": "01",
+                  "pathSegments": ["S02", "{{episodeOneDirectory}}"]
+                },
+                {
+                  "id": "{{episodeTwoId}}",
+                  "order": 2,
+                  "slug": "",
+                  "pathSegments": ["S02", "002"]
+                }
               ],
               "workstreams": [
                 {
@@ -15073,6 +15163,9 @@ static void ShotManagerOutputResolvesExactAssociations()
             "episode_001").ShotManagerEpisode;
         True(episodeAssociation.IsAssociated);
         Equal(1, episodeAssociation.EpisodeOrder);
+        SequenceEqual(
+            new[] { "S02", "001" },
+            episodeAssociation.EpisodePathSegments);
         var shotAssociation = database.GetShotSettings(
             "shot_001").ShotManagerShot;
         True(shotAssociation.IsAssociated);
@@ -15084,7 +15177,7 @@ static void ShotManagerOutputResolvesExactAssociations()
         True(resolved.IsShotManaged);
         Equal(Path.GetFullPath(productionRoot), resolved.RootPath);
         Equal("FOQ2_201_005_010_render", resolved.Plan.TechnicalName);
-        Equal("001/FUSION/renders-final", resolved.Plan.RelativeDirectory);
+        Equal("S02/001/FUSION/renders-final", resolved.Plan.RelativeDirectory);
 
         True(fields.CreateFieldValue(
                 projectNode,
@@ -15119,11 +15212,12 @@ static void ShotManagerOutputResolvesExactAssociations()
         Equal("FOQ2_201_005_010_render", managedDraft.SuggestedBaseName);
         Equal(1, managedDraft.Routes.Count);
         Equal(
-            "001/FUSION/renders-final",
+            "S02/001/FUSION/renders-final",
             managedDraft.Routes[0].RelativeDirectory);
         Equal("", managedDraft.RouteStatusMessage);
         var declaredDirectory = Path.Combine(
             productionRoot,
+            "S02",
             "001",
             "FUSION",
             "renders-final");
@@ -15149,21 +15243,30 @@ static void ShotManagerOutputResolvesExactAssociations()
 
         File.WriteAllText(
             productionJson,
-            Document("_new", "FOQ2_201_005_011"));
+            Document(
+                "_new",
+                "FOQ2_201_005_011",
+                episodeOneDirectory: "001-revised",
+                episodeOneOrder: 47,
+                seasonSlug: "_S99_"));
         fields.CommitFieldValue(
             projectNode,
             "project.shotManagerJsonPath",
             productionJson);
+        resolved = resolver.Resolve(
+            database.GetProductionOutputShotContext("shot_001"));
+        Equal("FOQ2_201_005_011_new", resolved.Plan.TechnicalName);
         Equal(
-            "FOQ2_201_005_011_new",
-            resolver.Resolve(database.GetProductionOutputShotContext("shot_001"))
-                .Plan.TechnicalName);
+            "S02/001-revised/FUSION/renders-final",
+            resolved.Plan.RelativeDirectory);
 
         File.Delete(productionJson);
+        resolved = resolver.Resolve(
+            database.GetProductionOutputShotContext("shot_001"));
+        Equal("FOQ2_201_005_011_new", resolved.Plan.TechnicalName);
         Equal(
-            "FOQ2_201_005_011_new",
-            resolver.Resolve(database.GetProductionOutputShotContext("shot_001"))
-                .Plan.TechnicalName);
+            "S02/001-revised/FUSION/renders-final",
+            resolved.Plan.RelativeDirectory);
         Throws<InvalidOperationException>(() => fields.CommitFieldValue(
             shotNode,
             "shot.shotManagerShotId",
@@ -21547,8 +21650,8 @@ static void LockScreenComposesRuntimeStack()
                     database.Resources),
                 lockScreenInstance.Id));
 
-        var conversationInstance = nodes.First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance
-            && database.GetModuleSettings(database.GetModuleInstanceSettings(node.Id).ModuleId).RecordClassId == "module.core.chat");
+        var conversationInstance = nodes.Single((node) => node.Id
+            == "module_instance_900f1616432d4f63a97f2a74dd647e08");
         var calculatedDuration = ModuleInstanceTimeline.DurationFrames(
             new ModuleInstanceTimelineDataSource(
                 database.Production,
@@ -22060,6 +22163,201 @@ static string ParityDatabasePath()
         : Path.GetFullPath(configured);
 }
 
+static string CreateDesktopTestDatabase(
+    string sourcePath)
+{
+    _ = new SqliteProjectTestContext(sourcePath)
+        .LoadProjectTree();
+    var temporary = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-desktop-test-source-{Guid.NewGuid():N}.sqlite");
+    File.Copy(sourcePath, temporary, overwrite: true);
+    try
+    {
+        using (var cleanup = new SqliteConnection(
+                   $"Data Source={temporary}"))
+        {
+            cleanup.Open();
+            using var cleanupCommand = cleanup.CreateCommand();
+            cleanupCommand.CommandText = """
+                DELETE FROM module_instances
+                WHERE shot_id = 'shot_001';
+                DELETE FROM shots
+                WHERE id = 'shot_001';
+                """;
+            cleanupCommand.ExecuteNonQuery();
+        }
+        var database = new SqliteProjectTestContext(
+            temporary);
+        var tree = database.LoadProjectTree();
+        var episode = Descendants(tree).Single((node) =>
+            node.Kind == ProjectTreeNodeKind.Episode
+            && node.Id == "episode_001");
+        var createdShot = database.AddShot(
+            episode,
+            "actor_alex",
+            database.SuggestShotNumber(episode.Id));
+        var moduleInstances = ModuleInstances(database);
+
+        ProjectTreeNode AddScreen(
+            string recordClassId,
+            string name)
+        {
+            var module = moduleInstances
+                .GetAvailableShotModules(createdShot.Id)
+                .Single((candidate) =>
+                    candidate.RecordClassId == recordClassId);
+            var variant = moduleInstances
+                .GetModuleVariantOptions(module.Id)
+                .Single((candidate) =>
+                    candidate.Value.EndsWith(
+                        "::variant::default",
+                        StringComparison.Ordinal));
+            return moduleInstances.AddModuleInstance(
+                createdShot,
+                new ShotModuleInstanceDraft(
+                    module,
+                    variant.Value,
+                    variant.Label,
+                    name));
+        }
+
+        var lockScreen = AddScreen(
+            "module.core.lockScreen",
+            "Lock Screen fixture");
+        var conversation = AddScreen(
+            ModuleRuntimeDocumentContracts
+                .ConversationRecordClassId,
+            "Conversation fixture");
+        database.UpdateModuleInstanceRuntimeValue(
+            conversation.Id,
+            "actorId",
+            JsonValue.Create("actor_alex_b"));
+        var conversationVariant =
+            database.GetModuleInstanceVariantSettings(
+                conversation.Id);
+        var conversationRuntime =
+            DesignPreviewTestValues.Parse(
+                database.GetModuleInstanceRuntimePreviewJson(
+                    conversation.Id));
+        var messageCollection =
+            RuntimeInputDefinitionReader.ReadCollections(
+                    conversationRuntime,
+                    JsonPath.ParseRequiredObject(
+                        conversationVariant.ConfigJson,
+                        "Conversation test fixture Variant"))
+                .Single((collection) =>
+                    collection.Id == "messages");
+        var messageDirections = new[]
+        {
+            (Direction: "outgoing", ActorId: "actor_alex_b"),
+            (Direction: "outgoing", ActorId: "actor_alex_b"),
+            (Direction: "incoming", ActorId: "actor_alex"),
+        };
+        for (var index = 0; index < messageDirections.Length; index++)
+        {
+            var message = StructuredCollectionItemFactory.Create(
+                messageCollection,
+                (field) => field.DefaultValue,
+                (_) => new JsonObject());
+            message["direction"] =
+                messageDirections[index].Direction;
+            message["actorId"] =
+                messageDirections[index].ActorId;
+            message["text"] = $"Fixture message {index + 1}";
+            database.MutateModuleInstanceStructuredCollection(
+                conversation.Id,
+                new AddStructuredCollectionItem(
+                    new StructuredCollectionAddress(
+                        "messages",
+                        [],
+                        "messages"),
+                    message));
+        }
+
+        using var connection = new SqliteConnection(
+            $"Data Source={temporary}");
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
+        using var command = connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = """
+            INSERT INTO shots (
+              id, episode_id, name, slug, version, notes, sort_order,
+              fps_override, duration_frames, duration_policy,
+              explicit_duration_frames, owner_actor_id, device_override_id,
+              device_overrides_json, theme_override_id, canvas_json,
+              metadata_json, shot_number, shot_manager_association_state,
+              shot_manager_reference_production_id, shot_manager_shot_id,
+              shot_manager_canonical_name, reference_video_json)
+            SELECT
+              'shot_001', episode_id, 'Shot fixture',
+              '__desktop_test_shot_001__', version, notes,
+              sort_order, fps_override, duration_frames, duration_policy,
+              explicit_duration_frames, owner_actor_id, device_override_id,
+              device_overrides_json, theme_override_id, canvas_json,
+              metadata_json, 900001, 'free', '', '', '',
+              reference_video_json
+            FROM shots
+            WHERE id = $createdShotId;
+
+            INSERT INTO module_instances (
+              id, shot_id, app_id, module_id, name, notes, sort_order,
+              duration_frames, duration_policy, action_delay_frames,
+              transition_json, content_json, behavior_json, animation_json,
+              metadata_json)
+            SELECT
+              'module_instance_6ba3837154634771b40a25ca64160bc4',
+              'shot_001', app_id, module_id, name, notes, 1,
+              duration_frames, duration_policy, action_delay_frames,
+              transition_json, content_json, behavior_json, animation_json,
+              metadata_json
+            FROM module_instances
+            WHERE id = $lockScreenId;
+
+            INSERT INTO module_instances (
+              id, shot_id, app_id, module_id, name, notes, sort_order,
+              duration_frames, duration_policy, action_delay_frames,
+              transition_json, content_json, behavior_json, animation_json,
+              metadata_json)
+            SELECT
+              'module_instance_900f1616432d4f63a97f2a74dd647e08',
+              'shot_001', app_id, module_id, name, notes, 2,
+              duration_frames, duration_policy, action_delay_frames,
+              transition_json, content_json, behavior_json,
+              animation_json, metadata_json
+            FROM module_instances
+            WHERE id = $conversationId;
+
+            DELETE FROM module_instances
+            WHERE id IN ($lockScreenId, $conversationId);
+            DELETE FROM shots WHERE id = $createdShotId;
+            UPDATE shots
+            SET slug = 'A0001', shot_number = 1
+            WHERE id = 'shot_001';
+            """;
+        command.Parameters.AddWithValue(
+            "$createdShotId",
+            createdShot.Id);
+        command.Parameters.AddWithValue(
+            "$lockScreenId",
+            lockScreen.Id);
+        command.Parameters.AddWithValue(
+            "$conversationId",
+            conversation.Id);
+        command.ExecuteNonQuery();
+        transaction.Commit();
+        _ = new SqliteProjectTestContext(
+            temporary).LoadProjectTree();
+        return temporary;
+    }
+    catch
+    {
+        File.Delete(temporary);
+        throw;
+    }
+}
+
 static void DefaultDesktopDatabaseUsesApplicationData()
 {
     Equal(
@@ -22150,6 +22448,29 @@ static void Equal<T>(T expected, T actual)
 {
     if (!EqualityComparer<T>.Default.Equals(expected, actual))
         throw new Exception($"Expected '{expected}', received '{actual}'.");
+}
+static void EqualEpisodeSettings(EpisodeSettings expected, EpisodeSettings actual)
+{
+    Equal(expected.Slug, actual.Slug);
+    Equal(expected.SortOrder, actual.SortOrder);
+    Equal(
+        expected.ShotManagerEpisode.IsAssociated,
+        actual.ShotManagerEpisode.IsAssociated);
+    Equal(
+        expected.ShotManagerEpisode.ReferenceProductionId,
+        actual.ShotManagerEpisode.ReferenceProductionId);
+    Equal(
+        expected.ShotManagerEpisode.EpisodeId,
+        actual.ShotManagerEpisode.EpisodeId);
+    Equal(
+        expected.ShotManagerEpisode.EpisodeOrder,
+        actual.ShotManagerEpisode.EpisodeOrder);
+    Equal(
+        expected.ShotManagerEpisode.EpisodeSlug,
+        actual.ShotManagerEpisode.EpisodeSlug);
+    SequenceEqual(
+        expected.ShotManagerEpisode.EpisodePathSegments,
+        actual.ShotManagerEpisode.EpisodePathSegments);
 }
 static void SequenceEqual<T>(IEnumerable<T> expected, IEnumerable<T> actual)
 {
