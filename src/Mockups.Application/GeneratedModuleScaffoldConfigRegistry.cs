@@ -524,13 +524,6 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ["videoCall", "footerSurfaceSlot"],
             "surface",
             []),
-        ["module.core.videoCall.gridColumns"] = new(
-            "module.core.videoCall",
-            "module.core.videoCall.gridColumns",
-            ValueKind.Integer,
-            ["videoCall", "gridColumns"],
-            "",
-            []),
         ["module.core.videoCall.gridGapToken"] = new(
             "module.core.videoCall",
             "module.core.videoCall.gridGapToken",
@@ -551,6 +544,13 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ValueKind.ComponentVariantSlot,
             ["videoCall", "gridParticipantSlot"],
             "callParticipant",
+            []),
+        ["module.core.videoCall.gridRows"] = new(
+            "module.core.videoCall",
+            "module.core.videoCall.gridRows",
+            ValueKind.Integer,
+            ["videoCall", "gridRows"],
+            "",
             []),
         ["module.core.videoCall.headerFloatHorizontalPaddingToken"] = new(
             "module.core.videoCall",

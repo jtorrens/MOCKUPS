@@ -48,7 +48,7 @@ export interface VideoCallModuleContract {
   showGridParticipants: boolean;
   gridPadding: SpacingPairContract;
   gridGapToken: string;
-  gridColumns: number;
+  gridRows: number;
   showStatusBar: boolean;
   showNavigationBar: boolean;
   participants: VideoCallParticipant[];

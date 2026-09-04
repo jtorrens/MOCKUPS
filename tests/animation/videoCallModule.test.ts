@@ -53,6 +53,28 @@ test("Video Call permits simultaneous participants with the same role", () => {
   assert.equal(node.children?.filter(child => child.id === "component.callParticipant").length, 2);
 });
 
+test("Video Call grid rows fill every row without reserving empty columns", () => {
+  const source = fixture();
+  const preview = JSON.parse(source.designPreviewJson) as { participants: Array<Record<string, unknown>> };
+  preview.participants = preview.participants.slice(0, 3);
+  for (const participant of preview.participants) participant.role = "grid";
+  const config = JSON.parse(source.configJson) as { videoCall: Record<string, unknown> };
+  config.videoCall.gridRows = 2;
+
+  const node = videoCallModuleToRenderable({
+    ...source,
+    configJson: JSON.stringify(config),
+    designPreviewJson: JSON.stringify(preview),
+  });
+  const participants = node.children?.filter(child => child.id === "component.callParticipant") ?? [];
+  assert.equal(participants.length, 3);
+  assert.ok(participants.every(participant => participant.box));
+  assert.equal(participants[0]!.box!.y, participants[1]!.box!.y);
+  assert.equal(participants[0]!.box!.height, participants[2]!.box!.height);
+  assert.ok(participants[2]!.box!.y > participants[0]!.box!.y);
+  assert.ok(participants[2]!.box!.width > participants[0]!.box!.width * 1.9);
+});
+
 test("Video Call master switches remove every optional section", () => {
   const source = fixture();
   const config = JSON.parse(source.configJson) as { videoCall: Record<string, unknown> };

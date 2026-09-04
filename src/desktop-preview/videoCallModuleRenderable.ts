@@ -56,7 +56,7 @@ export function videoCallModuleToRenderable(payload: DesignPreviewPayload): Rend
     height: Math.max(1, bodyBottom - bodyTop),
   };
   const gridItems = call.participants.filter((item) => item.role === "grid");
-  const gridBoxes = grid(gridItems, inset(payload, body, call.gridPadding), numberToken(payload, call.gridGapToken) * scale, call.gridColumns);
+  const gridBoxes = grid(gridItems, inset(payload, body, call.gridPadding), numberToken(payload, call.gridGapToken) * scale, call.gridRows);
   const gridById = new Map(gridBoxes.map(({ item, box }) => [item.id, box]));
   const mainContent = inset(payload, body, call.mainPadding);
   const mainBox = call.mainSizeMode === "fill"
@@ -84,13 +84,30 @@ export function videoCallModuleToRenderable(payload: DesignPreviewPayload): Rend
   return { id: call.id, type: "group", frame: 0, box: screen, style: { overflow: "hidden" }, children };
 }
 
-function grid(items: VideoCallParticipant[], box: RenderableBox, gap: number, requestedColumns: number) {
+function grid(items: VideoCallParticipant[], box: RenderableBox, gap: number, requestedRows: number) {
   if (items.length === 0) return [];
-  const columns = Math.max(1, Math.min(requestedColumns, items.length));
-  const rows = Math.ceil(items.length / columns);
-  const width = Math.max(1, (box.width - gap * (columns - 1)) / columns);
+  const rows = Math.max(1, Math.min(requestedRows, items.length));
+  const columns = Math.ceil(items.length / rows);
   const height = Math.max(1, (box.height - gap * (rows - 1)) / rows);
-  return items.map((item, index) => ({ item, box: { x: box.x + (index % columns) * (width + gap), y: box.y + Math.floor(index / columns) * (height + gap), width, height } }));
+  const placed: Array<{ item: VideoCallParticipant; box: RenderableBox }> = [];
+  let itemIndex = 0;
+  for (let row = 0; row < rows; row += 1) {
+    const count = Math.min(columns, items.length - itemIndex);
+    const width = Math.max(1, (box.width - gap * (count - 1)) / count);
+    for (let column = 0; column < count; column += 1) {
+      placed.push({
+        item: items[itemIndex]!,
+        box: {
+          x: box.x + column * (width + gap),
+          y: box.y + row * (height + gap),
+          width,
+          height,
+        },
+      });
+      itemIndex += 1;
+    }
+  }
+  return placed;
 }
 
 function inset(payload: DesignPreviewPayload, box: RenderableBox, padding: { xToken: string; yToken: string }): RenderableBox {

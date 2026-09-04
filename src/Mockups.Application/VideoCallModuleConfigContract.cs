@@ -22,7 +22,7 @@ internal static class VideoCallModuleConfigContract
             "showFooter", "footerLayoutMode", "footerFloatHorizontalPaddingToken", "footerFloatOffsetY", "footerHeight", "footerSurfaceSlot", "footerRowGapToken", "footerRows",
             "showMainVideo", "mainParticipantSlot", "mainSizeMode", "mainSize", "mainPlacement", "mainPadding",
             "showPip", "pipParticipantSlot", "pipSize", "pipPlacement", "pipPadding",
-            "showGridParticipants", "gridParticipantSlot", "gridPadding", "gridGapToken", "gridColumns",
+            "showGridParticipants", "gridParticipantSlot", "gridPadding", "gridGapToken", "gridRows",
             "showParticipantNames", "showParticipantStatus", "showStatusBar", "showNavigationBar",
             "statusBarSlot", "navigationBarSlot"
         ], $"{context}.videoCall");
@@ -45,8 +45,8 @@ internal static class VideoCallModuleConfigContract
             _ = AlignmentPlacementValue.Parse(JsonPath.RequiredObject(owner, key, context).ToJsonString());
         if (JsonPath.RequiredNumber(owner, "headerHeight", context) < 0 || JsonPath.RequiredNumber(owner, "footerHeight", context) < 0)
             throw new InvalidOperationException($"{context} video call section heights must be non-negative.");
-        if (JsonPath.RequiredNumber(owner, "gridColumns", context) < 1)
-            throw new InvalidOperationException($"{context}.videoCall.gridColumns must be positive.");
+        if (JsonPath.RequiredNumber(owner, "gridRows", context) < 1)
+            throw new InvalidOperationException($"{context}.videoCall.gridRows must be positive.");
         foreach (var key in new[] { "headerSurfaceSlot", "footerSurfaceSlot", "mainParticipantSlot", "pipParticipantSlot", "gridParticipantSlot", "statusBarSlot", "navigationBarSlot" })
             ComponentVariantSlotDocumentContract.Validate(JsonPath.RequiredObject(owner, key, context), $"{context}.videoCall.{key}");
         SocialPostModuleConfigContract.ValidateRows(owner, "headerRows", $"{context}.videoCall");

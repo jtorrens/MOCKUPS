@@ -428,7 +428,7 @@
       },
       "gridPadding": "theme.spacing.s|theme.spacing.s",
       "gridGapToken": "theme.spacing.s",
-      "gridColumns": 2,
+      "gridRows": 2,
       "showParticipantNames": true,
       "showParticipantStatus": true,
       "showStatusBar": true,
@@ -2188,7 +2188,7 @@
         },
         "gridPadding": "theme.spacing.s|theme.spacing.s",
         "gridGapToken": "theme.spacing.s",
-        "gridColumns": 2,
+        "gridRows": 2,
         "showParticipantNames": true,
         "showParticipantStatus": true,
         "showStatusBar": true,
@@ -4786,12 +4786,12 @@
       "structuredCollection": null
     },
     {
-      "id": "module.core.videoCall.gridColumns",
-      "label": "Columns",
+      "id": "module.core.videoCall.gridRows",
+      "label": "Rows",
       "valueKind": "Integer",
       "jsonPath": [
         "videoCall",
-        "gridColumns"
+        "gridRows"
       ],
       "defaultValue": "2",
       "isEditable": true,
@@ -5179,7 +5179,7 @@
                 "visible": true
               },
               {
-                "id": "module.core.videoCall.gridColumns",
+                "id": "module.core.videoCall.gridRows",
                 "order": 50,
                 "visible": true
               },

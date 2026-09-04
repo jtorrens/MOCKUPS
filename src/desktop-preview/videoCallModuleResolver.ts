@@ -78,7 +78,7 @@ export function resolveVideoCallModule(payload: DesignPreviewPayload): VideoCall
     showGridParticipants: requiredBoolean(owner, "showGridParticipants", "module.core.videoCall.showGridParticipants"),
     gridPadding: pair(owner, "gridPadding"),
     gridGapToken: requiredString(owner, "gridGapToken", "module.core.videoCall.gridGapToken"),
-    gridColumns: Math.max(1, Math.round(requiredNumber(owner, "gridColumns", "module.core.videoCall.gridColumns"))),
+    gridRows: Math.max(1, Math.round(requiredNumber(owner, "gridRows", "module.core.videoCall.gridRows"))),
     showStatusBar: requiredBoolean(owner, "showStatusBar", "module.core.videoCall.showStatusBar"),
     showNavigationBar: requiredBoolean(owner, "showNavigationBar", "module.core.videoCall.showNavigationBar"),
     participants,
