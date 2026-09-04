@@ -19,18 +19,26 @@ export function videoCallModuleToRenderable(payload: DesignPreviewPayload): Rend
   const navigation = call.showNavigationBar ? chrome(payload, bases, "navigation_bar", call.navigationBarSlot) : undefined;
   const contentTop = screen.y + (status?.box?.height ?? 0);
   const contentBottom = screen.y + screen.height - (navigation?.box?.height ?? 0);
+  const headerFloats = call.headerLayoutMode === "float";
+  const footerFloats = call.footerLayoutMode === "float";
   const header = call.showHeader ? rowsSectionNode(payload, bases, {
     ownerId: call.id, section: "header", rows: call.headerRows, rowGapToken: call.headerRowGapToken,
     height: call.headerHeight, surfaceSlot: call.headerSurfaceSlot, edge: "top", contentEdge: contentTop,
+    horizontalInset: headerFloats ? numberToken(payload, call.headerFloatHorizontalPaddingToken) * scale : 0,
+    edgeOffset: headerFloats ? call.headerFloatOffsetY * scale : 0,
+    bleedToScreenEdge: !headerFloats,
   }) : undefined;
   const footer = call.showFooter ? rowsSectionNode(payload, bases, {
     ownerId: call.id, section: "footer", rows: call.footerRows, rowGapToken: call.footerRowGapToken,
     height: call.footerHeight, surfaceSlot: call.footerSurfaceSlot, edge: "bottom", contentEdge: contentBottom,
+    horizontalInset: footerFloats ? numberToken(payload, call.footerFloatHorizontalPaddingToken) * scale : 0,
+    edgeOffset: footerFloats ? call.footerFloatOffsetY * scale : 0,
+    bleedToScreenEdge: !footerFloats,
   }) : undefined;
-  const bodyTop = header?.box && call.headerLayoutMode === "stack"
+  const bodyTop = header?.box && !headerFloats
     ? header.box.y + header.box.height
     : contentTop;
-  const bodyBottom = footer?.box && call.footerLayoutMode === "stack"
+  const bodyBottom = footer?.box && !footerFloats
     ? footer.box.y
     : contentBottom;
   const body: RenderableBox = {

@@ -475,6 +475,20 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ["videoCall", "conversationType"],
             "",
             []),
+        ["module.core.videoCall.footerFloatHorizontalPaddingToken"] = new(
+            "module.core.videoCall",
+            "module.core.videoCall.footerFloatHorizontalPaddingToken",
+            ValueKind.ThemeToken,
+            ["videoCall", "footerFloatHorizontalPaddingToken"],
+            "",
+            []),
+        ["module.core.videoCall.footerFloatOffsetY"] = new(
+            "module.core.videoCall",
+            "module.core.videoCall.footerFloatOffsetY",
+            ValueKind.Integer,
+            ["videoCall", "footerFloatOffsetY"],
+            "",
+            []),
         ["module.core.videoCall.footerHeight"] = new(
             "module.core.videoCall",
             "module.core.videoCall.footerHeight",
@@ -537,6 +551,20 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ValueKind.ComponentVariantSlot,
             ["videoCall", "gridParticipantSlot"],
             "callParticipant",
+            []),
+        ["module.core.videoCall.headerFloatHorizontalPaddingToken"] = new(
+            "module.core.videoCall",
+            "module.core.videoCall.headerFloatHorizontalPaddingToken",
+            ValueKind.ThemeToken,
+            ["videoCall", "headerFloatHorizontalPaddingToken"],
+            "",
+            []),
+        ["module.core.videoCall.headerFloatOffsetY"] = new(
+            "module.core.videoCall",
+            "module.core.videoCall.headerFloatOffsetY",
+            ValueKind.Integer,
+            ["videoCall", "headerFloatOffsetY"],
+            "",
             []),
         ["module.core.videoCall.headerHeight"] = new(
             "module.core.videoCall",

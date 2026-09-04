@@ -18,8 +18,8 @@ internal static class VideoCallModuleConfigContract
         var owner = JsonPath.RequiredObject(config, "videoCall", context);
         RequireExactKeys(owner, [
             "useAppWallpaper", "conversationType", "backgroundColorToken",
-            "showHeader", "headerLayoutMode", "headerHeight", "headerSurfaceSlot", "headerRowGapToken", "headerRows",
-            "showFooter", "footerLayoutMode", "footerHeight", "footerSurfaceSlot", "footerRowGapToken", "footerRows",
+            "showHeader", "headerLayoutMode", "headerFloatHorizontalPaddingToken", "headerFloatOffsetY", "headerHeight", "headerSurfaceSlot", "headerRowGapToken", "headerRows",
+            "showFooter", "footerLayoutMode", "footerFloatHorizontalPaddingToken", "footerFloatOffsetY", "footerHeight", "footerSurfaceSlot", "footerRowGapToken", "footerRows",
             "showMainVideo", "mainParticipantSlot", "mainSizeMode", "mainSize", "mainPlacement", "mainPadding",
             "showPip", "pipParticipantSlot", "pipSize", "pipPlacement", "pipPadding",
             "showGridParticipants", "gridParticipantSlot", "gridPadding", "gridGapToken", "gridColumns",
@@ -33,7 +33,10 @@ internal static class VideoCallModuleConfigContract
         RequireOneOf(JsonPath.RequiredString(owner, "footerLayoutMode", context), ["stack", "float"], $"{context}.videoCall.footerLayoutMode");
         RequireOneOf(JsonPath.RequiredString(owner, "mainSizeMode", context), ["fill", "fixed"], $"{context}.videoCall.mainSizeMode");
         JsonPath.RequiredString(owner, "backgroundColorToken", context);
-        foreach (var key in new[] { "headerRowGapToken", "footerRowGapToken", "gridGapToken" }) JsonPath.RequiredString(owner, key, context);
+        foreach (var key in new[] { "headerFloatHorizontalPaddingToken", "footerFloatHorizontalPaddingToken", "headerRowGapToken", "footerRowGapToken", "gridGapToken" }) JsonPath.RequiredString(owner, key, context);
+        foreach (var key in new[] { "headerFloatOffsetY", "footerFloatOffsetY" })
+            if (JsonPath.RequiredNumber(owner, key, context) < 0)
+                throw new InvalidOperationException($"{context}.videoCall.{key} must be non-negative.");
         foreach (var key in new[] { "mainPadding", "pipPadding", "gridPadding" })
             _ = RuntimeInputValueKindContract.ParseValue(ValueKind.ThemeTokenPair, JsonPath.RequiredString(owner, key, context), $"{context}.videoCall.{key}");
         foreach (var key in new[] { "mainSize", "pipSize" })

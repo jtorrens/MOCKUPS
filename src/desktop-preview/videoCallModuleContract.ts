@@ -22,12 +22,16 @@ export interface VideoCallModuleContract {
   backgroundColorToken: string;
   showHeader: boolean;
   headerLayoutMode: "stack" | "float";
+  headerFloatHorizontalPaddingToken: string;
+  headerFloatOffsetY: number;
   headerHeight: number;
   headerSurfaceSlot: VideoCallComponentSlot;
   headerRowGapToken: string;
   headerRows: [SocialPostRow, SocialPostRow];
   showFooter: boolean;
   footerLayoutMode: "stack" | "float";
+  footerFloatHorizontalPaddingToken: string;
+  footerFloatOffsetY: number;
   footerHeight: number;
   footerSurfaceSlot: VideoCallComponentSlot;
   footerRowGapToken: string;

@@ -46,6 +46,8 @@
       "backgroundColorToken": "theme.colors.background",
       "showHeader": true,
       "headerLayoutMode": "stack",
+      "headerFloatHorizontalPaddingToken": "theme.spacing.m",
+      "headerFloatOffsetY": 12,
       "headerHeight": 130,
       "headerSurfaceSlot": {
         "variantReference": "component_project_foqn_s2_surface::variant::default",
@@ -218,6 +220,8 @@
       ],
       "showFooter": true,
       "footerLayoutMode": "stack",
+      "footerFloatHorizontalPaddingToken": "theme.spacing.m",
+      "footerFloatOffsetY": 12,
       "footerHeight": 130,
       "footerSurfaceSlot": {
         "variantReference": "component_project_foqn_s2_surface::variant::default",
@@ -1804,6 +1808,8 @@
         "backgroundColorToken": "theme.colors.background",
         "showHeader": true,
         "headerLayoutMode": "stack",
+        "headerFloatHorizontalPaddingToken": "theme.spacing.m",
+        "headerFloatOffsetY": 12,
         "headerHeight": 130,
         "headerSurfaceSlot": {
           "variantReference": "component_project_foqn_s2_surface::variant::default",
@@ -1976,6 +1982,8 @@
         ],
         "showFooter": true,
         "footerLayoutMode": "stack",
+        "footerFloatHorizontalPaddingToken": "theme.spacing.m",
+        "footerFloatOffsetY": 12,
         "footerHeight": 130,
         "footerSurfaceSlot": {
           "variantReference": "component_project_foqn_s2_surface::variant::default",
@@ -2351,6 +2359,128 @@
       "recordReference": null,
       "motionTiming": null,
       "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.videoCall.headerFloatHorizontalPaddingToken",
+      "label": "Float horizontal padding",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "videoCall",
+        "headerFloatHorizontalPaddingToken"
+      ],
+      "defaultValue": "theme.spacing.m",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xl",
+          "label": "spacing.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xxl",
+          "label": "spacing.xxl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null,
+      "structuredCollection": null
+    },
+    {
+      "id": "module.core.videoCall.headerFloatOffsetY",
+      "label": "Float offset Y",
+      "valueKind": "Integer",
+      "jsonPath": [
+        "videoCall",
+        "headerFloatOffsetY"
+      ],
+      "defaultValue": "12",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": {
+        "minimum": 0,
+        "maximum": 4096,
+        "increment": 1,
+        "decimalPlaces": 0,
+        "useSlider": false
+      },
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "px",
       "embeddedSlot": null
     },
     {
@@ -3196,6 +3326,128 @@
       "recordReference": null,
       "motionTiming": null,
       "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.videoCall.footerFloatHorizontalPaddingToken",
+      "label": "Float horizontal padding",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "videoCall",
+        "footerFloatHorizontalPaddingToken"
+      ],
+      "defaultValue": "theme.spacing.m",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xl",
+          "label": "spacing.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xxl",
+          "label": "spacing.xxl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null,
+      "structuredCollection": null
+    },
+    {
+      "id": "module.core.videoCall.footerFloatOffsetY",
+      "label": "Float offset Y",
+      "valueKind": "Integer",
+      "jsonPath": [
+        "videoCall",
+        "footerFloatOffsetY"
+      ],
+      "defaultValue": "12",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": {
+        "minimum": 0,
+        "maximum": 4096,
+        "increment": 1,
+        "decimalPlaces": 0,
+        "useSlider": false
+      },
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "px",
       "embeddedSlot": null
     },
     {
@@ -4755,18 +5007,28 @@
                 "visible": true
               },
               {
-                "id": "module.core.videoCall.headerHeight",
+                "id": "module.core.videoCall.headerFloatHorizontalPaddingToken",
                 "order": 30,
                 "visible": true
               },
               {
-                "id": "module.core.videoCall.headerSurface",
+                "id": "module.core.videoCall.headerFloatOffsetY",
                 "order": 40,
                 "visible": true
               },
               {
-                "id": "module.core.videoCall.headerRowGapToken",
+                "id": "module.core.videoCall.headerHeight",
                 "order": 50,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.headerSurface",
+                "order": 60,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.headerRowGapToken",
+                "order": 70,
                 "visible": true
               }
             ]
@@ -4964,18 +5226,28 @@
                 "visible": true
               },
               {
-                "id": "module.core.videoCall.footerHeight",
+                "id": "module.core.videoCall.footerFloatHorizontalPaddingToken",
                 "order": 30,
                 "visible": true
               },
               {
-                "id": "module.core.videoCall.footerSurface",
+                "id": "module.core.videoCall.footerFloatOffsetY",
                 "order": 40,
                 "visible": true
               },
               {
-                "id": "module.core.videoCall.footerRowGapToken",
+                "id": "module.core.videoCall.footerHeight",
                 "order": 50,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.footerSurface",
+                "order": 60,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.footerRowGapToken",
+                "order": 70,
                 "visible": true
               }
             ]

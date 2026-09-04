@@ -549,32 +549,41 @@ export function rowsSectionNode(
     surfaceSlot: SocialPostComponentSlot;
     edge: "top" | "bottom";
     contentEdge: number;
+    horizontalInset?: number;
+    edgeOffset?: number;
+    bleedToScreenEdge?: boolean;
   },
 ): RenderableNode {
   const screen = previewScreenBox(payload);
   const scale = renderScale(payload);
-  const first = renderRow(payload, componentBaseConfigs, options.ownerId, options.section, options.rows[0], 0);
+  const horizontalInset = Math.max(0, options.horizontalInset ?? 0);
+  const sectionX = screen.x + horizontalInset;
+  const sectionWidth = Math.max(1, screen.width - horizontalInset * 2);
+  const first = renderRow(payload, componentBaseConfigs, options.ownerId, options.section, options.rows[0], 0, sectionX, sectionWidth);
   const gap = numberToken(payload, options.rowGapToken) * scale;
-  const second = renderRow(payload, componentBaseConfigs, options.ownerId, options.section, options.rows[1], 0);
+  const second = renderRow(payload, componentBaseConfigs, options.ownerId, options.section, options.rows[1], 0, sectionX, sectionWidth);
   const rowsHeight = first.height + gap + second.height;
   const sectionHeight = Math.max(options.height * scale, rowsHeight);
+  const edgeOffset = Math.max(0, options.edgeOffset ?? 0);
   const sectionY = options.edge === "top"
-    ? options.contentEdge
-    : options.contentEdge - sectionHeight;
+    ? options.contentEdge + edgeOffset
+    : options.contentEdge - sectionHeight - edgeOffset;
   const rowsY = sectionY + sectionHeight - rowsHeight;
   const firstNode = translateRenderableNode(first.node, { x: 0, y: rowsY });
   const secondNode = translateRenderableNode(second.node, {
     x: 0,
     y: rowsY + first.height + gap,
   });
-  const surfaceBox = {
-    x: screen.x,
-    y: options.edge === "top" ? screen.y : sectionY,
-    width: screen.width,
-    height: options.edge === "top"
-      ? Math.max(0, sectionY + sectionHeight - screen.y)
-      : Math.max(0, screen.y + screen.height - sectionY),
-  };
+  const surfaceBox = options.bleedToScreenEdge === false
+    ? { x: sectionX, y: sectionY, width: sectionWidth, height: sectionHeight }
+    : {
+      x: screen.x,
+      y: options.edge === "top" ? screen.y : sectionY,
+      width: screen.width,
+      height: options.edge === "top"
+        ? Math.max(0, sectionY + sectionHeight - screen.y)
+        : Math.max(0, screen.y + screen.height - sectionY),
+    };
   const surface = resolveSurfaceComponentAtSize(
     embeddedComponentConfig(
       componentBaseConfigs,
@@ -590,9 +599,9 @@ export function rowsSectionNode(
     type: "group",
     frame: 0,
     box: {
-      x: screen.x,
+      x: sectionX,
       y: sectionY,
-      width: screen.width,
+      width: sectionWidth,
       height: sectionHeight,
     },
     style: { overflow: "visible" },
@@ -611,8 +620,9 @@ function renderRow(
   section: "header" | "footer",
   row: SocialPostRow,
   y: number,
+  sectionX: number,
+  sectionWidth: number,
 ): RenderedRow {
-  const screen = previewScreenBox(payload);
   const scale = renderScale(payload);
   const measured = row.slots.flatMap((slot) => {
     if (!slot.componentType || !slot.componentSlot || !rowSlotHasContent(slot)) return [];
@@ -635,8 +645,8 @@ function renderRow(
   const [horizontalPadding, verticalPadding] = spacingPair(payload, row.padding);
   const rowHeight = contentHeight + verticalPadding * 2;
   const contentY = y + verticalPadding;
-  const leftEdge = screen.x + horizontalPadding;
-  const rightEdge = screen.x + screen.width - horizontalPadding;
+  const leftEdge = sectionX + horizontalPadding;
+  const rightEdge = sectionX + sectionWidth - horizontalPadding;
   const left = measured.find((item) => item.index === 1);
   const right = measured.find((item) => item.index === 5);
   const middle = measured.filter((item) => item.index >= 2 && item.index <= 4);
@@ -686,9 +696,9 @@ function renderRow(
       type: "surface",
       frame: 0,
       box: {
-        x: screen.x,
+        x: sectionX,
         y: y + rowHeight,
-        width: screen.width,
+        width: sectionWidth,
         height: separatorHeight,
       },
       style: { background: selectedColor(payload, "theme.colors.divider") },
@@ -701,7 +711,7 @@ function renderRow(
       id: `${ownerId}.${section}.${row.id}`,
       type: "group",
       frame: 0,
-      box: { x: screen.x, y, width: screen.width, height },
+      box: { x: sectionX, y, width: sectionWidth, height },
       style: { overflow: "visible" },
       children,
     },
