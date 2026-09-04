@@ -42,90 +42,391 @@
     "appearanceMode": "inherit",
     "videoCall": {
       "useAppWallpaper": false,
-      "showStatusBar": true,
+      "conversationType": "group",
+      "backgroundColorToken": "theme.colors.background",
       "showHeader": true,
-      "showBackButton": true,
-      "showCallTitle": true,
-      "showParticipantCount": true,
-      "showDuration": true,
-      "showAddParticipant": true,
-      "showSelfView": true,
-      "showParticipantNames": true,
-      "showParticipantStatus": true,
-      "showControls": true,
-      "showNavigationBar": true,
-      "showCameraControl": true,
-      "showMicrophoneControl": true,
-      "showSpeakerControl": true,
-      "showMoreControl": true,
-      "showEndCallControl": true,
-      "screenPadding": "theme.spacing.s|theme.spacing.s",
-      "participantGapToken": "theme.spacing.s",
-      "headerHeight": 72,
-      "controlsHeight": 94,
-      "selfViewSize": "104|156",
-      "selfViewPlacement": {
+      "headerHeight": 130,
+      "headerSurfaceSlot": {
+        "variantReference": "component_project_foqn_s2_surface::variant::default",
+        "overrides": {
+          "style": {
+            "cornerRadiusToken": "theme.radii.none"
+          }
+        }
+      },
+      "headerRowGapToken": "theme.spacing.s",
+      "headerRows": [
+        {
+          "id": "row1",
+          "label": "Row 1",
+          "padding": "theme.spacing.xl|theme.spacing.m",
+          "verticalAlignment": "center",
+          "showSeparator": false,
+          "slot1Kind": "avatar",
+          "slot1AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {
+              "avatar": {
+                "defaultSize": 50
+              }
+            }
+          },
+          "slot1IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot1LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          },
+          "slot2Kind": "label",
+          "slot2AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "slot2IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot2LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
+            "overrides": {}
+          },
+          "slot3Kind": "label",
+          "slot3AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "slot3IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot3LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
+            "overrides": {}
+          },
+          "slot4Kind": "label",
+          "slot4AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "slot4IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot4LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
+            "overrides": {}
+          },
+          "slot5Kind": "none",
+          "slot5AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "slot5IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot5LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          },
+          "slot1IconSizeToken": "theme.iconSizes.m",
+          "slot2IconSizeToken": "theme.iconSizes.m",
+          "slot3IconSizeToken": "theme.iconSizes.m",
+          "slot4IconSizeToken": "theme.iconSizes.m",
+          "slot5IconSizeToken": "theme.iconSizes.m"
+        },
+        {
+          "id": "row2",
+          "label": "Row 2",
+          "padding": "theme.spacing.l|theme.spacing.s",
+          "verticalAlignment": "center",
+          "showSeparator": true,
+          "slot1Kind": "label",
+          "slot1AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "slot1IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot1LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          },
+          "slot2Kind": "label",
+          "slot2AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "slot2IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot2LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          },
+          "slot3Kind": "label",
+          "slot3AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "slot3IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot3LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          },
+          "slot4Kind": "none",
+          "slot4AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "slot4IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot4LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          },
+          "slot5Kind": "label",
+          "slot5AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "slot5IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot5LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          },
+          "slot1IconSizeToken": "theme.iconSizes.m",
+          "slot2IconSizeToken": "theme.iconSizes.m",
+          "slot3IconSizeToken": "theme.iconSizes.m",
+          "slot4IconSizeToken": "theme.iconSizes.m",
+          "slot5IconSizeToken": "theme.iconSizes.m"
+        }
+      ],
+      "showFooter": true,
+      "footerHeight": 130,
+      "footerSurfaceSlot": {
+        "variantReference": "component_project_foqn_s2_surface::variant::default",
+        "overrides": {
+          "style": {
+            "cornerRadiusToken": "theme.radii.none"
+          }
+        }
+      },
+      "footerRowGapToken": "theme.spacing.s",
+      "footerRows": [
+        {
+          "id": "footerRow1",
+          "label": "Row 1",
+          "padding": "theme.spacing.xl|theme.spacing.m",
+          "verticalAlignment": "center",
+          "showSeparator": false,
+          "slot1Kind": "avatar",
+          "slot1AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {
+              "avatar": {
+                "defaultSize": 50
+              }
+            }
+          },
+          "slot1IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot1LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          },
+          "slot2Kind": "label",
+          "slot2AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "slot2IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot2LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
+            "overrides": {}
+          },
+          "slot3Kind": "label",
+          "slot3AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "slot3IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot3LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
+            "overrides": {}
+          },
+          "slot4Kind": "label",
+          "slot4AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "slot4IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot4LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
+            "overrides": {}
+          },
+          "slot5Kind": "none",
+          "slot5AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "slot5IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot5LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          },
+          "slot1IconSizeToken": "theme.iconSizes.m",
+          "slot2IconSizeToken": "theme.iconSizes.m",
+          "slot3IconSizeToken": "theme.iconSizes.m",
+          "slot4IconSizeToken": "theme.iconSizes.m",
+          "slot5IconSizeToken": "theme.iconSizes.m"
+        },
+        {
+          "id": "footerRow2",
+          "label": "Row 2",
+          "padding": "theme.spacing.l|theme.spacing.s",
+          "verticalAlignment": "center",
+          "showSeparator": true,
+          "slot1Kind": "label",
+          "slot1AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "slot1IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot1LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          },
+          "slot2Kind": "label",
+          "slot2AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "slot2IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot2LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          },
+          "slot3Kind": "label",
+          "slot3AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "slot3IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot3LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          },
+          "slot4Kind": "none",
+          "slot4AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "slot4IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot4LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          },
+          "slot5Kind": "label",
+          "slot5AvatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "slot5IconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "slot5LabelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          },
+          "slot1IconSizeToken": "theme.iconSizes.m",
+          "slot2IconSizeToken": "theme.iconSizes.m",
+          "slot3IconSizeToken": "theme.iconSizes.m",
+          "slot4IconSizeToken": "theme.iconSizes.m",
+          "slot5IconSizeToken": "theme.iconSizes.m"
+        }
+      ],
+      "showMainVideo": true,
+      "mainParticipantSlot": {
+        "variantReference": "component_project_foqn_s2_call_participant::variant::default",
+        "overrides": {}
+      },
+      "mainSizeMode": "fill",
+      "mainSize": "390|520",
+      "mainPlacement": {
+        "mode": "center",
+        "alignX": 0.5,
+        "alignY": 0.5,
+        "offsetX": 0,
+        "offsetY": 0
+      },
+      "mainPadding": "theme.spacing.none|theme.spacing.none",
+      "showPip": true,
+      "pipParticipantSlot": {
+        "variantReference": "component_project_foqn_s2_call_participant::variant::default",
+        "overrides": {}
+      },
+      "pipSize": "104|156",
+      "pipPlacement": {
         "mode": "insideEdge",
         "alignX": 1,
         "alignY": 0,
         "offsetX": -12,
         "offsetY": 12
       },
-      "backgroundColorToken": "theme.colors.background",
-      "participantSlot": {
+      "pipPadding": "theme.spacing.s|theme.spacing.s",
+      "showGridParticipants": true,
+      "gridParticipantSlot": {
         "variantReference": "component_project_foqn_s2_call_participant::variant::default",
         "overrides": {}
       },
-      "titleLabelSlot": {
-        "variantReference": "component_project_foqn_s2_label::variant::default",
-        "overrides": {
-          "label": {
-            "dimensionMode": "content",
-            "padding": "theme.spacing.none|theme.spacing.none",
-            "textColorToken": "theme.colors.textPrimary",
-            "textAlign": "center"
-          }
-        }
-      },
-      "metaLabelSlot": {
-        "variantReference": "component_project_foqn_s2_label::variant::default",
-        "overrides": {
-          "label": {
-            "dimensionMode": "content",
-            "padding": "theme.spacing.none|theme.spacing.none",
-            "textColorToken": "theme.colors.textSecondary",
-            "textAlign": "center"
-          }
-        }
-      },
-      "backButtonSlot": {
-        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-        "overrides": {}
-      },
-      "addButtonSlot": {
-        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-        "overrides": {}
-      },
-      "cameraButtonSlot": {
-        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-        "overrides": {}
-      },
-      "microphoneButtonSlot": {
-        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-        "overrides": {}
-      },
-      "speakerButtonSlot": {
-        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-        "overrides": {}
-      },
-      "moreButtonSlot": {
-        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-        "overrides": {}
-      },
-      "endCallButtonSlot": {
-        "variantReference": "component_project_foqn_s2_button::variant::ios_decline",
-        "overrides": {}
-      },
+      "gridPadding": "theme.spacing.s|theme.spacing.s",
+      "gridGapToken": "theme.spacing.s",
+      "gridColumns": 2,
+      "showParticipantNames": true,
+      "showParticipantStatus": true,
+      "showStatusBar": true,
+      "showNavigationBar": true,
       "statusBarSlot": {
         "variantReference": "component_project_foqn_s2_status_bar::variant::lock_screen",
         "overrides": {}
@@ -139,231 +440,1014 @@
   "designPreview": {
     "componentType": "module.core.videoCall",
     "sampleSize": 390,
-    "inputs": [
+    "inputs": [],
+    "collections": [
       {
-        "id": "callTitle",
-        "label": "Call title",
-        "jsonKey": "callTitle",
-        "kind": "text",
-        "valueKind": "StringSingleLine",
-        "defaultValue": "Weekend crew",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "source": "runtime",
-        "uiOrigin": "self",
-        "uiGroupId": "call",
-        "uiGroupLabel": "Call",
-        "uiParentGroupId": "",
-        "uiOrder": 10,
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "transition": null,
-        "unit": ""
-      },
-      {
-        "id": "layoutMode",
-        "label": "Layout",
-        "jsonKey": "layoutMode",
-        "kind": "option",
-        "valueKind": "OptionToken",
-        "defaultValue": "automatic",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [
+        "id": "videoCallHeaderRows",
+        "label": "Header Rows",
+        "jsonKey": "videoCallHeaderRows",
+        "itemLabel": "Row",
+        "storageCollectionJsonKey": "videoCallHeaderRows",
+        "animationTimeline": {
+          "sequenceItems": false
+        },
+        "fields": [
           {
-            "value": "automatic",
-            "label": "Automatic"
+            "id": "rowLabel",
+            "label": "Row",
+            "jsonKey": "label",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "source": "variant",
+            "showInEditor": false
           },
           {
-            "value": "spotlight",
-            "label": "Spotlight"
+            "id": "slot1.kind",
+            "label": "Slot 1 content",
+            "jsonKey": "slot1Kind",
+            "kind": "option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ],
+            "source": "variant",
+            "showInEditor": false
           },
           {
-            "value": "grid",
-            "label": "Grid"
+            "id": "slot1.actor",
+            "label": "Slot 1 actor",
+            "jsonKey": "slot1ActorId",
+            "kind": "recordReference",
+            "valueKind": "RecordReference",
+            "defaultValue": "actor_alex",
+            "tableId": "actors",
+            "resolvedJsonKey": "slot1Actor",
+            "enabledWhenItemJsonKey": "slot1Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ],
+            "uiOrder": 10
+          },
+          {
+            "id": "slot1.label",
+            "label": "Slot 1 label",
+            "jsonKey": "slot1Label",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot1Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 11,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
+          },
+          {
+            "id": "slot1.sublabel",
+            "label": "Slot 1 sublabel",
+            "jsonKey": "slot1Sublabel",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot1Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 12,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
+          },
+          {
+            "id": "slot2.kind",
+            "label": "Slot 2 content",
+            "jsonKey": "slot2Kind",
+            "kind": "option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ],
+            "source": "variant",
+            "showInEditor": false
+          },
+          {
+            "id": "slot2.actor",
+            "label": "Slot 2 actor",
+            "jsonKey": "slot2ActorId",
+            "kind": "recordReference",
+            "valueKind": "RecordReference",
+            "defaultValue": "actor_alex",
+            "tableId": "actors",
+            "resolvedJsonKey": "slot2Actor",
+            "enabledWhenItemJsonKey": "slot2Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ],
+            "uiOrder": 20
+          },
+          {
+            "id": "slot2.label",
+            "label": "Slot 2 label",
+            "jsonKey": "slot2Label",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot2Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 21,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
+          },
+          {
+            "id": "slot2.sublabel",
+            "label": "Slot 2 sublabel",
+            "jsonKey": "slot2Sublabel",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot2Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 22,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
+          },
+          {
+            "id": "slot3.kind",
+            "label": "Slot 3 content",
+            "jsonKey": "slot3Kind",
+            "kind": "option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ],
+            "source": "variant",
+            "showInEditor": false
+          },
+          {
+            "id": "slot3.actor",
+            "label": "Slot 3 actor",
+            "jsonKey": "slot3ActorId",
+            "kind": "recordReference",
+            "valueKind": "RecordReference",
+            "defaultValue": "actor_alex",
+            "tableId": "actors",
+            "resolvedJsonKey": "slot3Actor",
+            "enabledWhenItemJsonKey": "slot3Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ],
+            "uiOrder": 30
+          },
+          {
+            "id": "slot3.label",
+            "label": "Slot 3 label",
+            "jsonKey": "slot3Label",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot3Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 31,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
+          },
+          {
+            "id": "slot3.sublabel",
+            "label": "Slot 3 sublabel",
+            "jsonKey": "slot3Sublabel",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot3Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 32,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
+          },
+          {
+            "id": "slot4.kind",
+            "label": "Slot 4 content",
+            "jsonKey": "slot4Kind",
+            "kind": "option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ],
+            "source": "variant",
+            "showInEditor": false
+          },
+          {
+            "id": "slot4.actor",
+            "label": "Slot 4 actor",
+            "jsonKey": "slot4ActorId",
+            "kind": "recordReference",
+            "valueKind": "RecordReference",
+            "defaultValue": "actor_alex",
+            "tableId": "actors",
+            "resolvedJsonKey": "slot4Actor",
+            "enabledWhenItemJsonKey": "slot4Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ],
+            "uiOrder": 40
+          },
+          {
+            "id": "slot4.label",
+            "label": "Slot 4 label",
+            "jsonKey": "slot4Label",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot4Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 41,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
+          },
+          {
+            "id": "slot4.sublabel",
+            "label": "Slot 4 sublabel",
+            "jsonKey": "slot4Sublabel",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot4Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 42,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
+          },
+          {
+            "id": "slot5.kind",
+            "label": "Slot 5 content",
+            "jsonKey": "slot5Kind",
+            "kind": "option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ],
+            "source": "variant",
+            "showInEditor": false
+          },
+          {
+            "id": "slot5.actor",
+            "label": "Slot 5 actor",
+            "jsonKey": "slot5ActorId",
+            "kind": "recordReference",
+            "valueKind": "RecordReference",
+            "defaultValue": "actor_alex",
+            "tableId": "actors",
+            "resolvedJsonKey": "slot5Actor",
+            "enabledWhenItemJsonKey": "slot5Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ],
+            "uiOrder": 50
+          },
+          {
+            "id": "slot5.label",
+            "label": "Slot 5 label",
+            "jsonKey": "slot5Label",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot5Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 51,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
+          },
+          {
+            "id": "slot5.sublabel",
+            "label": "Slot 5 sublabel",
+            "jsonKey": "slot5Sublabel",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot5Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 52,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
           }
         ],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "source": "runtime",
-        "uiOrigin": "self",
-        "uiGroupId": "call",
-        "uiGroupLabel": "Call",
-        "uiParentGroupId": "",
-        "uiOrder": 20,
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "transition": null,
-        "unit": "",
-        "animatable": true,
-        "animationInterpolations": [
-          "hold"
-        ]
+        "itemPresentation": {
+          "titleFieldId": "rowLabel",
+          "firstItemBadge": "",
+          "subtitleFieldIds": [],
+          "subtitleMaxCharacters": 72,
+          "iconFieldId": "",
+          "fallbackIcon": "layout",
+          "iconValueMap": {}
+        },
+        "canEditStructure": false,
+        "fixedItemCount": 2,
+        "uiPresentation": "collection",
+        "itemRuntimePresentation": "card",
+        "structureProjection": {
+          "sourceConfigPath": "videoCall.headerRows",
+          "sourceIdJsonKey": "id",
+          "runtimeIdJsonKey": "id",
+          "fieldBindings": {
+            "label": "label",
+            "slot1Kind": "slot1Kind",
+            "slot2Kind": "slot2Kind",
+            "slot3Kind": "slot3Kind",
+            "slot4Kind": "slot4Kind",
+            "slot5Kind": "slot5Kind"
+          }
+        }
       },
       {
-        "id": "activeParticipantId",
-        "label": "Spotlight participant",
-        "jsonKey": "activeParticipantId",
-        "kind": "text",
-        "valueKind": "StringSingleLine",
-        "defaultValue": "participant_alex",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "source": "runtime",
-        "uiOrigin": "self",
-        "uiGroupId": "call",
-        "uiGroupLabel": "Call",
-        "uiParentGroupId": "",
-        "uiOrder": 30,
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "transition": null,
-        "unit": "",
-        "animatable": true,
-        "animationInterpolations": [
-          "hold"
-        ]
+        "id": "videoCallFooterRows",
+        "label": "Footer Rows",
+        "jsonKey": "videoCallFooterRows",
+        "itemLabel": "Row",
+        "storageCollectionJsonKey": "videoCallFooterRows",
+        "animationTimeline": {
+          "sequenceItems": false
+        },
+        "fields": [
+          {
+            "id": "rowLabel",
+            "label": "Row",
+            "jsonKey": "label",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "source": "variant",
+            "showInEditor": false
+          },
+          {
+            "id": "slot1.kind",
+            "label": "Slot 1 content",
+            "jsonKey": "slot1Kind",
+            "kind": "option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ],
+            "source": "variant",
+            "showInEditor": false
+          },
+          {
+            "id": "slot1.actor",
+            "label": "Slot 1 actor",
+            "jsonKey": "slot1ActorId",
+            "kind": "recordReference",
+            "valueKind": "RecordReference",
+            "defaultValue": "actor_alex",
+            "tableId": "actors",
+            "resolvedJsonKey": "slot1Actor",
+            "enabledWhenItemJsonKey": "slot1Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ],
+            "uiOrder": 10
+          },
+          {
+            "id": "slot1.label",
+            "label": "Slot 1 label",
+            "jsonKey": "slot1Label",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot1Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 11,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
+          },
+          {
+            "id": "slot1.sublabel",
+            "label": "Slot 1 sublabel",
+            "jsonKey": "slot1Sublabel",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot1Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 12,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
+          },
+          {
+            "id": "slot2.kind",
+            "label": "Slot 2 content",
+            "jsonKey": "slot2Kind",
+            "kind": "option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ],
+            "source": "variant",
+            "showInEditor": false
+          },
+          {
+            "id": "slot2.actor",
+            "label": "Slot 2 actor",
+            "jsonKey": "slot2ActorId",
+            "kind": "recordReference",
+            "valueKind": "RecordReference",
+            "defaultValue": "actor_alex",
+            "tableId": "actors",
+            "resolvedJsonKey": "slot2Actor",
+            "enabledWhenItemJsonKey": "slot2Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ],
+            "uiOrder": 20
+          },
+          {
+            "id": "slot2.label",
+            "label": "Slot 2 label",
+            "jsonKey": "slot2Label",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot2Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 21,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
+          },
+          {
+            "id": "slot2.sublabel",
+            "label": "Slot 2 sublabel",
+            "jsonKey": "slot2Sublabel",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot2Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 22,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
+          },
+          {
+            "id": "slot3.kind",
+            "label": "Slot 3 content",
+            "jsonKey": "slot3Kind",
+            "kind": "option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ],
+            "source": "variant",
+            "showInEditor": false
+          },
+          {
+            "id": "slot3.actor",
+            "label": "Slot 3 actor",
+            "jsonKey": "slot3ActorId",
+            "kind": "recordReference",
+            "valueKind": "RecordReference",
+            "defaultValue": "actor_alex",
+            "tableId": "actors",
+            "resolvedJsonKey": "slot3Actor",
+            "enabledWhenItemJsonKey": "slot3Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ],
+            "uiOrder": 30
+          },
+          {
+            "id": "slot3.label",
+            "label": "Slot 3 label",
+            "jsonKey": "slot3Label",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot3Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 31,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
+          },
+          {
+            "id": "slot3.sublabel",
+            "label": "Slot 3 sublabel",
+            "jsonKey": "slot3Sublabel",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot3Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 32,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
+          },
+          {
+            "id": "slot4.kind",
+            "label": "Slot 4 content",
+            "jsonKey": "slot4Kind",
+            "kind": "option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ],
+            "source": "variant",
+            "showInEditor": false
+          },
+          {
+            "id": "slot4.actor",
+            "label": "Slot 4 actor",
+            "jsonKey": "slot4ActorId",
+            "kind": "recordReference",
+            "valueKind": "RecordReference",
+            "defaultValue": "actor_alex",
+            "tableId": "actors",
+            "resolvedJsonKey": "slot4Actor",
+            "enabledWhenItemJsonKey": "slot4Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ],
+            "uiOrder": 40
+          },
+          {
+            "id": "slot4.label",
+            "label": "Slot 4 label",
+            "jsonKey": "slot4Label",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot4Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 41,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
+          },
+          {
+            "id": "slot4.sublabel",
+            "label": "Slot 4 sublabel",
+            "jsonKey": "slot4Sublabel",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot4Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 42,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
+          },
+          {
+            "id": "slot5.kind",
+            "label": "Slot 5 content",
+            "jsonKey": "slot5Kind",
+            "kind": "option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ],
+            "source": "variant",
+            "showInEditor": false
+          },
+          {
+            "id": "slot5.actor",
+            "label": "Slot 5 actor",
+            "jsonKey": "slot5ActorId",
+            "kind": "recordReference",
+            "valueKind": "RecordReference",
+            "defaultValue": "actor_alex",
+            "tableId": "actors",
+            "resolvedJsonKey": "slot5Actor",
+            "enabledWhenItemJsonKey": "slot5Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ],
+            "uiOrder": 50
+          },
+          {
+            "id": "slot5.label",
+            "label": "Slot 5 label",
+            "jsonKey": "slot5Label",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot5Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 51,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
+          },
+          {
+            "id": "slot5.sublabel",
+            "label": "Slot 5 sublabel",
+            "jsonKey": "slot5Sublabel",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "",
+            "enabledWhenItemJsonKey": "slot5Kind",
+            "enabledWhenItemValues": [
+              "avatar",
+              "label"
+            ],
+            "uiOrder": 52,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold",
+              "writeOn"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "ownerStart"
+              }
+            }
+          }
+        ],
+        "itemPresentation": {
+          "titleFieldId": "rowLabel",
+          "firstItemBadge": "",
+          "subtitleFieldIds": [],
+          "subtitleMaxCharacters": 72,
+          "iconFieldId": "",
+          "fallbackIcon": "layout",
+          "iconValueMap": {}
+        },
+        "canEditStructure": false,
+        "fixedItemCount": 2,
+        "uiPresentation": "collection",
+        "itemRuntimePresentation": "card",
+        "structureProjection": {
+          "sourceConfigPath": "videoCall.footerRows",
+          "sourceIdJsonKey": "id",
+          "runtimeIdJsonKey": "id",
+          "fieldBindings": {
+            "label": "label",
+            "slot1Kind": "slot1Kind",
+            "slot2Kind": "slot2Kind",
+            "slot3Kind": "slot3Kind",
+            "slot4Kind": "slot4Kind",
+            "slot5Kind": "slot5Kind"
+          }
+        }
       },
-      {
-        "id": "selfParticipantId",
-        "label": "Self participant",
-        "jsonKey": "selfParticipantId",
-        "kind": "text",
-        "valueKind": "StringSingleLine",
-        "defaultValue": "participant_sam",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "source": "runtime",
-        "uiOrigin": "self",
-        "uiGroupId": "call",
-        "uiGroupLabel": "Call",
-        "uiParentGroupId": "",
-        "uiOrder": 40,
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "transition": null,
-        "unit": ""
-      },
-      {
-        "id": "cameraEnabled",
-        "label": "Camera enabled",
-        "jsonKey": "cameraEnabled",
-        "kind": "boolean",
-        "valueKind": "Boolean",
-        "defaultValue": "true",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "source": "runtime",
-        "uiOrigin": "self",
-        "uiGroupId": "controls",
-        "uiGroupLabel": "Controls",
-        "uiParentGroupId": "",
-        "uiOrder": 50,
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "transition": null,
-        "unit": "",
-        "animatable": true,
-        "animationInterpolations": [
-          "hold"
-        ]
-      },
-      {
-        "id": "microphoneEnabled",
-        "label": "Microphone enabled",
-        "jsonKey": "microphoneEnabled",
-        "kind": "boolean",
-        "valueKind": "Boolean",
-        "defaultValue": "true",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "source": "runtime",
-        "uiOrigin": "self",
-        "uiGroupId": "controls",
-        "uiGroupLabel": "Controls",
-        "uiParentGroupId": "",
-        "uiOrder": 60,
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "transition": null,
-        "unit": "",
-        "animatable": true,
-        "animationInterpolations": [
-          "hold"
-        ]
-      },
-      {
-        "id": "speakerEnabled",
-        "label": "Speaker enabled",
-        "jsonKey": "speakerEnabled",
-        "kind": "boolean",
-        "valueKind": "Boolean",
-        "defaultValue": "true",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "source": "runtime",
-        "uiOrigin": "self",
-        "uiGroupId": "controls",
-        "uiGroupLabel": "Controls",
-        "uiParentGroupId": "",
-        "uiOrder": 70,
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "transition": null,
-        "unit": "",
-        "animatable": true,
-        "animationInterpolations": [
-          "hold"
-        ]
-      }
-    ],
-    "collections": [
       {
         "id": "participants",
         "label": "Participants",
@@ -377,6 +1461,32 @@
             "kind": "boolean",
             "valueKind": "Boolean",
             "defaultValue": "true",
+            "animatable": true,
+            "animationInterpolations": [
+              "hold"
+            ]
+          },
+          {
+            "id": "role",
+            "label": "Role",
+            "jsonKey": "role",
+            "kind": "option",
+            "valueKind": "OptionToken",
+            "defaultValue": "grid",
+            "options": [
+              {
+                "value": "main",
+                "label": "Main"
+              },
+              {
+                "value": "pip",
+                "label": "PIP"
+              },
+              {
+                "value": "grid",
+                "label": "Grid"
+              }
+            ],
             "animatable": true,
             "animationInterpolations": [
               "hold"
@@ -533,13 +1643,6 @@
       }
     ],
     "actions": [],
-    "callTitle": "Weekend crew",
-    "layoutMode": "automatic",
-    "activeParticipantId": "participant_alex",
-    "selfParticipantId": "participant_sam",
-    "cameraEnabled": true,
-    "microphoneEnabled": true,
-    "speakerEnabled": true,
     "participants": [
       {
         "id": "participant_alex",
@@ -553,7 +1656,8 @@
         "connectionState": "connected",
         "speaking": true,
         "mediaScale": 1,
-        "mediaOffset": "0|0"
+        "mediaOffset": "0|0",
+        "role": "main"
       },
       {
         "id": "participant_asia",
@@ -567,7 +1671,8 @@
         "connectionState": "connected",
         "speaking": false,
         "mediaScale": 1,
-        "mediaOffset": "0|0"
+        "mediaOffset": "0|0",
+        "role": "grid"
       },
       {
         "id": "participant_jon",
@@ -581,7 +1686,8 @@
         "connectionState": "lost",
         "speaking": false,
         "mediaScale": 1,
-        "mediaOffset": "0|0"
+        "mediaOffset": "0|0",
+        "role": "grid"
       },
       {
         "id": "participant_sam",
@@ -595,7 +1701,8 @@
         "connectionState": "connecting",
         "speaking": false,
         "mediaScale": 1,
-        "mediaOffset": "0|0"
+        "mediaOffset": "0|0",
+        "role": "pip"
       }
     ],
     "animationTimeline": {
@@ -604,7 +1711,83 @@
         "explicit"
       ],
       "defaultDurationFrames": 300
-    }
+    },
+    "videoCallHeaderRows": [
+      {
+        "id": "row1",
+        "slot1ActorId": "actor_alex",
+        "slot1Label": "Alex Q",
+        "slot1Sublabel": "@alexq · 2 min",
+        "slot2ActorId": "actor_alex",
+        "slot2Label": "250",
+        "slot2Sublabel": "Publicaciones",
+        "slot3ActorId": "actor_alex",
+        "slot3Label": "135",
+        "slot3Sublabel": "Seguidores",
+        "slot4ActorId": "actor_alex",
+        "slot4Label": "54",
+        "slot4Sublabel": "Siguiendo",
+        "slot5ActorId": "actor_alex",
+        "slot5Label": "",
+        "slot5Sublabel": ""
+      },
+      {
+        "id": "row2",
+        "slot1ActorId": "actor_alex",
+        "slot1Label": "#FOQN",
+        "slot1Sublabel": "",
+        "slot2ActorId": "actor_alex",
+        "slot2Label": "#ASDF",
+        "slot2Sublabel": "",
+        "slot3ActorId": "actor_alex",
+        "slot3Label": "",
+        "slot3Sublabel": "",
+        "slot4ActorId": "actor_alex",
+        "slot4Label": "",
+        "slot4Sublabel": "",
+        "slot5ActorId": "actor_alex",
+        "slot5Label": "",
+        "slot5Sublabel": ""
+      }
+    ],
+    "videoCallFooterRows": [
+      {
+        "id": "footerRow1",
+        "slot1ActorId": "actor_alex",
+        "slot1Label": "Alex Q",
+        "slot1Sublabel": "@alexq · 2 min",
+        "slot2ActorId": "actor_alex",
+        "slot2Label": "250",
+        "slot2Sublabel": "Publicaciones",
+        "slot3ActorId": "actor_alex",
+        "slot3Label": "135",
+        "slot3Sublabel": "Seguidores",
+        "slot4ActorId": "actor_alex",
+        "slot4Label": "54",
+        "slot4Sublabel": "Siguiendo",
+        "slot5ActorId": "actor_alex",
+        "slot5Label": "",
+        "slot5Sublabel": ""
+      },
+      {
+        "id": "footerRow2",
+        "slot1ActorId": "actor_alex",
+        "slot1Label": "#FOQN",
+        "slot1Sublabel": "",
+        "slot2ActorId": "actor_alex",
+        "slot2Label": "#ASDF",
+        "slot2Sublabel": "",
+        "slot3ActorId": "actor_alex",
+        "slot3Label": "",
+        "slot3Sublabel": "",
+        "slot4ActorId": "actor_alex",
+        "slot4Label": "",
+        "slot4Sublabel": "",
+        "slot5ActorId": "actor_alex",
+        "slot5Label": "",
+        "slot5Sublabel": ""
+      }
+    ]
   },
   "defaultVariant": {
     "id": "default",
@@ -615,90 +1798,391 @@
       "appearanceMode": "inherit",
       "videoCall": {
         "useAppWallpaper": false,
-        "showStatusBar": true,
+        "conversationType": "group",
+        "backgroundColorToken": "theme.colors.background",
         "showHeader": true,
-        "showBackButton": true,
-        "showCallTitle": true,
-        "showParticipantCount": true,
-        "showDuration": true,
-        "showAddParticipant": true,
-        "showSelfView": true,
-        "showParticipantNames": true,
-        "showParticipantStatus": true,
-        "showControls": true,
-        "showNavigationBar": true,
-        "showCameraControl": true,
-        "showMicrophoneControl": true,
-        "showSpeakerControl": true,
-        "showMoreControl": true,
-        "showEndCallControl": true,
-        "screenPadding": "theme.spacing.s|theme.spacing.s",
-        "participantGapToken": "theme.spacing.s",
-        "headerHeight": 72,
-        "controlsHeight": 94,
-        "selfViewSize": "104|156",
-        "selfViewPlacement": {
+        "headerHeight": 130,
+        "headerSurfaceSlot": {
+          "variantReference": "component_project_foqn_s2_surface::variant::default",
+          "overrides": {
+            "style": {
+              "cornerRadiusToken": "theme.radii.none"
+            }
+          }
+        },
+        "headerRowGapToken": "theme.spacing.s",
+        "headerRows": [
+          {
+            "id": "row1",
+            "label": "Row 1",
+            "padding": "theme.spacing.xl|theme.spacing.m",
+            "verticalAlignment": "center",
+            "showSeparator": false,
+            "slot1Kind": "avatar",
+            "slot1AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {
+                "avatar": {
+                  "defaultSize": 50
+                }
+              }
+            },
+            "slot1IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot1LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            },
+            "slot2Kind": "label",
+            "slot2AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "slot2IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot2LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
+              "overrides": {}
+            },
+            "slot3Kind": "label",
+            "slot3AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "slot3IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot3LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
+              "overrides": {}
+            },
+            "slot4Kind": "label",
+            "slot4AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "slot4IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot4LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
+              "overrides": {}
+            },
+            "slot5Kind": "none",
+            "slot5AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "slot5IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot5LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            },
+            "slot1IconSizeToken": "theme.iconSizes.m",
+            "slot2IconSizeToken": "theme.iconSizes.m",
+            "slot3IconSizeToken": "theme.iconSizes.m",
+            "slot4IconSizeToken": "theme.iconSizes.m",
+            "slot5IconSizeToken": "theme.iconSizes.m"
+          },
+          {
+            "id": "row2",
+            "label": "Row 2",
+            "padding": "theme.spacing.l|theme.spacing.s",
+            "verticalAlignment": "center",
+            "showSeparator": true,
+            "slot1Kind": "label",
+            "slot1AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "slot1IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot1LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            },
+            "slot2Kind": "label",
+            "slot2AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "slot2IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot2LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            },
+            "slot3Kind": "label",
+            "slot3AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "slot3IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot3LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            },
+            "slot4Kind": "none",
+            "slot4AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "slot4IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot4LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            },
+            "slot5Kind": "label",
+            "slot5AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "slot5IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot5LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            },
+            "slot1IconSizeToken": "theme.iconSizes.m",
+            "slot2IconSizeToken": "theme.iconSizes.m",
+            "slot3IconSizeToken": "theme.iconSizes.m",
+            "slot4IconSizeToken": "theme.iconSizes.m",
+            "slot5IconSizeToken": "theme.iconSizes.m"
+          }
+        ],
+        "showFooter": true,
+        "footerHeight": 130,
+        "footerSurfaceSlot": {
+          "variantReference": "component_project_foqn_s2_surface::variant::default",
+          "overrides": {
+            "style": {
+              "cornerRadiusToken": "theme.radii.none"
+            }
+          }
+        },
+        "footerRowGapToken": "theme.spacing.s",
+        "footerRows": [
+          {
+            "id": "footerRow1",
+            "label": "Row 1",
+            "padding": "theme.spacing.xl|theme.spacing.m",
+            "verticalAlignment": "center",
+            "showSeparator": false,
+            "slot1Kind": "avatar",
+            "slot1AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {
+                "avatar": {
+                  "defaultSize": 50
+                }
+              }
+            },
+            "slot1IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot1LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            },
+            "slot2Kind": "label",
+            "slot2AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "slot2IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot2LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
+              "overrides": {}
+            },
+            "slot3Kind": "label",
+            "slot3AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "slot3IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot3LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
+              "overrides": {}
+            },
+            "slot4Kind": "label",
+            "slot4AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "slot4IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot4LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
+              "overrides": {}
+            },
+            "slot5Kind": "none",
+            "slot5AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "slot5IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot5LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            },
+            "slot1IconSizeToken": "theme.iconSizes.m",
+            "slot2IconSizeToken": "theme.iconSizes.m",
+            "slot3IconSizeToken": "theme.iconSizes.m",
+            "slot4IconSizeToken": "theme.iconSizes.m",
+            "slot5IconSizeToken": "theme.iconSizes.m"
+          },
+          {
+            "id": "footerRow2",
+            "label": "Row 2",
+            "padding": "theme.spacing.l|theme.spacing.s",
+            "verticalAlignment": "center",
+            "showSeparator": true,
+            "slot1Kind": "label",
+            "slot1AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "slot1IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot1LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            },
+            "slot2Kind": "label",
+            "slot2AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "slot2IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot2LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            },
+            "slot3Kind": "label",
+            "slot3AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "slot3IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot3LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            },
+            "slot4Kind": "none",
+            "slot4AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "slot4IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot4LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            },
+            "slot5Kind": "label",
+            "slot5AvatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "slot5IconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "slot5LabelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            },
+            "slot1IconSizeToken": "theme.iconSizes.m",
+            "slot2IconSizeToken": "theme.iconSizes.m",
+            "slot3IconSizeToken": "theme.iconSizes.m",
+            "slot4IconSizeToken": "theme.iconSizes.m",
+            "slot5IconSizeToken": "theme.iconSizes.m"
+          }
+        ],
+        "showMainVideo": true,
+        "mainParticipantSlot": {
+          "variantReference": "component_project_foqn_s2_call_participant::variant::default",
+          "overrides": {}
+        },
+        "mainSizeMode": "fill",
+        "mainSize": "390|520",
+        "mainPlacement": {
+          "mode": "center",
+          "alignX": 0.5,
+          "alignY": 0.5,
+          "offsetX": 0,
+          "offsetY": 0
+        },
+        "mainPadding": "theme.spacing.none|theme.spacing.none",
+        "showPip": true,
+        "pipParticipantSlot": {
+          "variantReference": "component_project_foqn_s2_call_participant::variant::default",
+          "overrides": {}
+        },
+        "pipSize": "104|156",
+        "pipPlacement": {
           "mode": "insideEdge",
           "alignX": 1,
           "alignY": 0,
           "offsetX": -12,
           "offsetY": 12
         },
-        "backgroundColorToken": "theme.colors.background",
-        "participantSlot": {
+        "pipPadding": "theme.spacing.s|theme.spacing.s",
+        "showGridParticipants": true,
+        "gridParticipantSlot": {
           "variantReference": "component_project_foqn_s2_call_participant::variant::default",
           "overrides": {}
         },
-        "titleLabelSlot": {
-          "variantReference": "component_project_foqn_s2_label::variant::default",
-          "overrides": {
-            "label": {
-              "dimensionMode": "content",
-              "padding": "theme.spacing.none|theme.spacing.none",
-              "textColorToken": "theme.colors.textPrimary",
-              "textAlign": "center"
-            }
-          }
-        },
-        "metaLabelSlot": {
-          "variantReference": "component_project_foqn_s2_label::variant::default",
-          "overrides": {
-            "label": {
-              "dimensionMode": "content",
-              "padding": "theme.spacing.none|theme.spacing.none",
-              "textColorToken": "theme.colors.textSecondary",
-              "textAlign": "center"
-            }
-          }
-        },
-        "backButtonSlot": {
-          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-          "overrides": {}
-        },
-        "addButtonSlot": {
-          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-          "overrides": {}
-        },
-        "cameraButtonSlot": {
-          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-          "overrides": {}
-        },
-        "microphoneButtonSlot": {
-          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-          "overrides": {}
-        },
-        "speakerButtonSlot": {
-          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-          "overrides": {}
-        },
-        "moreButtonSlot": {
-          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-          "overrides": {}
-        },
-        "endCallButtonSlot": {
-          "variantReference": "component_project_foqn_s2_button::variant::ios_decline",
-          "overrides": {}
-        },
+        "gridPadding": "theme.spacing.s|theme.spacing.s",
+        "gridGapToken": "theme.spacing.s",
+        "gridColumns": 2,
+        "showParticipantNames": true,
+        "showParticipantStatus": true,
+        "showStatusBar": true,
+        "showNavigationBar": true,
         "statusBarSlot": {
           "variantReference": "component_project_foqn_s2_status_bar::variant::lock_screen",
           "overrides": {}
@@ -720,147 +2204,65 @@
     "defaultDurationFrames": 300
   },
   "metadata": {
-    "note": "Hybrid call Screen with exact participant tracks and optional chrome."
+    "note": "Video call with one role-driven participant collection and Social Post row sections."
   },
   "dictionaryFields": [
     {
-      "id": "module.core.videoCall.participant",
-      "label": "Participant",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "videoCall",
-        "participantSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_call_participant::variant::default\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "callParticipant",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": {
-        "componentType": "callParticipant",
-        "label": "Participant",
-        "recordClassId": "component.callParticipant"
-      }
-    },
-    {
-      "id": "module.core.videoCall.screenPadding",
-      "label": "Screen padding",
-      "valueKind": "ThemeTokenPair",
-      "jsonPath": [
-        "videoCall",
-        "screenPadding"
-      ],
-      "defaultValue": "theme.spacing.s|theme.spacing.s",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "theme.spacing.none",
-          "label": "spacing.none"
-        },
-        {
-          "value": "theme.spacing.xs",
-          "label": "spacing.xs"
-        },
-        {
-          "value": "theme.spacing.s",
-          "label": "spacing.s"
-        },
-        {
-          "value": "theme.spacing.m",
-          "label": "spacing.m"
-        },
-        {
-          "value": "theme.spacing.l",
-          "label": "spacing.l"
-        }
-      ],
-      "optionSource": "None",
-      "pairLabels": {
-        "first": "X",
-        "second": "Y"
-      },
-      "number": null,
-      "componentVariantType": "",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "module.core.videoCall.participantGap",
-      "label": "Participant gap",
-      "valueKind": "ThemeToken",
-      "jsonPath": [
-        "videoCall",
-        "participantGapToken"
-      ],
-      "defaultValue": "theme.spacing.s",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "theme.spacing.none",
-          "label": "spacing.none"
-        },
-        {
-          "value": "theme.spacing.xs",
-          "label": "spacing.xs"
-        },
-        {
-          "value": "theme.spacing.s",
-          "label": "spacing.s"
-        },
-        {
-          "value": "theme.spacing.m",
-          "label": "spacing.m"
-        },
-        {
-          "value": "theme.spacing.l",
-          "label": "spacing.l"
-        }
-      ],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "module.core.videoCall.showStatusBar",
-      "label": "Show status bar",
+      "id": "module.core.videoCall.useAppWallpaper",
+      "label": "Use app wallpaper",
       "valueKind": "Boolean",
       "jsonPath": [
         "videoCall",
-        "showStatusBar"
+        "useAppWallpaper"
       ],
       "defaultValue": "true",
       "isEditable": true,
       "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null,
+      "structuredCollection": null
+    },
+    {
+      "id": "module.core.videoCall.conversationType",
+      "label": "Conversation type",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "videoCall",
+        "conversationType"
+      ],
+      "defaultValue": "group",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "individual",
+          "label": "Individual",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "group",
+          "label": "Group",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
       "optionSource": "None",
       "pairLabels": null,
       "number": null,
@@ -895,6 +2297,38 @@
       "runtimeInputComponentVariantFieldId": "",
       "runtimeCollectionComponentVariantFieldId": "",
       "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null,
+      "structuredCollection": null
+    },
+    {
+      "id": "module.core.videoCall.headerHeight",
+      "label": "Header height",
+      "valueKind": "Integer",
+      "jsonPath": [
+        "videoCall",
+        "headerHeight"
+      ],
+      "defaultValue": "120",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": {
+        "minimum": 0,
+        "maximum": 240,
+        "increment": 1,
+        "decimalPlaces": 0,
+        "useSlider": false
+      },
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
       "structuredCollection": null,
       "imagePreview": null,
       "recordReference": null,
@@ -903,14 +2337,1686 @@
       "embeddedSlot": null
     },
     {
-      "id": "module.core.videoCall.showBackButton",
-      "label": "Show back button",
+      "id": "module.core.videoCall.headerSurface",
+      "label": "Header surface",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "videoCall",
+        "headerSurfaceSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_surface::variant::default\",\"overrides\":{\"style\":{\"cornerRadiusToken\":\"theme.radii.none\"}}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "surface",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "surface",
+        "label": "Header surface",
+        "recordClassId": "component.surface"
+      },
+      "structuredCollection": null
+    },
+    {
+      "id": "module.core.videoCall.headerRowGapToken",
+      "label": "Gap between rows",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "videoCall",
+        "headerRowGapToken"
+      ],
+      "defaultValue": "theme.spacing.s",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xl",
+          "label": "spacing.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xxl",
+          "label": "spacing.xxl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null,
+      "structuredCollection": null
+    },
+    {
+      "id": "module.core.videoCall.headerRows",
+      "label": "Rows",
+      "valueKind": "StructuredCollection",
+      "jsonPath": [
+        "videoCall",
+        "headerRows"
+      ],
+      "defaultValue": "[{\"id\":\"row1\",\"label\":\"Row 1\",\"padding\":\"theme.spacing.s|theme.spacing.s\",\"verticalAlignment\":\"center\",\"showSeparator\":true,\"slot1Kind\":\"avatar\",\"slot1AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot1IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot1LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot2Kind\":\"none\",\"slot2AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot2IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot2LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot3Kind\":\"none\",\"slot3AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot3IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot3LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot4Kind\":\"none\",\"slot4AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot4IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot4LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot5Kind\":\"icon\",\"slot5AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot5IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot5LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot1IconSizeToken\":\"theme.iconSizes.m\",\"slot2IconSizeToken\":\"theme.iconSizes.m\",\"slot3IconSizeToken\":\"theme.iconSizes.m\",\"slot4IconSizeToken\":\"theme.iconSizes.m\",\"slot5IconSizeToken\":\"theme.iconSizes.m\"},{\"id\":\"row2\",\"label\":\"Row 2\",\"padding\":\"theme.spacing.s|theme.spacing.s\",\"verticalAlignment\":\"center\",\"showSeparator\":true,\"slot1Kind\":\"label\",\"slot1AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot1IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot1LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot2Kind\":\"label\",\"slot2AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot2IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot2LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot3Kind\":\"none\",\"slot3AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot3IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot3LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot4Kind\":\"none\",\"slot4AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot4IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot4LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot5Kind\":\"icon\",\"slot5AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot5IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot5LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot1IconSizeToken\":\"theme.iconSizes.m\",\"slot2IconSizeToken\":\"theme.iconSizes.m\",\"slot3IconSizeToken\":\"theme.iconSizes.m\",\"slot4IconSizeToken\":\"theme.iconSizes.m\",\"slot5IconSizeToken\":\"theme.iconSizes.m\"}]",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": {
+        "id": "videoCallHeaderRows",
+        "label": "Header rows",
+        "jsonKey": "rows",
+        "itemLabel": "Row",
+        "fields": [
+          {
+            "id": "label",
+            "label": "Row",
+            "jsonKey": "label",
+            "kind": "Text",
+            "valueKind": "StringReadOnly",
+            "defaultValue": "",
+            "showInEditor": false
+          },
+          {
+            "id": "padding",
+            "label": "Padding",
+            "jsonKey": "padding",
+            "kind": "Text",
+            "valueKind": "ThemeTokenPair",
+            "defaultValue": "theme.spacing.s|theme.spacing.s",
+            "options": [
+              {
+                "value": "theme.spacing.none",
+                "label": "spacing.none"
+              },
+              {
+                "value": "theme.spacing.xs",
+                "label": "spacing.xs"
+              },
+              {
+                "value": "theme.spacing.s",
+                "label": "spacing.s"
+              },
+              {
+                "value": "theme.spacing.m",
+                "label": "spacing.m"
+              },
+              {
+                "value": "theme.spacing.l",
+                "label": "spacing.l"
+              },
+              {
+                "value": "theme.spacing.xl",
+                "label": "spacing.xl"
+              },
+              {
+                "value": "theme.spacing.xxl",
+                "label": "spacing.xxl"
+              }
+            ],
+            "pairLabels": {
+              "first": "Horizontal",
+              "second": "Vertical"
+            }
+          },
+          {
+            "id": "verticalAlignment",
+            "label": "Vertical alignment",
+            "jsonKey": "verticalAlignment",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "center",
+            "options": [
+              {
+                "value": "top",
+                "label": "Top"
+              },
+              {
+                "value": "center",
+                "label": "Center"
+              },
+              {
+                "value": "bottom",
+                "label": "Bottom"
+              }
+            ]
+          },
+          {
+            "id": "showSeparator",
+            "label": "Show separator",
+            "jsonKey": "showSeparator",
+            "kind": "Boolean",
+            "valueKind": "Boolean",
+            "defaultValue": "true"
+          },
+          {
+            "id": "slot1.kind",
+            "label": "Slot 1 content",
+            "jsonKey": "slot1Kind",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ]
+          },
+          {
+            "id": "slot1.avatar",
+            "label": "Slot 1 avatar",
+            "jsonKey": "slot1AvatarSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
+            "componentType": "avatar",
+            "enabledWhenItemJsonKey": "slot1Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ]
+          },
+          {
+            "id": "slot1.icon",
+            "label": "Slot 1 icon",
+            "jsonKey": "slot1IconSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
+            "componentType": "button",
+            "enabledWhenItemJsonKey": "slot1Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
+            "id": "slot1.iconSize",
+            "label": "Slot 1 icon size",
+            "jsonKey": "slot1IconSizeToken",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "theme.iconSizes.m",
+            "options": [
+              {
+                "value": "theme.iconSizes.xs",
+                "label": "Extra small"
+              },
+              {
+                "value": "theme.iconSizes.s",
+                "label": "Small"
+              },
+              {
+                "value": "theme.iconSizes.m",
+                "label": "Medium"
+              },
+              {
+                "value": "theme.iconSizes.l",
+                "label": "Large"
+              },
+              {
+                "value": "theme.iconSizes.xl",
+                "label": "Extra large"
+              }
+            ],
+            "enabledWhenItemJsonKey": "slot1Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
+            "id": "slot1.label",
+            "label": "Slot 1 label",
+            "jsonKey": "slot1LabelSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
+            "componentType": "label",
+            "enabledWhenItemJsonKey": "slot1Kind",
+            "enabledWhenItemValues": [
+              "label"
+            ]
+          },
+          {
+            "id": "slot2.kind",
+            "label": "Slot 2 content",
+            "jsonKey": "slot2Kind",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ]
+          },
+          {
+            "id": "slot2.avatar",
+            "label": "Slot 2 avatar",
+            "jsonKey": "slot2AvatarSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
+            "componentType": "avatar",
+            "enabledWhenItemJsonKey": "slot2Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ]
+          },
+          {
+            "id": "slot2.icon",
+            "label": "Slot 2 icon",
+            "jsonKey": "slot2IconSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
+            "componentType": "button",
+            "enabledWhenItemJsonKey": "slot2Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
+            "id": "slot2.iconSize",
+            "label": "Slot 2 icon size",
+            "jsonKey": "slot2IconSizeToken",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "theme.iconSizes.m",
+            "options": [
+              {
+                "value": "theme.iconSizes.xs",
+                "label": "Extra small"
+              },
+              {
+                "value": "theme.iconSizes.s",
+                "label": "Small"
+              },
+              {
+                "value": "theme.iconSizes.m",
+                "label": "Medium"
+              },
+              {
+                "value": "theme.iconSizes.l",
+                "label": "Large"
+              },
+              {
+                "value": "theme.iconSizes.xl",
+                "label": "Extra large"
+              }
+            ],
+            "enabledWhenItemJsonKey": "slot2Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
+            "id": "slot2.label",
+            "label": "Slot 2 label",
+            "jsonKey": "slot2LabelSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
+            "componentType": "label",
+            "enabledWhenItemJsonKey": "slot2Kind",
+            "enabledWhenItemValues": [
+              "label"
+            ]
+          },
+          {
+            "id": "slot3.kind",
+            "label": "Slot 3 content",
+            "jsonKey": "slot3Kind",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ]
+          },
+          {
+            "id": "slot3.avatar",
+            "label": "Slot 3 avatar",
+            "jsonKey": "slot3AvatarSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
+            "componentType": "avatar",
+            "enabledWhenItemJsonKey": "slot3Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ]
+          },
+          {
+            "id": "slot3.icon",
+            "label": "Slot 3 icon",
+            "jsonKey": "slot3IconSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
+            "componentType": "button",
+            "enabledWhenItemJsonKey": "slot3Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
+            "id": "slot3.iconSize",
+            "label": "Slot 3 icon size",
+            "jsonKey": "slot3IconSizeToken",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "theme.iconSizes.m",
+            "options": [
+              {
+                "value": "theme.iconSizes.xs",
+                "label": "Extra small"
+              },
+              {
+                "value": "theme.iconSizes.s",
+                "label": "Small"
+              },
+              {
+                "value": "theme.iconSizes.m",
+                "label": "Medium"
+              },
+              {
+                "value": "theme.iconSizes.l",
+                "label": "Large"
+              },
+              {
+                "value": "theme.iconSizes.xl",
+                "label": "Extra large"
+              }
+            ],
+            "enabledWhenItemJsonKey": "slot3Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
+            "id": "slot3.label",
+            "label": "Slot 3 label",
+            "jsonKey": "slot3LabelSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
+            "componentType": "label",
+            "enabledWhenItemJsonKey": "slot3Kind",
+            "enabledWhenItemValues": [
+              "label"
+            ]
+          },
+          {
+            "id": "slot4.kind",
+            "label": "Slot 4 content",
+            "jsonKey": "slot4Kind",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ]
+          },
+          {
+            "id": "slot4.avatar",
+            "label": "Slot 4 avatar",
+            "jsonKey": "slot4AvatarSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
+            "componentType": "avatar",
+            "enabledWhenItemJsonKey": "slot4Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ]
+          },
+          {
+            "id": "slot4.icon",
+            "label": "Slot 4 icon",
+            "jsonKey": "slot4IconSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
+            "componentType": "button",
+            "enabledWhenItemJsonKey": "slot4Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
+            "id": "slot4.iconSize",
+            "label": "Slot 4 icon size",
+            "jsonKey": "slot4IconSizeToken",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "theme.iconSizes.m",
+            "options": [
+              {
+                "value": "theme.iconSizes.xs",
+                "label": "Extra small"
+              },
+              {
+                "value": "theme.iconSizes.s",
+                "label": "Small"
+              },
+              {
+                "value": "theme.iconSizes.m",
+                "label": "Medium"
+              },
+              {
+                "value": "theme.iconSizes.l",
+                "label": "Large"
+              },
+              {
+                "value": "theme.iconSizes.xl",
+                "label": "Extra large"
+              }
+            ],
+            "enabledWhenItemJsonKey": "slot4Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
+            "id": "slot4.label",
+            "label": "Slot 4 label",
+            "jsonKey": "slot4LabelSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
+            "componentType": "label",
+            "enabledWhenItemJsonKey": "slot4Kind",
+            "enabledWhenItemValues": [
+              "label"
+            ]
+          },
+          {
+            "id": "slot5.kind",
+            "label": "Slot 5 content",
+            "jsonKey": "slot5Kind",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ]
+          },
+          {
+            "id": "slot5.avatar",
+            "label": "Slot 5 avatar",
+            "jsonKey": "slot5AvatarSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
+            "componentType": "avatar",
+            "enabledWhenItemJsonKey": "slot5Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ]
+          },
+          {
+            "id": "slot5.icon",
+            "label": "Slot 5 icon",
+            "jsonKey": "slot5IconSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
+            "componentType": "button",
+            "enabledWhenItemJsonKey": "slot5Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
+            "id": "slot5.iconSize",
+            "label": "Slot 5 icon size",
+            "jsonKey": "slot5IconSizeToken",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "theme.iconSizes.m",
+            "options": [
+              {
+                "value": "theme.iconSizes.xs",
+                "label": "Extra small"
+              },
+              {
+                "value": "theme.iconSizes.s",
+                "label": "Small"
+              },
+              {
+                "value": "theme.iconSizes.m",
+                "label": "Medium"
+              },
+              {
+                "value": "theme.iconSizes.l",
+                "label": "Large"
+              },
+              {
+                "value": "theme.iconSizes.xl",
+                "label": "Extra large"
+              }
+            ],
+            "enabledWhenItemJsonKey": "slot5Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
+            "id": "slot5.label",
+            "label": "Slot 5 label",
+            "jsonKey": "slot5LabelSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
+            "componentType": "label",
+            "enabledWhenItemJsonKey": "slot5Kind",
+            "enabledWhenItemValues": [
+              "label"
+            ]
+          }
+        ],
+        "itemPresentation": {
+          "titleFieldId": "label",
+          "firstItemBadge": "",
+          "subtitleFieldIds": [],
+          "subtitleMaxCharacters": 72,
+          "iconFieldId": "",
+          "fallbackIcon": "layout",
+          "iconValueMap": {}
+        },
+        "canEditStructure": false,
+        "fixedItemCount": 2,
+        "uiPresentation": "collection",
+        "itemRuntimePresentation": "card"
+      },
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.videoCall.showFooter",
+      "label": "Show footer",
       "valueKind": "Boolean",
       "jsonPath": [
         "videoCall",
-        "showBackButton"
+        "showFooter"
       ],
       "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null,
+      "structuredCollection": null
+    },
+    {
+      "id": "module.core.videoCall.footerHeight",
+      "label": "Footer height",
+      "valueKind": "Integer",
+      "jsonPath": [
+        "videoCall",
+        "footerHeight"
+      ],
+      "defaultValue": "120",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": {
+        "minimum": 0,
+        "maximum": 240,
+        "increment": 1,
+        "decimalPlaces": 0,
+        "useSlider": false
+      },
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.videoCall.footerSurface",
+      "label": "Footer surface",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "videoCall",
+        "footerSurfaceSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_surface::variant::default\",\"overrides\":{\"style\":{\"cornerRadiusToken\":\"theme.radii.none\"}}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "surface",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "surface",
+        "label": "Footer surface",
+        "recordClassId": "component.surface"
+      },
+      "structuredCollection": null
+    },
+    {
+      "id": "module.core.videoCall.footerRowGapToken",
+      "label": "Gap between rows",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "videoCall",
+        "footerRowGapToken"
+      ],
+      "defaultValue": "theme.spacing.s",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xl",
+          "label": "spacing.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xxl",
+          "label": "spacing.xxl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null,
+      "structuredCollection": null
+    },
+    {
+      "id": "module.core.videoCall.footerRows",
+      "label": "Rows",
+      "valueKind": "StructuredCollection",
+      "jsonPath": [
+        "videoCall",
+        "footerRows"
+      ],
+      "defaultValue": "null",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": {
+        "id": "videoCallFooterRows",
+        "label": "Footer rows",
+        "jsonKey": "rows",
+        "itemLabel": "Row",
+        "fields": [
+          {
+            "id": "label",
+            "label": "Row",
+            "jsonKey": "label",
+            "kind": "Text",
+            "valueKind": "StringReadOnly",
+            "defaultValue": "",
+            "showInEditor": false
+          },
+          {
+            "id": "padding",
+            "label": "Padding",
+            "jsonKey": "padding",
+            "kind": "Text",
+            "valueKind": "ThemeTokenPair",
+            "defaultValue": "theme.spacing.s|theme.spacing.s",
+            "options": [
+              {
+                "value": "theme.spacing.none",
+                "label": "spacing.none"
+              },
+              {
+                "value": "theme.spacing.xs",
+                "label": "spacing.xs"
+              },
+              {
+                "value": "theme.spacing.s",
+                "label": "spacing.s"
+              },
+              {
+                "value": "theme.spacing.m",
+                "label": "spacing.m"
+              },
+              {
+                "value": "theme.spacing.l",
+                "label": "spacing.l"
+              },
+              {
+                "value": "theme.spacing.xl",
+                "label": "spacing.xl"
+              },
+              {
+                "value": "theme.spacing.xxl",
+                "label": "spacing.xxl"
+              }
+            ],
+            "pairLabels": {
+              "first": "Horizontal",
+              "second": "Vertical"
+            }
+          },
+          {
+            "id": "verticalAlignment",
+            "label": "Vertical alignment",
+            "jsonKey": "verticalAlignment",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "center",
+            "options": [
+              {
+                "value": "top",
+                "label": "Top"
+              },
+              {
+                "value": "center",
+                "label": "Center"
+              },
+              {
+                "value": "bottom",
+                "label": "Bottom"
+              }
+            ]
+          },
+          {
+            "id": "showSeparator",
+            "label": "Show separator",
+            "jsonKey": "showSeparator",
+            "kind": "Boolean",
+            "valueKind": "Boolean",
+            "defaultValue": "true"
+          },
+          {
+            "id": "slot1.kind",
+            "label": "Slot 1 content",
+            "jsonKey": "slot1Kind",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ]
+          },
+          {
+            "id": "slot1.avatar",
+            "label": "Slot 1 avatar",
+            "jsonKey": "slot1AvatarSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
+            "componentType": "avatar",
+            "enabledWhenItemJsonKey": "slot1Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ]
+          },
+          {
+            "id": "slot1.icon",
+            "label": "Slot 1 icon",
+            "jsonKey": "slot1IconSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
+            "componentType": "button",
+            "enabledWhenItemJsonKey": "slot1Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
+            "id": "slot1.iconSize",
+            "label": "Slot 1 icon size",
+            "jsonKey": "slot1IconSizeToken",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "theme.iconSizes.m",
+            "options": [
+              {
+                "value": "theme.iconSizes.xs",
+                "label": "Extra small"
+              },
+              {
+                "value": "theme.iconSizes.s",
+                "label": "Small"
+              },
+              {
+                "value": "theme.iconSizes.m",
+                "label": "Medium"
+              },
+              {
+                "value": "theme.iconSizes.l",
+                "label": "Large"
+              },
+              {
+                "value": "theme.iconSizes.xl",
+                "label": "Extra large"
+              }
+            ],
+            "enabledWhenItemJsonKey": "slot1Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
+            "id": "slot1.label",
+            "label": "Slot 1 label",
+            "jsonKey": "slot1LabelSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
+            "componentType": "label",
+            "enabledWhenItemJsonKey": "slot1Kind",
+            "enabledWhenItemValues": [
+              "label"
+            ]
+          },
+          {
+            "id": "slot2.kind",
+            "label": "Slot 2 content",
+            "jsonKey": "slot2Kind",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ]
+          },
+          {
+            "id": "slot2.avatar",
+            "label": "Slot 2 avatar",
+            "jsonKey": "slot2AvatarSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
+            "componentType": "avatar",
+            "enabledWhenItemJsonKey": "slot2Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ]
+          },
+          {
+            "id": "slot2.icon",
+            "label": "Slot 2 icon",
+            "jsonKey": "slot2IconSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
+            "componentType": "button",
+            "enabledWhenItemJsonKey": "slot2Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
+            "id": "slot2.iconSize",
+            "label": "Slot 2 icon size",
+            "jsonKey": "slot2IconSizeToken",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "theme.iconSizes.m",
+            "options": [
+              {
+                "value": "theme.iconSizes.xs",
+                "label": "Extra small"
+              },
+              {
+                "value": "theme.iconSizes.s",
+                "label": "Small"
+              },
+              {
+                "value": "theme.iconSizes.m",
+                "label": "Medium"
+              },
+              {
+                "value": "theme.iconSizes.l",
+                "label": "Large"
+              },
+              {
+                "value": "theme.iconSizes.xl",
+                "label": "Extra large"
+              }
+            ],
+            "enabledWhenItemJsonKey": "slot2Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
+            "id": "slot2.label",
+            "label": "Slot 2 label",
+            "jsonKey": "slot2LabelSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
+            "componentType": "label",
+            "enabledWhenItemJsonKey": "slot2Kind",
+            "enabledWhenItemValues": [
+              "label"
+            ]
+          },
+          {
+            "id": "slot3.kind",
+            "label": "Slot 3 content",
+            "jsonKey": "slot3Kind",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ]
+          },
+          {
+            "id": "slot3.avatar",
+            "label": "Slot 3 avatar",
+            "jsonKey": "slot3AvatarSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
+            "componentType": "avatar",
+            "enabledWhenItemJsonKey": "slot3Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ]
+          },
+          {
+            "id": "slot3.icon",
+            "label": "Slot 3 icon",
+            "jsonKey": "slot3IconSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
+            "componentType": "button",
+            "enabledWhenItemJsonKey": "slot3Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
+            "id": "slot3.iconSize",
+            "label": "Slot 3 icon size",
+            "jsonKey": "slot3IconSizeToken",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "theme.iconSizes.m",
+            "options": [
+              {
+                "value": "theme.iconSizes.xs",
+                "label": "Extra small"
+              },
+              {
+                "value": "theme.iconSizes.s",
+                "label": "Small"
+              },
+              {
+                "value": "theme.iconSizes.m",
+                "label": "Medium"
+              },
+              {
+                "value": "theme.iconSizes.l",
+                "label": "Large"
+              },
+              {
+                "value": "theme.iconSizes.xl",
+                "label": "Extra large"
+              }
+            ],
+            "enabledWhenItemJsonKey": "slot3Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
+            "id": "slot3.label",
+            "label": "Slot 3 label",
+            "jsonKey": "slot3LabelSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
+            "componentType": "label",
+            "enabledWhenItemJsonKey": "slot3Kind",
+            "enabledWhenItemValues": [
+              "label"
+            ]
+          },
+          {
+            "id": "slot4.kind",
+            "label": "Slot 4 content",
+            "jsonKey": "slot4Kind",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ]
+          },
+          {
+            "id": "slot4.avatar",
+            "label": "Slot 4 avatar",
+            "jsonKey": "slot4AvatarSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
+            "componentType": "avatar",
+            "enabledWhenItemJsonKey": "slot4Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ]
+          },
+          {
+            "id": "slot4.icon",
+            "label": "Slot 4 icon",
+            "jsonKey": "slot4IconSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
+            "componentType": "button",
+            "enabledWhenItemJsonKey": "slot4Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
+            "id": "slot4.iconSize",
+            "label": "Slot 4 icon size",
+            "jsonKey": "slot4IconSizeToken",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "theme.iconSizes.m",
+            "options": [
+              {
+                "value": "theme.iconSizes.xs",
+                "label": "Extra small"
+              },
+              {
+                "value": "theme.iconSizes.s",
+                "label": "Small"
+              },
+              {
+                "value": "theme.iconSizes.m",
+                "label": "Medium"
+              },
+              {
+                "value": "theme.iconSizes.l",
+                "label": "Large"
+              },
+              {
+                "value": "theme.iconSizes.xl",
+                "label": "Extra large"
+              }
+            ],
+            "enabledWhenItemJsonKey": "slot4Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
+            "id": "slot4.label",
+            "label": "Slot 4 label",
+            "jsonKey": "slot4LabelSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
+            "componentType": "label",
+            "enabledWhenItemJsonKey": "slot4Kind",
+            "enabledWhenItemValues": [
+              "label"
+            ]
+          },
+          {
+            "id": "slot5.kind",
+            "label": "Slot 5 content",
+            "jsonKey": "slot5Kind",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ]
+          },
+          {
+            "id": "slot5.avatar",
+            "label": "Slot 5 avatar",
+            "jsonKey": "slot5AvatarSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
+            "componentType": "avatar",
+            "enabledWhenItemJsonKey": "slot5Kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ]
+          },
+          {
+            "id": "slot5.icon",
+            "label": "Slot 5 icon",
+            "jsonKey": "slot5IconSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
+            "componentType": "button",
+            "enabledWhenItemJsonKey": "slot5Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
+            "id": "slot5.iconSize",
+            "label": "Slot 5 icon size",
+            "jsonKey": "slot5IconSizeToken",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "theme.iconSizes.m",
+            "options": [
+              {
+                "value": "theme.iconSizes.xs",
+                "label": "Extra small"
+              },
+              {
+                "value": "theme.iconSizes.s",
+                "label": "Small"
+              },
+              {
+                "value": "theme.iconSizes.m",
+                "label": "Medium"
+              },
+              {
+                "value": "theme.iconSizes.l",
+                "label": "Large"
+              },
+              {
+                "value": "theme.iconSizes.xl",
+                "label": "Extra large"
+              }
+            ],
+            "enabledWhenItemJsonKey": "slot5Kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ]
+          },
+          {
+            "id": "slot5.label",
+            "label": "Slot 5 label",
+            "jsonKey": "slot5LabelSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
+            "componentType": "label",
+            "enabledWhenItemJsonKey": "slot5Kind",
+            "enabledWhenItemValues": [
+              "label"
+            ]
+          }
+        ],
+        "itemPresentation": {
+          "titleFieldId": "label",
+          "firstItemBadge": "",
+          "subtitleFieldIds": [],
+          "subtitleMaxCharacters": 72,
+          "iconFieldId": "",
+          "fallbackIcon": "layout",
+          "iconValueMap": {}
+        },
+        "canEditStructure": false,
+        "fixedItemCount": 2,
+        "uiPresentation": "collection",
+        "itemRuntimePresentation": "card"
+      },
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.videoCall.showMainVideo",
+      "label": "Show main video",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "videoCall",
+        "showMainVideo"
+      ],
+      "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null,
+      "structuredCollection": null
+    },
+    {
+      "id": "module.core.videoCall.mainParticipant",
+      "label": "Main participant",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "videoCall",
+        "mainParticipantSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_call_participant::variant::default\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "callParticipant",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "callParticipant",
+        "label": "Main participant",
+        "recordClassId": "component.callParticipant"
+      }
+    },
+    {
+      "id": "module.core.videoCall.mainSizeMode",
+      "label": "Size mode",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "videoCall",
+        "mainSizeMode"
+      ],
+      "defaultValue": "fill",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "fill",
+          "label": "Fill",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "fixed",
+          "label": "Fixed",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.videoCall.mainSize",
+      "label": "Main size",
+      "valueKind": "IntegerPair",
+      "jsonPath": [
+        "videoCall",
+        "mainSize"
+      ],
+      "defaultValue": "390|520",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": {
+        "first": "W",
+        "second": "H"
+      },
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.videoCall.mainPlacement",
+      "label": "Main placement",
+      "valueKind": "AlignmentPlacement",
+      "jsonPath": [
+        "videoCall",
+        "mainPlacement"
+      ],
+      "defaultValue": "{\"mode\":\"center\",\"alignX\":0.5,\"alignY\":0.5,\"offsetX\":0,\"offsetY\":0}",
       "isEditable": true,
       "options": [],
       "optionSource": "None",
@@ -929,14 +4035,149 @@
       "embeddedSlot": null
     },
     {
-      "id": "module.core.videoCall.showCallTitle",
-      "label": "Show call title",
+      "id": "module.core.videoCall.mainPadding",
+      "label": "Main padding",
+      "valueKind": "ThemeTokenPair",
+      "jsonPath": [
+        "videoCall",
+        "mainPadding"
+      ],
+      "defaultValue": "theme.spacing.none|theme.spacing.none",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none"
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs"
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s"
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m"
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l"
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": {
+        "first": "Horizontal",
+        "second": "Vertical"
+      },
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.videoCall.showPip",
+      "label": "Show PIP",
       "valueKind": "Boolean",
       "jsonPath": [
         "videoCall",
-        "showCallTitle"
+        "showPip"
       ],
       "defaultValue": "true",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null,
+      "structuredCollection": null
+    },
+    {
+      "id": "module.core.videoCall.pipParticipant",
+      "label": "PIP participant",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "videoCall",
+        "pipParticipantSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_call_participant::variant::default\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "callParticipant",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "callParticipant",
+        "label": "PIP participant",
+        "recordClassId": "component.callParticipant"
+      }
+    },
+    {
+      "id": "module.core.videoCall.pipSize",
+      "label": "PIP size",
+      "valueKind": "IntegerPair",
+      "jsonPath": [
+        "videoCall",
+        "pipSize"
+      ],
+      "defaultValue": "104|156",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": {
+        "first": "W",
+        "second": "H"
+      },
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.videoCall.pipPlacement",
+      "label": "PIP placement",
+      "valueKind": "AlignmentPlacement",
+      "jsonPath": [
+        "videoCall",
+        "pipPlacement"
+      ],
+      "defaultValue": "{\"mode\":\"insideEdge\",\"alignX\":1,\"alignY\":0,\"offsetX\":-12,\"offsetY\":12}",
       "isEditable": true,
       "options": [],
       "optionSource": "None",
@@ -955,18 +4196,42 @@
       "embeddedSlot": null
     },
     {
-      "id": "module.core.videoCall.showParticipantCount",
-      "label": "Show participant count",
-      "valueKind": "Boolean",
+      "id": "module.core.videoCall.pipPadding",
+      "label": "PIP padding",
+      "valueKind": "ThemeTokenPair",
       "jsonPath": [
         "videoCall",
-        "showParticipantCount"
+        "pipPadding"
       ],
-      "defaultValue": "true",
+      "defaultValue": "theme.spacing.s|theme.spacing.s",
       "isEditable": true,
-      "options": [],
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none"
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs"
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s"
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m"
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l"
+        }
+      ],
       "optionSource": "None",
-      "pairLabels": null,
+      "pairLabels": {
+        "first": "Horizontal",
+        "second": "Vertical"
+      },
       "number": null,
       "componentVariantType": "",
       "synchronizedVariantReferenceJsonPaths": [],
@@ -981,18 +4246,98 @@
       "embeddedSlot": null
     },
     {
-      "id": "module.core.videoCall.showDuration",
-      "label": "Show duration",
+      "id": "module.core.videoCall.showGridParticipants",
+      "label": "Show other participants",
       "valueKind": "Boolean",
       "jsonPath": [
         "videoCall",
-        "showDuration"
+        "showGridParticipants"
       ],
       "defaultValue": "true",
       "isEditable": true,
       "options": [],
       "optionSource": "None",
       "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null,
+      "structuredCollection": null
+    },
+    {
+      "id": "module.core.videoCall.gridParticipant",
+      "label": "Participant",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "videoCall",
+        "gridParticipantSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_call_participant::variant::default\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "callParticipant",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": {
+        "componentType": "callParticipant",
+        "label": "Participant",
+        "recordClassId": "component.callParticipant"
+      }
+    },
+    {
+      "id": "module.core.videoCall.gridPadding",
+      "label": "Grid padding",
+      "valueKind": "ThemeTokenPair",
+      "jsonPath": [
+        "videoCall",
+        "gridPadding"
+      ],
+      "defaultValue": "theme.spacing.s|theme.spacing.s",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none"
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs"
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s"
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m"
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l"
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": {
+        "first": "Horizontal",
+        "second": "Vertical"
+      },
       "number": null,
       "componentVariantType": "",
       "synchronizedVariantReferenceJsonPaths": [],
@@ -1007,16 +4352,80 @@
       "embeddedSlot": null
     },
     {
-      "id": "module.core.videoCall.showAddParticipant",
-      "label": "Show add participant",
-      "valueKind": "Boolean",
+      "id": "module.core.videoCall.gridGapToken",
+      "label": "Participant gap",
+      "valueKind": "ThemeToken",
       "jsonPath": [
         "videoCall",
-        "showAddParticipant"
+        "gridGapToken"
       ],
-      "defaultValue": "true",
+      "defaultValue": "theme.spacing.s",
       "isEditable": true,
-      "options": [],
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xl",
+          "label": "spacing.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xxl",
+          "label": "spacing.xxl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
       "optionSource": "None",
       "pairLabels": null,
       "number": null,
@@ -1025,27 +4434,33 @@
       "runtimeInputComponentVariantFieldId": "",
       "runtimeCollectionComponentVariantFieldId": "",
       "componentInputBindings": null,
-      "structuredCollection": null,
       "imagePreview": null,
       "recordReference": null,
       "motionTiming": null,
       "unit": "",
-      "embeddedSlot": null
+      "embeddedSlot": null,
+      "structuredCollection": null
     },
     {
-      "id": "module.core.videoCall.showSelfView",
-      "label": "Show self view",
-      "valueKind": "Boolean",
+      "id": "module.core.videoCall.gridColumns",
+      "label": "Columns",
+      "valueKind": "Integer",
       "jsonPath": [
         "videoCall",
-        "showSelfView"
+        "gridColumns"
       ],
-      "defaultValue": "true",
+      "defaultValue": "2",
       "isEditable": true,
       "options": [],
       "optionSource": "None",
       "pairLabels": null,
-      "number": null,
+      "number": {
+        "minimum": 1,
+        "maximum": 6,
+        "increment": 1,
+        "decimalPlaces": 0,
+        "useSlider": false
+      },
       "componentVariantType": "",
       "synchronizedVariantReferenceJsonPaths": [],
       "runtimeInputComponentVariantFieldId": "",
@@ -1077,12 +4492,12 @@
       "runtimeInputComponentVariantFieldId": "",
       "runtimeCollectionComponentVariantFieldId": "",
       "componentInputBindings": null,
-      "structuredCollection": null,
       "imagePreview": null,
       "recordReference": null,
       "motionTiming": null,
       "unit": "",
-      "embeddedSlot": null
+      "embeddedSlot": null,
+      "structuredCollection": null
     },
     {
       "id": "module.core.videoCall.showParticipantStatus",
@@ -1103,20 +4518,20 @@
       "runtimeInputComponentVariantFieldId": "",
       "runtimeCollectionComponentVariantFieldId": "",
       "componentInputBindings": null,
-      "structuredCollection": null,
       "imagePreview": null,
       "recordReference": null,
       "motionTiming": null,
       "unit": "",
-      "embeddedSlot": null
+      "embeddedSlot": null,
+      "structuredCollection": null
     },
     {
-      "id": "module.core.videoCall.showControls",
-      "label": "Show controls",
+      "id": "module.core.videoCall.showStatusBar",
+      "label": "Show status bar",
       "valueKind": "Boolean",
       "jsonPath": [
         "videoCall",
-        "showControls"
+        "showStatusBar"
       ],
       "defaultValue": "true",
       "isEditable": true,
@@ -1129,12 +4544,12 @@
       "runtimeInputComponentVariantFieldId": "",
       "runtimeCollectionComponentVariantFieldId": "",
       "componentInputBindings": null,
-      "structuredCollection": null,
       "imagePreview": null,
       "recordReference": null,
       "motionTiming": null,
       "unit": "",
-      "embeddedSlot": null
+      "embeddedSlot": null,
+      "structuredCollection": null
     },
     {
       "id": "module.core.videoCall.showNavigationBar",
@@ -1155,142 +4570,12 @@
       "runtimeInputComponentVariantFieldId": "",
       "runtimeCollectionComponentVariantFieldId": "",
       "componentInputBindings": null,
-      "structuredCollection": null,
       "imagePreview": null,
       "recordReference": null,
       "motionTiming": null,
       "unit": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "module.core.videoCall.showCameraControl",
-      "label": "Show camera",
-      "valueKind": "Boolean",
-      "jsonPath": [
-        "videoCall",
-        "showCameraControl"
-      ],
-      "defaultValue": "true",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "module.core.videoCall.showMicrophoneControl",
-      "label": "Show microphone",
-      "valueKind": "Boolean",
-      "jsonPath": [
-        "videoCall",
-        "showMicrophoneControl"
-      ],
-      "defaultValue": "true",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "module.core.videoCall.showSpeakerControl",
-      "label": "Show speaker",
-      "valueKind": "Boolean",
-      "jsonPath": [
-        "videoCall",
-        "showSpeakerControl"
-      ],
-      "defaultValue": "true",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "module.core.videoCall.showMoreControl",
-      "label": "Show more",
-      "valueKind": "Boolean",
-      "jsonPath": [
-        "videoCall",
-        "showMoreControl"
-      ],
-      "defaultValue": "true",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "module.core.videoCall.showEndCallControl",
-      "label": "Show end call",
-      "valueKind": "Boolean",
-      "jsonPath": [
-        "videoCall",
-        "showEndCallControl"
-      ],
-      "defaultValue": "true",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": null
+      "embeddedSlot": null,
+      "structuredCollection": null
     }
   ],
   "editorLayout": {
@@ -1298,15 +4583,15 @@
       {
         "id": "general",
         "label": "General",
-        "subtitle": "Identity",
+        "subtitle": "Conversation and background",
         "icon": "general",
         "order": 10,
         "visible": true,
         "defaultOpen": false,
         "groups": [
           {
-            "id": "identity",
-            "label": "Identity",
+            "id": "general",
+            "label": "General",
             "order": 10,
             "visible": true,
             "fields": [
@@ -1334,134 +4619,321 @@
                 "id": "core.notes",
                 "order": 50,
                 "visible": true
+              },
+              {
+                "id": "module.core.videoCall.useAppWallpaper",
+                "order": 60,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.conversationType",
+                "order": 70,
+                "visible": true
               }
             ]
           }
         ]
       },
       {
-        "id": "composition",
-        "label": "Video Call",
-        "subtitle": "Layout and optional elements",
+        "id": "header",
+        "label": "Header",
+        "subtitle": "Two rows · five slots each",
         "icon": "layout",
         "order": 20,
         "visible": true,
-        "defaultOpen": true,
-        "groupLayout": "separatedSections",
+        "defaultOpen": false,
         "groups": [
           {
-            "id": "layout",
-            "label": "Layout",
+            "id": "header",
+            "label": "Header",
             "order": 10,
             "visible": true,
+            "presentation": "separatedSections",
             "fields": [
               {
-                "id": "module.core.videoCall.participant",
+                "id": "module.core.videoCall.showHeader",
                 "order": 10,
                 "visible": true
               },
               {
-                "id": "module.core.videoCall.screenPadding",
+                "id": "module.core.videoCall.headerHeight",
                 "order": 20,
                 "visible": true
               },
               {
-                "id": "module.core.videoCall.participantGap",
+                "id": "module.core.videoCall.headerSurface",
                 "order": 30,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.headerRowGapToken",
+                "order": 40,
                 "visible": true
               }
             ]
           },
           {
-            "id": "visibility",
-            "label": "Visibility",
+            "id": "rows",
+            "label": "Rows",
             "order": 20,
             "visible": true,
             "presentation": "verticalCards",
             "fields": [
               {
-                "id": "module.core.videoCall.showStatusBar",
+                "id": "module.core.videoCall.headerRows",
+                "order": 10,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "main-video",
+        "label": "Main Video",
+        "subtitle": "Surface, size and placement",
+        "icon": "media",
+        "order": 30,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "main-video",
+            "label": "Main Video",
+            "order": 10,
+            "visible": true,
+            "presentation": "separatedSections",
+            "fields": [
+              {
+                "id": "module.core.videoCall.showMainVideo",
                 "order": 10,
                 "visible": true
               },
               {
-                "id": "module.core.videoCall.showHeader",
+                "id": "module.core.videoCall.mainParticipant",
                 "order": 20,
                 "visible": true
               },
               {
-                "id": "module.core.videoCall.showBackButton",
+                "id": "module.core.videoCall.mainSizeMode",
                 "order": 30,
                 "visible": true
               },
               {
-                "id": "module.core.videoCall.showCallTitle",
+                "id": "module.core.videoCall.mainSize",
                 "order": 40,
                 "visible": true
               },
               {
-                "id": "module.core.videoCall.showParticipantCount",
+                "id": "module.core.videoCall.mainPlacement",
                 "order": 50,
                 "visible": true
               },
               {
-                "id": "module.core.videoCall.showDuration",
+                "id": "module.core.videoCall.mainPadding",
                 "order": 60,
                 "visible": true
-              },
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "pip",
+        "label": "PIP",
+        "subtitle": "Floating participant surface",
+        "icon": "media",
+        "order": 40,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "pip",
+            "label": "PIP",
+            "order": 10,
+            "visible": true,
+            "presentation": "separatedSections",
+            "fields": [
               {
-                "id": "module.core.videoCall.showAddParticipant",
-                "order": 70,
+                "id": "module.core.videoCall.showPip",
+                "order": 10,
                 "visible": true
               },
               {
-                "id": "module.core.videoCall.showSelfView",
-                "order": 80,
+                "id": "module.core.videoCall.pipParticipant",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.pipSize",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.pipPlacement",
+                "order": 40,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.pipPadding",
+                "order": 50,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "participants",
+        "label": "Participants",
+        "subtitle": "Grid participant appearance",
+        "icon": "people",
+        "order": 50,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "participants",
+            "label": "Participants",
+            "order": 10,
+            "visible": true,
+            "presentation": "separatedSections",
+            "fields": [
+              {
+                "id": "module.core.videoCall.showGridParticipants",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.gridParticipant",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.gridPadding",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.gridGapToken",
+                "order": 40,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.gridColumns",
+                "order": 50,
                 "visible": true
               },
               {
                 "id": "module.core.videoCall.showParticipantNames",
-                "order": 90,
+                "order": 60,
                 "visible": true
               },
               {
                 "id": "module.core.videoCall.showParticipantStatus",
-                "order": 100,
+                "order": 70,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "footer",
+        "label": "Footer",
+        "subtitle": "Two rows · five slots each",
+        "icon": "layout",
+        "order": 60,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "footer",
+            "label": "Footer",
+            "order": 10,
+            "visible": true,
+            "presentation": "separatedSections",
+            "fields": [
+              {
+                "id": "module.core.videoCall.showFooter",
+                "order": 10,
                 "visible": true
               },
               {
-                "id": "module.core.videoCall.showControls",
-                "order": 110,
+                "id": "module.core.videoCall.footerHeight",
+                "order": 20,
                 "visible": true
               },
+              {
+                "id": "module.core.videoCall.footerSurface",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.footerRowGapToken",
+                "order": 40,
+                "visible": true
+              }
+            ]
+          },
+          {
+            "id": "rows",
+            "label": "Rows",
+            "order": 20,
+            "visible": true,
+            "presentation": "verticalCards",
+            "fields": [
+              {
+                "id": "module.core.videoCall.footerRows",
+                "order": 10,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "status-bar",
+        "label": "Status Bar",
+        "subtitle": "Theme status component",
+        "icon": "layout",
+        "order": 70,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "status-bar",
+            "label": "Status Bar",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "module.core.videoCall.showStatusBar",
+                "order": 10,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "navigation-bar",
+        "label": "Navigation Bar",
+        "subtitle": "Theme navigation component",
+        "icon": "layout",
+        "order": 80,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "navigation-bar",
+            "label": "Navigation Bar",
+            "order": 10,
+            "visible": true,
+            "fields": [
               {
                 "id": "module.core.videoCall.showNavigationBar",
-                "order": 120,
-                "visible": true
-              },
-              {
-                "id": "module.core.videoCall.showCameraControl",
-                "order": 130,
-                "visible": true
-              },
-              {
-                "id": "module.core.videoCall.showMicrophoneControl",
-                "order": 140,
-                "visible": true
-              },
-              {
-                "id": "module.core.videoCall.showSpeakerControl",
-                "order": 150,
-                "visible": true
-              },
-              {
-                "id": "module.core.videoCall.showMoreControl",
-                "order": 160,
-                "visible": true
-              },
-              {
-                "id": "module.core.videoCall.showEndCallControl",
-                "order": 170,
+                "order": 10,
                 "visible": true
               }
             ]

@@ -120,7 +120,7 @@ internal static class SocialPostModuleConfigContract
         ValidateRows(socialPost, "footerRows", owner);
     }
 
-    private static void ValidateRows(JsonObject socialPost, string key, string owner)
+    internal static void ValidateRows(JsonObject socialPost, string key, string owner)
     {
         var rows = JsonPath.RequiredArray(socialPost, key, owner);
         var idPrefix = key.Equals("footerRows", StringComparison.Ordinal)

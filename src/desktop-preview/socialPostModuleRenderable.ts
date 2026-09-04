@@ -66,7 +66,8 @@ export function socialPostModuleToRenderable(
     : undefined;
   const contentY = screen.y + (status?.box?.height ?? 0);
   const header = contract.showHeader
-    ? rowsSectionNode(payload, componentBaseConfigs, {
+      ? rowsSectionNode(payload, componentBaseConfigs, {
+        ownerId: "module.core.socialPost",
         section: "header",
         rows: contract.rows,
         rowGapToken: contract.rowGapToken,
@@ -79,6 +80,7 @@ export function socialPostModuleToRenderable(
   const bodyTop = header?.box ? header.box.y + header.box.height : contentY;
   const contentBottom = screen.y + screen.height - (navigation?.box?.height ?? 0);
   const footer = rowsSectionNode(payload, componentBaseConfigs, {
+    ownerId: "module.core.socialPost",
     section: "footer",
     rows: contract.footerRows,
     rowGapToken: contract.footerRowGapToken,
@@ -535,10 +537,11 @@ function mediaPagerPages(sources: string[], selectedIndex: number) {
       ];
 }
 
-function rowsSectionNode(
+export function rowsSectionNode(
   payload: DesignPreviewPayload,
   componentBaseConfigs: Record<string, unknown>,
   options: {
+    ownerId: string;
     section: "header" | "footer";
     rows: [SocialPostRow, SocialPostRow];
     rowGapToken: string;
@@ -550,9 +553,9 @@ function rowsSectionNode(
 ): RenderableNode {
   const screen = previewScreenBox(payload);
   const scale = renderScale(payload);
-  const first = renderRow(payload, componentBaseConfigs, options.section, options.rows[0], 0);
+  const first = renderRow(payload, componentBaseConfigs, options.ownerId, options.section, options.rows[0], 0);
   const gap = numberToken(payload, options.rowGapToken) * scale;
-  const second = renderRow(payload, componentBaseConfigs, options.section, options.rows[1], 0);
+  const second = renderRow(payload, componentBaseConfigs, options.ownerId, options.section, options.rows[1], 0);
   const rowsHeight = first.height + gap + second.height;
   const sectionHeight = Math.max(options.height * scale, rowsHeight);
   const sectionY = options.edge === "top"
@@ -577,13 +580,13 @@ function rowsSectionNode(
       componentBaseConfigs,
       options.surfaceSlot,
       "surface",
-      `module.core.socialPost.${options.section}SurfaceSlot`,
+      `${options.ownerId}.${options.section}SurfaceSlot`,
     ),
     { width: surfaceBox.width / scale, height: surfaceBox.height / scale },
-    `module.core.socialPost.${options.section}.surface`,
+    `${options.ownerId}.${options.section}.surface`,
   );
   return {
-    id: `module.core.socialPost.${options.section}`,
+    id: `${options.ownerId}.${options.section}`,
     type: "group",
     frame: 0,
     box: {
@@ -604,6 +607,7 @@ function rowsSectionNode(
 function renderRow(
   payload: DesignPreviewPayload,
   componentBaseConfigs: Record<string, unknown>,
+  ownerId: string,
   section: "header" | "footer",
   row: SocialPostRow,
   y: number,
@@ -639,6 +643,7 @@ function renderRow(
   const children: RenderableNode[] = [];
 
   if (left) children.push(placeMeasuredSlot(
+    ownerId,
     section,
     row.id,
     left,
@@ -647,6 +652,7 @@ function renderRow(
   ));
   if (right) {
     children.push(placeMeasuredSlot(
+      ownerId,
       section,
       row.id,
       right,
@@ -663,6 +669,7 @@ function renderRow(
   let middleX = middleLeft + middleGap;
   for (const item of middle) {
     children.push(placeMeasuredSlot(
+      ownerId,
       section,
       row.id,
       item,
@@ -675,7 +682,7 @@ function renderRow(
   const separatorHeight = row.showSeparator ? Math.max(1, scale) : 0;
   if (row.showSeparator) {
     children.push({
-      id: `module.core.socialPost.${section}.${row.id}.separator`,
+      id: `${ownerId}.${section}.${row.id}.separator`,
       type: "surface",
       frame: 0,
       box: {
@@ -691,7 +698,7 @@ function renderRow(
   return {
     height,
     node: {
-      id: `module.core.socialPost.${section}.${row.id}`,
+      id: `${ownerId}.${section}.${row.id}`,
       type: "group",
       frame: 0,
       box: { x: screen.x, y, width: screen.width, height },
@@ -725,6 +732,7 @@ function rowY(
 }
 
 function placeMeasuredSlot(
+  ownerId: string,
   section: "header" | "footer",
   rowId: SocialPostRow["id"],
   item: MeasuredSlot,
@@ -736,7 +744,7 @@ function placeMeasuredSlot(
     y: y - (item.node.box?.y ?? 0),
   });
   return {
-    id: `module.core.socialPost.${section}.${rowId}.slot.${item.index}.${translated.id}`,
+    id: `${ownerId}.${section}.${rowId}.slot.${item.index}.${translated.id}`,
     type: "group",
     frame: 0,
     box: translated.box,

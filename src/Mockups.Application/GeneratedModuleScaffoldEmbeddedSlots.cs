@@ -145,10 +145,34 @@ public static class GeneratedModuleScaffoldEmbeddedSlots
             "component.textInputBar",
             ["socialPost", "messageTextInputBarSlot"]),
         new(
-            "module.core.videoCall.participant",
+            "module.core.videoCall.footerSurface",
+            "surface",
+            "Footer surface",
+            "component.surface",
+            ["videoCall", "footerSurfaceSlot"]),
+        new(
+            "module.core.videoCall.gridParticipant",
             "callParticipant",
             "Participant",
             "component.callParticipant",
-            ["videoCall", "participantSlot"]),
+            ["videoCall", "gridParticipantSlot"]),
+        new(
+            "module.core.videoCall.headerSurface",
+            "surface",
+            "Header surface",
+            "component.surface",
+            ["videoCall", "headerSurfaceSlot"]),
+        new(
+            "module.core.videoCall.mainParticipant",
+            "callParticipant",
+            "Main participant",
+            "component.callParticipant",
+            ["videoCall", "mainParticipantSlot"]),
+        new(
+            "module.core.videoCall.pipParticipant",
+            "callParticipant",
+            "PIP participant",
+            "component.callParticipant",
+            ["videoCall", "pipParticipantSlot"]),
     ];
 }
