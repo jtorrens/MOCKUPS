@@ -159,9 +159,10 @@ internal sealed class RecordClassFieldValueService
                 localValue ?? inheritedValue,
                 IsInherited: localValue is null));
             return isDevice
-                && DeviceSettingsFieldContract.ParseOverrides(
-                    settings.DeviceOverridesJson,
-                    $"Shot '{node.Id}' Device overrides").Count > 0
+                && OverrideDocumentContract.HasAuthoredValues(
+                    DeviceSettingsFieldContract.ParseOverrides(
+                        settings.DeviceOverridesJson,
+                        $"Shot '{node.Id}' Device overrides"))
                     ? resourceOverrideResult with { IsHighlighted = true }
                     : resourceOverrideResult;
         }
@@ -464,6 +465,47 @@ internal sealed class RecordClassFieldValueService
             context.OwnerNode,
             definition.OverrideDocumentFieldId,
             overrides.ToJsonString());
+    }
+
+    public void ClearRecordReferenceOverrides(
+        ProjectTreeNode ownerNode,
+        FieldDefinition field)
+    {
+        var definition = field.RecordReference
+            ?? throw new InvalidOperationException(
+                $"Field '{field.Id}' is not a RecordReference.");
+        if (string.IsNullOrWhiteSpace(
+                definition.OverrideRecordClassId)
+            || string.IsNullOrWhiteSpace(
+                definition.OverrideDocumentFieldId)
+            || definition.OverrideFieldIds is not { Count: > 0 })
+        {
+            throw new InvalidOperationException(
+                $"RecordReference '{field.Id}' does not declare a complete Overrides contract.");
+        }
+        var owner =
+            $"{ownerNode.RecordClassId} '{ownerNode.Id}' RecordReference Overrides";
+        var current = JsonPath.ParseRequiredObject(
+            _recordReferenceOverrides.GetOverrideDocument(
+                ownerNode,
+                definition.OverrideDocumentFieldId),
+            owner);
+        var allowed = definition.OverrideFieldIds
+            .ToHashSet(StringComparer.Ordinal);
+        foreach (var (fieldId, node) in current)
+        {
+            if (!allowed.Contains(fieldId)
+                || node is not JsonValue value
+                || !value.TryGetValue<string>(out _))
+            {
+                throw new InvalidOperationException(
+                    $"{owner} contains invalid field '{fieldId}'.");
+            }
+        }
+        _recordReferenceOverrides.UpdateOverrideDocument(
+            ownerNode,
+            definition.OverrideDocumentFieldId,
+            new JsonObject().ToJsonString());
     }
 
     private static RecordReferenceDefinition

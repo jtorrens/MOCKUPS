@@ -122,4 +122,11 @@ internal sealed class EditorFieldValueRouter
             context,
             fieldId,
             value);
+
+    public void ClearRecordReferenceOverrides(
+        ProjectTreeNode ownerNode,
+        FieldDefinition definition) =>
+        _recordClassFields.ClearRecordReferenceOverrides(
+            ownerNode,
+            definition);
 }

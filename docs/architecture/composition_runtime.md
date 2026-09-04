@@ -15,7 +15,12 @@ The reference is complete and stable. A class id, short Variant id, label,
 component type, sibling order and collection position are insufficient.
 
 A boundary also owns its explicit local Overrides. Overrides customize that
-one embedded use and do not mutate the referenced Variant.
+one embedded use and do not mutate the referenced Variant. Authorship is
+explicit rather than value-comparison based: a manually stored value remains
+an Override even when it equals the inherited value. Field Restore removes one
+leaf and prunes empty parents; boundary Restore clears all descendant Overrides
+while preserving the Variant reference and unrelated Runtime values. Empty
+objects alone do not count as authored Overrides.
 
 Editing a Runtime-owned Override produces a copied candidate document and
 returns one task for the complete write. A Production instance persists that

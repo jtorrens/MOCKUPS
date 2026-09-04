@@ -380,6 +380,12 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                         return Task.CompletedTask;
                     });
                 },
+                RestoreEmbeddedComponentOverrides = (_) =>
+                {
+                    item[overridesKey] = new JsonObject();
+                    Publish(commit: true);
+                    return Task.CompletedTask;
+                },
             }
             : _services;
         if (input.StructuredCollection is not null
@@ -412,7 +418,9 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
             new FieldValue(
                 definition,
                 currentValue,
-                IsHighlighted: selectsComponent && overrides is { Count: > 0 }),
+                IsHighlighted: selectsComponent
+                    && overrides is not null
+                    && OverrideDocumentContract.HasAuthoredValues(overrides)),
             services);
         control.ValueCommitted += async (_, next) =>
         {

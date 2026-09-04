@@ -1,5 +1,7 @@
 using Mockups.DesktopEditorShell.Data;
+using Mockups.DesktopEditorShell.Common;
 using System;
+using System.Collections.Generic;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
@@ -95,6 +97,63 @@ internal sealed class EmbeddedComponentDocumentStore
             context.Slots,
             fieldId,
             value);
+    }
+
+    public async Task ClearOverridesAsync(
+        EditorEmbeddedContext context)
+    {
+        if (context.RuntimeSource is null)
+        {
+            _database.ClearEmbeddedComponentOverrides(
+                context.OwnerNode,
+                context.Slots);
+            return;
+        }
+
+        await _runtimeCommitGate.WaitAsync();
+        try
+        {
+            var candidate = context.RuntimeSource.Overrides
+                .DeepClone()
+                .AsObject();
+            var target = RuntimeOverridesAt(
+                candidate,
+                context.Slots);
+            target?.Clear();
+            await context.RuntimeSource.OverridesChanged(candidate);
+            ReplaceObject(
+                context.RuntimeSource.Overrides,
+                candidate);
+        }
+        finally
+        {
+            _runtimeCommitGate.Release();
+        }
+    }
+
+    private static JsonObject? RuntimeOverridesAt(
+        JsonObject root,
+        IReadOnlyList<EmbeddedComponentSlotDefinition> slots)
+    {
+        JsonObject current = root;
+        foreach (var slot in slots)
+        {
+            var slotNode = JsonPath.Get(current, slot.SlotPath);
+            if (slotNode is null) return null;
+            var slotObject = slotNode as JsonObject
+                ?? throw new InvalidOperationException(
+                    $"Embedded component slot '{slot.FieldId}' must be an object.");
+            if (!slotObject.TryGetPropertyValue(
+                    "overrides",
+                    out var overridesNode))
+            {
+                return null;
+            }
+            current = overridesNode as JsonObject
+                ?? throw new InvalidOperationException(
+                    $"Embedded component slot '{slot.FieldId}' overrides must be an object.");
+        }
+        return current;
     }
 
     private static void ReplaceObject(

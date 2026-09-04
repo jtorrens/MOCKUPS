@@ -8,7 +8,8 @@ using Mockups.DesktopEditorShell.Common;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal sealed class DictionaryComponentVariantSlotControl : StackPanel, IDictionaryValueControl
+internal sealed class DictionaryComponentVariantSlotControl : StackPanel, IDictionaryValueControl,
+    IDictionaryOverrideStateControl
 {
     private readonly FieldDefinition _definition;
     private readonly DictionaryComponentVariantControl _variantControl;
@@ -18,6 +19,7 @@ internal sealed class DictionaryComponentVariantSlotControl : StackPanel, IDicti
     public DictionaryComponentVariantSlotControl(
         FieldDefinition definition,
         string value,
+        bool isInherited,
         Func<string, Task>? openComponentVariantReference,
         Func<string, JsonObject, Func<JsonObject, Task>, Task>? openRuntimeComponentOverrides)
     {
@@ -36,6 +38,9 @@ internal sealed class DictionaryComponentVariantSlotControl : StackPanel, IDicti
         Func<string, Task>? openOverrides = _openRuntimeComponentOverrides is null
             ? null
             : async (_) => await OpenOverrides();
+        Func<string, Task>? restoreOverrides = _openRuntimeComponentOverrides is null
+            ? null
+            : (_) => RestoreOverrides();
         _variantControl = new DictionaryComponentVariantControl(
             definition with
             {
@@ -43,11 +48,14 @@ internal sealed class DictionaryComponentVariantSlotControl : StackPanel, IDicti
                 DefaultValue = reference,
             },
             reference,
-            isHighlighted: ComponentVariantSlotDocumentContract.Overrides(
-                _slot,
-                $"Dictionary field '{definition.Id}'").Count > 0,
+            isHighlighted: !isInherited
+                && OverrideDocumentContract.HasAuthoredValues(
+                    ComponentVariantSlotDocumentContract.Overrides(
+                        _slot,
+                        $"Dictionary field '{definition.Id}'")),
             openComponentVariantReference,
-            openEmbeddedComponent: openOverrides);
+            openEmbeddedComponent: openOverrides,
+            restoreEmbeddedComponentOverrides: restoreOverrides);
         _variantControl.ValueChanged += (_, next) =>
         {
             SetReference(next);
@@ -58,12 +66,18 @@ internal sealed class DictionaryComponentVariantSlotControl : StackPanel, IDicti
             SetReference(next);
             ValueCommitted?.Invoke(this, Serialize());
         };
+        _variantControl.OverrideStateChanged += (_, _) =>
+            OverrideStateChanged?.Invoke(this, EventArgs.Empty);
         Children.Add(_variantControl);
     }
 
     public event EventHandler<string>? ValueChanged;
 
     public event EventHandler<string>? ValueCommitted;
+
+    public bool HasOverrides => _variantControl.HasOverrides;
+
+    public event EventHandler? OverrideStateChanged;
 
     public void SetValue(string value)
     {
@@ -93,7 +107,21 @@ internal sealed class DictionaryComponentVariantSlotControl : StackPanel, IDicti
         var overrides = ComponentVariantSlotDocumentContract.Overrides(
             _slot,
             $"Dictionary field '{_definition.Id}'");
-        _variantControl.SetOverrideHighlighted(overrides.Count > 0);
+        _variantControl.SetOverrideHighlighted(
+            OverrideDocumentContract.HasAuthoredValues(overrides));
+    }
+
+    private Task RestoreOverrides()
+    {
+        _slot["overrides"] = new JsonObject();
+        ComponentVariantSlotDocumentContract.Validate(
+            _slot,
+            $"Dictionary field '{_definition.Id}'");
+        RefreshOverrideButton();
+        var serialized = Serialize();
+        ValueChanged?.Invoke(this, serialized);
+        ValueCommitted?.Invoke(this, serialized);
+        return Task.CompletedTask;
     }
 
     private async Task OpenOverrides()

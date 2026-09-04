@@ -351,6 +351,9 @@ public interface IComponentDocumentStore
         IReadOnlyList<EditorShell.EmbeddedComponentSlotDefinition> slots,
         string embeddedFieldId,
         string value);
+    void ClearEmbeddedComponentOverrides(
+        EditorShell.ProjectTreeNode ownerNode,
+        IReadOnlyList<EditorShell.EmbeddedComponentSlotDefinition> slots);
     void UpdateRuntimeComponentOverride(
         JsonObject overrides,
         IReadOnlyList<EditorShell.EmbeddedComponentSlotDefinition> slots,

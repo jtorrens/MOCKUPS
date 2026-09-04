@@ -17,6 +17,12 @@ internal interface IDictionaryPreviewValueControl
     void RefreshPreview();
 }
 
+internal interface IDictionaryOverrideStateControl
+{
+    bool HasOverrides { get; }
+    event EventHandler? OverrideStateChanged;
+}
+
 // Composite dictionary values can change the runtime contract exposed by their
 // owning record. The shell listens only to this generic structural signal and
 // rebuilds the current editor surface from persisted metadata.

@@ -158,6 +158,16 @@ internal sealed class ComponentClassFieldValueService
             value);
     }
 
+    public void ClearEmbeddedComponentOverrides(
+        ProjectTreeNode node,
+        IReadOnlyList<EmbeddedComponentSlotDefinition> slots)
+    {
+        if (node.IsLocked) return;
+        _documents.ClearEmbeddedComponentOverrides(
+            node,
+            slots);
+    }
+
     public FieldValue CreateEmbeddedFieldValue(EditorEmbeddedContext context, string embeddedFieldId) =>
         ValidateFieldValue(_embeddedDocuments.CreateFieldValue(context, embeddedFieldId));
 
@@ -175,6 +185,10 @@ internal sealed class ComponentClassFieldValueService
             embeddedFieldId,
             value);
     }
+
+    public Task ClearEmbeddedComponentOverridesAsync(
+        EditorEmbeddedContext context) =>
+        _embeddedDocuments.ClearOverridesAsync(context);
 
     public void CommitEmbeddedFieldValue(
         EditorEmbeddedContext context,

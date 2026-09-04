@@ -96,7 +96,11 @@ internal sealed class EditorDictionaryFieldServices
         Func<FieldDefinition, ComponentInputBindingDefinition, Task>? openComponentInputBinding = null,
         Action<EditorEmbeddedContext>? openRuntimeComponentOverrides = null,
         Func<FieldDefinition, string, Task>?
-            openRecordReferenceOverrides = null)
+            openRecordReferenceOverrides = null,
+        Func<string, Task>?
+            restoreEmbeddedComponentOverrides = null,
+        Func<FieldDefinition, string, Task>?
+            restoreRecordReferenceOverrides = null)
     {
         int ResolveBehaviorTimingFrames(
             FieldDefinition definition,
@@ -175,6 +179,8 @@ internal sealed class EditorDictionaryFieldServices
             OpenComponentVariantReference:
                 openComponentVariantReference,
             OpenEmbeddedComponent: openEmbeddedComponent,
+            RestoreEmbeddedComponentOverrides:
+                restoreEmbeddedComponentOverrides,
             OpenComponentInputBinding: openComponentInputBinding,
             ResolveBehaviorTimingFrames:
                 ResolveBehaviorTimingFrames,
@@ -186,6 +192,8 @@ internal sealed class EditorDictionaryFieldServices
                     : OpenRuntimeOverrides,
             OpenRecordReferenceOverrides:
                 openRecordReferenceOverrides,
+            RestoreRecordReferenceOverrides:
+                restoreRecordReferenceOverrides,
             ConfirmStructuredCollectionItemDelete:
                 _domainDialogs.ConfirmRuntimeCollectionItemDelete,
             ConfirmDiscardForwardedRuntimeInputs:
@@ -203,7 +211,11 @@ internal sealed class EditorDictionaryFieldServices
         Func<FieldDefinition, ComponentInputBindingDefinition, Task>? openComponentInputBinding = null,
         Action<EditorEmbeddedContext>? openRuntimeComponentOverrides = null,
         Func<FieldDefinition, string, Task>?
-            openRecordReferenceOverrides = null)
+            openRecordReferenceOverrides = null,
+        Func<string, Task>?
+            restoreEmbeddedComponentOverrides = null,
+        Func<FieldDefinition, string, Task>?
+            restoreRecordReferenceOverrides = null)
     {
         var projectId = ProjectAncestor(node).Id;
         string IconThemeId()
@@ -269,12 +281,16 @@ internal sealed class EditorDictionaryFieldServices
             GetComponentVariantRuntimeCollections: _contextData.ComponentVariantRuntimeCollections,
             OpenComponentVariantReference: openComponentVariantReference,
             OpenEmbeddedComponent: openEmbeddedComponent,
+            RestoreEmbeddedComponentOverrides:
+                restoreEmbeddedComponentOverrides,
             OpenComponentInputBinding: openComponentInputBinding,
             ResolveBehaviorTimingFrames: ResolveBehaviorTimingFrames,
             ConfirmStopRuntimeInputForwarding: _domainDialogs.ConfirmStopRuntimeInputForwarding,
             OpenRuntimeComponentOverrides: openRuntimeComponentOverrides is null ? null : OpenRuntimeOverrides,
             OpenRecordReferenceOverrides:
                 openRecordReferenceOverrides,
+            RestoreRecordReferenceOverrides:
+                restoreRecordReferenceOverrides,
             ConfirmStructuredCollectionItemDelete: _domainDialogs.ConfirmRuntimeCollectionItemDelete,
             ConfirmDiscardForwardedRuntimeInputs: _domainDialogs.ConfirmDiscardForwardedRuntimeInputs,
             SetRuntimeTestValue: _setRuntimeTestValue,

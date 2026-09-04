@@ -105,7 +105,12 @@ local Override document.
 ```
 
 Variant selection, navigation to the class and local Overrides use the shared
-compact actions in one row.
+compact actions in one row. Every boundary that exposes Overrides also exposes
+Restore immediately to its right. Restore clears the complete local Overrides
+document below that boundary, preserves the exact Variant reference and any
+unrelated Runtime values, and leaves an empty object only where the current
+document contract requires it. Empty objects alone do not mark a boundary as
+overridden.
 
 A fixed boundary exposes Variant, class navigation and Overrides, never a
 Component selector. A polymorphic boundary exposes Component selection only
@@ -114,7 +119,7 @@ when its declared selector explicitly contains `*`.
 A `RecordReference` may declaratively name the referenced record class, sparse
 owner-local document and exact editable field set that support Overrides. The
 registered reference control adds the same compact Overrides action and
-navigates through `EditorWorkspaceCoordinator` into the central contextual
+Restore action, and navigates through `EditorWorkspaceCoordinator` into the central contextual
 editor. The normal layout/card projection renders that referenced class with
 its breadcrumb and session view memory. Overrides never opens a modal or a
 parallel editor surface. Editors, shell and shared services do not add buttons,
@@ -177,12 +182,14 @@ semantics, not a comparison between Variant snapshots:
   owning boundary path;
 - it reuses the registered dictionary control and the same Restore commit;
 - restoring a field removes it from the projection;
-- an explicit control edit that returns the canonical value to the exact
-  currently inherited value commits the inherited storage value, removes the
-  local Override leaf and prunes empty objects inside that Override boundary;
+- every explicit control edit remains authored, including a value equal to the
+  currently inherited value; equality never changes ownership;
+- only Restore removes a local Override: field Restore removes that leaf and
+  prunes empty parent objects, while boundary Restore clears every descendant
+  Override recursively;
 - reads never perform that comparison: if a parent Variant later changes and
   its value happens to match an already stored Override, the Override remains
-  intact until an explicit edit or Restore removes it;
+  intact until Restore removes it;
 - direct fields stored by the current Variant never appear, even when they
   differ from the protected Default Variant, class scaffold or seed;
 - referenced child Variant data never appears as an Override of its parent.

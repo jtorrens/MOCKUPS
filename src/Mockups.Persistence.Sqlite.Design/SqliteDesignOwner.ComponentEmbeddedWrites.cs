@@ -6,6 +6,87 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SqliteDesignOwner
 {
+    public void ClearEmbeddedComponentOverrides(
+        ProjectTreeNode ownerNode,
+        IReadOnlyList<EmbeddedComponentSlotDefinition> slots)
+    {
+        if (slots.Count == 0)
+        {
+            throw new InvalidOperationException(
+                "Clearing embedded Component Overrides needs at least one slot.");
+        }
+
+        lock (WriteGate)
+        {
+            using var connection = OpenConnection();
+            if (ownerNode.Kind is ProjectTreeNodeKind.Module
+                or ProjectTreeNodeKind.ModuleVariant)
+            {
+                var settings = ownerNode.Kind == ProjectTreeNodeKind.Module
+                    ? GetModuleSettings(ownerNode.Id)
+                    : GetModuleVariantSettings(ownerNode);
+                var config = ParseJsonObject(settings.ConfigJson);
+                EmbeddedOverrides(config, slots, createIfMissing: false)?.Clear();
+                ApplyComponentInputBindingsProjections(
+                    connection,
+                    settings.ProjectId,
+                    config,
+                    ComponentInputBindingsProjectionCatalog.RecordOwners());
+                if (ownerNode.Kind == ProjectTreeNodeKind.Module)
+                {
+                    _appModuleRepository.UpdateModuleConfig(
+                        connection,
+                        ownerNode.Id,
+                        config.ToJsonString());
+                }
+                else
+                {
+                    ReplaceModuleVariantConfig(
+                        ownerNode,
+                        config.ToJsonString());
+                }
+                return;
+            }
+
+            if (ownerNode.Kind == ProjectTreeNodeKind.ComponentClass)
+            {
+                var settings = GetComponentClassSettings(
+                    connection,
+                    ownerNode.Id);
+                var config = ParseJsonObject(settings.ConfigJson);
+                var metadata = ParseJsonObject(settings.MetadataJson);
+                EmbeddedOverrides(config, slots, createIfMissing: false)?.Clear();
+                PersistDefaultComponentConfig(
+                    connection,
+                    ownerNode.Id,
+                    config,
+                    metadata);
+                return;
+            }
+
+            if (ownerNode.Kind != ProjectTreeNodeKind.ComponentVariant)
+            {
+                throw new InvalidOperationException(
+                    $"Embedded Component Overrides are not supported for '{ownerNode.Kind}'.");
+            }
+            var variantConfig = ComponentVariantConfigForUpdate(
+                connection,
+                ownerNode,
+                out var componentClassId,
+                out var variantMetadata);
+            EmbeddedOverrides(
+                variantConfig,
+                slots,
+                createIfMissing: false)?.Clear();
+            PersistComponentVariantUpdate(
+                connection,
+                ownerNode,
+                componentClassId,
+                variantConfig,
+                variantMetadata);
+        }
+    }
+
     public void UpdateEmbeddedComponentField(
         string componentClassId,
         string slotFieldId,

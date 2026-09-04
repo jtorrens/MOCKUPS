@@ -436,7 +436,7 @@ internal sealed partial class SqliteDesignOwner
             slots,
             createIfMissing: false);
         return overrides is not null
-            && HasEffectiveJsonValue(overrides);
+            && OverrideDocumentContract.HasAuthoredValues(overrides);
     }
 
     private JsonObject EffectiveEmbeddedBaseConfig(

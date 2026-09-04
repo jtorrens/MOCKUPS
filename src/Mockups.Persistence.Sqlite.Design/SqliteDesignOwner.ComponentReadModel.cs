@@ -583,29 +583,6 @@ internal sealed partial class SqliteDesignOwner
             return false;
         }
 
-        return HasEffectiveJsonValue(overrides);
-    }
-
-    internal static bool HasEffectiveJsonValue(JsonObject value)
-    {
-        foreach (var child in value)
-        {
-            if (child.Value is JsonObject childObject)
-            {
-                if (HasEffectiveJsonValue(childObject))
-                {
-                    return true;
-                }
-
-                continue;
-            }
-
-            if (child.Value is not null)
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return OverrideDocumentContract.HasAuthoredValues(overrides);
     }
 }

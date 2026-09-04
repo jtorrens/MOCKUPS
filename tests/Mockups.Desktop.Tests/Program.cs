@@ -183,7 +183,7 @@ var tests = new (string Name, Action Run)[]
     ("collapsed editor cards defer their snapshot until expansion", CollapsedEditorCardsDeferSnapshots),
     ("editor visual cards require prepared field snapshots", EditorVisualCardsRequirePreparedFieldSnapshots),
     ("flat Variant Overrides include only local inherited fields", FlatVariantOverridesUseRestoreSemantics),
-    ("explicit Override edits reconcile only with the current inherited value", ExplicitOverrideEditsReconcileCurrentInheritedValue),
+    ("explicit Override edits remain authored until Restore", ExplicitOverrideEditsRemainAuthoredUntilRestore),
     ("rapid visual selection commits only the latest prepared editor", RapidVisualSelectionCommitsLatestPreparedEditor),
     ("new Shot reload prepares Preview before selection", NewShotReloadPreparesPreviewBeforeSelection),
     ("failed Preview preparation keeps the prior tree catalog and selection", FailedPreviewPreparationKeepsPriorSession),
@@ -4849,7 +4849,7 @@ static void FlatVariantOverridesUseRestoreSemantics()
     }
 }
 
-static void ExplicitOverrideEditsReconcileCurrentInheritedValue()
+static void ExplicitOverrideEditsRemainAuthoredUntilRestore()
 {
     using var session = HeadlessUnitTestSession.StartNew(
         typeof(HeadlessTestApplication));
@@ -4911,6 +4911,13 @@ static void ExplicitOverrideEditsReconcileCurrentInheritedValue()
                 .Single();
             toggle.IsChecked = false;
             Dispatcher.UIThread.RunJobs();
+            Equal("false", inheritedCommit);
+            True(control.HasLocalOverride);
+            control.Children
+                .OfType<Button>()
+                .Single((button) => button.Content as string == "↺")
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
             Equal("inherited", inheritedCommit);
             True(!control.HasLocalOverride);
 
@@ -4922,7 +4929,7 @@ static void ExplicitOverrideEditsReconcileCurrentInheritedValue()
             pairTextBoxes[0].Text = "0";
             pairTextBoxes[1].Text = "0";
             Dispatcher.UIThread.RunJobs();
-            True(!pairControl.HasLocalOverride);
+            True(pairControl.HasLocalOverride);
             pairTextBoxes[1].RaiseEvent(
                 new FocusChangedEventArgs(
                     InputElement.LostFocusEvent));
@@ -4931,9 +4938,16 @@ static void ExplicitOverrideEditsReconcileCurrentInheritedValue()
                 () =>
                 {
                     Dispatcher.UIThread.RunJobs();
-                    return inheritedPairCommit == "inherited";
+                    return inheritedPairCommit == "0|0";
                 },
                 TimeSpan.FromSeconds(2)));
+            pairControl.Children
+                .OfType<Button>()
+                .Single((button) => button.Content as string == "↺")
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            Equal("inherited", inheritedPairCommit);
+            True(!pairControl.HasLocalOverride);
 
             var parentChangedDefinition = definition with
             {
@@ -7549,6 +7563,7 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
                 """
                 {"variantReference":"component_project_foqn_s2_list::variant::chats","overrides":{"marker":"preserved"}}
                 """,
+                false,
                 null,
                 null);
             typeof(DictionaryComponentVariantSlotControl)
@@ -7575,6 +7590,45 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
                         "Changed fixed Component slot"),
                     "marker",
                     "Changed fixed Component slot Overrides"));
+
+            string? restoredSlotJson = null;
+            var restorableSlot = new DictionaryComponentVariantSlotControl(
+                listField.Definition with { IsEditable = true },
+                """
+                {"variantReference":"component_project_foqn_s2_list::variant::chats","overrides":{"surface":{"backgroundColorToken":"theme.colors.surface"},"empty":{}}}
+                """,
+                false,
+                null,
+                (_, _, _) => Task.CompletedTask);
+            restorableSlot.ValueCommitted += (_, json) =>
+                restoredSlotJson = json;
+            var restoreAll = restorableSlot
+                .GetVisualDescendants()
+                .OfType<Button>()
+                .Single((button) =>
+                    Avalonia.Automation.AutomationProperties
+                        .GetName(button)
+                    == "Restore all overrides for List");
+            True(restoreAll.IsEnabled);
+            restoreAll.RaiseEvent(
+                new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            var restoredSlot = ComponentVariantSlotDocumentContract.Parse(
+                restoredSlotJson
+                    ?? throw new InvalidOperationException(
+                        "Component Variant Slot Restore did not commit."),
+                "Restored fixed Component slot");
+            Equal(
+                "component_project_foqn_s2_list::variant::chats",
+                ComponentVariantSlotDocumentContract.VariantReference(
+                    restoredSlot,
+                    "Restored fixed Component slot"));
+            True(!OverrideDocumentContract.HasAuthoredValues(
+                ComponentVariantSlotDocumentContract.Overrides(
+                    restoredSlot,
+                    "Restored fixed Component slot")));
+            True(!OverrideDocumentContract.HasAuthoredValues(
+                JsonNode.Parse("{\"nested\":{}}")!.AsObject()));
 
             var editableVariant = NodeCommands(database).SaveModuleVariant(
                 selected,
@@ -15588,6 +15642,17 @@ static void ShotDeviceSettingsOverridesPreserveOwnership()
             restored.EffectiveDeviceSettings(
                 database.GetDeviceSettings(alternateDeviceId))
                 .Manufacturer);
+        values.ClearRecordReferenceOverrides(
+            shotNode,
+            referenceField.Definition);
+        True(!OverrideDocumentContract.HasAuthoredValues(
+            JsonPath.ParseRequiredObject(
+                database.GetShotSettings(shotNode.Id)
+                    .DeviceOverridesJson,
+                "Cleared Shot Device settings test")));
+        True(!values.CreateFieldValue(
+            shotNode,
+            "shot.deviceOverrideId").IsHighlighted);
     }
     finally
     {

@@ -1783,36 +1783,6 @@ internal sealed class RuntimeInputsCollectionEditor
             componentItems.DocumentKeys,
             $"Runtime collection '{collection.Id}' item '{ItemId(item, itemIndex)}'");
         var selected = _ownerDocuments.ComponentVariantSelection(variantReference);
-        async Task ApplyOverrides(JsonObject nextOverrides)
-        {
-            var itemId = ItemId(
-                item,
-                itemIndex);
-            if (owner.IsInstance)
-            {
-                await _instanceDocuments.UpdateCollectionValueAsync(
-                    owner.Node.Id,
-                    StorageCollectionKey(collection),
-                    itemId,
-                    componentItems.OverridesJsonKey,
-                    nextOverrides);
-            }
-            item[componentItems.OverridesJsonKey] =
-                nextOverrides.DeepClone();
-            _setPreviewCollectionItemValues(
-                collection.JsonKey,
-                itemId,
-                new Dictionary<string, JsonNode?>
-                {
-                    [componentItems.OverridesJsonKey] =
-                        nextOverrides,
-                });
-            if (owner.IsInstance)
-            {
-                _onChanged();
-            }
-            _testValuesChanged();
-        }
         _openEmbeddedContext(new EditorEmbeddedContext(
             owner.Node,
             [],
@@ -1823,7 +1793,48 @@ internal sealed class RuntimeInputsCollectionEditor
                 selected.RecordClassId,
                 selected.ConfigJson,
                 overrides,
-                ApplyOverrides)));
+                (nextOverrides) => ApplyRuntimeComponentOverrides(
+                    owner,
+                    collection,
+                    itemIndex,
+                    item,
+                    nextOverrides))));
+    }
+
+    private async Task ApplyRuntimeComponentOverrides(
+        RuntimeInputOwner owner,
+        RuntimeInputCollectionDefinition collection,
+        int itemIndex,
+        JsonObject item,
+        JsonObject nextOverrides)
+    {
+        var componentItems = collection.ComponentItems
+            ?? throw new InvalidOperationException(
+                $"Collection '{collection.Id}' has no component item contract.");
+        var itemId = ItemId(item, itemIndex);
+        if (owner.IsInstance)
+        {
+            await _instanceDocuments.UpdateCollectionValueAsync(
+                owner.Node.Id,
+                StorageCollectionKey(collection),
+                itemId,
+                componentItems.OverridesJsonKey,
+                nextOverrides);
+        }
+        item[componentItems.OverridesJsonKey] =
+            nextOverrides.DeepClone();
+        _setPreviewCollectionItemValues(
+            collection.JsonKey,
+            itemId,
+            new Dictionary<string, JsonNode?>
+            {
+                [componentItems.OverridesJsonKey] = nextOverrides,
+            });
+        if (owner.IsInstance)
+        {
+            _onChanged();
+        }
+        _testValuesChanged();
     }
 
     private static JsonObject CloneObject(JsonObject source) =>
@@ -1853,7 +1864,8 @@ internal sealed class RuntimeInputsCollectionEditor
         var hasComponentOverrides = selectsComponent
             && componentItems is not null
             && item[componentItems.OverridesJsonKey] is JsonObject currentOverrides
-            && ComponentOverrideCount(currentOverrides) > 0;
+            && OverrideDocumentContract.HasAuthoredValues(
+                currentOverrides);
         var services = DictionaryServices(owner, (fieldId) =>
         {
             var source = collection.Fields.FirstOrDefault((candidate) => candidate.Id == fieldId);
@@ -1873,6 +1885,16 @@ internal sealed class RuntimeInputsCollectionEditor
             : null,
         openRuntimeComponentOverrides: _openEmbeddedContext) with
         {
+            RestoreEmbeddedComponentOverrides = selectsComponent
+                && componentItems is not null
+                && openComponentOverrides is not null
+                    ? (_) => ApplyRuntimeComponentOverrides(
+                        owner,
+                        collection,
+                        itemIndex,
+                        item,
+                        new JsonObject())
+                    : null,
             DecorateStructuredCollectionField = owner.IsInstance
                 ? (nestedInput, targetId, nestedControl) => DecorateAnimationToggle(owner, nestedInput, targetId, nestedControl)
                 : null,
@@ -2060,28 +2082,6 @@ internal sealed class RuntimeInputsCollectionEditor
             return collection.ItemRuntimeContractJsonKey;
         return collection.ComponentItems?.InputsJsonKey
             ?? throw new InvalidOperationException($"Collection '{collection.Id}' has no item runtime contract.");
-    }
-
-    private static int ComponentOverrideCount(JsonObject overrides)
-    {
-        var count = 0;
-        void Visit(JsonNode? node)
-        {
-            switch (node)
-            {
-                case JsonObject objectValue:
-                    foreach (var value in objectValue.Select((entry) => entry.Value)) Visit(value);
-                    break;
-                case JsonArray arrayValue:
-                    foreach (var value in arrayValue) Visit(value);
-                    break;
-                case not null:
-                    count++;
-                    break;
-            }
-        }
-        Visit(overrides);
-        return count;
     }
 
     private Control DecorateAnimationToggle(

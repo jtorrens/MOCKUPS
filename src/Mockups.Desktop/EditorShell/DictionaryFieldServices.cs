@@ -21,12 +21,15 @@ internal sealed record DictionaryFieldServices(
     Func<string, IReadOnlyList<RuntimeInputCollectionDefinition>>? GetComponentVariantRuntimeCollections = null,
     Func<string, Task>? OpenComponentVariantReference = null,
     Func<string, Task>? OpenEmbeddedComponent = null,
+    Func<string, Task>? RestoreEmbeddedComponentOverrides = null,
     Func<FieldDefinition, ComponentInputBindingDefinition, Task>? OpenComponentInputBinding = null,
     Func<FieldDefinition, string, int>? ResolveBehaviorTimingFrames = null,
     Func<string, Task<bool>>? ConfirmStopRuntimeInputForwarding = null,
     Func<string, JsonObject, Func<JsonObject, Task>, Task>? OpenRuntimeComponentOverrides = null,
     Func<FieldDefinition, string, Task>?
         OpenRecordReferenceOverrides = null,
+    Func<FieldDefinition, string, Task>?
+        RestoreRecordReferenceOverrides = null,
     Func<string, Task<bool>>? ConfirmStructuredCollectionItemDelete = null,
     Func<string, IReadOnlyList<string>, Task<bool>>? ConfirmDiscardForwardedRuntimeInputs = null,
     Action<string, string>? SetRuntimeTestValue = null,

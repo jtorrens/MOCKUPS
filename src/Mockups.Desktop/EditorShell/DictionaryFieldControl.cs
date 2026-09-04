@@ -23,6 +23,7 @@ internal sealed class DictionaryFieldControl : Grid
     private readonly Grid? _valueHost;
     private readonly Border? _complexSeparator;
     private bool _isInherited;
+    private bool _hasNestedOverrides;
     private string _value;
     private string _lastCommittedValue;
 
@@ -42,6 +43,7 @@ internal sealed class DictionaryFieldControl : Grid
         services ??= new DictionaryFieldServices();
         _definition = fieldValue.Definition;
         _isInherited = fieldValue.IsInherited;
+        _hasNestedOverrides = fieldValue.IsHighlighted;
         _value = fieldValue.IsInherited ? fieldValue.Definition.InheritedValue : fieldValue.Value;
         _lastCommittedValue = fieldValue.IsInherited ? fieldValue.Definition.InheritedStorageValue : fieldValue.Value;
         _valueOnly = valueOnly;
@@ -287,27 +289,8 @@ internal sealed class DictionaryFieldControl : Grid
 
     private void SetLocalValue(string value)
     {
-        if (_definition.CanInherit
-            && _isInherited
-            && value == _definition.InheritedValue)
-        {
-            return;
-        }
-
         if (!_isInherited && _value == value)
         {
-            return;
-        }
-
-        if (_definition.CanInherit
-            && value == _definition.InheritedValue)
-        {
-            _isInherited = true;
-            SetDisplayedValue(_definition.InheritedValue);
-            UpdateState();
-            ValueChanged?.Invoke(
-                this,
-                _definition.InheritedStorageValue);
             return;
         }
 
@@ -372,6 +355,15 @@ internal sealed class DictionaryFieldControl : Grid
         {
             runtimeContractControl.RuntimeContractChanged += (_, _) =>
                 RuntimeContractChanged?.Invoke(this, EventArgs.Empty);
+        }
+        if (valueControl is IDictionaryOverrideStateControl overrideStateControl)
+        {
+            _hasNestedOverrides = overrideStateControl.HasOverrides;
+            overrideStateControl.OverrideStateChanged += (_, _) =>
+            {
+                _hasNestedOverrides = overrideStateControl.HasOverrides;
+                UpdateState();
+            };
         }
 
         if (valueControl is Control control)
@@ -452,7 +444,7 @@ internal sealed class DictionaryFieldControl : Grid
     {
         var isDefault = IsDefault;
         _restoreButton.IsVisible = _definition.CanInherit && !isDefault && _definition.IsEditable;
-        if (isDefault)
+        if (isDefault && !_hasNestedOverrides)
         {
             _label.ClearValue(TextBlock.ForegroundProperty);
         }
@@ -461,7 +453,7 @@ internal sealed class DictionaryFieldControl : Grid
             _label.Foreground = new SolidColorBrush(Color.Parse("#D6A638"));
         }
 
-        PseudoClasses.Set(":changed", !isDefault);
+        PseudoClasses.Set(":changed", !isDefault || _hasNestedOverrides);
     }
 
     private void UpdateResponsiveLabelWidth(double availableWidth)

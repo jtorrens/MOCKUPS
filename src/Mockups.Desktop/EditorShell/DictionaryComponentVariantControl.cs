@@ -10,7 +10,8 @@ using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal sealed class DictionaryComponentVariantControl : Grid, IDictionaryValueControl
+internal sealed class DictionaryComponentVariantControl : Grid, IDictionaryValueControl,
+    IDictionaryOverrideStateControl
 {
     private readonly FieldDefinition _definition;
     private readonly IReadOnlyList<FieldOption> _references;
@@ -18,6 +19,8 @@ internal sealed class DictionaryComponentVariantControl : Grid, IDictionaryValue
     private readonly EditorInstantComboBox _variantCombo;
     private readonly Button? _openButton;
     private readonly Button? _overrideButton;
+    private readonly Button? _restoreButton;
+    private bool _hasOverrides;
     private bool _isUpdating;
 
     public DictionaryComponentVariantControl(
@@ -25,9 +28,11 @@ internal sealed class DictionaryComponentVariantControl : Grid, IDictionaryValue
         string value,
         bool isHighlighted,
         Func<string, Task>? openComponentVariantReference,
-        Func<string, Task>? openEmbeddedComponent)
+        Func<string, Task>? openEmbeddedComponent,
+        Func<string, Task>? restoreEmbeddedComponentOverrides)
     {
         _definition = definition;
+        _hasOverrides = isHighlighted;
         _references = definition.Options ?? [];
         var selectsComponentClass = definition.SelectComponentClass;
         MinWidth = 0;
@@ -95,6 +100,32 @@ internal sealed class DictionaryComponentVariantControl : Grid, IDictionaryValue
             EditorAccessibility.Describe(_overrideButton, $"Edit overrides for {_definition.DisplayLabel}");
             EditorOverrideVisuals.ApplyActionButton(_overrideButton, isHighlighted);
             _overrideButton.Click += async (_, _) => await openEmbeddedComponent(_definition.Id);
+
+            if (restoreEmbeddedComponentOverrides is null)
+            {
+                throw new InvalidOperationException(
+                    $"Dictionary field '{definition.Id}' exposes Overrides without Restore.");
+            }
+            _restoreButton = new Button
+            {
+                Content = "↺",
+                Width = 32,
+                Height = 32,
+                Padding = new Thickness(0),
+                HorizontalContentAlignment = HorizontalAlignment.Center,
+                VerticalContentAlignment = VerticalAlignment.Center,
+            };
+            EditorAccessibility.Describe(
+                _restoreButton,
+                $"Restore all overrides for {_definition.DisplayLabel}");
+            ToolTip.SetTip(
+                _restoreButton,
+                $"Restore all overrides for {_definition.DisplayLabel}");
+            _restoreButton.Click += async (_, _) =>
+            {
+                await restoreEmbeddedComponentOverrides(_definition.Id);
+                SetOverrideHighlighted(false);
+            };
         }
 
         var variantRow = new DockPanel
@@ -103,6 +134,12 @@ internal sealed class DictionaryComponentVariantControl : Grid, IDictionaryValue
             MinWidth = 0,
             ClipToBounds = true,
         };
+        if (_restoreButton is not null)
+        {
+            _restoreButton.Margin = new Thickness(8, 0, 0, 0);
+            DockPanel.SetDock(_restoreButton, Dock.Right);
+            variantRow.Children.Add(_restoreButton);
+        }
         if (_overrideButton is not null)
         {
             _overrideButton.Margin = new Thickness(8, 0, 0, 0);
@@ -127,11 +164,26 @@ internal sealed class DictionaryComponentVariantControl : Grid, IDictionaryValue
 
     public event EventHandler<string>? ValueCommitted;
 
+    public bool HasOverrides => _hasOverrides;
+
+    public event EventHandler? OverrideStateChanged;
+
     public void SetOverrideHighlighted(bool isHighlighted)
     {
+        var changed = _hasOverrides != isHighlighted;
+        _hasOverrides = isHighlighted;
         if (_overrideButton is not null)
         {
             EditorOverrideVisuals.ApplyActionButton(_overrideButton, isHighlighted);
+        }
+        if (_restoreButton is not null)
+        {
+            EditorOverrideVisuals.ApplyActionButton(_restoreButton, isHighlighted);
+        }
+        UpdateOpenButton();
+        if (changed)
+        {
+            OverrideStateChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 
@@ -246,6 +298,12 @@ internal sealed class DictionaryComponentVariantControl : Grid, IDictionaryValue
         if (_overrideButton is not null)
         {
             _overrideButton.IsEnabled = _definition.IsEditable && hasSelection;
+        }
+        if (_restoreButton is not null)
+        {
+            _restoreButton.IsEnabled = _definition.IsEditable
+                && hasSelection
+                && _hasOverrides;
         }
     }
 

@@ -447,6 +447,13 @@ internal sealed class SqliteComponentDocumentPort(
             embeddedFieldId,
             value);
 
+    public void ClearEmbeddedComponentOverrides(
+        ProjectTreeNode ownerNode,
+        IReadOnlyList<EmbeddedComponentSlotDefinition> slots) =>
+        target.ClearEmbeddedComponentOverrides(
+            ownerNode,
+            slots);
+
     public void UpdateRuntimeComponentOverride(
         JsonObject overrides,
         IReadOnlyList<EmbeddedComponentSlotDefinition> slots,

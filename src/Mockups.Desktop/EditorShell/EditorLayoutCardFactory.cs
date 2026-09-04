@@ -439,7 +439,32 @@ internal sealed class EditorLayoutCardFactory
                 _openRecordReferenceOverrides(
                     node,
                     definition,
-                    referenceId));
+                    referenceId),
+            restoreEmbeddedComponentOverrides:
+                supportsEmbeddedOverrides && hasEmbeddedSlot
+                    ? async (_) =>
+                    {
+                        await _fieldCommitCoordinator.ExecuteAsync(
+                            () => _componentClassFieldValues
+                                .ClearEmbeddedComponentOverrides(
+                                    node,
+                                    [EmbeddedComponentSlotCatalog.Get(
+                                        field.Definition.Id)]));
+                        _scheduleActiveEditorReload(node);
+                        _refreshPreview();
+                    }
+                    : null,
+            restoreRecordReferenceOverrides:
+                async (definition, _) =>
+                {
+                    await _fieldCommitCoordinator.ExecuteAsync(
+                        () => _fieldValues
+                            .ClearRecordReferenceOverrides(
+                                node,
+                                definition));
+                    _scheduleActiveEditorReload(node);
+                    _refreshPreview();
+                });
         var control = new DictionaryFieldControl(field, services);
         _activeFieldControls.Register(control);
         control.ValueCommitted += async (_, value) =>
@@ -586,7 +611,18 @@ internal sealed class EditorLayoutCardFactory
             _openComponentVariantReference,
             (id) => _openNestedEmbeddedComponentEditor(context, id),
             (definition, input) => _openNestedEmbeddedComponentSlotEditor(context, ComponentInputSlot(definition, input)),
-            _openRuntimeComponentOverrides);
+            _openRuntimeComponentOverrides,
+            restoreEmbeddedComponentOverrides:
+                async (fieldId) =>
+                {
+                    var nested = context.Nested(
+                        EmbeddedComponentSlotCatalog.Get(fieldId));
+                    await _componentClassFieldValues
+                        .ClearEmbeddedComponentOverridesAsync(nested);
+                    activeFieldControls.RefreshPreviews();
+                    _refreshPreview();
+                    restored?.Invoke();
+                });
         var control = new DictionaryFieldControl(
             field,
             services,

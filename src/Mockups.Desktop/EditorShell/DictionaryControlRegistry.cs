@@ -96,10 +96,12 @@ internal static class DictionaryControlRegistry
                 request.Value,
                 request.IsHighlighted,
                 request.Services.OpenComponentVariantReference,
-                request.Services.OpenEmbeddedComponent),
+                request.Services.OpenEmbeddedComponent,
+                request.Services.RestoreEmbeddedComponentOverrides),
             [ValueKind.ComponentVariantSlot] = (request) => new DictionaryComponentVariantSlotControl(
                 request.Definition,
                 request.Value,
+                request.IsInherited,
                 request.Services.OpenComponentVariantReference,
                 request.Services.OpenRuntimeComponentOverrides),
             [ValueKind.ComponentInputBindings] = (request) => new DictionaryComponentInputBindingsControl(
@@ -114,7 +116,8 @@ internal static class DictionaryControlRegistry
                 request.Definition,
                 request.Value,
                 request.IsHighlighted,
-                request.Services.OpenEmbeddedComponent),
+                request.Services.OpenEmbeddedComponent,
+                request.Services.RestoreEmbeddedComponentOverrides),
             [ValueKind.AlignmentPlacement] = (request) => new DictionaryAlignmentPlacementControl(request.Definition, request.Value),
             [ValueKind.Motion] = (request) => new DictionaryMotionControl(request.Definition, request.Value),
             [ValueKind.MotionTiming] = (request) => new DictionaryMotionTimingControl(request.Definition, request.Value),
@@ -195,6 +198,7 @@ internal static class DictionaryControlRegistry
             request.Definition,
             request.Value,
             request.IsHighlighted,
-            request.Services.OpenRecordReferenceOverrides);
+            request.Services.OpenRecordReferenceOverrides,
+            request.Services.RestoreRecordReferenceOverrides);
     }
 }

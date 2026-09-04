@@ -7,18 +7,21 @@ using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal sealed class DictionaryEmbeddedComponentControl : Grid, IDictionaryValueControl
+internal sealed class DictionaryEmbeddedComponentControl : Grid, IDictionaryValueControl,
+    IDictionaryOverrideStateControl
 {
     private readonly FieldDefinition _definition;
     private readonly TextBlock _label;
-    private readonly bool _isHighlighted;
+    private readonly Button? _restoreButton;
+    private bool _isHighlighted;
     private string _value;
 
     public DictionaryEmbeddedComponentControl(
         FieldDefinition definition,
         string value,
         bool isHighlighted,
-        Func<string, Task>? openEmbeddedComponent)
+        Func<string, Task>? openEmbeddedComponent,
+        Func<string, Task>? restoreEmbeddedComponentOverrides)
     {
         _definition = definition;
         _isHighlighted = isHighlighted;
@@ -40,7 +43,17 @@ internal sealed class DictionaryEmbeddedComponentControl : Grid, IDictionaryValu
         {
             return;
         }
+        if (restoreEmbeddedComponentOverrides is null)
+        {
+            throw new InvalidOperationException(
+                $"Dictionary field '{definition.Id}' exposes Overrides without Restore.");
+        }
 
+        var actions = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 8,
+        };
         var button = new Button
         {
             Content = "···",
@@ -56,8 +69,43 @@ internal sealed class DictionaryEmbeddedComponentControl : Grid, IDictionaryValu
         {
             await openEmbeddedComponent(_definition.Id);
         };
-        SetColumn(button, 1);
-        Children.Add(button);
+        actions.Children.Add(button);
+        _restoreButton = new Button
+        {
+            Content = "↺",
+            Width = 32,
+            Height = 32,
+            Padding = new Avalonia.Thickness(0),
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center,
+            IsEnabled = definition.IsEditable && isHighlighted,
+        };
+        EditorAccessibility.Describe(
+            _restoreButton,
+            $"Restore all overrides for {definition.DisplayLabel}");
+        ToolTip.SetTip(
+            _restoreButton,
+            $"Restore all overrides for {definition.DisplayLabel}");
+        EditorOverrideVisuals.ApplyActionButton(
+            _restoreButton,
+            isHighlighted);
+        _restoreButton.Click += async (_, _) =>
+        {
+            await restoreEmbeddedComponentOverrides(_definition.Id);
+            _isHighlighted = false;
+            ApplyLabelBrush();
+            EditorOverrideVisuals.ApplyActionButton(
+                button,
+                false);
+            EditorOverrideVisuals.ApplyActionButton(
+                _restoreButton,
+                false);
+            _restoreButton.IsEnabled = false;
+            OverrideStateChanged?.Invoke(this, EventArgs.Empty);
+        };
+        actions.Children.Add(_restoreButton);
+        SetColumn(actions, 1);
+        Children.Add(actions);
     }
 
     public event EventHandler<string>? ValueChanged
@@ -71,6 +119,10 @@ internal sealed class DictionaryEmbeddedComponentControl : Grid, IDictionaryValu
         add { }
         remove { }
     }
+
+    public bool HasOverrides => _isHighlighted;
+
+    public event EventHandler? OverrideStateChanged;
 
     public void SetValue(string value)
     {

@@ -350,6 +350,13 @@ Overrides are local and visible through the shared action. The UI never hides a
 class change, silently replaces a Variant or manufactures Overrides from
 position.
 
+Every visible Overrides action has a Restore action immediately to its right.
+The Overrides action and boundary label use amber whenever any descendant local
+value is authored; this remains true when that value equals its inherited
+value. Restore clears the complete local boundary recursively. Inside the
+contextual editor, each authored field label is amber and its own Restore
+removes only that field.
+
 Every Overrides action that reveals editable dictionary fields is contextual
 editor navigation. It publishes one exact coordinated context, breadcrumb,
 central card set and session view-memory key. It never opens a modal, utility
