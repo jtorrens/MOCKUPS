@@ -674,7 +674,7 @@ function renderRow(
   const middleLeft = leftEdge + (left?.width ?? 0);
   const middleRight = rightEdge - (right?.width ?? 0);
   const middleWidth = middle.reduce((width, item) => width + item.width, 0);
-  const freeWidth = Math.max(0, middleRight - middleLeft - middleWidth);
+  const freeWidth = middleRight - middleLeft - middleWidth;
   const middleGap = middle.length > 0 ? freeWidth / (middle.length + 1) : 0;
   let middleX = middleLeft + middleGap;
   for (const item of middle) {
