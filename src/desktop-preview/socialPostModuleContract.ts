@@ -61,6 +61,12 @@ export interface SocialPostModuleContract {
   mediaHeight: number;
   mediaScale: number;
   mediaOffset: string;
+  mediaIsPlaying: boolean;
+  mediaCurrentTimeSeconds: number;
+  mediaDurationSeconds: number;
+  mediaIsFullScreen: boolean;
+  mediaFullScreenTransition: boolean;
+  mediaMotionElapsedMs: number;
   showMediaSeparator: boolean;
   showGallery: boolean;
   gallerySlot: SocialPostComponentSlot;

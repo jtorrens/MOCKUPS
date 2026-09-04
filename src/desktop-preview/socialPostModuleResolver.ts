@@ -176,6 +176,36 @@ export function resolveSocialPostModule(
       "mediaOffset",
       "module.core.socialPost.mediaOffset",
     ),
+    mediaIsPlaying: requiredBoolean(
+      preview,
+      "isPlaying",
+      "module.core.socialPost.isPlaying",
+    ),
+    mediaCurrentTimeSeconds: Math.max(0, requiredNumber(
+      preview,
+      "currentTimeSeconds",
+      "module.core.socialPost.currentTimeSeconds",
+    )),
+    mediaDurationSeconds: Math.max(0, requiredNumber(
+      preview,
+      "durationSeconds",
+      "module.core.socialPost.durationSeconds",
+    )),
+    mediaIsFullScreen: requiredBoolean(
+      preview,
+      "isFullScreen",
+      "module.core.socialPost.isFullScreen",
+    ),
+    mediaFullScreenTransition: requiredBoolean(
+      preview,
+      "fullScreenTransition",
+      "module.core.socialPost.fullScreenTransition",
+    ),
+    mediaMotionElapsedMs: Math.max(0, requiredNumber(
+      preview,
+      "motionElapsedMs",
+      "module.core.socialPost.motionElapsedMs",
+    )),
     showMediaSeparator: requiredBoolean(
       socialPost,
       "showMediaSeparator",
@@ -266,6 +296,49 @@ function resolveSocialPostModuleFrame(payload: DesignPreviewPayload) {
       fieldId === "mediaOffset" ? "integerPair" : undefined,
     );
     preview[fieldId] = resolved.value;
+  }
+  const playing = resolveParameterAnimation(
+    animation,
+    "isPlaying",
+    "",
+    timeline.temporalLocalFrame("isPlaying", "", screenFrame),
+    preview.isPlaying,
+  );
+  preview.isPlaying = playing.value;
+  if (playing.animated
+      && playing.value === true
+      && playing.sourceKeyframeFrame !== undefined) {
+    const elapsedSeconds = Math.max(
+      0,
+      timeline.temporalLocalFrame("isPlaying", "", screenFrame)
+        - playing.sourceKeyframeFrame,
+    ) / Math.max(1, payload.frameRate);
+    const durationSeconds = Math.max(
+      0,
+      requiredNumber(preview, "durationSeconds", "module.core.socialPost.durationSeconds"),
+    );
+    preview.currentTimeSeconds = Math.min(elapsedSeconds, durationSeconds);
+    preview.isPlaying = durationSeconds > 0 && elapsedSeconds < durationSeconds;
+  }
+  const fullScreen = resolveParameterAnimation(
+    animation,
+    "isFullScreen",
+    "",
+    timeline.temporalLocalFrame("isFullScreen", "", screenFrame),
+    preview.isFullScreen,
+  );
+  preview.isFullScreen = fullScreen.value;
+  const fullScreenChanged = fullScreen.sourceKeyframeFrame !== undefined
+    && typeof fullScreen.previousValue === "boolean"
+    && typeof fullScreen.value === "boolean"
+    && fullScreen.previousValue !== fullScreen.value;
+  if (fullScreenChanged) {
+    preview.fullScreenTransition = true;
+    preview.motionElapsedMs = Math.max(
+      0,
+      timeline.temporalLocalFrame("isFullScreen", "", screenFrame)
+        - fullScreen.sourceKeyframeFrame!,
+    ) / Math.max(1, payload.frameRate) * 1000;
   }
   const resolvedText = resolveParameterAnimation(
     animation,

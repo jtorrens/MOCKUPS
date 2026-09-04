@@ -411,7 +411,15 @@ function mediaSectionNode(
     height: mediaHeight,
   };
   const pages = mediaPagerPages(contract.mediaSources, contract.gallerySelectedIndex);
+  const activeIndex = contract.mediaSources.length > 0
+    ? Math.min(
+        Math.round(contract.gallerySelectedIndex),
+        contract.mediaSources.length - 1,
+      )
+    : 0;
   const mediaPages = pages.map(({ index, sourceUri }) => {
+    const isActive = index === activeIndex;
+    const isVideo = projectMediaType(sourceUri) === "video";
     const pageBox = {
       ...mediaBox,
       x: mediaBox.x + (index - contract.gallerySelectedIndex) * mediaBox.width,
@@ -427,6 +435,15 @@ function mediaSectionNode(
         mediaType: projectMediaType(sourceUri),
         mediaScale: contract.mediaScale,
         mediaOffset: contract.mediaOffset,
+        isPlaying: isActive && isVideo ? contract.mediaIsPlaying : false,
+        currentTimeSeconds: isActive && isVideo ? contract.mediaCurrentTimeSeconds : 0,
+        durationSeconds: isActive && isVideo ? contract.mediaDurationSeconds : 0,
+        isFullScreen: isActive ? contract.mediaIsFullScreen : false,
+        fullScreenTransition: isActive ? contract.mediaFullScreenTransition : false,
+        controlsElapsedMs: isActive && isVideo
+          ? contract.mediaCurrentTimeSeconds * 1000
+          : 0,
+        motionElapsedMs: isActive ? contract.mediaMotionElapsedMs : 0,
         viewportSize: `${mediaBox.width / scale}|${mediaHeightDesign}`,
       },
       undefined,

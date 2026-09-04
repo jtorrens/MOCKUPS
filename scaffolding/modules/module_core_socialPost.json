@@ -13,7 +13,7 @@
     "responsibility": "Own the Social Post header, Media and fixed Message composition.",
     "visualBoundary": "Render a Surface-backed header, padded Media boundary and a flexible Message zone composed from Bubble, Text Input Bar and Keyboard.",
     "runtimeBehavior": "The Variant owns structure, Component Variants, padding and separators; Runtime owns row content, the Gallery directory and selected index, Media framing and height, message text, write-on and composer visibility.",
-    "forwarding": "The selected Gallery index explicitly drives both the Gallery position and the paged Media source; message text is explicitly supplied to the selected Bubble, Text Input Bar and Keyboard boundaries.",
+    "forwarding": "The selected Gallery index explicitly drives both the Gallery position and the paged Media source. The selected Media alone receives the declared playback and full-screen Runtime values and actions. Message text is explicitly supplied to the selected Bubble, Text Input Bar and Keyboard boundaries.",
     "temporalOwnership": "The Screen owns message write-on while child Components retain their local rendering behavior.",
     "productionContext": "Resolve only through the exact Production Screen to Shot owner Actor to Theme and Device context."
   },
@@ -540,6 +540,104 @@
           "linear",
           "hold"
         ]
+      },
+      {
+        "id": "isPlaying",
+        "label": "Play / Pause",
+        "jsonKey": "isPlaying",
+        "kind": "boolean",
+        "valueKind": "Boolean",
+        "defaultValue": "false",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "media",
+        "uiGroupLabel": "Media",
+        "uiOrder": 50,
+        "animatable": true,
+        "animationInterpolations": [
+          "hold"
+        ]
+      },
+      {
+        "id": "currentTimeSeconds",
+        "label": "Current time",
+        "jsonKey": "currentTimeSeconds",
+        "kind": "number",
+        "valueKind": "Decimal",
+        "defaultValue": "0",
+        "minimum": 0,
+        "maximum": 86400,
+        "increment": 0.1,
+        "unit": "s",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "media",
+        "uiGroupLabel": "Media",
+        "uiOrder": 60
+      },
+      {
+        "id": "durationSeconds",
+        "label": "Duration",
+        "jsonKey": "durationSeconds",
+        "kind": "number",
+        "valueKind": "Decimal",
+        "defaultValue": "12",
+        "minimum": 0,
+        "maximum": 86400,
+        "increment": 0.1,
+        "unit": "s",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "media",
+        "uiGroupLabel": "Media",
+        "uiOrder": 70
+      },
+      {
+        "id": "isFullScreen",
+        "label": "Full screen",
+        "jsonKey": "isFullScreen",
+        "kind": "boolean",
+        "valueKind": "Boolean",
+        "defaultValue": "false",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "media",
+        "uiGroupLabel": "Media",
+        "uiOrder": 80,
+        "animatable": true,
+        "animationInterpolations": [
+          "hold"
+        ]
+      },
+      {
+        "id": "fullScreenTransition",
+        "label": "Full-screen transition",
+        "jsonKey": "fullScreenTransition",
+        "kind": "boolean",
+        "valueKind": "Boolean",
+        "defaultValue": "false",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "media",
+        "uiGroupLabel": "Media",
+        "uiOrder": 90,
+        "actionOnly": true
+      },
+      {
+        "id": "motionElapsedMs",
+        "label": "Motion elapsed",
+        "jsonKey": "motionElapsedMs",
+        "kind": "number",
+        "valueKind": "Decimal",
+        "defaultValue": "0",
+        "minimum": 0,
+        "maximum": 86400000,
+        "increment": 10,
+        "unit": "ms",
+        "source": "calculated",
+        "uiOrigin": "self",
+        "uiOrder": 100,
+        "actionOnly": true
       },
       {
         "id": "showGallery",
@@ -1777,6 +1875,12 @@
     "galleryScrollRow": 0,
     "mediaScale": 1,
     "mediaOffset": "0|0",
+    "isPlaying": false,
+    "currentTimeSeconds": 0,
+    "durationSeconds": 12,
+    "isFullScreen": false,
+    "fullScreenTransition": false,
+    "motionElapsedMs": 0,
     "messageText": "Escribe aquí el mensaje de la publicación.",
     "messageWriteOnTiming": {
       "mode": "fixed",
@@ -1789,6 +1893,28 @@
     "messageWriteOnTrigger": false,
     "messageWriteOnFrame": 0,
     "actions": [
+      {
+        "id": "play",
+        "label": "Play",
+        "playInputId": "isPlaying",
+        "durationInputId": "durationSeconds",
+        "timeJsonKey": "currentTimeSeconds",
+        "prewarmFrames": true,
+        "completionBehavior": "reset",
+        "timeUnit": "seconds"
+      },
+      {
+        "id": "fullScreen",
+        "label": "Full screen",
+        "playInputId": "fullScreenTransition",
+        "durationSeconds": 0.3,
+        "timeJsonKey": "motionElapsedMs",
+        "prewarmFrames": false,
+        "timeUnit": "milliseconds",
+        "completionBehavior": "reset",
+        "targetInputId": "isFullScreen",
+        "targetMode": "toggle"
+      },
       {
         "id": "writeMessage",
         "label": "Write message",

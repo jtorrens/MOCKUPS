@@ -84,6 +84,12 @@ test("Social Post owns two fixed structure-projected Runtime row sections", () =
   assert.deepEqual(runtime.inputs.map(({ id }) => id), [
     "mediaScale",
     "mediaOffset",
+    "isPlaying",
+    "currentTimeSeconds",
+    "durationSeconds",
+    "isFullScreen",
+    "fullScreenTransition",
+    "motionElapsedMs",
     "showGallery",
     "galleryDirectory",
     "gallerySelectedIndex",
@@ -123,6 +129,12 @@ test("Social Post owns two fixed structure-projected Runtime row sections", () =
   assert.equal(contract.mediaScale, 1);
   assert.equal(contract.mediaHeightMode, "fixed");
   assert.equal(contract.mediaOffset, "0|0");
+  assert.equal(contract.mediaIsPlaying, false);
+  assert.equal(contract.mediaCurrentTimeSeconds, 0);
+  assert.equal(contract.mediaDurationSeconds, 12);
+  assert.equal(contract.mediaIsFullScreen, false);
+  assert.equal(contract.mediaFullScreenTransition, false);
+  assert.equal(contract.mediaMotionElapsedMs, 0);
   assert.equal(contract.showGallerySeparator, true);
   assert.deepEqual(contract.footerRows.map(({ id }) => id), ["row1", "row2"]);
   const footerConfigRows = config.socialPost.footerRows as Array<Record<string, unknown>>;
@@ -228,6 +240,53 @@ test("Social Post resolves animated Media scale and offset", () => {
   const contract = resolveSocialPostModule(source);
   assert.equal(contract.mediaScale, 1.5);
   assert.equal(contract.mediaOffset, "10|-5");
+});
+
+test("Social Post resolves selected video playback and full-screen animation", () => {
+  const source = fixture();
+  source.localFrame = 12;
+  source.projectMediaFiles = ["media/a.jpg", "media/b.mov"];
+  const runtime = JSON.parse(source.designPreviewJson) as Record<string, unknown>;
+  runtime.galleryDirectory = "media";
+  runtime.gallerySelectedIndex = 1;
+  runtime.durationSeconds = 2;
+  source.designPreviewJson = JSON.stringify(runtime);
+  source.runtimeContractJson = JSON.stringify(runtime);
+  source.instanceJson = JSON.stringify({
+    animation: {
+      schemaVersion: 2,
+      tracks: [
+        {
+          id: "media-playback",
+          fieldId: "isPlaying",
+          keyframes: [
+            { id: "play-0", frame: 0, value: false, interpolation: "hold", enabled: true },
+            { id: "play-6", frame: 6, value: true, interpolation: "hold", enabled: true },
+          ],
+        },
+        {
+          id: "media-full-screen",
+          fieldId: "isFullScreen",
+          keyframes: [
+            { id: "full-0", frame: 0, value: false, interpolation: "hold", enabled: true },
+            { id: "full-9", frame: 9, value: true, interpolation: "hold", enabled: true },
+          ],
+        },
+      ],
+    },
+  });
+
+  const contract = resolveSocialPostModule(source);
+  assert.equal(contract.mediaIsPlaying, true);
+  assert.equal(contract.mediaCurrentTimeSeconds, 0.24);
+  assert.equal(contract.mediaDurationSeconds, 2);
+  assert.equal(contract.mediaIsFullScreen, true);
+  assert.equal(contract.mediaFullScreenTransition, true);
+  assert.equal(contract.mediaMotionElapsedMs, 120);
+
+  const renderable = socialPostModuleToRenderable(source);
+  const activeMedia = requiredNode(renderable, "module.core.socialPost.media.page.1");
+  assert.ok(findNodeBy(activeMedia, (node) => node.style?.rootOverlay === true));
 });
 
 test("Social Post hides its Message without reserving its minimum height", () => {

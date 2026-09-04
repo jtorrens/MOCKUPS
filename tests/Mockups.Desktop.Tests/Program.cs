@@ -21098,6 +21098,11 @@ static void SocialPostComposesHeaderRows()
         [
             "mediaScale",
             "mediaOffset",
+            "isPlaying",
+            "currentTimeSeconds",
+            "durationSeconds",
+            "isFullScreen",
+            "fullScreenTransition",
             "showGallery",
             "galleryDirectory",
             "gallerySelectedIndex",
