@@ -1472,6 +1472,7 @@
             "kind": "recordReference",
             "valueKind": "RecordReference",
             "defaultValue": "",
+            "allowEmpty": true,
             "tableId": "actors",
             "resolvedJsonKey": "actor"
           },
