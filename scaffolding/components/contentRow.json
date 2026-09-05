@@ -309,6 +309,16 @@
           "itemLabel": "Slot",
           "fields": [
             {
+              "id": "kind",
+              "label": "Content",
+              "jsonKey": "kind",
+              "kind": "text",
+              "valueKind": "StringReadOnly",
+              "defaultValue": "none",
+              "source": "variant",
+              "showInEditor": false
+            },
+            {
               "id": "actorId",
               "label": "Actor",
               "jsonKey": "actorId",
@@ -333,7 +343,11 @@
               "uiParentGroupId": "",
               "transition": null,
               "unit": "",
-              "uiOrder": 10
+              "uiOrder": 10,
+              "enabledWhenItemJsonKey": "kind",
+              "enabledWhenItemValues": [
+                "avatar"
+              ]
             },
             {
               "id": "label",
@@ -360,7 +374,12 @@
               "uiParentGroupId": "",
               "transition": null,
               "unit": "",
-              "uiOrder": 20
+              "uiOrder": 20,
+              "enabledWhenItemJsonKey": "kind",
+              "enabledWhenItemValues": [
+                "avatar",
+                "label"
+              ]
             },
             {
               "id": "sublabel",
@@ -387,7 +406,12 @@
               "uiParentGroupId": "",
               "transition": null,
               "unit": "",
-              "uiOrder": 30
+              "uiOrder": 30,
+              "enabledWhenItemJsonKey": "kind",
+              "enabledWhenItemValues": [
+                "avatar",
+                "label"
+              ]
             },
             {
               "id": "state",
@@ -431,7 +455,11 @@
               "uiParentGroupId": "",
               "transition": null,
               "unit": "",
-              "uiOrder": 40
+              "uiOrder": 40,
+              "enabledWhenItemJsonKey": "kind",
+              "enabledWhenItemValues": [
+                "icon"
+              ]
             }
           ],
           "itemPresentation": {
@@ -452,7 +480,9 @@
             "sourceConfigPath": "contentRow.slots",
             "sourceIdJsonKey": "id",
             "runtimeIdJsonKey": "id",
-            "fieldBindings": {}
+            "fieldBindings": {
+              "kind": "kind"
+            }
           }
         }
       }

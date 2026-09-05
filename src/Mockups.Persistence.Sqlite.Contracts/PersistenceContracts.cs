@@ -1,6 +1,7 @@
 using Microsoft.Data.Sqlite;
 using Mockups.DesktopEditorShell.EditorShell;
 using System.Collections.Generic;
+using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.Data;
 
@@ -497,6 +498,11 @@ internal interface IModuleVariantCatalog
 
     IReadOnlyDictionary<string, string> GetModuleNames(
         IReadOnlyCollection<string> moduleIds);
+}
+
+internal interface IComponentVariantConfigCatalog
+{
+    JsonObject GetComponentVariantConfig(string variantReference);
 }
 
 internal interface IComponentFieldDesignOptionSource

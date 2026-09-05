@@ -91,6 +91,13 @@ Required Preview documents are validated as current JSON objects before
 dispatch. A blank, malformed, absent or wrong-root required document is an
 error. Optionality exists only when declared by the payload contract.
 
+`RuntimeContractJson` remains the exact unresolved authoring contract after
+forwarding, structural projection and timing preparation. Record-reference
+objects such as a resolved Actor are added only to the separate
+`DesignPreviewJson` render payload. Editing and structural reconciliation always
+restart from `RuntimeContractJson`, so a render-only projection can never be
+persisted back into a strict Runtime collection document.
+
 ## Manifest and routing
 
 `src/desktop-preview/desktopPreviewManifest.json` is the current registry of

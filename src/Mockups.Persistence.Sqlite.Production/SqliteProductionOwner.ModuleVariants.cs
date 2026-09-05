@@ -260,7 +260,8 @@ internal sealed partial class SqliteProductionOwner
                 $"Missing module variant '{reference}'.");
         return RuntimePreviewDocumentContract.PrepareFixture(
             ParseJsonObject(module.DesignPreviewJson),
-            ParseJsonObject(variant.ConfigJson));
+            ParseJsonObject(variant.ConfigJson),
+            _componentVariantConfigCatalog.GetComponentVariantConfig);
     }
 
     private static JsonObject ParseJsonObject(string json) =>

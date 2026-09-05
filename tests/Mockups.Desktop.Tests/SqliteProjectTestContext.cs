@@ -20,6 +20,7 @@ internal sealed class SqliteProjectTestContext
         Design = new SqliteDesignOwner(context);
         Production = new SqliteProductionOwner(
             context,
+            Design,
             Design);
         Resources = new SqliteResourceOwner(
             context,

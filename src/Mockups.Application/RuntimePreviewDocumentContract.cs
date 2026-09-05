@@ -12,12 +12,16 @@ public static class RuntimePreviewDocumentContract
 {
     public static JsonObject PrepareFixture(
         JsonObject previewFixture,
-        JsonObject effectiveConfig)
+        JsonObject effectiveConfig,
+        Func<string, JsonObject>? componentVariantConfig = null)
     {
         var prepared = RuntimeInputForwardingContract.EffectivePreview(
             previewFixture,
             effectiveConfig);
-        StructuredRuntimeCollectionProjection.Apply(prepared, effectiveConfig);
+        StructuredRuntimeCollectionProjection.Apply(
+            prepared,
+            effectiveConfig,
+            componentVariantConfig);
         RuntimeTemporalPhaseContract.Hydrate(prepared, effectiveConfig);
         return prepared;
     }
@@ -25,9 +29,13 @@ public static class RuntimePreviewDocumentContract
     public static JsonObject PrepareRuntime(
         JsonObject previewFixture,
         JsonObject effectiveConfig,
-        JsonObject runtimeValues)
+        JsonObject runtimeValues,
+        Func<string, JsonObject>? componentVariantConfig = null)
     {
-        var prepared = PrepareFixture(previewFixture, effectiveConfig);
+        var prepared = PrepareFixture(
+            previewFixture,
+            effectiveConfig,
+            componentVariantConfig);
         var current = RuntimeInputDocumentContract.CreateContentForContract(
             runtimeValues,
             prepared);
@@ -38,6 +46,10 @@ public static class RuntimePreviewDocumentContract
                 prepared[key] = value?.DeepClone();
             }
         }
+        StructuredRuntimeCollectionProjection.Apply(
+            prepared,
+            effectiveConfig,
+            componentVariantConfig);
         return prepared;
     }
 }

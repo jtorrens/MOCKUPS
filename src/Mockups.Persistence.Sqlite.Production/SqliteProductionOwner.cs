@@ -15,13 +15,17 @@ internal sealed partial class SqliteProductionOwner :
     private readonly IModuleInstanceThemeContextService
         _moduleInstanceThemeContextService;
     private readonly IModuleVariantCatalog _moduleVariantCatalog;
+    private readonly IComponentVariantConfigCatalog
+        _componentVariantConfigCatalog;
 
     internal SqliteProductionOwner(
         SqliteProjectContext context,
-        IModuleVariantCatalog moduleVariantCatalog)
+        IModuleVariantCatalog moduleVariantCatalog,
+        IComponentVariantConfigCatalog componentVariantConfigCatalog)
     {
         _context = context;
         _moduleVariantCatalog = moduleVariantCatalog;
+        _componentVariantConfigCatalog = componentVariantConfigCatalog;
         _shotRepository = new ShotRepository(context);
         _projectEpisodeRepository = new ProjectEpisodeRepository(
             context,

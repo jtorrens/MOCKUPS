@@ -385,7 +385,8 @@ internal sealed class RuntimeInputsCollectionEditor
             JsonObject DefaultPreview() =>
                 PrepareDefaultPreview(
                     owner.DesignPreviewJson,
-                    config);
+                    config,
+                    _previewInputData.ComponentVariantConfig);
             var reset = new Button
             {
                 MinWidth = 150,
@@ -916,11 +917,13 @@ internal sealed class RuntimeInputsCollectionEditor
 
     internal static JsonObject PrepareDefaultPreview(
         string designPreviewJson,
-        JsonObject config) =>
+        JsonObject config,
+        Func<string, JsonObject>? componentVariantConfig = null) =>
         RuntimePreviewDocumentContract.PrepareFixture(
             DesignPreviewTestValues.Parse(
                 designPreviewJson),
-            config);
+            config,
+            componentVariantConfig);
 
     private Control CreatePromotedRuntimeContractContent(
         RuntimeInputOwner owner,

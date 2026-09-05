@@ -88,7 +88,8 @@ internal static class ComponentPreviewTransientValues
     {
         var envelope = RuntimePreviewDocumentContract.PrepareFixture(
             preview,
-            config);
+            config,
+            componentVariantConfig);
         if (state.HasCollectionTestValues)
         {
             envelope["testValues"] = ParseJsonObject(
@@ -135,7 +136,10 @@ internal static class ComponentPreviewTransientValues
         JsonObject config,
         Func<string, JsonObject> componentVariantConfig)
     {
-        var prepared = RuntimePreviewDocumentContract.PrepareFixture(preview, config);
+        var prepared = RuntimePreviewDocumentContract.PrepareFixture(
+            preview,
+            config,
+            componentVariantConfig);
         preview.Clear();
         foreach (var (key, value) in prepared)
         {
@@ -177,7 +181,8 @@ internal static class ComponentPreviewTransientValues
                     componentVariantConfig(variantReference);
                 var preparedChild = RuntimePreviewDocumentContract.PrepareFixture(
                     childRuntime,
-                    childConfig);
+                    childConfig,
+                    componentVariantConfig);
                 childRuntime.Clear();
                 foreach (var (key, value) in preparedChild)
                 {

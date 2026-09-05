@@ -8,7 +8,10 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 public static class StructuredRuntimeCollectionProjection
 {
-    public static bool Apply(JsonObject preview, JsonObject config)
+    public static bool Apply(
+        JsonObject preview,
+        JsonObject config,
+        Func<string, JsonObject>? componentVariantConfig = null)
     {
         var changed = false;
         if (preview["inputs"] is { } inputsNode)
@@ -34,7 +37,12 @@ public static class StructuredRuntimeCollectionProjection
                     throw new InvalidOperationException(
                         $"{owner} structureProjection requires ValueKind StructuredCollection.");
                 }
-                changed |= ApplyProjection(preview, config, collection, owner);
+                changed |= ApplyProjection(
+                    preview,
+                    config,
+                    collection,
+                    owner,
+                    componentVariantConfig);
             }
         }
 
@@ -55,7 +63,12 @@ public static class StructuredRuntimeCollectionProjection
                     throw new InvalidOperationException(
                         $"{owner} structureProjection requires canEditStructure false.");
                 }
-                changed |= ApplyProjection(preview, config, collection, owner);
+                changed |= ApplyProjection(
+                    preview,
+                    config,
+                    collection,
+                    owner,
+                    componentVariantConfig);
             }
         }
         return changed;
@@ -65,7 +78,8 @@ public static class StructuredRuntimeCollectionProjection
         JsonObject preview,
         JsonObject config,
         JsonObject collection,
-        string owner)
+        string owner,
+        Func<string, JsonObject>? componentVariantConfig)
     {
         var jsonKey = JsonPath.RequiredString(collection, "jsonKey", owner);
         var current = preview[jsonKey] as JsonArray
@@ -75,7 +89,8 @@ public static class StructuredRuntimeCollectionProjection
             current,
             config,
             collection,
-            $"{owner} structured collection");
+            $"{owner} structured collection",
+            componentVariantConfig);
         if (JsonNode.DeepEquals(current, next)) return false;
         preview[jsonKey] = next;
         return true;
@@ -85,20 +100,35 @@ public static class StructuredRuntimeCollectionProjection
         JsonArray current,
         JsonObject config,
         JsonObject collection,
-        string owner)
+        string owner,
+        Func<string, JsonObject>? componentVariantConfig)
     {
         var projection = JsonPath.RequiredObject(
             collection,
             "structureProjection",
             owner);
+        var sourceVariantSlotPath = projection["sourceVariantSlotPath"] is null
+            ? ""
+            : JsonPath.RequiredString(
+                projection,
+                "sourceVariantSlotPath",
+                $"{owner}.structureProjection");
         RequireExactKeys(
             projection,
-            [
-                "sourceConfigPath",
-                "sourceIdJsonKey",
-                "runtimeIdJsonKey",
-                "fieldBindings",
-            ],
+            sourceVariantSlotPath.Length == 0
+                ? [
+                    "sourceConfigPath",
+                    "sourceIdJsonKey",
+                    "runtimeIdJsonKey",
+                    "fieldBindings",
+                ]
+                : [
+                    "sourceVariantSlotPath",
+                    "sourceConfigPath",
+                    "sourceIdJsonKey",
+                    "runtimeIdJsonKey",
+                    "fieldBindings",
+                ],
             $"{owner}.structureProjection");
         var sourcePath = JsonPath.RequiredString(
             projection,
@@ -116,8 +146,15 @@ public static class StructuredRuntimeCollectionProjection
             projection,
             "fieldBindings",
             $"{owner}.structureProjection");
+        var sourceConfig = sourceVariantSlotPath.Length == 0
+            ? config
+            : ResolveSourceVariantConfig(
+                config,
+                sourceVariantSlotPath,
+                componentVariantConfig,
+                owner);
         var source = JsonPath.Get(
-            config,
+            sourceConfig,
             sourcePath.Split('.', StringSplitOptions.RemoveEmptyEntries)) as JsonArray
             ?? throw new InvalidOperationException(
                 $"{owner} structureProjection sourceConfigPath '{sourcePath}' must resolve to an array.");
@@ -228,15 +265,76 @@ public static class StructuredRuntimeCollectionProjection
                         definition,
                         $"{owner} field '{runtimeKey}'");
                 }
-                RuntimeInputValueKindContract.ValidateRuntimeValue(
-                    definition,
-                    value,
-                    $"{owner} Runtime item '{id}' field '{runtimeKey}'");
+                var nestedCollection =
+                    typedDefinition.ValueKind == ValueKind.StructuredCollection
+                        ? definition["structuredCollection"] as JsonObject
+                        : null;
+                if (nestedCollection?["structureProjection"] is JsonObject)
+                {
+                    value = Project(
+                        value as JsonArray
+                            ?? throw new InvalidOperationException(
+                                $"{owner} Runtime item '{id}' field '{runtimeKey}' must be an array."),
+                        sourceItem,
+                        nestedCollection,
+                        $"{owner} Runtime item '{id}' field '{runtimeKey}'",
+                        componentVariantConfig);
+                }
+                else
+                {
+                    RuntimeInputValueKindContract.ValidateRuntimeValue(
+                        definition,
+                        value,
+                        $"{owner} Runtime item '{id}' field '{runtimeKey}'");
+                }
                 projected[runtimeKey] = value;
             }
             result.Add(projected);
         }
         return result;
+    }
+
+    private static JsonObject ResolveSourceVariantConfig(
+        JsonObject config,
+        string sourceVariantSlotPath,
+        Func<string, JsonObject>? componentVariantConfig,
+        string owner)
+    {
+        if (componentVariantConfig is null)
+        {
+            throw new InvalidOperationException(
+                $"{owner} structureProjection sourceVariantSlotPath "
+                + $"'{sourceVariantSlotPath}' requires a Component Variant config resolver.");
+        }
+        var slot = JsonPath.Get(
+            config,
+            sourceVariantSlotPath.Split(
+                '.',
+                StringSplitOptions.RemoveEmptyEntries)) as JsonObject
+            ?? throw new InvalidOperationException(
+                $"{owner} structureProjection sourceVariantSlotPath "
+                + $"'{sourceVariantSlotPath}' must resolve to an exact Component Variant slot.");
+        RequireExactKeys(
+            slot,
+            ["variantReference", "overrides"],
+            $"{owner} source Component Variant slot");
+        var variantReference = JsonPath.RequiredString(
+            slot,
+            "variantReference",
+            $"{owner} source Component Variant slot");
+        if (!VariantReferenceId.TryParse(variantReference, out _, out _))
+        {
+            throw new InvalidOperationException(
+                $"{owner} source Component Variant slot requires one complete Variant reference.");
+        }
+        var effective = componentVariantConfig(variantReference).DeepClone().AsObject();
+        ComponentConfigOverrideMerger.MergeInto(
+            effective,
+            JsonPath.RequiredObject(
+                slot,
+                "overrides",
+                $"{owner} source Component Variant slot"));
+        return effective;
     }
 
     private static void RequireExactKeys(

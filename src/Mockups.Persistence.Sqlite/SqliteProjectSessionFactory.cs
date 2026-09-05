@@ -10,6 +10,7 @@ internal static class SqliteProjectSessionFactory
         var design = new SqliteDesignOwner(context);
         var production = new SqliteProductionOwner(
             context,
+            design,
             design);
         var resources = new SqliteResourceOwner(
             context,

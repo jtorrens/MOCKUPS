@@ -63,6 +63,16 @@ bound by the structure projection remain Variant-owned. Preview preparation
 performs this projection before the generic Runtime collection editor, instance
 payload preparation and concrete resolver consume the document.
 
+A nested structural projection may name one exact `ComponentVariantSlot` path
+relative to its parent structural item. Application resolves the referenced
+Component Variant, applies that slot's sparse local Overrides and only then
+reads the declared child collection path. This lets the embedded Component own
+the number and identity of its slots. Bound discriminator fields such as a
+Content Row slot `kind` exist in the effective Runtime document so the generic
+conditional-field contract can select its controls, but they are never written
+to the Runtime authoring document. Reconciliation preserves every Runtime-owned
+field, including fields currently hidden by that discriminator.
+
 ### Calculated text
 
 Calculated text separates Runtime content from Variant presentation.

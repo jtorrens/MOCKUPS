@@ -16,7 +16,8 @@ internal sealed partial class SqliteProductionOwner
         var preview = RuntimePreviewDocumentContract.PrepareRuntime(
             ParseJsonObject(module.DesignPreviewJson),
             config,
-            ParseJsonObject(instance.ContentJson));
+            ParseJsonObject(instance.ContentJson),
+            _componentVariantConfigCatalog.GetComponentVariantConfig);
 
         preview.Remove("testValues");
         return preview.ToJsonString();

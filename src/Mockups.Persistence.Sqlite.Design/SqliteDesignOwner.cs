@@ -7,6 +7,7 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SqliteDesignOwner :
     IModuleVariantCatalog,
+    IComponentVariantConfigCatalog,
     IComponentFieldDesignOptionSource,
     IComponentPreviewInputRepository,
     IRuntimeInputOwnerStore,

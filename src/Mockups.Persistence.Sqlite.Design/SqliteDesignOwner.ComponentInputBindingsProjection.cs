@@ -86,7 +86,8 @@ internal sealed partial class SqliteDesignOwner
         ComponentConfigOverrideMerger.MergeInto(config, overrides);
         var contract = RuntimePreviewDocumentContract.PrepareFixture(
             ParseJsonObject(row.DesignPreviewJson),
-            config);
+            config,
+            GetComponentVariantConfig);
         return contract;
     }
 }

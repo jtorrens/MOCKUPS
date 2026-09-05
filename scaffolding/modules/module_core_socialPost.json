@@ -996,6 +996,16 @@
               "itemLabel": "Slot",
               "fields": [
                 {
+                  "id": "kind",
+                  "label": "Content",
+                  "jsonKey": "kind",
+                  "kind": "text",
+                  "valueKind": "StringReadOnly",
+                  "defaultValue": "none",
+                  "source": "variant",
+                  "showInEditor": false
+                },
+                {
                   "id": "actorId",
                   "label": "Actor",
                   "jsonKey": "actorId",
@@ -1005,7 +1015,9 @@
                   "tableId": "actors",
                   "resolvedJsonKey": "actor",
                   "source": "runtime",
-                  "uiOrder": 10
+                  "uiOrder": 10,
+                  "enabledWhenItemJsonKey": "kind",
+                  "enabledWhenItemValues": ["avatar"]
                 },
                 {
                   "id": "label",
@@ -1015,7 +1027,9 @@
                   "valueKind": "StringSingleLine",
                   "defaultValue": "",
                   "source": "runtime",
-                  "uiOrder": 20
+                  "uiOrder": 20,
+                  "enabledWhenItemJsonKey": "kind",
+                  "enabledWhenItemValues": ["avatar", "label"]
                 },
                 {
                   "id": "sublabel",
@@ -1025,7 +1039,9 @@
                   "valueKind": "StringSingleLine",
                   "defaultValue": "",
                   "source": "runtime",
-                  "uiOrder": 30
+                  "uiOrder": 30,
+                  "enabledWhenItemJsonKey": "kind",
+                  "enabledWhenItemValues": ["avatar", "label"]
                 },
                 {
                   "id": "state",
@@ -1053,7 +1069,9 @@
                     }
                   ],
                   "source": "runtime",
-                  "uiOrder": 40
+                  "uiOrder": 40,
+                  "enabledWhenItemJsonKey": "kind",
+                  "enabledWhenItemValues": ["icon"]
                 }
               ],
               "itemPresentation": {
@@ -1069,7 +1087,16 @@
               },
               "canEditStructure": false,
               "uiPresentation": "collection",
-              "itemRuntimePresentation": "card"
+              "itemRuntimePresentation": "card",
+              "structureProjection": {
+                "sourceVariantSlotPath": "rowSlot",
+                "sourceConfigPath": "contentRow.slots",
+                "sourceIdJsonKey": "id",
+                "runtimeIdJsonKey": "id",
+                "fieldBindings": {
+                  "kind": "kind"
+                }
+              }
             }
           }
         ],
@@ -1131,6 +1158,16 @@
               "itemLabel": "Slot",
               "fields": [
                 {
+                  "id": "kind",
+                  "label": "Content",
+                  "jsonKey": "kind",
+                  "kind": "text",
+                  "valueKind": "StringReadOnly",
+                  "defaultValue": "none",
+                  "source": "variant",
+                  "showInEditor": false
+                },
+                {
                   "id": "actorId",
                   "label": "Actor",
                   "jsonKey": "actorId",
@@ -1140,7 +1177,9 @@
                   "tableId": "actors",
                   "resolvedJsonKey": "actor",
                   "source": "runtime",
-                  "uiOrder": 10
+                  "uiOrder": 10,
+                  "enabledWhenItemJsonKey": "kind",
+                  "enabledWhenItemValues": ["avatar"]
                 },
                 {
                   "id": "label",
@@ -1150,7 +1189,9 @@
                   "valueKind": "StringSingleLine",
                   "defaultValue": "",
                   "source": "runtime",
-                  "uiOrder": 20
+                  "uiOrder": 20,
+                  "enabledWhenItemJsonKey": "kind",
+                  "enabledWhenItemValues": ["avatar", "label"]
                 },
                 {
                   "id": "sublabel",
@@ -1160,7 +1201,9 @@
                   "valueKind": "StringSingleLine",
                   "defaultValue": "",
                   "source": "runtime",
-                  "uiOrder": 30
+                  "uiOrder": 30,
+                  "enabledWhenItemJsonKey": "kind",
+                  "enabledWhenItemValues": ["avatar", "label"]
                 },
                 {
                   "id": "state",
@@ -1188,7 +1231,9 @@
                     }
                   ],
                   "source": "runtime",
-                  "uiOrder": 40
+                  "uiOrder": 40,
+                  "enabledWhenItemJsonKey": "kind",
+                  "enabledWhenItemValues": ["icon"]
                 }
               ],
               "itemPresentation": {
@@ -1204,7 +1249,16 @@
               },
               "canEditStructure": false,
               "uiPresentation": "collection",
-              "itemRuntimePresentation": "card"
+              "itemRuntimePresentation": "card",
+              "structureProjection": {
+                "sourceVariantSlotPath": "rowSlot",
+                "sourceConfigPath": "contentRow.slots",
+                "sourceIdJsonKey": "id",
+                "runtimeIdJsonKey": "id",
+                "fieldBindings": {
+                  "kind": "kind"
+                }
+              }
             }
           }
         ],

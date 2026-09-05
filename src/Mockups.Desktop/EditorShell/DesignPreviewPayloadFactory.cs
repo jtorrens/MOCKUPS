@@ -171,6 +171,7 @@ internal static class DesignPreviewPayloadFactory
         {
             runtimePreview[timelineFrameJsonKey] = Math.Max(0, screenFrame.Value);
         }
+        var runtimeContractJson = runtimePreview.ToJsonString();
         var runtimeActorId = runtimePreview["actorId"]?.GetValue<string>();
         if (!string.IsNullOrWhiteSpace(runtimeActorId))
         {
@@ -210,7 +211,7 @@ internal static class DesignPreviewPayloadFactory
             theme.FontFaces,
             instance.RecordClassId,
             runtimePreviewJson,
-            runtimePreviewJson,
+            runtimeContractJson,
             effectiveThemeMode,
             instance.ComponentBaseConfigsJson,
             instance.AppConfigJson,
@@ -397,8 +398,10 @@ internal static class DesignPreviewPayloadFactory
         var config = DesignPreviewTestValues.Parse(settings.ConfigJson);
         var effectivePreview = EffectiveRuntimeContract(
             DesignPreviewTestValues.Parse(settings.DesignPreviewJson),
-            config);
-        var runtimePreview = DesignPreviewTestValues.Parse(DesignPreviewTestValues.RuntimeJson(effectivePreview.ToJsonString()));
+            config,
+            ComponentVariantConfigResolver(settings.ComponentBaseConfigsJson));
+        var runtimeContractJson = DesignPreviewTestValues.RuntimeJson(effectivePreview.ToJsonString());
+        var runtimePreview = DesignPreviewTestValues.Parse(runtimeContractJson);
         var actorId = runtimePreview["actorId"]?.GetValue<string>() ?? "";
         runtimePreview["actor"] = string.IsNullOrWhiteSpace(actorId)
             ? ActorPreviewInputFactory.CreateSample()
@@ -422,7 +425,7 @@ internal static class DesignPreviewPayloadFactory
             theme.FontFaces,
             settings.RecordClassId,
             runtimePreviewJson,
-            runtimePreviewJson,
+            runtimeContractJson,
             effectiveThemeMode,
             settings.ComponentBaseConfigsJson,
             settings.AppConfigJson,
@@ -455,17 +458,18 @@ internal static class DesignPreviewPayloadFactory
         var configJson = settings.ConfigJson;
         var effectivePreview = EffectiveRuntimeContract(
             DesignPreviewTestValues.Parse(settings.DesignPreviewJson),
-            DesignPreviewTestValues.Parse(configJson));
-        var runtimePreview = DesignPreviewTestValues.Parse(
+            DesignPreviewTestValues.Parse(configJson),
+            ComponentVariantConfigResolver(settings.ComponentBaseConfigsJson));
+        var runtimeContractJson = ResolveActionDurationsJson(
+            configJson,
+            theme.TokensJson,
             DesignPreviewTestValues.RuntimeJson(effectivePreview.ToJsonString()));
+        var runtimePreview = DesignPreviewTestValues.Parse(runtimeContractJson);
         dataSource.ResolveNestedRuntimeRecordReferences(
             runtimePreview,
             effectiveThemeMode,
             theme.PaletteColors);
-        var designPreviewJson = ResolveActionDurationsJson(
-            configJson,
-            theme.TokensJson,
-            runtimePreview.ToJsonString());
+        var designPreviewJson = runtimePreview.ToJsonString();
         return new DesignPreviewPayload(
             "componentClass",
             settings.Name,
@@ -480,7 +484,7 @@ internal static class DesignPreviewPayloadFactory
             theme.FontFaces,
             settings.ComponentType,
             designPreviewJson,
-            designPreviewJson,
+            runtimeContractJson,
             effectiveThemeMode,
             settings.ComponentBaseConfigsJson,
             ProjectId: settings.ProjectId);
@@ -512,9 +516,29 @@ internal static class DesignPreviewPayloadFactory
 
     private static JsonObject EffectiveRuntimeContract(
         JsonObject preview,
-        JsonObject config)
+        JsonObject config,
+        Func<string, JsonObject> componentVariantConfig)
     {
-        return RuntimePreviewDocumentContract.PrepareFixture(preview, config);
+        return RuntimePreviewDocumentContract.PrepareFixture(
+            preview,
+            config,
+            componentVariantConfig);
+    }
+
+    private static Func<string, JsonObject> ComponentVariantConfigResolver(
+        string componentBaseConfigsJson)
+    {
+        var catalog = JsonPath.ParseRequiredObject(
+            componentBaseConfigsJson,
+            "Component Variant config catalog");
+        var variants = JsonPath.RequiredObject(
+            catalog,
+            "variants",
+            "Component Variant config catalog");
+        return variantReference => variants[variantReference] is JsonObject config
+            ? config.DeepClone().AsObject()
+            : throw new InvalidOperationException(
+                $"Component Variant config catalog is missing '{variantReference}'.");
     }
 
     private static bool ResolveActionDuration(JsonObject config, JsonObject themeTokens, JsonObject action)

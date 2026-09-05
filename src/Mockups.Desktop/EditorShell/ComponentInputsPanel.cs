@@ -129,7 +129,7 @@ internal sealed class ComponentPreviewInputSession
         _config = config;
         _themeTokens = ParseJsonObject(payload.ThemeTokensJson);
         var preview = ComponentPreviewTransientValues.Apply(
-            ParseJsonObject(payload.DesignPreviewJson),
+            ParseJsonObject(payload.RuntimeContractJson),
             config,
             CaptureTransientState(payload),
             _previewInputData.ComponentVariantConfig);
@@ -497,7 +497,7 @@ internal sealed class ComponentPreviewInputSession
 
         var config = ParseJsonObject(payload.ConfigJson);
         var preview = ComponentPreviewTransientValues.Apply(
-            ParseJsonObject(payload.DesignPreviewJson),
+            ParseJsonObject(payload.RuntimeContractJson),
             config,
             CaptureTransientState(payload),
             _previewInputData.ComponentVariantConfig);
@@ -559,6 +559,7 @@ internal sealed class ComponentPreviewInputSession
         }
 
         ReconcileRuntimeStructure(preview, config);
+        var runtimeContractJson = preview.ToJsonString();
         if (!string.IsNullOrWhiteSpace(effectiveProjectId))
         {
             ResolveCollectionRecordReferences(
@@ -574,7 +575,7 @@ internal sealed class ComponentPreviewInputSession
         {
             ConfigJson = config.ToJsonString(),
             DesignPreviewJson = preparedPreviewJson,
-            RuntimeContractJson = preparedPreviewJson,
+            RuntimeContractJson = runtimeContractJson,
             ProjectMediaFiles = PreviewMediaDirectoryCatalog.Resolve(
                 payload.ProjectMediaRoot,
                 preparedPreviewJson),
