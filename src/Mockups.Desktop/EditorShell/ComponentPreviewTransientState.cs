@@ -86,8 +86,12 @@ internal static class ComponentPreviewTransientValues
         ComponentPreviewTransientState state,
         Func<string, JsonObject> componentVariantConfig)
     {
+        var authoring = preview.DeepClone().AsObject();
+        NestedRuntimeRecordReferenceResolver.RemoveDeclaredResolvedValues(
+            authoring,
+            config);
         var envelope = RuntimePreviewDocumentContract.PrepareFixture(
-            preview,
+            authoring,
             config,
             componentVariantConfig);
         if (state.HasCollectionTestValues)
@@ -95,6 +99,9 @@ internal static class ComponentPreviewTransientValues
             envelope["testValues"] = ParseJsonObject(
                 state.CollectionTestValuesJson).DeepClone();
         }
+        NestedRuntimeRecordReferenceResolver.RemoveDeclaredResolvedValues(
+            envelope,
+            config);
 
         var effective = ParseJsonObject(
             DesignPreviewTestValues.RuntimeJson(
@@ -121,6 +128,9 @@ internal static class ComponentPreviewTransientValues
                     value);
             }
         }
+        NestedRuntimeRecordReferenceResolver.RemoveDeclaredResolvedValues(
+            effective,
+            config);
         effective = ParseJsonObject(
             DesignPreviewTestValues.RuntimeJson(
                 effective.ToJsonString()));

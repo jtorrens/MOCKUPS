@@ -68,6 +68,66 @@ internal sealed class NestedRuntimeRecordReferenceResolver
         }
     }
 
+    public static void RemoveDeclaredResolvedValues(
+        JsonObject document,
+        JsonObject config)
+    {
+        RemoveResolvedValues(
+            document,
+            RuntimeInputDefinitionReader.ReadInputs(
+                document,
+                config,
+                includeHidden: true));
+        var collections = RuntimeInputDefinitionReader.ReadCollections(
+            document,
+            config,
+            includeHidden: true);
+        foreach (var collection in collections)
+        {
+            foreach (var owner in new[]
+                     {
+                         document,
+                         document["testValues"] as JsonObject,
+                     })
+            {
+                if (owner?[collection.JsonKey] is not JsonArray items)
+                {
+                    continue;
+                }
+                foreach (var item in items.OfType<JsonObject>())
+                {
+                    RemoveResolvedValues(item, collection.Fields);
+                }
+            }
+        }
+    }
+
+    private static void RemoveResolvedValues(
+        JsonObject values,
+        IReadOnlyList<ComponentInputDefinition> inputs)
+    {
+        foreach (var input in inputs)
+        {
+            if (input.Kind == ComponentInputKind.RecordReference
+                && !string.IsNullOrWhiteSpace(input.ResolvedJsonKey))
+            {
+                values.Remove(input.ResolvedJsonKey);
+            }
+            if (input.ValueKind != ValueKind.StructuredCollection
+                || input.StructuredCollection is null
+                || values[input.JsonKey] is not JsonArray items)
+            {
+                continue;
+            }
+            foreach (var item in items.OfType<JsonObject>())
+            {
+                RemoveResolvedValues(
+                    item,
+                    input.StructuredCollection.Fields);
+            }
+        }
+    }
+
     public JsonObject CreateAnimationCatalog(
         JsonObject values,
         JsonObject config,

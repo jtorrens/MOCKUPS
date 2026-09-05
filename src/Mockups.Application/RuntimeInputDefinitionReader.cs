@@ -10,7 +10,8 @@ public static class RuntimeInputDefinitionReader
 {
     public static IReadOnlyList<ComponentInputDefinition> ReadInputs(
         JsonObject preview,
-        JsonObject config)
+        JsonObject config,
+        bool includeHidden = false)
     {
         preview = RuntimeInputForwardingContract.EffectivePreview(preview, config);
         if (preview["inputs"] is null)
@@ -87,7 +88,8 @@ public static class RuntimeInputDefinitionReader
                     "structuredCollection",
                     $"Runtime Input '{id}'")),
             };
-            if (source == ComponentInputSource.Runtime && InputIsVisible(item, config))
+            if (source == ComponentInputSource.Runtime
+                && (includeHidden || InputIsVisible(item, config)))
             {
                 definitions.Add(definition);
             }

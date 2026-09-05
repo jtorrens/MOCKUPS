@@ -98,6 +98,13 @@ objects such as a resolved Actor are added only to the separate
 restart from `RuntimeContractJson`, so a render-only projection can never be
 persisted back into a strict Runtime collection document.
 
+When an already effective Preview document re-enters the authoring surface, the
+generic record-reference owner removes only the exact `resolvedJsonKey` values
+declared by its Runtime definitions, recursively through structured
+collections and Design Test Values. Unknown fields remain errors. Authoring
+therefore consumes stable record ids while render preparation alone owns the
+resolved record objects.
+
 ## Manifest and routing
 
 `src/desktop-preview/desktopPreviewManifest.json` is the current registry of
