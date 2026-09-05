@@ -6,7 +6,8 @@ export type ContentRowSlotKind = "none" | "avatar" | "icon" | "label";
 export type ContentRowVerticalAlignment = "top" | "center" | "bottom";
 
 export interface ContentRowSlotContract {
-  index: number;
+  id: string;
+  order: number;
   kind: ContentRowSlotKind;
   content?: AvatarDesignContract | ButtonDesignContract | LabelDesignContract;
 }
@@ -17,11 +18,5 @@ export interface ContentRowDesignContract {
   padding: { xToken: string; yToken: string };
   verticalAlignment: ContentRowVerticalAlignment;
   showSeparator: boolean;
-  slots: [
-    ContentRowSlotContract,
-    ContentRowSlotContract,
-    ContentRowSlotContract,
-    ContentRowSlotContract,
-    ContentRowSlotContract,
-  ];
+  slots: ContentRowSlotContract[];
 }

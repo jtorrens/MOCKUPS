@@ -414,7 +414,8 @@ test("Social Post renders the same two-row contract as a footer above navigation
   assert.equal(message.box.y + message.box.height, footer.box.y);
   assert.equal(footer.box.y + footer.box.height, navigation.box.y);
   assert.equal(row2.box.y, row1.box.y + row1.box.height + 4);
-  const firstFooterKind = String(config.socialPost.footerRows[0]?.slot1Kind ?? "none");
+  const firstFooterRow = config.socialPost.footerRows[0] as { rowSlot?: { overrides?: { contentRow?: { slots?: Array<{ kind?: string }> } } } } | undefined;
+  const firstFooterKind = String(firstFooterRow?.rowSlot?.overrides?.contentRow?.slots?.[0]?.kind ?? "none");
   const footerComponentByKind: Record<string, string> = {
     avatar: "component.avatar",
     icon: "component.button",

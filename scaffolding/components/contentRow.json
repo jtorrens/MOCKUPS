@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "intent": {
-    "responsibility": "Own one reusable five-slot content row and its complete current configuration.",
+    "responsibility": "Own one reusable ordered content-row slot collection and its complete current configuration.",
     "visualBoundary": "Resolve avatar, label and button slots through exact embedded Component boundaries.",
     "runtimeBehavior": "Consume actor, label, sublabel and button state only through declared Runtime Inputs.",
     "forwarding": "Forward values only through declared stable source and target identities.",
@@ -14,7 +14,7 @@
     "projectId": "project_foqn_s2",
     "recordClassId": "component.contentRow",
     "name": "Content Row",
-    "notes": "Reusable five-slot row for module header, footer and main overlays."
+    "notes": "Reusable ordered content row for module header, footer and main overlays."
   },
   "manifest": {
     "contract": "./contentRowComponentContract",
@@ -47,76 +47,98 @@
       "padding": "theme.spacing.s|theme.spacing.s",
       "verticalAlignment": "center",
       "showSeparator": false,
-      "slot1Kind": "none",
-      "slot1AvatarSlot": {
-        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-        "overrides": {}
-      },
-      "slot1IconSlot": {
-        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-        "overrides": {}
-      },
-      "slot1IconSizeToken": "theme.iconSizes.m",
-      "slot1LabelSlot": {
-        "variantReference": "component_project_foqn_s2_label::variant::default",
-        "overrides": {}
-      },
-      "slot2Kind": "none",
-      "slot2AvatarSlot": {
-        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-        "overrides": {}
-      },
-      "slot2IconSlot": {
-        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-        "overrides": {}
-      },
-      "slot2IconSizeToken": "theme.iconSizes.m",
-      "slot2LabelSlot": {
-        "variantReference": "component_project_foqn_s2_label::variant::default",
-        "overrides": {}
-      },
-      "slot3Kind": "none",
-      "slot3AvatarSlot": {
-        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-        "overrides": {}
-      },
-      "slot3IconSlot": {
-        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-        "overrides": {}
-      },
-      "slot3IconSizeToken": "theme.iconSizes.m",
-      "slot3LabelSlot": {
-        "variantReference": "component_project_foqn_s2_label::variant::default",
-        "overrides": {}
-      },
-      "slot4Kind": "none",
-      "slot4AvatarSlot": {
-        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-        "overrides": {}
-      },
-      "slot4IconSlot": {
-        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-        "overrides": {}
-      },
-      "slot4IconSizeToken": "theme.iconSizes.m",
-      "slot4LabelSlot": {
-        "variantReference": "component_project_foqn_s2_label::variant::default",
-        "overrides": {}
-      },
-      "slot5Kind": "none",
-      "slot5AvatarSlot": {
-        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-        "overrides": {}
-      },
-      "slot5IconSlot": {
-        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-        "overrides": {}
-      },
-      "slot5IconSizeToken": "theme.iconSizes.m",
-      "slot5LabelSlot": {
-        "variantReference": "component_project_foqn_s2_label::variant::default",
-        "overrides": {}
-      }
+      "slots": [
+        {
+          "id": "slot1",
+          "name": "Slot 1",
+          "kind": "none",
+          "avatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "iconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "iconSizeToken": "theme.iconSizes.m",
+          "labelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          }
+        },
+        {
+          "id": "slot2",
+          "name": "Slot 2",
+          "kind": "none",
+          "avatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "iconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "iconSizeToken": "theme.iconSizes.m",
+          "labelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          }
+        },
+        {
+          "id": "slot3",
+          "name": "Slot 3",
+          "kind": "none",
+          "avatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "iconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "iconSizeToken": "theme.iconSizes.m",
+          "labelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          }
+        },
+        {
+          "id": "slot4",
+          "name": "Slot 4",
+          "kind": "none",
+          "avatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "iconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "iconSizeToken": "theme.iconSizes.m",
+          "labelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          }
+        },
+        {
+          "id": "slot5",
+          "name": "Slot 5",
+          "kind": "none",
+          "avatarSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+            "overrides": {}
+          },
+          "iconSlot": {
+            "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "overrides": {}
+          },
+          "iconSizeToken": "theme.iconSizes.m",
+          "labelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          }
+        }
+      ]
     }
   },
   "defaultVariant": {
@@ -137,76 +159,98 @@
         "padding": "theme.spacing.s|theme.spacing.s",
         "verticalAlignment": "center",
         "showSeparator": false,
-        "slot1Kind": "none",
-        "slot1AvatarSlot": {
-          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-          "overrides": {}
-        },
-        "slot1IconSlot": {
-          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-          "overrides": {}
-        },
-        "slot1IconSizeToken": "theme.iconSizes.m",
-        "slot1LabelSlot": {
-          "variantReference": "component_project_foqn_s2_label::variant::default",
-          "overrides": {}
-        },
-        "slot2Kind": "none",
-        "slot2AvatarSlot": {
-          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-          "overrides": {}
-        },
-        "slot2IconSlot": {
-          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-          "overrides": {}
-        },
-        "slot2IconSizeToken": "theme.iconSizes.m",
-        "slot2LabelSlot": {
-          "variantReference": "component_project_foqn_s2_label::variant::default",
-          "overrides": {}
-        },
-        "slot3Kind": "none",
-        "slot3AvatarSlot": {
-          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-          "overrides": {}
-        },
-        "slot3IconSlot": {
-          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-          "overrides": {}
-        },
-        "slot3IconSizeToken": "theme.iconSizes.m",
-        "slot3LabelSlot": {
-          "variantReference": "component_project_foqn_s2_label::variant::default",
-          "overrides": {}
-        },
-        "slot4Kind": "none",
-        "slot4AvatarSlot": {
-          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-          "overrides": {}
-        },
-        "slot4IconSlot": {
-          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-          "overrides": {}
-        },
-        "slot4IconSizeToken": "theme.iconSizes.m",
-        "slot4LabelSlot": {
-          "variantReference": "component_project_foqn_s2_label::variant::default",
-          "overrides": {}
-        },
-        "slot5Kind": "none",
-        "slot5AvatarSlot": {
-          "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-          "overrides": {}
-        },
-        "slot5IconSlot": {
-          "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-          "overrides": {}
-        },
-        "slot5IconSizeToken": "theme.iconSizes.m",
-        "slot5LabelSlot": {
-          "variantReference": "component_project_foqn_s2_label::variant::default",
-          "overrides": {}
-        }
+        "slots": [
+          {
+            "id": "slot1",
+            "name": "Slot 1",
+            "kind": "none",
+            "avatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "iconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "iconSizeToken": "theme.iconSizes.m",
+            "labelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            }
+          },
+          {
+            "id": "slot2",
+            "name": "Slot 2",
+            "kind": "none",
+            "avatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "iconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "iconSizeToken": "theme.iconSizes.m",
+            "labelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            }
+          },
+          {
+            "id": "slot3",
+            "name": "Slot 3",
+            "kind": "none",
+            "avatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "iconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "iconSizeToken": "theme.iconSizes.m",
+            "labelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            }
+          },
+          {
+            "id": "slot4",
+            "name": "Slot 4",
+            "kind": "none",
+            "avatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "iconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "iconSizeToken": "theme.iconSizes.m",
+            "labelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            }
+          },
+          {
+            "id": "slot5",
+            "name": "Slot 5",
+            "kind": "none",
+            "avatarSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+              "overrides": {}
+            },
+            "iconSlot": {
+              "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+              "overrides": {}
+            },
+            "iconSizeToken": "theme.iconSizes.m",
+            "labelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            }
+          }
+        ]
       }
     }
   },
@@ -243,39 +287,12 @@
         "unit": ""
       },
       {
-        "id": "slot1ActorId",
-        "label": "Slot 1 actor",
-        "jsonKey": "slot1ActorId",
-        "kind": "recordReference",
-        "valueKind": "RecordReference",
-        "defaultValue": "actor_alex",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "actors",
-        "resolvedJsonKey": "slot1Actor",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "source": "runtime",
-        "uiOrigin": "self",
-        "uiGroupId": "slot1",
-        "uiGroupLabel": "Slot 1",
-        "uiParentGroupId": "",
-        "uiOrder": 110,
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "transition": null,
-        "unit": ""
-      },
-      {
-        "id": "slot1Label",
-        "label": "Slot 1 label",
-        "jsonKey": "slot1Label",
-        "kind": "text",
-        "valueKind": "StringSingleLine",
-        "defaultValue": "",
+        "id": "slotInputs",
+        "label": "Slots",
+        "jsonKey": "slotInputs",
+        "kind": "collection",
+        "valueKind": "StructuredCollection",
+        "defaultValue": "[]",
         "minimum": 0,
         "maximum": 9999,
         "increment": 1,
@@ -285,672 +302,211 @@
         "options": [],
         "pairFirstLabel": "W",
         "pairSecondLabel": "H",
-        "source": "runtime",
-        "uiOrigin": "self",
-        "uiGroupId": "slot1",
-        "uiGroupLabel": "Slot 1",
-        "uiParentGroupId": "",
-        "uiOrder": 120,
         "visibleWhenPath": "",
         "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "self",
+        "uiGroupId": "",
+        "uiGroupLabel": "",
+        "uiParentGroupId": "",
         "transition": null,
         "unit": "",
-        "animatable": true,
-        "animationInterpolations": [
-          "hold"
-        ]
-      },
-      {
-        "id": "slot1Sublabel",
-        "label": "Slot 1 sublabel",
-        "jsonKey": "slot1Sublabel",
-        "kind": "text",
-        "valueKind": "StringSingleLine",
-        "defaultValue": "",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "source": "runtime",
-        "uiOrigin": "self",
-        "uiGroupId": "slot1",
-        "uiGroupLabel": "Slot 1",
-        "uiParentGroupId": "",
-        "uiOrder": 130,
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "transition": null,
-        "unit": "",
-        "animatable": true,
-        "animationInterpolations": [
-          "hold"
-        ]
-      },
-      {
-        "id": "slot1State",
-        "label": "Slot 1 state",
-        "jsonKey": "slot1State",
-        "kind": "option",
-        "valueKind": "OptionToken",
-        "defaultValue": "normal",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [
-          {
-            "value": "normal",
-            "label": "Normal"
+        "uiOrder": 30,
+        "structuredCollection": {
+          "id": "slotInputs",
+          "label": "Slots",
+          "jsonKey": "slotInputs",
+          "itemLabel": "Slot",
+          "fields": [
+            {
+              "id": "actorId",
+              "label": "Actor",
+              "jsonKey": "actorId",
+              "kind": "recordReference",
+              "valueKind": "RecordReference",
+              "defaultValue": "actor_alex",
+              "minimum": 0,
+              "maximum": 9999,
+              "increment": 1,
+              "tableId": "actors",
+              "resolvedJsonKey": "actor",
+              "componentType": "",
+              "options": [],
+              "pairFirstLabel": "W",
+              "pairSecondLabel": "H",
+              "visibleWhenPath": "",
+              "visibleWhenValue": "",
+              "source": "runtime",
+              "uiOrigin": "embedded",
+              "uiGroupId": "content",
+              "uiGroupLabel": "Content",
+              "uiParentGroupId": "",
+              "transition": null,
+              "unit": "",
+              "uiOrder": 10
+            },
+            {
+              "id": "label",
+              "label": "Label",
+              "jsonKey": "label",
+              "kind": "text",
+              "valueKind": "StringSingleLine",
+              "defaultValue": "",
+              "minimum": 0,
+              "maximum": 9999,
+              "increment": 1,
+              "tableId": "",
+              "resolvedJsonKey": "",
+              "componentType": "",
+              "options": [],
+              "pairFirstLabel": "W",
+              "pairSecondLabel": "H",
+              "visibleWhenPath": "",
+              "visibleWhenValue": "",
+              "source": "runtime",
+              "uiOrigin": "embedded",
+              "uiGroupId": "content",
+              "uiGroupLabel": "Content",
+              "uiParentGroupId": "",
+              "transition": null,
+              "unit": "",
+              "uiOrder": 20
+            },
+            {
+              "id": "sublabel",
+              "label": "Sublabel",
+              "jsonKey": "sublabel",
+              "kind": "text",
+              "valueKind": "StringSingleLine",
+              "defaultValue": "",
+              "minimum": 0,
+              "maximum": 9999,
+              "increment": 1,
+              "tableId": "",
+              "resolvedJsonKey": "",
+              "componentType": "",
+              "options": [],
+              "pairFirstLabel": "W",
+              "pairSecondLabel": "H",
+              "visibleWhenPath": "",
+              "visibleWhenValue": "",
+              "source": "runtime",
+              "uiOrigin": "embedded",
+              "uiGroupId": "content",
+              "uiGroupLabel": "Content",
+              "uiParentGroupId": "",
+              "transition": null,
+              "unit": "",
+              "uiOrder": 30
+            },
+            {
+              "id": "state",
+              "label": "State",
+              "jsonKey": "state",
+              "kind": "option",
+              "valueKind": "OptionToken",
+              "defaultValue": "normal",
+              "minimum": 0,
+              "maximum": 9999,
+              "increment": 1,
+              "tableId": "",
+              "resolvedJsonKey": "",
+              "componentType": "",
+              "options": [
+                {
+                  "value": "normal",
+                  "label": "Normal"
+                },
+                {
+                  "value": "active",
+                  "label": "Active"
+                },
+                {
+                  "value": "pushed",
+                  "label": "Pushed"
+                },
+                {
+                  "value": "disabled",
+                  "label": "Disabled"
+                }
+              ],
+              "pairFirstLabel": "W",
+              "pairSecondLabel": "H",
+              "visibleWhenPath": "",
+              "visibleWhenValue": "",
+              "source": "runtime",
+              "uiOrigin": "embedded",
+              "uiGroupId": "content",
+              "uiGroupLabel": "Content",
+              "uiParentGroupId": "",
+              "transition": null,
+              "unit": "",
+              "uiOrder": 40
+            }
+          ],
+          "itemPresentation": {
+            "titleFieldId": "label",
+            "firstItemBadge": "",
+            "subtitleFieldIds": [
+              "sublabel"
+            ],
+            "subtitleMaxCharacters": 72,
+            "iconFieldId": "",
+            "fallbackIcon": "layout",
+            "iconValueMap": {}
           },
-          {
-            "value": "active",
-            "label": "Active"
-          },
-          {
-            "value": "pushed",
-            "label": "Pushed"
-          },
-          {
-            "value": "disabled",
-            "label": "Disabled"
+          "canEditStructure": false,
+          "uiPresentation": "collection",
+          "itemRuntimePresentation": "card",
+          "structureProjection": {
+            "sourceConfigPath": "contentRow.slots",
+            "sourceIdJsonKey": "id",
+            "runtimeIdJsonKey": "id",
+            "fieldBindings": {}
           }
-        ],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "source": "runtime",
-        "uiOrigin": "self",
-        "uiGroupId": "slot1",
-        "uiGroupLabel": "Slot 1",
-        "uiParentGroupId": "",
-        "uiOrder": 140,
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "transition": null,
-        "unit": "",
-        "animatable": true,
-        "animationInterpolations": [
-          "hold"
-        ]
-      },
-      {
-        "id": "slot2ActorId",
-        "label": "Slot 2 actor",
-        "jsonKey": "slot2ActorId",
-        "kind": "recordReference",
-        "valueKind": "RecordReference",
-        "defaultValue": "actor_alex",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "actors",
-        "resolvedJsonKey": "slot2Actor",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "source": "runtime",
-        "uiOrigin": "self",
-        "uiGroupId": "slot2",
-        "uiGroupLabel": "Slot 2",
-        "uiParentGroupId": "",
-        "uiOrder": 210,
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "transition": null,
-        "unit": ""
-      },
-      {
-        "id": "slot2Label",
-        "label": "Slot 2 label",
-        "jsonKey": "slot2Label",
-        "kind": "text",
-        "valueKind": "StringSingleLine",
-        "defaultValue": "",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "source": "runtime",
-        "uiOrigin": "self",
-        "uiGroupId": "slot2",
-        "uiGroupLabel": "Slot 2",
-        "uiParentGroupId": "",
-        "uiOrder": 220,
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "transition": null,
-        "unit": "",
-        "animatable": true,
-        "animationInterpolations": [
-          "hold"
-        ]
-      },
-      {
-        "id": "slot2Sublabel",
-        "label": "Slot 2 sublabel",
-        "jsonKey": "slot2Sublabel",
-        "kind": "text",
-        "valueKind": "StringSingleLine",
-        "defaultValue": "",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "source": "runtime",
-        "uiOrigin": "self",
-        "uiGroupId": "slot2",
-        "uiGroupLabel": "Slot 2",
-        "uiParentGroupId": "",
-        "uiOrder": 230,
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "transition": null,
-        "unit": "",
-        "animatable": true,
-        "animationInterpolations": [
-          "hold"
-        ]
-      },
-      {
-        "id": "slot2State",
-        "label": "Slot 2 state",
-        "jsonKey": "slot2State",
-        "kind": "option",
-        "valueKind": "OptionToken",
-        "defaultValue": "normal",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [
-          {
-            "value": "normal",
-            "label": "Normal"
-          },
-          {
-            "value": "active",
-            "label": "Active"
-          },
-          {
-            "value": "pushed",
-            "label": "Pushed"
-          },
-          {
-            "value": "disabled",
-            "label": "Disabled"
-          }
-        ],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "source": "runtime",
-        "uiOrigin": "self",
-        "uiGroupId": "slot2",
-        "uiGroupLabel": "Slot 2",
-        "uiParentGroupId": "",
-        "uiOrder": 240,
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "transition": null,
-        "unit": "",
-        "animatable": true,
-        "animationInterpolations": [
-          "hold"
-        ]
-      },
-      {
-        "id": "slot3ActorId",
-        "label": "Slot 3 actor",
-        "jsonKey": "slot3ActorId",
-        "kind": "recordReference",
-        "valueKind": "RecordReference",
-        "defaultValue": "actor_alex",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "actors",
-        "resolvedJsonKey": "slot3Actor",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "source": "runtime",
-        "uiOrigin": "self",
-        "uiGroupId": "slot3",
-        "uiGroupLabel": "Slot 3",
-        "uiParentGroupId": "",
-        "uiOrder": 310,
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "transition": null,
-        "unit": ""
-      },
-      {
-        "id": "slot3Label",
-        "label": "Slot 3 label",
-        "jsonKey": "slot3Label",
-        "kind": "text",
-        "valueKind": "StringSingleLine",
-        "defaultValue": "",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "source": "runtime",
-        "uiOrigin": "self",
-        "uiGroupId": "slot3",
-        "uiGroupLabel": "Slot 3",
-        "uiParentGroupId": "",
-        "uiOrder": 320,
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "transition": null,
-        "unit": "",
-        "animatable": true,
-        "animationInterpolations": [
-          "hold"
-        ]
-      },
-      {
-        "id": "slot3Sublabel",
-        "label": "Slot 3 sublabel",
-        "jsonKey": "slot3Sublabel",
-        "kind": "text",
-        "valueKind": "StringSingleLine",
-        "defaultValue": "",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "source": "runtime",
-        "uiOrigin": "self",
-        "uiGroupId": "slot3",
-        "uiGroupLabel": "Slot 3",
-        "uiParentGroupId": "",
-        "uiOrder": 330,
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "transition": null,
-        "unit": "",
-        "animatable": true,
-        "animationInterpolations": [
-          "hold"
-        ]
-      },
-      {
-        "id": "slot3State",
-        "label": "Slot 3 state",
-        "jsonKey": "slot3State",
-        "kind": "option",
-        "valueKind": "OptionToken",
-        "defaultValue": "normal",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [
-          {
-            "value": "normal",
-            "label": "Normal"
-          },
-          {
-            "value": "active",
-            "label": "Active"
-          },
-          {
-            "value": "pushed",
-            "label": "Pushed"
-          },
-          {
-            "value": "disabled",
-            "label": "Disabled"
-          }
-        ],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "source": "runtime",
-        "uiOrigin": "self",
-        "uiGroupId": "slot3",
-        "uiGroupLabel": "Slot 3",
-        "uiParentGroupId": "",
-        "uiOrder": 340,
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "transition": null,
-        "unit": "",
-        "animatable": true,
-        "animationInterpolations": [
-          "hold"
-        ]
-      },
-      {
-        "id": "slot4ActorId",
-        "label": "Slot 4 actor",
-        "jsonKey": "slot4ActorId",
-        "kind": "recordReference",
-        "valueKind": "RecordReference",
-        "defaultValue": "actor_alex",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "actors",
-        "resolvedJsonKey": "slot4Actor",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "source": "runtime",
-        "uiOrigin": "self",
-        "uiGroupId": "slot4",
-        "uiGroupLabel": "Slot 4",
-        "uiParentGroupId": "",
-        "uiOrder": 410,
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "transition": null,
-        "unit": ""
-      },
-      {
-        "id": "slot4Label",
-        "label": "Slot 4 label",
-        "jsonKey": "slot4Label",
-        "kind": "text",
-        "valueKind": "StringSingleLine",
-        "defaultValue": "",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "source": "runtime",
-        "uiOrigin": "self",
-        "uiGroupId": "slot4",
-        "uiGroupLabel": "Slot 4",
-        "uiParentGroupId": "",
-        "uiOrder": 420,
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "transition": null,
-        "unit": "",
-        "animatable": true,
-        "animationInterpolations": [
-          "hold"
-        ]
-      },
-      {
-        "id": "slot4Sublabel",
-        "label": "Slot 4 sublabel",
-        "jsonKey": "slot4Sublabel",
-        "kind": "text",
-        "valueKind": "StringSingleLine",
-        "defaultValue": "",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "source": "runtime",
-        "uiOrigin": "self",
-        "uiGroupId": "slot4",
-        "uiGroupLabel": "Slot 4",
-        "uiParentGroupId": "",
-        "uiOrder": 430,
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "transition": null,
-        "unit": "",
-        "animatable": true,
-        "animationInterpolations": [
-          "hold"
-        ]
-      },
-      {
-        "id": "slot4State",
-        "label": "Slot 4 state",
-        "jsonKey": "slot4State",
-        "kind": "option",
-        "valueKind": "OptionToken",
-        "defaultValue": "normal",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [
-          {
-            "value": "normal",
-            "label": "Normal"
-          },
-          {
-            "value": "active",
-            "label": "Active"
-          },
-          {
-            "value": "pushed",
-            "label": "Pushed"
-          },
-          {
-            "value": "disabled",
-            "label": "Disabled"
-          }
-        ],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "source": "runtime",
-        "uiOrigin": "self",
-        "uiGroupId": "slot4",
-        "uiGroupLabel": "Slot 4",
-        "uiParentGroupId": "",
-        "uiOrder": 440,
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "transition": null,
-        "unit": "",
-        "animatable": true,
-        "animationInterpolations": [
-          "hold"
-        ]
-      },
-      {
-        "id": "slot5ActorId",
-        "label": "Slot 5 actor",
-        "jsonKey": "slot5ActorId",
-        "kind": "recordReference",
-        "valueKind": "RecordReference",
-        "defaultValue": "actor_alex",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "actors",
-        "resolvedJsonKey": "slot5Actor",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "source": "runtime",
-        "uiOrigin": "self",
-        "uiGroupId": "slot5",
-        "uiGroupLabel": "Slot 5",
-        "uiParentGroupId": "",
-        "uiOrder": 510,
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "transition": null,
-        "unit": ""
-      },
-      {
-        "id": "slot5Label",
-        "label": "Slot 5 label",
-        "jsonKey": "slot5Label",
-        "kind": "text",
-        "valueKind": "StringSingleLine",
-        "defaultValue": "",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "source": "runtime",
-        "uiOrigin": "self",
-        "uiGroupId": "slot5",
-        "uiGroupLabel": "Slot 5",
-        "uiParentGroupId": "",
-        "uiOrder": 520,
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "transition": null,
-        "unit": "",
-        "animatable": true,
-        "animationInterpolations": [
-          "hold"
-        ]
-      },
-      {
-        "id": "slot5Sublabel",
-        "label": "Slot 5 sublabel",
-        "jsonKey": "slot5Sublabel",
-        "kind": "text",
-        "valueKind": "StringSingleLine",
-        "defaultValue": "",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "source": "runtime",
-        "uiOrigin": "self",
-        "uiGroupId": "slot5",
-        "uiGroupLabel": "Slot 5",
-        "uiParentGroupId": "",
-        "uiOrder": 530,
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "transition": null,
-        "unit": "",
-        "animatable": true,
-        "animationInterpolations": [
-          "hold"
-        ]
-      },
-      {
-        "id": "slot5State",
-        "label": "Slot 5 state",
-        "jsonKey": "slot5State",
-        "kind": "option",
-        "valueKind": "OptionToken",
-        "defaultValue": "normal",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [
-          {
-            "value": "normal",
-            "label": "Normal"
-          },
-          {
-            "value": "active",
-            "label": "Active"
-          },
-          {
-            "value": "pushed",
-            "label": "Pushed"
-          },
-          {
-            "value": "disabled",
-            "label": "Disabled"
-          }
-        ],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "source": "runtime",
-        "uiOrigin": "self",
-        "uiGroupId": "slot5",
-        "uiGroupLabel": "Slot 5",
-        "uiParentGroupId": "",
-        "uiOrder": 540,
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "transition": null,
-        "unit": "",
-        "animatable": true,
-        "animationInterpolations": [
-          "hold"
-        ]
+        }
       }
     ],
     "collections": [],
     "actions": [],
     "viewportSize": "390|80",
-    "slot1Label": "",
-    "slot1Sublabel": "",
-    "slot1State": "normal",
-    "slot2Label": "",
-    "slot2Sublabel": "",
-    "slot2State": "normal",
-    "slot3Label": "",
-    "slot3Sublabel": "",
-    "slot3State": "normal",
-    "slot4Label": "",
-    "slot4Sublabel": "",
-    "slot4State": "normal",
-    "slot5Label": "",
-    "slot5Sublabel": "",
-    "slot5State": "normal",
-    "slot1ActorId": "actor_alex",
-    "slot2ActorId": "actor_alex",
-    "slot3ActorId": "actor_alex",
-    "slot4ActorId": "actor_alex",
-    "slot5ActorId": "actor_alex"
+    "slotInputs": [
+      {
+        "id": "slot1",
+        "actorId": "actor_alex",
+        "label": "",
+        "sublabel": "",
+        "state": "normal"
+      },
+      {
+        "id": "slot2",
+        "actorId": "actor_alex",
+        "label": "",
+        "sublabel": "",
+        "state": "normal"
+      },
+      {
+        "id": "slot3",
+        "actorId": "actor_alex",
+        "label": "",
+        "sublabel": "",
+        "state": "normal"
+      },
+      {
+        "id": "slot4",
+        "actorId": "actor_alex",
+        "label": "",
+        "sublabel": "",
+        "state": "normal"
+      },
+      {
+        "id": "slot5",
+        "actorId": "actor_alex",
+        "label": "",
+        "sublabel": "",
+        "state": "normal"
+      }
+    ]
   },
   "metadata": {
     "note": "Shared five-slot content row used by module-owned row collections."
@@ -1071,762 +627,374 @@
       "embeddedSlot": null
     },
     {
-      "id": "component.contentRow.slot1.kind",
-      "label": "Slot 1 content",
-      "valueKind": "OptionToken",
+      "id": "component.contentRow.slots",
+      "label": "Slots",
+      "valueKind": "StructuredCollection",
       "jsonPath": [
         "contentRow",
-        "slot1Kind"
+        "slots"
       ],
-      "defaultValue": "none",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "none",
-          "label": "None"
-        },
-        {
-          "value": "avatar",
-          "label": "Avatar + label"
-        },
-        {
-          "value": "icon",
-          "label": "Icon"
-        },
-        {
-          "value": "label",
-          "label": "Label"
-        }
-      ],
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "component.contentRow.slot1.avatar",
-      "label": "Slot 1 avatar",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "contentRow",
-        "slot1AvatarSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
+      "defaultValue": "[]",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "avatar",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "component.contentRow.slot1.icon",
-      "label": "Slot 1 icon",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "contentRow",
-        "slot1IconSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "button",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "component.contentRow.slot1.label",
-      "label": "Slot 1 label",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "contentRow",
-        "slot1LabelSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "label",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "component.contentRow.slot1.iconSize",
-      "label": "Slot 1 icon size",
-      "valueKind": "OptionToken",
-      "jsonPath": [
-        "contentRow",
-        "slot1IconSizeToken"
-      ],
-      "defaultValue": "theme.iconSizes.m",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "theme.iconSizes.xs",
-          "label": "Extra small"
+      "structuredCollection": {
+        "id": "slots",
+        "label": "Slots",
+        "jsonKey": "slots",
+        "itemLabel": "Slot",
+        "fields": [
+          {
+            "id": "name",
+            "label": "Name",
+            "jsonKey": "name",
+            "kind": "Text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "Slot",
+            "options": null,
+            "minimum": 0,
+            "maximum": 9999,
+            "increment": 1,
+            "tableId": "",
+            "resolvedJsonKey": "",
+            "componentType": "",
+            "source": "Runtime",
+            "pairLabels": null,
+            "uiOrigin": "Self",
+            "uiGroupId": "",
+            "uiGroupLabel": "",
+            "uiParentGroupId": "",
+            "enabledWhenItemJsonKey": "",
+            "enabledWhenItemValues": null,
+            "minimumItemIndex": 0,
+            "uiOrder": 0,
+            "uiSectionLabel": "",
+            "unit": "",
+            "animation": null,
+            "behaviorTiming": null,
+            "transition": null,
+            "enabledWhenPath": "",
+            "enabledWhenValue": "",
+            "refreshOnCommit": false,
+            "structuredCollection": null,
+            "allowEmpty": false,
+            "allowEmptyWhenItemJsonKey": "",
+            "allowEmptyWhenItemValues": null,
+            "actionOnly": false,
+            "optionsSourceCollectionJsonKey": "",
+            "optionsSourceValueJsonKey": "id",
+            "optionsSourceLabelJsonKey": "",
+            "optionsSourceFirstItemBadge": "",
+            "showInEditor": true,
+            "helpText": "",
+            "valuePattern": "",
+            "valuePatternMessage": ""
+          },
+          {
+            "id": "kind",
+            "label": "Content",
+            "jsonKey": "kind",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "none",
+            "options": [
+              {
+                "value": "none",
+                "label": "None"
+              },
+              {
+                "value": "avatar",
+                "label": "Avatar + label"
+              },
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "label",
+                "label": "Label"
+              }
+            ],
+            "minimum": 0,
+            "maximum": 9999,
+            "increment": 1,
+            "tableId": "",
+            "resolvedJsonKey": "",
+            "componentType": "",
+            "source": "Runtime",
+            "pairLabels": null,
+            "uiOrigin": "Self",
+            "uiGroupId": "",
+            "uiGroupLabel": "",
+            "uiParentGroupId": "",
+            "enabledWhenItemJsonKey": "",
+            "enabledWhenItemValues": null,
+            "minimumItemIndex": 0,
+            "uiOrder": 0,
+            "uiSectionLabel": "",
+            "unit": "",
+            "animation": null,
+            "behaviorTiming": null,
+            "transition": null,
+            "enabledWhenPath": "",
+            "enabledWhenValue": "",
+            "refreshOnCommit": false,
+            "structuredCollection": null,
+            "allowEmpty": false,
+            "allowEmptyWhenItemJsonKey": "",
+            "allowEmptyWhenItemValues": null,
+            "actionOnly": false,
+            "optionsSourceCollectionJsonKey": "",
+            "optionsSourceValueJsonKey": "id",
+            "optionsSourceLabelJsonKey": "",
+            "optionsSourceFirstItemBadge": "",
+            "showInEditor": true,
+            "helpText": "",
+            "valuePattern": "",
+            "valuePatternMessage": ""
+          },
+          {
+            "id": "avatarSlot",
+            "label": "Avatar",
+            "jsonKey": "avatarSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
+            "options": null,
+            "minimum": 0,
+            "maximum": 9999,
+            "increment": 1,
+            "tableId": "",
+            "resolvedJsonKey": "",
+            "componentType": "avatar",
+            "source": "Runtime",
+            "pairLabels": null,
+            "uiOrigin": "Self",
+            "uiGroupId": "",
+            "uiGroupLabel": "",
+            "uiParentGroupId": "",
+            "enabledWhenItemJsonKey": "kind",
+            "enabledWhenItemValues": [
+              "avatar"
+            ],
+            "minimumItemIndex": 0,
+            "uiOrder": 0,
+            "uiSectionLabel": "",
+            "unit": "",
+            "animation": null,
+            "behaviorTiming": null,
+            "transition": null,
+            "enabledWhenPath": "",
+            "enabledWhenValue": "",
+            "refreshOnCommit": false,
+            "structuredCollection": null,
+            "allowEmpty": false,
+            "allowEmptyWhenItemJsonKey": "",
+            "allowEmptyWhenItemValues": null,
+            "actionOnly": false,
+            "optionsSourceCollectionJsonKey": "",
+            "optionsSourceValueJsonKey": "id",
+            "optionsSourceLabelJsonKey": "",
+            "optionsSourceFirstItemBadge": "",
+            "showInEditor": true,
+            "helpText": "",
+            "valuePattern": "",
+            "valuePatternMessage": ""
+          },
+          {
+            "id": "iconSlot",
+            "label": "Icon",
+            "jsonKey": "iconSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
+            "options": null,
+            "minimum": 0,
+            "maximum": 9999,
+            "increment": 1,
+            "tableId": "",
+            "resolvedJsonKey": "",
+            "componentType": "button",
+            "source": "Runtime",
+            "pairLabels": null,
+            "uiOrigin": "Self",
+            "uiGroupId": "",
+            "uiGroupLabel": "",
+            "uiParentGroupId": "",
+            "enabledWhenItemJsonKey": "kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ],
+            "minimumItemIndex": 0,
+            "uiOrder": 0,
+            "uiSectionLabel": "",
+            "unit": "",
+            "animation": null,
+            "behaviorTiming": null,
+            "transition": null,
+            "enabledWhenPath": "",
+            "enabledWhenValue": "",
+            "refreshOnCommit": false,
+            "structuredCollection": null,
+            "allowEmpty": false,
+            "allowEmptyWhenItemJsonKey": "",
+            "allowEmptyWhenItemValues": null,
+            "actionOnly": false,
+            "optionsSourceCollectionJsonKey": "",
+            "optionsSourceValueJsonKey": "id",
+            "optionsSourceLabelJsonKey": "",
+            "optionsSourceFirstItemBadge": "",
+            "showInEditor": true,
+            "helpText": "",
+            "valuePattern": "",
+            "valuePatternMessage": ""
+          },
+          {
+            "id": "iconSizeToken",
+            "label": "Icon size",
+            "jsonKey": "iconSizeToken",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "theme.iconSizes.m",
+            "options": [
+              {
+                "value": "theme.iconSizes.xs",
+                "label": "Extra small"
+              },
+              {
+                "value": "theme.iconSizes.s",
+                "label": "Small"
+              },
+              {
+                "value": "theme.iconSizes.m",
+                "label": "Medium"
+              },
+              {
+                "value": "theme.iconSizes.l",
+                "label": "Large"
+              },
+              {
+                "value": "theme.iconSizes.xl",
+                "label": "Extra large"
+              }
+            ],
+            "minimum": 0,
+            "maximum": 9999,
+            "increment": 1,
+            "tableId": "",
+            "resolvedJsonKey": "",
+            "componentType": "",
+            "source": "Runtime",
+            "pairLabels": null,
+            "uiOrigin": "Self",
+            "uiGroupId": "",
+            "uiGroupLabel": "",
+            "uiParentGroupId": "",
+            "enabledWhenItemJsonKey": "kind",
+            "enabledWhenItemValues": [
+              "icon"
+            ],
+            "minimumItemIndex": 0,
+            "uiOrder": 0,
+            "uiSectionLabel": "",
+            "unit": "",
+            "animation": null,
+            "behaviorTiming": null,
+            "transition": null,
+            "enabledWhenPath": "",
+            "enabledWhenValue": "",
+            "refreshOnCommit": false,
+            "structuredCollection": null,
+            "allowEmpty": false,
+            "allowEmptyWhenItemJsonKey": "",
+            "allowEmptyWhenItemValues": null,
+            "actionOnly": false,
+            "optionsSourceCollectionJsonKey": "",
+            "optionsSourceValueJsonKey": "id",
+            "optionsSourceLabelJsonKey": "",
+            "optionsSourceFirstItemBadge": "",
+            "showInEditor": true,
+            "helpText": "",
+            "valuePattern": "",
+            "valuePatternMessage": ""
+          },
+          {
+            "id": "labelSlot",
+            "label": "Label",
+            "jsonKey": "labelSlot",
+            "kind": "ComponentVariantSlot",
+            "valueKind": "ComponentVariantSlot",
+            "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
+            "options": null,
+            "minimum": 0,
+            "maximum": 9999,
+            "increment": 1,
+            "tableId": "",
+            "resolvedJsonKey": "",
+            "componentType": "label",
+            "source": "Runtime",
+            "pairLabels": null,
+            "uiOrigin": "Self",
+            "uiGroupId": "",
+            "uiGroupLabel": "",
+            "uiParentGroupId": "",
+            "enabledWhenItemJsonKey": "kind",
+            "enabledWhenItemValues": [
+              "label"
+            ],
+            "minimumItemIndex": 0,
+            "uiOrder": 0,
+            "uiSectionLabel": "",
+            "unit": "",
+            "animation": null,
+            "behaviorTiming": null,
+            "transition": null,
+            "enabledWhenPath": "",
+            "enabledWhenValue": "",
+            "refreshOnCommit": false,
+            "structuredCollection": null,
+            "allowEmpty": false,
+            "allowEmptyWhenItemJsonKey": "",
+            "allowEmptyWhenItemValues": null,
+            "actionOnly": false,
+            "optionsSourceCollectionJsonKey": "",
+            "optionsSourceValueJsonKey": "id",
+            "optionsSourceLabelJsonKey": "",
+            "optionsSourceFirstItemBadge": "",
+            "showInEditor": true,
+            "helpText": "",
+            "valuePattern": "",
+            "valuePatternMessage": ""
+          }
+        ],
+        "sourceCollectionJsonKey": "",
+        "itemPresentation": {
+          "titleFieldId": "name",
+          "firstItemBadge": "",
+          "subtitleFieldIds": [
+            "kind"
+          ],
+          "subtitleMaxCharacters": 72,
+          "iconFieldId": "",
+          "fallbackIcon": "layout",
+          "iconValueMap": {}
         },
-        {
-          "value": "theme.iconSizes.s",
-          "label": "Small"
-        },
-        {
-          "value": "theme.iconSizes.m",
-          "label": "Medium"
-        },
-        {
-          "value": "theme.iconSizes.l",
-          "label": "Large"
-        },
-        {
-          "value": "theme.iconSizes.xl",
-          "label": "Extra large"
-        }
-      ],
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "component.contentRow.slot2.kind",
-      "label": "Slot 2 content",
-      "valueKind": "OptionToken",
-      "jsonPath": [
-        "contentRow",
-        "slot2Kind"
-      ],
-      "defaultValue": "none",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "none",
-          "label": "None"
-        },
-        {
-          "value": "avatar",
-          "label": "Avatar + label"
-        },
-        {
-          "value": "icon",
-          "label": "Icon"
-        },
-        {
-          "value": "label",
-          "label": "Label"
-        }
-      ],
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "component.contentRow.slot2.avatar",
-      "label": "Slot 2 avatar",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "contentRow",
-        "slot2AvatarSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "avatar",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "component.contentRow.slot2.icon",
-      "label": "Slot 2 icon",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "contentRow",
-        "slot2IconSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "button",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "component.contentRow.slot2.label",
-      "label": "Slot 2 label",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "contentRow",
-        "slot2LabelSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "label",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "component.contentRow.slot2.iconSize",
-      "label": "Slot 2 icon size",
-      "valueKind": "OptionToken",
-      "jsonPath": [
-        "contentRow",
-        "slot2IconSizeToken"
-      ],
-      "defaultValue": "theme.iconSizes.m",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "theme.iconSizes.xs",
-          "label": "Extra small"
-        },
-        {
-          "value": "theme.iconSizes.s",
-          "label": "Small"
-        },
-        {
-          "value": "theme.iconSizes.m",
-          "label": "Medium"
-        },
-        {
-          "value": "theme.iconSizes.l",
-          "label": "Large"
-        },
-        {
-          "value": "theme.iconSizes.xl",
-          "label": "Extra large"
-        }
-      ],
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "component.contentRow.slot3.kind",
-      "label": "Slot 3 content",
-      "valueKind": "OptionToken",
-      "jsonPath": [
-        "contentRow",
-        "slot3Kind"
-      ],
-      "defaultValue": "none",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "none",
-          "label": "None"
-        },
-        {
-          "value": "avatar",
-          "label": "Avatar + label"
-        },
-        {
-          "value": "icon",
-          "label": "Icon"
-        },
-        {
-          "value": "label",
-          "label": "Label"
-        }
-      ],
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "component.contentRow.slot3.avatar",
-      "label": "Slot 3 avatar",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "contentRow",
-        "slot3AvatarSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "avatar",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "component.contentRow.slot3.icon",
-      "label": "Slot 3 icon",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "contentRow",
-        "slot3IconSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "button",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "component.contentRow.slot3.label",
-      "label": "Slot 3 label",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "contentRow",
-        "slot3LabelSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "label",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "component.contentRow.slot3.iconSize",
-      "label": "Slot 3 icon size",
-      "valueKind": "OptionToken",
-      "jsonPath": [
-        "contentRow",
-        "slot3IconSizeToken"
-      ],
-      "defaultValue": "theme.iconSizes.m",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "theme.iconSizes.xs",
-          "label": "Extra small"
-        },
-        {
-          "value": "theme.iconSizes.s",
-          "label": "Small"
-        },
-        {
-          "value": "theme.iconSizes.m",
-          "label": "Medium"
-        },
-        {
-          "value": "theme.iconSizes.l",
-          "label": "Large"
-        },
-        {
-          "value": "theme.iconSizes.xl",
-          "label": "Extra large"
-        }
-      ],
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "component.contentRow.slot4.kind",
-      "label": "Slot 4 content",
-      "valueKind": "OptionToken",
-      "jsonPath": [
-        "contentRow",
-        "slot4Kind"
-      ],
-      "defaultValue": "none",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "none",
-          "label": "None"
-        },
-        {
-          "value": "avatar",
-          "label": "Avatar + label"
-        },
-        {
-          "value": "icon",
-          "label": "Icon"
-        },
-        {
-          "value": "label",
-          "label": "Label"
-        }
-      ],
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "component.contentRow.slot4.avatar",
-      "label": "Slot 4 avatar",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "contentRow",
-        "slot4AvatarSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "avatar",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "component.contentRow.slot4.icon",
-      "label": "Slot 4 icon",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "contentRow",
-        "slot4IconSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "button",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "component.contentRow.slot4.label",
-      "label": "Slot 4 label",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "contentRow",
-        "slot4LabelSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "label",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "component.contentRow.slot4.iconSize",
-      "label": "Slot 4 icon size",
-      "valueKind": "OptionToken",
-      "jsonPath": [
-        "contentRow",
-        "slot4IconSizeToken"
-      ],
-      "defaultValue": "theme.iconSizes.m",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "theme.iconSizes.xs",
-          "label": "Extra small"
-        },
-        {
-          "value": "theme.iconSizes.s",
-          "label": "Small"
-        },
-        {
-          "value": "theme.iconSizes.m",
-          "label": "Medium"
-        },
-        {
-          "value": "theme.iconSizes.l",
-          "label": "Large"
-        },
-        {
-          "value": "theme.iconSizes.xl",
-          "label": "Extra large"
-        }
-      ],
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "component.contentRow.slot5.kind",
-      "label": "Slot 5 content",
-      "valueKind": "OptionToken",
-      "jsonPath": [
-        "contentRow",
-        "slot5Kind"
-      ],
-      "defaultValue": "none",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "none",
-          "label": "None"
-        },
-        {
-          "value": "avatar",
-          "label": "Avatar + label"
-        },
-        {
-          "value": "icon",
-          "label": "Icon"
-        },
-        {
-          "value": "label",
-          "label": "Label"
-        }
-      ],
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "component.contentRow.slot5.avatar",
-      "label": "Slot 5 avatar",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "contentRow",
-        "slot5AvatarSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "avatar",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "component.contentRow.slot5.icon",
-      "label": "Slot 5 icon",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "contentRow",
-        "slot5IconSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "button",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "component.contentRow.slot5.label",
-      "label": "Slot 5 label",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "contentRow",
-        "slot5LabelSlot"
-      ],
-      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
-      "isEditable": true,
-      "options": [],
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "label",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "component.contentRow.slot5.iconSize",
-      "label": "Slot 5 icon size",
-      "valueKind": "OptionToken",
-      "jsonPath": [
-        "contentRow",
-        "slot5IconSizeToken"
-      ],
-      "defaultValue": "theme.iconSizes.m",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "theme.iconSizes.xs",
-          "label": "Extra small"
-        },
-        {
-          "value": "theme.iconSizes.s",
-          "label": "Small"
-        },
-        {
-          "value": "theme.iconSizes.m",
-          "label": "Medium"
-        },
-        {
-          "value": "theme.iconSizes.l",
-          "label": "Large"
-        },
-        {
-          "value": "theme.iconSizes.xl",
-          "label": "Extra large"
-        }
-      ],
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
+        "componentItems": null,
+        "storageCollectionJsonKey": "",
+        "itemRuntimeContractJsonKey": "",
+        "uiParentCollectionJsonKey": "",
+        "uiParentItemIdJsonKey": "",
+        "animationPresentation": "item",
+        "canEditStructure": true,
+        "fixedItemCount": 0,
+        "uiPresentation": "collection",
+        "itemRuntimePresentation": "card",
+        "itemRuntimeHiddenInputIds": null,
+        "itemRuntimeVariantReferencePath": "",
+        "itemRuntimeOwnerVariantReferencePath": ""
+      },
       "componentVariantType": "",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
@@ -1908,224 +1076,24 @@
         ]
       },
       {
-        "id": "slot1",
-        "label": "Slot 1",
-        "subtitle": "Content boundary",
+        "id": "slots",
+        "label": "Slots",
+        "subtitle": "Ordered content collection",
         "icon": "layout",
-        "order": 21,
+        "order": 30,
         "visible": true,
         "defaultOpen": false,
         "groups": [
           {
-            "id": "slot1",
-            "label": "Slot 1",
+            "id": "slots",
+            "label": "Slots",
             "order": 10,
             "visible": true,
             "presentation": "verticalCards",
             "fields": [
               {
-                "id": "component.contentRow.slot1.kind",
+                "id": "component.contentRow.slots",
                 "order": 10,
-                "visible": true
-              },
-              {
-                "id": "component.contentRow.slot1.avatar",
-                "order": 20,
-                "visible": true
-              },
-              {
-                "id": "component.contentRow.slot1.icon",
-                "order": 30,
-                "visible": true
-              },
-              {
-                "id": "component.contentRow.slot1.label",
-                "order": 40,
-                "visible": true
-              },
-              {
-                "id": "component.contentRow.slot1.iconSize",
-                "order": 50,
-                "visible": true
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "slot2",
-        "label": "Slot 2",
-        "subtitle": "Content boundary",
-        "icon": "layout",
-        "order": 22,
-        "visible": true,
-        "defaultOpen": false,
-        "groups": [
-          {
-            "id": "slot2",
-            "label": "Slot 2",
-            "order": 10,
-            "visible": true,
-            "presentation": "verticalCards",
-            "fields": [
-              {
-                "id": "component.contentRow.slot2.kind",
-                "order": 10,
-                "visible": true
-              },
-              {
-                "id": "component.contentRow.slot2.avatar",
-                "order": 20,
-                "visible": true
-              },
-              {
-                "id": "component.contentRow.slot2.icon",
-                "order": 30,
-                "visible": true
-              },
-              {
-                "id": "component.contentRow.slot2.label",
-                "order": 40,
-                "visible": true
-              },
-              {
-                "id": "component.contentRow.slot2.iconSize",
-                "order": 50,
-                "visible": true
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "slot3",
-        "label": "Slot 3",
-        "subtitle": "Content boundary",
-        "icon": "layout",
-        "order": 23,
-        "visible": true,
-        "defaultOpen": false,
-        "groups": [
-          {
-            "id": "slot3",
-            "label": "Slot 3",
-            "order": 10,
-            "visible": true,
-            "presentation": "verticalCards",
-            "fields": [
-              {
-                "id": "component.contentRow.slot3.kind",
-                "order": 10,
-                "visible": true
-              },
-              {
-                "id": "component.contentRow.slot3.avatar",
-                "order": 20,
-                "visible": true
-              },
-              {
-                "id": "component.contentRow.slot3.icon",
-                "order": 30,
-                "visible": true
-              },
-              {
-                "id": "component.contentRow.slot3.label",
-                "order": 40,
-                "visible": true
-              },
-              {
-                "id": "component.contentRow.slot3.iconSize",
-                "order": 50,
-                "visible": true
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "slot4",
-        "label": "Slot 4",
-        "subtitle": "Content boundary",
-        "icon": "layout",
-        "order": 24,
-        "visible": true,
-        "defaultOpen": false,
-        "groups": [
-          {
-            "id": "slot4",
-            "label": "Slot 4",
-            "order": 10,
-            "visible": true,
-            "presentation": "verticalCards",
-            "fields": [
-              {
-                "id": "component.contentRow.slot4.kind",
-                "order": 10,
-                "visible": true
-              },
-              {
-                "id": "component.contentRow.slot4.avatar",
-                "order": 20,
-                "visible": true
-              },
-              {
-                "id": "component.contentRow.slot4.icon",
-                "order": 30,
-                "visible": true
-              },
-              {
-                "id": "component.contentRow.slot4.label",
-                "order": 40,
-                "visible": true
-              },
-              {
-                "id": "component.contentRow.slot4.iconSize",
-                "order": 50,
-                "visible": true
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "slot5",
-        "label": "Slot 5",
-        "subtitle": "Content boundary",
-        "icon": "layout",
-        "order": 25,
-        "visible": true,
-        "defaultOpen": false,
-        "groups": [
-          {
-            "id": "slot5",
-            "label": "Slot 5",
-            "order": 10,
-            "visible": true,
-            "presentation": "verticalCards",
-            "fields": [
-              {
-                "id": "component.contentRow.slot5.kind",
-                "order": 10,
-                "visible": true
-              },
-              {
-                "id": "component.contentRow.slot5.avatar",
-                "order": 20,
-                "visible": true
-              },
-              {
-                "id": "component.contentRow.slot5.icon",
-                "order": 30,
-                "visible": true
-              },
-              {
-                "id": "component.contentRow.slot5.label",
-                "order": 40,
-                "visible": true
-              },
-              {
-                "id": "component.contentRow.slot5.iconSize",
-                "order": 50,
                 "visible": true
               }
             ]

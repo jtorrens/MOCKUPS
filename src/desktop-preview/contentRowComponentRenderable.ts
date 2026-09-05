@@ -8,7 +8,8 @@ import { labelComponentToRenderable, measureLabelComponent } from "./labelCompon
 import { translateRenderableNode } from "./previewGeometryHelpers.js";
 
 interface MeasuredSlot {
-  index: number;
+  id: string;
+  order: number;
   node: RenderableNode;
   width: number;
   height: number;
@@ -32,7 +33,7 @@ export function contentRowComponentToRenderable(
       : slot.kind === "label"
         ? measureLabelComponent(slot.content as Parameters<typeof measureLabelComponent>[0], payload)
         : node.box ?? { width: 1, height: 1 };
-    return [{ index: slot.index, node, width: size.width, height: size.height } satisfies MeasuredSlot];
+    return [{ id: slot.id, order: slot.order, node, width: size.width, height: size.height } satisfies MeasuredSlot];
   });
   const scale = renderScale(payload);
   const paddingX = numberToken(payload, row.padding.xToken) * scale;
@@ -47,9 +48,11 @@ export function contentRowComponentToRenderable(
   const contentY = box.y + paddingY;
   const leftEdge = box.x + paddingX;
   const rightEdge = box.x + box.width - paddingX;
-  const left = measured.find((item) => item.index === 1);
-  const right = measured.find((item) => item.index === 5);
-  const middle = measured.filter((item) => item.index >= 2 && item.index <= 4);
+  const left = measured.find((item) => item.order === 0);
+  const right = row.slots.length > 1
+    ? measured.find((item) => item.order === row.slots.length - 1)
+    : undefined;
+  const middle = measured.filter((item) => item.order > 0 && item.order < row.slots.length - 1);
   const children: RenderableNode[] = [];
   if (left) children.push(place(left, leftEdge, alignedY(row, contentY, contentHeight, left.height)));
   if (right) children.push(place(right, rightEdge - right.width, alignedY(row, contentY, contentHeight, right.height)));
@@ -81,5 +84,5 @@ function place(item: MeasuredSlot, x: number, y: number): RenderableNode {
     x: x - (item.node.box?.x ?? 0),
     y: y - (item.node.box?.y ?? 0),
   });
-  return { id: `component.contentRow.slot.${item.index}`, type: "group", frame: 0, box: translated.box, style: { overflow: "visible" }, children: [translated] };
+  return { id: `component.contentRow.slot.${item.id}`, type: "group", frame: 0, box: translated.box, style: { overflow: "visible" }, children: [translated] };
 }

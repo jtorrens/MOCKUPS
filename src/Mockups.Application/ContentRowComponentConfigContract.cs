@@ -16,27 +16,27 @@ internal static class ContentRowComponentConfigContract
         RequireExactKeys(config, ["boundaryMotion", "contentRow"], context);
         _ = MotionVariantValue.Parse(JsonPath.RequiredObject(config, "boundaryMotion", context).ToJsonString());
         var owner = JsonPath.RequiredObject(config, "contentRow", context);
-        var keys = new List<string> { "padding", "verticalAlignment", "showSeparator" };
-        for (var index = 1; index <= 5; index++)
-        {
-            keys.AddRange([
-                $"slot{index}Kind", $"slot{index}AvatarSlot", $"slot{index}IconSlot",
-                $"slot{index}IconSizeToken", $"slot{index}LabelSlot"
-            ]);
-        }
-        RequireExactKeys(owner, keys, $"{context}.contentRow");
+        RequireExactKeys(owner, ["padding", "verticalAlignment", "showSeparator", "slots"], $"{context}.contentRow");
         _ = RuntimeInputValueKindContract.ParseValue(ValueKind.ThemeTokenPair, JsonPath.RequiredString(owner, "padding", context), $"{context}.contentRow.padding");
         var alignment = JsonPath.RequiredString(owner, "verticalAlignment", context);
         if (alignment is not ("top" or "center" or "bottom")) throw new InvalidOperationException($"{context}.contentRow.verticalAlignment is invalid.");
         JsonPath.RequiredBoolean(owner, "showSeparator", context);
-        for (var index = 1; index <= 5; index++)
+        var slots = JsonPath.ObjectItems(JsonPath.RequiredArray(owner, "slots", context), $"{context}.contentRow.slots").ToList();
+        var ids = new HashSet<string>(StringComparer.Ordinal);
+        for (var index = 0; index < slots.Count; index++)
         {
-            var kind = JsonPath.RequiredString(owner, $"slot{index}Kind", context);
-            if (kind is not ("none" or "avatar" or "icon" or "label")) throw new InvalidOperationException($"{context}.contentRow.slot{index}Kind is invalid.");
-            ComponentVariantSlotDocumentContract.Validate(JsonPath.RequiredObject(owner, $"slot{index}AvatarSlot", context), $"{context}.contentRow.slot{index}AvatarSlot");
-            ComponentVariantSlotDocumentContract.Validate(JsonPath.RequiredObject(owner, $"slot{index}IconSlot", context), $"{context}.contentRow.slot{index}IconSlot");
-            ComponentVariantSlotDocumentContract.Validate(JsonPath.RequiredObject(owner, $"slot{index}LabelSlot", context), $"{context}.contentRow.slot{index}LabelSlot");
-            JsonPath.RequiredString(owner, $"slot{index}IconSizeToken", context);
+            var slot = slots[index];
+            var slotContext = $"{context}.contentRow.slots[{index}]";
+            RequireExactKeys(slot, ["id", "name", "kind", "avatarSlot", "iconSlot", "iconSizeToken", "labelSlot"], slotContext);
+            var id = JsonPath.RequiredString(slot, "id", slotContext);
+            if (!ids.Add(id)) throw new InvalidOperationException($"{context}.contentRow.slots contains duplicate id '{id}'.");
+            JsonPath.RequiredString(slot, "name", slotContext);
+            var kind = JsonPath.RequiredString(slot, "kind", slotContext);
+            if (kind is not ("none" or "avatar" or "icon" or "label")) throw new InvalidOperationException($"{slotContext}.kind is invalid.");
+            ComponentVariantSlotDocumentContract.Validate(JsonPath.RequiredObject(slot, "avatarSlot", slotContext), $"{slotContext}.avatarSlot");
+            ComponentVariantSlotDocumentContract.Validate(JsonPath.RequiredObject(slot, "iconSlot", slotContext), $"{slotContext}.iconSlot");
+            ComponentVariantSlotDocumentContract.Validate(JsonPath.RequiredObject(slot, "labelSlot", slotContext), $"{slotContext}.labelSlot");
+            JsonPath.RequiredString(slot, "iconSizeToken", slotContext);
         }
     }
 

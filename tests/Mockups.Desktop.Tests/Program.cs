@@ -21329,9 +21329,7 @@ static void SocialPostScreenCreationIsAtomic()
             foreach (var row in rows)
             {
                 True(!row.ContainsKey("label"));
-                True(!row.ContainsKey("slot1Kind"));
-                True(row.ContainsKey("slot1ActorId"));
-                True(row.ContainsKey("slot1Label"));
+                Equal(5, JsonPath.RequiredArray(row, "slotInputs", "Social Post row Runtime").Count);
             }
         }
         var preview = JsonPath.ParseRequiredObject(
@@ -21350,12 +21348,17 @@ static void SocialPostScreenCreationIsAtomic()
             .First((actorId) => !actorId.Equals(
                 shotSettings.OwnerActorId,
                 StringComparison.Ordinal));
+        var runtimeRows = JsonPath.RequiredArray(content, "socialPostRows", "Social Post Screen content");
+        var runtimeRow = runtimeRows.OfType<JsonObject>().Single((row) => row["id"]?.GetValue<string>() == "row1");
+        var slotInputs = JsonPath.RequiredArray(runtimeRow, "slotInputs", "Social Post row1").DeepClone();
+        var firstSlot = slotInputs.AsArray().OfType<JsonObject>().Single((slot) => slot["id"]?.GetValue<string>() == "row1_slot1");
+        firstSlot["actorId"] = socialActorId;
         database.UpdateModuleInstanceRuntimeCollectionValue(
             screen.Id,
             "socialPostRows",
             "row1",
-            "slot1ActorId",
-            JsonValue.Create(socialActorId));
+            "slotInputs",
+            slotInputs);
         var payloadData = new DesignPreviewPayloadDataSource(
             database.PreviewInputs,
             database.Production,
@@ -21383,11 +21386,10 @@ static void SocialPostScreenCreationIsAtomic()
             .Single((row) => row["id"]?.GetValue<string>() == "row1");
         Equal(
             socialActorId,
-            JsonPath.RequiredObject(
-                preparedRow,
-                "slot1Actor",
-                "Prepared Social Post row1")
-                ["id"]?.GetValue<string>());
+            JsonPath.RequiredArray(preparedRow, "slotInputs", "Prepared Social Post row1")
+                .OfType<JsonObject>()
+                .Single((slot) => slot["id"]?.GetValue<string>() == "row1_slot1")["actor"]?
+                .AsObject()["id"]?.GetValue<string>());
         True(!socialActorId.Equals(
             shotSettings.OwnerActorId,
             StringComparison.Ordinal));

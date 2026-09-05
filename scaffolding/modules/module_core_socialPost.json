@@ -77,80 +77,102 @@
                 "padding": "theme.spacing.xl|theme.spacing.m",
                 "verticalAlignment": "center",
                 "showSeparator": false,
-                "slot1Kind": "avatar",
-                "slot1AvatarSlot": {
-                  "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                  "overrides": {
-                    "avatar": {
-                      "defaultSize": 50
+                "slots": [
+                  {
+                    "id": "row1_slot1",
+                    "name": "Slot 1",
+                    "kind": "avatar",
+                    "avatarSlot": {
+                      "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                      "overrides": {
+                        "avatar": {
+                          "defaultSize": 50
+                        }
+                      }
+                    },
+                    "iconSlot": {
+                      "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                      "overrides": {}
+                    },
+                    "iconSizeToken": "theme.iconSizes.m",
+                    "labelSlot": {
+                      "variantReference": "component_project_foqn_s2_label::variant::default",
+                      "overrides": {}
+                    }
+                  },
+                  {
+                    "id": "row1_slot2",
+                    "name": "Slot 2",
+                    "kind": "label",
+                    "avatarSlot": {
+                      "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                      "overrides": {}
+                    },
+                    "iconSlot": {
+                      "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                      "overrides": {}
+                    },
+                    "iconSizeToken": "theme.iconSizes.m",
+                    "labelSlot": {
+                      "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
+                      "overrides": {}
+                    }
+                  },
+                  {
+                    "id": "row1_slot3",
+                    "name": "Slot 3",
+                    "kind": "label",
+                    "avatarSlot": {
+                      "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                      "overrides": {}
+                    },
+                    "iconSlot": {
+                      "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                      "overrides": {}
+                    },
+                    "iconSizeToken": "theme.iconSizes.m",
+                    "labelSlot": {
+                      "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
+                      "overrides": {}
+                    }
+                  },
+                  {
+                    "id": "row1_slot4",
+                    "name": "Slot 4",
+                    "kind": "label",
+                    "avatarSlot": {
+                      "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                      "overrides": {}
+                    },
+                    "iconSlot": {
+                      "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                      "overrides": {}
+                    },
+                    "iconSizeToken": "theme.iconSizes.m",
+                    "labelSlot": {
+                      "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
+                      "overrides": {}
+                    }
+                  },
+                  {
+                    "id": "row1_slot5",
+                    "name": "Slot 5",
+                    "kind": "none",
+                    "avatarSlot": {
+                      "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                      "overrides": {}
+                    },
+                    "iconSlot": {
+                      "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                      "overrides": {}
+                    },
+                    "iconSizeToken": "theme.iconSizes.m",
+                    "labelSlot": {
+                      "variantReference": "component_project_foqn_s2_label::variant::default",
+                      "overrides": {}
                     }
                   }
-                },
-                "slot1IconSlot": {
-                  "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                  "overrides": {}
-                },
-                "slot1LabelSlot": {
-                  "variantReference": "component_project_foqn_s2_label::variant::default",
-                  "overrides": {}
-                },
-                "slot2Kind": "label",
-                "slot2AvatarSlot": {
-                  "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                  "overrides": {}
-                },
-                "slot2IconSlot": {
-                  "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                  "overrides": {}
-                },
-                "slot2LabelSlot": {
-                  "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
-                  "overrides": {}
-                },
-                "slot3Kind": "label",
-                "slot3AvatarSlot": {
-                  "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                  "overrides": {}
-                },
-                "slot3IconSlot": {
-                  "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                  "overrides": {}
-                },
-                "slot3LabelSlot": {
-                  "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
-                  "overrides": {}
-                },
-                "slot4Kind": "label",
-                "slot4AvatarSlot": {
-                  "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                  "overrides": {}
-                },
-                "slot4IconSlot": {
-                  "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                  "overrides": {}
-                },
-                "slot4LabelSlot": {
-                  "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
-                  "overrides": {}
-                },
-                "slot5Kind": "none",
-                "slot5AvatarSlot": {
-                  "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                  "overrides": {}
-                },
-                "slot5IconSlot": {
-                  "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                  "overrides": {}
-                },
-                "slot5LabelSlot": {
-                  "variantReference": "component_project_foqn_s2_label::variant::default",
-                  "overrides": {}
-                },
-                "slot1IconSizeToken": "theme.iconSizes.m",
-                "slot2IconSizeToken": "theme.iconSizes.m",
-                "slot3IconSizeToken": "theme.iconSizes.m",
-                "slot4IconSizeToken": "theme.iconSizes.m",
-                "slot5IconSizeToken": "theme.iconSizes.m"
+                ]
               }
             }
           }
@@ -165,76 +187,98 @@
                 "padding": "theme.spacing.l|theme.spacing.s",
                 "verticalAlignment": "center",
                 "showSeparator": true,
-                "slot1Kind": "label",
-                "slot1AvatarSlot": {
-                  "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                  "overrides": {}
-                },
-                "slot1IconSlot": {
-                  "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                  "overrides": {}
-                },
-                "slot1LabelSlot": {
-                  "variantReference": "component_project_foqn_s2_label::variant::default",
-                  "overrides": {}
-                },
-                "slot2Kind": "label",
-                "slot2AvatarSlot": {
-                  "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                  "overrides": {}
-                },
-                "slot2IconSlot": {
-                  "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                  "overrides": {}
-                },
-                "slot2LabelSlot": {
-                  "variantReference": "component_project_foqn_s2_label::variant::default",
-                  "overrides": {}
-                },
-                "slot3Kind": "label",
-                "slot3AvatarSlot": {
-                  "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                  "overrides": {}
-                },
-                "slot3IconSlot": {
-                  "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                  "overrides": {}
-                },
-                "slot3LabelSlot": {
-                  "variantReference": "component_project_foqn_s2_label::variant::default",
-                  "overrides": {}
-                },
-                "slot4Kind": "none",
-                "slot4AvatarSlot": {
-                  "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                  "overrides": {}
-                },
-                "slot4IconSlot": {
-                  "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                  "overrides": {}
-                },
-                "slot4LabelSlot": {
-                  "variantReference": "component_project_foqn_s2_label::variant::default",
-                  "overrides": {}
-                },
-                "slot5Kind": "label",
-                "slot5AvatarSlot": {
-                  "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                  "overrides": {}
-                },
-                "slot5IconSlot": {
-                  "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                  "overrides": {}
-                },
-                "slot5LabelSlot": {
-                  "variantReference": "component_project_foqn_s2_label::variant::default",
-                  "overrides": {}
-                },
-                "slot1IconSizeToken": "theme.iconSizes.m",
-                "slot2IconSizeToken": "theme.iconSizes.m",
-                "slot3IconSizeToken": "theme.iconSizes.m",
-                "slot4IconSizeToken": "theme.iconSizes.m",
-                "slot5IconSizeToken": "theme.iconSizes.m"
+                "slots": [
+                  {
+                    "id": "row2_slot1",
+                    "name": "Slot 1",
+                    "kind": "label",
+                    "avatarSlot": {
+                      "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                      "overrides": {}
+                    },
+                    "iconSlot": {
+                      "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                      "overrides": {}
+                    },
+                    "iconSizeToken": "theme.iconSizes.m",
+                    "labelSlot": {
+                      "variantReference": "component_project_foqn_s2_label::variant::default",
+                      "overrides": {}
+                    }
+                  },
+                  {
+                    "id": "row2_slot2",
+                    "name": "Slot 2",
+                    "kind": "label",
+                    "avatarSlot": {
+                      "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                      "overrides": {}
+                    },
+                    "iconSlot": {
+                      "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                      "overrides": {}
+                    },
+                    "iconSizeToken": "theme.iconSizes.m",
+                    "labelSlot": {
+                      "variantReference": "component_project_foqn_s2_label::variant::default",
+                      "overrides": {}
+                    }
+                  },
+                  {
+                    "id": "row2_slot3",
+                    "name": "Slot 3",
+                    "kind": "label",
+                    "avatarSlot": {
+                      "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                      "overrides": {}
+                    },
+                    "iconSlot": {
+                      "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                      "overrides": {}
+                    },
+                    "iconSizeToken": "theme.iconSizes.m",
+                    "labelSlot": {
+                      "variantReference": "component_project_foqn_s2_label::variant::default",
+                      "overrides": {}
+                    }
+                  },
+                  {
+                    "id": "row2_slot4",
+                    "name": "Slot 4",
+                    "kind": "none",
+                    "avatarSlot": {
+                      "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                      "overrides": {}
+                    },
+                    "iconSlot": {
+                      "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                      "overrides": {}
+                    },
+                    "iconSizeToken": "theme.iconSizes.m",
+                    "labelSlot": {
+                      "variantReference": "component_project_foqn_s2_label::variant::default",
+                      "overrides": {}
+                    }
+                  },
+                  {
+                    "id": "row2_slot5",
+                    "name": "Slot 5",
+                    "kind": "label",
+                    "avatarSlot": {
+                      "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                      "overrides": {}
+                    },
+                    "iconSlot": {
+                      "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                      "overrides": {}
+                    },
+                    "iconSizeToken": "theme.iconSizes.m",
+                    "labelSlot": {
+                      "variantReference": "component_project_foqn_s2_label::variant::default",
+                      "overrides": {}
+                    }
+                  }
+                ]
               }
             }
           }
@@ -351,80 +395,102 @@
                 "padding": "theme.spacing.xl|theme.spacing.m",
                 "verticalAlignment": "center",
                 "showSeparator": false,
-                "slot1Kind": "avatar",
-                "slot1AvatarSlot": {
-                  "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                  "overrides": {
-                    "avatar": {
-                      "defaultSize": 50
+                "slots": [
+                  {
+                    "id": "footerRow1_slot1",
+                    "name": "Slot 1",
+                    "kind": "avatar",
+                    "avatarSlot": {
+                      "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                      "overrides": {
+                        "avatar": {
+                          "defaultSize": 50
+                        }
+                      }
+                    },
+                    "iconSlot": {
+                      "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                      "overrides": {}
+                    },
+                    "iconSizeToken": "theme.iconSizes.m",
+                    "labelSlot": {
+                      "variantReference": "component_project_foqn_s2_label::variant::default",
+                      "overrides": {}
+                    }
+                  },
+                  {
+                    "id": "footerRow1_slot2",
+                    "name": "Slot 2",
+                    "kind": "label",
+                    "avatarSlot": {
+                      "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                      "overrides": {}
+                    },
+                    "iconSlot": {
+                      "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                      "overrides": {}
+                    },
+                    "iconSizeToken": "theme.iconSizes.m",
+                    "labelSlot": {
+                      "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
+                      "overrides": {}
+                    }
+                  },
+                  {
+                    "id": "footerRow1_slot3",
+                    "name": "Slot 3",
+                    "kind": "label",
+                    "avatarSlot": {
+                      "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                      "overrides": {}
+                    },
+                    "iconSlot": {
+                      "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                      "overrides": {}
+                    },
+                    "iconSizeToken": "theme.iconSizes.m",
+                    "labelSlot": {
+                      "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
+                      "overrides": {}
+                    }
+                  },
+                  {
+                    "id": "footerRow1_slot4",
+                    "name": "Slot 4",
+                    "kind": "label",
+                    "avatarSlot": {
+                      "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                      "overrides": {}
+                    },
+                    "iconSlot": {
+                      "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                      "overrides": {}
+                    },
+                    "iconSizeToken": "theme.iconSizes.m",
+                    "labelSlot": {
+                      "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
+                      "overrides": {}
+                    }
+                  },
+                  {
+                    "id": "footerRow1_slot5",
+                    "name": "Slot 5",
+                    "kind": "none",
+                    "avatarSlot": {
+                      "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                      "overrides": {}
+                    },
+                    "iconSlot": {
+                      "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                      "overrides": {}
+                    },
+                    "iconSizeToken": "theme.iconSizes.m",
+                    "labelSlot": {
+                      "variantReference": "component_project_foqn_s2_label::variant::default",
+                      "overrides": {}
                     }
                   }
-                },
-                "slot1IconSlot": {
-                  "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                  "overrides": {}
-                },
-                "slot1LabelSlot": {
-                  "variantReference": "component_project_foqn_s2_label::variant::default",
-                  "overrides": {}
-                },
-                "slot2Kind": "label",
-                "slot2AvatarSlot": {
-                  "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                  "overrides": {}
-                },
-                "slot2IconSlot": {
-                  "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                  "overrides": {}
-                },
-                "slot2LabelSlot": {
-                  "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
-                  "overrides": {}
-                },
-                "slot3Kind": "label",
-                "slot3AvatarSlot": {
-                  "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                  "overrides": {}
-                },
-                "slot3IconSlot": {
-                  "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                  "overrides": {}
-                },
-                "slot3LabelSlot": {
-                  "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
-                  "overrides": {}
-                },
-                "slot4Kind": "label",
-                "slot4AvatarSlot": {
-                  "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                  "overrides": {}
-                },
-                "slot4IconSlot": {
-                  "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                  "overrides": {}
-                },
-                "slot4LabelSlot": {
-                  "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
-                  "overrides": {}
-                },
-                "slot5Kind": "none",
-                "slot5AvatarSlot": {
-                  "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                  "overrides": {}
-                },
-                "slot5IconSlot": {
-                  "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                  "overrides": {}
-                },
-                "slot5LabelSlot": {
-                  "variantReference": "component_project_foqn_s2_label::variant::default",
-                  "overrides": {}
-                },
-                "slot1IconSizeToken": "theme.iconSizes.m",
-                "slot2IconSizeToken": "theme.iconSizes.m",
-                "slot3IconSizeToken": "theme.iconSizes.m",
-                "slot4IconSizeToken": "theme.iconSizes.m",
-                "slot5IconSizeToken": "theme.iconSizes.m"
+                ]
               }
             }
           }
@@ -439,76 +505,98 @@
                 "padding": "theme.spacing.l|theme.spacing.s",
                 "verticalAlignment": "center",
                 "showSeparator": true,
-                "slot1Kind": "label",
-                "slot1AvatarSlot": {
-                  "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                  "overrides": {}
-                },
-                "slot1IconSlot": {
-                  "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                  "overrides": {}
-                },
-                "slot1LabelSlot": {
-                  "variantReference": "component_project_foqn_s2_label::variant::default",
-                  "overrides": {}
-                },
-                "slot2Kind": "label",
-                "slot2AvatarSlot": {
-                  "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                  "overrides": {}
-                },
-                "slot2IconSlot": {
-                  "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                  "overrides": {}
-                },
-                "slot2LabelSlot": {
-                  "variantReference": "component_project_foqn_s2_label::variant::default",
-                  "overrides": {}
-                },
-                "slot3Kind": "label",
-                "slot3AvatarSlot": {
-                  "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                  "overrides": {}
-                },
-                "slot3IconSlot": {
-                  "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                  "overrides": {}
-                },
-                "slot3LabelSlot": {
-                  "variantReference": "component_project_foqn_s2_label::variant::default",
-                  "overrides": {}
-                },
-                "slot4Kind": "none",
-                "slot4AvatarSlot": {
-                  "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                  "overrides": {}
-                },
-                "slot4IconSlot": {
-                  "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                  "overrides": {}
-                },
-                "slot4LabelSlot": {
-                  "variantReference": "component_project_foqn_s2_label::variant::default",
-                  "overrides": {}
-                },
-                "slot5Kind": "label",
-                "slot5AvatarSlot": {
-                  "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                  "overrides": {}
-                },
-                "slot5IconSlot": {
-                  "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                  "overrides": {}
-                },
-                "slot5LabelSlot": {
-                  "variantReference": "component_project_foqn_s2_label::variant::default",
-                  "overrides": {}
-                },
-                "slot1IconSizeToken": "theme.iconSizes.m",
-                "slot2IconSizeToken": "theme.iconSizes.m",
-                "slot3IconSizeToken": "theme.iconSizes.m",
-                "slot4IconSizeToken": "theme.iconSizes.m",
-                "slot5IconSizeToken": "theme.iconSizes.m"
+                "slots": [
+                  {
+                    "id": "footerRow2_slot1",
+                    "name": "Slot 1",
+                    "kind": "label",
+                    "avatarSlot": {
+                      "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                      "overrides": {}
+                    },
+                    "iconSlot": {
+                      "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                      "overrides": {}
+                    },
+                    "iconSizeToken": "theme.iconSizes.m",
+                    "labelSlot": {
+                      "variantReference": "component_project_foqn_s2_label::variant::default",
+                      "overrides": {}
+                    }
+                  },
+                  {
+                    "id": "footerRow2_slot2",
+                    "name": "Slot 2",
+                    "kind": "label",
+                    "avatarSlot": {
+                      "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                      "overrides": {}
+                    },
+                    "iconSlot": {
+                      "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                      "overrides": {}
+                    },
+                    "iconSizeToken": "theme.iconSizes.m",
+                    "labelSlot": {
+                      "variantReference": "component_project_foqn_s2_label::variant::default",
+                      "overrides": {}
+                    }
+                  },
+                  {
+                    "id": "footerRow2_slot3",
+                    "name": "Slot 3",
+                    "kind": "label",
+                    "avatarSlot": {
+                      "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                      "overrides": {}
+                    },
+                    "iconSlot": {
+                      "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                      "overrides": {}
+                    },
+                    "iconSizeToken": "theme.iconSizes.m",
+                    "labelSlot": {
+                      "variantReference": "component_project_foqn_s2_label::variant::default",
+                      "overrides": {}
+                    }
+                  },
+                  {
+                    "id": "footerRow2_slot4",
+                    "name": "Slot 4",
+                    "kind": "none",
+                    "avatarSlot": {
+                      "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                      "overrides": {}
+                    },
+                    "iconSlot": {
+                      "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                      "overrides": {}
+                    },
+                    "iconSizeToken": "theme.iconSizes.m",
+                    "labelSlot": {
+                      "variantReference": "component_project_foqn_s2_label::variant::default",
+                      "overrides": {}
+                    }
+                  },
+                  {
+                    "id": "footerRow2_slot5",
+                    "name": "Slot 5",
+                    "kind": "label",
+                    "avatarSlot": {
+                      "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                      "overrides": {}
+                    },
+                    "iconSlot": {
+                      "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                      "overrides": {}
+                    },
+                    "iconSizeToken": "theme.iconSizes.m",
+                    "labelSlot": {
+                      "variantReference": "component_project_foqn_s2_label::variant::default",
+                      "overrides": {}
+                    }
+                  }
+                ]
               }
             }
           }
@@ -909,428 +997,95 @@
             "showInEditor": false
           },
           {
-            "id": "slot1.actor",
-            "label": "Slot 1 actor",
-            "jsonKey": "slot1ActorId",
-            "kind": "recordReference",
-            "valueKind": "RecordReference",
-            "defaultValue": "actor_alex",
-            "tableId": "actors",
-            "resolvedJsonKey": "slot1Actor",
-            "uiOrder": 10
-          },
-          {
-            "id": "slot1.label",
-            "label": "Slot 1 label",
-            "jsonKey": "slot1Label",
-            "kind": "text",
-            "valueKind": "StringSingleLine",
-            "defaultValue": "",
-            "uiOrder": 11,
-            "animatable": true,
-            "animationInterpolations": [
-              "hold",
-              "writeOn"
-            ],
-            "animationTimeline": {
-              "origin": {
-                "kind": "ownerStart"
-              }
-            }
-          },
-          {
-            "id": "slot1.sublabel",
-            "label": "Slot 1 sublabel",
-            "jsonKey": "slot1Sublabel",
-            "kind": "text",
-            "valueKind": "StringSingleLine",
-            "defaultValue": "",
-            "uiOrder": 12,
-            "animatable": true,
-            "animationInterpolations": [
-              "hold",
-              "writeOn"
-            ],
-            "animationTimeline": {
-              "origin": {
-                "kind": "ownerStart"
-              }
-            }
-          },
-          {
-            "id": "slot2.actor",
-            "label": "Slot 2 actor",
-            "jsonKey": "slot2ActorId",
-            "kind": "recordReference",
-            "valueKind": "RecordReference",
-            "defaultValue": "actor_alex",
-            "tableId": "actors",
-            "resolvedJsonKey": "slot2Actor",
-            "uiOrder": 20
-          },
-          {
-            "id": "slot2.label",
-            "label": "Slot 2 label",
-            "jsonKey": "slot2Label",
-            "kind": "text",
-            "valueKind": "StringSingleLine",
-            "defaultValue": "",
-            "uiOrder": 21,
-            "animatable": true,
-            "animationInterpolations": [
-              "hold",
-              "writeOn"
-            ],
-            "animationTimeline": {
-              "origin": {
-                "kind": "ownerStart"
-              }
-            }
-          },
-          {
-            "id": "slot2.sublabel",
-            "label": "Slot 2 sublabel",
-            "jsonKey": "slot2Sublabel",
-            "kind": "text",
-            "valueKind": "StringSingleLine",
-            "defaultValue": "",
-            "uiOrder": 22,
-            "animatable": true,
-            "animationInterpolations": [
-              "hold",
-              "writeOn"
-            ],
-            "animationTimeline": {
-              "origin": {
-                "kind": "ownerStart"
-              }
-            }
-          },
-          {
-            "id": "slot3.actor",
-            "label": "Slot 3 actor",
-            "jsonKey": "slot3ActorId",
-            "kind": "recordReference",
-            "valueKind": "RecordReference",
-            "defaultValue": "actor_alex",
-            "tableId": "actors",
-            "resolvedJsonKey": "slot3Actor",
-            "uiOrder": 30
-          },
-          {
-            "id": "slot3.label",
-            "label": "Slot 3 label",
-            "jsonKey": "slot3Label",
-            "kind": "text",
-            "valueKind": "StringSingleLine",
-            "defaultValue": "",
-            "uiOrder": 31,
-            "animatable": true,
-            "animationInterpolations": [
-              "hold",
-              "writeOn"
-            ],
-            "animationTimeline": {
-              "origin": {
-                "kind": "ownerStart"
-              }
-            }
-          },
-          {
-            "id": "slot3.sublabel",
-            "label": "Slot 3 sublabel",
-            "jsonKey": "slot3Sublabel",
-            "kind": "text",
-            "valueKind": "StringSingleLine",
-            "defaultValue": "",
-            "uiOrder": 32,
-            "animatable": true,
-            "animationInterpolations": [
-              "hold",
-              "writeOn"
-            ],
-            "animationTimeline": {
-              "origin": {
-                "kind": "ownerStart"
-              }
-            }
-          },
-          {
-            "id": "slot4.actor",
-            "label": "Slot 4 actor",
-            "jsonKey": "slot4ActorId",
-            "kind": "recordReference",
-            "valueKind": "RecordReference",
-            "defaultValue": "actor_alex",
-            "tableId": "actors",
-            "resolvedJsonKey": "slot4Actor",
-            "uiOrder": 40
-          },
-          {
-            "id": "slot4.label",
-            "label": "Slot 4 label",
-            "jsonKey": "slot4Label",
-            "kind": "text",
-            "valueKind": "StringSingleLine",
-            "defaultValue": "",
-            "uiOrder": 41,
-            "animatable": true,
-            "animationInterpolations": [
-              "hold",
-              "writeOn"
-            ],
-            "animationTimeline": {
-              "origin": {
-                "kind": "ownerStart"
-              }
-            }
-          },
-          {
-            "id": "slot4.sublabel",
-            "label": "Slot 4 sublabel",
-            "jsonKey": "slot4Sublabel",
-            "kind": "text",
-            "valueKind": "StringSingleLine",
-            "defaultValue": "",
-            "uiOrder": 42,
-            "animatable": true,
-            "animationInterpolations": [
-              "hold",
-              "writeOn"
-            ],
-            "animationTimeline": {
-              "origin": {
-                "kind": "ownerStart"
-              }
-            }
-          },
-          {
-            "id": "slot5.actor",
-            "label": "Slot 5 actor",
-            "jsonKey": "slot5ActorId",
-            "kind": "recordReference",
-            "valueKind": "RecordReference",
-            "defaultValue": "actor_alex",
-            "tableId": "actors",
-            "resolvedJsonKey": "slot5Actor",
-            "uiOrder": 50
-          },
-          {
-            "id": "slot5.label",
-            "label": "Slot 5 label",
-            "jsonKey": "slot5Label",
-            "kind": "text",
-            "valueKind": "StringSingleLine",
-            "defaultValue": "",
-            "uiOrder": 51,
-            "animatable": true,
-            "animationInterpolations": [
-              "hold",
-              "writeOn"
-            ],
-            "animationTimeline": {
-              "origin": {
-                "kind": "ownerStart"
-              }
-            }
-          },
-          {
-            "id": "slot5.sublabel",
-            "label": "Slot 5 sublabel",
-            "jsonKey": "slot5Sublabel",
-            "kind": "text",
-            "valueKind": "StringSingleLine",
-            "defaultValue": "",
-            "uiOrder": 52,
-            "animatable": true,
-            "animationInterpolations": [
-              "hold",
-              "writeOn"
-            ],
-            "animationTimeline": {
-              "origin": {
-                "kind": "ownerStart"
-              }
-            }
-          },
-          {
-            "id": "slot1.state",
-            "label": "Slot 1 state",
-            "jsonKey": "slot1State",
-            "kind": "option",
-            "valueKind": "OptionToken",
-            "defaultValue": "normal",
-            "options": [
-              {
-                "value": "normal",
-                "label": "Normal"
+            "id": "slotInputs",
+            "label": "Slots",
+            "jsonKey": "slotInputs",
+            "kind": "collection",
+            "valueKind": "StructuredCollection",
+            "defaultValue": "[]",
+            "source": "runtime",
+            "uiOrder": 20,
+            "structuredCollection": {
+              "id": "slotInputs",
+              "label": "Slots",
+              "jsonKey": "slotInputs",
+              "itemLabel": "Slot",
+              "fields": [
+                {
+                  "id": "actorId",
+                  "label": "Actor",
+                  "jsonKey": "actorId",
+                  "kind": "recordReference",
+                  "valueKind": "RecordReference",
+                  "defaultValue": "actor_alex",
+                  "tableId": "actors",
+                  "resolvedJsonKey": "actor",
+                  "source": "runtime",
+                  "uiOrder": 10
+                },
+                {
+                  "id": "label",
+                  "label": "Label",
+                  "jsonKey": "label",
+                  "kind": "text",
+                  "valueKind": "StringSingleLine",
+                  "defaultValue": "",
+                  "source": "runtime",
+                  "uiOrder": 20
+                },
+                {
+                  "id": "sublabel",
+                  "label": "Sublabel",
+                  "jsonKey": "sublabel",
+                  "kind": "text",
+                  "valueKind": "StringSingleLine",
+                  "defaultValue": "",
+                  "source": "runtime",
+                  "uiOrder": 30
+                },
+                {
+                  "id": "state",
+                  "label": "State",
+                  "jsonKey": "state",
+                  "kind": "option",
+                  "valueKind": "OptionToken",
+                  "defaultValue": "normal",
+                  "options": [
+                    {
+                      "value": "normal",
+                      "label": "Normal"
+                    },
+                    {
+                      "value": "active",
+                      "label": "Active"
+                    },
+                    {
+                      "value": "pushed",
+                      "label": "Pushed"
+                    },
+                    {
+                      "value": "disabled",
+                      "label": "Disabled"
+                    }
+                  ],
+                  "source": "runtime",
+                  "uiOrder": 40
+                }
+              ],
+              "itemPresentation": {
+                "titleFieldId": "label",
+                "firstItemBadge": "",
+                "subtitleFieldIds": [
+                  "sublabel"
+                ],
+                "subtitleMaxCharacters": 72,
+                "iconFieldId": "",
+                "fallbackIcon": "layout",
+                "iconValueMap": {}
               },
-              {
-                "value": "active",
-                "label": "Active"
-              },
-              {
-                "value": "pushed",
-                "label": "Pushed"
-              },
-              {
-                "value": "disabled",
-                "label": "Disabled"
-              }
-            ],
-            "uiOrder": 13,
-            "animatable": true,
-            "animationInterpolations": [
-              "hold"
-            ],
-            "animationTimeline": {
-              "origin": {
-                "kind": "ownerStart"
-              }
-            }
-          },
-          {
-            "id": "slot2.state",
-            "label": "Slot 2 state",
-            "jsonKey": "slot2State",
-            "kind": "option",
-            "valueKind": "OptionToken",
-            "defaultValue": "normal",
-            "options": [
-              {
-                "value": "normal",
-                "label": "Normal"
-              },
-              {
-                "value": "active",
-                "label": "Active"
-              },
-              {
-                "value": "pushed",
-                "label": "Pushed"
-              },
-              {
-                "value": "disabled",
-                "label": "Disabled"
-              }
-            ],
-            "uiOrder": 23,
-            "animatable": true,
-            "animationInterpolations": [
-              "hold"
-            ],
-            "animationTimeline": {
-              "origin": {
-                "kind": "ownerStart"
-              }
-            }
-          },
-          {
-            "id": "slot3.state",
-            "label": "Slot 3 state",
-            "jsonKey": "slot3State",
-            "kind": "option",
-            "valueKind": "OptionToken",
-            "defaultValue": "normal",
-            "options": [
-              {
-                "value": "normal",
-                "label": "Normal"
-              },
-              {
-                "value": "active",
-                "label": "Active"
-              },
-              {
-                "value": "pushed",
-                "label": "Pushed"
-              },
-              {
-                "value": "disabled",
-                "label": "Disabled"
-              }
-            ],
-            "uiOrder": 33,
-            "animatable": true,
-            "animationInterpolations": [
-              "hold"
-            ],
-            "animationTimeline": {
-              "origin": {
-                "kind": "ownerStart"
-              }
-            }
-          },
-          {
-            "id": "slot4.state",
-            "label": "Slot 4 state",
-            "jsonKey": "slot4State",
-            "kind": "option",
-            "valueKind": "OptionToken",
-            "defaultValue": "normal",
-            "options": [
-              {
-                "value": "normal",
-                "label": "Normal"
-              },
-              {
-                "value": "active",
-                "label": "Active"
-              },
-              {
-                "value": "pushed",
-                "label": "Pushed"
-              },
-              {
-                "value": "disabled",
-                "label": "Disabled"
-              }
-            ],
-            "uiOrder": 43,
-            "animatable": true,
-            "animationInterpolations": [
-              "hold"
-            ],
-            "animationTimeline": {
-              "origin": {
-                "kind": "ownerStart"
-              }
-            }
-          },
-          {
-            "id": "slot5.state",
-            "label": "Slot 5 state",
-            "jsonKey": "slot5State",
-            "kind": "option",
-            "valueKind": "OptionToken",
-            "defaultValue": "normal",
-            "options": [
-              {
-                "value": "normal",
-                "label": "Normal"
-              },
-              {
-                "value": "active",
-                "label": "Active"
-              },
-              {
-                "value": "pushed",
-                "label": "Pushed"
-              },
-              {
-                "value": "disabled",
-                "label": "Disabled"
-              }
-            ],
-            "uiOrder": 53,
-            "animatable": true,
-            "animationInterpolations": [
-              "hold"
-            ],
-            "animationTimeline": {
-              "origin": {
-                "kind": "ownerStart"
-              }
+              "canEditStructure": false,
+              "uiPresentation": "collection",
+              "itemRuntimePresentation": "card"
             }
           }
         ],
@@ -1377,428 +1132,95 @@
             "showInEditor": false
           },
           {
-            "id": "slot1.actor",
-            "label": "Slot 1 actor",
-            "jsonKey": "slot1ActorId",
-            "kind": "recordReference",
-            "valueKind": "RecordReference",
-            "defaultValue": "actor_alex",
-            "tableId": "actors",
-            "resolvedJsonKey": "slot1Actor",
-            "uiOrder": 10
-          },
-          {
-            "id": "slot1.label",
-            "label": "Slot 1 label",
-            "jsonKey": "slot1Label",
-            "kind": "text",
-            "valueKind": "StringSingleLine",
-            "defaultValue": "",
-            "uiOrder": 11,
-            "animatable": true,
-            "animationInterpolations": [
-              "hold",
-              "writeOn"
-            ],
-            "animationTimeline": {
-              "origin": {
-                "kind": "ownerStart"
-              }
-            }
-          },
-          {
-            "id": "slot1.sublabel",
-            "label": "Slot 1 sublabel",
-            "jsonKey": "slot1Sublabel",
-            "kind": "text",
-            "valueKind": "StringSingleLine",
-            "defaultValue": "",
-            "uiOrder": 12,
-            "animatable": true,
-            "animationInterpolations": [
-              "hold",
-              "writeOn"
-            ],
-            "animationTimeline": {
-              "origin": {
-                "kind": "ownerStart"
-              }
-            }
-          },
-          {
-            "id": "slot2.actor",
-            "label": "Slot 2 actor",
-            "jsonKey": "slot2ActorId",
-            "kind": "recordReference",
-            "valueKind": "RecordReference",
-            "defaultValue": "actor_alex",
-            "tableId": "actors",
-            "resolvedJsonKey": "slot2Actor",
-            "uiOrder": 20
-          },
-          {
-            "id": "slot2.label",
-            "label": "Slot 2 label",
-            "jsonKey": "slot2Label",
-            "kind": "text",
-            "valueKind": "StringSingleLine",
-            "defaultValue": "",
-            "uiOrder": 21,
-            "animatable": true,
-            "animationInterpolations": [
-              "hold",
-              "writeOn"
-            ],
-            "animationTimeline": {
-              "origin": {
-                "kind": "ownerStart"
-              }
-            }
-          },
-          {
-            "id": "slot2.sublabel",
-            "label": "Slot 2 sublabel",
-            "jsonKey": "slot2Sublabel",
-            "kind": "text",
-            "valueKind": "StringSingleLine",
-            "defaultValue": "",
-            "uiOrder": 22,
-            "animatable": true,
-            "animationInterpolations": [
-              "hold",
-              "writeOn"
-            ],
-            "animationTimeline": {
-              "origin": {
-                "kind": "ownerStart"
-              }
-            }
-          },
-          {
-            "id": "slot3.actor",
-            "label": "Slot 3 actor",
-            "jsonKey": "slot3ActorId",
-            "kind": "recordReference",
-            "valueKind": "RecordReference",
-            "defaultValue": "actor_alex",
-            "tableId": "actors",
-            "resolvedJsonKey": "slot3Actor",
-            "uiOrder": 30
-          },
-          {
-            "id": "slot3.label",
-            "label": "Slot 3 label",
-            "jsonKey": "slot3Label",
-            "kind": "text",
-            "valueKind": "StringSingleLine",
-            "defaultValue": "",
-            "uiOrder": 31,
-            "animatable": true,
-            "animationInterpolations": [
-              "hold",
-              "writeOn"
-            ],
-            "animationTimeline": {
-              "origin": {
-                "kind": "ownerStart"
-              }
-            }
-          },
-          {
-            "id": "slot3.sublabel",
-            "label": "Slot 3 sublabel",
-            "jsonKey": "slot3Sublabel",
-            "kind": "text",
-            "valueKind": "StringSingleLine",
-            "defaultValue": "",
-            "uiOrder": 32,
-            "animatable": true,
-            "animationInterpolations": [
-              "hold",
-              "writeOn"
-            ],
-            "animationTimeline": {
-              "origin": {
-                "kind": "ownerStart"
-              }
-            }
-          },
-          {
-            "id": "slot4.actor",
-            "label": "Slot 4 actor",
-            "jsonKey": "slot4ActorId",
-            "kind": "recordReference",
-            "valueKind": "RecordReference",
-            "defaultValue": "actor_alex",
-            "tableId": "actors",
-            "resolvedJsonKey": "slot4Actor",
-            "uiOrder": 40
-          },
-          {
-            "id": "slot4.label",
-            "label": "Slot 4 label",
-            "jsonKey": "slot4Label",
-            "kind": "text",
-            "valueKind": "StringSingleLine",
-            "defaultValue": "",
-            "uiOrder": 41,
-            "animatable": true,
-            "animationInterpolations": [
-              "hold",
-              "writeOn"
-            ],
-            "animationTimeline": {
-              "origin": {
-                "kind": "ownerStart"
-              }
-            }
-          },
-          {
-            "id": "slot4.sublabel",
-            "label": "Slot 4 sublabel",
-            "jsonKey": "slot4Sublabel",
-            "kind": "text",
-            "valueKind": "StringSingleLine",
-            "defaultValue": "",
-            "uiOrder": 42,
-            "animatable": true,
-            "animationInterpolations": [
-              "hold",
-              "writeOn"
-            ],
-            "animationTimeline": {
-              "origin": {
-                "kind": "ownerStart"
-              }
-            }
-          },
-          {
-            "id": "slot5.actor",
-            "label": "Slot 5 actor",
-            "jsonKey": "slot5ActorId",
-            "kind": "recordReference",
-            "valueKind": "RecordReference",
-            "defaultValue": "actor_alex",
-            "tableId": "actors",
-            "resolvedJsonKey": "slot5Actor",
-            "uiOrder": 50
-          },
-          {
-            "id": "slot5.label",
-            "label": "Slot 5 label",
-            "jsonKey": "slot5Label",
-            "kind": "text",
-            "valueKind": "StringSingleLine",
-            "defaultValue": "",
-            "uiOrder": 51,
-            "animatable": true,
-            "animationInterpolations": [
-              "hold",
-              "writeOn"
-            ],
-            "animationTimeline": {
-              "origin": {
-                "kind": "ownerStart"
-              }
-            }
-          },
-          {
-            "id": "slot5.sublabel",
-            "label": "Slot 5 sublabel",
-            "jsonKey": "slot5Sublabel",
-            "kind": "text",
-            "valueKind": "StringSingleLine",
-            "defaultValue": "",
-            "uiOrder": 52,
-            "animatable": true,
-            "animationInterpolations": [
-              "hold",
-              "writeOn"
-            ],
-            "animationTimeline": {
-              "origin": {
-                "kind": "ownerStart"
-              }
-            }
-          },
-          {
-            "id": "slot1.state",
-            "label": "Slot 1 state",
-            "jsonKey": "slot1State",
-            "kind": "option",
-            "valueKind": "OptionToken",
-            "defaultValue": "normal",
-            "options": [
-              {
-                "value": "normal",
-                "label": "Normal"
+            "id": "slotInputs",
+            "label": "Slots",
+            "jsonKey": "slotInputs",
+            "kind": "collection",
+            "valueKind": "StructuredCollection",
+            "defaultValue": "[]",
+            "source": "runtime",
+            "uiOrder": 20,
+            "structuredCollection": {
+              "id": "slotInputs",
+              "label": "Slots",
+              "jsonKey": "slotInputs",
+              "itemLabel": "Slot",
+              "fields": [
+                {
+                  "id": "actorId",
+                  "label": "Actor",
+                  "jsonKey": "actorId",
+                  "kind": "recordReference",
+                  "valueKind": "RecordReference",
+                  "defaultValue": "actor_alex",
+                  "tableId": "actors",
+                  "resolvedJsonKey": "actor",
+                  "source": "runtime",
+                  "uiOrder": 10
+                },
+                {
+                  "id": "label",
+                  "label": "Label",
+                  "jsonKey": "label",
+                  "kind": "text",
+                  "valueKind": "StringSingleLine",
+                  "defaultValue": "",
+                  "source": "runtime",
+                  "uiOrder": 20
+                },
+                {
+                  "id": "sublabel",
+                  "label": "Sublabel",
+                  "jsonKey": "sublabel",
+                  "kind": "text",
+                  "valueKind": "StringSingleLine",
+                  "defaultValue": "",
+                  "source": "runtime",
+                  "uiOrder": 30
+                },
+                {
+                  "id": "state",
+                  "label": "State",
+                  "jsonKey": "state",
+                  "kind": "option",
+                  "valueKind": "OptionToken",
+                  "defaultValue": "normal",
+                  "options": [
+                    {
+                      "value": "normal",
+                      "label": "Normal"
+                    },
+                    {
+                      "value": "active",
+                      "label": "Active"
+                    },
+                    {
+                      "value": "pushed",
+                      "label": "Pushed"
+                    },
+                    {
+                      "value": "disabled",
+                      "label": "Disabled"
+                    }
+                  ],
+                  "source": "runtime",
+                  "uiOrder": 40
+                }
+              ],
+              "itemPresentation": {
+                "titleFieldId": "label",
+                "firstItemBadge": "",
+                "subtitleFieldIds": [
+                  "sublabel"
+                ],
+                "subtitleMaxCharacters": 72,
+                "iconFieldId": "",
+                "fallbackIcon": "layout",
+                "iconValueMap": {}
               },
-              {
-                "value": "active",
-                "label": "Active"
-              },
-              {
-                "value": "pushed",
-                "label": "Pushed"
-              },
-              {
-                "value": "disabled",
-                "label": "Disabled"
-              }
-            ],
-            "uiOrder": 13,
-            "animatable": true,
-            "animationInterpolations": [
-              "hold"
-            ],
-            "animationTimeline": {
-              "origin": {
-                "kind": "ownerStart"
-              }
-            }
-          },
-          {
-            "id": "slot2.state",
-            "label": "Slot 2 state",
-            "jsonKey": "slot2State",
-            "kind": "option",
-            "valueKind": "OptionToken",
-            "defaultValue": "normal",
-            "options": [
-              {
-                "value": "normal",
-                "label": "Normal"
-              },
-              {
-                "value": "active",
-                "label": "Active"
-              },
-              {
-                "value": "pushed",
-                "label": "Pushed"
-              },
-              {
-                "value": "disabled",
-                "label": "Disabled"
-              }
-            ],
-            "uiOrder": 23,
-            "animatable": true,
-            "animationInterpolations": [
-              "hold"
-            ],
-            "animationTimeline": {
-              "origin": {
-                "kind": "ownerStart"
-              }
-            }
-          },
-          {
-            "id": "slot3.state",
-            "label": "Slot 3 state",
-            "jsonKey": "slot3State",
-            "kind": "option",
-            "valueKind": "OptionToken",
-            "defaultValue": "normal",
-            "options": [
-              {
-                "value": "normal",
-                "label": "Normal"
-              },
-              {
-                "value": "active",
-                "label": "Active"
-              },
-              {
-                "value": "pushed",
-                "label": "Pushed"
-              },
-              {
-                "value": "disabled",
-                "label": "Disabled"
-              }
-            ],
-            "uiOrder": 33,
-            "animatable": true,
-            "animationInterpolations": [
-              "hold"
-            ],
-            "animationTimeline": {
-              "origin": {
-                "kind": "ownerStart"
-              }
-            }
-          },
-          {
-            "id": "slot4.state",
-            "label": "Slot 4 state",
-            "jsonKey": "slot4State",
-            "kind": "option",
-            "valueKind": "OptionToken",
-            "defaultValue": "normal",
-            "options": [
-              {
-                "value": "normal",
-                "label": "Normal"
-              },
-              {
-                "value": "active",
-                "label": "Active"
-              },
-              {
-                "value": "pushed",
-                "label": "Pushed"
-              },
-              {
-                "value": "disabled",
-                "label": "Disabled"
-              }
-            ],
-            "uiOrder": 43,
-            "animatable": true,
-            "animationInterpolations": [
-              "hold"
-            ],
-            "animationTimeline": {
-              "origin": {
-                "kind": "ownerStart"
-              }
-            }
-          },
-          {
-            "id": "slot5.state",
-            "label": "Slot 5 state",
-            "jsonKey": "slot5State",
-            "kind": "option",
-            "valueKind": "OptionToken",
-            "defaultValue": "normal",
-            "options": [
-              {
-                "value": "normal",
-                "label": "Normal"
-              },
-              {
-                "value": "active",
-                "label": "Active"
-              },
-              {
-                "value": "pushed",
-                "label": "Pushed"
-              },
-              {
-                "value": "disabled",
-                "label": "Disabled"
-              }
-            ],
-            "uiOrder": 53,
-            "animatable": true,
-            "animationInterpolations": [
-              "hold"
-            ],
-            "animationTimeline": {
-              "origin": {
-                "kind": "ownerStart"
-              }
+              "canEditStructure": false,
+              "uiPresentation": "collection",
+              "itemRuntimePresentation": "card"
             }
           }
         ],
@@ -1885,97 +1307,165 @@
     "socialPostRows": [
       {
         "id": "row1",
-        "slot1ActorId": "actor_alex",
-        "slot1Label": "Alex Q",
-        "slot1Sublabel": "@alexq · 2 min",
-        "slot2ActorId": "actor_alex",
-        "slot2Label": "250",
-        "slot2Sublabel": "Publicaciones",
-        "slot3ActorId": "actor_alex",
-        "slot3Label": "135",
-        "slot3Sublabel": "Seguidores",
-        "slot4ActorId": "actor_alex",
-        "slot4Label": "54",
-        "slot4Sublabel": "Siguiendo",
-        "slot5ActorId": "actor_alex",
-        "slot5Label": "",
-        "slot5Sublabel": "",
-        "slot1State": "normal",
-        "slot2State": "normal",
-        "slot3State": "normal",
-        "slot4State": "normal",
-        "slot5State": "normal"
+        "slotInputs": [
+          {
+            "id": "row1_slot1",
+            "actorId": "actor_alex",
+            "label": "Alex Q",
+            "sublabel": "@alexq · 2 min",
+            "state": "normal"
+          },
+          {
+            "id": "row1_slot2",
+            "actorId": "actor_alex",
+            "label": "250",
+            "sublabel": "Publicaciones",
+            "state": "normal"
+          },
+          {
+            "id": "row1_slot3",
+            "actorId": "actor_alex",
+            "label": "135",
+            "sublabel": "Seguidores",
+            "state": "normal"
+          },
+          {
+            "id": "row1_slot4",
+            "actorId": "actor_alex",
+            "label": "54",
+            "sublabel": "Siguiendo",
+            "state": "normal"
+          },
+          {
+            "id": "row1_slot5",
+            "actorId": "actor_alex",
+            "label": "",
+            "sublabel": "",
+            "state": "normal"
+          }
+        ]
       },
       {
         "id": "row2",
-        "slot1ActorId": "actor_alex",
-        "slot1Label": "#FOQN",
-        "slot1Sublabel": "",
-        "slot2ActorId": "actor_alex",
-        "slot2Label": "#ASDF",
-        "slot2Sublabel": "",
-        "slot3ActorId": "actor_alex",
-        "slot3Label": "",
-        "slot3Sublabel": "",
-        "slot4ActorId": "actor_alex",
-        "slot4Label": "",
-        "slot4Sublabel": "",
-        "slot5ActorId": "actor_alex",
-        "slot5Label": "",
-        "slot5Sublabel": "",
-        "slot1State": "normal",
-        "slot2State": "normal",
-        "slot3State": "normal",
-        "slot4State": "normal",
-        "slot5State": "normal"
+        "slotInputs": [
+          {
+            "id": "row2_slot1",
+            "actorId": "actor_alex",
+            "label": "#FOQN",
+            "sublabel": "",
+            "state": "normal"
+          },
+          {
+            "id": "row2_slot2",
+            "actorId": "actor_alex",
+            "label": "#ASDF",
+            "sublabel": "",
+            "state": "normal"
+          },
+          {
+            "id": "row2_slot3",
+            "actorId": "actor_alex",
+            "label": "",
+            "sublabel": "",
+            "state": "normal"
+          },
+          {
+            "id": "row2_slot4",
+            "actorId": "actor_alex",
+            "label": "",
+            "sublabel": "",
+            "state": "normal"
+          },
+          {
+            "id": "row2_slot5",
+            "actorId": "actor_alex",
+            "label": "",
+            "sublabel": "",
+            "state": "normal"
+          }
+        ]
       }
     ],
     "socialPostFooterRows": [
       {
         "id": "footerRow1",
-        "slot1ActorId": "actor_alex",
-        "slot1Label": "Alex Q",
-        "slot1Sublabel": "@alexq · 2 min",
-        "slot2ActorId": "actor_alex",
-        "slot2Label": "250",
-        "slot2Sublabel": "Publicaciones",
-        "slot3ActorId": "actor_alex",
-        "slot3Label": "135",
-        "slot3Sublabel": "Seguidores",
-        "slot4ActorId": "actor_alex",
-        "slot4Label": "54",
-        "slot4Sublabel": "Siguiendo",
-        "slot5ActorId": "actor_alex",
-        "slot5Label": "",
-        "slot5Sublabel": "",
-        "slot1State": "normal",
-        "slot2State": "normal",
-        "slot3State": "normal",
-        "slot4State": "normal",
-        "slot5State": "normal"
+        "slotInputs": [
+          {
+            "id": "footerRow1_slot1",
+            "actorId": "actor_alex",
+            "label": "Alex Q",
+            "sublabel": "@alexq · 2 min",
+            "state": "normal"
+          },
+          {
+            "id": "footerRow1_slot2",
+            "actorId": "actor_alex",
+            "label": "250",
+            "sublabel": "Publicaciones",
+            "state": "normal"
+          },
+          {
+            "id": "footerRow1_slot3",
+            "actorId": "actor_alex",
+            "label": "135",
+            "sublabel": "Seguidores",
+            "state": "normal"
+          },
+          {
+            "id": "footerRow1_slot4",
+            "actorId": "actor_alex",
+            "label": "54",
+            "sublabel": "Siguiendo",
+            "state": "normal"
+          },
+          {
+            "id": "footerRow1_slot5",
+            "actorId": "actor_alex",
+            "label": "",
+            "sublabel": "",
+            "state": "normal"
+          }
+        ]
       },
       {
         "id": "footerRow2",
-        "slot1ActorId": "actor_alex",
-        "slot1Label": "#FOQN",
-        "slot1Sublabel": "",
-        "slot2ActorId": "actor_alex",
-        "slot2Label": "#ASDF",
-        "slot2Sublabel": "",
-        "slot3ActorId": "actor_alex",
-        "slot3Label": "",
-        "slot3Sublabel": "",
-        "slot4ActorId": "actor_alex",
-        "slot4Label": "",
-        "slot4Sublabel": "",
-        "slot5ActorId": "actor_alex",
-        "slot5Label": "",
-        "slot5Sublabel": "",
-        "slot1State": "normal",
-        "slot2State": "normal",
-        "slot3State": "normal",
-        "slot4State": "normal",
-        "slot5State": "normal"
+        "slotInputs": [
+          {
+            "id": "footerRow2_slot1",
+            "actorId": "actor_alex",
+            "label": "#FOQN",
+            "sublabel": "",
+            "state": "normal"
+          },
+          {
+            "id": "footerRow2_slot2",
+            "actorId": "actor_alex",
+            "label": "#ASDF",
+            "sublabel": "",
+            "state": "normal"
+          },
+          {
+            "id": "footerRow2_slot3",
+            "actorId": "actor_alex",
+            "label": "",
+            "sublabel": "",
+            "state": "normal"
+          },
+          {
+            "id": "footerRow2_slot4",
+            "actorId": "actor_alex",
+            "label": "",
+            "sublabel": "",
+            "state": "normal"
+          },
+          {
+            "id": "footerRow2_slot5",
+            "actorId": "actor_alex",
+            "label": "",
+            "sublabel": "",
+            "state": "normal"
+          }
+        ]
       }
     ]
   },
@@ -2014,80 +1504,102 @@
                   "padding": "theme.spacing.xl|theme.spacing.m",
                   "verticalAlignment": "center",
                   "showSeparator": false,
-                  "slot1Kind": "avatar",
-                  "slot1AvatarSlot": {
-                    "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                    "overrides": {
-                      "avatar": {
-                        "defaultSize": 50
+                  "slots": [
+                    {
+                      "id": "row1_slot1",
+                      "name": "Slot 1",
+                      "kind": "avatar",
+                      "avatarSlot": {
+                        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                        "overrides": {
+                          "avatar": {
+                            "defaultSize": 50
+                          }
+                        }
+                      },
+                      "iconSlot": {
+                        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                        "overrides": {}
+                      },
+                      "iconSizeToken": "theme.iconSizes.m",
+                      "labelSlot": {
+                        "variantReference": "component_project_foqn_s2_label::variant::default",
+                        "overrides": {}
+                      }
+                    },
+                    {
+                      "id": "row1_slot2",
+                      "name": "Slot 2",
+                      "kind": "label",
+                      "avatarSlot": {
+                        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                        "overrides": {}
+                      },
+                      "iconSlot": {
+                        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                        "overrides": {}
+                      },
+                      "iconSizeToken": "theme.iconSizes.m",
+                      "labelSlot": {
+                        "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
+                        "overrides": {}
+                      }
+                    },
+                    {
+                      "id": "row1_slot3",
+                      "name": "Slot 3",
+                      "kind": "label",
+                      "avatarSlot": {
+                        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                        "overrides": {}
+                      },
+                      "iconSlot": {
+                        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                        "overrides": {}
+                      },
+                      "iconSizeToken": "theme.iconSizes.m",
+                      "labelSlot": {
+                        "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
+                        "overrides": {}
+                      }
+                    },
+                    {
+                      "id": "row1_slot4",
+                      "name": "Slot 4",
+                      "kind": "label",
+                      "avatarSlot": {
+                        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                        "overrides": {}
+                      },
+                      "iconSlot": {
+                        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                        "overrides": {}
+                      },
+                      "iconSizeToken": "theme.iconSizes.m",
+                      "labelSlot": {
+                        "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
+                        "overrides": {}
+                      }
+                    },
+                    {
+                      "id": "row1_slot5",
+                      "name": "Slot 5",
+                      "kind": "none",
+                      "avatarSlot": {
+                        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                        "overrides": {}
+                      },
+                      "iconSlot": {
+                        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                        "overrides": {}
+                      },
+                      "iconSizeToken": "theme.iconSizes.m",
+                      "labelSlot": {
+                        "variantReference": "component_project_foqn_s2_label::variant::default",
+                        "overrides": {}
                       }
                     }
-                  },
-                  "slot1IconSlot": {
-                    "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                    "overrides": {}
-                  },
-                  "slot1LabelSlot": {
-                    "variantReference": "component_project_foqn_s2_label::variant::default",
-                    "overrides": {}
-                  },
-                  "slot2Kind": "label",
-                  "slot2AvatarSlot": {
-                    "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                    "overrides": {}
-                  },
-                  "slot2IconSlot": {
-                    "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                    "overrides": {}
-                  },
-                  "slot2LabelSlot": {
-                    "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
-                    "overrides": {}
-                  },
-                  "slot3Kind": "label",
-                  "slot3AvatarSlot": {
-                    "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                    "overrides": {}
-                  },
-                  "slot3IconSlot": {
-                    "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                    "overrides": {}
-                  },
-                  "slot3LabelSlot": {
-                    "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
-                    "overrides": {}
-                  },
-                  "slot4Kind": "label",
-                  "slot4AvatarSlot": {
-                    "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                    "overrides": {}
-                  },
-                  "slot4IconSlot": {
-                    "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                    "overrides": {}
-                  },
-                  "slot4LabelSlot": {
-                    "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
-                    "overrides": {}
-                  },
-                  "slot5Kind": "none",
-                  "slot5AvatarSlot": {
-                    "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                    "overrides": {}
-                  },
-                  "slot5IconSlot": {
-                    "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                    "overrides": {}
-                  },
-                  "slot5LabelSlot": {
-                    "variantReference": "component_project_foqn_s2_label::variant::default",
-                    "overrides": {}
-                  },
-                  "slot1IconSizeToken": "theme.iconSizes.m",
-                  "slot2IconSizeToken": "theme.iconSizes.m",
-                  "slot3IconSizeToken": "theme.iconSizes.m",
-                  "slot4IconSizeToken": "theme.iconSizes.m",
-                  "slot5IconSizeToken": "theme.iconSizes.m"
+                  ]
                 }
               }
             }
@@ -2102,76 +1614,98 @@
                   "padding": "theme.spacing.l|theme.spacing.s",
                   "verticalAlignment": "center",
                   "showSeparator": true,
-                  "slot1Kind": "label",
-                  "slot1AvatarSlot": {
-                    "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                    "overrides": {}
-                  },
-                  "slot1IconSlot": {
-                    "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                    "overrides": {}
-                  },
-                  "slot1LabelSlot": {
-                    "variantReference": "component_project_foqn_s2_label::variant::default",
-                    "overrides": {}
-                  },
-                  "slot2Kind": "label",
-                  "slot2AvatarSlot": {
-                    "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                    "overrides": {}
-                  },
-                  "slot2IconSlot": {
-                    "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                    "overrides": {}
-                  },
-                  "slot2LabelSlot": {
-                    "variantReference": "component_project_foqn_s2_label::variant::default",
-                    "overrides": {}
-                  },
-                  "slot3Kind": "label",
-                  "slot3AvatarSlot": {
-                    "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                    "overrides": {}
-                  },
-                  "slot3IconSlot": {
-                    "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                    "overrides": {}
-                  },
-                  "slot3LabelSlot": {
-                    "variantReference": "component_project_foqn_s2_label::variant::default",
-                    "overrides": {}
-                  },
-                  "slot4Kind": "none",
-                  "slot4AvatarSlot": {
-                    "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                    "overrides": {}
-                  },
-                  "slot4IconSlot": {
-                    "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                    "overrides": {}
-                  },
-                  "slot4LabelSlot": {
-                    "variantReference": "component_project_foqn_s2_label::variant::default",
-                    "overrides": {}
-                  },
-                  "slot5Kind": "label",
-                  "slot5AvatarSlot": {
-                    "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                    "overrides": {}
-                  },
-                  "slot5IconSlot": {
-                    "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                    "overrides": {}
-                  },
-                  "slot5LabelSlot": {
-                    "variantReference": "component_project_foqn_s2_label::variant::default",
-                    "overrides": {}
-                  },
-                  "slot1IconSizeToken": "theme.iconSizes.m",
-                  "slot2IconSizeToken": "theme.iconSizes.m",
-                  "slot3IconSizeToken": "theme.iconSizes.m",
-                  "slot4IconSizeToken": "theme.iconSizes.m",
-                  "slot5IconSizeToken": "theme.iconSizes.m"
+                  "slots": [
+                    {
+                      "id": "row2_slot1",
+                      "name": "Slot 1",
+                      "kind": "label",
+                      "avatarSlot": {
+                        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                        "overrides": {}
+                      },
+                      "iconSlot": {
+                        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                        "overrides": {}
+                      },
+                      "iconSizeToken": "theme.iconSizes.m",
+                      "labelSlot": {
+                        "variantReference": "component_project_foqn_s2_label::variant::default",
+                        "overrides": {}
+                      }
+                    },
+                    {
+                      "id": "row2_slot2",
+                      "name": "Slot 2",
+                      "kind": "label",
+                      "avatarSlot": {
+                        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                        "overrides": {}
+                      },
+                      "iconSlot": {
+                        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                        "overrides": {}
+                      },
+                      "iconSizeToken": "theme.iconSizes.m",
+                      "labelSlot": {
+                        "variantReference": "component_project_foqn_s2_label::variant::default",
+                        "overrides": {}
+                      }
+                    },
+                    {
+                      "id": "row2_slot3",
+                      "name": "Slot 3",
+                      "kind": "label",
+                      "avatarSlot": {
+                        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                        "overrides": {}
+                      },
+                      "iconSlot": {
+                        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                        "overrides": {}
+                      },
+                      "iconSizeToken": "theme.iconSizes.m",
+                      "labelSlot": {
+                        "variantReference": "component_project_foqn_s2_label::variant::default",
+                        "overrides": {}
+                      }
+                    },
+                    {
+                      "id": "row2_slot4",
+                      "name": "Slot 4",
+                      "kind": "none",
+                      "avatarSlot": {
+                        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                        "overrides": {}
+                      },
+                      "iconSlot": {
+                        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                        "overrides": {}
+                      },
+                      "iconSizeToken": "theme.iconSizes.m",
+                      "labelSlot": {
+                        "variantReference": "component_project_foqn_s2_label::variant::default",
+                        "overrides": {}
+                      }
+                    },
+                    {
+                      "id": "row2_slot5",
+                      "name": "Slot 5",
+                      "kind": "label",
+                      "avatarSlot": {
+                        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                        "overrides": {}
+                      },
+                      "iconSlot": {
+                        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                        "overrides": {}
+                      },
+                      "iconSizeToken": "theme.iconSizes.m",
+                      "labelSlot": {
+                        "variantReference": "component_project_foqn_s2_label::variant::default",
+                        "overrides": {}
+                      }
+                    }
+                  ]
                 }
               }
             }
@@ -2288,80 +1822,102 @@
                   "padding": "theme.spacing.xl|theme.spacing.m",
                   "verticalAlignment": "center",
                   "showSeparator": false,
-                  "slot1Kind": "avatar",
-                  "slot1AvatarSlot": {
-                    "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                    "overrides": {
-                      "avatar": {
-                        "defaultSize": 50
+                  "slots": [
+                    {
+                      "id": "footerRow1_slot1",
+                      "name": "Slot 1",
+                      "kind": "avatar",
+                      "avatarSlot": {
+                        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                        "overrides": {
+                          "avatar": {
+                            "defaultSize": 50
+                          }
+                        }
+                      },
+                      "iconSlot": {
+                        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                        "overrides": {}
+                      },
+                      "iconSizeToken": "theme.iconSizes.m",
+                      "labelSlot": {
+                        "variantReference": "component_project_foqn_s2_label::variant::default",
+                        "overrides": {}
+                      }
+                    },
+                    {
+                      "id": "footerRow1_slot2",
+                      "name": "Slot 2",
+                      "kind": "label",
+                      "avatarSlot": {
+                        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                        "overrides": {}
+                      },
+                      "iconSlot": {
+                        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                        "overrides": {}
+                      },
+                      "iconSizeToken": "theme.iconSizes.m",
+                      "labelSlot": {
+                        "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
+                        "overrides": {}
+                      }
+                    },
+                    {
+                      "id": "footerRow1_slot3",
+                      "name": "Slot 3",
+                      "kind": "label",
+                      "avatarSlot": {
+                        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                        "overrides": {}
+                      },
+                      "iconSlot": {
+                        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                        "overrides": {}
+                      },
+                      "iconSizeToken": "theme.iconSizes.m",
+                      "labelSlot": {
+                        "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
+                        "overrides": {}
+                      }
+                    },
+                    {
+                      "id": "footerRow1_slot4",
+                      "name": "Slot 4",
+                      "kind": "label",
+                      "avatarSlot": {
+                        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                        "overrides": {}
+                      },
+                      "iconSlot": {
+                        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                        "overrides": {}
+                      },
+                      "iconSizeToken": "theme.iconSizes.m",
+                      "labelSlot": {
+                        "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
+                        "overrides": {}
+                      }
+                    },
+                    {
+                      "id": "footerRow1_slot5",
+                      "name": "Slot 5",
+                      "kind": "none",
+                      "avatarSlot": {
+                        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                        "overrides": {}
+                      },
+                      "iconSlot": {
+                        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                        "overrides": {}
+                      },
+                      "iconSizeToken": "theme.iconSizes.m",
+                      "labelSlot": {
+                        "variantReference": "component_project_foqn_s2_label::variant::default",
+                        "overrides": {}
                       }
                     }
-                  },
-                  "slot1IconSlot": {
-                    "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                    "overrides": {}
-                  },
-                  "slot1LabelSlot": {
-                    "variantReference": "component_project_foqn_s2_label::variant::default",
-                    "overrides": {}
-                  },
-                  "slot2Kind": "label",
-                  "slot2AvatarSlot": {
-                    "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                    "overrides": {}
-                  },
-                  "slot2IconSlot": {
-                    "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                    "overrides": {}
-                  },
-                  "slot2LabelSlot": {
-                    "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
-                    "overrides": {}
-                  },
-                  "slot3Kind": "label",
-                  "slot3AvatarSlot": {
-                    "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                    "overrides": {}
-                  },
-                  "slot3IconSlot": {
-                    "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                    "overrides": {}
-                  },
-                  "slot3LabelSlot": {
-                    "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
-                    "overrides": {}
-                  },
-                  "slot4Kind": "label",
-                  "slot4AvatarSlot": {
-                    "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                    "overrides": {}
-                  },
-                  "slot4IconSlot": {
-                    "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                    "overrides": {}
-                  },
-                  "slot4LabelSlot": {
-                    "variantReference": "component_project_foqn_s2_label::variant::default_copy_2",
-                    "overrides": {}
-                  },
-                  "slot5Kind": "none",
-                  "slot5AvatarSlot": {
-                    "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                    "overrides": {}
-                  },
-                  "slot5IconSlot": {
-                    "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                    "overrides": {}
-                  },
-                  "slot5LabelSlot": {
-                    "variantReference": "component_project_foqn_s2_label::variant::default",
-                    "overrides": {}
-                  },
-                  "slot1IconSizeToken": "theme.iconSizes.m",
-                  "slot2IconSizeToken": "theme.iconSizes.m",
-                  "slot3IconSizeToken": "theme.iconSizes.m",
-                  "slot4IconSizeToken": "theme.iconSizes.m",
-                  "slot5IconSizeToken": "theme.iconSizes.m"
+                  ]
                 }
               }
             }
@@ -2376,76 +1932,98 @@
                   "padding": "theme.spacing.l|theme.spacing.s",
                   "verticalAlignment": "center",
                   "showSeparator": true,
-                  "slot1Kind": "label",
-                  "slot1AvatarSlot": {
-                    "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                    "overrides": {}
-                  },
-                  "slot1IconSlot": {
-                    "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                    "overrides": {}
-                  },
-                  "slot1LabelSlot": {
-                    "variantReference": "component_project_foqn_s2_label::variant::default",
-                    "overrides": {}
-                  },
-                  "slot2Kind": "label",
-                  "slot2AvatarSlot": {
-                    "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                    "overrides": {}
-                  },
-                  "slot2IconSlot": {
-                    "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                    "overrides": {}
-                  },
-                  "slot2LabelSlot": {
-                    "variantReference": "component_project_foqn_s2_label::variant::default",
-                    "overrides": {}
-                  },
-                  "slot3Kind": "label",
-                  "slot3AvatarSlot": {
-                    "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                    "overrides": {}
-                  },
-                  "slot3IconSlot": {
-                    "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                    "overrides": {}
-                  },
-                  "slot3LabelSlot": {
-                    "variantReference": "component_project_foqn_s2_label::variant::default",
-                    "overrides": {}
-                  },
-                  "slot4Kind": "none",
-                  "slot4AvatarSlot": {
-                    "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                    "overrides": {}
-                  },
-                  "slot4IconSlot": {
-                    "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                    "overrides": {}
-                  },
-                  "slot4LabelSlot": {
-                    "variantReference": "component_project_foqn_s2_label::variant::default",
-                    "overrides": {}
-                  },
-                  "slot5Kind": "label",
-                  "slot5AvatarSlot": {
-                    "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
-                    "overrides": {}
-                  },
-                  "slot5IconSlot": {
-                    "variantReference": "component_project_foqn_s2_button::variant::icon_only",
-                    "overrides": {}
-                  },
-                  "slot5LabelSlot": {
-                    "variantReference": "component_project_foqn_s2_label::variant::default",
-                    "overrides": {}
-                  },
-                  "slot1IconSizeToken": "theme.iconSizes.m",
-                  "slot2IconSizeToken": "theme.iconSizes.m",
-                  "slot3IconSizeToken": "theme.iconSizes.m",
-                  "slot4IconSizeToken": "theme.iconSizes.m",
-                  "slot5IconSizeToken": "theme.iconSizes.m"
+                  "slots": [
+                    {
+                      "id": "footerRow2_slot1",
+                      "name": "Slot 1",
+                      "kind": "label",
+                      "avatarSlot": {
+                        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                        "overrides": {}
+                      },
+                      "iconSlot": {
+                        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                        "overrides": {}
+                      },
+                      "iconSizeToken": "theme.iconSizes.m",
+                      "labelSlot": {
+                        "variantReference": "component_project_foqn_s2_label::variant::default",
+                        "overrides": {}
+                      }
+                    },
+                    {
+                      "id": "footerRow2_slot2",
+                      "name": "Slot 2",
+                      "kind": "label",
+                      "avatarSlot": {
+                        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                        "overrides": {}
+                      },
+                      "iconSlot": {
+                        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                        "overrides": {}
+                      },
+                      "iconSizeToken": "theme.iconSizes.m",
+                      "labelSlot": {
+                        "variantReference": "component_project_foqn_s2_label::variant::default",
+                        "overrides": {}
+                      }
+                    },
+                    {
+                      "id": "footerRow2_slot3",
+                      "name": "Slot 3",
+                      "kind": "label",
+                      "avatarSlot": {
+                        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                        "overrides": {}
+                      },
+                      "iconSlot": {
+                        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                        "overrides": {}
+                      },
+                      "iconSizeToken": "theme.iconSizes.m",
+                      "labelSlot": {
+                        "variantReference": "component_project_foqn_s2_label::variant::default",
+                        "overrides": {}
+                      }
+                    },
+                    {
+                      "id": "footerRow2_slot4",
+                      "name": "Slot 4",
+                      "kind": "none",
+                      "avatarSlot": {
+                        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                        "overrides": {}
+                      },
+                      "iconSlot": {
+                        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                        "overrides": {}
+                      },
+                      "iconSizeToken": "theme.iconSizes.m",
+                      "labelSlot": {
+                        "variantReference": "component_project_foqn_s2_label::variant::default",
+                        "overrides": {}
+                      }
+                    },
+                    {
+                      "id": "footerRow2_slot5",
+                      "name": "Slot 5",
+                      "kind": "label",
+                      "avatarSlot": {
+                        "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
+                        "overrides": {}
+                      },
+                      "iconSlot": {
+                        "variantReference": "component_project_foqn_s2_button::variant::icon_only",
+                        "overrides": {}
+                      },
+                      "iconSizeToken": "theme.iconSizes.m",
+                      "labelSlot": {
+                        "variantReference": "component_project_foqn_s2_label::variant::default",
+                        "overrides": {}
+                      }
+                    }
+                  ]
                 }
               }
             }
@@ -3286,7 +2864,7 @@
         "socialPost",
         "rows"
       ],
-      "defaultValue": "[{\"id\":\"row1\",\"label\":\"Row 1\",\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.xl|theme.spacing.m\",\"verticalAlignment\":\"center\",\"showSeparator\":false,\"slot1Kind\":\"avatar\",\"slot1AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{\"avatar\":{\"defaultSize\":50}}},\"slot1IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot1LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot2Kind\":\"label\",\"slot2AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot2IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot2LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}},\"slot3Kind\":\"label\",\"slot3AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot3IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot3LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}},\"slot4Kind\":\"label\",\"slot4AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot4IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot4LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}},\"slot5Kind\":\"none\",\"slot5AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot5IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot5LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot1IconSizeToken\":\"theme.iconSizes.m\",\"slot2IconSizeToken\":\"theme.iconSizes.m\",\"slot3IconSizeToken\":\"theme.iconSizes.m\",\"slot4IconSizeToken\":\"theme.iconSizes.m\",\"slot5IconSizeToken\":\"theme.iconSizes.m\"}}}},{\"id\":\"row2\",\"label\":\"Row 2\",\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.l|theme.spacing.s\",\"verticalAlignment\":\"center\",\"showSeparator\":true,\"slot1Kind\":\"label\",\"slot1AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot1IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot1LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot2Kind\":\"label\",\"slot2AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot2IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot2LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot3Kind\":\"label\",\"slot3AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot3IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot3LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot4Kind\":\"none\",\"slot4AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot4IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot4LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot5Kind\":\"label\",\"slot5AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot5IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot5LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot1IconSizeToken\":\"theme.iconSizes.m\",\"slot2IconSizeToken\":\"theme.iconSizes.m\",\"slot3IconSizeToken\":\"theme.iconSizes.m\",\"slot4IconSizeToken\":\"theme.iconSizes.m\",\"slot5IconSizeToken\":\"theme.iconSizes.m\"}}}}]",
+      "defaultValue": "[{\"id\":\"row1\",\"label\":\"Row 1\",\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.xl|theme.spacing.m\",\"verticalAlignment\":\"center\",\"showSeparator\":false,\"slots\":[{\"id\":\"slot1\",\"name\":\"Slot 1\",\"kind\":\"avatar\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{\"avatar\":{\"defaultSize\":50}}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"slot2\",\"name\":\"Slot 2\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"slot3\",\"name\":\"Slot 3\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"slot4\",\"name\":\"Slot 4\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"slot5\",\"name\":\"Slot 5\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}}},{\"id\":\"row2\",\"label\":\"Row 2\",\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.l|theme.spacing.s\",\"verticalAlignment\":\"center\",\"showSeparator\":true,\"slots\":[{\"id\":\"slot1\",\"name\":\"Slot 1\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"slot2\",\"name\":\"Slot 2\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"slot3\",\"name\":\"Slot 3\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"slot4\",\"name\":\"Slot 4\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"slot5\",\"name\":\"Slot 5\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}}}]",
       "isEditable": true,
       "options": [],
       "optionSource": "None",
@@ -3502,7 +3080,7 @@
         "socialPost",
         "footerRows"
       ],
-      "defaultValue": "[{\"id\":\"footerRow1\",\"label\":\"Row 1\",\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.xl|theme.spacing.m\",\"verticalAlignment\":\"center\",\"showSeparator\":false,\"slot1Kind\":\"avatar\",\"slot1AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{\"avatar\":{\"defaultSize\":50}}},\"slot1IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot1LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot2Kind\":\"label\",\"slot2AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot2IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot2LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}},\"slot3Kind\":\"label\",\"slot3AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot3IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot3LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}},\"slot4Kind\":\"label\",\"slot4AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot4IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot4LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}},\"slot5Kind\":\"none\",\"slot5AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot5IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot5LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot1IconSizeToken\":\"theme.iconSizes.m\",\"slot2IconSizeToken\":\"theme.iconSizes.m\",\"slot3IconSizeToken\":\"theme.iconSizes.m\",\"slot4IconSizeToken\":\"theme.iconSizes.m\",\"slot5IconSizeToken\":\"theme.iconSizes.m\"}}}},{\"id\":\"footerRow2\",\"label\":\"Row 2\",\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.l|theme.spacing.s\",\"verticalAlignment\":\"center\",\"showSeparator\":true,\"slot1Kind\":\"label\",\"slot1AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot1IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot1LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot2Kind\":\"label\",\"slot2AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot2IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot2LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot3Kind\":\"label\",\"slot3AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot3IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot3LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot4Kind\":\"none\",\"slot4AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot4IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot4LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot5Kind\":\"label\",\"slot5AvatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"slot5IconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"slot5LabelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}},\"slot1IconSizeToken\":\"theme.iconSizes.m\",\"slot2IconSizeToken\":\"theme.iconSizes.m\",\"slot3IconSizeToken\":\"theme.iconSizes.m\",\"slot4IconSizeToken\":\"theme.iconSizes.m\",\"slot5IconSizeToken\":\"theme.iconSizes.m\"}}}}]",
+      "defaultValue": "[{\"id\":\"footerRow1\",\"label\":\"Row 1\",\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.xl|theme.spacing.m\",\"verticalAlignment\":\"center\",\"showSeparator\":false,\"slots\":[{\"id\":\"slot1\",\"name\":\"Slot 1\",\"kind\":\"avatar\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{\"avatar\":{\"defaultSize\":50}}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"slot2\",\"name\":\"Slot 2\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"slot3\",\"name\":\"Slot 3\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"slot4\",\"name\":\"Slot 4\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default_copy_2\",\"overrides\":{}}},{\"id\":\"slot5\",\"name\":\"Slot 5\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}}},{\"id\":\"footerRow2\",\"label\":\"Row 2\",\"rowSlot\":{\"variantReference\":\"component_project_foqn_s2_content_row::variant::default\",\"overrides\":{\"contentRow\":{\"padding\":\"theme.spacing.l|theme.spacing.s\",\"verticalAlignment\":\"center\",\"showSeparator\":true,\"slots\":[{\"id\":\"slot1\",\"name\":\"Slot 1\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"slot2\",\"name\":\"Slot 2\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"slot3\",\"name\":\"Slot 3\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"slot4\",\"name\":\"Slot 4\",\"kind\":\"none\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}},{\"id\":\"slot5\",\"name\":\"Slot 5\",\"kind\":\"label\",\"avatarSlot\":{\"variantReference\":\"component_project_foqn_s2_avatar::variant::avatar_chat_header\",\"overrides\":{}},\"iconSlot\":{\"variantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"overrides\":{}},\"iconSizeToken\":\"theme.iconSizes.m\",\"labelSlot\":{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}}]}}}}]",
       "isEditable": true,
       "options": [],
       "optionSource": "None",

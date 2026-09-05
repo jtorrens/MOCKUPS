@@ -31,7 +31,7 @@ export function resolveRow<TContent>(
       ...payload,
       componentType,
       configJson: JSON.stringify(config),
-      designPreviewJson: JSON.stringify({ ...runtimeRow, viewportSize: "390|80" }),
+      designPreviewJson: JSON.stringify({ slotInputs: runtimeRow.slotInputs, viewportSize: "390|80" }),
     }),
   };
 }

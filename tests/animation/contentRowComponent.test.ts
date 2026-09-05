@@ -5,16 +5,16 @@ import { contentRowComponentToRenderable } from "../../src/desktop-preview/conte
 import { resolveContentRowComponent } from "../../src/desktop-preview/contentRowComponentResolver.js";
 import { committedComponentFixture } from "./committedComponentFixture.js";
 
-test("Content Row resolves five slots and applies horizontal and vertical padding", () => {
+test("Content Row resolves its slot collection and applies horizontal and vertical padding", () => {
   const source = committedComponentFixture("contentRow", "default");
-  const config = JSON.parse(source.configJson) as { contentRow: Record<string, unknown> };
-  const preview = JSON.parse(source.designPreviewJson) as Record<string, unknown>;
-  config.contentRow.slot1Kind = "label";
-  config.contentRow.slot3Kind = "label";
-  config.contentRow.slot5Kind = "icon";
-  preview.slot1Label = "Left";
-  preview.slot3Label = "Center";
-  preview.slot5State = "active";
+  const config = JSON.parse(source.configJson) as { contentRow: { slots: Array<Record<string, unknown>> } };
+  const preview = JSON.parse(source.designPreviewJson) as { slotInputs: Array<Record<string, unknown>> };
+  config.contentRow.slots[0]!.kind = "label";
+  config.contentRow.slots[2]!.kind = "label";
+  config.contentRow.slots[4]!.kind = "icon";
+  preview.slotInputs[0]!.label = "Left";
+  preview.slotInputs[2]!.label = "Center";
+  preview.slotInputs[4]!.state = "active";
   const payload = { ...source, configJson: JSON.stringify(config), designPreviewJson: JSON.stringify(preview) };
   const row = resolveContentRowComponent(payload);
   assert.equal(row.slots.length, 5);

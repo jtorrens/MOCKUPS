@@ -29,7 +29,17 @@ export function resolveContentRowComponent(
   const rawSize = requiredNumberPair(preview, "viewportSize", "component.contentRow.runtime.viewportSize");
   const padding = requiredStringPair(owner, "padding", "component.contentRow.padding");
   const verticalAlignment = alignment(requiredString(owner, "verticalAlignment", "component.contentRow.verticalAlignment"));
-  const slots = [1, 2, 3, 4, 5].map((index) => resolveSlot(payload, owner, preview, bases, index)) as ContentRowDesignContract["slots"];
+  const slotConfigs = requiredObjectArray(owner, "slots", "component.contentRow.slots");
+  const slotInputs = requiredObjectArray(preview, "slotInputs", "component.contentRow.runtime.slotInputs");
+  const runtimeById = new Map(slotInputs.map((item, index) => [requiredString(item, "id", `component.contentRow.runtime.slotInputs[${index}].id`), item]));
+  const slots = slotConfigs.map((slot, index) => {
+    const id = requiredString(slot, "id", `component.contentRow.slots[${index}].id`);
+    const runtime = runtimeById.get(id);
+    if (!runtime) throw new Error(`component.contentRow runtime is missing slot '${id}'`);
+    runtimeById.delete(id);
+    return resolveSlot(payload, slot, runtime, bases, id, index);
+  });
+  if (runtimeById.size) throw new Error(`component.contentRow runtime has unknown slots: ${[...runtimeById.keys()].join(", ")}`);
   return {
     id: "component.contentRow",
     size: { width: positive(rawSize.first, "width"), height: positive(rawSize.second, "height") },
@@ -42,23 +52,23 @@ export function resolveContentRowComponent(
 
 function resolveSlot(
   payload: DesignPreviewPayload,
-  owner: Record<string, unknown>,
-  preview: Record<string, unknown>,
+  slot: Record<string, unknown>,
+  runtime: Record<string, unknown>,
   bases: Record<string, unknown>,
+  id: string,
   index: number,
 ): ContentRowSlotContract {
-  const prefix = `slot${index}`;
-  const path = `component.contentRow.${prefix}`;
-  const kind = slotKind(requiredString(owner, `${prefix}Kind`, `${path}.kind`));
-  if (kind === "none") return { index, kind };
-  const label = requiredPossiblyEmptyString(preview, `${prefix}Label`, `${path}.runtime.label`);
-  const sublabel = requiredPossiblyEmptyString(preview, `${prefix}Sublabel`, `${path}.runtime.sublabel`);
+  const path = `component.contentRow.slots[${index}]`;
+  const kind = slotKind(requiredString(slot, "kind", `${path}.kind`));
+  if (kind === "none") return { id, order: index, kind };
+  const label = requiredPossiblyEmptyString(runtime, "label", `${path}.runtime.label`);
+  const sublabel = requiredPossiblyEmptyString(runtime, "sublabel", `${path}.runtime.sublabel`);
   if (kind === "label") {
     return {
-      index,
+      id, order: index,
       kind,
       content: resolveLabelComponentFromRecords(
-        embeddedComponentConfig(bases, requiredRecord(owner, `${prefix}LabelSlot`, `${path}.labelSlot`), "label", `${path}.labelSlot`),
+        embeddedComponentConfig(bases, requiredRecord(slot, "labelSlot", `${path}.labelSlot`), "label", `${path}.labelSlot`),
         literalLabelPreview(label, sublabel),
         bases,
         `${path}.label`,
@@ -67,33 +77,42 @@ function resolveSlot(
     };
   }
   if (kind === "icon") {
-    const buttonConfig = embeddedComponentConfig(bases, requiredRecord(owner, `${prefix}IconSlot`, `${path}.iconSlot`), "button", `${path}.iconSlot`);
+    const buttonConfig = embeddedComponentConfig(bases, requiredRecord(slot, "iconSlot", `${path}.iconSlot`), "button", `${path}.iconSlot`);
     const buttonOwner = requiredRecord(buttonConfig, "button", `${path}.button`);
     buttonOwner.contentMode = "icon";
     return {
-      index,
+      id, order: index,
       kind,
       content: resolveButtonComponentFromRecords(buttonConfig, {
-        state: requiredString(preview, `${prefix}State`, `${path}.runtime.state`),
+        state: requiredString(runtime, "state", `${path}.runtime.state`),
         pushTrigger: false,
         sampleText: label,
-        iconSizeToken: requiredString(owner, `${prefix}IconSizeToken`, `${path}.iconSizeToken`),
+        iconSizeToken: requiredString(slot, "iconSizeToken", `${path}.iconSizeToken`),
         showBadge: false,
       }, bases, `${path}.icon`),
     };
   }
-  const actor = structuredClone(requiredRecord(preview, `${prefix}Actor`, `${path}.runtime.actor`));
+  const actor = structuredClone(requiredRecord(runtime, "actor", `${path}.runtime.actor`));
   if (label.trim()) actor.displayName = label;
   return {
-    index,
+    id, order: index,
     kind,
     content: resolveAvatarComponentFromRecords(
-      embeddedComponentConfig(bases, requiredRecord(owner, `${prefix}AvatarSlot`, `${path}.avatarSlot`), "avatar", `${path}.avatarSlot`),
+      embeddedComponentConfig(bases, requiredRecord(slot, "avatarSlot", `${path}.avatarSlot`), "avatar", `${path}.avatarSlot`),
       { actor, sampleText: label, sampleSubtext: sublabel, showBadge: false },
       bases,
       `${path}.avatar`,
     ),
   };
+}
+
+function requiredObjectArray(owner: Record<string, unknown>, key: string, path: string): Record<string, unknown>[] {
+  const value = owner[key];
+  if (!Array.isArray(value)) throw new Error(`${path} must be an array`);
+  return value.map((item, index) => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) throw new Error(`${path}[${index}] must be an object`);
+    return item as Record<string, unknown>;
+  });
 }
 
 function slotKind(value: string): ContentRowSlotKind {
