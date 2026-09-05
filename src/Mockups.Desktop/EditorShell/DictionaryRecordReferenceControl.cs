@@ -56,8 +56,7 @@ internal sealed class DictionaryRecordReferenceControl : DockPanel,
             Padding = new Thickness(0),
             HorizontalContentAlignment = HorizontalAlignment.Center,
             VerticalContentAlignment = VerticalAlignment.Center,
-            IsEnabled = definition.IsEditable
-                && openOverrides is not null
+            IsEnabled = openOverrides is not null
                 && !string.IsNullOrWhiteSpace(value),
         };
         EditorAccessibility.Describe(
@@ -148,11 +147,9 @@ internal sealed class DictionaryRecordReferenceControl : DockPanel,
 
     private void UpdateButton()
     {
-        _overridesButton.IsEnabled = _definition.IsEditable
-            && _openOverrides is not null
+        _overridesButton.IsEnabled = _openOverrides is not null
             && !string.IsNullOrWhiteSpace(_value);
-        _restoreButton.IsEnabled = _definition.IsEditable
-            && _restoreOverrides is not null
+        _restoreButton.IsEnabled = _restoreOverrides is not null
             && _hasOverrides
             && !string.IsNullOrWhiteSpace(_value);
     }
@@ -168,7 +165,7 @@ internal sealed class DictionaryRecordReferenceControl : DockPanel,
             _restoreButton,
             active);
         _restoreButton.IsVisible = active;
-        _restoreButton.IsEnabled = _definition.IsEditable
+        _restoreButton.IsEnabled = _restoreOverrides is not null
             && active
             && !string.IsNullOrWhiteSpace(_value);
         if (changed)

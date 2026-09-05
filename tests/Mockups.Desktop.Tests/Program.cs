@@ -153,7 +153,7 @@ var tests = new (string Name, Action Run)[]
     ("Preview payload rejects incomplete Production context without selector fallbacks", PreviewPayloadRejectsIncompleteProductionContext),
     ("Production payload preserves its explicit Actor and animation documents", ProductionPayloadPreservesActorAndAnimation),
     ("Production Runtime commits discard transient Preview values", ProductionRuntimeCommitsDiscardTransientPreviewValues),
-    ("Shot Screen transitions reuse simultaneous boundary Motion", ShotScreenTransitionsReuseBoundaryMotion),
+    ("Shot Screen tracks resolve independent lanes gaps and overlap priority", ShotScreenTracksResolveIndependentLanes),
     ("Production playback selects exact owner frames from its prepared snapshot", ProductionPlaybackSelectsPreparedOwnerFrames),
     ("Conversation Play messages advances the root Module owner frame", ConversationPlayMessagesAdvancesRootOwnerFrame),
     ("Preview Theme mode always follows the interactive selector", PreviewThemeModeHasOneStrictPayloadOwner),
@@ -9089,10 +9089,10 @@ static void ProjectOwnedReferencesRejectCrossProjectValues()
         Execute(connection, "PRAGMA foreign_keys = OFF");
         Execute(connection, "UPDATE shots SET device_override_id = 'missing_device' WHERE id = 'shot_001'");
     });
-    AssertRejectedDatabaseIsReadOnly("missing-shot-theme-override", (connection) =>
+    AssertRejectedDatabaseIsReadOnly("missing-screen-theme-override", (connection) =>
     {
         Execute(connection, "PRAGMA foreign_keys = OFF");
-        Execute(connection, "UPDATE shots SET theme_override_id = 'missing_theme' WHERE id = 'shot_001'");
+        Execute(connection, "UPDATE module_instances SET theme_override_id = 'missing_theme' WHERE id = (SELECT id FROM module_instances WHERE shot_id = 'shot_001' ORDER BY sort_order, id LIMIT 1)");
     });
     AssertRejectedDatabaseIsReadOnly("blank-shot-resource-override", (connection) =>
     {
@@ -11431,7 +11431,14 @@ static void ProductionActiveScreenPresentationFollowsShotFrames()
     Equal("screen_b", ProductionScreenPlaybackState.ActiveScreenId(ranges, 5));
     Equal("screen_b", ProductionScreenPlaybackState.ActiveScreenId(ranges, 7));
     Equal("screen_c", ProductionScreenPlaybackState.ActiveScreenId(ranges, 8));
-    Equal("screen_c", ProductionScreenPlaybackState.ActiveScreenId(ranges, 99));
+    Equal("", ProductionScreenPlaybackState.ActiveScreenId(ranges, 99));
+    IReadOnlyList<ProductionScreenFrameRange> overlapping =
+    [
+        new("top", 3, 5),
+        new("bottom", 0, 10),
+    ];
+    Equal("bottom", ProductionScreenPlaybackState.ActiveScreenId(overlapping, 2));
+    Equal("top", ProductionScreenPlaybackState.ActiveScreenId(overlapping, 4));
     Equal(1, ProductionScreenPlaybackState.ActiveScreenIndex(ranges, 5));
     Equal("", ProductionScreenPlaybackState.ActiveScreenId([], 0));
     Equal(-1, ProductionScreenPlaybackState.ActiveScreenIndex([], 0));
@@ -13055,7 +13062,6 @@ static void ShotRepositoryPreservesFocusedContract()
         Equal(original.DurationFrames, settings.DurationFrames);
         Equal(original.OwnerActorId, settings.OwnerActorId);
         Equal(original.DeviceOverrideId, settings.DeviceOverrideId);
-        Equal(original.ThemeOverrideId, settings.ThemeOverrideId);
         Equal(original.CanvasJson, settings.CanvasJson);
         Equal(original.ReferenceVideoJson, settings.ReferenceVideoJson);
         Equal(original.MetadataJson, settings.MetadataJson);
@@ -15139,9 +15145,9 @@ static void ShotActorContextIsExplicit()
             shot.Id,
             "shot.deviceOverrideId",
             "device_shot_override_cross"));
-        Throws<InvalidOperationException>(() => database.UpdateShotField(
-            shot.Id,
-            "shot.themeOverrideId",
+        Throws<InvalidOperationException>(() => database.UpdateModuleInstanceField(
+            screen.Id,
+            "moduleInstance.themeOverrideId",
             "theme_shot_override_cross"));
 
         var duplicate = moduleInstances.Duplicate(screen);
@@ -15646,8 +15652,7 @@ static void ProductionShotContextBoundaryPreservesResolvedContext()
         Equal(actor.DisplayName, context.Actor);
         var resolvedDeviceId = shotSettings.DeviceOverrideId
             ?? actor.DefaultDeviceId;
-        var resolvedThemeId = shotSettings.ThemeOverrideId
-            ?? actor.DefaultThemeId;
+        var resolvedThemeId = actor.DefaultThemeId;
         Equal(database.GetDeviceSettings(resolvedDeviceId).Name, context.Device);
         Equal(database.GetThemeSettings(resolvedThemeId).Name, context.Theme);
         Equal(database.GetThemeFieldValue(resolvedThemeId, "theme.defaultMode"), context.ThemeMode);
@@ -15677,13 +15682,12 @@ static void ShotResourceOverridesResolveIndependently()
             .Single((node) => node.Id == "shot_001");
         var settings = database.GetShotSettings(shot.Id);
         var actor = database.GetActorSettings(settings.OwnerActorId);
-        database.UpdateShotField(
-            shot.Id,
-            "shot.deviceOverrideId",
-            "inherited");
-        database.UpdateShotField(
-            shot.Id,
-            "shot.themeOverrideId",
+        var screen = shot.Children.First((node) =>
+            node.Kind == ProjectTreeNodeKind.ModuleInstance);
+        database.UpdateShotField(shot.Id, "shot.deviceOverrideId", "inherited");
+        database.UpdateModuleInstanceField(
+            screen.Id,
+            "moduleInstance.themeOverrideId",
             "inherited");
         var deviceOverrideId = database.GetDeviceOptions(settings.ProjectId)
             .Select((option) => option.Value)
@@ -15703,8 +15707,8 @@ static void ShotResourceOverridesResolveIndependently()
             shot,
             "shot.deviceOverrideId");
         var inheritedTheme = values.CreateFieldValue(
-            shot,
-            "shot.themeOverrideId");
+            screen,
+            "moduleInstance.themeOverrideId");
         True(inheritedDevice.IsInherited);
         True(inheritedTheme.IsInherited);
         Equal(actor.DefaultDeviceId, inheritedDevice.Definition.InheritedValue);
@@ -15716,7 +15720,7 @@ static void ShotResourceOverridesResolveIndependently()
             deviceOverrideId);
         var deviceOnly = database.GetShotSettings(shot.Id);
         Equal(deviceOverrideId, deviceOnly.DeviceOverrideId);
-        True(deviceOnly.ThemeOverrideId is null);
+        True(database.GetModuleInstanceSettings(screen.Id).ThemeOverrideId is null);
 
         var contextService = new ProductionShotContextService(
             new ProductionShotContextDataSource(
@@ -15732,24 +15736,22 @@ static void ShotResourceOverridesResolveIndependently()
             database.Resources,
             database.Resources,
             database.ProjectPaths);
-        var screen = shot.Children.First((node) =>
-            node.Kind == ProjectTreeNodeKind.ModuleInstance);
         var deviceThemeContext = Required(payloadData.LoadThemeContext(screen, null));
         Equal(deviceOverrideId, deviceThemeContext.DeviceId);
         Equal(actor.DefaultThemeId, payloadData.ResolveThemeId(screen, null));
 
-        database.UpdateShotField(
-            shot.Id,
-            "shot.themeOverrideId",
+        database.UpdateModuleInstanceField(
+            screen.Id,
+            "moduleInstance.themeOverrideId",
             themeOverrideId);
-        var overridden = database.GetShotSettings(shot.Id);
-        Equal(deviceOverrideId, overridden.DeviceOverrideId);
+        var overridden = database.GetModuleInstanceSettings(screen.Id);
+        Equal(deviceOverrideId, database.GetShotSettings(shot.Id).DeviceOverrideId);
         Equal(themeOverrideId, overridden.ThemeOverrideId);
         var overrideContext = contextService.Resolve(shot.Id);
         Equal(database.GetDeviceSettings(deviceOverrideId).Name, overrideContext.Device);
-        Equal(database.GetThemeSettings(themeOverrideId).Name, overrideContext.Theme);
+        Equal(database.GetThemeSettings(actor.DefaultThemeId).Name, overrideContext.Theme);
         Equal(
-            database.GetThemeFieldValue(themeOverrideId, "theme.defaultMode"),
+            database.GetThemeFieldValue(actor.DefaultThemeId, "theme.defaultMode"),
             overrideContext.ThemeMode);
         Equal(themeOverrideId, payloadData.ResolveThemeId(screen, null));
         Equal(
@@ -15763,13 +15765,18 @@ static void ShotResourceOverridesResolveIndependently()
             .GetAwaiter()
             .GetResult();
         Equal(deviceOverrideId, draft.DeviceId);
-        Equal(themeOverrideId, draft.ThemeId);
+        Equal(actor.DefaultThemeId, draft.ThemeId);
 
         var deviceNode = Descendants(database.LoadProjectTree())
             .Single((node) => node.Id == deviceOverrideId);
         True(database.ReferenceUsages.GetReferenceUsageDetails(deviceNode)
             .Any((usage) => usage.SourceNodeId == shot.Id
                 && usage.Field == "Device override"));
+        var themeNode = Descendants(database.LoadProjectTree())
+            .Single((node) => node.Id == themeOverrideId);
+        True(database.ReferenceUsages.GetReferenceUsageDetails(themeNode)
+            .Any((usage) => usage.SourceNodeId == screen.Id
+                && usage.Field == "Theme override"));
 
         database.UpdateShotField(
             shot.Id,
@@ -15777,18 +15784,19 @@ static void ShotResourceOverridesResolveIndependently()
             "inherited");
         var themeOnly = database.GetShotSettings(shot.Id);
         True(themeOnly.DeviceOverrideId is null);
-        Equal(themeOverrideId, themeOnly.ThemeOverrideId);
+        Equal(themeOverrideId,
+            database.GetModuleInstanceSettings(screen.Id).ThemeOverrideId);
         Equal(
             database.GetDeviceSettings(actor.DefaultDeviceId).Name,
             contextService.Resolve(shot.Id).Device);
 
-        database.UpdateShotField(
-            shot.Id,
-            "shot.themeOverrideId",
+        database.UpdateModuleInstanceField(
+            screen.Id,
+            "moduleInstance.themeOverrideId",
             "inherited");
         var inherited = database.GetShotSettings(shot.Id);
         True(inherited.DeviceOverrideId is null);
-        True(inherited.ThemeOverrideId is null);
+        True(database.GetModuleInstanceSettings(screen.Id).ThemeOverrideId is null);
     }
     finally
     {
@@ -15810,6 +15818,8 @@ static void ShotDeviceSettingsOverridesPreserveOwnership()
         var shotNode = Descendants(tree)
             .Single((node) => node.Id == "shot_001");
         var shot = database.GetShotSettings(shotNode.Id);
+        var screenNode = shotNode.Children.First((node) =>
+            node.Kind == ProjectTreeNodeKind.ModuleInstance);
         var actor = database.GetActorSettings(shot.OwnerActorId);
         var initialDeviceId = shot.EffectiveDeviceId(
             actor.DefaultDeviceId);
@@ -15828,13 +15838,13 @@ static void ShotDeviceSettingsOverridesPreserveOwnership()
             database.Resources);
 
         var referenceField = values.CreateFieldValue(
-            shotNode,
-            "shot.deviceOverrideId");
+            screenNode,
+            "moduleInstance.device");
         var referenceContract = Required(
             referenceField.Definition.RecordReference);
         var initialContext = EditorEmbeddedContext
             .ForRecordReferenceOverride(
-                shotNode,
+                screenNode,
                 Descendants(tree).Single((node) =>
                     node.Id == initialDeviceId),
                 referenceField.Definition.Id,
@@ -15842,9 +15852,9 @@ static void ShotDeviceSettingsOverridesPreserveOwnership()
         var prepared = values
             .CreateRecordReferenceOverrideFields(
             initialContext,
-            DeviceSettingsFieldContract.OverrideableFieldIds);
+            DeviceSettingsFieldContract.ScreenOverrideableFieldIds);
         SequenceEqual(
-            DeviceSettingsFieldContract.OverrideableFieldIds,
+            DeviceSettingsFieldContract.ScreenOverrideableFieldIds,
             prepared.Keys);
         True(prepared.Values.All((field) =>
             field.Definition.CanInherit
@@ -15854,59 +15864,58 @@ static void ShotDeviceSettingsOverridesPreserveOwnership()
             "device",
             referenceContract.OverrideRecordClassId);
         Equal(
-            "shot.deviceOverrides",
+            "moduleInstance.deviceOverrides",
             referenceContract.OverrideDocumentFieldId);
         SequenceEqual(
-            DeviceSettingsFieldContract.OverrideableFieldIds,
+            DeviceSettingsFieldContract.ScreenOverrideableFieldIds,
             Required(referenceContract.OverrideFieldIds));
         values.CommitRecordReferenceOverrideField(
             initialContext,
-            "device.manufacturer",
-            "Shot-local manufacturer");
+            "device.metrics.moduleTransparency.backgroundOpacity",
+            "0.25");
         values.CommitRecordReferenceOverrideField(
             initialContext,
-            "device.metrics.cornerRadius",
+            "device.metrics.moduleTransparency.fixedStart",
             "123");
-        var overridden = database.GetShotSettings(shotNode.Id);
+        var overridden = database.GetModuleInstanceSettings(screenNode.Id);
         var overrideJson = JsonPath.ParseRequiredObject(
             overridden.DeviceOverridesJson,
-            "Shot Device settings test");
+            "Screen Device settings test");
         Equal(2, overrideJson.Count);
         Equal(
-            "Shot-local manufacturer",
-            overrideJson["device.manufacturer"]?.GetValue<string>());
+            "0.25",
+            overrideJson["device.metrics.moduleTransparency.backgroundOpacity"]?.GetValue<string>());
         Equal(
             "123",
-            overrideJson["device.metrics.cornerRadius"]?.GetValue<string>());
+            overrideJson["device.metrics.moduleTransparency.fixedStart"]?.GetValue<string>());
         True(values.CreateFieldValue(
-            shotNode,
-            "shot.deviceOverrideId").IsHighlighted);
+            screenNode,
+            "moduleInstance.device").IsHighlighted);
 
         database.UpdateShotField(
             shotNode.Id,
             "shot.deviceOverrideId",
             alternateDeviceId);
-        var changedDevice = database.GetShotSettings(shotNode.Id);
+        var changedDevice = database.GetModuleInstanceSettings(screenNode.Id);
         Equal(
             overridden.DeviceOverridesJson,
             changedDevice.DeviceOverridesJson);
         var effective = changedDevice.EffectiveDeviceSettings(
             database.GetDeviceSettings(alternateDeviceId));
-        Equal("Shot-local manufacturer", effective.Manufacturer);
         Equal(
             "123",
             DeviceSettingsFieldContract.FieldValue(
                 effective,
-                "device.metrics.cornerRadius"));
-        var previewSettings = database.PreviewInputs
-            .GetShotSettings(shotNode.Id);
+                "device.metrics.moduleTransparency.fixedStart"));
+        var previewSettings = database.Production
+            .GetModuleInstanceSettings(screenNode.Id);
         Equal(
             "123",
             DeviceSettingsFieldContract.FieldValue(
                 previewSettings.EffectiveDeviceSettings(
                     database.PreviewInputs.GetDeviceSettings(
                         alternateDeviceId)),
-                "device.metrics.cornerRadius"));
+                "device.metrics.moduleTransparency.fixedStart"));
 
         var preview = new ProductionPreviewSessionDataSource(
                 database.PreviewInputs,
@@ -15916,9 +15925,11 @@ static void ShotDeviceSettingsOverridesPreserveOwnership()
             .LoadSnapshot(database.LoadProjectTree())
             .Shot(shotNode.Id);
         Equal(alternateDeviceId, preview.DeviceId);
-        Equal(123d, preview.DeviceMetrics.CornerRadius);
-        var screen = shotNode.Children.First((node) =>
-            node.Kind == ProjectTreeNodeKind.ModuleInstance);
+        Equal(123d,
+            preview.Screens.Single((candidate) =>
+                candidate.ScreenId == screenNode.Id)
+                .DeviceMetrics.ModuleTransparency.FixedStart);
+        var screen = screenNode;
         var productionPayload = Required(CreatePreviewPayload(
             database,
             screen,
@@ -15948,9 +15959,6 @@ static void ShotDeviceSettingsOverridesPreserveOwnership()
             .LoadDraftAsync(shotNode)
             .GetAwaiter()
             .GetResult();
-        Equal(
-            changedDevice.DeviceOverridesJson,
-            renderDraft.DeviceOverridesJson);
         var renderRoot = Path.Combine(
             Path.GetTempPath(),
             $"mockups-shot-device-render-{Guid.NewGuid():N}");
@@ -15985,19 +15993,26 @@ static void ShotDeviceSettingsOverridesPreserveOwnership()
                     overwriteExisting: false);
             values.CommitRecordReferenceOverrideField(
                 EditorEmbeddedContext.ForRecordReferenceOverride(
-                    shotNode,
+                    screenNode,
                     Descendants(tree).Single((node) =>
                         node.Id == alternateDeviceId),
                     referenceField.Definition.Id,
                     referenceContract.OverrideDocumentFieldId),
-                "device.metrics.cornerRadius",
+                "device.metrics.moduleTransparency.fixedStart",
                 "124");
             var currentPreparation = factory.ResolveCurrentPreparationAsync(
                     plan.Plans.Single(),
                     CancellationToken.None)
                 .GetAwaiter()
                 .GetResult();
-            Equal(124d, currentPreparation.Metrics.CornerRadius);
+            Equal(
+                "124",
+                JsonPath.ParseRequiredObject(
+                    currentPreparation.Draft.Screens.Single((candidate) =>
+                        candidate.ScreenId == screenNode.Id).DeviceOverridesJson,
+                    "Render Screen Device overrides")
+                    ["device.metrics.moduleTransparency.fixedStart"]
+                    ?.GetValue<string>());
         }
         finally
         {
@@ -16006,39 +16021,34 @@ static void ShotDeviceSettingsOverridesPreserveOwnership()
 
         var alternateContext = EditorEmbeddedContext
             .ForRecordReferenceOverride(
-                shotNode,
+                screenNode,
                 Descendants(tree).Single((node) =>
                     node.Id == alternateDeviceId),
                 referenceField.Definition.Id,
                 referenceContract.OverrideDocumentFieldId);
         values.CommitRecordReferenceOverrideField(
             alternateContext,
-            "device.manufacturer",
+            "device.metrics.moduleTransparency.backgroundOpacity",
             "inherited");
-        var restored = database.GetShotSettings(shotNode.Id);
+        var restored = database.GetModuleInstanceSettings(screenNode.Id);
         var restoredJson = JsonPath.ParseRequiredObject(
             restored.DeviceOverridesJson,
-            "Restored Shot Device settings test");
-        True(!restoredJson.ContainsKey("device.manufacturer"));
+            "Restored Screen Device settings test");
+        True(!restoredJson.ContainsKey(
+            "device.metrics.moduleTransparency.backgroundOpacity"));
         True(restoredJson.ContainsKey(
-            "device.metrics.cornerRadius"));
-        Equal(
-            database.GetDeviceSettings(alternateDeviceId)
-                .Manufacturer,
-            restored.EffectiveDeviceSettings(
-                database.GetDeviceSettings(alternateDeviceId))
-                .Manufacturer);
+            "device.metrics.moduleTransparency.fixedStart"));
         values.ClearRecordReferenceOverrides(
-            shotNode,
+            screenNode,
             referenceField.Definition);
         True(!OverrideDocumentContract.HasAuthoredValues(
             JsonPath.ParseRequiredObject(
-                database.GetShotSettings(shotNode.Id)
+                database.GetModuleInstanceSettings(screenNode.Id)
                     .DeviceOverridesJson,
-                "Cleared Shot Device settings test")));
+                "Cleared Screen Device settings test")));
         True(!values.CreateFieldValue(
-            shotNode,
-            "shot.deviceOverrideId").IsHighlighted);
+            screenNode,
+            "moduleInstance.device").IsHighlighted);
     }
     finally
     {
@@ -16046,30 +16056,39 @@ static void ShotDeviceSettingsOverridesPreserveOwnership()
     }
 
     AssertRejectedDatabaseIsReadOnly(
-        "shot-device-overrides-wrong-root",
+        "screen-device-overrides-wrong-root",
         (connection) =>
         {
             using var command = connection.CreateCommand();
             command.CommandText =
-                "UPDATE shots SET device_overrides_json = '[]' WHERE id = 'shot_001'";
+                "UPDATE module_instances SET device_overrides_json = '[]' WHERE id = (SELECT id FROM module_instances WHERE shot_id = 'shot_001' ORDER BY sort_order, id LIMIT 1)";
             command.ExecuteNonQuery();
         });
     AssertRejectedDatabaseIsReadOnly(
-        "shot-device-overrides-unknown-field",
+        "screen-device-overrides-unknown-field",
         (connection) =>
         {
             using var command = connection.CreateCommand();
             command.CommandText =
-                "UPDATE shots SET device_overrides_json = '{\"device.unknown\":\"value\"}' WHERE id = 'shot_001'";
+                "UPDATE module_instances SET device_overrides_json = '{\"device.unknown\":\"value\"}' WHERE id = (SELECT id FROM module_instances WHERE shot_id = 'shot_001' ORDER BY sort_order, id LIMIT 1)";
             command.ExecuteNonQuery();
         });
     AssertRejectedDatabaseIsReadOnly(
-        "shot-device-overrides-invalid-value",
+        "screen-device-overrides-geometry-field",
         (connection) =>
         {
             using var command = connection.CreateCommand();
             command.CommandText =
-                "UPDATE shots SET device_overrides_json = '{\"device.metrics.cornerRadius\":\"invalid\"}' WHERE id = 'shot_001'";
+                "UPDATE module_instances SET device_overrides_json = '{\"device.metrics.cornerRadius\":\"12\"}' WHERE id = (SELECT id FROM module_instances WHERE shot_id = 'shot_001' ORDER BY sort_order, id LIMIT 1)";
+            command.ExecuteNonQuery();
+        });
+    AssertRejectedDatabaseIsReadOnly(
+        "screen-device-overrides-invalid-value",
+        (connection) =>
+        {
+            using var command = connection.CreateCommand();
+            command.CommandText =
+                "UPDATE module_instances SET device_overrides_json = '{\"device.metrics.moduleTransparency.fixedStart\":\"invalid\"}' WHERE id = (SELECT id FROM module_instances WHERE shot_id = 'shot_001' ORDER BY sort_order, id LIMIT 1)";
             command.ExecuteNonQuery();
         });
 }
@@ -16084,6 +16103,12 @@ static void DeclaredRecordReferenceOverridesUseSharedAction()
     File.Copy(source, temporary, overwrite: true);
     try
     {
+        var screenId = Descendants(
+                new SqliteProjectTestContext(temporary)
+                    .LoadProjectTree())
+            .First((node) => node.Parent?.Id == "shot_001"
+                && node.Kind == ProjectTreeNodeKind.ModuleInstance)
+            .Id;
         using var session = HeadlessUnitTestSession.StartNew(
             typeof(HeadlessTestApplication));
         session.Dispatch(() =>
@@ -16174,7 +16199,7 @@ static void DeclaredRecordReferenceOverridesUseSharedAction()
                         Avalonia.Automation
                             .AutomationProperties
                             .GetName(button)
-                        == "Edit overrides for Device override");
+                        == "Edit overrides for Device");
 
             Required(window.FindControl<Button>(
                     "ProductionWorkspaceButton"))
@@ -16194,37 +16219,34 @@ static void DeclaredRecordReferenceOverridesUseSharedAction()
                 WindowSession(window).Workspace);
             True((bool)(selectNode.Invoke(
                 window,
-                ["shot_001"]) ?? false));
-            WaitForEditor("shot_001");
+                [screenId]) ?? false));
+            WaitForEditor(screenId);
             Equal(0, window.OwnedWindows.Count);
             var action = OverridesAction();
             True(action.IsEnabled);
             action.RaiseEvent(new RoutedEventArgs(
                 Button.ClickEvent));
-            WaitForEditor("shot_001");
+            WaitForEditor(screenId);
 
             var context = Required(
                 WindowSession(window).EmbeddedEditor);
             var reference = Required(
                 context.RecordReferenceOverride);
             Equal(
-                "shot.deviceOverrideId",
+                "moduleInstance.device",
                 reference.ReferenceFieldId);
             Equal(
-                "shot.deviceOverrides",
+                "moduleInstance.deviceOverrides",
                 reference.OverrideDocumentFieldId);
             Equal("device", context.RecordClassId);
             Equal(0, window.OwnedWindows.Count);
             SequenceEqual(
-                [
-                    "record-overrides:general",
-                    "record-overrides:moduleTransparency",
-                ],
+                ["record-overrides:moduleTransparency"],
                 editorContent.Cards.Select((card) =>
                     card.SessionStateId));
             SequenceEqual(
                 DeviceSettingsFieldContract
-                    .OverrideableFieldIds
+                    .ScreenOverrideableFieldIds
                     .OrderBy((id) => id),
                 activeFields.ControlsByFieldId.Keys
                     .OrderBy((id) => id));
@@ -16245,10 +16267,10 @@ static void DeclaredRecordReferenceOverridesUseSharedAction()
             returnToOwner.Invoke(
                 window,
                 [context.OwnerNode]);
-            WaitForEditor("shot_001");
+            WaitForEditor(screenId);
             OverridesAction().RaiseEvent(
                 new RoutedEventArgs(Button.ClickEvent));
-            WaitForEditor("shot_001");
+            WaitForEditor(screenId);
             transparencyCard = editorContent.Cards
                 .Single((card) => card.SessionStateId
                     == "record-overrides:moduleTransparency");
@@ -16775,278 +16797,116 @@ static void ProductionPlaybackSelectsPreparedOwnerFrames()
             OwnerId: "screen-a");
 }
 
-static void ShotScreenTransitionsReuseBoundaryMotion()
+static void ShotScreenTracksResolveIndependentLanes()
 {
-    var sourcePath =
-        ParityDatabasePath();
-    var temporary =
-        Path.Combine(
-            Path.GetTempPath(),
-            $"mockups-screen-transition-{Guid.NewGuid():N}.sqlite");
-    File.Copy(
-        sourcePath,
-        temporary,
-        overwrite: true);
+    var sourcePath = ParityDatabasePath();
+    var temporary = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-screen-lanes-{Guid.NewGuid():N}.sqlite");
+    File.Copy(sourcePath, temporary, overwrite: true);
     try
     {
-        var database =
-            new SqliteProjectTestContext(
-                temporary);
-        var tree =
-            database.LoadProjectTree();
-        var shot =
-            Descendants(tree)
-                .Single((node) => node.Id == "shot_001");
-        var slots =
-            database.GetShotModuleInstanceSlots(
-                shot.Id);
-        True(slots.Count >= 2);
-        var outgoing =
-            slots[0];
-        var incoming =
-            slots[1];
-        var outgoingMotion =
-            """
-            {"transition":"slide","direction":"left","bounds":"screen","fade":true,"translate":true,"scale":false}
-            """;
-        var incomingMotion =
-            """
-            {"transition":"slide","direction":"right","bounds":"screen","fade":true,"translate":true,"scale":false}
-            """;
+        var database = new SqliteProjectTestContext(temporary);
+        var shot = Descendants(database.LoadProjectTree())
+            .Single((node) => node.Id == "shot_001");
+        var screens = database.GetShotModuleInstanceSlots(shot.Id);
+        True(screens.Count >= 2);
+        var top = screens[0];
+        var lower = screens[1];
         database.UpdateModuleInstanceField(
-            outgoing.Id,
-            "moduleInstance.transition",
-            outgoingMotion);
+            top.Id,
+            "moduleInstance.startFrame",
+            "0");
         database.UpdateModuleInstanceField(
-            incoming.Id,
-            "moduleInstance.transition",
-            incomingMotion);
-        database.UpdateModuleInstanceField(
-            outgoing.Id,
-            "moduleInstance.actionDelayFrames",
-            "2");
-        database.UpdateModuleInstanceField(
-            incoming.Id,
-            "moduleInstance.actionDelayFrames",
-            "3");
-        Throws<InvalidOperationException>(
-            () => database.UpdateModuleInstanceField(
-                incoming.Id,
-                "moduleInstance.transition",
-                """{"type":"cut"}"""));
+            lower.Id,
+            "moduleInstance.startFrame",
+            "0");
 
-        var values =
-            new RecordClassFieldValueService(
-                ProductionRecordFields(database),
-                RecordReferenceOverrides(database),
-                DesignRecordFields(database),
-                ResourceRecordFields(database),
-                database.Production,
-                database.Resources);
-        var incomingNode =
-            Descendants(tree)
-                .Single((node) =>
-                    node.Id == incoming.Id);
-        var transitionField =
-            values.CreateFieldValue(
-                incomingNode,
-                "moduleInstance.transition");
-        Equal(
-            ValueKind.Motion,
-            transitionField.Definition.ValueKind);
-        True(
-            transitionField.Definition.IsEditable);
-        Equal(
-            MotionVariantValue.Parse(
-                incomingMotion),
-            MotionVariantValue.Parse(
-                transitionField.Value));
-        var delayField =
-            values.CreateFieldValue(
-                incomingNode,
-                "moduleInstance.actionDelayFrames");
-        Equal(
-            ValueKind.Integer,
-            delayField.Definition.ValueKind);
-        Equal(
-            "frames",
-            delayField.Definition.Unit);
-        Equal(
-            "3",
-            delayField.Value);
+        var timeline = new ModuleInstanceTimelineDataSource(
+            database.Production,
+            database.Resources);
+        var ranges = ModuleInstanceTimeline.ScreenRanges(timeline, shot.Id);
+        Equal(top.Id,
+            ProductionScreenPlaybackState.ActiveScreenId(
+                ProductionScreenPlaybackState.FrameRanges(timeline, shot.Id),
+                0));
 
-        var payloads =
-            new DesignPreviewPayloadDataSource(
-                database.PreviewInputs,
-                database.Production,
+        var payloads = new DesignPreviewPayloadDataSource(
+            database.PreviewInputs,
+            database.Production,
+            database.Resources,
+            database.Resources,
+            database.ProjectPaths);
+        var preparer = new ProductionPreviewPayloadPreparer(
+            payloads,
+            new ProductionPreviewRuntimeResolver(
                 database.Resources,
-                database.Resources,
-                database.ProjectPaths);
-        var preparer =
-            new ProductionPreviewPayloadPreparer(
-                payloads,
-                new ProductionPreviewRuntimeResolver(
-                    database.Resources,
-                    database.ProjectPaths));
-        var timeline =
-            new ModuleInstanceTimelineDataSource(
-                database.Production,
-                database.Resources);
-        var ranges =
-            ModuleInstanceTimeline.ScreenRanges(
-                timeline,
-                shot.Id);
-        var outgoingRange =
-            ranges.Single((range) =>
-                range.ScreenId
-                == outgoing.Id);
-        var incomingRange =
-            ranges.Single((range) =>
-                range.ScreenId
-                == incoming.Id);
-        Equal(
-            2,
-            outgoingRange.ActionStartFrame);
-        Equal(
-            outgoingRange.ActionDurationFrames
-                + 2,
-            outgoingRange.EffectiveDurationFrames);
-        var boundaryFrame =
-            incomingRange.StartFrame;
-        Equal(
-            outgoingRange.EffectiveDurationFrames,
-            boundaryFrame);
-        var firstDelay =
-            preparer.PrepareRequired(
-                shot,
-                null,
-                "light",
-                1);
-        Equal(
-            0,
-            firstDelay.LocalFrame);
-        var firstAction =
-            preparer.PrepareRequired(
-                shot,
-                null,
-                "light",
-                outgoingRange.ActionStartFrame
-                + 1);
-        Equal(
-            1,
-            firstAction.LocalFrame);
-        var first =
-            preparer.PrepareRequired(
-                shot,
-                null,
-                "light",
-                boundaryFrame);
-        Equal(
-            "screenTransition",
-            first.Kind);
-        var transition =
-            first.ScreenTransition
-            ?? throw new InvalidOperationException(
-                "Missing prepared Screen transition.");
-        Equal(
-            outgoing.Id,
+                database.ProjectPaths));
+        var overlapPayload = preparer.PrepareRequired(
+            shot,
+            null,
+            "light",
+            0);
+        Equal(top.Id,
             JsonPath.RequiredString(
                 JsonPath.RequiredObject(
                     JsonPath.ParseRequiredObject(
-                        transition.Outgoing.InstanceJson,
-                        "outgoing Screen transition instance"),
+                        overlapPayload.InstanceJson,
+                        "overlap Screen payload"),
                     "context",
-                    "outgoing Screen transition instance"),
+                    "overlap Screen payload"),
                 "moduleInstanceId",
-                "outgoing Screen transition context"));
-        Equal(
-            incoming.Id,
+                "overlap Screen payload"));
+        True(overlapPayload.ScreenTransition is null);
+
+        var topRange = ranges.Single((range) => range.ScreenId == top.Id);
+        database.UpdateModuleInstanceField(
+            top.Id,
+            "moduleInstance.startFrame",
+            (-topRange.EffectiveDurationFrames).ToString(
+                System.Globalization.CultureInfo.InvariantCulture));
+        database.UpdateModuleInstanceField(
+            lower.Id,
+            "moduleInstance.startFrame",
+            "10");
+        var gapPayload = preparer.Prepare(
+            shot,
+            null,
+            "light",
+            0,
+            CancellationToken.None);
+        True(gapPayload is null);
+
+        database.UpdateModuleInstanceField(
+            lower.Id,
+            "moduleInstance.startFrame",
+            "-5");
+        var moved = ModuleInstanceTimeline.ScreenRanges(timeline, shot.Id)
+            .Single((range) => range.ScreenId == lower.Id);
+        Equal(-5, moved.StartFrame);
+        var lowerPayload = preparer.PrepareRequired(
+            shot,
+            null,
+            "light",
+            0);
+        Equal(lower.Id,
             JsonPath.RequiredString(
                 JsonPath.RequiredObject(
                     JsonPath.ParseRequiredObject(
-                        transition.Incoming.InstanceJson,
-                        "incoming Screen transition instance"),
+                        lowerPayload.InstanceJson,
+                        "moved Screen payload"),
                     "context",
-                    "incoming Screen transition instance"),
+                    "moved Screen payload"),
                 "moduleInstanceId",
-                "incoming Screen transition context"));
+                "moved Screen payload"));
         Equal(
-            0d,
-            transition.ElapsedMilliseconds);
-        Equal(
-            outgoing.StoredDurationFrames - 1,
-            transition.Outgoing.LocalFrame);
-        Equal(
-            0,
-            transition.Incoming.LocalFrame);
-        Equal(
-            transition.DurationFrames
-                + 3,
-            incomingRange.ActionStartFrame);
-        Equal(
-            incomingRange.ActionDurationFrames
-                + incomingRange.ActionStartFrame,
-            incomingRange.EffectiveDurationFrames);
-
-        var next =
-            preparer.PrepareRequired(
-                shot,
-                null,
-                "light",
-                boundaryFrame + 1);
-        True(
-            next.ScreenTransition
-                is { ElapsedMilliseconds: > 0 });
-        var lastTransitionFrame =
-            preparer.PrepareRequired(
-                shot,
-                null,
-                "light",
-                boundaryFrame
-                + transition.DurationFrames
-                - 1);
-        True(
-            lastTransitionFrame.ScreenTransition
-                is not null);
-        Equal(
-            0,
-            lastTransitionFrame.LocalFrame);
-        var delay =
-            preparer.PrepareRequired(
-                shot,
-                null,
-                "light",
-                boundaryFrame
-                + transition.DurationFrames);
-        Equal(
-            "moduleInstance",
-            delay.Kind);
-        True(
-            delay.ScreenTransition is null);
-        Equal(
-            0,
-            delay.LocalFrame);
-        var action =
-            preparer.PrepareRequired(
-                shot,
-                null,
-                "light",
-                boundaryFrame
-                + incomingRange.ActionStartFrame
-                + 1);
-        Equal(
-            1,
-            action.LocalFrame);
-        Equal(
-            ranges.Sum((range) =>
-                range.EffectiveDurationFrames),
-            database.GetShotSettings(
-                shot.Id).DurationFrames);
+            ModuleInstanceTimeline.ScreenRanges(timeline, shot.Id)
+                .Sum((range) => range.EffectiveDurationFrames),
+            database.GetShotSettings(shot.Id).DurationFrames);
     }
     finally
     {
-        File.Delete(
-            temporary);
+        File.Delete(temporary);
     }
 }
 
@@ -20050,7 +19910,7 @@ static void AnimatableFieldVocabularyIsConstrained()
         .Where(field => field["animatable"]?.GetValue<bool>() == true)
         .Select(field => field["id"]!.GetValue<string>());
     SequenceEqual(new[] { "actor", "headerSubtitle" }, screenAnimated);
-    SequenceEqual(new[] { "direction", "text", "statusVisible", "status", "statusText", "isPlaying", "fullScreen" }, messageAnimated);
+    SequenceEqual(new[] { "direction", "text", "statusVisible", "status", "statusText", "isPlaying", "fullScreen", "keepCursorAfterWrite" }, messageAnimated);
     Equal(
         "ownerStart",
         screenFields.Single(field => field["id"]!.GetValue<string>() == "actor")["animationTimeline"]!["origin"]!["kind"]!.GetValue<string>());
@@ -22758,7 +22618,7 @@ static string CreateDesktopTestDatabase(
               id, episode_id, name, slug, version, notes, sort_order,
               fps_override, duration_frames, duration_policy,
               explicit_duration_frames, owner_actor_id, device_override_id,
-              device_overrides_json, theme_override_id, canvas_json,
+              canvas_json,
               metadata_json, shot_number, shot_manager_association_state,
               shot_manager_reference_production_id, shot_manager_shot_id,
               shot_manager_canonical_name, reference_video_json)
@@ -22767,7 +22627,7 @@ static string CreateDesktopTestDatabase(
               '__desktop_test_shot_001__', version, notes,
               sort_order, fps_override, duration_frames, duration_policy,
               explicit_duration_frames, owner_actor_id, device_override_id,
-              device_overrides_json, theme_override_id, canvas_json,
+              canvas_json,
               metadata_json, 900001, 'free', '', '', '',
               reference_video_json
             FROM shots
@@ -22775,13 +22635,15 @@ static string CreateDesktopTestDatabase(
 
             INSERT INTO module_instances (
               id, shot_id, app_id, module_id, name, notes, sort_order,
-              duration_frames, duration_policy, action_delay_frames,
+              start_frame, duration_frames, duration_policy, action_delay_frames,
+              device_overrides_json, theme_override_id,
               transition_json, content_json, behavior_json, animation_json,
               metadata_json)
             SELECT
               'module_instance_6ba3837154634771b40a25ca64160bc4',
               'shot_001', app_id, module_id, name, notes, 1,
-              duration_frames, duration_policy, action_delay_frames,
+              start_frame, duration_frames, duration_policy, action_delay_frames,
+              device_overrides_json, theme_override_id,
               transition_json, content_json, behavior_json, animation_json,
               metadata_json
             FROM module_instances
@@ -22789,13 +22651,15 @@ static string CreateDesktopTestDatabase(
 
             INSERT INTO module_instances (
               id, shot_id, app_id, module_id, name, notes, sort_order,
-              duration_frames, duration_policy, action_delay_frames,
+              start_frame, duration_frames, duration_policy, action_delay_frames,
+              device_overrides_json, theme_override_id,
               transition_json, content_json, behavior_json, animation_json,
               metadata_json)
             SELECT
               'module_instance_900f1616432d4f63a97f2a74dd647e08',
               'shot_001', app_id, module_id, name, notes, 2,
-              duration_frames, duration_policy, action_delay_frames,
+              start_frame, duration_frames, duration_policy, action_delay_frames,
+              device_overrides_json, theme_override_id,
               transition_json, content_json, behavior_json,
               animation_json, metadata_json
             FROM module_instances

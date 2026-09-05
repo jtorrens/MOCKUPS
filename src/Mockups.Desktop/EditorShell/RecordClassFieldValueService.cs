@@ -123,6 +123,37 @@ internal sealed class RecordClassFieldValueService
                 IsInherited: settings.FpsOverride is null));
         }
 
+        if (node.Kind == ProjectTreeNodeKind.Shot
+            && field.Id == "shot.deviceOverrideId")
+        {
+            var settings = _production.GetShotSettings(node.Id);
+            var actor = _resources.GetActorSettings(settings.OwnerActorId);
+            var inheritedValue = actor.DefaultDeviceId;
+            return ValidateFieldValue(new FieldValue(
+                new FieldDefinition(
+                    field.Id,
+                    field.Label,
+                    field.ValueKind,
+                    IsEditable: field.IsEditable,
+                    DefaultValue: inheritedValue,
+                    CommitAsDefault: false,
+                    CanInherit: true,
+                    InheritedValue: inheritedValue,
+                    Options: options,
+                    PairLabels: field.PairLabels,
+                    ImagePreview: field.ImagePreview,
+                    Number: field.Number,
+                    RecordReference: field.RecordReference,
+                    ComponentInputBindings: field.ComponentInputBindings,
+                    StructuredCollection: field.StructuredCollection,
+                    RuntimeInputComponentVariantFieldId: field.RuntimeInputComponentVariantFieldId,
+                    RuntimeCollectionComponentVariantFieldId: field.RuntimeCollectionComponentVariantFieldId,
+                    Unit: field.Unit,
+                    MotionTiming: field.MotionTiming),
+                settings.DeviceOverrideId ?? inheritedValue,
+                IsInherited: settings.DeviceOverrideId is null));
+        }
+
         if (node.Kind == ProjectTreeNodeKind.ModuleInstance
             && field.Id is "moduleInstance.device" or "moduleInstance.themeOverrideId")
         {

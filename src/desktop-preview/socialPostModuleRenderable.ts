@@ -236,6 +236,7 @@ function messageSectionNode(
           writeOnTrigger: message.bubbleWriteOnTrigger,
           writeOnFrame: message.writeOnFrame,
           writeOnDurationFrames: message.writeOnDurationFrames,
+          keepCursorAfterWrite: false,
         },
       )
     : undefined;
