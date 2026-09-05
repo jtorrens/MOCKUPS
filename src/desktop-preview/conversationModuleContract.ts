@@ -35,6 +35,7 @@ export interface ConversationMessageContract {
   writeOnDurationFrames: number;
   writeOnTrigger: boolean;
   writeOnFrame: number;
+  keepCursorAfterWrite: boolean;
   statusVisible: boolean;
   visibleAtFrame: number;
   mediaType: "none" | "image" | "video" | "audio";

@@ -314,6 +314,14 @@ export function resolveConversationModuleFrame(
       optionalNumber(message, "writeOnDurationFrames", 0),
       `${targetId}:${messageText}`,
     );
+    message.keepCursorAfterWrite = resolve(
+      "keepCursorAfterWrite",
+      requiredBoolean(
+        message,
+        "keepCursorAfterWrite",
+        `module.core.chat.messages[${index}].keepCursorAfterWrite`,
+      ),
+    ).value;
     const composerElapsedFrame = Math.max(
       0,
       timeline.temporalLocalFrame(
@@ -529,6 +537,11 @@ function conversationMessages(preview: JsonRecord): ResolvedConversationMessage[
       ),
       writeOnTrigger: false,
       writeOnFrame: Math.max(0, Math.floor(optionalNumber(message, "writeOnFrame", 0))),
+      keepCursorAfterWrite: requiredBoolean(
+        message,
+        "keepCursorAfterWrite",
+        `${path}.keepCursorAfterWrite`,
+      ),
       statusVisible: requiredBoolean(message, "statusVisible", `${path}.statusVisible`),
       visibleAtFrame: 0,
       mediaType: messageMediaType(message, path),
@@ -791,6 +804,7 @@ function validateConversationMessageRuntime(message: JsonRecord, index: number) 
   requiredNumber(message, "delayAfterPreviousFrames", `${path}.delayAfterPreviousFrames`);
   requiredRecord(message, "writeOnTiming", `${path}.writeOnTiming`);
   requiredNumber(message, "postWriteOnHoldFrames", `${path}.postWriteOnHoldFrames`);
+  requiredBoolean(message, "keepCursorAfterWrite", `${path}.keepCursorAfterWrite`);
   requiredBoolean(message, "statusVisible", `${path}.statusVisible`);
   conversationStatusState(requiredString(message, "statusState", `${path}.statusState`));
   requiredPossiblyEmptyString(message, "statusText", `${path}.statusText`);

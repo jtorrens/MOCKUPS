@@ -123,7 +123,9 @@ Discrete Conversation direction and chat-Actor tracks use `hold`. Direction is
 message-owner-relative and changes presentation without changing the message's
 stable Actor reference. The chat Actor is Screen-owner-relative, resolves
 through the prepared Runtime record-reference catalog and remains independent
-from the Shot Actor.
+from the Shot Actor. A message also owns the animatable Boolean
+`keepCursorAfterWrite`. It uses `hold`, originates at that message's `text`
+completion and does not extend collection sequencing or owner duration.
 
 The common owner timeline derives:
 

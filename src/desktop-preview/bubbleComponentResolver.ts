@@ -247,7 +247,12 @@ export function resolveBubbleComponent(
       textAlign: optionalBoolean(preview, "typingIndicator") || state === "system"
         ? "center"
         : resolvedTextBox.textAlign,
-      cursorVisible: simpleWriteOnFrameInProgress(fullText, writeOnPlan),
+      cursorVisible: simpleWriteOnFrameInProgress(fullText, writeOnPlan)
+        || requiredBoolean(
+          preview,
+          "keepCursorAfterWrite",
+          "component.bubble.input.keepCursorAfterWrite",
+        ),
     },
     mediaSlot: {
       mediaType,
@@ -534,6 +539,11 @@ function validateBubbleRuntimeDocument(preview: Record<string, unknown>) {
   );
   requiredBoolean(preview, "writeOnTrigger", "component.bubble.input.writeOnTrigger");
   requiredNumber(preview, "writeOnFrame", "component.bubble.input.writeOnFrame");
+  requiredBoolean(
+    preview,
+    "keepCursorAfterWrite",
+    "component.bubble.input.keepCursorAfterWrite",
+  );
   requiredPossiblyEmptyString(preview, "actorId", "component.bubble.input.actorId");
   requiredPossiblyEmptyString(preview, "actorName", "component.bubble.input.actorName");
   requiredPossiblyEmptyString(preview, "statusText", "component.bubble.input.statusText");

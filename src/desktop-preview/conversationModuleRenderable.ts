@@ -282,6 +282,7 @@ function messageNodes(
           writeOnTrigger,
           writeOnFrame: message.writeOnFrame,
           writeOnDurationFrames: message.writeOnDurationFrames,
+          keepCursorAfterWrite: message.keepCursorAfterWrite,
           statusState: message.statusVisible ? message.statusState : "none",
           statusText: message.statusVisible ? message.statusText : "",
         },

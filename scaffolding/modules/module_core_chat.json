@@ -463,6 +463,7 @@
         "controlsElapsedMs": 0,
         "id": "message_001",
         "postWriteOnHoldFrames": 0,
+        "keepCursorAfterWrite": false,
         "playbackMode": "once",
         "playDurationFrames": 72,
         "playbackFrame": 0,
@@ -495,6 +496,7 @@
         "controlsElapsedMs": 0,
         "id": "message_002",
         "postWriteOnHoldFrames": 10,
+        "keepCursorAfterWrite": false,
         "playbackMode": "once",
         "playDurationFrames": 72,
         "playbackFrame": 0,
@@ -527,6 +529,7 @@
         "controlsElapsedMs": 0,
         "id": "message_003",
         "postWriteOnHoldFrames": 0,
+        "keepCursorAfterWrite": false,
         "playbackMode": "once",
         "playDurationFrames": 72,
         "playbackFrame": 0,
@@ -726,6 +729,31 @@
             "uiOrder": 22,
             "uiSectionLabel": "",
             "valueKind": "Integer"
+          },
+          {
+            "id": "keepCursorAfterWrite",
+            "label": "Keep cursor after writing",
+            "jsonKey": "keepCursorAfterWrite",
+            "kind": "boolean",
+            "defaultValue": "false",
+            "animatable": true,
+            "animationInterpolations": [
+              "hold"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "fieldCompletion",
+                "fieldId": "text",
+                "offsetFrames": 0
+              },
+              "extendsOwnerDuration": false
+            },
+            "uiGroupId": "timing",
+            "uiGroupLabel": "Timing",
+            "uiParentGroupId": "",
+            "uiOrder": 24,
+            "uiSectionLabel": "",
+            "valueKind": "Boolean"
           },
           {
             "id": "statusVisible",

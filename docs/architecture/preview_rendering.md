@@ -335,7 +335,10 @@ Conversation keeps composer presence under its temporal owner. When an
 explicit `text` track replaces the base write-on, the resolved bubble text and
 the effective track duration remain separate: the former paints the message,
 while the latter keeps Text Input Bar and Keyboard present for the outgoing
-write interval.
+write interval. Conversation resolves each message's `keepCursorAfterWrite`
+Runtime value for the current frame and forwards it explicitly to Bubble.
+Bubble alone combines it with write-on progress to control Text Box cursor
+visibility; Text Box keeps ownership of the cursor's blinking presentation.
 
 Conversation Preview prepares message layout transitions by stable message id.
 At an appearance or completed explicit disappearance it resolves the previous
