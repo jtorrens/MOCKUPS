@@ -80,7 +80,6 @@
                 "slots": [
                   {
                     "id": "row1_slot1",
-                    "name": "Slot 1",
                     "kind": "avatar",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -102,7 +101,6 @@
                   },
                   {
                     "id": "row1_slot2",
-                    "name": "Slot 2",
                     "kind": "label",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -120,7 +118,6 @@
                   },
                   {
                     "id": "row1_slot3",
-                    "name": "Slot 3",
                     "kind": "label",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -138,7 +135,6 @@
                   },
                   {
                     "id": "row1_slot4",
-                    "name": "Slot 4",
                     "kind": "label",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -156,7 +152,6 @@
                   },
                   {
                     "id": "row1_slot5",
-                    "name": "Slot 5",
                     "kind": "none",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -190,7 +185,6 @@
                 "slots": [
                   {
                     "id": "row2_slot1",
-                    "name": "Slot 1",
                     "kind": "label",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -208,7 +202,6 @@
                   },
                   {
                     "id": "row2_slot2",
-                    "name": "Slot 2",
                     "kind": "label",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -226,7 +219,6 @@
                   },
                   {
                     "id": "row2_slot3",
-                    "name": "Slot 3",
                     "kind": "label",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -244,7 +236,6 @@
                   },
                   {
                     "id": "row2_slot4",
-                    "name": "Slot 4",
                     "kind": "none",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -262,7 +253,6 @@
                   },
                   {
                     "id": "row2_slot5",
-                    "name": "Slot 5",
                     "kind": "label",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -398,7 +388,6 @@
                 "slots": [
                   {
                     "id": "footerRow1_slot1",
-                    "name": "Slot 1",
                     "kind": "avatar",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -420,7 +409,6 @@
                   },
                   {
                     "id": "footerRow1_slot2",
-                    "name": "Slot 2",
                     "kind": "label",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -438,7 +426,6 @@
                   },
                   {
                     "id": "footerRow1_slot3",
-                    "name": "Slot 3",
                     "kind": "label",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -456,7 +443,6 @@
                   },
                   {
                     "id": "footerRow1_slot4",
-                    "name": "Slot 4",
                     "kind": "label",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -474,7 +460,6 @@
                   },
                   {
                     "id": "footerRow1_slot5",
-                    "name": "Slot 5",
                     "kind": "none",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -508,7 +493,6 @@
                 "slots": [
                   {
                     "id": "footerRow2_slot1",
-                    "name": "Slot 1",
                     "kind": "label",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -526,7 +510,6 @@
                   },
                   {
                     "id": "footerRow2_slot2",
-                    "name": "Slot 2",
                     "kind": "label",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -544,7 +527,6 @@
                   },
                   {
                     "id": "footerRow2_slot3",
-                    "name": "Slot 3",
                     "kind": "label",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -562,7 +544,6 @@
                   },
                   {
                     "id": "footerRow2_slot4",
-                    "name": "Slot 4",
                     "kind": "none",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -580,7 +561,6 @@
                   },
                   {
                     "id": "footerRow2_slot5",
-                    "name": "Slot 5",
                     "kind": "label",
                     "avatarSlot": {
                       "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -1507,7 +1487,6 @@
                   "slots": [
                     {
                       "id": "row1_slot1",
-                      "name": "Slot 1",
                       "kind": "avatar",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -1529,7 +1508,6 @@
                     },
                     {
                       "id": "row1_slot2",
-                      "name": "Slot 2",
                       "kind": "label",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -1547,7 +1525,6 @@
                     },
                     {
                       "id": "row1_slot3",
-                      "name": "Slot 3",
                       "kind": "label",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -1565,7 +1542,6 @@
                     },
                     {
                       "id": "row1_slot4",
-                      "name": "Slot 4",
                       "kind": "label",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -1583,7 +1559,6 @@
                     },
                     {
                       "id": "row1_slot5",
-                      "name": "Slot 5",
                       "kind": "none",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -1617,7 +1592,6 @@
                   "slots": [
                     {
                       "id": "row2_slot1",
-                      "name": "Slot 1",
                       "kind": "label",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -1635,7 +1609,6 @@
                     },
                     {
                       "id": "row2_slot2",
-                      "name": "Slot 2",
                       "kind": "label",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -1653,7 +1626,6 @@
                     },
                     {
                       "id": "row2_slot3",
-                      "name": "Slot 3",
                       "kind": "label",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -1671,7 +1643,6 @@
                     },
                     {
                       "id": "row2_slot4",
-                      "name": "Slot 4",
                       "kind": "none",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -1689,7 +1660,6 @@
                     },
                     {
                       "id": "row2_slot5",
-                      "name": "Slot 5",
                       "kind": "label",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -1825,7 +1795,6 @@
                   "slots": [
                     {
                       "id": "footerRow1_slot1",
-                      "name": "Slot 1",
                       "kind": "avatar",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -1847,7 +1816,6 @@
                     },
                     {
                       "id": "footerRow1_slot2",
-                      "name": "Slot 2",
                       "kind": "label",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -1865,7 +1833,6 @@
                     },
                     {
                       "id": "footerRow1_slot3",
-                      "name": "Slot 3",
                       "kind": "label",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -1883,7 +1850,6 @@
                     },
                     {
                       "id": "footerRow1_slot4",
-                      "name": "Slot 4",
                       "kind": "label",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -1901,7 +1867,6 @@
                     },
                     {
                       "id": "footerRow1_slot5",
-                      "name": "Slot 5",
                       "kind": "none",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -1935,7 +1900,6 @@
                   "slots": [
                     {
                       "id": "footerRow2_slot1",
-                      "name": "Slot 1",
                       "kind": "label",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -1953,7 +1917,6 @@
                     },
                     {
                       "id": "footerRow2_slot2",
-                      "name": "Slot 2",
                       "kind": "label",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -1971,7 +1934,6 @@
                     },
                     {
                       "id": "footerRow2_slot3",
-                      "name": "Slot 3",
                       "kind": "label",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -1989,7 +1951,6 @@
                     },
                     {
                       "id": "footerRow2_slot4",
-                      "name": "Slot 4",
                       "kind": "none",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -2007,7 +1968,6 @@
                     },
                     {
                       "id": "footerRow2_slot5",
-                      "name": "Slot 5",
                       "kind": "label",
                       "avatarSlot": {
                         "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",

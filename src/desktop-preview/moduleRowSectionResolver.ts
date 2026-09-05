@@ -24,16 +24,49 @@ export function resolveRow<TContent>(
 ): ModuleRow<TContent> {
   const id = requiredString(rowConfig, "id", `${ownerId}.${section}.row${row}.id`);
   const rowSlot = requiredRecord(rowConfig, "rowSlot", `${ownerId}.${section}.${id}.rowSlot`);
-  const config = embeddedComponentConfig(componentBaseConfigs, rowSlot, componentType, `${ownerId}.${section}.${id}.rowSlot`);
+  const config = rebaseNestedStableIds(
+    embeddedComponentConfig(componentBaseConfigs, rowSlot, componentType, `${ownerId}.${section}.${id}.rowSlot`),
+    id,
+  );
+  const runtime = rebaseNestedStableIds(runtimeRow, id);
   return {
     id,
     content: resolve({
       ...payload,
       componentType,
       configJson: JSON.stringify(config),
-      designPreviewJson: JSON.stringify({ slotInputs: runtimeRow.slotInputs, viewportSize: "390|80" }),
+      designPreviewJson: JSON.stringify({ slotInputs: runtime.slotInputs, viewportSize: "390|80" }),
     }),
   };
+}
+
+function rebaseNestedStableIds(value: Record<string, unknown>, ownerId: string): Record<string, unknown> {
+  const rebased = structuredClone(value);
+  visit(rebased, ownerId);
+  return rebased;
+
+  function visit(current: unknown, scopeId: string): void {
+    if (Array.isArray(current)) {
+      for (const item of current) {
+        let itemScopeId = scopeId;
+        if (item && typeof item === "object" && !Array.isArray(item)) {
+          const record = item as Record<string, unknown>;
+          const originalId = record.id;
+          if (typeof originalId === "string") {
+            const rebasedId = originalId.startsWith(`${scopeId}_`)
+              ? originalId
+              : `${scopeId}_${originalId}`;
+            record.id = rebasedId;
+            itemScopeId = rebasedId;
+          }
+        }
+        visit(item, itemScopeId);
+      }
+      return;
+    }
+    if (!current || typeof current !== "object") return;
+    for (const child of Object.values(current as Record<string, unknown>)) visit(child, scopeId);
+  }
 }
 
 function requiredIdentifiedRows(value: unknown, key: string, idPrefix: string, ownerId: string, rowCount: number) {

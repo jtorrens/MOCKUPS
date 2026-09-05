@@ -50,7 +50,6 @@
       "slots": [
         {
           "id": "slot1",
-          "name": "Slot 1",
           "kind": "none",
           "avatarSlot": {
             "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -68,7 +67,6 @@
         },
         {
           "id": "slot2",
-          "name": "Slot 2",
           "kind": "none",
           "avatarSlot": {
             "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -86,7 +84,6 @@
         },
         {
           "id": "slot3",
-          "name": "Slot 3",
           "kind": "none",
           "avatarSlot": {
             "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -104,7 +101,6 @@
         },
         {
           "id": "slot4",
-          "name": "Slot 4",
           "kind": "none",
           "avatarSlot": {
             "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -122,7 +118,6 @@
         },
         {
           "id": "slot5",
-          "name": "Slot 5",
           "kind": "none",
           "avatarSlot": {
             "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -162,7 +157,6 @@
         "slots": [
           {
             "id": "slot1",
-            "name": "Slot 1",
             "kind": "none",
             "avatarSlot": {
               "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -180,7 +174,6 @@
           },
           {
             "id": "slot2",
-            "name": "Slot 2",
             "kind": "none",
             "avatarSlot": {
               "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -198,7 +191,6 @@
           },
           {
             "id": "slot3",
-            "name": "Slot 3",
             "kind": "none",
             "avatarSlot": {
               "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -216,7 +208,6 @@
           },
           {
             "id": "slot4",
-            "name": "Slot 4",
             "kind": "none",
             "avatarSlot": {
               "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -234,7 +225,6 @@
           },
           {
             "id": "slot5",
-            "name": "Slot 5",
             "kind": "none",
             "avatarSlot": {
               "variantReference": "component_project_foqn_s2_avatar::variant::avatar_chat_header",
@@ -647,52 +637,6 @@
         "itemLabel": "Slot",
         "fields": [
           {
-            "id": "name",
-            "label": "Name",
-            "jsonKey": "name",
-            "kind": "Text",
-            "valueKind": "StringSingleLine",
-            "defaultValue": "Slot",
-            "options": null,
-            "minimum": 0,
-            "maximum": 9999,
-            "increment": 1,
-            "tableId": "",
-            "resolvedJsonKey": "",
-            "componentType": "",
-            "source": "Runtime",
-            "pairLabels": null,
-            "uiOrigin": "Self",
-            "uiGroupId": "",
-            "uiGroupLabel": "",
-            "uiParentGroupId": "",
-            "enabledWhenItemJsonKey": "",
-            "enabledWhenItemValues": null,
-            "minimumItemIndex": 0,
-            "uiOrder": 0,
-            "uiSectionLabel": "",
-            "unit": "",
-            "animation": null,
-            "behaviorTiming": null,
-            "transition": null,
-            "enabledWhenPath": "",
-            "enabledWhenValue": "",
-            "refreshOnCommit": false,
-            "structuredCollection": null,
-            "allowEmpty": false,
-            "allowEmptyWhenItemJsonKey": "",
-            "allowEmptyWhenItemValues": null,
-            "actionOnly": false,
-            "optionsSourceCollectionJsonKey": "",
-            "optionsSourceValueJsonKey": "id",
-            "optionsSourceLabelJsonKey": "",
-            "optionsSourceFirstItemBadge": "",
-            "showInEditor": true,
-            "helpText": "",
-            "valuePattern": "",
-            "valuePatternMessage": ""
-          },
-          {
             "id": "kind",
             "label": "Content",
             "jsonKey": "kind",
@@ -971,7 +915,7 @@
         ],
         "sourceCollectionJsonKey": "",
         "itemPresentation": {
-          "titleFieldId": "name",
+          "titleFieldId": "",
           "firstItemBadge": "",
           "subtitleFieldIds": [
             "kind"

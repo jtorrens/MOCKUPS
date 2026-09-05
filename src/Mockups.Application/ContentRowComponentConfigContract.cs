@@ -27,10 +27,9 @@ internal static class ContentRowComponentConfigContract
         {
             var slot = slots[index];
             var slotContext = $"{context}.contentRow.slots[{index}]";
-            RequireExactKeys(slot, ["id", "name", "kind", "avatarSlot", "iconSlot", "iconSizeToken", "labelSlot"], slotContext);
+            RequireExactKeys(slot, ["id", "kind", "avatarSlot", "iconSlot", "iconSizeToken", "labelSlot"], slotContext);
             var id = JsonPath.RequiredString(slot, "id", slotContext);
             if (!ids.Add(id)) throw new InvalidOperationException($"{context}.contentRow.slots contains duplicate id '{id}'.");
-            JsonPath.RequiredString(slot, "name", slotContext);
             var kind = JsonPath.RequiredString(slot, "kind", slotContext);
             if (kind is not ("none" or "avatar" or "icon" or "label")) throw new InvalidOperationException($"{slotContext}.kind is invalid.");
             ComponentVariantSlotDocumentContract.Validate(JsonPath.RequiredObject(slot, "avatarSlot", slotContext), $"{slotContext}.avatarSlot");
