@@ -70,7 +70,18 @@ internal static class DesignPreviewPayloadFactory
             return null;
         }
 
-        var theme = dataSource.LoadThemeContext(node, themeId);
+        var contextNode = node.Kind == ProjectTreeNodeKind.Shot
+            ? dataSource.ActiveShotScreenId(node.Id, timelineFrame) is { Length: > 0 } screenId
+                ? new ProjectTreeNode(
+                    ProjectTreeNodeKind.ModuleInstance,
+                    screenId,
+                    screenId,
+                    "",
+                    ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ModuleInstance))
+                : null
+            : node;
+        if (contextNode is null) return null;
+        var theme = dataSource.LoadThemeContext(contextNode, themeId);
         if (theme is null) return null;
         var payload = node.Kind switch
         {
@@ -110,7 +121,7 @@ internal static class DesignPreviewPayloadFactory
             };
     }
 
-    public static DesignPreviewPayload CreateProductionRender(
+    public static DesignPreviewPayload? CreateProductionRender(
         DesignPreviewPayloadDataSource dataSource,
         ProjectTreeNode shot,
         string themeId,
@@ -123,8 +134,13 @@ internal static class DesignPreviewPayloadFactory
             throw new InvalidOperationException(
                 "A Production render payload requires a Shot.");
         }
+        var screenId = dataSource.ActiveShotScreenId(
+            shot.Id,
+            shotFrame);
+        if (screenId is null) return null;
         var theme = dataSource.LoadProductionRenderThemeContext(
             shot,
+            screenId,
             themeId,
             deviceId);
         var payload = FromShot(
@@ -138,7 +154,7 @@ internal static class DesignPreviewPayloadFactory
             shotFrame,
             respectAuthoredAppearance: true)
             ?? throw new InvalidOperationException(
-                $"Shot '{shot.Name}' has no Screens to render.");
+                $"Shot '{shot.Name}' did not resolve its active Screen '{screenId}'.");
         return payload with
         {
             OwnerId = shot.Id,
@@ -277,31 +293,12 @@ internal static class DesignPreviewPayloadFactory
     {
         var slots = dataSource.LoadShotSlots(shotNode.Id);
         if (slots.Count == 0) return null;
-        var boundedFrame = Math.Max(
-            0,
-            Math.Min(
-                slots.Sum((slot) =>
-                    slot.EffectiveDurationFrames) - 1,
-                shotFrame));
-        var startFrame = 0;
-        var activeIndex = slots.Count - 1;
-        var active = slots[^1];
-        for (var index = 0; index < slots.Count; index++)
-        {
-            var slot = slots[index];
-            if (boundedFrame
-                < startFrame
-                + slot.EffectiveDurationFrames)
-            {
-                active = slot;
-                activeIndex = index;
-                break;
-            }
-            startFrame +=
-                slot.EffectiveDurationFrames;
-        }
+        var active = slots.FirstOrDefault((slot) =>
+            shotFrame >= slot.StartFrame
+            && shotFrame < slot.StartFrame + slot.EffectiveDurationFrames);
+        if (active is null) return null;
         var screenFrame =
-            boundedFrame - startFrame;
+            shotFrame - active.StartFrame;
         var actionStartFrame =
             active.TransitionFrameCount
             + active.ActionDelayFrames;
@@ -336,52 +333,7 @@ internal static class DesignPreviewPayloadFactory
                     active.ActionDelayFrames,
                     active.ActionDurationFrames),
         };
-        if (activeIndex == 0
-            || active.TransitionFrameCount == 0
-            || screenFrame
-                >= active.TransitionFrameCount)
-        {
-            return incoming;
-        }
-
-        var outgoingSlot =
-            slots[activeIndex - 1];
-        var outgoingMotion =
-            JsonPath.ParseRequiredObject(
-                outgoingSlot.TransitionJson,
-                $"Screen '{outgoingSlot.Id}' transition");
-        var incomingMotion =
-            JsonPath.ParseRequiredObject(
-                active.TransitionJson,
-                $"Screen '{active.Id}' transition");
-        var outgoing = FromModuleInstance(
-            dataSource,
-            outgoingSlot.Id,
-            deviceId,
-            themeMode,
-            theme,
-            outgoingSlot.ActionDurationFrames - 1,
-            respectAuthoredAppearance)
-            with
-            {
-                ThemeStatusBarVariantReference =
-                    theme.StatusBarVariantReference,
-                ThemeNavigationBarVariantReference =
-                    theme.NavigationBarVariantReference,
-            };
-        return incoming with
-        {
-            Kind = "screenTransition",
-            ScreenTransition = new ScreenTransitionPayload(
-                outgoing,
-                incoming,
-                outgoingMotion.ToJsonString(),
-                incomingMotion.ToJsonString(),
-                screenFrame
-                    * 1000.0
-                    / incoming.FrameRate,
-                active.TransitionFrameCount),
-        };
+        return incoming;
     }
 
     private static DesignPreviewPayload FromModuleSource(

@@ -18,9 +18,12 @@ internal sealed partial class SqliteProductionOwner
             record.Name,
             record.Notes,
             record.SortOrder,
+            record.StartFrame,
             record.DurationFrames,
             record.DurationPolicy,
             record.ActionDelayFrames,
+            record.DeviceOverridesJson,
+            record.ThemeOverrideId,
             record.TransitionJson,
             record.ContentJson,
             record.BehaviorJson,
@@ -67,6 +70,7 @@ internal sealed partial class SqliteProductionOwner
                         : throw new InvalidOperationException(
                             $"Missing module '{instance.ModuleId}'."),
                 instance.SortOrder,
+                instance.StartFrame,
                 instance.TransitionJson,
                 MotionVariantValue.Parse(
                     instance.TransitionJson).Transition,

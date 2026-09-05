@@ -93,30 +93,10 @@ internal sealed partial class SqliteProductionOwner
             {
                 var current =
                     ordered[index];
-                var transitionFrames =
-                    index == 0
-                        ? 0
-                        : ScreenTimelineTiming
-                            .TransitionFrameCount(
-                                ordered[index - 1]
-                                    .TransitionJson,
-                                current.TransitionJson,
-                                _moduleInstanceThemeContextService
-                                    .GetTokensJson(
-                                        connection,
-                                        ordered[index - 1]
-                                            .Id),
-                                _moduleInstanceThemeContextService
-                                    .GetTokensJson(
-                                        connection,
-                                        current.Id),
-                                frameRate);
-                duration +=
-                    ScreenTimelineTiming
-                        .EffectiveDurationFrames(
-                            current.DurationFrames,
-                            transitionFrames,
-                            current.ActionDelayFrames);
+                duration += EffectiveScreenDurationFrames(
+                    connection,
+                    current,
+                    frameRate);
             }
             durationByShot.Add(
                 group.Key,
@@ -149,5 +129,25 @@ internal sealed partial class SqliteProductionOwner
             var project = _projectEpisodeRepository.GetProjectSettings(connection, shot.ProjectId);
             return shot.FpsOverride ?? project.DefaultFps;
         }
+    }
+
+    private int EffectiveScreenDurationFrames(
+        SqliteConnection connection,
+        ModuleInstanceRecord screen,
+        int frameRate)
+    {
+        var theme = _moduleInstanceThemeContextService.GetTokensJson(
+            connection,
+            screen.Id);
+        var transitionFrames = ScreenTimelineTiming.TransitionFrameCount(
+            MotionVariantValue.NoneValue.ToJsonString(),
+            screen.TransitionJson,
+            theme,
+            theme,
+            frameRate);
+        return ScreenTimelineTiming.EffectiveDurationFrames(
+            screen.DurationFrames,
+            transitionFrames,
+            screen.ActionDelayFrames);
     }
 }

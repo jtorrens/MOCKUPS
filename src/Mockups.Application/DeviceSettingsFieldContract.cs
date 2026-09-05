@@ -9,6 +9,18 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 public static class DeviceSettingsFieldContract
 {
+    public static IReadOnlyList<string> ScreenOverrideableFieldIds { get; } =
+    [
+        "device.metrics.moduleTransparency.enabled",
+        "device.metrics.moduleTransparency.mode",
+        "device.metrics.moduleTransparency.paletteColor",
+        "device.metrics.moduleTransparency.backgroundOpacity",
+        "device.metrics.moduleTransparency.fixedStart",
+        "device.metrics.moduleTransparency.minimumOpaqueExtent",
+        "device.metrics.moduleTransparency.gradientHeight",
+        "device.metrics.moduleTransparency.variableOffset",
+    ];
+
     public static IReadOnlyList<string> OverrideableFieldIds { get; } =
     [
         "device.manufacturer",
@@ -33,11 +45,28 @@ public static class DeviceSettingsFieldContract
     public static JsonObject ParseOverrides(
         string json,
         string owner)
+        => ParseOverrides(
+            json,
+            owner,
+            OverrideableFieldIds);
+
+    public static JsonObject ParseScreenOverrides(
+        string json,
+        string owner)
+        => ParseOverrides(
+            json,
+            owner,
+            ScreenOverrideableFieldIds);
+
+    private static JsonObject ParseOverrides(
+        string json,
+        string owner,
+        IReadOnlyList<string> allowedFieldIds)
     {
         var overrides = JsonNode.Parse(json) as JsonObject
             ?? throw new InvalidOperationException(
                 $"{owner} must be a JSON object.");
-        var allowed = OverrideableFieldIds.ToHashSet(
+        var allowed = allowedFieldIds.ToHashSet(
             StringComparer.Ordinal);
         foreach (var entry in overrides)
         {
@@ -64,6 +93,26 @@ public static class DeviceSettingsFieldContract
         var overrides = ParseOverrides(overridesJson, owner);
         var effective = inherited;
         foreach (var fieldId in OverrideableFieldIds)
+        {
+            if (overrides[fieldId] is JsonValue value)
+            {
+                effective = ApplyField(
+                    effective,
+                    fieldId,
+                    value.GetValue<string>());
+            }
+        }
+        return effective;
+    }
+
+    public static DeviceSettings ApplyScreenOverrides(
+        DeviceSettings inherited,
+        string overridesJson,
+        string owner)
+    {
+        var overrides = ParseScreenOverrides(overridesJson, owner);
+        var effective = inherited;
+        foreach (var fieldId in ScreenOverrideableFieldIds)
         {
             if (overrides[fieldId] is JsonValue value)
             {

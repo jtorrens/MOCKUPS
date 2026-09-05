@@ -70,7 +70,7 @@ internal sealed class ProductionPreviewPayloadPreparer
         return resolved;
     }
 
-    public DesignPreviewPayload PrepareRenderRequired(
+    public DesignPreviewPayload? PrepareRender(
         ProjectTreeNode shot,
         string themeId,
         string deviceId,
@@ -84,7 +84,9 @@ internal sealed class ProductionPreviewPayloadPreparer
             deviceId,
             themeMode,
             shotFrame);
-        return _runtime.Resolve(payload, themeMode);
+        return payload is null
+            ? null
+            : _runtime.Resolve(payload, themeMode);
     }
 
     public IReadOnlyList<DesignPreviewPayload>
@@ -188,64 +190,21 @@ internal sealed class ProductionPreviewPayloadPreparer
                 startFrame);
         }
 
-        var frames =
-            new List<DesignPreviewPayload>(
-                lastFrame - startFrame + 1);
-        var slotStartFrame = 0;
-        foreach (var slot in slots)
+        var frames = new List<DesignPreviewPayload>(
+            lastFrame - startFrame + 1);
+        for (var frame = startFrame;
+             frame <= lastFrame;
+             frame++)
         {
-            cancellationToken
-                .ThrowIfCancellationRequested();
-            var slotEndFrame =
-                slotStartFrame
-                + slot.EffectiveDurationFrames - 1;
-            var overlapStart =
-                Math.Max(
-                    startFrame,
-                    slotStartFrame);
-            var overlapEnd =
-                Math.Min(
-                    lastFrame,
-                    slotEndFrame);
-            if (overlapStart <= overlapEnd)
-            {
-                var template =
-                    Prepare(
-                        node,
-                        themeId,
-                        themeMode,
-                        overlapStart,
-                        cancellationToken)
-                    ?? throw MissingPayload(
-                        node,
-                        overlapStart);
-                for (var frame = overlapStart;
-                     frame <= overlapEnd;
-                     frame++)
-                {
-                    cancellationToken
-                        .ThrowIfCancellationRequested();
-                    frames.Add(
-                        AtLocalFrame(
-                            template,
-                            frame - slotStartFrame));
-                }
-            }
-
-            slotStartFrame +=
-                slot.EffectiveDurationFrames;
-            if (slotStartFrame > lastFrame)
-            {
-                break;
-            }
-        }
-
-        if (frames.Count
-            != lastFrame - startFrame + 1)
-        {
-            throw MissingPayload(
-                node,
-                startFrame + frames.Count);
+            cancellationToken.ThrowIfCancellationRequested();
+            frames.Add(
+                Prepare(
+                    node,
+                    themeId,
+                    themeMode,
+                    frame,
+                    cancellationToken)
+                ?? throw MissingPayload(node, frame));
         }
 
         return frames;

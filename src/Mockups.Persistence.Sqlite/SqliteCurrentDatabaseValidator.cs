@@ -68,7 +68,7 @@ internal sealed partial class SqliteCurrentDatabaseValidator
         ("episodes", "metadata_json", "object"),
         ("episodes", "shot_manager_episode_path_segments_json", "array"),
         ("shots", "canvas_json", "object"),
-        ("shots", "device_overrides_json", "object"),
+        ("module_instances", "device_overrides_json", "object"),
         ("shots", "reference_video_json", "object"),
         ("shots", "metadata_json", "object"),
         ("apps", "config_json", "object"),
@@ -125,10 +125,11 @@ internal sealed partial class SqliteCurrentDatabaseValidator
         using var command = connection.CreateCommand();
         command.CommandText =
             """
-            SELECT s.id, s.device_overrides_json,
+            SELECT mi.id, mi.device_overrides_json,
                    d.project_id, d.name, d.manufacturer,
                    d.model, d.os_family, d.metrics_json
-            FROM shots s
+            FROM module_instances mi
+            JOIN shots s ON s.id = mi.shot_id
             JOIN actors a ON a.id = s.owner_actor_id
             JOIN devices d
               ON d.id = COALESCE(
@@ -138,8 +139,8 @@ internal sealed partial class SqliteCurrentDatabaseValidator
         using var reader = command.ExecuteReader();
         while (reader.Read())
         {
-            var shotId = reader.GetString(0);
-            _ = DeviceSettingsFieldContract.ApplyOverrides(
+            var screenId = reader.GetString(0);
+            _ = DeviceSettingsFieldContract.ApplyScreenOverrides(
                 new DeviceSettings(
                     reader.GetString(2),
                     reader.GetString(3),
@@ -148,7 +149,7 @@ internal sealed partial class SqliteCurrentDatabaseValidator
                     reader.GetString(6),
                     reader.GetString(7)),
                 reader.GetString(1),
-                $"Shot '{shotId}' device_overrides_json");
+                $"Screen '{screenId}' device_overrides_json");
         }
     }
 
@@ -680,8 +681,12 @@ internal sealed partial class SqliteCurrentDatabaseValidator
         RequireNoRows(connection, "SELECT 1 FROM module_instances mi JOIN modules m ON m.id = mi.module_id WHERE mi.app_id <> m.app_id", "module instance app/module mismatch");
         RequireNoRows(
             connection,
-            "SELECT 1 FROM shots WHERE device_override_id = '' OR theme_override_id = ''",
-            "shot with blank Device or Theme override");
+            "SELECT 1 FROM shots WHERE device_override_id = ''",
+            "Shot with blank Device override");
+        RequireNoRows(
+            connection,
+            "SELECT 1 FROM module_instances WHERE theme_override_id = ''",
+            "Screen with blank Theme override");
         RequireNoRows(
             connection,
             """
@@ -690,9 +695,9 @@ internal sealed partial class SqliteCurrentDatabaseValidator
             JOIN shots s ON s.id = mi.shot_id
             LEFT JOIN actors actor ON actor.id = s.owner_actor_id
             LEFT JOIN themes t
-              ON t.id = COALESCE(s.theme_override_id, actor.default_theme_id)
+              ON t.id = COALESCE(mi.theme_override_id, actor.default_theme_id)
             WHERE s.owner_actor_id = '' OR actor.id IS NULL
-               OR COALESCE(s.theme_override_id, actor.default_theme_id) = ''
+               OR COALESCE(mi.theme_override_id, actor.default_theme_id) = ''
                OR t.id IS NULL
             """,
             "module instance without explicit Shot owner Theme context");

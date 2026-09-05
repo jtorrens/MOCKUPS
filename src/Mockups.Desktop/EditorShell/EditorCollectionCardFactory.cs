@@ -203,6 +203,7 @@ internal sealed class EditorCollectionCardFactory : IDisposable
             new ShotModuleInstancesCollectionEditor(
                 _moduleInstances,
                 _timeline,
+                _productionRecordFields,
                 _moduleInstanceThemes,
                 _operations,
                 _messages,

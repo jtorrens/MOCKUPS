@@ -25,8 +25,8 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
     {
         using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT id, shot_id, app_id, module_id, name, notes, sort_order, duration_frames, duration_policy, action_delay_frames,
-                   transition_json, content_json, behavior_json, animation_json, metadata_json
+            SELECT id, shot_id, app_id, module_id, name, notes, sort_order, start_frame, duration_frames, duration_policy, action_delay_frames,
+                   device_overrides_json, theme_override_id, transition_json, content_json, behavior_json, animation_json, metadata_json
             FROM module_instances
             WHERE id = $id
             """;
@@ -44,8 +44,8 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
     {
         using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT id, shot_id, app_id, module_id, name, notes, sort_order, duration_frames, duration_policy, action_delay_frames,
-                   transition_json, content_json, behavior_json, animation_json, metadata_json
+            SELECT id, shot_id, app_id, module_id, name, notes, sort_order, start_frame, duration_frames, duration_policy, action_delay_frames,
+                   device_overrides_json, theme_override_id, transition_json, content_json, behavior_json, animation_json, metadata_json
             FROM module_instances
             ORDER BY shot_id, sort_order, name, id
             """;
@@ -56,8 +56,8 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
     {
         using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT id, shot_id, app_id, module_id, name, notes, sort_order, duration_frames, duration_policy, action_delay_frames,
-                   transition_json, content_json, behavior_json, animation_json, metadata_json
+            SELECT id, shot_id, app_id, module_id, name, notes, sort_order, start_frame, duration_frames, duration_policy, action_delay_frames,
+                   device_overrides_json, theme_override_id, transition_json, content_json, behavior_json, animation_json, metadata_json
             FROM module_instances
             WHERE shot_id = $shotId
             ORDER BY sort_order, name, id
@@ -97,11 +97,13 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
             transaction,
             """
             INSERT INTO module_instances (
-              id, shot_id, app_id, module_id, name, notes, sort_order, duration_frames,
-              duration_policy, action_delay_frames, transition_json, content_json, behavior_json, animation_json, metadata_json)
+              id, shot_id, app_id, module_id, name, notes, sort_order, start_frame, duration_frames,
+              duration_policy, action_delay_frames, device_overrides_json, theme_override_id,
+              transition_json, content_json, behavior_json, animation_json, metadata_json)
             VALUES (
-              $id, $shotId, $appId, $moduleId, $name, $notes, $sortOrder, $durationFrames,
-              $durationPolicy, $actionDelayFrames, $transitionJson, $contentJson, $behaviorJson, $animationJson, $metadataJson)
+              $id, $shotId, $appId, $moduleId, $name, $notes, $sortOrder, $startFrame, $durationFrames,
+              $durationPolicy, $actionDelayFrames, $deviceOverridesJson, $themeOverrideId,
+              $transitionJson, $contentJson, $behaviorJson, $animationJson, $metadataJson)
             """,
             ("$id", record.Id),
             ("$shotId", record.ShotId),
@@ -110,9 +112,12 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
             ("$name", record.Name),
             ("$notes", record.Notes),
             ("$sortOrder", record.SortOrder),
+            ("$startFrame", record.StartFrame),
             ("$durationFrames", record.DurationFrames),
             ("$durationPolicy", record.DurationPolicy),
             ("$actionDelayFrames", record.ActionDelayFrames),
+            ("$deviceOverridesJson", record.DeviceOverridesJson),
+            ("$themeOverrideId", (object?)record.ThemeOverrideId ?? DBNull.Value),
             ("$transitionJson", record.TransitionJson),
             ("$contentJson", record.ContentJson),
             ("$behaviorJson", record.BehaviorJson),
@@ -135,10 +140,12 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
             transaction,
             """
             INSERT INTO module_instances (
-              id, shot_id, app_id, module_id, name, notes, sort_order, duration_frames,
-              duration_policy, action_delay_frames, transition_json, content_json, behavior_json, animation_json, metadata_json)
-            SELECT $id, $shotId, app_id, module_id, $name, notes, $sortOrder, duration_frames,
-                   duration_policy, action_delay_frames, transition_json, content_json, behavior_json, animation_json, metadata_json
+              id, shot_id, app_id, module_id, name, notes, sort_order, start_frame, duration_frames,
+              duration_policy, action_delay_frames, device_overrides_json, theme_override_id,
+              transition_json, content_json, behavior_json, animation_json, metadata_json)
+            SELECT $id, $shotId, app_id, module_id, $name, notes, $sortOrder, start_frame, duration_frames,
+                   duration_policy, action_delay_frames, device_overrides_json, theme_override_id,
+                   transition_json, content_json, behavior_json, animation_json, metadata_json
             FROM module_instances
             WHERE id = $sourceId
             """,
@@ -204,6 +211,51 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
             connection,
             "UPDATE module_instances SET action_delay_frames = $actionDelayFrames WHERE id = $id",
             ("$actionDelayFrames", actionDelayFrames),
+            ("$id", moduleInstanceId));
+    }
+
+    public void UpdateStartFrame(
+        SqliteConnection connection,
+        string moduleInstanceId,
+        int startFrame)
+    {
+        _ = Get(connection, moduleInstanceId);
+        _context.Execute(
+            connection,
+            "UPDATE module_instances SET start_frame = $startFrame WHERE id = $id",
+            ("$startFrame", startFrame),
+            ("$id", moduleInstanceId));
+    }
+
+    public void UpdateResourceOverride(
+        SqliteConnection connection,
+        string moduleInstanceId,
+        string column,
+        string? value)
+    {
+        if (column != "theme_override_id")
+            throw new InvalidOperationException($"Unsupported Screen resource column '{column}'.");
+        _ = Get(connection, moduleInstanceId);
+        _context.Execute(
+            connection,
+            $"UPDATE module_instances SET {column} = $value WHERE id = $id",
+            ("$value", (object?)value ?? DBNull.Value),
+            ("$id", moduleInstanceId));
+    }
+
+    public void UpdateDeviceOverrides(
+        SqliteConnection connection,
+        string moduleInstanceId,
+        string overridesJson)
+    {
+        _ = DeviceSettingsFieldContract.ParseScreenOverrides(
+            overridesJson,
+            $"Screen '{moduleInstanceId}' device_overrides_json");
+        _ = Get(connection, moduleInstanceId);
+        _context.Execute(
+            connection,
+            "UPDATE module_instances SET device_overrides_json = $value WHERE id = $id",
+            ("$value", overridesJson),
             ("$id", moduleInstanceId));
     }
 
@@ -371,13 +423,16 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
             SqliteCommandExecutor.ReadString(reader, 5),
             reader.GetInt32(6),
             reader.GetInt32(7),
-            reader.GetString(8),
-            reader.GetInt32(9),
-            SqliteCommandExecutor.ReadString(reader, 10),
+            reader.GetInt32(8),
+            reader.GetString(9),
+            reader.GetInt32(10),
             SqliteCommandExecutor.ReadString(reader, 11),
-            SqliteCommandExecutor.ReadString(reader, 12),
+            reader.IsDBNull(12) ? null : reader.GetString(12),
             SqliteCommandExecutor.ReadString(reader, 13),
-            SqliteCommandExecutor.ReadString(reader, 14));
+            SqliteCommandExecutor.ReadString(reader, 14),
+            SqliteCommandExecutor.ReadString(reader, 15),
+            SqliteCommandExecutor.ReadString(reader, 16),
+            SqliteCommandExecutor.ReadString(reader, 17));
         Validate(record);
         return record;
     }
@@ -388,6 +443,11 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
         {
             throw new InvalidOperationException($"Module instance '{record.Id}' duration must be positive.");
         }
+        if (record.ThemeOverrideId is not null && string.IsNullOrWhiteSpace(record.ThemeOverrideId))
+            throw new InvalidOperationException($"Screen '{record.Id}' Theme override must be null or exact.");
+        _ = DeviceSettingsFieldContract.ParseScreenOverrides(
+            record.DeviceOverridesJson,
+            $"Screen '{record.Id}' device_overrides_json");
         _ = RuntimeDurationContract.ParsePolicy(record.DurationPolicy);
         if (record.ActionDelayFrames < 0)
         {

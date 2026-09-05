@@ -64,7 +64,6 @@ internal static class ModuleInstanceTimeline
         var ranges =
             new List<ScreenTimelineRange>(
                 sources.Count);
-        var startFrame = 0;
         for (var index = 0;
              index < sources.Count;
              index++)
@@ -72,27 +71,20 @@ internal static class ModuleInstanceTimeline
             var source =
                 sources[index];
             var transitionFrames =
-                index == 0
-                    ? 0
-                    : ScreenTimelineTiming
-                        .TransitionFrameCount(
-                            sources[index - 1]
-                                .TransitionJson,
-                            source.TransitionJson,
-                            sources[index - 1]
-                                .ThemeTokensJson,
-                            source.ThemeTokensJson,
-                            source.FrameRate);
+                ScreenTimelineTiming.TransitionFrameCount(
+                    MotionVariantValue.NoneValue.ToJsonString(),
+                    source.TransitionJson,
+                    source.ThemeTokensJson,
+                    source.ThemeTokensJson,
+                    source.FrameRate);
             var range =
                 new ScreenTimelineRange(
                     ids[index],
-                    startFrame,
+                    source.StartFrame,
                     transitionFrames,
                     source.ActionDelayFrames,
                     DurationFrames(source));
             ranges.Add(range);
-            startFrame +=
-                range.EffectiveDurationFrames;
         }
         return ranges;
     }

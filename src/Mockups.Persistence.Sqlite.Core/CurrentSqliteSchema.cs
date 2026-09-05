@@ -71,8 +71,6 @@ internal static class CurrentSqliteSchema
             CHECK(explicit_duration_frames > 0),
           owner_actor_id TEXT NOT NULL REFERENCES actors(id) ON DELETE RESTRICT,
           device_override_id TEXT REFERENCES devices(id) ON DELETE RESTRICT,
-          device_overrides_json TEXT NOT NULL DEFAULT '{}',
-          theme_override_id TEXT REFERENCES themes(id) ON DELETE RESTRICT,
           canvas_json TEXT NOT NULL DEFAULT '{}',
           metadata_json TEXT NOT NULL DEFAULT '{}',
           shot_number INTEGER NOT NULL DEFAULT 1 CHECK(shot_number > 0),
@@ -123,10 +121,13 @@ internal static class CurrentSqliteSchema
           name TEXT NOT NULL,
           notes TEXT NOT NULL DEFAULT '',
           sort_order INTEGER NOT NULL DEFAULT 0,
+          start_frame INTEGER NOT NULL DEFAULT 0,
           duration_frames INTEGER NOT NULL DEFAULT 240,
           duration_policy TEXT NOT NULL DEFAULT 'calculated'
             CHECK(duration_policy IN ('calculated', 'explicit')),
           action_delay_frames INTEGER NOT NULL DEFAULT 0,
+          device_overrides_json TEXT NOT NULL DEFAULT '{}',
+          theme_override_id TEXT REFERENCES themes(id) ON DELETE RESTRICT,
           transition_json TEXT NOT NULL DEFAULT '{"transition":"none","direction":"bottom","bounds":"screen","fade":false,"translate":false,"scale":false}',
           content_json TEXT NOT NULL DEFAULT '{}',
           behavior_json TEXT NOT NULL DEFAULT '{}',
@@ -219,7 +220,7 @@ internal static class CurrentSqliteSchema
           layout_json TEXT NOT NULL
         );
 
-        PRAGMA user_version = 15;
+        PRAGMA user_version = 16;
         """;
 
 }

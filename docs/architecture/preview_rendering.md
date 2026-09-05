@@ -383,13 +383,13 @@ one, and visual refresh, playback preparation and reference browsing consume
 only the latest committed snapshot without direct persistence reads.
 
 The same preparation closes the complete current Production timeline catalog:
-each Shot's frame rate, ordered Screens, exact effective frame ranges and
+each Shot's frame rate, ordered Screen lanes, signed starts, exact effective frame ranges and
 action-shifted keyframes, Shot reference-video document, plus each Screen's transition Motion, action delay,
-action duration and Variant config and each Shot's exact Actor plus effective
-Device and Theme context. Each effective resource is the independent Shot
-override when present and otherwise the corresponding Actor default. The
-prepared effective Device also applies the complete Shot-local Device settings
-override document before geometry and Module transparency are resolved.
+action duration and Variant config. Each Shot carries its exact Actor and one
+effective Device; each Screen carries its effective Theme and sparse
+non-geometric Device settings. The Screen document is applied only after the
+Shot Device is resolved. Gaps resolve to an empty alpha-zero frame and overlaps
+select the first/highest ordered lane.
 Production navigation,
 context presentation, validation,
 playhead controls, appearance selection, history subtitles and playback timing

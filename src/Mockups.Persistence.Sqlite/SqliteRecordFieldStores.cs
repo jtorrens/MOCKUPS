@@ -131,8 +131,8 @@ internal sealed partial class SqliteProductionRecordFieldStore :
 internal sealed class SqliteRecordReferenceOverrideStore :
     IRecordReferenceOverrideStore
 {
-    private const string ShotDeviceOverrides =
-        "shot.deviceOverrides";
+    private const string ScreenDeviceOverrides =
+        "moduleInstance.deviceOverrides";
     private readonly SqliteProductionOwner _production;
     private readonly SqliteResourceOwner _resources;
 
@@ -148,10 +148,10 @@ internal sealed class SqliteRecordReferenceOverrideStore :
         ProjectTreeNode ownerNode,
         string documentFieldId)
     {
-        RequireShotDeviceDocument(
+        RequireScreenDeviceDocument(
             ownerNode,
             documentFieldId);
-        return _production.GetShotSettings(
+        return _production.GetModuleInstanceSettings(
             ownerNode.Id).DeviceOverridesJson;
     }
 
@@ -160,11 +160,12 @@ internal sealed class SqliteRecordReferenceOverrideStore :
         string documentFieldId,
         string overridesJson)
     {
-        RequireShotDeviceDocument(
+        RequireScreenDeviceDocument(
             ownerNode,
             documentFieldId);
-        var shot = _production.GetShotSettings(
+        var screen = _production.GetModuleInstanceSettings(
             ownerNode.Id);
+        var shot = _production.GetShotSettings(screen.ShotId);
         var actor = _resources.GetActorSettings(
             shot.OwnerActorId);
         var deviceId = shot.EffectiveDeviceId(
@@ -172,24 +173,24 @@ internal sealed class SqliteRecordReferenceOverrideStore :
         if (string.IsNullOrWhiteSpace(deviceId))
         {
             throw new InvalidOperationException(
-                $"Shot '{ownerNode.Id}' has no effective Device.");
+                $"Screen '{ownerNode.Id}' has no effective Device.");
         }
-        _ = DeviceSettingsFieldContract.ApplyOverrides(
+        _ = DeviceSettingsFieldContract.ApplyScreenOverrides(
             _resources.GetDeviceSettings(deviceId),
             overridesJson,
-            $"Shot '{ownerNode.Id}' Device overrides");
-        _production.UpdateShotDeviceOverrides(
+            $"Screen '{ownerNode.Id}' Device overrides");
+        _production.UpdateModuleInstanceDeviceOverrides(
             ownerNode.Id,
             overridesJson);
     }
 
-    private static void RequireShotDeviceDocument(
+    private static void RequireScreenDeviceDocument(
         ProjectTreeNode ownerNode,
         string documentFieldId)
     {
-        if (ownerNode.Kind != ProjectTreeNodeKind.Shot
+        if (ownerNode.Kind != ProjectTreeNodeKind.ModuleInstance
             || !documentFieldId.Equals(
-                ShotDeviceOverrides,
+                ScreenDeviceOverrides,
                 StringComparison.Ordinal))
         {
             throw new InvalidOperationException(

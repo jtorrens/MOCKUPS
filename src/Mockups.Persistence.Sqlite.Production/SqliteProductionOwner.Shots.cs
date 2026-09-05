@@ -29,8 +29,6 @@ internal sealed partial class SqliteProductionOwner
             record.ExplicitDurationFrames,
             record.OwnerActorId,
             record.DeviceOverrideId,
-            record.DeviceOverridesJson,
-            record.ThemeOverrideId,
             record.CanvasJson,
             record.ReferenceVideoJson,
             record.MetadataJson,
@@ -41,20 +39,6 @@ internal sealed partial class SqliteProductionOwner
                     record.ShotManagerShotId,
                     record.ShotManagerCanonicalName),
                 $"Shot '{shotId}' Shot Manager association"));
-    }
-
-    public void UpdateShotDeviceOverrides(
-        string shotId,
-        string overridesJson)
-    {
-        lock (WriteGate)
-        {
-            using var connection = OpenConnection();
-            _shotRepository.UpdateDeviceOverrides(
-                connection,
-                shotId,
-                overridesJson);
-        }
     }
 
     public ProductionOutputShotContext GetProductionOutputShotContext(
@@ -190,19 +174,14 @@ internal sealed partial class SqliteProductionOwner
             return false;
         }
 
-        if (fieldId is "shot.deviceOverrideId" or "shot.themeOverrideId"
-            && value == "inherited")
+        if (fieldId == "shot.deviceOverrideId" && value == "inherited")
         {
-            _shotRepository.ClearResourceOverride(
-                connection,
-                shotId,
-                fieldId);
+            _shotRepository.ClearDeviceOverride(connection, shotId);
             return true;
         }
 
         var changesContext = fieldId is "shot.ownerActorId"
             or "shot.deviceOverrideId"
-            or "shot.themeOverrideId"
             or "shot.durationPolicy"
             or "shot.durationFrames";
         if (fieldId == "shot.ownerActorId")

@@ -6,6 +6,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed record ModuleInstanceTimelineSource(
     string ShotId,
+    int StartFrame,
     int PersistedDurationFrames,
     int ActionDelayFrames,
     string TransitionJson,
@@ -34,6 +35,7 @@ internal sealed class ModuleInstanceTimelineDataSource
         var instance = _database.GetModuleInstanceSettings(moduleInstanceId);
         return new ModuleInstanceTimelineSource(
             instance.ShotId,
+            instance.StartFrame,
             instance.DurationFrames,
             instance.ActionDelayFrames,
             instance.TransitionJson,

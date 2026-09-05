@@ -37,7 +37,7 @@ internal sealed class ProductionShotContextService
             return Invalid($"Shot {shotId} references a missing Actor.");
         }
         var deviceId = shot.EffectiveDeviceId(actor.DefaultDeviceId);
-        var themeId = shot.EffectiveThemeId(actor.DefaultThemeId);
+        var themeId = actor.DefaultThemeId;
         if (string.IsNullOrWhiteSpace(deviceId) || string.IsNullOrWhiteSpace(themeId))
         {
             return Invalid($"Actor {actor.DisplayName} must define a default Device and Theme.", actor.DisplayName);

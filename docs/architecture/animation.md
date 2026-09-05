@@ -89,23 +89,18 @@ Every temporal entity follows one rule:
 This applies recursively to Shots, Screens, stack slots, States, structured
 collections and nested Components.
 
-An ordered Screen boundary follows that same rule without a separate transition
-timeline. The Shot owns the boundary event. On the incoming Screen's first
-frame, the outgoing Screen exit Motion and incoming Screen entry Motion start
-simultaneously from one elapsed parent clock. Each Screen supplies its own
-complete reusable Motion recipe and resolves its own Theme duration and easing.
-The completion dependency is the longer of the two Motions. During that
-dependency the outgoing Screen keeps its final local frame and the incoming
-Screen remains frozen at local frame zero. Once both Motions complete, the
-incoming Screen consumes its non-negative action delay, still at local frame
-zero, and only then starts its internal timeline. The first Screen has no
-synthetic entry Motion but consumes its action delay before its timeline starts.
-The effective Screen extent is entry-transition frames plus action-delay frames
-plus its calculated or explicit action duration. Shot calculated duration is the
-sum of those effective extents. A Shot may instead own a positive explicit
-duration. The common Shot timeline resolves that effective extent for editor,
-Preview and render: a shorter explicit extent cuts the timeline; a longer one
-holds the final local frame of the last Screen.
+A Screen boundary is an independent Shot lane with one signed persisted
+`start_frame`. Its reusable Motion is a local entry from transparency; it never
+uses another Screen as an outgoing composite. After entry, the Screen consumes
+its non-negative action delay at local frame zero and then starts its internal
+timeline. Its effective extent is entry frames plus delay plus calculated or
+explicit action duration. Calculated duration is fixed; explicit (`Free`)
+duration is resizable at Shot level. Moving or resizing does not rewrite local
+keyframes. Shot calculated duration remains the sum of effective Screen extents,
+independent of their positions; an explicit Shot duration remains authoritative.
+The Shot interval clips Preview and render. Outside it no frame is produced.
+Within it, gaps produce alpha zero and overlapping lanes resolve to the highest
+ordered Screen.
 
 The event clock and the visual Motion recipe have distinct owners. A child
 Component Variant may declare its reusable boundary Motion, while the parent

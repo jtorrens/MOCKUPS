@@ -224,28 +224,28 @@ internal sealed class ReferenceUsageService :
     {
         using (var command = connection.CreateCommand())
         {
-            command.CommandText = "SELECT s.id, s.name, s.episode_id, s.owner_actor_id, s.device_override_id, s.theme_override_id, e.project_id FROM shots s JOIN episodes e ON e.id = s.episode_id";
+            command.CommandText = "SELECT s.id, s.name, s.episode_id, s.owner_actor_id, s.device_override_id, e.project_id FROM shots s JOIN episodes e ON e.id = s.episode_id";
             using var reader = command.ExecuteReader();
             while (reader.Read())
             {
-                var source = new SourceContext(reader.GetString(0), ProjectTreeNodeKind.Shot, "Shot", reader.GetString(1), ReferenceUsageScope.Production, reader.GetString(6));
+                var source = new SourceContext(reader.GetString(0), ProjectTreeNodeKind.Shot, "Shot", reader.GetString(1), ReferenceUsageScope.Production, reader.GetString(5));
                 AddExact(usages, targets, ProjectTreeNodeKind.Episode, reader.GetString(2), source, "Episode");
                 AddExact(usages, targets, ProjectTreeNodeKind.Actor, ReadString(reader, 3), source, "Owner actor");
                 AddExact(usages, targets, ProjectTreeNodeKind.Device, ReadString(reader, 4), source, "Device override");
-                AddExact(usages, targets, ProjectTreeNodeKind.Theme, ReadString(reader, 5), source, "Theme override");
             }
         }
 
         using (var command = connection.CreateCommand())
         {
-            command.CommandText = "SELECT mi.id, mi.name, mi.shot_id, mi.app_id, mi.module_id, mi.metadata_json, a.project_id FROM module_instances mi JOIN apps a ON a.id = mi.app_id";
+            command.CommandText = "SELECT mi.id, mi.name, mi.shot_id, mi.app_id, mi.module_id, mi.metadata_json, mi.theme_override_id, a.project_id FROM module_instances mi JOIN apps a ON a.id = mi.app_id";
             using var reader = command.ExecuteReader();
             while (reader.Read())
             {
-                var source = new SourceContext(reader.GetString(0), ProjectTreeNodeKind.ModuleInstance, "Screen", reader.GetString(1), ReferenceUsageScope.Production, reader.GetString(6));
+                var source = new SourceContext(reader.GetString(0), ProjectTreeNodeKind.ModuleInstance, "Screen", reader.GetString(1), ReferenceUsageScope.Production, reader.GetString(7));
                 AddExact(usages, targets, ProjectTreeNodeKind.Shot, reader.GetString(2), source, "Shot");
                 AddExact(usages, targets, ProjectTreeNodeKind.App, reader.GetString(3), source, "App");
                 AddExact(usages, targets, ProjectTreeNodeKind.Module, reader.GetString(4), source, "Module");
+                AddExact(usages, targets, ProjectTreeNodeKind.Theme, ReadString(reader, 6), source, "Theme override");
                 var metadata = JsonPath.ParseRequiredObject(ReadString(reader, 5), $"Module Instance '{source.NodeId}' metadata_json");
                 AddExact(
                     usages,

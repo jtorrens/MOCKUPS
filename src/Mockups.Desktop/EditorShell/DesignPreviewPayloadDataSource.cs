@@ -52,6 +52,7 @@ internal sealed record DesignPreviewShotSlot(
     string Id,
     string Name,
     string ModuleName,
+    int StartFrame,
     int EffectiveDurationFrames,
     int TransitionFrameCount,
     int ActionDelayFrames,
@@ -101,6 +102,7 @@ internal sealed class DesignPreviewPayloadDataSource
 
     public DesignPreviewThemeContext LoadProductionRenderThemeContext(
         ProjectTreeNode shot,
+        string screenId,
         string themeId,
         string deviceId)
     {
@@ -110,9 +112,16 @@ internal sealed class DesignPreviewPayloadDataSource
                 "Production render context requires a Shot.");
         }
         var settings = _database.GetShotSettings(shot.Id);
+        var screen = _timeline.GetModuleInstanceSettings(screenId);
+        if (!screen.ShotId.Equals(shot.Id, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"Render Screen '{screenId}' does not belong to Shot '{shot.Id}'.");
+        }
+        var effectiveThemeId = screen.EffectiveThemeId(themeId);
         if (!_database.GetThemeOptions(settings.ProjectId)
                 .Any((option) => option.Value.Equals(
-                    themeId,
+                    effectiveThemeId,
                     StringComparison.Ordinal))
             || !_database.GetDeviceOptions(settings.ProjectId)
                 .Any((option) => option.Value.Equals(
@@ -122,7 +131,7 @@ internal sealed class DesignPreviewPayloadDataSource
             throw new InvalidOperationException(
                 "Render Theme and Device must belong to the Shot Project.");
         }
-        return CreateThemeContext(themeId, deviceId);
+        return CreateThemeContext(effectiveThemeId, deviceId);
     }
 
     private DesignPreviewThemeContext CreateThemeContext(
@@ -155,8 +164,12 @@ internal sealed class DesignPreviewPayloadDataSource
             return selectedThemeId;
         }
 
-        var (shot, actor) = RequiredProductionContext(node);
-        var themeId = shot.EffectiveThemeId(actor.DefaultThemeId);
+        var (_, actor) = RequiredProductionContext(node);
+        var screen = node.Kind == ProjectTreeNodeKind.ModuleInstance
+            ? _timeline.GetModuleInstanceSettings(node.Id)
+            : null;
+        var themeId = screen?.EffectiveThemeId(actor.DefaultThemeId)
+            ?? actor.DefaultThemeId;
         if (string.IsNullOrWhiteSpace(themeId))
         {
             throw new InvalidOperationException(
@@ -239,6 +252,7 @@ internal sealed class DesignPreviewPayloadDataSource
                     slot.Id,
                     slot.Name,
                     slot.ModuleName,
+                    range.StartFrame,
                     range.EffectiveDurationFrames,
                     range.TransitionFrameCount,
                     range.ActionDelayFrames,
@@ -247,6 +261,16 @@ internal sealed class DesignPreviewPayloadDataSource
             })
             .ToList();
     }
+
+    public string ActiveShotScreenId(string shotId, int shotFrame) =>
+        ProductionScreenPlaybackState.ActiveScreenId(
+            ModuleInstanceTimeline.ScreenRanges(_timelineDataSource, shotId)
+                .Select((range) => new ProductionScreenFrameRange(
+                    range.ScreenId,
+                    range.StartFrame,
+                    range.EffectiveDurationFrames))
+                .ToArray(),
+            shotFrame);
 
     public ScreenTimelineRange ModuleInstanceScreenRange(
         string moduleInstanceId) =>

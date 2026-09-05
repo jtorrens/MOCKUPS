@@ -63,22 +63,18 @@ the row is inserted. There is no incomplete Actor placeholder and no startup or
 editor repair route. Actor and Shot creation share the generic record-creation
 form and persistence entrypoint.
 
-Device and Theme overrides are optional same-Project Shot fields. Each is
-independent: `NULL` inherits the corresponding required Actor default, while a
-local reference replaces only that resource. Changing the Actor therefore
-changes only resources that remain inherited. The effective Device and Theme
-are consumed consistently by Preview, playback, Module Theme-token resolution
-and Render Queue initialization. Reference Usage reports only explicit Shot
-override edges; inherited resources remain Actor edges.
+Device selection is one optional same-Project Shot field: `NULL` inherits the
+required Actor default and a local reference replaces it. Every Screen uses
+that same Device and therefore the same canvas and screen geometry.
 
-The Device reference also exposes the shared Overrides action. Its sparse
-Shot-local document can override every editable Device setting while leaving
-the Device record unchanged. Those values remain local when the selected or
-inherited Device changes and are then applied over the new Device. The standard
-field Restore action removes one local value and immediately resumes inheriting
-that setting from the current Device. The action opens the referenced Device
-layout in the central contextual editor under the exact Shot breadcrumb; it
-never opens a modal and introduces no Shot/Device editor branch.
+Theme selection is Screen-owned. Its optional same-Project override inherits
+the Shot Actor default independently for each Screen. The Screen also exposes
+the shared Device Overrides action against the Shot's effective Device, but its
+sparse document is restricted to the declared non-geometric Module transparency
+fields. Restore removes one local value. The action opens the referenced Device
+layout in the central contextual editor under the exact Screen breadcrumb; it
+never opens a modal or creates a second resolution route. Preview, playback and
+render consume the same Screen Theme and effective visual Device settings.
 
 Duplicating an Episode preserves every current Shot number because the copies
 belong to a different Episode. Duplicating one Shot requires a new number in
@@ -168,7 +164,7 @@ resolved again only when the user launches them.
 ## Render Queue
 
 The Render action is a persistent icon on every Shot row. It always opens an
-add modal with that exact Shot selected. Actor, Device, Theme and local Shot
+add modal with that exact Shot selected. Actor, base Device, base Theme and local Shot
 details load independently of routing. The modal derives the route and
 technical name from the exact manual contract or exact Shot Manager
 associations. An associated Shot needs only its existing local root to resolve
@@ -186,12 +182,17 @@ never recreates a missing root or moves an earlier render.
 The add modal exposes:
 
 - the Shot Actor as read-only;
-- Device and Theme initialized from the Shot's effective resources, with
-  additional same-Project job-only overrides;
+- Device initialized from the Shot's effective resource and Theme initialized
+  from the Actor default, with additional same-Project job-only base overrides;
 - Light, Dark or Both;
 - the resolved Production Output route;
 - a job-owned output mode;
 - an editable safe base name.
+
+Screen Theme overrides take precedence over the job base Theme. Each active
+Screen applies its own declared Module-transparency overrides over the job
+Device without changing raster dimensions. Frames with no active Screen are
+stored as fully transparent documents.
 
 The initial output modes are MOV ProRes 422 HQ, MOV ProRes 4444 with alpha,
 MOV H.264 Light at 8 Mb/s, Standard at 20 Mb/s, High at 40 Mb/s, PNG sequence
@@ -291,6 +292,8 @@ A Screen is a persisted Module Instance. It owns:
 
 - exact App, Module and Module Variant references;
 - order within its Shot;
+- a signed Shot-frame start;
+- an optional Theme override and sparse non-geometric Device overrides;
 - transition document;
 - non-negative action delay in frames;
 - Runtime Input payload in `content_json`;
@@ -299,22 +302,15 @@ A Screen is a persisted Module Instance. It owns:
 - duration when that selected policy is explicit;
 - current metadata.
 
-The transition document is one complete boundary Motion. At a boundary between
-two ordered Screens, the Shot starts both parent-owned events at the first frame
-of the incoming Screen: the previous Screen uses its Motion as an exit and the
-incoming Screen uses its Motion as an entry. Both events receive the same
-elapsed Shot interval and resolve their own Theme timing. The outgoing Screen
-is retained at its final local frame until both Motions complete. The first
-incoming frame remains frozen at local frame zero throughout that boundary.
-After both Motions complete, the Screen remains at frame zero for its authored
-action delay; only then does its internal action timeline start. The first
-Screen has no synthetic entry transition but applies its delay before its
-actions; the last Screen has no synthetic exit. The effective Screen duration
-and calculated Shot duration include entry transition, delay and action duration.
-A Shot can select an explicit positive duration at its own timeline boundary;
-that single resolved duration cuts the final Screen early or holds its final
-frame after the calculated sequence ends for Preview and render alike.
-`none` with no fade remains an immediate change.
+Each Screen is an independent Shot lane. Its start may be negative, inside the
+Shot or after the Shot end. Its local entry Motion, action delay and action
+timeline determine its effective extent; it never composites a transition with
+another Screen. Calculated duration is fixed in the Shot timeline and explicit
+(`Free`) duration can be resized there. Lanes may overlap; the highest ordered
+lane wins for the overlap. A gap has no active Screen and produces a fully
+transparent Device image. The Shot interval is only the Preview/render clipping
+window, so portions before frame zero or after the Shot end are not displayed or
+rendered. Moving a lane does not rewrite local keyframes or Shot duration.
 
 Screen payload is authored in Preview because that is where its effect can be
 checked, but ownership remains with the Screen instance.
@@ -331,7 +327,8 @@ Every Screen resolves through its exact Shot. A complete valid route is:
 ```text
 Screen → Shot → owner Actor
               → effective Device (Shot override ?? Actor default)
-              → effective Theme  (Shot override ?? Actor default)
+Screen → effective Theme (Screen override ?? Actor default)
+       → sparse Module-transparency overrides
               → visual context
 ```
 

@@ -14,6 +14,8 @@ internal sealed record ProductionPreviewScreenSnapshot(
     int TransitionFrameCount,
     int ActionDelayFrames,
     int ActionDurationFrames,
+    string DeviceId,
+    DevicePreviewMetrics DeviceMetrics,
     string TransitionJson,
     string VariantConfigJson,
     IReadOnlyList<int> ShotKeyframeFrames)
@@ -26,9 +28,9 @@ internal sealed record ProductionPreviewShotSnapshot(
     string ShotId,
     int FrameRate,
     int DurationFrames,
-    ProductionShotContext Context,
     string DeviceId,
     DevicePreviewMetrics DeviceMetrics,
+    ProductionShotContext Context,
     ShotReferenceVideoDocument ReferenceVideo,
     IReadOnlyList<ProductionPreviewScreenSnapshot> Screens)
 {
@@ -118,6 +120,17 @@ internal sealed class ProductionPreviewSessionDataSource
                          node.Kind
                          == ProjectTreeNodeKind.Shot))
         {
+            var shotSettings = _database.GetShotSettings(shotNode.Id);
+            var actor = _actors.LoadContext(shotSettings.OwnerActorId);
+            var shotDeviceId = shotSettings.EffectiveDeviceId(
+                actor.DefaultDeviceId);
+            if (string.IsNullOrWhiteSpace(shotDeviceId))
+            {
+                throw new InvalidOperationException(
+                    $"Shot '{shotNode.Id}' has no effective Device.");
+            }
+            var shotDeviceMetrics = DeviceSettingsFieldContract.PreviewMetrics(
+                _database.GetDeviceSettings(shotDeviceId));
             var shotScreens =
                 new List<ProductionPreviewScreenSnapshot>();
             foreach (var range in
@@ -129,6 +142,12 @@ internal sealed class ProductionPreviewSessionDataSource
                     range.ScreenId;
                 var source =
                     _timelineDataSource.Load(screenId);
+                var screenSettings = _timeline.GetModuleInstanceSettings(screenId);
+                var deviceId = shotDeviceId;
+                if (string.IsNullOrWhiteSpace(deviceId))
+                    throw new InvalidOperationException($"Screen '{screenId}' has no effective Device.");
+                var effectiveDevice = screenSettings.EffectiveDeviceSettings(
+                    _database.GetDeviceSettings(deviceId));
                 if (!source.ShotId.Equals(
                         shotNode.Id,
                         StringComparison.Ordinal))
@@ -148,6 +167,8 @@ internal sealed class ProductionPreviewSessionDataSource
                         range.TransitionFrameCount,
                         range.ActionDelayFrames,
                         range.ActionDurationFrames,
+                        deviceId,
+                        DeviceSettingsFieldContract.PreviewMetrics(effectiveDevice),
                         source.TransitionJson,
                         _timeline
                             .GetModuleInstanceVariantSettings(
@@ -170,30 +191,15 @@ internal sealed class ProductionPreviewSessionDataSource
                 }
             }
 
-            var shotSettings = _database.GetShotSettings(
-                shotNode.Id);
-            var actor = _actors.LoadContext(
-                shotSettings.OwnerActorId);
-            var deviceId = shotSettings.EffectiveDeviceId(
-                actor.DefaultDeviceId);
-            if (string.IsNullOrWhiteSpace(deviceId))
-            {
-                throw new InvalidOperationException(
-                    $"Shot '{shotNode.Id}' has no effective Device.");
-            }
-            var effectiveDevice = shotSettings.EffectiveDeviceSettings(
-                _database.GetDeviceSettings(deviceId));
-            var deviceMetrics = DeviceSettingsFieldContract
-                .PreviewMetrics(effectiveDevice);
             var shot =
                 new ProductionPreviewShotSnapshot(
                     shotNode.Id,
                     shotSettings.Fps,
                     shotSettings.DurationFrames,
+                    shotDeviceId,
+                    shotDeviceMetrics,
                     _shotContexts.Resolve(
                         shotNode.Id),
-                    deviceId,
-                    deviceMetrics,
                     shotSettings.ReferenceVideo,
                     shotScreens);
             if (!shots.TryAdd(

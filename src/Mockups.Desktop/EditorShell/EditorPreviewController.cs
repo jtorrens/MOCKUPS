@@ -1797,12 +1797,14 @@ internal sealed class EditorPreviewController : IDisposable
                         var contextState =
                             invalidProductionContext
                             ?? (payload is null
-                                ? NonRenderableStateForSelection(
-                                    selected,
-                                    themeId,
-                                    themeMode,
-                                    shotFrame,
-                                    cancellationToken)
+                                ? IsTransparentShotFrame(node, shotFrame)
+                                    ? PreviewContextState.Transparent
+                                    : NonRenderableStateForSelection(
+                                        selected,
+                                        themeId,
+                                        themeMode,
+                                        shotFrame,
+                                        cancellationToken)
                                 : PreviewContextState
                                     .Renderable);
                         return (
@@ -3570,6 +3572,15 @@ internal sealed class EditorPreviewController : IDisposable
         InvalidatePreparedDesignPlayback();
         var navigationRange = NavigationFrameRange();
         if (_shotPreviewFrame >= navigationRange.EndFrame) _shotPreviewFrame = navigationRange.StartFrame;
+        if (ShotPlaybackContainsTransparentGap(
+                payloadNode,
+                _shotPreviewFrame,
+                navigationRange.EndFrame))
+        {
+            InvalidatePreparedShotPlayback();
+            StartShotPlayback(shotId, navigationRange);
+            return;
+        }
         if (CanReusePreparedShotPlayback(
                 payloadNode,
                 _shotPreviewFrame,
@@ -3701,6 +3712,30 @@ internal sealed class EditorPreviewController : IDisposable
                 endFrame)
             && HasFrameCacheReservation(
                 PlaybackFrameCacheOwner.Shot);
+    }
+
+    private bool ShotPlaybackContainsTransparentGap(
+        ProjectTreeNode node,
+        int startFrame,
+        int endFrame)
+    {
+        if (node.Kind != ProjectTreeNodeKind.Shot)
+        {
+            return false;
+        }
+        var ranges = PreparedProductionSession()
+            .Shot(node.Id)
+            .FrameRanges;
+        for (var frame = startFrame; frame <= endFrame; frame++)
+        {
+            if (ProductionScreenPlaybackState.ActiveScreenIndex(
+                    ranges,
+                    frame) < 0)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void StartShotPlayback(
@@ -3942,9 +3977,29 @@ internal sealed class EditorPreviewController : IDisposable
 
     private string PreviewDeviceId(DesignPreviewPayload? payload)
     {
+        var shotId = ProductionShotId();
+        if (!string.IsNullOrWhiteSpace(shotId))
+        {
+            return PreparedProductionSession().Shot(shotId).DeviceId;
+        }
         return !string.IsNullOrWhiteSpace(payload?.DeviceId)
             ? payload.DeviceId
             : SelectedDeviceId ?? "";
+    }
+
+    private bool IsTransparentShotFrame(
+        ProjectTreeNode? node,
+        int shotFrame)
+    {
+        if (node?.Kind != ProjectTreeNodeKind.Shot)
+        {
+            return false;
+        }
+        var shot = PreparedProductionSession().Shot(node.Id);
+        return shot.Screens.Count > 0
+            && ProductionScreenPlaybackState.ActiveScreenIndex(
+                shot.FrameRanges,
+                shotFrame) < 0;
     }
 
     private void ToggleDesignPreviewContextLock()
@@ -4474,18 +4529,32 @@ internal sealed class EditorPreviewController : IDisposable
         DesignPreviewPayload? payload)
     {
         var shotId = ProductionPayloadShotId(payload);
+        if (string.IsNullOrWhiteSpace(shotId))
+        {
+            shotId = ProductionShotId();
+        }
         if (!string.IsNullOrWhiteSpace(shotId))
         {
-            var shot = PreparedProductionSession().Shot(
-                shotId);
-            if (!shot.DeviceId.Equals(
+            var screenId = RuntimeContextValue(payload, "moduleInstanceId");
+            if (string.IsNullOrWhiteSpace(screenId))
+            {
+                var shot = PreparedProductionSession().Shot(shotId);
+                if (!shot.DeviceId.Equals(deviceId, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        $"Production Preview Shot '{shotId}' resolved Device '{shot.DeviceId}', not '{deviceId}'.");
+                }
+                return shot.DeviceMetrics;
+            }
+            var screen = PreparedProductionSession().Screen(screenId);
+            if (!screen.DeviceId.Equals(
                     deviceId,
                     StringComparison.Ordinal))
             {
                 throw new InvalidOperationException(
-                    $"Production Preview Shot '{shotId}' resolved Device '{shot.DeviceId}', not '{deviceId}'.");
+                    $"Production Preview Screen '{screenId}' resolved Device '{screen.DeviceId}', not '{deviceId}'.");
             }
-            return shot.DeviceMetrics;
+            return screen.DeviceMetrics;
         }
         if (_visualContextSnapshot is not { } snapshot
             || !snapshot.ProjectId.Equals(

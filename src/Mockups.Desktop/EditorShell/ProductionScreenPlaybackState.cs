@@ -33,12 +33,13 @@ internal static class ProductionScreenPlaybackState
         for (var index = 0; index < ranges.Count; index++)
         {
             var range = ranges[index];
-            if (shotFrame < range.StartFrame + range.DurationFrames)
+            if (shotFrame >= range.StartFrame
+                && shotFrame < range.StartFrame + range.DurationFrames)
             {
                 return index;
             }
         }
-        return ranges.Count - 1;
+        return -1;
     }
 
     public static string ActiveScreenId(

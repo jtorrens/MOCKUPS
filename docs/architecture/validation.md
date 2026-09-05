@@ -178,7 +178,7 @@ proving simultaneous outgoing and incoming Motion, stable owner-local frames
   materialization, exact ProRes/H.264 profiles, proportional even-dimension
   normalization for odd H.264 Device rasters, black-premultiplied alpha output,
   decoded ProRes 4444 opaque alpha remaining at its exact full-scale value,
-  interactive Preview Theme override through the Production Mode context
+  per-Screen authored Theme context in Preview and Render
   control, session-only checkerboard and alpha-channel inspection with compact
   switches whose track and thumb follow the checked state without duplicate
   labels, explicit Play/Pause transport glyph contrast, and an always-openable
@@ -463,11 +463,13 @@ Database validation is read-only and confirms:
 - complete Component and Module Variants;
 - full reference formats and same-Project integrity through the same guard used
   by repository writes;
-- required Shot Actor, independent nullable Device/Theme overrides and their
-  exact effective Production context;
-- strict Shot-local Device settings override documents, complete declared
-  Device field coverage, per-field Restore, preservation across Device changes
-  and identical effective metrics in Preview and Render preparation;
+- required Shot Actor, its nullable Device override and each Screen's nullable
+  Theme override with exact same-Project Production context;
+- strict Screen-local non-geometric Device override documents, rejection of
+  geometry keys, per-field Restore, preservation across Shot Device changes and
+  identical effective metrics in Preview and Render preparation;
+- signed Screen starts, fixed calculated duration, resizable explicit duration,
+  top-lane overlap priority and transparent Shot gaps;
 - exact Production Output settings and derivable Shot plans;
 - declared font, icon and media assets;
 - manifest-to-row agreement.
@@ -507,14 +509,15 @@ For any editor or Preview change, exercise at least:
     manual behavior, broken-association errors and retained output folders on
     Shot deletion.
 14. Shot Render action on a pre-association Shot, Actor loaded before routing,
-    automatic route proposal, Device/Theme overrides, Light/Dark/Both naming,
+    automatic route proposal, Shot Device and per-Screen Theme/visual overrides,
+    Light/Dark/Both naming,
     manual job-start folder creation, managed missing-folder rejection, queue
     progress, cancel/retry/pause and output
     reveal.
 15. Shot reference Browse, missing/out-of-range `Sin media`, Set In, muted and
     audible playback, shared Shot/Screen scrubbing, marker add/drag/text/delete
     and marker ticks across Screen boundaries.
-16. Shot Device Overrides opening in the central contextual editor with the
+16. Screen Device Overrides opening in the central contextual editor with the
     exact breadcrumb, per-field Restore, retained card/scroll memory on return
     and no modal window.
 

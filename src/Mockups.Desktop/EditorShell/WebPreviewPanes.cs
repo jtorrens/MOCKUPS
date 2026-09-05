@@ -1968,6 +1968,10 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         return RasterDocumentHtml(metrics, htmlParts.BodyHtml, htmlParts.FontStyleHtml);
     }
 
+    public static string BuildTransparentRasterHtml(
+        DevicePreviewMetrics metrics) =>
+        RasterDocumentHtml(metrics, "", "");
+
     public void SetRasterLoading(bool visible, string message)
     {
         var visibleJson = visible ? "true" : "false";
@@ -2156,6 +2160,8 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         }
         if (update.Payload is null)
         {
+            var transparent = update.ContextState.Kind
+                == PreviewContextStateKind.Transparent;
             LoadHtml(DeviceHtml(
                 update.Metrics,
                 update.IsDark,
@@ -2167,9 +2173,11 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
                 update.ShowDeviceFrame,
                 update.ShowTransparencyGrid,
                 update.ShowAlphaOnly,
-                Placeholder(
-                    "Design WebView host",
-                    "Select a component variant to preview it through the desktop component route."),
+                transparent
+                    ? ""
+                    : Placeholder(
+                        "Design WebView host",
+                        "Select a component variant to preview it through the desktop component route."),
                 reference: reference));
             RememberResidentShell(update.ShellIdentity);
             _lastRenderedUpdate = update;

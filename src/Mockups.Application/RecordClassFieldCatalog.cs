@@ -164,20 +164,7 @@ public static class RecordClassFieldCatalog
             "shot.deviceOverrideId",
             "Device override",
             ValueKind.RecordReference,
-            RecordReference: new RecordReferenceDefinition(
-                "devices",
-                AllowEmpty: true,
-                OverrideRecordClassId: "device",
-                OverrideDocumentFieldId:
-                    "shot.deviceOverrides",
-                OverrideFieldIds:
-                    DeviceSettingsFieldContract
-                        .OverrideableFieldIds)),
-        ["shot.themeOverrideId"] = new(
-            "shot.themeOverrideId",
-            "Theme override",
-            ValueKind.RecordReference,
-            RecordReference: new RecordReferenceDefinition("themes", AllowEmpty: true)),
+            RecordReference: new RecordReferenceDefinition("devices", AllowEmpty: true)),
         ["shot.referenceVideoPath"] = new(
             "shot.referenceVideoPath",
             "Reference video",
@@ -266,6 +253,27 @@ public static class RecordClassFieldCatalog
             ValueKind.ComponentVariant,
             OptionSource: FieldOptionSource.ModuleVariants),
         ["moduleInstance.sortOrder"] = new("moduleInstance.sortOrder", "Sort Order", ValueKind.Integer, IsEditable: false),
+        ["moduleInstance.startFrame"] = new(
+            "moduleInstance.startFrame",
+            "Start frame",
+            ValueKind.Integer,
+            Number: new NumberDefinition(-100000, 100000, 1, 0),
+            Unit: "frames"),
+        ["moduleInstance.device"] = new(
+            "moduleInstance.device",
+            "Device",
+            ValueKind.RecordReference,
+            IsEditable: false,
+            RecordReference: new RecordReferenceDefinition(
+                "devices",
+                OverrideRecordClassId: "device",
+                OverrideDocumentFieldId: "moduleInstance.deviceOverrides",
+                OverrideFieldIds: DeviceSettingsFieldContract.ScreenOverrideableFieldIds)),
+        ["moduleInstance.themeOverrideId"] = new(
+            "moduleInstance.themeOverrideId",
+            "Theme override",
+            ValueKind.RecordReference,
+            RecordReference: new RecordReferenceDefinition("themes", AllowEmpty: true)),
         ["moduleInstance.durationPolicy"] = new(
             "moduleInstance.durationPolicy",
             "Duration mode",

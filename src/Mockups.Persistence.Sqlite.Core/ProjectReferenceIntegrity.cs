@@ -51,12 +51,16 @@ internal static class ProjectReferenceIntegrity
                 ProjectReferenceKind.Device,
                 shot.DeviceOverrideId,
                 $"Shot '{shot.Id}' Device override");
+        }
+
+        foreach (var screen in ScreenReferences(connection))
+        {
             RequireSameProjectReference(
                 connection,
-                shot.ProjectId,
+                screen.ProjectId,
                 ProjectReferenceKind.Theme,
-                shot.ThemeOverrideId,
-                $"Shot '{shot.Id}' Theme override");
+                screen.ThemeOverrideId,
+                $"Screen '{screen.Id}' Theme override");
         }
 
         foreach (var theme in ThemeReferences(connection))
@@ -198,8 +202,7 @@ internal static class ProjectReferenceIntegrity
         var rows = new List<ShotReferenceRow>();
         using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT s.id, e.project_id, s.owner_actor_id,
-                   s.device_override_id, s.theme_override_id
+            SELECT s.id, e.project_id, s.owner_actor_id, s.device_override_id
             FROM shots s
             JOIN episodes e ON e.id = s.episode_id
             ORDER BY s.id
@@ -211,8 +214,29 @@ internal static class ProjectReferenceIntegrity
                 reader.GetString(0),
                 reader.GetString(1),
                 SqliteCommandExecutor.ReadString(reader, 2),
-                SqliteCommandExecutor.ReadString(reader, 3),
-                SqliteCommandExecutor.ReadString(reader, 4)));
+                SqliteCommandExecutor.ReadString(reader, 3)));
+        }
+        return rows;
+    }
+
+    private static IReadOnlyList<ScreenReferenceRow> ScreenReferences(SqliteConnection connection)
+    {
+        var rows = new List<ScreenReferenceRow>();
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT mi.id, e.project_id, mi.theme_override_id
+            FROM module_instances mi
+            JOIN shots s ON s.id = mi.shot_id
+            JOIN episodes e ON e.id = s.episode_id
+            ORDER BY mi.id
+            """;
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            rows.Add(new ScreenReferenceRow(
+                reader.GetString(0),
+                reader.GetString(1),
+                SqliteCommandExecutor.ReadString(reader, 2)));
         }
         return rows;
     }
@@ -269,7 +293,11 @@ internal static class ProjectReferenceIntegrity
         string Id,
         string ProjectId,
         string OwnerActorId,
-        string DeviceOverrideId,
+        string DeviceOverrideId);
+
+    private sealed record ScreenReferenceRow(
+        string Id,
+        string ProjectId,
         string ThemeOverrideId);
 
     private sealed record ThemeReferenceRow(

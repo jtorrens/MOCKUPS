@@ -123,17 +123,18 @@ internal sealed class RecordClassFieldValueService
                 IsInherited: settings.FpsOverride is null));
         }
 
-        if (node.Kind == ProjectTreeNodeKind.Shot
-            && field.Id is "shot.deviceOverrideId" or "shot.themeOverrideId")
+        if (node.Kind == ProjectTreeNodeKind.ModuleInstance
+            && field.Id is "moduleInstance.device" or "moduleInstance.themeOverrideId")
         {
-            var settings = _production.GetShotSettings(node.Id);
-            var actor = _resources.GetActorSettings(settings.OwnerActorId);
-            var isDevice = field.Id == "shot.deviceOverrideId";
+            var settings = _timeline.GetModuleInstanceSettings(node.Id);
+            var shot = _production.GetShotSettings(settings.ShotId);
+            var actor = _resources.GetActorSettings(shot.OwnerActorId);
+            var isDevice = field.Id == "moduleInstance.device";
             var inheritedValue = isDevice
-                ? actor.DefaultDeviceId
+                ? shot.EffectiveDeviceId(actor.DefaultDeviceId)
                 : actor.DefaultThemeId;
             var localValue = isDevice
-                ? settings.DeviceOverrideId
+                ? inheritedValue
                 : settings.ThemeOverrideId;
             var resourceOverrideResult = ValidateFieldValue(new FieldValue(
                 new FieldDefinition(
@@ -143,7 +144,7 @@ internal sealed class RecordClassFieldValueService
                     IsEditable: field.IsEditable,
                     DefaultValue: inheritedValue,
                     CommitAsDefault: false,
-                    CanInherit: true,
+                    CanInherit: !isDevice,
                     InheritedValue: inheritedValue,
                     Options: options,
                     PairLabels: field.PairLabels,
@@ -157,12 +158,12 @@ internal sealed class RecordClassFieldValueService
                     Unit: field.Unit,
                     MotionTiming: field.MotionTiming),
                 localValue ?? inheritedValue,
-                IsInherited: localValue is null));
+                IsInherited: !isDevice && localValue is null));
             return isDevice
                 && OverrideDocumentContract.HasAuthoredValues(
-                    DeviceSettingsFieldContract.ParseOverrides(
+                    DeviceSettingsFieldContract.ParseScreenOverrides(
                         settings.DeviceOverridesJson,
-                        $"Shot '{node.Id}' Device overrides"))
+                        $"Screen '{node.Id}' Device overrides"))
                     ? resourceOverrideResult with { IsHighlighted = true }
                     : resourceOverrideResult;
         }
@@ -710,6 +711,7 @@ internal sealed class RecordClassFieldValueService
                 _timeline.GetModuleInstanceModuleName(moduleInstanceId),
             "moduleInstance.variant" => _production.GetModuleInstanceVariantReference(moduleInstanceId),
             "moduleInstance.sortOrder" => settings.SortOrder.ToString(),
+            "moduleInstance.startFrame" => settings.StartFrame.ToString(),
             "moduleInstance.durationPolicy" => settings.DurationPolicy,
             "moduleInstance.durationFrames" =>
                 ModuleInstanceTimeline
@@ -722,6 +724,12 @@ internal sealed class RecordClassFieldValueService
                 settings.ActionDelayFrames.ToString(),
             "moduleInstance.transition" =>
                 settings.TransitionJson,
+            "moduleInstance.device" => _production.GetShotSettings(settings.ShotId)
+                .EffectiveDeviceId(
+                    _resources.GetActorSettings(
+                        _production.GetShotSettings(settings.ShotId).OwnerActorId)
+                    .DefaultDeviceId),
+            "moduleInstance.themeOverrideId" => settings.ThemeOverrideId ?? "",
             _ => throw new InvalidOperationException($"Unknown module instance field '{fieldId}'."),
         };
     }
@@ -740,7 +748,6 @@ internal sealed class RecordClassFieldValueService
             "shot.fps" => settings.Fps.ToString(),
             "shot.ownerActorId" => settings.OwnerActorId,
             "shot.deviceOverrideId" => settings.DeviceOverrideId ?? "",
-            "shot.themeOverrideId" => settings.ThemeOverrideId ?? "",
             "shot.referenceVideoPath" => settings.ReferenceVideo.SourcePath,
             "shot.renderName" => ShotRenderName(shotId),
             "shot.shotManagerShotId" =>

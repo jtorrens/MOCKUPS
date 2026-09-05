@@ -26,7 +26,8 @@ internal sealed record RenderPreparationScreenRange(
     string ScreenId,
     string ScreenName,
     int StartFrame,
-    int DurationFrames);
+    int DurationFrames,
+    string DeviceOverridesJson);
 
 internal sealed record RenderBatchSnapshotPreparation(
     RenderQueueShotDraft Draft,
@@ -47,7 +48,6 @@ internal sealed record RenderQueueShotDraft(
     string ActorId,
     string ActorName,
     string DeviceId,
-    string DeviceOverridesJson,
     string ThemeId,
     int ShotNumber,
     int Fps,
@@ -103,7 +103,7 @@ internal sealed class RenderJobSnapshotFactory : IRenderJobPreparer
         var shotSettings = _database.GetShotSettings(shot.Id);
         var actor = _database.GetActorSettings(shotSettings.OwnerActorId);
         var deviceId = shotSettings.EffectiveDeviceId(actor.DefaultDeviceId);
-        var themeId = shotSettings.EffectiveThemeId(actor.DefaultThemeId);
+        var themeId = actor.DefaultThemeId;
         if (string.IsNullOrWhiteSpace(deviceId)
             || string.IsNullOrWhiteSpace(themeId))
         {
@@ -137,7 +137,9 @@ internal sealed class RenderJobSnapshotFactory : IRenderJobPreparer
                     range.ScreenId,
                     screen.Name,
                     range.StartFrame,
-                    range.EffectiveDurationFrames);
+                    range.EffectiveDurationFrames,
+                    _database.GetModuleInstanceSettings(
+                        range.ScreenId).DeviceOverridesJson);
             })
             .ToList();
         if (screens.Count == 0)
@@ -157,7 +159,6 @@ internal sealed class RenderJobSnapshotFactory : IRenderJobPreparer
             shotSettings.OwnerActorId,
             actor.DisplayName,
             deviceId,
-            shotSettings.DeviceOverridesJson,
             themeId,
             shotSettings.ShotNumber,
             shotSettings.Fps,
@@ -296,10 +297,7 @@ internal sealed class RenderJobSnapshotFactory : IRenderJobPreparer
             ?? throw new InvalidOperationException(
                 "The planned Theme is no longer available in the Shot Project.");
         var metrics = DeviceSettingsFieldContract.PreviewMetrics(
-            DeviceSettingsFieldContract.ApplyOverrides(
-                _database.GetDeviceSettings(plan.DeviceId),
-                draft.DeviceOverridesJson,
-                $"Shot '{draft.Shot.Id}' Device overrides"));
+            _database.GetDeviceSettings(plan.DeviceId));
         var summary = new RenderJobSummary(
             new RenderShotContext(
                 draft.ProjectId,
@@ -345,15 +343,31 @@ internal sealed class RenderJobSnapshotFactory : IRenderJobPreparer
             for (var frame = 0; frame < draft.TotalFrames; frame++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var payload = _productionPayloads.PrepareRenderRequired(
+                var activeScreen = draft.Screens.FirstOrDefault(
+                    (candidate) =>
+                        frame >= candidate.StartFrame
+                        && frame < candidate.StartFrame
+                            + candidate.DurationFrames);
+                var frameMetrics = activeScreen is null
+                    ? preparation.Metrics
+                    : DeviceSettingsFieldContract.PreviewMetrics(
+                        DeviceSettingsFieldContract.ApplyScreenOverrides(
+                            _database.GetDeviceSettings(
+                                preparation.DeviceId),
+                            activeScreen.DeviceOverridesJson,
+                            $"Screen '{activeScreen.ScreenId}' Device overrides"));
+                var payload = _productionPayloads.PrepareRender(
                     draft.Shot,
                     preparation.ThemeId,
                     preparation.DeviceId,
                     requestedAppearance,
                     frame);
-                var html = await DesignWebPreviewPane.BuildRasterHtmlAsync(
-                    preparation.Metrics,
-                    payload);
+                var html = payload is null
+                    ? DesignWebPreviewPane.BuildTransparentRasterHtml(
+                        preparation.Metrics)
+                    : await DesignWebPreviewPane.BuildRasterHtmlAsync(
+                        frameMetrics,
+                        payload);
                 cancellationToken.ThrowIfCancellationRequested();
                 foreach (var key in PreviewAssetRegistry.Keys(html))
                 {
@@ -409,16 +423,9 @@ internal sealed class RenderJobSnapshotFactory : IRenderJobPreparer
         RenderQueueShotDraft draft,
         int frame)
     {
-        var screen = draft.Screens.SingleOrDefault((candidate) =>
+        var screen = draft.Screens.FirstOrDefault((candidate) =>
             frame >= candidate.StartFrame
             && frame < candidate.StartFrame + candidate.DurationFrames);
-        if (screen is not null) return screen.ScreenName;
-        var last = draft.Screens.LastOrDefault();
-        if (last is null)
-        {
-            throw new InvalidOperationException(
-                $"Render preparation Shot '{draft.Shot.Id}' has no Screen to hold.");
-        }
-        return last.ScreenName;
+        return screen?.ScreenName ?? "Transparent gap";
     }
 }

@@ -5,7 +5,7 @@ Status: normative.
 ## Database scope
 
 The desktop application persists one complete Project workspace in SQLite.
-Schema version `15` is the only current schema. Every row belongs directly or
+Schema version `16` is the only current schema. Every row belongs directly or
 indirectly to a Project and cross-Project lookup is invalid.
 
 The current tables are:
@@ -20,16 +20,19 @@ The current tables are:
 | Editor description | `editor_layouts` | Project-owned layout metadata |
 
 `shots.owner_actor_id` is required and uses a restricted foreign key.
-`shots.device_override_id` and `shots.theme_override_id` are independent
-nullable restricted foreign keys. `NULL` means inherit the corresponding
-required Actor default; a local value must resolve inside the Shot Project.
-Blank, missing and cross-Project override references are invalid current data.
-`shots.device_overrides_json` is a required object containing sparse Shot-local
-Device field values. Every key is an exact current Device dictionary field id
-and every value is its current scalar storage string. Selection changes never
-clear this document; restoring a field removes that key. The effective Device
-is the selected reference—local or inherited from the Actor—with this document
-applied by the shared Device field contract.
+`shots.device_override_id` is one nullable restricted foreign key. `NULL`
+inherits the required Actor default; a local value must resolve inside the Shot
+Project. It is the only Device reference used by every Screen so canvas and
+screen geometry remain stable for the complete Shot.
+`module_instances.theme_override_id` is independently nullable and inherits the
+Shot Actor default Theme. `module_instances.device_overrides_json` is a required
+object containing sparse Screen-local values from the declared non-geometric
+Device subset (`device.metrics.moduleTransparency.*`). Geometry, manufacturer,
+model and OS cannot be overridden by a Screen. Every key is an exact current
+dictionary field id and every value is its current scalar storage string;
+Restore removes that key.
+`module_instances.start_frame` is the signed Shot-frame origin of the Screen.
+It may place a Screen before frame zero or beyond the Shot end.
 `shots.shot_number` is a positive stable identity owned by MOCKUPS and unique
 inside its Episode. `shots.slug` stores the explicit Shot Code, which is unique
 inside its Episode and accepts letters, numbers, hyphen and underscore. It is
@@ -60,7 +63,8 @@ updated explicitly before its referenced definition can be removed.
 `ProjectReferenceIntegrity` is the single cross-domain data guard for
 Project-owned relational references. Focused repositories invoke it before
 writes and startup validation invokes the same owner read-only. Actor Device
-and Theme, Shot Actor and its optional Device and Theme overrides, and Theme Icon Theme, Status Bar and
+and Theme, Shot Actor and its optional Device override, Screen Theme override,
+and Theme Icon Theme, Status Bar and
 Navigation Bar references must resolve inside the owner's exact Project.
 Status and Navigation references additionally require a complete existing
 Component Variant of their exact declared type.
@@ -250,13 +254,14 @@ Module Instance Runtime writes belong to
 `SqliteModuleInstanceCollectionStore`, scalar fields to
 `SqliteProductionRecordFieldStore`, and animation/read models to the Production
 owner. The session composes one Runtime Input store instance.
-Shot scalar writes, inherited Device/Theme field projection and its local
-Device settings override document remain Production-owned. The sparse document
+Shot scalar writes and inherited Device projection remain Production-owned.
+Screen scalar writes, inherited Theme projection and the Screen-local
+non-geometric Device settings override document remain Production-owned. The sparse document
 is exposed independently through `IRecordReferenceOverrideStore`; its session
 adapter cannot be cast to the Production scalar-field adapter. The generic
 editor supplies the metadata-declared owner, document id and field set, while
 the focused persistence implementation alone maps that declared document to
-the concrete Shot row and validates its effective Device. App and Module scalar fields belong to
+the concrete Screen row and validates the Shot's effective Device. App and Module scalar fields belong to
 `SqliteDesignRecordFieldStore`; Palette, Device, Actor, Theme, Icon Theme and
 Production Font scalar fields belong to `SqliteResourceRecordFieldStore`.
 Default database path discovery belongs to
@@ -414,7 +419,6 @@ object
   projects.metadata_json
   episodes.metadata_json
   shots.canvas_json
-  shots.device_overrides_json
   shots.reference_video_json
   shots.metadata_json
   apps.config_json
@@ -422,6 +426,7 @@ object
   modules.config_json
   modules.design_preview_json
   modules.metadata_json
+  module_instances.device_overrides_json
   module_instances.transition_json
   module_instances.content_json
   module_instances.behavior_json
@@ -544,10 +549,10 @@ containing Device options and metrics, Theme options and media root. Visual
 refresh, playback setup and reference browsing consume that snapshot; replacing
 it is revisioned and runs through the same session operation worker.
 That operation also prepares the complete Production Preview session catalog:
-Shot frame rates, ordered Screen ranges and keyframes, and exact Screen Variant
-configs. Each Shot entry includes its effective Device and Theme—local Shot
-override when present, otherwise the corresponding Actor default—plus Actor and
-appearance context. Timeline controls, context presentation and playback
+Shot frame rates, ordered Screen lanes with signed starts, ranges and keyframes,
+and exact Screen Variant configs. Each Shot entry includes its effective Device
+and Actor context; each Screen entry includes its effective Theme and
+non-geometric Device overrides. Timeline controls, context presentation and playback
 consume the catalog and hold no timeline or Shot-context persistence data
 source. Later tree reads remain candidates until this complete catalog and its
 visual-context snapshot succeed. The candidate tree, catalog and selection are

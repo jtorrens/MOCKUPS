@@ -23,8 +23,6 @@ internal sealed record ShotRecord(
     int ExplicitDurationFrames,
     string OwnerActorId,
     string? DeviceOverrideId,
-    string DeviceOverridesJson,
-    string? ThemeOverrideId,
     string CanvasJson,
     string ReferenceVideoJson,
     string MetadataJson,
@@ -148,9 +146,12 @@ internal sealed record ModuleInstanceRecord(
     string Name,
     string Notes,
     int SortOrder,
+    int StartFrame,
     int DurationFrames,
     string DurationPolicy,
     int ActionDelayFrames,
+    string DeviceOverridesJson,
+    string? ThemeOverrideId,
     string TransitionJson,
     string ContentJson,
     string BehaviorJson,
@@ -259,15 +260,7 @@ internal interface IShotRepository
 
     void ClearFpsOverride(SqliteConnection connection, string shotId);
 
-    void ClearResourceOverride(
-        SqliteConnection connection,
-        string shotId,
-        string fieldId);
-
-    void UpdateDeviceOverrides(
-        SqliteConnection connection,
-        string shotId,
-        string overridesJson);
+    void ClearDeviceOverride(SqliteConnection connection, string shotId);
 
     void UpdateField(SqliteConnection connection, string shotId, string fieldId, string value);
 
@@ -612,6 +605,22 @@ internal interface IModuleInstanceRepository
         SqliteConnection connection,
         string moduleInstanceId,
         int actionDelayFrames);
+
+    void UpdateStartFrame(
+        SqliteConnection connection,
+        string moduleInstanceId,
+        int startFrame);
+
+    void UpdateResourceOverride(
+        SqliteConnection connection,
+        string moduleInstanceId,
+        string column,
+        string? value);
+
+    void UpdateDeviceOverrides(
+        SqliteConnection connection,
+        string moduleInstanceId,
+        string overridesJson);
 
     void UpdateContentAndAnimation(
         SqliteConnection connection,

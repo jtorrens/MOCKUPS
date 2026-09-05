@@ -3,6 +3,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal enum PreviewContextStateKind
 {
     Renderable,
+    Transparent,
     NonRenderable,
     Loading,
     Error,
@@ -17,6 +18,11 @@ internal sealed record PreviewContextState(
 {
     public static PreviewContextState Renderable { get; } = new(
         PreviewContextStateKind.Renderable,
+        "",
+        "");
+
+    public static PreviewContextState Transparent { get; } = new(
+        PreviewContextStateKind.Transparent,
         "",
         "");
 

@@ -104,8 +104,6 @@ internal sealed class ShotRepository : IShotRepository
             actorId,
             null,
             "{}",
-            null,
-            "{}",
             ShotReferenceVideoDocument.Empty.ToJson(),
             "{}",
             "free",
@@ -256,7 +254,6 @@ internal sealed class ShotRepository : IShotRepository
             "shot.fps" => "fps_override",
             "shot.ownerActorId" => "owner_actor_id",
             "shot.deviceOverrideId" => "device_override_id",
-            "shot.themeOverrideId" => "theme_override_id",
             "shot.canvas" => "canvas_json",
             "shot.metadata" => "metadata_json",
             _ => throw new InvalidOperationException($"Unknown shot field '{fieldId}'."),
@@ -298,17 +295,14 @@ internal sealed class ShotRepository : IShotRepository
                 $"Shot '{shotId}' owner Actor",
                 required: true);
         }
-        if (fieldId is "shot.deviceOverrideId" or "shot.themeOverrideId")
+        if (fieldId == "shot.deviceOverrideId")
         {
-            var isDevice = fieldId == "shot.deviceOverrideId";
             ProjectReferenceIntegrity.RequireSameProjectReference(
                 connection,
                 current.ProjectId,
-                isDevice
-                    ? ProjectReferenceKind.Device
-                    : ProjectReferenceKind.Theme,
+                ProjectReferenceKind.Device,
                 value,
-                $"Shot '{shotId}' {(isDevice ? "Device" : "Theme")} override",
+                $"Shot '{shotId}' Device override",
                 required: true);
         }
         _context.Execute(
@@ -356,39 +350,13 @@ internal sealed class ShotRepository : IShotRepository
             ("$canonicalName", shot.CanonicalName));
     }
 
-    public void ClearResourceOverride(
-        SqliteConnection connection,
-        string shotId,
-        string fieldId)
+    public void ClearDeviceOverride(SqliteConnection connection, string shotId)
     {
         _ = Get(connection, shotId);
-        var column = fieldId switch
-        {
-            "shot.deviceOverrideId" => "device_override_id",
-            "shot.themeOverrideId" => "theme_override_id",
-            _ => throw new InvalidOperationException(
-                $"Unknown Shot resource override field '{fieldId}'."),
-        };
         _context.Execute(
             connection,
-            $"UPDATE shots SET {column} = NULL WHERE id = $id",
+            "UPDATE shots SET device_override_id = NULL WHERE id = $id",
             ("$id", shotId));
-    }
-
-    public void UpdateDeviceOverrides(
-        SqliteConnection connection,
-        string shotId,
-        string overridesJson)
-    {
-        _ = Get(connection, shotId);
-        _ = DeviceSettingsFieldContract.ParseOverrides(
-            overridesJson,
-            $"Shot '{shotId}' device_overrides_json");
-        _context.Execute(
-            connection,
-            "UPDATE shots SET device_overrides_json = $value WHERE id = $id",
-            ("$id", shotId),
-            ("$value", overridesJson));
     }
 
     public void UpdateDuration(
@@ -472,12 +440,6 @@ internal sealed class ShotRepository : IShotRepository
             ProjectReferenceKind.Device,
             record.DeviceOverrideId ?? "",
             $"Shot '{record.Id}' Device override");
-        ProjectReferenceIntegrity.RequireSameProjectReference(
-            connection,
-            record.ProjectId,
-            ProjectReferenceKind.Theme,
-            record.ThemeOverrideId ?? "",
-            $"Shot '{record.Id}' Theme override");
         InsertRow(connection, transaction, record);
     }
 
@@ -494,8 +456,7 @@ internal sealed class ShotRepository : IShotRepository
             INSERT INTO shots (
               id, episode_id, name, slug, version, notes, sort_order, fps_override,
               duration_frames, duration_policy, explicit_duration_frames,
-              owner_actor_id, device_override_id, device_overrides_json,
-              theme_override_id,
+              owner_actor_id, device_override_id,
               canvas_json, reference_video_json, metadata_json, shot_number,
               shot_manager_association_state,
               shot_manager_reference_production_id,
@@ -504,8 +465,7 @@ internal sealed class ShotRepository : IShotRepository
             VALUES (
               $id, $episodeId, $name, $slug, $version, $notes, $sortOrder, $fpsOverride,
               $durationFrames, $durationPolicy, $explicitDurationFrames,
-              $ownerActorId, $deviceOverrideId, $deviceOverridesJson,
-              $themeOverrideId,
+              $ownerActorId, $deviceOverrideId,
               $canvasJson, $referenceVideoJson, $metadataJson, $shotNumber,
               $shotManagerAssociationState,
               $shotManagerReferenceProductionId,
@@ -525,8 +485,6 @@ internal sealed class ShotRepository : IShotRepository
             ("$explicitDurationFrames", record.ExplicitDurationFrames),
             ("$ownerActorId", record.OwnerActorId),
             ("$deviceOverrideId", (object?)record.DeviceOverrideId ?? DBNull.Value),
-            ("$deviceOverridesJson", record.DeviceOverridesJson),
-            ("$themeOverrideId", (object?)record.ThemeOverrideId ?? DBNull.Value),
             ("$canvasJson", record.CanvasJson),
             ("$referenceVideoJson", record.ReferenceVideoJson),
             ("$metadataJson", record.MetadataJson),
@@ -563,15 +521,13 @@ internal sealed class ShotRepository : IShotRepository
             reader.GetInt32(12),
             SqliteCommandExecutor.ReadString(reader, 13),
             reader.IsDBNull(14) ? null : reader.GetString(14),
-            reader.GetString(15),
-            reader.IsDBNull(16) ? null : reader.GetString(16),
+            SqliteCommandExecutor.ReadString(reader, 15),
+            SqliteCommandExecutor.ReadString(reader, 16),
             SqliteCommandExecutor.ReadString(reader, 17),
             SqliteCommandExecutor.ReadString(reader, 18),
             SqliteCommandExecutor.ReadString(reader, 19),
             SqliteCommandExecutor.ReadString(reader, 20),
-            SqliteCommandExecutor.ReadString(reader, 21),
-            SqliteCommandExecutor.ReadString(reader, 22),
-            SqliteCommandExecutor.ReadString(reader, 23));
+            SqliteCommandExecutor.ReadString(reader, 21));
         Validate(record);
         return record;
     }
@@ -589,21 +545,8 @@ internal sealed class ShotRepository : IShotRepository
         {
             throw new InvalidOperationException($"Shot '{record.Id}' requires an explicit owner Actor.");
         }
-        if (record.DeviceOverrideId is not null
-            && string.IsNullOrWhiteSpace(record.DeviceOverrideId))
-        {
-            throw new InvalidOperationException(
-                $"Shot '{record.Id}' Device override must be null or an exact reference.");
-        }
-        if (record.ThemeOverrideId is not null
-            && string.IsNullOrWhiteSpace(record.ThemeOverrideId))
-        {
-            throw new InvalidOperationException(
-                $"Shot '{record.Id}' Theme override must be null or an exact reference.");
-        }
-        _ = DeviceSettingsFieldContract.ParseOverrides(
-            record.DeviceOverridesJson,
-            $"Shot '{record.Id}' device_overrides_json");
+        if (record.DeviceOverrideId is not null && string.IsNullOrWhiteSpace(record.DeviceOverrideId))
+            throw new InvalidOperationException($"Shot '{record.Id}' Device override must be null or exact.");
         if (record.ShotNumber <= 0)
         {
             throw new InvalidOperationException(
@@ -699,8 +642,8 @@ internal sealed class ShotRepository : IShotRepository
                s.version, s.notes,
                s.sort_order, s.fps_override, s.duration_frames, s.duration_policy,
                s.explicit_duration_frames, s.owner_actor_id,
-               s.device_override_id, s.device_overrides_json,
-               s.theme_override_id, s.canvas_json,
+               s.device_override_id,
+               s.canvas_json,
                s.reference_video_json, s.metadata_json,
                s.shot_manager_association_state,
                s.shot_manager_reference_production_id,

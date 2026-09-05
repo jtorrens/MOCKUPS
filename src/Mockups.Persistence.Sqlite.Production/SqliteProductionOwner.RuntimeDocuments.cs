@@ -370,6 +370,32 @@ internal sealed partial class SqliteProductionOwner
     {
         switch (fieldId)
         {
+            case "moduleInstance.startFrame":
+                _moduleInstanceRepository.UpdateStartFrame(
+                    connection,
+                    moduleInstanceId,
+                    NumericText.Int32(value, 0));
+                return;
+            case "moduleInstance.themeOverrideId":
+                var resourceInstance = _moduleInstanceRepository.Get(connection, moduleInstanceId);
+                var resourceShot = _shotRepository.Get(connection, resourceInstance.ShotId);
+                var inherited = value == "inherited";
+                if (!inherited)
+                {
+                    ProjectReferenceIntegrity.RequireSameProjectReference(
+                        connection,
+                        resourceShot.ProjectId,
+                        ProjectReferenceKind.Theme,
+                        value,
+                        $"Screen '{moduleInstanceId}' Theme override",
+                        required: true);
+                }
+                _moduleInstanceRepository.UpdateResourceOverride(
+                    connection,
+                    moduleInstanceId,
+                    "theme_override_id",
+                    inherited ? null : value);
+                return;
             case "moduleInstance.variant":
                 UpdateModuleInstanceVariant(
                     connection,
@@ -434,6 +460,20 @@ internal sealed partial class SqliteProductionOwner
             default:
                 throw new InvalidOperationException(
                     $"Unknown module instance field '{fieldId}'.");
+        }
+    }
+
+    public void UpdateModuleInstanceDeviceOverrides(
+        string moduleInstanceId,
+        string overridesJson)
+    {
+        lock (WriteGate)
+        {
+            using var connection = OpenConnection();
+            _moduleInstanceRepository.UpdateDeviceOverrides(
+                connection,
+                moduleInstanceId,
+                overridesJson);
         }
     }
 
@@ -514,6 +554,20 @@ internal sealed partial class SqliteProductionOwner
             var index = _moduleInstanceRepository.NextSortOrder(
                 connection,
                 shot.Id);
+            var shotSettings = _shotRepository.Get(connection, shot.Id);
+            var projectSettings = _projectEpisodeRepository.GetProjectSettings(
+                connection,
+                shotSettings.ProjectId);
+            var frameRate = shotSettings.FpsOverride
+                ?? projectSettings.DefaultFps;
+            var startFrame = _moduleInstanceRepository.QueryByShot(connection, shot.Id)
+                .Select((screen) => screen.StartFrame
+                    + EffectiveScreenDurationFrames(
+                        connection,
+                        screen,
+                        frameRate))
+                .DefaultIfEmpty(0)
+                .Max();
             var id = $"module_instance_{Guid.NewGuid():N}";
             var name = _moduleInstanceRepository.UniqueName(
                 connection,
@@ -529,9 +583,12 @@ internal sealed partial class SqliteProductionOwner
                     name,
                     $"{module.Name} module instance.",
                     index,
+                    startFrame,
                     initialDuration,
                     initialDurationPolicy,
                     0,
+                    "{}",
+                    null,
                     MotionVariantValue.NoneValue.ToJsonString(),
                     content.ToJsonString(),
                     "{}",

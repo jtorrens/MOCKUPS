@@ -29,10 +29,10 @@ Visual spacing fields use `theme.spacing.*` tokens. Compound light/dark values
 preserve their explicit pair labels and use their registered dictionary
 control.
 
-A Production Screen receives Theme context only through its exact Shot:
+A Production Screen receives Theme context only through its exact ownership:
 
 ```text
-Screen → Shot → Shot owner Actor → Actor default Theme
+Screen → Screen Theme override ?? (Shot → Shot owner Actor → Actor default Theme)
 ```
 
 There is no Theme inference from App, Module, Variant, label, order or type.
