@@ -468,13 +468,6 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ["socialPost", "useAppWallpaper"],
             "",
             []),
-        ["module.core.videoCall.conversationType"] = new(
-            "module.core.videoCall",
-            "module.core.videoCall.conversationType",
-            ValueKind.OptionToken,
-            ["videoCall", "conversationType"],
-            "",
-            []),
         ["module.core.videoCall.footerFloatHorizontalPaddingToken"] = new(
             "module.core.videoCall",
             "module.core.videoCall.footerFloatHorizontalPaddingToken",
@@ -529,6 +522,20 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             "module.core.videoCall.gridGapToken",
             ValueKind.ThemeToken,
             ["videoCall", "gridGapToken"],
+            "",
+            []),
+        ["module.core.videoCall.gridHeight"] = new(
+            "module.core.videoCall",
+            "module.core.videoCall.gridHeight",
+            ValueKind.Integer,
+            ["videoCall", "gridHeight"],
+            "",
+            []),
+        ["module.core.videoCall.gridHeightMode"] = new(
+            "module.core.videoCall",
+            "module.core.videoCall.gridHeightMode",
+            ValueKind.OptionToken,
+            ["videoCall", "gridHeightMode"],
             "",
             []),
         ["module.core.videoCall.gridPadding"] = new(
@@ -614,27 +621,6 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ValueKind.ComponentVariantSlot,
             ["videoCall", "mainParticipantSlot"],
             "callParticipant",
-            []),
-        ["module.core.videoCall.mainPlacement"] = new(
-            "module.core.videoCall",
-            "module.core.videoCall.mainPlacement",
-            ValueKind.AlignmentPlacement,
-            ["videoCall", "mainPlacement"],
-            "",
-            []),
-        ["module.core.videoCall.mainSize"] = new(
-            "module.core.videoCall",
-            "module.core.videoCall.mainSize",
-            ValueKind.IntegerPair,
-            ["videoCall", "mainSize"],
-            "",
-            []),
-        ["module.core.videoCall.mainSizeMode"] = new(
-            "module.core.videoCall",
-            "module.core.videoCall.mainSizeMode",
-            ValueKind.OptionToken,
-            ["videoCall", "mainSizeMode"],
-            "",
             []),
         ["module.core.videoCall.pipPadding"] = new(
             "module.core.videoCall",

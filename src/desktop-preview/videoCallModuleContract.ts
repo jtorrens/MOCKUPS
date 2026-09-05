@@ -18,7 +18,6 @@ export interface VideoCallParticipant {
 export interface VideoCallModuleContract {
   id: "module.core.videoCall";
   useAppWallpaper: boolean;
-  conversationType: "individual" | "group";
   backgroundColorToken: string;
   showHeader: boolean;
   headerLayoutMode: "stack" | "float";
@@ -37,9 +36,6 @@ export interface VideoCallModuleContract {
   footerRowGapToken: string;
   footerRows: [ModuleRow, ModuleRow];
   showMainVideo: boolean;
-  mainSizeMode: "fill" | "fixed";
-  mainSize: { width: number; height: number };
-  mainPlacement: AlignmentPlacementContract;
   mainPadding: SpacingPairContract;
   showPip: boolean;
   pipSize: { width: number; height: number };
@@ -48,6 +44,8 @@ export interface VideoCallModuleContract {
   showGridParticipants: boolean;
   gridPadding: SpacingPairContract;
   gridGapToken: string;
+  gridHeightMode: "fixed" | "fill";
+  gridHeight: number;
   gridRows: number;
   showStatusBar: boolean;
   showNavigationBar: boolean;

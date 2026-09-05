@@ -444,20 +444,20 @@ Before handing off:
 The next writing task fetches and verifies that exact state before editing.
 Parallel work is read-only or uses isolated worktrees and branches.
 
-## Collaboration: validation follows revision scope
+## Collaboration: validation is compile-only by default
 
-Use `npm run test:changed` while iterating and `npm run test:revision` as the
-normal final gate for a coherent local revision. The scoped planner must fail
-on an unclassified path; it never substitutes the complete suite for missing
-ownership.
+Optimize normal iteration for fast feedback. By default, run only the checks
+needed to prove that the changed code compiles, such as TypeScript typechecking,
+the affected .NET build or the packaging build required to launch the app.
 
-Do not run `npm test` merely because a local revision is ready to commit. The
-complete repository gate is required only when the revision affects a shared
-Preview boundary, manifest or registry, persistence schema or parity data,
-generated scaffolding, a cross-owner integration or phase handoff, or when
-merging or publishing a version. It also runs when the user explicitly asks
-for complete validation. A focused revision remains complete when every check
-selected by `test:revision` passes.
+Do not run test suites during iteration or final handoff unless the user
+explicitly requests them. This includes `npm run test:changed`, `npm run
+test:revision`, focused tests and the complete `npm test` repository gate.
+Changes to Preview boundaries, manifests, registries, persistence, parity data,
+generated scaffolding, cross-owner integrations, phase handoffs, merges and
+published versions do not implicitly authorize a test suite. When the user
+does request tests, select the narrowest applicable suite unless they explicitly
+request the complete battery.
 
 ## Delivery
 

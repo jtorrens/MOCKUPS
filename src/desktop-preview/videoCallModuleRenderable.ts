@@ -55,20 +55,12 @@ export function videoCallModuleToRenderable(payload: DesignPreviewPayload): Rend
     width: screen.width,
     height: Math.max(1, bodyBottom - bodyTop),
   };
-  const gridItems = call.participants.filter((item) => item.role === "grid");
-  const gridBoxes = grid(gridItems, inset(payload, body, call.gridPadding), numberToken(payload, call.gridGapToken) * scale, call.gridRows);
-  const gridById = new Map(gridBoxes.map(({ item, box }) => [item.id, box]));
-  const mainContent = inset(payload, body, call.mainPadding);
-  const mainBox = call.mainSizeMode === "fill"
-    ? mainContent
-    : placeChild(mainContent, { width: call.mainSize.width * scale, height: call.mainSize.height * scale }, scalePlacement(call.mainPlacement, scale));
+  const gap = numberToken(payload, call.gridGapToken) * scale;
+  const layoutById = participantLayout(call, payload, body, gap);
   const pipContent = inset(payload, body, call.pipPadding);
   const pipBox = placeChild(pipContent, { width: call.pipSize.width * scale, height: call.pipSize.height * scale }, scalePlacement(call.pipPlacement, scale));
   const participants = call.participants.flatMap((item) => {
-    const box = item.role === "main" && call.showMainVideo ? mainBox
-      : item.role === "pip" && call.showPip ? pipBox
-      : item.role === "grid" && call.showGridParticipants ? gridById.get(item.id)
-      : undefined;
+    const box = item.role === "pip" && call.showPip ? pipBox : layoutById.get(item.id);
     return box ? [callParticipantComponentToRenderable(previewPayloadInBox(payload, box), item.participant, box)] : [];
   });
   const children: RenderableNode[] = [
@@ -82,6 +74,36 @@ export function videoCallModuleToRenderable(payload: DesignPreviewPayload): Rend
   if (status) children.push(status);
   if (navigation) children.push(navigation);
   return { id: call.id, type: "group", frame: 0, box: screen, style: { overflow: "hidden" }, children };
+}
+
+function participantLayout(call: ReturnType<typeof resolveVideoCallModule>, payload: DesignPreviewPayload, body: RenderableBox, gap: number) {
+  if (call.gridHeightMode === "fill") {
+    const items = call.participants.filter((item) =>
+      (item.role === "main" && call.showMainVideo)
+      || (item.role === "grid" && call.showGridParticipants));
+    return new Map(grid(items, inset(payload, body, call.gridPadding), gap, call.gridRows).map(({ item, box }) => [item.id, box]));
+  }
+
+  const gridItems = call.showGridParticipants
+    ? call.participants.filter((item) => item.role === "grid")
+    : [];
+  const gridHeight = Math.min(body.height, call.gridHeight * renderScale(payload));
+  const gridRegion: RenderableBox = {
+    x: body.x,
+    y: body.y + body.height - gridHeight,
+    width: body.width,
+    height: gridHeight,
+  };
+  const mainRegion: RenderableBox = gridItems.length > 0
+    ? { x: body.x, y: body.y, width: body.width, height: Math.max(1, gridRegion.y - gap - body.y) }
+    : body;
+  const byId = new Map<string, RenderableBox>();
+  if (call.showMainVideo) {
+    const mainBox = inset(payload, mainRegion, call.mainPadding);
+    for (const item of call.participants) if (item.role === "main") byId.set(item.id, mainBox);
+  }
+  for (const { item, box } of grid(gridItems, inset(payload, gridRegion, call.gridPadding), gap, call.gridRows)) byId.set(item.id, box);
+  return byId;
 }
 
 function grid(items: VideoCallParticipant[], box: RenderableBox, gap: number, requestedRows: number) {

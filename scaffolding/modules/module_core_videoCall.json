@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "intent": {
-    "responsibility": "Own one complete one-to-one or group video-call Screen.",
+    "responsibility": "Own one complete video-call Screen whose participant roles determine the current composition.",
     "visualBoundary": "Own system chrome, optional header, participant layout, optional self view and optional call controls.",
-    "runtimeBehavior": "Runtime owns call title, layout mode, self participant identity, control states and an ordered participant collection.",
+    "runtimeBehavior": "Runtime owns call title, control states and one ordered participant collection whose animated role selects main, PIP or grid presentation.",
     "forwarding": "Forward each participant collection item explicitly to the fixed Call Participant Variant and each control to its fixed Button Variant.",
     "temporalOwnership": "The Screen owns participant presence; every participant Runtime field is resolved relative to that participant first appearance.",
     "productionContext": "Use exact Screen → Shot → Actor → Theme/Device context."
@@ -42,7 +42,6 @@
     "appearanceMode": "inherit",
     "videoCall": {
       "useAppWallpaper": false,
-      "conversationType": "group",
       "backgroundColorToken": "theme.colors.background",
       "showHeader": true,
       "headerLayoutMode": "stack",
@@ -397,15 +396,6 @@
         "variantReference": "component_project_foqn_s2_call_participant::variant::default",
         "overrides": {}
       },
-      "mainSizeMode": "fill",
-      "mainSize": "390|520",
-      "mainPlacement": {
-        "mode": "center",
-        "alignX": 0.5,
-        "alignY": 0.5,
-        "offsetX": 0,
-        "offsetY": 0
-      },
       "mainPadding": "theme.spacing.none|theme.spacing.none",
       "showPip": true,
       "pipParticipantSlot": {
@@ -428,6 +418,8 @@
       },
       "gridPadding": "theme.spacing.s|theme.spacing.s",
       "gridGapToken": "theme.spacing.s",
+      "gridHeightMode": "fixed",
+      "gridHeight": 360,
       "gridRows": 2,
       "showParticipantNames": true,
       "showParticipantStatus": true,
@@ -1802,7 +1794,6 @@
       "appearanceMode": "inherit",
       "videoCall": {
         "useAppWallpaper": false,
-        "conversationType": "group",
         "backgroundColorToken": "theme.colors.background",
         "showHeader": true,
         "headerLayoutMode": "stack",
@@ -2157,15 +2148,6 @@
           "variantReference": "component_project_foqn_s2_call_participant::variant::default",
           "overrides": {}
         },
-        "mainSizeMode": "fill",
-        "mainSize": "390|520",
-        "mainPlacement": {
-          "mode": "center",
-          "alignX": 0.5,
-          "alignY": 0.5,
-          "offsetX": 0,
-          "offsetY": 0
-        },
         "mainPadding": "theme.spacing.none|theme.spacing.none",
         "showPip": true,
         "pipParticipantSlot": {
@@ -2188,6 +2170,8 @@
         },
         "gridPadding": "theme.spacing.s|theme.spacing.s",
         "gridGapToken": "theme.spacing.s",
+        "gridHeightMode": "fixed",
+        "gridHeight": 360,
         "gridRows": 2,
         "showParticipantNames": true,
         "showParticipantStatus": true,
@@ -2242,51 +2226,6 @@
       "unit": "",
       "embeddedSlot": null,
       "structuredCollection": null
-    },
-    {
-      "id": "module.core.videoCall.conversationType",
-      "label": "Conversation type",
-      "valueKind": "OptionToken",
-      "jsonPath": [
-        "videoCall",
-        "conversationType"
-      ],
-      "defaultValue": "group",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "individual",
-          "label": "Individual",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "group",
-          "label": "Group",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        }
-      ],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": null
     },
     {
       "id": "module.core.videoCall.showHeader",
@@ -4279,106 +4218,6 @@
       }
     },
     {
-      "id": "module.core.videoCall.mainSizeMode",
-      "label": "Size mode",
-      "valueKind": "OptionToken",
-      "jsonPath": [
-        "videoCall",
-        "mainSizeMode"
-      ],
-      "defaultValue": "fill",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "fill",
-          "label": "Fill",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "fixed",
-          "label": "Fixed",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        }
-      ],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "module.core.videoCall.mainSize",
-      "label": "Main size",
-      "valueKind": "IntegerPair",
-      "jsonPath": [
-        "videoCall",
-        "mainSize"
-      ],
-      "defaultValue": "390|520",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": {
-        "first": "W",
-        "second": "H"
-      },
-      "number": null,
-      "componentVariantType": "",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "module.core.videoCall.mainPlacement",
-      "label": "Main placement",
-      "valueKind": "AlignmentPlacement",
-      "jsonPath": [
-        "videoCall",
-        "mainPlacement"
-      ],
-      "defaultValue": "{\"mode\":\"center\",\"alignX\":0.5,\"alignY\":0.5,\"offsetX\":0,\"offsetY\":0}",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": null
-    },
-    {
       "id": "module.core.videoCall.mainPadding",
       "label": "Main padding",
       "valueKind": "ThemeTokenPair",
@@ -4786,6 +4625,83 @@
       "structuredCollection": null
     },
     {
+      "id": "module.core.videoCall.gridHeightMode",
+      "label": "Height mode",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "videoCall",
+        "gridHeightMode"
+      ],
+      "defaultValue": "fixed",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "fixed",
+          "label": "Fixed",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "fill",
+          "label": "Fill",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": null,
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "module.core.videoCall.gridHeight",
+      "label": "Grid height",
+      "valueKind": "Integer",
+      "jsonPath": [
+        "videoCall",
+        "gridHeight"
+      ],
+      "defaultValue": "360",
+      "isEditable": true,
+      "options": [],
+      "optionSource": "None",
+      "pairLabels": null,
+      "number": {
+        "minimum": 1,
+        "maximum": 4096,
+        "increment": 1,
+        "decimalPlaces": 0,
+        "useSlider": false
+      },
+      "componentVariantType": "",
+      "synchronizedVariantReferenceJsonPaths": [],
+      "runtimeInputComponentVariantFieldId": "",
+      "runtimeCollectionComponentVariantFieldId": "",
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "imagePreview": null,
+      "recordReference": null,
+      "motionTiming": null,
+      "unit": "px",
+      "embeddedSlot": null
+    },
+    {
       "id": "module.core.videoCall.gridRows",
       "label": "Rows",
       "valueKind": "Integer",
@@ -4968,11 +4884,6 @@
                 "id": "module.core.videoCall.useAppWallpaper",
                 "order": 60,
                 "visible": true
-              },
-              {
-                "id": "module.core.videoCall.conversationType",
-                "order": 70,
-                "visible": true
               }
             ]
           }
@@ -5050,7 +4961,7 @@
       {
         "id": "main-video",
         "label": "Main Video",
-        "subtitle": "Surface, size and placement",
+        "subtitle": "Highlighted participant appearance",
         "icon": "media",
         "order": 30,
         "visible": true,
@@ -5074,23 +4985,8 @@
                 "visible": true
               },
               {
-                "id": "module.core.videoCall.mainSizeMode",
-                "order": 30,
-                "visible": true
-              },
-              {
-                "id": "module.core.videoCall.mainSize",
-                "order": 40,
-                "visible": true
-              },
-              {
-                "id": "module.core.videoCall.mainPlacement",
-                "order": 50,
-                "visible": true
-              },
-              {
                 "id": "module.core.videoCall.mainPadding",
-                "order": 60,
+                "order": 30,
                 "visible": true
               }
             ]
@@ -5179,18 +5075,28 @@
                 "visible": true
               },
               {
-                "id": "module.core.videoCall.gridRows",
+                "id": "module.core.videoCall.gridHeightMode",
                 "order": 50,
                 "visible": true
               },
               {
-                "id": "module.core.videoCall.showParticipantNames",
+                "id": "module.core.videoCall.gridHeight",
                 "order": 60,
                 "visible": true
               },
               {
-                "id": "module.core.videoCall.showParticipantStatus",
+                "id": "module.core.videoCall.gridRows",
                 "order": 70,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.showParticipantNames",
+                "order": 80,
+                "visible": true
+              },
+              {
+                "id": "module.core.videoCall.showParticipantStatus",
+                "order": 90,
                 "visible": true
               }
             ]

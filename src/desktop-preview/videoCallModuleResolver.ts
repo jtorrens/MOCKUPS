@@ -37,12 +37,10 @@ export function resolveVideoCallModule(payload: DesignPreviewPayload): VideoCall
   const headerRuntimeRows = requiredRuntimeRows(preview, "videoCallHeaderRows", "row", "module.core.videoCall");
   const footerRows = requiredRows(owner, "footerRows", "footerRow", "module.core.videoCall");
   const footerRuntimeRows = requiredRuntimeRows(preview, "videoCallFooterRows", "footerRow", "module.core.videoCall");
-  const mainSize = requiredNumberPair(owner, "mainSize", "module.core.videoCall.mainSize");
   const pipSize = requiredNumberPair(owner, "pipSize", "module.core.videoCall.pipSize");
   return {
     id: "module.core.videoCall",
     useAppWallpaper: requiredBoolean(owner, "useAppWallpaper", "module.core.videoCall.useAppWallpaper"),
-    conversationType: conversationType(requiredString(owner, "conversationType", "module.core.videoCall.conversationType")),
     backgroundColorToken: requiredString(owner, "backgroundColorToken", "module.core.videoCall.backgroundColorToken"),
     showHeader: requiredBoolean(owner, "showHeader", "module.core.videoCall.showHeader"),
     headerLayoutMode: sectionLayoutMode(requiredString(owner, "headerLayoutMode", "module.core.videoCall.headerLayoutMode")),
@@ -67,9 +65,6 @@ export function resolveVideoCallModule(payload: DesignPreviewPayload): VideoCall
       resolveRow("module.core.videoCall", "footer", 2, footerRows[1], footerRuntimeRows[1], bases),
     ],
     showMainVideo: requiredBoolean(owner, "showMainVideo", "module.core.videoCall.showMainVideo"),
-    mainSizeMode: sizeMode(requiredString(owner, "mainSizeMode", "module.core.videoCall.mainSizeMode")),
-    mainSize: { width: positive(mainSize.first, "mainSize.width"), height: positive(mainSize.second, "mainSize.height") },
-    mainPlacement: requiredPlacement(owner, "mainPlacement", "module.core.videoCall.mainPlacement"),
     mainPadding: pair(owner, "mainPadding"),
     showPip: requiredBoolean(owner, "showPip", "module.core.videoCall.showPip"),
     pipSize: { width: positive(pipSize.first, "pipSize.width"), height: positive(pipSize.second, "pipSize.height") },
@@ -78,6 +73,8 @@ export function resolveVideoCallModule(payload: DesignPreviewPayload): VideoCall
     showGridParticipants: requiredBoolean(owner, "showGridParticipants", "module.core.videoCall.showGridParticipants"),
     gridPadding: pair(owner, "gridPadding"),
     gridGapToken: requiredString(owner, "gridGapToken", "module.core.videoCall.gridGapToken"),
+    gridHeightMode: gridHeightMode(requiredString(owner, "gridHeightMode", "module.core.videoCall.gridHeightMode")),
+    gridHeight: positive(requiredNumber(owner, "gridHeight", "module.core.videoCall.gridHeight"), "gridHeight"),
     gridRows: Math.max(1, Math.round(requiredNumber(owner, "gridRows", "module.core.videoCall.gridRows"))),
     showStatusBar: requiredBoolean(owner, "showStatusBar", "module.core.videoCall.showStatusBar"),
     showNavigationBar: requiredBoolean(owner, "showNavigationBar", "module.core.videoCall.showNavigationBar"),
@@ -99,8 +96,7 @@ function typedSlot(owner: Record<string, unknown>, bases: Record<string, unknown
 function slotConfig(bases: Record<string, unknown>, slot: VideoCallComponentSlot, type: string, path: string) { return mergeComponentDefaults(componentVariantConfig(bases, type, requiredString(slot, "variantReference", `${path}.variantReference`)), requiredRecord(slot, "overrides", `${path}.overrides`)); }
 function pair(owner: Record<string, unknown>, key: string) { const value = requiredStringPair(owner, key, `module.core.videoCall.${key}`); return { xToken: value.first, yToken: value.second }; }
 function participantRole(value: string): VideoCallParticipantRole { if (value === "main" || value === "pip" || value === "grid") return value; throw new Error(`Unsupported participant role '${value}'`); }
-function conversationType(value: string): VideoCallModuleContract["conversationType"] { if (value === "individual" || value === "group") return value; throw new Error(`Unsupported conversation type '${value}'`); }
 function sectionLayoutMode(value: string): "stack" | "float" { if (value === "stack" || value === "float") return value; throw new Error(`Unsupported section layout mode '${value}'`); }
-function sizeMode(value: string): VideoCallModuleContract["mainSizeMode"] { if (value === "fill" || value === "fixed") return value; throw new Error(`Unsupported main size mode '${value}'`); }
+function gridHeightMode(value: string): VideoCallModuleContract["gridHeightMode"] { if (value === "fixed" || value === "fill") return value; throw new Error(`Unsupported grid height mode '${value}'`); }
 function positive(value: number, path: string) { if (!Number.isFinite(value) || value <= 0) throw new Error(`${path} must be positive`); return value; }
 function nonNegative(value: number, path: string) { if (!Number.isFinite(value) || value < 0) throw new Error(`${path} must be non-negative`); return value; }
