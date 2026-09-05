@@ -8769,6 +8769,25 @@ static void PinnedProductionPreviewKeepsActiveScreenWhileEditingDesign()
                     Required(WindowSession(window).SelectedNode),
                     WindowSession(window).TreeRoots);
                 Equal(lockedNode.Id, canonicalLockedNode.Id);
+                var navigateToPreviewContext = typeof(EditorPreviewController)
+                    .GetMethod(
+                        "NavigateToActiveDesignContext",
+                        BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?? throw new InvalidOperationException(
+                        "Missing Preview context navigation boundary.");
+                navigateToPreviewContext.Invoke(preview, []);
+                True(SpinWait.SpinUntil(
+                    () =>
+                    {
+                        Dispatcher.UIThread.RunJobs();
+                        return WindowSession(window).Workspace
+                                == EditorWorkspace.Production
+                            && WindowSession(window).SelectedNode?.Id
+                                == lockedNode.Id;
+                    },
+                    TimeSpan.FromSeconds(10)),
+                    "The locked Preview context did not reopen its exact Production editor.");
+                Equal(pinnedBreadcrumb, PreviewBreadcrumb());
                 var canonicalRoot = canonicalLockedNode;
                 while (canonicalRoot.Parent is { } parent)
                 {

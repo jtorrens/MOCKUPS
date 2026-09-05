@@ -177,6 +177,8 @@ internal sealed class EditorPreviewController : IDisposable
     private readonly Func<bool> _isDark;
     private readonly Func<ProjectTreeNode?> _selectedNode;
     private readonly Func<string, bool> _selectNodeById;
+    private readonly Func<EditorWorkspace, string, Task<bool>>
+        _navigateNodeInWorkspace;
     private readonly TextBlock _designContextText;
     private readonly Button _designContextHistoryButton;
     private readonly Button _designContextAddHistoryButton;
@@ -438,6 +440,7 @@ internal sealed class EditorPreviewController : IDisposable
         Func<bool> isDark,
         Func<ProjectTreeNode?> selectedNode,
         Func<string, bool> selectNodeById,
+        Func<EditorWorkspace, string, Task<bool>> navigateNodeInWorkspace,
         Action<PreviewAuthoringNavigationTarget> navigateAuthoringTarget,
         Control previewPanel,
         Window owner)
@@ -477,6 +480,7 @@ internal sealed class EditorPreviewController : IDisposable
         _isDark = isDark;
         _selectedNode = selectedNode;
         _selectNodeById = selectNodeById;
+        _navigateNodeInWorkspace = navigateNodeInWorkspace;
         _designContextText = designContextText;
         _designContextHistoryButton = designContextHistoryButton;
         _designContextAddHistoryButton = designContextAddHistoryButton;
@@ -4061,22 +4065,32 @@ internal sealed class EditorPreviewController : IDisposable
                 : "Keep current preview context");
     }
 
-    private void NavigateToActiveDesignContext()
+    private async void NavigateToActiveDesignContext()
     {
-        if (!string.IsNullOrWhiteSpace(_activeProductionModuleInstanceId))
-        {
-            _selectNodeById(_activeProductionModuleInstanceId);
-            return;
-        }
-        var node = _activeDesignPreviewNode
-            ?? LockedNode(EditorWorkspace.Design)
-            ?? _lastDesignPreviewNode;
-        if (node is null)
-        {
-            return;
-        }
+        var workspace = PreviewWorkspace();
+        var targetId = !string.IsNullOrWhiteSpace(
+                _activeProductionModuleInstanceId)
+            ? _activeProductionModuleInstanceId
+            : (_activeDesignPreviewNode
+                ?? LockedNode(workspace)
+                ?? _lastDesignPreviewNode)?.Id;
+        if (string.IsNullOrWhiteSpace(targetId)) return;
 
-        _selectNodeById(node.Id);
+        try
+        {
+            if (!await _navigateNodeInWorkspace(
+                    workspace,
+                    targetId))
+            {
+                _messages.Warning(
+                    "Preview context",
+                    $"The exact Preview editor '{targetId}' is unavailable.");
+            }
+        }
+        catch (Exception error)
+        {
+            _messages.Error("Preview context", error);
+        }
     }
 
     private string ProductionShotId()

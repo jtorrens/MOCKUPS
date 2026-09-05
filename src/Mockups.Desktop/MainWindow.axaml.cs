@@ -133,6 +133,10 @@ public partial class MainWindow : SukiWindow
             (nodeId) => NavigateToNodeById(
                 nodeId,
                 "preview-context"),
+            (workspace, nodeId) => NavigateToNodeInWorkspaceAsync(
+                workspace,
+                nodeId,
+                "preview-context"),
             (target) => previewAuthoringNavigator.Navigate(target),
             PreviewPanelBorder,
             this);
@@ -1574,6 +1578,17 @@ public partial class MainWindow : SukiWindow
         EditorWorkspace workspace,
         string nodeId)
     {
+        return await NavigateToNodeInWorkspaceAsync(
+            workspace,
+            nodeId,
+            "reference-usage");
+    }
+
+    private async Task<bool> NavigateToNodeInWorkspaceAsync(
+        EditorWorkspace workspace,
+        string nodeId,
+        string source)
+    {
         var node = EditorNodeSelectionState.FindNodeById(
             Session.TreeRoots,
             nodeId);
@@ -1595,12 +1610,12 @@ public partial class MainWindow : SukiWindow
         _navigationPanel.EnsureVisible();
         CaptureActiveEditorViewState();
         using var transaction = BeginContextTransaction(
-            "reference-usage",
+            source,
             nodeId);
         if (!_workspaceCoordinator.TrySelectNodeInWorkspace(
                 workspace,
                 nodeId,
-                "reference-usage",
+                source,
                 out var transition))
         {
             return false;

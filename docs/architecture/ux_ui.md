@@ -246,6 +246,9 @@ resolution, preparation and playback.
 Fixing a Preview context retains its exact visible breadcrumb and context label
 through refreshes and editor or workspace changes. Releasing it keeps that
 chrome mounted until the newly selected Preview context is ready.
+Activating that retained context navigates through `EditorWorkspaceCoordinator`,
+switches to its exact Design or Production workspace and opens the editor for
+the item visible in Preview without releasing the lock.
 
 In the interactive Preview, hovering a resolved element shows its exact
 renderable identity. Right click pins that element and presents its ordered
