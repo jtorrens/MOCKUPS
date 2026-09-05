@@ -70,6 +70,8 @@ It includes:
   `ComponentVariantSlot` fields inside structured collections, nested
   collection paths, amber propagation through field/card/internal navigation,
   and Restore persistence through the stable item path;
+- shared modal priority, including recovery when the owning editor regains
+  focus after a modal opens without stealing focus from another application;
 - Preview authoring exposes no synchronous Runtime Input visual-construction
   or fallback-load method; the cancellable prepared surface is its only
   compiled entrypoint;

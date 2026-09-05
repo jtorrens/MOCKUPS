@@ -375,6 +375,11 @@ window, parallel panel or temporary editor. Modals remain bounded confirmation,
 selection, import or search workflows and never host persistent dictionary
 authoring.
 
+Bounded modal dialogs remain above their owning editor window. On macOS the
+shared modal-priority owner restores the visible dialog if the editor regains
+focus during the input-event handoff, while allowing the user to switch to a
+different application without the dialog stealing system focus.
+
 Declared `RecordReference` Overrides use this same action and standard
 inherited controls. Their metadata declares the referenced class, sparse local
 document and exact field set; shell and shared editor services never route by a

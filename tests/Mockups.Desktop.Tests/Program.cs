@@ -6446,6 +6446,11 @@ static void PreviewControlsDetachIntoTopmostSessionWindow()
         True(dialog.IsActive);
         True(!floating.Topmost);
         True(!floating.IsEnabled);
+        dialog.Topmost = false;
+        owner.Activate();
+        Dispatcher.UIThread.RunJobs();
+        True(dialog.Topmost);
+        True(dialog.IsActive);
         dialog.Close();
         Dispatcher.UIThread.RunJobs();
         True(floating.Topmost);

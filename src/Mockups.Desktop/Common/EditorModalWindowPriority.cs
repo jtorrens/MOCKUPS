@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Threading;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -10,7 +11,50 @@ internal static class EditorModalWindowPriority
     public static void Configure(Window dialog, Window owner)
     {
         List<OwnedWindowState>? displacedWindows = null;
+        var activationPending = false;
+        var closed = false;
+
+        void PromoteDialog(bool requireActiveOwner)
+        {
+            if (closed || !dialog.IsVisible || activationPending)
+            {
+                return;
+            }
+            activationPending = true;
+            Dispatcher.UIThread.Post(
+                () =>
+                {
+                    activationPending = false;
+                    if (closed
+                        || !dialog.IsVisible
+                        || (requireActiveOwner && !owner.IsActive))
+                    {
+                        return;
+                    }
+                    dialog.Topmost = true;
+                    dialog.Activate();
+                },
+                DispatcherPriority.Background);
+        }
+
+        void RestoreDialogAfterOwnerActivation(
+            object? sender,
+            EventArgs args) =>
+            PromoteDialog(requireActiveOwner: true);
+
+        void RestoreDialogAfterDeactivation(
+            object? sender,
+            EventArgs args)
+        {
+            if (owner.IsActive)
+            {
+                PromoteDialog(requireActiveOwner: true);
+            }
+        }
+
         dialog.Topmost = true;
+        owner.Activated += RestoreDialogAfterOwnerActivation;
+        dialog.Deactivated += RestoreDialogAfterDeactivation;
         dialog.Opened += (_, _) =>
         {
             displacedWindows = owner.OwnedWindows
@@ -27,18 +71,13 @@ internal static class EditorModalWindowPriority
                 displaced.Window.IsEnabled = false;
                 displaced.Window.Topmost = false;
             }
-            Dispatcher.UIThread.Post(
-                () =>
-                {
-                    if (dialog.IsVisible)
-                    {
-                        dialog.Activate();
-                    }
-                },
-                DispatcherPriority.Background);
+            PromoteDialog(requireActiveOwner: false);
         };
         dialog.Closed += (_, _) =>
         {
+            closed = true;
+            owner.Activated -= RestoreDialogAfterOwnerActivation;
+            dialog.Deactivated -= RestoreDialogAfterDeactivation;
             if (displacedWindows is null)
             {
                 return;
