@@ -67,7 +67,7 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
             };
             return;
         }
-        StructuredCollectionDocumentContract.Validate(
+        StructuredCollectionDocumentContract.ValidateEffective(
             _items,
             collection,
             $"Structured collection '{collection.Id}'");
@@ -88,7 +88,14 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
         StructuredCollectionEditor? editor = null;
         void Commit(bool runtimeContractChanged = false)
         {
-            var json = _items.ToJsonString();
+            var stored = collection.StructureOwnedFieldJsonKeys
+                    is { Count: > 0 }
+                ? StructuredCollectionDocumentContract.StoredClone(
+                    _items,
+                    collection,
+                    $"Structured collection '{collection.Id}'")
+                : _items.DeepClone().AsArray();
+            var json = stored.ToJsonString();
             ValueChanged?.Invoke(this, json);
             ValueCommitted?.Invoke(this, json);
             Rebuild();

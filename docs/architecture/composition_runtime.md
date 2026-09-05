@@ -71,7 +71,10 @@ the number and identity of its slots. Bound discriminator fields such as a
 Content Row slot `kind` exist in the effective Runtime document so the generic
 conditional-field contract can select its controls, but they are never written
 to the Runtime authoring document. Reconciliation preserves every Runtime-owned
-field, including fields currently hidden by that discriminator.
+field, including fields currently hidden by that discriminator. The generic
+structured-collection surface validates effective documents against Runtime
+fields plus the exact declared structure bindings, while commits serialize the
+strict stored document and remove those projected Variant fields.
 
 ### Calculated text
 

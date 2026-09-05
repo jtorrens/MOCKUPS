@@ -76,7 +76,20 @@ public static class StructuredCollectionDocumentContract
     public static void Validate(
         JsonArray items,
         RuntimeInputCollectionDefinition definition,
-        string owner)
+        string owner) =>
+        Validate(items, definition, owner, includeStructureOwnedFields: false);
+
+    public static void ValidateEffective(
+        JsonArray items,
+        RuntimeInputCollectionDefinition definition,
+        string owner) =>
+        Validate(items, definition, owner, includeStructureOwnedFields: true);
+
+    private static void Validate(
+        JsonArray items,
+        RuntimeInputCollectionDefinition definition,
+        string owner,
+        bool includeStructureOwnedFields)
     {
         RuntimeCollectionDocumentContract.Validate(items, owner);
         if (definition.FixedItemCount > 0
@@ -86,7 +99,12 @@ public static class StructuredCollectionDocumentContract
                 $"{owner} requires exactly {definition.FixedItemCount} items but contains {items.Count}.");
         }
         var storedFields = definition.Fields
-            .Where((field) => field.Source == ComponentInputSource.Runtime)
+            .Where((field) =>
+                field.Source == ComponentInputSource.Runtime
+                || (includeStructureOwnedFields
+                    && field.Source == ComponentInputSource.Variant
+                    && definition.StructureOwnedFieldJsonKeys?.Contains(
+                        field.JsonKey) == true))
             .ToList();
         var fieldKeys = storedFields
             .Select((field) => field.JsonKey)
@@ -160,10 +178,25 @@ public static class StructuredCollectionDocumentContract
                 var value = item[field.JsonKey]
                     ?? throw new InvalidOperationException(
                         $"{owner} item '{itemId}' requires field '{field.JsonKey}'.");
-                RuntimeInputValueKindContract.ValidateRuntimeValue(
-                    field,
-                    value,
-                    $"{owner} item '{itemId}' field '{field.JsonKey}'");
+                if (includeStructureOwnedFields
+                    && field.ValueKind == ValueKind.StructuredCollection
+                    && field.StructuredCollection?.StructureOwnedFieldJsonKeys
+                        is { Count: > 0 })
+                {
+                    ValidateEffective(
+                        value as JsonArray
+                            ?? throw new InvalidOperationException(
+                                $"{owner} item '{itemId}' field '{field.JsonKey}' must be an array."),
+                        field.StructuredCollection,
+                        $"{owner} item '{itemId}' field '{field.JsonKey}'");
+                }
+                else
+                {
+                    RuntimeInputValueKindContract.ValidateRuntimeValue(
+                        field,
+                        value,
+                        $"{owner} item '{itemId}' field '{field.JsonKey}'");
+                }
             }
             if (definition.ComponentItems is { } declaredComponentItems)
             {

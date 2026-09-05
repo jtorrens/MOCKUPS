@@ -199,6 +199,11 @@ public static class RuntimeInputDefinitionReader
             var itemPresentation = ReadItemPresentation(collection);
             var componentItems = ReadComponentItems(collection);
             var fixedComponentBoundary = ReadFixedComponentBoundary(collection);
+            var structureOwnedFieldJsonKeys =
+                ReadStructureOwnedFieldJsonKeys(
+                    collection,
+                    itemFields,
+                    id);
             if (componentItems is not null && fixedComponentBoundary is not null)
             {
                 throw new InvalidOperationException(
@@ -280,7 +285,8 @@ public static class RuntimeInputDefinitionReader
                 JsonStringArray(collection, "itemRuntimeHiddenInputIds"),
                 JsonString(collection, "itemRuntimeVariantReferencePath"),
                 JsonString(collection, "itemRuntimeOwnerVariantReferencePath"),
-                fixedComponentBoundary));
+                fixedComponentBoundary,
+                structureOwnedFieldJsonKeys));
         }
         return definitions;
     }
@@ -342,6 +348,41 @@ public static class RuntimeInputDefinitionReader
         if (collection is null) return null;
         var wrapper = new JsonObject { ["collections"] = new JsonArray(collection.DeepClone()) };
         return ReadCollections(wrapper, new JsonObject()).SingleOrDefault();
+    }
+
+    private static IReadOnlySet<string> ReadStructureOwnedFieldJsonKeys(
+        JsonObject collection,
+        IReadOnlyList<ComponentInputDefinition> fields,
+        string collectionId)
+    {
+        if (collection["structureProjection"] is null)
+        {
+            return new HashSet<string>(StringComparer.Ordinal);
+        }
+        var projection = JsonPath.RequiredObject(
+            collection,
+            "structureProjection",
+            $"Runtime Input collection '{collectionId}'");
+        var bindings = JsonPath.RequiredObject(
+            projection,
+            "fieldBindings",
+            $"Runtime Input collection '{collectionId}' structureProjection");
+        var keys = bindings
+            .Select((entry) => entry.Key)
+            .ToHashSet(StringComparer.Ordinal);
+        foreach (var key in keys)
+        {
+            var matches = fields.Where((field) =>
+                    field.JsonKey.Equals(key, StringComparison.Ordinal))
+                .ToList();
+            if (matches.Count != 1)
+            {
+                throw new InvalidOperationException(
+                    $"Runtime Input collection '{collectionId}' structureProjection "
+                    + $"binding '{key}' must target one declared field.");
+            }
+        }
+        return keys;
     }
 
     private static int FixedCollectionItemCount(JsonObject collection, JsonObject config)

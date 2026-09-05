@@ -100,7 +100,8 @@ public sealed record RuntimeInputCollectionDefinition(
     IReadOnlyList<string>? ItemRuntimeHiddenInputIds = null,
     string ItemRuntimeVariantReferencePath = "",
     string ItemRuntimeOwnerVariantReferencePath = "",
-    RuntimeFixedComponentBoundaryDefinition? FixedComponentBoundary = null);
+    RuntimeFixedComponentBoundaryDefinition? FixedComponentBoundary = null,
+    IReadOnlySet<string>? StructureOwnedFieldJsonKeys = null);
 
 public sealed record RuntimeFixedComponentBoundaryDefinition(
     string VariantReferenceJsonKey,
