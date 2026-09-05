@@ -21137,20 +21137,7 @@ static void SocialPostComposesHeaderRows()
     foreach (var row in rows)
     {
         JsonPath.RequiredBoolean(row, "visible", "Social Post row config");
-        foreach (var slot in Enumerable.Range(1, 5))
-        {
-            JsonPath.RequiredString(
-                row,
-                $"slot{slot}IconSizeToken",
-                "Social Post row config");
-            foreach (var suffix in new[] { "AvatarSlot", "IconSlot", "LabelSlot" })
-            {
-                var key = $"slot{slot}{suffix}";
-                ComponentVariantSlotDocumentContract.Validate(
-                    JsonPath.RequiredObject(row, key, "Social Post row config"),
-                    $"Social Post row config.{key}");
-            }
-        }
+        AssertContentRowBoundary(row, "Social Post row config");
     }
     var footerRows = JsonPath.RequiredArray(socialPost, "footerRows", "Social Post config")
         .OfType<JsonObject>()
@@ -21162,6 +21149,7 @@ static void SocialPostComposesHeaderRows()
     foreach (var row in footerRows)
     {
         JsonPath.RequiredBoolean(row, "visible", "Social Post footer row config");
+        AssertContentRowBoundary(row, "Social Post footer row config");
     }
     JsonPath.RequiredBoolean(socialPost, "useAppWallpaper", "Social Post config");
     JsonPath.RequiredBoolean(socialPost, "showHeader", "Social Post config");
@@ -21271,11 +21259,38 @@ static void SocialPostComposesHeaderRows()
         "module.core.socialPost.header.row1",
         "module.core.socialPost.header.row2",
         "module.core.socialPost.footer",
-        "module.core.socialPost.footer.row1",
-        "module.core.socialPost.footer.row2",
+        "module.core.socialPost.footer.footerRow1",
+        "module.core.socialPost.footer.footerRow2",
     })
     {
         True(html.Contains($"data-renderable-id=\"{renderableId}\"", StringComparison.Ordinal));
+    }
+
+    static void AssertContentRowBoundary(JsonObject row, string owner)
+    {
+        var rowSlot = JsonPath.RequiredObject(row, "rowSlot", owner);
+        ComponentVariantSlotDocumentContract.Validate(rowSlot, $"{owner}.rowSlot");
+        var overrides = JsonPath.RequiredObject(rowSlot, "overrides", $"{owner}.rowSlot");
+        if (overrides["contentRow"] is not JsonObject contentRow) return;
+        JsonPath.RequiredString(contentRow, "padding", $"{owner}.rowSlot.overrides.contentRow");
+        JsonPath.RequiredString(contentRow, "verticalAlignment", $"{owner}.rowSlot.overrides.contentRow");
+        JsonPath.RequiredBoolean(contentRow, "showSeparator", $"{owner}.rowSlot.overrides.contentRow");
+        var slots = JsonPath.RequiredArray(contentRow, "slots", $"{owner}.rowSlot.overrides.contentRow")
+            .OfType<JsonObject>()
+            .ToList();
+        Equal(5, slots.Count);
+        foreach (var slot in slots)
+        {
+            JsonPath.RequiredString(slot, "id", $"{owner}.rowSlot.overrides.contentRow slot");
+            JsonPath.RequiredString(slot, "kind", $"{owner}.rowSlot.overrides.contentRow slot");
+            JsonPath.RequiredString(slot, "iconSizeToken", $"{owner}.rowSlot.overrides.contentRow slot");
+            foreach (var key in new[] { "avatarSlot", "iconSlot", "labelSlot" })
+            {
+                ComponentVariantSlotDocumentContract.Validate(
+                    JsonPath.RequiredObject(slot, key, $"{owner}.rowSlot.overrides.contentRow slot"),
+                    $"{owner}.rowSlot.overrides.contentRow slot.{key}");
+            }
+        }
     }
 }
 

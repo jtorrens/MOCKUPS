@@ -55,6 +55,7 @@ const focusedCharacterizations = {
   incomingCallNotification:
     "tests/animation/incomingCallNotificationComponent.test.ts",
   callParticipant: "tests/animation/callParticipantComponent.test.ts",
+  contentRow: "tests/animation/contentRowComponent.test.ts",
   "module.core.chat": "tests/animation/conversationModuleResolver.test.ts",
   "module.core.lockScreen":
     "tests/Mockups.Desktop.Tests/Program.cs",

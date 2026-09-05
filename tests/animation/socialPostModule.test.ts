@@ -35,9 +35,11 @@ function fixture() {
     const runtime = JSON.parse(module.design_preview_json) as Record<string, unknown>;
     const avatarRuntime = JSON.parse(avatar.designPreviewJson) as Record<string, unknown>;
     const runtimeRows = runtime.socialPostRows as Array<Record<string, unknown>>;
-    runtimeRows[0]!.slot1Actor = avatarRuntime.actor;
     const footerRuntimeRows = runtime.socialPostFooterRows as Array<Record<string, unknown>>;
-    footerRuntimeRows[0]!.slot1Actor = avatarRuntime.actor;
+    for (const runtimeRow of [...runtimeRows, ...footerRuntimeRows]) {
+      const slots = runtimeRow.slotInputs as Array<Record<string, unknown>>;
+      for (const slot of slots) slot.actor = avatarRuntime.actor;
+    }
     return {
       ...bubble,
       kind: "module" as const,
@@ -107,23 +109,26 @@ test("Social Post owns two fixed structure-projected Runtime row sections", () =
     "socialPostFooterRows",
   ]);
   assert.deepEqual(contract.rows.map(({ id }) => id), ["row1", "row2"]);
-  assert.equal(contract.rows[0].slots[0].kind, "avatar");
-  assert.equal(contract.rows[0].slots[0].inputs.actorId, "actor_alex");
-  assert.equal(contract.rows[0].slots[0].inputs.sampleText, "Alex Q");
-  assert.equal(contract.rows[1].slots[0].kind, "label");
-  assert.equal(contract.rows[1].slots[0].inputs.sampleText, "#FOQN");
-  const headerConfigRows = config.socialPost.rows as Array<Record<string, unknown>>;
+  assert.equal(contract.rows[0].content.slots[0].kind, "avatar");
+  const headerAvatar = contract.rows[0].content.slots[0].content;
+  assert.ok(headerAvatar && "actor" in headerAvatar);
+  assert.equal(headerAvatar.actor.id, "actor_alex");
+  assert.equal(headerAvatar.actor.displayName, "Alex Q");
+  assert.equal(contract.rows[1].content.slots[0].kind, "label");
+  const headerLabel = contract.rows[1].content.slots[0].content;
+  assert.ok(headerLabel && "text" in headerLabel);
+  assert.equal(headerLabel.text, "#FOQN");
+  const headerConfigRows = config.socialPost.rows as Array<{
+    rowSlot: { overrides: { contentRow: { slots: Array<Record<string, unknown>> } } };
+  }>;
   for (const [rowIndex, row] of contract.rows.entries()) {
-    for (const [slotIndex, slot] of row.slots.entries()) {
+    for (const [slotIndex, slot] of row.content.slots.entries()) {
+      const slotConfig = headerConfigRows[rowIndex]?.rowSlot.overrides.contentRow.slots[slotIndex];
+      assert.equal(slot.kind, slotConfig?.kind);
       if (slot.kind !== "icon") continue;
-      assert.equal(
-        slot.inputs.iconSizeToken,
-        headerConfigRows[rowIndex]?.[`slot${slotIndex + 1}IconSizeToken`],
-      );
-      assert.equal(
-        (slot.componentSlot?.overrides.button as Record<string, unknown> | undefined)?.contentMode,
-        "icon",
-      );
+      assert.ok(slot.content && "iconSizeToken" in slot.content);
+      assert.equal(slot.content.iconSizeToken, slotConfig?.iconSizeToken);
+      assert.equal(slot.content.contentMode, "icon");
     }
   }
   assert.equal(contract.mediaScale, 1);
@@ -136,23 +141,19 @@ test("Social Post owns two fixed structure-projected Runtime row sections", () =
   assert.equal(contract.mediaFullScreenTransition, false);
   assert.equal(contract.mediaMotionElapsedMs, 0);
   assert.equal(contract.showGallerySeparator, true);
-  assert.deepEqual(contract.footerRows.map(({ id }) => id), ["row1", "row2"]);
-  const footerConfigRows = config.socialPost.footerRows as Array<Record<string, unknown>>;
+  assert.deepEqual(contract.footerRows.map(({ id }) => id), ["footerRow1", "footerRow2"]);
+  const footerConfigRows = config.socialPost.footerRows as Array<{
+    rowSlot: { overrides: { contentRow: { slots: Array<Record<string, unknown>> } } };
+  }>;
   for (const [rowIndex, row] of contract.footerRows.entries()) {
-    for (const [slotIndex, slot] of row.slots.entries()) {
-      assert.equal(
-        slot.kind,
-        footerConfigRows[rowIndex]?.[`slot${slotIndex + 1}Kind`],
-      );
+    for (const [slotIndex, slot] of row.content.slots.entries()) {
+      const slotConfig = footerConfigRows[rowIndex]?.rowSlot.overrides.contentRow?.slots?.[slotIndex];
+      if (!slotConfig) continue;
+      assert.equal(slot.kind, slotConfig?.kind);
       if (slot.kind === "icon") {
-        assert.equal(
-          slot.inputs.iconSizeToken,
-          footerConfigRows[rowIndex]?.[`slot${slotIndex + 1}IconSizeToken`],
-        );
-        assert.equal(
-          (slot.componentSlot?.overrides.button as Record<string, unknown> | undefined)?.contentMode,
-          "icon",
-        );
+        assert.ok(slot.content && "iconSizeToken" in slot.content);
+        assert.equal(slot.content.iconSizeToken, slotConfig?.iconSizeToken);
+        assert.equal(slot.content.contentMode, "icon");
       }
     }
   }
@@ -321,8 +322,14 @@ test("Social Post shows the Gallery separator only when its Variant enables it",
   assert.equal(findNode(hidden, "module.core.socialPost.gallery.separator"), undefined);
 });
 
-test("Social Post resolves animated text before distributing non-empty row slots", () => {
+test("Social Post resolves animated text and distributes non-empty Runtime row slots", () => {
   const source = fixture();
+  const runtime = JSON.parse(source.designPreviewJson) as {
+    socialPostRows: Array<{ slotInputs: Array<{ id: string; label: string }> }>;
+  };
+  runtime.socialPostRows[1]!.slotInputs[2]!.label = "#Tag";
+  source.designPreviewJson = JSON.stringify(runtime);
+  source.runtimeContractJson = JSON.stringify(runtime);
   source.instanceJson = JSON.stringify({
     animation: {
       schemaVersion: 2,
@@ -335,15 +342,6 @@ test("Social Post resolves animated text before distributing non-empty row slots
             { id: "message-10", frame: 10, value: "Hello", interpolation: "writeOn", enabled: true },
           ],
         },
-        {
-          id: "row2-slot3-label",
-          fieldId: "slot3.label",
-          targetId: "row2",
-          keyframes: [
-            { id: "row-0", frame: 0, value: "", interpolation: "hold", enabled: true },
-            { id: "row-10", frame: 10, value: "#Tag", interpolation: "writeOn", enabled: true },
-          ],
-        },
       ],
     },
   });
@@ -351,23 +349,20 @@ test("Social Post resolves animated text before distributing non-empty row slots
   source.localFrame = 0;
   const emptyFrame = resolveSocialPostModule(source);
   assert.equal(emptyFrame.message.text, "");
-  assert.equal(emptyFrame.rows[1].slots[2].inputs.sampleText, "");
-  assert.equal(
-    findNodeWithPrefix(
-      socialPostModuleToRenderable(source),
-      "module.core.socialPost.header.row2.slot.3.",
-    ),
-    undefined,
-  );
+  const emptyAnimatedLabel = emptyFrame.rows[1].content.slots[2].content;
+  assert.ok(emptyAnimatedLabel && "text" in emptyAnimatedLabel);
+  assert.equal(emptyAnimatedLabel.text, "#Tag");
 
   source.localFrame = 5;
   const animatedFrame = resolveSocialPostModule(source);
   assert.equal(animatedFrame.message.text, "He");
   assert.equal(animatedFrame.message.visibleText, "He");
-  assert.equal(animatedFrame.rows[1].slots[2].inputs.sampleText, "#T");
-  assert.ok(findNodeWithPrefix(
+  const animatedLabel = animatedFrame.rows[1].content.slots[2].content;
+  assert.ok(animatedLabel && "text" in animatedLabel);
+  assert.equal(animatedLabel.text, "#Tag");
+  assert.ok(findNode(
     socialPostModuleToRenderable(source),
-    "module.core.socialPost.header.row2.slot.3.",
+    "component.contentRow.slot.row2_slot3",
   ));
 });
 
@@ -380,7 +375,7 @@ test("Social Post renders its two header rows against one Surface", () => {
   const header = requiredNode(node, "module.core.socialPost.header");
   const row1 = requiredNode(node, "module.core.socialPost.header.row1");
   const row2 = requiredNode(node, "module.core.socialPost.header.row2");
-  const separator = requiredNode(node, "module.core.socialPost.header.row2.separator");
+  const separator = requiredNode(row2, "component.contentRow.separator");
   assert.equal(node.id, "module.core.socialPost");
   assert.deepEqual(node.box, { x: 0, y: 0, width: 360, height: 720 });
   assert.ok(header.box);
@@ -388,10 +383,10 @@ test("Social Post renders its two header rows against one Surface", () => {
   assert.ok(row2.box);
   assert.ok(separator.box);
   assert.equal(header.box.height, config.socialPost.headerHeight);
-  assert.equal(row2.box.y, row1.box.y + row1.box.height + 4);
+  assert.equal(row2.box.y, row1.box.y + row1.box.height);
   assert.equal(separator.box.y + separator.box.height, row2.box.y + row2.box.height);
-  assert.ok(findNode(header, "component.avatar"));
-  assert.ok(findNode(header, "component.label"));
+  assert.ok(findNode(header, "component.contentRow.slots[0].avatar"));
+  assert.ok(findNode(header, "component.contentRow.slots[1].label"));
   assert.equal(header.children?.[0]?.type, "surface");
 });
 
@@ -415,34 +410,21 @@ test("Social Post excludes invisible rows from section measurement and gaps", ()
   );
 });
 
-test("Social Post renders the same two-row contract as a footer above navigation", () => {
+test("Social Post renders its non-empty footer rows above navigation", () => {
   const source = fixture();
   const node = socialPostModuleToRenderable(source);
-  const config = JSON.parse(source.configJson) as {
-    socialPost: { footerRows: Array<Record<string, unknown>> };
-  };
   const message = requiredNode(node, "module.core.socialPost.message");
   const footer = requiredNode(node, "module.core.socialPost.footer");
-  const row1 = requiredNode(node, "module.core.socialPost.footer.row1");
-  const row2 = requiredNode(node, "module.core.socialPost.footer.row2");
+  const row1 = requiredNode(node, "module.core.socialPost.footer.footerRow1");
   const navigation = requiredNode(node, "navigation_bar");
   assert.ok(message.box);
   assert.ok(footer.box);
   assert.ok(row1.box);
-  assert.ok(row2.box);
   assert.ok(navigation.box);
   assert.equal(message.box.y + message.box.height, footer.box.y);
   assert.equal(footer.box.y + footer.box.height, navigation.box.y);
-  assert.equal(row2.box.y, row1.box.y + row1.box.height + 4);
-  const firstFooterRow = config.socialPost.footerRows[0] as { rowSlot?: { overrides?: { contentRow?: { slots?: Array<{ kind?: string }> } } } } | undefined;
-  const firstFooterKind = String(firstFooterRow?.rowSlot?.overrides?.contentRow?.slots?.[0]?.kind ?? "none");
-  const footerComponentByKind: Record<string, string> = {
-    avatar: "component.avatar",
-    icon: "component.button",
-    label: "component.label",
-  };
-  const firstFooterComponent = footerComponentByKind[firstFooterKind];
-  if (firstFooterComponent) assert.ok(findNode(footer, firstFooterComponent));
+  assert.equal(findNode(footer, "module.core.socialPost.footer.footerRow2"), undefined);
+  assert.ok(findNode(footer, "component.contentRow.slot.footerRow1_slot1"));
   assert.equal(footer.children?.[0]?.type, "surface");
   assert.equal(
     footer.children?.[0]?.box?.y! + footer.children?.[0]?.box?.height!,
@@ -518,11 +500,12 @@ test("Social Post rejects a wrong Surface boundary and a missing row Actor", () 
   const missingActor = fixture();
   const runtime = JSON.parse(missingActor.designPreviewJson) as Record<string, unknown>;
   const runtimeRows = runtime.socialPostRows as Array<Record<string, unknown>>;
-  delete runtimeRows[0]!.slot1Actor;
+  const firstRowSlots = runtimeRows[0]!.slotInputs as Array<Record<string, unknown>>;
+  delete firstRowSlots[0]!.actor;
   missingActor.designPreviewJson = JSON.stringify(runtime);
   assert.throws(
     () => resolveSocialPostModule(missingActor),
-    /module\.core\.socialPost\.header\.row1\.slot1Actor/,
+    /component\.contentRow\.slots\[0\]\.runtime\.actor/,
   );
 });
 

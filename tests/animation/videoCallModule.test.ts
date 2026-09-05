@@ -20,11 +20,17 @@ function fixture() {
       participants: Array<Record<string, unknown>>;
       videoCallHeaderRows: Array<Record<string, unknown>>;
       videoCallFooterRows: Array<Record<string, unknown>>;
+      videoCallMainRows: Array<Record<string, unknown>>;
     };
     const actor = (JSON.parse(base.designPreviewJson) as Record<string, unknown>).actor;
     for (const participant of preview.participants) participant.actor = actor;
-    for (const runtimeRow of [...preview.videoCallHeaderRows, ...preview.videoCallFooterRows]) {
-      for (const slot of [1, 2, 3, 4, 5]) runtimeRow[`slot${slot}Actor`] = actor;
+    for (const runtimeRow of [
+      ...preview.videoCallHeaderRows,
+      ...preview.videoCallFooterRows,
+      ...preview.videoCallMainRows,
+    ]) {
+      const slots = runtimeRow.slotInputs as Array<Record<string, unknown>>;
+      for (const slot of slots) slot.actor = actor;
     }
     return { ...base, kind: "module" as const, componentType: "module.core.videoCall", configJson: JSON.stringify(variant.config), designPreviewJson: JSON.stringify(preview), runtimeContractJson: JSON.stringify(preview) };
   } finally { database.close(); }
@@ -172,9 +178,9 @@ test("Video Call centers row blocks and presents participants as one collection"
   const header = node.children?.find(child => child.id === "module.core.videoCall.header");
   assert.ok(header?.box);
   const rows = header.children?.filter(child => child.id === "module.core.videoCall.header.row1" || child.id === "module.core.videoCall.header.row2") ?? [];
-  assert.equal(rows.length, 2);
-  assert.ok(rows[0]?.box && rows[1]?.box);
-  const rowsCenter = (rows[0]!.box!.y + rows[1]!.box!.y + rows[1]!.box!.height) * 0.5;
+  assert.equal(rows.length, 1);
+  assert.ok(rows[0]?.box);
+  const rowsCenter = rows[0]!.box!.y + rows[0]!.box!.height * 0.5;
   const headerCenter = header.box.y + header.box.height * 0.5;
   assert.ok(Math.abs(rowsCenter - headerCenter) < 0.001);
 });

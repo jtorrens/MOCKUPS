@@ -50,7 +50,8 @@
       "navigation_bar",
       "incomingCallNotification",
       "gallery",
-      "callParticipant"
+      "callParticipant",
+      "contentRow"
     ]
   },
   "owners": {

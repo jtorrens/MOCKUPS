@@ -821,23 +821,39 @@ static void ProjectedRuntimeCollectionsReconcileById()
 
     var projectedDefinition = new JsonObject
     {
+        ["id"] = "rows",
+        ["label"] = "Rows",
+        ["jsonKey"] = "rows",
+        ["itemLabel"] = "Row",
+        ["canEditStructure"] = false,
         ["fields"] = new JsonArray
         {
             new JsonObject
             {
                 ["id"] = "label",
+                ["label"] = "Label",
                 ["jsonKey"] = "label",
+                ["kind"] = "text",
+                ["valueKind"] = nameof(ValueKind.StringSingleLine),
+                ["defaultValue"] = "",
                 ["source"] = "variant",
             },
             new JsonObject
             {
                 ["id"] = "value",
+                ["label"] = "Value",
                 ["jsonKey"] = "value",
+                ["kind"] = "text",
+                ["valueKind"] = nameof(ValueKind.StringSingleLine),
+                ["defaultValue"] = "",
                 ["source"] = "runtime",
             },
         },
         ["structureProjection"] = new JsonObject
         {
+            ["sourceConfigPath"] = "rows",
+            ["sourceIdJsonKey"] = "id",
+            ["runtimeIdJsonKey"] = "id",
             ["fieldBindings"] = new JsonObject
             {
                 ["label"] = "label",
