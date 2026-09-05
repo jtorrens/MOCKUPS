@@ -22,7 +22,7 @@ export function contentRowComponentToRenderable(
 ): RenderableNode {
   const measured = row.slots.flatMap((slot) => {
     if (!slot.content) return [];
-    if (slot.kind === "label" && !("text" in slot.content && (slot.content.text.trim() || slot.content.subtext.trim()))) return [];
+    if (!contentRowSlotHasRenderableContent(slot)) return [];
     const node = slot.kind === "avatar"
       ? avatarComponentToRenderable(payload, slot.content as Parameters<typeof avatarComponentToRenderable>[1])
       : slot.kind === "icon"
@@ -71,6 +71,16 @@ export function contentRowComponentToRenderable(
     style: { background: selectedColor(payload, "theme.colors.divider") },
   });
   return { id: row.id, type: "group", frame: 0, box, style: { overflow: "visible" }, children };
+}
+
+export function contentRowHasRenderableContent(row: ContentRowDesignContract): boolean {
+  return row.slots.some(contentRowSlotHasRenderableContent);
+}
+
+function contentRowSlotHasRenderableContent(slot: ContentRowDesignContract["slots"][number]): boolean {
+  if (!slot.content) return false;
+  return slot.kind !== "label"
+    || ("text" in slot.content && Boolean(slot.content.text.trim() || slot.content.subtext.trim()));
 }
 
 function alignedY(row: ContentRowDesignContract, y: number, contentHeight: number, itemHeight: number) {

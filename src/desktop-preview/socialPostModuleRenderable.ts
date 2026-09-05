@@ -21,7 +21,7 @@ import type {
 } from "./socialPostModuleContract.js";
 import { resolveSocialPostModule } from "./socialPostModuleResolver.js";
 import { rowsSectionNode } from "./moduleRowSectionRenderable.js";
-import { contentRowComponentToRenderable } from "./contentRowComponentRenderable.js";
+import { contentRowComponentToRenderable, contentRowHasRenderableContent } from "./contentRowComponentRenderable.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
 import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
 import { wallpaperRenderable } from "./wallpaperRenderable.js";
@@ -70,6 +70,7 @@ export function socialPostModuleToRenderable(
         ),
         edge: "top",
         contentEdge: contentY,
+        rowHasContent: contentRowHasRenderableContent,
         renderRow: contentRowComponentToRenderable,
       })
     : undefined;
@@ -90,6 +91,7 @@ export function socialPostModuleToRenderable(
     ),
     edge: "bottom",
     contentEdge: contentBottom,
+    rowHasContent: contentRowHasRenderableContent,
     renderRow: contentRowComponentToRenderable,
   });
   const composer = composerLayoutNode(

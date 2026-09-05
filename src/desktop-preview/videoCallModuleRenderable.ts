@@ -8,7 +8,7 @@ import { parseObject } from "./componentResolverCommon.js";
 import { labelComponentToRenderableAt, measureLabelComponent } from "./labelComponentRenderable.js";
 import { mediaComponentToRenderableAt } from "./mediaComponentRenderable.js";
 import { alignedRowsOverlayNode, rowsSectionNode } from "./moduleRowSectionRenderable.js";
-import { contentRowComponentToRenderable } from "./contentRowComponentRenderable.js";
+import { contentRowComponentToRenderable, contentRowHasRenderableContent } from "./contentRowComponentRenderable.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
 import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
 import { resolveVideoCallModule } from "./videoCallModuleResolver.js";
@@ -35,6 +35,7 @@ export function videoCallModuleToRenderable(payload: DesignPreviewPayload): Rend
     edgeOffset: headerFloats ? call.headerFloatOffsetY * scale : 0,
     bleedToScreenEdge: !headerFloats,
     contentAlignment: "center",
+    rowHasContent: contentRowHasRenderableContent,
     renderRow: contentRowComponentToRenderable,
   }) : undefined;
   const footer = call.showFooter ? rowsSectionNode(payload, bases, {
@@ -46,6 +47,7 @@ export function videoCallModuleToRenderable(payload: DesignPreviewPayload): Rend
     edgeOffset: footerFloats ? call.footerFloatOffsetY * scale : 0,
     bleedToScreenEdge: !footerFloats,
     contentAlignment: "center",
+    rowHasContent: contentRowHasRenderableContent,
     renderRow: contentRowComponentToRenderable,
   }) : undefined;
   const bodyTop = header?.box && !headerFloats

@@ -14,6 +14,7 @@ export function rowsSectionNode<TContent>(
     height: number; renderSurface: (box: RenderableBox) => RenderableNode; edge: "top" | "bottom";
     contentEdge: number; horizontalInset?: number; edgeOffset?: number; bleedToScreenEdge?: boolean;
     contentAlignment?: "bottom" | "center";
+    rowHasContent: (content: TContent) => boolean;
     renderRow: (payload: DesignPreviewPayload, content: TContent, box: RenderableBox) => RenderableNode;
   },
 ): RenderableNode {
@@ -22,23 +23,29 @@ export function rowsSectionNode<TContent>(
   const horizontalInset = Math.max(0, options.horizontalInset ?? 0);
   const sectionX = screen.x + horizontalInset;
   const sectionWidth = Math.max(1, screen.width - horizontalInset * 2);
-  const first = renderRow(payload, componentBaseConfigs, options.ownerId, options.section, options.rows[0], 0, sectionX, sectionWidth, options.renderRow);
   const gap = numberToken(payload, options.rowGapToken) * scale;
-  const second = renderRow(payload, componentBaseConfigs, options.ownerId, options.section, options.rows[1], 0, sectionX, sectionWidth, options.renderRow);
-  const rowsHeight = first.height + gap + second.height;
+  const renderedRows = options.rows
+    .filter((row) => options.rowHasContent(row.content))
+    .map((row) => renderRow(payload, componentBaseConfigs, options.ownerId, options.section, row, 0, sectionX, sectionWidth, options.renderRow));
+  const rowsHeight = renderedRows.reduce((height, row) => height + row.height, 0)
+    + Math.max(0, renderedRows.length - 1) * gap;
   const sectionHeight = Math.max(options.height * scale, rowsHeight);
   const edgeOffset = Math.max(0, options.edgeOffset ?? 0);
   const sectionY = options.edge === "top" ? options.contentEdge + edgeOffset : options.contentEdge - sectionHeight - edgeOffset;
   const rowsY = options.contentAlignment === "bottom" ? sectionY + sectionHeight - rowsHeight : sectionY + (sectionHeight - rowsHeight) * 0.5;
-  const firstNode = translateRenderableNode(first.node, { x: 0, y: rowsY });
-  const secondNode = translateRenderableNode(second.node, { x: 0, y: rowsY + first.height + gap });
+  let nextRowY = rowsY;
+  const rowNodes = renderedRows.map((row) => {
+    const node = translateRenderableNode(row.node, { x: 0, y: nextRowY });
+    nextRowY += row.height + gap;
+    return node;
+  });
   const surfaceBox = options.bleedToScreenEdge === false
     ? { x: sectionX, y: sectionY, width: sectionWidth, height: sectionHeight }
     : { x: screen.x, y: options.edge === "top" ? screen.y : sectionY, width: screen.width, height: options.edge === "top" ? Math.max(0, sectionY + sectionHeight - screen.y) : Math.max(0, screen.y + screen.height - sectionY) };
   return {
     id: `${options.ownerId}.${options.section}`, type: "group", frame: 0,
     box: { x: sectionX, y: sectionY, width: sectionWidth, height: sectionHeight }, style: { overflow: "visible" },
-    children: [options.renderSurface(surfaceBox), firstNode, secondNode],
+    children: [options.renderSurface(surfaceBox), ...rowNodes],
   };
 }
 
