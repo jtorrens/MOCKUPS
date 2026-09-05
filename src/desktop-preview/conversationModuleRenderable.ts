@@ -330,13 +330,13 @@ function messageNodes(
     previousY += entry.finalBounds.height + gap;
   });
   return entries.map((entry, index) => {
-    const { node, bounds, finalBounds, alignment } = entry;
+    const { node, bounds, alignment } = entry;
     const message = messages[index]!;
     const offsetX = alignment === "right"
-      ? screen.x + screen.width - gutter.x - (finalBounds.x + finalBounds.width)
+      ? screen.x + screen.width - gutter.x - (bounds.x + bounds.width)
       : alignment === "center"
-        ? screen.x + screen.width / 2 - (finalBounds.x + finalBounds.width / 2)
-        : screen.x + gutter.x - finalBounds.x;
+        ? screen.x + screen.width / 2 - (bounds.x + bounds.width / 2)
+        : screen.x + gutter.x - bounds.x;
     const targetY = top + gap - targetOverflow
       + entries.slice(0, index).reduce((sum, current) => sum + current.finalBounds.height + gap, 0);
     const priorY = previousYById.get(message.id);

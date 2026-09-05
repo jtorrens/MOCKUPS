@@ -32,6 +32,12 @@ Screen. The playhead may traverse all three zones. General and collection-item
 lanes may be manipulated only inside the content zone; preroll and postroll are
 parent-owned playback context and use an unfilled presentation.
 
+During write-on, a content-sized Bubble is positioned from its current visible
+bounds on every frame. Right-aligned outgoing Bubbles therefore keep their
+right edge fixed and grow towards the left; centered Bubbles retain their
+current center and left-aligned Bubbles retain their left edge. The final
+Bubble bounds remain reserved only for vertical message reflow.
+
 Timeline edits commit through the existing temporal owners. Serial collection
 movement writes the collection's declared pre-duration field; outgoing resize
 writes its declared parent-owned presence-duration field. Presence duration is
