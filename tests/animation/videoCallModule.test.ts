@@ -178,3 +178,26 @@ test("Video Call centers row blocks and presents participants as one collection"
   const headerCenter = header.box.y + header.box.height * 0.5;
   assert.ok(Math.abs(rowsCenter - headerCenter) < 0.001);
 });
+
+test("Video Call excludes invisible rows while preserving the remaining row placement", () => {
+  const source = fixture();
+  const config = JSON.parse(source.configJson) as {
+    videoCall: { headerRows: Array<{ visible: boolean }> };
+  };
+  config.videoCall.headerRows[1]!.visible = false;
+  const hidden = { ...source, configJson: JSON.stringify(config) };
+  const contract = resolveVideoCallModule(hidden);
+  assert.equal(contract.headerRows[0].visible, true);
+  assert.equal(contract.headerRows[1].visible, false);
+
+  const node = videoCallModuleToRenderable(hidden);
+  const header = node.children?.find(child => child.id === "module.core.videoCall.header");
+  const row1 = header?.children?.find(child => child.id === "module.core.videoCall.header.row1");
+  const row2 = header?.children?.find(child => child.id === "module.core.videoCall.header.row2");
+  assert.ok(header?.box && row1?.box);
+  assert.equal(row2, undefined);
+  assert.equal(
+    row1.box.y + row1.box.height * 0.5,
+    header.box.y + header.box.height * 0.5,
+  );
+});

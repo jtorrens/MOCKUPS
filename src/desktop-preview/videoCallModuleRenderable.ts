@@ -125,6 +125,7 @@ function participantNode(
     section: "mainRows",
     rows: call.mainRows,
     box,
+    rowHasContent: contentRowHasRenderableContent,
     renderRow: contentRowComponentToRenderable,
   }));
   return { id: participant.id, type: "group", frame: 0, box, style: { overflow: "hidden" }, children };

@@ -25,7 +25,7 @@ export function rowsSectionNode<TContent>(
   const sectionWidth = Math.max(1, screen.width - horizontalInset * 2);
   const gap = numberToken(payload, options.rowGapToken) * scale;
   const renderedRows = options.rows
-    .filter((row) => options.rowHasContent(row.content))
+    .filter((row) => row.visible && options.rowHasContent(row.content))
     .map((row) => renderRow(payload, componentBaseConfigs, options.ownerId, options.section, row, 0, sectionX, sectionWidth, options.renderRow));
   const rowsHeight = renderedRows.reduce((height, row) => height + row.height, 0)
     + Math.max(0, renderedRows.length - 1) * gap;
@@ -52,14 +52,23 @@ export function rowsSectionNode<TContent>(
 export function alignedRowsOverlayNode<TContent>(
   payload: DesignPreviewPayload,
   componentBaseConfigs: Record<string, unknown>,
-  options: { ownerId: string; section: string; rows: [ModuleRow<TContent>, ModuleRow<TContent>, ModuleRow<TContent>]; box: RenderableBox; renderRow: (payload: DesignPreviewPayload, content: TContent, box: RenderableBox) => RenderableNode },
+  options: {
+    ownerId: string;
+    section: string;
+    rows: [ModuleRow<TContent>, ModuleRow<TContent>, ModuleRow<TContent>];
+    box: RenderableBox;
+    rowHasContent: (content: TContent) => boolean;
+    renderRow: (payload: DesignPreviewPayload, content: TContent, box: RenderableBox) => RenderableNode;
+  },
 ): RenderableNode {
   const placements = ["top", "center", "bottom"] as const;
-  const rendered = options.rows.map((row) => renderRow(payload, componentBaseConfigs, options.ownerId, options.section, row, 0, options.box.x, options.box.width, options.renderRow));
+  const rendered = options.rows.flatMap((row, index) => row.visible && options.rowHasContent(row.content)
+    ? [{ row: renderRow(payload, componentBaseConfigs, options.ownerId, options.section, row, 0, options.box.x, options.box.width, options.renderRow), placement: placements[index] }]
+    : []);
   return {
     id: `${options.ownerId}.${options.section}`, type: "group", frame: 0, box: options.box, style: { overflow: "visible" },
-    children: rendered.map((row, index) => {
-      const y = placements[index] === "top" ? options.box.y : placements[index] === "center" ? options.box.y + (options.box.height - row.height) * 0.5 : options.box.y + options.box.height - row.height;
+    children: rendered.map(({ row, placement }) => {
+      const y = placement === "top" ? options.box.y : placement === "center" ? options.box.y + (options.box.height - row.height) * 0.5 : options.box.y + options.box.height - row.height;
       return translateRenderableNode(row.node, { x: 0, y });
     }),
   };

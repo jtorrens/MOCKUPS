@@ -142,7 +142,7 @@ internal static class SocialPostModuleConfigContract
             var row = rows[rowIndex] as JsonObject
                 ?? throw new InvalidOperationException(
                     $"{owner}.{key}[{rowIndex}] must be an object.");
-            RequireExactKeys(row, ["id", "label", "rowSlot"], $"{owner}.{key}.{rowId}");
+            RequireExactKeys(row, ["id", "label", "visible", "rowSlot"], $"{owner}.{key}.{rowId}");
             if (!JsonPath.RequiredString(row, "id", owner)
                     .Equals(rowId, StringComparison.Ordinal))
             {
@@ -150,6 +150,7 @@ internal static class SocialPostModuleConfigContract
                     $"{owner}.{key}[{rowIndex}] must have stable id '{rowId}'.");
             }
             JsonPath.RequiredString(row, "label", owner);
+            JsonPath.RequiredBoolean(row, "visible", owner);
             ValidateSlot(row, "rowSlot", $"{owner}.{key}.{rowId}");
         }
     }

@@ -395,6 +395,26 @@ test("Social Post renders its two header rows against one Surface", () => {
   assert.equal(header.children?.[0]?.type, "surface");
 });
 
+test("Social Post excludes invisible rows from section measurement and gaps", () => {
+  const source = fixture();
+  const config = JSON.parse(source.configJson) as {
+    socialPost: { rows: Array<{ visible: boolean }> };
+  };
+  config.socialPost.rows[1]!.visible = false;
+  const node = socialPostModuleToRenderable({
+    ...source,
+    configJson: JSON.stringify(config),
+  });
+  const header = requiredNode(node, "module.core.socialPost.header");
+  const row1 = requiredNode(node, "module.core.socialPost.header.row1");
+  assert.equal(findNode(header, "module.core.socialPost.header.row2"), undefined);
+  assert.ok(header.box && row1.box);
+  assert.equal(
+    row1.box.y + row1.box.height * 0.5,
+    header.box.y + header.box.height * 0.5,
+  );
+});
+
 test("Social Post renders the same two-row contract as a footer above navigation", () => {
   const source = fixture();
   const node = socialPostModuleToRenderable(source);

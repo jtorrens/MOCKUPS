@@ -21136,6 +21136,7 @@ static void SocialPostComposesHeaderRows()
     SequenceEqual(["row1", "row2"], rows.Select((row) => row["id"]?.GetValue<string>() ?? "").ToList());
     foreach (var row in rows)
     {
+        JsonPath.RequiredBoolean(row, "visible", "Social Post row config");
         foreach (var slot in Enumerable.Range(1, 5))
         {
             JsonPath.RequiredString(
@@ -21158,6 +21159,10 @@ static void SocialPostComposesHeaderRows()
     SequenceEqual(["footerRow1", "footerRow2"], footerRows
         .Select((row) => row["id"]?.GetValue<string>() ?? "")
         .ToList());
+    foreach (var row in footerRows)
+    {
+        JsonPath.RequiredBoolean(row, "visible", "Social Post footer row config");
+    }
     JsonPath.RequiredBoolean(socialPost, "useAppWallpaper", "Social Post config");
     JsonPath.RequiredBoolean(socialPost, "showHeader", "Social Post config");
     JsonPath.RequiredBoolean(socialPost, "showStatusBar", "Social Post config");

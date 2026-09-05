@@ -5,5 +5,6 @@ export interface ModuleRowComponentSlot extends Record<string, unknown> {
 
 export interface ModuleRow<TContent> {
   id: string;
+  visible: boolean;
   content: TContent;
 }

@@ -1,5 +1,5 @@
 import { embeddedComponentConfig } from "./componentPreviewDefaults.js";
-import { requiredRecord, requiredString } from "./componentResolverCommon.js";
+import { requiredBoolean, requiredRecord, requiredString } from "./componentResolverCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import type { ModuleRow } from "./moduleRowSectionContract.js";
 
@@ -31,6 +31,7 @@ export function resolveRow<TContent>(
   const runtime = rebaseNestedStableIds(runtimeRow, id);
   return {
     id,
+    visible: requiredBoolean(rowConfig, "visible", `${ownerId}.${section}.${id}.visible`),
     content: resolve({
       ...payload,
       componentType,

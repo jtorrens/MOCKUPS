@@ -164,6 +164,16 @@ contract and is applied identically to Module and Component parents.
 Text Input Bar forwards only its explicit runtime text. Bubble and Text Input
 Bar customize their selected Text Box slot through local Overrides.
 
+## Content Rows
+
+A Module-owned Content Row collection item contains one stable id, one
+Variant-owned `visible` value and one exact Content Row Variant slot. New rows
+default to visible. Hiding a row preserves its complete slot, local Overrides
+and Runtime values, but excludes that row from rendering, section measurement
+and inter-row gap calculation. The common row collection owner applies this
+contract to every Module that embeds Content Row; concrete Modules do not add
+their own visibility fields or filtering branches.
+
 Cursor is an inline Text Box decoration. It is painted inside the resolved text
 viewport and never contributes to intrinsic width, wrapping or height. Showing,
 hiding or fading Cursor therefore cannot resize an owning Text Box or Bubble.
