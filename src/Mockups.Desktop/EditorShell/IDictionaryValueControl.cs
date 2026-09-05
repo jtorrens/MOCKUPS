@@ -36,3 +36,10 @@ internal interface IDictionaryRuntimeContractValueControl
 internal interface IDictionaryLocalHorizontalScrollControl
 {
 }
+
+// Composite controls can keep bounded actions available while their authored
+// value itself is read-only. Each composite owns the enabled state of its
+// editable and action subcontrols.
+internal interface IDictionaryCompositeEnablementControl
+{
+}

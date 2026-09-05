@@ -359,6 +359,11 @@ Overrides are local and visible through the shared action. The UI never hides a
 class change, silently replaces a Variant or manufactures Overrides from
 position.
 
+A read-only referenced value may still own editable local Overrides. In that
+case its selector remains disabled while the shared Overrides action remains
+available; value editability never disables independently declared boundary
+actions.
+
 An Overrides action is neutral white while its boundary has no local
 Overrides, and Restore is absent. Whenever any descendant local value is
 authored, the boundary label and Overrides action become amber and an amber

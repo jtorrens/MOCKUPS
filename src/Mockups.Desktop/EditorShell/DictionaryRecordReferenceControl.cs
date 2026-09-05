@@ -8,7 +8,8 @@ using System.Threading.Tasks;
 namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class DictionaryRecordReferenceControl : DockPanel,
-    IDictionaryValueControl, IDictionaryOverrideStateControl
+    IDictionaryValueControl, IDictionaryOverrideStateControl,
+    IDictionaryCompositeEnablementControl
 {
     private readonly FieldDefinition _definition;
     private readonly DictionaryOptionTokenControl _selector;

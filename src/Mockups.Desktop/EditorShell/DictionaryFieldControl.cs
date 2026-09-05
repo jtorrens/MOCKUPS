@@ -373,7 +373,9 @@ internal sealed class DictionaryFieldControl : Grid, IDictionaryOverrideStateCon
 
         if (valueControl is Control control)
         {
-            if (!_definition.IsEditable)
+            if (!_definition.IsEditable
+                && valueControl is not
+                    IDictionaryCompositeEnablementControl)
             {
                 control.IsEnabled = false;
                 control.Opacity = 0.58;
