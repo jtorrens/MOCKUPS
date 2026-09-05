@@ -34,6 +34,8 @@ internal sealed record DictionaryFieldServices(
     Func<string, IReadOnlyList<string>, Task<bool>>? ConfirmDiscardForwardedRuntimeInputs = null,
     Action<string, string>? SetRuntimeTestValue = null,
     Func<ComponentInputDefinition, string, DictionaryFieldControl, Control>? DecorateStructuredCollectionField = null,
+    Func<StructuredCollectionAddress, string, IReadOnlyDictionary<string, JsonNode?>, Task>?
+        UpdateStructuredCollectionValues = null,
     Func<StructuredCollectionMutation, Task<StructuredCollectionMutationResult>>?
         MutateStructuredCollection = null,
     EditorSessionUiState? StructuredCollectionUiState = null);

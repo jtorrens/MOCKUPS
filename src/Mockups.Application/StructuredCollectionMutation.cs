@@ -83,7 +83,14 @@ public static class StructuredCollectionMutationEngine
                     field.Source == ComponentInputSource.Runtime
                     && field.JsonKey.Equals(fieldJsonKey, StringComparison.Ordinal))
                 .ToList();
-            if (matches.Count != 1)
+            var isDeclaredDocumentKey = definition.ComponentItems is { } componentItems
+                    && (fieldJsonKey.Equals(componentItems.OverridesJsonKey, StringComparison.Ordinal)
+                        || fieldJsonKey.Equals(componentItems.InputsJsonKey, StringComparison.Ordinal))
+                || !string.IsNullOrWhiteSpace(definition.ItemRuntimeContractJsonKey)
+                    && fieldJsonKey.Equals(definition.ItemRuntimeContractJsonKey, StringComparison.Ordinal)
+                || definition.FixedComponentBoundary is { } fixedBoundary
+                    && fieldJsonKey.Equals(fixedBoundary.OverridesJsonKey, StringComparison.Ordinal);
+            if (matches.Count != 1 && !isDeclaredDocumentKey)
             {
                 throw new InvalidOperationException(
                     $"Structured collection '{definition.Id}' has no unique declared runtime field '{fieldJsonKey}'.");
@@ -91,23 +98,13 @@ public static class StructuredCollectionMutationEngine
             item[fieldJsonKey] = value?.DeepClone();
         }
 
-        if (address.Owners.Count == 0)
-        {
-            StructuredCollectionDocumentContract.Validate(
-                collection,
-                definition,
-                $"Structured collection update '{definition.Id}'");
-        }
-        else
-        {
-            StructuredCollectionDocumentContract.ValidateEffective(
-                collection,
-                definition,
-                $"Structured collection update '{definition.Id}'");
-        }
         var rootCollection = nextContent[address.RootStorageJsonKey] as JsonArray
             ?? throw new InvalidOperationException(
                 $"Structured collection update requires root array '{address.RootStorageJsonKey}'.");
+        StructuredCollectionDocumentContract.Validate(
+            rootCollection,
+            rootDefinition,
+            $"Structured collection update '{rootDefinition.Id}'");
         StructuredCollectionItemIdentity.ValidateUniqueTargetIds(
             rootCollection,
             rootDefinition,

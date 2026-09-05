@@ -34,6 +34,13 @@ Runtime/Test Value collections. A collection item factory creates the exact
 declared item document before that mutation; controls do not append ids or
 embedded documents independently.
 
+For nested Runtime collections, the same control publishes scalar commits by
+stable collection address and item id. An effective editor document may contain
+Variant-owned discriminator fields for conditional presentation, but the
+control never republishes that effective aggregate through the Runtime commit
+path. Variant authoring may continue to commit its collection as one dictionary
+value because that complete document has one owner.
+
 Component and Module dictionary fields may both declare the same
 `StructuredCollection` contract. A fixed collection sets
 `canEditStructure: false` and an exact `fixedItemCount`; the common editor then

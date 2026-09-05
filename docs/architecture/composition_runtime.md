@@ -73,8 +73,13 @@ conditional-field contract can select its controls, but they are never written
 to the Runtime authoring document. Reconciliation preserves every Runtime-owned
 field, including fields currently hidden by that discriminator. The generic
 structured-collection surface validates effective documents against Runtime
-fields plus the exact declared structure bindings, while commits serialize the
-strict stored document and remove those projected Variant fields.
+fields plus the exact declared structure bindings. A scalar edit emits its
+nested stable collection address, item id, field key and value; it never
+publishes the surrounding effective collection as the persisted value.
+Production and session Test Values apply that same command to their strict
+stored Runtime document, validate the complete stored root and then project the
+Variant structure again for display and Preview. Projected Variant fields are
+therefore never presented to persistence as candidate Runtime data.
 
 ### Calculated text
 

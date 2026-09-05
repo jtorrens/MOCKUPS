@@ -383,10 +383,13 @@ internal sealed class ComponentPreviewInputSession
         }
         if (!testValues.TryGetPropertyValue(address.RootStorageJsonKey, out var collectionNode))
         {
-            collectionNode = new JsonArray(
-                DesignPreviewTestValues.CollectionItems(_runtimePreview, definitions[0])
-                    .Select((item) => (JsonNode?)item.DeepClone())
-                    .ToArray());
+            collectionNode = StructuredCollectionDocumentContract.StoredClone(
+                new JsonArray(
+                    DesignPreviewTestValues.CollectionItems(_runtimePreview, definitions[0])
+                        .Select((item) => (JsonNode?)item.DeepClone())
+                        .ToArray()),
+                definitions[0],
+                $"Transient Runtime collection '{address.RootStorageJsonKey}'");
         }
         var content = new JsonObject
         {

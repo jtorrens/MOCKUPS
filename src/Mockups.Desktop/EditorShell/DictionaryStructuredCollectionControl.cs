@@ -315,6 +315,20 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
         int itemIndex,
         ComponentInputDefinition input)
     {
+        async Task PublishItemValuesAsync(
+            IReadOnlyDictionary<string, JsonNode?> values)
+        {
+            if (_services.UpdateStructuredCollectionValues is { } update)
+            {
+                await update(
+                    StructuredCollectionAddress.Root(collection.JsonKey),
+                    ItemId(item, itemIndex),
+                    values);
+                return;
+            }
+            Publish(commit: true);
+        }
+
         var componentItems = collection.ComponentItems;
         var fixedBoundary = collection.FixedComponentBoundary;
         var selectsRuntimeComponent = componentItems is not null
@@ -383,41 +397,67 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                     await _services.OpenRuntimeComponentOverrides(reference, currentOverrides, (next) =>
                     {
                         item[overridesKey] = next.DeepClone();
-                        Publish(commit: true);
-                        return Task.CompletedTask;
+                        return PublishItemValuesAsync(
+                            new Dictionary<string, JsonNode?>
+                            {
+                                [overridesKey] = next,
+                            });
                     });
                 },
-                RestoreEmbeddedComponentOverrides = (_) =>
+                RestoreEmbeddedComponentOverrides = async (_) =>
                 {
                     item[overridesKey] = new JsonObject();
-                    Publish(commit: true);
-                    return Task.CompletedTask;
+                    await PublishItemValuesAsync(
+                        new Dictionary<string, JsonNode?>
+                        {
+                            [overridesKey] = item[overridesKey],
+                        });
                 },
             }
             : _services;
-        if (input.StructuredCollection is not null
-            && services.MutateStructuredCollection is { } parentMutation)
+        if (input.StructuredCollection is not null)
         {
+            var parentMutation = services.MutateStructuredCollection;
+            var parentUpdate = services.UpdateStructuredCollectionValues;
             services = services with
             {
-                MutateStructuredCollection = (mutation) =>
-                {
-                    var address = mutation.Address with
+                MutateStructuredCollection = parentMutation is null
+                    ? null
+                    : (mutation) =>
                     {
-                        RootStorageJsonKey = collection.JsonKey,
-                        Owners =
-                        [
-                            new StructuredCollectionOwnerSegment(
-                                collection.JsonKey,
-                                ItemId(item, itemIndex)),
-                            .. mutation.Address.Owners,
-                        ],
-                    };
-                    return parentMutation(
-                        StructuredCollectionMutationEngine.WithAddress(
-                            mutation,
-                            address));
-                },
+                        var address = mutation.Address with
+                        {
+                            RootStorageJsonKey = collection.JsonKey,
+                            Owners =
+                            [
+                                new StructuredCollectionOwnerSegment(
+                                    collection.JsonKey,
+                                    ItemId(item, itemIndex)),
+                                .. mutation.Address.Owners,
+                            ],
+                        };
+                        return parentMutation(
+                            StructuredCollectionMutationEngine.WithAddress(
+                                mutation,
+                                address));
+                    },
+                UpdateStructuredCollectionValues = parentUpdate is null
+                    ? null
+                    : (nestedAddress, nestedItemId, values) =>
+                    {
+                        var address = nestedAddress with
+                        {
+                            RootStorageJsonKey = collection.JsonKey,
+                            Owners =
+                            [
+                                new StructuredCollectionOwnerSegment(
+                                    collection.JsonKey,
+                                    ItemId(item, itemIndex)),
+                                .. nestedAddress.Owners,
+                            ],
+                        };
+                        return parentUpdate(address, nestedItemId, values);
+                    },
             };
         }
         var currentValue = DesignPreviewTestValues.CollectionValue(item, input);
@@ -452,6 +492,10 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                 }
             }
             item[input.JsonKey] = DesignPreviewTestValues.ValueNode(input, nextReference);
+            var updates = new Dictionary<string, JsonNode?>
+            {
+                [input.JsonKey] = item[input.JsonKey],
+            };
             if (componentChanged && componentItems is not null)
             {
                 item[componentItems.OverridesJsonKey] = new JsonObject();
@@ -460,8 +504,10 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                     : _services.GetComponentVariantRuntimeValues?.Invoke(next)
                       ?? throw new InvalidOperationException(
                           $"Component Variant '{next}' has no Runtime values provider.");
+                updates[componentItems.OverridesJsonKey] = item[componentItems.OverridesJsonKey];
+                updates[componentItems.InputsJsonKey] = item[componentItems.InputsJsonKey];
             }
-            Publish(commit: true);
+            await PublishItemValuesAsync(updates);
             if (collection.Fields.Any((candidate) =>
                     candidate.EnabledWhenItemJsonKey.Equals(input.JsonKey, StringComparison.Ordinal)))
             {

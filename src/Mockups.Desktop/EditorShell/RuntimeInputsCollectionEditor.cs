@@ -1938,6 +1938,38 @@ internal sealed class RuntimeInputsCollectionEditor
             DecorateStructuredCollectionField = owner.IsInstance
                 ? (nestedInput, targetId, nestedControl) => DecorateAnimationToggle(owner, nestedInput, targetId, nestedControl)
                 : null,
+            UpdateStructuredCollectionValues = async (nestedAddress, nestedItemId, values) =>
+            {
+                var resolvedAddress = nestedAddress with
+                {
+                    RootStorageJsonKey = address.RootStorageJsonKey,
+                    Owners =
+                    [
+                        .. address.Owners,
+                        new StructuredCollectionOwnerSegment(
+                            address.CollectionJsonKey,
+                            ItemId(item, itemIndex)),
+                        .. nestedAddress.Owners,
+                    ],
+                };
+                if (owner.IsInstance)
+                {
+                    await _instanceDocuments.UpdateCollectionValuesAsync(
+                        owner.Node.Id,
+                        resolvedAddress,
+                        nestedItemId,
+                        values);
+                    _onChanged();
+                }
+                else
+                {
+                    _setPreviewCollectionItemValues(
+                        resolvedAddress,
+                        nestedItemId,
+                        values);
+                }
+                _testValuesChanged();
+            },
             MutateStructuredCollection = owner.IsInstance
                 ? async (mutation) =>
                 {
