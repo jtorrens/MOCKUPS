@@ -357,7 +357,10 @@ internal sealed class SqliteEditorNavigationStore
             }
         }
 
-        foreach (var shot in shots.OrderBy((shot) => shot.SortOrder).ThenBy((shot) => shot.Name))
+        foreach (var shot in shots
+                     .OrderBy((shot) => shot.Name, StringComparer.OrdinalIgnoreCase)
+                     .ThenBy((shot) => shot.Name, StringComparer.Ordinal)
+                     .ThenBy((shot) => shot.Id, StringComparer.Ordinal))
         {
             if (!episodeNodes.TryGetValue(shot.EpisodeId, out var episode)) continue;
 

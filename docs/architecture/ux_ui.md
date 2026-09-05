@@ -377,8 +377,13 @@ authoring.
 
 Bounded modal dialogs remain above their owning editor window. On macOS the
 shared modal-priority owner restores the visible dialog if the editor regains
-focus during the input-event handoff, while allowing the user to switch to a
-different application without the dialog stealing system focus.
+focus during the input-event handoff and reasserts that priority while native
+window ordering settles, while allowing the user to switch to a different
+application without the dialog stealing system focus.
+
+Within each Episode, the Production navigation tree presents Shots in stable
+alphabetical order by the authored Shot name. Creation order and persisted
+`sortOrder` do not determine this navigation projection.
 
 Declared `RecordReference` Overrides use this same action and standard
 inherited controls. Their metadata declares the referenced class, sparse local

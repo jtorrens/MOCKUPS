@@ -8,13 +8,20 @@ namespace Mockups.DesktopEditorShell.Common;
 
 internal static class EditorModalWindowPriority
 {
+    private static readonly TimeSpan[] OpeningPromotionDelays =
+    [
+        TimeSpan.FromMilliseconds(50),
+        TimeSpan.FromMilliseconds(150),
+        TimeSpan.FromMilliseconds(350),
+    ];
+
     public static void Configure(Window dialog, Window owner)
     {
         List<OwnedWindowState>? displacedWindows = null;
         var activationPending = false;
         var closed = false;
 
-        void PromoteDialog(bool requireActiveOwner)
+        void PromoteDialog(bool requireActiveApplicationWindow)
         {
             if (closed || !dialog.IsVisible || activationPending)
             {
@@ -27,7 +34,9 @@ internal static class EditorModalWindowPriority
                     activationPending = false;
                     if (closed
                         || !dialog.IsVisible
-                        || (requireActiveOwner && !owner.IsActive))
+                        || (requireActiveApplicationWindow
+                            && !owner.IsActive
+                            && !dialog.IsActive))
                     {
                         return;
                     }
@@ -40,17 +49,12 @@ internal static class EditorModalWindowPriority
         void RestoreDialogAfterOwnerActivation(
             object? sender,
             EventArgs args) =>
-            PromoteDialog(requireActiveOwner: true);
+            PromoteDialog(requireActiveApplicationWindow: true);
 
         void RestoreDialogAfterDeactivation(
             object? sender,
-            EventArgs args)
-        {
-            if (owner.IsActive)
-            {
-                PromoteDialog(requireActiveOwner: true);
-            }
-        }
+            EventArgs args) =>
+            PromoteDialog(requireActiveApplicationWindow: true);
 
         dialog.Topmost = true;
         owner.Activated += RestoreDialogAfterOwnerActivation;
@@ -71,7 +75,14 @@ internal static class EditorModalWindowPriority
                 displaced.Window.IsEnabled = false;
                 displaced.Window.Topmost = false;
             }
-            PromoteDialog(requireActiveOwner: false);
+            PromoteDialog(requireActiveApplicationWindow: false);
+            foreach (var delay in OpeningPromotionDelays)
+            {
+                DispatcherTimer.RunOnce(
+                    () => PromoteDialog(
+                        requireActiveApplicationWindow: true),
+                    delay);
+            }
         };
         dialog.Closed += (_, _) =>
         {

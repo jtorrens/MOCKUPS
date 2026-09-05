@@ -162,6 +162,7 @@ var tests = new (string Name, Action Run)[]
     ("explicit Usage references are exact typed and shared", ExplicitReferenceUsageIsExactTypedAndShared),
     ("Usage navigation preserves workspace node and embedded context", UsageNavigationPreservesTypedContext),
     ("Production Data owns actors devices and fonts", ProductionDataOwnsConcreteResources),
+    ("Production tree orders Shots alphabetically by name", ProductionTreeOrdersShotsByName),
     ("selected navigation rows contain every action and chevron", SelectedNavigationRowsContainEveryAction),
     ("Production Output action reveals the project-owned configuration", ProductionOutputActionOwnsConfiguration),
     ("external Node processes share one executable resolution", ExternalNodeProcessesShareExecutableResolution),
@@ -17955,6 +17956,47 @@ static void ProductionDataOwnsConcreteResources()
         and not ProjectTreeNodeKind.ActorsRoot));
     var themeRoot = DescendantsAndSelf(project).Single((node) => node.Kind == ProjectTreeNodeKind.ThemesRoot);
     Equal(ProjectTreeNodeKind.SystemDataRoot, Required(themeRoot.Parent).Kind);
+}
+
+static void ProductionTreeOrdersShotsByName()
+{
+    var temporary = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-shot-navigation-order-{Guid.NewGuid():N}.sqlite");
+    File.Copy(ParityDatabasePath(), temporary, overwrite: true);
+    try
+    {
+        var database = new SqliteProjectTestContext(temporary);
+        var episode = Descendants(database.LoadProjectTree())
+            .First((node) =>
+                node.Kind == ProjectTreeNodeKind.Episode
+                && node.Children.Count((child) =>
+                    child.Kind == ProjectTreeNodeKind.Shot) >= 2);
+        var shots = episode.Children
+            .Where((child) => child.Kind == ProjectTreeNodeKind.Shot)
+            .Take(2)
+            .ToList();
+        shots[0].Name = "Zulu navigation shot";
+        shots[1].Name = "Alpha navigation shot";
+        database.UpdateNode(shots[0]);
+        database.UpdateNode(shots[1]);
+
+        var reloadedEpisode = Descendants(database.LoadProjectTree())
+            .Single((node) => node.Id == episode.Id);
+        var names = reloadedEpisode.Children
+            .Where((child) => child.Kind == ProjectTreeNodeKind.Shot)
+            .Select((child) => child.Name)
+            .ToList();
+        SequenceEqual(
+            names
+                .OrderBy((name) => name, StringComparer.OrdinalIgnoreCase)
+                .ThenBy((name) => name, StringComparer.Ordinal),
+            names);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
 }
 
 static void SelectedNavigationRowsContainEveryAction()
