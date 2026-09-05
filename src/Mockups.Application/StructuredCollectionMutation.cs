@@ -94,7 +94,7 @@ public static class StructuredCollectionMutationEngine
         var rootCollection = nextContent[address.RootStorageJsonKey] as JsonArray
             ?? throw new InvalidOperationException(
                 $"Structured collection update requires root array '{address.RootStorageJsonKey}'.");
-        StructuredCollectionDocumentContract.Validate(
+        StructuredCollectionDocumentContract.ValidateEffective(
             rootCollection,
             rootDefinition,
             $"Structured collection update '{rootDefinition.Id}'");
