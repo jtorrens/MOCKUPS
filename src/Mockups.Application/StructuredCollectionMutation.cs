@@ -91,13 +91,23 @@ public static class StructuredCollectionMutationEngine
             item[fieldJsonKey] = value?.DeepClone();
         }
 
+        if (address.Owners.Count == 0)
+        {
+            StructuredCollectionDocumentContract.Validate(
+                collection,
+                definition,
+                $"Structured collection update '{definition.Id}'");
+        }
+        else
+        {
+            StructuredCollectionDocumentContract.ValidateEffective(
+                collection,
+                definition,
+                $"Structured collection update '{definition.Id}'");
+        }
         var rootCollection = nextContent[address.RootStorageJsonKey] as JsonArray
             ?? throw new InvalidOperationException(
                 $"Structured collection update requires root array '{address.RootStorageJsonKey}'.");
-        StructuredCollectionDocumentContract.ValidateEffective(
-            rootCollection,
-            rootDefinition,
-            $"Structured collection update '{rootDefinition.Id}'");
         StructuredCollectionItemIdentity.ValidateUniqueTargetIds(
             rootCollection,
             rootDefinition,
