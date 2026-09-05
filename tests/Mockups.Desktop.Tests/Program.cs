@@ -4533,6 +4533,48 @@ static void FlatVariantOverridesUseRestoreSemantics()
                         "component.button.padding",
                         StringComparer.Ordinal)));
 
+                var contentRowVariant = nodes.First((node) =>
+                    node.Kind == ProjectTreeNodeKind.ComponentVariant
+                    && node.Parent?.RecordClassId == "component.contentRow");
+                var contentSlots = JsonNode.Parse(
+                        database.CreateComponentVariantFieldValue(
+                                contentRowVariant,
+                                "component.contentRow.slots")
+                            .Value)
+                    ?.AsArray()
+                    ?? throw new InvalidOperationException(
+                        "Content Row Variant requires slot items.");
+                var labelItem = contentSlots
+                    .Select((item) => item!.AsObject())
+                    .First();
+                labelItem["kind"] = "label";
+                var labelSlot = JsonPath.RequiredObject(
+                    labelItem,
+                    "labelSlot",
+                    "Content Row label slot");
+                labelSlot["overrides"] = new JsonObject
+                {
+                    ["label"] = new JsonObject
+                    {
+                        ["textColorToken"] = "theme.colors.textSecondary",
+                    },
+                };
+                database.UpdateComponentVariantField(
+                    contentRowVariant,
+                    "component.contentRow.slots",
+                    contentSlots.ToJsonString());
+                var contentRowProjection = content.PrepareOverridesAsync(
+                        EditorNodeSelectionState.EditorNodeForSelection(
+                            contentRowVariant),
+                        contentRowVariant)
+                    .GetAwaiter()
+                    .GetResult();
+                True(contentRowProjection.Groups.Any((group) =>
+                    group.PathLabel.Contains("Label", StringComparison.Ordinal)
+                    && group.OverrideFieldIds.Contains(
+                        "component.label.textColorToken",
+                        StringComparer.Ordinal)));
+
                 var listItemVariant = nodes.Single((node) =>
                     node.Kind
                         == ProjectTreeNodeKind.ComponentVariant
@@ -7711,6 +7753,39 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
                     "Restored fixed Component slot")));
             True(!OverrideDocumentContract.HasAuthoredValues(
                 JsonNode.Parse("{\"nested\":{}}")!.AsObject()));
+
+            var nestedSlotValue =
+                """
+                {"variantReference":"component_project_foqn_s2_list::variant::chats","overrides":{"list":{"gapToken":"theme.spacing.xl"}}}
+                """;
+            var aggregateDefinition = listField.Definition with
+            {
+                CanInherit = false,
+                DefaultValue = nestedSlotValue,
+                IsEditable = true,
+            };
+            var aggregate = new DictionaryFieldControl(
+                new FieldValue(aggregateDefinition, nestedSlotValue),
+                new DictionaryFieldServices(
+                    OpenRuntimeComponentOverrides: (_, _, _) =>
+                        Task.CompletedTask));
+            True(aggregate.IsDefault);
+            True(aggregate.HasOverrides);
+            var aggregateStateChanged = false;
+            aggregate.OverrideStateChanged += (_, _) =>
+                aggregateStateChanged = true;
+            var aggregateRestore = aggregate
+                .GetVisualDescendants()
+                .OfType<Button>()
+                .Single((button) =>
+                    Avalonia.Automation.AutomationProperties
+                        .GetName(button)
+                    == "Restore all overrides for List");
+            aggregateRestore.RaiseEvent(
+                new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            True(!aggregate.HasOverrides);
+            True(aggregateStateChanged);
 
             var editableVariant = NodeCommands(database).SaveModuleVariant(
                 selected,

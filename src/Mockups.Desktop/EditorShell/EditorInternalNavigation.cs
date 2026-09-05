@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Layout;
+using Avalonia.LogicalTree;
 using Avalonia.Media;
 using Avalonia.Threading;
 using Mockups.DesktopEditorShell.Common;
@@ -167,6 +168,7 @@ internal sealed class EditorInternalNavigation : Grid
     private readonly Border _contentHost;
     private readonly Dictionary<string, Button> _buttons = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Border> _entries = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, Control> _icons = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Control> _sectionContents = new(StringComparer.Ordinal);
     private string _selectedId;
     private bool _isCompact;
@@ -256,6 +258,10 @@ internal sealed class EditorInternalNavigation : Grid
             };
             _entries[section.Id] = entry;
             _navigation.Children.Add(entry);
+            foreach (var control in OverrideControls(section))
+            {
+                control.OverrideStateChanged += (_, _) => RefreshVisuals();
+            }
         }
 
         SizeChanged += (_, args) => ApplyResponsiveLayout(args.NewSize.Width, _contentHost);
@@ -275,6 +281,8 @@ internal sealed class EditorInternalNavigation : Grid
 
     private Button CreateNavigationButton(EditorInternalNavigationSection section)
     {
+        var icon = EditorIcons.CreateSemantic(section.Label, section.Icon, 16);
+        _icons[section.Id] = icon;
         var text = new StackPanel
         {
             Spacing = 2,
@@ -302,7 +310,7 @@ internal sealed class EditorInternalNavigation : Grid
             ColumnSpacing = 10,
             Children =
             {
-                EditorIcons.CreateSemantic(section.Label, section.Icon, 16),
+                icon,
             },
         };
         Grid.SetColumn(text, 1);
@@ -326,6 +334,28 @@ internal sealed class EditorInternalNavigation : Grid
         button.KeyDown += (_, args) => NavigateByKeyboard(section.Id, args);
         EditorAccessibility.Describe(button, $"Open {section.Label}", section.Subtitle, showToolTip: false);
         return button;
+    }
+
+    private static IEnumerable<DictionaryFieldControl> OverrideControls(
+        EditorInternalNavigationSection section)
+    {
+        foreach (var control in section.Content
+                     .GetLogicalDescendants()
+                     .OfType<DictionaryFieldControl>())
+        {
+            yield return control;
+        }
+        if (section.Content is DictionaryFieldControl field)
+        {
+            yield return field;
+        }
+        foreach (var subcard in section.Subcards ?? [])
+        {
+            foreach (var control in OverrideControls(subcard))
+            {
+                yield return control;
+            }
+        }
     }
 
     private void NavigateByKeyboard(string currentId, KeyEventArgs args)
@@ -455,6 +485,14 @@ internal sealed class EditorInternalNavigation : Grid
             button.BorderThickness = selected
                 ? _isCompact ? new Thickness(0, 0, 0, 2) : new Thickness(2, 0, 0, 0)
                 : new Thickness(0);
+            if (_icons.TryGetValue(section.Id, out var icon))
+            {
+                EditorIcons.ApplyBrush(
+                    icon,
+                    OverrideControls(section).Any((control) => control.HasOverrides)
+                        ? EditorOverrideVisuals.Brush
+                        : null);
+            }
         }
     }
 

@@ -9,12 +9,16 @@ using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal sealed class DictionaryStructuredCollectionControl : Border, IDictionaryValueControl, IDictionaryRuntimeContractValueControl, IEditorAuthoringItemTarget
+internal sealed class DictionaryStructuredCollectionControl : Border, IDictionaryValueControl,
+    IDictionaryRuntimeContractValueControl, IDictionaryOverrideStateControl,
+    IEditorAuthoringItemTarget
 {
     private readonly FieldDefinition _definition;
     private readonly DictionaryFieldServices _services;
     private readonly EditorSessionUiState _uiState;
+    private readonly List<DictionaryFieldControl> _overrideControls = [];
     private JsonArray _items;
+    private bool _lastPublishedOverrideState;
 
     public DictionaryStructuredCollectionControl(
         FieldDefinition definition,
@@ -31,7 +35,9 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
     public event EventHandler<string>? ValueChanged;
     public event EventHandler<string>? ValueCommitted;
     public event EventHandler? RuntimeContractChanged;
+    public event EventHandler? OverrideStateChanged;
     public string FieldId => _definition.Id;
+    public bool HasOverrides => _overrideControls.Any((control) => control.HasOverrides);
 
     public bool SelectItem(string itemId)
     {
@@ -57,6 +63,7 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
 
     private void Rebuild()
     {
+        _overrideControls.Clear();
         var collection = CollectionDefinition();
         if (collection is null)
         {
@@ -303,6 +310,7 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                 field.ValueChanged += (_, next) => SetComponentInputs(item, componentItems, next, commit: false);
                 field.ValueCommitted += (_, next) => SetComponentInputs(item, componentItems, next, commit: true);
                 field.RuntimeContractChanged += (_, _) => RuntimeContractChanged?.Invoke(this, EventArgs.Empty);
+                RegisterOverrideControl(field);
                 content.Children.Add(field);
             }
         }
@@ -469,6 +477,7 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                     && overrides is not null
                     && OverrideDocumentContract.HasAuthoredValues(overrides)),
             services);
+        RegisterOverrideControl(control);
         control.ValueCommitted += async (_, next) =>
         {
             var previous = DesignPreviewTestValues.CollectionValue(item, input);
@@ -523,6 +532,21 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
             ItemId(item, itemIndex),
             control) ?? control;
         return decorated;
+    }
+
+    private void RegisterOverrideControl(DictionaryFieldControl control)
+    {
+        _overrideControls.Add(control);
+        control.OverrideStateChanged += (_, _) => PublishOverrideState();
+        PublishOverrideState();
+    }
+
+    private void PublishOverrideState()
+    {
+        var hasOverrides = HasOverrides;
+        if (_lastPublishedOverrideState == hasOverrides) return;
+        _lastPublishedOverrideState = hasOverrides;
+        OverrideStateChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private void SetComponentInputs(

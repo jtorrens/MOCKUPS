@@ -362,6 +362,12 @@ value equals its inherited value. Restore clears the complete local boundary
 recursively. Inside the contextual editor, each authored field label is amber
 and its own Restore removes only that field.
 
+That state propagates through dictionary containment: structured-collection
+fields, their owning card icons and internal-navigation entries are amber when
+any descendant boundary contains authored Overrides. A container does not gain
+its own Restore unless it owns an inheritable value; descendant Restore remains
+the operation that clears the descendant document.
+
 Every Overrides action that reveals editable dictionary fields is contextual
 editor navigation. It publishes one exact coordinated context, breadcrumb,
 central card set and session view-memory key. It never opens a modal, utility
@@ -379,7 +385,8 @@ override-specific controls or branches.
 
 Component and Module Variant editors also expose a flat `Overrides (N)` peer
 view. It shows the standard controls for every locally overridden inherited
-field owned by that Variant, across its declared embedded boundaries. It hides
+field owned by that Variant, across its declared embedded boundaries and every
+declared Component boundary nested in structured collections. It hides
 all inherited fields and all direct Variant fields. One path header identifies
 each owning boundary. Fields with the same owner path share that header and
 form one continuous compact group. The group fits the measured Overrides

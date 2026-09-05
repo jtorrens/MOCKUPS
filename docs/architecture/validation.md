@@ -66,6 +66,10 @@ It includes:
   persistence port plus headless activation of the real shared action, proving
   one coordinator-owned context, exact reference breadcrumb, central cards,
   session view-memory restoration and no owned modal window;
+- generic Override discovery and aggregation, covering
+  `ComponentVariantSlot` fields inside structured collections, nested
+  collection paths, amber propagation through field/card/internal navigation,
+  and Restore persistence through the stable item path;
 - Preview authoring exposes no synchronous Runtime Input visual-construction
   or fallback-load method; the cancellable prepared surface is its only
   compiled entrypoint;

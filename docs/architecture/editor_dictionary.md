@@ -121,6 +121,13 @@ Variant reference and any unrelated Runtime values, and leaves an empty object
 only where the current document contract requires it. Empty objects alone do
 not mark a boundary as overridden.
 
+Override state aggregates through every dictionary container. A nested
+`ComponentVariantSlot` marks its structured-collection field, owning card and
+internal navigation path amber even when the collection value itself is direct
+Variant data and therefore has no field-level Restore. The same aggregate state
+drives the editor context count; controls do not maintain a separate visual
+interpretation of authored Overrides.
+
 A fixed boundary exposes Variant, class navigation and Overrides, never a
 Component selector. A polymorphic boundary exposes Component selection only
 when its declared selector explicitly contains `*`.
@@ -189,6 +196,8 @@ semantics, not a comparison between Variant snapshots:
 - it includes only fields whose prepared `FieldValue.HasLocalOverride` is true;
 - it follows owner-declared embedded slots recursively and preserves the
   owning boundary path;
+- it discovers fixed boundaries, component-item boundaries and
+  `ComponentVariantSlot` fields at every declared structured-collection depth;
 - it reuses the registered dictionary control and the same Restore commit;
 - restoring a field removes it from the projection;
 - every explicit control edit remains authored, including a value equal to the
@@ -203,13 +212,14 @@ semantics, not a comparison between Variant snapshots:
   differ from the protected Default Variant, class scaffold or seed;
 - referenced child Variant data never appears as an Override of its parent.
 
-An Icon Row item contributes only its declared fixed Component boundary and
-typed local `buttonOverrides` document. It uses the generic structured
-collection control and the same lifecycle mutation as every other collection;
-there is no Icon Row value kind, control or persistence path. The boundary
-metadata names the Button Variant field, Overrides key and exact Button class.
-The item's selected icon, label, state and Button Variant reference remain
-direct Icon Row Variant data and are not projected.
+A structured collection contributes only the Component boundaries declared by
+its metadata: a fixed boundary, a component-item boundary or complete
+`ComponentVariantSlot` fields. The generic projection traverses nested
+collection definitions and stable item ids; no concrete collection or
+Component receives a discovery or persistence branch. An Icon Row item is one
+instance of that contract through its fixed Button boundary and typed local
+`buttonOverrides` document. Its selected icon, label, state and Button Variant
+reference remain direct Icon Row Variant data and are not projected.
 
 ## Session view state
 

@@ -159,9 +159,10 @@ internal sealed class EditorLayoutCardFactory
         EditorCardHeader.SetOverrideState(headerIcon, controls);
         foreach (var control in controls)
         {
+            control.OverrideStateChanged += (_, _) =>
+                EditorCardHeader.SetOverrideState(headerIcon, controls);
             control.ValueChanged += (_, _) =>
             {
-                EditorCardHeader.SetOverrideState(headerIcon, controls);
                 _inlinePreviews.Refresh(node, _activeFieldControls.ControlsByFieldId);
             };
         }
@@ -247,10 +248,8 @@ internal sealed class EditorLayoutCardFactory
         EditorCardHeader.SetOverrideState(headerIcon, controls);
         foreach (var control in controls)
         {
-            control.ValueChanged += (_, _) =>
-            {
+            control.OverrideStateChanged += (_, _) =>
                 EditorCardHeader.SetOverrideState(headerIcon, controls);
-            };
         }
 
         return card;
@@ -404,7 +403,7 @@ internal sealed class EditorLayoutCardFactory
             controls);
         foreach (var control in controls)
         {
-            control.ValueChanged += (_, _) =>
+            control.OverrideStateChanged += (_, _) =>
                 EditorCardHeader.SetOverrideState(
                     headerIcon,
                     controls);

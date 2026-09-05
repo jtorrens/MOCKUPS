@@ -416,6 +416,13 @@ explicit confirmation before editing.
 
 ## Collaboration: serialize code-writing tasks
 
+Work directly on `main` by default. Create another branch or worktree only when
+the user explicitly requests it. A temporary implementation branch is part of
+the same delivery: integrate it into `main`, push `main` when authorized,
+switch the canonical checkout back to `main`, remove the temporary local and
+remote branch and its worktree, and verify `main` equals `origin/main`. Do not
+leave completed work on an active branch.
+
 Only one task may modify tracked project code or parity data in the shared
 checkout at a time. Every writing task begins, before its first edit, with
 `npm run desktop:update:begin`. That command creates the shared workstation
@@ -442,7 +449,8 @@ Before handing off:
 6. report branch and final commit.
 
 The next writing task fetches and verifies that exact state before editing.
-Parallel work is read-only or uses isolated worktrees and branches.
+Parallel work is read-only. A parallel writing task still requires the user's
+explicit authorization for its isolated worktree and branch.
 
 ## Collaboration: validation is compile-only by default
 
@@ -480,5 +488,5 @@ Create a local commit for every coherent validated revision. Do not push until
 the user explicitly asks.
 
 When a version is intended for other computers, integrate it into `main`, push
-`main`, switch the local checkout to `main` and verify local `main` equals
-`origin/main`.
+`main`, switch the local checkout to `main`, remove any completed temporary
+branch and worktree, and verify local `main` equals `origin/main`.

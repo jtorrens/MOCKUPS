@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal sealed class DictionaryFieldControl : Grid
+internal sealed class DictionaryFieldControl : Grid, IDictionaryOverrideStateControl
 {
     private readonly FieldDefinition _definition;
     private readonly TextBlock _label;
@@ -26,6 +26,7 @@ internal sealed class DictionaryFieldControl : Grid
     private bool _hasNestedOverrides;
     private string _value;
     private string _lastCommittedValue;
+    private bool _lastPublishedOverrideState;
 
     public DictionaryFieldControl(
         FieldValue fieldValue,
@@ -173,6 +174,8 @@ internal sealed class DictionaryFieldControl : Grid
 
     public event EventHandler? RuntimeContractChanged;
 
+    public event EventHandler? OverrideStateChanged;
+
     protected override Size MeasureOverride(Size availableSize)
     {
         if (!double.IsInfinity(availableSize.Width))
@@ -191,6 +194,8 @@ internal sealed class DictionaryFieldControl : Grid
         : _value == _lastCommittedValue;
 
     public bool HasLocalOverride => _definition.CanInherit && !_isInherited;
+
+    public bool HasOverrides => !IsDefault || _hasNestedOverrides;
 
     public bool CommitAsDefault => _definition.CommitAsDefault;
 
@@ -454,6 +459,12 @@ internal sealed class DictionaryFieldControl : Grid
         }
 
         PseudoClasses.Set(":changed", !isDefault || _hasNestedOverrides);
+        var hasOverrides = HasOverrides;
+        if (_lastPublishedOverrideState != hasOverrides)
+        {
+            _lastPublishedOverrideState = hasOverrides;
+            OverrideStateChanged?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     private void UpdateResponsiveLabelWidth(double availableWidth)

@@ -64,6 +64,6 @@ internal static class EditorCardHeader
 
     public static void SetOverrideState(Control icon, IEnumerable<DictionaryFieldControl> controls)
     {
-        EditorIcons.ApplyBrush(icon, controls.Any((control) => !control.IsDefault) ? EditorOverrideVisuals.Brush : null);
+        EditorIcons.ApplyBrush(icon, controls.Any((control) => control.HasOverrides) ? EditorOverrideVisuals.Brush : null);
     }
 }

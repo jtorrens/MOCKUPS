@@ -308,7 +308,7 @@ internal sealed class EditorHeaderController
         };
     }
 
-    private int OverrideCount() => _activeFieldControls.ControlsByFieldId.Values.Count((control) => control.HasLocalOverride);
+    private int OverrideCount() => _activeFieldControls.ControlsByFieldId.Values.Count((control) => control.HasOverrides);
 
     private void SetContextStrip(EditorContextStripMetadata? metadata)
     {
