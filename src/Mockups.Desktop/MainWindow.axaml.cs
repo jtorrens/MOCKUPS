@@ -944,6 +944,13 @@ public partial class MainWindow : SukiWindow
     private void CommitPreviewAuthoringSurfaceCandidate(
         PreparedPreviewAuthoringCandidate candidate)
     {
+        PreviewDebugLog.Write(
+            "preview.authoring.commit",
+            ("selected", candidate.SelectedNode.Id),
+            ("preview", candidate.PreviewNode.Id),
+            ("workspace", candidate.Workspace.ToString()),
+            ("supports", candidate.SupportsSurface),
+            ("prepared", candidate.Prepared is not null));
         if (!candidate.SupportsSurface)
         {
             _screenTimeline.Clear();
@@ -1025,10 +1032,19 @@ public partial class MainWindow : SukiWindow
         }
         catch (OperationCanceledException)
         {
+            PreviewDebugLog.Write(
+                "preview.authoring.cancelled",
+                ("node", node.Id),
+                ("revision", revision));
             // A newer selection owns Preview authoring.
         }
         catch (Exception exception)
         {
+            PreviewDebugLog.Write(
+                "preview.authoring.error",
+                ("node", node.Id),
+                ("revision", revision),
+                ("error", exception.ToString()));
             if (_workspaceCoordinator.IsCurrent(
                     revision,
                     node.Id))
