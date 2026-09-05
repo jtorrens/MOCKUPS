@@ -128,6 +128,16 @@ public static class StructuredRuntimeCollectionProjection
         var fieldsByJsonKey = fields.ToDictionary(
             (field) => JsonPath.RequiredString(field, "jsonKey", $"{owner}.field"),
             StringComparer.Ordinal);
+        var typedFieldsByJsonKey = RuntimeInputDefinitionReader.ReadCollections(
+                new JsonObject
+                {
+                    ["collections"] = new JsonArray(collection.DeepClone()),
+                },
+                new JsonObject(),
+                includeHidden: true)
+            .Single()
+            .Fields
+            .ToDictionary((field) => field.JsonKey, StringComparer.Ordinal);
         var sourceKeyByRuntimeKey = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var (runtimeKey, node) in bindings)
         {
@@ -182,6 +192,7 @@ public static class StructuredRuntimeCollectionProjection
             };
             foreach (var (runtimeKey, definition) in fieldsByJsonKey)
             {
+                var typedDefinition = typedFieldsByJsonKey[runtimeKey];
                 if (definition["source"] is JsonValue fieldSourceValue
                     && fieldSourceValue.TryGetValue<string>(out var fieldSource)
                     && fieldSource.Equals("calculated", StringComparison.Ordinal))
@@ -200,7 +211,16 @@ public static class StructuredRuntimeCollectionProjection
                 }
                 else if (currentItem?[runtimeKey] is { } currentValue)
                 {
-                    value = currentValue.DeepClone();
+                    value = typedDefinition.ValueKind == ValueKind.StructuredCollection
+                        ? StructuredCollectionDocumentContract.StoredClone(
+                            currentValue as JsonArray
+                                ?? throw new InvalidOperationException(
+                                    $"{owner} Runtime item '{id}' field '{runtimeKey}' must be an array."),
+                            typedDefinition.StructuredCollection
+                                ?? throw new InvalidOperationException(
+                                    $"{owner} Runtime item '{id}' field '{runtimeKey}' requires a collection contract."),
+                            $"{owner} Runtime item '{id}' field '{runtimeKey}'")
+                        : currentValue.DeepClone();
                 }
                 else
                 {

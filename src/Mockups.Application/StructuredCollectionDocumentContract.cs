@@ -8,6 +8,71 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 public static class StructuredCollectionDocumentContract
 {
+    public static JsonArray StoredClone(
+        JsonArray items,
+        RuntimeInputCollectionDefinition definition,
+        string owner)
+    {
+        RuntimeCollectionDocumentContract.Validate(items, owner);
+        var result = new JsonArray();
+        for (var index = 0; index < items.Count; index++)
+        {
+            var item = items[index] as JsonObject
+                ?? throw new InvalidOperationException(
+                    $"{owner} item at index {index} must be an object.");
+            var itemId = JsonPath.RequiredString(
+                item,
+                "id",
+                $"{owner} item at index {index}");
+            var stored = new JsonObject { ["id"] = itemId };
+            foreach (var field in definition.Fields.Where((candidate) =>
+                         candidate.Source == ComponentInputSource.Runtime))
+            {
+                var value = item[field.JsonKey]
+                    ?? throw new InvalidOperationException(
+                        $"{owner} item '{itemId}' requires field '{field.JsonKey}'.");
+                stored[field.JsonKey] = field.ValueKind == ValueKind.StructuredCollection
+                    ? StoredClone(
+                        value as JsonArray
+                            ?? throw new InvalidOperationException(
+                                $"{owner} item '{itemId}' field '{field.JsonKey}' must be an array."),
+                        field.StructuredCollection
+                            ?? throw new InvalidOperationException(
+                                $"{owner} item '{itemId}' field '{field.JsonKey}' requires a collection contract."),
+                        $"{owner} item '{itemId}' field '{field.JsonKey}'")
+                    : value.DeepClone();
+            }
+            if (definition.ComponentItems is { } componentItems)
+            {
+                stored[componentItems.OverridesJsonKey] = JsonPath.RequiredObject(
+                    item,
+                    componentItems.OverridesJsonKey,
+                    $"{owner} item '{itemId}'").DeepClone();
+                stored[componentItems.InputsJsonKey] = JsonPath.RequiredObject(
+                    item,
+                    componentItems.InputsJsonKey,
+                    $"{owner} item '{itemId}'").DeepClone();
+            }
+            if (!string.IsNullOrWhiteSpace(definition.ItemRuntimeContractJsonKey))
+            {
+                stored[definition.ItemRuntimeContractJsonKey] = JsonPath.RequiredObject(
+                    item,
+                    definition.ItemRuntimeContractJsonKey,
+                    $"{owner} item '{itemId}'").DeepClone();
+            }
+            if (definition.FixedComponentBoundary is { } boundary)
+            {
+                stored[boundary.OverridesJsonKey] = JsonPath.RequiredObject(
+                    item,
+                    boundary.OverridesJsonKey,
+                    $"{owner} item '{itemId}'").DeepClone();
+            }
+            result.Add(stored);
+        }
+        Validate(result, definition, owner);
+        return result;
+    }
+
     public static void Validate(
         JsonArray items,
         RuntimeInputCollectionDefinition definition,

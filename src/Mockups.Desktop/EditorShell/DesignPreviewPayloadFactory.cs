@@ -74,8 +74,8 @@ internal static class DesignPreviewPayloadFactory
         if (theme is null) return null;
         var payload = node.Kind switch
         {
-            ProjectTreeNodeKind.ComponentClass => FromComponentSource(dataSource.LoadComponentClass(node), themeMode, theme),
-            ProjectTreeNodeKind.ComponentVariant => FromComponentSource(dataSource.LoadComponentVariant(node), themeMode, theme),
+            ProjectTreeNodeKind.ComponentClass => FromComponentSource(dataSource, dataSource.LoadComponentClass(node), themeMode, theme),
+            ProjectTreeNodeKind.ComponentVariant => FromComponentSource(dataSource, dataSource.LoadComponentVariant(node), themeMode, theme),
             ProjectTreeNodeKind.Module => FromModuleSource(dataSource, dataSource.LoadModule(node), themeMode, theme),
             ProjectTreeNodeKind.ModuleVariant => FromModuleSource(dataSource, dataSource.LoadModuleVariant(node), themeMode, theme),
             ProjectTreeNodeKind.ModuleInstance =>
@@ -444,6 +444,7 @@ internal static class DesignPreviewPayloadFactory
     }
 
     private static DesignPreviewPayload FromComponentSource(
+        DesignPreviewPayloadDataSource dataSource,
         DesignPreviewComponentSource settings,
         string themeMode,
         DesignPreviewThemeContext theme)
@@ -455,10 +456,16 @@ internal static class DesignPreviewPayloadFactory
         var effectivePreview = EffectiveRuntimeContract(
             DesignPreviewTestValues.Parse(settings.DesignPreviewJson),
             DesignPreviewTestValues.Parse(configJson));
+        var runtimePreview = DesignPreviewTestValues.Parse(
+            DesignPreviewTestValues.RuntimeJson(effectivePreview.ToJsonString()));
+        dataSource.ResolveNestedRuntimeRecordReferences(
+            runtimePreview,
+            effectiveThemeMode,
+            theme.PaletteColors);
         var designPreviewJson = ResolveActionDurationsJson(
             configJson,
             theme.TokensJson,
-            DesignPreviewTestValues.RuntimeJson(effectivePreview.ToJsonString()));
+            runtimePreview.ToJsonString());
         return new DesignPreviewPayload(
             "componentClass",
             settings.Name,
