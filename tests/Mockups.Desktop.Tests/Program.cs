@@ -6705,6 +6705,53 @@ static void PreviewShellVisualTreeIsResponsive()
                 Thread.Sleep(5);
             }
             Equal(productionShot.Id, WindowSession(window).SelectedNode?.Id);
+            var timelineTab = Required(
+                window.FindControl<TabItem>("PreviewTimelineTab"));
+            var timelineHost = Required(
+                window.FindControl<ContentControl>("PreviewTimelineHost"));
+            True(timelineTab.IsVisible);
+            SequenceEqual(
+                [authoringTab, timelineTab, setupTab],
+                tabs.Items.OfType<TabItem>().ToList());
+            tabs.SelectedItem = timelineTab;
+            Dispatcher.UIThread.RunJobs();
+            var shotTimelineSurface = Required(
+                timelineHost.Content as PreviewScreenTimelineSurface);
+            var shotTimelinePreparationTimeout = Stopwatch.StartNew();
+            while (!shotTimelineSurface
+                       .GetVisualDescendants()
+                       .OfType<PreviewScreenTimelineRuler>()
+                       .Any()
+                   && shotTimelinePreparationTimeout.Elapsed < TimeSpan.FromSeconds(5))
+            {
+                Dispatcher.UIThread.RunJobs();
+                Thread.Sleep(5);
+            }
+            var shotTimelineLanes = shotTimelineSurface
+                .GetVisualDescendants()
+                .OfType<PreviewScreenTimelineLane>()
+                .ToList();
+            SequenceEqual(
+                productionShot.Children
+                    .Where((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance)
+                    .Select((node) => node.Name)
+                    .ToList(),
+                shotTimelineLanes.Select((lane) => lane.Label).ToList());
+            True(shotTimelineLanes.Count > 0);
+            True(!shotTimelineSurface
+                .GetVisualDescendants()
+                .OfType<TextBlock>()
+                .Any((text) => text.Text is "General"
+                    || text.Text?.EndsWith(" · Keyframes", StringComparison.Ordinal) == true));
+            var shotAnimationHost = Required(
+                typeof(PreviewScreenTimelineSurface)
+                    .GetField(
+                        "_animationHost",
+                        BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?.GetValue(shotTimelineSurface) as ContentControl);
+            True(shotAnimationHost.Content is null);
+            tabs.SelectedItem = selectedTab;
+            Dispatcher.UIThread.RunJobs();
             var shotFrameSlider = Required(
                 typeof(EditorPreviewController)
                     .GetField("_shotFrameSlider", BindingFlags.Instance | BindingFlags.NonPublic)
@@ -6843,10 +6890,6 @@ static void PreviewShellVisualTreeIsResponsive()
                 Thread.Sleep(5);
             }
             Equal(productionScreen.Id, WindowSession(window).SelectedNode?.Id);
-            var timelineTab = Required(
-                window.FindControl<TabItem>("PreviewTimelineTab"));
-            var timelineHost = Required(
-                window.FindControl<ContentControl>("PreviewTimelineHost"));
             True(timelineTab.IsVisible);
             SequenceEqual(
                 [authoringTab, timelineTab, setupTab],
@@ -6863,10 +6906,13 @@ static void PreviewShellVisualTreeIsResponsive()
             var timelineSurface = Required(
                 timelineHost.Content as PreviewScreenTimelineSurface);
             var timelinePreparationTimeout = Stopwatch.StartNew();
-            while (!timelineSurface
-                       .GetVisualDescendants()
-                       .OfType<PreviewScreenTimelineRuler>()
-                       .Any()
+            while ((typeof(PreviewScreenTimelineSurface)
+                        .GetField(
+                            "_snapshot",
+                            BindingFlags.Instance | BindingFlags.NonPublic)
+                        ?.GetValue(timelineSurface)
+                    as PreviewScreenTimelineSnapshot)?.ScreenId
+                       != productionScreen.Id
                    && timelinePreparationTimeout.Elapsed < TimeSpan.FromSeconds(5))
             {
                 Dispatcher.UIThread.RunJobs();
@@ -18551,6 +18597,13 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
             endFrame: 28,
             frameDelta: 200));
     Equal(
+        (-22, -2),
+        PreviewScreenTimelineMath.Move(
+            startFrame: 8,
+            endFrame: 28,
+            frameDelta: -30,
+            minimumStartFrame: -100000));
+    Equal(
         9,
         PreviewScreenTimelineMath.ResizeEnd(
             startFrame: 8,
@@ -18675,6 +18728,16 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
         maximumTimelineFrame: snapshot.MaximumFrame,
         candidates: []);
     Equal((129, 169, (int?)null), movedBeyondScreen);
+    var movedBeforeShot = PreviewScreenTimelineMath.MoveWithSnap(
+        startFrame: 10,
+        endFrame: 50,
+        frameDelta: -35,
+        laneWidth: 500,
+        minimumTimelineFrame: -40,
+        maximumTimelineFrame: 140,
+        candidates: [],
+        minimumStartFrame: -100000);
+    Equal((-25, 15, (int?)null), movedBeforeShot);
     var resizedBeyondScreen = PreviewScreenTimelineMath.ResizeEndWithSnap(
         startFrame: 20,
         requestedEndFrame: 145,
@@ -18683,6 +18746,127 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
         maximumTimelineFrame: snapshot.MaximumFrame,
         candidates: []);
     Equal((145, (int?)null), resizedBeyondScreen);
+
+    var shotTimelineWrites = new List<(string ScreenId, string FieldId, int Value)>();
+    var shotSnapshot = new ProductionPreviewShotSnapshot(
+        "shot_timeline",
+        FrameRate: 25,
+        DurationFrames: 100,
+        DeviceId: "device",
+        DeviceMetrics: new DevicePreviewMetrics(
+            "Device",
+            100,
+            200,
+            0,
+            0,
+            100,
+            200,
+            0,
+            0,
+            0,
+            0,
+            0,
+            DeviceModuleTransparencyOverride.Disabled),
+        Context: new ProductionShotContext(
+            true,
+            "",
+            "Actor",
+            "Device",
+            "Theme",
+            "light"),
+        ReferenceVideo: ShotReferenceVideoDocument.Empty,
+        Screens:
+        [
+            new ProductionPreviewScreenSnapshot(
+                "screen_top",
+                "Top Screen",
+                "shot_timeline",
+                StartFrame: -12,
+                DurationFrames: 40,
+                TransitionFrameCount: 0,
+                ActionDelayFrames: 0,
+                ActionDurationFrames: 40,
+                IsDurationEditable: false,
+                DeviceId: "device",
+                DeviceMetrics: new DevicePreviewMetrics(
+                    "Device",
+                    100,
+                    200,
+                    0,
+                    0,
+                    100,
+                    200,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    DeviceModuleTransparencyOverride.Disabled),
+                TransitionJson: "{}",
+                VariantConfigJson: "{}",
+                ShotKeyframeFrames: []),
+            new ProductionPreviewScreenSnapshot(
+                "screen_bottom",
+                "Bottom Screen",
+                "shot_timeline",
+                StartFrame: 20,
+                DurationFrames: 110,
+                TransitionFrameCount: 0,
+                ActionDelayFrames: 0,
+                ActionDurationFrames: 110,
+                IsDurationEditable: true,
+                DeviceId: "device",
+                DeviceMetrics: new DevicePreviewMetrics(
+                    "Device",
+                    100,
+                    200,
+                    0,
+                    0,
+                    100,
+                    200,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    DeviceModuleTransparencyOverride.Disabled),
+                TransitionJson: "{}",
+                VariantConfigJson: "{}",
+                ShotKeyframeFrames: []),
+        ]);
+    var shotTimeline = PreviewShotTimelineSnapshotFactory.Create(
+        shotSnapshot,
+        "Shot Timeline",
+        (screenId, fieldId, value) =>
+        {
+            shotTimelineWrites.Add((screenId, fieldId, value));
+            return Task.CompletedTask;
+        });
+    Equal("shot_timeline", shotTimeline.ScreenId);
+    Equal("Shot Timeline", shotTimeline.ScreenLabel);
+    True(!shotTimeline.ShowGeneralLane);
+    True(!shotTimeline.ShowCollectionHeaders);
+    True(!shotTimeline.ShowAnimationEditor);
+    Equal(0, shotTimeline.Keyframes.Count);
+    Equal(1, shotTimeline.Collections.Count);
+    SequenceEqual(
+        ["Top Screen", "Bottom Screen"],
+        shotTimeline.Collections[0].Items.Select((item) => item.Label).ToList());
+    Equal(-12, shotTimeline.Collections[0].Items[0].StartFrame);
+    Equal(28, shotTimeline.Collections[0].Items[0].EndFrame);
+    True(shotTimeline.Collections[0].Items[0].ShotScreenEdit?.CanResizeEnd == false);
+    Equal(20, shotTimeline.Collections[0].Items[1].StartFrame);
+    Equal(130, shotTimeline.Collections[0].Items[1].EndFrame);
+    True(shotTimeline.Collections[0].Items[1].ShotScreenEdit?.CanResizeEnd == true);
+    True(shotTimeline.MinimumFrame < -12);
+    True(shotTimeline.MaximumFrame >= 130);
+    Required(shotTimeline.ShotMutation).UpdateScreenFieldAsync(
+        "screen_bottom",
+        "moduleInstance.startFrame",
+        -5).GetAwaiter().GetResult();
+    SequenceEqual(
+        [("screen_bottom", "moduleInstance.startFrame", -5)],
+        shotTimelineWrites);
 
     var node = new ProjectTreeNode(
         ProjectTreeNodeKind.ModuleInstance,

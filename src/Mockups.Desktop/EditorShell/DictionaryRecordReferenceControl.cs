@@ -57,7 +57,10 @@ internal sealed class DictionaryRecordReferenceControl : DockPanel,
             HorizontalContentAlignment = HorizontalAlignment.Center,
             VerticalContentAlignment = VerticalAlignment.Center,
             IsEnabled = openOverrides is not null
-                && !string.IsNullOrWhiteSpace(value),
+                && (!string.IsNullOrWhiteSpace(value)
+                    || definition.CanInherit
+                    && !string.IsNullOrWhiteSpace(
+                        definition.InheritedValue)),
         };
         EditorAccessibility.Describe(
             _overridesButton,
@@ -68,11 +71,11 @@ internal sealed class DictionaryRecordReferenceControl : DockPanel,
         _overridesButton.Click += async (_, _) =>
         {
             if (_openOverrides is not null
-                && !string.IsNullOrWhiteSpace(_value))
+                && EffectiveReferenceValue() is { } referenceValue)
             {
                 await _openOverrides(
                     _definition,
-                    _value);
+                    referenceValue);
             }
         };
         SetDock(_overridesButton, Dock.Right);
@@ -102,9 +105,9 @@ internal sealed class DictionaryRecordReferenceControl : DockPanel,
         _restoreButton.Click += async (_, _) =>
         {
             if (_restoreOverrides is not null
-                && !string.IsNullOrWhiteSpace(_value))
+                && EffectiveReferenceValue() is { } referenceValue)
             {
-                await _restoreOverrides(_definition, _value);
+                await _restoreOverrides(_definition, referenceValue);
                 SetOverrideState(false);
             }
         };
@@ -148,10 +151,10 @@ internal sealed class DictionaryRecordReferenceControl : DockPanel,
     private void UpdateButton()
     {
         _overridesButton.IsEnabled = _openOverrides is not null
-            && !string.IsNullOrWhiteSpace(_value);
+            && EffectiveReferenceValue() is not null;
         _restoreButton.IsEnabled = _restoreOverrides is not null
             && _hasOverrides
-            && !string.IsNullOrWhiteSpace(_value);
+            && EffectiveReferenceValue() is not null;
     }
 
     private void SetOverrideState(bool active)
@@ -167,10 +170,19 @@ internal sealed class DictionaryRecordReferenceControl : DockPanel,
         _restoreButton.IsVisible = active;
         _restoreButton.IsEnabled = _restoreOverrides is not null
             && active
-            && !string.IsNullOrWhiteSpace(_value);
+            && EffectiveReferenceValue() is not null;
         if (changed)
         {
             OverrideStateChanged?.Invoke(this, EventArgs.Empty);
         }
+    }
+
+    private string? EffectiveReferenceValue()
+    {
+        if (!string.IsNullOrWhiteSpace(_value)) return _value;
+        return _definition.CanInherit
+            && !string.IsNullOrWhiteSpace(_definition.InheritedValue)
+                ? _definition.InheritedValue
+                : null;
     }
 }

@@ -288,6 +288,14 @@ regions. Collection collapse and viewport zoom are session-only. Block edits
 persist through their declared collection fields or animation document and do
 not rewrite owner-local keyframes.
 
+When Production Preview is owned by a Shot, that same Timeline surface changes
+coordinate owner instead of creating an editor-local timeline. It presents one
+ordered lane per Screen on the absolute Shot clock and omits General, Runtime
+collection and animation-editor lanes. Moving a Screen writes its signed Shot
+start; resizing its outgoing edge writes duration only when its selected policy
+is explicit. The viewport may expose authored portions outside the Shot while
+Preview and Render continue to clip them to the Shot interval.
+
 Selecting General or one stable item lane selects that exact temporal owner.
 The complete lane receives the selected treatment and one contextual animation
 section opens below the final visible lane. That section contains only tracks

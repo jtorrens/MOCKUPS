@@ -147,7 +147,12 @@ public partial class MainWindow : SukiWindow
             _previewController.SetProductionScreenTimelineFrame,
             _previewController.ToggleProductionPlayback,
             _previewController.PlaybackState,
-            _previewController.ProductionScreenReferenceMarkers);
+            _previewController.ProductionScreenReferenceMarkers,
+            _previewController.ProductionShotTimelineSnapshot,
+            _previewController.ProductionShotFrame,
+            _previewController.SetProductionShotFrame,
+            _previewController.UpdateProductionShotScreenTimelineAsync,
+            RefreshProductionAuthoringAsync);
         _previewController.ConfigureScreenTimelineKeyboardNavigation(
             _screenTimeline.TryStepFrame,
             _screenTimeline.TryMoveToNavigationFrame);
@@ -951,6 +956,18 @@ public partial class MainWindow : SukiWindow
     private void CommitPreviewAuthoringSurfaceCandidate(
         PreparedPreviewAuthoringCandidate candidate)
     {
+        if (candidate.Workspace == EditorWorkspace.Production
+            && candidate.PreviewNode.Kind == ProjectTreeNodeKind.Shot)
+        {
+            _screenTimeline.BeginShot(candidate.PreviewNode.Id);
+            _screenTimeline.ShowShot(
+                candidate.PreviewNode.Id,
+                candidate.PreviewNode.Name);
+            RenderPreviewAuthoringSurface(
+                candidate.PreviewNode,
+                null);
+            return;
+        }
         if (!candidate.SupportsSurface)
         {
             _screenTimeline.Clear();
@@ -1062,7 +1079,8 @@ public partial class MainWindow : SukiWindow
             $"{EditorNodeSelectionState.EditorNodeForSelection(node).RecordClassId}:preview:utility-tab";
         var selectedId = _editorSessionUiState.Selection(_previewUtilityTabStateKey);
         var supportsTimeline = Session.Workspace == EditorWorkspace.Production
-            && node.Kind == ProjectTreeNodeKind.ModuleInstance;
+            && node.Kind is ProjectTreeNodeKind.Shot
+                or ProjectTreeNodeKind.ModuleInstance;
         var selectedTab = selectedId switch
         {
             PreviewUtilitySetupId => PreviewSetupTab,

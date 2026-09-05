@@ -168,7 +168,12 @@ tabs use the order **Screen Payload**, **Timeline**, **Preview**. Screen Payload
 keeps the animation activation glyph beside every animatable Runtime field, but
 contains no Animation detail sections: activating a field creates its track and
 the selected owner lane in Timeline is the only detailed animation editor. A
-**Timeline** tab appears for a Production Screen. It uses one compact transport
+**Timeline** tab appears for a Production Shot or Screen. With a Shot selected,
+it reuses the same timeline surface with one lane per ordered Screen, without a
+General lane, Runtime collection lanes or animation detail editor. Screen lanes
+may move before or after the Shot clipping interval; only explicit-duration
+Screens expose their outgoing resize edge. With a Screen selected, Timeline
+uses one compact transport
 above a tick ruler, then a General lane and one labelled group per Runtime
 collection with one lane per stable item. Collection groups are collapsible and
 use the standard card affordance at the right (`>` closed, `v` open); their

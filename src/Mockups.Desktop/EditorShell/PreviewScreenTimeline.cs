@@ -38,6 +38,12 @@ internal sealed record PreviewScreenTimelineStateEdit(
 
 internal sealed record PreviewScreenTimelineDurationEdit;
 
+internal sealed record PreviewShotScreenTimelineEdit(
+    bool CanResizeEnd);
+
+internal sealed record PreviewShotTimelineMutation(
+    Func<string, string, int, Task> UpdateScreenFieldAsync);
+
 internal sealed record PreviewScreenTimelineItem(
     string Id,
     string Label,
@@ -46,7 +52,9 @@ internal sealed record PreviewScreenTimelineItem(
     IReadOnlyList<PreviewScreenTimelineInterval> Intervals,
     PreviewScreenTimelineSerialEdit? SerialEdit = null,
     PreviewScreenTimelineStateEdit? StateEdit = null,
-    PreviewScreenTimelineDurationEdit? DurationEdit = null);
+    PreviewScreenTimelineDurationEdit? DurationEdit = null,
+    PreviewShotScreenTimelineEdit? ShotScreenEdit = null,
+    int MinimumStartFrame = 0);
 
 internal sealed record PreviewScreenTimelineCollection(
     string Id,
@@ -74,7 +82,11 @@ internal sealed record PreviewScreenTimelineSnapshot(
     IReadOnlyList<PreviewScreenTimelineCollection> Collections,
     IReadOnlyList<PreviewScreenTimelineKeyframe> Keyframes,
     RuntimeInputTimelineMutation? Mutation,
-    bool IsDurationEditable = false)
+    bool IsDurationEditable = false,
+    PreviewShotTimelineMutation? ShotMutation = null,
+    bool ShowGeneralLane = true,
+    bool ShowCollectionHeaders = true,
+    bool ShowAnimationEditor = true)
 {
     public int MinimumFrame => -PreRollFrames;
     public int MaximumFrame => ContentDurationFrames + PostRollFrames - 1;
@@ -188,10 +200,13 @@ internal static class PreviewScreenTimelineMath
     public static (int StartFrame, int EndFrame) Move(
         int startFrame,
         int endFrame,
-        int frameDelta)
+        int frameDelta,
+        int minimumStartFrame = 0)
     {
         var duration = Math.Max(1, endFrame - startFrame);
-        var nextStart = Math.Max(0, startFrame + frameDelta);
+        var nextStart = Math.Max(
+            minimumStartFrame,
+            startFrame + frameDelta);
         return (nextStart, nextStart + duration);
     }
 
@@ -234,10 +249,13 @@ internal static class PreviewScreenTimelineMath
         double laneWidth,
         int minimumTimelineFrame,
         int maximumTimelineFrame,
-        IReadOnlyList<int> candidates)
+        IReadOnlyList<int> candidates,
+        int minimumStartFrame = 0)
     {
         var duration = Math.Max(1, endFrame - startFrame);
-        var desiredStart = Math.Max(0, startFrame + frameDelta);
+        var desiredStart = Math.Max(
+            minimumStartFrame,
+            startFrame + frameDelta);
         var desiredEnd = desiredStart + duration;
         var threshold = SnapThresholdFrames(
             laneWidth,
@@ -251,7 +269,8 @@ internal static class PreviewScreenTimelineMath
                 (Candidate: candidate, Offset: candidate - desiredEnd),
             })
             .Where((match) => Math.Abs(match.Offset) <= threshold)
-            .Where((match) => desiredStart + match.Offset >= 0)
+            .Where((match) => desiredStart + match.Offset
+                >= minimumStartFrame)
             .OrderBy((match) => Math.Abs(match.Offset))
             .ThenBy((match) => match.Candidate)
             .Select((match) => new PreviewScreenTimelineSnapMatch(
@@ -271,7 +290,8 @@ internal static class PreviewScreenTimelineMath
         var rounded = Move(
             startFrame,
             endFrame,
-            (int)Math.Round(frameDelta, MidpointRounding.AwayFromZero));
+            (int)Math.Round(frameDelta, MidpointRounding.AwayFromZero),
+            minimumStartFrame);
         return (rounded.StartFrame, rounded.EndFrame, null);
     }
 
@@ -725,6 +745,63 @@ internal static class PreviewScreenTimelineSnapshotFactory
         JsonPath.ParseRequiredObject(json, owner);
 }
 
+internal static class PreviewShotTimelineSnapshotFactory
+{
+    private const int ContextFrames =
+        PreviewScreenTimelineMath.AuthoringHorizonFrames;
+
+    public static PreviewScreenTimelineSnapshot Create(
+        ProductionPreviewShotSnapshot shot,
+        string shotLabel,
+        Func<string, string, int, Task> updateScreenFieldAsync)
+    {
+        var minimumScreenFrame = shot.Screens
+            .Select((screen) => screen.StartFrame)
+            .DefaultIfEmpty(0)
+            .Min();
+        var maximumScreenFrame = shot.Screens
+            .Select((screen) => screen.StartFrame + screen.DurationFrames)
+            .DefaultIfEmpty(shot.DurationFrames)
+            .Max();
+        var items = shot.Screens
+            .Select((screen) =>
+                new PreviewScreenTimelineItem(
+                    screen.ScreenId,
+                    screen.ScreenLabel,
+                    screen.StartFrame,
+                    screen.StartFrame + screen.DurationFrames,
+                    [new PreviewScreenTimelineInterval(
+                        screen.StartFrame,
+                        screen.StartFrame + screen.DurationFrames)],
+                    ShotScreenEdit: new PreviewShotScreenTimelineEdit(
+                        screen.IsDurationEditable),
+                    MinimumStartFrame: -100000))
+            .ToArray();
+        return new PreviewScreenTimelineSnapshot(
+            shot.ShotId,
+            shotLabel,
+            Math.Max(
+                ContextFrames,
+                -minimumScreenFrame + ContextFrames),
+            Math.Max(1, shot.DurationFrames),
+            Math.Max(
+                ContextFrames,
+                maximumScreenFrame - shot.DurationFrames
+                    + ContextFrames),
+            [new PreviewScreenTimelineCollection(
+                "screens",
+                "Screens",
+                items)],
+            [],
+            Mutation: null,
+            ShotMutation: new PreviewShotTimelineMutation(
+                updateScreenFieldAsync),
+            ShowGeneralLane: false,
+            ShowCollectionHeaders: false,
+            ShowAnimationEditor: false);
+    }
+}
+
 internal sealed class PreviewScreenTimelineController : IDisposable
 {
     private readonly ContentControl _host;
@@ -735,8 +812,16 @@ internal sealed class PreviewScreenTimelineController : IDisposable
     private readonly PreviewPlaybackState _playbackState;
     private readonly Func<string, IReadOnlyList<PreviewScreenTimelineReferenceMarker>>
         _referenceMarkers;
+    private readonly Func<string, ProductionPreviewShotSnapshot>
+        _shotSnapshot;
+    private readonly Func<int> _shotFrame;
+    private readonly Action<int> _setShotFrame;
+    private readonly Func<string, string, int, Task>
+        _updateShotScreenField;
+    private readonly Func<Task> _refreshProductionAuthoring;
     private readonly PreviewScreenTimelineSurface _surface;
     private string _screenId = "";
+    private string _shotId = "";
 
     public PreviewScreenTimelineController(
         ContentControl host,
@@ -746,7 +831,12 @@ internal sealed class PreviewScreenTimelineController : IDisposable
         Action togglePlayback,
         PreviewPlaybackState playbackState,
         Func<string, IReadOnlyList<PreviewScreenTimelineReferenceMarker>>
-            referenceMarkers)
+            referenceMarkers,
+        Func<string, ProductionPreviewShotSnapshot> shotSnapshot,
+        Func<int> shotFrame,
+        Action<int> setShotFrame,
+        Func<string, string, int, Task> updateShotScreenField,
+        Func<Task> refreshProductionAuthoring)
     {
         _host = host;
         _screenRange = screenRange;
@@ -755,6 +845,11 @@ internal sealed class PreviewScreenTimelineController : IDisposable
         _togglePlayback = togglePlayback;
         _playbackState = playbackState;
         _referenceMarkers = referenceMarkers;
+        _shotSnapshot = shotSnapshot;
+        _shotFrame = shotFrame;
+        _setShotFrame = setShotFrame;
+        _updateShotScreenField = updateShotScreenField;
+        _refreshProductionAuthoring = refreshProductionAuthoring;
         _surface = new PreviewScreenTimelineSurface(
             SetFrame,
             StepFrame,
@@ -765,8 +860,37 @@ internal sealed class PreviewScreenTimelineController : IDisposable
 
     public void BeginScreen(string screenId)
     {
+        _shotId = "";
         _screenId = screenId;
         _surface.ShowLoading();
+    }
+
+    public void BeginShot(string shotId)
+    {
+        _screenId = "";
+        _shotId = shotId;
+        _surface.ShowLoading();
+    }
+
+    public void ShowShot(string shotId, string shotLabel)
+    {
+        if (!_shotId.Equals(shotId, StringComparison.Ordinal)) return;
+        try
+        {
+            var snapshot = PreviewShotTimelineSnapshotFactory.Create(
+                _shotSnapshot(shotId),
+                shotLabel,
+                UpdateShotScreenFieldAsync);
+            _surface.SetSnapshot(
+                snapshot,
+                null,
+                _shotFrame(),
+                _playbackState.IsPlaying);
+        }
+        catch (Exception exception)
+        {
+            _surface.ShowFailure(exception.Message);
+        }
     }
 
     public void ShowPrepared(EditorPreparedPreviewAuthoringSurface prepared)
@@ -797,11 +921,19 @@ internal sealed class PreviewScreenTimelineController : IDisposable
     public void Clear()
     {
         _screenId = "";
+        _shotId = "";
         _surface.Clear();
     }
 
     public void RefreshFrame()
     {
+        if (!string.IsNullOrWhiteSpace(_shotId))
+        {
+            _surface.SetFrame(
+                _shotFrame(),
+                _playbackState.IsPlaying);
+            return;
+        }
         if (string.IsNullOrWhiteSpace(_screenId)) return;
         _surface.SetFrame(
             _screenFrame(_screenId),
@@ -824,17 +956,33 @@ internal sealed class PreviewScreenTimelineController : IDisposable
 
     private void SetFrame(int frame)
     {
-        if (!string.IsNullOrWhiteSpace(_screenId))
+        if (!string.IsNullOrWhiteSpace(_shotId))
+            _setShotFrame(frame);
+        else if (!string.IsNullOrWhiteSpace(_screenId))
             _setScreenFrame(_screenId, frame);
     }
 
     private void StepFrame(int delta)
     {
-        if (!string.IsNullOrWhiteSpace(_screenId))
+        if (!string.IsNullOrWhiteSpace(_shotId))
+            SetFrame(_shotFrame() + delta);
+        else if (!string.IsNullOrWhiteSpace(_screenId))
             SetFrame(_screenFrame(_screenId) + delta);
     }
 
     private void TogglePlayback() => _togglePlayback();
+
+    private async Task UpdateShotScreenFieldAsync(
+        string screenId,
+        string fieldId,
+        int value)
+    {
+        await _updateShotScreenField(
+            screenId,
+            fieldId,
+            value);
+        await _refreshProductionAuthoring();
+    }
 }
 
 internal sealed class PreviewScreenTimelineSurface : Border
@@ -907,7 +1055,7 @@ internal sealed class PreviewScreenTimelineSurface : Border
         _content.Children.Clear();
         _content.Children.Add(new TextBlock
         {
-            Text = "Selecciona una Screen para abrir su Timeline.",
+            Text = "Selecciona un Shot o una Screen para abrir su Timeline.",
             Margin = new Thickness(6),
             Opacity = 0.7,
         });
@@ -959,7 +1107,7 @@ internal sealed class PreviewScreenTimelineSurface : Border
 
     public void SetSnapshot(
         PreviewScreenTimelineSnapshot snapshot,
-        Func<string, AnimationTargetEditorContent> animationContent,
+        Func<string, AnimationTargetEditorContent>? animationContent,
         int frame,
         bool isPlaying,
         IReadOnlyList<PreviewScreenTimelineReferenceMarker>? referenceMarkers = null)
@@ -1001,54 +1149,63 @@ internal sealed class PreviewScreenTimelineSurface : Border
             _ruler,
             28,
             FontWeight.Normal);
-        var general = CreateLane(
-            snapshot,
-            "general",
-            new PreviewScreenTimelineItem(
+        PreviewScreenTimelineLane? general = null;
+        if (snapshot.ShowGeneralLane)
+        {
+            general = CreateLane(
+                snapshot,
                 "general",
+                new PreviewScreenTimelineItem(
+                    "general",
+                    "General",
+                    0,
+                    snapshot.ContentDurationFrames,
+                    [new PreviewScreenTimelineInterval(0, snapshot.ContentDurationFrames)],
+                    DurationEdit: snapshot.IsDurationEditable
+                        ? new PreviewScreenTimelineDurationEdit()
+                        : null),
+                isGeneral: true);
+            _generalLane = general;
+            var generalRow = AddTimelineRow(
+                timeline,
                 "General",
-                0,
-                snapshot.ContentDurationFrames,
-                [new PreviewScreenTimelineInterval(0, snapshot.ContentDurationFrames)],
-                DurationEdit: snapshot.IsDurationEditable
-                    ? new PreviewScreenTimelineDurationEdit()
-                    : null),
-            isGeneral: true);
-        _generalLane = general;
-        var generalRow = AddTimelineRow(
-            timeline,
-            "General",
-            general,
-            28,
-            FontWeight.SemiBold,
-            () => SelectLane(general));
-        _rowsByLane[general] = generalRow;
+                general,
+                28,
+                FontWeight.SemiBold,
+                () => SelectLane(general));
+            _rowsByLane[general] = generalRow;
+        }
 
         foreach (var collection in snapshot.Collections)
         {
             var collectionKey = CollectionKey(snapshot.ScreenId, collection.Id);
-            var collapsed = _collapsedCollections.TryGetValue(
+            var collapsed = snapshot.ShowCollectionHeaders
+                && _collapsedCollections.TryGetValue(
                     collectionKey,
                     out var storedCollapsed)
                 && storedCollapsed;
             var itemRows = new List<TimelineRow>();
-            AddCollectionHeader(
-                timeline,
-                collection.Label,
-                collapsed,
-                (nextCollapsed) =>
-                {
-                    _collapsedCollections[collectionKey] = nextCollapsed;
-                    foreach (var row in itemRows) row.SetVisible(!nextCollapsed);
-                    if (nextCollapsed
-                        && itemRows.Any((row) => ReferenceEquals(
-                            row.Lane,
-                            _selectedLane)))
+            if (snapshot.ShowCollectionHeaders)
+            {
+                AddCollectionHeader(
+                    timeline,
+                    collection.Label,
+                    collapsed,
+                    (nextCollapsed) =>
                     {
-                        SelectLane(general);
-                    }
-                    _overlay?.InvalidateVisual();
-                });
+                        _collapsedCollections[collectionKey] = nextCollapsed;
+                        foreach (var row in itemRows) row.SetVisible(!nextCollapsed);
+                        if (nextCollapsed
+                            && itemRows.Any((row) => ReferenceEquals(
+                                row.Lane,
+                                _selectedLane))
+                            && general is not null)
+                        {
+                            SelectLane(general);
+                        }
+                        _overlay?.InvalidateVisual();
+                    });
+            }
             foreach (var item in collection.Items)
             {
                 var laneKey = LaneKey(
@@ -1087,17 +1244,20 @@ internal sealed class PreviewScreenTimelineSurface : Border
         Grid.SetRowSpan(_overlay, rowCount);
         timeline.Children.Add(_overlay);
         _content.Children.Add(timeline);
-        _content.Children.Add(_animationHost);
+        if (snapshot.ShowAnimationEditor)
+            _content.Children.Add(_animationHost);
         var selectedKey = _selectedLaneByScreen.TryGetValue(
                 snapshot.ScreenId,
                 out var storedLaneKey)
             ? storedLaneKey
-            : general.Key;
+            : general?.Key;
         var selectedLane = _lanes.FirstOrDefault((lane) =>
                 lane.IsVisible
                 && lane.Key.Equals(selectedKey, StringComparison.Ordinal))
-            ?? general;
-        SelectLane(selectedLane);
+            ?? general
+            ?? _lanes.FirstOrDefault();
+        if (selectedLane is not null)
+            SelectLane(selectedLane);
         UpdateFrameText();
         UpdatePlayButton(isPlaying);
     }
@@ -1224,7 +1384,7 @@ internal sealed class PreviewScreenTimelineSurface : Border
 
     private void SelectLane(PreviewScreenTimelineLane lane)
     {
-        if (_snapshot is null || _animationContent is null) return;
+        if (_snapshot is null) return;
         _selectedLane = lane;
         _selectedLaneByScreen[_snapshot.ScreenId] = lane.Key;
         var keyframes = _snapshot.Keyframes
@@ -1243,6 +1403,12 @@ internal sealed class PreviewScreenTimelineSurface : Border
                 isSelected ? keyframes : []);
             if (_rowsByLane.TryGetValue(candidate, out var row))
                 row.SetSelected(isSelected);
+        }
+        if (_animationContent is null
+            || !_snapshot.ShowAnimationEditor)
+        {
+            _animationHost.Content = null;
+            return;
         }
         var animation = _animationContent(lane.TargetId);
         _animationHost.Content = new StackPanel
@@ -1267,6 +1433,26 @@ internal sealed class PreviewScreenTimelineSurface : Border
         PreviewScreenTimelineItem item,
         PreviewScreenTimelineLaneEdit edit)
     {
+        if (_snapshot?.ShotMutation is { } shotMutation
+            && item.ShotScreenEdit is { } shotScreen)
+        {
+            if (edit.Mode == PreviewScreenTimelineLaneEditMode.Move)
+            {
+                await shotMutation.UpdateScreenFieldAsync(
+                    item.Id,
+                    "moduleInstance.startFrame",
+                    edit.StartFrame);
+            }
+            else if (edit.Mode == PreviewScreenTimelineLaneEditMode.Exit
+                && shotScreen.CanResizeEnd)
+            {
+                await shotMutation.UpdateScreenFieldAsync(
+                    item.Id,
+                    "moduleInstance.durationFrames",
+                    Math.Max(1, edit.EndFrame - edit.StartFrame));
+            }
+            return;
+        }
         if (_snapshot?.Mutation is not { } mutation) return;
         if (item.DurationEdit is not null
             && edit.Mode == PreviewScreenTimelineLaneEditMode.Exit)
@@ -1821,6 +2007,7 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
     private readonly bool _movesOwnerOrigin;
     private readonly bool _ownsScreenDuration;
     private readonly bool _canMove;
+    private readonly int _minimumStartFrame;
     private readonly int _authoredStartFrame;
     private readonly Func<PreviewScreenTimelineLane, IReadOnlyList<int>>
         _snapTargets;
@@ -1853,16 +2040,23 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
         _isStateLane = item.StateEdit is not null;
         _isEditable = item.SerialEdit is not null
             || item.StateEdit is not null
-            || item.DurationEdit is not null;
+            || item.DurationEdit is not null
+            || item.ShotScreenEdit is not null;
         _canResizeEnd = item.StateEdit is not null
             || item.SerialEdit?.CanResizeEnd == true
-            || item.DurationEdit is not null;
+            || item.DurationEdit is not null
+            || item.ShotScreenEdit?.CanResizeEnd == true;
         _movesOwnerOrigin = item.SerialEdit is not null;
         _ownsScreenDuration = item.DurationEdit is not null;
-        _canMove = item.SerialEdit is not null || item.StateEdit is not null;
+        _canMove = item.SerialEdit is not null
+            || item.StateEdit is not null
+            || item.ShotScreenEdit is not null;
+        _minimumStartFrame = item.MinimumStartFrame;
         _authoredStartFrame = item.StartFrame;
         _snapTargets = snapTargets;
-        _startFrame = Math.Max(0, item.StartFrame);
+        _startFrame = Math.Max(
+            _minimumStartFrame,
+            item.StartFrame);
         _endFrame = Math.Max(_startFrame + 1, item.EndFrame);
         _intervals = item.Intervals.ToList();
         Cursor = new Cursor(_isEditable
@@ -2090,7 +2284,8 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
                 Bounds.Width,
                 Viewport.MinimumFrame,
                 Viewport.MaximumFrame,
-                _snapTargets(this));
+                _snapTargets(this),
+                _minimumStartFrame);
             _startFrame = next.StartFrame;
             _endFrame = next.EndFrame;
             if (_dragMode == DragMode.StateMove && _dragInterval is { } original)

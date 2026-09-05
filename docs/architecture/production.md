@@ -310,7 +310,10 @@ another Screen. Calculated duration is fixed in the Shot timeline and explicit
 lane wins for the overlap. A gap has no active Screen and produces a fully
 transparent Device image. The Shot interval is only the Preview/render clipping
 window, so portions before frame zero or after the Shot end are not displayed or
-rendered. Moving a lane does not rewrite local keyframes or Shot duration.
+rendered. Moving a lane does not rewrite local keyframes or Shot duration. This
+Shot timeline is the shared **Timeline** utility in Preview when the selected
+context is a Shot. The Shot editor keeps only the ordered Screen collection and
+does not embed another temporal surface.
 
 Screen payload is authored in Preview because that is where its effect can be
 checked, but ownership remains with the Screen instance.

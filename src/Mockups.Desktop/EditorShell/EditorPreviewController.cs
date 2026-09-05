@@ -285,6 +285,28 @@ internal sealed class EditorPreviewController : IDisposable
 
     public void SetProductionShotFrame(int frame) => SetShotPreviewFrame(frame);
 
+    public ProductionPreviewShotSnapshot ProductionShotTimelineSnapshot(
+        string shotId) =>
+        PreparedProductionSession().Shot(shotId);
+
+    public Task UpdateProductionShotScreenTimelineAsync(
+        string screenId,
+        string fieldId,
+        int value)
+    {
+        if (fieldId is not "moduleInstance.startFrame"
+            and not "moduleInstance.durationFrames")
+        {
+            throw new InvalidOperationException(
+                $"Shot Timeline cannot edit Screen field '{fieldId}'.");
+        }
+        return _operations.ExecuteAsync(
+            () => _productionRecordFields.UpdateModuleInstanceField(
+                screenId,
+                fieldId,
+                value.ToString(CultureInfo.InvariantCulture)));
+    }
+
     public EditorWorkspace PreviewAuthoringWorkspace =>
         PreviewWorkspace();
 

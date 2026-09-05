@@ -8,12 +8,14 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed record ProductionPreviewScreenSnapshot(
     string ScreenId,
+    string ScreenLabel,
     string ShotId,
     int StartFrame,
     int DurationFrames,
     int TransitionFrameCount,
     int ActionDelayFrames,
     int ActionDurationFrames,
+    bool IsDurationEditable,
     string DeviceId,
     DevicePreviewMetrics DeviceMetrics,
     string TransitionJson,
@@ -161,12 +163,16 @@ internal sealed class ProductionPreviewSessionDataSource
                 var screen =
                     new ProductionPreviewScreenSnapshot(
                         screenId,
+                        screenSettings.Name,
                         shotNode.Id,
                         range.StartFrame,
                         durationFrames,
                         range.TransitionFrameCount,
                         range.ActionDelayFrames,
                         range.ActionDurationFrames,
+                        RuntimeDurationContract.ParsePolicy(
+                            screenSettings.DurationPolicy)
+                            == RuntimeDurationPolicy.Explicit,
                         deviceId,
                         DeviceSettingsFieldContract.PreviewMetrics(effectiveDevice),
                         source.TransitionJson,
