@@ -90,6 +90,7 @@ export const desktopPreviewComponentCapabilities = {
     [],
     ["presenceMotion"],
   ),
+  contentRow: capabilities([], [], ["stateMotion"]),
   callParticipant: capabilities([], [], ["ownerTimeline", "mediaPlayback", "stateMotion"]),
 } as const satisfies Record<DesktopPreviewComponentClass, DesktopPreviewOwnerCapabilities>;
 

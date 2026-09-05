@@ -20,6 +20,7 @@ import {
 } from "./componentResolverCommon.js";
 import { optionalObject, requiredObjectArray } from "./previewJsonHelpers.js";
 import { requiredRows, requiredRuntimeRows, resolveRow } from "./moduleRowSectionResolver.js";
+import { resolveContentRowComponent } from "./contentRowComponentResolver.js";
 import { resolveParameterAnimation } from "./parameterAnimationResolver.js";
 import { rootScreenFrame } from "./previewFrameContext.js";
 import { RuntimeOwnerTimeline } from "./runtimeOwnerTimeline.js";
@@ -132,8 +133,8 @@ export function resolveSocialPostModule(
       "module.core.socialPost.rowGapToken",
     ),
     rows: [
-      resolveRow("module.core.socialPost", "header", 1, rows[0], runtimeRows[0], componentBaseConfigs),
-      resolveRow("module.core.socialPost", "header", 2, rows[1], runtimeRows[1], componentBaseConfigs),
+      resolveRow(payload, "module.core.socialPost", "header", 1, rows[0], runtimeRows[0], componentBaseConfigs, "contentRow", resolveContentRowComponent),
+      resolveRow(payload, "module.core.socialPost", "header", 2, rows[1], runtimeRows[1], componentBaseConfigs, "contentRow", resolveContentRowComponent),
     ],
     showMedia: requiredBoolean(
       socialPost,
@@ -246,8 +247,8 @@ export function resolveSocialPostModule(
       "module.core.socialPost.footerRowGapToken",
     ),
     footerRows: [
-      resolveRow("module.core.socialPost", "footer", 1, footerRows[0], footerRuntimeRows[0], componentBaseConfigs),
-      resolveRow("module.core.socialPost", "footer", 2, footerRows[1], footerRuntimeRows[1], componentBaseConfigs),
+      resolveRow(payload, "module.core.socialPost", "footer", 1, footerRows[0], footerRuntimeRows[0], componentBaseConfigs, "contentRow", resolveContentRowComponent),
+      resolveRow(payload, "module.core.socialPost", "footer", 2, footerRows[1], footerRuntimeRows[1], componentBaseConfigs, "contentRow", resolveContentRowComponent),
     ],
   };
 }

@@ -20,13 +20,15 @@ internal static class VideoCallModuleConfigContract
             "useAppWallpaper", "backgroundColorToken",
             "showHeader", "headerLayoutMode", "headerFloatHorizontalPaddingToken", "headerFloatOffsetY", "headerHeight", "headerSurfaceSlot", "headerRowGapToken", "headerRows",
             "showFooter", "footerLayoutMode", "footerFloatHorizontalPaddingToken", "footerFloatOffsetY", "footerHeight", "footerSurfaceSlot", "footerRowGapToken", "footerRows",
-            "showMainVideo", "mainParticipantSlot", "mainPadding",
-            "showPip", "pipParticipantSlot", "pipSize", "pipPlacement", "pipPadding",
-            "showGridParticipants", "gridParticipantSlot", "gridPadding", "gridGapToken", "gridHeightMode", "gridHeight", "gridRows",
-            "showParticipantNames", "showParticipantStatus", "showStatusBar", "showNavigationBar",
+            "showMainVideo", "mainSurfaceSlot", "mainPadding", "mainRows",
+            "showPip", "pipSurfaceSlot", "pipSize", "pipPlacement", "pipPadding",
+            "showGridParticipants", "gridSurfaceSlot", "gridPadding", "gridGapToken", "gridHeightMode", "gridHeight", "gridRows",
+            "showParticipantSurface", "showParticipantMedia", "showFallbackAvatar", "showFallbackStatus",
+            "defaultStatusText", "participantContentPadding", "participantAvatarSize", "participantMediaSlot", "participantAvatarSlot", "participantStatusLabelSlot",
+            "showStatusBar", "showNavigationBar",
             "statusBarSlot", "navigationBarSlot"
         ], $"{context}.videoCall");
-        foreach (var key in new[] { "useAppWallpaper", "showHeader", "showFooter", "showMainVideo", "showPip", "showGridParticipants", "showParticipantNames", "showParticipantStatus", "showStatusBar", "showNavigationBar" })
+        foreach (var key in new[] { "useAppWallpaper", "showHeader", "showFooter", "showMainVideo", "showPip", "showGridParticipants", "showParticipantSurface", "showParticipantMedia", "showFallbackAvatar", "showFallbackStatus", "showStatusBar", "showNavigationBar" })
             JsonPath.RequiredBoolean(owner, key, context);
         RequireOneOf(JsonPath.RequiredString(owner, "headerLayoutMode", context), ["stack", "float"], $"{context}.videoCall.headerLayoutMode");
         RequireOneOf(JsonPath.RequiredString(owner, "footerLayoutMode", context), ["stack", "float"], $"{context}.videoCall.footerLayoutMode");
@@ -36,19 +38,21 @@ internal static class VideoCallModuleConfigContract
         foreach (var key in new[] { "headerFloatOffsetY", "footerFloatOffsetY" })
             if (JsonPath.RequiredNumber(owner, key, context) < 0)
                 throw new InvalidOperationException($"{context}.videoCall.{key} must be non-negative.");
-        foreach (var key in new[] { "mainPadding", "pipPadding", "gridPadding" })
+        JsonPath.RequiredString(owner, "defaultStatusText", context);
+        foreach (var key in new[] { "mainPadding", "pipPadding", "gridPadding", "participantContentPadding" })
             _ = RuntimeInputValueKindContract.ParseValue(ValueKind.ThemeTokenPair, JsonPath.RequiredString(owner, key, context), $"{context}.videoCall.{key}");
         _ = RuntimeInputValueKindContract.ParseValue(ValueKind.IntegerPair, JsonPath.RequiredString(owner, "pipSize", context), $"{context}.videoCall.pipSize");
         _ = AlignmentPlacementValue.Parse(JsonPath.RequiredObject(owner, "pipPlacement", context).ToJsonString());
         if (JsonPath.RequiredNumber(owner, "headerHeight", context) < 0 || JsonPath.RequiredNumber(owner, "footerHeight", context) < 0)
             throw new InvalidOperationException($"{context} video call section heights must be non-negative.");
-        foreach (var key in new[] { "gridHeight", "gridRows" })
+        foreach (var key in new[] { "gridHeight", "gridRows", "participantAvatarSize" })
             if (JsonPath.RequiredNumber(owner, key, context) < 1)
                 throw new InvalidOperationException($"{context}.videoCall.{key} must be positive.");
-        foreach (var key in new[] { "headerSurfaceSlot", "footerSurfaceSlot", "mainParticipantSlot", "pipParticipantSlot", "gridParticipantSlot", "statusBarSlot", "navigationBarSlot" })
+        foreach (var key in new[] { "headerSurfaceSlot", "footerSurfaceSlot", "mainSurfaceSlot", "pipSurfaceSlot", "gridSurfaceSlot", "participantMediaSlot", "participantAvatarSlot", "participantStatusLabelSlot", "statusBarSlot", "navigationBarSlot" })
             ComponentVariantSlotDocumentContract.Validate(JsonPath.RequiredObject(owner, key, context), $"{context}.videoCall.{key}");
         SocialPostModuleConfigContract.ValidateRows(owner, "headerRows", $"{context}.videoCall");
         SocialPostModuleConfigContract.ValidateRows(owner, "footerRows", $"{context}.videoCall");
+        SocialPostModuleConfigContract.ValidateRows(owner, "mainRows", $"{context}.videoCall", 3, "mainRow");
     }
 
     private static void RequireExactKeys(JsonObject value, IReadOnlyList<string> expected, string owner)

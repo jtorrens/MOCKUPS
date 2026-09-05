@@ -31,6 +31,9 @@ internal static class GeneratedComponentScaffoldConfigRegistry
                 return true;
             case "componentStack":
                 return true;
+            case "contentRow":
+                ContentRowComponentConfigContract.Validate(config, context);
+                return true;
             case "cursor":
                 return true;
             case "drawPassword":

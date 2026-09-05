@@ -34,8 +34,8 @@ test("Video Call resolves group participants including connecting and connection
   const source = fixture();
   const call = resolveVideoCallModule(source);
   assert.equal(call.participants.length, 4);
-  assert.equal(call.participants.find(item => item.id === "participant_sam")?.participant.statusLabel.text, "Connecting…");
-  assert.equal(call.participants.find(item => item.id === "participant_jon")?.participant.statusLabel.text, "Connection lost");
+  assert.equal(call.participants.find(item => item.id === "participant_sam")?.statusLabel.text, "Connecting…");
+  assert.equal(call.participants.find(item => item.id === "participant_jon")?.statusLabel.text, "Connection lost");
   const node = videoCallModuleToRenderable(source);
   assert.equal(node.id, "module.core.videoCall");
   assert.ok((node.children?.length ?? 0) > 4);
@@ -50,7 +50,7 @@ test("Video Call permits simultaneous participants with the same role", () => {
   const call = resolveVideoCallModule(duplicateMain);
   assert.deepEqual(call.participants.map(({ role }) => role), ["main", "main"]);
   const node = videoCallModuleToRenderable(duplicateMain);
-  assert.equal(node.children?.filter(child => child.id === "component.callParticipant").length, 2);
+  assert.equal(node.children?.filter(child => child.id.startsWith("participant_")).length, 2);
 });
 
 test("Video Call grid rows fill every row without reserving empty columns", () => {
@@ -67,7 +67,7 @@ test("Video Call grid rows fill every row without reserving empty columns", () =
     configJson: JSON.stringify(config),
     designPreviewJson: JSON.stringify(preview),
   });
-  const participants = node.children?.filter(child => child.id === "component.callParticipant") ?? [];
+  const participants = node.children?.filter(child => child.id.startsWith("participant_")) ?? [];
   assert.equal(participants.length, 3);
   assert.ok(participants.every(participant => participant.box));
   assert.equal(participants[0]!.box!.y, participants[1]!.box!.y);
@@ -93,7 +93,7 @@ test("Video Call fixed grid anchors below main and above the stacked footer", ()
   config.videoCall.showPip = false;
 
   const node = videoCallModuleToRenderable({ ...source, configJson: JSON.stringify(config), designPreviewJson: JSON.stringify(preview) });
-  const participants = node.children?.filter(child => child.id === "component.callParticipant") ?? [];
+  const participants = node.children?.filter(child => child.id.startsWith("participant_")) ?? [];
   const footer = node.children?.find(child => child.id === "module.core.videoCall.footer");
   assert.equal(participants.length, 3);
   assert.ok(participants.every(participant => participant.box) && footer?.box);
@@ -114,7 +114,7 @@ test("Video Call fixed main expands through the complete body when there is no g
 
   const node = videoCallModuleToRenderable({ ...source, configJson: JSON.stringify(config), designPreviewJson: JSON.stringify(preview) });
   const background = node.children?.find(child => child.id === "module.core.videoCall.background");
-  const participant = node.children?.find(child => child.id === "component.callParticipant");
+  const participant = node.children?.find(child => child.id.startsWith("participant_"));
   assert.deepEqual(participant?.box, background?.box);
 });
 
@@ -136,7 +136,7 @@ test("Video Call fill mode gives main and grid roles the same tile geometry", ()
     ...source,
     configJson: JSON.stringify(config),
     designPreviewJson: JSON.stringify({ ...preview, participants }),
-  }).children?.filter(child => child.id === "component.callParticipant").map(child => child.box);
+  }).children?.filter(child => child.id.startsWith("participant_")).map(child => child.box);
   const before = render(preview.participants);
   preview.participants[0]!.role = "grid";
   preview.participants[1]!.role = "main";

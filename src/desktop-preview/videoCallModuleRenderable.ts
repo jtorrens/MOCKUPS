@@ -1,15 +1,18 @@
 import type { RenderableBox, RenderableNode } from "../visual/renderable/types.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
+import { avatarComponentToRenderableAt } from "./avatarComponentRenderable.js";
 import { embeddedComponentConfig } from "./componentPreviewDefaults.js";
 import { componentClassToRenderable } from "./componentRenderableBoundary.js";
 import { numberToken, placeChild, previewPayloadInBox, previewScreenBox, renderScale, scalePlacement, selectedColor } from "./componentRenderableCommon.js";
 import { parseObject } from "./componentResolverCommon.js";
-import { callParticipantComponentToRenderable } from "./callParticipantComponentRenderable.js";
-import { rowsSectionNode } from "./moduleRowSectionRenderable.js";
+import { labelComponentToRenderableAt, measureLabelComponent } from "./labelComponentRenderable.js";
+import { mediaComponentToRenderableAt } from "./mediaComponentRenderable.js";
+import { alignedRowsOverlayNode, rowsSectionNode } from "./moduleRowSectionRenderable.js";
+import { contentRowComponentToRenderable } from "./contentRowComponentRenderable.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
 import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
 import { resolveVideoCallModule } from "./videoCallModuleResolver.js";
-import type { VideoCallComponentSlot, VideoCallParticipant } from "./videoCallModuleContract.js";
+import type { VideoCallComponentSlot, VideoCallModuleContract, VideoCallParticipant } from "./videoCallModuleContract.js";
 import { wallpaperRenderable } from "./wallpaperRenderable.js";
 
 export function videoCallModuleToRenderable(payload: DesignPreviewPayload): RenderableNode {
@@ -32,6 +35,7 @@ export function videoCallModuleToRenderable(payload: DesignPreviewPayload): Rend
     edgeOffset: headerFloats ? call.headerFloatOffsetY * scale : 0,
     bleedToScreenEdge: !headerFloats,
     contentAlignment: "center",
+    renderRow: contentRowComponentToRenderable,
   }) : undefined;
   const footer = call.showFooter ? rowsSectionNode(payload, bases, {
     ownerId: call.id, section: "footer", rows: call.footerRows, rowGapToken: call.footerRowGapToken,
@@ -42,6 +46,7 @@ export function videoCallModuleToRenderable(payload: DesignPreviewPayload): Rend
     edgeOffset: footerFloats ? call.footerFloatOffsetY * scale : 0,
     bleedToScreenEdge: !footerFloats,
     contentAlignment: "center",
+    renderRow: contentRowComponentToRenderable,
   }) : undefined;
   const bodyTop = header?.box && !headerFloats
     ? header.box.y + header.box.height
@@ -61,7 +66,7 @@ export function videoCallModuleToRenderable(payload: DesignPreviewPayload): Rend
   const pipBox = placeChild(pipContent, { width: call.pipSize.width * scale, height: call.pipSize.height * scale }, scalePlacement(call.pipPlacement, scale));
   const participants = call.participants.flatMap((item) => {
     const box = item.role === "pip" && call.showPip ? pipBox : layoutById.get(item.id);
-    return box ? [callParticipantComponentToRenderable(previewPayloadInBox(payload, box), item.participant, box)] : [];
+    return box ? [participantNode(previewPayloadInBox(payload, box), bases, call, item, box)] : [];
   });
   const children: RenderableNode[] = [
     call.useAppWallpaper
@@ -74,6 +79,53 @@ export function videoCallModuleToRenderable(payload: DesignPreviewPayload): Rend
   if (status) children.push(status);
   if (navigation) children.push(navigation);
   return { id: call.id, type: "group", frame: 0, box: screen, style: { overflow: "hidden" }, children };
+}
+
+function participantNode(
+  payload: DesignPreviewPayload,
+  componentBaseConfigs: Record<string, unknown>,
+  call: VideoCallModuleContract,
+  participant: VideoCallParticipant,
+  box: RenderableBox,
+): RenderableNode {
+  const scale = renderScale(payload);
+  const content = inset(payload, box, participant.padding);
+  const children: RenderableNode[] = [];
+  if (participant.showSurface) children.push(surfaceComponentToRenderableAt(payload, participant.surface, box));
+  if (participant.showMedia && participant.videoPresent) children.push(mediaComponentToRenderableAt(payload, participant.media, content));
+  if (!participant.videoPresent) {
+    const avatarSize = participant.showFallbackAvatar
+      ? Math.min(participant.avatarSize * scale, content.width, content.height)
+      : 0;
+    const statusSize = participant.showFallbackStatus
+      ? measureLabelComponent(participant.statusLabel, payload, { maximumWidth: content.width })
+      : { width: 0, height: 0 };
+    const gap = avatarSize > 0 && statusSize.height > 0
+      ? numberToken(payload, participant.padding.yToken) * scale
+      : 0;
+    const fallbackHeight = avatarSize + gap + statusSize.height;
+    const fallbackY = content.y + (content.height - fallbackHeight) * 0.5;
+    if (avatarSize > 0) children.push(avatarComponentToRenderableAt(payload, participant.avatar, {
+      x: content.x + (content.width - avatarSize) * 0.5,
+      y: fallbackY,
+      width: avatarSize,
+      height: avatarSize,
+    }));
+    if (statusSize.height > 0) children.push(labelComponentToRenderableAt(payload, participant.statusLabel, {
+      x: content.x + (content.width - statusSize.width) * 0.5,
+      y: fallbackY + avatarSize + gap,
+      width: statusSize.width,
+      height: statusSize.height,
+    }));
+  }
+  if (participant.role === "main") children.push(alignedRowsOverlayNode(payload, componentBaseConfigs, {
+    ownerId: `${call.id}.${participant.id}`,
+    section: "mainRows",
+    rows: call.mainRows,
+    box,
+    renderRow: contentRowComponentToRenderable,
+  }));
+  return { id: participant.id, type: "group", frame: 0, box, style: { overflow: "hidden" }, children };
 }
 
 function participantLayout(call: ReturnType<typeof resolveVideoCallModule>, payload: DesignPreviewPayload, body: RenderableBox, gap: number) {

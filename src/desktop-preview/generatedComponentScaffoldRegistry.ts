@@ -18,6 +18,8 @@ import { collectionStackComponentToRenderable } from "./collectionStackComponent
 import { resolveCollectionStackComponent } from "./collectionStackComponentResolver.js";
 import { componentStackComponentToRenderable } from "./componentStackComponentRenderable.js";
 import { resolveComponentStackComponent } from "./componentStackComponentResolver.js";
+import { contentRowComponentToRenderable } from "./contentRowComponentRenderable.js";
+import { resolveContentRowComponent } from "./contentRowComponentResolver.js";
 import { cursorComponentToRenderable } from "./cursorComponentRenderable.js";
 import { resolveCursorComponent } from "./cursorComponentResolver.js";
 import { drawPasswordComponentToRenderable } from "./drawPasswordComponentRenderable.js";
@@ -82,6 +84,8 @@ export const generatedComponentScaffoldFactories = {
     collectionStackComponentToRenderable(payload, resolveCollectionStackComponent(payload), renderChild),
   componentStack: (payload, _assignedBox, renderChild) =>
     componentStackComponentToRenderable(payload, resolveComponentStackComponent(payload), renderChild),
+  contentRow: (payload, assignedBox) =>
+    contentRowComponentToRenderable(payload, resolveContentRowComponent(payload), assignedBox),
   cursor: (payload) =>
     cursorComponentToRenderable(payload, resolveCursorComponent(payload)),
   drawPassword: (payload) =>

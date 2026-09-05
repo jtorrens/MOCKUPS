@@ -1,6 +1,10 @@
-import type { CallParticipantDesignContract } from "./callParticipantComponentContract.js";
+import type { AvatarDesignContract } from "./avatarComponentContract.js";
+import type { LabelDesignContract } from "./labelComponentContract.js";
+import type { MediaDesignContract } from "./mediaComponentContract.js";
 import type { ModuleRow } from "./moduleRowSectionContract.js";
+import type { ContentRowDesignContract } from "./contentRowComponentContract.js";
 import type { AlignmentPlacementContract, SpacingPairContract } from "./previewComponentContracts.js";
+import type { SurfaceDesignContract } from "./surfaceComponentContract.js";
 
 export interface VideoCallComponentSlot extends Record<string, unknown> {
   variantReference: string;
@@ -8,11 +12,23 @@ export interface VideoCallComponentSlot extends Record<string, unknown> {
 }
 
 export type VideoCallParticipantRole = "main" | "pip" | "grid";
+export type VideoCallConnectionState = "connecting" | "connected" | "weak" | "lost";
 
 export interface VideoCallParticipant {
   id: string;
   role: VideoCallParticipantRole;
-  participant: CallParticipantDesignContract;
+  videoPresent: boolean;
+  connectionState: VideoCallConnectionState;
+  padding: SpacingPairContract;
+  avatarSize: number;
+  showSurface: boolean;
+  showMedia: boolean;
+  showFallbackAvatar: boolean;
+  showFallbackStatus: boolean;
+  surface: SurfaceDesignContract;
+  media: MediaDesignContract;
+  avatar: AvatarDesignContract;
+  statusLabel: LabelDesignContract;
 }
 
 export interface VideoCallModuleContract {
@@ -26,7 +42,7 @@ export interface VideoCallModuleContract {
   headerHeight: number;
   headerSurfaceSlot: VideoCallComponentSlot;
   headerRowGapToken: string;
-  headerRows: [ModuleRow, ModuleRow];
+  headerRows: [ModuleRow<ContentRowDesignContract>, ModuleRow<ContentRowDesignContract>];
   showFooter: boolean;
   footerLayoutMode: "stack" | "float";
   footerFloatHorizontalPaddingToken: string;
@@ -34,9 +50,10 @@ export interface VideoCallModuleContract {
   footerHeight: number;
   footerSurfaceSlot: VideoCallComponentSlot;
   footerRowGapToken: string;
-  footerRows: [ModuleRow, ModuleRow];
+  footerRows: [ModuleRow<ContentRowDesignContract>, ModuleRow<ContentRowDesignContract>];
   showMainVideo: boolean;
   mainPadding: SpacingPairContract;
+  mainRows: [ModuleRow<ContentRowDesignContract>, ModuleRow<ContentRowDesignContract>, ModuleRow<ContentRowDesignContract>];
   showPip: boolean;
   pipSize: { width: number; height: number };
   pipPlacement: AlignmentPlacementContract;

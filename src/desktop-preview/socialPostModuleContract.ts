@@ -2,6 +2,7 @@ import type {
   ModuleRow,
   ModuleRowComponentSlot,
 } from "./moduleRowSectionContract.js";
+import type { ContentRowDesignContract } from "./contentRowComponentContract.js";
 
 export type SocialPostComponentSlot = ModuleRowComponentSlot;
 
@@ -34,7 +35,7 @@ export interface SocialPostModuleContract {
   showNavigationBar: boolean;
   headerSurfaceSlot: SocialPostComponentSlot;
   rowGapToken: string;
-  rows: [ModuleRow, ModuleRow];
+  rows: [ModuleRow<ContentRowDesignContract>, ModuleRow<ContentRowDesignContract>];
   showMedia: boolean;
   mediaSlot: SocialPostComponentSlot;
   mediaPadding: string;
@@ -63,5 +64,5 @@ export interface SocialPostModuleContract {
   footerHeight: number;
   footerSurfaceSlot: SocialPostComponentSlot;
   footerRowGapToken: string;
-  footerRows: [ModuleRow, ModuleRow];
+  footerRows: [ModuleRow<ContentRowDesignContract>, ModuleRow<ContentRowDesignContract>];
 }

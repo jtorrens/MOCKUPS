@@ -131,7 +131,7 @@ export function checkDocumentationContracts({
     );
   }
   for (const [document, requiredTerm] of [
-    ["AGENTS.md", "Do not run `npm test` merely because a local revision is ready to commit."],
+    ["AGENTS.md", "Do not run test suites during iteration or final handoff unless the user"],
     ["docs/architecture/validation.md", "check is a complete validation for that revision scope."],
   ] as const) {
     assertDocumentContains(
