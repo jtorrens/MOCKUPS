@@ -57,6 +57,12 @@ later to another Actor in the same Project. The number is stable and unique
 inside its Episode. MOCKUPS derives the Shot code, technical name and output
 route from it.
 
+Actor creation requires its name, short name, same-Project default Device,
+same-Project default Theme and exact light/dark Palette Color identities before
+the row is inserted. There is no incomplete Actor placeholder and no startup or
+editor repair route. Actor and Shot creation share the generic record-creation
+form and persistence entrypoint.
+
 Device and Theme overrides are optional same-Project Shot fields. Each is
 independent: `NULL` inherits the corresponding required Actor default, while a
 local reference replaces only that resource. Changing the Actor therefore

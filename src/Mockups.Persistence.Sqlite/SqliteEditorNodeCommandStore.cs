@@ -162,8 +162,6 @@ internal sealed class SqliteEditorNodeCommandStore
                     node.RecordClassId,
                     node.Parent);
             }
-            case ProjectTreeNodeKind.ModuleInstance:
-                return DuplicateModuleInstance(connection, node);
             case ProjectTreeNodeKind.PaletteColor:
             {
                 var copy = _resources.PaletteRepository.Duplicate(
@@ -359,36 +357,6 @@ internal sealed class SqliteEditorNodeCommandStore
 
             _design.DeleteModuleVariant(connection, node);
         }
-    }
-
-    private ProjectTreeNode DuplicateModuleInstance(
-        Microsoft.Data.Sqlite.SqliteConnection connection,
-        ProjectTreeNode node)
-    {
-        var settings = _production.GetModuleInstanceSettings(node.Id);
-        var id = $"module_instance_{Guid.NewGuid():N}";
-        var sortOrder = _production.ModuleInstanceRepository
-            .NextSortOrder(connection, settings.ShotId);
-        var copyName = _production.ModuleInstanceRepository
-            .UniqueName(
-                connection,
-                settings.ShotId,
-                $"{node.Name} copy");
-        _production.ModuleInstanceRepository.Duplicate(
-            connection,
-            node.Id,
-            id,
-            settings.ShotId,
-            copyName,
-            sortOrder);
-        _production.SynchronizeTimelineDurations(connection);
-        return new ProjectTreeNode(
-            ProjectTreeNodeKind.ModuleInstance,
-            id,
-            copyName,
-            node.Notes,
-            node.RecordClassId,
-            node.Parent);
     }
 
     private ProjectTreeNode DuplicateIconTheme(

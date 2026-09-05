@@ -21,10 +21,7 @@ internal sealed class DictionaryPalettePairControl : Grid, IDictionaryValueContr
         VerticalAlignment = VerticalAlignment.Center;
         HorizontalAlignment = HorizontalAlignment.Left;
 
-        var pair = DictionaryFieldPairText.ParseRequired(
-            ValueKind.PaletteColorPair,
-            value,
-            $"Field '{definition.Id}' value");
+        var pair = ParsePresentedPair(value, $"Field '{definition.Id}' value");
         var labels = DictionaryFieldPairText.Labels(definition);
         _labels = new PairFieldLabels(labels.First, labels.Second);
 
@@ -75,10 +72,7 @@ internal sealed class DictionaryPalettePairControl : Grid, IDictionaryValueContr
 
     public void SetValue(string value)
     {
-        var pair = DictionaryFieldPairText.ParseRequired(
-            ValueKind.PaletteColorPair,
-            value,
-            "Palette color pair value");
+        var pair = ParsePresentedPair(value, "Palette color pair value");
         _isUpdating = true;
         _firstControl.SetValue(pair.First);
         _secondControl.SetValue(pair.Second);
@@ -95,6 +89,11 @@ internal sealed class DictionaryPalettePairControl : Grid, IDictionaryValueContr
         ValueChanged?.Invoke(this, value);
         ValueCommitted?.Invoke(this, value);
     }
+
+    private static (string First, string Second) ParsePresentedPair(string value, string owner) =>
+        value == "|"
+            ? ("", "")
+            : DictionaryFieldPairText.ParseRequired(ValueKind.PaletteColorPair, value, owner);
 
     private static Border CreateGroup(string label, Control control)
     {

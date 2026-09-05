@@ -114,6 +114,34 @@ internal sealed class EditorContentController : IDisposable
         ], resetExpansion: false);
     }
 
+    public void ShowPreparationError(string message)
+    {
+        HidePeerViews();
+        ResetRegistries();
+        CommittedOwnerId = "";
+        _cardHost.Replace(
+        [
+            new InstantEditorCard(
+                EditorCardHeader.Create(
+                    "Editor unavailable",
+                    "The selected record could not be prepared",
+                    EditorIcons.Create(EditorIcons.Structure, 18)),
+                new Border
+                {
+                    Padding = EditorUiDensity.CardThickness(10),
+                    Child = new TextBlock
+                    {
+                        Text = message,
+                        TextWrapping = Avalonia.Media.TextWrapping.Wrap,
+                    },
+                },
+                isExpanded: true)
+            {
+                SessionStateId = "editor:preparation-error",
+            },
+        ], resetExpansion: false);
+    }
+
     public Task<EditorPreparedRootContent> PrepareRootAsync(
         ProjectTreeNode layoutNode,
         ProjectTreeNode dataNode) =>

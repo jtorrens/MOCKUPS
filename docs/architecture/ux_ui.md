@@ -381,6 +381,13 @@ focus during the input-event handoff and reasserts that priority while native
 window ordering settles, while allowing the user to switch to a different
 application without the dialog stealing system focus.
 
+Record creation that needs explicit values uses one shared modal generated
+from `RecordCreationDefinition`. Every scalar is rendered by its registered
+Dictionary control; the confirmation action stays disabled until the complete
+definition validates. Actor, Theme and Shot do not own creation dialogs.
+Import, refresh and bounded selection remain distinct operations and their
+navigation labels state that operation explicitly.
+
 Within each Episode, the Production navigation tree presents Shots in stable
 alphabetical order by the authored Shot name. Creation order and persisted
 `sortOrder` do not determine this navigation projection.

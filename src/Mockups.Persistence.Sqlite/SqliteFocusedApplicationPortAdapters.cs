@@ -70,24 +70,20 @@ internal sealed class SqliteModuleInstanceThemeTokenPort(
 internal sealed class SqliteEditorChildPort(SqliteEditorChildStore target)
     : IEditorChildStore
 {
-    public ProjectTreeNode AddChild(ProjectTreeNode parent) =>
-        target.AddChild(parent);
+    public RecordCreationDefinition PrepareRecordCreation(
+        ProjectTreeNode parent,
+        string creationId) =>
+        target.PrepareRecordCreation(parent, creationId);
+
+    public ProjectTreeNode CreateRecord(
+        ProjectTreeNode parent,
+        RecordCreationDraft draft) =>
+        target.CreateRecord(parent, draft);
 
     public ProjectTreeNode AddImportedDevice(
         ProjectTreeNode devicesRoot,
         DeviceImportDraft device) =>
         target.AddImportedDevice(devicesRoot, device);
-
-    public ProjectTreeNode AddShot(
-        ProjectTreeNode episode,
-        string actorId,
-        int shotNumber) =>
-        target.AddShot(episode, actorId, shotNumber);
-
-    public ProjectTreeNode AddTheme(
-        ProjectTreeNode themesRoot,
-        string family) =>
-        target.AddTheme(themesRoot, family);
 
     public int SuggestShotNumber(string episodeId) =>
         target.SuggestShotNumber(episodeId);

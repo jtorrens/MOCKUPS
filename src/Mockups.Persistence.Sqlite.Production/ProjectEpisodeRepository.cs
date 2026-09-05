@@ -10,11 +10,16 @@ internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
 {
     private readonly SqliteProjectContext _context;
     private readonly IShotRepository _shotRepository;
+    private readonly IModuleInstanceRepository _moduleInstanceRepository;
 
-    public ProjectEpisodeRepository(SqliteProjectContext context, IShotRepository shotRepository)
+    public ProjectEpisodeRepository(
+        SqliteProjectContext context,
+        IShotRepository shotRepository,
+        IModuleInstanceRepository moduleInstanceRepository)
     {
         _context = context;
         _shotRepository = shotRepository;
+        _moduleInstanceRepository = moduleInstanceRepository;
     }
 
     public ProjectSettings GetProjectSettings(string projectId)
@@ -473,19 +478,15 @@ internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
         _context.Execute(
             connection,
             """
-            INSERT INTO episodes (id, project_id, name, notes, sort_order)
-            VALUES ($id, $projectId, $name, $notes, $sortOrder)
+            INSERT INTO episodes (id, project_id, name, slug, notes, sort_order)
+            VALUES ($id, $projectId, $name, $slug, $notes, $sortOrder)
             """,
             ("$id", id),
             ("$projectId", projectId),
             ("$name", name),
+            ("$slug", slug),
             ("$notes", notes),
             ("$sortOrder", sortOrder));
-        _context.Execute(
-            connection,
-            "UPDATE episodes SET slug = $slug WHERE id = $id",
-            ("$id", id),
-            ("$slug", slug));
 
         return new EpisodeRecord(id, projectId, name, slug, notes, sortOrder);
     }
@@ -494,14 +495,22 @@ internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
     {
         var source = QueryEpisodes(connection).SingleOrDefault((episode) => episode.Id == sourceEpisodeId)
             ?? throw new InvalidOperationException($"Missing episode '{sourceEpisodeId}'.");
+        var sourceShots = _shotRepository.QueryByEpisode(connection, sourceEpisodeId);
+        var sourceScreens = sourceShots
+            .ToDictionary(
+                (shot) => shot.Id,
+                (shot) => _moduleInstanceRepository.QueryByShot(connection, shot.Id),
+                StringComparer.Ordinal);
         var id = $"episode_{Guid.NewGuid():N}";
         var sortOrder = SqliteCommandExecutor.NextSortOrder(connection, "episodes", "project_id", source.ProjectId);
         var slug = ProductionOutputContract.CreateEpisodeCode(
             GetProjectSettings(connection, source.ProjectId)
                 .ProductionOutput.EpisodePrefix,
             sortOrder + 1);
+        using var transaction = connection.BeginTransaction();
         _context.Execute(
             connection,
+            transaction,
             """
             INSERT INTO episodes (id, project_id, name, slug, notes, sort_order)
             VALUES ($id, $projectId, $name, $slug, $notes, $sortOrder)
@@ -513,7 +522,27 @@ internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
             ("$notes", source.Notes),
             ("$sortOrder", sortOrder));
 
-        _shotRepository.DuplicateForEpisode(connection, sourceEpisodeId, id);
+        var shotIds = _shotRepository.DuplicateForEpisode(
+            connection,
+            sourceShots,
+            id,
+            source.ProjectId,
+            transaction);
+        foreach (var (sourceShotId, targetShotId) in shotIds)
+        {
+            foreach (var screen in sourceScreens[sourceShotId])
+            {
+                _moduleInstanceRepository.Insert(
+                    connection,
+                    screen with
+                    {
+                        Id = $"module_instance_{Guid.NewGuid():N}",
+                        ShotId = targetShotId,
+                    },
+                    transaction);
+            }
+        }
+        transaction.Commit();
         return new EpisodeRecord(id, source.ProjectId, copyName, slug, source.Notes, sortOrder);
     }
 

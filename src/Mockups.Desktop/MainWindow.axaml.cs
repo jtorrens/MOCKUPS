@@ -781,6 +781,7 @@ public partial class MainWindow : SukiWindow
                     revision,
                     dataNode.Id))
             {
+                _editorContent.ShowPreparationError(exception.Message);
                 _messages.Error(
                     "Prepare editor",
                     exception);
@@ -1145,6 +1146,7 @@ public partial class MainWindow : SukiWindow
         {
             if (Session.Revision == revision)
             {
+                _editorContent.ShowPreparationError(exception.Message);
                 _messages.Error(
                     "Prepare embedded editor",
                     exception);

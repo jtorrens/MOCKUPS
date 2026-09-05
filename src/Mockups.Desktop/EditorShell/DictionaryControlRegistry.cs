@@ -20,7 +20,10 @@ internal static class DictionaryControlRegistry
             [ValueKind.StringReadOnly] = (request) => new DictionaryTextControl(request.Definition, request.Value),
             [ValueKind.StringMultiline] = (request) => new DictionaryTextControl(request.Definition, request.Value),
             [ValueKind.Boolean] = (request) => new DictionaryBooleanControl(request.Value, request.Definition.IsEditable),
-            [ValueKind.OptionToken] = (request) => new DictionaryOptionTokenControl(request.Definition, request.Value),
+            [ValueKind.OptionToken] = (request) => new DictionaryOptionTokenControl(
+                request.Definition,
+                request.Value,
+                request.Services.AllowIncompleteDraft),
             [ValueKind.RecordReference] = CreateRecordReferenceControl,
             [ValueKind.PaletteColorToken] = (request) => new DictionaryPaletteTokenControl(
                 request.Definition.Label,
@@ -182,7 +185,8 @@ internal static class DictionaryControlRegistry
         {
             return new DictionaryOptionTokenControl(
                 request.Definition,
-                request.Value);
+                request.Value,
+                request.Services.AllowIncompleteDraft);
         }
         if (string.IsNullOrWhiteSpace(
                 reference.OverrideRecordClassId)

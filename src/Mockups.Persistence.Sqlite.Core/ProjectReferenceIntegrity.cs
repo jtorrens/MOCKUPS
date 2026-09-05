@@ -25,13 +25,15 @@ internal static class ProjectReferenceIntegrity
                 actor.ProjectId,
                 ProjectReferenceKind.Device,
                 actor.DefaultDeviceId,
-                $"Actor '{actor.Id}' default Device");
+                $"Actor '{actor.Id}' default Device",
+                required: true);
             RequireSameProjectReference(
                 connection,
                 actor.ProjectId,
                 ProjectReferenceKind.Theme,
                 actor.DefaultThemeId,
-                $"Actor '{actor.Id}' default Theme");
+                $"Actor '{actor.Id}' default Theme",
+                required: true);
         }
 
         foreach (var shot in ShotReferences(connection))

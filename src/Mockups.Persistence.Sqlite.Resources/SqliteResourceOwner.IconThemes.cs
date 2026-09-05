@@ -216,22 +216,33 @@ internal sealed partial class SqliteResourceOwner
             .OrderBy(Path.GetFileName)
             .ToList();
 
+        var existingRows = _iconThemeRepository.QueryAll(connection)
+            .Where((row) => row.ProjectId == projectId)
+            .ToList();
+        var discovered = new List<(IconThemeRecord Row, string MetadataJson)>();
         foreach (var directory in setDirectories)
         {
             var setName = Path.GetFileName(directory);
-            var id = $"icon_theme_{projectId}_{Slug(setName)}";
+            var existing = existingRows.SingleOrDefault((row) => row.Name == setName);
+            var id = existing?.Id ?? $"icon_theme_{projectId}_{Slug(setName)}";
             var assetRoot = NormalizeRelativePath(Path.GetRelativePath(mediaRoot, directory));
             var metadata = IconThemeMetadata(directory, setName);
-            _iconThemeRepository.UpsertDiscovered(
-                connection,
-                id,
-                projectId,
-                setName,
-                assetRoot,
-                metadata.ToJsonString());
+            discovered.Add((
+                new IconThemeRecord(
+                    id,
+                    projectId,
+                    setName,
+                    assetRoot,
+                    existing?.MappingJson ?? "{}",
+                    metadata.ToJsonString()),
+                metadata.ToJsonString()));
         }
 
-        var rows = _iconThemeRepository.QueryAll(connection).Where((row) => row.ProjectId == projectId).ToList();
+        var discoveredNames = discovered.Select((item) => item.Row.Name).ToHashSet(StringComparer.Ordinal);
+        var rows = existingRows
+            .Where((row) => !discoveredNames.Contains(row.Name))
+            .Concat(discovered.Select((item) => item.Row))
+            .ToList();
         var tokensBySet = rows.ToDictionary(
             (row) => row.Id,
             (row) => IconTokenRules.SvgTokenSet(Path.Combine(mediaRoot, row.AssetRoot)));
@@ -242,11 +253,32 @@ internal sealed partial class SqliteResourceOwner
         }
 
         var allTokens = tokensBySet.Values.SelectMany((set) => set).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        foreach (var row in rows)
+        var mappings = rows.ToDictionary(
+            (row) => row.Id,
+            (row) => BuildIconThemeMapping(row.MappingJson, commonTokens).ToJsonString(),
+            StringComparer.Ordinal);
+        using var transaction = connection.BeginTransaction();
+        foreach (var item in discovered)
         {
-            var nextMapping = BuildIconThemeMapping(row.MappingJson, commonTokens);
-            _iconThemeRepository.UpdateMapping(connection, row.Id, nextMapping.ToJsonString());
+            _iconThemeRepository.UpsertDiscovered(
+                connection,
+                transaction,
+                item.Row.Id,
+                projectId,
+                item.Row.Name,
+                item.Row.AssetRoot,
+                mappings[item.Row.Id],
+                item.MetadataJson);
         }
+        foreach (var row in existingRows.Where((row) => !discoveredNames.Contains(row.Name)))
+        {
+            _iconThemeRepository.UpdateMapping(
+                connection,
+                transaction,
+                row.Id,
+                mappings[row.Id]);
+        }
+        transaction.Commit();
 
         return new IconThemeRefreshResult(rows.Count, commonTokens.Count, Math.Max(0, allTokens.Count - commonTokens.Count));
     }

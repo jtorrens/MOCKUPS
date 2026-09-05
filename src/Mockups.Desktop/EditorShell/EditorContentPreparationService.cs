@@ -556,7 +556,7 @@ internal sealed class EditorContentPreparationService : IDisposable
                         changed));
                 PrepareOverrideContext(
                     new EditorEmbeddedContext(node, [], runtimeSource),
-                    $"{itemPathLabel} · {boundary.Label}",
+                    $"{pathLabel} · {boundary.Label} {presentation.Title}",
                     groups,
                     fieldSets,
                     collectionOwners,

@@ -10,8 +10,24 @@ internal static class SqliteProjectTestContextExtensions
 
     internal static ProjectTreeNode AddChild(
         this SqliteProjectTestContext engine,
-        ProjectTreeNode parent) =>
-        engine.Children.AddChild(parent);
+        ProjectTreeNode parent)
+    {
+        var operation = EditorAddOperationCatalog.Require(parent.Kind);
+        var creationId = parent.Kind == ProjectTreeNodeKind.DevicesRoot
+            ? "device"
+            : operation.CreationId;
+        var definition = engine.Children.PrepareRecordCreation(
+            parent,
+            creationId);
+        return engine.Children.CreateRecord(
+            parent,
+            new RecordCreationDraft(
+                definition.Id,
+                definition.Fields.ToDictionary(
+                    (field) => field.Definition.Id,
+                    (field) => field.Value,
+                    StringComparer.Ordinal)));
+    }
 
     internal static ProjectTreeNode AddImportedDevice(
         this SqliteProjectTestContext engine,
@@ -23,17 +39,39 @@ internal static class SqliteProjectTestContextExtensions
         this SqliteProjectTestContext engine,
         ProjectTreeNode episode,
         string actorId,
-        int shotNumber) =>
-        engine.Children.AddShot(
+        int shotNumber)
+    {
+        var definition = engine.Children.PrepareRecordCreation(episode, "shot");
+        return engine.Children.CreateRecord(
             episode,
-            actorId,
-            shotNumber);
+            new RecordCreationDraft(
+                definition.Id,
+                new Dictionary<string, string>(StringComparer.Ordinal)
+                {
+                    ["shot.ownerActorId"] = actorId,
+                    ["shot.creation.shotNumber"] = shotNumber.ToString(),
+                }));
+    }
 
     internal static ProjectTreeNode AddTheme(
         this SqliteProjectTestContext engine,
         ProjectTreeNode themesRoot,
-        string family) =>
-        engine.Children.AddTheme(themesRoot, family);
+        string family)
+    {
+        var definition = engine.Children.PrepareRecordCreation(themesRoot, "theme");
+        var values = definition.Fields.ToDictionary(
+            (field) => field.Definition.Id,
+            (field) => field.Definition.Id == "theme.family"
+                ? family
+                : field.Definition.Options?.First((option) =>
+                    !string.IsNullOrWhiteSpace(option.Value)).Value
+                    ?? throw new InvalidOperationException(
+                        $"Test Theme field '{field.Definition.Id}' requires one explicit fixture option."),
+            StringComparer.Ordinal);
+        return engine.Children.CreateRecord(
+            themesRoot,
+            new RecordCreationDraft(definition.Id, values));
+    }
 
     internal static int SuggestShotNumber(
         this SqliteProjectTestContext engine,

@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using Mockups.DesktopEditorShell.Common;
+using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -135,28 +136,44 @@ internal sealed class ActorRepository : IActorRepository
         return rows;
     }
 
-    public ActorRecord Create(SqliteConnection connection, string projectId)
+    public ActorRecord Create(
+        SqliteConnection connection,
+        string projectId,
+        string displayName,
+        string shortName,
+        string defaultDeviceId,
+        string defaultThemeId,
+        string actorColorPair,
+        string avatarTextColorPair,
+        string wallpaperColorPair)
     {
-        var index = SqliteCommandExecutor.ScalarLong(
-            connection,
-            "SELECT COUNT(*) FROM actors WHERE project_id = $projectId",
-            ("$projectId", projectId)) + 1;
+        displayName = RequiredText(displayName, "Actor name");
+        shortName = RequiredText(shortName, "Actor short name");
+        ProjectReferenceIntegrity.RequireSameProjectReference(
+            connection, projectId, ProjectReferenceKind.Device,
+            defaultDeviceId, "New Actor default Device", required: true);
+        ProjectReferenceIntegrity.RequireSameProjectReference(
+            connection, projectId, ProjectReferenceKind.Theme,
+            defaultThemeId, "New Actor default Theme", required: true);
+        var actorColors = RequiredPalettePair(connection, projectId, actorColorPair, "New Actor color");
+        var avatarTextColors = RequiredPalettePair(connection, projectId, avatarTextColorPair, "New Actor avatar text color");
+        var wallpaperColors = RequiredPalettePair(connection, projectId, wallpaperColorPair, "New Actor wallpaper color");
         var id = $"actor_{Guid.NewGuid():N}";
-        var displayName = $"Actor {index}";
-        var shortName = $"A{index}";
-        var metadataJson = DefaultMetadataJson("blue", "gray_010");
+        var metadataJson = DefaultMetadataJson(actorColors, avatarTextColors, wallpaperColors);
         _context.Execute(
             connection,
             """
             INSERT INTO actors (id, project_id, display_name, short_name, default_device_id, default_theme_id, metadata_json)
-            VALUES ($id, $projectId, $displayName, $shortName, '', '', $metadataJson)
+            VALUES ($id, $projectId, $displayName, $shortName, $defaultDeviceId, $defaultThemeId, $metadataJson)
             """,
             ("$id", id),
             ("$projectId", projectId),
             ("$displayName", displayName),
             ("$shortName", shortName),
+            ("$defaultDeviceId", defaultDeviceId),
+            ("$defaultThemeId", defaultThemeId),
             ("$metadataJson", metadataJson));
-        return new ActorRecord(id, projectId, displayName, shortName, "", "", metadataJson);
+        return new ActorRecord(id, projectId, displayName, shortName, defaultDeviceId, defaultThemeId, metadataJson);
     }
 
     public ActorRecord Duplicate(SqliteConnection connection, string sourceId, string copyName)
@@ -226,7 +243,10 @@ internal sealed class ActorRepository : IActorRepository
             SqliteCommandExecutor.ReadString(reader, 5));
     }
 
-    private static string DefaultMetadataJson(string colorToken, string avatarTextColorToken)
+    private static string DefaultMetadataJson(
+        (string Light, string Dark) actorColors,
+        (string Light, string Dark) avatarTextColors,
+        (string Light, string Dark) wallpaperColors)
     {
         var root = new JsonObject
         {
@@ -234,15 +254,15 @@ internal sealed class ActorRepository : IActorRepository
             {
                 ["light"] = new JsonObject
                 {
-                    ["color"] = colorToken,
-                    ["avatarTextColor"] = avatarTextColorToken,
-                    ["wallpaper"] = new JsonObject { ["color"] = "gray_100" },
+                    ["color"] = actorColors.Light,
+                    ["avatarTextColor"] = avatarTextColors.Light,
+                    ["wallpaper"] = new JsonObject { ["color"] = wallpaperColors.Light },
                 },
                 ["dark"] = new JsonObject
                 {
-                    ["color"] = colorToken,
-                    ["avatarTextColor"] = avatarTextColorToken,
-                    ["wallpaper"] = new JsonObject { ["color"] = "gray_000" },
+                    ["color"] = actorColors.Dark,
+                    ["avatarTextColor"] = avatarTextColors.Dark,
+                    ["wallpaper"] = new JsonObject { ["color"] = wallpaperColors.Dark },
                 },
             },
             ["avatar"] = new JsonObject
@@ -257,16 +277,49 @@ internal sealed class ActorRepository : IActorRepository
             },
             ["wallpaper"] = new JsonObject
             {
-                ["kind"] = "image",
+                ["kind"] = "solid",
                 ["opacity"] = 1,
                 ["images"] = new JsonObject
                 {
-                    ["light"] = new JsonObject { ["filePath"] = "wallpapers/image.16f45e146467c560c19b884f3017a4a2.png" },
-                    ["dark"] = new JsonObject { ["filePath"] = "wallpapers/image.16f45e146467c560c19b884f3017a4a2.png" },
+                    ["light"] = new JsonObject { ["filePath"] = "" },
+                    ["dark"] = new JsonObject { ["filePath"] = "" },
                 },
             },
         };
 
         return root.ToJsonString();
+    }
+
+    private static string RequiredText(string value, string owner)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new InvalidOperationException($"{owner} is required.");
+        }
+        return value.Trim();
+    }
+
+    private static (string Light, string Dark) RequiredPalettePair(
+        SqliteConnection connection,
+        string projectId,
+        string value,
+        string owner)
+    {
+        var normalized = RuntimeInputValueKindContract.ParseValue(
+            ValueKind.PaletteColorPair, value, owner).GetValue<string>();
+        var ids = normalized.Split('|', StringSplitOptions.None);
+        foreach (var id in ids)
+        {
+            var referencedProjectId = SqliteCommandExecutor.ScalarString(
+                connection,
+                "SELECT project_id FROM palette_colors WHERE id = $id",
+                ("$id", id));
+            if (!projectId.Equals(referencedProjectId, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    $"{owner} references missing or cross-Project Palette Color '{id}'.");
+            }
+        }
+        return (ids[0], ids[1]);
     }
 }

@@ -250,10 +250,12 @@ internal interface IShotRepository
         string shotCode,
         SqliteTransaction? transaction = null);
 
-    void DuplicateForEpisode(
+    IReadOnlyDictionary<string, string> DuplicateForEpisode(
         SqliteConnection connection,
-        string sourceEpisodeId,
-        string targetEpisodeId);
+        IReadOnlyList<ShotRecord> sourceShots,
+        string targetEpisodeId,
+        string targetProjectId,
+        SqliteTransaction transaction);
 
     void ClearFpsOverride(SqliteConnection connection, string shotId);
 
@@ -354,7 +356,16 @@ internal interface IActorRepository
 
     IReadOnlyList<ActorRecord> QueryAll(SqliteConnection connection);
 
-    ActorRecord Create(SqliteConnection connection, string projectId);
+    ActorRecord Create(
+        SqliteConnection connection,
+        string projectId,
+        string displayName,
+        string shortName,
+        string defaultDeviceId,
+        string defaultThemeId,
+        string actorColorPair,
+        string avatarTextColorPair,
+        string wallpaperColorPair);
 
     ActorRecord Duplicate(SqliteConnection connection, string sourceId, string copyName);
 
@@ -421,12 +432,14 @@ internal interface IIconThemeRepository
 
     IReadOnlyList<IconThemeRecord> QueryAll(SqliteConnection connection);
 
-    IconThemeRecord UpsertDiscovered(
+    void UpsertDiscovered(
         SqliteConnection connection,
+        SqliteTransaction transaction,
         string id,
         string projectId,
         string name,
         string assetRoot,
+        string mappingJson,
         string metadataJson);
 
     IconThemeRecord CreateDuplicate(
@@ -438,6 +451,12 @@ internal interface IIconThemeRepository
         string metadataJson);
 
     void UpdateMapping(SqliteConnection connection, string iconThemeId, string mappingJson);
+
+    void UpdateMapping(
+        SqliteConnection connection,
+        SqliteTransaction transaction,
+        string iconThemeId,
+        string mappingJson);
 
     void UpdateIdentity(
         SqliteConnection connection,

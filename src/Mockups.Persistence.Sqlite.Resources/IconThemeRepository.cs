@@ -49,31 +49,35 @@ internal sealed class IconThemeRepository : IIconThemeRepository
         return rows;
     }
 
-    public IconThemeRecord UpsertDiscovered(
+    public void UpsertDiscovered(
         SqliteConnection connection,
+        SqliteTransaction transaction,
         string id,
         string projectId,
         string name,
         string assetRoot,
+        string mappingJson,
         string metadataJson)
     {
+        JsonPath.ParseRequiredObject(mappingJson, $"Icon Theme '{id}' mapping_json");
         JsonPath.ParseRequiredObject(metadataJson, $"Icon Theme '{id}' metadata_json");
         _context.Execute(
             connection,
+            transaction,
             """
             INSERT INTO icon_themes (id, project_id, name, asset_root, mapping_json, metadata_json)
-            VALUES ($id, $projectId, $name, $assetRoot, '{}', $metadataJson)
+            VALUES ($id, $projectId, $name, $assetRoot, $mappingJson, $metadataJson)
             ON CONFLICT(project_id, name) DO UPDATE SET
               asset_root = excluded.asset_root,
+              mapping_json = excluded.mapping_json,
               metadata_json = excluded.metadata_json
             """,
             ("$id", id),
             ("$projectId", projectId),
             ("$name", name),
             ("$assetRoot", assetRoot),
+            ("$mappingJson", mappingJson),
             ("$metadataJson", metadataJson));
-        return QueryAll(connection)
-            .Single((row) => row.ProjectId == projectId && row.Name == name);
     }
 
     public IconThemeRecord CreateDuplicate(
@@ -103,9 +107,19 @@ internal sealed class IconThemeRepository : IIconThemeRepository
 
     public void UpdateMapping(SqliteConnection connection, string iconThemeId, string mappingJson)
     {
+        UpdateMapping(connection, transaction: null, iconThemeId, mappingJson);
+    }
+
+    public void UpdateMapping(
+        SqliteConnection connection,
+        SqliteTransaction? transaction,
+        string iconThemeId,
+        string mappingJson)
+    {
         JsonPath.ParseRequiredObject(mappingJson, $"Icon Theme '{iconThemeId}' mapping_json");
         _context.Execute(
             connection,
+            transaction,
             "UPDATE icon_themes SET mapping_json = $mappingJson WHERE id = $id",
             ("$id", iconThemeId),
             ("$mappingJson", mappingJson));

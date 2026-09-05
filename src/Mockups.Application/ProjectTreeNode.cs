@@ -74,15 +74,7 @@ public sealed class ProjectTreeNode
     public List<ProjectTreeNode> Children { get; } = [];
 
     public int Level => Parent is null ? 0 : Parent.Level + 1;
-    public bool CanAddChild => Kind is ProjectTreeNodeKind.PaletteRoot
-        or ProjectTreeNodeKind.IconThemesRoot
-        or ProjectTreeNodeKind.DevicesRoot
-        or ProjectTreeNodeKind.ActorsRoot
-        or ProjectTreeNodeKind.ThemesRoot
-        or ProjectTreeNodeKind.ProductionFontsRoot
-        or ProjectTreeNodeKind.EpisodesRoot
-        or ProjectTreeNodeKind.Episode
-        or ProjectTreeNodeKind.Shot;
+    public bool CanAddChild => EditorAddOperationCatalog.TryGet(Kind, out _);
     public bool CanDuplicate => Kind is ProjectTreeNodeKind.ModuleVariant
         or ProjectTreeNodeKind.ModuleInstance
         or ProjectTreeNodeKind.Episode

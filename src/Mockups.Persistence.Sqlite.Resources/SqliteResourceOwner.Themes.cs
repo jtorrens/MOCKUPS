@@ -448,6 +448,9 @@ internal sealed partial class SqliteResourceOwner
                         ["toast"] = "gray_020",
                         ["divider"] = "gray_080",
                         ["accent"] = isAndroid ? "purple" : "blue",
+                        ["positive"] = "aqua_green",
+                        ["negative"] = "red",
+                        ["onAction"] = "gray_100",
                         ["icons.primary"] = "gray_010",
                         ["icons.secondary"] = "gray_040",
                         ["icons.alternate"] = "gray_060",
@@ -490,6 +493,9 @@ internal sealed partial class SqliteResourceOwner
                         ["toast"] = "gray_030",
                         ["divider"] = "gray_040",
                         ["accent"] = isAndroid ? "purple_tint" : "blue_bright",
+                        ["positive"] = "aqua_green",
+                        ["negative"] = "red",
+                        ["onAction"] = "gray_100",
                         ["icons.primary"] = "gray_100",
                         ["icons.secondary"] = "gray_070",
                         ["icons.alternate"] = "gray_050",
@@ -552,7 +558,7 @@ internal sealed partial class SqliteResourceOwner
     [
         "gray_000", "gray_010", "gray_020", "gray_030", "gray_040", "gray_050",
         "gray_060", "gray_070", "gray_080", "gray_090", "gray_100", "blue",
-        "blue_bright", "purple", "purple_tint", "red",
+        "blue_bright", "purple", "purple_tint", "red", "aqua_green",
     ];
 
     private static JsonObject ThemeMotionTokens()

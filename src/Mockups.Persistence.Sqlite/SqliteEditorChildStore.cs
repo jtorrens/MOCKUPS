@@ -9,6 +9,10 @@ internal sealed class SqliteEditorChildStore
     private readonly SqliteDesignOwner _design;
     private readonly SqliteProductionOwner _production;
     private readonly SqliteResourceOwner _resources;
+    private readonly IReadOnlyDictionary<string, Func<ProjectTreeNode, RecordCreationDefinition>>
+        _creationPreparers;
+    private readonly IReadOnlyDictionary<string, Func<ProjectTreeNode, IReadOnlyDictionary<string, string>, ProjectTreeNode>>
+        _creationCommitters;
 
     internal SqliteEditorChildStore(
         SqliteProjectContext context,
@@ -20,107 +24,200 @@ internal sealed class SqliteEditorChildStore
         _design = design;
         _production = production;
         _resources = resources;
+        _creationPreparers = new Dictionary<string, Func<ProjectTreeNode, RecordCreationDefinition>>(StringComparer.Ordinal)
+        {
+            ["palette"] = PreparePaletteCreation,
+            ["device"] = PrepareBlankDeviceCreation,
+            ["actor"] = PrepareActorCreation,
+            ["theme"] = PrepareThemeCreation,
+            ["episode"] = PrepareEpisodeCreation,
+            ["shot"] = PrepareShotCreation,
+        };
+        _creationCommitters = new Dictionary<string, Func<ProjectTreeNode, IReadOnlyDictionary<string, string>, ProjectTreeNode>>(StringComparer.Ordinal)
+        {
+            ["palette"] = CreatePalette,
+            ["device"] = CreateBlankDevice,
+            ["actor"] = CreateActor,
+            ["theme"] = CreateTheme,
+            ["episode"] = CreateEpisode,
+            ["shot"] = CreateShot,
+        };
     }
 
-    internal ProjectTreeNode AddChild(ProjectTreeNode parent)
+    internal RecordCreationDefinition PrepareRecordCreation(
+        ProjectTreeNode parent,
+        string creationId)
+    {
+        if (!_creationPreparers.TryGetValue(creationId, out var prepare))
+        {
+            throw new InvalidOperationException(
+                $"Record creation '{creationId}' is not registered.");
+        }
+        return prepare(parent);
+    }
+
+    internal ProjectTreeNode CreateRecord(
+        ProjectTreeNode parent,
+        RecordCreationDraft draft)
+    {
+        var definition = PrepareRecordCreation(parent, draft.DefinitionId);
+        if (definition.ValidationError(draft.Values) is { } error)
+        {
+            throw new InvalidOperationException(error);
+        }
+        if (!_creationCommitters.TryGetValue(draft.DefinitionId, out var commit))
+        {
+            throw new InvalidOperationException(
+                $"Record creation '{draft.DefinitionId}' has no commit owner.");
+        }
+        return commit(parent, draft.Values);
+    }
+
+    private RecordCreationDefinition PreparePaletteCreation(ProjectTreeNode parent)
+    {
+        RequireParent(parent, ProjectTreeNodeKind.PaletteRoot, "palette");
+        return EmptyCreation("palette", "paletteColor", "Add palette color");
+    }
+
+    private RecordCreationDefinition PrepareBlankDeviceCreation(ProjectTreeNode parent)
+    {
+        RequireParent(parent, ProjectTreeNodeKind.DevicesRoot, "device");
+        return EmptyCreation("device", "device", "Add blank device");
+    }
+
+    private RecordCreationDefinition PrepareActorCreation(ProjectTreeNode parent)
+    {
+        RequireParent(parent, ProjectTreeNodeKind.ActorsRoot, "actor");
+        using var connection = _context.OpenConnection();
+        var projectId = ProjectAncestor(parent).Id;
+        var index = SqliteCommandExecutor.ScalarLong(
+            connection,
+            "SELECT COUNT(*) FROM actors WHERE project_id = $projectId",
+            ("$projectId", projectId)) + 1;
+        var palette = _resources.GetPaletteColorOptions(projectId);
+        return new RecordCreationDefinition(
+            "actor", "actor", "Add Actor",
+            "Complete every required Actor value before creating the record.", "Add",
+            [
+                Field("core.name", "Name", ValueKind.StringSingleLine, $"Actor {index}"),
+                Field(RecordClassFieldCatalog.Get("actor.shortName"), $"A{index}"),
+                Field(RecordClassFieldCatalog.Get("actor.defaultDeviceId"), "", _resources.GetDeviceOptions(projectId)),
+                Field(RecordClassFieldCatalog.Get("actor.defaultThemeId"), "", _resources.GetThemeOptions(projectId)),
+                Field(RecordClassFieldCatalog.Get("actor.color.modes"), "|", palette),
+                Field(RecordClassFieldCatalog.Get("actor.avatarTextColor.modes"), "|", palette),
+                Field(RecordClassFieldCatalog.Get("actor.wallpaper.color"), "|", palette),
+            ]);
+    }
+
+    private RecordCreationDefinition PrepareThemeCreation(ProjectTreeNode parent)
+    {
+        RequireParent(parent, ProjectTreeNodeKind.ThemesRoot, "theme");
+        var projectId = ProjectAncestor(parent).Id;
+        return new RecordCreationDefinition(
+            "theme", "theme", "Create theme",
+            "Choose the complete reference set used by the new Theme.", "Create",
+            [
+                Field(RecordClassFieldCatalog.Get("theme.family"), ""),
+                Field(RecordClassFieldCatalog.Get("theme.iconThemeId"), "", _resources.GetIconThemeOptions(projectId)),
+                Field(RecordClassFieldCatalog.Get("theme.statusBarId"), "", _design.GetComponentVariantReferenceOptionsByType(projectId, "status_bar")),
+                Field(RecordClassFieldCatalog.Get("theme.navigationBarId"), "", _design.GetComponentVariantReferenceOptionsByType(projectId, "navigation_bar")),
+                Field(RecordClassFieldCatalog.Get("theme.typography.fontFamilyId"), "", _resources.GetProductionFontOptions(projectId, "text")),
+                Field(RecordClassFieldCatalog.Get("theme.typography.emojiFontFamilyId"), "", _resources.GetProductionFontOptions(projectId, "emoji")),
+            ]);
+    }
+
+    private RecordCreationDefinition PrepareEpisodeCreation(ProjectTreeNode parent)
+    {
+        RequireParent(parent, ProjectTreeNodeKind.EpisodesRoot, "episode");
+        return EmptyCreation("episode", "episode", "Add episode");
+    }
+
+    private RecordCreationDefinition PrepareShotCreation(ProjectTreeNode parent)
+    {
+        RequireParent(parent, ProjectTreeNodeKind.Episode, "shot");
+        var projectId = ProjectAncestor(parent).Id;
+        return new RecordCreationDefinition(
+            "shot", "shot", "Add Shot",
+            "Choose the Actor that owns this Shot. A Shot can never be ownerless.", "Add",
+            [
+                Field(RecordClassFieldCatalog.Get("shot.ownerActorId"), "", _resources.GetRequiredActorOptions(projectId)),
+                Field("shot.creation.shotNumber", "Shot number", ValueKind.Integer,
+                    SuggestShotNumber(parent.Id).ToString(),
+                    new NumberDefinition(1, 99_999_999, 1, 0)),
+            ]);
+    }
+
+    private ProjectTreeNode CreatePalette(ProjectTreeNode parent, IReadOnlyDictionary<string, string> values)
     {
         using var connection = _context.OpenConnection();
-        if (parent.Kind == ProjectTreeNodeKind.Project)
-        {
-            throw new InvalidOperationException(
-                "Project children are created through explicit Apps/Episodes roots.");
-        }
+        var color = _resources.PaletteRepository.Create(connection, ProjectAncestor(parent).Id);
+        return new ProjectTreeNode(ProjectTreeNodeKind.PaletteColor, color.Id, color.Token, color.Note,
+            ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.PaletteColor), parent, color.ValueHex, false);
+    }
 
-        if (parent.Kind == ProjectTreeNodeKind.PaletteRoot)
-        {
-            var project = ProjectAncestor(parent);
-            var color = _resources.PaletteRepository.Create(
-                connection,
-                project.Id);
-            return new ProjectTreeNode(
-                ProjectTreeNodeKind.PaletteColor,
-                color.Id,
-                color.Token,
-                color.Note,
-                ProjectTreeNode.DefaultRecordClassId(
-                    ProjectTreeNodeKind.PaletteColor),
-                parent,
-                color.ValueHex,
-                false);
-        }
+    private ProjectTreeNode CreateBlankDevice(ProjectTreeNode parent, IReadOnlyDictionary<string, string> values)
+    {
+        using var connection = _context.OpenConnection();
+        var device = _resources.DeviceRepository.Create(connection, ProjectAncestor(parent).Id);
+        return new ProjectTreeNode(ProjectTreeNodeKind.Device, device.Id, device.Name, "",
+            ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Device), parent);
+    }
 
-        if (parent.Kind == ProjectTreeNodeKind.DevicesRoot)
-        {
-            var project = ProjectAncestor(parent);
-            var device = _resources.DeviceRepository.Create(
-                connection,
-                project.Id);
-            return new ProjectTreeNode(
-                ProjectTreeNodeKind.Device,
-                device.Id,
-                device.Name,
-                "",
-                ProjectTreeNode.DefaultRecordClassId(
-                    ProjectTreeNodeKind.Device),
-                parent);
-        }
+    private ProjectTreeNode CreateActor(ProjectTreeNode parent, IReadOnlyDictionary<string, string> values)
+    {
+        using var connection = _context.OpenConnection();
+        var actor = _resources.ActorRepository.Create(
+            connection, ProjectAncestor(parent).Id,
+            Required(values, "core.name"), Required(values, "actor.shortName"),
+            Required(values, "actor.defaultDeviceId"), Required(values, "actor.defaultThemeId"),
+            Required(values, "actor.color.modes"), Required(values, "actor.avatarTextColor.modes"),
+            Required(values, "actor.wallpaper.color"));
+        return new ProjectTreeNode(ProjectTreeNodeKind.Actor, actor.Id, actor.DisplayName, actor.ShortName,
+            ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Actor), parent);
+    }
 
-        if (parent.Kind == ProjectTreeNodeKind.ActorsRoot)
-        {
-            var project = ProjectAncestor(parent);
-            var actor = _resources.ActorRepository.Create(
-                connection,
-                project.Id);
-            return new ProjectTreeNode(
-                ProjectTreeNodeKind.Actor,
-                actor.Id,
-                actor.DisplayName,
-                actor.ShortName,
-                ProjectTreeNode.DefaultRecordClassId(
-                    ProjectTreeNodeKind.Actor),
-                parent);
-        }
+    private ProjectTreeNode CreateTheme(ProjectTreeNode parent, IReadOnlyDictionary<string, string> values)
+    {
+        using var connection = _context.OpenConnection();
+        var projectId = ProjectAncestor(parent).Id;
+        var family = Required(values, "theme.family");
+        var paletteIds = _resources.PaletteRepository.QueryAll(connection)
+            .Where((color) => color.ProjectId == projectId)
+            .GroupBy((color) => color.Token, StringComparer.Ordinal)
+            .ToDictionary((group) => group.Key, (group) => group.Single().Id, StringComparer.Ordinal);
+        var created = _resources.ThemeRepository.Create(
+            connection, projectId, family,
+            Required(values, "theme.iconThemeId"), Required(values, "theme.statusBarId"),
+            Required(values, "theme.navigationBarId"),
+            SqliteResourceOwner.DefaultThemeTokensJson(
+                family,
+                Required(values, "theme.typography.fontFamilyId"),
+                Required(values, "theme.typography.emojiFontFamilyId"),
+                paletteIds),
+            JsonSerializer.Serialize(new { note = $"{family} production theme." }));
+        return new ProjectTreeNode(ProjectTreeNodeKind.Theme, created.Id, created.Name,
+            $"{created.Family} · {SqliteResourceOwner.ThemeReferenceSummary(created)}",
+            ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Theme), parent);
+    }
 
-        if (parent.Kind == ProjectTreeNodeKind.ThemesRoot)
-        {
-            return AddTheme(parent, "custom");
-        }
+    private ProjectTreeNode CreateEpisode(ProjectTreeNode parent, IReadOnlyDictionary<string, string> values)
+    {
+        using var connection = _context.OpenConnection();
+        var episode = _production.ProjectEpisodeRepository.CreateEpisode(connection, ProjectAncestor(parent).Id);
+        return new ProjectTreeNode(ProjectTreeNodeKind.Episode, episode.Id, episode.Name, episode.Notes,
+            ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Episode), parent);
+    }
 
-        if (parent.Kind == ProjectTreeNodeKind.ProductionFontsRoot)
-        {
-            throw new InvalidOperationException(
-                "Production fonts are added through the font importer.");
-        }
-
-        if (parent.Kind == ProjectTreeNodeKind.IconThemesRoot)
-        {
-            throw new InvalidOperationException(
-                "Icon themes are rebuilt through Refresh Sets.");
-        }
-
-        if (parent.Kind == ProjectTreeNodeKind.EpisodesRoot)
-        {
-            var project = ProjectAncestor(parent);
-            var episode = _production.ProjectEpisodeRepository
-                .CreateEpisode(connection, project.Id);
-            return new ProjectTreeNode(
-                ProjectTreeNodeKind.Episode,
-                episode.Id,
-                episode.Name,
-                episode.Notes,
-                ProjectTreeNode.DefaultRecordClassId(
-                    ProjectTreeNodeKind.Episode),
-                parent);
-        }
-
-        if (parent.Kind == ProjectTreeNodeKind.Episode)
-        {
-            throw new InvalidOperationException(
-                "Shots require an explicit owner Actor and must be created through AddShot.");
-        }
-
-        throw new InvalidOperationException(
-            $"Cannot add a child to {parent.Kind}.");
+    private ProjectTreeNode CreateShot(ProjectTreeNode parent, IReadOnlyDictionary<string, string> values)
+    {
+        using var connection = _context.OpenConnection();
+        var actorId = Required(values, "shot.ownerActorId");
+        _production.ModuleInstanceThemeContextService.RequireEpisodeActor(connection, parent.Id, actorId);
+        var shot = _production.CreateShot(
+            connection, parent.Id, actorId,
+            int.Parse(Required(values, "shot.creation.shotNumber")));
+        return new ProjectTreeNode(ProjectTreeNodeKind.Shot, shot.Id, shot.Name, shot.Notes,
+            ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Shot), parent);
     }
 
     internal ProjectTreeNode AddImportedDevice(
@@ -153,104 +250,6 @@ internal sealed class SqliteEditorChildStore
             devicesRoot);
     }
 
-    internal ProjectTreeNode AddShot(
-        ProjectTreeNode episode,
-        string actorId,
-        int shotNumber)
-    {
-        if (episode.Kind != ProjectTreeNodeKind.Episode)
-        {
-            throw new InvalidOperationException(
-                "Shots can only be added to an Episode.");
-        }
-
-        using var connection = _context.OpenConnection();
-        _production.ModuleInstanceThemeContextService
-            .RequireEpisodeActor(
-                connection,
-                episode.Id,
-                actorId);
-        var shot = _production.CreateShot(
-            connection,
-            episode.Id,
-            actorId,
-            shotNumber);
-        return new ProjectTreeNode(
-            ProjectTreeNodeKind.Shot,
-            shot.Id,
-            shot.Name,
-            shot.Notes,
-            ProjectTreeNode.DefaultRecordClassId(
-                ProjectTreeNodeKind.Shot),
-            episode);
-    }
-
-    internal ProjectTreeNode AddTheme(
-        ProjectTreeNode themesRoot,
-        string family)
-    {
-        if (themesRoot.Kind != ProjectTreeNodeKind.ThemesRoot)
-        {
-            throw new InvalidOperationException(
-                "Themes can only be added from the Themes root.");
-        }
-
-        family = family is "ios" or "android" ? family : "custom";
-        using var connection = _context.OpenConnection();
-        var project = ProjectAncestor(themesRoot);
-        var iconThemeId = _resources.IconThemeRepository
-            .QueryAll(connection)
-            .Where((theme) => theme.ProjectId == project.Id)
-            .OrderBy((theme) => theme.Name)
-            .ThenBy((theme) => theme.Id)
-            .Select((theme) => theme.Id)
-            .FirstOrDefault() ?? "";
-        var productionFonts = _resources.ProductionFontRepository
-            .QueryAll(connection)
-            .Where((font) => font.ProjectId == project.Id)
-            .ToList();
-        var paletteColorIds = _resources.PaletteRepository
-            .QueryAll(connection)
-            .Where((color) => color.ProjectId == project.Id)
-            .GroupBy((color) => color.Token, StringComparer.Ordinal)
-            .ToDictionary(
-                (group) => group.Key,
-                (group) => group.Single().Id,
-                StringComparer.Ordinal);
-        var textFontId = FontId(productionFonts, "text");
-        var emojiFontId = FontId(productionFonts, "emoji");
-        var statusBarId = _design.DefaultComponentVariantReference(
-            connection,
-            project.Id,
-            "status_bar");
-        var navigationBarId = _design.DefaultComponentVariantReference(
-            connection,
-            project.Id,
-            "navigation_bar");
-        var created = _resources.ThemeRepository.Create(
-            connection,
-            project.Id,
-            family,
-            iconThemeId,
-            statusBarId,
-            navigationBarId,
-            SqliteResourceOwner.DefaultThemeTokensJson(
-                family,
-                textFontId,
-                emojiFontId,
-                paletteColorIds),
-            JsonSerializer.Serialize(
-                new { note = $"{family} production theme." }));
-        return new ProjectTreeNode(
-            ProjectTreeNodeKind.Theme,
-            created.Id,
-            created.Name,
-            $"{created.Family} · {SqliteResourceOwner.ThemeReferenceSummary(created)}",
-            ProjectTreeNode.DefaultRecordClassId(
-                ProjectTreeNodeKind.Theme),
-            themesRoot);
-    }
-
     internal int SuggestShotNumber(string episodeId)
     {
         using var connection = _context.OpenConnection();
@@ -277,15 +276,46 @@ internal sealed class SqliteEditorChildStore
         ProjectTreeNode iconThemesRoot) =>
         _resources.RefreshIconThemeSets(iconThemesRoot);
 
-    private static string FontId(
-        IReadOnlyList<ProductionFontRecord> fonts,
-        string category) =>
-        fonts
-            .Where((font) => font.Category == category)
-            .OrderBy((font) => font.FamilyName)
-            .ThenBy((font) => font.Id)
-            .Select((font) => font.Id)
-            .FirstOrDefault() ?? "";
+    private static RecordCreationDefinition EmptyCreation(
+        string id,
+        string recordClassId,
+        string title) =>
+        new(id, recordClassId, title, "The complete record is created from declared defaults.", "Add", [], false);
+
+    private static FieldValue Field(
+        string id,
+        string label,
+        ValueKind kind,
+        string value,
+        NumberDefinition? number = null) =>
+        new(new FieldDefinition(id, label, kind, DefaultValue: value, Number: number), value);
+
+    private static FieldValue Field(
+        RecordClassFieldDescriptor descriptor,
+        string value,
+        IReadOnlyList<FieldOption>? options = null) =>
+        new(new FieldDefinition(
+            descriptor.Id, descriptor.Label, descriptor.ValueKind, descriptor.IsEditable,
+            value, Options: options ?? descriptor.Options, PairLabels: descriptor.PairLabels,
+            ImagePreview: descriptor.ImagePreview, Number: descriptor.Number,
+            RecordReference: descriptor.RecordReference, Unit: descriptor.Unit), value);
+
+    private static string Required(IReadOnlyDictionary<string, string> values, string fieldId) =>
+        values.TryGetValue(fieldId, out var value) && !string.IsNullOrWhiteSpace(value)
+            ? value
+            : throw new InvalidOperationException($"Creation value '{fieldId}' is required.");
+
+    private static void RequireParent(
+        ProjectTreeNode parent,
+        ProjectTreeNodeKind expected,
+        string creationId)
+    {
+        if (parent.Kind != expected)
+        {
+            throw new InvalidOperationException(
+                $"Record creation '{creationId}' requires parent {expected}, not {parent.Kind}.");
+        }
+    }
 
     private static ProjectTreeNode ProjectAncestor(
         ProjectTreeNode node)

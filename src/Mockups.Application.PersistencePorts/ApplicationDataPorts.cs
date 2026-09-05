@@ -258,17 +258,15 @@ public interface IDictionaryFieldContextRepository
 
 public interface IEditorChildStore
 {
-    EditorShell.ProjectTreeNode AddChild(EditorShell.ProjectTreeNode parent);
+    EditorShell.RecordCreationDefinition PrepareRecordCreation(
+        EditorShell.ProjectTreeNode parent,
+        string creationId);
+    EditorShell.ProjectTreeNode CreateRecord(
+        EditorShell.ProjectTreeNode parent,
+        EditorShell.RecordCreationDraft draft);
     EditorShell.ProjectTreeNode AddImportedDevice(
         EditorShell.ProjectTreeNode devicesRoot,
         EditorShell.DeviceImportDraft device);
-    EditorShell.ProjectTreeNode AddShot(
-        EditorShell.ProjectTreeNode episode,
-        string actorId,
-        int shotNumber);
-    EditorShell.ProjectTreeNode AddTheme(
-        EditorShell.ProjectTreeNode themesRoot,
-        string family);
     int SuggestShotNumber(string episodeId);
     ProjectSettings GetProjectSettings(string projectId);
     IReadOnlyList<EditorShell.FieldOption> GetRequiredActorOptions(

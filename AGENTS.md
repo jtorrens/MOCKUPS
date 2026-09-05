@@ -90,6 +90,16 @@ Runtime preparation and Preview preparation through the same contract. A
 strict concrete resolver validates the prepared result; it never repairs or
 reconciles it.
 
+Every navigation `+` action is declared by `EditorAddOperationCatalog` as
+Create, Import, Discover/Refresh or bounded selection. Record creation always
+uses `PrepareRecordCreation` followed by the shared Dictionary-backed creation
+form when explicit values are required, then `CreateRecord`. The accept action
+remains disabled until every declared required value is complete. A repository
+must never expose parallel `AddChild`, class-specific Create/Add entrypoints or
+insert an incomplete row for later repair. Import and discovery workflows may
+prepare external data, but their final authored write still reaches the one
+declared owner and must not be labelled as generic creation.
+
 ## Hard rule: exceptions require a stop and discussion
 
 An exception, one-off mapping, special-case branch, compatibility path, local

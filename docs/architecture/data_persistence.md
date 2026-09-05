@@ -206,6 +206,17 @@ only then replaces the visible authored snapshot. A failed write retains the
 last confirmed document.
 Persistence keeps adapters only for ports exposed by the current session;
 retired area-wide adapters are removed with their contracts.
+
+Navigation Add behavior has one Application-owned declaration in
+`EditorAddOperationCatalog`. It distinguishes authored record creation from
+Device/Font import, Icon Theme discovery/refresh and bounded Screen selection.
+An authored record is prepared through `PrepareRecordCreation`, validated as a
+complete Dictionary field set and committed through `CreateRecord`; focused
+repositories expose no parallel `AddChild`, `AddShot` or `AddTheme` route.
+Records whose declared defaults are already complete may skip the form, but
+they use the same prepare/validate/commit contract. Records requiring explicit
+references cannot be inserted with empty placeholders for later editing.
+
 The Node Command membrane exposes exactly `IEditorNodeCommandStore`; it has no
 child creation, Module Instance, timeline or Reference Usage members and uses
 no runtime casts to recover them.

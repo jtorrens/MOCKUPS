@@ -145,7 +145,8 @@ internal sealed class EditorNodeCommandController
         var child = await workflow.TryAdd(parent);
         if (child is null) return;
 
-        if (parent.Kind == ProjectTreeNodeKind.IconThemesRoot)
+        if (EditorAddOperationCatalog.Require(parent.Kind).Kind
+            == EditorAddOperationKind.RefreshIconThemes)
         {
             await _loadProjectTree();
             return;
@@ -163,17 +164,15 @@ internal sealed class EditorNodeCommandController
             try
             {
                 var episode = node.Parent;
-                var draft = await new ShotCreationDialog(
+                var shotNumber = await new ShotDuplicationDialog(
                     _owner,
                     _children,
-                    _operations).Show(
-                        episode,
-                        preserveExistingActor: true);
-                if (draft is null) return;
+                    _operations).Show(episode);
+                if (shotNumber is null) return;
                 var copy = await _operations.ExecuteAsync(
                     () => _database.DuplicateShot(
                         node,
-                        draft.ShotNumber));
+                        shotNumber.Value));
                 _reloadAndSelect(copy);
             }
             catch (Exception exception)
@@ -187,7 +186,9 @@ internal sealed class EditorNodeCommandController
         try
         {
             var copy = await _operations.ExecuteAsync(
-                () => _database.Duplicate(node));
+                () => node.Kind == ProjectTreeNodeKind.ModuleInstance
+                    ? _moduleInstances.Duplicate(node)
+                    : _database.Duplicate(node));
             _reloadAndSelect(copy);
         }
         catch (Exception exception)

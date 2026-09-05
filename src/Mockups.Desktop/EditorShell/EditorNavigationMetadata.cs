@@ -88,21 +88,7 @@ internal static class EditorNavigationMetadata
 
     public static string AddChildLabel(ProjectTreeNode node)
     {
-        return node.Kind switch
-        {
-            ProjectTreeNodeKind.ComponentClassGroup => "Add component",
-            ProjectTreeNodeKind.ComponentClass => "Add variant",
-            ProjectTreeNodeKind.EpisodesRoot => "Add episode",
-            ProjectTreeNodeKind.Episode => "Add shot",
-            ProjectTreeNodeKind.Shot => "Add screen",
-            ProjectTreeNodeKind.PaletteRoot => "Add palette color",
-            ProjectTreeNodeKind.IconThemesRoot => "Add icon theme",
-            ProjectTreeNodeKind.DevicesRoot => "Add device",
-            ProjectTreeNodeKind.ActorsRoot => "Add actor",
-            ProjectTreeNodeKind.ThemesRoot => "Add theme",
-            ProjectTreeNodeKind.ProductionFontsRoot => "Add production font",
-            _ => "Add child",
-        };
+        return EditorAddOperationCatalog.Require(node.Kind).Label;
     }
 
     public static string HierarchicalIcon(ProjectTreeNode node)

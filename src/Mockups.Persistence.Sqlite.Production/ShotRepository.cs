@@ -159,20 +159,22 @@ internal sealed class ShotRepository : IShotRepository
         return Get(connection, id);
     }
 
-    public void DuplicateForEpisode(
+    public IReadOnlyDictionary<string, string> DuplicateForEpisode(
         SqliteConnection connection,
-        string sourceEpisodeId,
-        string targetEpisodeId)
+        IReadOnlyList<ShotRecord> sourceShots,
+        string targetEpisodeId,
+        string targetProjectId,
+        SqliteTransaction transaction)
     {
-        var targetProjectId = RequiredProjectId(connection, targetEpisodeId);
-        var sourceShots = QueryByEpisode(connection, sourceEpisodeId);
+        var duplicatedIds = new Dictionary<string, string>(StringComparer.Ordinal);
         for (var index = 0; index < sourceShots.Count; index++)
         {
+            var duplicateId = $"shot_{Guid.NewGuid():N}";
             Insert(
                 connection,
                 sourceShots[index] with
                 {
-                    Id = $"shot_{Guid.NewGuid():N}",
+                    Id = duplicateId,
                     EpisodeId = targetEpisodeId,
                     ProjectId = targetProjectId,
                     SortOrder = index,
@@ -180,8 +182,11 @@ internal sealed class ShotRepository : IShotRepository
                     ShotManagerReferenceProductionId = "",
                     ShotManagerShotId = "",
                     ShotManagerCanonicalName = "",
-                });
+                },
+                transaction);
+            duplicatedIds[sourceShots[index].Id] = duplicateId;
         }
+        return duplicatedIds;
     }
 
     public void ClearFpsOverride(SqliteConnection connection, string shotId)

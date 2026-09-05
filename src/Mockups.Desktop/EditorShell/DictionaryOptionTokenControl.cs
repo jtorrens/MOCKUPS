@@ -7,12 +7,20 @@ internal sealed class DictionaryOptionTokenControl : Grid, IDictionaryValueContr
 {
     private readonly FieldDefinition _definition;
     private readonly EditorInstantComboBox _comboBox;
+    private readonly bool _allowIncompleteDraft;
     private bool _isUpdating;
 
-    public DictionaryOptionTokenControl(FieldDefinition definition, string value)
+    public DictionaryOptionTokenControl(
+        FieldDefinition definition,
+        string value,
+        bool allowIncompleteDraft = false)
     {
         _definition = definition;
-        _comboBox = DictionaryOptionSelector.CreateComboBox(definition, value);
+        _allowIncompleteDraft = allowIncompleteDraft;
+        _comboBox = DictionaryOptionSelector.CreateComboBox(
+            definition,
+            value,
+            allowIncompleteDraft);
         SetValue(value);
         _comboBox.SelectionChanged += (_, _) =>
         {
@@ -32,7 +40,11 @@ internal sealed class DictionaryOptionTokenControl : Grid, IDictionaryValueContr
     public void SetValue(string value)
     {
         _isUpdating = true;
-        DictionaryOptionSelector.SetValue(_comboBox, _definition, value);
+        DictionaryOptionSelector.SetValue(
+            _comboBox,
+            _definition,
+            value,
+            _allowIncompleteDraft);
         _isUpdating = false;
     }
 }

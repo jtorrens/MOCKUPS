@@ -78,6 +78,7 @@ var tests = new (string Name, Action Run)[]
     ("editor layout saves only authored card metadata", EditorLayoutSaveKeepsOnlyAuthoredCardMetadata),
     ("extracted repositories preserve the focused port contract", ExtractedRepositoriesPreserveFocusedContract),
     ("resource repositories preserve Palette Device and Actor contracts", ResourceRepositoriesPreserveFocusedContract),
+    ("record creation uses one declarative complete lifecycle", RecordCreationUsesOneDeclarativeLifecycle),
     ("Actor preview data boundary preserves current values read-only", ActorPreviewDataBoundaryPreservesCurrentValues),
     ("Actor preview surfaces share initials identity", ActorPreviewSurfacesShareInitialsIdentity),
     ("Runtime Input option boundary preserves dictionary options read-only", RuntimeInputOptionBoundaryPreservesDictionaryOptions),
@@ -3931,7 +3932,7 @@ static void VisualPersistenceWritersRequireOperationCoordination()
                  typeof(EditorNodeCommandController),
                  typeof(EditorDomainDialogService),
                  typeof(EditorCollectionCardFactory),
-                 typeof(ShotCreationDialog),
+                 typeof(ShotDuplicationDialog),
                  typeof(ShotModulePickerDialog),
                  typeof(ShotModuleInstancesCollectionEditor),
                  typeof(IconThemeTokensCollectionEditor),
@@ -4537,6 +4538,8 @@ static void FlatVariantOverridesUseRestoreSemantics()
                 var contentRowVariant = nodes.First((node) =>
                     node.Kind == ProjectTreeNodeKind.ComponentVariant
                     && node.Parent?.RecordClassId == "component.contentRow");
+                contentRowVariant = NodeCommands(database)
+                    .ToggleComponentVariantLock(contentRowVariant);
                 var contentSlots = JsonNode.Parse(
                         database.CreateComponentVariantFieldValue(
                                 contentRowVariant,
@@ -10148,7 +10151,10 @@ static void ExtractedRepositoriesPreserveFocusedContract()
         var context = new SqliteProjectContext(temporary);
         IEditorLayoutStore layoutRepository = new SqliteEditorLayoutStore(context);
         IShotRepository shotRepository = new ShotRepository(context);
-        IProjectEpisodeRepository projectEpisodeRepository = new ProjectEpisodeRepository(context, shotRepository);
+        IProjectEpisodeRepository projectEpisodeRepository = new ProjectEpisodeRepository(
+            context,
+            shotRepository,
+            new ModuleInstanceRepository(context));
 
         var tree = database.LoadProjectTree();
         var project = Descendants(tree).Single((node) => node.Kind == ProjectTreeNodeKind.Project);
@@ -10219,6 +10225,143 @@ static void ExtractedRepositoriesPreserveFocusedContract()
         database.Delete(duplicatedEpisode);
         database.Delete(createdEpisode);
 
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void RecordCreationUsesOneDeclarativeLifecycle()
+{
+    var expectedOperations = new Dictionary<ProjectTreeNodeKind, EditorAddOperationKind>
+    {
+        [ProjectTreeNodeKind.PaletteRoot] = EditorAddOperationKind.CreateRecord,
+        [ProjectTreeNodeKind.IconThemesRoot] = EditorAddOperationKind.RefreshIconThemes,
+        [ProjectTreeNodeKind.DevicesRoot] = EditorAddOperationKind.ImportDevice,
+        [ProjectTreeNodeKind.ActorsRoot] = EditorAddOperationKind.CreateRecord,
+        [ProjectTreeNodeKind.ThemesRoot] = EditorAddOperationKind.CreateRecord,
+        [ProjectTreeNodeKind.ProductionFontsRoot] = EditorAddOperationKind.ImportProductionFont,
+        [ProjectTreeNodeKind.EpisodesRoot] = EditorAddOperationKind.CreateRecord,
+        [ProjectTreeNodeKind.Episode] = EditorAddOperationKind.CreateRecord,
+        [ProjectTreeNodeKind.Shot] = EditorAddOperationKind.SelectModuleInstance,
+    };
+    foreach (var (parentKind, operationKind) in expectedOperations)
+    {
+        var operation = EditorAddOperationCatalog.Require(parentKind);
+        Equal(operationKind, operation.Kind);
+        True(!string.IsNullOrWhiteSpace(operation.Label));
+    }
+    True(!EditorAddOperationCatalog.TryGet(ProjectTreeNodeKind.Actor, out _));
+    var childPortMethods = typeof(IEditorChildStore).GetMethods()
+        .Select((method) => method.Name)
+        .ToHashSet(StringComparer.Ordinal);
+    True(childPortMethods.Contains(nameof(IEditorChildStore.PrepareRecordCreation)));
+    True(childPortMethods.Contains(nameof(IEditorChildStore.CreateRecord)));
+    True(!childPortMethods.Contains("AddChild"));
+    True(!childPortMethods.Contains("AddShot"));
+    True(!childPortMethods.Contains("AddTheme"));
+    True(RecordCreationDialog.DialogWidth
+        >= RecordCreationDialog.DialogMinimumWidth);
+    True(RecordCreationDialog.DialogMinimumWidth >= 720);
+
+    var temporary = Path.Combine(Path.GetTempPath(), $"mockups-record-creation-{Guid.NewGuid():N}.sqlite");
+    File.Copy(ParityDatabasePath(), temporary, overwrite: true);
+    try
+    {
+        var database = new SqliteProjectTestContext(temporary);
+        var tree = database.LoadProjectTree();
+        var actorsRoot = Descendants(tree).Single((node) => node.Kind == ProjectTreeNodeKind.ActorsRoot);
+        var actor = database.Children.PrepareRecordCreation(actorsRoot, "actor");
+        SequenceEqual(
+            new[]
+            {
+                "core.name", "actor.shortName", "actor.defaultDeviceId",
+                "actor.defaultThemeId", "actor.color.modes",
+                "actor.avatarTextColor.modes", "actor.wallpaper.color",
+            },
+            actor.Fields.Select((field) => field.Definition.Id));
+        True(actor.RequiresConfirmation);
+        var actorDefaults = actor.Fields.ToDictionary(
+            (field) => field.Definition.Id,
+            (field) => field.Value,
+            StringComparer.Ordinal);
+        True(actor.ValidationError(actorDefaults) is not null);
+        var requiredActorReference = actor.Fields.Single((field) =>
+            field.Definition.Id == "actor.defaultDeviceId");
+        Throws<InvalidOperationException>(() =>
+            DictionaryOptionSelector.SelectedOption(
+                requiredActorReference.Definition,
+                requiredActorReference.Value));
+        Equal(
+            "",
+            DictionaryOptionSelector.SelectedOption(
+                requiredActorReference.Definition,
+                requiredActorReference.Value,
+                allowIncompleteDraft: true)?.Value);
+        var beforeRejected = SHA256.HashData(File.ReadAllBytes(temporary));
+        Throws<InvalidOperationException>(() => database.Children.CreateRecord(
+            actorsRoot,
+            new RecordCreationDraft(actor.Id, actorDefaults)));
+        SequenceEqual(beforeRejected, SHA256.HashData(File.ReadAllBytes(temporary)));
+
+        var themesRoot = Descendants(tree).Single((node) => node.Kind == ProjectTreeNodeKind.ThemesRoot);
+        var theme = database.Children.PrepareRecordCreation(themesRoot, "theme");
+        SequenceEqual(
+            new[]
+            {
+                "theme.family", "theme.iconThemeId", "theme.statusBarId",
+                "theme.navigationBarId", "theme.typography.fontFamilyId",
+                "theme.typography.emojiFontFamilyId",
+            },
+            theme.Fields.Select((field) => field.Definition.Id));
+        True(theme.Fields.All((field) => string.IsNullOrWhiteSpace(field.Value)));
+        foreach (var field in theme.Fields)
+        {
+            Equal(
+                "",
+                DictionaryOptionSelector.SelectedOption(
+                    field.Definition,
+                    field.Value,
+                    allowIncompleteDraft: true)?.Value);
+        }
+        var themeValues = theme.Fields.ToDictionary(
+            (field) => field.Definition.Id,
+            (field) => field.Definition.Options!
+                .First((option) => !string.IsNullOrWhiteSpace(option.Value))
+                .Value,
+            StringComparer.Ordinal);
+        var createdTheme = database.Children.CreateRecord(
+            themesRoot,
+            new RecordCreationDraft(theme.Id, themeValues));
+        foreach (var fieldId in ThemeColorTokenCatalog.ColorTokens
+                     .Select((token) => token.Id)
+                     .Concat(ThemeNumericTokenCatalog.NumericTokens
+                         .Select((token) => token.Id))
+                     .Concat(new[]
+                     {
+                         "theme.defaultMode", "theme.neutralTint.hueDeg",
+                         "theme.neutralTint.saturation", "theme.shadows.default.color",
+                         "theme.typography.fontFamilyId",
+                         "theme.typography.systemFontFamilyId",
+                         "theme.typography.emojiFontFamilyId", "theme.typography.style",
+                         "theme.motion.fade", "theme.motion.slide", "theme.motion.swipe",
+                         "theme.motion.scale", "theme.motion.reflow",
+                     }))
+        {
+            True(!string.IsNullOrWhiteSpace(
+                database.GetThemeFieldValue(createdTheme.Id, fieldId)));
+        }
+
+        var episode = Descendants(tree).First((node) => node.Kind == ProjectTreeNodeKind.Episode);
+        var shot = database.Children.PrepareRecordCreation(episode, "shot");
+        SequenceEqual(
+            new[] { "shot.ownerActorId", "shot.creation.shotNumber" },
+            shot.Fields.Select((field) => field.Definition.Id));
+        True(shot.ValidationError(shot.Fields.ToDictionary(
+            (field) => field.Definition.Id,
+            (field) => field.Value,
+            StringComparer.Ordinal)) is not null);
     }
     finally
     {
@@ -10427,7 +10570,24 @@ static void ResourceRepositoriesPreserveFocusedContract()
 
         var actorsRoot = Descendants(database.LoadProjectTree())
             .Single((node) => node.Kind == ProjectTreeNodeKind.ActorsRoot);
-        var createdActor = database.AddChild(actorsRoot);
+        var actorCreation = database.Children.PrepareRecordCreation(actorsRoot, "actor");
+        var actorValues = actorCreation.Fields.ToDictionary(
+            (field) => field.Definition.Id,
+            (field) => field.Definition.Id switch
+            {
+                "core.name" => "Repository Created Actor",
+                "actor.shortName" => "RCA",
+                "actor.defaultDeviceId" or "actor.defaultThemeId" =>
+                    field.Definition.Options!.First().Value,
+                "actor.color.modes" or "actor.avatarTextColor.modes" or "actor.wallpaper.color" =>
+                    $"{field.Definition.Options!.First().Value}|{field.Definition.Options!.First().Value}",
+                _ => throw new InvalidOperationException(
+                    $"Unexpected Actor creation field '{field.Definition.Id}'."),
+            },
+            StringComparer.Ordinal);
+        var createdActor = database.Children.CreateRecord(
+            actorsRoot,
+            new RecordCreationDraft(actorCreation.Id, actorValues));
         var duplicatedActor = database.Duplicate(createdActor);
         duplicatedActor.Name = "Repository Actor";
         database.UpdateNode(duplicatedActor);
@@ -12442,12 +12602,15 @@ static void IconThemeRepositoryPreservesFocusedContract()
         using (var connection = context.OpenConnection())
         {
             Throws<InvalidOperationException>(() => repository.UpdateMapping(connection, record.Id, "[]"));
+            using var transaction = connection.BeginTransaction();
             Throws<InvalidOperationException>(() => repository.UpsertDiscovered(
                 connection,
+                transaction,
                 "invalid_icon_theme",
                 project.Id,
                 "Invalid Icon Theme",
                 "icon-themes/invalid",
+                "{}",
                 "[]"));
         }
         var afterRejectedWrite = SHA256.HashData(File.ReadAllBytes(temporary));
@@ -12873,7 +13036,11 @@ static void ShotRepositoryPreservesFocusedContract()
         var database = new SqliteProjectTestContext(temporary);
         var context = new SqliteProjectContext(temporary);
         IShotRepository repository = new ShotRepository(context);
-        IProjectEpisodeRepository episodeRepository = new ProjectEpisodeRepository(context, repository);
+        IModuleInstanceRepository moduleInstanceRepository = new ModuleInstanceRepository(context);
+        IProjectEpisodeRepository episodeRepository = new ProjectEpisodeRepository(
+            context,
+            repository,
+            moduleInstanceRepository);
         var tree = database.LoadProjectTree();
         var node = Descendants(tree).Single((candidate) => candidate.Id == "shot_001");
         var original = repository.Get(node.Id);
@@ -12980,6 +13147,12 @@ static void ShotRepositoryPreservesFocusedContract()
                 database.GetShotSettings(original.Id).ReferenceVideoJson,
                 episodeShot.ReferenceVideoJson);
             Equal(original.MetadataJson, episodeShot.MetadataJson);
+            var originalScreens = moduleInstanceRepository.QueryByShot(connection, original.Id);
+            var duplicatedScreens = moduleInstanceRepository.QueryByShot(connection, episodeShot.Id);
+            Equal(originalScreens.Count, duplicatedScreens.Count);
+            SequenceEqual(
+                originalScreens.Select((screen) => screen.ContentJson),
+                duplicatedScreens.Select((screen) => screen.ContentJson));
             episodeRepository.DeleteEpisode(connection, duplicatedEpisode.Id);
         }
 

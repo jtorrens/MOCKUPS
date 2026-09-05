@@ -7,6 +7,7 @@ using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using SukiUI.Controls;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -40,72 +41,59 @@ internal sealed class EditorAddChildWorkflow
 
     public async Task<ProjectTreeNode?> TryAdd(ProjectTreeNode parent)
     {
-        if (!parent.CanAddChild)
+        if (!EditorAddOperationCatalog.TryGet(parent.Kind, out var operation)) return null;
+        return operation.Kind switch
         {
-            return null;
-        }
+            EditorAddOperationKind.CreateRecord => await CreateRecord(parent, operation.CreationId),
+            EditorAddOperationKind.ImportDevice => await ImportDevice(parent),
+            EditorAddOperationKind.ImportProductionFont => await ImportProductionFont(parent),
+            EditorAddOperationKind.RefreshIconThemes => await RefreshAndReturn(parent),
+            EditorAddOperationKind.SelectModuleInstance => await SelectModuleInstance(parent),
+            _ => throw new InvalidOperationException(
+                $"Add operation '{operation.Id}' has unsupported kind '{operation.Kind}'."),
+        };
+    }
 
-        if (parent.Kind == ProjectTreeNodeKind.ProductionFontsRoot)
+    private async Task<ProjectTreeNode?> CreateRecord(ProjectTreeNode parent, string creationId)
+    {
+        try
         {
-            return await ImportProductionFont(parent);
-        }
-
-        if (parent.Kind == ProjectTreeNodeKind.IconThemesRoot)
-        {
-            await RefreshIconThemes(parent);
-            return parent;
-        }
-
-        if (parent.Kind == ProjectTreeNodeKind.ThemesRoot)
-        {
-            var startingPoint = await ChooseThemeStartingPoint();
-            return startingPoint is null
-                ? null
-                : await _operations.ExecuteAsync(
-                    () => _database.AddTheme(parent, startingPoint));
-        }
-
-        if (parent.Kind == ProjectTreeNodeKind.DevicesRoot)
-        {
-            return await ImportDevice(parent);
-        }
-
-        if (parent.Kind == ProjectTreeNodeKind.Shot)
-        {
-            var draft = await new ShotModulePickerDialog(
-                _owner,
-                _moduleInstances,
-                _operations).Show(parent.Id);
+            var definition = await _operations.ExecuteAsync(
+                () => _database.PrepareRecordCreation(parent, creationId));
+            var draft = definition.RequiresConfirmation
+                ? await new RecordCreationDialog(_owner).Show(definition)
+                : new RecordCreationDraft(
+                    definition.Id,
+                    definition.Fields.ToDictionary(
+                        (field) => field.Definition.Id,
+                        (field) => field.Value,
+                        StringComparer.Ordinal));
             return draft is null
                 ? null
                 : await _operations.ExecuteAsync(
-                    () => _moduleInstances.AddModuleInstance(parent, draft));
+                    () => _database.CreateRecord(parent, draft));
         }
-
-        if (parent.Kind == ProjectTreeNodeKind.Episode)
+        catch (Exception exception)
         {
-            try
-            {
-                var draft = await new ShotCreationDialog(
-                    _owner,
-                    _database,
-                    _operations).Show(parent);
-                if (draft is null) return null;
-                return await _operations.ExecuteAsync(
-                    () => _database.AddShot(
-                        parent,
-                        draft.ActorId,
-                        draft.ShotNumber));
-            }
-            catch (Exception exception)
-            {
-                await _showInfo("Shot creation failed", exception.Message);
-                return null;
-            }
+            await _showInfo("Record creation failed", exception.Message);
+            return null;
         }
+    }
 
-        return await _operations.ExecuteAsync(
-            () => _database.AddChild(parent));
+    private async Task<ProjectTreeNode?> SelectModuleInstance(ProjectTreeNode shot)
+    {
+        var draft = await new ShotModulePickerDialog(
+            _owner, _moduleInstances, _operations).Show(shot.Id);
+        return draft is null
+            ? null
+            : await _operations.ExecuteAsync(
+                () => _moduleInstances.AddModuleInstance(shot, draft));
+    }
+
+    private async Task<ProjectTreeNode> RefreshAndReturn(ProjectTreeNode parent)
+    {
+        await RefreshIconThemes(parent);
+        return parent;
     }
 
     private async Task<ProjectTreeNode?> ImportDevice(ProjectTreeNode devicesRoot)
@@ -117,8 +105,14 @@ internal sealed class EditorAddChildWorkflow
             if (result is null) return null;
             if (result.CreateBlank)
             {
+                var definition = await _operations.ExecuteAsync(
+                    () => _database.PrepareRecordCreation(devicesRoot, "device"));
                 return await _operations.ExecuteAsync(
-                    () => _database.AddChild(devicesRoot));
+                    () => _database.CreateRecord(
+                        devicesRoot,
+                        new RecordCreationDraft(
+                            definition.Id,
+                            new Dictionary<string, string>(StringComparer.Ordinal))));
             }
             return result.Draft is null
                 ? null
@@ -146,80 +140,6 @@ internal sealed class EditorAddChildWorkflow
         {
             await _showInfo("Refresh failed", exception.Message);
         }
-    }
-
-    private async Task<string?> ChooseThemeStartingPoint()
-    {
-        var dialog = new SukiWindow
-        {
-            Title = "Create theme",
-            Width = 420,
-            Height = 230,
-            MinWidth = 420,
-            MinHeight = 230,
-            CanResize = false,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            IsMenuVisible = false,
-            BackgroundAnimationEnabled = false,
-            BackgroundTransitionsEnabled = false,
-            BackgroundTransitionTime = 0.05,
-        };
-        EditorSukiWindowTheme.ApplyDialogChrome(dialog, _owner);
-
-        var cancelButton = new Button { Content = "Cancel", MinWidth = 92 };
-        cancelButton.Click += (_, _) => dialog.Close(null);
-        var iosButton = new Button { Content = "iOS starting point", MinWidth = 130 };
-        iosButton.Click += (_, _) => dialog.Close("ios");
-        var androidButton = new Button { Content = "Android starting point", MinWidth = 150 };
-        androidButton.Click += (_, _) => dialog.Close("android");
-
-        var actions = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            HorizontalAlignment = HorizontalAlignment.Right,
-            Spacing = 10,
-            Children =
-            {
-                cancelButton,
-                iosButton,
-                androidButton,
-            },
-        };
-
-        dialog.Content = new Border
-        {
-            Padding = new Thickness(22),
-            Child = new Grid
-            {
-                RowDefinitions = new RowDefinitions("*,Auto"),
-                RowSpacing = 18,
-                Children =
-                {
-                    new StackPanel
-                    {
-                        Spacing = 8,
-                        Children =
-                        {
-                            new TextBlock
-                            {
-                                Text = "Choose a starting point for the new theme.",
-                                TextWrapping = TextWrapping.Wrap,
-                            },
-                            new TextBlock
-                            {
-                                Text = "You can edit the linked icon, status bar, navigation bar and tokens afterwards.",
-                                Opacity = 0.72,
-                                TextWrapping = TextWrapping.Wrap,
-                            },
-                        },
-                    },
-                    actions,
-                },
-            },
-        };
-        Grid.SetRow(actions, 1);
-
-        return await dialog.ShowDialog<string?>(_owner);
     }
 
     private async Task<ProjectTreeNode?> ImportProductionFont(ProjectTreeNode fontsRoot)

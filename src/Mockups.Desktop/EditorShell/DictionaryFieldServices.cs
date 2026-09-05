@@ -38,7 +38,8 @@ internal sealed record DictionaryFieldServices(
         UpdateStructuredCollectionValues = null,
     Func<StructuredCollectionMutation, Task<StructuredCollectionMutationResult>>?
         MutateStructuredCollection = null,
-    EditorSessionUiState? StructuredCollectionUiState = null);
+    EditorSessionUiState? StructuredCollectionUiState = null,
+    bool AllowIncompleteDraft = false);
 
 internal static class DictionaryRecordReferenceOptions
 {

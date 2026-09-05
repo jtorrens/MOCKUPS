@@ -27,10 +27,11 @@ internal sealed partial class SqliteProductionOwner :
         _moduleVariantCatalog = moduleVariantCatalog;
         _componentVariantConfigCatalog = componentVariantConfigCatalog;
         _shotRepository = new ShotRepository(context);
+        _moduleInstanceRepository = new ModuleInstanceRepository(context);
         _projectEpisodeRepository = new ProjectEpisodeRepository(
             context,
-            _shotRepository);
-        _moduleInstanceRepository = new ModuleInstanceRepository(context);
+            _shotRepository,
+            _moduleInstanceRepository);
         _moduleInstanceThemeContextService =
             new ModuleInstanceThemeContextService(context);
     }
