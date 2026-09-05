@@ -707,8 +707,7 @@ internal sealed class RuntimeInputsCollectionEditor
             && string.IsNullOrWhiteSpace(collection.StorageCollectionJsonKey);
         void Changed()
         {
-            _onChanged();
-            _reloadAndSelect?.Invoke(owner.Node);
+            NotifyStructuredCollectionChanged(owner);
         }
         var selectionKey = $"{owner.Node.Id}:test-values";
         var collectionActions = CreateTestValueCollectionActions(
@@ -1448,8 +1447,7 @@ internal sealed class RuntimeInputsCollectionEditor
         StructuredCollectionEditor? editor = null;
         void Changed()
         {
-            _onChanged();
-            _reloadAndSelect?.Invoke(owner.Node);
+            NotifyStructuredCollectionChanged(owner);
         }
         var collectionActions = CreateTestValueCollectionActions(
             owner,
@@ -1500,6 +1498,19 @@ internal sealed class RuntimeInputsCollectionEditor
             canEditStructure: collection.CanEditStructure
                 && string.IsNullOrWhiteSpace(collection.StorageCollectionJsonKey));
         return editor.Create();
+    }
+
+    private void NotifyStructuredCollectionChanged(
+        RuntimeInputOwner owner)
+    {
+        if (owner.IsInstance && _reloadAndSelect is not null)
+        {
+            _reloadAndSelect(owner.Node);
+            return;
+        }
+
+        _onChanged();
+        _reloadAndSelect?.Invoke(owner.Node);
     }
 
     private IReadOnlyList<EditorInternalNavigationSection> CreateChildRuntimeCollectionSubcards(

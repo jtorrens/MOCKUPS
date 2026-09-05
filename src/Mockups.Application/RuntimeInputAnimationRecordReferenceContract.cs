@@ -24,7 +24,8 @@ public static class RuntimeInputAnimationRecordReferenceContract
             "");
         foreach (var collection in RuntimeInputDefinitionReader.ReadCollections(
                      runtimePreview,
-                     new JsonObject()))
+                     new JsonObject()).Where((collection) =>
+                         collection.CanEditStructure))
         {
             if (runtimePreview[collection.JsonKey] is not JsonArray items) continue;
             foreach (var item in items.OfType<JsonObject>())
@@ -84,7 +85,7 @@ public static class RuntimeInputAnimationRecordReferenceContract
             {
                 declarations.Add((input.Id, targetId), input);
             }
-            if (input.StructuredCollection is null
+            if (input.StructuredCollection is not { CanEditStructure: true }
                 || values[input.JsonKey] is not JsonArray nestedItems)
             {
                 continue;
