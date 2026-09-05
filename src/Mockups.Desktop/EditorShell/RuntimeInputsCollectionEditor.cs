@@ -61,7 +61,7 @@ internal sealed class RuntimeInputsCollectionEditor
     private readonly Func<string, int> _currentActionFrame;
     private readonly Func<string, int> _maximumActionFrame;
     private readonly Action<string, string> _setPreviewTestValue;
-    private readonly Action<string, string, IReadOnlyDictionary<string, JsonNode?>>
+    private readonly Action<StructuredCollectionAddress, string, IReadOnlyDictionary<string, JsonNode?>>
         _setPreviewCollectionItemValues;
     private readonly Action<ProjectTreeNode, string, IReadOnlyList<JsonObject>> _setPreviewCollectionTestItems;
     private readonly Func<ProjectTreeNode, bool> _resetTestValues;
@@ -108,7 +108,7 @@ internal sealed class RuntimeInputsCollectionEditor
         Func<string, int> currentActionFrame,
         Func<string, int> maximumActionFrame,
         Action<string, string> setPreviewTestValue,
-        Action<string, string, IReadOnlyDictionary<string, JsonNode?>>
+        Action<StructuredCollectionAddress, string, IReadOnlyDictionary<string, JsonNode?>>
             setPreviewCollectionItemValues,
         Action<ProjectTreeNode, string, IReadOnlyList<JsonObject>> setPreviewCollectionTestItems,
         Func<ProjectTreeNode, bool> resetTestValues,
@@ -313,7 +313,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 {
                     await _instanceDocuments.UpdateCollectionValuesAsync(
                         owner.Node.Id,
-                        collectionJsonKey,
+                        StructuredCollectionAddress.Root(collectionJsonKey),
                         itemId,
                         values);
                     _onChanged();
@@ -792,6 +792,7 @@ internal sealed class RuntimeInputsCollectionEditor
             owner,
             preview,
             collection,
+            StructuredCollectionAddress.Root(collection.StorageJsonKey),
             actions,
             itemIndex,
             item,
@@ -954,7 +955,7 @@ internal sealed class RuntimeInputsCollectionEditor
             {
                 await _instanceDocuments.UpdateCollectionValueAsync(
                     owner.Node.Id,
-                    StorageCollectionKey(collection),
+                    StructuredCollectionAddress.Root(collection.StorageJsonKey),
                     itemId,
                     runtimeContractJsonKey,
                     runtimeContract);
@@ -963,7 +964,7 @@ internal sealed class RuntimeInputsCollectionEditor
             }
 
             _setPreviewCollectionItemValues(
-                collection.JsonKey,
+                StructuredCollectionAddress.Root(collection.StorageJsonKey),
                 itemId,
                 new Dictionary<string, JsonNode?>
                 {
@@ -995,6 +996,7 @@ internal sealed class RuntimeInputsCollectionEditor
             general.Children.Add(CreateTestValueCollectionControl(
                 owner,
                 collection,
+                StructuredCollectionAddress.Root(collection.StorageJsonKey),
                 itemIndex,
                 item,
                 input,
@@ -1282,6 +1284,7 @@ internal sealed class RuntimeInputsCollectionEditor
             owner,
             preview,
             collection,
+            StructuredCollectionAddress.Root(collection.StorageJsonKey),
             actions,
             itemIndex,
             item,
@@ -1312,9 +1315,9 @@ internal sealed class RuntimeInputsCollectionEditor
         Action changed)
     {
         var address = new StructuredCollectionAddress(
-            StorageCollectionKey(collection),
+            collection.StorageJsonKey,
             [],
-            StorageCollectionKey(collection));
+            collection.StorageJsonKey);
         async Task<StructuredCollectionMutationResult> Mutate(
             StructuredCollectionMutation mutation)
         {
@@ -1417,7 +1420,7 @@ internal sealed class RuntimeInputsCollectionEditor
             RuntimeInputCollectionDefinition collection,
             StructuredCollectionMutation mutation)
     {
-        var storageKey = StorageCollectionKey(collection);
+        var storageKey = collection.StorageJsonKey;
         var content = new JsonObject
         {
             [storageKey] = new JsonArray(
@@ -1445,6 +1448,8 @@ internal sealed class RuntimeInputsCollectionEditor
         IReadOnlyList<RuntimeInputCollectionDefinition>? childCollections = null)
     {
         StructuredCollectionEditor? editor = null;
+        var address = StructuredCollectionAddress.Root(
+            collection.StorageJsonKey);
         void Changed()
         {
             NotifyStructuredCollectionChanged(owner);
@@ -1474,11 +1479,12 @@ internal sealed class RuntimeInputsCollectionEditor
             (item, itemIndex) =>
             {
                 void OpenComponentOverrides() =>
-                    OpenRuntimeComponentOverrides(owner, collection, itemIndex, item);
+                    OpenRuntimeComponentOverrides(owner, collection, address, itemIndex, item);
                 var content = CreateTestValueCollectionItemContent(
                     owner,
                     preview,
                     collection,
+                    address,
                     actions,
                     itemIndex,
                     item,
@@ -1488,7 +1494,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 {
                     itemSubcards = itemSubcards
                         .Concat(CreateChildRuntimeCollectionSubcards(
-                            owner, preview, item, actions, childCollections))
+                            owner, preview, item, address, actions, childCollections))
                         .ToList();
                 }
                 return new StructuredCollectionItemContent(content, itemSubcards);
@@ -1517,6 +1523,7 @@ internal sealed class RuntimeInputsCollectionEditor
         RuntimeInputOwner owner,
         JsonObject preview,
         JsonObject parentItem,
+        StructuredCollectionAddress parentAddress,
         IReadOnlyList<ComponentPreviewActionDefinition> actions,
         IReadOnlyList<RuntimeInputCollectionDefinition> childCollections)
     {
@@ -1531,10 +1538,22 @@ internal sealed class RuntimeInputsCollectionEditor
             {
                 var childItem = childItems[index];
                 var childItemId = ItemId(childItem, index);
+                var childAddress = parentAddress with
+                {
+                    Owners =
+                    [
+                        .. parentAddress.Owners,
+                        new StructuredCollectionOwnerSegment(
+                            parentAddress.CollectionJsonKey,
+                            parentId),
+                    ],
+                    CollectionJsonKey = childCollection.JsonKey,
+                };
                 var childContent = CreateTestValueCollectionItemContent(
                     owner,
                     preview,
                     childCollection,
+                    childAddress,
                     actions,
                     DesignPreviewTestValues.CollectionItems(preview, childCollection).ToList().FindIndex(
                         (candidate) => ItemId(candidate, 0) == childItemId),
@@ -1565,6 +1584,7 @@ internal sealed class RuntimeInputsCollectionEditor
         RuntimeInputOwner owner,
         JsonObject preview,
         RuntimeInputCollectionDefinition collection,
+        StructuredCollectionAddress address,
         IReadOnlyList<ComponentPreviewActionDefinition> actions,
         int itemIndex,
         JsonObject item,
@@ -1595,6 +1615,7 @@ internal sealed class RuntimeInputsCollectionEditor
             content.Children.Add(CreateTestValueCollectionControl(
                 owner,
                 collection,
+                address,
                 itemIndex,
                 item,
                 input,
@@ -1608,7 +1629,7 @@ internal sealed class RuntimeInputsCollectionEditor
         foreach (var groupId in topLevelGroupIds)
         {
             groupSubcards.Add(CreateTestValueCollectionGroupSubcard(
-                owner, preview, collection, itemIndex, item, groupId, groups, refreshActionVisibility));
+                owner, preview, collection, address, itemIndex, item, groupId, groups, refreshActionVisibility));
         }
         var componentItemDefinition = collection.ComponentItems;
         var componentVariantField = componentItemDefinition is null
@@ -1659,7 +1680,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 foreach (var nestedInput in nestedInputs.Where((input) => IsVisibleRuntimeValue(owner, input)))
                 {
                     nestedPanel.Children.Add(CreateNestedComponentInputControl(
-                        owner, collection, itemIndex, item, itemRuntimeContract, nestedInput));
+                        owner, collection, address, itemIndex, item, itemRuntimeContract, nestedInput));
                 }
                 groupSubcards.Add(new EditorInternalNavigationSection(
                     "componentInputs",
@@ -1784,6 +1805,7 @@ internal sealed class RuntimeInputsCollectionEditor
     private void OpenRuntimeComponentOverrides(
         RuntimeInputOwner owner,
         RuntimeInputCollectionDefinition collection,
+        StructuredCollectionAddress address,
         int itemIndex,
         JsonObject item)
     {
@@ -1810,6 +1832,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 (nextOverrides) => ApplyRuntimeComponentOverrides(
                     owner,
                     collection,
+                    address,
                     itemIndex,
                     item,
                     nextOverrides))));
@@ -1818,6 +1841,7 @@ internal sealed class RuntimeInputsCollectionEditor
     private async Task ApplyRuntimeComponentOverrides(
         RuntimeInputOwner owner,
         RuntimeInputCollectionDefinition collection,
+        StructuredCollectionAddress address,
         int itemIndex,
         JsonObject item,
         JsonObject nextOverrides)
@@ -1830,7 +1854,7 @@ internal sealed class RuntimeInputsCollectionEditor
         {
             await _instanceDocuments.UpdateCollectionValueAsync(
                 owner.Node.Id,
-                StorageCollectionKey(collection),
+                address,
                 itemId,
                 componentItems.OverridesJsonKey,
                 nextOverrides);
@@ -1838,7 +1862,7 @@ internal sealed class RuntimeInputsCollectionEditor
         item[componentItems.OverridesJsonKey] =
             nextOverrides.DeepClone();
         _setPreviewCollectionItemValues(
-            collection.JsonKey,
+            address,
             itemId,
             new Dictionary<string, JsonNode?>
             {
@@ -1857,6 +1881,7 @@ internal sealed class RuntimeInputsCollectionEditor
     private Control CreateTestValueCollectionControl(
         RuntimeInputOwner owner,
         RuntimeInputCollectionDefinition collection,
+        StructuredCollectionAddress address,
         int itemIndex,
         JsonObject item,
         ComponentInputDefinition input,
@@ -1905,6 +1930,7 @@ internal sealed class RuntimeInputsCollectionEditor
                     ? (_) => ApplyRuntimeComponentOverrides(
                         owner,
                         collection,
+                        address,
                         itemIndex,
                         item,
                         new JsonObject())
@@ -1917,11 +1943,12 @@ internal sealed class RuntimeInputsCollectionEditor
                 {
                     var nestedAddress = mutation.Address with
                     {
-                        RootStorageJsonKey = StorageCollectionKey(collection),
+                        RootStorageJsonKey = address.RootStorageJsonKey,
                         Owners =
                         [
+                            .. address.Owners,
                             new StructuredCollectionOwnerSegment(
-                                StorageCollectionKey(collection),
+                                address.CollectionJsonKey,
                                 ItemId(item, itemIndex)),
                             .. mutation.Address.Owners,
                         ],
@@ -1978,7 +2005,7 @@ internal sealed class RuntimeInputsCollectionEditor
             {
                 await _instanceDocuments.UpdateCollectionValuesAsync(
                     owner.Node.Id,
-                    StorageCollectionKey(collection),
+                    address,
                     itemId,
                     updates);
                 _onChanged();
@@ -1986,7 +2013,7 @@ internal sealed class RuntimeInputsCollectionEditor
             else
             {
                 _setPreviewCollectionItemValues(
-                    collection.JsonKey,
+                    address,
                     itemId,
                     updates);
             }
@@ -2037,6 +2064,7 @@ internal sealed class RuntimeInputsCollectionEditor
     private Control CreateNestedComponentInputControl(
         RuntimeInputOwner owner,
         RuntimeInputCollectionDefinition collection,
+        StructuredCollectionAddress address,
         int itemIndex,
         JsonObject item,
         JsonObject componentInputs,
@@ -2061,7 +2089,7 @@ internal sealed class RuntimeInputsCollectionEditor
             var inputsJsonKey = RuntimeContractJsonKey(collection);
             item[inputsJsonKey] = componentInputs.DeepClone();
             _setPreviewCollectionItemValues(
-                collection.JsonKey,
+                address,
                 ItemId(item, itemIndex),
                 new Dictionary<string, JsonNode?>
                 {
@@ -2080,7 +2108,7 @@ internal sealed class RuntimeInputsCollectionEditor
             {
                 await _instanceDocuments.UpdateCollectionValueAsync(
                     owner.Node.Id,
-                    StorageCollectionKey(collection),
+                    address,
                     itemId,
                     inputsJsonKey,
                     componentInputs);
@@ -2243,6 +2271,7 @@ internal sealed class RuntimeInputsCollectionEditor
         RuntimeInputOwner owner,
         JsonObject preview,
         RuntimeInputCollectionDefinition collection,
+        StructuredCollectionAddress address,
         int itemIndex,
         JsonObject item,
         string groupId,
@@ -2263,6 +2292,7 @@ internal sealed class RuntimeInputsCollectionEditor
             content.Children.Add(CreateTestValueCollectionControl(
                 owner,
                 collection,
+                address,
                 itemIndex,
                 item,
                 input,
@@ -2273,7 +2303,7 @@ internal sealed class RuntimeInputsCollectionEditor
         foreach (var childId in ComponentInputGrouping.ChildGroupIds(groupId, groups))
         {
             childSubcards.Add(CreateTestValueCollectionGroupSubcard(
-                owner, preview, collection, itemIndex, item, childId, groups, afterCommit));
+                owner, preview, collection, address, itemIndex, item, childId, groups, afterCommit));
         }
         return new EditorInternalNavigationSection(
             groupId,
@@ -2435,12 +2465,5 @@ internal sealed class RuntimeInputsCollectionEditor
 
         return current;
     }
-
-    private static string StorageCollectionKey(RuntimeInputCollectionDefinition collection) =>
-        !string.IsNullOrWhiteSpace(collection.StorageCollectionJsonKey)
-            ? collection.StorageCollectionJsonKey
-            : string.IsNullOrWhiteSpace(collection.SourceCollectionJsonKey)
-                ? collection.JsonKey
-                : collection.SourceCollectionJsonKey;
 
 }

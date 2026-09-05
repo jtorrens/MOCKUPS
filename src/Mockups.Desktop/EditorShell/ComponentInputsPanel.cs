@@ -350,28 +350,56 @@ internal sealed class ComponentPreviewInputSession
     }
 
     public void SetExternalCollectionItemValues(
-        string collectionJsonKey,
+        StructuredCollectionAddress address,
         string itemId,
         IReadOnlyDictionary<string, JsonNode?> values)
     {
         if (string.IsNullOrWhiteSpace(_scopeKey)
-            || string.IsNullOrWhiteSpace(collectionJsonKey)
+            || string.IsNullOrWhiteSpace(address.RootStorageJsonKey)
             || string.IsNullOrWhiteSpace(itemId)
             || values.Count == 0)
         {
             return;
         }
 
-        var item = ExternalCollectionItem(collectionJsonKey, itemId);
-        foreach (var (itemJsonKey, value) in values)
+        var testValues = _transientCollectionTestValuesByScope.GetValueOrDefault(_scopeKey);
+        if (testValues is null)
         {
-            if (string.IsNullOrWhiteSpace(itemJsonKey))
-            {
-                throw new InvalidOperationException(
-                    "Transient collection item value key cannot be empty.");
-            }
-            item[itemJsonKey] = value?.DeepClone();
+            testValues = new JsonObject();
+            _transientCollectionTestValuesByScope[_scopeKey] = testValues;
         }
+        var definitions = RuntimeInputDefinitionReader.ReadCollections(
+                _runtimePreview,
+                _config,
+                includeHidden: true)
+            .Where((candidate) => candidate.StorageJsonKey.Equals(
+                address.RootStorageJsonKey,
+                StringComparison.Ordinal))
+            .ToList();
+        if (definitions.Count != 1)
+        {
+            throw new InvalidOperationException(
+                $"Transient Runtime values have no unique structured collection '{address.RootStorageJsonKey}'.");
+        }
+        if (!testValues.TryGetPropertyValue(address.RootStorageJsonKey, out var collectionNode))
+        {
+            collectionNode = new JsonArray(
+                DesignPreviewTestValues.CollectionItems(_runtimePreview, definitions[0])
+                    .Select((item) => (JsonNode?)item.DeepClone())
+                    .ToArray());
+        }
+        var content = new JsonObject
+        {
+            [address.RootStorageJsonKey] = collectionNode?.DeepClone(),
+        };
+        var updated = StructuredCollectionMutationEngine.UpdateValues(
+            content,
+            definitions[0],
+            address,
+            itemId,
+            values);
+        testValues[address.RootStorageJsonKey] =
+            updated[address.RootStorageJsonKey]?.DeepClone();
         _refreshPreview();
     }
 

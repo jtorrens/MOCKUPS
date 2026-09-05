@@ -579,7 +579,7 @@ internal static class PreviewScreenTimelineSnapshotFactory
                 var field = definition["fields"]!.AsArray().OfType<JsonObject>()
                     .First(candidate => candidate["id"]?.GetValue<string>() == preFieldIds[0]);
                 serialEdit = new PreviewScreenTimelineSerialEdit(
-                    StorageCollectionKey(collection),
+                    collection.StorageJsonKey,
                     JsonPath.RequiredString(field, "jsonKey", "Timeline offset field"),
                     presenceDurationField is null
                         ? ""
@@ -720,13 +720,6 @@ internal static class PreviewScreenTimelineSnapshotFactory
             $"{collection.ItemLabel} {index + 1}",
             "",
             EditorIcons.Component).Title;
-
-    private static string StorageCollectionKey(RuntimeInputCollectionDefinition collection) =>
-        !string.IsNullOrWhiteSpace(collection.StorageCollectionJsonKey)
-            ? collection.StorageCollectionJsonKey
-            : string.IsNullOrWhiteSpace(collection.SourceCollectionJsonKey)
-                ? collection.JsonKey
-                : collection.SourceCollectionJsonKey;
 
     private static JsonObject Parse(string json, string owner) =>
         JsonPath.ParseRequiredObject(json, owner);

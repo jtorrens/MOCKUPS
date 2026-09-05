@@ -101,7 +101,15 @@ public sealed record RuntimeInputCollectionDefinition(
     string ItemRuntimeVariantReferencePath = "",
     string ItemRuntimeOwnerVariantReferencePath = "",
     RuntimeFixedComponentBoundaryDefinition? FixedComponentBoundary = null,
-    IReadOnlySet<string>? StructureOwnedFieldJsonKeys = null);
+    IReadOnlySet<string>? StructureOwnedFieldJsonKeys = null)
+{
+    public string StorageJsonKey =>
+        !string.IsNullOrWhiteSpace(StorageCollectionJsonKey)
+            ? StorageCollectionJsonKey
+            : !string.IsNullOrWhiteSpace(SourceCollectionJsonKey)
+                ? SourceCollectionJsonKey
+                : JsonKey;
+}
 
 public sealed record RuntimeFixedComponentBoundaryDefinition(
     string VariantReferenceJsonKey,

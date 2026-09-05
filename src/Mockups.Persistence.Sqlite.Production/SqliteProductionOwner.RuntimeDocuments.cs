@@ -76,52 +76,31 @@ internal sealed partial class SqliteProductionOwner
     internal void UpdateModuleInstanceRuntimeCollectionValues(
         SqliteConnection connection,
         string moduleInstanceId,
-        string collectionJsonKey,
+        StructuredCollectionAddress address,
         string itemId,
         IReadOnlyDictionary<string, JsonNode?> values,
         IReadOnlySet<string> projectActorIds)
     {
-        if (values.Count == 0)
-        {
-            throw new InvalidOperationException(
-                "A runtime collection update requires at least one explicit field.");
-        }
-
         var content = ParseJsonObject(
             _moduleInstanceRepository
                 .Get(connection, moduleInstanceId)
                 .ContentJson);
-        var item = RequireDeclaredRuntimeCollection(
-                connection,
-                moduleInstanceId,
-                collectionJsonKey,
-                content)
-            .OfType<JsonObject>()
-            .FirstOrDefault((candidate) =>
-                candidate["id"]?.GetValue<string>() == itemId)
-            ?? throw new InvalidOperationException(
-                $"Missing runtime collection item '{itemId}'.");
-        foreach (var (fieldJsonKey, value) in values)
-        {
-            if (string.IsNullOrWhiteSpace(fieldJsonKey))
-            {
-                throw new InvalidOperationException(
-                    "Runtime collection field keys cannot be empty.");
-            }
-
-            RequireDeclaredRuntimeCollectionField(
-                connection,
-                moduleInstanceId,
-                collectionJsonKey,
-                fieldJsonKey,
-                value);
-            item[fieldJsonKey] = value?.DeepClone();
-        }
+        var rootDefinition = RequireDeclaredRuntimeCollectionDefinition(
+            connection,
+            moduleInstanceId,
+            address.RootStorageJsonKey,
+            content);
+        var nextContent = StructuredCollectionMutationEngine.UpdateValues(
+            content,
+            rootDefinition,
+            address,
+            itemId,
+            values);
 
         SaveModuleInstanceRuntimeContent(
             connection,
             moduleInstanceId,
-            content,
+            nextContent,
             projectActorIds);
     }
 
@@ -685,7 +664,7 @@ internal sealed partial class SqliteProductionOwner
                 new JsonObject(),
                 includeHidden: true)
             .Where((collection) =>
-                RuntimeCollectionStorageKey(collection).Equals(
+                collection.StorageJsonKey.Equals(
                     collectionJsonKey,
                     StringComparison.Ordinal))
             .ToList();
@@ -696,14 +675,6 @@ internal sealed partial class SqliteProductionOwner
         }
         return matches[0];
     }
-
-    private static string RuntimeCollectionStorageKey(
-        RuntimeInputCollectionDefinition collection) =>
-        !string.IsNullOrWhiteSpace(collection.StorageCollectionJsonKey)
-            ? collection.StorageCollectionJsonKey
-            : !string.IsNullOrWhiteSpace(collection.SourceCollectionJsonKey)
-                ? collection.SourceCollectionJsonKey
-                : collection.JsonKey;
 
     private JsonObject RequireDeclaredRuntimeInput(
         SqliteConnection connection,
@@ -745,58 +716,6 @@ internal sealed partial class SqliteProductionOwner
             value,
             $"Module Instance '{moduleInstanceId}' runtime input '{jsonKey}'");
         return matches[0];
-    }
-
-    private void RequireDeclaredRuntimeCollectionField(
-        SqliteConnection connection,
-        string moduleInstanceId,
-        string collectionJsonKey,
-        string fieldJsonKey,
-        JsonNode? value)
-    {
-        var contract = ModuleInstanceRuntimeContract(
-            connection,
-            moduleInstanceId);
-        var collectionMatches =
-            RuntimeInputDocumentContract.DefinitionObjects(
-                    contract,
-                    "collections",
-                    $"Module Instance '{moduleInstanceId}' Runtime contract")
-                .Where((collection) =>
-                    RuntimeInputDocumentContract.CollectionStorageKey(
-                        collection) == collectionJsonKey)
-                .ToList();
-        if (collectionMatches.Count != 1)
-        {
-            throw new InvalidOperationException(
-                $"Module Instance '{moduleInstanceId}' has no unique declared runtime collection '{collectionJsonKey}'.");
-        }
-
-        var fieldMatches =
-            RuntimeInputDocumentContract.DefinitionObjects(
-                    collectionMatches[0],
-                    "fields",
-                    $"Runtime collection '{collectionJsonKey}'",
-                    required: true)
-                .Where(
-                    RuntimeInputDocumentContract
-                        .IsRuntimeDefinition)
-                .Where((field) =>
-                    JsonPath.RequiredString(
-                        field,
-                        "jsonKey",
-                        "Runtime collection field") == fieldJsonKey)
-                .ToList();
-        if (fieldMatches.Count != 1)
-        {
-            throw new InvalidOperationException(
-                $"Runtime collection '{collectionJsonKey}' has no unique declared runtime field '{fieldJsonKey}'.");
-        }
-
-        RuntimeInputValueKindContract.ValidateRuntimeValue(
-            fieldMatches[0],
-            value,
-            $"Module Instance '{moduleInstanceId}' runtime collection '{collectionJsonKey}' field '{fieldJsonKey}'");
     }
 
     private JsonObject ModuleInstanceRuntimeContract(

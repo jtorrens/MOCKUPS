@@ -10,7 +10,11 @@ public sealed record StructuredCollectionOwnerSegment(string CollectionJsonKey, 
 public sealed record StructuredCollectionAddress(
     string RootStorageJsonKey,
     IReadOnlyList<StructuredCollectionOwnerSegment> Owners,
-    string CollectionJsonKey);
+    string CollectionJsonKey)
+{
+    public static StructuredCollectionAddress Root(string collectionJsonKey) =>
+        new(collectionJsonKey, [], collectionJsonKey);
+}
 
 public abstract record StructuredCollectionMutation(StructuredCollectionAddress Address);
 
@@ -47,6 +51,60 @@ public sealed record StructuredCollectionMutationResult(
 
 public static class StructuredCollectionMutationEngine
 {
+    public static JsonObject UpdateValues(
+        JsonObject content,
+        RuntimeInputCollectionDefinition rootDefinition,
+        StructuredCollectionAddress address,
+        string itemId,
+        IReadOnlyDictionary<string, JsonNode?> values)
+    {
+        if (values.Count == 0)
+        {
+            throw new InvalidOperationException(
+                "A structured collection update requires at least one explicit field.");
+        }
+
+        var nextContent = content.DeepClone().AsObject();
+        var (collection, definition) = Resolve(nextContent, rootDefinition, address);
+        var itemIndex = RequiredIndex(collection, itemId, definition.Id);
+        var item = collection[itemIndex] as JsonObject
+            ?? throw new InvalidOperationException(
+                $"Structured collection '{definition.Id}' item '{itemId}' must be an object.");
+        foreach (var (fieldJsonKey, value) in values)
+        {
+            if (string.IsNullOrWhiteSpace(fieldJsonKey))
+            {
+                throw new InvalidOperationException(
+                    "Structured collection field keys cannot be empty.");
+            }
+
+            var matches = definition.Fields
+                .Where((field) =>
+                    field.Source == ComponentInputSource.Runtime
+                    && field.JsonKey.Equals(fieldJsonKey, StringComparison.Ordinal))
+                .ToList();
+            if (matches.Count != 1)
+            {
+                throw new InvalidOperationException(
+                    $"Structured collection '{definition.Id}' has no unique declared runtime field '{fieldJsonKey}'.");
+            }
+            item[fieldJsonKey] = value?.DeepClone();
+        }
+
+        var rootCollection = nextContent[address.RootStorageJsonKey] as JsonArray
+            ?? throw new InvalidOperationException(
+                $"Structured collection update requires root array '{address.RootStorageJsonKey}'.");
+        StructuredCollectionDocumentContract.Validate(
+            rootCollection,
+            rootDefinition,
+            $"Structured collection update '{rootDefinition.Id}'");
+        StructuredCollectionItemIdentity.ValidateUniqueTargetIds(
+            rootCollection,
+            rootDefinition,
+            $"Structured collection update '{rootDefinition.Id}'");
+        return nextContent;
+    }
+
     public static StructuredCollectionMutationResult Apply(
         JsonObject content,
         JsonObject animation,

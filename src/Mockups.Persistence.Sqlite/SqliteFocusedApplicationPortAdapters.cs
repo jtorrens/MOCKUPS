@@ -281,25 +281,25 @@ internal sealed class SqliteRuntimeInputInstancePort(
 
     public void UpdateModuleInstanceRuntimeCollectionValue(
         string moduleInstanceId,
-        string collectionJsonKey,
+        StructuredCollectionAddress address,
         string itemId,
         string fieldJsonKey,
         JsonNode? value) =>
         target.UpdateModuleInstanceRuntimeCollectionValue(
             moduleInstanceId,
-            collectionJsonKey,
+            address,
             itemId,
             fieldJsonKey,
             value);
 
     public void UpdateModuleInstanceRuntimeCollectionValues(
         string moduleInstanceId,
-        string collectionJsonKey,
+        StructuredCollectionAddress address,
         string itemId,
         IReadOnlyDictionary<string, JsonNode?> values) =>
         target.UpdateModuleInstanceRuntimeCollectionValues(
             moduleInstanceId,
-            collectionJsonKey,
+            address,
             itemId,
             values);
 

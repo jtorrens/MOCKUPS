@@ -55,7 +55,7 @@ internal static class SqliteProjectTestContextModuleInstanceExtensions
         engine.RuntimeInputInstances
             .UpdateModuleInstanceRuntimeCollectionValue(
                 moduleInstanceId,
-                collectionJsonKey,
+                StructuredCollectionAddress.Root(collectionJsonKey),
                 itemId,
                 fieldJsonKey,
                 value);
@@ -69,7 +69,7 @@ internal static class SqliteProjectTestContextModuleInstanceExtensions
         engine.RuntimeInputInstances
             .UpdateModuleInstanceRuntimeCollectionValues(
                 moduleInstanceId,
-                collectionJsonKey,
+                StructuredCollectionAddress.Root(collectionJsonKey),
                 itemId,
                 values);
 

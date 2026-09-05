@@ -48,7 +48,7 @@ internal sealed class EditorCollectionCardFactory : IDisposable
     private readonly Func<string, int> _currentPreviewActionFrame;
     private readonly Func<string, int> _maximumPreviewActionFrame;
     private readonly Action<string, string> _setPreviewTestValue;
-    private readonly Action<string, string, IReadOnlyDictionary<string, JsonNode?>>
+    private readonly Action<StructuredCollectionAddress, string, IReadOnlyDictionary<string, JsonNode?>>
         _setPreviewCollectionItemValues;
     private readonly Action<ProjectTreeNode, string, IReadOnlyList<JsonObject>> _setPreviewCollectionTestItems;
     private readonly Func<ProjectTreeNode, bool> _resetPreviewTestValues;
@@ -94,7 +94,7 @@ internal sealed class EditorCollectionCardFactory : IDisposable
         Func<string, int> currentPreviewActionFrame,
         Func<string, int> maximumPreviewActionFrame,
         Action<string, string> setPreviewTestValue,
-        Action<string, string, IReadOnlyDictionary<string, JsonNode?>>
+        Action<StructuredCollectionAddress, string, IReadOnlyDictionary<string, JsonNode?>>
             setPreviewCollectionItemValues,
         Action<ProjectTreeNode, string, IReadOnlyList<JsonObject>> setPreviewCollectionTestItems,
         Func<ProjectTreeNode, bool> resetPreviewTestValues,

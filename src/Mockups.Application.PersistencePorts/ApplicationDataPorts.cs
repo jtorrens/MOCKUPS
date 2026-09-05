@@ -388,13 +388,13 @@ public interface IRuntimeInputInstanceStore
         JsonNode? value);
     void UpdateModuleInstanceRuntimeCollectionValue(
         string moduleInstanceId,
-        string collectionJsonKey,
+        EditorShell.StructuredCollectionAddress address,
         string itemId,
         string fieldJsonKey,
         JsonNode? value);
     void UpdateModuleInstanceRuntimeCollectionValues(
         string moduleInstanceId,
-        string collectionJsonKey,
+        EditorShell.StructuredCollectionAddress address,
         string itemId,
         IReadOnlyDictionary<string, JsonNode?> values);
     EditorShell.StructuredCollectionMutationResult MutateModuleInstanceStructuredCollection(

@@ -548,7 +548,7 @@ static void ListRuntimeUpdatesFollowStableIdentityAfterReorder()
         .AsObject();
     firstRuntime["state"] = "inactive";
     session.SetExternalCollectionItemValues(
-        "items",
+        StructuredCollectionAddress.Root("items"),
         firstId,
         new Dictionary<string, JsonNode?>
         {
@@ -11475,20 +11475,20 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
         var beforeRejectedField = SHA256.HashData(File.ReadAllBytes(temporary));
         Throws<InvalidOperationException>(() => store.UpdateCollectionValueAsync(
             screen.Id,
-            collectionKey,
+            collectionAddress,
             testBId,
             "undeclared_field",
             JsonValue.Create("value")).GetAwaiter().GetResult());
         Throws<InvalidOperationException>(() => store.UpdateCollectionValueAsync(
             screen.Id,
-            collectionKey,
+            collectionAddress,
             testBId,
             "text",
             JsonValue.Create(42)).GetAwaiter().GetResult());
         SequenceEqual(beforeRejectedField, SHA256.HashData(File.ReadAllBytes(temporary)));
         store.UpdateCollectionValueAsync(
             screen.Id,
-            collectionKey,
+            collectionAddress,
             testBId,
             "text",
             JsonValue.Create("B2")).GetAwaiter().GetResult();
@@ -11497,7 +11497,7 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
         var explicitPresenceDuration = durationBeforePresenceResize + 600;
         store.UpdateCollectionValueAsync(
             screen.Id,
-            collectionKey,
+            collectionAddress,
             testBId,
             "visibleDurationFrames",
             JsonValue.Create(explicitPresenceDuration)).GetAwaiter().GetResult();
@@ -16930,7 +16930,7 @@ static void ConversationMessageActorsFollowDirectionContract()
             operations);
         store.UpdateCollectionValuesAsync(
             screen.Id,
-            "messages",
+            StructuredCollectionAddress.Root("messages"),
             incomingId,
             new Dictionary<string, JsonNode?>
             {
@@ -16947,7 +16947,7 @@ static void ConversationMessageActorsFollowDirectionContract()
 
         store.UpdateCollectionValuesAsync(
             screen.Id,
-            "messages",
+            StructuredCollectionAddress.Root("messages"),
             incomingId,
             new Dictionary<string, JsonNode?>
             {

@@ -2071,12 +2071,12 @@ internal sealed class EditorPreviewController : IDisposable
     }
 
     public void SetDesignPreviewCollectionItemValues(
-        string collectionJsonKey,
+        StructuredCollectionAddress address,
         string itemId,
         IReadOnlyDictionary<string, JsonNode?> values)
     {
         _designInputsPanel.SetExternalCollectionItemValues(
-            collectionJsonKey,
+            address,
             itemId,
             values);
     }

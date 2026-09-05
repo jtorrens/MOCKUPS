@@ -57,7 +57,7 @@ internal sealed class RuntimeInputInstanceDocumentStore
 
     public Task UpdateCollectionValueAsync(
         string moduleInstanceId,
-        string collectionJsonKey,
+        StructuredCollectionAddress address,
         string itemId,
         string fieldJsonKey,
         JsonNode? value)
@@ -66,7 +66,7 @@ internal sealed class RuntimeInputInstanceDocumentStore
         return _operations.ExecuteAsync(
             () => _database.UpdateModuleInstanceRuntimeCollectionValue(
                 moduleInstanceId,
-                collectionJsonKey,
+                address,
                 itemId,
                 fieldJsonKey,
                 valueSnapshot));
@@ -74,7 +74,7 @@ internal sealed class RuntimeInputInstanceDocumentStore
 
     public Task UpdateCollectionValuesAsync(
         string moduleInstanceId,
-        string collectionJsonKey,
+        StructuredCollectionAddress address,
         string itemId,
         IReadOnlyDictionary<string, JsonNode?> values)
     {
@@ -87,7 +87,7 @@ internal sealed class RuntimeInputInstanceDocumentStore
         return _operations.ExecuteAsync(
             () => _database.UpdateModuleInstanceRuntimeCollectionValues(
                 moduleInstanceId,
-                collectionJsonKey,
+                address,
                 itemId,
                 valuesSnapshot));
     }

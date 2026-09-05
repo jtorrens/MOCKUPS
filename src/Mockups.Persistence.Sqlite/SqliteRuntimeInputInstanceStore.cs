@@ -29,13 +29,13 @@ internal sealed class SqliteRuntimeInputInstanceStore(
 
     public void UpdateModuleInstanceRuntimeCollectionValue(
         string moduleInstanceId,
-        string collectionJsonKey,
+        StructuredCollectionAddress address,
         string itemId,
         string fieldJsonKey,
         JsonNode? value) =>
         UpdateModuleInstanceRuntimeCollectionValues(
             moduleInstanceId,
-            collectionJsonKey,
+            address,
             itemId,
             new Dictionary<string, JsonNode?>
             {
@@ -44,7 +44,7 @@ internal sealed class SqliteRuntimeInputInstanceStore(
 
     public void UpdateModuleInstanceRuntimeCollectionValues(
         string moduleInstanceId,
-        string collectionJsonKey,
+        StructuredCollectionAddress address,
         string itemId,
         IReadOnlyDictionary<string, JsonNode?> values)
     {
@@ -52,7 +52,7 @@ internal sealed class SqliteRuntimeInputInstanceStore(
         production.UpdateModuleInstanceRuntimeCollectionValues(
             connection,
             moduleInstanceId,
-            collectionJsonKey,
+            address,
             itemId,
             values,
             ModuleInstanceProjectActorIds(
