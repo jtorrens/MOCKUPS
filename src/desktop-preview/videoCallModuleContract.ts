@@ -27,7 +27,7 @@ export interface VideoCallParticipant {
   showFallbackStatus: boolean;
   surface: SurfaceDesignContract;
   media: MediaDesignContract;
-  avatar: AvatarDesignContract;
+  avatar?: AvatarDesignContract;
   statusLabel: LabelDesignContract;
 }
 

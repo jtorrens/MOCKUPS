@@ -96,7 +96,8 @@ function participantNode(
   if (participant.showSurface) children.push(surfaceComponentToRenderableAt(payload, participant.surface, box));
   if (participant.showMedia && participant.videoPresent) children.push(mediaComponentToRenderableAt(payload, participant.media, content));
   if (!participant.videoPresent) {
-    const avatarSize = participant.showFallbackAvatar
+    const avatar = participant.avatar;
+    const avatarSize = participant.showFallbackAvatar && avatar
       ? Math.min(participant.avatarSize * scale, content.width, content.height)
       : 0;
     const statusSize = participant.showFallbackStatus
@@ -107,7 +108,7 @@ function participantNode(
       : 0;
     const fallbackHeight = avatarSize + gap + statusSize.height;
     const fallbackY = content.y + (content.height - fallbackHeight) * 0.5;
-    if (avatarSize > 0) children.push(avatarComponentToRenderableAt(payload, participant.avatar, {
+    if (avatarSize > 0 && avatar) children.push(avatarComponentToRenderableAt(payload, avatar, {
       x: content.x + (content.width - avatarSize) * 0.5,
       y: fallbackY,
       width: avatarSize,

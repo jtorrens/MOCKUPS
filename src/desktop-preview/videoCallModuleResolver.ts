@@ -32,7 +32,10 @@ export function resolveVideoCallModule(payload: DesignPreviewPayload): VideoCall
       const role = participantRole(requiredString(item, "role", `module.core.videoCall.runtime.participants[${index}].role`));
       const itemOwner = `module.core.videoCall.runtime.participants[${index}]`;
       const videoPresent = requiredBoolean(item, "videoPresent", `${itemOwner}.videoPresent`);
-      const actor = requiredRecord(item, "actor", `${itemOwner}.actor`);
+      const actorId = requiredPossiblyEmptyString(item, "actorId", `${itemOwner}.actorId`);
+      const actor = actorId.trim()
+        ? requiredRecord(item, "actor", `${itemOwner}.actor`)
+        : undefined;
       const avatarConfig = structuredClone(participantAvatarConfig);
       requiredRecord(avatarConfig, "avatar", "module.core.videoCall.participantAvatar").defaultSize = avatarSize;
       const statusOverride = requiredPossiblyEmptyString(item, "statusTextOverride", `${itemOwner}.statusTextOverride`);
@@ -63,7 +66,7 @@ export function resolveVideoCallModule(payload: DesignPreviewPayload): VideoCall
           controlsElapsedMs: 60000,
           motionElapsedMs: 0,
         }, bases, `${itemOwner}.media`),
-        avatar: resolveAvatarComponentFromRecords(avatarConfig, {
+        avatar: actor ? resolveAvatarComponentFromRecords(avatarConfig, {
           actor,
           sampleSubtext: "",
           showBadge: false,
@@ -73,7 +76,7 @@ export function resolveVideoCallModule(payload: DesignPreviewPayload): VideoCall
           badgeSize: 20,
           badgeBackgroundPaletteColor: "blue",
           badgeContentPaletteColor: "gray_100",
-        }, bases, `${itemOwner}.avatar`),
+        }, bases, `${itemOwner}.avatar`) : undefined,
         statusLabel: resolveLabelComponentFromRecords(
           participantStatusConfig,
           literalLabelPreview(statusOverride.trim() || defaultStatusText),
