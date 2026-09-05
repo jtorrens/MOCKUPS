@@ -14,6 +14,7 @@ internal sealed class ShotModuleInstancesCollectionEditor
     private readonly IModuleInstanceCollectionStore _database;
     private readonly IModuleInstanceTimelineStore _timeline;
     private readonly EditorOperationCoordinator _operations;
+    private readonly IEditorShellMessageSink _messages;
     private readonly Action _onChanged;
     private readonly Action<ProjectTreeNode> _reloadAndSelect;
     private readonly Func<string, Task<ShotModuleInstanceDraft?>> _defineModuleInstance;
@@ -27,6 +28,7 @@ internal sealed class ShotModuleInstancesCollectionEditor
         IModuleInstanceTimelineStore timeline,
         IModuleInstanceThemeTokenQuery moduleInstanceThemes,
         EditorOperationCoordinator operations,
+        IEditorShellMessageSink messages,
         Action onChanged,
         Action<ProjectTreeNode> reloadAndSelect,
         Func<string, Task<ShotModuleInstanceDraft?>> defineModuleInstance,
@@ -37,6 +39,7 @@ internal sealed class ShotModuleInstancesCollectionEditor
         _database = database;
         _timeline = timeline;
         _operations = operations;
+        _messages = messages;
         _onChanged = onChanged;
         _reloadAndSelect = reloadAndSelect;
         _defineModuleInstance = defineModuleInstance;
@@ -54,12 +57,17 @@ internal sealed class ShotModuleInstancesCollectionEditor
         var add = EditorCollectionItemControls.CreateAddButton("Add Screen");
         add.Click += async (_, _) =>
         {
-            var draft = await _defineModuleInstance(shot.Id);
-            if (draft is null) return;
-            var added = await _operations.ExecuteAsync(
-                () => _database.AddModuleInstance(shot, draft));
-            _onChanged();
-            _reloadAndSelect(added);
+            await RunMutationAsync(
+                "Add Screen",
+                async () =>
+                {
+                    var draft = await _defineModuleInstance(shot.Id);
+                    if (draft is null) return;
+                    var added = await _operations.ExecuteAsync(
+                        () => _database.AddModuleInstance(shot, draft));
+                    _onChanged();
+                    _reloadAndSelect(added);
+                });
         };
 
         return DeferredEditorCard.Create(
@@ -177,11 +185,16 @@ internal sealed class ShotModuleInstancesCollectionEditor
         var duplicate = EditorCollectionItemControls.CreateDuplicateButton($"Duplicate {slot.Name}");
         duplicate.Click += async (_, _) =>
         {
-            var copy = await _operations.ExecuteAsync(
-                () => _database.Duplicate(
-                    ScreenNode(shot, slot)));
-            _onChanged();
-            _reloadAndSelect(copy);
+            await RunMutationAsync(
+                "Duplicate Screen",
+                async () =>
+                {
+                    var copy = await _operations.ExecuteAsync(
+                        () => _database.Duplicate(
+                            ScreenNode(shot, slot)));
+                    _onChanged();
+                    _reloadAndSelect(copy);
+                });
         };
         Grid.SetColumn(duplicate, 4);
         row.Children.Add(duplicate);
@@ -189,12 +202,17 @@ internal sealed class ShotModuleInstancesCollectionEditor
         var delete = EditorCollectionItemControls.CreateDeleteButton($"Delete {slot.Name}");
         delete.Click += async (_, _) =>
         {
-            var instance = ScreenNode(shot, slot);
-            if (!await _confirmDelete(instance)) return;
-            await _operations.ExecuteAsync(
-                () => _database.Delete(instance));
-            _onChanged();
-            _reloadAndSelect(shot);
+            await RunMutationAsync(
+                "Delete Screen",
+                async () =>
+                {
+                    var instance = ScreenNode(shot, slot);
+                    if (!await _confirmDelete(instance)) return;
+                    await _operations.ExecuteAsync(
+                        () => _database.Delete(instance));
+                    _onChanged();
+                    _reloadAndSelect(shot);
+                });
         };
         Grid.SetColumn(delete, 5);
         row.Children.Add(delete);
@@ -206,14 +224,37 @@ internal sealed class ShotModuleInstancesCollectionEditor
             var button = EditorCollectionItemControls.CreateMoveButton(up, enabled: !disabled);
             button.Click += async (_, _) =>
             {
-                await _operations.ExecuteAsync(
-                    () => _database.MoveModuleInstance(
-                        slot.Id,
-                        offset));
-                _onChanged();
-                _reloadAndSelect(shot);
+                await RunMutationAsync(
+                    "Move Screen",
+                    async () =>
+                    {
+                        await _operations.ExecuteAsync(
+                            () => _database.MoveModuleInstance(
+                                slot.Id,
+                                offset));
+                        _onChanged();
+                        _reloadAndSelect(shot);
+                    });
             };
             return button;
+        }
+    }
+
+    private async Task RunMutationAsync(
+        string operation,
+        Func<Task> mutation)
+    {
+        try
+        {
+            await mutation();
+        }
+        catch (OperationCanceledException)
+        {
+            // The editor session no longer owns the queued operation.
+        }
+        catch (Exception exception)
+        {
+            _messages.Error(operation, exception);
         }
     }
 

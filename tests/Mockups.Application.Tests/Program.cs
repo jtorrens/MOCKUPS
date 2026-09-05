@@ -855,6 +855,122 @@ static void ProjectedRuntimeCollectionsReconcileById()
     True(!persisted[1]!.AsObject().ContainsKey("label"));
     Equal("default", persisted[0]?["value"]?.GetValue<string>());
     Equal("authored", persisted[1]?["value"]?.GetValue<string>());
+
+    var nestedDefinition = new JsonObject
+    {
+        ["id"] = "rows",
+        ["label"] = "Rows",
+        ["jsonKey"] = "rows",
+        ["itemLabel"] = "Row",
+        ["canEditStructure"] = false,
+        ["fixedItemCount"] = 1,
+        ["fields"] = new JsonArray
+        {
+            new JsonObject
+            {
+                ["id"] = "label",
+                ["label"] = "Label",
+                ["jsonKey"] = "label",
+                ["kind"] = "text",
+                ["valueKind"] = nameof(ValueKind.StringSingleLine),
+                ["defaultValue"] = "",
+                ["source"] = "variant",
+            },
+            new JsonObject
+            {
+                ["id"] = "slots",
+                ["label"] = "Slots",
+                ["jsonKey"] = "slots",
+                ["kind"] = "collection",
+                ["valueKind"] = nameof(ValueKind.StructuredCollection),
+                ["defaultValue"] = "[]",
+                ["source"] = "runtime",
+                ["structuredCollection"] = new JsonObject
+                {
+                    ["id"] = "slots",
+                    ["label"] = "Slots",
+                    ["jsonKey"] = "slots",
+                    ["itemLabel"] = "Slot",
+                    ["canEditStructure"] = false,
+                    ["fixedItemCount"] = 1,
+                    ["fields"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["id"] = "kind",
+                            ["label"] = "Kind",
+                            ["jsonKey"] = "kind",
+                            ["kind"] = "text",
+                            ["valueKind"] = nameof(ValueKind.StringReadOnly),
+                            ["defaultValue"] = "none",
+                            ["source"] = "variant",
+                        },
+                        new JsonObject
+                        {
+                            ["id"] = "actorId",
+                            ["label"] = "Actor",
+                            ["jsonKey"] = "actorId",
+                            ["kind"] = "recordReference",
+                            ["valueKind"] = nameof(ValueKind.RecordReference),
+                            ["defaultValue"] = "actor_default",
+                            ["tableId"] = "actors",
+                            ["resolvedJsonKey"] = "actor",
+                            ["source"] = "runtime",
+                        },
+                    },
+                    ["structureProjection"] = new JsonObject
+                    {
+                        ["sourceConfigPath"] = "contentRow.slots",
+                        ["sourceIdJsonKey"] = "id",
+                        ["runtimeIdJsonKey"] = "id",
+                        ["fieldBindings"] = new JsonObject
+                        {
+                            ["kind"] = "kind",
+                        },
+                    },
+                },
+            },
+        },
+        ["structureProjection"] = new JsonObject
+        {
+            ["sourceConfigPath"] = "rows",
+            ["sourceIdJsonKey"] = "id",
+            ["runtimeIdJsonKey"] = "id",
+            ["fieldBindings"] = new JsonObject
+            {
+                ["label"] = "label",
+            },
+        },
+    };
+    var nestedDefaults = new JsonArray
+    {
+        new JsonObject
+        {
+            ["id"] = "row1",
+            ["label"] = "Row 1",
+            ["slots"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["id"] = "slot1",
+                    ["kind"] = "avatar",
+                    ["actorId"] = "actor_alex",
+                    ["actor"] = new JsonObject { ["name"] = "Alex" },
+                },
+            },
+        },
+    };
+    var nestedPersisted =
+        RuntimeInputDocumentContract.ReconcileProjectedCollection(
+            null,
+            nestedDefaults,
+            nestedDefinition);
+    var nestedRow = nestedPersisted[0]!.AsObject();
+    True(!nestedRow.ContainsKey("label"));
+    var nestedSlot = nestedRow["slots"]![0]!.AsObject();
+    Equal("actor_alex", nestedSlot["actorId"]?.GetValue<string>());
+    True(!nestedSlot.ContainsKey("kind"));
+    True(!nestedSlot.ContainsKey("actor"));
 }
 
 static void ComponentInputBindingsProjectExactStructuredRuntimeValues()

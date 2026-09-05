@@ -93,6 +93,26 @@ public static class RuntimeInputDocumentContract
 
         var result = new JsonArray();
         var structureOwnedKeys = StructureOwnedKeys(collectionDefinition);
+        RuntimeInputCollectionDefinition? typedDefinition = null;
+        IReadOnlyDictionary<string, ComponentInputDefinition>? runtimeFields = null;
+        if (collectionDefinition?["structureProjection"] is JsonObject)
+        {
+            typedDefinition = RuntimeInputDefinitionReader.ReadCollections(
+                    new JsonObject
+                    {
+                        ["collections"] = new JsonArray(
+                            collectionDefinition.DeepClone()),
+                    },
+                    new JsonObject(),
+                    includeHidden: true)
+                .Single();
+            runtimeFields = typedDefinition.Fields
+                .Where((field) =>
+                    field.Source == ComponentInputSource.Runtime)
+                .ToDictionary(
+                    (field) => field.JsonKey,
+                    StringComparer.Ordinal);
+        }
         for (var index = 0; index < defaults.Count; index++)
         {
             var defaultItem = defaults[index] as JsonObject
@@ -139,11 +159,48 @@ public static class RuntimeInputDocumentContract
                 }
             }
 
+            if (runtimeFields is not null)
+            {
+                foreach (var (key, field) in runtimeFields)
+                {
+                    if (next[key] is { } value)
+                    {
+                        next[key] = StoredValue(
+                            field,
+                            value,
+                            $"Projected runtime collection item '{id}' field '{key}'");
+                    }
+                }
+            }
+
             result.Add(next);
+        }
+
+        if (typedDefinition is not null)
+        {
+            StructuredCollectionDocumentContract.Validate(
+                result,
+                typedDefinition,
+                "Projected runtime collection");
         }
 
         return result;
     }
+
+    private static JsonNode StoredValue(
+        ComponentInputDefinition? field,
+        JsonNode value,
+        string owner) =>
+        field?.ValueKind == ValueKind.StructuredCollection
+            ? StructuredCollectionDocumentContract.StoredClone(
+                value as JsonArray
+                    ?? throw new InvalidOperationException(
+                        $"{owner} must be an array."),
+                field.StructuredCollection
+                    ?? throw new InvalidOperationException(
+                        $"{owner} requires a collection contract."),
+                owner)
+            : value.DeepClone();
 
     private static IReadOnlySet<string> StructureOwnedKeys(
         JsonObject? collectionDefinition)

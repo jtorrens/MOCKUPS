@@ -197,6 +197,7 @@ internal sealed class EditorCollectionCardFactory : IDisposable
                 _timeline,
                 _moduleInstanceThemes,
                 _operations,
+                _messages,
                 _onChanged,
                 _reloadAndSelect,
                 _domainDialogs.DefineModuleInstanceForShot,
