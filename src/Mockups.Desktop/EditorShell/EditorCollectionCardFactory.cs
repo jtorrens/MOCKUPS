@@ -48,8 +48,10 @@ internal sealed class EditorCollectionCardFactory : IDisposable
     private readonly Func<string, int> _currentPreviewActionFrame;
     private readonly Func<string, int> _maximumPreviewActionFrame;
     private readonly Action<string, string> _setPreviewTestValue;
+    private readonly Action<string> _discardCommittedProductionRuntimeValue;
     private readonly Action<StructuredCollectionAddress, string, IReadOnlyDictionary<string, JsonNode?>>
         _setPreviewCollectionItemValues;
+    private readonly Action<string> _discardCommittedProductionRuntimeCollection;
     private readonly Action<ProjectTreeNode, string, IReadOnlyList<JsonObject>> _setPreviewCollectionTestItems;
     private readonly Func<ProjectTreeNode, bool> _resetPreviewTestValues;
     private readonly PreviewPlaybackState _previewPlaybackState;
@@ -94,8 +96,10 @@ internal sealed class EditorCollectionCardFactory : IDisposable
         Func<string, int> currentPreviewActionFrame,
         Func<string, int> maximumPreviewActionFrame,
         Action<string, string> setPreviewTestValue,
+        Action<string> discardCommittedProductionRuntimeValue,
         Action<StructuredCollectionAddress, string, IReadOnlyDictionary<string, JsonNode?>>
             setPreviewCollectionItemValues,
+        Action<string> discardCommittedProductionRuntimeCollection,
         Action<ProjectTreeNode, string, IReadOnlyList<JsonObject>> setPreviewCollectionTestItems,
         Func<ProjectTreeNode, bool> resetPreviewTestValues,
         PreviewPlaybackState previewPlaybackState,
@@ -137,7 +141,11 @@ internal sealed class EditorCollectionCardFactory : IDisposable
         _currentPreviewActionFrame = currentPreviewActionFrame;
         _maximumPreviewActionFrame = maximumPreviewActionFrame;
         _setPreviewTestValue = setPreviewTestValue;
+        _discardCommittedProductionRuntimeValue =
+            discardCommittedProductionRuntimeValue;
         _setPreviewCollectionItemValues = setPreviewCollectionItemValues;
+        _discardCommittedProductionRuntimeCollection =
+            discardCommittedProductionRuntimeCollection;
         _setPreviewCollectionTestItems = setPreviewCollectionTestItems;
         _resetPreviewTestValues = resetPreviewTestValues;
         _previewPlaybackState = previewPlaybackState;
@@ -371,7 +379,9 @@ internal sealed class EditorCollectionCardFactory : IDisposable
             _currentPreviewActionFrame,
             _maximumPreviewActionFrame,
             _setPreviewTestValue,
+            _discardCommittedProductionRuntimeValue,
             _setPreviewCollectionItemValues,
+            _discardCommittedProductionRuntimeCollection,
             _setPreviewCollectionTestItems,
             _resetPreviewTestValues,
             _domainDialogs.ConfirmTestValueDefaults,

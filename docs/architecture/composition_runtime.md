@@ -42,6 +42,12 @@ metadata.
   definition.
 - Editing a Production payload updates only the selected Screen.
 
+A Production control may publish a temporary value while an edit is in
+progress, but a successful commit discards that exact scalar or root
+collection overlay before refreshing Preview. The refreshed Production image
+is prepared from the persisted Screen document; a Design Test Value must never
+remain as a parallel Production value or override a later committed value.
+
 Preview controls do not create fields or reinterpret their ownership.
 `RuntimeInputDefinitionReader` in Application is the single parser for scalar
 and collection declarations. Persistence and Desktop consume its immutable

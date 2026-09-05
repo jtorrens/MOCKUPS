@@ -61,8 +61,10 @@ internal sealed class RuntimeInputsCollectionEditor
     private readonly Func<string, int> _currentActionFrame;
     private readonly Func<string, int> _maximumActionFrame;
     private readonly Action<string, string> _setPreviewTestValue;
+    private readonly Action<string> _discardCommittedProductionRuntimeValue;
     private readonly Action<StructuredCollectionAddress, string, IReadOnlyDictionary<string, JsonNode?>>
         _setPreviewCollectionItemValues;
+    private readonly Action<string> _discardCommittedProductionRuntimeCollection;
     private readonly Action<ProjectTreeNode, string, IReadOnlyList<JsonObject>> _setPreviewCollectionTestItems;
     private readonly Func<ProjectTreeNode, bool> _resetTestValues;
     private readonly Func<string, IReadOnlyList<string>, Task<bool>> _confirmSaveDefaults;
@@ -108,8 +110,10 @@ internal sealed class RuntimeInputsCollectionEditor
         Func<string, int> currentActionFrame,
         Func<string, int> maximumActionFrame,
         Action<string, string> setPreviewTestValue,
+        Action<string> discardCommittedProductionRuntimeValue,
         Action<StructuredCollectionAddress, string, IReadOnlyDictionary<string, JsonNode?>>
             setPreviewCollectionItemValues,
+        Action<string> discardCommittedProductionRuntimeCollection,
         Action<ProjectTreeNode, string, IReadOnlyList<JsonObject>> setPreviewCollectionTestItems,
         Func<ProjectTreeNode, bool> resetTestValues,
         Func<string, IReadOnlyList<string>, Task<bool>> confirmSaveDefaults,
@@ -153,7 +157,11 @@ internal sealed class RuntimeInputsCollectionEditor
         _currentActionFrame = currentActionFrame;
         _maximumActionFrame = maximumActionFrame;
         _setPreviewTestValue = setPreviewTestValue;
+        _discardCommittedProductionRuntimeValue =
+            discardCommittedProductionRuntimeValue;
         _setPreviewCollectionItemValues = setPreviewCollectionItemValues;
+        _discardCommittedProductionRuntimeCollection =
+            discardCommittedProductionRuntimeCollection;
         _setPreviewCollectionTestItems = setPreviewCollectionTestItems;
         _resetTestValues = resetTestValues;
         _confirmSaveDefaults = confirmSaveDefaults;
@@ -662,6 +670,8 @@ internal sealed class RuntimeInputsCollectionEditor
                     owner.Node.Id,
                     input.JsonKey,
                     DesignPreviewTestValues.ValueNode(input, next));
+                _discardCommittedProductionRuntimeValue(
+                    input.JsonKey);
                 _onChanged();
             }
             else
@@ -959,6 +969,8 @@ internal sealed class RuntimeInputsCollectionEditor
                     itemId,
                     runtimeContractJsonKey,
                     runtimeContract);
+                _discardCommittedProductionRuntimeCollection(
+                    collection.StorageJsonKey);
                 _onChanged();
                 return;
             }
@@ -1858,21 +1870,26 @@ internal sealed class RuntimeInputsCollectionEditor
                 itemId,
                 componentItems.OverridesJsonKey,
                 nextOverrides);
+            _discardCommittedProductionRuntimeCollection(
+                address.RootStorageJsonKey);
         }
         item[componentItems.OverridesJsonKey] =
             nextOverrides.DeepClone();
-        _setPreviewCollectionItemValues(
-            address,
-            itemId,
-            new Dictionary<string, JsonNode?>
-            {
-                [componentItems.OverridesJsonKey] = nextOverrides,
-            });
         if (owner.IsInstance)
         {
             _onChanged();
         }
-        _testValuesChanged();
+        else
+        {
+            _setPreviewCollectionItemValues(
+                address,
+                itemId,
+                new Dictionary<string, JsonNode?>
+                {
+                    [componentItems.OverridesJsonKey] = nextOverrides,
+                });
+            _testValuesChanged();
+        }
     }
 
     private static JsonObject CloneObject(JsonObject source) =>
@@ -2144,6 +2161,8 @@ internal sealed class RuntimeInputsCollectionEditor
                     itemId,
                     inputsJsonKey,
                     componentInputs);
+                _discardCommittedProductionRuntimeCollection(
+                    address.RootStorageJsonKey);
                 _onChanged();
             }
         };

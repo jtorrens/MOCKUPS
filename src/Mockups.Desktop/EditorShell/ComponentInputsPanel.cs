@@ -349,6 +349,39 @@ internal sealed class ComponentPreviewInputSession
         _refreshPreview();
     }
 
+    public void DiscardExternalInputValue(string jsonKey)
+    {
+        if (string.IsNullOrWhiteSpace(_scopeKey)
+            || string.IsNullOrWhiteSpace(jsonKey))
+        {
+            return;
+        }
+
+        var key = $"{_scopeKey}:{jsonKey}";
+        _values.Remove(key);
+        _inputDefaults.Remove(key);
+    }
+
+    public void DiscardExternalCollectionValues(
+        string rootStorageJsonKey)
+    {
+        if (string.IsNullOrWhiteSpace(_scopeKey)
+            || string.IsNullOrWhiteSpace(rootStorageJsonKey)
+            || !_transientCollectionTestValuesByScope.TryGetValue(
+                _scopeKey,
+                out var testValues))
+        {
+            return;
+        }
+
+        testValues.Remove(rootStorageJsonKey);
+        if (testValues.Count == 0)
+        {
+            _transientCollectionTestValuesByScope.Remove(
+                _scopeKey);
+        }
+    }
+
     public void SetExternalCollectionItemValues(
         StructuredCollectionAddress address,
         string itemId,

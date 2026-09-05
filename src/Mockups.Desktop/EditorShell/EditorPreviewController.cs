@@ -2074,6 +2074,19 @@ internal sealed class EditorPreviewController : IDisposable
         _designInputsPanel.SetExternalInputValue(jsonKey, value);
     }
 
+    public void DiscardCommittedProductionRuntimeValue(
+        string jsonKey)
+    {
+        _designInputsPanel.DiscardExternalInputValue(jsonKey);
+    }
+
+    public void DiscardCommittedProductionRuntimeCollection(
+        string rootStorageJsonKey)
+    {
+        _designInputsPanel.DiscardExternalCollectionValues(
+            rootStorageJsonKey);
+    }
+
     public void SetDesignPreviewCollectionItemValues(
         StructuredCollectionAddress address,
         string itemId,

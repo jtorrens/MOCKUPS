@@ -152,6 +152,7 @@ var tests = new (string Name, Action Run)[]
     ("declared RecordReference Overrides use the shared action", DeclaredRecordReferenceOverridesUseSharedAction),
     ("Preview payload rejects incomplete Production context without selector fallbacks", PreviewPayloadRejectsIncompleteProductionContext),
     ("Production payload preserves its explicit Actor and animation documents", ProductionPayloadPreservesActorAndAnimation),
+    ("Production Runtime commits discard transient Preview values", ProductionRuntimeCommitsDiscardTransientPreviewValues),
     ("Shot Screen transitions reuse simultaneous boundary Motion", ShotScreenTransitionsReuseBoundaryMotion),
     ("Production playback selects exact owner frames from its prepared snapshot", ProductionPlaybackSelectsPreparedOwnerFrames),
     ("Conversation Play messages advances the root Module owner frame", ConversationPlayMessagesAdvancesRootOwnerFrame),
@@ -16544,6 +16545,141 @@ static void ProductionPayloadPreservesActorAndAnimation()
         Equal(expected.ThemeMode, actual.ThemeMode);
         Equal(expected.DeviceId, actual.DeviceId);
         Equal(expected.FrameRate, actual.FrameRate);
+    }
+}
+
+static void ProductionRuntimeCommitsDiscardTransientPreviewValues()
+{
+    var sourcePath = ParityDatabasePath();
+    var temporary = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-production-runtime-preview-{Guid.NewGuid():N}.sqlite");
+    File.Copy(sourcePath, temporary, overwrite: true);
+    try
+    {
+        var database = new SqliteProjectTestContext(temporary);
+        var nodes = Descendants(database.LoadProjectTree()).ToList();
+        var screen = nodes.First((node) =>
+            node.Kind == ProjectTreeNodeKind.ModuleInstance
+            && database.GetModuleInstanceVariantSettings(node.Id)
+                .RecordClassId == ModuleRuntimeDocumentContracts.ConversationRecordClassId);
+        var projectId = database
+            .GetModuleInstanceVariantSettings(screen.Id)
+            .ProjectId;
+        var actorIds = nodes
+            .Where((node) => node.Kind == ProjectTreeNodeKind.Actor)
+            .Select((node) => node.Id)
+            .Distinct(StringComparer.Ordinal)
+            .Take(2)
+            .ToList();
+        Equal(2, actorIds.Count);
+
+        database.UpdateModuleInstanceRuntimeValue(
+            screen.Id,
+            "actorId",
+            JsonValue.Create(actorIds[0]));
+        var payload = Required(
+            CreatePreviewPayload(database, screen, null));
+        var session = new ComponentPreviewInputSession(
+            database.Design,
+            database.DictionaryContext,
+            database.Resources,
+            database.ProjectPaths,
+            () => { });
+        session.UpdateForPayload(payload, projectId);
+
+        void CommitActor(string actorId)
+        {
+            session.SetExternalInputValue("actorId", actorId);
+            var transient = session.ApplyInputs(
+                payload,
+                "light",
+                projectId);
+            Equal(
+                actorId,
+                JsonPath.ParseRequiredObject(
+                    transient.RuntimeContractJson,
+                    "transient Production Runtime")
+                    ["actorId"]?.GetValue<string>());
+
+            database.UpdateModuleInstanceRuntimeValue(
+                screen.Id,
+                "actorId",
+                JsonValue.Create(actorId));
+            session.DiscardExternalInputValue("actorId");
+            payload = Required(
+                CreatePreviewPayload(database, screen, null));
+            session.UpdateForPayload(payload, projectId);
+            var refreshed = session.ApplyInputs(
+                payload,
+                "light",
+                projectId);
+            var runtime = JsonPath.ParseRequiredObject(
+                refreshed.RuntimeContractJson,
+                "committed Production Runtime");
+            var preview = JsonPath.ParseRequiredObject(
+                refreshed.DesignPreviewJson,
+                "committed Production Preview");
+            Equal(actorId, runtime["actorId"]?.GetValue<string>());
+            Equal(actorId, preview["actor"]?["id"]?.GetValue<string>());
+        }
+
+        CommitActor(actorIds[1]);
+        CommitActor(actorIds[0]);
+
+        var persistedRuntime = JsonPath.ParseRequiredObject(
+            payload.RuntimeContractJson,
+            "Production collection Runtime");
+        var messages = JsonPath.RequiredArray(
+            persistedRuntime,
+            "messages",
+            "Production collection Runtime");
+        var firstMessage = messages[0]?.AsObject()
+            ?? throw new InvalidOperationException(
+                "Conversation Runtime has no first message.");
+        var firstMessageId = JsonPath.RequiredString(
+            firstMessage,
+            "id",
+            "Conversation first message");
+        var persistedText = JsonPath.RequiredString(
+            firstMessage,
+            "text",
+            "Conversation first message",
+            allowEmpty: true);
+        session.SetExternalCollectionItemValues(
+            StructuredCollectionAddress.Root("messages"),
+            firstMessageId,
+            new Dictionary<string, JsonNode?>
+            {
+                ["text"] = "Transient text",
+            });
+        var transientCollection = JsonPath.ParseRequiredObject(
+            session.ApplyInputs(payload, "light", projectId)
+                .RuntimeContractJson,
+            "transient Production collection");
+        Equal(
+            "Transient text",
+            JsonPath.RequiredArray(
+                    transientCollection,
+                    "messages",
+                    "transient Production collection")[0]?
+                ["text"]?.GetValue<string>());
+        session.DiscardExternalCollectionValues("messages");
+        var restoredCollection = JsonPath.ParseRequiredObject(
+            session.ApplyInputs(payload, "light", projectId)
+                .RuntimeContractJson,
+            "restored Production collection");
+        Equal(
+            persistedText,
+            JsonPath.RequiredArray(
+                    restoredCollection,
+                    "messages",
+                    "restored Production collection")[0]?
+                ["text"]?.GetValue<string>());
+    }
+    finally
+    {
+        File.Delete(temporary);
     }
 }
 
