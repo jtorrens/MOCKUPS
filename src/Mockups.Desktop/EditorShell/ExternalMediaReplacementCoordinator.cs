@@ -17,6 +17,7 @@ internal sealed class ExternalMediaReplacementCoordinator
     private readonly RuntimeInputInstanceDocumentStore _instanceDocuments;
     private readonly EditorOperationCoordinator _operations;
     private readonly IExternalMediaUsageQuery _usage;
+    private readonly IExternalMediaAssetReplacementStore _assetDirectories;
     private readonly Func<string, ProjectTreeNode?> _findNode;
     private readonly Func<string, string, Task> _showInfo;
     private readonly Action _authoredValuesChanged;
@@ -32,6 +33,7 @@ internal sealed class ExternalMediaReplacementCoordinator
         IModuleInstanceThemeTokenQuery themeTokens,
         EditorOperationCoordinator operations,
         IExternalMediaUsageQuery usage,
+        IExternalMediaAssetReplacementStore assetDirectories,
         Func<string, ProjectTreeNode?> findNode,
         Func<string, string, Task> showInfo,
         Action authoredValuesChanged)
@@ -51,6 +53,7 @@ internal sealed class ExternalMediaReplacementCoordinator
             operations);
         _operations = operations;
         _usage = usage;
+        _assetDirectories = assetDirectories;
         _findNode = findNode;
         _showInfo = showInfo;
         _authoredValuesChanged = authoredValuesChanged;
@@ -69,7 +72,21 @@ internal sealed class ExternalMediaReplacementCoordinator
             var node = _findNode(usage.SourceNodeId)
                 ?? throw new InvalidOperationException(
                     $"Could not find {usage.SourceTypeLabel} '{usage.SourceName}'.");
-            if (usage.AuthoringSurface == ExternalMediaAuthoringSurface.Editor)
+            if (usage.DirectoryKind == ExternalMediaDirectoryKind.ProductionFontFamily)
+            {
+                await _operations.ExecuteAsync(() =>
+                    _assetDirectories.ReplaceProductionFontFamilyDirectory(
+                        usage.SourceNodeId,
+                        replacement));
+            }
+            else if (usage.DirectoryKind == ExternalMediaDirectoryKind.IconTheme)
+            {
+                await _operations.ExecuteAsync(() =>
+                    _assetDirectories.ReplaceIconThemeDirectory(
+                        usage.SourceNodeId,
+                        replacement));
+            }
+            else if (usage.AuthoringSurface == ExternalMediaAuthoringSurface.Editor)
             {
                 await ReplaceEditorValueAsync(node, usage, replacement);
             }

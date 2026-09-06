@@ -324,6 +324,24 @@ internal sealed class SqliteExternalMediaUsagePort(
         target.GetExternalMediaUsageDetails(projectId);
 }
 
+internal sealed class SqliteExternalMediaAssetReplacementPort(
+    SqliteResourceOwner target) : IExternalMediaAssetReplacementStore
+{
+    public void ReplaceProductionFontFamilyDirectory(
+        string productionFontId,
+        string relativeDirectory) =>
+        target.ReplaceProductionFontFamilyDirectory(
+            productionFontId,
+            relativeDirectory);
+
+    public void ReplaceIconThemeDirectory(
+        string iconThemeId,
+        string relativeDirectory) =>
+        target.ReplaceIconThemeDirectory(
+            iconThemeId,
+            relativeDirectory);
+}
+
 internal sealed class SqliteEditorNodeCommandPort(
     SqliteEditorNodeCommandStore target)
     : IEditorNodeCommandStore

@@ -33,6 +33,7 @@ internal sealed record DesktopApplicationDataPorts(
     IModuleInstanceAnimationStore Animation,
     IReferenceUsageQuery ReferenceUsage,
     IExternalMediaUsageQuery ExternalMediaUsage,
+    IExternalMediaAssetReplacementStore ExternalMediaAssetReplacement,
     IEditorLayoutStore Layouts,
     IActorPreviewRepository ActorPreview);
 

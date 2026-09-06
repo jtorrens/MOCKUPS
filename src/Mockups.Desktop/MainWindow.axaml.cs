@@ -327,6 +327,7 @@ public partial class MainWindow : SukiWindow
                 data.ModuleInstanceThemes,
                 application.Operations,
                 data.ExternalMediaUsage,
+                data.ExternalMediaAssetReplacement,
                 (nodeId) => EditorNodeSelectionState.FindNodeById(
                     Session.TreeRoots,
                     nodeId),

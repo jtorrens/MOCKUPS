@@ -143,6 +143,70 @@ internal sealed class ExternalMediaUsageService : IExternalMediaUsageQuery
                 AddPath(usages, source, "shot.referenceVideoPath", "shot.referenceVideoPath", "sourcePath", "Reference video", document.SourcePath, ValueKind.VideoFilePath, mediaRoot);
             }
         }
+
+        using (var command = connection.CreateCommand())
+        {
+            command.CommandText =
+                "SELECT id, family_name, source_directory FROM production_fonts WHERE project_id = $projectId";
+            command.Parameters.AddWithValue("$projectId", projectId);
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                var source = new SourceContext(
+                    projectId,
+                    projectRoot,
+                    reader.GetString(0),
+                    ProjectTreeNodeKind.ProductionFont,
+                    ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ProductionFont),
+                    "Production Font",
+                    reader.GetString(1),
+                    ReferenceUsageScope.Production,
+                    ExternalMediaAuthoringSurface.Editor);
+                AddPath(
+                    usages,
+                    source,
+                    "font.sourceDirectory",
+                    "font.sourceDirectory",
+                    "sourceDirectory",
+                    "Family directory",
+                    ReadString(reader, 2),
+                    ValueKind.MediaDirectoryPath,
+                    mediaRoot,
+                    directoryKind: ExternalMediaDirectoryKind.ProductionFontFamily);
+            }
+        }
+
+        using (var command = connection.CreateCommand())
+        {
+            command.CommandText =
+                "SELECT id, name, asset_root FROM icon_themes WHERE project_id = $projectId";
+            command.Parameters.AddWithValue("$projectId", projectId);
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                var source = new SourceContext(
+                    projectId,
+                    projectRoot,
+                    reader.GetString(0),
+                    ProjectTreeNodeKind.IconTheme,
+                    ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.IconTheme),
+                    "Icon Theme",
+                    reader.GetString(1),
+                    ReferenceUsageScope.Design,
+                    ExternalMediaAuthoringSurface.Editor);
+                AddPath(
+                    usages,
+                    source,
+                    "iconTheme.assetRoot",
+                    "iconTheme.assetRoot",
+                    "assetRoot",
+                    "Icon directory",
+                    ReadString(reader, 2),
+                    ValueKind.MediaDirectoryPath,
+                    mediaRoot,
+                    directoryKind: ExternalMediaDirectoryKind.IconTheme);
+            }
+        }
     }
 
     private static void AddComponentUsages(
@@ -692,7 +756,8 @@ internal sealed class ExternalMediaUsageService : IExternalMediaUsageQuery
         string mediaRoot,
         IReadOnlyList<string>? slotFieldIds = null,
         string itemId = "",
-        bool isRuntimeDefault = false)
+        bool isRuntimeDefault = false,
+        ExternalMediaDirectoryKind directoryKind = ExternalMediaDirectoryKind.None)
     {
         if (string.IsNullOrWhiteSpace(authoredPath)) return;
         var absolute = Resolve(source, authoredPath, mediaRoot);
@@ -718,9 +783,19 @@ internal sealed class ExternalMediaUsageService : IExternalMediaUsageQuery
             declaredFieldId,
             declaredJsonKey,
             isRuntimeDefault,
+            isDirectory && directoryKind == ExternalMediaDirectoryKind.None
+                ? ExternalMediaDirectoryKind.Media
+                : directoryKind,
             absolute,
             directory,
-            isDirectory ? "Media folder" : Path.GetFileName(absolute),
+            isDirectory
+                ? directoryKind switch
+                {
+                    ExternalMediaDirectoryKind.ProductionFontFamily => "Font family folder",
+                    ExternalMediaDirectoryKind.IconTheme => "Icon folder",
+                    _ => "Media folder",
+                }
+                : Path.GetFileName(absolute),
             isDirectory,
             isDirectory ? Directory.Exists(absolute) : File.Exists(absolute)));
     }

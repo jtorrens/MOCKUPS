@@ -9,6 +9,14 @@ public enum ExternalMediaAuthoringSurface
     PreviewAuthoring,
 }
 
+public enum ExternalMediaDirectoryKind
+{
+    None,
+    Media,
+    ProductionFontFamily,
+    IconTheme,
+}
+
 public sealed record ExternalMediaUsageDetail(
     string ProjectId,
     string SourceNodeId,
@@ -27,6 +35,7 @@ public sealed record ExternalMediaUsageDetail(
     string DeclaredFieldId,
     string DeclaredJsonKey,
     bool IsRuntimeDefault,
+    ExternalMediaDirectoryKind DirectoryKind,
     string AbsoluteTargetPath,
     string AbsoluteDirectoryPath,
     string FileName,

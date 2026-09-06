@@ -273,9 +273,16 @@ internal sealed class ExternalMediaTableControl : StackPanel
         fileName.ContextMenu = CreateMediaContextMenu(item);
         ToolTip.SetTip(
             fileName,
-            item.IsDirectory
-                ? "Right-click for media folder actions"
-                : "Right-click for media file actions");
+            item.DirectoryKind switch
+            {
+                ExternalMediaDirectoryKind.ProductionFontFamily =>
+                    "Right-click for font family actions",
+                ExternalMediaDirectoryKind.IconTheme =>
+                    "Right-click for icon folder actions",
+                ExternalMediaDirectoryKind.Media =>
+                    "Right-click for media folder actions",
+                _ => "Right-click for media file actions",
+            });
         Grid.SetColumn(fileName, 2);
         row.Children.Add(fileName);
 
@@ -292,9 +299,16 @@ internal sealed class ExternalMediaTableControl : StackPanel
     {
         var replace = new MenuItem
         {
-            Header = item.IsDirectory
-                ? "Replace media folder…"
-                : "Replace media…",
+            Header = item.DirectoryKind switch
+            {
+                ExternalMediaDirectoryKind.ProductionFontFamily =>
+                    "Replace font family…",
+                ExternalMediaDirectoryKind.IconTheme =>
+                    "Replace icon folder…",
+                ExternalMediaDirectoryKind.Media =>
+                    "Replace media folder…",
+                _ => "Replace media…",
+            },
         };
         replace.Click += async (_, _) =>
         {

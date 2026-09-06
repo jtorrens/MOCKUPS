@@ -18368,6 +18368,14 @@ static void ExternalMediaInventoriesDeclaredAuthoredPaths()
         usage.IsDirectory
         && usage.FileName == "Media folder"
         && usage.AbsoluteDirectoryPath == usage.AbsoluteTargetPath));
+    True(usages.Any((usage) =>
+        usage.SourceKind == ProjectTreeNodeKind.ProductionFont
+        && usage.DirectoryKind == ExternalMediaDirectoryKind.ProductionFontFamily
+        && usage.FileName == "Font family folder"));
+    True(usages.Any((usage) =>
+        usage.SourceKind == ProjectTreeNodeKind.IconTheme
+        && usage.DirectoryKind == ExternalMediaDirectoryKind.IconTheme
+        && usage.FileName == "Icon folder"));
     True(usages.Any((usage) => !usage.Exists));
 }
 
@@ -18395,6 +18403,7 @@ static void ExternalMediaKeepsExistingPathsVisible()
             "actor.avatar.filePath",
             "filePath",
             false,
+            ExternalMediaDirectoryKind.None,
             "/project/avatars/alex.png",
             "/project/avatars",
             "alex.png",

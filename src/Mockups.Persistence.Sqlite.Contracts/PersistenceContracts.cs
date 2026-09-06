@@ -412,6 +412,12 @@ internal interface IProductionFontRepository
         string sourceDirectory,
         string filesJson);
 
+    void UpdateAssets(
+        SqliteConnection connection,
+        string fontId,
+        string sourceDirectory,
+        string filesJson);
+
     void Delete(SqliteConnection connection, string fontId);
 
     void Rename(SqliteConnection connection, string fontId, string name);
@@ -449,6 +455,12 @@ internal interface IIconThemeRepository
         SqliteConnection connection,
         SqliteTransaction transaction,
         string iconThemeId,
+        string mappingJson);
+
+    void UpdateAssets(
+        SqliteConnection connection,
+        string iconThemeId,
+        string assetRoot,
         string mappingJson);
 
     void UpdateIdentity(

@@ -100,6 +100,43 @@ internal sealed partial class SqliteResourceOwner
         return RefreshIconThemeSets(connection, ProjectIdForIconTheme(connection, iconThemeId));
     }
 
+    public void ReplaceIconThemeDirectory(
+        string iconThemeId,
+        string relativeDirectory)
+    {
+        using var connection = OpenConnection();
+        var row = _iconThemeRepository.Get(connection, iconThemeId);
+        var mediaRoot = ResolveProjectPath(
+            GetProjectSettings(connection, row.ProjectId).MediaRoot);
+        var normalizedDirectory = NormalizeRelativePath(relativeDirectory);
+        var absoluteDirectory = Path.GetFullPath(
+            Path.Combine(mediaRoot, normalizedDirectory));
+        var relativeToRoot = Path.GetRelativePath(mediaRoot, absoluteDirectory);
+        if (relativeToRoot.StartsWith("..", StringComparison.Ordinal)
+            || Path.IsPathFullyQualified(relativeToRoot)
+            || !Directory.Exists(absoluteDirectory))
+        {
+            throw new InvalidOperationException(
+                "Icon Theme directory must exist inside the Project media root.");
+        }
+
+        var tokens = IconTokenRules.SvgTokenSet(absoluteDirectory);
+        if (tokens.Count == 0)
+        {
+            throw new InvalidOperationException(
+                "Icon Theme directory contains no SVG icons.");
+        }
+
+        var mapping = BuildIconThemeMapping(
+            row.MappingJson,
+            tokens).ToJsonString();
+        _iconThemeRepository.UpdateAssets(
+            connection,
+            iconThemeId,
+            normalizedDirectory,
+            mapping);
+    }
+
     public void DeleteIconThemeToken(string iconThemeId, string token)
     {
         if (!ValidIconTokenRegex().IsMatch(token))

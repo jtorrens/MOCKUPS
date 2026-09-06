@@ -33,6 +33,7 @@ public sealed class SqliteProjectSession
         IModuleInstanceAnimationStore animation,
         IReferenceUsageQuery referenceUsage,
         IExternalMediaUsageQuery externalMediaUsage,
+        IExternalMediaAssetReplacementStore externalMediaAssetReplacement,
         IEditorLayoutStore layouts,
         IActorPreviewRepository actorPreview)
     {
@@ -63,6 +64,7 @@ public sealed class SqliteProjectSession
         Animation = animation;
         ReferenceUsage = referenceUsage;
         ExternalMediaUsage = externalMediaUsage;
+        ExternalMediaAssetReplacement = externalMediaAssetReplacement;
         Layouts = layouts;
         ActorPreview = actorPreview;
     }
@@ -132,6 +134,11 @@ public sealed class SqliteProjectSession
     public IReferenceUsageQuery ReferenceUsage { get; }
 
     public IExternalMediaUsageQuery ExternalMediaUsage { get; }
+
+    public IExternalMediaAssetReplacementStore ExternalMediaAssetReplacement
+    {
+        get;
+    }
 
     public IEditorLayoutStore Layouts { get; }
 

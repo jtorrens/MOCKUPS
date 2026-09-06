@@ -143,6 +143,7 @@ internal static class SqliteProjectSessionFactory
             new SqliteModuleInstanceAnimationPort(animations),
             new SqliteReferenceUsagePort(referenceUsages),
             new SqliteExternalMediaUsagePort(externalMediaUsages),
+            new SqliteExternalMediaAssetReplacementPort(resources),
             new SqliteEditorLayoutPort(
                 new SqliteEditorLayoutStore(context)),
             new SqliteActorPreviewPort(resources));

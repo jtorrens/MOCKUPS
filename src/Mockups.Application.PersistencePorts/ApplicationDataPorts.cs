@@ -480,6 +480,16 @@ public interface IExternalMediaUsageQuery
         string projectId);
 }
 
+public interface IExternalMediaAssetReplacementStore
+{
+    void ReplaceProductionFontFamilyDirectory(
+        string productionFontId,
+        string relativeDirectory);
+    void ReplaceIconThemeDirectory(
+        string iconThemeId,
+        string relativeDirectory);
+}
+
 public interface IRenderSnapshotDataSource :
     IPreviewInputRepository,
     IActorPreviewRepository,

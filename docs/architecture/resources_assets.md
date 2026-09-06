@@ -35,16 +35,17 @@ general filesystem server. Closing the editor stops that source.
 
 Every Project exposes one permanent **External Media** surface in both Design
 and Production. Its focused query is the sole owner of the Project-wide index
-of authored external image, wallpaper, avatar, media, video and media-directory
+of authored external image, wallpaper, avatar, media, video and directory
 paths. It traverses only fields declared with the corresponding media
-`ValueKind`, plus the exact App, Actor and Shot media documents owned by their
-repositories. It never scans arbitrary JSON text or infers assets from file
-extensions.
+`ValueKind`, plus the exact App, Actor, Shot, Production Font family and Icon
+Theme asset-root documents owned by their repositories. It never scans
+arbitrary JSON text or infers authored references from file extensions.
 
 The index covers every complete Component Variant, every complete Module
 Variant, their Design Test Values and defaults, and every Production Screen
-payload and local Override. Icons, Icon Themes, fonts and application-internal
-assets are outside this inventory. Relative references resolve through the
+payload and local Override. Each Production Font family directory and each Icon
+Theme directory is represented once; individual icon files and
+application-internal assets remain outside the inventory. Relative references resolve through the
 Project path resolver; absolute references retain their authored workstation
 location. Missing targets remain listed and are marked explicitly so stale
 authored references can be found without repairing or deleting them.
@@ -53,13 +54,16 @@ Each result retains its exact owner, authoring surface, field, nested slot path
 and stable structured-item id. The UI can therefore navigate to the owning
 editor and focus that exact field or item without matching labels, types or
 positions. A file row shows its absolute parent path and filename separately.
-A media-directory row shows only the absolute directory path and the indicative
-filename text `Media folder`; it never expands the directory into synthetic
-file usages. Right-clicking an existing path reveals that exact file or folder
-in the workstation file manager.
+A directory row shows only the absolute directory path and the indicative File
+name text `Media folder`, `Font family folder` or `Icon folder`; it never
+expands the directory into synthetic file usages.
 
-The File name cell exposes `Replace media…`, or `Replace media folder…` for a
-directory, for both existing and missing references. The same contextual menu
+The File name cell exposes `Replace media…`, `Replace media folder…`, `Replace
+font family…` or `Replace icon folder…` according to the declared owner, for
+both existing and missing references. Production Font replacement rebuilds the
+family's exact file/style/weight document from the selected directory; Icon
+Theme replacement rebuilds its token mapping from the selected SVG directory.
+The same contextual menu
 is available from the path and filename cells and exposes `Show in Finder` as
 a separate action when the target exists; right-click never reveals a target
 directly. The replacement action uses the

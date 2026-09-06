@@ -125,6 +125,23 @@ internal sealed class IconThemeRepository : IIconThemeRepository
             ("$mappingJson", mappingJson));
     }
 
+    public void UpdateAssets(
+        SqliteConnection connection,
+        string iconThemeId,
+        string assetRoot,
+        string mappingJson)
+    {
+        JsonPath.ParseRequiredObject(
+            mappingJson,
+            $"Icon Theme '{iconThemeId}' mapping_json");
+        _context.Execute(
+            connection,
+            "UPDATE icon_themes SET asset_root = $assetRoot, mapping_json = $mappingJson WHERE id = $id",
+            ("$id", iconThemeId),
+            ("$assetRoot", assetRoot),
+            ("$mappingJson", mappingJson));
+    }
+
     public void UpdateIdentity(
         SqliteConnection connection,
         string iconThemeId,

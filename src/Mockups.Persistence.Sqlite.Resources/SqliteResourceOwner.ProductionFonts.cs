@@ -94,6 +94,58 @@ internal sealed partial class SqliteResourceOwner
             fontsRoot);
     }
 
+    public void ReplaceProductionFontFamilyDirectory(
+        string productionFontId,
+        string relativeDirectory)
+    {
+        using var connection = OpenConnection();
+        var font = _productionFontRepository.Get(connection, productionFontId);
+        var mediaRoot = ResolveProjectPath(
+            GetProjectSettings(connection, font.ProjectId).MediaRoot);
+        var normalizedDirectory = NormalizeRelativePath(relativeDirectory);
+        var absoluteDirectory = Path.GetFullPath(
+            Path.Combine(mediaRoot, normalizedDirectory));
+        var relativeToRoot = Path.GetRelativePath(mediaRoot, absoluteDirectory);
+        if (relativeToRoot.StartsWith("..", StringComparison.Ordinal)
+            || Path.IsPathFullyQualified(relativeToRoot)
+            || !Directory.Exists(absoluteDirectory))
+        {
+            throw new InvalidOperationException(
+                "Production Font family directory must exist inside the Project media root.");
+        }
+
+        var files = Directory
+            .EnumerateFiles(absoluteDirectory, "*", SearchOption.TopDirectoryOnly)
+            .Where(IsSupportedFontFile)
+            .OrderBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        if (files.Length == 0)
+        {
+            throw new InvalidOperationException(
+                "Production Font family directory contains no supported font files.");
+        }
+
+        var document = new JsonArray();
+        foreach (var file in files)
+        {
+            var fileName = Path.GetFileName(file);
+            document.Add(new JsonObject
+            {
+                ["fileName"] = fileName,
+                ["relativePath"] = NormalizeRelativePath(
+                    Path.Combine(normalizedDirectory, fileName)),
+                ["style"] = InferFontStyle(file),
+                ["weight"] = InferFontWeight(file),
+            });
+        }
+
+        _productionFontRepository.UpdateAssets(
+            connection,
+            productionFontId,
+            normalizedDirectory,
+            document.ToJsonString());
+    }
+
     public ProductionFontSettings GetProductionFontSettings(string fontId)
     {
         var record = _productionFontRepository.Get(fontId);

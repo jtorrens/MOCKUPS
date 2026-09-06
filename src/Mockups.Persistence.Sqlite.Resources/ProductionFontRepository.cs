@@ -116,6 +116,23 @@ internal sealed class ProductionFontRepository : IProductionFontRepository
         return Get(connection, id);
     }
 
+    public void UpdateAssets(
+        SqliteConnection connection,
+        string fontId,
+        string sourceDirectory,
+        string filesJson)
+    {
+        ProductionFontFilesContract.ParseRequired(
+            filesJson,
+            $"Production Font '{fontId}' files_json");
+        _context.Execute(
+            connection,
+            "UPDATE production_fonts SET source_directory = $sourceDirectory, files_json = $filesJson WHERE id = $id",
+            ("$id", fontId),
+            ("$sourceDirectory", sourceDirectory),
+            ("$filesJson", filesJson));
+    }
+
     public void Delete(SqliteConnection connection, string fontId)
     {
         _context.Execute(connection, "DELETE FROM production_fonts WHERE id = $id", ("$id", fontId));

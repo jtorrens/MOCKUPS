@@ -20,16 +20,16 @@ It opens a read-only central inventory with the sortable columns **System
 item**, **Absolute path** and **File name**. Selecting the system item routes to
 the exact owning Component Variant, Module Variant, Test Values surface or
 Production record and focuses its declared field or stable collection item.
-Right-clicking an existing absolute path reveals the exact target in Finder on
-macOS. Missing references stay visible. Media-directory references show the
-directory path once and use `Media folder` in the File name column instead of
-listing directory contents.
+Missing references stay visible. Media directories, Production Font family
+directories and Icon Theme directories show the directory path once and use
+`Media folder`, `Font family folder` or `Icon folder` in the File name column
+instead of listing directory contents.
 
 Right-clicking the Absolute path or File name cell opens the same contextual
-menu. It offers replacement of that exact media reference, including a missing
-target, plus a separate `Show in Finder` action when the target exists; opening
-the menu itself never reveals a file. File and directory rows use their
-corresponding shared picker. A successful replacement refreshes the complete
+menu. It offers replacement of that exact media, font-family or icon-theme
+reference, including a missing target, plus a separate `Show in Finder` action
+when the target exists; opening the menu itself never reveals a file. File and
+directory rows use their corresponding shared picker. A successful replacement refreshes the complete
 inventory without resetting its active sort; cancelling leaves the row and
 authored data unchanged.
 
