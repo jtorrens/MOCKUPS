@@ -18342,6 +18342,10 @@ static void ExternalMediaInventoriesDeclaredAuthoredPaths()
         usage.AbsoluteTargetPath)));
     True(usages.All((usage) => Path.IsPathFullyQualified(
         usage.AbsoluteDirectoryPath)));
+    True(usages.All((usage) => !string.IsNullOrWhiteSpace(
+        usage.DeclaredFieldId)));
+    True(usages.All((usage) => !string.IsNullOrWhiteSpace(
+        usage.DeclaredJsonKey)));
     True(usages.Any((usage) =>
         usage.SourceKind == ProjectTreeNodeKind.App
         && usage.FieldId == "app.wallpaper.images.light.filePath"));
@@ -18359,6 +18363,7 @@ static void ExternalMediaInventoriesDeclaredAuthoredPaths()
     True(usages.Any((usage) =>
         usage.SourceKind == ProjectTreeNodeKind.ModuleInstance
         && usage.AuthoringSurface == ExternalMediaAuthoringSurface.PreviewAuthoring));
+    True(usages.Any((usage) => usage.IsRuntimeDefault));
     True(usages.Any((usage) =>
         usage.IsDirectory
         && usage.FileName == "Media folder"
@@ -18386,6 +18391,10 @@ static void ExternalMediaKeepsExistingPathsVisible()
             "Avatar image",
             "",
             "avatars/alex.png",
+            ValueKind.ImageFilePath,
+            "actor.avatar.filePath",
+            "filePath",
+            false,
             "/project/avatars/alex.png",
             "/project/avatars",
             "alex.png",
@@ -18394,13 +18403,22 @@ static void ExternalMediaKeepsExistingPathsVisible()
         var control = new ExternalMediaTableControl(
             [usage],
             isDark: true,
-            (_) => Task.CompletedTask);
+            (_) => Task.CompletedTask,
+            (_) => Task.FromResult<IReadOnlyList<ExternalMediaUsageDetail>?>(null));
         var cells = control.GetLogicalDescendants()
             .OfType<TextBlock>()
             .Where((text) => text.Text is "/project/avatars" or "alex.png")
             .ToArray();
         Equal(2, cells.Length);
         True(cells.All((cell) => cell.Foreground is not null));
+        var fileName = cells.Single((cell) => cell.Text == "alex.png");
+        var menuItems = fileName.ContextMenu?.ItemsSource
+            ?.OfType<MenuItem>()
+            .ToArray() ?? [];
+        Equal(2, menuItems.Length);
+        Equal("Replace media…", menuItems[0].Header?.ToString());
+        Equal("Show in Finder", menuItems[1].Header?.ToString());
+        True(menuItems[1].IsEnabled);
     }, CancellationToken.None).GetAwaiter().GetResult();
 }
 

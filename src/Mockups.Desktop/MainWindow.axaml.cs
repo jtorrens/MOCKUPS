@@ -315,11 +315,29 @@ public partial class MainWindow : SukiWindow
             ShowEmbeddedContext,
             _authoringFocusController,
             _messages);
+        var externalMediaReplacement =
+            new ExternalMediaReplacementCoordinator(
+                pathBrowser,
+                fieldValues,
+                componentClassFieldValues,
+                data.RuntimeInputOwners,
+                data.RuntimeInputInstances,
+                data.Animation,
+                data.Timeline,
+                data.ModuleInstanceThemes,
+                application.Operations,
+                data.ExternalMediaUsage,
+                (nodeId) => EditorNodeSelectionState.FindNodeById(
+                    Session.TreeRoots,
+                    nodeId),
+                _nodeCommands.ShowInfoDialog,
+                RefreshPreviewOptions);
         var externalMediaSurface = new ExternalMediaEditorSurface(
             data.ExternalMediaUsage,
             application.Operations,
             () => _themeController.IsDark,
-            externalMediaNavigator.Navigate);
+            externalMediaNavigator.Navigate,
+            externalMediaReplacement.ReplaceAsync);
         var specialSurfaces = new EditorSpecialSurfaceCatalog(
             _productionNavigationActions.EditorCards,
             externalMediaSurface.CreateCards);

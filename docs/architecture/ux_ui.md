@@ -25,6 +25,14 @@ macOS. Missing references stay visible. Media-directory references show the
 directory path once and use `Media folder` in the File name column instead of
 listing directory contents.
 
+Right-clicking the Absolute path or File name cell opens the same contextual
+menu. It offers replacement of that exact media reference, including a missing
+target, plus a separate `Show in Finder` action when the target exists; opening
+the menu itself never reveals a file. File and directory rows use their
+corresponding shared picker. A successful replacement refreshes the complete
+inventory without resetting its active sort; cancelling leaves the row and
+authored data unchanged.
+
 ## Three-panel shell
 
 The desktop shell has:

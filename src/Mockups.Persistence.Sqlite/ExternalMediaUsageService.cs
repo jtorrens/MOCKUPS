@@ -89,8 +89,8 @@ internal sealed class ExternalMediaUsageService : IExternalMediaUsageQuery
                     ReferenceUsageScope.Design,
                     ExternalMediaAuthoringSurface.Editor);
                 var config = RequiredObject(reader, 3, $"App '{source.NodeId}' config_json");
-                AddPath(usages, source, "app.wallpaper.images.light.filePath", "Wallpaper · Light", JsonPath.String(config, new[] { "wallpaper", "images", "light", "filePath" }), ValueKind.ImageFilePath, mediaRoot);
-                AddPath(usages, source, "app.wallpaper.images.dark.filePath", "Wallpaper · Dark", JsonPath.String(config, new[] { "wallpaper", "images", "dark", "filePath" }), ValueKind.ImageFilePath, mediaRoot);
+                AddPath(usages, source, "app.wallpaper.images.light.filePath", "app.wallpaper.images.light.filePath", "filePath", "Wallpaper · Light", JsonPath.String(config, new[] { "wallpaper", "images", "light", "filePath" }), ValueKind.ImageFilePath, mediaRoot);
+                AddPath(usages, source, "app.wallpaper.images.dark.filePath", "app.wallpaper.images.dark.filePath", "filePath", "Wallpaper · Dark", JsonPath.String(config, new[] { "wallpaper", "images", "dark", "filePath" }), ValueKind.ImageFilePath, mediaRoot);
             }
         }
 
@@ -113,9 +113,9 @@ internal sealed class ExternalMediaUsageService : IExternalMediaUsageQuery
                     ReferenceUsageScope.Production,
                     ExternalMediaAuthoringSurface.Editor);
                 var metadata = RequiredObject(reader, 2, $"Actor '{source.NodeId}' metadata_json");
-                AddPath(usages, source, "actor.wallpaper.images.light.filePath", "Wallpaper · Light", JsonPath.String(metadata, new[] { "wallpaper", "images", "light", "filePath" }), ValueKind.ImageFilePath, mediaRoot);
-                AddPath(usages, source, "actor.wallpaper.images.dark.filePath", "Wallpaper · Dark", JsonPath.String(metadata, new[] { "wallpaper", "images", "dark", "filePath" }), ValueKind.ImageFilePath, mediaRoot);
-                AddPath(usages, source, "actor.avatar.filePath", "Avatar image", JsonPath.String(metadata, new[] { "avatar", "filePath" }), ValueKind.ImageFilePath, mediaRoot);
+                AddPath(usages, source, "actor.wallpaper.images.light.filePath", "actor.wallpaper.images.light.filePath", "filePath", "Wallpaper · Light", JsonPath.String(metadata, new[] { "wallpaper", "images", "light", "filePath" }), ValueKind.ImageFilePath, mediaRoot);
+                AddPath(usages, source, "actor.wallpaper.images.dark.filePath", "actor.wallpaper.images.dark.filePath", "filePath", "Wallpaper · Dark", JsonPath.String(metadata, new[] { "wallpaper", "images", "dark", "filePath" }), ValueKind.ImageFilePath, mediaRoot);
+                AddPath(usages, source, "actor.avatar.filePath", "actor.avatar.filePath", "filePath", "Avatar image", JsonPath.String(metadata, new[] { "avatar", "filePath" }), ValueKind.ImageFilePath, mediaRoot);
             }
         }
 
@@ -140,7 +140,7 @@ internal sealed class ExternalMediaUsageService : IExternalMediaUsageQuery
                 var document = ShotReferenceVideoDocument.ParseRequired(
                     ReadString(reader, 2),
                     $"Shot '{source.NodeId}' reference video");
-                AddPath(usages, source, "shot.referenceVideoPath", "Reference video", document.SourcePath, ValueKind.VideoFilePath, mediaRoot);
+                AddPath(usages, source, "shot.referenceVideoPath", "shot.referenceVideoPath", "sourcePath", "Reference video", document.SourcePath, ValueKind.VideoFilePath, mediaRoot);
             }
         }
     }
@@ -304,6 +304,8 @@ internal sealed class ExternalMediaUsageService : IExternalMediaUsageQuery
             AddDeclaredValue(
                 descriptor.ValueKind,
                 descriptor.Id,
+                descriptor.Id,
+                descriptor.ConfigJsonPath![^1],
                 descriptor.Label,
                 value,
                 descriptor.ComponentInputBindings,
@@ -369,6 +371,8 @@ internal sealed class ExternalMediaUsageService : IExternalMediaUsageQuery
             AddDeclaredValue(
                 descriptor.ValueKind,
                 focusOverride?.FieldId ?? descriptor.Id,
+                descriptor.Id,
+                descriptor.JsonPath[^1],
                 descriptor.Label,
                 value,
                 descriptor.ComponentInputBindings,
@@ -425,7 +429,8 @@ internal sealed class ExternalMediaUsageService : IExternalMediaUsageQuery
                     componentIndex,
                     mediaRoot,
                     usages,
-                    focusOverride);
+                    focusOverride,
+                    isRuntimeDefault: false);
             }
             if (valueSource != RuntimeValueSource.DesignPreview) continue;
             var defaultValue = DefaultNode(input);
@@ -436,9 +441,10 @@ internal sealed class ExternalMediaUsageService : IExternalMediaUsageQuery
                 source,
                 componentIndex,
                 mediaRoot,
-                usages,
-                focusOverride,
-                " · Default");
+                    usages,
+                    focusOverride,
+                    " · Default",
+                    isRuntimeDefault: true);
         }
 
         foreach (var collection in RuntimeInputDefinitionReader.ReadCollections(preview, config))
@@ -463,11 +469,14 @@ internal sealed class ExternalMediaUsageService : IExternalMediaUsageQuery
         string mediaRoot,
         ICollection<ExternalMediaUsageDetail> usages,
         FocusOverride? focusOverride,
-        string labelSuffix = "")
+        string labelSuffix = "",
+        bool isRuntimeDefault = false)
     {
         AddDeclaredValue(
             input.ValueKind,
             focusOverride?.FieldId ?? input.Id,
+            input.Id,
+            input.JsonKey,
             input.Label + labelSuffix,
             value,
             null,
@@ -477,12 +486,15 @@ internal sealed class ExternalMediaUsageService : IExternalMediaUsageQuery
             mediaRoot,
             usages,
             focusOverride?.SlotFieldIds ?? [],
-            focusOverride?.ItemId ?? "");
+            focusOverride?.ItemId ?? "",
+            isRuntimeDefault);
     }
 
     private static void AddDeclaredValue(
         ValueKind valueKind,
         string fieldId,
+        string declaredFieldId,
+        string declaredJsonKey,
         string fieldLabel,
         JsonNode value,
         IReadOnlyList<ComponentInputBindingDefinition>? bindings,
@@ -492,7 +504,8 @@ internal sealed class ExternalMediaUsageService : IExternalMediaUsageQuery
         string mediaRoot,
         ICollection<ExternalMediaUsageDetail> usages,
         IReadOnlyList<string> slotFieldIds,
-        string itemId)
+        string itemId,
+        bool isRuntimeDefault = false)
     {
         if (MediaValueKinds.Contains(valueKind))
         {
@@ -500,12 +513,15 @@ internal sealed class ExternalMediaUsageService : IExternalMediaUsageQuery
                 usages,
                 source,
                 fieldId,
+                declaredFieldId,
+                declaredJsonKey,
                 fieldLabel,
                 StringValue(value),
                 valueKind,
                 mediaRoot,
                 slotFieldIds,
-                itemId);
+                itemId,
+                isRuntimeDefault);
             return;
         }
         if (valueKind == ValueKind.ComponentInputBindings
@@ -519,6 +535,8 @@ internal sealed class ExternalMediaUsageService : IExternalMediaUsageQuery
                 AddDeclaredValue(
                     binding.ValueKind,
                     fieldId,
+                    binding.Id,
+                    binding.JsonKey,
                     $"{fieldLabel} · {binding.Label}",
                     bindingValue,
                     null,
@@ -528,7 +546,8 @@ internal sealed class ExternalMediaUsageService : IExternalMediaUsageQuery
                     mediaRoot,
                     usages,
                     slotFieldIds,
-                    itemId);
+                    itemId,
+                    isRuntimeDefault);
             }
             return;
         }
@@ -608,6 +627,8 @@ internal sealed class ExternalMediaUsageService : IExternalMediaUsageQuery
                 AddDeclaredValue(
                     field.ValueKind,
                     focus.FieldId,
+                    field.Id,
+                    field.JsonKey,
                     $"{collection.Label} · {stableItemId} · {field.Label}",
                     fieldValue,
                     null,
@@ -663,12 +684,15 @@ internal sealed class ExternalMediaUsageService : IExternalMediaUsageQuery
         ICollection<ExternalMediaUsageDetail> usages,
         SourceContext source,
         string fieldId,
+        string declaredFieldId,
+        string declaredJsonKey,
         string fieldLabel,
         string authoredPath,
         ValueKind valueKind,
         string mediaRoot,
         IReadOnlyList<string>? slotFieldIds = null,
-        string itemId = "")
+        string itemId = "",
+        bool isRuntimeDefault = false)
     {
         if (string.IsNullOrWhiteSpace(authoredPath)) return;
         var absolute = Resolve(source, authoredPath, mediaRoot);
@@ -690,6 +714,10 @@ internal sealed class ExternalMediaUsageService : IExternalMediaUsageQuery
             fieldLabel,
             itemId,
             authoredPath,
+            valueKind,
+            declaredFieldId,
+            declaredJsonKey,
+            isRuntimeDefault,
             absolute,
             directory,
             isDirectory ? "Media folder" : Path.GetFileName(absolute),
@@ -854,7 +882,7 @@ internal sealed class ExternalMediaUsageService : IExternalMediaUsageQuery
         reader.IsDBNull(ordinal) ? "" : reader.GetString(ordinal);
 
     private static string UsageIdentity(ExternalMediaUsageDetail usage) =>
-        $"{usage.SourceNodeId}\u001f{usage.AuthoringSurface}\u001f{string.Join('/', usage.SlotFieldIds)}\u001f{usage.FieldId}\u001f{usage.ItemId}\u001f{usage.AbsoluteTargetPath}";
+        $"{usage.SourceNodeId}\u001f{usage.AuthoringSurface}\u001f{string.Join('/', usage.SlotFieldIds)}\u001f{usage.FieldId}\u001f{usage.DeclaredFieldId}\u001f{usage.ItemId}\u001f{usage.IsRuntimeDefault}\u001f{usage.AbsoluteTargetPath}";
 
     private sealed record SourceContext(
         string ProjectId,

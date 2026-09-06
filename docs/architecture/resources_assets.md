@@ -58,6 +58,18 @@ filename text `Media folder`; it never expands the directory into synthetic
 file usages. Right-clicking an existing path reveals that exact file or folder
 in the workstation file manager.
 
+The File name cell exposes `Replace media…`, or `Replace media folder…` for a
+directory, for both existing and missing references. The same contextual menu
+is available from the path and filename cells and exposes `Show in Finder` as
+a separate action when the target exists; right-click never reveals a target
+directly. The replacement action uses the
+declared field `ValueKind` picker, preserves that picker's relative/absolute
+storage policy and commits only the exact owner, nested slot and stable item
+identified by the row through the existing editor, Design Test Values or
+Production Runtime Input write contract. It never performs a global path
+replacement. After a successful commit the focused query reloads the complete
+inventory while the current column and sort direction remain unchanged.
+
 ## Palette and Themes
 
 Palette records provide stable semantic color identities. Themes provide

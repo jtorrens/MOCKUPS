@@ -18,17 +18,24 @@ internal sealed class ExternalMediaEditorSurface
     private readonly EditorOperationCoordinator _operations;
     private readonly Func<bool> _isDark;
     private readonly Func<ExternalMediaUsageDetail, Task> _navigate;
+    private readonly Func<
+        ExternalMediaUsageDetail,
+        Task<IReadOnlyList<ExternalMediaUsageDetail>?>> _replace;
 
     public ExternalMediaEditorSurface(
         IExternalMediaUsageQuery usage,
         EditorOperationCoordinator operations,
         Func<bool> isDark,
-        Func<ExternalMediaUsageDetail, Task> navigate)
+        Func<ExternalMediaUsageDetail, Task> navigate,
+        Func<
+            ExternalMediaUsageDetail,
+            Task<IReadOnlyList<ExternalMediaUsageDetail>?>> replace)
     {
         _usage = usage;
         _operations = operations;
         _isDark = isDark;
         _navigate = navigate;
+        _replace = replace;
     }
 
     public IReadOnlyList<InstantEditorCard>? CreateCards(ProjectTreeNode node)
@@ -58,7 +65,8 @@ internal sealed class ExternalMediaEditorSurface
                     new ExternalMediaTableControl(
                         items,
                         _isDark(),
-                        _navigate)),
+                        _navigate,
+                        _replace)),
                 isExpanded: true),
         ];
     }
@@ -66,9 +74,12 @@ internal sealed class ExternalMediaEditorSurface
 
 internal sealed class ExternalMediaTableControl : StackPanel
 {
-    private readonly IReadOnlyList<ExternalMediaUsageDetail> _items;
+    private IReadOnlyList<ExternalMediaUsageDetail> _items;
     private readonly bool _isDark;
     private readonly Func<ExternalMediaUsageDetail, Task> _navigate;
+    private readonly Func<
+        ExternalMediaUsageDetail,
+        Task<IReadOnlyList<ExternalMediaUsageDetail>?>> _replace;
     private readonly StackPanel _rows;
     private readonly Dictionary<ExternalMediaSortColumn, Button> _headers = [];
     private ExternalMediaSortColumn _sortColumn = ExternalMediaSortColumn.SystemItem;
@@ -77,11 +88,15 @@ internal sealed class ExternalMediaTableControl : StackPanel
     public ExternalMediaTableControl(
         IReadOnlyList<ExternalMediaUsageDetail> items,
         bool isDark,
-        Func<ExternalMediaUsageDetail, Task> navigate)
+        Func<ExternalMediaUsageDetail, Task> navigate,
+        Func<
+            ExternalMediaUsageDetail,
+            Task<IReadOnlyList<ExternalMediaUsageDetail>?>> replace)
     {
         _items = items;
         _isDark = isDark;
         _navigate = navigate;
+        _replace = replace;
         Name = "ExternalMediaTable";
         Spacing = 0;
 
@@ -242,25 +257,12 @@ internal sealed class ExternalMediaTableControl : StackPanel
         row.Children.Add(systemItem);
 
         var path = CellText(item.AbsoluteDirectoryPath, item.Exists, _isDark);
-        path.Cursor = item.Exists
-            ? new Cursor(StandardCursorType.Hand)
-            : Cursor.Default;
-        path.PointerPressed += (_, args) =>
-        {
-            if (!item.Exists
-                || args.GetCurrentPoint(path).Properties.PointerUpdateKind
-                    != PointerUpdateKind.RightButtonPressed)
-            {
-                return;
-            }
-            EditorLocalPathActions.Reveal(item.AbsoluteTargetPath);
-            args.Handled = true;
-        };
         ToolTip.SetTip(
             path,
             item.Exists
-                ? $"Right-click to show in Finder\n{item.AbsoluteTargetPath}"
-                : $"Missing\n{item.AbsoluteTargetPath}");
+                ? $"Right-click for media actions\n{item.AbsoluteTargetPath}"
+                : $"Missing · Right-click for media actions\n{item.AbsoluteTargetPath}");
+        path.ContextMenu = CreateMediaContextMenu(item);
         Grid.SetColumn(path, 1);
         row.Children.Add(path);
 
@@ -268,6 +270,12 @@ internal sealed class ExternalMediaTableControl : StackPanel
             item.Exists ? item.FileName : $"{item.FileName} · Missing",
             item.Exists,
             _isDark);
+        fileName.ContextMenu = CreateMediaContextMenu(item);
+        ToolTip.SetTip(
+            fileName,
+            item.IsDirectory
+                ? "Right-click for media folder actions"
+                : "Right-click for media file actions");
         Grid.SetColumn(fileName, 2);
         row.Children.Add(fileName);
 
@@ -277,6 +285,47 @@ internal sealed class ExternalMediaTableControl : StackPanel
             BorderBrush = EditorUiVisuals.ConnectorBrush(_isDark),
             BorderThickness = new Thickness(0, 0, 0, 1),
             Child = row,
+        };
+    }
+
+    private ContextMenu CreateMediaContextMenu(ExternalMediaUsageDetail item)
+    {
+        var replace = new MenuItem
+        {
+            Header = item.IsDirectory
+                ? "Replace media folder…"
+                : "Replace media…",
+        };
+        replace.Click += async (_, _) =>
+        {
+            replace.IsEnabled = false;
+            try
+            {
+                var refreshed = await _replace(item);
+                if (refreshed is null) return;
+                _items = refreshed;
+                Rebuild();
+            }
+            finally
+            {
+                replace.IsEnabled = true;
+            }
+        };
+        var reveal = new MenuItem
+        {
+            Header = "Show in Finder",
+            IsEnabled = item.Exists,
+        };
+        reveal.Click += (_, _) =>
+        {
+            if (item.Exists)
+            {
+                EditorLocalPathActions.Reveal(item.AbsoluteTargetPath);
+            }
+        };
+        return new ContextMenu
+        {
+            ItemsSource = new[] { replace, reveal },
         };
     }
 

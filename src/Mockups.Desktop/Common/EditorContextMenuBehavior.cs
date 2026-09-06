@@ -1,5 +1,7 @@
+using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.VisualTree;
 using System.Runtime.CompilerServices;
 
 namespace Mockups.DesktopEditorShell.Common;
@@ -26,7 +28,21 @@ internal static class EditorContextMenuBehavior
         {
             root.AddHandler(
                 InputElement.ContextRequestedEvent,
-                (_, args) => args.Handled = true,
+                (_, args) =>
+                {
+                    var current = args.Source as Control;
+                    while (current is not null)
+                    {
+                        if (current.ContextMenu is not null)
+                        {
+                            return;
+                        }
+
+                        current = current.GetVisualParent() as Control;
+                    }
+
+                    args.Handled = true;
+                },
                 RoutingStrategies.Tunnel,
                 handledEventsToo: true);
         }
