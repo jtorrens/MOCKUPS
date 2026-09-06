@@ -137,7 +137,10 @@ by strict owner-specific Runtime documents; this does not grant Production a
 Resources reference. Production owns each Screen's selected Module-allowed
 duration policy, calculated Screen duration resolution and Shot duration
 synchronization. Composition invokes that operation only after a cross-owner
-write that can affect the timeline.
+write that can affect the timeline. A structured item's signed entry offset and
+explicit presence duration remain child timing: neither changes the calculated
+or explicit Screen duration. Preview and Render clip that child timing to the
+independently resolved Screen interval.
 
 Shot duplication is one Production-owned aggregate transaction. It persists
 the new Shot and duplicates every ordered Screen through the same generic

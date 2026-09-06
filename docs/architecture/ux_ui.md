@@ -209,15 +209,15 @@ block outline also becomes amber; when its detent is the playhead, the playhead
 becomes amber as well. Collection collapse and zoom remain session-only.
 Releasing an editable block commits through the collection's declared offset
 or presence-duration field and refreshes Preview from the newly prepared
-payload. The viewport always retains a session-only authoring horizon to the
-right of the effective Screen range, including when the playhead is at the
-last frame or zoom changes. While a duration-affecting item boundary is dragged,
-General, the content boundary and the frame counter project the growing
-calculated Screen extent immediately, and the scale rebases the active drag so
-the same boundary retains a trailing horizon without jumping in frame value.
-Releasing it persists the declared item field, recalculates the Screen and Shot
-through the common timeline owner and confirms that extent. The horizon itself
-is never persisted. An outgoing-edge edit never creates or changes retime.
+payload. The viewport always retains a session-only authoring horizon on both
+sides of the effective Screen range, including when a collection item begins
+before frame zero, ends after the Screen, or zoom changes. While an item boundary
+is dragged, that horizon expands and the scale rebases the active drag so the
+boundary does not jump in frame value. General, the content boundary and the
+frame counter remain tied only to the independent Screen duration. Releasing an
+item persists its declared offset or presence field without changing Screen or
+Shot duration. The horizon itself is never persisted. An outgoing-edge edit
+never creates or changes retime.
 
 Selecting General or any item lane highlights the complete lane, including its
 label, and opens one Keyframes section after the final visible lane. The section
@@ -241,11 +241,10 @@ visible center tick and pointer detent restore `1:1`, where the viewport is
 exactly the declared Screen range. Moving right zooms in; moving left zooms out
 and reveals additional time before and after that range. Each scale change
 anchors on the current playhead position. Scale and viewport are session-only.
-Collection item entry remains at or after Screen frame zero, while an item's
-outgoing edge may be dragged beyond the current Screen range when the expanded
-viewport reveals it. After commit, a calculated Screen expands through the
-latest explicit collection-item Out; an explicit Screen keeps its declared
-range.
+Collection item entry may be dragged before Screen frame zero and its outgoing
+edge may be dragged beyond the current Screen range when the expanded viewport
+reveals it. Both values remain authored, while Preview and Render clip the item
+to the independent Screen range.
 
 The visible Preview utility headers remain in one horizontal row at the
 supported 1040 px minimum and the 1440 px default window widths. The Preview

@@ -261,7 +261,7 @@ var tests = new (string Name, Action Run)[]
     ("later targets move after prior finite media", LaterTargetsFollowFiniteMedia),
     ("duration uses half-open keyframe endpoints", DurationUsesHalfOpenEndpoints),
     ("duration combines declared sequence and animation", DurationCombinesSequenceAndAnimation),
-    ("explicit collection presence extends calculated duration", ExplicitCollectionPresenceExtendsCalculatedDuration),
+    ("explicit collection presence does not extend calculated duration", ExplicitCollectionPresenceDoesNotExtendCalculatedDuration),
     ("animated media actions are finite", AnimatedMediaActionsAreFinite),
     ("field completion dependencies reject cycles", FieldCompletionDependenciesRejectCycles),
     ("target and Screen retime preserve authored keyframes", RetimePreservesAuthoredKeyframes),
@@ -19034,7 +19034,7 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
         anchorFrame: 40,
         zoom: 0);
     Equal(
-        new PreviewScreenTimelineViewport(-20, 121),
+        new PreviewScreenTimelineViewport(-30, 121),
         fitViewport);
     Equal(
         PreviewScreenTimelineMath.AuthoringHorizonFrames,
@@ -19061,11 +19061,14 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
             PostRollFrames = 0,
         },
         new PreviewScreenTimelineViewport(0, 118),
-        previewContentDuration: 117);
-    Equal(126, expandedViewport.MaximumFrame);
+        previewContentDuration: 117,
+        minimumAuthoredFrame: 0,
+        maximumAuthoredFrame: 117);
+    Equal(-10, expandedViewport.MinimumFrame);
+    Equal(127, expandedViewport.MaximumFrame);
     Equal(
         PreviewScreenTimelineMath.AuthoringHorizonFrames,
-        expandedViewport.MaximumFrame - 116);
+        expandedViewport.MaximumFrame - 117);
     var terminalViewport = PreviewScreenTimelineMath.Viewport(
         snapshot,
         anchorFrame: snapshot.MaximumFrame,
@@ -19296,7 +19299,7 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
         "Item",
         []);
     var preview = Object(
-        """{"items":[{"id":"item_1","delay":4,"visibleDurationFrames":0},{"id":"item_2","delay":0,"visibleDurationFrames":20}]}""");
+        """{"items":[{"id":"item_1","delay":-4,"visibleDurationFrames":0},{"id":"item_2","delay":0,"visibleDurationFrames":120}]}""");
     var contract =
         """
         {
@@ -19345,17 +19348,18 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
         new PreviewScreenTimelineRange(20, 100, 12));
     Equal(1, resolved.Collections.Count);
     Equal(2, resolved.Collections[0].Items.Count);
-    Equal(4, resolved.Collections[0].Items[0].StartFrame);
+    Equal(-4, resolved.Collections[0].Items[0].StartFrame);
     Equal(100, resolved.Collections[0].Items[0].EndFrame);
-    Equal(5, resolved.Collections[0].Items[1].StartFrame);
-    Equal(25, resolved.Collections[0].Items[1].EndFrame);
+    Equal(-3, resolved.Collections[0].Items[1].StartFrame);
+    Equal(117, resolved.Collections[0].Items[1].EndFrame);
     Equal(0, resolved.Collections[0].Items[0].SerialEdit?.PreviousEndFrame);
-    Equal(5, resolved.Collections[0].Items[1].SerialEdit?.PreviousEndFrame);
+    Equal(-3, resolved.Collections[0].Items[1].SerialEdit?.PreviousEndFrame);
     True(resolved.Collections[0].Items[0].SerialEdit?.CanResizeEnd == true);
     True(resolved.Collections[0].Items
-        .All((item) => item.StartFrame >= 0
-            && item.EndFrame > item.StartFrame
-            && item.EndFrame <= resolved.ContentDurationFrames));
+        .All((item) => item.MinimumStartFrame == -100000
+            && item.EndFrame > item.StartFrame));
+    True(resolved.Collections[0].Items[0].StartFrame < 0);
+    True(resolved.Collections[0].Items[1].EndFrame > resolved.ContentDurationFrames);
     var derivedContract = Object(contract);
     derivedContract["collections"]![0]!["animationTimeline"]!
         .AsObject()
@@ -20233,7 +20237,7 @@ static void DurationCombinesSequenceAndAnimation()
     Equal(15, RuntimeTimeline.DurationFrames(contract, runtime, animation, 1));
 }
 
-static void ExplicitCollectionPresenceExtendsCalculatedDuration()
+static void ExplicitCollectionPresenceDoesNotExtendCalculatedDuration()
 {
     var contract = """
         {
@@ -20261,7 +20265,7 @@ static void ExplicitCollectionPresenceExtendsCalculatedDuration()
         ]}
         """;
 
-    Equal(31, RuntimeTimeline.DurationFrames(contract, runtime, "{}", 1));
+    Equal(15, RuntimeTimeline.DurationFrames(contract, runtime, "{}", 1));
     Equal(11, RuntimeAnimationFrameOrigin.ScreenFrame(
         Object(contract),
         Object(runtime),

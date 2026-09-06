@@ -108,9 +108,15 @@ internal static class PreviewScreenTimelineMath
 
     public static int AuthoringMaximumFrame(
         PreviewScreenTimelineSnapshot snapshot) =>
-        snapshot.MaximumFrame > int.MaxValue - AuthoringHorizonFrames
+        MaximumAuthoredFrame(snapshot) > int.MaxValue - AuthoringHorizonFrames
             ? int.MaxValue
-            : snapshot.MaximumFrame + AuthoringHorizonFrames;
+            : MaximumAuthoredFrame(snapshot) + AuthoringHorizonFrames;
+
+    public static int AuthoringMinimumFrame(
+        PreviewScreenTimelineSnapshot snapshot) =>
+        MinimumAuthoredFrame(snapshot) < int.MinValue + AuthoringHorizonFrames
+            ? int.MinValue
+            : MinimumAuthoredFrame(snapshot) - AuthoringHorizonFrames;
 
     public static int PreviewContentDuration(
         int confirmedContentDuration,
@@ -155,17 +161,23 @@ internal static class PreviewScreenTimelineMath
     public static PreviewScreenTimelineViewport EnsureAuthoringHorizon(
         PreviewScreenTimelineSnapshot snapshot,
         PreviewScreenTimelineViewport viewport,
-        int previewContentDuration)
+        int previewContentDuration,
+        int minimumAuthoredFrame,
+        int maximumAuthoredFrame)
     {
+        var requiredMinimum = minimumAuthoredFrame < int.MinValue + AuthoringHorizonFrames
+            ? int.MinValue
+            : minimumAuthoredFrame - AuthoringHorizonFrames;
         var contentMaximum = previewContentDuration > int.MaxValue - snapshot.PostRollFrames
             ? int.MaxValue
             : previewContentDuration + snapshot.PostRollFrames - 1;
-        var requiredMaximum = contentMaximum > int.MaxValue - AuthoringHorizonFrames
+        var authoredMaximum = Math.Max(contentMaximum, maximumAuthoredFrame);
+        var requiredMaximum = authoredMaximum > int.MaxValue - AuthoringHorizonFrames
             ? int.MaxValue
-            : contentMaximum + AuthoringHorizonFrames;
-        return requiredMaximum <= viewport.MaximumFrame
-            ? viewport
-            : viewport with { MaximumFrame = requiredMaximum };
+            : authoredMaximum + AuthoringHorizonFrames;
+        return new PreviewScreenTimelineViewport(
+            Math.Min(viewport.MinimumFrame, requiredMinimum),
+            Math.Max(viewport.MaximumFrame, requiredMaximum));
     }
 
     public static double Fraction(
@@ -342,19 +354,20 @@ internal static class PreviewScreenTimelineMath
         double zoom)
     {
         var authoringMaximumFrame = AuthoringMaximumFrame(snapshot);
+        var authoringMinimumFrame = AuthoringMinimumFrame(snapshot);
         var value = Math.Clamp(zoom, -1, 1);
         if (Math.Abs(value) < 0.0001)
             return new PreviewScreenTimelineViewport(
-                snapshot.MinimumFrame,
+                authoringMinimumFrame,
                 authoringMaximumFrame);
         var baseSpan = Math.Max(
             1,
-            authoringMaximumFrame - snapshot.MinimumFrame);
+            authoringMaximumFrame - authoringMinimumFrame);
         var scale = Math.Pow(8, value);
         var visibleSpan = Math.Max(8, baseSpan / scale);
         var anchorFraction = Fraction(
             anchorFrame,
-            snapshot.MinimumFrame,
+            authoringMinimumFrame,
             authoringMaximumFrame);
         var minimum = anchorFrame - anchorFraction * visibleSpan;
         var maximum = minimum + visibleSpan;
@@ -375,6 +388,34 @@ internal static class PreviewScreenTimelineMath
                 (int)Math.Floor(minimum) + 1,
                 (int)Math.Ceiling(maximum)));
     }
+
+    private static int MinimumAuthoredFrame(
+        PreviewScreenTimelineSnapshot snapshot) =>
+        snapshot.Collections
+            .SelectMany((collection) => collection.Items)
+            .SelectMany((item) => item.Intervals)
+            .SelectMany((interval) => new[]
+            {
+                interval.StartFrame,
+                interval.EndFrame,
+            })
+            .Concat(snapshot.Keyframes.Select((keyframe) => keyframe.ScreenFrame))
+            .Append(snapshot.MinimumFrame)
+            .Min();
+
+    private static int MaximumAuthoredFrame(
+        PreviewScreenTimelineSnapshot snapshot) =>
+        snapshot.Collections
+            .SelectMany((collection) => collection.Items)
+            .SelectMany((item) => item.Intervals)
+            .SelectMany((interval) => new[]
+            {
+                interval.StartFrame,
+                interval.EndFrame,
+            })
+            .Concat(snapshot.Keyframes.Select((keyframe) => keyframe.ScreenFrame))
+            .Append(snapshot.MaximumFrame)
+            .Max();
 
     private static double SnapThresholdFrames(
         double width,
@@ -583,8 +624,8 @@ internal static class PreviewScreenTimelineSnapshotFactory
             var item = items[index];
             var itemId = JsonPath.RequiredString(item, "id", $"Screen Timeline collection '{collection.Id}' item");
             var start = sequenceItems
-                ? Math.Max(0, RuntimeAnimationFrameOrigin.ScreenFrameForOwnerFrame(
-                    contract, runtime, animation, itemId, 0, themeTokens, frameRate))
+                ? RuntimeAnimationFrameOrigin.ScreenFrameForOwnerFrame(
+                    contract, runtime, animation, itemId, 0, themeTokens, frameRate)
                 : 0;
             var sequenceEnd = sequenceItems
                 ? Math.Max(start + 1, RuntimeAnimationFrameOrigin.OwnerSequenceEndScreenFrame(
@@ -615,7 +656,8 @@ internal static class PreviewScreenTimelineSnapshotFactory
                 start,
                 end,
                 [new PreviewScreenTimelineInterval(start, end)],
-                serialEdit));
+                serialEdit,
+                MinimumStartFrame: serialEdit is null ? 0 : -100000));
             if (sequenceItems) previousSequenceEnd = sequenceEnd;
         }
         return new PreviewScreenTimelineCollection(collection.Id, collection.Label, projected);
@@ -1353,23 +1395,21 @@ internal sealed class PreviewScreenTimelineSurface : Border
         double pointerX)
     {
         if (_snapshot is null || _viewport is null) return;
-        var next = PreviewScreenTimelineMath.PreviewContentDuration(
-            activeLane.OwnsScreenDuration
-                ? 1
-                : _snapshot.ContentDurationFrames,
-            activeLane.OwnsScreenDuration
-                ? [activeLane.EndFrame]
-                : _lanes
-                    .Where((lane) => lane.AffectsScreenDuration)
-                    .Select((lane) => lane.EndFrame));
-        if (next == _previewContentDurationFrames) return;
-        _previewContentDurationFrames = next;
-        _generalLane?.SetAuthoringEndFrame(next);
-        _backdrop?.SetContentEndFrame(next);
+        if (activeLane.OwnsScreenDuration)
+        {
+            var next = PreviewScreenTimelineMath.PreviewContentDuration(
+                1,
+                [activeLane.EndFrame]);
+            _previewContentDurationFrames = next;
+            _generalLane?.SetAuthoringEndFrame(next);
+            _backdrop?.SetContentEndFrame(next);
+        }
         var nextViewport = PreviewScreenTimelineMath.EnsureAuthoringHorizon(
             _snapshot,
             _viewport,
-            next);
+            _previewContentDurationFrames,
+            activeLane.StartFrame,
+            activeLane.EndFrame);
         if (nextViewport != _viewport)
         {
             _viewport = nextViewport;
@@ -1379,7 +1419,7 @@ internal sealed class PreviewScreenTimelineSurface : Border
             _overlay?.SetViewport(nextViewport);
             activeLane.RebaseActiveDrag(pointerX);
         }
-        UpdateFrameText();
+        if (activeLane.OwnsScreenDuration) UpdateFrameText();
     }
 
     private void SelectLane(PreviewScreenTimelineLane lane)
@@ -2077,7 +2117,6 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
     public bool IsSelected => _isSelected;
     public int StartFrame => _startFrame;
     public int EndFrame => _endFrame;
-    public bool AffectsScreenDuration => _movesOwnerOrigin;
     public bool OwnsScreenDuration => _ownsScreenDuration;
     public IReadOnlyList<int> SnapFrames => _isGeneral
         ? [0, Snapshot.ContentDurationFrames]

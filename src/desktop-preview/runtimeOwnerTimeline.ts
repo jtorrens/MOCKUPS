@@ -74,10 +74,7 @@ export class RuntimeOwnerTimeline {
           "runtime collection animation timeline",
         )
           .reduce((sum, fieldId) => sum + signedFieldValue(item, fields, fieldId), 0);
-        const start = Math.max(
-          0,
-          (sequenceItems ? cursor : this.itemOwnerOrigin(collection, item)) + pre,
-        );
+        const start = (sequenceItems ? cursor : this.itemOwnerOrigin(collection, item)) + pre;
         const durations = this.itemDurations(collection, item, targetId, phase);
         const effectiveSpan = this.targetDuration(targetId, durations.span);
         const effectiveSequence = scale(durations.sequence, durations.span, effectiveSpan);
@@ -97,10 +94,6 @@ export class RuntimeOwnerTimeline {
         });
         if (sequenceItems) cursor = start + effectiveSequence;
         naturalEnd = Math.max(naturalEnd, start + effectiveSpan);
-        const presenceDuration = this.presenceDuration(collection, item);
-        if (presenceDuration !== undefined && presenceDuration > 0) {
-          naturalEnd = Math.max(naturalEnd, start + presenceDuration);
-        }
       }
       if (sequenceItems) naturalEnd = Math.max(naturalEnd, cursor);
     }

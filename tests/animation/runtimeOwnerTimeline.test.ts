@@ -112,7 +112,36 @@ test("serial collection offsets may overlap the preceding item", () => {
   assert.equal(timeline.itemStartFrame("second"), 6);
 });
 
-test("explicit collection presence extends owner duration without changing serial completion", () => {
+test("the first serial collection item may begin before owner frame zero", () => {
+  const serialContract = {
+    collections: [{
+      jsonKey: "items",
+      animationTimeline: {
+        sequenceItems: true,
+        preDurationFieldIds: ["delay"],
+        sequenceCompletionFieldIds: ["text"],
+      },
+      fields: [
+        { id: "delay", jsonKey: "delay" },
+        {
+          id: "text",
+          jsonKey: "text",
+          animationTimeline: { completion: { baseDurationFieldId: "duration" } },
+        },
+        { id: "duration", jsonKey: "duration" },
+      ],
+    }],
+  };
+  const timeline = new RuntimeOwnerTimeline(
+    serialContract,
+    { items: [{ id: "first", delay: -4, text: "One", duration: 6 }] },
+    {},
+  );
+  assert.equal(timeline.itemStartFrame("first"), -4);
+  assert.equal(timeline.itemEndFrame("first"), 2);
+});
+
+test("explicit collection presence does not extend owner duration or serial completion", () => {
   const presenceContract = {
     collections: [{
       jsonKey: "items",
@@ -143,7 +172,7 @@ test("explicit collection presence extends owner duration without changing seria
   assert.equal(timeline.itemPresenceEndFrame("first", 100), 100);
   assert.equal(timeline.itemStartFrame("second"), 11);
   assert.equal(timeline.itemPresenceEndFrame("second", 100), 31);
-  assert.equal(timeline.durationFrames, 31);
+  assert.equal(timeline.durationFrames, 15);
   assert.equal(timeline.itemHasExplicitPresenceEnd("first"), false);
   assert.equal(timeline.itemHasExplicitPresenceEnd("second"), true);
 });

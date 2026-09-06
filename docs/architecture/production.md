@@ -386,13 +386,12 @@ arrival derived from write-on/hold/delay, while a zero visible duration keeps
 it through the Screen end and a positive duration defines an explicit Out.
 Only an explicit pre-boundary Out runs the shared Motion in reverse. Presence
 never delays the next message and never retimes or rewrites message keyframes.
-For a calculated Conversation Screen, the latest positive message Out extends
-the action duration and therefore the reachable playhead range. Conversation
-also allows an explicit duration on each Screen instance. Its Duration field
-and General timeline lane are the same authoring value, may end before or after
-the messages, and clip message content at the Screen boundary without retiming
-it. Conversation header presence follows the Screen boundary, so an explicit
-duration can keep the header after the final message disappears.
+Message In and Out never change the Conversation Screen duration. Conversation
+allows the Screen duration policy declared by its Module; its Duration field
+and General timeline lane are the same independent authoring value, may end
+before or after the messages, and clip message content at the Screen boundary
+without retiming it. Conversation header presence follows the Screen boundary,
+so an explicit duration can keep the header after the final message disappears.
 
 ## Playback
 

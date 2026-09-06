@@ -28,9 +28,11 @@ Production Preview exposes a Screen-relative Timeline over that same clock.
 Its visible range includes three contiguous zones: negative preroll for the
 incoming transition plus action delay, editable Screen content beginning at
 frame zero, and positive postroll for the outgoing transition into the next
-Screen. The playhead may traverse all three zones. General and collection-item
-lanes may be manipulated only inside the content zone; preroll and postroll are
-parent-owned playback context and use an unfilled presentation.
+Screen. The playhead may traverse all three zones. General remains the
+Screen-duration lane. Collection-item lanes may be authored before or after the
+content zone; the parent Screen still clips their resolved output outside its
+own interval. Transition preroll and postroll remain parent-owned playback
+context and use an unfilled presentation.
 
 During write-on, a content-sized Bubble is positioned from its current visible
 bounds on every frame. Right-aligned outgoing Bubbles therefore keep their
@@ -61,12 +63,12 @@ the Screen. A positive value is the number of Screen frames from the item's In
 to its explicit Out. The collection's shared item Motion runs forward at In and
 backward so that it completes at an explicit Out. An automatic Out coincident
 with the Screen end does not start a redundant item exit; Screen Motion owns
-that boundary. For a calculated owner, its effective duration includes the
-latest positive explicit Out across every declared collection; changing an Out
-therefore extends that Screen without changing collection sequencing or local
-keyframes. An explicit Screen duration remains authoritative. Conversation
-messages use this contract and share one Motion recipe from the Conversation
-Module Variant.
+that boundary. Presence never contributes to the owner's calculated duration.
+Changing an Out therefore changes only that item's parent-owned presence
+interval and never the Screen duration, collection sequencing or local
+keyframes. The Screen boundary clips any portion before frame zero or after its
+independent calculated or explicit duration. Conversation messages use this
+contract and share one Motion recipe from the Conversation Module Variant.
 
 Conversation owns message geometry separately from message presence. Its
 `Messages reflow timing` is one duration/easing contract for both keyed
@@ -319,9 +321,9 @@ The Screen Timeline viewport is independent of the Screen duration contract.
 At `1:1` it presents the declared Screen range. Session-only zoom can expand the
 viewport around the current playhead to expose a prospective item Out during a
 drag and keyframes outside that range without clamping or retiming them.
-Collection item entry cannot move before Screen frame zero. Committing a later
-explicit item Out extends a calculated Screen to that Out; an explicit Screen
-keeps its authoritative duration and may retain an Out beyond its range.
+Collection item entry may move before Screen frame zero and its explicit Out may
+move beyond the Screen end. Neither boundary changes the Screen duration; the
+Screen clips the resolved child while preserving its authored timing.
 Viewport scale itself never changes completion dependencies or duration.
 
 Parallel Stack slot lanes default to the complete Screen range. A child

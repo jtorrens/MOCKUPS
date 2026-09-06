@@ -224,7 +224,7 @@ public static class RuntimeAnimationFrameOrigin
                     var appearance = sequenceItems
                         ? cursor
                         : ItemOwnerOrigin(collection, item);
-                    var start = Math.Max(0, appearance + pre);
+                    var start = appearance + pre;
                     var durations = CalculateItemDurations(collection, item, targetId, phase);
                     var effectiveSpan = TargetDuration(targetId, durations.Span);
                     var effectiveSequence = Scale(durations.Sequence, durations.Span, effectiveSpan);
@@ -243,13 +243,6 @@ public static class RuntimeAnimationFrameOrigin
                     }
                     if (sequenceItems) cursor = start + effectiveSequence;
                     naturalEnd = Math.Max(naturalEnd, start + effectiveSpan);
-                    var presenceDuration = PresenceDuration(collection, item);
-                    if (presenceDuration is > 0)
-                    {
-                        naturalEnd = Math.Max(
-                            naturalEnd,
-                            start + presenceDuration.Value);
-                    }
                 }
                 if (sequenceItems) naturalEnd = Math.Max(naturalEnd, cursor);
             }
