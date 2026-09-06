@@ -392,6 +392,8 @@ and General timeline lane are the same independent authoring value, may end
 before or after the messages, and clip message content at the Screen boundary
 without retiming it. Conversation header presence follows the Screen boundary,
 so an explicit duration can keep the header after the final message disappears.
+Message Motion/Fade begins at the message track In rather than at the Screen In;
+clipping a negative message In never restarts its Motion.
 
 ## Playback
 

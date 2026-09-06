@@ -19360,6 +19360,18 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
             && item.EndFrame > item.StartFrame));
     True(resolved.Collections[0].Items[0].StartFrame < 0);
     True(resolved.Collections[0].Items[1].EndFrame > resolved.ContentDurationFrames);
+    Equal(0d, RuntimeAnimationFrameOrigin.OwnerLocalFrame(
+        Object(contract),
+        preview,
+        new JsonObject(),
+        "item_1",
+        screenFrame: -4));
+    Equal(4d, RuntimeAnimationFrameOrigin.OwnerLocalFrame(
+        Object(contract),
+        preview,
+        new JsonObject(),
+        "item_1",
+        screenFrame: 0));
     var derivedContract = Object(contract);
     derivedContract["collections"]![0]!["animationTimeline"]!
         .AsObject()

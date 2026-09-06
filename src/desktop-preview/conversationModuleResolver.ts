@@ -526,30 +526,18 @@ function conversationMessages(preview: JsonRecord): ResolvedConversationMessage[
         0,
         Math.floor(optionalNumber(message, "composerWriteOnFrame", 0)),
       ),
-      timelineStartFrame: Math.max(
-        0,
-        Math.floor(optionalNumber(message, "timelineStartFrame", 0)),
-      ),
-      timelineTextStartFrame: Math.max(
-        0,
-        Math.floor(optionalNumber(
-          message,
-          "timelineTextStartFrame",
-          optionalNumber(message, "timelineStartFrame", 0),
-        )),
-      ),
+      timelineStartFrame: Math.floor(optionalNumber(message, "timelineStartFrame", 0)),
+      timelineTextStartFrame: Math.floor(optionalNumber(
+        message,
+        "timelineTextStartFrame",
+        optionalNumber(message, "timelineStartFrame", 0),
+      )),
       timelineTemporalFrame: Math.max(
         0,
         Math.floor(optionalNumber(message, "timelineTemporalFrame", 0)),
       ),
-      timelineRevealAtFrame: Math.max(
-        0,
-        Math.floor(optionalNumber(message, "timelineRevealAtFrame", 0)),
-      ),
-      presenceEndFrame: Math.max(
-        1,
-        Math.floor(optionalNumber(message, "presenceEndFrame", 1)),
-      ),
+      timelineRevealAtFrame: Math.floor(optionalNumber(message, "timelineRevealAtFrame", 0)),
+      presenceEndFrame: Math.floor(optionalNumber(message, "presenceEndFrame", 1)),
       hasExplicitPresenceEnd: optionalBoolean(message, "hasExplicitPresenceEnd"),
       writeOnDurationFrames: Math.max(
         0,
@@ -564,9 +552,8 @@ function conversationMessages(preview: JsonRecord): ResolvedConversationMessage[
       ),
       ...(Object.hasOwn(message, "keepCursorReleaseFrame")
         ? {
-            keepCursorReleaseFrame: Math.max(
-              0,
-              Math.floor(optionalNumber(message, "keepCursorReleaseFrame", 0)),
+            keepCursorReleaseFrame: Math.floor(
+              optionalNumber(message, "keepCursorReleaseFrame", 0),
             ),
           }
         : {}),
@@ -683,7 +670,9 @@ function messageVisibleAtFrame(
   const revealAt = revealAfterWriteOn
     ? message.timelineRevealAtFrame
     : message.timelineStartFrame;
-  return Math.max(revealAt, message.keepCursorReleaseFrame ?? 0);
+  return message.keepCursorReleaseFrame === undefined
+    ? revealAt
+    : Math.max(revealAt, message.keepCursorReleaseFrame);
 }
 
 function visibleMessages(

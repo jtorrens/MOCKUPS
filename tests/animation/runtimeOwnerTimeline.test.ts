@@ -139,6 +139,8 @@ test("the first serial collection item may begin before owner frame zero", () =>
   );
   assert.equal(timeline.itemStartFrame("first"), -4);
   assert.equal(timeline.itemEndFrame("first"), 2);
+  assert.equal(timeline.temporalOwnerFrame("first", -4), 0);
+  assert.equal(timeline.temporalOwnerFrame("first", 0), 4);
 });
 
 test("explicit collection presence does not extend owner duration or serial completion", () => {

@@ -314,7 +314,10 @@ public static class RuntimeAnimationFrameOrigin
 
         public double OwnerLocalFrame(string targetId, int screenFrame)
         {
-            var rootNatural = Unscale(Math.Max(0, screenFrame), _naturalDuration, _effectiveDuration);
+            var rootNatural = Unscale(
+                string.IsNullOrWhiteSpace(targetId) ? Math.Max(0, screenFrame) : screenFrame,
+                _naturalDuration,
+                _effectiveDuration);
             if (string.IsNullOrWhiteSpace(targetId)) return rootNatural;
             if (!_items.TryGetValue(targetId, out var item)) return 0;
             return Unscale(rootNatural - item.RootStart, item.NaturalSpan, item.EffectiveSpan);
@@ -368,7 +371,10 @@ public static class RuntimeAnimationFrameOrigin
 
         public double LocalFrame(string fieldId, string targetId, int screenFrame)
         {
-            var rootNaturalFrame = Unscale(Math.Max(0, screenFrame), _naturalDuration, _effectiveDuration);
+            var rootNaturalFrame = Unscale(
+                string.IsNullOrWhiteSpace(targetId) ? Math.Max(0, screenFrame) : screenFrame,
+                _naturalDuration,
+                _effectiveDuration);
             if (string.IsNullOrWhiteSpace(targetId))
             {
                 var origin = TopField(fieldId).Origin;

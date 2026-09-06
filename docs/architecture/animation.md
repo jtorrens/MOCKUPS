@@ -69,6 +69,10 @@ interval and never the Screen duration, collection sequencing or local
 keyframes. The Screen boundary clips any portion before frame zero or after its
 independent calculated or explicit duration. Conversation messages use this
 contract and share one Motion recipe from the Conversation Module Variant.
+An item's forward Motion/Fade clock starts at its own resolved In, including a
+negative In. The Screen does not restart that clock at frame zero: when the
+Screen first becomes visible, a preroll item is already at the progress reached
+since its track In.
 
 Conversation owns message geometry separately from message presence. Its
 `Messages reflow timing` is one duration/easing contract for both keyed

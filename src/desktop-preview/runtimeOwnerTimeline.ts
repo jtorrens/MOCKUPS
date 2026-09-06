@@ -128,7 +128,11 @@ export class RuntimeOwnerTimeline {
   }
 
   localFrame(fieldId: string, targetId: string, screenFrame: number) {
-    const rootNatural = unscale(Math.max(0, screenFrame), this.naturalDuration, this.durationFrames);
+    const rootNatural = unscale(
+      targetId ? screenFrame : Math.max(0, screenFrame),
+      this.naturalDuration,
+      this.durationFrames,
+    );
     if (!targetId) return rootNatural - this.topField(fieldId).origin;
     const item = this.items.get(targetId);
     if (!item) return 0;
@@ -164,13 +168,13 @@ export class RuntimeOwnerTimeline {
     const item = this.items.get(targetId);
     if (!item) return 0;
     const ownerFrameAt = (candidateFrame: number) => {
-      const rootNatural = unscale(Math.max(0, candidateFrame), this.naturalDuration, this.durationFrames);
+      const rootNatural = unscale(candidateFrame, this.naturalDuration, this.durationFrames);
       const ownerEffective = rootNatural - item.rootStart;
       const ownerNatural = unscale(ownerEffective, item.naturalSpan, item.effectiveSpan);
       return item.phase > 0 ? Math.max(0, ownerNatural - item.phase) : ownerNatural;
     };
     const entered = ownerFrameAt(screenFrame);
-    if (item.phase <= 0 || !presenceEndFrame || presenceEndFrame <= 0) return entered;
+    if (item.phase <= 0 || presenceEndFrame === undefined) return entered;
     const entryDuration = Math.max(0, this.itemPhaseEndFrame(targetId) - this.itemStartFrame(targetId));
     const exitStart = Math.max(this.itemStartFrame(targetId), presenceEndFrame - entryDuration);
     return screenFrame < exitStart ? entered : ownerFrameAt(exitStart);

@@ -951,6 +951,43 @@ test("Conversation message presence ends at its explicit resolved Out", () => {
   assert.equal(at(100).length, 0);
 });
 
+test("Conversation message Motion starts at the track In before Screen frame zero", () => {
+  const source = committedConversationPayload(true);
+  const runtime = JSON.parse(source.designPreviewJson) as {
+    messages: Array<Record<string, unknown>>;
+  };
+  const original = runtime.messages[0]!;
+  runtime.messages = [{
+    ...original,
+    id: "preroll-message",
+    direction: "incoming",
+    delayAfterPreviousFrames: -100,
+    postWriteOnHoldFrames: 0,
+    visibleDurationFrames: 0,
+    writeOnTiming: {
+      mode: "fixed",
+      fixedFrames: 0,
+      paceToken: "theme.motion.naturalPace.normal",
+    },
+  }];
+  source.designPreviewJson = JSON.stringify(runtime);
+  source.localFrame = 0;
+  source.screenTiming = {
+    screenFrame: 0,
+    transitionFrameCount: 0,
+    actionDelayFrames: 0,
+    actionDurationFrames: 100,
+    actionStartFrame: 0,
+  };
+  const instance = JSON.parse(source.instanceJson) as Record<string, unknown>;
+  instance.context = { screenFrame: 0 };
+  source.instanceJson = JSON.stringify(instance);
+
+  const [message] = resolveConversationModule(source).visibleMessages;
+  assert.equal(message?.visibleAtFrame, -100);
+  assert.equal(message?.presenceMotionKind, undefined);
+});
+
 test("Conversation uses one reflow timing when a message appears", () => {
   const source = committedConversationPayload(true);
   const runtime = JSON.parse(source.designPreviewJson) as {
