@@ -182,6 +182,7 @@ var tests = new (string Name, Action Run)[]
     ("exact Component Variant Slots replace inherited boundaries atomically", ExactComponentVariantSlotsReplaceInheritedBoundaries),
     ("Default Variant editing unlock is session-only", DefaultVariantEditingUnlockIsSessionOnly),
     ("fixed structural Runtime collections reconcile by stable ids", FixedStructuralRuntimeCollectionsReconcileByStableIds),
+    ("Icon Bar Variants own exact zone topology", IconBarVariantsOwnExactZoneTopology),
     ("Incoming Call exposes exact Avatar and Icon Row Runtime boundaries", IncomingCallExposesExactChildRuntimeBoundaries),
     ("Preview references share Project media path resolution", PreviewReferencesShareProjectMediaPathResolution),
     ("Project media roots are empty or absolute external paths", ProjectMediaRootsAreExternalAbsolutePaths),
@@ -3400,7 +3401,12 @@ static void FixedStructuralRuntimeCollectionsReconcileByStableIds()
             "iconRow",
             invalidItemSizing,
             "Icon Row with invalid item sizing"));
-    Equal(0, JsonPath.RequiredArray(defaultContract, "buttonInputs", "Default Icon Row Runtime").Count);
+    SequenceEqual(
+        ["button_001"],
+        JsonPath.ObjectItems(
+                JsonPath.RequiredArray(defaultContract, "buttonInputs", "Default Icon Row Runtime"),
+                "Default Icon Row Runtime buttons")
+            .Select((item) => JsonPath.RequiredString(item, "id", "Default Icon Row button")));
     SequenceEqual(
         ["decline", "answer"],
         JsonPath.ObjectItems(
@@ -3442,9 +3448,12 @@ static void FixedStructuralRuntimeCollectionsReconcileByStableIds()
         buttons.OfType<JsonObject>().Select((item) => JsonPath.RequiredString(item, "id", "Reordered button")));
     Equal("normal", buttons[0]?["state"]?.GetValue<string>() ?? "");
 
-    StructuredRuntimeCollectionProjection.Apply(
-        preview,
-        database.GetComponentVariantConfig(references["default"]));
+    var emptyConfig = database.GetComponentVariantConfig(references["default"]);
+    JsonPath.RequiredArray(
+        JsonPath.RequiredObject(emptyConfig, "iconRow", "Empty Icon Row config"),
+        "items",
+        "Empty Icon Row config").Clear();
+    StructuredRuntimeCollectionProjection.Apply(preview, emptyConfig);
     Equal(0, JsonPath.RequiredArray(preview, "buttonInputs", "Empty Icon Row Runtime").Count);
 
     var duplicateConfig = iosConfig.DeepClone().AsObject();
@@ -3468,6 +3477,78 @@ static void FixedStructuralRuntimeCollectionsReconcileByStableIds()
             "iconRow",
             "Icon Row without item sizing").Remove("itemSizingMode");
         return clone;
+    }
+}
+
+static void IconBarVariantsOwnExactZoneTopology()
+{
+    var database = new SqliteProjectTestContext(ParityDatabasePath());
+    var iconBar = database.LoadProjectTree()
+        .SelectMany(DescendantsAndSelf)
+        .Single((node) =>
+            node.Kind == ProjectTreeNodeKind.ComponentClass
+            && database.GetComponentClassSettings(node.Id).ComponentType == "iconBar");
+    var variants = iconBar.Children
+        .Where((node) => node.Kind == ProjectTreeNodeKind.ComponentVariant)
+        .ToDictionary(
+            (node) => node.Id[(node.Id.LastIndexOf("::variant::", StringComparison.Ordinal)
+                + "::variant::".Length)..],
+            (node) => database.GetComponentVariantConfig(node.Id),
+            StringComparer.Ordinal);
+    var expected = new Dictionary<string, int[]>(StringComparer.Ordinal)
+    {
+        ["default"] = [1, 1, 1, 1, 1, 1],
+        ["default_copy"] = [1, 0, 2, 1, 0, 1],
+        ["text_input_chat_copy"] = [1, 0, 1, 1, 0, 1],
+    };
+    var prefixes = new[]
+    {
+        "idleLeft",
+        "idleCenter",
+        "idleRight",
+        "activeLeft",
+        "activeCenter",
+        "activeRight",
+    };
+
+    foreach (var (variantId, counts) in expected)
+    {
+        var config = JsonPath.RequiredObject(
+            variants[variantId],
+            "iconBar",
+            $"Icon Bar {variantId}");
+        for (var index = 0; index < prefixes.Length; index++)
+        {
+            var prefix = prefixes[index];
+            var slot = JsonPath.RequiredObject(
+                config,
+                $"{prefix}IconRowSlot",
+                $"Icon Bar {variantId} {prefix} slot");
+            var overrides = JsonPath.RequiredObject(
+                slot,
+                "overrides",
+                $"Icon Bar {variantId} {prefix} overrides");
+            var structuralItems = JsonPath.RequiredArray(
+                JsonPath.RequiredObject(
+                    overrides,
+                    "iconRow",
+                    $"Icon Bar {variantId} {prefix} row"),
+                "items",
+                $"Icon Bar {variantId} {prefix} structure");
+            var runtimeItems = JsonPath.RequiredArray(
+                JsonPath.RequiredObject(
+                    config,
+                    $"{prefix}IconRowInputs",
+                    $"Icon Bar {variantId} {prefix} inputs"),
+                "buttonInputs",
+                $"Icon Bar {variantId} {prefix} Runtime");
+            Equal(counts[index], structuralItems.Count);
+            SequenceEqual(
+                JsonPath.ObjectItems(structuralItems, "Icon Bar structural items")
+                    .Select((item) => JsonPath.RequiredString(item, "id", "Icon Bar structural item")),
+                JsonPath.ObjectItems(runtimeItems, "Icon Bar Runtime items")
+                    .Select((item) => JsonPath.RequiredString(item, "id", "Icon Bar Runtime item")));
+        }
     }
 }
 

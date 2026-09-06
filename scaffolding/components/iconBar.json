@@ -49,45 +49,243 @@
       "edgePadding": "theme.spacing.m",
       "idleLeftIconRowSlot": {
         "variantReference": "component_project_foqn_s2_iconRow::variant::default",
-        "overrides": {}
+        "overrides": {
+          "iconRow": {
+            "items": [
+              {
+                "id": "button_001",
+                "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                "state": "normal",
+                "iconToken": "media_camera",
+                "text": "",
+                "buttonOverrides": {},
+                "iconSizeToken": "theme.iconSizes.m",
+                "textSizeToken": "theme.typography.sizes.s"
+              }
+            ]
+          }
+        }
       },
       "idleLeftIconRowInputs": {
-        "buttonInputs": []
+        "buttonInputs": [
+          {
+            "id": "button_001",
+            "state": "normal",
+            "sampleText": "",
+            "iconToken": "media_camera",
+            "iconSizeToken": "theme.iconSizes.m",
+            "textSizeToken": "theme.typography.sizes.s",
+            "showBadge": false,
+            "badgeContentMode": "text",
+            "badgeIconToken": "system_check",
+            "badgeText": "1",
+            "badgeSize": 20,
+            "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
+            "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
+            "iconColorToken": "theme.colors.icon",
+            "textColorToken": "theme.colors.textPrimary"
+          }
+        ]
       },
       "idleCenterIconRowSlot": {
         "variantReference": "component_project_foqn_s2_iconRow::variant::default",
-        "overrides": {}
+        "overrides": {
+          "iconRow": {
+            "items": [
+              {
+                "id": "button_001",
+                "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                "state": "normal",
+                "iconToken": "media_play",
+                "text": "",
+                "buttonOverrides": {},
+                "iconSizeToken": "theme.iconSizes.m",
+                "textSizeToken": "theme.typography.sizes.s"
+              }
+            ]
+          }
+        }
       },
       "idleCenterIconRowInputs": {
-        "buttonInputs": []
+        "buttonInputs": [
+          {
+            "id": "button_001",
+            "state": "normal",
+            "sampleText": "",
+            "iconToken": "media_play",
+            "iconSizeToken": "theme.iconSizes.m",
+            "textSizeToken": "theme.typography.sizes.s",
+            "showBadge": false,
+            "badgeContentMode": "text",
+            "badgeIconToken": "system_check",
+            "badgeText": "1",
+            "badgeSize": 20,
+            "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
+            "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
+            "iconColorToken": "theme.colors.icon",
+            "textColorToken": "theme.colors.textPrimary"
+          }
+        ]
       },
       "idleRightIconRowSlot": {
         "variantReference": "component_project_foqn_s2_iconRow::variant::default",
-        "overrides": {}
+        "overrides": {
+          "iconRow": {
+            "items": [
+              {
+                "id": "button_001",
+                "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                "state": "normal",
+                "iconToken": "nav_more_horizontal",
+                "text": "",
+                "buttonOverrides": {},
+                "iconSizeToken": "theme.iconSizes.m",
+                "textSizeToken": "theme.typography.sizes.s"
+              }
+            ]
+          }
+        }
       },
       "idleRightIconRowInputs": {
-        "buttonInputs": []
+        "buttonInputs": [
+          {
+            "id": "button_001",
+            "state": "normal",
+            "sampleText": "",
+            "iconToken": "nav_more_horizontal",
+            "iconSizeToken": "theme.iconSizes.m",
+            "textSizeToken": "theme.typography.sizes.s",
+            "showBadge": false,
+            "badgeContentMode": "text",
+            "badgeIconToken": "system_check",
+            "badgeText": "1",
+            "badgeSize": 20,
+            "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
+            "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
+            "iconColorToken": "theme.colors.icon",
+            "textColorToken": "theme.colors.textPrimary"
+          }
+        ]
       },
       "activeLeftIconRowSlot": {
         "variantReference": "component_project_foqn_s2_iconRow::variant::default",
-        "overrides": {}
+        "overrides": {
+          "iconRow": {
+            "items": [
+              {
+                "id": "button_001",
+                "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                "state": "normal",
+                "iconToken": "media_camera",
+                "text": "",
+                "buttonOverrides": {},
+                "iconSizeToken": "theme.iconSizes.m",
+                "textSizeToken": "theme.typography.sizes.s"
+              }
+            ]
+          }
+        }
       },
       "activeLeftIconRowInputs": {
-        "buttonInputs": []
+        "buttonInputs": [
+          {
+            "id": "button_001",
+            "state": "normal",
+            "sampleText": "",
+            "iconToken": "media_camera",
+            "iconSizeToken": "theme.iconSizes.m",
+            "textSizeToken": "theme.typography.sizes.s",
+            "showBadge": false,
+            "badgeContentMode": "text",
+            "badgeIconToken": "system_check",
+            "badgeText": "1",
+            "badgeSize": 20,
+            "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
+            "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
+            "iconColorToken": "theme.colors.icon",
+            "textColorToken": "theme.colors.textPrimary"
+          }
+        ]
       },
       "activeCenterIconRowSlot": {
         "variantReference": "component_project_foqn_s2_iconRow::variant::default",
-        "overrides": {}
+        "overrides": {
+          "iconRow": {
+            "items": [
+              {
+                "id": "button_001",
+                "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                "state": "normal",
+                "iconToken": "media_pause",
+                "text": "",
+                "buttonOverrides": {},
+                "iconSizeToken": "theme.iconSizes.m",
+                "textSizeToken": "theme.typography.sizes.s"
+              }
+            ]
+          }
+        }
       },
       "activeCenterIconRowInputs": {
-        "buttonInputs": []
+        "buttonInputs": [
+          {
+            "id": "button_001",
+            "state": "normal",
+            "sampleText": "",
+            "iconToken": "media_pause",
+            "iconSizeToken": "theme.iconSizes.m",
+            "textSizeToken": "theme.typography.sizes.s",
+            "showBadge": false,
+            "badgeContentMode": "text",
+            "badgeIconToken": "system_check",
+            "badgeText": "1",
+            "badgeSize": 20,
+            "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
+            "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
+            "iconColorToken": "theme.colors.icon",
+            "textColorToken": "theme.colors.textPrimary"
+          }
+        ]
       },
       "activeRightIconRowSlot": {
         "variantReference": "component_project_foqn_s2_iconRow::variant::default",
-        "overrides": {}
+        "overrides": {
+          "iconRow": {
+            "items": [
+              {
+                "id": "button_001",
+                "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                "state": "normal",
+                "iconToken": "nav_more_horizontal",
+                "text": "",
+                "buttonOverrides": {},
+                "iconSizeToken": "theme.iconSizes.m",
+                "textSizeToken": "theme.typography.sizes.s"
+              }
+            ]
+          }
+        }
       },
       "activeRightIconRowInputs": {
-        "buttonInputs": []
+        "buttonInputs": [
+          {
+            "id": "button_001",
+            "state": "normal",
+            "sampleText": "",
+            "iconToken": "nav_more_horizontal",
+            "iconSizeToken": "theme.iconSizes.m",
+            "textSizeToken": "theme.typography.sizes.s",
+            "showBadge": false,
+            "badgeContentMode": "text",
+            "badgeIconToken": "system_check",
+            "badgeText": "1",
+            "badgeSize": 20,
+            "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
+            "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
+            "iconColorToken": "theme.colors.icon",
+            "textColorToken": "theme.colors.textPrimary"
+          }
+        ]
       },
       "sizeSource": "shared",
       "iconSizeToken": "theme.iconSizes.m",
@@ -116,45 +314,243 @@
         "edgePadding": "theme.spacing.m",
         "idleLeftIconRowSlot": {
           "variantReference": "component_project_foqn_s2_iconRow::variant::default",
-          "overrides": {}
+          "overrides": {
+            "iconRow": {
+              "items": [
+                {
+                  "id": "button_001",
+                  "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                  "state": "normal",
+                  "iconToken": "media_camera",
+                  "text": "",
+                  "buttonOverrides": {},
+                  "iconSizeToken": "theme.iconSizes.m",
+                  "textSizeToken": "theme.typography.sizes.s"
+                }
+              ]
+            }
+          }
         },
         "idleLeftIconRowInputs": {
-          "buttonInputs": []
+          "buttonInputs": [
+            {
+              "id": "button_001",
+              "state": "normal",
+              "sampleText": "",
+              "iconToken": "media_camera",
+              "iconSizeToken": "theme.iconSizes.m",
+              "textSizeToken": "theme.typography.sizes.s",
+              "showBadge": false,
+              "badgeContentMode": "text",
+              "badgeIconToken": "system_check",
+              "badgeText": "1",
+              "badgeSize": 20,
+              "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
+              "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
+              "iconColorToken": "theme.colors.icon",
+              "textColorToken": "theme.colors.textPrimary"
+            }
+          ]
         },
         "idleCenterIconRowSlot": {
           "variantReference": "component_project_foqn_s2_iconRow::variant::default",
-          "overrides": {}
+          "overrides": {
+            "iconRow": {
+              "items": [
+                {
+                  "id": "button_001",
+                  "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                  "state": "normal",
+                  "iconToken": "media_play",
+                  "text": "",
+                  "buttonOverrides": {},
+                  "iconSizeToken": "theme.iconSizes.m",
+                  "textSizeToken": "theme.typography.sizes.s"
+                }
+              ]
+            }
+          }
         },
         "idleCenterIconRowInputs": {
-          "buttonInputs": []
+          "buttonInputs": [
+            {
+              "id": "button_001",
+              "state": "normal",
+              "sampleText": "",
+              "iconToken": "media_play",
+              "iconSizeToken": "theme.iconSizes.m",
+              "textSizeToken": "theme.typography.sizes.s",
+              "showBadge": false,
+              "badgeContentMode": "text",
+              "badgeIconToken": "system_check",
+              "badgeText": "1",
+              "badgeSize": 20,
+              "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
+              "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
+              "iconColorToken": "theme.colors.icon",
+              "textColorToken": "theme.colors.textPrimary"
+            }
+          ]
         },
         "idleRightIconRowSlot": {
           "variantReference": "component_project_foqn_s2_iconRow::variant::default",
-          "overrides": {}
+          "overrides": {
+            "iconRow": {
+              "items": [
+                {
+                  "id": "button_001",
+                  "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                  "state": "normal",
+                  "iconToken": "nav_more_horizontal",
+                  "text": "",
+                  "buttonOverrides": {},
+                  "iconSizeToken": "theme.iconSizes.m",
+                  "textSizeToken": "theme.typography.sizes.s"
+                }
+              ]
+            }
+          }
         },
         "idleRightIconRowInputs": {
-          "buttonInputs": []
+          "buttonInputs": [
+            {
+              "id": "button_001",
+              "state": "normal",
+              "sampleText": "",
+              "iconToken": "nav_more_horizontal",
+              "iconSizeToken": "theme.iconSizes.m",
+              "textSizeToken": "theme.typography.sizes.s",
+              "showBadge": false,
+              "badgeContentMode": "text",
+              "badgeIconToken": "system_check",
+              "badgeText": "1",
+              "badgeSize": 20,
+              "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
+              "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
+              "iconColorToken": "theme.colors.icon",
+              "textColorToken": "theme.colors.textPrimary"
+            }
+          ]
         },
         "activeLeftIconRowSlot": {
           "variantReference": "component_project_foqn_s2_iconRow::variant::default",
-          "overrides": {}
+          "overrides": {
+            "iconRow": {
+              "items": [
+                {
+                  "id": "button_001",
+                  "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                  "state": "normal",
+                  "iconToken": "media_camera",
+                  "text": "",
+                  "buttonOverrides": {},
+                  "iconSizeToken": "theme.iconSizes.m",
+                  "textSizeToken": "theme.typography.sizes.s"
+                }
+              ]
+            }
+          }
         },
         "activeLeftIconRowInputs": {
-          "buttonInputs": []
+          "buttonInputs": [
+            {
+              "id": "button_001",
+              "state": "normal",
+              "sampleText": "",
+              "iconToken": "media_camera",
+              "iconSizeToken": "theme.iconSizes.m",
+              "textSizeToken": "theme.typography.sizes.s",
+              "showBadge": false,
+              "badgeContentMode": "text",
+              "badgeIconToken": "system_check",
+              "badgeText": "1",
+              "badgeSize": 20,
+              "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
+              "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
+              "iconColorToken": "theme.colors.icon",
+              "textColorToken": "theme.colors.textPrimary"
+            }
+          ]
         },
         "activeCenterIconRowSlot": {
           "variantReference": "component_project_foqn_s2_iconRow::variant::default",
-          "overrides": {}
+          "overrides": {
+            "iconRow": {
+              "items": [
+                {
+                  "id": "button_001",
+                  "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                  "state": "normal",
+                  "iconToken": "media_pause",
+                  "text": "",
+                  "buttonOverrides": {},
+                  "iconSizeToken": "theme.iconSizes.m",
+                  "textSizeToken": "theme.typography.sizes.s"
+                }
+              ]
+            }
+          }
         },
         "activeCenterIconRowInputs": {
-          "buttonInputs": []
+          "buttonInputs": [
+            {
+              "id": "button_001",
+              "state": "normal",
+              "sampleText": "",
+              "iconToken": "media_pause",
+              "iconSizeToken": "theme.iconSizes.m",
+              "textSizeToken": "theme.typography.sizes.s",
+              "showBadge": false,
+              "badgeContentMode": "text",
+              "badgeIconToken": "system_check",
+              "badgeText": "1",
+              "badgeSize": 20,
+              "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
+              "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
+              "iconColorToken": "theme.colors.icon",
+              "textColorToken": "theme.colors.textPrimary"
+            }
+          ]
         },
         "activeRightIconRowSlot": {
           "variantReference": "component_project_foqn_s2_iconRow::variant::default",
-          "overrides": {}
+          "overrides": {
+            "iconRow": {
+              "items": [
+                {
+                  "id": "button_001",
+                  "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                  "state": "normal",
+                  "iconToken": "nav_more_horizontal",
+                  "text": "",
+                  "buttonOverrides": {},
+                  "iconSizeToken": "theme.iconSizes.m",
+                  "textSizeToken": "theme.typography.sizes.s"
+                }
+              ]
+            }
+          }
         },
         "activeRightIconRowInputs": {
-          "buttonInputs": []
+          "buttonInputs": [
+            {
+              "id": "button_001",
+              "state": "normal",
+              "sampleText": "",
+              "iconToken": "nav_more_horizontal",
+              "iconSizeToken": "theme.iconSizes.m",
+              "textSizeToken": "theme.typography.sizes.s",
+              "showBadge": false,
+              "badgeContentMode": "text",
+              "badgeIconToken": "system_check",
+              "badgeText": "1",
+              "badgeSize": 20,
+              "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
+              "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
+              "iconColorToken": "theme.colors.icon",
+              "textColorToken": "theme.colors.textPrimary"
+            }
+          ]
         },
         "sizeSource": "shared",
         "iconSizeToken": "theme.iconSizes.m",
@@ -185,45 +581,212 @@
           "edgePadding": "theme.spacing.m",
           "idleLeftIconRowSlot": {
             "variantReference": "component_project_foqn_s2_iconRow::variant::default",
-            "overrides": {}
+            "overrides": {
+              "iconRow": {
+                "items": [
+                  {
+                    "id": "button_001",
+                    "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                    "state": "normal",
+                    "iconToken": "system_add",
+                    "text": "",
+                    "buttonOverrides": {},
+                    "iconSizeToken": "theme.iconSizes.m",
+                    "textSizeToken": "theme.typography.sizes.s"
+                  }
+                ]
+              }
+            }
           },
           "idleLeftIconRowInputs": {
-            "buttonInputs": []
+            "buttonInputs": [
+              {
+                "id": "button_001",
+                "state": "normal",
+                "sampleText": "",
+                "iconToken": "system_add",
+                "iconSizeToken": "theme.iconSizes.m",
+                "textSizeToken": "theme.typography.sizes.s",
+                "showBadge": false,
+                "badgeContentMode": "text",
+                "badgeIconToken": "system_check",
+                "badgeText": "1",
+                "badgeSize": 20,
+                "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
+                "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
+                "iconColorToken": "theme.colors.icon",
+                "textColorToken": "theme.colors.textPrimary"
+              }
+            ]
           },
           "idleCenterIconRowSlot": {
             "variantReference": "component_project_foqn_s2_iconRow::variant::default",
-            "overrides": {}
+            "overrides": {
+              "iconRow": {
+                "items": []
+              }
+            }
           },
           "idleCenterIconRowInputs": {
             "buttonInputs": []
           },
           "idleRightIconRowSlot": {
             "variantReference": "component_project_foqn_s2_iconRow::variant::default",
-            "overrides": {}
+            "overrides": {
+              "iconRow": {
+                "items": [
+                  {
+                    "id": "button_001",
+                    "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                    "state": "normal",
+                    "iconToken": "media_camera",
+                    "text": "",
+                    "buttonOverrides": {},
+                    "iconSizeToken": "theme.iconSizes.m",
+                    "textSizeToken": "theme.typography.sizes.s"
+                  },
+                  {
+                    "id": "button_002",
+                    "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                    "state": "normal",
+                    "iconToken": "media_mic",
+                    "text": "",
+                    "buttonOverrides": {},
+                    "iconSizeToken": "theme.iconSizes.m",
+                    "textSizeToken": "theme.typography.sizes.s"
+                  }
+                ]
+              }
+            }
           },
           "idleRightIconRowInputs": {
-            "buttonInputs": []
+            "buttonInputs": [
+              {
+                "id": "button_001",
+                "state": "normal",
+                "sampleText": "",
+                "iconToken": "media_camera",
+                "iconSizeToken": "theme.iconSizes.m",
+                "textSizeToken": "theme.typography.sizes.s",
+                "showBadge": false,
+                "badgeContentMode": "text",
+                "badgeIconToken": "system_check",
+                "badgeText": "1",
+                "badgeSize": 20,
+                "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
+                "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
+                "iconColorToken": "theme.colors.icon",
+                "textColorToken": "theme.colors.textPrimary"
+              },
+              {
+                "id": "button_002",
+                "state": "normal",
+                "sampleText": "",
+                "iconToken": "media_mic",
+                "iconSizeToken": "theme.iconSizes.m",
+                "textSizeToken": "theme.typography.sizes.s",
+                "showBadge": false,
+                "badgeContentMode": "text",
+                "badgeIconToken": "system_check",
+                "badgeText": "1",
+                "badgeSize": 20,
+                "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
+                "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
+                "iconColorToken": "theme.colors.icon",
+                "textColorToken": "theme.colors.textPrimary"
+              }
+            ]
           },
           "activeLeftIconRowSlot": {
             "variantReference": "component_project_foqn_s2_iconRow::variant::default",
-            "overrides": {}
+            "overrides": {
+              "iconRow": {
+                "items": [
+                  {
+                    "id": "button_001",
+                    "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                    "state": "normal",
+                    "iconToken": "media_camera",
+                    "text": "",
+                    "buttonOverrides": {},
+                    "iconSizeToken": "theme.iconSizes.m",
+                    "textSizeToken": "theme.typography.sizes.s"
+                  }
+                ]
+              }
+            }
           },
           "activeLeftIconRowInputs": {
-            "buttonInputs": []
+            "buttonInputs": [
+              {
+                "id": "button_001",
+                "state": "normal",
+                "sampleText": "",
+                "iconToken": "media_camera",
+                "iconSizeToken": "theme.iconSizes.m",
+                "textSizeToken": "theme.typography.sizes.s",
+                "showBadge": false,
+                "badgeContentMode": "text",
+                "badgeIconToken": "system_check",
+                "badgeText": "1",
+                "badgeSize": 20,
+                "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
+                "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
+                "iconColorToken": "theme.colors.icon",
+                "textColorToken": "theme.colors.textPrimary"
+              }
+            ]
           },
           "activeCenterIconRowSlot": {
             "variantReference": "component_project_foqn_s2_iconRow::variant::default",
-            "overrides": {}
+            "overrides": {
+              "iconRow": {
+                "items": []
+              }
+            }
           },
           "activeCenterIconRowInputs": {
             "buttonInputs": []
           },
           "activeRightIconRowSlot": {
             "variantReference": "component_project_foqn_s2_iconRow::variant::default",
-            "overrides": {}
+            "overrides": {
+              "iconRow": {
+                "items": [
+                  {
+                    "id": "button_001",
+                    "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                    "state": "normal",
+                    "iconToken": "chat_send",
+                    "text": "",
+                    "buttonOverrides": {},
+                    "iconSizeToken": "theme.iconSizes.m",
+                    "textSizeToken": "theme.typography.sizes.s"
+                  }
+                ]
+              }
+            }
           },
           "activeRightIconRowInputs": {
-            "buttonInputs": []
+            "buttonInputs": [
+              {
+                "id": "button_001",
+                "state": "normal",
+                "sampleText": "",
+                "iconToken": "chat_send",
+                "iconSizeToken": "theme.iconSizes.m",
+                "textSizeToken": "theme.typography.sizes.s",
+                "showBadge": false,
+                "badgeContentMode": "text",
+                "badgeIconToken": "system_check",
+                "badgeText": "1",
+                "badgeSize": 20,
+                "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
+                "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
+                "iconColorToken": "theme.colors.icon",
+                "textColorToken": "theme.colors.textPrimary"
+              }
+            ]
           },
           "sizeSource": "shared",
           "iconSizeToken": "theme.iconSizes.m",
@@ -253,45 +816,185 @@
           "edgePadding": "theme.spacing.m",
           "idleLeftIconRowSlot": {
             "variantReference": "component_project_foqn_s2_iconRow::variant::default",
-            "overrides": {}
+            "overrides": {
+              "iconRow": {
+                "items": [
+                  {
+                    "id": "button_001",
+                    "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                    "state": "normal",
+                    "iconToken": "app_language",
+                    "text": "",
+                    "buttonOverrides": {},
+                    "iconSizeToken": "theme.iconSizes.m",
+                    "textSizeToken": "theme.typography.sizes.s"
+                  }
+                ]
+              }
+            }
           },
           "idleLeftIconRowInputs": {
-            "buttonInputs": []
+            "buttonInputs": [
+              {
+                "id": "button_001",
+                "state": "normal",
+                "sampleText": "",
+                "iconToken": "app_language",
+                "iconSizeToken": "theme.iconSizes.m",
+                "textSizeToken": "theme.typography.sizes.s",
+                "showBadge": false,
+                "badgeContentMode": "text",
+                "badgeIconToken": "system_check",
+                "badgeText": "1",
+                "badgeSize": 20,
+                "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
+                "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
+                "iconColorToken": "theme.colors.icon",
+                "textColorToken": "theme.colors.textPrimary"
+              }
+            ]
           },
           "idleCenterIconRowSlot": {
             "variantReference": "component_project_foqn_s2_iconRow::variant::default",
-            "overrides": {}
+            "overrides": {
+              "iconRow": {
+                "items": []
+              }
+            }
           },
           "idleCenterIconRowInputs": {
             "buttonInputs": []
           },
           "idleRightIconRowSlot": {
             "variantReference": "component_project_foqn_s2_iconRow::variant::default",
-            "overrides": {}
+            "overrides": {
+              "iconRow": {
+                "items": [
+                  {
+                    "id": "button_001",
+                    "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                    "state": "normal",
+                    "iconToken": "media_mic",
+                    "text": "",
+                    "buttonOverrides": {},
+                    "iconSizeToken": "theme.iconSizes.m",
+                    "textSizeToken": "theme.typography.sizes.s"
+                  }
+                ]
+              }
+            }
           },
           "idleRightIconRowInputs": {
-            "buttonInputs": []
+            "buttonInputs": [
+              {
+                "id": "button_001",
+                "state": "normal",
+                "sampleText": "",
+                "iconToken": "media_mic",
+                "iconSizeToken": "theme.iconSizes.m",
+                "textSizeToken": "theme.typography.sizes.s",
+                "showBadge": false,
+                "badgeContentMode": "text",
+                "badgeIconToken": "system_check",
+                "badgeText": "1",
+                "badgeSize": 20,
+                "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
+                "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
+                "iconColorToken": "theme.colors.icon",
+                "textColorToken": "theme.colors.textPrimary"
+              }
+            ]
           },
           "activeLeftIconRowSlot": {
             "variantReference": "component_project_foqn_s2_iconRow::variant::default",
-            "overrides": {}
+            "overrides": {
+              "iconRow": {
+                "items": [
+                  {
+                    "id": "button_001",
+                    "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                    "state": "normal",
+                    "iconToken": "media_camera",
+                    "text": "",
+                    "buttonOverrides": {},
+                    "iconSizeToken": "theme.iconSizes.m",
+                    "textSizeToken": "theme.typography.sizes.s"
+                  }
+                ]
+              }
+            }
           },
           "activeLeftIconRowInputs": {
-            "buttonInputs": []
+            "buttonInputs": [
+              {
+                "id": "button_001",
+                "state": "normal",
+                "sampleText": "",
+                "iconToken": "media_camera",
+                "iconSizeToken": "theme.iconSizes.m",
+                "textSizeToken": "theme.typography.sizes.s",
+                "showBadge": false,
+                "badgeContentMode": "text",
+                "badgeIconToken": "system_check",
+                "badgeText": "1",
+                "badgeSize": 20,
+                "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
+                "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
+                "iconColorToken": "theme.colors.icon",
+                "textColorToken": "theme.colors.textPrimary"
+              }
+            ]
           },
           "activeCenterIconRowSlot": {
             "variantReference": "component_project_foqn_s2_iconRow::variant::default",
-            "overrides": {}
+            "overrides": {
+              "iconRow": {
+                "items": []
+              }
+            }
           },
           "activeCenterIconRowInputs": {
             "buttonInputs": []
           },
           "activeRightIconRowSlot": {
             "variantReference": "component_project_foqn_s2_iconRow::variant::default",
-            "overrides": {}
+            "overrides": {
+              "iconRow": {
+                "items": [
+                  {
+                    "id": "button_001",
+                    "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+                    "state": "normal",
+                    "iconToken": "chat_send",
+                    "text": "",
+                    "buttonOverrides": {},
+                    "iconSizeToken": "theme.iconSizes.m",
+                    "textSizeToken": "theme.typography.sizes.s"
+                  }
+                ]
+              }
+            }
           },
           "activeRightIconRowInputs": {
-            "buttonInputs": []
+            "buttonInputs": [
+              {
+                "id": "button_001",
+                "state": "normal",
+                "sampleText": "",
+                "iconToken": "chat_send",
+                "iconSizeToken": "theme.iconSizes.m",
+                "textSizeToken": "theme.typography.sizes.s",
+                "showBadge": false,
+                "badgeContentMode": "text",
+                "badgeIconToken": "system_check",
+                "badgeText": "1",
+                "badgeSize": 20,
+                "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
+                "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
+                "iconColorToken": "theme.colors.icon",
+                "textColorToken": "theme.colors.textPrimary"
+              }
+            ]
           },
           "sizeSource": "shared",
           "iconSizeToken": "theme.iconSizes.m",
@@ -416,7 +1119,7 @@
         "iconBar",
         "activeCenterIconRowInputs"
       ],
-      "defaultValue": "{\u0022buttonInputs\u0022:[]}",
+      "defaultValue": "{\"buttonInputs\":[]}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
@@ -468,7 +1171,7 @@
         "iconBar",
         "activeLeftIconRowInputs"
       ],
-      "defaultValue": "{\u0022buttonInputs\u0022:[]}",
+      "defaultValue": "{\"buttonInputs\":[]}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
@@ -520,7 +1223,7 @@
         "iconBar",
         "activeRightIconRowInputs"
       ],
-      "defaultValue": "{\u0022buttonInputs\u0022:[]}",
+      "defaultValue": "{\"buttonInputs\":[]}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
@@ -728,7 +1431,7 @@
         "iconBar",
         "idleCenterIconRowInputs"
       ],
-      "defaultValue": "{\u0022buttonInputs\u0022:[]}",
+      "defaultValue": "{\"buttonInputs\":[]}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
@@ -780,7 +1483,7 @@
         "iconBar",
         "idleLeftIconRowInputs"
       ],
-      "defaultValue": "{\u0022buttonInputs\u0022:[]}",
+      "defaultValue": "{\"buttonInputs\":[]}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
@@ -832,7 +1535,7 @@
         "iconBar",
         "idleRightIconRowInputs"
       ],
-      "defaultValue": "{\u0022buttonInputs\u0022:[]}",
+      "defaultValue": "{\"buttonInputs\":[]}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,

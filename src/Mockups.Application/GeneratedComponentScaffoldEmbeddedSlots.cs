@@ -550,7 +550,7 @@ public static class GeneratedComponentScaffoldEmbeddedSlots
             "Icon bar",
             "component.iconBar",
             ["textInput", "iconBarSlot"],
-            false),
+            true),
         new(
             "component.textInputBar.textBox.editor",
             "textBox",

@@ -740,7 +740,7 @@
         "componentType": "iconBar",
         "label": "Icon bar",
         "recordClassId": "component.iconBar",
-        "allowRuntimeInputForwarding": false
+        "allowRuntimeInputForwarding": true
       }
     },
     {

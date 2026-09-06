@@ -14,6 +14,7 @@ export function resolvedTextInputBarRuntimeConfig(
   availableWidth: number,
   ownerPath: string,
 ) {
+  const parentRuntime = parseObject(payload.designPreviewJson);
   const config = embeddedComponentConfig(
     componentBaseConfigs,
     slot,
@@ -26,6 +27,7 @@ export function resolvedTextInputBarRuntimeConfig(
     componentType: "textInputBar",
     configJson: JSON.stringify(config),
     designPreviewJson: JSON.stringify({
+      ...parentRuntime,
       ...forwardedRuntimeInputPatch(
         config,
         "forwarded.component.textInputBar.textBox.inputs.sampleText",

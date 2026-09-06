@@ -51,7 +51,18 @@
       "sizeSource": "shared",
       "iconSizeToken": "theme.iconSizes.m",
       "textSizeToken": "theme.typography.sizes.s",
-      "items": [],
+      "items": [
+        {
+          "id": "button_001",
+          "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+          "state": "normal",
+          "iconToken": "system_check",
+          "text": "",
+          "buttonOverrides": {},
+          "iconSizeToken": "theme.iconSizes.m",
+          "textSizeToken": "theme.typography.sizes.s"
+        }
+      ],
       "itemSizingMode": "content"
     }
   },
@@ -79,7 +90,18 @@
         "sizeSource": "shared",
         "iconSizeToken": "theme.iconSizes.m",
         "textSizeToken": "theme.typography.sizes.s",
-        "items": [],
+        "items": [
+          {
+            "id": "button_001",
+            "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
+            "state": "normal",
+            "iconToken": "system_check",
+            "text": "",
+            "buttonOverrides": {},
+            "iconSizeToken": "theme.iconSizes.m",
+            "textSizeToken": "theme.typography.sizes.s"
+          }
+        ],
         "itemSizingMode": "content"
       }
     }
@@ -116,8 +138,6 @@
               "iconToken": "phone_hangup",
               "iconSizeToken": "theme.iconSizes.l",
               "textSizeToken": "theme.typography.sizes.s",
-              "pushTrigger": false,
-              "pushElapsedMs": 0,
               "text": "Decline",
               "buttonVariantReference": "component_project_foqn_s2_button::variant::ios_decline",
               "buttonOverrides": {}
@@ -128,8 +148,6 @@
               "iconToken": "phone_call",
               "iconSizeToken": "theme.iconSizes.l",
               "textSizeToken": "theme.typography.sizes.s",
-              "pushTrigger": false,
-              "pushElapsedMs": 0,
               "text": "Answer",
               "buttonVariantReference": "component_project_foqn_s2_button::variant::ios_answer",
               "buttonOverrides": {}
@@ -170,8 +188,6 @@
               "iconToken": "phone_hangup",
               "iconSizeToken": "theme.iconSizes.m",
               "textSizeToken": "theme.typography.sizes.s",
-              "pushTrigger": false,
-              "pushElapsedMs": 0,
               "text": "Decline",
               "buttonVariantReference": "component_project_foqn_s2_button::variant::android_decline",
               "buttonOverrides": {}
@@ -182,8 +198,6 @@
               "iconToken": "phone_call",
               "iconSizeToken": "theme.iconSizes.m",
               "textSizeToken": "theme.typography.sizes.s",
-              "pushTrigger": false,
-              "pushElapsedMs": 0,
               "text": "Answer",
               "buttonVariantReference": "component_project_foqn_s2_button::variant::android_answer",
               "buttonOverrides": {}
@@ -206,7 +220,7 @@
         "jsonKey": "buttonInputs",
         "kind": "collection",
         "valueKind": "StructuredCollection",
-        "defaultValue": "[]",
+        "defaultValue": "[{\"id\":\"button_001\",\"state\":\"normal\",\"sampleText\":\"\",\"iconToken\":\"system_check\",\"iconSizeToken\":\"theme.iconSizes.m\",\"textSizeToken\":\"theme.typography.sizes.s\",\"showBadge\":false,\"badgeContentMode\":\"text\",\"badgeIconToken\":\"system_check\",\"badgeText\":\"1\",\"badgeSize\":20,\"badgeBackgroundPaletteColor\":\"palette_project_foqn_s2_blue\",\"badgeContentPaletteColor\":\"palette_project_foqn_s2_gray_100\",\"iconColorToken\":\"theme.colors.icon\",\"textColorToken\":\"theme.colors.textPrimary\"}]",
         "minimum": 0,
         "maximum": 9999,
         "increment": 1,
@@ -758,7 +772,25 @@
         "uiOrder": 10
       }
     ],
-    "buttonInputs": [],
+    "buttonInputs": [
+      {
+        "id": "button_001",
+        "state": "normal",
+        "sampleText": "",
+        "iconToken": "system_check",
+        "iconSizeToken": "theme.iconSizes.m",
+        "textSizeToken": "theme.typography.sizes.s",
+        "showBadge": false,
+        "badgeContentMode": "text",
+        "badgeIconToken": "system_check",
+        "badgeText": "1",
+        "badgeSize": 20,
+        "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
+        "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
+        "iconColorToken": "theme.colors.icon",
+        "textColorToken": "theme.colors.textPrimary"
+      }
+    ],
     "collections": [],
     "actions": []
   },

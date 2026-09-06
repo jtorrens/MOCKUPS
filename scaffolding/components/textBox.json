@@ -79,11 +79,19 @@
       "maxLines": 3,
       "leftIconRowSlot": {
         "variantReference": "component_project_foqn_s2_iconRow::variant::default",
-        "overrides": {}
+        "overrides": {
+          "iconRow": {
+            "items": []
+          }
+        }
       },
       "rightIconRowSlot": {
         "variantReference": "component_project_foqn_s2_iconRow::variant::default",
-        "overrides": {}
+        "overrides": {
+          "iconRow": {
+            "items": []
+          }
+        }
       },
       "iconGap": "theme.spacing.m"
     }
@@ -138,11 +146,19 @@
         "maxLines": 3,
         "leftIconRowSlot": {
           "variantReference": "component_project_foqn_s2_iconRow::variant::default",
-          "overrides": {}
+          "overrides": {
+            "iconRow": {
+              "items": []
+            }
+          }
         },
         "rightIconRowSlot": {
           "variantReference": "component_project_foqn_s2_iconRow::variant::default",
-          "overrides": {}
+          "overrides": {
+            "iconRow": {
+              "items": []
+            }
+          }
         },
         "iconGap": "theme.spacing.m"
       }
@@ -208,7 +224,11 @@
           "maxLines": 4,
           "leftIconRowSlot": {
             "variantReference": "component_project_foqn_s2_iconRow::variant::default",
-            "overrides": {}
+            "overrides": {
+              "iconRow": {
+                "items": []
+              }
+            }
           },
           "rightIconRowSlot": {
             "variantReference": "component_project_foqn_s2_iconRow::variant::default",

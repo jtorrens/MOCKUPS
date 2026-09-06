@@ -185,8 +185,12 @@ may exist in the prepared Preview value but are never copied into persisted
 parent Runtime rows. This projection is owned by the common Runtime document
 contract and is applied identically to Module and Component parents.
 
-Text Input Bar forwards only its explicit runtime text. Bubble and Text Input
-Bar customize their selected Text Box slot through local Overrides.
+Text Input Bar forwards its explicit runtime text and may expose explicitly
+selected Icon Bar item values by stable id. The Icon Bar Variant owns the
+number, order and zone of those items through its local Icon Row slot Overrides;
+parent Runtime values may change their glyph, Button state and other declared
+dynamic values but never their cardinality or order. Bubble and Text Input Bar
+customize their selected Text Box slot through local Overrides.
 Component embedded slots declare whether their descendant Runtime Inputs may
 expose forwarding actions. The editor resolves dependent Component Variant
 fields from their effective inherited values; the `inherited` marker is
