@@ -254,7 +254,9 @@ is deleted after completion, failure or cancellation and is never written into
 the queue document.
 Shot frames with no active Screen, including authored gaps between two Screens,
 produce the same transparent canvas document instead of resolving a synthetic
-or empty Module Instance identity.
+or empty Module Instance identity. That document retains the standard
+`design_preview.surface` boundary and complete canvas bounds so transitions
+between rendered Screens and transparent gaps use the same raster contract.
 
 Jobs enqueued while a launched batch is active remain `PENDING` until a later
 activation. A paused or interrupted active child returns to Pending after

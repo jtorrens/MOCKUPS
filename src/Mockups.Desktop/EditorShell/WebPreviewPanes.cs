@@ -1970,7 +1970,16 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
 
     public static string BuildTransparentRasterHtml(
         DevicePreviewMetrics metrics) =>
-        RasterDocumentHtml(metrics, "", "");
+        RasterDocumentHtml(
+            metrics,
+            """
+            <div
+              data-renderable-id="design_preview.surface"
+              aria-hidden="true"
+              style="width:100%;height:100%;background:transparent">
+            </div>
+            """,
+            "");
 
     public void SetRasterLoading(bool visible, string message)
     {

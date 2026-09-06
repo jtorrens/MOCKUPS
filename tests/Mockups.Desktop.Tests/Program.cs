@@ -140,6 +140,7 @@ var tests = new (string Name, Action Run)[]
     ("Chromium raster failures retain worker diagnostics", ChromiumRasterFailuresRetainWorkerDiagnostics),
     ("Production render overrides Device and Theme while respecting forced Screen appearance", ProductionRenderOverridesRespectScreenAppearance),
     ("Production render uses transparency for Shot Screen gaps", ProductionRenderUsesTransparencyForShotScreenGaps),
+    ("transparent Shot frames preserve the raster surface contract", TransparentShotFramesPreserveRasterSurfaceContract),
     ("Render snapshot store interns repeated font assets", RenderSnapshotStoreInternsAssets),
     ("Render Queue persists and completes batch children independently", RenderQueueChildrenAreIndependent),
     ("Render Queue runs only the explicitly launched pending batch", RenderQueueRunsOnlyExplicitPendingBatch),
@@ -14065,6 +14066,36 @@ static void ProductionRenderUsesTransparencyForShotScreenGaps()
     {
         File.Delete(temporary);
     }
+}
+
+static void TransparentShotFramesPreserveRasterSurfaceContract()
+{
+    var html = DesignWebPreviewPane.BuildTransparentRasterHtml(
+        new DevicePreviewMetrics(
+            "Device",
+            64,
+            96,
+            0,
+            0,
+            64,
+            96,
+            0,
+            0,
+            0,
+            0,
+            0,
+            DeviceModuleTransparencyOverride.Disabled));
+
+    True(
+        html.Contains(
+            "data-renderable-id=\"design_preview.surface\"",
+            StringComparison.Ordinal),
+        "A transparent frame must expose the same raster surface as a rendered Screen.");
+    True(
+        html.Contains(
+            "width:100%;height:100%;background:transparent",
+            StringComparison.Ordinal),
+        "The transparent raster surface must preserve the complete canvas bounds.");
 }
 
 static void AnimatedConversationComposerRemainsVisible()
