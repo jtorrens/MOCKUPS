@@ -474,6 +474,12 @@ public interface IReferenceUsageQuery
         EditorShell.ProjectTreeNode node);
 }
 
+public interface IExternalMediaUsageQuery
+{
+    IReadOnlyList<ExternalMediaUsageDetail> GetExternalMediaUsageDetails(
+        string projectId);
+}
+
 public interface IRenderSnapshotDataSource :
     IPreviewInputRepository,
     IActorPreviewRepository,

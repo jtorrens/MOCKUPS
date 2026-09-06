@@ -316,6 +316,14 @@ internal sealed class SqliteReferenceUsagePort(IReferenceUsageQuery target)
         target.GetReferenceUsageDetails(node);
 }
 
+internal sealed class SqliteExternalMediaUsagePort(
+    IExternalMediaUsageQuery target) : IExternalMediaUsageQuery
+{
+    public IReadOnlyList<ExternalMediaUsageDetail>
+        GetExternalMediaUsageDetails(string projectId) =>
+        target.GetExternalMediaUsageDetails(projectId);
+}
+
 internal sealed class SqliteEditorNodeCommandPort(
     SqliteEditorNodeCommandStore target)
     : IEditorNodeCommandStore

@@ -75,6 +75,13 @@ internal sealed class SqliteEditorNavigationStore
         var shotNodes = new Dictionary<string, ProjectTreeNode>();
         foreach (var project in projectNodes.Values)
         {
+            var externalMediaRoot = new ProjectTreeNode(
+                ProjectTreeNodeKind.ExternalMediaRoot,
+                $"external_media_root_{project.Id}",
+                "External Media",
+                "Authored external files and folders used by this project.",
+                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ExternalMediaRoot),
+                project);
             var productionDataRoot = new ProjectTreeNode(
                 ProjectTreeNodeKind.ProductionDataRoot,
                 $"production_data_root_{project.Id}",
@@ -167,6 +174,7 @@ internal sealed class SqliteEditorNavigationStore
             systemDataRoot.AddChild(componentClassesRoot);
             project.AddChild(appsRoot);
             project.AddChild(episodesRoot);
+            project.AddChild(externalMediaRoot);
             project.AddChild(productionDataRoot);
             project.AddChild(systemDataRoot);
             appRootNodes[project.Id] = appsRoot;

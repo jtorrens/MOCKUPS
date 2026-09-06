@@ -20,7 +20,8 @@ internal static class DeferredEditorCard
         string sessionStateId,
         Func<CancellationToken, Task<T>> load,
         Func<T, DeferredEditorCardContent> present,
-        Control? headerTrailing = null)
+        Control? headerTrailing = null,
+        bool isExpanded = false)
     {
         var header = new ContentControl
         {
@@ -98,6 +99,10 @@ internal static class DeferredEditorCard
             lifetime.Cancel();
             lifetime.Dispose();
         };
+        if (isExpanded)
+        {
+            card.IsExpanded = true;
+        }
         return card;
     }
 

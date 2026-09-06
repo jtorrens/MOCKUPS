@@ -17,6 +17,7 @@ internal static class EditorNavigationMetadata
     {
         return node.Kind is ProjectTreeNodeKind.AppsRoot
             or ProjectTreeNodeKind.RenderQueueRoot
+            or ProjectTreeNodeKind.ExternalMediaRoot
             or ProjectTreeNodeKind.ProductionDataRoot
             or ProjectTreeNodeKind.SystemDataRoot;
     }
@@ -28,8 +29,9 @@ internal static class EditorNavigationMetadata
             ProjectTreeNodeKind.AppsRoot => 10,
             ProjectTreeNodeKind.EpisodesRoot => 20,
             ProjectTreeNodeKind.RenderQueueRoot => 30,
-            ProjectTreeNodeKind.ProductionDataRoot => 40,
-            ProjectTreeNodeKind.SystemDataRoot => 50,
+            ProjectTreeNodeKind.ExternalMediaRoot => 40,
+            ProjectTreeNodeKind.ProductionDataRoot => 50,
+            ProjectTreeNodeKind.SystemDataRoot => 60,
             _ => 100,
         };
     }
@@ -45,6 +47,7 @@ internal static class EditorNavigationMetadata
         {
             ProjectTreeNodeKind.Project => "Project",
             ProjectTreeNodeKind.RenderQueueRoot => "Render Queue",
+            ProjectTreeNodeKind.ExternalMediaRoot => "External Media",
             ProjectTreeNodeKind.ProductionDataRoot => "Production data",
             ProjectTreeNodeKind.SystemDataRoot => "System data",
             _ => node.Name,
@@ -58,6 +61,7 @@ internal static class EditorNavigationMetadata
             ProjectTreeNodeKind.Project => "Episodes, shots, screens and modules",
             ProjectTreeNodeKind.AppsRoot => "Apps and module defaults",
             ProjectTreeNodeKind.RenderQueueRoot => "Local render jobs and history",
+            ProjectTreeNodeKind.ExternalMediaRoot => "Authored external files and folders",
             ProjectTreeNodeKind.ProductionDataRoot => "Actors, devices and production fonts",
             ProjectTreeNodeKind.SystemDataRoot => "Themes, icon sets, component variants, palette and media",
             ProjectTreeNodeKind.ProductionFontsRoot => "Approved production font families",

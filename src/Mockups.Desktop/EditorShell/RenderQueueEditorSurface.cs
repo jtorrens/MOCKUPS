@@ -7,7 +7,6 @@ using Avalonia.VisualTree;
 using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
@@ -564,29 +563,11 @@ internal sealed class RenderQueueMonitorControl : StackPanel
                 ? "Dark"
                 : value;
 
-    private static void Reveal(string outputPath)
-    {
-        var target = Directory.Exists(outputPath)
-            ? outputPath
-            : Path.GetDirectoryName(outputPath);
-        if (string.IsNullOrWhiteSpace(target)
-            || !Directory.Exists(target))
-        {
-            return;
-        }
-        try
-        {
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = target,
-                UseShellExecute = true,
-            });
-        }
-        catch
-        {
-            // Revealing is a convenience; the completed output remains valid.
-        }
-    }
+    private static void Reveal(string outputPath) =>
+        EditorLocalPathActions.Reveal(
+            Directory.Exists(outputPath)
+                ? outputPath
+                : Path.GetDirectoryName(outputPath) ?? outputPath);
 
     private sealed class JobRowState(
         Border root,

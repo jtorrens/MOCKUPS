@@ -15,6 +15,16 @@ Cross-workspace navigation is explicit. Opening a Usage reference or class
 action activates the correct workspace, expands the exact tree branch, selects
 the item and opens its editor.
 
+Both workspaces expose the same permanent **External Media** Project section.
+It opens a read-only central inventory with the sortable columns **System
+item**, **Absolute path** and **File name**. Selecting the system item routes to
+the exact owning Component Variant, Module Variant, Test Values surface or
+Production record and focuses its declared field or stable collection item.
+Right-clicking an existing absolute path reveals the exact target in Finder on
+macOS. Missing references stay visible. Media-directory references show the
+directory path once and use `Media folder` in the File name column instead of
+listing directory contents.
+
 ## Three-panel shell
 
 The desktop shell has:

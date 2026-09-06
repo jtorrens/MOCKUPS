@@ -164,6 +164,7 @@ var tests = new (string Name, Action Run)[]
     ("Conversation message Actors follow their exact direction contract", ConversationMessageActorsFollowDirectionContract),
     ("invalid Conversation message Actor documents fail read-only", InvalidConversationMessageActorsFailReadOnly),
     ("explicit Usage references are exact typed and shared", ExplicitReferenceUsageIsExactTypedAndShared),
+    ("External Media inventories declared authored media paths", ExternalMediaInventoriesDeclaredAuthoredPaths),
     ("Usage navigation preserves workspace node and embedded context", UsageNavigationPreservesTypedContext),
     ("Production Data owns actors devices and fonts", ProductionDataOwnsConcreteResources),
     ("Production tree orders Shots alphabetically by name", ProductionTreeOrdersShotsByName),
@@ -3974,6 +3975,7 @@ static void SqliteSessionExposesDistinctFocusedPorts()
             typeof(IRuntimeInputInstanceStore)),
         (project.Animation, typeof(IModuleInstanceAnimationStore)),
         (project.ReferenceUsage, typeof(IReferenceUsageQuery)),
+        (project.ExternalMediaUsage, typeof(IExternalMediaUsageQuery)),
         (project.Layouts, typeof(IEditorLayoutStore)),
         (project.ActorPreview, typeof(IActorPreviewRepository)),
     ];
@@ -18315,6 +18317,53 @@ static void ExplicitReferenceUsageIsExactTypedAndShared()
     }
 }
 
+static void ExternalMediaInventoriesDeclaredAuthoredPaths()
+{
+    var session = SqlitePersistence.OpenCurrent(ParityDatabasePath());
+    var project = session.Navigation.LoadProjectTree().Single();
+    var designSections = EditorWorkspaceNavigation.SectionRoots(
+        project,
+        EditorWorkspace.Design);
+    var productionSections = EditorWorkspaceNavigation.SectionRoots(
+        project,
+        EditorWorkspace.Production);
+    var designRoot = designSections.Single((node) =>
+        node.Kind == ProjectTreeNodeKind.ExternalMediaRoot);
+    var productionRoot = productionSections.Single((node) =>
+        node.Kind == ProjectTreeNodeKind.ExternalMediaRoot);
+    Equal(designRoot.Id, productionRoot.Id);
+    Equal(project, Required(designRoot.Parent));
+
+    var usages = session.ExternalMediaUsage.GetExternalMediaUsageDetails(project.Id);
+    True(usages.Count > 0);
+    True(usages.All((usage) => Path.IsPathFullyQualified(
+        usage.AbsoluteTargetPath)));
+    True(usages.All((usage) => Path.IsPathFullyQualified(
+        usage.AbsoluteDirectoryPath)));
+    True(usages.Any((usage) =>
+        usage.SourceKind == ProjectTreeNodeKind.App
+        && usage.FieldId == "app.wallpaper.images.light.filePath"));
+    True(!usages.Any((usage) => usage.FieldId == "app.icon.filePath"));
+    True(usages.Any((usage) =>
+        usage.SourceKind == ProjectTreeNodeKind.ComponentVariant
+        && usage.AuthoringSurface == ExternalMediaAuthoringSurface.PreviewAuthoring
+        && usage.AuthoredPath.EndsWith(
+            "gatos_V2-0012.mp4",
+            StringComparison.Ordinal)));
+    True(usages.Any((usage) =>
+        usage.SourceKind == ProjectTreeNodeKind.ModuleVariant
+        && usage.AuthoringSurface == ExternalMediaAuthoringSurface.PreviewAuthoring
+        && !string.IsNullOrWhiteSpace(usage.ItemId)));
+    True(usages.Any((usage) =>
+        usage.SourceKind == ProjectTreeNodeKind.ModuleInstance
+        && usage.AuthoringSurface == ExternalMediaAuthoringSurface.PreviewAuthoring));
+    True(usages.Any((usage) =>
+        usage.IsDirectory
+        && usage.FileName == "Media folder"
+        && usage.AbsoluteDirectoryPath == usage.AbsoluteTargetPath));
+    True(usages.Any((usage) => !usage.Exists));
+}
+
 static void UsageNavigationPreservesTypedContext()
 {
     var events = new List<string>();
@@ -18378,6 +18427,7 @@ static void ProductionDataOwnsConcreteResources()
         {
             ProjectTreeNodeKind.EpisodesRoot,
             ProjectTreeNodeKind.RenderQueueRoot,
+            ProjectTreeNodeKind.ExternalMediaRoot,
             ProjectTreeNodeKind.ProductionDataRoot,
         },
         productionSections.Select((node) => node.Kind));

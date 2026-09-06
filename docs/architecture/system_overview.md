@@ -41,6 +41,11 @@ SQLite current project data
         │       ├── structured collections
         │       └── owner-relative animation
         │
+        ├── declared External Media inventory
+        │       ├── Variant and Test Value paths
+        │       ├── Production Screen paths
+        │       └── exact authoring navigation targets
+        │
         ├── Production Output resolution
         │       ├── Project-owned manual naming contract
         │       ├── portable Shot Manager associations

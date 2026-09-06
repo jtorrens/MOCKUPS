@@ -21,6 +21,7 @@ internal static class SqliteProjectSessionFactory
                 design,
                 resources);
         var referenceUsages = new ReferenceUsageService(context);
+        var externalMediaUsages = new ExternalMediaUsageService(context);
         var previewInputs = new SqlitePreviewInputPort(
             production,
             design,
@@ -141,6 +142,7 @@ internal static class SqliteProjectSessionFactory
                 runtimeInputInstances),
             new SqliteModuleInstanceAnimationPort(animations),
             new SqliteReferenceUsagePort(referenceUsages),
+            new SqliteExternalMediaUsagePort(externalMediaUsages),
             new SqliteEditorLayoutPort(
                 new SqliteEditorLayoutStore(context)),
             new SqliteActorPreviewPort(resources));

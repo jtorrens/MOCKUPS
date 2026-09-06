@@ -27,6 +27,7 @@ Production exposes:
 
 - Episodes, Shots and Screens in the sequence tree;
 - one permanent **Render Queue** section for workstation-local jobs;
+- the shared permanent **External Media** inventory for authored Project paths;
 - one **Production Data** card containing Actors, Devices and Production Fonts.
 
 Future Project duplication may offer:

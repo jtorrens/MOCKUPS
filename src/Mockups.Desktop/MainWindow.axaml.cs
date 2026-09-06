@@ -309,6 +309,20 @@ public partial class MainWindow : SukiWindow
             SelectReferenceNodeInWorkspaceAsync,
             _embeddedUsageNavigator.NavigateToEmbeddedUsage,
             _messages);
+        var externalMediaNavigator = new EditorExternalMediaNavigator(
+            SelectReferenceNodeInWorkspaceAsync,
+            () => Session.SelectedNode,
+            ShowEmbeddedContext,
+            _authoringFocusController,
+            _messages);
+        var externalMediaSurface = new ExternalMediaEditorSurface(
+            data.ExternalMediaUsage,
+            application.Operations,
+            () => _themeController.IsDark,
+            externalMediaNavigator.Navigate);
+        var specialSurfaces = new EditorSpecialSurfaceCatalog(
+            _productionNavigationActions.EditorCards,
+            externalMediaSurface.CreateCards);
         var headerPreparation =
             new EditorHeaderPreparationService(
                 data.Components,
@@ -402,7 +416,7 @@ public partial class MainWindow : SukiWindow
             inlinePreviews,
             layoutCards,
             _collectionCards,
-            _productionNavigationActions.EditorCards);
+            specialSurfaces.CreateCards);
         PreviewUtilityTabs.SelectionChanged += (_, args) =>
         {
             if (_isUpdatingPreviewUtilityTab
@@ -1098,6 +1112,12 @@ public partial class MainWindow : SukiWindow
             PreviewAuthoringDataTab.IsVisible = authoringSurface is not null;
             PreviewTimelineTab.IsVisible = supportsTimeline;
             PreviewUtilityTabs.SelectedItem = selectedTab;
+            if (authoringSurface is not null)
+            {
+                _authoringFocusController.ApplyPreviewAuthoring(
+                    node,
+                    authoringSurface.Content);
+            }
         }
         finally
         {

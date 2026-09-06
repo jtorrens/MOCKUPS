@@ -177,6 +177,7 @@ public sealed class ApplicationStartupCoordinator
                 project.RuntimeInputInstances,
                 project.Animation,
                 project.ReferenceUsage,
+                project.ExternalMediaUsage,
                 project.Layouts,
                 project.ActorPreview);
             var initialTreeRoots =

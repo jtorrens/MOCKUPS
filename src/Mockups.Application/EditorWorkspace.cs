@@ -26,6 +26,7 @@ public static class EditorWorkspacePolicy
         return kind switch
         {
             ProjectTreeNodeKind.Project => EditorWorkspaceScope.Both,
+            ProjectTreeNodeKind.ExternalMediaRoot => EditorWorkspaceScope.Both,
             ProjectTreeNodeKind.AppsRoot or ProjectTreeNodeKind.App
                 or ProjectTreeNodeKind.Module or ProjectTreeNodeKind.ModuleVariant =>
                 EditorWorkspaceScope.Design,
@@ -63,6 +64,7 @@ public static class EditorWorkspacePolicy
             or ProjectTreeNodeKind.IconThemesRoot
             or ProjectTreeNodeKind.EpisodesRoot
             or ProjectTreeNodeKind.RenderQueueRoot
+            or ProjectTreeNodeKind.ExternalMediaRoot
             or ProjectTreeNodeKind.ProductionDataRoot;
     }
 
@@ -77,7 +79,8 @@ public static class EditorWorkspacePolicy
             ProjectTreeNodeKind.IconThemesRoot => 50,
             ProjectTreeNodeKind.EpisodesRoot => 10,
             ProjectTreeNodeKind.RenderQueueRoot => 20,
-            ProjectTreeNodeKind.ProductionDataRoot => 30,
+            ProjectTreeNodeKind.ExternalMediaRoot => 30,
+            ProjectTreeNodeKind.ProductionDataRoot => 40,
             _ => 100,
         };
     }

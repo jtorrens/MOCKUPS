@@ -31,6 +31,33 @@ keeps large MOV/MP4 files streamable and seekable by the native WebView without
 copying them into Preview data, embedding them as data URIs or exposing a
 general filesystem server. Closing the editor stops that source.
 
+## External Media inventory
+
+Every Project exposes one permanent **External Media** surface in both Design
+and Production. Its focused query is the sole owner of the Project-wide index
+of authored external image, wallpaper, avatar, media, video and media-directory
+paths. It traverses only fields declared with the corresponding media
+`ValueKind`, plus the exact App, Actor and Shot media documents owned by their
+repositories. It never scans arbitrary JSON text or infers assets from file
+extensions.
+
+The index covers every complete Component Variant, every complete Module
+Variant, their Design Test Values and defaults, and every Production Screen
+payload and local Override. Icons, Icon Themes, fonts and application-internal
+assets are outside this inventory. Relative references resolve through the
+Project path resolver; absolute references retain their authored workstation
+location. Missing targets remain listed and are marked explicitly so stale
+authored references can be found without repairing or deleting them.
+
+Each result retains its exact owner, authoring surface, field, nested slot path
+and stable structured-item id. The UI can therefore navigate to the owning
+editor and focus that exact field or item without matching labels, types or
+positions. A file row shows its absolute parent path and filename separately.
+A media-directory row shows only the absolute directory path and the indicative
+filename text `Media folder`; it never expands the directory into synthetic
+file usages. Right-clicking an existing path reveals that exact file or folder
+in the workstation file manager.
+
 ## Palette and Themes
 
 Palette records provide stable semantic color identities. Themes provide
