@@ -2,6 +2,10 @@ import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import readline from "node:readline";
 import { chromium, type Browser, type Page } from "playwright";
+import {
+  rasterDocumentRequiresFullLoad,
+  rasterDocumentSections,
+} from "./rasterDocumentContract.js";
 
 interface RasterRequest {
   id: string;
@@ -19,6 +23,7 @@ interface RasterRequest {
 let browser: Browser | undefined;
 let page: Page | undefined;
 let loadedViewport = "";
+let loadedHeadHtml = "";
 const previewAssets = new Map<string, string>();
 
 async function synchronizeBrowserAssets(
@@ -75,10 +80,12 @@ async function ensurePage(width: number, height: number) {
     browser = await chromium.launch({ headless: true });
     page = undefined;
     loadedViewport = "";
+    loadedHeadHtml = "";
   }
   if (!page || page.isClosed()) {
     page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
     loadedViewport = "";
+    loadedHeadHtml = "";
   }
   await page.setViewportSize({ width, height });
   return page;
@@ -99,17 +106,22 @@ async function rasterize(request: RasterRequest) {
     if (!previewAssets.has(key)) throw new Error(`Raster document asset '${key}' is unavailable`);
   }
   const html = request.html;
+  const documentSections = rasterDocumentSections(html);
   const activePage = await ensurePage(request.width, request.height);
   const renderStartedAt = performance.now();
   const patchStartedAt = performance.now();
   const viewportKey = `${request.width}x${request.height}`;
-  const resetsDocument = loadedViewport !== viewportKey;
-  if (resetsDocument) {
+  const reloadsDocument = rasterDocumentRequiresFullLoad(
+    loadedViewport,
+    loadedHeadHtml,
+    viewportKey,
+    documentSections.headHtml,
+  );
+  if (reloadsDocument) {
     await activePage.setContent(html, { waitUntil: "domcontentloaded", timeout: 15_000 });
     loadedViewport = viewportKey;
+    loadedHeadHtml = documentSections.headHtml;
   } else {
-    const bodyMatch = /<body(?:\s[^>]*)?>([\s\S]*?)<\/body>/i.exec(html);
-    if (!bodyMatch) throw new Error("Raster document body is unavailable for incremental replacement");
     await activePage.evaluate((nextBodyHtml) => {
       document.body.style.visibility = "hidden";
       const fragment = document.createElement("template");
@@ -119,11 +131,11 @@ async function rasterize(request: RasterRequest) {
       const currentRoot = document.querySelector(selector);
       if (!nextRoot || !currentRoot) throw new Error("Raster renderable root is unavailable for incremental replacement");
       currentRoot.replaceWith(document.importNode(nextRoot, true));
-    }, bodyMatch[1]);
+    }, documentSections.bodyHtml);
   }
   const patchMs = performance.now() - patchStartedAt;
   const assetsStartedAt = performance.now();
-  const browserAssets = resetsDocument
+  const browserAssets = reloadsDocument
     ? [...previewAssets].map(([key, uri]) => ({ key, uri }))
     : request.assets ?? [];
   await synchronizeBrowserAssets(activePage, request.assetKeys, browserAssets);

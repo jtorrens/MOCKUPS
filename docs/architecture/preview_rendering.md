@@ -326,6 +326,11 @@ temporary snapshot store and never promotes them back into the process-wide
 Preview registry.
 The persistent HTML renderer returns the complete deduplicated asset set for
 each generated document; it retains no cross-document asset catalogue.
+The persistent raster worker treats the incoming document head as part of that
+exact frozen document. It may replace only the renderable body while both the
+viewport and head are unchanged. A change to either performs a complete
+document load before asset hydration and `document.fonts.ready`, so font-face
+rules can never leak from or remain missing after another Screen or job.
 The worker's output boundary converts the straight-alpha Chromium raster to
 black-premultiplied RGB while retaining alpha in alpha-capable formats.
 MOV conversion also owns complete frame and container color metadata. It

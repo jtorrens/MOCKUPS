@@ -15113,10 +15113,15 @@ static void RenderExecutorPublishesCleanPngSequence()
                     """
                     <!doctype html>
                     <html>
+                      <head>
+                        <meta charset="utf-8">
+                        <style>.render-surface { background: rgba(255,0,0,.5); }</style>
+                      </head>
                       <body style="margin:0">
                         <div
                           data-renderable-id="design_preview.surface"
-                          style="width:64px;height:64px;background:rgba(255,0,0,.5)">
+                          class="render-surface"
+                          style="width:64px;height:64px">
                         </div>
                       </body>
                     </html>
@@ -15124,10 +15129,15 @@ static void RenderExecutorPublishesCleanPngSequence()
                     """
                     <!doctype html>
                     <html>
+                      <head>
+                        <meta charset="utf-8">
+                        <style>.render-surface { background: rgba(0,255,0,.5); }</style>
+                      </head>
                       <body style="margin:0">
                         <div
                           data-renderable-id="design_preview.surface"
-                          style="width:64px;height:64px;background:rgba(255,0,0,.5)">
+                          class="render-surface"
+                          style="width:64px;height:64px">
                         </div>
                       </body>
                     </html>
@@ -15156,19 +15166,21 @@ static void RenderExecutorPublishesCleanPngSequence()
         True(Directory.Exists(snapshot.Output.OutputPath));
         var frames = Directory.GetFiles(
             snapshot.Output.OutputPath,
-            "*.png");
+            "*.png")
+            .OrderBy((path) => path, StringComparer.Ordinal)
+            .ToArray();
         Equal(2, frames.Length);
         True(new FileInfo(frames[0]).Length > 0);
-        Equal(
-            Convert.ToHexString(
-                SHA256.HashData(File.ReadAllBytes(frames[0]))),
-            Convert.ToHexString(
-                SHA256.HashData(File.ReadAllBytes(frames[1]))));
+        True(!SHA256.HashData(File.ReadAllBytes(frames[0]))
+            .SequenceEqual(SHA256.HashData(File.ReadAllBytes(frames[1]))));
         SequenceEqual(
             new byte[] { 128, 0, 0, 128 },
             ReadFirstRgbaPixel(frames[0]));
+        SequenceEqual(
+            new byte[] { 0, 128, 0, 128 },
+            ReadFirstRgbaPixel(frames[1]));
         Equal(
-            1,
+            2,
             Directory.GetFiles(
                 Path.Combine(
                     snapshot.FrameStore.BatchRootPath,
@@ -15241,6 +15253,7 @@ static void RenderExecutorPublishesMovWithExactMetadata()
                     """
                     <!doctype html>
                     <html>
+                      <head><meta charset="utf-8"></head>
                       <body style="margin:0">
                         <div
                           data-renderable-id="design_preview.surface"
