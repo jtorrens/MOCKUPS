@@ -241,7 +241,7 @@ internal sealed class ExternalMediaTableControl : StackPanel
         Grid.SetColumn(systemItem, 0);
         row.Children.Add(systemItem);
 
-        var path = CellText(item.AbsoluteDirectoryPath, item.Exists);
+        var path = CellText(item.AbsoluteDirectoryPath, item.Exists, _isDark);
         path.Cursor = item.Exists
             ? new Cursor(StandardCursorType.Hand)
             : Cursor.Default;
@@ -266,7 +266,8 @@ internal sealed class ExternalMediaTableControl : StackPanel
 
         var fileName = CellText(
             item.Exists ? item.FileName : $"{item.FileName} · Missing",
-            item.Exists);
+            item.Exists,
+            _isDark);
         Grid.SetColumn(fileName, 2);
         row.Children.Add(fileName);
 
@@ -279,14 +280,17 @@ internal sealed class ExternalMediaTableControl : StackPanel
         };
     }
 
-    private static TextBlock CellText(string text, bool exists) => new()
+    private static TextBlock CellText(
+        string text,
+        bool exists,
+        bool isDark) => new()
     {
         Text = text,
         VerticalAlignment = VerticalAlignment.Center,
         TextTrimming = TextTrimming.CharacterEllipsis,
         Opacity = exists ? 0.82 : 1,
         Foreground = exists
-            ? null
+            ? EditorUiVisuals.SecondaryTextBrush(isDark)
             : new SolidColorBrush(Color.Parse("#E06C75")),
     };
 

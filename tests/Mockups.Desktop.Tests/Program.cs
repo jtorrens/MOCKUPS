@@ -6,6 +6,7 @@ using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
+using Avalonia.LogicalTree;
 using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -165,6 +166,7 @@ var tests = new (string Name, Action Run)[]
     ("invalid Conversation message Actor documents fail read-only", InvalidConversationMessageActorsFailReadOnly),
     ("explicit Usage references are exact typed and shared", ExplicitReferenceUsageIsExactTypedAndShared),
     ("External Media inventories declared authored media paths", ExternalMediaInventoriesDeclaredAuthoredPaths),
+    ("External Media keeps existing paths and filenames visible", ExternalMediaKeepsExistingPathsVisible),
     ("Usage navigation preserves workspace node and embedded context", UsageNavigationPreservesTypedContext),
     ("Production Data owns actors devices and fonts", ProductionDataOwnsConcreteResources),
     ("Production tree orders Shots alphabetically by name", ProductionTreeOrdersShotsByName),
@@ -18362,6 +18364,44 @@ static void ExternalMediaInventoriesDeclaredAuthoredPaths()
         && usage.FileName == "Media folder"
         && usage.AbsoluteDirectoryPath == usage.AbsoluteTargetPath));
     True(usages.Any((usage) => !usage.Exists));
+}
+
+static void ExternalMediaKeepsExistingPathsVisible()
+{
+    using var session = HeadlessUnitTestSession.StartNew(
+        typeof(HeadlessTestApplication));
+    session.Dispatch(() =>
+    {
+        var usage = new ExternalMediaUsageDetail(
+            "project",
+            "actor",
+            ProjectTreeNodeKind.Actor,
+            "actor",
+            "Actor",
+            "Alex",
+            ReferenceUsageScope.Production,
+            ExternalMediaAuthoringSurface.Editor,
+            [],
+            "actor.avatar.filePath",
+            "Avatar image",
+            "",
+            "avatars/alex.png",
+            "/project/avatars/alex.png",
+            "/project/avatars",
+            "alex.png",
+            false,
+            true);
+        var control = new ExternalMediaTableControl(
+            [usage],
+            isDark: true,
+            (_) => Task.CompletedTask);
+        var cells = control.GetLogicalDescendants()
+            .OfType<TextBlock>()
+            .Where((text) => text.Text is "/project/avatars" or "alex.png")
+            .ToArray();
+        Equal(2, cells.Length);
+        True(cells.All((cell) => cell.Foreground is not null));
+    }, CancellationToken.None).GetAwaiter().GetResult();
 }
 
 static void UsageNavigationPreservesTypedContext()
