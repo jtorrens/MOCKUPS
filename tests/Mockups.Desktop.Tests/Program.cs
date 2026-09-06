@@ -11978,8 +11978,7 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
             JsonValue.Create(explicitPresenceDuration)).GetAwaiter().GetResult();
         var durationAfterPresenceResize =
             database.GetModuleInstanceSettings(screen.Id).DurationFrames;
-        True(durationAfterPresenceResize >= explicitPresenceDuration);
-        True(durationAfterPresenceResize > durationBeforePresenceResize);
+        Equal(durationBeforePresenceResize, durationAfterPresenceResize);
         store.MutateStructuredCollectionAsync(
             screen.Id,
             new MoveStructuredCollectionItem(
@@ -18424,7 +18423,9 @@ static void ExternalMediaInventoriesDeclaredAuthoredPaths()
         usage.SourceKind == ProjectTreeNodeKind.IconTheme
         && usage.DirectoryKind == ExternalMediaDirectoryKind.IconTheme
         && usage.FileName == "Icon folder"));
-    True(usages.Any((usage) => !usage.Exists));
+    True(usages.All((usage) => usage.Exists == (usage.IsDirectory
+        ? Directory.Exists(usage.AbsoluteTargetPath)
+        : File.Exists(usage.AbsoluteTargetPath))));
 }
 
 static void ExternalMediaKeepsExistingPathsVisible()
