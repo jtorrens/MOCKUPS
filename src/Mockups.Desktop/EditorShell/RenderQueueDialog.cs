@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Threading;
 using Mockups.DesktopEditorShell.Common;
 using SukiUI.Controls;
 using System;
@@ -119,12 +120,22 @@ internal sealed class RenderQueueDialog
             control.IsEnabled = false;
         }
 
+        using var cancellation = new CancellationTokenSource();
+        CancellationTokenSource? proposalCancellation = null;
         RenderQueueShotDraft? currentDraft = null;
         RenderOutputPlan? currentPlan = null;
         var currentPlanReplacesExisting = false;
         var isProposingVersion = false;
-        void RefreshProposal(bool proposeVersion = false)
+        var isInitializing = false;
+        var proposalRevision = 0;
+        async Task RefreshProposalAsync(bool proposeVersion = false)
         {
+            var revision = ++proposalRevision;
+            proposalCancellation?.Cancel();
+            proposalCancellation?.Dispose();
+            proposalCancellation = CancellationTokenSource.CreateLinkedTokenSource(
+                cancellation.Token);
+            var proposalToken = proposalCancellation.Token;
             if (currentDraft is null)
             {
                 currentPlan = null;
@@ -133,84 +144,115 @@ internal sealed class RenderQueueDialog
                 add.IsEnabled = false;
                 return;
             }
+
+            var draft = currentDraft;
+            var selectedDevice = device.SelectedItem;
+            var selectedTheme = theme.SelectedItem;
+            var selectedAppearance = appearance.SelectedItem;
+            var selectedOutputMode = outputMode.SelectedItem;
+            var selectedRoute = route.SelectedItem;
+            var selectedBaseName = baseName.Text ?? "";
+            var selectedVersionText = outputVersion.Text ?? "";
             try
             {
                 validation.Foreground = null;
                 currentPlan = null;
                 currentPlanReplacesExisting = false;
-                if (device.SelectedItem is null
-                    || theme.SelectedItem is null
-                    || appearance.SelectedItem is null
-                    || outputMode.SelectedItem is null
-                    || route.SelectedItem is null)
+                if (selectedDevice is null
+                    || selectedTheme is null
+                    || selectedAppearance is null
+                    || selectedOutputMode is null
+                    || selectedRoute is null)
                 {
-                    validation.Text = route.SelectedItem is null
+                    validation.Text = selectedRoute is null
                         ? string.IsNullOrWhiteSpace(
-                            currentDraft.RouteStatusMessage)
+                            draft.RouteStatusMessage)
                             ? "Choose the configured Production Output route."
-                            : currentDraft.RouteStatusMessage
+                            : draft.RouteStatusMessage
                         : "Complete every render option.";
                     proposal.Text = "";
                     add.IsEnabled = false;
                     return;
                 }
-                var routeContract = currentDraft.Routes.Single(
+                validation.Text = "Resolving the next available output version…";
+                proposal.Text = "";
+                add.IsEnabled = false;
+                var routeContract = draft.Routes.Single(
                     (candidate) => candidate.EntryId.Equals(
-                        route.SelectedItem.Value,
+                        selectedRoute.Value,
                         StringComparison.Ordinal));
                 var mode = RenderOutputModes.Require(
-                    outputMode.SelectedItem.Value);
+                    selectedOutputMode.Value);
                 var appearances = RenderQueueAppearance.Expand(
-                    appearance.SelectedItem.Value);
-                if (proposeVersion)
+                    selectedAppearance.Value);
+                var activePaths = _queue.ActiveOutputPaths();
+                var result = await Task.Run(() =>
                 {
-                    var suggested = RenderOutputPlanner.Suggest(
-                        currentDraft.RootPath,
+                    proposalToken.ThrowIfCancellationRequested();
+                    var version = proposeVersion
+                        ? RenderOutputPlanner.Suggest(
+                            draft.RootPath,
+                            routeContract.RelativeDirectory,
+                            selectedBaseName,
+                            appearances,
+                            mode,
+                            routeContract.VersionPadding,
+                            activePaths).Version
+                        : RenderOutputPlanner.RequireVersion(
+                            selectedVersionText);
+                    var plan = RenderOutputPlanner.Plan(
+                        draft.RootPath,
                         routeContract.RelativeDirectory,
-                        baseName.Text ?? "",
+                        selectedBaseName,
                         appearances,
                         mode,
-                        routeContract.VersionPadding,
-                        _queue.ActiveOutputPaths());
+                        version,
+                        routeContract.VersionPadding);
+                    if (plan.OutputPaths.Values.Any((path) =>
+                        activePaths.Contains(Path.GetFullPath(path))))
+                    {
+                        throw new InvalidOperationException(
+                            "Another queued render already owns this output version.");
+                    }
+                    var replacesExisting = plan.OutputPaths.Values.Any(
+                        (path) => File.Exists(path) || Directory.Exists(path));
+                    proposalToken.ThrowIfCancellationRequested();
+                    return (Plan: plan, ReplacesExisting: replacesExisting);
+                }, proposalToken);
+                if (revision != proposalRevision || proposalToken.IsCancellationRequested)
+                {
+                    return;
+                }
+                if (proposeVersion)
+                {
                     isProposingVersion = true;
-                    outputVersion.Text = suggested.Version.ToString();
+                    outputVersion.Text = result.Plan.Version.ToString();
                     isProposingVersion = false;
                 }
-                var selectedVersion = RenderOutputPlanner.RequireVersion(
-                    outputVersion.Text ?? "");
-                currentPlan = RenderOutputPlanner.Plan(
-                    currentDraft.RootPath,
-                    routeContract.RelativeDirectory,
-                    baseName.Text ?? "",
-                    appearances,
-                    mode,
-                    selectedVersion,
-                    routeContract.VersionPadding);
-                var activePaths = _queue.ActiveOutputPaths();
-                if (currentPlan.OutputPaths.Values.Any((path) =>
-                    activePaths.Contains(Path.GetFullPath(path))))
-                {
-                    throw new InvalidOperationException(
-                        "Another queued render already owns this output version.");
-                }
-                currentPlanReplacesExisting = currentPlan.OutputPaths.Values.Any(
-                    (path) => File.Exists(path) || Directory.Exists(path));
-                var names = currentPlan.OutputPaths
+                currentPlan = result.Plan;
+                currentPlanReplacesExisting = result.ReplacesExisting;
+                var names = result.Plan.OutputPaths
                     .OrderBy((pair) => pair.Key, StringComparer.Ordinal)
                     .Select((pair) => Path.GetFileName(pair.Value));
                 proposal.Text =
-                    $"Version v{currentPlan.Version.ToString().PadLeft(routeContract.VersionPadding, '0')} · "
+                    $"Version v{result.Plan.Version.ToString().PadLeft(routeContract.VersionPadding, '0')} · "
                     + string.Join(" · ", names)
                     + (currentPlanReplacesExisting
                         ? " · replaces existing output"
                         : "");
                 validation.Text = currentPlanReplacesExisting
                     ? "This version already exists. Adding it requires confirmation before the existing output is replaced."
-                    : currentDraft.RouteStatusMessage;
+                    : draft.RouteStatusMessage;
                 add.IsEnabled = true;
+            }
+            catch (OperationCanceledException)
+                when (proposalToken.IsCancellationRequested)
+            {
+                // A newer form value superseded this filesystem proposal.
             }
             catch (Exception exception)
             {
+                if (revision != proposalRevision) return;
                 currentPlan = null;
                 proposal.Text = "";
                 validation.Foreground = Brushes.IndianRed;
@@ -228,13 +270,25 @@ internal sealed class RenderQueueDialog
             route,
         })
         {
-            combo.SelectionChanged += (_, _) => RefreshProposal(proposeVersion: true);
+            combo.SelectionChanged += (_, _) =>
+            {
+                if (!isInitializing)
+                {
+                    _ = RefreshProposalAsync(proposeVersion: true);
+                }
+            };
         }
-        baseName.TextChanged += (_, _) => RefreshProposal(proposeVersion: true);
+        baseName.TextChanged += (_, _) =>
+        {
+            if (!isInitializing)
+            {
+                _ = RefreshProposalAsync(proposeVersion: true);
+            }
+        };
         outputVersion.TextChanged += (_, _) =>
         {
-            if (isProposingVersion) return;
-            RefreshProposal();
+            if (isInitializing || isProposingVersion) return;
+            _ = RefreshProposalAsync();
         };
 
         add.Click += async (_, _) =>
@@ -272,7 +326,7 @@ internal sealed class RenderQueueDialog
                             height: 280);
                     if (!confirmed)
                     {
-                        RefreshProposal();
+                        await RefreshProposalAsync();
                         return;
                     }
                 }
@@ -295,7 +349,7 @@ internal sealed class RenderQueueDialog
             catch (Exception exception)
             {
                 var message = exception.Message;
-                RefreshProposal();
+                await RefreshProposalAsync();
                 validation.Foreground = Brushes.IndianRed;
                 validation.Text = message;
                 add.IsEnabled = currentPlan is not null;
@@ -369,13 +423,20 @@ internal sealed class RenderQueueDialog
             Child = root,
         };
 
-        using var cancellation = new CancellationTokenSource();
-        dialog.Closed += (_, _) => cancellation.Cancel();
+        dialog.Closed += (_, _) =>
+        {
+            cancellation.Cancel();
+            proposalCancellation?.Cancel();
+        };
         dialog.Opened += async (_, _) =>
         {
             try
             {
+                await Dispatcher.UIThread.InvokeAsync(
+                    () => { },
+                    DispatcherPriority.Render);
                 currentDraft = await loadDraft(cancellation.Token);
+                isInitializing = true;
                 device.ItemsSource = currentDraft.Devices;
                 device.SelectedItem = currentDraft.Devices.FirstOrDefault(
                     (option) => option.Value.Equals(
@@ -399,6 +460,7 @@ internal sealed class RenderQueueDialog
                         StringComparison.Ordinal))
                     ?? routeOptions.FirstOrDefault();
                 baseName.Text = currentDraft.SuggestedBaseName;
+                isInitializing = false;
                 actorValue.Text = currentDraft.ActorName;
                 shotDetails.Text =
                     $"Shot {currentDraft.ShotNumber} · "
@@ -409,7 +471,7 @@ internal sealed class RenderQueueDialog
                     control.IsEnabled = true;
                 }
                 route.IsEnabled = currentDraft.Routes.Count > 0;
-                RefreshProposal(proposeVersion: true);
+                await RefreshProposalAsync(proposeVersion: true);
             }
             catch (OperationCanceledException)
                 when (cancellation.IsCancellationRequested)
@@ -423,10 +485,15 @@ internal sealed class RenderQueueDialog
                     "This Shot cannot be added until its output route is available.";
                 validation.Foreground = Brushes.IndianRed;
                 validation.Text = exception.Message;
-                RefreshProposal();
+                await RefreshProposalAsync();
+            }
+            finally
+            {
+                isInitializing = false;
             }
         };
         await dialog.ShowDialog(_owner);
+        proposalCancellation?.Dispose();
     }
 
     private static EditorInstantComboBox Combo(

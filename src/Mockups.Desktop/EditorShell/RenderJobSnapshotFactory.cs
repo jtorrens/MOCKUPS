@@ -120,6 +120,15 @@ internal sealed class RenderJobSnapshotFactory : IRenderJobPreparer
         ProjectTreeNode shot,
         CancellationToken cancellationToken = default)
     {
+        return Task.Run(
+            () => LoadDraft(shot, cancellationToken),
+            cancellationToken);
+    }
+
+    private RenderQueueShotDraft LoadDraft(
+        ProjectTreeNode shot,
+        CancellationToken cancellationToken)
+    {
         cancellationToken.ThrowIfCancellationRequested();
         if (shot.Kind != ProjectTreeNodeKind.Shot)
         {
@@ -179,7 +188,8 @@ internal sealed class RenderJobSnapshotFactory : IRenderJobPreparer
                 ? "Choose this workstation's Shot Manager production.json before rendering."
                 : "Configure this Project's local Production Output root before rendering."
             : "";
-        return Task.FromResult(new RenderQueueShotDraft(
+        cancellationToken.ThrowIfCancellationRequested();
+        return new RenderQueueShotDraft(
             shot,
             shotSettings.ProjectId,
             shotSettings.OwnerActorId,
@@ -202,7 +212,7 @@ internal sealed class RenderJobSnapshotFactory : IRenderJobPreparer
                     plan.RelativeDirectory,
                     plan.VersionPadding,
                     plan.FramePadding),
-            ]));
+            ]);
     }
 
     public RenderBatchPlan PlanBatch(

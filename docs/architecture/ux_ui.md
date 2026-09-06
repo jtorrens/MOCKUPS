@@ -332,6 +332,9 @@ child names update before enqueue. A missing physical route directory does not
 disable the form: the render worker safely creates missing subdirectories from
 the frozen manual or Shot Managed route when the job starts. The root itself
 must already exist; symbolic links, files in the route and escapes are rejected.
+The modal paints its loading state before draft preparation and output-path
+inspection. Database reads and filesystem probes remain cancellable and run
+outside the UI thread; initial control population triggers one proposal pass.
 
 Confirming the modal closes it immediately and creates visible `PREPARING`
 Light/Dark children. Preparation uses the stable determinate job bar and shows
