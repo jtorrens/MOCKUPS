@@ -124,6 +124,7 @@ internal static class DesignPreviewPayloadFactory
     public static DesignPreviewPayload? CreateProductionRender(
         DesignPreviewPayloadDataSource dataSource,
         ProjectTreeNode shot,
+        string themeStrategy,
         string themeId,
         string deviceId,
         string requestedThemeMode,
@@ -141,6 +142,7 @@ internal static class DesignPreviewPayloadFactory
         var theme = dataSource.LoadProductionRenderThemeContext(
             shot,
             screenId,
+            themeStrategy,
             themeId,
             deviceId);
         var payload = FromShot(

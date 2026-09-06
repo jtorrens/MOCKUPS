@@ -72,6 +72,7 @@ internal sealed class ProductionPreviewPayloadPreparer
 
     public DesignPreviewPayload? PrepareRender(
         ProjectTreeNode shot,
+        string themeStrategy,
         string themeId,
         string deviceId,
         string themeMode,
@@ -80,6 +81,7 @@ internal sealed class ProductionPreviewPayloadPreparer
         var payload = DesignPreviewPayloadFactory.CreateProductionRender(
             _payloads,
             shot,
+            themeStrategy,
             themeId,
             deviceId,
             themeMode,

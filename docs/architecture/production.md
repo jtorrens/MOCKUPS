@@ -165,8 +165,8 @@ resolved again only when the user launches them.
 ## Render Queue
 
 The Render action is a persistent icon on every Shot row. It always opens an
-add modal with that exact Shot selected. Actor, base Device, base Theme and local Shot
-details load independently of routing. The modal derives the route and
+add modal with that exact Shot selected. Actor, Device, Theme strategy and local
+Shot details load independently of routing. The modal derives the route and
 technical name from the exact manual contract or exact Shot Manager
 associations. An associated Shot needs only its existing local root to resolve
 offline; `production.json` is not a render-time dependency. If the applicable
@@ -183,17 +183,21 @@ never recreates a missing root or moves an earlier render.
 The add modal exposes:
 
 - the Shot Actor as read-only;
-- Device initialized from the Shot's effective resource and Theme initialized
-  from the Actor default, with additional same-Project job-only base overrides;
+- Device initialized from the Shot's effective resource;
+- Theme initialized to `Screen`, followed by the same-Project Themes as
+  explicit job-only choices;
 - Light, Dark or Both;
 - the resolved Production Output route;
 - a job-owned output mode;
 - an editable safe base name.
 
-Screen Theme overrides take precedence over the job base Theme. Each active
-Screen applies its own declared Module-transparency overrides over the job
-Device without changing raster dimensions. Frames with no active Screen are
-stored as fully transparent documents.
+`Screen` resolves the Theme independently for every active Screen from that
+Screen's override or, when inherited, the Shot owner Actor's default Theme. An
+explicit Theme selection forces that exact Theme on every Screen and ignores
+their local Theme overrides for that job. It does not rewrite authored Screen
+data. Each active Screen applies its own declared Module-transparency overrides
+over the job Device without changing raster dimensions. Frames with no active
+Screen are stored as fully transparent documents.
 
 The initial output modes are MOV ProRes 422 HQ, MOV ProRes 4444 with alpha,
 MOV H.264 Light at 8 Mb/s, Standard at 20 Mb/s, High at 40 Mb/s, PNG sequence
@@ -237,7 +241,8 @@ Light or Dark keeps that mode even inside the opposite requested Shot job;
 rejected by family because Themes are authored visual fiction.
 
 Adding a batch persists only one live plan per child: exact Shot id, selected
-Device and Theme ids, requested appearance and output target. It does not
+Device, explicit Theme strategy and optional forced Theme id, requested
+appearance and output target. It does not
 prepare frames, copy assets, capture duration or store resolved Shot or Screen
 documents. Every added child is immediately `PENDING`, and enqueue never starts
 preparation or execution.

@@ -13998,11 +13998,14 @@ static void ProductionRenderOverridesRespectScreenAppearance()
         var themeId = database.GetThemeOptions(
                 shotSettings.ProjectId)
             .Select((option) => option.Value)
-            .FirstOrDefault((id) =>
+            .First((id) =>
                 !id.Equals(
                     actor.DefaultThemeId,
-                    StringComparison.Ordinal))
-            ?? actor.DefaultThemeId;
+                    StringComparison.Ordinal));
+        database.UpdateModuleInstanceField(
+            firstScreen.Id,
+            "moduleInstance.themeOverrideId",
+            actor.DefaultThemeId);
         var payload = Required(DesignPreviewPayloadFactory.CreateProductionRender(
             new DesignPreviewPayloadDataSource(
                 database.PreviewInputs,
@@ -14011,6 +14014,7 @@ static void ProductionRenderOverridesRespectScreenAppearance()
                 database.Resources,
                 database.ProjectPaths),
             shot,
+            RenderThemeStrategy.Forced,
             themeId,
             deviceId,
             RenderQueueAppearance.Dark,
@@ -14022,6 +14026,23 @@ static void ProductionRenderOverridesRespectScreenAppearance()
         Equal(
             RenderQueueAppearance.Light,
             payload.ThemeMode);
+        var screenPayload = Required(
+            DesignPreviewPayloadFactory.CreateProductionRender(
+                new DesignPreviewPayloadDataSource(
+                    database.PreviewInputs,
+                    database.Production,
+                    database.Resources,
+                    database.Resources,
+                    database.ProjectPaths),
+                shot,
+                RenderThemeStrategy.Screen,
+                "",
+                deviceId,
+                RenderQueueAppearance.Dark,
+                0));
+        Equal(
+            database.GetThemeSettings(actor.DefaultThemeId).TokensJson,
+            screenPayload.ThemeTokensJson);
     }
     finally
     {
@@ -14061,7 +14082,8 @@ static void ProductionRenderUsesTransparencyForShotScreenGaps()
                 database.Resources,
                 database.ProjectPaths),
             shot,
-            actor.DefaultThemeId,
+            RenderThemeStrategy.Screen,
+            "",
             actor.DefaultDeviceId,
             RenderQueueAppearance.Light,
             0);
@@ -14373,6 +14395,7 @@ static void RenderQueueChildrenAreIndependent()
                 context.ShotId,
                 context.ShotName,
                 "device",
+                RenderThemeStrategy.Forced,
                 "theme",
                 appearance,
                 Output(appearance));
@@ -14391,6 +14414,7 @@ static void RenderQueueChildrenAreIndependent()
                 context,
                 "device",
                 "Device",
+                RenderThemeStrategy.Forced,
                 "theme",
                 "Theme",
                 appearance,
@@ -14519,6 +14543,7 @@ static void RenderQueueRunsOnlyExplicitPendingBatch()
                 context.ShotId,
                 context.ShotName,
                 "device",
+                RenderThemeStrategy.Forced,
                 "theme",
                 appearance,
                 Output(id, appearance));
@@ -14539,6 +14564,7 @@ static void RenderQueueRunsOnlyExplicitPendingBatch()
                 context,
                 "device",
                 "Device",
+                RenderThemeStrategy.Forced,
                 "theme",
                 "Theme",
                 appearance,
@@ -14775,6 +14801,7 @@ static void RenderQueueProgressControlIsStable()
                     value.Context.ShotId,
                     value.Context.ShotName,
                     "device",
+                    RenderThemeStrategy.Forced,
                     "theme",
                     value.Appearance,
                     value.Output);
@@ -15086,6 +15113,7 @@ static void RenderExecutorPublishesCleanPngSequence()
                 "Actor"),
             "device",
             "Device",
+            RenderThemeStrategy.Forced,
             "theme",
             "Theme",
             RenderQueueAppearance.Light,
@@ -15226,6 +15254,7 @@ static void RenderExecutorPublishesMovWithExactMetadata()
                 "Actor"),
             "device",
             "Device",
+            RenderThemeStrategy.Forced,
             "theme",
             "Theme",
             RenderQueueAppearance.Light,
@@ -16063,7 +16092,9 @@ static void ShotResourceOverridesResolveIndependently()
             .GetAwaiter()
             .GetResult();
         Equal(deviceOverrideId, draft.DeviceId);
-        Equal(actor.DefaultThemeId, draft.ThemeId);
+        Equal(RenderThemeSelection.ScreenValue, draft.ThemeSelectionValue);
+        Equal(RenderThemeSelection.ScreenValue, draft.ThemeOptions[0].Value);
+        Equal("Screen", draft.ThemeOptions[0].Label);
 
         var deviceNode = Descendants(database.LoadProjectTree())
             .Single((node) => node.Id == deviceOverrideId);
@@ -16282,7 +16313,7 @@ static void ShotDeviceSettingsOverridesPreserveOwnership()
             var plan = factory.PlanBatch(
                     renderDraft with { RootPath = renderRoot },
                     alternateDeviceId,
-                    renderDraft.ThemeId,
+                    renderDraft.ThemeSelectionValue,
                     RenderQueueAppearance.Light,
                     mode.Id,
                     route.EntryId,

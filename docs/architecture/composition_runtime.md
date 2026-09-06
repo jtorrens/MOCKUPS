@@ -140,6 +140,10 @@ Text Box Variants own exactly:
 - the gap between icon rows and text;
 - Text Box visual and runtime text values.
 
+The Text Box placeholder is Variant-owned authored text and may be explicitly
+empty. An empty placeholder remains empty through embedded Overrides and
+Preview preparation; no parent or resolver supplies replacement copy.
+
 Icon Row Variants own:
 
 - ordered items with stable ids;

@@ -381,10 +381,10 @@ internal sealed class RenderQueueDialog
                     (option) => option.Value.Equals(
                         currentDraft.DeviceId,
                         StringComparison.Ordinal));
-                theme.ItemsSource = currentDraft.Themes;
-                theme.SelectedItem = currentDraft.Themes.FirstOrDefault(
+                theme.ItemsSource = currentDraft.ThemeOptions;
+                theme.SelectedItem = currentDraft.ThemeOptions.FirstOrDefault(
                     (option) => option.Value.Equals(
-                        currentDraft.ThemeId,
+                        currentDraft.ThemeSelectionValue,
                         StringComparison.Ordinal));
                 var routeOptions = currentDraft.Routes.Select(
                     (candidate) => new FieldOption(

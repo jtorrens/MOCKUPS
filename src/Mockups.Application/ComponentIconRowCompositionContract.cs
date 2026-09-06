@@ -153,7 +153,11 @@ internal static class ComponentIconRowCompositionContract
                 JsonPath.RequiredObject(textBox, $"{side}IconRowSlot", owner),
                 $"{owner}.{side}IconRowSlot");
         }
-        _ = JsonPath.RequiredString(textBox, "placeholder", owner);
+        _ = JsonPath.RequiredString(
+            textBox,
+            "placeholder",
+            owner,
+            allowEmpty: true);
         _ = JsonPath.RequiredInteger(textBox, "maxLines", owner);
         _ = JsonPath.RequiredString(textBox, "iconGap", owner);
     }

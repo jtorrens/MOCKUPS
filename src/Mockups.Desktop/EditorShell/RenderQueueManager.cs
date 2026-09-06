@@ -581,7 +581,7 @@ internal sealed class RenderQueueManager : IDisposable
             File.ReadAllText(_path))
             ?? throw new InvalidOperationException("The render queue document is empty.");
         if (document.Schema != "mockups_render_queue"
-            || document.Version != 2
+            || document.Version != 3
             || document.Jobs is null
             || document.LastRouteByProject is null)
         {
@@ -696,6 +696,8 @@ internal sealed class RenderQueueManager : IDisposable
     {
         if (snapshot.Context.ProjectId != plan.ProjectId
             || snapshot.Context.ShotId != plan.ShotId
+            || snapshot.ThemeStrategy != plan.ThemeStrategy
+            || snapshot.ThemeId != plan.ThemeId
             || snapshot.RequestedAppearance != plan.RequestedAppearance
             || snapshot.Output != plan.Output)
         {

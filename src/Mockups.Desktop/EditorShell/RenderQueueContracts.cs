@@ -42,6 +42,20 @@ internal static class RenderQueueAppearance
     };
 }
 
+internal static class RenderThemeStrategy
+{
+    public const string Screen = "screen";
+    public const string Forced = "forced";
+
+    public static bool IsValid(string strategy, string themeId) =>
+        strategy switch
+        {
+            Screen => string.IsNullOrEmpty(themeId),
+            Forced => !string.IsNullOrWhiteSpace(themeId),
+            _ => false,
+        };
+}
+
 internal sealed record RenderOutputModeDefinition(
     string Id,
     string Label,
@@ -197,6 +211,7 @@ internal sealed record RenderJobSnapshot(
     RenderShotContext Context,
     string DeviceId,
     string DeviceName,
+    string ThemeStrategy,
     string ThemeId,
     string ThemeName,
     string RequestedAppearance,
@@ -206,7 +221,7 @@ internal sealed record RenderJobSnapshot(
     RenderOutputTarget Output)
 {
     public const string CurrentSchema = "mockups_render_job_snapshot";
-    public const int CurrentVersion = 4;
+    public const int CurrentVersion = 5;
 
     public void Validate()
     {
@@ -216,7 +231,7 @@ internal sealed record RenderJobSnapshot(
             || string.IsNullOrWhiteSpace(Context.ShotId)
             || string.IsNullOrWhiteSpace(Context.ActorId)
             || string.IsNullOrWhiteSpace(DeviceId)
-            || string.IsNullOrWhiteSpace(ThemeId)
+            || !RenderThemeStrategy.IsValid(ThemeStrategy, ThemeId)
             || RequestedAppearance is not RenderQueueAppearance.Light
                 and not RenderQueueAppearance.Dark
             || Metrics.CanvasWidth <= 0
@@ -253,12 +268,13 @@ internal sealed record RenderJobPlan(
     string ShotId,
     string ShotName,
     string DeviceId,
+    string ThemeStrategy,
     string ThemeId,
     string RequestedAppearance,
     RenderOutputTarget Output)
 {
     public const string CurrentSchema = "mockups_render_job_plan";
-    public const int CurrentVersion = 1;
+    public const int CurrentVersion = 2;
 
     public void Validate()
     {
@@ -268,7 +284,7 @@ internal sealed record RenderJobPlan(
             || string.IsNullOrWhiteSpace(ShotId)
             || string.IsNullOrWhiteSpace(ShotName)
             || string.IsNullOrWhiteSpace(DeviceId)
-            || string.IsNullOrWhiteSpace(ThemeId)
+            || !RenderThemeStrategy.IsValid(ThemeStrategy, ThemeId)
             || RequestedAppearance is not RenderQueueAppearance.Light
                 and not RenderQueueAppearance.Dark
             || Output.Appearance != RequestedAppearance)
@@ -307,6 +323,7 @@ internal sealed class RenderQueueJob
             "",
             "",
             "",
+            "",
             new RenderOutputTarget("", "", "", "", "", "", 0, 3, "", "", 8));
     public RenderJobSummary Summary { get; set; } =
         new(
@@ -322,7 +339,7 @@ internal sealed class RenderQueueJob
 internal sealed class RenderQueueDocument
 {
     public string Schema { get; init; } = "mockups_render_queue";
-    public int Version { get; init; } = 2;
+    public int Version { get; init; } = 3;
     public bool Paused { get; set; }
     public List<RenderQueueJob> Jobs { get; init; } = [];
     public Dictionary<string, string> LastRouteByProject { get; init; } =

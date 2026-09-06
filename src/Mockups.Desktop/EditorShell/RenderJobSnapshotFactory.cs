@@ -33,6 +33,7 @@ internal sealed record RenderBatchSnapshotPreparation(
     RenderQueueShotDraft Draft,
     string DeviceId,
     string DeviceName,
+    string ThemeStrategy,
     string ThemeId,
     string ThemeName,
     DevicePreviewMetrics Metrics,
@@ -48,7 +49,7 @@ internal sealed record RenderQueueShotDraft(
     string ActorId,
     string ActorName,
     string DeviceId,
-    string ThemeId,
+    string ThemeSelectionValue,
     int ShotNumber,
     int Fps,
     int TotalFrames,
@@ -57,8 +58,33 @@ internal sealed record RenderQueueShotDraft(
     string RootPath,
     string RouteStatusMessage,
     IReadOnlyList<FieldOption> Devices,
-    IReadOnlyList<FieldOption> Themes,
+    IReadOnlyList<FieldOption> ThemeOptions,
     IReadOnlyList<RenderQueueRouteOption> Routes);
+
+internal static class RenderThemeSelection
+{
+    public const string ScreenValue = "render-theme-selection::screen";
+    public const string ScreenLabel = "Screen";
+
+    public static IReadOnlyList<FieldOption> Options(
+        IReadOnlyList<FieldOption> themes) =>
+        [new FieldOption(ScreenValue, ScreenLabel), .. themes];
+
+    public static (string Strategy, string ThemeId, string Label) Resolve(
+        string value,
+        IReadOnlyList<FieldOption> themes)
+    {
+        if (value.Equals(ScreenValue, StringComparison.Ordinal))
+        {
+            return (RenderThemeStrategy.Screen, "", ScreenLabel);
+        }
+        var theme = themes.SingleOrDefault((option) =>
+            option.Value.Equals(value, StringComparison.Ordinal))
+            ?? throw new InvalidOperationException(
+                "Select Screen or a Theme from the Shot Project.");
+        return (RenderThemeStrategy.Forced, theme.Value, theme.Label);
+    }
+}
 
 internal sealed class RenderJobSnapshotFactory : IRenderJobPreparer
 {
@@ -103,9 +129,9 @@ internal sealed class RenderJobSnapshotFactory : IRenderJobPreparer
         var shotSettings = _database.GetShotSettings(shot.Id);
         var actor = _database.GetActorSettings(shotSettings.OwnerActorId);
         var deviceId = shotSettings.EffectiveDeviceId(actor.DefaultDeviceId);
-        var themeId = actor.DefaultThemeId;
+        var actorThemeId = actor.DefaultThemeId;
         if (string.IsNullOrWhiteSpace(deviceId)
-            || string.IsNullOrWhiteSpace(themeId))
+            || string.IsNullOrWhiteSpace(actorThemeId))
         {
             throw new InvalidOperationException(
                 $"Actor '{actor.DisplayName}' must define a default Device and Theme before rendering.");
@@ -159,7 +185,7 @@ internal sealed class RenderJobSnapshotFactory : IRenderJobPreparer
             shotSettings.OwnerActorId,
             actor.DisplayName,
             deviceId,
-            themeId,
+            RenderThemeSelection.ScreenValue,
             shotSettings.ShotNumber,
             shotSettings.Fps,
             shotSettings.DurationFrames,
@@ -168,7 +194,8 @@ internal sealed class RenderJobSnapshotFactory : IRenderJobPreparer
             rootPath,
             status,
             _database.GetDeviceOptions(shotSettings.ProjectId),
-            _database.GetThemeOptions(shotSettings.ProjectId),
+            RenderThemeSelection.Options(
+                _database.GetThemeOptions(shotSettings.ProjectId)),
             [
                 new RenderQueueRouteOption(
                     plan.RouteId,
@@ -181,7 +208,7 @@ internal sealed class RenderJobSnapshotFactory : IRenderJobPreparer
     public RenderBatchPlan PlanBatch(
         RenderQueueShotDraft draft,
         string deviceId,
-        string themeId,
+        string themeSelectionValue,
         string appearance,
         string outputModeId,
         string structureEntryId,
@@ -193,10 +220,12 @@ internal sealed class RenderJobSnapshotFactory : IRenderJobPreparer
             option.Value.Equals(deviceId, StringComparison.Ordinal))
             ?? throw new InvalidOperationException(
                 "Select a Device from the Shot Project.");
-        var theme = draft.Themes.SingleOrDefault((option) =>
-            option.Value.Equals(themeId, StringComparison.Ordinal))
-            ?? throw new InvalidOperationException(
-                "Select a Theme from the Shot Project.");
+        var theme = RenderThemeSelection.Resolve(
+            themeSelectionValue,
+            draft.ThemeOptions.Where((option) =>
+                !option.Value.Equals(
+                    RenderThemeSelection.ScreenValue,
+                    StringComparison.Ordinal)).ToList());
         var route = draft.Routes.SingleOrDefault((candidate) =>
             candidate.EntryId.Equals(
                 structureEntryId,
@@ -248,7 +277,8 @@ internal sealed class RenderJobSnapshotFactory : IRenderJobPreparer
                 draft.Shot.Id,
                 draft.Shot.Name,
                 deviceId,
-                themeId,
+                theme.Strategy,
+                theme.ThemeId,
                 summary.Appearance,
                 summary.Output)).ToList();
         foreach (var plan in plans) plan.Validate();
@@ -292,10 +322,14 @@ internal sealed class RenderJobSnapshotFactory : IRenderJobPreparer
             option.Value.Equals(plan.DeviceId, StringComparison.Ordinal))
             ?? throw new InvalidOperationException(
                 "The planned Device is no longer available in the Shot Project.");
-        var theme = draft.Themes.SingleOrDefault((option) =>
-            option.Value.Equals(plan.ThemeId, StringComparison.Ordinal))
-            ?? throw new InvalidOperationException(
-                "The planned Theme is no longer available in the Shot Project.");
+        var theme = plan.ThemeStrategy == RenderThemeStrategy.Screen
+            ? (Strategy: RenderThemeStrategy.Screen, ThemeId: "", Label: RenderThemeSelection.ScreenLabel)
+            : RenderThemeSelection.Resolve(
+                plan.ThemeId,
+                draft.ThemeOptions.Where((option) =>
+                    !option.Value.Equals(
+                        RenderThemeSelection.ScreenValue,
+                        StringComparison.Ordinal)).ToList());
         var metrics = DeviceSettingsFieldContract.PreviewMetrics(
             _database.GetDeviceSettings(plan.DeviceId));
         var summary = new RenderJobSummary(
@@ -314,6 +348,7 @@ internal sealed class RenderJobSnapshotFactory : IRenderJobPreparer
             draft,
             plan.DeviceId,
             device.Label,
+            theme.Strategy,
             plan.ThemeId,
             theme.Label,
             metrics,
@@ -358,6 +393,7 @@ internal sealed class RenderJobSnapshotFactory : IRenderJobPreparer
                             $"Screen '{activeScreen.ScreenId}' Device overrides"));
                 var payload = _productionPayloads.PrepareRender(
                     draft.Shot,
+                    preparation.ThemeStrategy,
                     preparation.ThemeId,
                     preparation.DeviceId,
                     requestedAppearance,
@@ -406,6 +442,7 @@ internal sealed class RenderJobSnapshotFactory : IRenderJobPreparer
                 summary.Context,
                 preparation.DeviceId,
                 preparation.DeviceName,
+                preparation.ThemeStrategy,
                 preparation.ThemeId,
                 preparation.ThemeName,
                 requestedAppearance,

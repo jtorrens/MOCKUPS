@@ -103,6 +103,7 @@ internal sealed class DesignPreviewPayloadDataSource
     public DesignPreviewThemeContext LoadProductionRenderThemeContext(
         ProjectTreeNode shot,
         string screenId,
+        string themeStrategy,
         string themeId,
         string deviceId)
     {
@@ -111,6 +112,11 @@ internal sealed class DesignPreviewPayloadDataSource
             throw new InvalidOperationException(
                 "Production render context requires a Shot.");
         }
+        if (!RenderThemeStrategy.IsValid(themeStrategy, themeId))
+        {
+            throw new InvalidOperationException(
+                "Production render Theme selection is incomplete or unsupported.");
+        }
         var settings = _database.GetShotSettings(shot.Id);
         var screen = _timeline.GetModuleInstanceSettings(screenId);
         if (!screen.ShotId.Equals(shot.Id, StringComparison.Ordinal))
@@ -118,7 +124,15 @@ internal sealed class DesignPreviewPayloadDataSource
             throw new InvalidOperationException(
                 $"Render Screen '{screenId}' does not belong to Shot '{shot.Id}'.");
         }
-        var effectiveThemeId = screen.EffectiveThemeId(themeId);
+        var effectiveThemeId = themeStrategy switch
+        {
+            RenderThemeStrategy.Screen => screen.EffectiveThemeId(
+                _actorDataSource.LoadContext(
+                    settings.OwnerActorId).DefaultThemeId),
+            RenderThemeStrategy.Forced => themeId,
+            _ => throw new InvalidOperationException(
+                $"Unsupported render Theme strategy '{themeStrategy}'."),
+        };
         if (!_database.GetThemeOptions(settings.ProjectId)
                 .Any((option) => option.Value.Equals(
                     effectiveThemeId,
