@@ -41,6 +41,8 @@ public partial class MainWindow : SukiWindow
     private readonly EditorHeaderController _editorHeader;
     private readonly EditorVariantHistoryService _variantHistory;
     private readonly EditorProductionNavigationActions _productionNavigationActions;
+    private readonly EditorApplicationBackupController
+        _applicationBackups;
     private readonly EditorTreeExpansionState _treeExpansion = new();
     private readonly EditorActiveFieldControls _activeFieldControls = new();
     private readonly EditorWorkspaceCoordinator _workspaceCoordinator;
@@ -51,6 +53,8 @@ public partial class MainWindow : SukiWindow
     private bool _isUpdatingPreviewUtilityTab;
     private string _renderedPreviewNavigationNodeId = "";
     private (string NodeId, string CardId)? _pendingEditorCardExpansion;
+    private bool _closeApproved;
+    private bool _sessionDisposed;
     private EditorSessionState Session => _workspaceCoordinator.State;
 
     [Obsolete("MainWindow must be created by Mockups.Desktop.Host.")]
@@ -81,6 +85,12 @@ public partial class MainWindow : SukiWindow
         Title = EditorBuildIdentity.WindowTitle;
         EditorContextMenuBehavior.Configure(this);
         _themeController = new EditorThemeController(this, RootShell, RefreshShellTheme);
+        _applicationBackups =
+            new EditorApplicationBackupController(
+                this,
+                application.BackupLifecycle,
+                application.Operations,
+                () => _themeController.IsDark);
         var inlinePreviews = EditorInlinePreviewControllerFactory.Create(
             data.ActorPreview,
             data.ProjectPaths,
@@ -465,12 +475,30 @@ public partial class MainWindow : SukiWindow
                 },
             },
         };
+        BackupHubButton.Content = new StackPanel
+        {
+            Orientation = Avalonia.Layout.Orientation.Horizontal,
+            Spacing = 7,
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+            Children =
+            {
+                EditorIcons.Create(EditorIcons.Data, 16),
+                new TextBlock
+                {
+                    Text = "Backup",
+                    FontWeight = FontWeight.SemiBold,
+                    VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                },
+            },
+        };
         ShellSettingsButton.Content = EditorIcons.Create(EditorIcons.Settings, 18);
         ApplyHeaderUtilityButton(
             NavigationPanelToggleButton);
+        ApplyHeaderUtilityButton(BackupHubButton);
         ApplyHeaderUtilityButton(UsageRefreshButton);
         ApplyHeaderUtilityButton(ShellSettingsButton);
         EditorAccessibility.Describe(UsageRefreshButton, "Update usage");
+        EditorAccessibility.Describe(BackupHubButton, "Create Backup Hub backup");
         EditorAccessibility.Describe(ShellSettingsButton, "Settings");
         _shellState.Restore();
         _navigationPanel.Restore(
@@ -503,24 +531,71 @@ public partial class MainWindow : SukiWindow
         _previewController.SetWorkspaceWithoutRefresh(Session.Workspace);
         _themeController.SetState(_shellState.IsDark, _shellState.SukiColor);
         EditorUiDensity.Configure(_shellState.UiTextScale, _shellState.UiCardPaddingScale);
-        Closing += (_, _) =>
+        Closing += async (_, args) =>
         {
-            _shellState.Save(
-                CreateSessionHistoryState(),
-                _navigationPanel.Snapshot());
-            _productionNavigationActions.Dispose();
-            _previewControlsDock.Dispose();
-            _screenTimeline.Dispose();
-            _editorContent.Dispose();
-            _collectionCards.Dispose();
-            _previewController.Dispose();
-            application.Operations.Dispose();
-            _workspaceCoordinator.Dispose();
+            if (!_closeApproved)
+            {
+                args.Cancel = true;
+                if (_applicationBackups.OperationActive)
+                {
+                    return;
+                }
+                _editorContent.CancelPreparation();
+                _previewController
+                    .CancelPreparationsForApplicationClose();
+                IsEnabled = false;
+                var shouldClose = await _applicationBackups
+                    .PrepareCloseAsync();
+                IsEnabled = true;
+                if (shouldClose)
+                {
+                    _closeApproved = true;
+                    Close();
+                }
+                return;
+            }
+            DisposeSession(application);
         };
         _themeController.Apply();
         InitializePreviewOptions();
         ApplyTreeLoadTransition(initialTransition);
         ApplyUiTextScale();
+    }
+
+    private async void OnBackupHubClick(
+        object? sender,
+        Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        BackupHubButton.IsEnabled = false;
+        try
+        {
+            await _applicationBackups.PublishManualAsync();
+        }
+        finally
+        {
+            BackupHubButton.IsEnabled = true;
+        }
+    }
+
+    private void DisposeSession(
+        DesktopApplicationServices application)
+    {
+        if (_sessionDisposed)
+        {
+            return;
+        }
+        _sessionDisposed = true;
+        _shellState.Save(
+            CreateSessionHistoryState(),
+            _navigationPanel.Snapshot());
+        _productionNavigationActions.Dispose();
+        _previewControlsDock.Dispose();
+        _screenTimeline.Dispose();
+        _editorContent.Dispose();
+        _collectionCards.Dispose();
+        _previewController.Dispose();
+        application.Operations.Dispose();
+        _workspaceCoordinator.Dispose();
     }
 
     private async void OnRefreshUsageClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)

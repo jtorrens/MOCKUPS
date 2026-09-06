@@ -377,8 +377,11 @@ For each coherent phase:
 4. inspect the current owner and shared equivalent;
 5. implement the smallest complete owner change;
 6. update current documentation and enforcement together;
-7. for a persisted-contract change, migrate only the canonical workstation
-   database and run `npm run desktop:update:checkpoint`;
+7. for a persisted-contract change, run `npm run
+   desktop:backup:pre-migration` while maintenance is active, migrate only the
+   canonical workstation database, and run `npm run
+   desktop:update:checkpoint`; abort the migration if Backup Hub cannot accept
+   the protected pre-migration package;
 8. run exact owner checks and the shared architecture guard while iterating;
 9. after the intended revision stops changing, run `npm run test:revision` and
    every check it selects for the exact revision scope;

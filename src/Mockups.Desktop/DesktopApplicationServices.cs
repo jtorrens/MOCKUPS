@@ -47,10 +47,12 @@ internal sealed record DesktopApplicationServices(
     EditorWorkspaceCoordinator WorkspaceCoordinator,
     EditorOperationCoordinator Operations,
     ProductionOutputRootStore ProductionOutputRoots,
-    ShotManagerDocumentStore ShotManagerDocuments)
+    ShotManagerDocumentStore ShotManagerDocuments,
+    IApplicationBackupLifecycle BackupLifecycle)
 {
     public static DesktopApplicationServices Create(
-        DesktopApplicationDataPorts data)
+        DesktopApplicationDataPorts data,
+        IApplicationBackupLifecycle? backupLifecycle = null)
     {
         var productionOutputRoots = new ProductionOutputRootStore();
         var shotManagerDocuments = new ShotManagerDocumentStore();
@@ -80,6 +82,8 @@ internal sealed record DesktopApplicationServices(
             new EditorWorkspaceCoordinator(data.Navigation),
             operations,
             productionOutputRoots,
-            shotManagerDocuments);
+            shotManagerDocuments,
+            backupLifecycle
+                ?? new NoApplicationBackupLifecycle());
     }
 }

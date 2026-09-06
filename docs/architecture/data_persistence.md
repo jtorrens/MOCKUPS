@@ -583,6 +583,42 @@ maintenance migration:
 Normal readers know only the resulting current contract. They contain no
 aliases, coercions, fallback fields or startup repair paths.
 
+## Backup Hub boundary
+
+The Desktop Host is the sole owner of the Backup Hub integration. It publishes
+Backup Package v1 with `applicationId` `mockups`, snapshot format
+`mockups-production`, the captured SQLite `PRAGMA user_version` as the opaque
+schema version, and exactly one payload file: `payload/mockups.sqlite`. WAL and
+SHM sidecars, workstation locks, the repository parity database, preferences
+and Project assets are never payload.
+
+Every package is built from the SQLite Backup API into a temporary directory
+inside Backup Hub's canonical inbox, validated through the strict current
+persistence contract plus `PRAGMA integrity_check`, flushed, and atomically
+renamed to `<packageId>.bhpkg`. Manual, pre-migration and pre-restore backups
+always publish. A normal application close is serialized after editor writes
+and publishes only when the hash of its consistent SQLite snapshot differs
+from the startup or last-published baseline. Rendering, Preview refresh,
+navigation and other read-only activity therefore create no duplicate backup.
+
+The Host consumes only Restore Handoff v2, before the application session opens
+SQLite. It strictly validates the vault marker, request, manifest, exact
+payload, hashes, current database contract and integrity before showing native
+confirmation. A snapshot is restorable only when its declared and actual
+schema equal the schema supported by that running application; backups from an
+older or newer schema are rejected, while older backups made with the same
+schema remain valid. Confirmation first publishes the mandatory `pre-restore`
+package, then the Host performs a journaled atomic replacement, validates the
+live database, publishes the terminal result and rolls back to the verified
+previous file on any replacement or verification failure. Startup never
+migrates, repairs or normalizes a restored database.
+
+Vault discovery follows Vault Location v1 exclusively: native user application
+data, `com.jtorrens.backup-hub/vault`, and the exact `vault-layout.json` marker.
+MOCKUPS never creates the vault, searches alternate locations or writes a
+fallback backup. Backup Hub owns encryption, retention, history and
+synchronization after package ingestion.
+
 ## References and lifecycle
 
 Reference discovery, `Used` state, Usage presentation and deletion protection

@@ -260,6 +260,9 @@ internal sealed class EditorContentController : IDisposable
         CommittedOwnerId = context.OwnerNode.Id;
     }
 
+    public void CancelPreparation() =>
+        _preparation.Cancel();
+
     public void Dispose() => _preparation.Dispose();
 
     internal static string OwnerLayoutRecordClassId(ProjectTreeNode ownerNode) =>

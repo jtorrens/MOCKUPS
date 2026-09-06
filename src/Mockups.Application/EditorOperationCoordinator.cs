@@ -7,19 +7,32 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 public sealed class EditorOperationCoordinator : IDisposable
 {
     private readonly SemaphoreSlim _operationGate = new(1, 1);
-    private readonly CancellationTokenSource _lifetime = new();
+    private readonly object _stateGate = new();
+    private CancellationTokenSource _lifetime = new();
+    private bool _stopping;
     private bool _disposed;
 
     public async Task<T> ExecuteAsync<T>(
         Func<T> operation,
         CancellationToken cancellationToken = default)
     {
-        ObjectDisposedException.ThrowIf(_disposed, this);
         ArgumentNullException.ThrowIfNull(operation);
+
+        CancellationToken lifetimeToken;
+        lock (_stateGate)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            if (_stopping)
+            {
+                throw new InvalidOperationException(
+                    "The editor operation queue is stopping for application close.");
+            }
+            lifetimeToken = _lifetime.Token;
+        }
 
         using var operationCancellation =
             CancellationTokenSource.CreateLinkedTokenSource(
-                _lifetime.Token,
+                lifetimeToken,
                 cancellationToken);
         var token = operationCancellation.Token;
         await _operationGate.WaitAsync(token).ConfigureAwait(false);
@@ -45,15 +58,79 @@ public sealed class EditorOperationCoordinator : IDisposable
             },
             cancellationToken);
 
-    public void Dispose()
+    public async Task<T> ExecuteShutdownAsync<T>(
+        Func<T> operation)
     {
-        if (_disposed)
+        ArgumentNullException.ThrowIfNull(operation);
+        CancellationTokenSource stoppedLifetime;
+        lock (_stateGate)
         {
-            return;
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            if (_stopping)
+            {
+                throw new InvalidOperationException(
+                    "The editor operation queue is already stopping.");
+            }
+            _stopping = true;
+            stoppedLifetime = _lifetime;
         }
 
-        _disposed = true;
-        _lifetime.Cancel();
-        _lifetime.Dispose();
+        stoppedLifetime.Cancel();
+        var ownsGate = await _operationGate.WaitAsync(
+                TimeSpan.FromSeconds(3))
+            .ConfigureAwait(false);
+        try
+        {
+            return await Task.Run(operation).ConfigureAwait(false);
+        }
+        catch
+        {
+            ResumeAfterFailedShutdown(stoppedLifetime);
+            throw;
+        }
+        finally
+        {
+            if (ownsGate)
+            {
+                _operationGate.Release();
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        CancellationTokenSource lifetime;
+        lock (_stateGate)
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            _disposed = true;
+            lifetime = _lifetime;
+        }
+
+        lifetime.Cancel();
+        lifetime.Dispose();
+    }
+
+    private void ResumeAfterFailedShutdown(
+        CancellationTokenSource stoppedLifetime)
+    {
+        lock (_stateGate)
+        {
+            if (_disposed
+                || !ReferenceEquals(
+                    _lifetime,
+                    stoppedLifetime))
+            {
+                return;
+            }
+
+            _lifetime = new CancellationTokenSource();
+            _stopping = false;
+            stoppedLifetime.Dispose();
+        }
     }
 }

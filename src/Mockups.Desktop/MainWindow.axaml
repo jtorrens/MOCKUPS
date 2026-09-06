@@ -52,6 +52,11 @@
                     </Border>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <Button x:Name="BackupHubButton"
+                            Click="OnBackupHubClick"
+                            MinHeight="36"
+                            Padding="10,4"
+                            BorderThickness="0" />
                     <Button x:Name="UsageRefreshButton"
                             Click="OnRefreshUsageClick"
                             MinHeight="36"

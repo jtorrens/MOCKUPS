@@ -72,12 +72,25 @@ public sealed class EditorApplicationSession
 public sealed class ApplicationStartupCoordinator
 {
     private readonly string _previewBundleDirectory;
+    private readonly Func<IApplicationBackupLifecycle>
+        _backupLifecycleFactory;
 
     public ApplicationStartupCoordinator(
         string previewBundleDirectory)
+        : this(
+            previewBundleDirectory,
+            () => new NoApplicationBackupLifecycle())
+    {
+    }
+
+    internal ApplicationStartupCoordinator(
+        string previewBundleDirectory,
+        Func<IApplicationBackupLifecycle>
+            backupLifecycleFactory)
     {
         _previewBundleDirectory = Path.GetFullPath(
             previewBundleDirectory);
+        _backupLifecycleFactory = backupLifecycleFactory;
     }
 
     public async Task<StartupResult> StartAsync(
@@ -185,7 +198,8 @@ public sealed class ApplicationStartupCoordinator
                 ports.Navigation.LoadProjectTree();
             cancellationToken.ThrowIfCancellationRequested();
             var services = DesktopApplicationServices.Create(
-                ports);
+                ports,
+                _backupLifecycleFactory());
             return new StartupResult.Success(
                 new EditorApplicationSession(
                     services,

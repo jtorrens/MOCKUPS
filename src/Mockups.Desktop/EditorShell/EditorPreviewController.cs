@@ -586,6 +586,14 @@ internal sealed class EditorPreviewController : IDisposable
         _referenceVideoController.Dispose();
     }
 
+    public void CancelPreparationsForApplicationClose()
+    {
+        CancelPlaybackPreparation();
+        _visualContextPreparation.Cancel();
+        _productionPayloadPreparation.Cancel();
+        _aheadPreloadCancellation?.Cancel();
+    }
+
     public void ConfigureScreenTimelineKeyboardNavigation(
         Func<int, bool> stepFrame,
         Func<int, bool> moveToNavigationFrame)

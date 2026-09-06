@@ -18,6 +18,7 @@
     "desktop:db:snapshot": "node scripts/workstationProject.mjs snapshot",
     "desktop:db:parity": "node scripts/workstationProject.mjs check",
     "desktop:update:begin": "node scripts/workstationProject.mjs update-begin",
+    "desktop:backup:pre-migration": "dotnet run --project src/Mockups.Desktop.Host/Mockups.Desktop.Host.csproj -p:SkipDesktopPreviewBuild=true -- --publish-backup pre-migration",
     "desktop:update:checkpoint": "node scripts/workstationProject.mjs update-checkpoint",
     "desktop:update:end": "node scripts/workstationProject.mjs update-end",
     "desktop:update:status": "node scripts/workstationProject.mjs update-status",

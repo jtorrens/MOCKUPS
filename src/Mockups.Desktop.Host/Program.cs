@@ -17,6 +17,11 @@ internal static class Program
             return;
         }
 
+        if (BackupHubMaintenanceCommand.TryRun(args))
+        {
+            return;
+        }
+
         if (CurrentDatabaseMaintenance.TryRun(args))
         {
             return;
