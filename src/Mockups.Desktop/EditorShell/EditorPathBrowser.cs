@@ -108,6 +108,51 @@ internal sealed class EditorPathBrowser
         return files.Count > 0 ? files[0].Path.LocalPath : null;
     }
 
+    public async Task<string?> BrowseExternalMediaSourceDirectory(
+        string currentDirectory)
+    {
+        var options = new FolderPickerOpenOptions
+        {
+            Title = "Select replacement source directory",
+            AllowMultiple = false,
+        };
+        if (!string.IsNullOrWhiteSpace(currentDirectory)
+            && Directory.Exists(currentDirectory))
+        {
+            options.SuggestedStartLocation =
+                await _storageProvider.TryGetFolderFromPathAsync(
+                    Path.GetFullPath(currentDirectory));
+        }
+
+        var folders = await _storageProvider.OpenFolderPickerAsync(options);
+        return folders.Count > 0
+            ? Path.GetFullPath(folders[0].Path.LocalPath)
+            : null;
+    }
+
+    public string ExternalMediaStoragePath(
+        string absolutePath,
+        ValueKind valueKind,
+        string projectId)
+    {
+        var fullPath = Path.GetFullPath(absolutePath);
+        if (valueKind == ValueKind.VideoFilePath)
+        {
+            return ReferenceVideoStoragePath(_projectPaths, fullPath);
+        }
+
+        var stored = _projectPaths.RelativePathIfInsideMediaRoot(
+            fullPath,
+            _contextData.ProjectMediaRoot(projectId)) ?? fullPath;
+        if (valueKind == ValueKind.MediaDirectoryPath
+            && Path.IsPathFullyQualified(stored))
+        {
+            throw new InvalidOperationException(
+                "Media directories must remain inside the Project media root.");
+        }
+        return _projectPaths.NormalizeRelativePath(stored);
+    }
+
     private static async Task<string?> BrowseJsonFile(
         IStorageProvider storageProvider,
         string currentPath)

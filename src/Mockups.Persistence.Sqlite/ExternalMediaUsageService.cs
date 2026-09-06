@@ -760,7 +760,7 @@ internal sealed class ExternalMediaUsageService : IExternalMediaUsageQuery
         ExternalMediaDirectoryKind directoryKind = ExternalMediaDirectoryKind.None)
     {
         if (string.IsNullOrWhiteSpace(authoredPath)) return;
-        var absolute = Resolve(source, authoredPath, mediaRoot);
+        var absolute = Resolve(source, authoredPath, valueKind, mediaRoot);
         var isDirectory = valueKind == ValueKind.MediaDirectoryPath;
         var directory = isDirectory
             ? absolute
@@ -803,11 +803,13 @@ internal sealed class ExternalMediaUsageService : IExternalMediaUsageQuery
     private static string Resolve(
         SourceContext source,
         string authoredPath,
+        ValueKind valueKind,
         string mediaRoot)
     {
-        var resolved = new ProjectPathResolver(source.ProjectRoot).ResolveLocalPath(
-            authoredPath,
-            mediaRoot);
+        var paths = new ProjectPathResolver(source.ProjectRoot);
+        var resolved = valueKind == ValueKind.VideoFilePath
+            ? paths.ResolveProjectPath(authoredPath)
+            : paths.ResolveLocalPath(authoredPath, mediaRoot);
         return resolved
             ?? throw new InvalidOperationException(
                 $"{source.TypeLabel} '{source.Name}' field path '{authoredPath}' cannot be resolved.");

@@ -2269,7 +2269,9 @@ static void TextBoxPreviewResolvesVariantOwnedIconRowSlots()
         Equal(
             "component_project_foqn_s2_iconRow::variant::default",
             ComponentVariantSlotDocumentContract.VariantReference(slot, $"Text Box Variant '{key}'"));
-        Equal(0, ComponentVariantSlotDocumentContract.Overrides(slot, $"Text Box Variant '{key}'").Count);
+        var overrides = ComponentVariantSlotDocumentContract.Overrides(slot, $"Text Box Variant '{key}'");
+        var iconRowOverrides = JsonPath.RequiredObject(overrides, "iconRow", $"Text Box Variant '{key}' overrides");
+        Equal(0, JsonPath.RequiredArray(iconRowOverrides, "items", $"Text Box Variant '{key}' overrides.iconRow").Count);
     }
     var iconRowVariant = nodes.Single((node) =>
         node.Kind == ProjectTreeNodeKind.ComponentVariant
@@ -3683,25 +3685,27 @@ static void IncomingCallExposesExactChildRuntimeBoundaries()
         database.Resources,
         database.ProjectPaths,
         () => { });
-    var emptyPayload = payload with { ConfigJson = changedConfig.ToJsonString() };
-    session.UpdateForPayload(emptyPayload, database.GetComponentClassSettings(incomingCall.Id).ProjectId);
-    var emptyResolved = session.ApplyInputs(
-        emptyPayload,
+    var defaultIconRowPayload = payload with { ConfigJson = changedConfig.ToJsonString() };
+    session.UpdateForPayload(defaultIconRowPayload, database.GetComponentClassSettings(incomingCall.Id).ProjectId);
+    var defaultIconRowResolved = session.ApplyInputs(
+        defaultIconRowPayload,
         "light",
         database.GetComponentClassSettings(incomingCall.Id).ProjectId);
-    var emptyRuntime = JsonPath.ParseRequiredObject(
-        emptyResolved.DesignPreviewJson,
-        "Incoming Call empty Icon Row Runtime");
-    var emptyIconRow = JsonPath.ObjectItems(
-            JsonPath.RequiredArray(emptyRuntime, "iconRowRuntime", "Incoming Call empty Runtime"),
-            "Incoming Call empty Icon Row Runtime")
+    var defaultIconRowRuntime = JsonPath.ParseRequiredObject(
+        defaultIconRowResolved.DesignPreviewJson,
+        "Incoming Call default Icon Row Runtime");
+    var defaultIconRow = JsonPath.ObjectItems(
+            JsonPath.RequiredArray(defaultIconRowRuntime, "iconRowRuntime", "Incoming Call default Runtime"),
+            "Incoming Call default Icon Row Runtime")
         .Single();
-    Equal(
-        0,
+    SequenceEqual(
+        ["button_001"],
         JsonPath.RequiredArray(
-            JsonPath.RequiredObject(emptyIconRow, "runtimeInputs", "Incoming Call empty Icon Row Runtime"),
-            "buttonInputs",
-            "Incoming Call empty Icon Row Runtime").Count);
+                JsonPath.RequiredObject(defaultIconRow, "runtimeInputs", "Incoming Call default Icon Row Runtime"),
+                "buttonInputs",
+                "Incoming Call default Icon Row Runtime")
+            .OfType<JsonObject>()
+            .Select((item) => JsonPath.RequiredString(item, "id", "Incoming Call default button")));
 
     var androidPayload = Required(CreatePreviewPayload(database, android, theme.Id));
     session.UpdateForPayload(
@@ -18413,6 +18417,7 @@ static void ExternalMediaKeepsExistingPathsVisible()
             [usage],
             isDark: true,
             (_) => Task.CompletedTask,
+            (_) => Task.FromResult<IReadOnlyList<ExternalMediaUsageDetail>?>(null),
             (_) => Task.FromResult<IReadOnlyList<ExternalMediaUsageDetail>?>(null));
         var cells = control.GetLogicalDescendants()
             .OfType<TextBlock>()
@@ -18428,6 +18433,24 @@ static void ExternalMediaKeepsExistingPathsVisible()
         Equal("Replace media…", menuItems[0].Header?.ToString());
         Equal("Show in Finder", menuItems[1].Header?.ToString());
         True(menuItems[1].IsEnabled);
+        var path = cells.Single((cell) => cell.Text == "/project/avatars");
+        var pathMenuItems = path.ContextMenu?.ItemsSource
+            ?.OfType<MenuItem>()
+            .ToArray() ?? [];
+        Equal(3, pathMenuItems.Length);
+        Equal("Change source directory…", pathMenuItems[0].Header?.ToString());
+        True(ExternalMediaReplacementCoordinator.IsSameOrDescendantDirectory(
+            "/project/avatars",
+            "/project/avatars/team"));
+        True(!ExternalMediaReplacementCoordinator.IsSameOrDescendantDirectory(
+            "/project/avatars",
+            "/project/avatars-old"));
+        Equal(
+            Path.GetFullPath("/replacement/team/alex.png"),
+            ExternalMediaReplacementCoordinator.ReassociatedTargetPath(
+                "/project/avatars",
+                "/replacement",
+                "/project/avatars/team/alex.png"));
     }, CancellationToken.None).GetAwaiter().GetResult();
 }
 

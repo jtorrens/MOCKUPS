@@ -2,6 +2,7 @@ using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
@@ -69,35 +70,7 @@ internal sealed class ExternalMediaReplacementCoordinator
 
         try
         {
-            var node = _findNode(usage.SourceNodeId)
-                ?? throw new InvalidOperationException(
-                    $"Could not find {usage.SourceTypeLabel} '{usage.SourceName}'.");
-            if (usage.DirectoryKind == ExternalMediaDirectoryKind.ProductionFontFamily)
-            {
-                await _operations.ExecuteAsync(() =>
-                    _assetDirectories.ReplaceProductionFontFamilyDirectory(
-                        usage.SourceNodeId,
-                        replacement));
-            }
-            else if (usage.DirectoryKind == ExternalMediaDirectoryKind.IconTheme)
-            {
-                await _operations.ExecuteAsync(() =>
-                    _assetDirectories.ReplaceIconThemeDirectory(
-                        usage.SourceNodeId,
-                        replacement));
-            }
-            else if (usage.AuthoringSurface == ExternalMediaAuthoringSurface.Editor)
-            {
-                await ReplaceEditorValueAsync(node, usage, replacement);
-            }
-            else if (node.Kind == ProjectTreeNodeKind.ModuleInstance)
-            {
-                await ReplaceProductionRuntimeValueAsync(node, usage, replacement);
-            }
-            else
-            {
-                await ReplaceDesignPreviewValueAsync(node, usage, replacement);
-            }
+            await ReplaceUsageAsync(usage, replacement);
             _authoredValuesChanged();
             return await _operations.ExecuteAsync(
                 () => _usage.GetExternalMediaUsageDetails(usage.ProjectId));
@@ -108,6 +81,139 @@ internal sealed class ExternalMediaReplacementCoordinator
                 "Media not replaced",
                 exception.Message);
             return null;
+        }
+    }
+
+    public async Task<IReadOnlyList<ExternalMediaUsageDetail>?>
+        ChangeSourceDirectoryAsync(ExternalMediaUsageDetail selected)
+    {
+        var sourceDirectory = Path.GetFullPath(
+            selected.AbsoluteDirectoryPath);
+        var destinationDirectory =
+            await _paths.BrowseExternalMediaSourceDirectory(sourceDirectory);
+        if (string.IsNullOrWhiteSpace(destinationDirectory)) return null;
+
+        try
+        {
+            var usages = await _operations.ExecuteAsync(
+                () => _usage.GetExternalMediaUsageDetails(selected.ProjectId));
+            var matches = usages
+                .Where((usage) => IsSameOrDescendantDirectory(
+                    sourceDirectory,
+                    usage.AbsoluteDirectoryPath))
+                .ToArray();
+            if (matches.Length == 0)
+            {
+                throw new InvalidOperationException(
+                    "No authored media references use the selected source directory.");
+            }
+
+            var failures = new List<string>();
+            foreach (var usage in matches)
+            {
+                try
+                {
+                    var target = ReassociatedTargetPath(
+                        sourceDirectory,
+                        destinationDirectory,
+                        usage.AbsoluteTargetPath);
+                    var replacement = _paths.ExternalMediaStoragePath(
+                        target,
+                        usage.ValueKind,
+                        usage.ProjectId);
+                    await ReplaceUsageAsync(usage, replacement);
+                }
+                catch (Exception exception)
+                {
+                    failures.Add($"{usage.SystemItem}: {exception.Message}");
+                }
+            }
+
+            _authoredValuesChanged();
+            var refreshed = await _operations.ExecuteAsync(
+                () => _usage.GetExternalMediaUsageDetails(selected.ProjectId));
+            if (failures.Count > 0)
+            {
+                await _showInfo(
+                    "Source directory changed with unresolved media",
+                    $"{matches.Length - failures.Count} of {matches.Length} references were reassociated. "
+                    + "The remaining references were left unchanged for individual resolution.\n\n"
+                    + string.Join("\n", failures));
+            }
+            return refreshed;
+        }
+        catch (Exception exception)
+        {
+            await _showInfo(
+                "Source directory not changed",
+                exception.Message);
+            return null;
+        }
+    }
+
+    internal static bool IsSameOrDescendantDirectory(
+        string sourceDirectory,
+        string candidateDirectory)
+    {
+        var relative = Path.GetRelativePath(
+            Path.GetFullPath(sourceDirectory),
+            Path.GetFullPath(candidateDirectory));
+        return relative == "."
+            || (!Path.IsPathFullyQualified(relative)
+                && !relative.Replace('\\', '/').Split('/').Any(
+                    (segment) => segment == ".."));
+    }
+
+    internal static string ReassociatedTargetPath(
+        string sourceDirectory,
+        string destinationDirectory,
+        string currentTargetPath)
+    {
+        var relative = Path.GetRelativePath(
+            Path.GetFullPath(sourceDirectory),
+            Path.GetFullPath(currentTargetPath));
+        if (Path.IsPathFullyQualified(relative)
+            || relative.Replace('\\', '/').Split('/').Any(
+                (segment) => segment == ".."))
+        {
+            throw new InvalidOperationException(
+                $"Media target '{currentTargetPath}' is outside the selected source directory.");
+        }
+        return Path.GetFullPath(Path.Combine(destinationDirectory, relative));
+    }
+
+    private async Task ReplaceUsageAsync(
+        ExternalMediaUsageDetail usage,
+        string replacement)
+    {
+        var node = _findNode(usage.SourceNodeId)
+            ?? throw new InvalidOperationException(
+                $"Could not find {usage.SourceTypeLabel} '{usage.SourceName}'.");
+        if (usage.DirectoryKind == ExternalMediaDirectoryKind.ProductionFontFamily)
+        {
+            await _operations.ExecuteAsync(() =>
+                _assetDirectories.ReplaceProductionFontFamilyDirectory(
+                    usage.SourceNodeId,
+                    replacement));
+        }
+        else if (usage.DirectoryKind == ExternalMediaDirectoryKind.IconTheme)
+        {
+            await _operations.ExecuteAsync(() =>
+                _assetDirectories.ReplaceIconThemeDirectory(
+                    usage.SourceNodeId,
+                    replacement));
+        }
+        else if (usage.AuthoringSurface == ExternalMediaAuthoringSurface.Editor)
+        {
+            await ReplaceEditorValueAsync(node, usage, replacement);
+        }
+        else if (node.Kind == ProjectTreeNodeKind.ModuleInstance)
+        {
+            await ReplaceProductionRuntimeValueAsync(node, usage, replacement);
+        }
+        else
+        {
+            await ReplaceDesignPreviewValueAsync(node, usage, replacement);
         }
     }
 

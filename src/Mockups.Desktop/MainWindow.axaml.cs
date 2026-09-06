@@ -338,7 +338,8 @@ public partial class MainWindow : SukiWindow
             application.Operations,
             () => _themeController.IsDark,
             externalMediaNavigator.Navigate,
-            externalMediaReplacement.ReplaceAsync);
+            externalMediaReplacement.ReplaceAsync,
+            externalMediaReplacement.ChangeSourceDirectoryAsync);
         var specialSurfaces = new EditorSpecialSurfaceCatalog(
             _productionNavigationActions.EditorCards,
             externalMediaSurface.CreateCards);

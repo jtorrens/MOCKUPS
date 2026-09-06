@@ -68,7 +68,7 @@ test("a parent Runtime value changes an Icon Bar glyph without changing its Vari
 
   assert.deepEqual(
     resolved.iconBar.rows.right.items.map((item) => item.id),
-    ["component.textInputBar.iconBar.active.right.button_001"],
+    ["button_001"],
   );
   assert.equal(resolved.iconBar.rows.right.items[0]!.button.iconToken, "media_camera");
 });

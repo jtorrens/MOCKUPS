@@ -642,7 +642,7 @@ test("Conversation writes outgoing text in Bubble when its composer slots are ab
   assert.equal(resolved.visibleMessages[0]?.writeOnTrigger, true);
 });
 
-test("Conversation retains only the outgoing message until its cursor state becomes false", () => {
+test("Conversation retains an outgoing composer while later messages advance until its cursor state becomes false", () => {
   const source = committedConversationPayload(true);
   const config = JSON.parse(source.configJson) as {
     conversation: Record<string, unknown>;
@@ -687,22 +687,30 @@ test("Conversation retains only the outgoing message until its cursor state beco
   ];
   source.designPreviewJson = JSON.stringify(runtime);
   const instance = JSON.parse(source.instanceJson) as Record<string, unknown>;
+  const cursorReleaseLocalFrame = 5;
   instance.animation = {
     schemaVersion: 2,
     tracks: [track("keepCursorAfterWrite", "retained", [
-      { id: "release", frame: 5, value: false, interpolation: "hold" },
+      { id: "release", frame: cursorReleaseLocalFrame, value: false, interpolation: "hold" },
     ])],
   };
   source.instanceJson = JSON.stringify(instance);
 
-  setConversationFrame(source, 6);
+  setConversationFrame(source, 0);
+  const prepared = resolveConversationModuleFrame(source);
+  const retainedTiming = (prepared.messages as Array<Record<string, unknown>>)
+    .find(({ id }) => id === "retained")!;
+  const releaseFrame = Number(retainedTiming.timelineRevealAtFrame)
+    + cursorReleaseLocalFrame;
+
+  setConversationFrame(source, releaseFrame - 1);
   const retained = resolveConversationModule(source);
   assert.equal(retained.composer.textInputVisible, true);
   assert.equal(retained.composer.keyboardVisible, true);
   assert.equal(retained.composer.text, "Still composing");
   assert.deepEqual(retained.visibleMessages.map(({ id }) => id), ["later"]);
 
-  setConversationFrame(source, 7);
+  setConversationFrame(source, releaseFrame);
   const released = resolveConversationModule(source);
   assert.equal(released.composer.textInputVisible, false);
   assert.equal(released.composer.keyboardVisible, false);

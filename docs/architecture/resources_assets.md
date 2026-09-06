@@ -63,16 +63,25 @@ font family…` or `Replace icon folder…` according to the declared owner, for
 both existing and missing references. Production Font replacement rebuilds the
 family's exact file/style/weight document from the selected directory; Icon
 Theme replacement rebuilds its token mapping from the selected SVG directory.
-The same contextual menu
-is available from the path and filename cells and exposes `Show in Finder` as
-a separate action when the target exists; right-click never reveals a target
-directly. The replacement action uses the
+Both contextual menus expose `Show in Finder` as a separate action when the
+target exists; right-click never reveals a target directly. The replacement
+action uses the
 declared field `ValueKind` picker, preserves that picker's relative/absolute
 storage policy and commits only the exact owner, nested slot and stable item
 identified by the row through the existing editor, Design Test Values or
 Production Runtime Input write contract. It never performs a global path
 replacement. After a successful commit the focused query reloads the complete
 inventory while the current column and sort direction remain unchanged.
+
+The Path cell additionally exposes `Change source directory…`. Its row's
+absolute directory is the exact old prefix. Every declared External Media
+usage whose resolved directory is that directory or a descendant is
+reassociated through its existing typed owner while preserving the target
+suffix below that prefix. The operation does not copy files and does not
+require every corresponding target to exist: unavailable targets remain
+visible as missing for individual replacement. Media files keep the normal
+relative-when-inside-media-root and absolute-when-outside storage policy;
+resource directories retain their stricter Project media-root ownership.
 
 ## Palette and Themes
 

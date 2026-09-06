@@ -21,6 +21,9 @@ internal sealed class ExternalMediaEditorSurface
     private readonly Func<
         ExternalMediaUsageDetail,
         Task<IReadOnlyList<ExternalMediaUsageDetail>?>> _replace;
+    private readonly Func<
+        ExternalMediaUsageDetail,
+        Task<IReadOnlyList<ExternalMediaUsageDetail>?>> _changeSourceDirectory;
 
     public ExternalMediaEditorSurface(
         IExternalMediaUsageQuery usage,
@@ -29,13 +32,17 @@ internal sealed class ExternalMediaEditorSurface
         Func<ExternalMediaUsageDetail, Task> navigate,
         Func<
             ExternalMediaUsageDetail,
-            Task<IReadOnlyList<ExternalMediaUsageDetail>?>> replace)
+            Task<IReadOnlyList<ExternalMediaUsageDetail>?>> replace,
+        Func<
+            ExternalMediaUsageDetail,
+            Task<IReadOnlyList<ExternalMediaUsageDetail>?>> changeSourceDirectory)
     {
         _usage = usage;
         _operations = operations;
         _isDark = isDark;
         _navigate = navigate;
         _replace = replace;
+        _changeSourceDirectory = changeSourceDirectory;
     }
 
     public IReadOnlyList<InstantEditorCard>? CreateCards(ProjectTreeNode node)
@@ -66,7 +73,8 @@ internal sealed class ExternalMediaEditorSurface
                         items,
                         _isDark(),
                         _navigate,
-                        _replace)),
+                        _replace,
+                        _changeSourceDirectory)),
                 isExpanded: true),
         ];
     }
@@ -80,6 +88,9 @@ internal sealed class ExternalMediaTableControl : StackPanel
     private readonly Func<
         ExternalMediaUsageDetail,
         Task<IReadOnlyList<ExternalMediaUsageDetail>?>> _replace;
+    private readonly Func<
+        ExternalMediaUsageDetail,
+        Task<IReadOnlyList<ExternalMediaUsageDetail>?>> _changeSourceDirectory;
     private readonly StackPanel _rows;
     private readonly Dictionary<ExternalMediaSortColumn, Button> _headers = [];
     private ExternalMediaSortColumn _sortColumn = ExternalMediaSortColumn.SystemItem;
@@ -91,12 +102,16 @@ internal sealed class ExternalMediaTableControl : StackPanel
         Func<ExternalMediaUsageDetail, Task> navigate,
         Func<
             ExternalMediaUsageDetail,
-            Task<IReadOnlyList<ExternalMediaUsageDetail>?>> replace)
+            Task<IReadOnlyList<ExternalMediaUsageDetail>?>> replace,
+        Func<
+            ExternalMediaUsageDetail,
+            Task<IReadOnlyList<ExternalMediaUsageDetail>?>> changeSourceDirectory)
     {
         _items = items;
         _isDark = isDark;
         _navigate = navigate;
         _replace = replace;
+        _changeSourceDirectory = changeSourceDirectory;
         Name = "ExternalMediaTable";
         Spacing = 0;
 
@@ -262,7 +277,9 @@ internal sealed class ExternalMediaTableControl : StackPanel
             item.Exists
                 ? $"Right-click for media actions\n{item.AbsoluteTargetPath}"
                 : $"Missing · Right-click for media actions\n{item.AbsoluteTargetPath}");
-        path.ContextMenu = CreateMediaContextMenu(item);
+        path.ContextMenu = CreateMediaContextMenu(
+            item,
+            includeSourceDirectoryChange: true);
         Grid.SetColumn(path, 1);
         row.Children.Add(path);
 
@@ -270,7 +287,9 @@ internal sealed class ExternalMediaTableControl : StackPanel
             item.Exists ? item.FileName : $"{item.FileName} · Missing",
             item.Exists,
             _isDark);
-        fileName.ContextMenu = CreateMediaContextMenu(item);
+        fileName.ContextMenu = CreateMediaContextMenu(
+            item,
+            includeSourceDirectoryChange: false);
         ToolTip.SetTip(
             fileName,
             item.DirectoryKind switch
@@ -295,7 +314,9 @@ internal sealed class ExternalMediaTableControl : StackPanel
         };
     }
 
-    private ContextMenu CreateMediaContextMenu(ExternalMediaUsageDetail item)
+    private ContextMenu CreateMediaContextMenu(
+        ExternalMediaUsageDetail item,
+        bool includeSourceDirectoryChange)
     {
         var replace = new MenuItem
         {
@@ -337,9 +358,30 @@ internal sealed class ExternalMediaTableControl : StackPanel
                 EditorLocalPathActions.Reveal(item.AbsoluteTargetPath);
             }
         };
+        var changeSourceDirectory = new MenuItem
+        {
+            Header = "Change source directory…",
+        };
+        changeSourceDirectory.Click += async (_, _) =>
+        {
+            changeSourceDirectory.IsEnabled = false;
+            try
+            {
+                var refreshed = await _changeSourceDirectory(item);
+                if (refreshed is null) return;
+                _items = refreshed;
+                Rebuild();
+            }
+            finally
+            {
+                changeSourceDirectory.IsEnabled = true;
+            }
+        };
         return new ContextMenu
         {
-            ItemsSource = new[] { replace, reveal },
+            ItemsSource = includeSourceDirectoryChange
+                ? new[] { changeSourceDirectory, replace, reveal }
+                : new[] { replace, reveal },
         };
     }
 
