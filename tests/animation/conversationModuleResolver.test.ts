@@ -90,6 +90,7 @@ function payload(
     { id: "isPlaying", jsonKey: "isPlaying", animationTimeline: { origin: { kind: "fieldCompletion", fieldId: "text", offsetFrames: 0 } } },
     { id: "playDuration", jsonKey: "playDurationFrames" },
     { id: "fullScreen", jsonKey: "isFullScreen", animationTimeline: { origin: { kind: "fieldCompletion", fieldId: "text", offsetFrames: 0 } } },
+    { id: "keepCursorAfterWrite", jsonKey: "keepCursorAfterWrite", animationTimeline: { origin: { kind: "fieldCompletion", fieldId: "text", offsetFrames: 0 }, extendsOwnerDuration: false } },
   ];
   return {
     kind: "moduleInstance",
@@ -639,6 +640,73 @@ test("Conversation writes outgoing text in Bubble when its composer slots are ab
   assert.equal(resolved.composer.textInputVisible, false);
   assert.equal(resolved.visibleMessages[0]?.text, "Writing in Bubble");
   assert.equal(resolved.visibleMessages[0]?.writeOnTrigger, true);
+});
+
+test("Conversation retains only the outgoing message until its cursor state becomes false", () => {
+  const source = committedConversationPayload(true);
+  const config = JSON.parse(source.configJson) as {
+    conversation: Record<string, unknown>;
+  };
+  config.conversation.showTextInputBar = true;
+  config.conversation.showKeyboard = true;
+  source.configJson = JSON.stringify(config);
+  const runtime = JSON.parse(source.designPreviewJson) as {
+    messages: Array<Record<string, unknown>>;
+    textInputVisible: boolean;
+    keyboardVisible: boolean;
+  };
+  const outgoing = runtime.messages.find(({ direction }) => direction === "outgoing")!;
+  const incoming = runtime.messages.find(({ direction }) => direction === "incoming")!;
+  runtime.textInputVisible = true;
+  runtime.keyboardVisible = true;
+  runtime.messages = [
+    {
+      ...outgoing,
+      id: "retained",
+      text: "Still composing",
+      delayAfterPreviousFrames: 0,
+      postWriteOnHoldFrames: 0,
+      keepCursorAfterWrite: true,
+      writeOnTiming: {
+        mode: "fixed",
+        fixedFrames: 2,
+        paceToken: "theme.motion.naturalPace.normal",
+      },
+    },
+    {
+      ...incoming,
+      id: "later",
+      text: "Independent later message",
+      delayAfterPreviousFrames: 0,
+      writeOnTiming: {
+        mode: "fixed",
+        fixedFrames: 0,
+        paceToken: "theme.motion.naturalPace.normal",
+      },
+    },
+  ];
+  source.designPreviewJson = JSON.stringify(runtime);
+  const instance = JSON.parse(source.instanceJson) as Record<string, unknown>;
+  instance.animation = {
+    schemaVersion: 2,
+    tracks: [track("keepCursorAfterWrite", "retained", [
+      { id: "release", frame: 5, value: false, interpolation: "hold" },
+    ])],
+  };
+  source.instanceJson = JSON.stringify(instance);
+
+  setConversationFrame(source, 6);
+  const retained = resolveConversationModule(source);
+  assert.equal(retained.composer.textInputVisible, true);
+  assert.equal(retained.composer.keyboardVisible, true);
+  assert.equal(retained.composer.text, "Still composing");
+  assert.deepEqual(retained.visibleMessages.map(({ id }) => id), ["later"]);
+
+  setConversationFrame(source, 7);
+  const released = resolveConversationModule(source);
+  assert.equal(released.composer.textInputVisible, false);
+  assert.equal(released.composer.keyboardVisible, false);
+  assert.deepEqual(released.visibleMessages.map(({ id }) => id), ["retained", "later"]);
 });
 
 test("Conversation rejects the retired incoming instant reveal mode", () => {

@@ -126,7 +126,10 @@ stable Actor reference. The chat Actor is Screen-owner-relative, resolves
 through the prepared Runtime record-reference catalog and remains independent
 from the Shot Actor. A message also owns the animatable Boolean
 `keepCursorAfterWrite`. It uses `hold`, originates at that message's `text`
-completion and does not extend collection sequencing or owner duration.
+completion and does not extend collection sequencing or owner duration. When
+the Text Input Bar is active, a true effective value keeps only that outgoing
+message unsent; later messages retain their independently resolved timing. The
+first effective false releases the retained message Bubble.
 
 The common owner timeline derives:
 

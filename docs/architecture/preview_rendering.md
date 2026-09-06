@@ -337,8 +337,11 @@ the effective track duration remain separate: the former paints the message,
 while the latter keeps Text Input Bar and Keyboard present for the outgoing
 write interval. Conversation resolves each message's `keepCursorAfterWrite`
 Runtime value for the current frame and forwards it explicitly to Bubble.
-Bubble alone combines it with write-on progress to control Text Box cursor
-visibility; Text Box keeps ownership of the cursor's blinking presentation.
+When Text Input Bar is active, a true value keeps that outgoing message in the
+composer and suppresses only its Bubble. Later messages remain independent and
+may appear on their own timelines. The first effective false is that message's
+send boundary and releases its Bubble. Bubble still forwards cursor state to
+Text Box, which owns the cursor's blinking presentation.
 
 Conversation Preview prepares message layout transitions by stable message id.
 At an appearance or completed explicit disappearance it resolves the previous
