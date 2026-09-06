@@ -90,6 +90,14 @@ internal static partial class PreviewAssetRegistry
         }
     }
 
+    public static void Remove(string key)
+    {
+        lock (Gate)
+        {
+            Assets.Remove(key);
+        }
+    }
+
     public static string Expand(string html)
     {
         return AssetKeyRegex().Replace(html, (match) =>

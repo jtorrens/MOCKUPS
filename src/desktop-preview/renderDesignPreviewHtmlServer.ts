@@ -13,22 +13,20 @@ const input = readline.createInterface({
   crlfDelay: Number.POSITIVE_INFINITY,
 });
 
-const knownAssets = new Map<string, string>();
 const dataUriPattern = /(?<uri>data:(?:image|video|font)\/.*?)(?=&quot;|&#39;|[\s"'<>]|$)/gis;
 
 function compactPreviewAssets(html: string) {
-  const assets: Array<{ key: string; uri: string }> = [];
+  const assets = new Map<string, string>();
   const compactHtml = html.replace(dataUriPattern, (match, _uri, _offset, _input, groups) => {
     const uri = String(groups?.uri ?? match);
-    let key = knownAssets.get(uri);
-    if (!key) {
-      key = createHash("sha256").update(uri).digest("hex");
-      knownAssets.set(uri, key);
-      assets.push({ key, uri });
-    }
+    const key = createHash("sha256").update(uri).digest("hex");
+    assets.set(key, uri);
     return `mockups-asset:${key}`;
   });
-  return { html: compactHtml, assets };
+  return {
+    html: compactHtml,
+    assets: [...assets].map(([key, uri]) => ({ key, uri })),
+  };
 }
 
 input.on("line", (line) => {

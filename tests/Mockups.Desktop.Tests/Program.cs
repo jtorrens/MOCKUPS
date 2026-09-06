@@ -139,6 +139,7 @@ var tests = new (string Name, Action Run)[]
     ("Render executor publishes MOV with exact alpha association metadata", RenderExecutorPublishesMovWithExactMetadata),
     ("Chromium raster failures retain worker diagnostics", ChromiumRasterFailuresRetainWorkerDiagnostics),
     ("Production render overrides Device and Theme while respecting forced Screen appearance", ProductionRenderOverridesRespectScreenAppearance),
+    ("Production render uses transparency for Shot Screen gaps", ProductionRenderUsesTransparencyForShotScreenGaps),
     ("Render snapshot store interns repeated font assets", RenderSnapshotStoreInternsAssets),
     ("Render Queue persists and completes batch children independently", RenderQueueChildrenAreIndependent),
     ("Render Queue runs only the explicitly launched pending batch", RenderQueueRunsOnlyExplicitPendingBatch),
@@ -13993,7 +13994,7 @@ static void ProductionRenderOverridesRespectScreenAppearance()
                     actor.DefaultThemeId,
                     StringComparison.Ordinal))
             ?? actor.DefaultThemeId;
-        var payload = DesignPreviewPayloadFactory.CreateProductionRender(
+        var payload = Required(DesignPreviewPayloadFactory.CreateProductionRender(
             new DesignPreviewPayloadDataSource(
                 database.PreviewInputs,
                 database.Production,
@@ -14004,7 +14005,7 @@ static void ProductionRenderOverridesRespectScreenAppearance()
             themeId,
             deviceId,
             RenderQueueAppearance.Dark,
-            0);
+            0));
         Equal(deviceId, payload.DeviceId);
         Equal(
             database.GetThemeSettings(themeId).TokensJson,
@@ -14012,6 +14013,53 @@ static void ProductionRenderOverridesRespectScreenAppearance()
         Equal(
             RenderQueueAppearance.Light,
             payload.ThemeMode);
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void ProductionRenderUsesTransparencyForShotScreenGaps()
+{
+    var source = ParityDatabasePath();
+    var temporary = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-render-gap-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SqliteProjectTestContext(temporary);
+        var tree = database.LoadProjectTree();
+        var shot = Descendants(tree)
+            .Single((node) => node.Id == "shot_001");
+        var shotSettings = database.GetShotSettings(shot.Id);
+        var actor = database.GetActorSettings(shotSettings.OwnerActorId);
+        var writeContext = new SqliteProjectContext(temporary);
+        using (var connection = writeContext.OpenConnection())
+        {
+            writeContext.Execute(
+                connection,
+                "UPDATE module_instances SET start_frame = start_frame + 10 WHERE shot_id = $shotId",
+                ("$shotId", shot.Id));
+        }
+
+        var payload = DesignPreviewPayloadFactory.CreateProductionRender(
+            new DesignPreviewPayloadDataSource(
+                database.PreviewInputs,
+                database.Production,
+                database.Resources,
+                database.Resources,
+                database.ProjectPaths),
+            shot,
+            actor.DefaultThemeId,
+            actor.DefaultDeviceId,
+            RenderQueueAppearance.Light,
+            0);
+
+        True(
+            payload is null,
+            "A Shot frame before the first active Screen must use the transparent render document.");
     }
     finally
     {
@@ -14602,6 +14650,7 @@ static void RenderSnapshotStoreInternsAssets()
             create: true);
         store.WriteAsset(key, resolved);
         store.WriteAsset(key, resolved);
+        Equal(dataUri, store.ReadAsset(key));
         Equal(
             1,
             Directory.GetFiles(

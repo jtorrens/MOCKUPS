@@ -137,7 +137,7 @@ internal static class DesignPreviewPayloadFactory
         var screenId = dataSource.ActiveShotScreenId(
             shot.Id,
             shotFrame);
-        if (screenId is null) return null;
+        if (string.IsNullOrWhiteSpace(screenId)) return null;
         var theme = dataSource.LoadProductionRenderThemeContext(
             shot,
             screenId,

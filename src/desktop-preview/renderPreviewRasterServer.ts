@@ -12,6 +12,7 @@ interface RasterRequest {
   format: "webp" | "png";
   quality?: number;
   captureScale?: number;
+  assetKeys: string[];
   assets?: Array<{ key: string; uri: string }>;
 }
 
@@ -20,12 +21,22 @@ let page: Page | undefined;
 let loadedViewport = "";
 const previewAssets = new Map<string, string>();
 
-async function registerBrowserAssets(activePage: Page, assets: Array<{ key: string; uri: string }>) {
-  if (assets.length === 0) return;
-  await activePage.evaluate((incoming) => {
+async function synchronizeBrowserAssets(
+  activePage: Page,
+  assetKeys: string[],
+  assets: Array<{ key: string; uri: string }>,
+) {
+  await activePage.evaluate(({ activeKeys, incoming }) => {
     const state = globalThis as typeof globalThis & { __mockupsRasterAssets?: Record<string, string> };
     const registry = state.__mockupsRasterAssets ??= {};
+    const active = new Set(activeKeys);
+    for (const [key, uri] of Object.entries(registry)) {
+      if (active.has(key)) continue;
+      URL.revokeObjectURL(uri);
+      delete registry[key];
+    }
     for (const asset of incoming) {
+      if (!active.has(asset.key)) throw new Error(`Raster asset '${asset.key}' is outside the active document`);
       if (registry[asset.key]) continue;
       const comma = asset.uri.indexOf(",");
       const header = asset.uri.slice(0, comma);
@@ -36,7 +47,7 @@ async function registerBrowserAssets(activePage: Page, assets: Array<{ key: stri
         : new TextEncoder().encode(decodeURIComponent(encoded));
       registry[asset.key] = URL.createObjectURL(new Blob([bytes], { type: mime }));
     }
-  }, assets);
+  }, { activeKeys: assetKeys, incoming: assets });
 }
 
 async function hydrateBrowserAssets(activePage: Page) {
@@ -60,14 +71,33 @@ async function hydrateBrowserAssets(activePage: Page) {
 }
 
 async function ensurePage(width: number, height: number) {
-  browser ??= await chromium.launch({ headless: true });
-  if (!page) page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
+  if (!browser?.isConnected()) {
+    browser = await chromium.launch({ headless: true });
+    page = undefined;
+    loadedViewport = "";
+  }
+  if (!page || page.isClosed()) {
+    page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
+    loadedViewport = "";
+  }
   await page.setViewportSize({ width, height });
   return page;
 }
 
 async function rasterize(request: RasterRequest) {
-  for (const asset of request.assets ?? []) previewAssets.set(asset.key, asset.uri);
+  const activeAssetKeys = new Set(request.assetKeys);
+  for (const key of previewAssets.keys()) {
+    if (!activeAssetKeys.has(key)) previewAssets.delete(key);
+  }
+  for (const asset of request.assets ?? []) {
+    if (!activeAssetKeys.has(asset.key)) {
+      throw new Error(`Raster asset '${asset.key}' is outside the active document`);
+    }
+    previewAssets.set(asset.key, asset.uri);
+  }
+  for (const key of activeAssetKeys) {
+    if (!previewAssets.has(key)) throw new Error(`Raster document asset '${key}' is unavailable`);
+  }
   const html = request.html;
   const activePage = await ensurePage(request.width, request.height);
   const renderStartedAt = performance.now();
@@ -96,7 +126,7 @@ async function rasterize(request: RasterRequest) {
   const browserAssets = resetsDocument
     ? [...previewAssets].map(([key, uri]) => ({ key, uri }))
     : request.assets ?? [];
-  await registerBrowserAssets(activePage, browserAssets);
+  await synchronizeBrowserAssets(activePage, request.assetKeys, browserAssets);
   await hydrateBrowserAssets(activePage);
   const assetsMs = performance.now() - assetsStartedAt;
   const readyStartedAt = performance.now();

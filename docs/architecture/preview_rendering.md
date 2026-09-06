@@ -318,6 +318,14 @@ that job reuses the already generated lossless raster. The transient snapshot
 and assets are deleted after the job and never become queue persistence. The
 renderer still knows nothing about queue state, output naming, Production
 Output paths or codecs.
+Each raster request declares the exact asset hashes referenced by that
+document. The worker revokes browser object URLs outside that set, while the
+Preview frame cache releases registry assets when their last cached document
+is evicted. Render Queue execution resolves frozen assets directly from its
+temporary snapshot store and never promotes them back into the process-wide
+Preview registry.
+The persistent HTML renderer returns the complete deduplicated asset set for
+each generated document; it retains no cross-document asset catalogue.
 The worker's output boundary converts the straight-alpha Chromium raster to
 black-premultiplied RGB while retaining alpha in alpha-capable formats.
 MOV conversion also owns complete frame and container color metadata. It

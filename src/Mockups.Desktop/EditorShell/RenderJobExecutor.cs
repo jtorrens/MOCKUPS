@@ -245,7 +245,6 @@ internal sealed class RenderJobExecutor : IRenderJobExecutor
             {
                 var html = store.ReadDocument(
                     frame.DocumentKey);
-                store.RegisterReferencedAssets(html);
                 await _rasterizer.RasterizeAsync(
                     html,
                     dimensions.Width,
@@ -254,7 +253,8 @@ internal sealed class RenderJobExecutor : IRenderJobExecutor
                     "png",
                     quality: 100,
                     captureScale: 1,
-                    cancellationToken);
+                    cancellationToken,
+                    assetResolver: store.ReadAsset);
                 renderedDocuments[frame.DocumentKey] =
                     outputPath;
             }

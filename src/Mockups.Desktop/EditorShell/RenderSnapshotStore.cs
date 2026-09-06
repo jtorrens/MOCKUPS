@@ -109,19 +109,16 @@ internal sealed class RenderSnapshotStore
         return html;
     }
 
-    public void RegisterReferencedAssets(string html)
+    public string ReadAsset(string key)
     {
-        foreach (var key in PreviewAssetRegistry.Keys(html))
+        RequireKey(key);
+        var dataUri = File.ReadAllText(AssetPath(key));
+        if (!Hash(dataUri).Equals(key, StringComparison.Ordinal))
         {
-            if (PreviewAssetRegistry.TryResolve(key, out _)) continue;
-            var dataUri = File.ReadAllText(AssetPath(key));
-            if (!Hash(dataUri).Equals(key, StringComparison.Ordinal))
-            {
-                throw new InvalidOperationException(
-                    $"Frozen render asset '{key}' does not match its content hash.");
-            }
-            PreviewAssetRegistry.Register(key, dataUri);
+            throw new InvalidOperationException(
+                $"Frozen render asset '{key}' does not match its content hash.");
         }
+        return dataUri;
     }
 
     public static void ValidateReference(

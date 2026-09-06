@@ -21,6 +21,7 @@ internal static class WebDesignPreviewRenderer
     private static readonly object CacheGate = new();
     private static readonly Dictionary<string, LinkedListNode<FrameCacheEntry>> FrameCache = new(StringComparer.Ordinal);
     private static readonly LinkedList<FrameCacheEntry> FrameCacheOrder = [];
+    private static readonly Dictionary<string, int> FrameCacheAssetReferences = new(StringComparer.Ordinal);
     private static readonly PersistentPreviewRenderer PersistentRenderer = new();
     private static readonly PersistentPreviewRenderer PrewarmPersistentRenderer = new();
     private static readonly Dictionary<long, int> FrameCacheReservations = [];
@@ -102,6 +103,16 @@ internal static class WebDesignPreviewRenderer
     {
         PersistentRenderer.Stop();
         PrewarmPersistentRenderer.Stop();
+        lock (CacheGate)
+        {
+            foreach (var key in FrameCacheAssetReferences.Keys.ToList())
+            {
+                PreviewAssetRegistry.Remove(key);
+            }
+            FrameCacheAssetReferences.Clear();
+            FrameCache.Clear();
+            FrameCacheOrder.Clear();
+        }
     }
 
     public static IDisposable ReserveFrameCacheCapacity(int frameCount)
@@ -373,6 +384,9 @@ internal static class WebDesignPreviewRenderer
         {
             if (FrameCache.TryGetValue(key, out var existing))
             {
+                ReplaceFrameAssetReferencesLocked(
+                    existing.Value.Html,
+                    html);
                 existing.Value = existing.Value with { Html = html };
                 FrameCacheOrder.Remove(existing);
                 FrameCacheOrder.AddFirst(existing);
@@ -380,6 +394,7 @@ internal static class WebDesignPreviewRenderer
             }
 
             var node = new LinkedListNode<FrameCacheEntry>(new FrameCacheEntry(key, html));
+            RetainFrameAssetsLocked(html);
             FrameCacheOrder.AddFirst(node);
             FrameCache[key] = node;
             TrimFrameCacheLocked();
@@ -393,7 +408,64 @@ internal static class WebDesignPreviewRenderer
             var last = FrameCacheOrder.Last;
             FrameCacheOrder.RemoveLast();
             FrameCache.Remove(last.Value.Key);
+            ReleaseFrameAssetsLocked(last.Value.Html);
         }
+    }
+
+    private static void ReplaceFrameAssetReferencesLocked(
+        string previousHtml,
+        string nextHtml)
+    {
+        var previous = PreviewAssetRegistry.Keys(previousHtml)
+            .ToHashSet(StringComparer.Ordinal);
+        var next = PreviewAssetRegistry.Keys(nextHtml)
+            .ToHashSet(StringComparer.Ordinal);
+        foreach (var key in previous.Except(next))
+        {
+            ReleaseFrameAssetLocked(key);
+        }
+        foreach (var key in next.Except(previous))
+        {
+            RetainFrameAssetLocked(key);
+        }
+    }
+
+    private static void RetainFrameAssetsLocked(string html)
+    {
+        foreach (var key in PreviewAssetRegistry.Keys(html))
+        {
+            RetainFrameAssetLocked(key);
+        }
+    }
+
+    private static void RetainFrameAssetLocked(string key)
+    {
+        FrameCacheAssetReferences[key] =
+            FrameCacheAssetReferences.GetValueOrDefault(key) + 1;
+    }
+
+    private static void ReleaseFrameAssetsLocked(string html)
+    {
+        foreach (var key in PreviewAssetRegistry.Keys(html))
+        {
+            ReleaseFrameAssetLocked(key);
+        }
+    }
+
+    private static void ReleaseFrameAssetLocked(string key)
+    {
+        if (!FrameCacheAssetReferences.TryGetValue(key, out var references))
+        {
+            throw new InvalidOperationException(
+                $"Preview frame cache does not own asset '{key}'.");
+        }
+        if (references > 1)
+        {
+            FrameCacheAssetReferences[key] = references - 1;
+            return;
+        }
+        FrameCacheAssetReferences.Remove(key);
+        PreviewAssetRegistry.Remove(key);
     }
 
     private static int CacheSize()

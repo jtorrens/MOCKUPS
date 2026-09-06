@@ -29,7 +29,8 @@ internal sealed class ChromiumPreviewRasterizer : IDisposable
         string format,
         int quality,
         double captureScale,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Func<string, string>? assetResolver = null)
     {
         await _gate.WaitAsync(cancellationToken);
         try
@@ -37,10 +38,16 @@ internal sealed class ChromiumPreviewRasterizer : IDisposable
             EnsureStarted();
             var process = _process ?? throw new InvalidOperationException("Chromium raster worker did not start.");
             var assetKeys = PreviewAssetRegistry.Keys(html);
+            _registeredAssets.IntersectWith(assetKeys);
             var newAssets = new List<object>();
             foreach (var key in assetKeys.Where((key) => !_registeredAssets.Contains(key)))
             {
-                if (!PreviewAssetRegistry.TryResolve(key, out var uri))
+                var uri = assetResolver is null
+                    ? PreviewAssetRegistry.TryResolve(key, out var registeredUri)
+                        ? registeredUri
+                        : null
+                    : assetResolver(key);
+                if (string.IsNullOrWhiteSpace(uri))
                 {
                     throw new InvalidOperationException($"Raster HTML references unknown preview asset '{key}'.");
                 }
@@ -58,6 +65,7 @@ internal sealed class ChromiumPreviewRasterizer : IDisposable
                 format,
                 quality,
                 captureScale,
+                assetKeys,
                 assets = newAssets,
             }));
             await process.StandardInput.FlushAsync();
