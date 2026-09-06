@@ -181,8 +181,6 @@
                           "state": "normal",
                           "iconToken": "app_language",
                           "text": "",
-                          "pushTrigger": false,
-                          "pushElapsedMs": 0,
                           "buttonOverrides": {},
                           "iconSizeToken": "theme.iconSizes.m",
                           "textSizeToken": "theme.typography.sizes.s"

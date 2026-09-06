@@ -411,8 +411,6 @@
                           "state": "normal",
                           "iconToken": "media_fullscreen",
                           "text": "",
-                          "pushTrigger": false,
-                          "pushElapsedMs": 0,
                           "buttonOverrides": {},
                           "iconSizeToken": "theme.iconSizes.m",
                           "textSizeToken": "theme.typography.sizes.s"
@@ -509,8 +507,6 @@
                           "state": "normal",
                           "iconToken": "media_play_fill",
                           "text": "",
-                          "pushTrigger": false,
-                          "pushElapsedMs": 0,
                           "buttonOverrides": {},
                           "iconSizeToken": "theme.iconSizes.m",
                           "textSizeToken": "theme.typography.sizes.s"
@@ -546,8 +542,6 @@
                           "state": "normal",
                           "iconToken": "media_pause",
                           "text": "",
-                          "pushTrigger": false,
-                          "pushElapsedMs": 0,
                           "buttonOverrides": {},
                           "iconSizeToken": "theme.iconSizes.m",
                           "textSizeToken": "theme.typography.sizes.s"
@@ -601,8 +595,6 @@
                           "state": "normal",
                           "iconToken": "media_video_fill",
                           "text": "",
-                          "pushTrigger": false,
-                          "pushElapsedMs": 0,
                           "buttonOverrides": {},
                           "iconSizeToken": "theme.iconSizes.m",
                           "textSizeToken": "theme.typography.sizes.s"
@@ -830,8 +822,6 @@
                           "state": "normal",
                           "iconToken": "media_fullscreen",
                           "text": "",
-                          "pushTrigger": false,
-                          "pushElapsedMs": 0,
                           "buttonOverrides": {},
                           "iconSizeToken": "theme.iconSizes.m",
                           "textSizeToken": "theme.typography.sizes.s"
@@ -926,8 +916,6 @@
                           "state": "normal",
                           "iconToken": "media_pause",
                           "text": "",
-                          "pushTrigger": false,
-                          "pushElapsedMs": 0,
                           "buttonOverrides": {},
                           "iconSizeToken": "theme.iconSizes.m",
                           "textSizeToken": "theme.typography.sizes.s"
@@ -1044,8 +1032,6 @@
                           "state": "normal",
                           "iconToken": "media_fullscreen",
                           "text": "",
-                          "pushTrigger": false,
-                          "pushElapsedMs": 0,
                           "buttonOverrides": {},
                           "iconSizeToken": "theme.iconSizes.m",
                           "textSizeToken": "theme.typography.sizes.s"

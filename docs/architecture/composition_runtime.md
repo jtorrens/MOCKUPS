@@ -184,6 +184,9 @@ exclusively in the selected child Variant slot. Fields declared `calculated`
 may exist in the prepared Preview value but are never copied into persisted
 parent Runtime rows. This projection is owned by the common Runtime document
 contract and is applied identically to Module and Component parents.
+Consequently, the calculated Button inputs `pushTrigger` and `pushElapsedMs`
+belong only to Runtime `buttonInputs`; an Icon Row structural item that owns a
+`buttonVariantReference` never stores either field.
 
 Text Input Bar forwards its explicit runtime text and may expose explicitly
 selected Icon Bar item values by stable id. The Icon Bar Variant owns the

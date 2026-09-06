@@ -3339,6 +3339,7 @@ static bool PersistedDefaultLock(
 static void FixedStructuralRuntimeCollectionsReconcileByStableIds()
 {
     var database = new SqliteProjectTestContext(ParityDatabasePath());
+    AssertIconRowStructureExcludesCalculatedButtonInputs();
     var iconRow = database.LoadProjectTree()
         .SelectMany(DescendantsAndSelf)
         .Single((node) =>
@@ -3477,6 +3478,60 @@ static void FixedStructuralRuntimeCollectionsReconcileByStableIds()
             "iconRow",
             "Icon Row without item sizing").Remove("itemSizingMode");
         return clone;
+    }
+
+    static void AssertIconRowStructureExcludesCalculatedButtonInputs()
+    {
+        using var connection = new SqliteConnection(
+            $"Data Source={ParityDatabasePath()};Mode=ReadOnly");
+        connection.Open();
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT 'Component ' || id AS owner, config_json, metadata_json
+            FROM component_classes
+            UNION ALL
+            SELECT 'Module ' || id AS owner, config_json, metadata_json
+            FROM modules
+            """;
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            var owner = reader.GetString(0);
+            AssertDocument(reader.GetString(1), $"{owner} config");
+            AssertDocument(reader.GetString(2), $"{owner} metadata");
+        }
+
+        static void AssertDocument(string json, string owner)
+        {
+            var root = JsonNode.Parse(json)
+                ?? throw new InvalidOperationException($"{owner} must be JSON.");
+            Visit(root, owner);
+        }
+
+        static void Visit(JsonNode node, string owner)
+        {
+            if (node is JsonArray array)
+            {
+                foreach (var child in array.OfType<JsonNode>())
+                {
+                    Visit(child, owner);
+                }
+                return;
+            }
+            if (node is not JsonObject value)
+            {
+                return;
+            }
+            if (value.ContainsKey("buttonVariantReference"))
+            {
+                True(!value.ContainsKey("pushTrigger"));
+                True(!value.ContainsKey("pushElapsedMs"));
+            }
+            foreach (var child in value.Select((property) => property.Value).OfType<JsonNode>())
+            {
+                Visit(child, owner);
+            }
+        }
     }
 }
 

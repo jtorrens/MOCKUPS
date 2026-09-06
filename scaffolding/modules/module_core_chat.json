@@ -83,8 +83,6 @@
                 "text": "",
                 "iconSizeToken": "theme.iconSizes.m",
                 "textSizeToken": "theme.typography.sizes.s",
-                "pushTrigger": false,
-                "pushElapsedMs": 0,
                 "buttonOverrides": {}
               }
             ]
@@ -104,8 +102,6 @@
                 "text": "",
                 "iconSizeToken": "theme.iconSizes.m",
                 "textSizeToken": "theme.typography.sizes.s",
-                "pushTrigger": false,
-                "pushElapsedMs": 0,
                 "buttonOverrides": {}
               },
               {
@@ -116,8 +112,6 @@
                 "text": "",
                 "iconSizeToken": "theme.iconSizes.m",
                 "textSizeToken": "theme.typography.sizes.s",
-                "pushTrigger": false,
-                "pushElapsedMs": 0,
                 "buttonOverrides": {}
               }
             ]
@@ -1264,8 +1258,6 @@
                   "text": "",
                   "iconSizeToken": "theme.iconSizes.m",
                   "textSizeToken": "theme.typography.sizes.s",
-                  "pushTrigger": false,
-                  "pushElapsedMs": 0,
                   "buttonOverrides": {}
                 }
               ]
@@ -1285,8 +1277,6 @@
                   "text": "",
                   "iconSizeToken": "theme.iconSizes.m",
                   "textSizeToken": "theme.typography.sizes.s",
-                  "pushTrigger": false,
-                  "pushElapsedMs": 0,
                   "buttonOverrides": {}
                 },
                 {
@@ -1297,8 +1287,6 @@
                   "text": "",
                   "iconSizeToken": "theme.iconSizes.m",
                   "textSizeToken": "theme.typography.sizes.s",
-                  "pushTrigger": false,
-                  "pushElapsedMs": 0,
                   "buttonOverrides": {}
                 }
               ]
