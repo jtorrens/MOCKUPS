@@ -659,7 +659,10 @@ internal sealed class RuntimeInputsCollectionEditor
                     input,
                     next);
             }
-            _setPreviewTestValue(input.JsonKey, next);
+            if (ShouldPublishTransientValue(owner.IsInstance, definition))
+            {
+                _setPreviewTestValue(input.JsonKey, next);
+            }
             _testValuesChanged();
         };
         control.ValueCommitted += async (_, next) =>
@@ -702,6 +705,21 @@ internal sealed class RuntimeInputsCollectionEditor
         return current is JsonValue value
             && value.TryGetValue<string>(out var text)
             && text.Equals(input.EnabledWhenValue, StringComparison.Ordinal);
+    }
+
+    internal static bool ShouldPublishTransientValue(
+        bool isProductionInstance,
+        FieldDefinition definition)
+    {
+        if (!isProductionInstance)
+        {
+            return true;
+        }
+
+        var policy = ValueKindCommitContract.Require(definition);
+        return policy.TextEntry != TextEntryCommitTrigger.None
+            || policy.Continuous != ContinuousCommitTrigger.None
+            || !policy.DiscreteImmediate;
     }
 
     private IReadOnlyList<EditorInternalNavigationSection> CreateTestValueCollectionItemSections(
@@ -1258,9 +1276,13 @@ internal sealed class RuntimeInputsCollectionEditor
         string temporalOwnerId,
         Func<bool, Task> persistRuntimeContract)
     {
+        var definition = RuntimeInputFieldDefinitionFactory.Create(
+            ActiveInputOptions,
+            owner.Node,
+            input);
         var control = new DictionaryFieldControl(
             new FieldValue(
-                RuntimeInputFieldDefinitionFactory.Create(ActiveInputOptions, owner.Node, input),
+                definition,
                 DesignPreviewTestValues.Value(runtimeContract, input)),
             DictionaryServices(
                 owner,
@@ -1274,7 +1296,10 @@ internal sealed class RuntimeInputsCollectionEditor
         control.ValueChanged += async (_, next) =>
         {
             runtimeContract[input.JsonKey] = DesignPreviewTestValues.ValueNode(input, next);
-            await persistRuntimeContract(false);
+            if (ShouldPublishTransientValue(owner.IsInstance, definition))
+            {
+                await persistRuntimeContract(false);
+            }
         };
         control.ValueCommitted += async (_, next) =>
         {
@@ -2119,9 +2144,13 @@ internal sealed class RuntimeInputsCollectionEditor
         JsonObject componentInputs,
         ComponentInputDefinition input)
     {
+        var definition = RuntimeInputFieldDefinitionFactory.Create(
+            ActiveInputOptions,
+            owner.Node,
+            input);
         var control = new DictionaryFieldControl(
             new FieldValue(
-                RuntimeInputFieldDefinitionFactory.Create(ActiveInputOptions, owner.Node, input),
+                definition,
                 DesignPreviewTestValues.Value(componentInputs, input)),
             DictionaryServices(
                 owner,
@@ -2137,6 +2166,10 @@ internal sealed class RuntimeInputsCollectionEditor
             componentInputs[input.JsonKey] = DesignPreviewTestValues.ValueNode(input, next);
             var inputsJsonKey = RuntimeContractJsonKey(collection);
             item[inputsJsonKey] = componentInputs.DeepClone();
+            if (!ShouldPublishTransientValue(owner.IsInstance, definition))
+            {
+                return;
+            }
             _setPreviewCollectionItemValues(
                 address,
                 ItemId(item, itemIndex),

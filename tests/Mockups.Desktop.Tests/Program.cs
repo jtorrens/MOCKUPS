@@ -2396,6 +2396,21 @@ static void ValueKindsOwnCommitPolicy()
         ValueKindCommitContract.Require(ValueKind.Alpha).Continuous);
     True(ValueKindCommitContract.Require(ValueKind.OptionToken).DiscreteImmediate);
     True(!ValueKindCommitContract.Require(ValueKind.StringSingleLine).DiscreteImmediate);
+    True(!RuntimeInputsCollectionEditor.ShouldPublishTransientValue(
+        true,
+        new FieldDefinition("boolean", "Boolean", ValueKind.Boolean)));
+    True(!RuntimeInputsCollectionEditor.ShouldPublishTransientValue(
+        true,
+        new FieldDefinition("option", "Option", ValueKind.OptionToken)));
+    True(RuntimeInputsCollectionEditor.ShouldPublishTransientValue(
+        true,
+        new FieldDefinition("text", "Text", ValueKind.StringSingleLine)));
+    True(RuntimeInputsCollectionEditor.ShouldPublishTransientValue(
+        true,
+        new FieldDefinition("alpha", "Alpha", ValueKind.Alpha)));
+    True(RuntimeInputsCollectionEditor.ShouldPublishTransientValue(
+        false,
+        new FieldDefinition("boolean", "Boolean", ValueKind.Boolean)));
 }
 
 static void ValidIntegerPairsCommitOnlyOnConfirmation()
