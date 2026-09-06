@@ -672,7 +672,8 @@
       "embeddedSlot": {
         "componentType": "surface",
         "label": "Correct empty",
-        "recordClassId": "component.surface"
+        "recordClassId": "component.surface",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -702,7 +703,8 @@
       "embeddedSlot": {
         "componentType": "surface",
         "label": "Correct filled",
-        "recordClassId": "component.surface"
+        "recordClassId": "component.surface",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -732,7 +734,8 @@
       "embeddedSlot": {
         "componentType": "surface",
         "label": "Incorrect empty",
-        "recordClassId": "component.surface"
+        "recordClassId": "component.surface",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -762,7 +765,8 @@
       "embeddedSlot": {
         "componentType": "surface",
         "label": "Incorrect filled",
-        "recordClassId": "component.surface"
+        "recordClassId": "component.surface",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -792,7 +796,8 @@
       "embeddedSlot": {
         "componentType": "surface",
         "label": "Initial empty",
-        "recordClassId": "component.surface"
+        "recordClassId": "component.surface",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -822,7 +827,8 @@
       "embeddedSlot": {
         "componentType": "surface",
         "label": "Initial filled",
-        "recordClassId": "component.surface"
+        "recordClassId": "component.surface",
+        "allowRuntimeInputForwarding": true
       }
     }
   ],

@@ -1785,7 +1785,8 @@
       "embeddedSlot": {
         "componentType": "iconBar",
         "label": "Full screen bottom icon bar",
-        "recordClassId": "component.iconBar"
+        "recordClassId": "component.iconBar",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -1813,7 +1814,8 @@
       "embeddedSlot": {
         "componentType": "iconBar",
         "label": "Full screen center icon bar",
-        "recordClassId": "component.iconBar"
+        "recordClassId": "component.iconBar",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -1841,7 +1843,8 @@
       "embeddedSlot": {
         "componentType": "iconBar",
         "label": "Full screen top icon bar",
-        "recordClassId": "component.iconBar"
+        "recordClassId": "component.iconBar",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -2332,7 +2335,8 @@
       "embeddedSlot": {
         "componentType": "label",
         "label": "Idle label",
-        "recordClassId": "component.label"
+        "recordClassId": "component.label",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -2490,7 +2494,8 @@
       "embeddedSlot": {
         "componentType": "iconBar",
         "label": "Inline bottom icon bar",
-        "recordClassId": "component.iconBar"
+        "recordClassId": "component.iconBar",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -2518,7 +2523,8 @@
       "embeddedSlot": {
         "componentType": "iconBar",
         "label": "Inline center icon bar",
-        "recordClassId": "component.iconBar"
+        "recordClassId": "component.iconBar",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -2546,7 +2552,8 @@
       "embeddedSlot": {
         "componentType": "iconBar",
         "label": "Inline top icon bar",
-        "recordClassId": "component.iconBar"
+        "recordClassId": "component.iconBar",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -2622,7 +2629,8 @@
       "embeddedSlot": {
         "componentType": "label",
         "label": "Play label",
-        "recordClassId": "component.label"
+        "recordClassId": "component.label",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -2780,7 +2788,8 @@
       "embeddedSlot": {
         "componentType": "surface",
         "label": "Surface",
-        "recordClassId": "component.surface"
+        "recordClassId": "component.surface",
+        "allowRuntimeInputForwarding": true
       }
     }
   ],

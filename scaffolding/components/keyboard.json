@@ -397,7 +397,8 @@
       "embeddedSlot": {
         "componentType": "iconBar",
         "label": "Icon bar",
-        "recordClassId": "component.iconBar"
+        "recordClassId": "component.iconBar",
+        "allowRuntimeInputForwarding": true
       }
     },
     {

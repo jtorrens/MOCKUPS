@@ -20989,6 +20989,23 @@ static void ComponentInputBindingsResolveRecordReferences()
             return [];
         },
     };
+    var inheritedVariantField = new FieldValue(
+        new FieldDefinition(
+            "owner.slot",
+            "Component Variant",
+            ValueKind.ComponentVariant,
+            CanInherit: true,
+            InheritedValue: slotVariantReference),
+        slotVariantReference,
+        IsInherited: true);
+    Equal(
+        slotVariantReference,
+        EditorLayoutCardFactory.PreparedEffectiveValue(
+            new Dictionary<string, FieldValue>
+            {
+                ["owner.slot"] = inheritedVariantField,
+            },
+            "owner.slot"));
 
     using var session = HeadlessUnitTestSession.StartNew(
         typeof(HeadlessTestApplication));
@@ -21024,6 +21041,50 @@ static void ComponentInputBindingsResolveRecordReferences()
                 RuntimeInputComponentVariantFieldId: "owner.slot"),
             "{}",
             slotServices);
+        var textBinding = new ComponentInputBindingDefinition(
+            "text",
+            "Text",
+            "text",
+            ValueKind.StringSingleLine,
+            ComponentInputBindingSource.Runtime,
+            "");
+        var nonForwardingServices = services with
+        {
+            AllowRuntimeInputForwarding = false,
+        };
+        var nonForwarding = new DictionaryComponentInputBindingsControl(
+            new FieldDefinition(
+                "owner.nonForwardingInputs",
+                "Component inputs",
+                ValueKind.ComponentInputBindings,
+                ComponentInputBindings: [textBinding]),
+            new JsonObject { ["text"] = "value" }.ToJsonString(),
+            nonForwardingServices);
+        Equal(
+            0,
+            nonForwarding.GetVisualDescendants().OfType<Button>().Count());
+        var forwardingDefinition = RuntimeInputForwardingContract.Definition(
+            new FieldDefinition(
+                "owner.nonForwardingInputs",
+                "Component inputs",
+                ValueKind.ComponentInputBindings),
+            textBinding,
+            textBinding.Label,
+            "value");
+        Throws<InvalidOperationException>(() =>
+            new DictionaryComponentInputBindingsControl(
+                new FieldDefinition(
+                    "owner.nonForwardingInputs",
+                    "Component inputs",
+                    ValueKind.ComponentInputBindings,
+                    ComponentInputBindings: [textBinding]),
+                new JsonObject
+                {
+                    ["text"] = "value",
+                    [RuntimeInputForwardingContract.StorageKey] =
+                        new JsonObject { ["text"] = forwardingDefinition },
+                }.ToJsonString(),
+                nonForwardingServices));
         var window = new Window
         {
             Content = new StackPanel
@@ -21033,6 +21094,7 @@ static void ComponentInputBindingsResolveRecordReferences()
                     required,
                     optional,
                     slotOwned,
+                    nonForwarding,
                 },
             },
         };

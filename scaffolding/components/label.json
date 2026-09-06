@@ -1211,7 +1211,8 @@
       "embeddedSlot": {
         "componentType": "surface",
         "label": "Surface",
-        "recordClassId": "component.surface"
+        "recordClassId": "component.surface",
+        "allowRuntimeInputForwarding": true
       }
     },
     {

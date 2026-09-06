@@ -398,7 +398,8 @@
       "embeddedSlot": {
         "componentType": "cursor",
         "label": "Cursor",
-        "recordClassId": "component.cursor"
+        "recordClassId": "component.cursor",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -588,7 +589,8 @@
       "embeddedSlot": {
         "componentType": "iconRow",
         "label": "Left icon row",
-        "recordClassId": "component.iconRow"
+        "recordClassId": "component.iconRow",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -1148,7 +1150,8 @@
       "embeddedSlot": {
         "componentType": "iconRow",
         "label": "Right icon row",
-        "recordClassId": "component.iconRow"
+        "recordClassId": "component.iconRow",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -1176,7 +1179,8 @@
       "embeddedSlot": {
         "componentType": "surface",
         "label": "Surface",
-        "recordClassId": "component.surface"
+        "recordClassId": "component.surface",
+        "allowRuntimeInputForwarding": true
       }
     },
     {

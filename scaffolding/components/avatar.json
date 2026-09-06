@@ -585,7 +585,8 @@
       "embeddedSlot": {
         "componentType": "badge",
         "label": "Badge",
-        "recordClassId": "component.badge"
+        "recordClassId": "component.badge",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -756,7 +757,8 @@
       "embeddedSlot": {
         "componentType": "label",
         "label": "Label",
-        "recordClassId": "component.label"
+        "recordClassId": "component.label",
+        "allowRuntimeInputForwarding": true
       }
     },
     {

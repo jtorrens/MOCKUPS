@@ -404,7 +404,8 @@
       "embeddedSlot": {
         "componentType": "iconRow",
         "label": "Active center row",
-        "recordClassId": "component.iconRow"
+        "recordClassId": "component.iconRow",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -455,7 +456,8 @@
       "embeddedSlot": {
         "componentType": "iconRow",
         "label": "Active left row",
-        "recordClassId": "component.iconRow"
+        "recordClassId": "component.iconRow",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -506,7 +508,8 @@
       "embeddedSlot": {
         "componentType": "iconRow",
         "label": "Active right row",
-        "recordClassId": "component.iconRow"
+        "recordClassId": "component.iconRow",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -713,7 +716,8 @@
       "embeddedSlot": {
         "componentType": "iconRow",
         "label": "Idle center row",
-        "recordClassId": "component.iconRow"
+        "recordClassId": "component.iconRow",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -764,7 +768,8 @@
       "embeddedSlot": {
         "componentType": "iconRow",
         "label": "Idle left row",
-        "recordClassId": "component.iconRow"
+        "recordClassId": "component.iconRow",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -815,7 +820,8 @@
       "embeddedSlot": {
         "componentType": "iconRow",
         "label": "Idle right row",
-        "recordClassId": "component.iconRow"
+        "recordClassId": "component.iconRow",
+        "allowRuntimeInputForwarding": true
       }
     },
     {

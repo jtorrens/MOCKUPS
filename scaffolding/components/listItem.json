@@ -4363,7 +4363,8 @@
       "embeddedSlot": {
         "componentType": "avatar",
         "label": "Avatar",
-        "recordClassId": "component.avatar"
+        "recordClassId": "component.avatar",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -4576,7 +4577,8 @@
       "embeddedSlot": {
         "componentType": "iconRow",
         "label": "Icon Row",
-        "recordClassId": "component.iconRow"
+        "recordClassId": "component.iconRow",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -4786,7 +4788,8 @@
       "embeddedSlot": {
         "componentType": "label",
         "label": "Label",
-        "recordClassId": "component.label"
+        "recordClassId": "component.label",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -5249,7 +5252,8 @@
       "embeddedSlot": {
         "componentType": "surface",
         "label": "Inactive surface",
-        "recordClassId": "component.surface"
+        "recordClassId": "component.surface",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -5303,7 +5307,8 @@
       "embeddedSlot": {
         "componentType": "surface",
         "label": "Normal surface",
-        "recordClassId": "component.surface"
+        "recordClassId": "component.surface",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -5357,7 +5362,8 @@
       "embeddedSlot": {
         "componentType": "surface",
         "label": "Pressed surface",
-        "recordClassId": "component.surface"
+        "recordClassId": "component.surface",
+        "allowRuntimeInputForwarding": true
       }
     }
   ],

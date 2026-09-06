@@ -49,6 +49,7 @@ export interface ComponentScaffoldField {
     componentType: string;
     label: string;
     recordClassId: string;
+    allowRuntimeInputForwarding: boolean;
   } | null;
 }
 
@@ -1049,7 +1050,7 @@ function parseDictionaryField(value: unknown, owner: string): ComponentScaffoldF
   if (embeddedSlot) {
     requireExactKeys(
       embeddedSlot,
-      ["componentType", "label", "recordClassId"],
+      ["componentType", "label", "recordClassId", "allowRuntimeInputForwarding"],
       `${owner} embeddedSlot`,
     );
   }
@@ -1114,6 +1115,11 @@ function parseDictionaryField(value: unknown, owner: string): ComponentScaffoldF
             embeddedSlot.recordClassId,
             `${owner} embeddedSlot recordClassId`,
           ),
+          allowRuntimeInputForwarding:
+            requiredBoolean(
+              embeddedSlot.allowRuntimeInputForwarding,
+              `${owner} embeddedSlot allowRuntimeInputForwarding`,
+            ),
         }
       : null,
   };

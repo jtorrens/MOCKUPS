@@ -1563,7 +1563,8 @@ static void ActiveEditorRefreshRebasesEmbeddedContext()
         "label",
         "Label",
         "component.label",
-        ["component", "slot"]);
+        ["component", "slot"],
+        true);
     coordinator.ShowEmbeddedEditor(
         new EditorEmbeddedContext(owner, [slot]));
     var oldOwner = Required(coordinator.State.EmbeddedEditor).OwnerNode;
@@ -1682,14 +1683,16 @@ static void DesignNavigationHistoryUnwindsEmbeddedBreadcrumbs()
             "iconRow",
             "Left icon row",
             "component.iconRow",
-            ["textBox", "leftIconRowSlot"]);
+            ["textBox", "leftIconRowSlot"],
+            true);
     var button =
         new EmbeddedComponentSlotDefinition(
             "component.iconRow.button.editor",
             "button",
             "Button",
             "component.button",
-            ["iconRow", "buttonSlot"]);
+            ["iconRow", "buttonSlot"],
+            true);
     var iconRowContext =
         new EditorEmbeddedContext(
             owner,

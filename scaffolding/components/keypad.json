@@ -1175,7 +1175,8 @@
       "embeddedSlot": {
         "componentType": "label",
         "label": "Label",
-        "recordClassId": "component.label"
+        "recordClassId": "component.label",
+        "allowRuntimeInputForwarding": true
       }
     },
     {

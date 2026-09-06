@@ -687,7 +687,8 @@
       "embeddedSlot": {
         "componentType": "surface",
         "label": "Bar surface",
-        "recordClassId": "component.surface"
+        "recordClassId": "component.surface",
+        "allowRuntimeInputForwarding": false
       }
     },
     {
@@ -738,7 +739,8 @@
       "embeddedSlot": {
         "componentType": "iconBar",
         "label": "Icon bar",
-        "recordClassId": "component.iconBar"
+        "recordClassId": "component.iconBar",
+        "allowRuntimeInputForwarding": false
       }
     },
     {
@@ -853,7 +855,8 @@
       "embeddedSlot": {
         "componentType": "textBox",
         "label": "Text box",
-        "recordClassId": "component.textBox"
+        "recordClassId": "component.textBox",
+        "allowRuntimeInputForwarding": false
       }
     },
     {

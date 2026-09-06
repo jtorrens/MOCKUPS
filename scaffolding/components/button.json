@@ -1946,7 +1946,8 @@
       "embeddedSlot": {
         "componentType": "badge",
         "label": "Badge",
-        "recordClassId": "component.badge"
+        "recordClassId": "component.badge",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -2645,7 +2646,8 @@
       "embeddedSlot": {
         "componentType": "label",
         "label": "Active label",
-        "recordClassId": "component.label"
+        "recordClassId": "component.label",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -2675,7 +2677,8 @@
       "embeddedSlot": {
         "componentType": "surface",
         "label": "Active surface",
-        "recordClassId": "component.surface"
+        "recordClassId": "component.surface",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -3055,7 +3058,8 @@
       "embeddedSlot": {
         "componentType": "label",
         "label": "Disabled label",
-        "recordClassId": "component.label"
+        "recordClassId": "component.label",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -3085,7 +3089,8 @@
       "embeddedSlot": {
         "componentType": "surface",
         "label": "Disabled surface",
-        "recordClassId": "component.surface"
+        "recordClassId": "component.surface",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -3465,7 +3470,8 @@
       "embeddedSlot": {
         "componentType": "label",
         "label": "Normal label",
-        "recordClassId": "component.label"
+        "recordClassId": "component.label",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -3495,7 +3501,8 @@
       "embeddedSlot": {
         "componentType": "surface",
         "label": "Normal surface",
-        "recordClassId": "component.surface"
+        "recordClassId": "component.surface",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -3875,7 +3882,8 @@
       "embeddedSlot": {
         "componentType": "label",
         "label": "Pushed label",
-        "recordClassId": "component.label"
+        "recordClassId": "component.label",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -3905,7 +3913,8 @@
       "embeddedSlot": {
         "componentType": "surface",
         "label": "Pushed surface",
-        "recordClassId": "component.surface"
+        "recordClassId": "component.surface",
+        "allowRuntimeInputForwarding": true
       }
     }
   ],

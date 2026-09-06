@@ -516,7 +516,8 @@
       "embeddedSlot": {
         "componentType": "badge",
         "label": "Badge",
-        "recordClassId": "component.badge"
+        "recordClassId": "component.badge",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -573,7 +574,8 @@
       "embeddedSlot": {
         "componentType": "collectionStack",
         "label": "Collection Stack",
-        "recordClassId": "component.collectionStack"
+        "recordClassId": "component.collectionStack",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -1027,7 +1029,8 @@
       "embeddedSlot": {
         "componentType": "notification",
         "label": "Notification",
-        "recordClassId": "component.notification"
+        "recordClassId": "component.notification",
+        "allowRuntimeInputForwarding": true
       }
     },
     {

@@ -121,6 +121,11 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
     private Control CreateInputField(ComponentInputBindingDefinition input)
     {
         var forwarded = Forwarding(input);
+        if (forwarded is not null && !_services.AllowRuntimeInputForwarding)
+        {
+            throw new InvalidOperationException(
+                $"Component input '{input.Id}' does not allow Runtime forwarding at this boundary.");
+        }
         var content = new StackPanel { Spacing = 6 };
         if (input.ActionOnly)
         {
@@ -165,26 +170,29 @@ internal sealed class DictionaryComponentInputBindingsControl : Border, IDiction
             ColumnSpacing = 6,
         };
         row.Children.Add(content);
-        var toggle = EditorForwardVisuals.CreateActionButton(forwarded is not null);
-        toggle.Click += async (_, args) =>
+        if (_services.AllowRuntimeInputForwarding)
         {
-            args.Handled = true;
-            if (Forwarding(input) is null)
+            var toggle = EditorForwardVisuals.CreateActionButton(forwarded is not null);
+            toggle.Click += async (_, args) =>
             {
-                SetForwarding(input, enabled: true);
-            }
-            else
-            {
-                var confirmed = _services.ConfirmStopRuntimeInputForwarding is null
-                    || await _services.ConfirmStopRuntimeInputForwarding(
-                        JsonText(Forwarding(input)?["label"], input.Label));
-                if (!confirmed) return;
-                SetForwarding(input, enabled: false);
-            }
-            RefreshRows();
-        };
-        Grid.SetColumn(toggle, 1);
-        row.Children.Add(toggle);
+                args.Handled = true;
+                if (Forwarding(input) is null)
+                {
+                    SetForwarding(input, enabled: true);
+                }
+                else
+                {
+                    var confirmed = _services.ConfirmStopRuntimeInputForwarding is null
+                        || await _services.ConfirmStopRuntimeInputForwarding(
+                            JsonText(Forwarding(input)?["label"], input.Label));
+                    if (!confirmed) return;
+                    SetForwarding(input, enabled: false);
+                }
+                RefreshRows();
+            };
+            Grid.SetColumn(toggle, 1);
+            row.Children.Add(toggle);
+        }
         return row;
     }
 

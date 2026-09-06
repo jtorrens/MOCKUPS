@@ -8,7 +8,8 @@ public sealed record EmbeddedComponentSlotDefinition(
     string EmbeddedComponentType,
     string Label,
     string RecordClassId,
-    string[] SlotPath);
+    string[] SlotPath,
+    bool AllowRuntimeInputForwarding = true);
 
 public static class EmbeddedComponentSlotCatalog
 {
@@ -25,7 +26,7 @@ public static class EmbeddedComponentSlotCatalog
             return true;
         }
 
-        slot = new EmbeddedComponentSlotDefinition("", "", "", "", []);
+        slot = new EmbeddedComponentSlotDefinition("", "", "", "", [], true);
         return false;
     }
 

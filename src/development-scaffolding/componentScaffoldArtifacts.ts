@@ -181,7 +181,8 @@ function renderEmbeddedSlots(specs: readonly ComponentScaffoldSpec[]) {
         + `            ${csharpString(embedded.componentType)},\n`
         + `            ${csharpString(embedded.label)},\n`
         + `            ${csharpString(embedded.recordClassId)},\n`
-        + `            [${slotPath.map(csharpString).join(", ")}]),`;
+        + `            [${slotPath.map(csharpString).join(", ")}],\n`
+        + `            ${embedded.allowRuntimeInputForwarding ? "true" : "false"}),`;
     }).join("\n");
   return `// Generated from scaffolding/components/*.json. Do not edit manually.\n`
     + `namespace Mockups.DesktopEditorShell.EditorShell;\n\n`

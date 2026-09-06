@@ -316,7 +316,7 @@ internal sealed class EditorLayoutCardFactory
                         (fieldId) => activeFieldControls
                             .ValueOrStored(
                                 fieldId,
-                                (storedId) => PreparedStoredValue(
+                                (storedId) => PreparedEffectiveValue(
                                     preparedFields,
                                     storedId)));
                 var control = new DictionaryFieldControl(
@@ -427,7 +427,7 @@ internal sealed class EditorLayoutCardFactory
             dictionaryContext,
             (id) => _activeFieldControls.ValueOrStored(
                 id,
-                (storedId) => PreparedStoredValue(
+                (storedId) => PreparedEffectiveValue(
                     preparedFields,
                     storedId)),
             _openComponentVariantReference,
@@ -603,7 +603,7 @@ internal sealed class EditorLayoutCardFactory
             dictionaryContext,
             (id) => activeFieldControls.ValueOrStored(
                 id,
-                (storedId) => PreparedStoredValue(
+                (storedId) => PreparedEffectiveValue(
                     preparedFields,
                     storedId,
                     dependencyFields)),
@@ -621,7 +621,11 @@ internal sealed class EditorLayoutCardFactory
                     activeFieldControls.RefreshPreviews();
                     _refreshPreview();
                     restored?.Invoke();
-                });
+                }) with
+        {
+            AllowRuntimeInputForwarding = context.Slots.All((slot) =>
+                slot.AllowRuntimeInputForwarding),
+        };
         var control = new DictionaryFieldControl(
             field,
             services,
@@ -709,7 +713,7 @@ internal sealed class EditorLayoutCardFactory
         return control;
     }
 
-    private static string PreparedStoredValue(
+    internal static string PreparedEffectiveValue(
         IReadOnlyDictionary<string, FieldValue> preparedFields,
         string fieldId,
         IReadOnlyDictionary<string, FieldValue>? dependencyFields = null)
@@ -721,9 +725,7 @@ internal sealed class EditorLayoutCardFactory
             throw new InvalidOperationException(
                 $"Field '{fieldId}' was not included in the prepared editor snapshot.");
         }
-        return field.IsInherited
-            ? field.Definition.InheritedStorageValue
-            : field.Value;
+        return field.Value;
     }
 
     private static EmbeddedComponentSlotDefinition ComponentInputSlot(
@@ -741,7 +743,8 @@ internal sealed class EditorLayoutCardFactory
             input.ComponentType,
             input.Label,
             $"component.{input.ComponentType}",
-            [.. descriptor.JsonPath, input.JsonKey]);
+            [.. descriptor.JsonPath, input.JsonKey],
+            true);
     }
 
     private Button? VariantLockButton(ProjectTreeNode node, EditorLayoutCard layoutCard)

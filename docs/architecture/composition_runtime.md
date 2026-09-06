@@ -187,6 +187,11 @@ contract and is applied identically to Module and Component parents.
 
 Text Input Bar forwards only its explicit runtime text. Bubble and Text Input
 Bar customize their selected Text Box slot through local Overrides.
+Component embedded slots declare whether their descendant Runtime Inputs may
+expose forwarding actions. The editor resolves dependent Component Variant
+fields from their effective inherited values; the `inherited` marker is
+reserved for the commit path and is never supplied to Runtime-contract
+resolution.
 
 ## Content Rows
 

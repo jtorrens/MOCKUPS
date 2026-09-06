@@ -1283,7 +1283,8 @@
       "embeddedSlot": {
         "componentType": "label",
         "label": "Actor label",
-        "recordClassId": "component.label"
+        "recordClassId": "component.label",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -1383,7 +1384,8 @@
       "embeddedSlot": {
         "componentType": "avatar",
         "label": "Avatar",
-        "recordClassId": "component.avatar"
+        "recordClassId": "component.avatar",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -1586,7 +1588,8 @@
       "embeddedSlot": {
         "componentType": "audio",
         "label": "Audio media",
-        "recordClassId": "component.audio"
+        "recordClassId": "component.audio",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -1614,7 +1617,8 @@
       "embeddedSlot": {
         "componentType": "media",
         "label": "Image media",
-        "recordClassId": "component.media"
+        "recordClassId": "component.media",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -1762,7 +1766,8 @@
       "embeddedSlot": {
         "componentType": "media",
         "label": "Video media",
-        "recordClassId": "component.media"
+        "recordClassId": "component.media",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -3378,7 +3383,8 @@
       "embeddedSlot": {
         "componentType": "surface",
         "label": "Surface",
-        "recordClassId": "component.surface"
+        "recordClassId": "component.surface",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -3509,7 +3515,8 @@
       "embeddedSlot": {
         "componentType": "textBox",
         "label": "Text box",
-        "recordClassId": "component.textBox"
+        "recordClassId": "component.textBox",
+        "allowRuntimeInputForwarding": true
       }
     }
   ],

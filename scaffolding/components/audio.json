@@ -774,7 +774,8 @@
       "embeddedSlot": {
         "componentType": "avatar",
         "label": "Avatar",
-        "recordClassId": "component.avatar"
+        "recordClassId": "component.avatar",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -850,7 +851,8 @@
       "embeddedSlot": {
         "componentType": "badge",
         "label": "Badge",
-        "recordClassId": "component.badge"
+        "recordClassId": "component.badge",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -902,7 +904,8 @@
       "embeddedSlot": {
         "componentType": "label",
         "label": "Duration label",
-        "recordClassId": "component.label"
+        "recordClassId": "component.label",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -1849,7 +1852,8 @@
       "embeddedSlot": {
         "componentType": "surface",
         "label": "Surface",
-        "recordClassId": "component.surface"
+        "recordClassId": "component.surface",
+        "allowRuntimeInputForwarding": true
       }
     },
     {

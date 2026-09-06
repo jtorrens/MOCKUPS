@@ -620,7 +620,8 @@
       "embeddedSlot": {
         "componentType": "surface",
         "label": "Gallery surface",
-        "recordClassId": "component.surface"
+        "recordClassId": "component.surface",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -648,7 +649,8 @@
       "embeddedSlot": {
         "componentType": "media",
         "label": "Media item",
-        "recordClassId": "component.media"
+        "recordClassId": "component.media",
+        "allowRuntimeInputForwarding": true
       }
     }
   ],

@@ -18538,7 +18538,8 @@
       "embeddedSlot": {
         "componentType": "collectionStack",
         "label": "Collection Stack",
-        "recordClassId": "component.collectionStack"
+        "recordClassId": "component.collectionStack",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
@@ -18954,7 +18955,8 @@
       "embeddedSlot": {
         "componentType": "listItem",
         "label": "List Item",
-        "recordClassId": "component.listItem"
+        "recordClassId": "component.listItem",
+        "allowRuntimeInputForwarding": true
       }
     },
     {
