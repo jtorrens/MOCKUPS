@@ -67,7 +67,7 @@ export function resolveConversationModule(
     "messageMotion",
     "module.core.chat.messageMotion",
   );
-  const textInputComposerEnabled = timing.textInputVisible && showTextInputBar;
+  const textInputComposerEnabled = timing.showTextInput && showTextInputBar;
   const composer = composerState(
     resolvedMessages,
     screenFrame,
@@ -462,10 +462,10 @@ function conversationTiming(preview: JsonRecord): ConversationTimingContract {
   return {
     bubbleRevealMode,
     incomingRevealMode: incomingRevealMode as ConversationIncomingRevealMode,
-    textInputVisible: requiredBoolean(
+    showTextInput: requiredBoolean(
       preview,
-      "textInputVisible",
-      "module.core.chat.input.textInputVisible",
+      "showTextInput",
+      "module.core.chat.input.showTextInput",
     ),
     keyboardVisible: requiredBoolean(
       preview,
@@ -789,7 +789,7 @@ function composerState(
       return {
         text: graphemes.slice(0, textLength).join(""),
         currentCharacter: writeOnInProgress ? textLength : 0,
-        textInputVisible: timing.textInputVisible,
+        textInputVisible: timing.showTextInput,
         keyboardVisible: timing.keyboardVisible,
       };
     }
@@ -797,7 +797,7 @@ function composerState(
   return {
     text: "",
     currentCharacter: 0,
-    textInputVisible: false,
+    textInputVisible: timing.showTextInput,
     keyboardVisible: false,
   };
 }

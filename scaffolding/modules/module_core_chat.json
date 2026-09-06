@@ -327,9 +327,9 @@
         "valueKind": "OptionToken"
       },
       {
-        "id": "textInput",
-        "label": "Text input while writing",
-        "jsonKey": "textInputVisible",
+        "id": "showTextInput",
+        "label": "Show Text Input",
+        "jsonKey": "showTextInput",
         "kind": "boolean",
         "defaultValue": "true",
         "groupId": "timing",
@@ -1201,7 +1201,7 @@
       }
     ],
     "bubbleRevealMode": "afterWriteOn",
-    "textInputVisible": true,
+    "showTextInput": true,
     "keyboardVisible": true,
     "incomingRevealMode": "typingIndicator",
     "typingIndicatorText": "•••",

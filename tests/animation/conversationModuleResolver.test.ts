@@ -102,7 +102,7 @@ function payload(
       headerSubtitle: "base header",
       bubbleRevealMode: "afterWriteOn",
       incomingRevealMode: "typingIndicator",
-      textInputVisible: true,
+      showTextInput: true,
       keyboardVisible: true,
       typingIndicatorText: "•••",
       typingIndicatorSizeToken: "theme.typography.sizes.m",
@@ -642,6 +642,32 @@ test("Conversation writes outgoing text in Bubble when its composer slots are ab
   assert.equal(resolved.visibleMessages[0]?.writeOnTrigger, true);
 });
 
+test("Conversation keeps Show Text Input visible with placeholder outside outgoing writing", () => {
+  const source = committedConversationPayload(true);
+  const config = JSON.parse(source.configJson) as {
+    conversation: Record<string, unknown>;
+  };
+  config.conversation.showTextInputBar = true;
+  config.conversation.showKeyboard = true;
+  source.configJson = JSON.stringify(config);
+  const runtime = JSON.parse(source.designPreviewJson) as {
+    messages: Array<Record<string, unknown>>;
+    showTextInput: boolean;
+    keyboardVisible: boolean;
+  };
+  runtime.showTextInput = true;
+  runtime.keyboardVisible = true;
+  runtime.messages = runtime.messages.filter(({ direction }) => direction === "incoming");
+  source.designPreviewJson = JSON.stringify(runtime);
+  setConversationFrame(source, 50);
+
+  const resolved = resolveConversationModule(source);
+  assert.equal(resolved.composer.textInputVisible, true);
+  assert.equal(resolved.composer.keyboardVisible, false);
+  assert.equal(resolved.composer.text, "");
+  assert.ok(resolved.textInputConfig);
+});
+
 test("Conversation retains an outgoing composer while later messages advance until its cursor state becomes false", () => {
   const source = committedConversationPayload(true);
   const config = JSON.parse(source.configJson) as {
@@ -652,12 +678,12 @@ test("Conversation retains an outgoing composer while later messages advance unt
   source.configJson = JSON.stringify(config);
   const runtime = JSON.parse(source.designPreviewJson) as {
     messages: Array<Record<string, unknown>>;
-    textInputVisible: boolean;
+    showTextInput: boolean;
     keyboardVisible: boolean;
   };
   const outgoing = runtime.messages.find(({ direction }) => direction === "outgoing")!;
   const incoming = runtime.messages.find(({ direction }) => direction === "incoming")!;
-  runtime.textInputVisible = true;
+  runtime.showTextInput = true;
   runtime.keyboardVisible = true;
   runtime.messages = [
     {
@@ -712,8 +738,9 @@ test("Conversation retains an outgoing composer while later messages advance unt
 
   setConversationFrame(source, releaseFrame);
   const released = resolveConversationModule(source);
-  assert.equal(released.composer.textInputVisible, false);
+  assert.equal(released.composer.textInputVisible, true);
   assert.equal(released.composer.keyboardVisible, false);
+  assert.equal(released.composer.text, "");
   assert.deepEqual(released.visibleMessages.map(({ id }) => id), ["retained", "later"]);
 });
 
@@ -737,7 +764,7 @@ test("Conversation timing requires one complete prepared Runtime document", () =
   for (const key of [
     "bubbleRevealMode",
     "incomingRevealMode",
-    "textInputVisible",
+    "showTextInput",
     "keyboardVisible",
     "typingIndicatorText",
     "typingIndicatorSizeToken",
@@ -747,7 +774,9 @@ test("Conversation timing requires one complete prepared Runtime document", () =
     const config = JSON.parse(source.configJson) as {
       conversation: Record<string, unknown>;
     };
-    config.conversation[key] = key.endsWith("Visible") ? true : "legacy-value";
+    config.conversation[key] = key === "showTextInput" || key.endsWith("Visible")
+      ? true
+      : "legacy-value";
     source.configJson = JSON.stringify(config);
     const runtime = JSON.parse(source.designPreviewJson) as Record<string, unknown>;
     delete runtime[key];
@@ -1167,7 +1196,7 @@ function committedConversationPayload(keepMessages = false): DesignPreviewPayloa
     };
     if (!keepMessages) runtime.messages = [];
     runtime.keyboardVisible = false;
-    runtime.textInputVisible = false;
+    runtime.showTextInput = false;
     const config = structuredClone(defaultVariant.config) as {
       conversation: Record<string, unknown>;
     };

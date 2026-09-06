@@ -395,6 +395,13 @@ so an explicit duration can keep the header after the final message disappears.
 Message Motion/Fade begins at the message track In rather than at the Screen In;
 clipping a negative message In never restarts its Motion.
 
+Conversation's `Show Text Input` Screen Runtime Input controls presence for the
+complete Screen duration. When active, the Text Input Bar remains present even
+outside message activity. Only an outgoing message currently writing supplies
+its text; at every other frame the supplied text is empty and the selected Text
+Box Variant renders its placeholder. `Keyboard while writing` remains a
+separate activity-bound Runtime Input.
+
 ## Playback
 
 Play resolves the selected Production context and presents complete frames in

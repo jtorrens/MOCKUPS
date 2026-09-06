@@ -74,6 +74,11 @@ negative In. The Screen does not restart that clock at frame zero: when the
 Screen first becomes visible, a preroll item is already at the progress reached
 since its track In.
 
+Conversation `Show Text Input` is non-sequencing Screen state, not a message
+presence interval. It keeps the Text Input Bar for the complete Screen while
+outgoing write-on alone supplies text; otherwise the Text Box owns placeholder
+rendering. Keyboard presence remains tied to outgoing writing.
+
 Conversation owns message geometry separately from message presence. Its
 `Messages reflow timing` is one duration/easing contract for both keyed
 vertical reflow after an explicit message Out and the vertical auto-scroll

@@ -10,7 +10,7 @@ export type ConversationTypingIndicatorAnimation = "none" | "pulsating" | "wave"
 export interface ConversationTimingContract {
   bubbleRevealMode: "duringWriteOn" | "afterWriteOn";
   incomingRevealMode: ConversationIncomingRevealMode;
-  textInputVisible: boolean;
+  showTextInput: boolean;
   keyboardVisible: boolean;
   typingIndicatorText: string;
   typingIndicatorSizeToken: string;
