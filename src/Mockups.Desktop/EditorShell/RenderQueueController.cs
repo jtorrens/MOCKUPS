@@ -62,11 +62,6 @@ internal sealed class RenderQueueController
         async Task<RenderQueueShotDraft> LoadDraft(
             CancellationToken cancellationToken)
         {
-            if (!string.IsNullOrWhiteSpace(_queue.InitializationError))
-            {
-                throw new InvalidOperationException(
-                    _queue.InitializationError);
-            }
             return await _snapshots.LoadDraftAsync(
                 shot,
                 cancellationToken);

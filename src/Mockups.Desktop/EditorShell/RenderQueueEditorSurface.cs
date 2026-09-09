@@ -72,6 +72,7 @@ internal sealed class RenderQueueMonitorControl : StackPanel
     private readonly Button _renderPending;
     private readonly Button _pause;
     private readonly Button _clear;
+    private readonly StackPanel _invalidJobs;
     private readonly StackPanel _batches;
     private readonly Dictionary<string, JobRowState> _jobRows =
         new(StringComparer.Ordinal);
@@ -120,21 +121,12 @@ internal sealed class RenderQueueMonitorControl : StackPanel
         Grid.SetColumn(actions, 1);
         Children.Add(header);
 
-        if (!string.IsNullOrWhiteSpace(_queue.InitializationError))
+        _invalidJobs = new StackPanel
         {
-            Children.Add(new Border
-            {
-                Padding = new Thickness(10),
-                CornerRadius = new CornerRadius(8),
-                Background = new SolidColorBrush(Color.Parse("#22CD5C5C")),
-                Child = new TextBlock
-                {
-                    Text = _queue.InitializationError,
-                    Foreground = Brushes.IndianRed,
-                    TextWrapping = TextWrapping.Wrap,
-                },
-            });
-        }
+            Name = "RenderQueueInvalidJobs",
+            Spacing = EditorUiDensity.Card(6),
+        };
+        Children.Add(_invalidJobs);
 
         _batches = new StackPanel
         {
@@ -180,25 +172,25 @@ internal sealed class RenderQueueMonitorControl : StackPanel
     private void Refresh()
     {
         var jobs = _queue.Jobs();
+        var invalidJobs = _queue.InvalidJobs();
         var active = jobs.Count((job) =>
             !RenderQueueStatus.IsTerminal(job.Status));
         var failed = jobs.Count((job) =>
             job.Status == RenderQueueStatus.Failed);
-        _summary.Text = jobs.Count == 0
+        _summary.Text = jobs.Count == 0 && invalidJobs.Count == 0
             ? "The local queue is empty. Add a concrete Shot from its render icon."
             : $"{jobs.Count} job{(jobs.Count == 1 ? "" : "s")} · "
                 + $"{active} active or pending"
-                + (failed == 0 ? "" : $" · {failed} failed");
+                + (failed == 0 ? "" : $" · {failed} failed")
+                + (invalidJobs.Count == 0
+                    ? ""
+                    : $" · {invalidJobs.Count} invalid disabled");
         _pause.Content = _queue.Paused ? "Resume" : "Pause";
-        _pause.IsEnabled = string.IsNullOrWhiteSpace(
-            _queue.InitializationError);
-        _clear.IsEnabled = string.IsNullOrWhiteSpace(
-                _queue.InitializationError)
-            && jobs.Any((job) =>
+        _pause.IsEnabled = true;
+        _clear.IsEnabled = jobs.Any((job) =>
                 RenderQueueStatus.IsTerminal(job.Status));
-        _renderPending.IsEnabled = string.IsNullOrWhiteSpace(
-                _queue.InitializationError)
-            && _queue.CanRenderPending;
+        _renderPending.IsEnabled = _queue.CanRenderPending;
+        RefreshInvalidJobs(invalidJobs);
 
         var nextStructureKey = string.Join(
             "|",
@@ -250,6 +242,42 @@ internal sealed class RenderQueueMonitorControl : StackPanel
         foreach (var job in jobs)
         {
             UpdateJobRow(job);
+        }
+    }
+
+    private void RefreshInvalidJobs(
+        IReadOnlyList<RenderQueueInvalidJobView> invalidJobs)
+    {
+        _invalidJobs.Children.Clear();
+        _invalidJobs.IsVisible = invalidJobs.Count > 0;
+        foreach (var invalid in invalidJobs)
+        {
+            var remove = ActionButton(
+                "Remove invalid item",
+                () => _queue.RemoveInvalid(invalid.Id));
+            var content = new Grid
+            {
+                ColumnDefinitions = new ColumnDefinitions("*,Auto"),
+                ColumnSpacing = 8,
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = $"Queue item {invalid.Position + 1} is disabled: {invalid.Error}",
+                        Foreground = Brushes.IndianRed,
+                        TextWrapping = TextWrapping.Wrap,
+                    },
+                    remove,
+                },
+            };
+            Grid.SetColumn(remove, 1);
+            _invalidJobs.Children.Add(new Border
+            {
+                Padding = new Thickness(10),
+                CornerRadius = new CornerRadius(8),
+                Background = new SolidColorBrush(Color.Parse("#22CD5C5C")),
+                Child = content,
+            });
         }
     }
 

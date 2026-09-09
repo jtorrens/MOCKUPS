@@ -364,6 +364,11 @@ internal sealed record RenderQueueJobView(
     RenderJobSummary Summary,
     string? Error);
 
+internal sealed record RenderQueueInvalidJobView(
+    string Id,
+    int Position,
+    string Error);
+
 internal sealed record RenderQueueExecutionProgress(
     int Current,
     int Total,

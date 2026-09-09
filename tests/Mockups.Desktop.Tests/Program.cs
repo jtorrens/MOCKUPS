@@ -15652,8 +15652,21 @@ static void LocalWorkstationDocumentsAreStrict()
         File.WriteAllText(
             renderQueue,
             "{\"Schema\":\"mockups_render_queue\",\"Version\":3,\"Paused\":false,\"LastRouteByProject\":{}}");
-        using var queue = new RenderQueueManager(renderQueue);
-        True(!string.IsNullOrWhiteSpace(queue.InitializationError));
+        Throws<InvalidOperationException>(() =>
+            _ = new RenderQueueManager(renderQueue));
+
+        File.WriteAllText(
+            renderQueue,
+            "{\"Schema\":\"mockups_render_queue\",\"Version\":3,\"Paused\":false,\"Jobs\":[{\"Id\":\"broken\"}],\"LastRouteByProject\":{}}");
+        using (var queue = new RenderQueueManager(renderQueue))
+        {
+            Equal(0, queue.Jobs().Count);
+            Equal(1, queue.InvalidJobs().Count);
+            True(queue.RemoveInvalid(queue.InvalidJobs()[0].Id));
+        }
+        var repairedQueue = JsonNode.Parse(File.ReadAllText(renderQueue))!
+            .AsObject();
+        Equal(0, repairedQueue["Jobs"]!.AsArray().Count);
     }
     finally
     {

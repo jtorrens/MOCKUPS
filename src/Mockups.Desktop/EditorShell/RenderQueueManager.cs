@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -17,6 +18,7 @@ internal sealed class RenderQueueManager : IDisposable
     private readonly string _path;
     private readonly IRenderJobExecutor _executor;
     private readonly HashSet<string> _launchedJobIds = new(StringComparer.Ordinal);
+    private readonly List<InvalidRenderQueueJob> _invalidJobs = [];
     private RenderQueueDocument _document;
     private CancellationTokenSource? _activeCancellation;
     private IRenderJobPreparer? _launchedPreparer;
@@ -29,24 +31,13 @@ internal sealed class RenderQueueManager : IDisposable
     {
         _path = Path.GetFullPath(path ?? DefaultPath());
         _executor = executor ?? new RenderJobExecutor();
-        try
-        {
-            _document = Load();
-            RecoverInterruptedJobs();
-            MaintainHistory();
-            Save();
-        }
-        catch (Exception exception)
-        {
-            _document = RenderQueueDocument.CreateCurrent();
-            InitializationError =
-                $"The local render queue could not be opened: {exception.Message}";
-        }
+        _document = Load();
+        RecoverInterruptedJobs();
+        MaintainHistory();
+        Save();
     }
 
     public event Action? Changed;
-    public string? InitializationError { get; }
-
     public bool Paused
     {
         get { lock (_gate) return _document.Paused; }
@@ -76,6 +67,18 @@ internal sealed class RenderQueueManager : IDisposable
         lock (_gate) return _document.Jobs.Select(ToView).ToList();
     }
 
+    public IReadOnlyList<RenderQueueInvalidJobView> InvalidJobs()
+    {
+        lock (_gate)
+        {
+            return _invalidJobs.Select((job) =>
+                new RenderQueueInvalidJobView(
+                    job.Id,
+                    job.Position,
+                    job.Error)).ToList();
+        }
+    }
+
     public IReadOnlySet<string> ActiveOutputPaths()
     {
         lock (_gate)
@@ -101,7 +104,6 @@ internal sealed class RenderQueueManager : IDisposable
 
     public void RememberRoute(string projectId, string structureEntryId)
     {
-        RequireAvailable();
         lock (_gate)
         {
             _document.LastRouteByProject[projectId] = structureEntryId;
@@ -114,7 +116,6 @@ internal sealed class RenderQueueManager : IDisposable
         IReadOnlyList<RenderJobPlan> plans,
         IReadOnlyList<RenderJobSummary> summaries)
     {
-        RequireAvailable();
         if (plans.Count == 0 || plans.Count != summaries.Count)
         {
             throw new InvalidOperationException(
@@ -169,7 +170,6 @@ internal sealed class RenderQueueManager : IDisposable
     public int RenderPending(IRenderJobPreparer preparer)
     {
         ArgumentNullException.ThrowIfNull(preparer);
-        RequireAvailable();
         int count;
         lock (_gate)
         {
@@ -190,7 +190,6 @@ internal sealed class RenderQueueManager : IDisposable
 
     public bool Cancel(string jobId)
     {
-        RequireAvailable();
         lock (_gate)
         {
             var job = _document.Jobs.SingleOrDefault((candidate) =>
@@ -223,7 +222,6 @@ internal sealed class RenderQueueManager : IDisposable
 
     public bool Retry(string jobId)
     {
-        RequireAvailable();
         RenderJobPlan plan;
         RenderJobSummary summary;
         lock (_gate)
@@ -245,7 +243,6 @@ internal sealed class RenderQueueManager : IDisposable
 
     public bool Remove(string jobId)
     {
-        RequireAvailable();
         lock (_gate)
         {
             var index = _document.Jobs.FindIndex((candidate) =>
@@ -264,9 +261,22 @@ internal sealed class RenderQueueManager : IDisposable
         return true;
     }
 
+    public bool RemoveInvalid(string jobId)
+    {
+        lock (_gate)
+        {
+            var index = _invalidJobs.FindIndex((candidate) =>
+                candidate.Id.Equals(jobId, StringComparison.Ordinal));
+            if (index < 0) return false;
+            _invalidJobs.RemoveAt(index);
+            Save();
+        }
+        NotifyChanged();
+        return true;
+    }
+
     public int ClearFinished()
     {
-        RequireAvailable();
         int removed;
         lock (_gate)
         {
@@ -283,7 +293,6 @@ internal sealed class RenderQueueManager : IDisposable
 
     public void SetPaused(bool value)
     {
-        RequireAvailable();
         lock (_gate)
         {
             if (_document.Paused == value) return;
@@ -297,7 +306,7 @@ internal sealed class RenderQueueManager : IDisposable
     private void Kick()
     {
         if (_shutdown.IsCancellationRequested
-            || !string.IsNullOrWhiteSpace(InitializationError)) return;
+            ) return;
         lock (_gate)
         {
             if (_workerScheduled
@@ -578,42 +587,91 @@ internal sealed class RenderQueueManager : IDisposable
     private RenderQueueDocument Load()
     {
         if (!File.Exists(_path)) return RenderQueueDocument.CreateCurrent();
-        var document = JsonSerializer.Deserialize<RenderQueueDocument>(
-            File.ReadAllText(_path),
-            CurrentLocalDocument.ExactJson)
-            ?? throw new InvalidOperationException("The render queue document is empty.");
-        if (document.Schema != "mockups_render_queue"
-            || document.Version != 3
-            || document.Jobs is null
-            || document.LastRouteByProject is null)
+        var root = JsonNode.Parse(File.ReadAllText(_path)) as JsonObject
+            ?? throw new InvalidOperationException(
+                "The render queue document must be an object.");
+        var expectedRootProperties = new HashSet<string>(
+            ["Schema", "Version", "Paused", "Jobs", "LastRouteByProject"],
+            StringComparer.Ordinal);
+        if (!root.Select((entry) => entry.Key)
+                .ToHashSet(StringComparer.Ordinal)
+                .SetEquals(expectedRootProperties))
         {
             throw new InvalidOperationException(
                 "The render queue document uses an unsupported contract.");
         }
-        foreach (var job in document.Jobs)
+        var schema = root["Schema"]?.GetValue<string>() ?? "";
+        var version = root["Version"]?.GetValue<int>() ?? 0;
+        if (schema != "mockups_render_queue" || version != 3)
         {
-            if (string.IsNullOrWhiteSpace(job.Id)
-                || string.IsNullOrWhiteSpace(job.BatchId)
-                || !RenderQueueStatus.IsKnown(job.Status)
-                || job.Summary.TotalFrames <= 0)
+            throw new InvalidOperationException(
+                "The render queue document uses an unsupported contract.");
+        }
+        var document = new RenderQueueDocument
+        {
+            Schema = schema,
+            Version = version,
+            Paused = root["Paused"]?.GetValue<bool>()
+                ?? throw new InvalidOperationException(
+                    "The render queue document requires Paused."),
+            Jobs = [],
+            LastRouteByProject = root["LastRouteByProject"]?
+                .Deserialize<Dictionary<string, string>>(
+                    CurrentLocalDocument.ExactJson)
+                ?? throw new InvalidOperationException(
+                    "The render queue document requires LastRouteByProject."),
+        };
+        var jobs = root["Jobs"] as JsonArray
+            ?? throw new InvalidOperationException(
+                "The render queue document requires a Jobs array.");
+        for (var index = 0; index < jobs.Count; index++)
+        {
+            var item = jobs[index];
+            try
             {
-                throw new InvalidOperationException(
-                    "The render queue contains an incomplete job.");
+                var job = item?.Deserialize<RenderQueueJob>(
+                        CurrentLocalDocument.ExactJson)
+                    ?? throw new InvalidOperationException(
+                        "The render queue job is empty.");
+                ValidateJob(job);
+                document.Jobs.Add(job);
             }
-            job.Plan.Validate();
-            RenderOutputPathSecurity.RequireOutputTargetContract(
-                job.Plan.Output);
-            ValidateSummaryContract(job.Summary);
-            if (!job.Plan.Output.OutputPath.Equals(
-                    job.Summary.Output.OutputPath,
-                    PathComparison())
-                || job.Plan.RequestedAppearance != job.Summary.Appearance)
+            catch (Exception exception) when (
+                exception is JsonException
+                    or InvalidOperationException
+                    or ArgumentException)
             {
-                throw new InvalidOperationException(
-                    "The render queue job plan and summary disagree.");
+                _invalidJobs.Add(new InvalidRenderQueueJob(
+                    $"invalid:{index}",
+                    index,
+                    item?.DeepClone(),
+                    exception.Message));
             }
         }
         return document;
+    }
+
+    private static void ValidateJob(RenderQueueJob job)
+    {
+        if (string.IsNullOrWhiteSpace(job.Id)
+            || string.IsNullOrWhiteSpace(job.BatchId)
+            || !RenderQueueStatus.IsKnown(job.Status)
+            || job.Summary.TotalFrames <= 0)
+        {
+            throw new InvalidOperationException(
+                "The render queue contains an incomplete job.");
+        }
+        job.Plan.Validate();
+        RenderOutputPathSecurity.RequireOutputTargetContract(job.Plan.Output);
+        ValidateSummaryContract(job.Summary);
+        if (!job.Plan.Output.OutputPath.Equals(
+                job.Summary.Output.OutputPath,
+                PathComparison())
+            || job.Plan.RequestedAppearance != job.Summary.Appearance)
+        {
+            throw new InvalidOperationException(
+                "The render queue job plan and summary disagree.");
+        }
     }
 
     private void Save()
@@ -627,15 +685,31 @@ internal sealed class RenderQueueManager : IDisposable
         {
             File.WriteAllText(
                 temporary,
-                JsonSerializer.Serialize(
-                    _document,
-                    new JsonSerializerOptions { WriteIndented = true }));
+                SerializeDocument());
             File.Move(temporary, _path, overwrite: true);
         }
         finally
         {
             if (File.Exists(temporary)) File.Delete(temporary);
         }
+    }
+
+    private string SerializeDocument()
+    {
+        var root = JsonSerializer.SerializeToNode(_document)?.AsObject()
+            ?? throw new InvalidOperationException(
+                "The render queue document could not be serialized.");
+        var jobs = root["Jobs"]?.AsArray()
+            ?? throw new InvalidOperationException(
+                "The serialized render queue document has no Jobs array.");
+        foreach (var invalid in _invalidJobs.OrderBy((item) => item.Position))
+        {
+            jobs.Insert(
+                Math.Clamp(invalid.Position, 0, jobs.Count),
+                invalid.Document?.DeepClone());
+        }
+        return root.ToJsonString(
+            new JsonSerializerOptions { WriteIndented = true });
     }
 
     private static void ValidatePlans(
@@ -761,14 +835,6 @@ internal sealed class RenderQueueManager : IDisposable
         job.Summary,
         job.Error);
 
-    private void RequireAvailable()
-    {
-        if (!string.IsNullOrWhiteSpace(InitializationError))
-        {
-            throw new InvalidOperationException(InitializationError);
-        }
-    }
-
     private static string DefaultPath()
     {
         return CurrentLocalDocument.ApplicationDataPath(
@@ -820,6 +886,12 @@ internal sealed class RenderQueueManager : IDisposable
             TaskContinuationOptions.ExecuteSynchronously,
             TaskScheduler.Default);
     }
+
+    private sealed record InvalidRenderQueueJob(
+        string Id,
+        int Position,
+        JsonNode? Document,
+        string Error);
 
     private sealed class SynchronousProgress<T>(Action<T> report) : IProgress<T>
     {

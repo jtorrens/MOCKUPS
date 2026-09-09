@@ -592,6 +592,11 @@ documents into a temporary or alternate root. A missing document may create
 its one current empty shape; a present document is never completed from model
 initializers or replaced by a compatibility representation.
 
+Render Queue validates its root envelope as one current document. A malformed
+root fails that owner. Each job is then validated independently: an invalid job
+is retained, reported as disabled and never prepared or rendered, while valid
+jobs remain usable. Only an explicit Remove action deletes that invalid entry.
+
 ## Backup Hub boundary
 
 The Desktop Host is the sole owner of the Backup Hub integration. It publishes
