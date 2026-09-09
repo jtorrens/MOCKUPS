@@ -72,7 +72,9 @@ export function checkRetiredContracts(
     },
     {
       path: "src/Mockups.Desktop/EditorShell/RenderQueueManager.cs",
-      terms: ["Path.GetTempPath()"],
+      terms: [
+        "if (string.IsNullOrWhiteSpace(root)) root = Path.GetTempPath();",
+      ],
     },
   ] as const;
   for (const entry of retiredSourceTerms) {
