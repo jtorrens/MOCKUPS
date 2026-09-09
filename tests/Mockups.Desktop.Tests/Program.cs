@@ -135,6 +135,7 @@ var tests = new (string Name, Action Run)[]
     ("Production Output generates exact Shot names and portable render routes", ProductionOutputGeneratesExactShotPlans),
     ("Shot Manager output captures exact associations and resolves offline", ShotManagerOutputResolvesExactAssociations),
     ("local workstation documents reject partial and extended contracts", LocalWorkstationDocumentsAreStrict),
+    ("shell window state persists only its exact visual contract", ShellWindowStateIsExactAndVisualOnly),
     ("Render output naming reserves one version for Light and Dark", RenderOutputNamingReservesOneBatchVersion),
     ("MOV H.264 modes match the Créditos encoding profiles", MovH264ModesMatchCreditosProfiles),
     ("MOV outputs carry exact color metadata and full-scale opaque alpha", MovOutputsCarryExactMetadata),
@@ -15653,6 +15654,63 @@ static void LocalWorkstationDocumentsAreStrict()
             "{\"Schema\":\"mockups_render_queue\",\"Version\":3,\"Paused\":false,\"LastRouteByProject\":{}}");
         using var queue = new RenderQueueManager(renderQueue);
         True(!string.IsNullOrWhiteSpace(queue.InitializationError));
+    }
+    finally
+    {
+        Directory.Delete(root, recursive: true);
+    }
+}
+
+static void ShellWindowStateIsExactAndVisualOnly()
+{
+    var root = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-shell-window-contract-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(root);
+    var statePath = Path.Combine(root, "window-state.json");
+    try
+    {
+        using var session = HeadlessUnitTestSession.StartNew(
+            typeof(HeadlessTestApplication));
+        session.Dispatch(() =>
+        {
+            var window = new Window
+            {
+                MinWidth = 800,
+                MinHeight = 600,
+                Width = 1200,
+                Height = 800,
+            };
+            var columns = new Grid
+            {
+                ColumnDefinitions = new ColumnDefinitions("300,5,500,5,*"),
+            };
+            var state = new EditorShellStateService(
+                window,
+                columns,
+                statePath);
+            state.Save(new EditorNavigationPanelState(
+                false,
+                300,
+                500,
+                400));
+
+            var document = JsonNode.Parse(File.ReadAllText(statePath))!
+                .AsObject();
+            Equal("mockups_shell_window_state", document["Schema"]!.GetValue<string>());
+            Equal(1, document["Version"]!.GetValue<int>());
+            True(document["Workspace"] is null);
+            True(document["ProductionId"] is null);
+            True(document["SessionHistory"] is null);
+
+            document["Workspace"] = "production";
+            File.WriteAllText(statePath, document.ToJsonString());
+            Throws<InvalidDataException>(() =>
+                new EditorShellStateService(
+                    window,
+                    columns,
+                    statePath).Restore());
+        }, CancellationToken.None).GetAwaiter().GetResult();
     }
     finally
     {
