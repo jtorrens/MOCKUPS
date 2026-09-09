@@ -273,6 +273,8 @@ var tests = new (string Name, Action Run)[]
     ("strict validation rejects invalid target durations", StrictValidationRejectsInvalidTargetDurations),
     ("strict validation rejects tracks without an origin keyframe", StrictValidationRejectsMissingOrigin),
     ("legacy animation requires explicit migration", LegacyAnimationRequiresExplicitMigration),
+    ("Backup Hub Restore initializes only an empty current owner", BackupHubRestoreInitializesOnlyEmptyCurrentOwner),
+    ("Backup Hub Restore rejects unowned existing directories", BackupHubRestoreRejectsUnownedExistingDirectories),
     ("initial animatable field vocabulary is constrained", AnimatableFieldVocabularyIsConstrained),
     ("playback state publishes play, busy and frame changes", PlaybackStatePublishesChanges),
     ("shared slider behavior maps Wacom Pen drag in every direction", SharedSliderBehaviorMapsPenDrag),
@@ -20500,6 +20502,56 @@ static void LegacyAnimationRequiresExplicitMigration()
     finally
     {
         File.Delete(temporary);
+    }
+}
+
+static void BackupHubRestoreInitializesOnlyEmptyCurrentOwner()
+{
+    var vault = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-restore-owner-current-{Guid.NewGuid():N}");
+    try
+    {
+        var locations = new RestoreLocations(vault);
+        locations.PrepareOwnership();
+
+        SequenceEqual("2\n"u8.ToArray(), File.ReadAllBytes(locations.OwnerMarker));
+        True(Directory.Exists(locations.Outbox));
+        True(Directory.Exists(locations.Processing));
+        True(Directory.Exists(locations.Results));
+        True(Directory.Exists(locations.Quarantine));
+
+        locations.PrepareOwnership();
+        SequenceEqual("2\n"u8.ToArray(), File.ReadAllBytes(locations.OwnerMarker));
+    }
+    finally
+    {
+        if (Directory.Exists(vault)) Directory.Delete(vault, recursive: true);
+    }
+}
+
+static void BackupHubRestoreRejectsUnownedExistingDirectories()
+{
+    var vault = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-restore-owner-unowned-{Guid.NewGuid():N}");
+    try
+    {
+        var locations = new RestoreLocations(vault);
+        Directory.CreateDirectory(locations.Processing);
+        File.WriteAllText(
+            Path.Combine(locations.Processing, "pending-request"),
+            "preserve");
+
+        Throws<InvalidDataException>(() => locations.PrepareOwnership());
+        True(!File.Exists(locations.OwnerMarker));
+        True(File.Exists(Path.Combine(
+            locations.Processing,
+            "pending-request")));
+    }
+    finally
+    {
+        if (Directory.Exists(vault)) Directory.Delete(vault, recursive: true);
     }
 }
 

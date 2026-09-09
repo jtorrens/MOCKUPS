@@ -819,11 +819,6 @@ internal sealed record RestoreLocations(string Vault)
         "restore-quarantine",
         BackupHubBackupService.ApplicationId);
 
-    public string Retired => Path.Combine(
-        Vault,
-        "restore-retired-v1-processing",
-        BackupHubBackupService.ApplicationId);
-
     public string OwnerMarker => Path.Combine(
         Vault,
         "restore-owner-protocol",
@@ -856,29 +851,17 @@ internal sealed record RestoreLocations(string Vault)
         }
         else
         {
-            if (Directory.Exists(Processing))
+            var existingRestoreDirectories = new[]
             {
-                BackupHubContract.RequireRegularDirectory(
-                    Processing,
-                    "restore processing directory");
-            }
-            if (Directory.Exists(Retired))
-            {
-                BackupHubContract.RequireRegularDirectory(
-                    Retired,
-                    "retired restore processing directory");
-            }
-            if (Directory.Exists(Processing)
-                && Directory.Exists(Retired))
+                Outbox,
+                Processing,
+                Results,
+                Quarantine,
+            }.Where(Directory.Exists).ToArray();
+            if (existingRestoreDirectories.Length > 0)
             {
                 throw new InvalidDataException(
-                    "Both active and retired MOCKUPS restore processing directories exist.");
-            }
-            if (Directory.Exists(Processing))
-            {
-                Directory.CreateDirectory(
-                    Path.GetDirectoryName(Retired)!);
-                Directory.Move(Processing, Retired);
+                    "The MOCKUPS Restore Handoff owner marker is missing while restore directories already exist. Run explicit Backup Hub maintenance before opening MOCKUPS.");
             }
             var temporaryMarker =
                 $"{OwnerMarker}.{Guid.NewGuid():D}.tmp";
