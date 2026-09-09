@@ -338,12 +338,20 @@ internal sealed class RenderQueueJob
 
 internal sealed class RenderQueueDocument
 {
-    public string Schema { get; init; } = "mockups_render_queue";
-    public int Version { get; init; } = 3;
-    public bool Paused { get; set; }
-    public List<RenderQueueJob> Jobs { get; init; } = [];
-    public Dictionary<string, string> LastRouteByProject { get; init; } =
-        new(StringComparer.Ordinal);
+    public static RenderQueueDocument CreateCurrent() => new()
+    {
+        Schema = "mockups_render_queue",
+        Version = 3,
+        Paused = false,
+        Jobs = [],
+        LastRouteByProject = new(StringComparer.Ordinal),
+    };
+
+    public required string Schema { get; init; }
+    public required int Version { get; init; }
+    public required bool Paused { get; set; }
+    public required List<RenderQueueJob> Jobs { get; init; }
+    public required Dictionary<string, string> LastRouteByProject { get; init; }
 }
 
 internal sealed record RenderQueueJobView(

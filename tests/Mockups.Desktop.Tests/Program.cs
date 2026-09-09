@@ -134,6 +134,7 @@ var tests = new (string Name, Action Run)[]
     ("Shot reference video documents preserve In and stable video markers", ShotReferenceVideoDocumentsAreStrict),
     ("Production Output generates exact Shot names and portable render routes", ProductionOutputGeneratesExactShotPlans),
     ("Shot Manager output captures exact associations and resolves offline", ShotManagerOutputResolvesExactAssociations),
+    ("local workstation documents reject partial and extended contracts", LocalWorkstationDocumentsAreStrict),
     ("Render output naming reserves one version for Light and Dark", RenderOutputNamingReservesOneBatchVersion),
     ("MOV H.264 modes match the Créditos encoding profiles", MovH264ModesMatchCreditosProfiles),
     ("MOV outputs carry exact color metadata and full-scale opaque alpha", MovOutputsCarryExactMetadata),
@@ -15621,6 +15622,41 @@ static void ProductionOutputGeneratesExactShotPlans()
         File.Delete(temporary);
         File.Delete(rootsPath);
         Directory.Delete(outputRoot, recursive: true);
+    }
+}
+
+static void LocalWorkstationDocumentsAreStrict()
+{
+    var root = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-local-document-contracts-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(root);
+    try
+    {
+        var productionRoots = Path.Combine(root, "production-output-roots.json");
+        File.WriteAllText(
+            productionRoots,
+            "{\"Schema\":\"mockups_production_output_roots\",\"Version\":1}");
+        Throws<InvalidOperationException>(() =>
+            new ProductionOutputRootStore(productionRoots).Get("project"));
+
+        var shotManager = Path.Combine(root, "shot-manager-locations.json");
+        File.WriteAllText(
+            shotManager,
+            "{\"Schema\":\"mockups_shot_manager_locations\",\"Version\":1,\"ProjectLocations\":{},\"Legacy\":true}");
+        Throws<InvalidOperationException>(() =>
+            new ShotManagerDocumentStore(shotManager).GetLocation("project"));
+
+        var renderQueue = Path.Combine(root, "render-queue.json");
+        File.WriteAllText(
+            renderQueue,
+            "{\"Schema\":\"mockups_render_queue\",\"Version\":3,\"Paused\":false,\"LastRouteByProject\":{}}");
+        using var queue = new RenderQueueManager(renderQueue);
+        True(!string.IsNullOrWhiteSpace(queue.InitializationError));
+    }
+    finally
+    {
+        Directory.Delete(root, recursive: true);
     }
 }
 

@@ -1,3 +1,4 @@
+using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -65,17 +66,35 @@ internal sealed class ProductionOutputRootStore
 
     private RootDocument Read()
     {
-        if (!File.Exists(_path)) return new RootDocument();
+        if (!File.Exists(_path))
+        {
+            return new RootDocument
+            {
+                Schema = "mockups_production_output_roots",
+                Version = 1,
+                ProjectRoots = new(StringComparer.Ordinal),
+            };
+        }
         try
         {
             var document = JsonSerializer.Deserialize<RootDocument>(
-                File.ReadAllText(_path));
+                File.ReadAllText(_path),
+                CurrentLocalDocument.ExactJson);
             if (document?.Schema != "mockups_production_output_roots"
                 || document.Version != 1
                 || document.ProjectRoots is null)
             {
                 throw new InvalidOperationException(
                     "The local Production output root document is not current.");
+            }
+            foreach (var (projectId, root) in document.ProjectRoots)
+            {
+                if (string.IsNullOrWhiteSpace(projectId)
+                    || !Path.IsPathFullyQualified(root))
+                {
+                    throw new InvalidOperationException(
+                        "The local Production output root document contains an invalid entry.");
+                }
             }
             return document;
         }
@@ -111,24 +130,15 @@ internal sealed class ProductionOutputRootStore
 
     private static string DefaultPath()
     {
-        var root = Environment.GetFolderPath(
-            Environment.SpecialFolder.LocalApplicationData);
-        if (string.IsNullOrWhiteSpace(root))
-        {
-            root = Path.GetTempPath();
-        }
-        return Path.Combine(
-            root,
-            "MOCKUPS",
+        return CurrentLocalDocument.ApplicationDataPath(
             "production-output-roots.json");
     }
 
     private sealed class RootDocument
     {
-        public string Schema { get; init; } =
-            "mockups_production_output_roots";
-        public int Version { get; init; } = 1;
-        public Dictionary<string, string> ProjectRoots { get; init; } =
-            new(StringComparer.Ordinal);
+        public required string Schema { get; init; }
+        public required int Version { get; init; }
+        public required Dictionary<string, string> ProjectRoots { get; init; }
+            = new(StringComparer.Ordinal);
     }
 }

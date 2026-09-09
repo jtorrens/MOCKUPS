@@ -1,3 +1,4 @@
+using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -37,7 +38,7 @@ internal sealed class RenderQueueManager : IDisposable
         }
         catch (Exception exception)
         {
-            _document = new RenderQueueDocument();
+            _document = RenderQueueDocument.CreateCurrent();
             InitializationError =
                 $"The local render queue could not be opened: {exception.Message}";
         }
@@ -576,9 +577,10 @@ internal sealed class RenderQueueManager : IDisposable
 
     private RenderQueueDocument Load()
     {
-        if (!File.Exists(_path)) return new RenderQueueDocument();
+        if (!File.Exists(_path)) return RenderQueueDocument.CreateCurrent();
         var document = JsonSerializer.Deserialize<RenderQueueDocument>(
-            File.ReadAllText(_path))
+            File.ReadAllText(_path),
+            CurrentLocalDocument.ExactJson)
             ?? throw new InvalidOperationException("The render queue document is empty.");
         if (document.Schema != "mockups_render_queue"
             || document.Version != 3
@@ -769,10 +771,8 @@ internal sealed class RenderQueueManager : IDisposable
 
     private static string DefaultPath()
     {
-        var root = Environment.GetFolderPath(
-            Environment.SpecialFolder.LocalApplicationData);
-        if (string.IsNullOrWhiteSpace(root)) root = Path.GetTempPath();
-        return Path.Combine(root, "MOCKUPS", "render-queue.json");
+        return CurrentLocalDocument.ApplicationDataPath(
+            "render-queue.json");
     }
 
     private static string DisplayAppearance(string appearance) =>

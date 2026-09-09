@@ -1,3 +1,4 @@
+using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Collections.Generic;
@@ -185,16 +186,34 @@ internal sealed class ShotManagerDocumentStore
 
     private StoreDocument Read()
     {
-        if (!File.Exists(_path)) return new StoreDocument();
+        if (!File.Exists(_path))
+        {
+            return new StoreDocument
+            {
+                Schema = "mockups_shot_manager_locations",
+                Version = 1,
+                ProjectLocations = new(StringComparer.Ordinal),
+            };
+        }
         try
         {
             var document = JsonSerializer.Deserialize<StoreDocument>(
-                File.ReadAllText(_path));
+                File.ReadAllText(_path),
+                CurrentLocalDocument.ExactJson);
             if (document?.Schema != "mockups_shot_manager_locations"
                 || document.Version != 1
                 || document.ProjectLocations is null)
                 throw new InvalidOperationException(
                     "The local Shot Manager location document is not current.");
+            foreach (var (projectId, location) in document.ProjectLocations)
+            {
+                if (string.IsNullOrWhiteSpace(projectId))
+                {
+                    throw new InvalidOperationException(
+                        "The local Shot Manager location document contains an empty Project identity.");
+                }
+                _ = RequireLocation(location, projectId);
+            }
             return document;
         }
         catch (JsonException exception)
@@ -229,18 +248,15 @@ internal sealed class ShotManagerDocumentStore
 
     private static string DefaultPath()
     {
-        var root = Environment.GetFolderPath(
-            Environment.SpecialFolder.LocalApplicationData);
-        if (string.IsNullOrWhiteSpace(root)) root = Path.GetTempPath();
-        return Path.Combine(root, "MOCKUPS", "shot-manager-locations.json");
+        return CurrentLocalDocument.ApplicationDataPath(
+            "shot-manager-locations.json");
     }
 
     private sealed class StoreDocument
     {
-        public string Schema { get; init; } =
-            "mockups_shot_manager_locations";
-        public int Version { get; init; } = 1;
-        public Dictionary<string, ShotManagerProjectLocation> ProjectLocations
-            { get; init; } = new(StringComparer.Ordinal);
+        public required string Schema { get; init; }
+        public required int Version { get; init; }
+        public required Dictionary<string, ShotManagerProjectLocation>
+            ProjectLocations { get; init; } = new(StringComparer.Ordinal);
     }
 }

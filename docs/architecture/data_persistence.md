@@ -583,6 +583,15 @@ maintenance migration:
 Normal readers know only the resulting current contract. They contain no
 aliases, coercions, fallback fields or startup repair paths.
 
+Workstation-local Production output roots, Shot Manager locations and Render
+Queue state live only below the native `LocalApplicationData/MOCKUPS`
+directory. Their current JSON root properties are required and exact;
+additional, missing or malformed properties fail explicitly. An unavailable
+native application-data directory is an error and never redirects these
+documents into a temporary or alternate root. A missing document may create
+its one current empty shape; a present document is never completed from model
+initializers or replaced by a compatibility representation.
+
 ## Backup Hub boundary
 
 The Desktop Host is the sole owner of the Backup Hub integration. It publishes

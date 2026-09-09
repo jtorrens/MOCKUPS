@@ -62,6 +62,18 @@ export function checkRetiredContracts(
       path: "src/Mockups.Desktop/MainWindow.axaml.cs",
       terms: ["CreateSessionHistoryState"],
     },
+    {
+      path: "src/Mockups.Desktop/Integrations/ProductionOutput/ProductionOutputRootStore.cs",
+      terms: ["Path.GetTempPath()"],
+    },
+    {
+      path: "src/Mockups.Desktop/Integrations/ProductionOutput/ShotManagerDocumentStore.cs",
+      terms: ["Path.GetTempPath()"],
+    },
+    {
+      path: "src/Mockups.Desktop/EditorShell/RenderQueueManager.cs",
+      terms: ["Path.GetTempPath()"],
+    },
   ] as const;
   for (const entry of retiredSourceTerms) {
     if (!repositoryFileExists(context, entry.path)) continue;
