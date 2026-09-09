@@ -28,6 +28,9 @@ npm test
 
 The public gate reads `data/mockups.sqlite` from the Git index
 into a disposable file and supplies that path to every database-backed check.
+It is also the only SQLite database permitted anywhere under `data/`;
+historical, migration and parallel snapshots are prohibited repository
+artifacts and the architecture gate rejects them recursively.
 It never replaces, opens for writing or validates against the workstation's
 active authoring database. Its disposable workspace exposes the repository
 assets read-only at the same relative boundary used by normal Project

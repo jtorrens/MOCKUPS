@@ -98,6 +98,35 @@ test("retired validation rejects completed maintenance scripts", () => {
   }
 });
 
+test("retired validation rejects every parallel SQLite database under data", () => {
+  const root = mkdtempSync(path.join(tmpdir(), "mockups-retired-database-contract-"));
+  try {
+    writeFileSync(path.join(root, "package.json"), "{\"scripts\":{}}\n", "utf8");
+    mkdirSync(path.join(root, "data", "nested"), { recursive: true });
+    writeFileSync(path.join(root, "data", "mockups.sqlite"), "current", "utf8");
+    writeFileSync(
+      path.join(root, "data", "nested", "historical.sqlite"),
+      "historical",
+      "utf8",
+    );
+    const context = createArchitectureValidationContext(root);
+    checkRetiredContracts(context);
+    assert.equal(
+      context.violations.some((violation) =>
+        violation.includes("data/nested/historical.sqlite")
+        && violation.includes("only repository SQLite database")),
+      true,
+    );
+    assert.equal(
+      context.violations.some((violation) =>
+        violation.startsWith("data/mockups.sqlite:")),
+      false,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("retired validation rejects historical Restore and shell session persistence", () => {
   const root = mkdtempSync(path.join(tmpdir(), "mockups-retired-state-contract-"));
   try {

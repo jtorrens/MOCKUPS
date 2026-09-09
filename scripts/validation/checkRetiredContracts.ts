@@ -1,3 +1,6 @@
+import { readdirSync } from "node:fs";
+import path from "node:path";
+
 import type { ArchitectureValidationContext } from "./validationContext.js";
 import { repositoryFileExists } from "./validationContext.js";
 
@@ -5,6 +8,7 @@ export const retiredPaths = [
   "archive/react-legacy",
   "assets/icons/components/Render Presets.svg",
   "assets/system/system_icons/components/Render Presets.svg",
+  "data/desktop-editor-spike.schema-v1.sqlite",
   "docs/WINDOWS_PC_TEST_HANDOFF.md",
   "docs/pc-mac/2026-07-30_windows_design_preview_patch_timeout.md",
   "docs/pc-mac/2026-07-30_windows_unicode_preview_transport.md",
@@ -46,6 +50,33 @@ export function checkRetiredContracts(
         retiredPath,
         "retired architecture path must not return",
       );
+    }
+  }
+
+  const dataDirectory = context.resolveRepositoryPath("data").fullPath;
+  if (repositoryFileExists(context, "data")) {
+    const pendingDirectories = [dataDirectory];
+    while (pendingDirectories.length > 0) {
+      const directory = pendingDirectories.pop()!;
+      for (const entry of readdirSync(directory, { withFileTypes: true })) {
+        const fullPath = path.join(directory, entry.name);
+        if (entry.isDirectory()) {
+          pendingDirectories.push(fullPath);
+          continue;
+        }
+        if (!entry.isFile() || !entry.name.toLowerCase().endsWith(".sqlite")) {
+          continue;
+        }
+        const relativePath = path.relative(context.root, fullPath)
+          .split(path.sep)
+          .join("/");
+        if (relativePath !== "data/mockups.sqlite") {
+          context.addViolation(
+            relativePath,
+            "data/mockups.sqlite is the only repository SQLite database; historical and parallel snapshots are prohibited",
+          );
+        }
+      }
     }
   }
 
