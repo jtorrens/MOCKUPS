@@ -103,47 +103,6 @@ internal sealed class EditorVariantHistoryService
         _ => throw new InvalidOperationException($"'{node.Kind}' is not a variant."),
     };
 
-    public EditorVariantHistoryStore ExportState()
-    {
-        return new EditorVariantHistoryStore
-        {
-            Sequence = _sequence,
-            SnapshotsByVariant = _snapshotsByVariant.ToDictionary(
-                (entry) => entry.Key,
-                (entry) => entry.Value.Select((snapshot) => new EditorVariantHistorySnapshotState
-                {
-                    Id = snapshot.Id,
-                    Label = snapshot.Label,
-                    CreatedAt = snapshot.CreatedAt,
-                    ConfigJson = snapshot.ConfigJson,
-                }).ToList(),
-                StringComparer.Ordinal),
-        };
-    }
-
-    public void RestoreState(EditorVariantHistoryStore? state)
-    {
-        _snapshotsByVariant.Clear();
-        _sequence = Math.Max(0, state?.Sequence ?? 0);
-        if (state?.SnapshotsByVariant is null)
-        {
-            return;
-        }
-
-        foreach (var (nodeId, snapshots) in state.SnapshotsByVariant)
-        {
-            _snapshotsByVariant[nodeId] = snapshots
-                .Where((snapshot) => !string.IsNullOrWhiteSpace(snapshot.Id))
-                .Take(10)
-                .Select((snapshot) => new EditorVariantHistorySnapshot(
-                    snapshot.Id,
-                    snapshot.Label,
-                    snapshot.CreatedAt,
-                    string.IsNullOrWhiteSpace(snapshot.ConfigJson) ? "{}" : snapshot.ConfigJson))
-                .ToList();
-        }
-    }
-
     private void AddSnapshot(string nodeId, string configJson)
     {
         if (!_snapshotsByVariant.TryGetValue(nodeId, out var snapshots))

@@ -507,9 +507,8 @@ public partial class MainWindow : SukiWindow
             _shellState.NavigationPanelExpandedEditorWidth,
             _shellState.NavigationPanelExpandedPreviewWidth);
         _workspaceCoordinator.Restore(new EditorSessionRestoreState(
-            EditorWorkspaceNavigation.Parse(_shellState.Workspace),
-            _shellState.ProductionId,
-            _shellState.SessionHistory.LastComponentVariantSelections));
+            EditorWorkspace.Design,
+            ""));
         var initialLoad = _workspaceCoordinator.BeginTreeLoad(
             Session.Workspace);
         if (!_workspaceCoordinator.TryCommitTreeLoad(
@@ -525,9 +524,6 @@ public partial class MainWindow : SukiWindow
         ProductionWorkspaceButton.Click += (_, _) => SetWorkspace(EditorWorkspace.Production);
         ProductionComboBox.SelectionChanged += (_, _) => SelectProductionFromPicker();
         UpdateWorkspaceButtons();
-        _variantHistory.RestoreState(_shellState.SessionHistory.VariantHistory);
-        _previewController.RestoreDesignHistoryState(_shellState.SessionHistory.DesignPreviewHistory);
-        _previewController.RestoreProductionHistoryState(_shellState.SessionHistory.ProductionPreviewHistory);
         _previewController.SetWorkspaceWithoutRefresh(Session.Workspace);
         _themeController.SetState(_shellState.IsDark, _shellState.SukiColor);
         EditorUiDensity.Configure(_shellState.UiTextScale, _shellState.UiCardPaddingScale);
@@ -585,9 +581,7 @@ public partial class MainWindow : SukiWindow
             return;
         }
         _sessionDisposed = true;
-        _shellState.Save(
-            CreateSessionHistoryState(),
-            _navigationPanel.Snapshot());
+        _shellState.Save(_navigationPanel.Snapshot());
         _productionNavigationActions.Dispose();
         _previewControlsDock.Dispose();
         _screenTimeline.Dispose();
@@ -697,7 +691,6 @@ public partial class MainWindow : SukiWindow
         EditorSessionTransition transition)
     {
         _treeExpansion.EnsureInitial(transition.Current.TreeRoots);
-        ApplyPersistedContext(transition);
         if (transition.Current.SelectedNode is { } selected)
         {
             _treeExpansion.ExpandAncestors(selected);
@@ -1370,7 +1363,6 @@ public partial class MainWindow : SukiWindow
             return;
         }
         _treeExpansion.EnsureInitial(transition.Current.TreeRoots);
-        ApplyPersistedContext(transition);
         var refreshedOwner = transition.Current.SelectedNode;
         if (refreshedOwner is null
             || !refreshedOwner.Id.Equals(
@@ -1551,8 +1543,6 @@ public partial class MainWindow : SukiWindow
         }
 
         _navigationPanel.EnsureVisible();
-        ApplyPersistedContext(
-            transition);
         if (transition.Effects.HasFlag(
                 EditorSessionEffects.Workspace))
         {
@@ -1757,7 +1747,6 @@ public partial class MainWindow : SukiWindow
         {
             return false;
         }
-        ApplyPersistedContext(transition);
         if (transition.Effects.HasFlag(EditorSessionEffects.Workspace))
         {
             _previewController.SetWorkspaceWithoutRefresh(workspace);
@@ -1824,7 +1813,6 @@ public partial class MainWindow : SukiWindow
         {
             return;
         }
-        ApplyPersistedContext(transition);
         _previewController.SetWorkspaceWithoutRefresh(workspace);
         UpdateWorkspaceButtons();
         transaction.Checkpoint("workspace-state-ready");
@@ -1857,18 +1845,6 @@ public partial class MainWindow : SukiWindow
             EditorCardsPanel,
             DesignPreviewHost,
             _previewController.NativeHostLifecycleState);
-    }
-
-    private void ApplyPersistedContext(EditorSessionTransition transition)
-    {
-        if (transition.Effects.HasFlag(EditorSessionEffects.Workspace))
-        {
-            _shellState.SetWorkspace(transition.Current.Workspace);
-        }
-        if (transition.Effects.HasFlag(EditorSessionEffects.Production))
-        {
-            _shellState.SetProductionId(transition.Current.ProductionId);
-        }
     }
 
     private void UpdateWorkspaceButtons()
@@ -1937,7 +1913,6 @@ public partial class MainWindow : SukiWindow
                 "production",
                 out var transition))
         {
-            ApplyPersistedContext(transition);
             if (transition.Effects.HasFlag(EditorSessionEffects.Workspace))
             {
                 _previewController.SetWorkspaceWithoutRefresh(
@@ -2001,22 +1976,6 @@ public partial class MainWindow : SukiWindow
         button.Background = Brushes.Transparent;
         button.BorderBrush = Brushes.Transparent;
         button.BorderThickness = new Thickness(0);
-    }
-
-    private EditorSessionHistoryState CreateSessionHistoryState()
-    {
-        return new EditorSessionHistoryState
-        {
-            VariantHistory = _variantHistory.ExportState(),
-            DesignPreviewHistory = _previewController.ExportDesignHistoryState().ToList(),
-            ProductionPreviewHistory = _previewController.ExportProductionHistoryState().ToList(),
-            LastComponentVariantSelections = Session.VariantSelections
-                .ComponentVariantNodeIds
-                .ToDictionary(
-                (entry) => entry.Key,
-                (entry) => entry.Value,
-                StringComparer.Ordinal),
-        };
     }
 
 }

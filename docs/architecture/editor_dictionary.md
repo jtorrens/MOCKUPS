@@ -233,6 +233,13 @@ current session. A new application session starts with cards closed. Preview
 history and Variant selection never overwrite this state, and it is not stored
 in `data/window-state.json`.
 
+`data/window-state.json` is the exact `mockups_shell_window_state` version 1
+document. It stores only window geometry, the three panel widths, Navigation
+collapse, Suki appearance and UI density. Workspace, Production, selection,
+Preview history, Variant history and editor view memory are never members of
+that document. Missing, additional or invalid properties fail the current
+reader; normal startup never interprets an earlier or partial shape.
+
 ## Shared input interaction
 
 Desktop text inputs preserve native mouse, touch and keyboard behavior. The

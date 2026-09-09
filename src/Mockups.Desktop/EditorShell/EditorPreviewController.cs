@@ -798,60 +798,6 @@ internal sealed class EditorPreviewController : IDisposable
         history.Insert(0, entry);
     }
 
-    public IReadOnlyList<EditorDesignPreviewHistoryEntryState> ExportDesignHistoryState()
-    {
-        return _designHistory.Select((entry) => new EditorDesignPreviewHistoryEntryState
-        {
-            Kind = entry.Key.Kind,
-            Id = entry.Key.Id,
-            Name = entry.Name,
-        }).ToList();
-    }
-
-    public void RestoreDesignHistoryState(IReadOnlyList<EditorDesignPreviewHistoryEntryState>? entries)
-    {
-        _designHistory.Clear();
-        if (entries is null)
-        {
-            RefreshDesignContextHistoryChrome();
-            return;
-        }
-
-        foreach (var entry in entries
-                     .Where((entry) => !string.IsNullOrWhiteSpace(entry.Id))
-                     .Take(10))
-        {
-            var key = new PreviewNodeKey(entry.Kind, entry.Id);
-            _designHistory.Add(new DesignPreviewHistoryEntry(
-                key,
-                string.IsNullOrWhiteSpace(entry.Name) ? entry.Id : entry.Name));
-        }
-        RefreshDesignContextHistoryChrome();
-    }
-
-    public IReadOnlyList<EditorDesignPreviewHistoryEntryState> ExportProductionHistoryState() =>
-        _productionHistory.Select((entry) => new EditorDesignPreviewHistoryEntryState
-        {
-            Kind = entry.Key.Kind,
-            Id = entry.Key.Id,
-            Name = entry.Name,
-        }).ToList();
-
-    public void RestoreProductionHistoryState(IReadOnlyList<EditorDesignPreviewHistoryEntryState>? entries)
-    {
-        _productionHistory.Clear();
-        foreach (var entry in entries ?? [])
-        {
-            if (entry.Kind is not ProjectTreeNodeKind.Shot and not ProjectTreeNodeKind.ModuleInstance
-                || string.IsNullOrWhiteSpace(entry.Id)) continue;
-            _productionHistory.Add(new DesignPreviewHistoryEntry(
-                new PreviewNodeKey(entry.Kind, entry.Id),
-                string.IsNullOrWhiteSpace(entry.Name) ? entry.Id : entry.Name));
-            if (_productionHistory.Count == 10) break;
-        }
-        RefreshDesignContextHistoryChrome();
-    }
-
     public void SetWorkspace(EditorWorkspace workspace)
     {
         SetWorkspace(workspace, refresh: true);

@@ -97,3 +97,37 @@ test("retired validation rejects completed maintenance scripts", () => {
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("retired validation rejects historical Restore and shell session persistence", () => {
+  const root = mkdtempSync(path.join(tmpdir(), "mockups-retired-state-contract-"));
+  try {
+    writeFileSync(path.join(root, "package.json"), "{\"scripts\":{}}\n", "utf8");
+    const restore = "src/Mockups.Desktop.Host/BackupHubRestoreService.cs";
+    const shell = "src/Mockups.Desktop/EditorShell/EditorShellStateService.cs";
+    mkdirSync(path.dirname(path.join(root, restore)), { recursive: true });
+    mkdirSync(path.dirname(path.join(root, shell)), { recursive: true });
+    writeFileSync(
+      path.join(root, restore),
+      "const string Retired = \"restore-retired-v1-processing\";\n",
+      "utf8",
+    );
+    writeFileSync(
+      path.join(root, shell),
+      "public object SessionHistory { get; init; }\n",
+      "utf8",
+    );
+    const context = createArchitectureValidationContext(root);
+    checkRetiredContracts(context);
+    assert.equal(
+      context.violations.some((violation) =>
+        violation.includes("restore-retired-v1-processing")),
+      true,
+    );
+    assert.equal(
+      context.violations.some((violation) => violation.includes("SessionHistory")),
+      true,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

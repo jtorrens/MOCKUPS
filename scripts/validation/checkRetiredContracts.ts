@@ -18,6 +18,7 @@ export const retiredPaths = [
   "scripts/icon-themes/_licenses/material-symbols-svg-200-apache-2.0.txt",
   "scripts/migratePaletteColorReferencesToIds.mjs",
   "spikes/desktop-editor-shell",
+  "src/Mockups.Desktop/EditorShell/EditorSessionHistoryState.cs",
   "src/debug-server",
   "src/debug-ui",
   "src/domain",
@@ -45,6 +46,33 @@ export function checkRetiredContracts(
         retiredPath,
         "retired architecture path must not return",
       );
+    }
+  }
+
+  const retiredSourceTerms = [
+    {
+      path: "src/Mockups.Desktop.Host/BackupHubRestoreService.cs",
+      terms: ["restore-retired-v1-processing"],
+    },
+    {
+      path: "src/Mockups.Desktop/EditorShell/EditorShellStateService.cs",
+      terms: ["SessionHistory", "ProductionId", "Workspace"],
+    },
+    {
+      path: "src/Mockups.Desktop/MainWindow.axaml.cs",
+      terms: ["CreateSessionHistoryState"],
+    },
+  ] as const;
+  for (const entry of retiredSourceTerms) {
+    if (!repositoryFileExists(context, entry.path)) continue;
+    const source = context.readText(entry.path);
+    for (const term of entry.terms) {
+      if (source.includes(term)) {
+        context.addViolation(
+          entry.path,
+          `retired persistence path '${term}' must not return`,
+        );
+      }
     }
   }
 
