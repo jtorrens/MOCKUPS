@@ -227,10 +227,9 @@ export function resolveBubbleComponent(
     "showIconRow",
     "component.bubble.iconRow.showIconRow",
   );
-  const iconRowBoundary = exactChildBoundary(
+  const iconRowBoundary = singleChildBoundary(
     preview,
     "iconRowRuntime",
-    "iconRow",
   );
   const iconRowSlot = requiredRecord(
     iconRowBoundary,
@@ -612,7 +611,7 @@ function validateBubbleRuntimeDocument(preview: Record<string, unknown>) {
   requiredNumber(preview, "controlsElapsedMs", "component.bubble.input.controlsElapsedMs");
   requiredNumber(preview, "motionElapsedMs", "component.bubble.input.motionElapsedMs");
   requiredBoolean(preview, "showIconRow", "component.bubble.input.showIconRow");
-  const iconRowBoundary = exactChildBoundary(preview, "iconRowRuntime", "iconRow");
+  const iconRowBoundary = singleChildBoundary(preview, "iconRowRuntime");
   requiredRecord(
     iconRowBoundary,
     "iconRowSlot",
@@ -625,10 +624,9 @@ function validateBubbleRuntimeDocument(preview: Record<string, unknown>) {
   );
 }
 
-function exactChildBoundary(
+function singleChildBoundary(
   preview: Record<string, unknown>,
   collectionKey: string,
-  expectedId: string,
 ) {
   const items = requiredObjectArray(
     preview,
@@ -639,14 +637,11 @@ function exactChildBoundary(
     throw new Error(`component.bubble input '${collectionKey}' requires exactly one item`);
   }
   const item = items[0]!;
-  const id = requiredString(
+  requiredString(
     item,
     "id",
     `component.bubble.input.${collectionKey}[0].id`,
   );
-  if (id !== expectedId) {
-    throw new Error(`component.bubble input '${collectionKey}' requires id '${expectedId}'`);
-  }
   return item;
 }
 
