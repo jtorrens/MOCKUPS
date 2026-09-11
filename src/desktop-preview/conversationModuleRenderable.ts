@@ -274,6 +274,7 @@ function messageNodes(
           fullframeOrientation: message.fullframeOrientation,
           controlsElapsedMs: message.controlsElapsedMs,
           motionElapsedMs: message.fullScreenMotionElapsedMs,
+          iconRowRuntime: message.iconRowRuntime,
           maxWidth: optionalNumber(conversation, "bubbleMaxWidth", 66),
           textSizeToken: message.isTypingIndicator ? timing.typingIndicatorSizeToken : undefined,
           textAnimationMode: message.isTypingIndicator ? timing.typingIndicatorAnimation : undefined,

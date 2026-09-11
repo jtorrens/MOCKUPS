@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "intent": {
     "responsibility": "Own the complete current Component configuration and its exact Runtime Input contract.",
-    "visualBoundary": "Resolve the Component through its manifest-declared resolver and renderable boundary.",
-    "runtimeBehavior": "Consume only declared Runtime Inputs and explicit embedded Component boundaries.",
+    "visualBoundary": "Resolve Surface, Text Box, optional media, the optional centered Icon Row and Status in that exact content order through manifest-declared owners.",
+    "runtimeBehavior": "Forward the complete nested Icon Row Runtime contract while keeping Icon Row structure Variant-owned.",
     "forwarding": "Forward values only through declared stable source and target identities.",
     "temporalOwnership": "Keep reusable behavior relative to the Component owner and its declared child owners."
   },
@@ -26,7 +26,8 @@
       "media",
       "audio",
       "label",
-      "avatar"
+      "avatar",
+      "iconRow"
     ]
   },
   "owners": {
@@ -152,7 +153,14 @@
         "sizeToken": "theme.iconSizes.s",
         "textSizeToken": "theme.iconSizes.s",
         "gapToken": "theme.spacing.xs"
-      }
+      },
+      "iconRowChildCount": 1,
+      "iconRowSlot": {
+        "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+        "overrides": {}
+      },
+      "iconRowGapToken": "theme.spacing.s",
+      "showIconRow": false
     }
   },
   "defaultVariant": {
@@ -275,7 +283,14 @@
           "sizeToken": "theme.iconSizes.s",
           "textSizeToken": "theme.iconSizes.s",
           "gapToken": "theme.spacing.xs"
-        }
+        },
+        "iconRowChildCount": 1,
+        "iconRowSlot": {
+          "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+          "overrides": {}
+        },
+        "iconRowGapToken": "theme.spacing.s",
+        "showIconRow": false
       }
     }
   },
@@ -449,14 +464,21 @@
             "sizeToken": "theme.iconSizes.s",
             "textSizeToken": "theme.iconSizes.xs",
             "gapToken": "theme.spacing.xs"
-          }
+          },
+          "iconRowChildCount": 1,
+          "iconRowSlot": {
+            "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+            "overrides": {}
+          },
+          "iconRowGapToken": "theme.spacing.s",
+          "showIconRow": false
         }
       }
     }
   ],
   "designPreview": {
     "componentType": "bubble",
-    "sampleText": "Mensaje de prueba \uD83D\uDE0E \uD83D\uDE0E\uD83D\uDE0D \ncon salto y wrap en la tercera l\u00EDnea de 123",
+    "sampleText": "Mensaje de prueba 😎 😎😍 \ncon salto y wrap en la tercera línea de 123",
     "sampleSubtext": "",
     "sampleSize": 256,
     "inputs": [
@@ -1252,7 +1274,612 @@
     "actorId": "",
     "mediaType": "image",
     "motionElapsedMs": 0,
-    "collections": []
+    "collections": [
+      {
+        "id": "iconRowRuntime",
+        "label": "Icon Row",
+        "jsonKey": "iconRowRuntime",
+        "itemLabel": "Icon Row",
+        "fields": [],
+        "itemRuntimeContractJsonKey": "runtimeInputs",
+        "fixedCountPath": "bubble.iconRowChildCount",
+        "canEditStructure": false,
+        "uiPresentation": "itemSections",
+        "itemRuntimePresentation": "sections",
+        "itemRuntimeVariantReferencePath": "bubble.iconRowSlot.variantReference"
+      }
+    ],
+    "iconRowRuntime": [
+      {
+        "id": "iconRow",
+        "runtimeInputs": {
+          "componentType": "iconRow",
+          "sampleText": "Sample",
+          "sampleSubtext": "",
+          "sampleSize": 256,
+          "inputs": [
+            {
+              "id": "buttonInputs",
+              "label": "Buttons",
+              "jsonKey": "buttonInputs",
+              "kind": "collection",
+              "valueKind": "StructuredCollection",
+              "defaultValue": "[{\"id\":\"button_001\",\"state\":\"normal\",\"sampleText\":\"\",\"iconToken\":\"system_check\",\"iconSizeToken\":\"theme.iconSizes.m\",\"textSizeToken\":\"theme.typography.sizes.s\",\"showBadge\":false,\"badgeContentMode\":\"text\",\"badgeIconToken\":\"system_check\",\"badgeText\":\"1\",\"badgeSize\":20,\"badgeBackgroundPaletteColor\":\"palette_project_foqn_s2_blue\",\"badgeContentPaletteColor\":\"palette_project_foqn_s2_gray_100\",\"iconColorToken\":\"theme.colors.icon\",\"textColorToken\":\"theme.colors.textPrimary\"}]",
+              "minimum": 0,
+              "maximum": 9999,
+              "increment": 1,
+              "tableId": "",
+              "resolvedJsonKey": "",
+              "componentType": "",
+              "options": [],
+              "pairFirstLabel": "W",
+              "pairSecondLabel": "H",
+              "visibleWhenPath": "",
+              "visibleWhenValue": "",
+              "source": "runtime",
+              "uiOrigin": "self",
+              "uiGroupId": "",
+              "uiGroupLabel": "",
+              "uiParentGroupId": "",
+              "transition": null,
+              "unit": "",
+              "structuredCollection": {
+                "id": "buttonInputs",
+                "label": "Buttons",
+                "jsonKey": "buttonInputs",
+                "itemLabel": "Button",
+                "fields": [
+                  {
+                    "id": "state",
+                    "label": "State",
+                    "jsonKey": "state",
+                    "kind": "option",
+                    "valueKind": "OptionToken",
+                    "defaultValue": "normal",
+                    "minimum": 0,
+                    "maximum": 9999,
+                    "increment": 1,
+                    "tableId": "",
+                    "resolvedJsonKey": "",
+                    "componentType": "",
+                    "options": [
+                      {
+                        "value": "normal",
+                        "label": "Normal"
+                      },
+                      {
+                        "value": "active",
+                        "label": "Active"
+                      },
+                      {
+                        "value": "pushed",
+                        "label": "Pushed"
+                      },
+                      {
+                        "value": "disabled",
+                        "label": "Disabled"
+                      }
+                    ],
+                    "pairFirstLabel": "W",
+                    "pairSecondLabel": "H",
+                    "visibleWhenPath": "",
+                    "visibleWhenValue": "",
+                    "source": "runtime",
+                    "uiOrigin": "embedded",
+                    "uiGroupId": "state",
+                    "uiGroupLabel": "State",
+                    "uiParentGroupId": "",
+                    "transition": null,
+                    "unit": "",
+                    "uiOrder": 10
+                  },
+                  {
+                    "id": "sampleText",
+                    "label": "Text",
+                    "jsonKey": "sampleText",
+                    "kind": "text",
+                    "valueKind": "StringSingleLine",
+                    "defaultValue": "Action",
+                    "minimum": 0,
+                    "maximum": 9999,
+                    "increment": 1,
+                    "tableId": "",
+                    "resolvedJsonKey": "",
+                    "componentType": "",
+                    "options": [],
+                    "pairFirstLabel": "W",
+                    "pairSecondLabel": "H",
+                    "visibleWhenPath": "",
+                    "visibleWhenValue": "",
+                    "source": "runtime",
+                    "uiOrigin": "embedded",
+                    "uiGroupId": "content",
+                    "uiGroupLabel": "Content",
+                    "uiParentGroupId": "",
+                    "transition": null,
+                    "unit": "",
+                    "uiOrder": 21
+                  },
+                  {
+                    "id": "iconToken",
+                    "label": "Icon",
+                    "jsonKey": "iconToken",
+                    "kind": "icon",
+                    "valueKind": "IconToken",
+                    "defaultValue": "media_play_fill",
+                    "minimum": 0,
+                    "maximum": 9999,
+                    "increment": 1,
+                    "tableId": "",
+                    "resolvedJsonKey": "",
+                    "componentType": "",
+                    "options": [],
+                    "pairFirstLabel": "W",
+                    "pairSecondLabel": "H",
+                    "visibleWhenPath": "",
+                    "visibleWhenValue": "",
+                    "source": "runtime",
+                    "uiOrigin": "embedded",
+                    "uiGroupId": "content",
+                    "uiGroupLabel": "Content",
+                    "uiParentGroupId": "",
+                    "transition": null,
+                    "unit": "",
+                    "uiOrder": 22
+                  },
+                  {
+                    "id": "iconSizeToken",
+                    "label": "Icon size",
+                    "jsonKey": "iconSizeToken",
+                    "kind": "themeToken",
+                    "valueKind": "ThemeToken",
+                    "defaultValue": "theme.iconSizes.m",
+                    "minimum": 0,
+                    "maximum": 9999,
+                    "increment": 1,
+                    "tableId": "",
+                    "resolvedJsonKey": "",
+                    "componentType": "",
+                    "options": [
+                      {
+                        "value": "theme.iconSizes.xs",
+                        "label": "iconSizes.xs"
+                      },
+                      {
+                        "value": "theme.iconSizes.s",
+                        "label": "iconSizes.s"
+                      },
+                      {
+                        "value": "theme.iconSizes.m",
+                        "label": "iconSizes.m"
+                      },
+                      {
+                        "value": "theme.iconSizes.l",
+                        "label": "iconSizes.l"
+                      },
+                      {
+                        "value": "theme.iconSizes.xl",
+                        "label": "iconSizes.xl"
+                      }
+                    ],
+                    "pairFirstLabel": "W",
+                    "pairSecondLabel": "H",
+                    "visibleWhenPath": "",
+                    "visibleWhenValue": "",
+                    "source": "runtime",
+                    "uiOrigin": "embedded",
+                    "uiGroupId": "content",
+                    "uiGroupLabel": "Content",
+                    "uiParentGroupId": "",
+                    "transition": null,
+                    "unit": "",
+                    "uiOrder": 23
+                  },
+                  {
+                    "id": "textSizeToken",
+                    "label": "Text size",
+                    "jsonKey": "textSizeToken",
+                    "kind": "themeToken",
+                    "valueKind": "ThemeToken",
+                    "defaultValue": "theme.typography.sizes.s",
+                    "minimum": 0,
+                    "maximum": 9999,
+                    "increment": 1,
+                    "tableId": "",
+                    "resolvedJsonKey": "",
+                    "componentType": "",
+                    "options": [
+                      {
+                        "value": "theme.typography.sizes.xs",
+                        "label": "typography.sizes.xs"
+                      },
+                      {
+                        "value": "theme.typography.sizes.s",
+                        "label": "typography.sizes.s"
+                      },
+                      {
+                        "value": "theme.typography.sizes.m",
+                        "label": "typography.sizes.m"
+                      },
+                      {
+                        "value": "theme.typography.sizes.l",
+                        "label": "typography.sizes.l"
+                      },
+                      {
+                        "value": "theme.typography.sizes.xl",
+                        "label": "typography.sizes.xl"
+                      }
+                    ],
+                    "pairFirstLabel": "W",
+                    "pairSecondLabel": "H",
+                    "visibleWhenPath": "",
+                    "visibleWhenValue": "",
+                    "source": "runtime",
+                    "uiOrigin": "embedded",
+                    "uiGroupId": "content",
+                    "uiGroupLabel": "Content",
+                    "uiParentGroupId": "",
+                    "transition": null,
+                    "unit": "",
+                    "uiOrder": 24
+                  },
+                  {
+                    "id": "pushTrigger",
+                    "label": "Push",
+                    "jsonKey": "pushTrigger",
+                    "kind": "boolean",
+                    "valueKind": "Boolean",
+                    "defaultValue": "false",
+                    "minimum": 0,
+                    "maximum": 9999,
+                    "increment": 1,
+                    "tableId": "",
+                    "resolvedJsonKey": "",
+                    "componentType": "",
+                    "options": [],
+                    "pairFirstLabel": "W",
+                    "pairSecondLabel": "H",
+                    "visibleWhenPath": "",
+                    "visibleWhenValue": "",
+                    "source": "calculated",
+                    "uiOrigin": "embedded",
+                    "uiGroupId": "action",
+                    "uiGroupLabel": "Action",
+                    "uiParentGroupId": "",
+                    "transition": null,
+                    "unit": "",
+                    "uiOrder": 30
+                  },
+                  {
+                    "id": "pushElapsedMs",
+                    "label": "Push elapsed",
+                    "jsonKey": "pushElapsedMs",
+                    "kind": "number",
+                    "valueKind": "Decimal",
+                    "defaultValue": "0",
+                    "minimum": 0,
+                    "maximum": 60000,
+                    "increment": 10,
+                    "tableId": "",
+                    "resolvedJsonKey": "",
+                    "componentType": "",
+                    "options": [],
+                    "pairFirstLabel": "W",
+                    "pairSecondLabel": "H",
+                    "visibleWhenPath": "",
+                    "visibleWhenValue": "",
+                    "source": "calculated",
+                    "uiOrigin": "embedded",
+                    "uiGroupId": "action",
+                    "uiGroupLabel": "Action",
+                    "uiParentGroupId": "",
+                    "transition": null,
+                    "unit": "ms",
+                    "uiOrder": 31
+                  },
+                  {
+                    "id": "showBadge",
+                    "label": "Show badge",
+                    "jsonKey": "showBadge",
+                    "kind": "boolean",
+                    "valueKind": "Boolean",
+                    "defaultValue": "false",
+                    "minimum": 0,
+                    "maximum": 9999,
+                    "increment": 1,
+                    "tableId": "",
+                    "resolvedJsonKey": "",
+                    "componentType": "",
+                    "options": [],
+                    "pairFirstLabel": "W",
+                    "pairSecondLabel": "H",
+                    "visibleWhenPath": "",
+                    "visibleWhenValue": "",
+                    "source": "runtime",
+                    "uiOrigin": "embedded",
+                    "uiGroupId": "badge",
+                    "uiGroupLabel": "Badge",
+                    "uiParentGroupId": "",
+                    "transition": null,
+                    "unit": "",
+                    "uiOrder": 40
+                  },
+                  {
+                    "id": "badgeContentMode",
+                    "label": "Badge content",
+                    "jsonKey": "badgeContentMode",
+                    "kind": "option",
+                    "valueKind": "OptionToken",
+                    "defaultValue": "icon",
+                    "minimum": 0,
+                    "maximum": 9999,
+                    "increment": 1,
+                    "tableId": "",
+                    "resolvedJsonKey": "",
+                    "componentType": "",
+                    "options": [
+                      {
+                        "value": "icon",
+                        "label": "Icon"
+                      },
+                      {
+                        "value": "text",
+                        "label": "Text"
+                      }
+                    ],
+                    "pairFirstLabel": "W",
+                    "pairSecondLabel": "H",
+                    "visibleWhenPath": "",
+                    "visibleWhenValue": "",
+                    "source": "runtime",
+                    "uiOrigin": "embedded",
+                    "uiGroupId": "badge",
+                    "uiGroupLabel": "Badge",
+                    "uiParentGroupId": "",
+                    "transition": null,
+                    "unit": "",
+                    "uiOrder": 41
+                  },
+                  {
+                    "id": "badgeIconToken",
+                    "label": "Badge icon",
+                    "jsonKey": "badgeIconToken",
+                    "kind": "icon",
+                    "valueKind": "IconToken",
+                    "defaultValue": "system_check",
+                    "minimum": 0,
+                    "maximum": 9999,
+                    "increment": 1,
+                    "tableId": "",
+                    "resolvedJsonKey": "",
+                    "componentType": "",
+                    "options": [],
+                    "pairFirstLabel": "W",
+                    "pairSecondLabel": "H",
+                    "visibleWhenPath": "",
+                    "visibleWhenValue": "",
+                    "source": "runtime",
+                    "uiOrigin": "embedded",
+                    "uiGroupId": "badge",
+                    "uiGroupLabel": "Badge",
+                    "uiParentGroupId": "",
+                    "transition": null,
+                    "unit": "",
+                    "uiOrder": 42
+                  },
+                  {
+                    "id": "badgeText",
+                    "label": "Badge text",
+                    "jsonKey": "badgeText",
+                    "kind": "text",
+                    "valueKind": "StringSingleLine",
+                    "defaultValue": "1",
+                    "minimum": 0,
+                    "maximum": 9999,
+                    "increment": 1,
+                    "tableId": "",
+                    "resolvedJsonKey": "",
+                    "componentType": "",
+                    "options": [],
+                    "pairFirstLabel": "W",
+                    "pairSecondLabel": "H",
+                    "visibleWhenPath": "",
+                    "visibleWhenValue": "",
+                    "source": "runtime",
+                    "uiOrigin": "embedded",
+                    "uiGroupId": "badge",
+                    "uiGroupLabel": "Badge",
+                    "uiParentGroupId": "",
+                    "transition": null,
+                    "unit": "",
+                    "uiOrder": 43
+                  },
+                  {
+                    "id": "badgeSize",
+                    "label": "Badge size",
+                    "jsonKey": "badgeSize",
+                    "kind": "number",
+                    "valueKind": "Integer",
+                    "defaultValue": "20",
+                    "minimum": 1,
+                    "maximum": 512,
+                    "increment": 1,
+                    "tableId": "",
+                    "resolvedJsonKey": "",
+                    "componentType": "",
+                    "options": [],
+                    "pairFirstLabel": "W",
+                    "pairSecondLabel": "H",
+                    "visibleWhenPath": "",
+                    "visibleWhenValue": "",
+                    "source": "runtime",
+                    "uiOrigin": "embedded",
+                    "uiGroupId": "badge",
+                    "uiGroupLabel": "Badge",
+                    "uiParentGroupId": "",
+                    "transition": null,
+                    "unit": "",
+                    "uiOrder": 44
+                  },
+                  {
+                    "id": "badgeBackgroundPaletteColor",
+                    "label": "Badge background",
+                    "jsonKey": "badgeBackgroundPaletteColor",
+                    "kind": "text",
+                    "valueKind": "PaletteColorToken",
+                    "defaultValue": "blue",
+                    "minimum": 0,
+                    "maximum": 9999,
+                    "increment": 1,
+                    "tableId": "",
+                    "resolvedJsonKey": "",
+                    "componentType": "",
+                    "options": [],
+                    "pairFirstLabel": "W",
+                    "pairSecondLabel": "H",
+                    "visibleWhenPath": "",
+                    "visibleWhenValue": "",
+                    "source": "runtime",
+                    "uiOrigin": "embedded",
+                    "uiGroupId": "badge",
+                    "uiGroupLabel": "Badge",
+                    "uiParentGroupId": "",
+                    "transition": null,
+                    "unit": "",
+                    "uiOrder": 45
+                  },
+                  {
+                    "id": "badgeContentPaletteColor",
+                    "label": "Badge icon / text color",
+                    "jsonKey": "badgeContentPaletteColor",
+                    "kind": "text",
+                    "valueKind": "PaletteColorToken",
+                    "defaultValue": "gray_100",
+                    "minimum": 0,
+                    "maximum": 9999,
+                    "increment": 1,
+                    "tableId": "",
+                    "resolvedJsonKey": "",
+                    "componentType": "",
+                    "options": [],
+                    "pairFirstLabel": "W",
+                    "pairSecondLabel": "H",
+                    "visibleWhenPath": "",
+                    "visibleWhenValue": "",
+                    "source": "runtime",
+                    "uiOrigin": "embedded",
+                    "uiGroupId": "badge",
+                    "uiGroupLabel": "Badge",
+                    "uiParentGroupId": "",
+                    "transition": null,
+                    "unit": "",
+                    "uiOrder": 46
+                  },
+                  {
+                    "id": "iconColorToken",
+                    "label": "Icon color",
+                    "jsonKey": "iconColorToken",
+                    "kind": "themeToken",
+                    "valueKind": "ThemeToken",
+                    "defaultValue": "theme.colors.icon",
+                    "minimum": 0,
+                    "maximum": 9999,
+                    "increment": 1,
+                    "tableId": "",
+                    "resolvedJsonKey": "",
+                    "componentType": "",
+                    "options": [],
+                    "pairFirstLabel": "W",
+                    "pairSecondLabel": "H",
+                    "visibleWhenPath": "",
+                    "visibleWhenValue": "",
+                    "source": "runtime",
+                    "uiOrigin": "self",
+                    "uiGroupId": "",
+                    "uiGroupLabel": "",
+                    "uiParentGroupId": "",
+                    "transition": null,
+                    "unit": "",
+                    "uiOrder": 22
+                  },
+                  {
+                    "id": "textColorToken",
+                    "label": "Text color",
+                    "jsonKey": "textColorToken",
+                    "kind": "themeToken",
+                    "valueKind": "ThemeToken",
+                    "defaultValue": "theme.colors.textPrimary",
+                    "minimum": 0,
+                    "maximum": 9999,
+                    "increment": 1,
+                    "tableId": "",
+                    "resolvedJsonKey": "",
+                    "componentType": "",
+                    "options": [],
+                    "pairFirstLabel": "W",
+                    "pairSecondLabel": "H",
+                    "visibleWhenPath": "",
+                    "visibleWhenValue": "",
+                    "source": "runtime",
+                    "uiOrigin": "self",
+                    "uiGroupId": "",
+                    "uiGroupLabel": "",
+                    "uiParentGroupId": "",
+                    "transition": null,
+                    "unit": "",
+                    "uiOrder": 22
+                  }
+                ],
+                "itemPresentation": {
+                  "subtitleFieldIds": [
+                    "sampleText",
+                    "iconToken",
+                    "state"
+                  ],
+                  "subtitleMaxCharacters": 72,
+                  "fallbackIcon": "component"
+                },
+                "canEditStructure": false,
+                "structureProjection": {
+                  "sourceConfigPath": "iconRow.items",
+                  "sourceIdJsonKey": "id",
+                  "runtimeIdJsonKey": "id",
+                  "fieldBindings": {
+                    "state": "state",
+                    "sampleText": "text",
+                    "iconToken": "iconToken",
+                    "iconSizeToken": "iconSizeToken",
+                    "textSizeToken": "textSizeToken"
+                  }
+                }
+              },
+              "uiOrder": 10
+            }
+          ],
+          "buttonInputs": [
+            {
+              "id": "button_001",
+              "state": "normal",
+              "sampleText": "",
+              "iconToken": "system_check",
+              "iconSizeToken": "theme.iconSizes.m",
+              "textSizeToken": "theme.typography.sizes.s",
+              "showBadge": false,
+              "badgeContentMode": "text",
+              "badgeIconToken": "system_check",
+              "badgeText": "1",
+              "badgeSize": 20,
+              "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
+              "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
+              "iconColorToken": "theme.colors.icon",
+              "textColorToken": "theme.colors.textPrimary"
+            }
+          ],
+          "collections": [],
+          "actions": []
+        }
+      }
+    ]
   },
   "metadata": {
     "note": "Seeded reusable component class."
@@ -1296,7 +1923,7 @@
         "actorLabelSlot",
         "placement"
       ],
-      "defaultValue": "{\u0022mode\u0022:\u0022outsideEdge\u0022,\u0022alignX\u0022:0.5,\u0022alignY\u0022:0,\u0022offsetX\u0022:0,\u0022offsetY\u0022:-4}",
+      "defaultValue": "{\"mode\":\"outsideEdge\",\"alignX\":0.5,\"alignY\":0,\"offsetX\":0,\"offsetY\":-4}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
@@ -1397,7 +2024,7 @@
         "avatarSlot",
         "placement"
       ],
-      "defaultValue": "{\u0022mode\u0022:\u0022outsideEdge\u0022,\u0022alignX\u0022:0,\u0022alignY\u0022:1,\u0022offsetX\u0022:-8,\u0022offsetY\u0022:0}",
+      "defaultValue": "{\"mode\":\"outsideEdge\",\"alignX\":0,\"alignY\":1,\"offsetX\":-8,\"offsetY\":0}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
@@ -1444,6 +2071,186 @@
         "bubble",
         "avatarSlot",
         "showAvatar"
+      ],
+      "defaultValue": "false",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.bubble.dimensionMode",
+      "label": "Dimension mode",
+      "valueKind": "OptionToken",
+      "jsonPath": [
+        "bubble",
+        "dimensionMode"
+      ],
+      "defaultValue": "content",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "content",
+          "label": "Content + padding",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "fixed",
+          "label": "Fixed size",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.bubble.iconRow.editor",
+      "label": "Icon row",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "bubble",
+        "iconRowSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_iconRow::variant::default\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "iconRow",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "iconRow",
+        "label": "Icon row",
+        "recordClassId": "component.iconRow",
+        "allowRuntimeInputForwarding": true
+      }
+    },
+    {
+      "id": "component.bubble.iconRow.gap",
+      "label": "Content gap",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "bubble",
+        "iconRowGapToken"
+      ],
+      "defaultValue": "theme.spacing.s",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xl",
+          "label": "spacing.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xxl",
+          "label": "spacing.xxl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.bubble.iconRow.showIconRow",
+      "label": "Show icon row",
+      "valueKind": "Boolean",
+      "jsonPath": [
+        "bubble",
+        "showIconRow"
       ],
       "defaultValue": "false",
       "isEditable": true,
@@ -1862,48 +2669,6 @@
         "first": "Light",
         "second": "Dark"
       },
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "component.bubble.dimensionMode",
-      "label": "Dimension mode",
-      "valueKind": "OptionToken",
-      "jsonPath": [
-        "bubble",
-        "dimensionMode"
-      ],
-      "defaultValue": "content",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "content",
-          "label": "Content + padding",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "fixed",
-          "label": "Fixed size",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        }
-      ],
-      "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
@@ -3820,11 +4585,53 @@
         ]
       },
       {
+        "id": "bubbleIconRow",
+        "label": "Icon Row",
+        "subtitle": "Optional actions below text or media",
+        "icon": "component",
+        "order": 90,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "bubbleIconRow",
+            "label": "Icon Row",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.bubble.iconRow.showIconRow",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.bubble.iconRow.editor",
+                "order": 20,
+                "visible": true,
+                "visibleWhenFieldId": "component.bubble.iconRow.showIconRow",
+                "visibleWhenValues": [
+                  "true"
+                ]
+              },
+              {
+                "id": "component.bubble.iconRow.gap",
+                "order": 30,
+                "visible": true,
+                "visibleWhenFieldId": "component.bubble.iconRow.showIconRow",
+                "visibleWhenValues": [
+                  "true"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
         "id": "bubbleStatus",
         "label": "Status",
         "subtitle": "Message status text and state icons",
         "icon": "status",
-        "order": 90,
+        "order": 100,
         "visible": true,
         "defaultOpen": false,
         "groupLayout": "separatedSections",

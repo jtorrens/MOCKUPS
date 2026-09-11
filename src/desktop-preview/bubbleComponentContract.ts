@@ -5,6 +5,7 @@ import type {
 import type { AudioDesignContract } from "./audioComponentContract.js";
 import type { AvatarDesignContract } from "./avatarComponentContract.js";
 import type { LabelDesignContract } from "./labelComponentContract.js";
+import type { IconRowDesignContract } from "./iconRowComponentContract.js";
 import type { MediaDesignContract } from "./mediaComponentContract.js";
 import type { SurfaceDesignContract } from "./surfaceComponentContract.js";
 import type { TextBoxDesignContract } from "./textBoxComponentContract.js";
@@ -46,6 +47,12 @@ export interface BubbleMediaSlotContract {
   audio?: AudioDesignContract;
 }
 
+export interface BubbleIconRowSlotContract {
+  showIconRow: boolean;
+  gapToken: string;
+  iconRow?: IconRowDesignContract;
+}
+
 export interface BubbleStatusIconContract {
   iconToken: string;
   colorToken: string;
@@ -69,6 +76,7 @@ export interface BubbleDesignContract {
   surface: SurfaceDesignContract;
   textBox: TextBoxDesignContract;
   mediaSlot: BubbleMediaSlotContract;
+  iconRowSlot: BubbleIconRowSlotContract;
   actorLabelSlot: BubbleActorLabelSlotContract;
   avatarSlot: BubbleAvatarSlotContract;
   status: BubbleStatusContract;

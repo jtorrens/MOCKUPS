@@ -39,6 +39,11 @@ import {
   mediaComponentToRenderableAt,
 } from "./mediaComponentRenderable.js";
 import {
+  iconRowAssignedSize,
+  iconRowComponentToRenderableAt,
+  measureIconRowComponent,
+} from "./iconRowComponentRenderable.js";
+import {
   surfaceComponentToRenderableAtWithColors,
   type SurfaceColorOverride,
 } from "./surfaceComponentRenderable.js";
@@ -86,7 +91,24 @@ export function bubbleComponentToRenderable(
       ? measureAudioComponent(payload, media.value)
       : measureMediaComponent(payload, media.value)
     : undefined;
+  const iconRow = bubble.iconRowSlot.iconRow;
+  const intrinsicIconRowSize = iconRow
+    ? measureIconRowComponent(payload, iconRow)
+    : undefined;
+  const iconRowSize = iconRow && intrinsicIconRowSize
+    ? iconRowAssignedSize(
+        iconRow,
+        intrinsicIconRowSize,
+        {
+          x: 0,
+          y: 0,
+          width: Math.max(1, textBoxForContent.size.width * scale),
+          height: intrinsicIconRowSize.height,
+        },
+      )
+    : undefined;
   const statusGap = Math.max(0, numberToken(payload, bubble.status.gapToken) * scale);
+  const iconRowGap = Math.max(0, numberToken(payload, bubble.iconRowSlot.gapToken) * scale);
   let measuredTextBox = measureTextBoxComponent(payload, textBoxForContent);
   if (!fixed && mediaSize
       && (bubble.mediaSlot.position === "top" || bubble.mediaSlot.position === "bottom")
@@ -101,7 +123,7 @@ export function bubbleComponentToRenderable(
     };
     measuredTextBox = measureTextBoxComponent(payload, textBoxForContent);
   }
-  const inlineStatusWidth = statusSize && !mediaSize
+  const inlineStatusWidth = statusSize && !mediaSize && !iconRowSize
     ? inlineBubbleStatusWidth(
         measuredTextBox,
         statusSize.width,
@@ -121,10 +143,12 @@ export function bubbleComponentToRenderable(
     { width: measuredTextBox.width, height: measuredTextBox.height },
     statusSize,
     mediaSize,
+    iconRowSize,
     bubble.mediaSlot.position,
     basePadding,
     actorLabelSize?.width ?? 0,
     statusGap,
+    iconRowGap,
     inlineStatusWidth,
   );
   const baseSurfaceBox = {
@@ -196,10 +220,12 @@ export function bubbleComponentToRenderable(
     { width: measuredTextBox.width, height: measuredTextBox.height },
     statusSize,
     mediaSize,
+    iconRowSize,
     bubble.mediaSlot.position,
     contentPadding,
     Math.max(0, labelMinimumSurfaceWidth - contentPadding.left - contentPadding.right),
     statusGap,
+    iconRowGap,
     inlineStatusWidth,
     Math.max(0, avatarMinimumSurfaceSize.height - contentPadding.top - contentPadding.bottom),
   );
@@ -244,6 +270,9 @@ export function bubbleComponentToRenderable(
   const textBox = translateBox(contentLayout.textBox, origin);
   const mediaBox = contentLayout.mediaBox
     ? translateBox(contentLayout.mediaBox, origin)
+    : undefined;
+  const iconRowBox = contentLayout.iconRowBox
+    ? translateBox(contentLayout.iconRowBox, origin)
     : undefined;
   const statusBox = contentLayout.statusBox
     ? translateBox(contentLayout.statusBox, origin)
@@ -324,6 +353,20 @@ export function bubbleComponentToRenderable(
         ),
       ),
       ...(inlineMediaNode ? [inlineMediaNode] : []),
+      ...(iconRow && iconRowBox
+        ? [renderAuthoringSlot(
+            payload,
+            "component.bubble",
+            "component.bubble.iconRow.editor",
+            "component.iconRow",
+            "component.iconRow.items",
+            (slotPayload) => iconRowComponentToRenderableAt(
+              slotPayload,
+              iconRow,
+              iconRowBox,
+            ),
+          )]
+        : []),
       ...(statusBox
         ? [bubbleStatusToRenderable(payload, bubble, statusBox, textColor)]
         : []),
@@ -387,6 +430,7 @@ function bubbleContentLayout(
   textSize: { width: number; height: number },
   statusSize: { width: number; height: number } | undefined,
   mediaSize: { width: number; height: number } | undefined,
+  iconRowSize: { width: number; height: number } | undefined,
   position: BubbleDesignContract["mediaSlot"]["position"],
   padding: {
     left: number;
@@ -398,11 +442,21 @@ function bubbleContentLayout(
   },
   minimumContentWidth = 0,
   statusGap = 0,
+  iconRowGap = 0,
   inlineStatusWidth?: number,
   minimumContentHeight = 0,
 ) {
   const statusIsInline = statusSize !== undefined && inlineStatusWidth !== undefined;
   const statusBlockHeight = statusSize && !statusIsInline ? statusGap + statusSize.height : 0;
+  const iconRowBlockHeight = iconRowSize ? iconRowGap + iconRowSize.height : 0;
+  const iconRowBoxAt = (contentWidth: number, precedingHeight: number) => iconRowSize
+    ? {
+        x: padding.left + (contentWidth - iconRowSize.width) / 2,
+        y: padding.top + precedingHeight + iconRowGap,
+        width: iconRowSize.width,
+        height: iconRowSize.height,
+      }
+    : undefined;
   const textAndStatusBoxes = (
     textX: number,
     textY: number,
@@ -429,9 +483,14 @@ function bubbleContentLayout(
       minimumContentWidth,
       textSize.width,
       statusSize?.width ?? 0,
+      iconRowSize?.width ?? 0,
       inlineStatusWidth ?? 0,
     );
-    const height = Math.max(minimumContentHeight, textSize.height + statusBlockHeight);
+    const precedingHeight = textSize.height;
+    const height = Math.max(
+      minimumContentHeight,
+      precedingHeight + iconRowBlockHeight + statusBlockHeight,
+    );
     const boxes = textAndStatusBoxes(
       padding.left,
       padding.top,
@@ -445,6 +504,7 @@ function bubbleContentLayout(
       height,
       ...boxes,
       mediaBox: undefined,
+      iconRowBox: iconRowBoxAt(width, precedingHeight),
     };
   }
 
@@ -452,10 +512,17 @@ function bubbleContentLayout(
   const horizontalGap = padding.gapX;
   if (position === "top" || position === "bottom") {
     const mediaGap = verticalGap;
-    const width = Math.max(minimumContentWidth, textSize.width, statusSize?.width ?? 0, mediaSize.width);
+    const width = Math.max(
+      minimumContentWidth,
+      textSize.width,
+      statusSize?.width ?? 0,
+      mediaSize.width,
+      iconRowSize?.width ?? 0,
+    );
+    const precedingHeight = textSize.height + mediaGap + mediaSize.height;
     const height = Math.max(
       minimumContentHeight,
-      textSize.height + mediaGap + mediaSize.height + statusBlockHeight,
+      precedingHeight + iconRowBlockHeight + statusBlockHeight,
     );
     const textX = mediaSize.width > textSize.width
       ? padding.left
@@ -478,13 +545,22 @@ function bubbleContentLayout(
       height,
       ...boxes,
       mediaBox,
+      iconRowBox: iconRowBoxAt(width, precedingHeight),
     };
   }
 
   const rowWidth = textSize.width + horizontalGap + mediaSize.width;
-  const width = Math.max(minimumContentWidth, rowWidth, statusSize?.width ?? 0);
+  const width = Math.max(
+    minimumContentWidth,
+    rowWidth,
+    statusSize?.width ?? 0,
+    iconRowSize?.width ?? 0,
+  );
   const rowHeight = Math.max(textSize.height, mediaSize.height);
-  const height = Math.max(minimumContentHeight, rowHeight + statusBlockHeight);
+  const height = Math.max(
+    minimumContentHeight,
+    rowHeight + iconRowBlockHeight + statusBlockHeight,
+  );
   const textX = position === "left"
     ? padding.left + mediaSize.width + horizontalGap
     : padding.left;
@@ -502,6 +578,7 @@ function bubbleContentLayout(
     height,
     ...boxes,
     mediaBox,
+    iconRowBox: iconRowBoxAt(width, rowHeight),
   };
 }
 

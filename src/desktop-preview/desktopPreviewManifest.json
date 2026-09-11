@@ -337,7 +337,8 @@
         "media",
         "audio",
         "label",
-        "avatar"
+        "avatar",
+        "iconRow"
       ]
     },
     "status_bar": {

@@ -204,6 +204,15 @@ fields from their effective inherited values; the `inherited` marker is
 reserved for the commit path and is never supplied to Runtime-contract
 resolution.
 
+Bubble additionally owns one optional fixed Icon Row boundary. The boundary
+stores an exact Icon Row Variant, local Overrides, explicit visibility and a
+`theme.spacing.*` gap. When visible, it is centered in the Bubble content width
+and follows the complete text/media block: it appears below media when media is
+present and below text otherwise. Status is always laid out after that Icon Row
+and cannot remain inline with the text while the row is visible. Bubble receives
+and forwards the complete nested Icon Row Runtime contract; it never copies or
+renames Button Runtime fields.
+
 ## Content Rows
 
 A Module-owned Content Row collection item contains one stable id, one

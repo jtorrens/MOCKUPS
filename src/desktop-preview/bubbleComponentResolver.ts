@@ -28,12 +28,14 @@ import type {
 import { resolveAudioComponentFromRecords } from "./audioComponentResolver.js";
 import { resolveAvatarComponentFromRecords } from "./avatarComponentResolver.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
+import { resolveIconRowComponentFromRecords } from "./iconRowComponentResolver.js";
 import { literalLabelPreview, resolveLabelComponentFromRecords, staticLabelFrameContext } from "./labelComponentResolver.js";
 import { resolveMediaComponentFromRecords } from "./mediaComponentResolver.js";
 import { screenPercentToDesignWidth } from "./previewGeometryHelpers.js";
 import type { SurfaceDesignContract } from "./surfaceComponentContract.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
 import { resolveTextBoxComponentFromRecords } from "./textBoxComponentResolver.js";
+import { requiredObjectArray } from "./previewJsonHelpers.js";
 import {
   simpleWriteOnFrameInProgress,
   simpleWriteOnFrameText,
@@ -53,6 +55,7 @@ export function resolveBubbleComponent(
   const imageMediaSlot = requiredRecord(bubble, "imageMediaSlot", "component.bubble");
   const videoMediaSlot = requiredRecord(bubble, "videoMediaSlot", "component.bubble");
   const audioSlot = requiredRecord(bubble, "audioSlot", "component.bubble");
+  const iconRowSlot = requiredRecord(bubble, "iconRowSlot", "component.bubble");
   const actorLabelSlot = requiredRecord(bubble, "actorLabelSlot", "component.bubble");
   const avatarSlot = requiredRecord(bubble, "avatarSlot", "component.bubble");
   const status = requiredRecord(bubble, "status", "component.bubble");
@@ -220,6 +223,23 @@ export function resolveBubbleComponent(
     "component.bubble.textBox",
     payload,
   );
+  const showIconRow = requiredBoolean(
+    bubble,
+    "showIconRow",
+    "component.bubble.iconRow.showIconRow",
+  );
+  const iconRowConfig = embeddedComponentConfig(
+    componentBaseConfigs,
+    iconRowSlot,
+    "iconRow",
+    "component.bubble.iconRowSlot",
+  );
+  const resolvedIconRow = resolveIconRowComponentFromRecords(
+    iconRowConfig,
+    exactChildRuntime(preview, "iconRowRuntime", "iconRow"),
+    componentBaseConfigs,
+    "component.bubble.iconRow",
+  );
 
   return {
     id: "component.bubble",
@@ -280,6 +300,15 @@ export function resolveBubbleComponent(
             "component.bubble.audio",
           )
         : undefined,
+    },
+    iconRowSlot: {
+      showIconRow,
+      gapToken: requiredString(
+        bubble,
+        "iconRowGapToken",
+        "component.bubble.iconRowGapToken",
+      ),
+      iconRow: showIconRow ? resolvedIconRow : undefined,
     },
     actorLabelSlot: {
       showLabel: actorLabelVisible,
@@ -569,6 +598,36 @@ function validateBubbleRuntimeDocument(preview: Record<string, unknown>) {
   );
   requiredNumber(preview, "controlsElapsedMs", "component.bubble.input.controlsElapsedMs");
   requiredNumber(preview, "motionElapsedMs", "component.bubble.input.motionElapsedMs");
+  exactChildRuntime(preview, "iconRowRuntime", "iconRow");
+}
+
+function exactChildRuntime(
+  preview: Record<string, unknown>,
+  collectionKey: string,
+  expectedId: string,
+) {
+  const items = requiredObjectArray(
+    preview,
+    collectionKey,
+    `component.bubble.input.${collectionKey}`,
+  );
+  if (items.length !== 1) {
+    throw new Error(`component.bubble input '${collectionKey}' requires exactly one item`);
+  }
+  const item = items[0]!;
+  const id = requiredString(
+    item,
+    "id",
+    `component.bubble.input.${collectionKey}[0].id`,
+  );
+  if (id !== expectedId) {
+    throw new Error(`component.bubble input '${collectionKey}' requires id '${expectedId}'`);
+  }
+  return requiredRecord(
+    item,
+    "runtimeInputs",
+    `component.bubble.input.${collectionKey}[0].runtimeInputs`,
+  );
 }
 
 function defaultActorPreview(displayName: string) {

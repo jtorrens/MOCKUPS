@@ -219,6 +219,7 @@ internal static class SocialPostModuleConfigContract
                 "statusState",
                 "statusText",
                 "typingIndicator",
+                "iconRowRuntime",
             ],
             owner);
         RequireOneOf(JsonPath.RequiredString(inputs, "state", owner),
@@ -247,6 +248,7 @@ internal static class SocialPostModuleConfigContract
             ["none", "sent", "delivered", "read"], $"{owner}.statusState");
         JsonPath.RequiredString(inputs, "statusText", owner, allowEmpty: true);
         JsonPath.RequiredBoolean(inputs, "typingIndicator", owner);
+        JsonPath.RequiredArray(inputs, "iconRowRuntime", owner);
     }
 
     private static void ValidateSlot(JsonObject owner, string key, string context) =>

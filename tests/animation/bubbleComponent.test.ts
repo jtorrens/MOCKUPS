@@ -134,6 +134,7 @@ test("Bubble requires every field in its complete prepared Runtime snapshot", ()
     "fullframeOrientation",
     "controlsElapsedMs",
     "motionElapsedMs",
+    "iconRowRuntime",
   ];
   const source = committedComponentFixture("bubble");
   const complete = JSON.parse(source.designPreviewJson) as Record<string, unknown>;
@@ -405,6 +406,67 @@ test("Bubble requires an explicit Avatar text-space reservation choice", () => {
     () => resolveBubbleComponent(payload),
     /component\.bubble\.avatar\.reserveTextSpace/,
   );
+});
+
+test("Bubble centers its active Icon Row after content and before Status", () => {
+  for (const mediaPosition of ["top", "bottom", "left", "right"] as const) {
+    const payload = committedComponentFixture("bubble", "default_copy");
+    const config = JSON.parse(payload.configJson) as {
+      bubble: {
+        showIconRow: boolean;
+        mediaPosition: string;
+      };
+    };
+    config.bubble.showIconRow = true;
+    config.bubble.mediaPosition = mediaPosition;
+    payload.configJson = JSON.stringify(config);
+    const preview = JSON.parse(payload.designPreviewJson) as Record<string, unknown>;
+    Object.assign(preview, {
+      mediaType: "image",
+      statusState: "sent",
+      statusText: "10:42",
+      writeOnTrigger: false,
+      keepCursorAfterWrite: false,
+    });
+    payload.designPreviewJson = JSON.stringify(preview);
+
+    const rendered = bubbleComponentToRenderable(payload, resolveBubbleComponent(payload));
+    const surface = requiredNode(rendered, "component.bubble.surface").box!;
+    const text = requiredNode(rendered, "component.bubble.textBox").box!;
+    const media = requiredNode(rendered, "component.bubble.image").box!;
+    const iconRow = requiredNode(rendered, "component.bubble.iconRow").box!;
+    const status = requiredNode(rendered, "component.bubble.status").box!;
+
+    assert.ok(iconRow.y >= Math.max(text.y + text.height, media.y + media.height));
+    approximatelyEqual(
+      iconRow.x + iconRow.width / 2,
+      surface.x + surface.width / 2,
+    );
+    assert.ok(status.y >= iconRow.y + iconRow.height);
+  }
+});
+
+test("Bubble places its active Icon Row directly below text when media is absent", () => {
+  const payload = committedComponentFixture("bubble");
+  const config = JSON.parse(payload.configJson) as {
+    bubble: { showIconRow: boolean };
+  };
+  config.bubble.showIconRow = true;
+  payload.configJson = JSON.stringify(config);
+  const preview = JSON.parse(payload.designPreviewJson) as Record<string, unknown>;
+  Object.assign(preview, {
+    mediaType: "none",
+    statusState: "none",
+    statusText: "",
+    writeOnTrigger: false,
+    keepCursorAfterWrite: false,
+  });
+  payload.designPreviewJson = JSON.stringify(preview);
+
+  const rendered = bubbleComponentToRenderable(payload, resolveBubbleComponent(payload));
+  const text = requiredNode(rendered, "component.bubble.textBox").box!;
+  const iconRow = requiredNode(rendered, "component.bubble.iconRow").box!;
+  assert.ok(iconRow.y >= text.y + text.height);
 });
 
 function requiredNode(node: RenderableNode, id: string): RenderableNode {
