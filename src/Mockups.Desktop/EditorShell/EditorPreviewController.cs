@@ -434,6 +434,7 @@ internal sealed class EditorPreviewController : IDisposable
         _referenceVideoController;
     private Func<int, bool>? _stepScreenTimelineFrame;
     private Func<int, bool>? _moveToScreenTimelineNavigationFrame;
+    private Func<int, bool>? _nudgeScreenTimelineSelection;
 
     public EditorPreviewController(
         IPreviewInputRepository preview,
@@ -597,10 +598,12 @@ internal sealed class EditorPreviewController : IDisposable
 
     public void ConfigureScreenTimelineKeyboardNavigation(
         Func<int, bool> stepFrame,
-        Func<int, bool> moveToNavigationFrame)
+        Func<int, bool> moveToNavigationFrame,
+        Func<int, bool> nudgeSelection)
     {
         _stepScreenTimelineFrame = stepFrame;
         _moveToScreenTimelineNavigationFrame = moveToNavigationFrame;
+        _nudgeScreenTimelineSelection = nudgeSelection;
     }
 
     private void AddCurrentDesignContextToHistory()
@@ -2729,6 +2732,10 @@ internal sealed class EditorPreviewController : IDisposable
                 _moveToScreenTimelineNavigationFrame?.Invoke(-1) == true,
             Key.PageDown =>
                 _moveToScreenTimelineNavigationFrame?.Invoke(1) == true,
+            Key.OemComma =>
+                _nudgeScreenTimelineSelection?.Invoke(-1) == true,
+            Key.OemPeriod =>
+                _nudgeScreenTimelineSelection?.Invoke(1) == true,
             _ => false,
         };
         if (handled) args.Handled = true;
@@ -2745,6 +2752,8 @@ internal sealed class EditorPreviewController : IDisposable
             "ArrowRight" => _stepScreenTimelineFrame?.Invoke(1),
             "PageUp" => _moveToScreenTimelineNavigationFrame?.Invoke(-1),
             "PageDown" => _moveToScreenTimelineNavigationFrame?.Invoke(1),
+            "," => _nudgeScreenTimelineSelection?.Invoke(-1),
+            "." => _nudgeScreenTimelineSelection?.Invoke(1),
             _ => false,
         };
     }

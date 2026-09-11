@@ -216,6 +216,8 @@ internal sealed class ModuleInstanceAnimationEditor
             .ToList();
         var activeTrackCount = resolvedTargets.Count;
         var content = new StackPanel { Spacing = EditorUiDensity.Card(12) };
+        Func<int, bool>? tryNudgeSelectedKeyframe = null;
+        Action? clearKeyframeSelection = null;
         if (resolvedTargets.Count == 0)
         {
             content.Children.Add(new TextBlock
@@ -227,7 +229,7 @@ internal sealed class ModuleInstanceAnimationEditor
         }
         else
         {
-            content.Children.Add(CreateTimelineEditor(
+            var timelineEditor = CreateTimelineEditor(
                 node,
                 document,
                 resolvedTargets,
@@ -239,12 +241,19 @@ internal sealed class ModuleInstanceAnimationEditor
                 source.EffectiveContractJson,
                 snapshot,
                 ReadScopeTargets,
-                alignToScreenTimeline));
+                alignToScreenTimeline);
+            content.Children.Add(timelineEditor.Content);
+            tryNudgeSelectedKeyframe = timelineEditor.TryNudgeSelectedKeyframe;
+            clearKeyframeSelection = timelineEditor.ClearKeyframeSelection;
         }
-        return new AnimationTargetEditorContent(content, activeTrackCount);
+        return new AnimationTargetEditorContent(
+            content,
+            activeTrackCount,
+            tryNudgeSelectedKeyframe,
+            clearKeyframeSelection);
     }
 
-    private Control CreateTimelineEditor(
+    private AnimationTimelineEditorContent CreateTimelineEditor(
         ProjectTreeNode node,
         ModuleInstanceAnimationDocument document,
         List<ResolvedAnimationTarget> targets,
@@ -360,6 +369,7 @@ internal sealed class ModuleInstanceAnimationEditor
             timelineDuration - 1);
         int TimelineFrame() => Math.Clamp(currentFrame, 0, timelineDuration - 1);
         var selectionKey = $"{node.Id}:animation-properties:{scopeKey}";
+        var keyframeSelectionKey = $"{selectionKey}:keyframe";
         var selectedId = _sessionUiState.Selection(selectionKey);
         var selected = targets.FirstOrDefault((target) => TargetKey(target) == selectedId)
             ?? targets.FirstOrDefault((target) => target.Track is not null)
@@ -376,6 +386,7 @@ internal sealed class ModuleInstanceAnimationEditor
                 preparedSnapshot.Source.FrameRate);
         selectedId = TargetKey(selected);
         _sessionUiState.Select(selectionKey, selectedId);
+        var selectedKeyframeId = _sessionUiState.Selection(keyframeSelectionKey);
         var root = new StackPanel { Spacing = EditorUiDensity.Card(12) };
         var frameText = new TextBlock { VerticalAlignment = VerticalAlignment.Center };
         var authoringLimitText = new TextBlock
@@ -541,10 +552,18 @@ internal sealed class ModuleInstanceAnimationEditor
             timelineHost.Content = CreateMiniTimeline(
                 targets,
                 selected,
+                selectedKeyframeId,
                 TimelineFrame(),
                 timelineDuration,
                 usesOwnerTimeline,
                 SetFrame,
+                (target, keyframe) =>
+                {
+                    selected = target;
+                    selectedKeyframeId = keyframe.Id;
+                    _sessionUiState.Select(selectionKey, TargetKey(target));
+                    _sessionUiState.Select(keyframeSelectionKey, keyframe.Id);
+                },
                 (target, keyframe, destinationFrame) =>
                     SaveAndRefresh(
                         (candidate) =>
@@ -577,7 +596,9 @@ internal sealed class ModuleInstanceAnimationEditor
                 button.Click += (_, _) =>
                 {
                     selected = target;
+                    selectedKeyframeId = null;
                     _sessionUiState.Select(selectionKey, TargetKey(target));
+                    _sessionUiState.Select(keyframeSelectionKey, "");
                     RefreshVisuals();
                 };
                 trackList.Children.Add(button);
@@ -706,7 +727,53 @@ internal sealed class ModuleInstanceAnimationEditor
         }
         PreviewPlaybackStateBinding.Attach(root, _playbackState, OnPlaybackChanged);
         RefreshVisuals();
-        return root;
+        bool TryNudgeSelectedKeyframe(int delta)
+        {
+            if (string.IsNullOrWhiteSpace(selectedKeyframeId)) return false;
+            var target = targets.FirstOrDefault((candidate) =>
+                candidate.Track?.Keyframes.Any((keyframe) =>
+                    keyframe.Id == selectedKeyframeId) == true);
+            var keyframe = target?.Track?.Keyframes.FirstOrDefault(
+                (candidate) => candidate.Id == selectedKeyframeId);
+            if (target?.Track is null || keyframe is null)
+            {
+                selectedKeyframeId = null;
+                _sessionUiState.Select(keyframeSelectionKey, "");
+                return true;
+            }
+            if (keyframe.Frame == 0 || delta == 0) return true;
+            var destination = keyframe.Frame + delta;
+            var destinationTimelineFrame = MarkerTimelineFrame(
+                target,
+                keyframe with { Frame = destination });
+            var occupied = target.Track.Keyframes.Any((candidate) =>
+                candidate.Id != keyframe.Id
+                && candidate.Frame == destination);
+            if (destination <= 0
+                || destinationTimelineFrame < 0
+                || destinationTimelineFrame >= timelineDuration
+                || occupied)
+            {
+                return true;
+            }
+            SetFrame(destinationTimelineFrame);
+            _ = SaveAndRefresh((candidate) => candidate.TryMoveKeyframe(
+                target.Track.FieldId,
+                target.Track.TargetId,
+                keyframe.Frame,
+                destination));
+            return true;
+        }
+        void ClearKeyframeSelection()
+        {
+            selectedKeyframeId = null;
+            _sessionUiState.Select(keyframeSelectionKey, "");
+            RefreshVisuals();
+        }
+        return new AnimationTimelineEditorContent(
+            root,
+            TryNudgeSelectedKeyframe,
+            ClearKeyframeSelection);
     }
 
     private Control CreateTrackDetail(
@@ -954,10 +1021,12 @@ internal sealed class ModuleInstanceAnimationEditor
     private static Control CreateMiniTimeline(
         IReadOnlyList<ResolvedAnimationTarget> targets,
         ResolvedAnimationTarget active,
+        string? selectedKeyframeId,
         int currentTimelineFrame,
         int timelineDuration,
         bool usesOwnerTimeline,
         Action<int> setFrame,
+        Action<ResolvedAnimationTarget, AnimationKeyframeView> selectKeyframe,
         Func<
             ResolvedAnimationTarget,
             AnimationKeyframeView,
@@ -1027,9 +1096,12 @@ internal sealed class ModuleInstanceAnimationEditor
                         ?? timelineKeyframe;
                     var isActive = ReferenceEquals(target, active);
                     var isCurrent = timelineKeyframe == currentTimelineFrame;
+                    var isSelected = keyframe.Id == selectedKeyframeId;
                     var isProtected = keyframe.Frame == 0;
                     var markerBrush = isCurrent
                         ? EditorAnimationVisuals.CurrentKeyframeBrush
+                        : isSelected
+                            ? EditorAnimationVisuals.CurrentKeyframeBrush
                         : isActive
                             ? EditorAnimationVisuals.ActiveTrackBrush
                             : EditorAnimationVisuals.OtherKeyframeBrush;
@@ -1097,6 +1169,7 @@ internal sealed class ModuleInstanceAnimationEditor
                     marker.PointerPressed += (_, args) =>
                     {
                         if (!args.GetCurrentPoint(marker).Properties.IsLeftButtonPressed) return;
+                        selectKeyframe(target, keyframe);
                         if (!canDrag)
                         {
                             setFrame(timelineKeyframe);
@@ -1611,4 +1684,12 @@ internal sealed class ModuleInstanceAnimationEditor
     }
 }
 
-internal sealed record AnimationTargetEditorContent(Control Content, int ActiveTrackCount);
+internal sealed record AnimationTargetEditorContent(
+    Control Content,
+    int ActiveTrackCount,
+    Func<int, bool>? TryNudgeSelectedKeyframe = null,
+    Action? ClearKeyframeSelection = null);
+internal sealed record AnimationTimelineEditorContent(
+    Control Content,
+    Func<int, bool> TryNudgeSelectedKeyframe,
+    Action ClearKeyframeSelection);
