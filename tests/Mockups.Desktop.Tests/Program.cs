@@ -2181,7 +2181,17 @@ static void RuntimeInputDefaultsUseValueKindOwner()
     AssertRejectedDatabaseIsReadOnly("runtime-pair-label", (connection) =>
     {
         using var command = connection.CreateCommand();
-        command.CommandText = "UPDATE modules SET design_preview_json = json_remove(design_preview_json, '$.collections[0].fields[11].pairFirstLabel') WHERE id = 'module_core_chat'";
+        command.CommandText = """
+            UPDATE modules
+            SET design_preview_json = json_remove(
+                design_preview_json,
+                '$.collections[0].fields[' || (
+                    SELECT key
+                    FROM json_each(design_preview_json, '$.collections[0].fields')
+                    WHERE json_extract(value, '$.id') = 'viewport'
+                ) || '].pairFirstLabel')
+            WHERE id = 'module_core_chat'
+            """;
         command.ExecuteNonQuery();
     });
     AssertRejectedDatabaseIsReadOnly("runtime-component-variant-slot-string", (connection) =>
@@ -10315,7 +10325,20 @@ static void AssertRejectedDatabaseIsReadOnly(string fixture, Action<SqliteConnec
         }
 
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
-        Throws<InvalidOperationException>(() => _ = new SqliteProjectTestContext(temporary));
+        var rejected = false;
+        try
+        {
+            _ = new SqliteProjectTestContext(temporary);
+        }
+        catch (InvalidOperationException)
+        {
+            rejected = true;
+        }
+        if (!rejected)
+        {
+            throw new Exception(
+                $"Rejected database fixture '{fixture}' was accepted.");
+        }
         var after = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, after);
     }
@@ -20687,7 +20710,7 @@ static void AnimatableFieldVocabularyIsConstrained()
         .Where(field => field["animatable"]?.GetValue<bool>() == true)
         .Select(field => field["id"]!.GetValue<string>());
     SequenceEqual(new[] { "actor", "headerSubtitle" }, screenAnimated);
-    SequenceEqual(new[] { "direction", "text", "statusVisible", "status", "statusText", "isPlaying", "fullScreen", "keepCursorAfterWrite" }, messageAnimated);
+    SequenceEqual(new[] { "direction", "text", "keepCursorAfterWrite", "statusVisible", "status", "statusText", "isPlaying", "fullScreen", "showIconRow" }, messageAnimated);
     Equal(
         "ownerStart",
         screenFields.Single(field => field["id"]!.GetValue<string>() == "actor")["animationTimeline"]!["origin"]!["kind"]!.GetValue<string>());
@@ -20703,6 +20726,9 @@ static void AnimatableFieldVocabularyIsConstrained()
     Equal(
         "ownerStart",
         messageFields.Single(field => field["id"]!.GetValue<string>() == "direction")["animationTimeline"]!["origin"]!["kind"]!.GetValue<string>());
+    Equal(
+        "ownerStart",
+        messageFields.Single(field => field["id"]!.GetValue<string>() == "showIconRow")["animationTimeline"]!["origin"]!["kind"]!.GetValue<string>());
     foreach (var forbidden in new[] { "actor", "delay", "writeOn", "postWriteOnHold", "mediaSource" })
         True(messageFields.Single(field => field["id"]!.GetValue<string>() == forbidden)["animatable"] is null);
 }
@@ -22691,7 +22717,8 @@ static void SocialPostEditorExposesCurrentHeaderContract()
             True(!(messages.Text ?? "").Contains(
                 "Prepare editor",
                 StringComparison.Ordinal));
-            window.Hide();
+            window.Close();
+            Dispatcher.UIThread.RunJobs();
         }, CancellationToken.None).GetAwaiter().GetResult();
     }
     finally
@@ -23652,7 +23679,11 @@ static void SequenceEqual<T>(IEnumerable<T> expected, IEnumerable<T> actual)
     if (!expected.SequenceEqual(actual))
         throw new Exception($"Expected [{string.Join(", ", expected)}], received [{string.Join(", ", actual)}].");
 }
-static void Throws<TException>(Action action) where TException : Exception
+static void Throws<TException>(
+    Action action,
+    [CallerLineNumber] int callerLine = 0,
+    [CallerArgumentExpression(nameof(action))] string? expression = null)
+    where TException : Exception
 {
     try
     {
@@ -23662,7 +23693,8 @@ static void Throws<TException>(Action action) where TException : Exception
     {
         return;
     }
-    throw new Exception($"Expected {typeof(TException).Name}.");
+    throw new Exception(
+        $"Expected {typeof(TException).Name} at test source line {callerLine}: {expression}.");
 }
 
 internal sealed class RecordingMessageSink : IEditorShellMessageSink

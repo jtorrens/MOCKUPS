@@ -1116,7 +1116,7 @@ test("Conversation uses the same reflow timing after a message Out completes", (
 });
 
 test("a nested full-screen Media keeps the exact root Screen coordinates", () => {
-  const source = committedConversationPayload();
+  const source = committedConversationPayload(true);
   const runtime = JSON.parse(source.designPreviewJson) as Record<string, unknown>;
   const messageTemplate = (runtime.messages as Array<Record<string, unknown>>)[0]!;
   runtime.messages = [{

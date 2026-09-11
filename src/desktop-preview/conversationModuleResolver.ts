@@ -360,6 +360,7 @@ export function resolveConversationModuleFrame(
     message.statusVisible = resolve("statusVisible", message.statusVisible).value;
     message.statusState = resolve("status", message.statusState).value;
     message.statusText = resolve("statusText", message.statusText).value;
+    message.showIconRow = resolve("showIconRow", message.showIconRow).value;
     const playing = resolve("isPlaying", message.isPlaying);
     message.isPlaying = playing.value;
     if (playing.animated && playing.value === true && playing.sourceKeyframeFrame !== undefined) {

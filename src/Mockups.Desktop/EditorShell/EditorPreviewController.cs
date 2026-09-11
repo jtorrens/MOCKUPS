@@ -2708,17 +2708,28 @@ internal sealed class EditorPreviewController : IDisposable
 
     private void OnOwnerKeyDown(object? sender, KeyEventArgs args)
     {
-        if (args.Key != Key.Escape || !StopPreviewFromEscape())
+        if (args.Key == Key.Escape && StopPreviewFromEscape())
+        {
+            args.Handled = true;
+            return;
+        }
+
+        var isNudgeKey = args.Key is Key.OemComma or Key.OemPeriod;
+        if (!isNudgeKey && !_previewPanel.IsPointerOver)
         {
             return;
         }
 
-        args.Handled = true;
+        TryHandleTimelineNavigationKey(args);
     }
 
-    private void OnPreviewPanelKeyDown(object? sender, KeyEventArgs args)
+    private void OnPreviewPanelKeyDown(object? sender, KeyEventArgs args) =>
+        TryHandleTimelineNavigationKey(args);
+
+    private void TryHandleTimelineNavigationKey(KeyEventArgs args)
     {
-        if (args.KeyModifiers != KeyModifiers.None
+        if (args.Handled
+            || args.KeyModifiers != KeyModifiers.None
             || PreviewInputOwnsNavigationKeys(args.Source))
         {
             return;
