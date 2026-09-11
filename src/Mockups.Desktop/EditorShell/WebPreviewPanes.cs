@@ -979,6 +979,16 @@ internal abstract class WebPreviewPane : Grid
                 let startTranslateY = 0;
                 let isDragging = false;
 
+                document.addEventListener("keydown", (event) => {
+                  if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
+                  if (!["ArrowLeft", "ArrowRight", "PageUp", "PageDown"].includes(event.key)) return;
+                  const target = event.target instanceof Element ? event.target : null;
+                  if (target?.closest("input, textarea, select, [contenteditable='true']")) return;
+                  invokeCSharpAction(`mockups-preview-key:${event.key}`);
+                  event.preventDefault();
+                  event.stopPropagation();
+                }, true);
+
                 window.mockupsSetTransparencyInspection = (showGrid, showAlpha) => {
                   if (!scaleLayer) return false;
                   scaleLayer.classList.toggle("is-transparency-grid", Boolean(showGrid));
@@ -1916,6 +1926,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
     public event Action<DesignPreviewFrameStatus>? FrameStatusChanged;
     public event Action<string>? ContextActionRequested;
     public event Action<PreviewAuthoringNavigationTarget>? AuthoringTargetRequested;
+    public event Action<string>? NavigationKeyRequested;
 
     public DesignWebPreviewPane(IProjectPathResolver projectPaths)
     {
@@ -1938,6 +1949,12 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
             if (message.StartsWith(actionPrefix, StringComparison.Ordinal))
             {
                 ContextActionRequested?.Invoke(message[actionPrefix.Length..]);
+                return;
+            }
+            const string navigationKeyPrefix = "mockups-preview-key:";
+            if (message.StartsWith(navigationKeyPrefix, StringComparison.Ordinal))
+            {
+                NavigationKeyRequested?.Invoke(message[navigationKeyPrefix.Length..]);
                 return;
             }
             if (PreviewAuthoringNavigationMessage.TryParse(

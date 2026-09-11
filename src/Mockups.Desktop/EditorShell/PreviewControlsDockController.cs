@@ -1,5 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
 using Mockups.DesktopEditorShell.Common;
@@ -77,6 +79,7 @@ internal sealed class PreviewControlsDockController : IDisposable
 
     public bool IsDetached { get; private set; }
     internal Window? FloatingWindow => _floatingWindow;
+    public event EventHandler<KeyEventArgs>? PreviewKeyDown;
 
     public void Toggle()
     {
@@ -249,6 +252,11 @@ internal sealed class PreviewControlsDockController : IDisposable
             Content = _floatingHost,
         };
         EditorSukiWindowTheme.ApplyUtilityWindowChrome(window, _owner);
+        window.AddHandler(
+            InputElement.KeyDownEvent,
+            OnFloatingWindowKeyDown,
+            RoutingStrategies.Tunnel,
+            handledEventsToo: true);
         window.Closing += (_, args) =>
         {
             if (_isDisposing)
@@ -262,6 +270,9 @@ internal sealed class PreviewControlsDockController : IDisposable
         _floatingWindow = window;
         return window;
     }
+
+    private void OnFloatingWindowKeyDown(object? sender, KeyEventArgs args) =>
+        PreviewKeyDown?.Invoke(sender, args);
 
     private void CaptureFloatingGeometry()
     {

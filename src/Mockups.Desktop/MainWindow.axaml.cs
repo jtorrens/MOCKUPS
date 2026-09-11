@@ -177,6 +177,8 @@ public partial class MainWindow : SukiWindow
                 PreviewUtilitySplitter,
                 PreviewControlsDetachButton,
                 () => _themeController.IsDark);
+        _previewControlsDock.PreviewKeyDown +=
+            _previewController.OnDetachedPreviewKeyDown;
         _treePreviewTransitions =
             new EditorTreePreviewTransitionCoordinator(
                 _workspaceCoordinator,

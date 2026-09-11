@@ -533,6 +533,7 @@ internal sealed class EditorPreviewController : IDisposable
             else _selectNodeById(targetId);
         };
         _designPreviewPane.AuthoringTargetRequested += navigateAuthoringTarget;
+        _designPreviewPane.NavigationKeyRequested += OnWebPreviewNavigationKey;
         _designInputsPanel.PlaybackStarted += OnPlaybackStarted;
         _designInputsPanel.PlaybackStopped += OnPlaybackStopped;
         _designInputsPanel.PlaybackBusyChanged += PlaybackState.SetBusy;
@@ -2733,6 +2734,21 @@ internal sealed class EditorPreviewController : IDisposable
         if (handled) args.Handled = true;
     }
 
+    internal void OnDetachedPreviewKeyDown(object? sender, KeyEventArgs args) =>
+        OnPreviewPanelKeyDown(sender, args);
+
+    private void OnWebPreviewNavigationKey(string key)
+    {
+        _ = key switch
+        {
+            "ArrowLeft" => _stepScreenTimelineFrame?.Invoke(-1),
+            "ArrowRight" => _stepScreenTimelineFrame?.Invoke(1),
+            "PageUp" => _moveToScreenTimelineNavigationFrame?.Invoke(-1),
+            "PageDown" => _moveToScreenTimelineNavigationFrame?.Invoke(1),
+            _ => false,
+        };
+    }
+
     private static bool PreviewInputOwnsNavigationKeys(object? source)
     {
         if (source is not Visual visual) return false;
@@ -2743,7 +2759,8 @@ internal sealed class EditorPreviewController : IDisposable
                 or NumericUpDown
                 or RangeBase
                 or ComboBox
-                or EditorInstantComboBox);
+                or EditorInstantComboBox
+                or NativeWebView);
     }
 
     private bool StopPreviewFromEscape()

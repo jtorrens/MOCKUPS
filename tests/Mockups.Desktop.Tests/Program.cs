@@ -19163,22 +19163,24 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
         PreviewScreenTimelineMath.PreviewContentDuration(
             confirmedContentDuration: 109,
             durationAffectingEndFrames: [72, 95]));
-    var expandedViewport = PreviewScreenTimelineMath.EnsureAuthoringHorizon(
-        snapshot with
-        {
-            PreRollFrames = 0,
-            ContentDurationFrames = 109,
-            PostRollFrames = 0,
-        },
+    var pannedViewport = PreviewScreenTimelineMath.PanToRevealBoundary(
         new PreviewScreenTimelineViewport(0, 118),
-        previewContentDuration: 117,
-        minimumAuthoredFrame: 0,
-        maximumAuthoredFrame: 117);
-    Equal(-10, expandedViewport.MinimumFrame);
-    Equal(127, expandedViewport.MaximumFrame);
+        boundaryFrame: 118,
+        direction: 1);
+    Equal(10, pannedViewport.MinimumFrame);
+    Equal(128, pannedViewport.MaximumFrame);
     Equal(
-        PreviewScreenTimelineMath.AuthoringHorizonFrames,
-        expandedViewport.MaximumFrame - 117);
+        118,
+        pannedViewport.MaximumFrame - pannedViewport.MinimumFrame);
+    Equal(
+        new PreviewScreenTimelineViewport(0, 118),
+        PreviewScreenTimelineMath.PanToRevealBoundary(
+            new PreviewScreenTimelineViewport(0, 118),
+            boundaryFrame: 100,
+            direction: 1));
+    Equal(
+        new PreviewScreenTimelineViewport(0, 118),
+        PreviewScreenTimelineMath.CenterOnFrame(pannedViewport, 59));
     var terminalViewport = PreviewScreenTimelineMath.Viewport(
         snapshot,
         anchorFrame: snapshot.MaximumFrame,

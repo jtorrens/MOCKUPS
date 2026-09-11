@@ -158,26 +158,52 @@ internal static class PreviewScreenTimelineMath
                 .DefaultIfEmpty(currentFrame)
                 .Min();
 
-    public static PreviewScreenTimelineViewport EnsureAuthoringHorizon(
-        PreviewScreenTimelineSnapshot snapshot,
+    public static PreviewScreenTimelineViewport PanToRevealBoundary(
         PreviewScreenTimelineViewport viewport,
-        int previewContentDuration,
-        int minimumAuthoredFrame,
-        int maximumAuthoredFrame)
+        int boundaryFrame,
+        int direction)
     {
-        var requiredMinimum = minimumAuthoredFrame < int.MinValue + AuthoringHorizonFrames
-            ? int.MinValue
-            : minimumAuthoredFrame - AuthoringHorizonFrames;
-        var contentMaximum = previewContentDuration > int.MaxValue - snapshot.PostRollFrames
+        var span = Math.Max(1, viewport.MaximumFrame - viewport.MinimumFrame);
+        if (direction == 0) return viewport;
+        if (direction < 0)
+        {
+            var requiredMinimum = boundaryFrame < int.MinValue + AuthoringHorizonFrames
+                ? int.MinValue
+                : boundaryFrame - AuthoringHorizonFrames;
+            if (requiredMinimum >= viewport.MinimumFrame) return viewport;
+            return new PreviewScreenTimelineViewport(
+                requiredMinimum,
+                requiredMinimum > int.MaxValue - span
+                    ? int.MaxValue
+                    : requiredMinimum + span);
+        }
+
+        var requiredMaximum = boundaryFrame > int.MaxValue - AuthoringHorizonFrames
             ? int.MaxValue
-            : previewContentDuration + snapshot.PostRollFrames - 1;
-        var authoredMaximum = Math.Max(contentMaximum, maximumAuthoredFrame);
-        var requiredMaximum = authoredMaximum > int.MaxValue - AuthoringHorizonFrames
-            ? int.MaxValue
-            : authoredMaximum + AuthoringHorizonFrames;
+            : boundaryFrame + AuthoringHorizonFrames;
+        if (requiredMaximum <= viewport.MaximumFrame) return viewport;
         return new PreviewScreenTimelineViewport(
-            Math.Min(viewport.MinimumFrame, requiredMinimum),
-            Math.Max(viewport.MaximumFrame, requiredMaximum));
+            requiredMaximum < int.MinValue + span
+                ? int.MinValue
+                : requiredMaximum - span,
+            requiredMaximum);
+    }
+
+    public static PreviewScreenTimelineViewport CenterOnFrame(
+        PreviewScreenTimelineViewport viewport,
+        int frame)
+    {
+        var span = Math.Max(1, viewport.MaximumFrame - viewport.MinimumFrame);
+        var leftSpan = span / 2;
+        var minimum = frame < int.MinValue + leftSpan
+            ? int.MinValue
+            : frame - leftSpan;
+        var maximum = minimum > int.MaxValue - span
+            ? int.MaxValue
+            : minimum + span;
+        if (maximum == int.MaxValue)
+            minimum = int.MaxValue - span;
+        return new PreviewScreenTimelineViewport(minimum, maximum);
     }
 
     public static double Fraction(
@@ -1041,6 +1067,8 @@ internal sealed class PreviewScreenTimelineSurface : Border
         _collapsedCollections = new(StringComparer.Ordinal);
     private readonly Dictionary<string, double>
         _zoomByScreen = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, PreviewScreenTimelineViewport>
+        _viewportByScreen = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string>
         _selectedLaneByScreen = new(StringComparer.Ordinal);
     private readonly Dictionary<PreviewScreenTimelineLane, TimelineRow>
@@ -1057,6 +1085,7 @@ internal sealed class PreviewScreenTimelineSurface : Border
     private int? _playheadSnapFrame;
     private int _frame;
     private int _previewContentDurationFrames;
+    private bool _boundaryDragAutoPanned;
     private Func<string, AnimationTargetEditorContent>? _animationContent;
     private PreviewScreenTimelineLane? _selectedLane;
     private PreviewScreenTimelineLane? _generalLane;
@@ -1162,10 +1191,11 @@ internal sealed class PreviewScreenTimelineSurface : Border
         var zoom = _zoomByScreen.TryGetValue(snapshot.ScreenId, out var storedZoom)
             ? storedZoom
             : 0;
-        _viewport = PreviewScreenTimelineMath.Viewport(
-            snapshot,
-            _frame,
-            zoom);
+        _viewport = Math.Abs(zoom) >= 0.0001
+            && _viewportByScreen.TryGetValue(snapshot.ScreenId, out var storedViewport)
+                ? storedViewport
+                : PreviewScreenTimelineMath.Viewport(snapshot, _frame, zoom);
+        _viewportByScreen[snapshot.ScreenId] = _viewport;
         _playheadSnapFrame = null;
         _lanes.Clear();
         _rowsByLane.Clear();
@@ -1381,8 +1411,10 @@ internal sealed class PreviewScreenTimelineSurface : Border
             isGeneral,
             LaneSnapTargets);
         lane.EditCommitted += async (_, edit) => await CommitLaneEditAsync(item, edit);
+        lane.BoundaryDragStarted += (_, _) => _boundaryDragAutoPanned = false;
         lane.AuthoringExtentChanged += (_, pointerX) =>
             RefreshPreviewContentDuration(lane, pointerX);
+        lane.BoundaryDragCompleted += (_, _) => CompleteBoundaryDrag();
         lane.SelectionRequested += (_, _) => SelectLane(lane);
         lane.SnapGuideChanged += (_, snapFrame) =>
             _overlay?.SetSnapGuide(snapFrame);
@@ -1404,22 +1436,39 @@ internal sealed class PreviewScreenTimelineSurface : Border
             _generalLane?.SetAuthoringEndFrame(next);
             _backdrop?.SetContentEndFrame(next);
         }
-        var nextViewport = PreviewScreenTimelineMath.EnsureAuthoringHorizon(
-            _snapshot,
+        var direction = activeLane.ActiveBoundaryFrame <= _viewport.MinimumFrame
+            ? -1
+            : activeLane.ActiveBoundaryFrame >= _viewport.MaximumFrame
+                ? 1
+                : 0;
+        if (direction == 0)
+        {
+            if (activeLane.OwnsScreenDuration) UpdateFrameText();
+            return;
+        }
+        var nextViewport = PreviewScreenTimelineMath.PanToRevealBoundary(
             _viewport,
-            _previewContentDurationFrames,
-            activeLane.StartFrame,
-            activeLane.EndFrame);
+            activeLane.ActiveBoundaryFrame,
+            direction);
         if (nextViewport != _viewport)
         {
-            _viewport = nextViewport;
-            _ruler?.SetViewport(nextViewport);
-            foreach (var lane in _lanes) lane.SetViewport(nextViewport);
-            _backdrop?.SetViewport(nextViewport);
-            _overlay?.SetViewport(nextViewport);
+            _boundaryDragAutoPanned = true;
+            ApplyViewport(nextViewport);
             activeLane.RebaseActiveDrag(pointerX);
         }
         if (activeLane.OwnsScreenDuration) UpdateFrameText();
+    }
+
+    private void CompleteBoundaryDrag()
+    {
+        if (_viewport is null || !_boundaryDragAutoPanned) return;
+        if (_frame < _viewport.MinimumFrame || _frame > _viewport.MaximumFrame)
+        {
+            ApplyViewport(PreviewScreenTimelineMath.CenterOnFrame(
+                _viewport,
+                _frame));
+        }
+        _boundaryDragAutoPanned = false;
     }
 
     private void SelectLane(PreviewScreenTimelineLane lane)
@@ -1591,14 +1640,21 @@ internal sealed class PreviewScreenTimelineSurface : Border
         if (_snapshot is null) return;
         var zoom = Math.Abs(value) < 0.04 ? 0 : Math.Clamp(value, -1, 1);
         _zoomByScreen[_snapshot.ScreenId] = zoom;
-        _viewport = PreviewScreenTimelineMath.Viewport(
+        ApplyViewport(PreviewScreenTimelineMath.Viewport(
             _snapshot,
             _frame,
-            zoom);
-        _ruler?.SetViewport(_viewport);
-        foreach (var lane in _lanes) lane.SetViewport(_viewport);
-        _backdrop?.SetViewport(_viewport);
-        _overlay?.SetViewport(_viewport);
+            zoom));
+    }
+
+    private void ApplyViewport(PreviewScreenTimelineViewport viewport)
+    {
+        _viewport = viewport;
+        if (_snapshot is not null)
+            _viewportByScreen[_snapshot.ScreenId] = viewport;
+        _ruler?.SetViewport(viewport);
+        foreach (var lane in _lanes) lane.SetViewport(viewport);
+        _backdrop?.SetViewport(viewport);
+        _overlay?.SetViewport(viewport);
     }
 
     private Control CreateTransport(
@@ -2118,6 +2174,9 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
     public int StartFrame => _startFrame;
     public int EndFrame => _endFrame;
     public bool OwnsScreenDuration => _ownsScreenDuration;
+    public int ActiveBoundaryFrame => _dragMode == DragMode.StateStart
+        ? _startFrame
+        : _endFrame;
     public IReadOnlyList<int> SnapFrames => _isGeneral
         ? [0, Snapshot.ContentDurationFrames]
         : _intervals
@@ -2125,7 +2184,9 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
             .Distinct()
             .ToList();
     public event EventHandler<PreviewScreenTimelineLaneEdit>? EditCommitted;
+    public event EventHandler? BoundaryDragStarted;
     public event Action<object?, double>? AuthoringExtentChanged;
+    public event EventHandler? BoundaryDragCompleted;
     public event EventHandler<int?>? SnapGuideChanged;
     public event EventHandler? SelectionRequested;
 
@@ -2294,6 +2355,8 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
         _dragStartValue = selected.StartFrame;
         _dragEndValue = selected.EndFrame;
         _dragInterval = selected;
+        if (_dragMode is DragMode.Exit or DragMode.StateStart or DragMode.StateEnd)
+            BoundaryDragStarted?.Invoke(this, EventArgs.Empty);
         args.Pointer.Capture(this);
         args.Handled = true;
     }
@@ -2384,7 +2447,8 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
         SnapGuideChanged?.Invoke(this, snapFrame);
         _activeSnapFrame = snapFrame;
         InvalidateVisual();
-        AuthoringExtentChanged?.Invoke(this, pointerX);
+        if (_dragMode is DragMode.Exit or DragMode.StateStart or DragMode.StateEnd)
+            AuthoringExtentChanged?.Invoke(this, pointerX);
         args.Handled = true;
     }
 
@@ -2402,10 +2466,15 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
         var mode = _dragMode;
         var original = _dragInterval;
         var updated = _activeIntervalIndex >= 0 ? _intervals[_activeIntervalIndex] : null;
+        var wasBoundaryDrag = _dragMode is DragMode.Exit
+            or DragMode.StateStart
+            or DragMode.StateEnd;
         _dragMode = DragMode.None;
         _activeSnapFrame = null;
         InvalidateVisual();
         SnapGuideChanged?.Invoke(this, null);
+        if (wasBoundaryDrag)
+            BoundaryDragCompleted?.Invoke(this, EventArgs.Empty);
         EditCommitted?.Invoke(this, new PreviewScreenTimelineLaneEdit(
             mode switch
             {
