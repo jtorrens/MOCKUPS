@@ -470,7 +470,7 @@
         "visibleDurationFrames": 0,
         "iconRowRuntime": [
           {
-            "id": "iconRow",
+            "id": "message_001_iconRow_1",
             "runtimeInputs": {
               "componentType": "iconRow",
               "sampleText": "Sample",
@@ -1099,7 +1099,7 @@
         "visibleDurationFrames": 0,
         "iconRowRuntime": [
           {
-            "id": "iconRow",
+            "id": "message_002_iconRow_1",
             "runtimeInputs": {
               "componentType": "iconRow",
               "sampleText": "Sample",
@@ -1728,7 +1728,7 @@
         "visibleDurationFrames": 0,
         "iconRowRuntime": [
           {
-            "id": "iconRow",
+            "id": "message_003_iconRow_1",
             "runtimeInputs": {
               "componentType": "iconRow",
               "sampleText": "Sample",
