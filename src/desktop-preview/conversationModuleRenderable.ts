@@ -331,6 +331,7 @@ function messageNodes(
     previousYById.set(entry.id, previousY);
     previousY += entry.finalBounds.height + gap;
   });
+  let appearingY = previousY;
   return entries.map((entry, index) => {
     const { node, bounds, alignment } = entry;
     const message = messages[index]!;
@@ -341,10 +342,12 @@ function messageNodes(
         : screen.x + gutter.x - bounds.x;
     const targetY = top + gap - targetOverflow
       + entries.slice(0, index).reduce((sum, current) => sum + current.finalBounds.height + gap, 0);
-    const priorY = previousYById.get(message.id);
-    const resolvedY = priorY === undefined
-      ? targetY
-      : lerp(priorY, targetY, scrollProgress);
+    const previousEntryY = previousYById.get(message.id);
+    const priorY = previousEntryY ?? appearingY;
+    if (previousEntryY === undefined) {
+      appearingY += entry.finalBounds.height + gap;
+    }
+    const resolvedY = lerp(priorY, targetY, scrollProgress);
     const targetNode = translateRenderableNode(node, { x: offsetX, y: targetY - bounds.y });
     const reflowTranslation = { x: 0, y: resolvedY - targetY };
     if (!targetNode.box || !message.presenceMotionFrame || !message.presenceMotionKind) {

@@ -1,6 +1,8 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Mockups.DesktopEditorShell.Common;
@@ -204,6 +206,24 @@ internal static class PreviewScreenTimelineMath
         if (maximum == int.MaxValue)
             minimum = int.MaxValue - span;
         return new PreviewScreenTimelineViewport(minimum, maximum);
+    }
+
+    public static PreviewScreenTimelineViewport SetViewportMinimum(
+        PreviewScreenTimelineViewport viewport,
+        int minimumFrame,
+        PreviewScreenTimelineViewport authoringRange)
+    {
+        var span = Math.Max(1, viewport.MaximumFrame - viewport.MinimumFrame);
+        var rangeSpan = Math.Max(
+            1,
+            authoringRange.MaximumFrame - authoringRange.MinimumFrame);
+        if (span >= rangeSpan) return viewport;
+        var maximumMinimum = authoringRange.MaximumFrame - span;
+        var minimum = Math.Clamp(
+            minimumFrame,
+            authoringRange.MinimumFrame,
+            maximumMinimum);
+        return new PreviewScreenTimelineViewport(minimum, minimum + span);
     }
 
     public static double Fraction(
@@ -1080,12 +1100,17 @@ internal sealed class PreviewScreenTimelineSurface : Border
     private PreviewScreenTimelineRuler? _ruler;
     private PreviewScreenTimelineBackdrop? _backdrop;
     private PreviewScreenTimelineOverlay? _overlay;
+    private ScrollBar? _horizontalScrollBar;
     private PreviewScreenTimelineSnapshot? _snapshot;
     private PreviewScreenTimelineViewport? _viewport;
     private int? _playheadSnapFrame;
     private int _frame;
     private int _previewContentDurationFrames;
     private bool _boundaryDragAutoPanned;
+    private bool _isMiddlePanning;
+    private bool _isSyncingHorizontalScrollBar;
+    private double _panStartX;
+    private PreviewScreenTimelineViewport? _panStartViewport;
     private Func<string, AnimationTargetEditorContent>? _animationContent;
     private PreviewScreenTimelineLane? _selectedLane;
     private PreviewScreenTimelineLane? _generalLane;
@@ -1115,12 +1140,15 @@ internal sealed class PreviewScreenTimelineSurface : Border
         _ruler = null;
         _backdrop = null;
         _overlay = null;
+        _horizontalScrollBar = null;
         _viewport = null;
         _playheadSnapFrame = null;
         _animationContent = null;
         _selectedLane = null;
         _generalLane = null;
         _previewContentDurationFrames = 0;
+        _isMiddlePanning = false;
+        _panStartViewport = null;
         _rowsByLane.Clear();
         _keyframeFrames.Clear();
         _content.Children.Clear();
@@ -1139,12 +1167,15 @@ internal sealed class PreviewScreenTimelineSurface : Border
         _ruler = null;
         _backdrop = null;
         _overlay = null;
+        _horizontalScrollBar = null;
         _viewport = null;
         _playheadSnapFrame = null;
         _animationContent = null;
         _selectedLane = null;
         _generalLane = null;
         _previewContentDurationFrames = 0;
+        _isMiddlePanning = false;
+        _panStartViewport = null;
         _rowsByLane.Clear();
         _keyframeFrames.Clear();
         _content.Children.Clear();
@@ -1158,12 +1189,15 @@ internal sealed class PreviewScreenTimelineSurface : Border
         _ruler = null;
         _backdrop = null;
         _overlay = null;
+        _horizontalScrollBar = null;
         _viewport = null;
         _playheadSnapFrame = null;
         _animationContent = null;
         _selectedLane = null;
         _generalLane = null;
         _previewContentDurationFrames = 0;
+        _isMiddlePanning = false;
+        _panStartViewport = null;
         _rowsByLane.Clear();
         _keyframeFrames.Clear();
         _content.Children.Clear();
@@ -1191,10 +1225,16 @@ internal sealed class PreviewScreenTimelineSurface : Border
         var zoom = _zoomByScreen.TryGetValue(snapshot.ScreenId, out var storedZoom)
             ? storedZoom
             : 0;
-        _viewport = Math.Abs(zoom) >= 0.0001
+        var restoredViewport = Math.Abs(zoom) >= 0.0001
             && _viewportByScreen.TryGetValue(snapshot.ScreenId, out var storedViewport)
                 ? storedViewport
                 : PreviewScreenTimelineMath.Viewport(snapshot, _frame, zoom);
+        _viewport = PreviewScreenTimelineMath.SetViewportMinimum(
+            restoredViewport,
+            restoredViewport.MinimumFrame,
+            new PreviewScreenTimelineViewport(
+                PreviewScreenTimelineMath.AuthoringMinimumFrame(snapshot),
+                PreviewScreenTimelineMath.AuthoringMaximumFrame(snapshot)));
         _viewportByScreen[snapshot.ScreenId] = _viewport;
         _playheadSnapFrame = null;
         _lanes.Clear();
@@ -1209,6 +1249,7 @@ internal sealed class PreviewScreenTimelineSurface : Border
             ColumnSpacing = 8,
             RowSpacing = 2,
         };
+        AttachMiddlePan(timeline);
         _ruler = new PreviewScreenTimelineRuler(
             snapshot,
             _viewport,
@@ -1316,6 +1357,7 @@ internal sealed class PreviewScreenTimelineSurface : Border
         Grid.SetRowSpan(_overlay, rowCount);
         timeline.Children.Add(_overlay);
         _content.Children.Add(timeline);
+        _content.Children.Add(CreateHorizontalScrollBar());
         if (snapshot.ShowAnimationEditor)
             _content.Children.Add(_animationHost);
         var selectedKey = _selectedLaneByScreen.TryGetValue(
@@ -1443,6 +1485,7 @@ internal sealed class PreviewScreenTimelineSurface : Border
                 : 0;
         if (direction == 0)
         {
+            RefreshHorizontalScrollBar();
             if (activeLane.OwnsScreenDuration) UpdateFrameText();
             return;
         }
@@ -1456,6 +1499,7 @@ internal sealed class PreviewScreenTimelineSurface : Border
             ApplyViewport(nextViewport);
             activeLane.RebaseActiveDrag(pointerX);
         }
+        RefreshHorizontalScrollBar();
         if (activeLane.OwnsScreenDuration) UpdateFrameText();
     }
 
@@ -1655,6 +1699,181 @@ internal sealed class PreviewScreenTimelineSurface : Border
         foreach (var lane in _lanes) lane.SetViewport(viewport);
         _backdrop?.SetViewport(viewport);
         _overlay?.SetViewport(viewport);
+        RefreshHorizontalScrollBar();
+    }
+
+    private Control CreateHorizontalScrollBar()
+    {
+        var scrollBar = new ScrollBar
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            MinHeight = 14,
+            SmallChange = 1,
+        };
+        scrollBar.ValueChanged += (_, args) =>
+        {
+            if (_isSyncingHorizontalScrollBar || _viewport is null) return;
+            ApplyViewport(PreviewScreenTimelineMath.SetViewportMinimum(
+                _viewport,
+                (int)Math.Round(args.NewValue, MidpointRounding.AwayFromZero),
+                CurrentAuthoringRange()));
+        };
+        _horizontalScrollBar = scrollBar;
+        var host = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions($"{LabelWidth},*"),
+            ColumnSpacing = 8,
+        };
+        Grid.SetColumn(scrollBar, 1);
+        host.Children.Add(scrollBar);
+        RefreshHorizontalScrollBar();
+        return host;
+    }
+
+    private void RefreshHorizontalScrollBar()
+    {
+        if (_horizontalScrollBar is null || _viewport is null) return;
+        var range = CurrentAuthoringRange();
+        var viewportSpan = Math.Max(
+            1,
+            _viewport.MaximumFrame - _viewport.MinimumFrame);
+        var rangeSpan = Math.Max(1, range.MaximumFrame - range.MinimumFrame);
+        var isScrollable = viewportSpan < rangeSpan;
+        _isSyncingHorizontalScrollBar = true;
+        try
+        {
+            _horizontalScrollBar.IsVisible = isScrollable;
+            if (!isScrollable) return;
+            _horizontalScrollBar.Minimum = range.MinimumFrame;
+            _horizontalScrollBar.Maximum = range.MaximumFrame - viewportSpan;
+            _horizontalScrollBar.ViewportSize = viewportSpan;
+            _horizontalScrollBar.LargeChange = Math.Max(1, viewportSpan * 0.8);
+            _horizontalScrollBar.Value = Math.Clamp(
+                _viewport.MinimumFrame,
+                range.MinimumFrame,
+                range.MaximumFrame - viewportSpan);
+        }
+        finally
+        {
+            _isSyncingHorizontalScrollBar = false;
+        }
+    }
+
+    private PreviewScreenTimelineViewport CurrentAuthoringRange()
+    {
+        if (_snapshot is null) return new PreviewScreenTimelineViewport(0, 1);
+        var liveMinimum = _lanes
+            .Select((lane) => lane.StartFrame)
+            .DefaultIfEmpty(_snapshot.MinimumFrame)
+            .Min();
+        var contentMaximum = _previewContentDurationFrames
+            + _snapshot.PostRollFrames - 1;
+        var liveMaximum = _lanes
+            .Select((lane) => lane.EndFrame)
+            .Append(contentMaximum)
+            .Max();
+        var expandedLiveMinimum = liveMinimum
+            < int.MinValue + PreviewScreenTimelineMath.AuthoringHorizonFrames
+                ? int.MinValue
+                : liveMinimum - PreviewScreenTimelineMath.AuthoringHorizonFrames;
+        var expandedLiveMaximum = liveMaximum
+            > int.MaxValue - PreviewScreenTimelineMath.AuthoringHorizonFrames
+                ? int.MaxValue
+                : liveMaximum + PreviewScreenTimelineMath.AuthoringHorizonFrames;
+        return new PreviewScreenTimelineViewport(
+            Math.Min(
+                PreviewScreenTimelineMath.AuthoringMinimumFrame(_snapshot),
+                expandedLiveMinimum),
+            Math.Max(
+                PreviewScreenTimelineMath.AuthoringMaximumFrame(_snapshot),
+                expandedLiveMaximum));
+    }
+
+    private void AttachMiddlePan(Grid timeline)
+    {
+        timeline.AddHandler(
+            InputElement.PointerPressedEvent,
+            OnTimelinePointerPressed,
+            RoutingStrategies.Tunnel,
+            handledEventsToo: true);
+        timeline.AddHandler(
+            InputElement.PointerMovedEvent,
+            OnTimelinePointerMoved,
+            RoutingStrategies.Tunnel,
+            handledEventsToo: true);
+        timeline.AddHandler(
+            InputElement.PointerReleasedEvent,
+            OnTimelinePointerReleased,
+            RoutingStrategies.Tunnel,
+            handledEventsToo: true);
+        timeline.PointerCaptureLost += (_, _) => EndMiddlePan();
+    }
+
+    private void OnTimelinePointerPressed(
+        object? sender,
+        PointerPressedEventArgs args)
+    {
+        if (sender is not Grid timeline
+            || args.Pointer.Type != PointerType.Mouse
+            || !args.GetCurrentPoint(timeline).Properties.IsMiddleButtonPressed
+            || _viewport is null
+            || !CanPanTimeline()) return;
+        var position = args.GetPosition(timeline);
+        if (position.X < LabelWidth + timeline.ColumnSpacing) return;
+        _isMiddlePanning = true;
+        _panStartX = position.X;
+        _panStartViewport = _viewport;
+        args.Pointer.Capture(timeline);
+        args.Handled = true;
+    }
+
+    private void OnTimelinePointerMoved(
+        object? sender,
+        PointerEventArgs args)
+    {
+        if (!_isMiddlePanning
+            || sender is not Grid timeline
+            || _panStartViewport is null) return;
+        var laneWidth = Math.Max(
+            1,
+            timeline.Bounds.Width - LabelWidth - timeline.ColumnSpacing);
+        var span = Math.Max(
+            1,
+            _panStartViewport.MaximumFrame - _panStartViewport.MinimumFrame);
+        var deltaFrames = -(
+            args.GetPosition(timeline).X - _panStartX)
+            / laneWidth * span;
+        ApplyViewport(PreviewScreenTimelineMath.SetViewportMinimum(
+            _panStartViewport,
+            _panStartViewport.MinimumFrame
+                + (int)Math.Round(deltaFrames, MidpointRounding.AwayFromZero),
+            CurrentAuthoringRange()));
+        args.Handled = true;
+    }
+
+    private void OnTimelinePointerReleased(
+        object? sender,
+        PointerReleasedEventArgs args)
+    {
+        if (!_isMiddlePanning) return;
+        EndMiddlePan();
+        args.Pointer.Capture(null);
+        args.Handled = true;
+    }
+
+    private bool CanPanTimeline()
+    {
+        if (_viewport is null) return false;
+        var range = CurrentAuthoringRange();
+        return _viewport.MaximumFrame - _viewport.MinimumFrame
+            < range.MaximumFrame - range.MinimumFrame;
+    }
+
+    private void EndMiddlePan()
+    {
+        _isMiddlePanning = false;
+        _panStartViewport = null;
     }
 
     private Control CreateTransport(
