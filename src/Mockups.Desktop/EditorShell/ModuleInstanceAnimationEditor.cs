@@ -425,21 +425,6 @@ internal sealed class ModuleInstanceAnimationEditor
             RefreshVisuals();
         }
 
-        void PreviewDraggedFrame(int timelineFrame)
-        {
-            frameUpdateGate.Run(() =>
-            {
-                currentFrame = Math.Clamp(timelineFrame, 0, timelineDuration - 1);
-                playhead.SetFrame(TimelineFrame());
-                frameText.Text = $"{TimelineFrame()}/{timelineDuration - 1}";
-                var screenFrame = ScreenFrameForTimelineFrame(currentFrame);
-                if (screenFrame < actualScreenDuration)
-                {
-                    _setShotFrame(screenStartFrame + screenFrame);
-                }
-            });
-        }
-
         async Task SaveAndRefresh(
             Func<ModuleInstanceAnimationDocument, bool>
                 mutation)
@@ -560,7 +545,6 @@ internal sealed class ModuleInstanceAnimationEditor
                 timelineDuration,
                 usesOwnerTimeline,
                 SetFrame,
-                PreviewDraggedFrame,
                 (target, keyframe, destinationFrame) =>
                     SaveAndRefresh(
                         (candidate) =>
@@ -974,7 +958,6 @@ internal sealed class ModuleInstanceAnimationEditor
         int timelineDuration,
         bool usesOwnerTimeline,
         Action<int> setFrame,
-        Action<int> previewFrame,
         Func<
             ResolvedAnimationTarget,
             AnimationKeyframeView,
@@ -1109,7 +1092,6 @@ internal sealed class ModuleInstanceAnimationEditor
                             : isActive
                                 ? EditorAnimationVisuals.ActiveTrackBrush
                                 : EditorAnimationVisuals.OtherKeyframeBrush);
-                        previewFrame(timelineKeyframe);
                     }
 
                     marker.PointerPressed += (_, args) =>
@@ -1189,7 +1171,6 @@ internal sealed class ModuleInstanceAnimationEditor
                             : isOriginalDestination
                                 ? EditorAnimationVisuals.ActiveTrackBrush
                                 : Brushes.IndianRed);
-                        previewFrame(candidateTimelineFrame);
                         args.Handled = true;
                     };
                     marker.PointerReleased += (_, args) =>
@@ -1251,7 +1232,6 @@ internal sealed class ModuleInstanceAnimationEditor
                             args.Handled = true;
                             return;
                         }
-                        previewFrame(destinationTimelineFrame);
                         _ = moveKeyframe(target, keyframe, destination);
                         args.Handled = true;
                     };

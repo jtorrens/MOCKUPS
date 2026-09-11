@@ -345,26 +345,29 @@ function messageNodes(
     const resolvedY = priorY === undefined
       ? targetY
       : lerp(priorY, targetY, scrollProgress);
-    const translated = translateRenderableNode(node, { x: offsetX, y: resolvedY - bounds.y });
-    if (!translated.box || !message.presenceMotionFrame || !message.presenceMotionKind) {
-      return translated;
+    const targetNode = translateRenderableNode(node, { x: offsetX, y: targetY - bounds.y });
+    const reflowTranslation = { x: 0, y: resolvedY - targetY };
+    if (!targetNode.box || !message.presenceMotionFrame || !message.presenceMotionKind) {
+      return translateRenderableNode(targetNode, reflowTranslation);
     }
     return message.presenceMotionKind === "enter"
       ? wrapMotionFrame(
           payload,
-          translated,
+          targetNode,
           message.presenceMotion,
           message.presenceMotionFrame,
-          translated.box,
+          targetNode.box,
           viewportBox,
+          reflowTranslation,
         )
       : wrapExitMotionFrame(
           payload,
-          translated,
+          targetNode,
           message.presenceMotion,
           message.presenceMotionFrame,
-          translated.box,
+          targetNode.box,
           viewportBox,
+          reflowTranslation,
         );
   });
 }

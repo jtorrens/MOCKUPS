@@ -4,7 +4,10 @@ import type {
   ComponentMotionFrameContract,
 } from "./previewComponentContracts.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import { rootPreviewScreenBox } from "./previewGeometryHelpers.js";
+import {
+  rootPreviewScreenBox,
+  translateRenderableNode,
+} from "./previewGeometryHelpers.js";
 import { parseObject } from "./previewJsonHelpers.js";
 import { requiredNumberValue, requiredRecord, stringValue } from "./previewValueHelpers.js";
 
@@ -40,11 +43,12 @@ export function wrapMotionFrame(
   frame: ComponentMotionFrameContract,
   finalBox: RenderableBox,
   parentBox: RenderableBox,
+  parentTranslation: { x: number; y: number } = { x: 0, y: 0 },
 ): RenderableNode {
   if (!frame.active
       || frame.progress >= 1
       || (motion.transition === "none" && !motion.fade)) {
-    return node;
+    return translateRenderableNode(node, parentTranslation);
   }
 
   const progress = clampedProgress(frame.progress);
@@ -58,8 +62,8 @@ export function wrapMotionFrame(
     width: finalBox.width,
     height: finalBox.height,
   };
-  const translateX = currentBox.x - finalBox.x;
-  const translateY = currentBox.y - finalBox.y;
+  const translateX = currentBox.x - finalBox.x + parentTranslation.x;
+  const translateY = currentBox.y - finalBox.y + parentTranslation.y;
   const currentScale = motion.scale
     ? lerp(0.92, 1, progress)
     : 1;
@@ -96,8 +100,11 @@ export function wrapExitMotionFrame(
   frame: ComponentMotionFrameContract,
   finalBox: RenderableBox,
   parentBox: RenderableBox,
+  parentTranslation: { x: number; y: number } = { x: 0, y: 0 },
 ): RenderableNode {
-  if (!frame.active || (motion.transition === "none" && !motion.fade)) return node;
+  if (!frame.active || (motion.transition === "none" && !motion.fade)) {
+    return translateRenderableNode(node, parentTranslation);
+  }
   const progress = clampedProgress(frame.progress);
   const boundsBox = motion.bounds === "screen" ? rootPreviewScreenBox(payload) : parentBox;
   const endBox = motion.translate ? entranceStartBox(finalBox, boundsBox, motion.direction) : finalBox;
@@ -112,8 +119,8 @@ export function wrapExitMotionFrame(
       box: finalBox,
       transform: {
         ...(node.transform ?? {}),
-        x: lerp(0, endBox.x - finalBox.x, progress),
-        y: lerp(0, endBox.y - finalBox.y, progress),
+        x: lerp(0, endBox.x - finalBox.x, progress) + parentTranslation.x,
+        y: lerp(0, endBox.y - finalBox.y, progress) + parentTranslation.y,
         opacity: motion.fade ? 1 - clampedProgress(progress) : 1,
         scale: motion.scale ? lerp(1, 0.92, progress) : 1,
       },
