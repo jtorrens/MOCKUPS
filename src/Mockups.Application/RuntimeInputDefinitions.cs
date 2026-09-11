@@ -98,6 +98,7 @@ public sealed record RuntimeInputCollectionDefinition(
     string UiPresentation = "collection",
     string ItemRuntimePresentation = "card",
     IReadOnlyList<string>? ItemRuntimeHiddenInputIds = null,
+    string ItemRuntimeVariantSlotJsonKey = "",
     string ItemRuntimeVariantReferencePath = "",
     string ItemRuntimeOwnerVariantReferencePath = "",
     RuntimeFixedComponentBoundaryDefinition? FixedComponentBoundary = null,

@@ -176,19 +176,16 @@ internal static class ComponentPreviewTransientValues
                     continue;
                 }
 
-                var variantReference =
-                    RuntimeCollectionItemContractOwner
-                        .ResolveItemVariantReference(
-                            item,
-                            collection,
-                            config,
-                            componentVariantConfig);
-                if (string.IsNullOrWhiteSpace(variantReference))
+                var childConfig = RuntimeCollectionItemContractOwner
+                    .ResolveItemVariantConfig(
+                        item,
+                        collection,
+                        config,
+                        componentVariantConfig);
+                if (childConfig.Count == 0)
                 {
                     continue;
                 }
-                var childConfig =
-                    componentVariantConfig(variantReference);
                 var preparedChild = RuntimePreviewDocumentContract.PrepareFixture(
                     childRuntime,
                     childConfig,

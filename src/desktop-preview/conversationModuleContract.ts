@@ -52,6 +52,7 @@ export interface ConversationMessageContract {
   fullScreenMotionElapsedMs: number;
   fullframeOrientation: string;
   controlsElapsedMs: number;
+  showIconRow: boolean;
   iconRowRuntime: JsonRecord[];
   isTypingIndicator: boolean;
   presenceMotion: ComponentMotionContract;

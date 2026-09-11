@@ -592,6 +592,11 @@ function conversationMessages(preview: JsonRecord): ResolvedConversationMessage[
         "controlsElapsedMs",
         `${path}.controlsElapsedMs`,
       ),
+      showIconRow: requiredBoolean(
+        message,
+        "showIconRow",
+        `${path}.showIconRow`,
+      ),
       iconRowRuntime: structuredClone(requiredObjectArray(
         message,
         "iconRowRuntime",
@@ -880,6 +885,7 @@ function validateConversationMessageRuntime(message: JsonRecord, index: number) 
     `${path}.fullframeOrientation`,
   ));
   requiredNumber(message, "controlsElapsedMs", `${path}.controlsElapsedMs`);
+  requiredBoolean(message, "showIconRow", `${path}.showIconRow`);
   requiredObjectArray(message, "iconRowRuntime", `${path}.iconRowRuntime`);
   requiredNumber(message, "visibleDurationFrames", `${path}.visibleDurationFrames`);
 }

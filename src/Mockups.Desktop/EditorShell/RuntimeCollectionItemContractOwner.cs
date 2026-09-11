@@ -6,6 +6,38 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal static class RuntimeCollectionItemContractOwner
 {
+    public static JsonObject ResolveItemVariantConfig(
+        JsonObject item,
+        RuntimeInputCollectionDefinition collection,
+        JsonObject ownerConfig,
+        Func<string, JsonObject> componentVariantConfig)
+    {
+        var reference = ResolveItemVariantReference(
+            item,
+            collection,
+            ownerConfig,
+            componentVariantConfig);
+        if (string.IsNullOrWhiteSpace(reference))
+        {
+            return new JsonObject();
+        }
+        var effective = componentVariantConfig(reference)
+            .DeepClone()
+            .AsObject();
+        if (!string.IsNullOrWhiteSpace(
+                collection.ItemRuntimeVariantSlotJsonKey))
+        {
+            var slotKey = collection.ItemRuntimeVariantSlotJsonKey;
+            var owner = $"Runtime collection '{collection.Id}' item slot '{slotKey}'";
+            ComponentConfigOverrideMerger.MergeInto(
+                effective,
+                ComponentVariantSlotDocumentContract.Overrides(
+                    JsonPath.RequiredObject(item, slotKey, owner),
+                    owner));
+        }
+        return effective;
+    }
+
     public static string ResolveItemVariantReference(
         JsonObject item,
         RuntimeInputCollectionDefinition collection,
@@ -19,6 +51,25 @@ internal static class RuntimeCollectionItemContractOwner
                     item,
                     componentItems.DocumentKeys,
                     $"Runtime collection '{collection.Id}' item");
+        }
+        if (!string.IsNullOrWhiteSpace(
+                collection.ItemRuntimeVariantSlotJsonKey))
+        {
+            if (!string.IsNullOrWhiteSpace(
+                    collection.ItemRuntimeVariantReferencePath))
+            {
+                throw new InvalidOperationException(
+                    $"Runtime collection '{collection.Id}' must declare either "
+                    + "itemRuntimeVariantSlotJsonKey or itemRuntimeVariantReferencePath, not both.");
+            }
+            var slotKey = collection.ItemRuntimeVariantSlotJsonKey;
+            var slot = JsonPath.RequiredObject(
+                item,
+                slotKey,
+                $"Runtime collection '{collection.Id}' item");
+            return ComponentVariantSlotDocumentContract.VariantReference(
+                slot,
+                $"Runtime collection '{collection.Id}' item slot '{slotKey}'");
         }
         if (string.IsNullOrWhiteSpace(
                 collection.ItemRuntimeVariantReferencePath))

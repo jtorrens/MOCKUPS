@@ -58,6 +58,8 @@ function payload(
       fullScreenTransition: false,
       fullframeOrientation: "portrait",
       controlsElapsedMs: 0,
+      showIconRow: false,
+      iconRowRuntime: [],
       visibleDurationFrames: 0,
       writeOnTiming: {
         mode: "fixed",
@@ -88,6 +90,7 @@ function payload(
     { id: "status", jsonKey: "statusState", animationTimeline: { origin: { kind: "fieldCompletion", fieldId: "text", offsetFrames: 0 }, extendsOwnerDuration: false } },
     { id: "statusText", jsonKey: "statusText", animationTimeline: { origin: { kind: "fieldCompletion", fieldId: "text", offsetFrames: 0 }, extendsOwnerDuration: false } },
     { id: "isPlaying", jsonKey: "isPlaying", animationTimeline: { origin: { kind: "fieldCompletion", fieldId: "text", offsetFrames: 0 } } },
+    { id: "showIconRow", jsonKey: "showIconRow", animationTimeline: { origin: { kind: "ownerStart" }, extendsOwnerDuration: false } },
     { id: "playDuration", jsonKey: "playDurationFrames" },
     { id: "fullScreen", jsonKey: "isFullScreen", animationTimeline: { origin: { kind: "fieldCompletion", fieldId: "text", offsetFrames: 0 } } },
     { id: "keepCursorAfterWrite", jsonKey: "keepCursorAfterWrite", animationTimeline: { origin: { kind: "fieldCompletion", fieldId: "text", offsetFrames: 0 }, extendsOwnerDuration: false } },
@@ -417,7 +420,7 @@ test("chat Actor resolves hold keyframes through the prepared record catalog", (
   assert.deepEqual(resolved.actor, { id: "actor_sam", displayName: "Sam" });
 });
 
-test("delivery, status and full-screen fields resolve independently", () => {
+test("delivery, status, Icon Row visibility and full-screen fields resolve independently", () => {
   const messages = [{
     id: "m1",
     direction: "incoming",
@@ -425,18 +428,21 @@ test("delivery, status and full-screen fields resolve independently", () => {
     statusVisible: false,
     statusState: "sent",
     statusText: "old",
+    showIconRow: false,
     isFullScreen: false,
   }];
   const tracks = [
     track("statusVisible", "m1", [{ id: "v0", frame: 0, value: true }]),
     track("status", "m1", [{ id: "s0", frame: 0, value: "read" }]),
     track("statusText", "m1", [{ id: "t0", frame: 0, value: "new" }]),
+    track("showIconRow", "m1", [{ id: "i0", frame: 0, value: true }]),
     track("fullScreen", "m1", [{ id: "f0", frame: 0, value: true }]),
   ];
   const message = (resolveConversationModuleFrame(payload(0, tracks, messages)).messages as Array<Record<string, unknown>>)[0]!;
   assert.equal(message.statusVisible, true);
   assert.equal(message.statusState, "read");
   assert.equal(message.statusText, "new");
+  assert.equal(message.showIconRow, true);
   assert.equal(message.isFullScreen, true);
 });
 
@@ -1112,6 +1118,7 @@ test("Conversation uses the same reflow timing after a message Out completes", (
 test("a nested full-screen Media keeps the exact root Screen coordinates", () => {
   const source = committedConversationPayload();
   const runtime = JSON.parse(source.designPreviewJson) as Record<string, unknown>;
+  const messageTemplate = (runtime.messages as Array<Record<string, unknown>>)[0]!;
   runtime.messages = [{
     id: "fullscreen-image",
     actorId: runtime.actorId,
@@ -1138,6 +1145,8 @@ test("a nested full-screen Media keeps the exact root Screen coordinates", () =>
     fullScreenTransition: false,
     fullframeOrientation: "portrait",
     controlsElapsedMs: 0,
+    showIconRow: false,
+    iconRowRuntime: structuredClone(messageTemplate.iconRowRuntime),
     visibleDurationFrames: 0,
     writeOnTiming: {
       mode: "fixed",

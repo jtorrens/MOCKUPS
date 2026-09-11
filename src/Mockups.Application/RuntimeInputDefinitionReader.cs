@@ -201,6 +201,32 @@ public static class RuntimeInputDefinitionReader
             var itemPresentation = ReadItemPresentation(collection);
             var componentItems = ReadComponentItems(collection);
             var fixedComponentBoundary = ReadFixedComponentBoundary(collection);
+            var itemRuntimeVariantSlotJsonKey = JsonString(
+                collection,
+                "itemRuntimeVariantSlotJsonKey");
+            if (!string.IsNullOrWhiteSpace(itemRuntimeVariantSlotJsonKey))
+            {
+                var matchingSlots = itemFields.Where((field) =>
+                        field.JsonKey.Equals(
+                            itemRuntimeVariantSlotJsonKey,
+                            StringComparison.Ordinal)
+                        && field.ValueKind == ValueKind.ComponentVariantSlot)
+                    .ToList();
+                if (matchingSlots.Count != 1)
+                {
+                    throw new InvalidOperationException(
+                        $"Runtime Input collection '{id}' itemRuntimeVariantSlotJsonKey "
+                        + $"'{itemRuntimeVariantSlotJsonKey}' must name exactly one "
+                        + "ComponentVariantSlot field.");
+                }
+                if (!string.IsNullOrWhiteSpace(
+                        JsonString(collection, "itemRuntimeVariantReferencePath")))
+                {
+                    throw new InvalidOperationException(
+                        $"Runtime Input collection '{id}' must declare either "
+                        + "itemRuntimeVariantSlotJsonKey or itemRuntimeVariantReferencePath, not both.");
+                }
+            }
             var structureOwnedFieldJsonKeys =
                 ReadStructureOwnedFieldJsonKeys(
                     collection,
@@ -285,6 +311,7 @@ public static class RuntimeInputDefinitionReader
                 uiPresentation,
                 itemRuntimePresentation,
                 JsonStringArray(collection, "itemRuntimeHiddenInputIds"),
+                itemRuntimeVariantSlotJsonKey,
                 JsonString(collection, "itemRuntimeVariantReferencePath"),
                 JsonString(collection, "itemRuntimeOwnerVariantReferencePath"),
                 fixedComponentBoundary,

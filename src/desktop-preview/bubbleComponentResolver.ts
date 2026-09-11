@@ -55,7 +55,6 @@ export function resolveBubbleComponent(
   const imageMediaSlot = requiredRecord(bubble, "imageMediaSlot", "component.bubble");
   const videoMediaSlot = requiredRecord(bubble, "videoMediaSlot", "component.bubble");
   const audioSlot = requiredRecord(bubble, "audioSlot", "component.bubble");
-  const iconRowSlot = requiredRecord(bubble, "iconRowSlot", "component.bubble");
   const actorLabelSlot = requiredRecord(bubble, "actorLabelSlot", "component.bubble");
   const avatarSlot = requiredRecord(bubble, "avatarSlot", "component.bubble");
   const status = requiredRecord(bubble, "status", "component.bubble");
@@ -224,9 +223,19 @@ export function resolveBubbleComponent(
     payload,
   );
   const showIconRow = requiredBoolean(
-    bubble,
+    preview,
     "showIconRow",
     "component.bubble.iconRow.showIconRow",
+  );
+  const iconRowBoundary = exactChildBoundary(
+    preview,
+    "iconRowRuntime",
+    "iconRow",
+  );
+  const iconRowSlot = requiredRecord(
+    iconRowBoundary,
+    "iconRowSlot",
+    "component.bubble.input.iconRowRuntime[0]",
   );
   const iconRowConfig = embeddedComponentConfig(
     componentBaseConfigs,
@@ -236,7 +245,11 @@ export function resolveBubbleComponent(
   );
   const resolvedIconRow = resolveIconRowComponentFromRecords(
     iconRowConfig,
-    exactChildRuntime(preview, "iconRowRuntime", "iconRow"),
+    requiredRecord(
+      iconRowBoundary,
+      "runtimeInputs",
+      "component.bubble.input.iconRowRuntime[0]",
+    ),
     componentBaseConfigs,
     "component.bubble.iconRow",
   );
@@ -598,10 +611,21 @@ function validateBubbleRuntimeDocument(preview: Record<string, unknown>) {
   );
   requiredNumber(preview, "controlsElapsedMs", "component.bubble.input.controlsElapsedMs");
   requiredNumber(preview, "motionElapsedMs", "component.bubble.input.motionElapsedMs");
-  exactChildRuntime(preview, "iconRowRuntime", "iconRow");
+  requiredBoolean(preview, "showIconRow", "component.bubble.input.showIconRow");
+  const iconRowBoundary = exactChildBoundary(preview, "iconRowRuntime", "iconRow");
+  requiredRecord(
+    iconRowBoundary,
+    "iconRowSlot",
+    "component.bubble.input.iconRowRuntime[0].iconRowSlot",
+  );
+  requiredRecord(
+    iconRowBoundary,
+    "runtimeInputs",
+    "component.bubble.input.iconRowRuntime[0].runtimeInputs",
+  );
 }
 
-function exactChildRuntime(
+function exactChildBoundary(
   preview: Record<string, unknown>,
   collectionKey: string,
   expectedId: string,
@@ -623,11 +647,7 @@ function exactChildRuntime(
   if (id !== expectedId) {
     throw new Error(`component.bubble input '${collectionKey}' requires id '${expectedId}'`);
   }
-  return requiredRecord(
-    item,
-    "runtimeInputs",
-    `component.bubble.input.${collectionKey}[0].runtimeInputs`,
-  );
+  return item;
 }
 
 function defaultActorPreview(displayName: string) {

@@ -134,6 +134,7 @@ test("Bubble requires every field in its complete prepared Runtime snapshot", ()
     "fullframeOrientation",
     "controlsElapsedMs",
     "motionElapsedMs",
+    "showIconRow",
     "iconRowRuntime",
   ];
   const source = committedComponentFixture("bubble");
@@ -412,16 +413,13 @@ test("Bubble centers its active Icon Row after content and before Status", () =>
   for (const mediaPosition of ["top", "bottom", "left", "right"] as const) {
     const payload = committedComponentFixture("bubble", "default_copy");
     const config = JSON.parse(payload.configJson) as {
-      bubble: {
-        showIconRow: boolean;
-        mediaPosition: string;
-      };
+      bubble: { mediaPosition: string };
     };
-    config.bubble.showIconRow = true;
     config.bubble.mediaPosition = mediaPosition;
     payload.configJson = JSON.stringify(config);
     const preview = JSON.parse(payload.designPreviewJson) as Record<string, unknown>;
     Object.assign(preview, {
+      showIconRow: true,
       mediaType: "image",
       statusState: "sent",
       statusText: "10:42",
@@ -448,13 +446,9 @@ test("Bubble centers its active Icon Row after content and before Status", () =>
 
 test("Bubble places its active Icon Row directly below text when media is absent", () => {
   const payload = committedComponentFixture("bubble");
-  const config = JSON.parse(payload.configJson) as {
-    bubble: { showIconRow: boolean };
-  };
-  config.bubble.showIconRow = true;
-  payload.configJson = JSON.stringify(config);
   const preview = JSON.parse(payload.designPreviewJson) as Record<string, unknown>;
   Object.assign(preview, {
+    showIconRow: true,
     mediaType: "none",
     statusState: "none",
     statusText: "",

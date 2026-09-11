@@ -205,13 +205,20 @@ reserved for the commit path and is never supplied to Runtime-contract
 resolution.
 
 Bubble additionally owns one optional fixed Icon Row boundary. The boundary
-stores an exact Icon Row Variant, local Overrides, explicit visibility and a
-`theme.spacing.*` gap. When visible, it is centered in the Bubble content width
+stores an exact Icon Row Variant and local Overrides in its Runtime collection
+item payload. Its explicit `showIconRow` visibility is a forwardable, animatable
+Runtime Input, while its `theme.spacing.*` gap remains Variant configuration.
+When visible, it is centered in the Bubble content width
 and follows the complete text/media block: it appears below media when media is
 present and below text otherwise. Status is always laid out after that Icon Row
 and cannot remain inline with the text while the row is visible. Bubble receives
 and forwards the complete nested Icon Row Runtime contract; it never copies or
 renames Button Runtime fields.
+
+Any Runtime collection item may declare a complete `ComponentVariantSlot` as
+the owner of its nested Runtime contract. The generic collection contract uses
+that item's exact `variantReference` and local `overrides` during preparation;
+concrete Modules only declare the slot and forward the resulting payload.
 
 ## Content Rows
 

@@ -953,9 +953,14 @@
               ],
               "collections": [],
               "actions": []
+            },
+            "iconRowSlot": {
+              "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+              "overrides": {}
             }
           }
-        ]
+        ],
+        "showIconRow": false
       },
       "showMessageSeparator": true,
       "footerSurfaceSlot": {
@@ -3029,9 +3034,14 @@
                 ],
                 "collections": [],
                 "actions": []
+              },
+              "iconRowSlot": {
+                "variantReference": "component_project_foqn_s2_iconRow::variant::default",
+                "overrides": {}
               }
             }
-          ]
+          ],
+          "showIconRow": false
         },
         "showMessageSeparator": true,
         "footerSurfaceSlot": {

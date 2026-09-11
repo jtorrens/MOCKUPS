@@ -62,13 +62,6 @@ public static class GeneratedComponentScaffoldEmbeddedSlots
             ["bubble", "avatarSlot"],
             true),
         new(
-            "component.bubble.iconRow.editor",
-            "iconRow",
-            "Icon row",
-            "component.iconRow",
-            ["bubble", "iconRowSlot"],
-            true),
-        new(
             "component.bubble.media.audio.editor",
             "audio",
             "Audio media",

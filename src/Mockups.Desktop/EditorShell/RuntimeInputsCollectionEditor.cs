@@ -1942,6 +1942,11 @@ internal sealed class RuntimeInputsCollectionEditor
         var componentItems = collection.ComponentItems;
         var selectsComponent = componentItems is not null
             && input.JsonKey.Equals(componentItems.VariantReferenceJsonKey, StringComparison.Ordinal);
+        var selectsItemRuntimeVariant =
+            !string.IsNullOrWhiteSpace(collection.ItemRuntimeVariantSlotJsonKey)
+            && input.JsonKey.Equals(
+                collection.ItemRuntimeVariantSlotJsonKey,
+                StringComparison.Ordinal);
         var hasComponentOverrides = selectsComponent
             && componentItems is not null
             && item[componentItems.OverridesJsonKey] is JsonObject currentOverrides
@@ -2075,6 +2080,38 @@ internal sealed class RuntimeInputsCollectionEditor
                 updates[componentItems.OverridesJsonKey] = item[componentItems.OverridesJsonKey];
                 updates[componentItems.InputsJsonKey] = item[componentItems.InputsJsonKey];
             }
+            if (selectsItemRuntimeVariant)
+            {
+                var slot = nextNode as JsonObject
+                    ?? throw new InvalidOperationException(
+                        $"Runtime collection '{collection.Id}' item Variant slot "
+                        + $"'{input.JsonKey}' must be an object.");
+                var slotOwner = $"Runtime collection '{collection.Id}' item Variant slot '{input.JsonKey}'";
+                var reference = ComponentVariantSlotDocumentContract.VariantReference(
+                    slot,
+                    slotOwner);
+                var effectiveConfig = ComponentVariantConfig(reference)
+                    .DeepClone()
+                    .AsObject();
+                ComponentConfigOverrideMerger.MergeInto(
+                    effectiveConfig,
+                    ComponentVariantSlotDocumentContract.Overrides(slot, slotOwner));
+                var runtimeKey = collection.ItemRuntimeContractJsonKey;
+                var currentRuntime = !string.IsNullOrWhiteSpace(runtimeKey)
+                    ? item[runtimeKey] as JsonObject
+                    : null;
+                if (currentRuntime is null)
+                {
+                    throw new InvalidOperationException(
+                        $"Runtime collection '{collection.Id}' item Variant slot "
+                        + "requires itemRuntimeContractJsonKey with an object Runtime value.");
+                }
+                item[runtimeKey] = RuntimePreviewDocumentContract.PrepareFixture(
+                    currentRuntime,
+                    effectiveConfig,
+                    ComponentVariantConfig);
+                updates[runtimeKey] = item[runtimeKey];
+            }
             if (owner.IsInstance)
             {
                 await _instanceDocuments.UpdateCollectionValuesAsync(
@@ -2094,6 +2131,7 @@ internal sealed class RuntimeInputsCollectionEditor
             _testValuesChanged();
             afterCommit?.Invoke();
             if (selectsComponent
+                || selectsItemRuntimeVariant
                 || collection.Fields.Any((candidate) =>
                     candidate.EnabledWhenItemJsonKey.Equals(input.JsonKey, StringComparison.Ordinal)
                     || candidate.BehaviorTiming?.SourceFieldId.Equals(input.Id, StringComparison.Ordinal) == true))

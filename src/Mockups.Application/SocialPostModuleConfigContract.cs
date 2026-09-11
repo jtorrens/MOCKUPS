@@ -219,6 +219,7 @@ internal static class SocialPostModuleConfigContract
                 "statusState",
                 "statusText",
                 "typingIndicator",
+                "showIconRow",
                 "iconRowRuntime",
             ],
             owner);
@@ -248,6 +249,7 @@ internal static class SocialPostModuleConfigContract
             ["none", "sent", "delivered", "read"], $"{owner}.statusState");
         JsonPath.RequiredString(inputs, "statusText", owner, allowEmpty: true);
         JsonPath.RequiredBoolean(inputs, "typingIndicator", owner);
+        JsonPath.RequiredBoolean(inputs, "showIconRow", owner);
         JsonPath.RequiredArray(inputs, "iconRowRuntime", owner);
     }
 
