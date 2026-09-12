@@ -649,11 +649,16 @@ function resolveMessageReflow(
       textInputComposerEnabled,
     );
     const appearance = visibleAt > 0
-      ? [{ startFrame: visibleAt, targetFrame: visibleAt }]
+      ? [{
+          kind: "appearance" as const,
+          startFrame: visibleAt,
+          targetFrame: visibleAt,
+        }]
       : [];
     const disappearance = message.hasExplicitPresenceEnd
       && message.presenceEndFrame < automaticEndFrame
       ? [{
+          kind: "disappearance" as const,
           startFrame: reflowAtMessageOutStart
             ? Math.max(visibleAt, message.presenceEndFrame - motionDurationFrames)
             : message.presenceEndFrame,
@@ -662,7 +667,10 @@ function resolveMessageReflow(
       : [];
     return [...appearance, ...disappearance];
   }).filter(({ startFrame }) => startFrame <= frame && frame < startFrame + durationFrames)
-    .sort((a, b) => b.startFrame - a.startFrame);
+    .sort((a, b) => {
+      if (a.kind !== b.kind) return a.kind === "disappearance" ? -1 : 1;
+      return b.startFrame - a.startFrame;
+    });
   const event = events[0];
   if (event === undefined) return undefined;
   const fromMessages = visibleMessages(

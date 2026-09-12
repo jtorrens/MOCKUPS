@@ -1139,12 +1139,44 @@ test("Conversation can begin reflow on the first frame of message Out", () => {
       paceToken: "theme.motion.naturalPace.normal",
     },
   });
-  runtime.messages = [message("leaving", 10), message("remaining", 0)];
+  runtime.messages = [
+    message("leaving", 100),
+    message("remaining", 0),
+    {
+      ...message("appearing", 0),
+      delayAfterPreviousFrames: 5,
+    },
+  ];
   source.designPreviewJson = JSON.stringify(runtime);
 
-  setConversationFrame(source, 4);
+  const appearanceFrame = Array.from({ length: 60 }, (_, frame) => frame)
+    .find((frame) => {
+      setConversationFrame(source, frame);
+      return resolveConversationModule(source).visibleMessages.some(
+        ({ id }) => id === "appearing",
+      );
+    });
+  assert.notEqual(appearanceFrame, undefined);
+  runtime.messages[0]!.visibleDurationFrames = appearanceFrame! + 4;
+  source.designPreviewJson = JSON.stringify(runtime);
+
+  const exitStartFrame = Array.from(
+    { length: appearanceFrame! + 1 },
+    (_, frame) => frame,
+  ).find((frame) => {
+    setConversationFrame(source, frame);
+    return resolveConversationModule(source)
+      .visibleMessages[0]?.presenceMotionKind === "exit";
+  });
+  assert.notEqual(exitStartFrame, undefined);
+  assert.ok(exitStartFrame! < appearanceFrame!);
+
+  setConversationFrame(source, appearanceFrame!);
   const started = resolveConversationModule(source);
-  assert.deepEqual(started.visibleMessages.map(({ id }) => id), ["leaving", "remaining"]);
+  assert.deepEqual(
+    started.visibleMessages.map(({ id }) => id),
+    ["leaving", "remaining", "appearing"],
+  );
   assert.equal(started.visibleMessages[0]?.presenceMotionKind, "exit");
   assert.deepEqual(
     started.messageReflow?.fromMessages.map(({ id }) => id),
@@ -1152,24 +1184,24 @@ test("Conversation can begin reflow on the first frame of message Out", () => {
   );
   assert.deepEqual(
     started.messageReflow?.toMessages.map(({ id }) => id),
-    ["remaining"],
+    ["remaining", "appearing"],
   );
   assert.ok((started.messageReflow?.progress ?? 0) > 0);
 
-  const bubbleYs = (frame: number) => {
+  const bubbleYs = (frame: number, expectedCount: number) => {
     setConversationFrame(source, frame);
     const bubbles = findNodes(
       conversationModuleToRenderable(source),
       "component.bubble",
     );
-    assert.equal(bubbles.length, 2);
-    return bubbles.map((bubble) => {
+    assert.equal(bubbles.length, expectedCount);
+    return bubbles.slice(0, 2).map((bubble) => {
       const bounds = renderableVisualBounds(bubble);
       return bounds.y + (bubble.transform?.y ?? 0);
     });
   };
-  const startedYs = bubbleYs(4);
-  const movingYs = bubbleYs(6);
+  const startedYs = bubbleYs(appearanceFrame!, 3);
+  const movingYs = bubbleYs(appearanceFrame! + 2, 3);
   const leavingDisplacement = startedYs[0]! - movingYs[0]!;
   const remainingDisplacement = startedYs[1]! - movingYs[1]!;
   assert.ok(Math.abs(leavingDisplacement) > 0.001);

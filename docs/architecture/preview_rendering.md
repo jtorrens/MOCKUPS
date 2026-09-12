@@ -366,6 +366,10 @@ an exiting message remains in the painted set, receives the same resolved
 reflow displacement as the adjacent surviving messages while its own
 Motion/Fade continues, and disappears only when Out completes. The generic
 renderer only paints the resulting geometry.
+If an appearance or viewport-overflow event begins during that advanced Out
+window, it does not replace the active disappearance reflow. The original Out
+boundary remains authoritative and its track-end target contains the complete
+message set visible at that frame.
 
 Message starts reach Conversation only through the prepared common owner
 timeline. That timeline consumes the declared Screen-instance positioning mode

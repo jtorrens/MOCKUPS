@@ -100,6 +100,9 @@ Motion/Fade with the same resolved reflow displacement as the adjacent
 surviving messages and leaves the layout only when Out completes. At either
 selected discrete frame boundary, the first frame consumes the first reflow
 sample so no unchanged hold frame separates that boundary from movement.
+An appearance or viewport-overflow event that begins during that advanced Out
+window does not replace its active reflow; the Out keeps its original start and
+the target layout at track completion includes every message visible there.
 
 ## Temporal ownership
 
