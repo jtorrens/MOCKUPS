@@ -26,6 +26,11 @@ internal static class EditorModalWindowPriority
             OwnerFamily(rootOwner).Any((window) =>
                 window.IsVisible && window.IsActive);
 
+        bool HasVisibleOwnedWindow() =>
+            OwnerFamily(dialog)
+                .Skip(1)
+                .Any((window) => window.IsVisible);
+
         void DisplaceCompetingWindows()
         {
             foreach (var window in OwnerFamily(rootOwner))
@@ -69,6 +74,7 @@ internal static class EditorModalWindowPriority
                     activationPending = false;
                     if (closed
                         || !dialog.IsVisible
+                        || HasVisibleOwnedWindow()
                         || (requireActiveOwnerFamily
                             && !HasActiveOwnerFamilyWindow()))
                     {
