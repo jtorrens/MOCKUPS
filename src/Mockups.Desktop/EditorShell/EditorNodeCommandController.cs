@@ -257,7 +257,8 @@ internal sealed class EditorNodeCommandController
         node = EditorNodeSelectionState.FindNodeById(_treeRoots(), deleteNodeId) ?? node;
         if (node.Parent is null) return;
 
-        var usages = await _operations.ExecuteAsync(
+        var usages = await _operations.ExecuteWithActivityAsync(
+            "Checking reference usage…",
             () => _referenceUsage.GetReferenceUsageDetails(node));
         if (usages.Count > 0)
         {

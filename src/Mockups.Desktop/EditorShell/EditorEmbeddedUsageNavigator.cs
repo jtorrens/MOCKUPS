@@ -10,6 +10,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class EditorEmbeddedUsageNavigator
 {
     private readonly IComponentDocumentStore _database;
+    private readonly EditorOperationCoordinator _operations;
     private readonly Window _owner;
     private readonly Func<bool> _isDark;
     private readonly Func<string, bool> _selectNodeById;
@@ -20,6 +21,7 @@ internal sealed class EditorEmbeddedUsageNavigator
 
     public EditorEmbeddedUsageNavigator(
         IComponentDocumentStore database,
+        EditorOperationCoordinator operations,
         Window owner,
         Func<bool> isDark,
         Func<string, bool> selectNodeById,
@@ -29,6 +31,7 @@ internal sealed class EditorEmbeddedUsageNavigator
         IEditorShellMessageSink messages)
     {
         _database = database;
+        _operations = operations;
         _owner = owner;
         _isDark = isDark;
         _selectNodeById = selectNodeById;
@@ -47,18 +50,31 @@ internal sealed class EditorEmbeddedUsageNavigator
                 return;
             }
 
-            var settings = _database.GetComponentClassSettings(node.Id);
-            var usages = _database.GetEmbeddedComponentUsages(settings.ProjectId, settings.ComponentType, node.Id);
             var variantNode = ActiveVariantNodeFor(node);
-            var variantUsages = variantNode is null
-                ? []
-                : _database.GetComponentVariantReferenceUsageDetails(variantNode);
+            var prepared = await _operations.ExecuteWithActivityAsync(
+                "Preparing embedded usage…",
+                () =>
+                {
+                    var settings = _database.GetComponentClassSettings(
+                        node.Id);
+                    var usages = _database.GetEmbeddedComponentUsages(
+                        settings.ProjectId,
+                        settings.ComponentType,
+                        node.Id);
+                    var variantUsages = variantNode is null
+                        ? []
+                        : _database.GetComponentVariantReferenceUsageDetails(
+                            variantNode);
+                    return (Settings: settings,
+                        Usages: usages,
+                        VariantUsages: variantUsages);
+                });
             var selected = await new EditorEmbeddedUsageDialog(_owner, _isDark()).Show(
-                settings.Name,
-                settings.ComponentType,
-                usages,
+                prepared.Settings.Name,
+                prepared.Settings.ComponentType,
+                prepared.Usages,
                 variantNode?.Name,
-                variantUsages);
+                prepared.VariantUsages);
             if (selected is not null)
             {
                 await NavigateToSelection(selected);
@@ -74,10 +90,16 @@ internal sealed class EditorEmbeddedUsageNavigator
     {
         try
         {
-            var ownerSettings = _database.GetComponentClassSettings(ownerNode.Id);
-            var usages = _database.GetEmbeddedComponentUsages(
-                ownerSettings.ProjectId,
-                slot.EmbeddedComponentType);
+            var usages = await _operations.ExecuteWithActivityAsync(
+                "Preparing embedded usage…",
+                () =>
+                {
+                    var ownerSettings =
+                        _database.GetComponentClassSettings(ownerNode.Id);
+                    return _database.GetEmbeddedComponentUsages(
+                        ownerSettings.ProjectId,
+                        slot.EmbeddedComponentType);
+                });
             var selected = await new EditorEmbeddedUsageDialog(_owner, _isDark()).Show(
                 slot.Label,
                 slot.EmbeddedComponentType,

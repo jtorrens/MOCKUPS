@@ -36,7 +36,8 @@ internal sealed class IconTokenPickerDialog
     {
         var themeTokens = string.IsNullOrWhiteSpace(iconThemeId)
             ? []
-            : await _operations.ExecuteAsync(
+            : await _operations.ExecuteWithActivityAsync(
+                "Preparing icon selector…",
                 () => _database.GetIconThemeTokens(iconThemeId));
         var selected = currentValue
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)

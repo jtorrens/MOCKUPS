@@ -11,6 +11,9 @@ public sealed class EditorOperationCoordinator : IDisposable
     private CancellationTokenSource _lifetime = new();
     private bool _stopping;
     private bool _disposed;
+    private long _nextActivityId;
+
+    public event Action<EditorOperationActivity>? ActivityChanged;
 
     public async Task<T> ExecuteAsync<T>(
         Func<T> operation,
@@ -57,6 +60,32 @@ public sealed class EditorOperationCoordinator : IDisposable
                 return true;
             },
             cancellationToken);
+
+    public async Task<T> ExecuteWithActivityAsync<T>(
+        string message,
+        Func<T> operation,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(message);
+        ArgumentNullException.ThrowIfNull(operation);
+
+        var activity = new EditorOperationActivity(
+            Interlocked.Increment(ref _nextActivityId),
+            message,
+            true);
+        ActivityChanged?.Invoke(activity);
+        try
+        {
+            return await ExecuteAsync(
+                    operation,
+                    cancellationToken)
+                .ConfigureAwait(false);
+        }
+        finally
+        {
+            ActivityChanged?.Invoke(activity with { IsActive = false });
+        }
+    }
 
     public async Task<T> ExecuteShutdownAsync<T>(
         Func<T> operation)
@@ -134,3 +163,8 @@ public sealed class EditorOperationCoordinator : IDisposable
         }
     }
 }
+
+public readonly record struct EditorOperationActivity(
+    long Id,
+    string Message,
+    bool IsActive);

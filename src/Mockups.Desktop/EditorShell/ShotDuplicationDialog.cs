@@ -27,7 +27,8 @@ internal sealed class ShotDuplicationDialog
         {
             throw new InvalidOperationException("Shot duplication requires an Episode.");
         }
-        var suggested = await _operations.ExecuteAsync(
+        var suggested = await _operations.ExecuteWithActivityAsync(
+            "Preparing Duplicate Shot…",
             () => _database.SuggestShotNumber(episode.Id));
         var definition = new RecordCreationDefinition(
             "shot.duplicate",

@@ -33,7 +33,8 @@ internal sealed class ThemeTokenPickerDialog
         var allowedTokens = allowedOptions is { Count: > 0 }
             ? allowedOptions.Select((option) => option.Value).ToHashSet(StringComparer.Ordinal)
             : null;
-        var startup = await _operations.ExecuteAsync(
+        var startup = await _operations.ExecuteWithActivityAsync(
+            "Preparing theme token selector…",
             () =>
             {
                 var themes = _database.GetThemeOptions(projectId)

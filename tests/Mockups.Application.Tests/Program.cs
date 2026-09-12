@@ -44,6 +44,7 @@ var tests = new (string Name, Action Run)[]
     ("Shot Manager readonly documents expose only the strict stable projection", ShotManagerReadonlyDocumentsAreStrict),
     ("editor operations execute away from the caller thread", EditorOperationsRunOnWorker),
     ("editor operations preserve their submission order", EditorOperationsAreSerialized),
+    ("presented editor operations publish their complete activity lifetime", PresentedEditorOperationsPublishActivityLifetime),
     ("disposing editor operations cancels queued work", DisposeCancelsQueuedEditorOperations),
 };
 
@@ -731,6 +732,26 @@ static void EditorOperationsAreSerialized()
     Equal(2, order.Count);
     Equal(1, order[0]);
     Equal(2, order[1]);
+}
+
+static void PresentedEditorOperationsPublishActivityLifetime()
+{
+    using var coordinator = new EditorOperationCoordinator();
+    var activities = new List<EditorOperationActivity>();
+    coordinator.ActivityChanged += activities.Add;
+
+    var result = coordinator.ExecuteWithActivityAsync(
+            "Preparing dialog…",
+            () => 42)
+        .GetAwaiter()
+        .GetResult();
+
+    Equal(42, result);
+    Equal(2, activities.Count);
+    True(activities[0].IsActive);
+    True(!activities[1].IsActive);
+    Equal(activities[0].Id, activities[1].Id);
+    Equal("Preparing dialog…", activities[0].Message);
 }
 
 static void DisposeCancelsQueuedEditorOperations()

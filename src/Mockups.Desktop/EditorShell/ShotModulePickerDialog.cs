@@ -31,7 +31,8 @@ internal sealed class ShotModulePickerDialog
 
     public async Task<ShotModuleInstanceDraft?> Show(string shotId)
     {
-        var startup = await _operations.ExecuteAsync(
+        var startup = await _operations.ExecuteWithActivityAsync(
+            "Preparing Add Screen…",
             () =>
             {
                 var modules = _database.GetAvailableShotModules(

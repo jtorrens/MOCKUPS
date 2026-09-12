@@ -227,6 +227,7 @@ var tests = new (string Name, Action Run)[]
     ("same-owner editor refresh keeps root and embedded cards mounted", SameOwnerEditorRefreshKeepsCardsMounted),
     ("Preview shell remains usable at 1040 and 1440 widths", PreviewShellLayoutIsResponsive),
     ("Preview controls detach into one topmost session window", PreviewControlsDetachIntoTopmostSessionWindow),
+    ("presented editor operations own the shared loading scrim", PresentedEditorOperationsOwnSharedLoadingScrim),
     ("navigation panel restores its width and opens for routed selection", NavigationPanelRestoresWidthAndOpensForRoutedSelection),
     ("real Preview shell layout remains usable at 1040 and 1440", PreviewShellVisualTreeIsResponsive),
     ("List Item and List expose their runtime model in the real editor", ListRuntimeEditorVisualTreeExposesDynamicSetsAndState),
@@ -6675,6 +6676,47 @@ static void PreviewControlsDetachIntoTopmostSessionWindow()
         True(!controller.IsDetached);
 
         owner.Close();
+    }, CancellationToken.None).GetAwaiter().GetResult();
+}
+
+static void PresentedEditorOperationsOwnSharedLoadingScrim()
+{
+    using var session = HeadlessUnitTestSession.StartNew(
+        typeof(HeadlessTestApplication));
+    session.Dispatch(() =>
+    {
+        using var operations = new EditorOperationCoordinator();
+        var scrim = new EditorLoadingScrim();
+        using var presenter = new EditorOperationActivityPresenter(
+            operations,
+            scrim);
+        using var started = new ManualResetEventSlim();
+        using var release = new ManualResetEventSlim();
+        var preparation = operations.ExecuteWithActivityAsync(
+            "Preparing dialog…",
+            () =>
+            {
+                started.Set();
+                if (!release.Wait(TimeSpan.FromSeconds(10)))
+                {
+                    throw new TimeoutException(
+                        "Timed out waiting to complete dialog preparation.");
+                }
+                return true;
+            });
+
+        True(started.Wait(TimeSpan.FromSeconds(10)));
+        Dispatcher.UIThread.RunJobs();
+        True(scrim.IsVisible);
+        True(scrim
+            .GetLogicalDescendants()
+            .OfType<TextBlock>()
+            .Any((text) => text.Text == "Preparing dialog…"));
+
+        release.Set();
+        True(preparation.GetAwaiter().GetResult());
+        Dispatcher.UIThread.RunJobs();
+        True(!scrim.IsVisible);
     }, CancellationToken.None).GetAwaiter().GetResult();
 }
 

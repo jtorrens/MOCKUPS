@@ -38,6 +38,8 @@ public partial class MainWindow : SukiWindow
     private readonly EditorEmbeddedEditorController _embeddedEditors;
     private readonly EditorEmbeddedUsageNavigator _embeddedUsageNavigator;
     private readonly EditorReferenceUsageNavigator _referenceUsageNavigator;
+    private readonly EditorOperationActivityPresenter
+        _operationActivityPresenter;
     private readonly EditorHeaderController _editorHeader;
     private readonly EditorVariantHistoryService _variantHistory;
     private readonly EditorProductionNavigationActions _productionNavigationActions;
@@ -82,6 +84,10 @@ public partial class MainWindow : SukiWindow
         var fieldCommitCoordinator = new EditorFieldCommitCoordinator(
             application.Operations);
         InitializeComponent();
+        _operationActivityPresenter =
+            new EditorOperationActivityPresenter(
+                application.Operations,
+                OperationLoadingScrim);
         Title = EditorBuildIdentity.WindowTitle;
         EditorContextMenuBehavior.Configure(this);
         _themeController = new EditorThemeController(this, RootShell, RefreshShellTheme);
@@ -309,6 +315,7 @@ public partial class MainWindow : SukiWindow
             _editorSessionUiState);
         _embeddedUsageNavigator = new EditorEmbeddedUsageNavigator(
             data.Components,
+            application.Operations,
             this,
             () => _themeController.IsDark,
             (nodeId) => NavigateToNodeById(
@@ -591,6 +598,7 @@ public partial class MainWindow : SukiWindow
         _editorContent.Dispose();
         _collectionCards.Dispose();
         _previewController.Dispose();
+        _operationActivityPresenter.Dispose();
         application.Operations.Dispose();
         _workspaceCoordinator.Dispose();
     }

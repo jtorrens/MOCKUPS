@@ -58,7 +58,8 @@ internal sealed class EditorAddChildWorkflow
     {
         try
         {
-            var definition = await _operations.ExecuteAsync(
+            var definition = await _operations.ExecuteWithActivityAsync(
+                "Preparing creation form…",
                 () => _database.PrepareRecordCreation(parent, creationId));
             var draft = definition.RequiresConfirmation
                 ? await new RecordCreationDialog(_owner).Show(definition)

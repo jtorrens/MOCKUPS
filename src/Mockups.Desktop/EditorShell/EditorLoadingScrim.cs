@@ -10,6 +10,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class EditorLoadingScrim : Border
 {
     private readonly TextBlock _messageText;
+    private readonly TextBlock _cancelText;
     private Action? _cancel;
 
     public EditorLoadingScrim()
@@ -29,6 +30,13 @@ internal sealed class EditorLoadingScrim : Border
             TextWrapping = TextWrapping.Wrap,
             HorizontalAlignment = HorizontalAlignment.Center,
             TextAlignment = TextAlignment.Center,
+        };
+        _cancelText = new TextBlock
+        {
+            Text = "Esc to stop",
+            FontSize = 11,
+            Opacity = 0.72,
+            HorizontalAlignment = HorizontalAlignment.Center,
         };
 
         Child = new Border
@@ -55,13 +63,7 @@ internal sealed class EditorLoadingScrim : Border
                         HorizontalAlignment = HorizontalAlignment.Stretch,
                     },
                     _messageText,
-                    new TextBlock
-                    {
-                        Text = "Esc to stop",
-                        FontSize = 11,
-                        Opacity = 0.72,
-                        HorizontalAlignment = HorizontalAlignment.Center,
-                    },
+                    _cancelText,
                 },
             },
         };
@@ -82,6 +84,7 @@ internal sealed class EditorLoadingScrim : Border
     {
         SetMessage(message);
         _cancel = cancel;
+        _cancelText.IsVisible = cancel is not null;
         IsVisible = true;
         Focus();
     }

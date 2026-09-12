@@ -17,6 +17,7 @@
                  BackgroundTransitionsEnabled="False"
                  BackgroundTransitionTime="0.05">
     <Border x:Name="RootShell" Padding="10">
+    <Grid>
     <Grid RowDefinitions="Auto,*">
         <Border Grid.Row="0"
                 Padding="18,12">
@@ -407,6 +408,9 @@
                 </suki:GlassCard>
             </Border>
         </Grid>
+    </Grid>
+    <editor:EditorLoadingScrim x:Name="OperationLoadingScrim"
+                               ZIndex="1000" />
     </Grid>
     </Border>
 </suki:SukiWindow>

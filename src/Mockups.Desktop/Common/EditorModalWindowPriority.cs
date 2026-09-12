@@ -89,7 +89,7 @@ internal static class EditorModalWindowPriority
             {
                 DispatcherTimer.RunOnce(
                     () => PromoteDialog(
-                        requireActiveOwnerFamily: true),
+                        requireActiveOwnerFamily: false),
                     delay);
             }
         };

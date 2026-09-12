@@ -41,7 +41,8 @@ internal sealed class IconThemeSvgReplaceDialog
 
     public async Task Show(ProjectTreeNode node, string token)
     {
-        var original = await _operations.ExecuteAsync(
+        var original = await _operations.ExecuteWithActivityAsync(
+            "Preparing SVG replacement…",
             () => _database.ReadIconThemeTokenSvg(
                 node.Id,
                 token));
