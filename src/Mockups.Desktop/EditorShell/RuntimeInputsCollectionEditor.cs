@@ -652,14 +652,52 @@ internal sealed class RuntimeInputsCollectionEditor
         control.IsEnabled = RuntimeInputIsEnabled(preview, DesignPreviewTestValues.Parse(owner.ConfigJson), input);
         control.ValueChanged += (_, next) =>
         {
+            var positioningCollections = CollectionPositioningStorageJsonKeys(
+                preview,
+                input.Id);
+            var isPositioningMode = positioningCollections.Count > 0;
             if (!owner.IsInstance)
             {
+                if (isPositioningMode)
+                {
+                    var runtime = DesignPreviewTestValues.Parse(
+                        DesignPreviewTestValues.RuntimeJson(
+                            preview.ToJsonString()));
+                    if (RuntimeAnimationFrameOrigin.TryChangeCollectionPositioningMode(
+                            preview,
+                            runtime,
+                            new JsonObject(),
+                            input.JsonKey,
+                            DesignPreviewTestValues.ValueNode(input, next),
+                            out var converted,
+                            _preparedDictionaryContext?.ThemeTokens()))
+                    {
+                        var config = DesignPreviewTestValues.Parse(owner.ConfigJson);
+                        foreach (var collection in RuntimeInputDefinitionReader.ReadCollections(
+                                     preview,
+                                     config,
+                                     includeHidden: true)
+                                     .Where((collection) => positioningCollections.Contains(
+                                         collection.StorageJsonKey)))
+                        {
+                            if (converted[collection.StorageJsonKey] is not JsonArray items)
+                                continue;
+                            _setPreviewCollectionTestItems(
+                                owner.Node,
+                                collection.JsonKey,
+                                items.OfType<JsonObject>()
+                                    .Select(CloneObject)
+                                    .ToList());
+                        }
+                    }
+                }
                 DesignPreviewTestValues.SetValue(
                     preview,
                     input,
                     next);
             }
-            if (ShouldPublishTransientValue(owner.IsInstance, definition))
+            if (ShouldPublishTransientValue(owner.IsInstance, definition)
+                && !(owner.IsInstance && isPositioningMode))
             {
                 _setPreviewTestValue(input.JsonKey, next);
             }
@@ -689,6 +727,32 @@ internal sealed class RuntimeInputsCollectionEditor
         return DecorateAnimationToggle(owner, input, "", control, ownerInputs);
     }
 
+    private static IReadOnlySet<string> CollectionPositioningStorageJsonKeys(
+        JsonObject contract,
+        string inputId) =>
+        JsonPath.OptionalObjectArray(
+                contract,
+                "collections",
+                "Runtime Input positioning contract")
+            .Where((collection) =>
+            {
+                var positioning = JsonPath.OptionalObject(
+                    collection["animationTimeline"] as JsonObject ?? new JsonObject(),
+                    "positioning",
+                    "Runtime collection animation timeline");
+                return positioning is not null
+                    && JsonPath.RequiredString(
+                            positioning,
+                            "modeInputId",
+                            "Runtime collection positioning")
+                        .Equals(inputId, StringComparison.Ordinal);
+            })
+            .Select((collection) => JsonPath.RequiredString(
+                collection,
+                "jsonKey",
+                "Runtime collection positioning"))
+            .ToHashSet(StringComparer.Ordinal);
+
     private static bool RuntimeInputIsEnabled(
         JsonObject preview,
         JsonObject config,
@@ -701,10 +765,24 @@ internal sealed class RuntimeInputsCollectionEditor
         }
 
         var path = input.EnabledWhenPath.Split('.', StringSplitOptions.RemoveEmptyEntries);
-        var current = JsonPath.Get(preview, path) ?? JsonPath.Get(config, path);
+        var current = JsonPath.Get(
+                preview["testValues"] as JsonObject ?? new JsonObject(),
+                path)
+            ?? JsonPath.Get(preview, path)
+            ?? JsonPath.Get(config, path);
         return current is JsonValue value
-            && value.TryGetValue<string>(out var text)
-            && text.Equals(input.EnabledWhenValue, StringComparison.Ordinal);
+            && RuntimeScalarText(value)
+                .Equals(input.EnabledWhenValue, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string RuntimeScalarText(JsonValue value)
+    {
+        if (value.TryGetValue<string>(out var text)) return text;
+        if (value.TryGetValue<bool>(out var boolean))
+            return boolean ? "true" : "false";
+        if (value.TryGetValue<decimal>(out var number))
+            return number.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        return "";
     }
 
     internal static bool ShouldPublishTransientValue(
@@ -1645,7 +1723,11 @@ internal sealed class RuntimeInputsCollectionEditor
             content.Children.Add(actionRow);
         }
         var visibleCollectionFields = collection.Fields
-            .Where((input) => IsVisibleRuntimeValue(owner, input))
+            .Where((input) => IsVisibleRuntimeValue(owner, input)
+                && RuntimeInputIsEnabled(
+                    preview,
+                    DesignPreviewTestValues.Parse(owner.ConfigJson),
+                    input))
             .ToList();
         foreach (var input in ComponentInputGrouping.OwnInputs(visibleCollectionFields))
         {

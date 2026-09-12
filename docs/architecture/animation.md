@@ -40,8 +40,9 @@ right edge fixed and grow towards the left; centered Bubbles retain their
 current center and left-aligned Bubbles retain their left edge. The final
 Bubble bounds remain reserved only for vertical message reflow.
 
-Timeline edits commit through the existing temporal owners. Serial collection
-movement writes the collection's declared pre-duration field; outgoing resize
+Timeline edits commit through the existing temporal owners. Collection
+movement writes the position field selected by its declared positioning mode;
+outgoing resize
 writes its declared parent-owned presence-duration field. Presence duration is
 not retime and never changes the item's local clock, its sequencing completion
 or its keyframes. Neither operation rewrites local keyframes.
@@ -50,12 +51,18 @@ inferred from the Screen or collection name. Keyframes outside a resized item
 or Screen range remain authored at their existing owner-local frames.
 
 Each serial collection lane begins at the parent-owned position resolved by
-the common owner timeline. A declared `preDurationFieldIds` value is the signed
-offset from the preceding item's sequence end, or from Screen frame zero for
-the first item. Positive values create a gap, zero makes the items contiguous,
-and negative values overlap them. Moving a lane writes that same field; no
-second timing document is created. Collections without a declared offset use
-zero.
+the common owner timeline. By default, a declared `preDurationFieldIds` value
+is the signed offset from the preceding item's sequence end, or from Screen
+frame zero for the first item. Positive values create a gap, zero makes the
+items contiguous, and negative values overlap them. A collection may also
+declare `animationTimeline.positioning` with one Boolean mode input, that
+relative-offset field and one absolute-start field. In absolute mode every
+item start is a frame relative to the Screen start and sibling duration or
+movement cannot displace it. Changing the mode rewrites the newly active
+representation for every item in one owner operation while preserving all
+current Screen-local starts; local keyframes are unchanged. Moving a lane
+writes only the active position field. Collections without a declared offset
+use zero.
 
 A collection may declare `animationTimeline.presenceDurationFieldId`. Zero is
 the explicit automatic sentinel: the item remains present through the end of

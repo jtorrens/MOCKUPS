@@ -53,6 +53,14 @@ Preview controls do not create fields or reinterpret their ownership.
 and collection declarations. Persistence and Desktop consume its immutable
 definitions; visual sessions contain no parallel contract parser.
 
+A structured collection may bind a Boolean Screen-instance Runtime Input to
+`animationTimeline.positioning`. The declaration names the collection's
+relative-offset and absolute-start fields. The common owner timeline resolves
+the selected representation, and the generic instance write converts every
+item before committing the mode. The inactive values remain persisted but are
+never consulted until a later conversion refreshes them from the current
+resolved positions.
+
 A Runtime Input may conditionally appear from either one exact config path or
 one stable item in a Variant-owned collection. Collection-item visibility
 declares the collection path, stable item id, item-relative field path and all

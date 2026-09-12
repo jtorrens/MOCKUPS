@@ -63,6 +63,12 @@ export class RuntimeOwnerTimeline {
         "runtime owner collection animation timeline",
       );
       const sequenceItems = collectionTimeline.sequenceItems !== false;
+      const absoluteStartFieldId = absoluteCollectionStartFieldId(
+        contract,
+        runtime,
+        collection,
+        directFields,
+      );
       let cursor = 0;
       for (const item of values) {
         const fields = itemFields(collection, item);
@@ -74,7 +80,10 @@ export class RuntimeOwnerTimeline {
           "runtime collection animation timeline",
         )
           .reduce((sum, fieldId) => sum + signedFieldValue(item, fields, fieldId), 0);
-        const start = (sequenceItems ? cursor : this.itemOwnerOrigin(collection, item)) + pre;
+        const usesAbsoluteStart = !!absoluteStartFieldId;
+        const start = usesAbsoluteStart
+          ? signedFieldValue(item, fields, absoluteStartFieldId)
+          : (sequenceItems ? cursor : this.itemOwnerOrigin(collection, item)) + pre;
         const durations = this.itemDurations(collection, item, targetId, phase);
         const effectiveSpan = this.targetDuration(targetId, durations.span);
         const effectiveSequence = scale(durations.sequence, durations.span, effectiveSpan);
@@ -92,7 +101,7 @@ export class RuntimeOwnerTimeline {
           phase,
           fields: new Map(),
         });
-        if (sequenceItems) cursor = start + effectiveSequence;
+        if (sequenceItems && !usesAbsoluteStart) cursor = start + effectiveSequence;
         naturalEnd = Math.max(naturalEnd, start + effectiveSpan);
       }
       if (sequenceItems) naturalEnd = Math.max(naturalEnd, cursor);
@@ -628,6 +637,39 @@ function validateCollectionTimeline(collection: JsonRecord, fields: JsonRecord[]
   validateOwnerPhase(timeline, "runtime collection animation timeline");
   optionalStringArray(timeline, "preDurationFieldIds", "runtime collection animation timeline");
   optionalStringArray(timeline, "postDurationFieldIds", "runtime collection animation timeline");
+  if (Object.hasOwn(timeline, "positioning")) {
+    const positioning = requiredObject(
+      timeline,
+      "positioning",
+      "runtime collection animation timeline",
+    );
+    requiredString(positioning, "modeInputId", "runtime collection positioning mode input");
+    const relativeFieldId = requiredString(
+      positioning,
+      "relativeOffsetFieldId",
+      "runtime collection positioning relative offset",
+    );
+    const absoluteFieldId = requiredString(
+      positioning,
+      "absoluteStartFieldId",
+      "runtime collection positioning absolute start",
+    );
+    const fieldIds = new Set(fields.map((field) =>
+      requiredString(field, "id", "runtime owner collection fields")));
+    if (!fieldIds.has(relativeFieldId) || !fieldIds.has(absoluteFieldId)) {
+      throw new Error("runtime collection positioning must reference declared relative and absolute fields");
+    }
+    const preFieldIds = optionalStringArray(
+      timeline,
+      "preDurationFieldIds",
+      "runtime collection animation timeline",
+    );
+    if (preFieldIds.length !== 1 || preFieldIds[0] !== relativeFieldId) {
+      throw new Error(
+        "runtime collection positioning relativeOffsetFieldId must be the one declared pre-duration field",
+      );
+    }
+  }
   if (Object.hasOwn(timeline, "sequenceCompletionFieldIds")) {
     const sequenceFieldIds = optionalStringArray(
       timeline,
@@ -678,6 +720,51 @@ function validateCollectionTimeline(collection: JsonRecord, fields: JsonRecord[]
   ]) {
     requiredString(ownerOrigin, key, `runtime collection owner origin ${key}`);
   }
+}
+
+function absoluteCollectionStartFieldId(
+  contract: JsonRecord,
+  runtime: JsonRecord,
+  collection: JsonRecord,
+  fields: JsonRecord[],
+) {
+  const timeline = optionalObject(
+    collection,
+    "animationTimeline",
+    "runtime owner collection animation timeline",
+  );
+  if (!Object.hasOwn(timeline, "positioning")) return "";
+  validateCollectionTimeline(collection, fields);
+  const positioning = requiredObject(
+    timeline,
+    "positioning",
+    "runtime collection animation timeline",
+  );
+  const modeInputId = requiredString(
+    positioning,
+    "modeInputId",
+    "runtime collection positioning mode input",
+  );
+  const modeInput = optionalObjectArray(contract, "inputs", "runtime owner contract")
+    .find((input) => requiredString(input, "id", "runtime owner input") === modeInputId);
+  if (!modeInput) {
+    throw new Error(`runtime collection positioning references missing mode input '${modeInputId}'`);
+  }
+  const modeJsonKey = requiredString(
+    modeInput,
+    "jsonKey",
+    `runtime collection positioning mode input '${modeInputId}'`,
+  );
+  if (typeof runtime[modeJsonKey] !== "boolean") {
+    throw new Error(`runtime collection positioning mode input '${modeInputId}' must be a boolean`);
+  }
+  return runtime[modeJsonKey] === true
+    ? requiredString(
+        positioning,
+        "absoluteStartFieldId",
+        "runtime collection positioning absolute start",
+      )
+    : "";
 }
 
 function validateOwnerPhase(timeline: JsonRecord, path: string) {

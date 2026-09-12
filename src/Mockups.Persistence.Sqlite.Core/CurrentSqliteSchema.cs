@@ -220,7 +220,7 @@ internal static class CurrentSqliteSchema
           layout_json TEXT NOT NULL
         );
 
-        PRAGMA user_version = 16;
+        PRAGMA user_version = 17;
         """;
 
 }

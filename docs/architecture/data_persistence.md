@@ -5,7 +5,7 @@ Status: normative.
 ## Database scope
 
 The desktop application persists one complete Project workspace in SQLite.
-Schema version `16` is the only current schema. Every row belongs directly or
+Schema version `17` is the only current schema. Every row belongs directly or
 indirectly to a Project and cross-Project lookup is invalid.
 
 The current tables are:
@@ -141,6 +141,13 @@ write that can affect the timeline. A structured item's signed entry offset and
 explicit presence duration remain child timing: neither changes the calculated
 or explicit Screen duration. Preview and Render clip that child timing to the
 independently resolved Screen interval.
+
+A declared collection-positioning mode change is one complete Production owner
+write. Production snapshots the current resolved item starts, recalculates the
+declared absolute starts or relative offsets, stores the Boolean mode and the
+converted collection in the same complete `content_json` write, then performs the
+normal duration synchronization. Readers never repair one representation from
+the other at startup.
 
 Shot duplication is one Production-owned aggregate transaction. It persists
 the new Shot and duplicates every ordered Screen through the same generic

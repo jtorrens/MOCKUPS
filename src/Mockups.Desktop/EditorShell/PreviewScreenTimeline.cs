@@ -24,9 +24,9 @@ internal sealed record PreviewScreenTimelineInterval(
 
 internal sealed record PreviewScreenTimelineSerialEdit(
     string StorageCollectionJsonKey,
-    string DelayFieldJsonKey,
+    string PositionFieldJsonKey,
     string PresenceDurationFieldJsonKey,
-    int PreviousEndFrame)
+    int PositionBaseFrame)
 {
     public bool CanResizeEnd =>
         !string.IsNullOrWhiteSpace(
@@ -667,6 +667,21 @@ internal static class PreviewScreenTimelineSnapshotFactory
             timeline,
             "preDurationFieldIds",
             $"Screen Timeline collection '{collection.Id}'");
+        var positioning = timeline["positioning"] as JsonObject;
+        var usesAbsoluteStart = positioning is not null
+            && CollectionUsesAbsolutePositioning(
+                contract,
+                runtime,
+                positioning,
+                collection.Id);
+        var positionFieldId = usesAbsoluteStart
+            ? JsonPath.RequiredString(
+                positioning!,
+                "absoluteStartFieldId",
+                $"Screen Timeline collection '{collection.Id}' positioning")
+            : preFieldIds.Count == 1
+                ? preFieldIds[0]
+                : "";
         var previousSequenceEnd = 0;
         var presenceDurationFieldId = timeline["presenceDurationFieldId"]?.GetValue<string>() ?? "";
         var presenceDurationField = string.IsNullOrWhiteSpace(presenceDurationFieldId)
@@ -690,20 +705,20 @@ internal static class PreviewScreenTimelineSnapshotFactory
                 contract, runtime, animation, itemId, contentDurationFrames, themeTokens, frameRate);
             var label = ItemLabel(collection, item, index);
             PreviewScreenTimelineSerialEdit? serialEdit = null;
-            if (sequenceItems && preFieldIds.Count == 1)
+            if (sequenceItems && !string.IsNullOrWhiteSpace(positionFieldId))
             {
                 var field = definition["fields"]!.AsArray().OfType<JsonObject>()
-                    .First(candidate => candidate["id"]?.GetValue<string>() == preFieldIds[0]);
+                    .First(candidate => candidate["id"]?.GetValue<string>() == positionFieldId);
                 serialEdit = new PreviewScreenTimelineSerialEdit(
                     collection.StorageJsonKey,
-                    JsonPath.RequiredString(field, "jsonKey", "Timeline offset field"),
+                    JsonPath.RequiredString(field, "jsonKey", "Timeline position field"),
                     presenceDurationField is null
                         ? ""
                         : JsonPath.RequiredString(
                             presenceDurationField,
                             "jsonKey",
                             "Timeline presence duration field"),
-                    previousSequenceEnd);
+                    usesAbsoluteStart ? 0 : previousSequenceEnd);
             }
             projected.Add(new PreviewScreenTimelineItem(
                 itemId,
@@ -716,6 +731,34 @@ internal static class PreviewScreenTimelineSnapshotFactory
             if (sequenceItems) previousSequenceEnd = sequenceEnd;
         }
         return new PreviewScreenTimelineCollection(collection.Id, collection.Label, projected);
+    }
+
+    private static bool CollectionUsesAbsolutePositioning(
+        JsonObject contract,
+        JsonObject runtime,
+        JsonObject positioning,
+        string collectionId)
+    {
+        var modeInputId = JsonPath.RequiredString(
+            positioning,
+            "modeInputId",
+            $"Screen Timeline collection '{collectionId}' positioning");
+        var input = JsonPath.OptionalObjectArray(
+                contract,
+                "inputs",
+                "Screen Timeline Runtime contract")
+            .SingleOrDefault((candidate) =>
+                candidate["id"]?.GetValue<string>() == modeInputId)
+            ?? throw new InvalidOperationException(
+                $"Screen Timeline collection '{collectionId}' positioning references missing input '{modeInputId}'.");
+        var jsonKey = JsonPath.RequiredString(
+            input,
+            "jsonKey",
+            $"Screen Timeline collection '{collectionId}' positioning mode input");
+        return JsonPath.RequiredBoolean(
+            runtime,
+            jsonKey,
+            $"Screen Timeline collection '{collectionId}' positioning mode input");
     }
 
     private static PreviewScreenTimelineItem CreateStateItem(
@@ -1645,7 +1688,7 @@ internal sealed class PreviewScreenTimelineSurface : Border
                     item.Id,
                     new Dictionary<string, JsonNode?>
                     {
-                        [serial.DelayFieldJsonKey] = edit.StartFrame - serial.PreviousEndFrame,
+                        [serial.PositionFieldJsonKey] = edit.StartFrame - serial.PositionBaseFrame,
                     });
                 return;
             }

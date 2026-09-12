@@ -862,6 +862,7 @@ function validateConversationMessageRuntime(message: JsonRecord, index: number) 
   requiredString(message, "direction", `${path}.direction`);
   requiredPossiblyEmptyString(message, "text", `${path}.text`);
   requiredNumber(message, "delayAfterPreviousFrames", `${path}.delayAfterPreviousFrames`);
+  requiredNumber(message, "startFrame", `${path}.startFrame`);
   requiredRecord(message, "writeOnTiming", `${path}.writeOnTiming`);
   requiredNumber(message, "postWriteOnHoldFrames", `${path}.postWriteOnHoldFrames`);
   requiredBoolean(message, "keepCursorAfterWrite", `${path}.keepCursorAfterWrite`);

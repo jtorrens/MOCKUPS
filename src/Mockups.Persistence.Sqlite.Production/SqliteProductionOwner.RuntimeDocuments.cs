@@ -30,16 +30,41 @@ internal sealed partial class SqliteProductionOwner
         JsonNode? value,
         IReadOnlySet<string> projectActorIds)
     {
-        var content = ParseJsonObject(
-            _moduleInstanceRepository
-                .Get(connection, moduleInstanceId)
-                .ContentJson);
+        var instance = _moduleInstanceRepository.Get(
+            connection,
+            moduleInstanceId);
+        var content = ParseJsonObject(instance.ContentJson);
         _ = RequireDeclaredRuntimeInput(
             connection,
             moduleInstanceId,
             jsonKey,
             value);
-        content[jsonKey] = value?.DeepClone();
+        var contract = ResolveModuleInstanceContract(
+            instance.ModuleId,
+            instance.MetadataJson);
+        var shot = _shotRepository.Get(connection, instance.ShotId);
+        var project = _projectEpisodeRepository.GetProjectSettings(
+            connection,
+            shot.ProjectId);
+        if (!RuntimeAnimationFrameOrigin.TryChangeCollectionPositioningMode(
+                contract,
+                content,
+                ParseJsonObject(instance.AnimationJson),
+                jsonKey,
+                value,
+                out var converted,
+                ParseJsonObject(
+                    _moduleInstanceThemeContextService.GetTokensJson(
+                        connection,
+                        moduleInstanceId)),
+                shot.FpsOverride ?? project.DefaultFps))
+        {
+            content[jsonKey] = value?.DeepClone();
+        }
+        else
+        {
+            content = converted;
+        }
         SaveModuleInstanceRuntimeContent(
             connection,
             moduleInstanceId,

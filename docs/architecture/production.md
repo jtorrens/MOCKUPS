@@ -381,8 +381,11 @@ replaces the bubble's base write-on. Text Input Bar and Keyboard therefore
 remain visible while the animated text is being authored on screen.
 
 Conversation owns one shared message Motion in its Module Variant. Each
-message has a parent-owned presence interval: its In remains the serial
-arrival derived from write-on/hold/delay, while a zero visible duration keeps
+message has a parent-owned presence interval. The Screen instance owns
+`Position from Screen start`: disabled resolves each In serially from the prior
+message's write-on/hold plus delay; enabled resolves each In from its authored
+Screen-local `Start frame`. Switching modes recalculates the destination values
+atomically and preserves every current In, including overlaps. A zero visible duration keeps
 it through the Screen end and a positive duration defines an explicit Out.
 Only an explicit pre-boundary Out runs the shared Motion in reverse. Presence
 never delays the next message and never retimes or rewrites message keyframes.

@@ -228,9 +228,13 @@ remain relative to the lane and are not rewritten. Collapsing a collection
 whose selected lane is hidden returns the selection to General.
 
 Every serial collection-item block starts at its resolved position in the
-Screen. A declared pre-duration field is edited as a signed gap from the prior
-block's outgoing edge: positive separates, zero joins and negative overlaps.
-Collections without that declaration use zero. Stack State lanes instead span
+Screen. In relative mode, a declared pre-duration field is edited as a signed
+gap from the prior block's sequencing edge: positive separates, zero joins and
+negative overlaps. In absolute mode, the editor shows `Start frame` and lane
+movement writes a frame relative to the Screen start. The Conversation Screen
+Payload exposes this choice as `Position from Screen start`; switching it keeps
+all messages at their current positions. Collections without a positioning
+declaration keep their existing behavior. Stack State lanes instead span
 the Screen and show filled active intervals over a subdued hatched inactive
 range. Multiple filled intervals on one lane represent re-entry. Their shared
 In/Out boundaries edit the existing selector keyframes.

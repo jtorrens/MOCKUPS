@@ -254,6 +254,19 @@
         "valueKind": "RecordReference"
       },
       {
+        "id": "messageAbsolutePositioning",
+        "label": "Position from Screen start",
+        "jsonKey": "messageAbsolutePositioning",
+        "kind": "boolean",
+        "defaultValue": "false",
+        "groupId": "timing",
+        "groupLabel": "Timing",
+        "groupOrder": 20,
+        "valueKind": "Boolean",
+        "refreshOnCommit": true,
+        "helpText": "Off sequences each message from the previous message end. On stores each message start relative to Screen frame zero."
+      },
+      {
         "id": "headerSubtitle",
         "label": "Header subtitle",
         "jsonKey": "headerSubtitle",
@@ -435,11 +448,13 @@
       }
     ],
     "conversationDurationFrames": 240,
+    "messageAbsolutePositioning": false,
     "messages": [
       {
         "direction": "incoming",
         "text": "Tenias razon: ya podemos componer desde el modulo.",
         "delayAfterPreviousFrames": 6,
+        "startFrame": 6,
         "statusState": "none",
         "statusText": "",
         "statusVisible": false,
@@ -1069,6 +1084,7 @@
         "direction": "outgoing",
         "text": "Mensaje de prueba 😎😍 en dos líneas",
         "delayAfterPreviousFrames": 6,
+        "startFrame": 42,
         "statusState": "read",
         "statusText": "",
         "statusVisible": false,
@@ -1698,6 +1714,7 @@
         "direction": "system",
         "text": "Hola 123 😎 A",
         "delayAfterPreviousFrames": 12,
+        "startFrame": 106,
         "statusState": "none",
         "statusText": "",
         "statusVisible": false,
@@ -2347,6 +2364,11 @@
         },
         "animationTimeline": {
           "sequence": "serial",
+          "positioning": {
+            "modeInputId": "messageAbsolutePositioning",
+            "relativeOffsetFieldId": "delay",
+            "absoluteStartFieldId": "startFrame"
+          },
           "preDurationFieldIds": [
             "delay"
           ],
@@ -2453,7 +2475,28 @@
             "uiParentGroupId": "",
             "uiOrder": 20,
             "uiSectionLabel": "",
-            "valueKind": "Integer"
+            "valueKind": "Integer",
+            "enabledWhenPath": "messageAbsolutePositioning",
+            "enabledWhenValue": "false"
+          },
+          {
+            "id": "startFrame",
+            "label": "Start frame",
+            "jsonKey": "startFrame",
+            "kind": "number",
+            "defaultValue": "0",
+            "minimum": -100000,
+            "maximum": 100000,
+            "increment": 1,
+            "unit": "frames",
+            "uiGroupId": "timing",
+            "uiGroupLabel": "Timing",
+            "uiParentGroupId": "",
+            "uiOrder": 20,
+            "uiSectionLabel": "",
+            "valueKind": "Integer",
+            "enabledWhenPath": "messageAbsolutePositioning",
+            "enabledWhenValue": "true"
           },
           {
             "id": "writeOn",

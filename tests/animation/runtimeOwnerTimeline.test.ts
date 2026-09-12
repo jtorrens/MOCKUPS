@@ -143,6 +143,49 @@ test("the first serial collection item may begin before owner frame zero", () =>
   assert.equal(timeline.temporalOwnerFrame("first", 0), 4);
 });
 
+test("a positioned collection resolves every item from the owner start", () => {
+  const positionedContract = {
+    inputs: [{ id: "absolutePositioning", jsonKey: "absolutePositioning" }],
+    collections: [{
+      jsonKey: "items",
+      animationTimeline: {
+        sequenceItems: true,
+        preDurationFieldIds: ["delay"],
+        sequenceCompletionFieldIds: ["text"],
+        positioning: {
+          modeInputId: "absolutePositioning",
+          relativeOffsetFieldId: "delay",
+          absoluteStartFieldId: "startFrame",
+        },
+      },
+      fields: [
+        { id: "delay", jsonKey: "delay" },
+        { id: "startFrame", jsonKey: "startFrame" },
+        {
+          id: "text",
+          jsonKey: "text",
+          animationTimeline: { completion: { baseDurationFieldId: "duration" } },
+        },
+        { id: "duration", jsonKey: "duration" },
+      ],
+    }],
+  };
+  const timeline = new RuntimeOwnerTimeline(
+    positionedContract,
+    {
+      absolutePositioning: true,
+      items: [
+        { id: "first", delay: 2, startFrame: 12, text: "One", duration: 6 },
+        { id: "second", delay: -2, startFrame: 4, text: "Two", duration: 3 },
+      ],
+    },
+    {},
+  );
+  assert.equal(timeline.itemStartFrame("first"), 12);
+  assert.equal(timeline.itemStartFrame("second"), 4);
+  assert.equal(timeline.itemEndFrame("second"), 7);
+});
+
 test("explicit collection presence does not extend owner duration or serial completion", () => {
   const presenceContract = {
     collections: [{

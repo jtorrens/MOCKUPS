@@ -170,6 +170,8 @@ public static class RuntimeInputDefinitionReader
                     JsonString(field, "uiParentGroupId"),
                     JsonString(field, "unit")) with
                 {
+                    EnabledWhenPath = JsonString(field, "enabledWhenPath"),
+                    EnabledWhenValue = JsonString(field, "enabledWhenValue"),
                     EnabledWhenItemJsonKey = JsonString(field, "enabledWhenItemJsonKey"),
                     EnabledWhenItemValues = JsonStringArray(field, "enabledWhenItemValues"),
                     MinimumItemIndex = (int)JsonDecimal(field, "minimumItemIndex", 0),

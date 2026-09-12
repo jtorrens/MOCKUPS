@@ -41,6 +41,7 @@ function payload(
         },
       },
       delayAfterPreviousFrames: 0,
+      startFrame: 0,
       statusVisible: false,
       statusState: "none",
       statusText: "",
@@ -78,6 +79,7 @@ function payload(
     { id: "direction", jsonKey: "direction", animationTimeline: { origin: { kind: "ownerStart" } } },
     { id: "text", jsonKey: "text", animationTimeline: { origin: { kind: "ownerStart" }, completion: { baseDurationFieldId: "writeOn", minimumEnabledKeyframes: 2 } } },
     { id: "delay", jsonKey: "delayAfterPreviousFrames" },
+    { id: "startFrame", jsonKey: "startFrame" },
     {
       id: "writeOn",
       jsonKey: "writeOnTiming",

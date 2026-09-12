@@ -19487,8 +19487,8 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
     Equal(100, resolved.Collections[0].Items[0].EndFrame);
     Equal(-3, resolved.Collections[0].Items[1].StartFrame);
     Equal(117, resolved.Collections[0].Items[1].EndFrame);
-    Equal(0, resolved.Collections[0].Items[0].SerialEdit?.PreviousEndFrame);
-    Equal(-3, resolved.Collections[0].Items[1].SerialEdit?.PreviousEndFrame);
+    Equal(0, resolved.Collections[0].Items[0].SerialEdit?.PositionBaseFrame);
+    Equal(-3, resolved.Collections[0].Items[1].SerialEdit?.PositionBaseFrame);
     True(resolved.Collections[0].Items[0].SerialEdit?.CanResizeEnd == true);
     True(resolved.Collections[0].Items
         .All((item) => item.MinimumStartFrame == -100000
@@ -19507,6 +19507,75 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
         new JsonObject(),
         "item_1",
         screenFrame: 0));
+    var absolutePreview = Object(
+        """{"absolutePositioning":true,"items":[{"id":"item_1","delay":-4,"startFrame":14,"visibleDurationFrames":0},{"id":"item_2","delay":0,"startFrame":3,"visibleDurationFrames":120}]}""");
+    var absoluteContract =
+        """
+        {
+          "inputs": [{
+            "id": "absolutePositioning",
+            "jsonKey": "absolutePositioning"
+          }],
+          "collections": [{
+            "id": "items",
+            "label": "Items",
+            "jsonKey": "items",
+            "itemLabel": "Item",
+            "fields": [
+              {"id":"delay","jsonKey":"delay"},
+              {"id":"startFrame","jsonKey":"startFrame"},
+              {"id":"visibleDuration","jsonKey":"visibleDurationFrames"}
+            ],
+            "animationTimeline": {
+              "sequenceItems": true,
+              "preDurationFieldIds": ["delay"],
+              "presenceDurationFieldId": "visibleDuration",
+              "positioning": {
+                "modeInputId": "absolutePositioning",
+                "relativeOffsetFieldId": "delay",
+                "absoluteStartFieldId": "startFrame"
+              }
+            }
+          }]
+        }
+        """;
+    var absoluteResolved = PreviewScreenTimelineSnapshotFactory.Create(
+        surface with
+        {
+            Preview = absolutePreview,
+            AnimationSnapshot = surface.AnimationSnapshot! with
+            {
+                Source = surface.AnimationSnapshot.Source with
+                {
+                    RuntimePreviewJson = absolutePreview.ToJsonString(),
+                    EffectiveContractJson = absoluteContract,
+                },
+            },
+        },
+        new PreviewScreenTimelineRange(20, 100, 12));
+    Equal(14, absoluteResolved.Collections[0].Items[0].StartFrame);
+    Equal(3, absoluteResolved.Collections[0].Items[1].StartFrame);
+    Equal("startFrame", absoluteResolved.Collections[0].Items[0].SerialEdit?.PositionFieldJsonKey);
+    Equal(0, absoluteResolved.Collections[0].Items[0].SerialEdit?.PositionBaseFrame);
+    Equal(0, absoluteResolved.Collections[0].Items[1].SerialEdit?.PositionBaseFrame);
+    True(RuntimeAnimationFrameOrigin.TryChangeCollectionPositioningMode(
+        Object(absoluteContract),
+        absolutePreview,
+        new JsonObject(),
+        "absolutePositioning",
+        JsonValue.Create(false),
+        out var convertedRelative));
+    Equal(14, convertedRelative["items"]![0]!["delay"]!.GetValue<int>());
+    Equal(-12, convertedRelative["items"]![1]!["delay"]!.GetValue<int>());
+    True(RuntimeAnimationFrameOrigin.TryChangeCollectionPositioningMode(
+        Object(absoluteContract),
+        convertedRelative,
+        new JsonObject(),
+        "absolutePositioning",
+        JsonValue.Create(true),
+        out var convertedAbsolute));
+    Equal(14, convertedAbsolute["items"]![0]!["startFrame"]!.GetValue<int>());
+    Equal(3, convertedAbsolute["items"]![1]!["startFrame"]!.GetValue<int>());
     var derivedContract = Object(contract);
     derivedContract["collections"]![0]!["animationTimeline"]!
         .AsObject()

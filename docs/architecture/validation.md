@@ -189,6 +189,9 @@ proving simultaneous outgoing and incoming Motion, stable owner-local frames
 - explicit Conversation text tracks retaining Keyboard and Text Input Bar
   presence for the outgoing write interval, plus positive message Out values
   extending calculated Screen duration without changing serial arrival;
+- Conversation Screen-instance positioning conversion preserving every current
+  message In in both relative-delay and Screen-local-start modes, with timeline
+  movement writing only the active representation;
 - explicit Conversation Actors on incoming, outgoing and system messages,
   direction changes that retain the same Actor, and hold tracks for message
   direction and chat Actor resolved from a prepared same-Project catalog;

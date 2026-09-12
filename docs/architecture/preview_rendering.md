@@ -362,6 +362,12 @@ and target vertical layouts once, then interpolates both sibling displacement
 and viewport overflow with the Conversation Variant's single reflow timing.
 The generic renderer only paints the resulting geometry.
 
+Message starts reach Conversation only through the prepared common owner
+timeline. That timeline consumes the declared Screen-instance positioning mode
+and resolves either the signed serial delay or the Screen-local start frame.
+The Conversation resolver, bridge and renderer do not choose a mode or
+recalculate sibling positions.
+
 ## Preview sessions
 
 Design and Production Preview keep only temporary presentation state:

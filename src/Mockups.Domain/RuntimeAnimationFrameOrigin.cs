@@ -164,6 +164,128 @@ public static class RuntimeAnimationFrameOrigin
         return Model(contract, runtime, animation).DurationFrames;
     }
 
+    public static bool TryChangeCollectionPositioningMode(
+        JsonObject contract,
+        JsonObject runtime,
+        JsonObject animation,
+        string modeInputJsonKey,
+        JsonNode? value,
+        out JsonObject converted,
+        JsonObject? themeTokens = null,
+        int frameRate = 0)
+    {
+        converted = runtime.DeepClone().AsObject();
+        var requestedAbsolute = value is JsonValue requestedValue
+            && requestedValue.TryGetValue<bool>(out var requested)
+                ? requested
+                : throw new InvalidOperationException(
+                    $"Runtime collection positioning mode '{modeInputJsonKey}' must be a JSON boolean.");
+        var inputs = Inputs(contract);
+        var matches = Collections(contract)
+            .Select((collection) => (
+                Collection: collection,
+                Positioning: JsonPath.OptionalObject(
+                    Timeline(collection),
+                    "positioning",
+                    "Runtime collection animation timeline")))
+            .Where((entry) => entry.Positioning is not null)
+            .Where((entry) =>
+            {
+                var modeInputId = JsonPath.RequiredString(
+                    entry.Positioning!,
+                    "modeInputId",
+                    "Runtime collection positioning");
+                var modeInput = inputs.SingleOrDefault((input) =>
+                    Text(input["id"]).Equals(modeInputId, StringComparison.Ordinal))
+                    ?? throw new InvalidOperationException(
+                        $"Runtime collection positioning references missing mode input '{modeInputId}'.");
+                return JsonPath.RequiredString(
+                        modeInput,
+                        "jsonKey",
+                        $"Runtime collection positioning mode input '{modeInputId}'")
+                    .Equals(modeInputJsonKey, StringComparison.Ordinal);
+            })
+            .ToList();
+        if (matches.Count == 0) return false;
+
+        var model = Model(
+            contract,
+            runtime,
+            animation,
+            themeTokens: themeTokens,
+            frameRate: frameRate);
+        foreach (var (collection, positioning) in matches)
+        {
+            var storageKey = CollectionKey(collection);
+            var sourceItems = RequiredCollection(runtime, storageKey);
+            var targetItems = RequiredCollection(converted, storageKey);
+            var fields = JsonPath.OptionalObjectArray(
+                collection,
+                "fields",
+                "Runtime owner collection");
+            var relativeFieldId = JsonPath.RequiredString(
+                positioning!,
+                "relativeOffsetFieldId",
+                "Runtime collection positioning");
+            var absoluteFieldId = JsonPath.RequiredString(
+                positioning!,
+                "absoluteStartFieldId",
+                "Runtime collection positioning");
+            var relativeJsonKey = FieldJsonKey(fields, relativeFieldId, "relative offset");
+            var absoluteJsonKey = FieldJsonKey(fields, absoluteFieldId, "absolute start");
+            var previousSequenceEnd = 0d;
+            for (var index = 0; index < sourceItems.Count; index++)
+            {
+                var sourceItem = sourceItems[index] as JsonObject
+                    ?? throw new InvalidOperationException(
+                        $"Runtime collection '{storageKey}' item at index {index} must be an object.");
+                var targetItem = targetItems[index] as JsonObject
+                    ?? throw new InvalidOperationException(
+                        $"Runtime collection '{storageKey}' item at index {index} must be an object.");
+                var targetId = JsonPath.RequiredString(
+                    sourceItem,
+                    "id",
+                    $"Runtime collection '{storageKey}' item at index {index}");
+                var start = model.OwnerNaturalStart(targetId);
+                if (requestedAbsolute)
+                {
+                    targetItem[absoluteJsonKey] = Round(start);
+                }
+                else
+                {
+                    targetItem[relativeJsonKey] = Round(start - previousSequenceEnd);
+                }
+                previousSequenceEnd = model.OwnerNaturalSequenceEnd(targetId);
+            }
+        }
+
+        converted[modeInputJsonKey] = requestedAbsolute;
+        _ = Model(
+            contract,
+            converted,
+            animation,
+            themeTokens: themeTokens,
+            frameRate: frameRate);
+        return true;
+    }
+
+    private static string FieldJsonKey(
+        IReadOnlyList<JsonObject> fields,
+        string fieldId,
+        string role) =>
+        JsonPath.RequiredString(
+            fields.SingleOrDefault((field) =>
+                Text(field["id"]).Equals(fieldId, StringComparison.Ordinal))
+            ?? throw new InvalidOperationException(
+                $"Runtime collection positioning references missing {role} field '{fieldId}'."),
+            "jsonKey",
+            $"Runtime collection positioning {role} field '{fieldId}'");
+
+    private static JsonArray RequiredCollection(JsonObject runtime, string storageKey) =>
+        runtime[storageKey] as JsonArray
+        ?? throw new InvalidOperationException(
+            $"Runtime collection positioning requires collection '{storageKey}'.");
+
     private static TimelineModel Model(
         JsonObject contract,
         JsonObject runtime,
@@ -210,6 +332,10 @@ public static class RuntimeAnimationFrameOrigin
                         $"Runtime owner collection '{key}' must be a JSON array when present.");
                 }
                 var sequenceItems = Timeline(collection)["sequenceItems"]?.GetValue<bool>() != false;
+                var absoluteStartFieldId = AbsoluteStartFieldId(
+                    contract,
+                    runtime,
+                    collection);
                 var cursor = 0d;
                 foreach (var item in JsonPath.ObjectItems(values, $"Runtime owner collection '{key}'"))
                 {
@@ -221,10 +347,16 @@ public static class RuntimeAnimationFrameOrigin
                     var phase = OwnerPhaseFrames(Timeline(collection), item);
                     var pre = StringArray(collection, "preDurationFieldIds")
                         .Sum((fieldId) => SignedFieldValue(item, fields, fieldId));
-                    var appearance = sequenceItems
-                        ? cursor
-                        : ItemOwnerOrigin(collection, item);
-                    var start = appearance + pre;
+                    var usesAbsoluteStart = !string.IsNullOrWhiteSpace(
+                        absoluteStartFieldId);
+                    var appearance = usesAbsoluteStart
+                        ? SignedFieldValue(item, fields, absoluteStartFieldId)
+                        : sequenceItems
+                            ? cursor
+                            : ItemOwnerOrigin(collection, item);
+                    var start = usesAbsoluteStart
+                        ? appearance
+                        : appearance + pre;
                     var durations = CalculateItemDurations(collection, item, targetId, phase);
                     var effectiveSpan = TargetDuration(targetId, durations.Span);
                     var effectiveSequence = Scale(durations.Sequence, durations.Span, effectiveSpan);
@@ -241,7 +373,8 @@ public static class RuntimeAnimationFrameOrigin
                         throw new InvalidOperationException(
                             $"Runtime owner collections contain duplicate target id '{targetId}'.");
                     }
-                    if (sequenceItems) cursor = start + effectiveSequence;
+                    if (sequenceItems && !usesAbsoluteStart)
+                        cursor = start + effectiveSequence;
                     naturalEnd = Math.Max(naturalEnd, start + effectiveSpan);
                 }
                 if (sequenceItems) naturalEnd = Math.Max(naturalEnd, cursor);
@@ -266,6 +399,14 @@ public static class RuntimeAnimationFrameOrigin
         }
 
         public int DurationFrames => Math.Max(1, Round(_effectiveDuration));
+
+        public double OwnerNaturalStart(string targetId) =>
+            _items.TryGetValue(targetId, out var item) ? item.RootStart : 0;
+
+        public double OwnerNaturalSequenceEnd(string targetId) =>
+            _items.TryGetValue(targetId, out var item)
+                ? item.RootStart + item.EffectiveSequence
+                : 0;
 
         public double OwnerNaturalDuration(string targetId) =>
             string.IsNullOrWhiteSpace(targetId)
@@ -997,6 +1138,70 @@ public static class RuntimeAnimationFrameOrigin
 
     private static JsonObject Timeline(JsonObject owner) =>
         JsonPath.OptionalObject(owner, "animationTimeline", "Runtime animation owner") ?? new JsonObject();
+
+    private static string AbsoluteStartFieldId(
+        JsonObject contract,
+        JsonObject runtime,
+        JsonObject collection)
+    {
+        var positioning = JsonPath.OptionalObject(
+            Timeline(collection),
+            "positioning",
+            "Runtime collection animation timeline");
+        if (positioning is null) return "";
+        var modeInputId = JsonPath.RequiredString(
+            positioning,
+            "modeInputId",
+            "Runtime collection positioning");
+        var modeInput = Inputs(contract).SingleOrDefault((input) =>
+            Text(input["id"]).Equals(modeInputId, StringComparison.Ordinal))
+            ?? throw new InvalidOperationException(
+                $"Runtime collection positioning references missing mode input '{modeInputId}'.");
+        var modeJsonKey = JsonPath.RequiredString(
+            modeInput,
+            "jsonKey",
+            $"Runtime collection positioning mode input '{modeInputId}'");
+        var absolute = JsonPath.RequiredBoolean(
+            runtime,
+            modeJsonKey,
+            $"Runtime collection positioning mode input '{modeInputId}'");
+        var relativeFieldId = JsonPath.RequiredString(
+            positioning,
+            "relativeOffsetFieldId",
+            "Runtime collection positioning");
+        var absoluteFieldId = JsonPath.RequiredString(
+            positioning,
+            "absoluteStartFieldId",
+            "Runtime collection positioning");
+        var fieldIds = JsonPath.OptionalObjectArray(
+                collection,
+                "fields",
+                "Runtime owner collection")
+            .Select((field) => JsonPath.RequiredString(
+                field,
+                "id",
+                "Runtime owner collection field"))
+            .ToHashSet(StringComparer.Ordinal);
+        if (!fieldIds.Contains(relativeFieldId)
+            || !fieldIds.Contains(absoluteFieldId))
+        {
+            throw new InvalidOperationException(
+                "Runtime collection positioning must reference declared relative and absolute fields.");
+        }
+        var preDurationFieldIds = JsonPath.OptionalStringArray(
+            Timeline(collection),
+            "preDurationFieldIds",
+            "Runtime collection animation timeline");
+        if (preDurationFieldIds.Count != 1
+            || !preDurationFieldIds[0].Equals(
+                relativeFieldId,
+                StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "Runtime collection positioning relativeOffsetFieldId must be the one declared pre-duration field.");
+        }
+        return absolute ? absoluteFieldId : "";
+    }
 
     private static JsonObject FieldTimeline(JsonObject field)
     {
