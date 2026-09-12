@@ -51,9 +51,14 @@ test("documentation validation binds the normative schema version to executable 
     assert.deepEqual(documentationViolations(root), []);
     const documentPath = path.join(root, "docs/architecture/data_persistence.md");
     const document = readFileSync(documentPath, "utf8");
+    const mismatchedDocument = document.replace(
+      /Schema version `\d+` is the only current schema\./u,
+      "Schema version `0` is the only current schema.",
+    );
+    assert.notEqual(mismatchedDocument, document);
     writeFileSync(
       documentPath,
-      document.replace("Schema version `16`", "Schema version `15`"),
+      mismatchedDocument,
       "utf8",
     );
     assert.equal(

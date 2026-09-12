@@ -2158,19 +2158,51 @@ static void RuntimeInputDefaultsUseValueKindOwner()
     AssertRejectedDatabaseIsReadOnly("runtime-behavior-timing-default", (connection) =>
     {
         using var command = connection.CreateCommand();
-        command.CommandText = "UPDATE modules SET design_preview_json = json_set(design_preview_json, '$.collections[0].fields[4].defaultValue', '{}') WHERE id = 'module_core_chat'";
+        command.CommandText = """
+            UPDATE modules
+            SET design_preview_json = json_set(
+                design_preview_json,
+                '$.collections[0].fields[' || (
+                    SELECT key
+                    FROM json_each(design_preview_json, '$.collections[0].fields')
+                    WHERE json_extract(value, '$.id') = 'writeOn'
+                ) || '].defaultValue',
+                '{}')
+            WHERE id = 'module_core_chat'
+            """;
         command.ExecuteNonQuery();
     });
     AssertRejectedDatabaseIsReadOnly("runtime-behavior-timing-metadata", (connection) =>
     {
         using var command = connection.CreateCommand();
-        command.CommandText = "UPDATE modules SET design_preview_json = json_remove(design_preview_json, '$.collections[0].fields[4].naturalTiming') WHERE id = 'module_core_chat'";
+        command.CommandText = """
+            UPDATE modules
+            SET design_preview_json = json_remove(
+                design_preview_json,
+                '$.collections[0].fields[' || (
+                    SELECT key
+                    FROM json_each(design_preview_json, '$.collections[0].fields')
+                    WHERE json_extract(value, '$.id') = 'writeOn'
+                ) || '].naturalTiming')
+            WHERE id = 'module_core_chat'
+            """;
         command.ExecuteNonQuery();
     });
     AssertRejectedDatabaseIsReadOnly("runtime-behavior-timing-source", (connection) =>
     {
         using var command = connection.CreateCommand();
-        command.CommandText = "UPDATE modules SET design_preview_json = json_set(design_preview_json, '$.collections[0].fields[4].naturalTiming.sourceFieldId', 'missing') WHERE id = 'module_core_chat'";
+        command.CommandText = """
+            UPDATE modules
+            SET design_preview_json = json_set(
+                design_preview_json,
+                '$.collections[0].fields[' || (
+                    SELECT key
+                    FROM json_each(design_preview_json, '$.collections[0].fields')
+                    WHERE json_extract(value, '$.id') = 'writeOn'
+                ) || '].naturalTiming.sourceFieldId',
+                'missing')
+            WHERE id = 'module_core_chat'
+            """;
         command.ExecuteNonQuery();
     });
     AssertRejectedDatabaseIsReadOnly("runtime-behavior-timing-pace", (connection) =>
@@ -6634,20 +6666,39 @@ static void PreviewControlsDetachIntoTopmostSessionWindow()
         True(dialog.IsActive);
         True(!floating.Topmost);
         True(!floating.IsEnabled);
+        True(!auxiliary.IsEnabled);
         dialog.Topmost = false;
         owner.Activate();
         Dispatcher.UIThread.RunJobs();
         True(dialog.Topmost);
         True(dialog.IsActive);
-        dialog.Topmost = false;
-        auxiliary.Activate();
+
+        var childDialog = new SukiWindow
+        {
+            Width = 280,
+            Height = 160,
+        };
+        EditorSukiWindowTheme.ApplyDialogChrome(
+            childDialog,
+            dialog);
+        var childResult = childDialog.ShowDialog<bool>(dialog);
         Dispatcher.UIThread.RunJobs();
-        True(dialog.Topmost);
-        True(dialog.IsActive);
+        True(childDialog.Topmost);
+        True(childDialog.IsActive);
+        dialog.Topmost = false;
+        owner.Activate();
+        Dispatcher.UIThread.RunJobs();
+        True(!dialog.Topmost);
+        True(childDialog.IsActive);
+        childDialog.Close(false);
+        Equal(false, childResult.GetAwaiter().GetResult());
+        Dispatcher.UIThread.RunJobs();
+
         dialog.Close();
         Dispatcher.UIThread.RunJobs();
         True(floating.Topmost);
         True(floating.IsEnabled);
+        True(auxiliary.IsEnabled);
         auxiliary.Close();
 
         floating.Position = new PixelPoint(420, 240);
