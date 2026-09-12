@@ -202,7 +202,11 @@ and exit transition appears as postroll. Pre- and postroll use a subdued
 diagonal hatch rather than authored-boundary guides. One uninterrupted playhead
 crosses the ruler and every visible lane. It snaps to visible lane boundaries
 and, when exposed, keyframes; a snapped playhead becomes amber. Item blocks can
-move horizontally and can be shortened only from their outgoing edge. Their
+show the same informational hatch over the effective owner Motion/Fade span at
+their leading edge and, only when they have an explicit outgoing boundary, at
+their trailing edge. The hatch does not change the block's authored timing or
+editing behavior. Blocks can move horizontally and can be shortened only from
+their outgoing edge. Their
 edges snap to the playhead and the boundaries of other visible blocks, showing
 one thin amber guide across the complete timeline while snapped. The active
 block outline also becomes amber; when its detent is the playhead, the playhead

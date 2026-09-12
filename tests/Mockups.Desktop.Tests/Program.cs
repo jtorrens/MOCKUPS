@@ -19550,6 +19550,8 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
             && item.EndFrame > item.StartFrame));
     True(resolved.Collections[0].Items[0].StartFrame < 0);
     True(resolved.Collections[0].Items[1].EndFrame > resolved.ContentDurationFrames);
+    Equal(0, resolved.Collections[0].Items[0].Intervals[0].EnterPhaseFrames);
+    Equal(0, resolved.Collections[0].Items[1].Intervals[0].ExitPhaseFrames);
     Equal(0d, RuntimeAnimationFrameOrigin.OwnerLocalFrame(
         Object(contract),
         preview,
@@ -19562,6 +19564,33 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
         new JsonObject(),
         "item_1",
         screenFrame: 0));
+    var motionContract = Object(contract);
+    motionContract["collections"]![0]!["animationTimeline"]!["ownerPhase"] =
+        new JsonObject
+        {
+            ["kind"] = "resolvedMotion",
+            ["motion"] = Object(
+                """{"transition":"slide","direction":"bottom","bounds":"parent","fade":true,"translate":true,"scale":false}"""),
+        };
+    var timelineMotionTheme =
+        """{"motion":{"transitions":{"slide":{"delayMs":40,"durationMs":200}}}}""";
+    var motionResolved = PreviewScreenTimelineSnapshotFactory.Create(
+        surface with
+        {
+            AnimationSnapshot = surface.AnimationSnapshot! with
+            {
+                Source = surface.AnimationSnapshot.Source with
+                {
+                    ThemeTokensJson = timelineMotionTheme,
+                    EffectiveContractJson = motionContract.ToJsonString(),
+                },
+            },
+        },
+        new PreviewScreenTimelineRange(20, 100, 12));
+    Equal(6, motionResolved.Collections[0].Items[0].Intervals[0].EnterPhaseFrames);
+    Equal(0, motionResolved.Collections[0].Items[0].Intervals[0].ExitPhaseFrames);
+    Equal(6, motionResolved.Collections[0].Items[1].Intervals[0].EnterPhaseFrames);
+    Equal(6, motionResolved.Collections[0].Items[1].Intervals[0].ExitPhaseFrames);
     var absolutePreview = Object(
         """{"absolutePositioning":true,"items":[{"id":"item_1","delay":-4,"startFrame":14,"visibleDurationFrames":0},{"id":"item_2","delay":0,"startFrame":3,"visibleDurationFrames":120}]}""");
     var absoluteContract =

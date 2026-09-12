@@ -96,9 +96,20 @@ public static class RuntimeAnimationFrameOrigin
         JsonObject runtime,
         JsonObject animation,
         string targetId,
-        JsonObject? themeTokens = null) =>
-        Model(contract, runtime, animation, themeTokens: themeTokens)
+        JsonObject? themeTokens = null,
+        int frameRate = 0) =>
+        Model(contract, runtime, animation, themeTokens: themeTokens, frameRate: frameRate)
             .OwnerHasExplicitPresenceEnd(targetId);
+
+    public static int OwnerPhaseDurationScreenFrames(
+        JsonObject contract,
+        JsonObject runtime,
+        JsonObject animation,
+        string targetId,
+        JsonObject? themeTokens = null,
+        int frameRate = 0) =>
+        Model(contract, runtime, animation, themeTokens: themeTokens, frameRate: frameRate)
+            .OwnerPhaseDurationScreenFrames(targetId);
 
     public static double OwnerLocalFrame(
         JsonObject contract,
@@ -365,6 +376,7 @@ public static class RuntimeAnimationFrameOrigin
                         item,
                         appearance,
                         start,
+                        phase,
                         durations.Span,
                         effectiveSpan,
                         durations.Sequence,
@@ -442,6 +454,18 @@ public static class RuntimeAnimationFrameOrigin
 
         public bool OwnerHasExplicitPresenceEnd(string targetId) =>
             _items.TryGetValue(targetId, out var item) && PresenceDuration(item) is > 0;
+
+        public int OwnerPhaseDurationScreenFrames(string targetId)
+        {
+            var phase = string.IsNullOrWhiteSpace(targetId)
+                ? OwnerPhaseFrames(Timeline(_contract), _runtime)
+                : _items.TryGetValue(targetId, out var item) ? item.OwnerPhaseFrames : 0;
+            if (phase <= 0) return 0;
+            return Math.Max(
+                0,
+                ScreenFrameForOwnerFrame(targetId, phase)
+                - ScreenFrameForOwnerFrame(targetId, 0));
+        }
 
         private static double? PresenceDuration(ItemTiming item) =>
             PresenceDuration(item.Collection, item.Item);
@@ -924,6 +948,7 @@ public static class RuntimeAnimationFrameOrigin
             JsonObject Item,
             double RootAppearance,
             double RootStart,
+            int OwnerPhaseFrames,
             double NaturalSpan,
             double EffectiveSpan,
             double NaturalSequence,

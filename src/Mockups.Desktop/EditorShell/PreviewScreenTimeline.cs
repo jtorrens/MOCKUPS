@@ -20,7 +20,9 @@ internal sealed record PreviewScreenTimelineInterval(
     int? StartKeyframeFrame = null,
     int? EndKeyframeFrame = null,
     int MinimumStartFrame = 0,
-    int MaximumEndFrame = int.MaxValue);
+    int MaximumEndFrame = int.MaxValue,
+    int EnterPhaseFrames = 0,
+    int ExitPhaseFrames = 0);
 
 internal sealed record PreviewScreenTimelineSerialEdit(
     string StorageCollectionJsonKey,
@@ -703,6 +705,10 @@ internal static class PreviewScreenTimelineSnapshotFactory
                 : contentDurationFrames;
             var end = RuntimeAnimationFrameOrigin.OwnerPresenceEndScreenFrame(
                 contract, runtime, animation, itemId, contentDurationFrames, themeTokens, frameRate);
+            var phaseFrames = RuntimeAnimationFrameOrigin.OwnerPhaseDurationScreenFrames(
+                contract, runtime, animation, itemId, themeTokens, frameRate);
+            var hasExplicitEnd = RuntimeAnimationFrameOrigin.OwnerHasExplicitPresenceEnd(
+                contract, runtime, animation, itemId, themeTokens, frameRate);
             var label = ItemLabel(collection, item, index);
             PreviewScreenTimelineSerialEdit? serialEdit = null;
             if (sequenceItems && !string.IsNullOrWhiteSpace(positionFieldId))
@@ -725,7 +731,11 @@ internal static class PreviewScreenTimelineSnapshotFactory
                 label,
                 start,
                 end,
-                [new PreviewScreenTimelineInterval(start, end)],
+                [new PreviewScreenTimelineInterval(
+                    start,
+                    end,
+                    EnterPhaseFrames: phaseFrames,
+                    ExitPhaseFrames: hasExplicitEnd ? phaseFrames : 0)],
                 serialEdit,
                 MinimumStartFrame: serialEdit is null ? 0 : -100000));
             if (sequenceItems) previousSequenceEnd = sequenceEnd;
@@ -2715,6 +2725,7 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
                 block,
                 4,
                 4);
+            DrawMotionPhaseHatch(context, interval, block);
             if (!_isEditable) continue;
             if ((_isStateLane && interval.StartKeyframeFrame is not null)
                 || (!_isStateLane && _canMove))
@@ -2763,6 +2774,40 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
                     marker);
             }
         }
+    }
+
+    private void DrawMotionPhaseHatch(
+        DrawingContext context,
+        PreviewScreenTimelineInterval interval,
+        Rect block)
+    {
+        var enterEndFrame = Math.Min(
+            interval.EndFrame,
+            interval.StartFrame + Math.Max(0, interval.EnterPhaseFrames));
+        var exitStartFrame = Math.Max(
+            interval.StartFrame,
+            interval.EndFrame - Math.Max(0, interval.ExitPhaseFrames));
+        if (enterEndFrame <= interval.StartFrame
+            && exitStartFrame >= interval.EndFrame) return;
+        if (enterEndFrame >= exitStartFrame)
+        {
+            PreviewScreenTimelineHatch.Draw(context, block);
+            return;
+        }
+        PreviewScreenTimelineHatch.Draw(
+            context,
+            new Rect(
+                block.Left,
+                block.Top,
+                Math.Max(0, X(enterEndFrame) - block.Left),
+                block.Height));
+        PreviewScreenTimelineHatch.Draw(
+            context,
+            new Rect(
+                X(exitStartFrame),
+                block.Top,
+                Math.Max(0, block.Right - X(exitStartFrame)),
+                block.Height));
     }
 
     private void OnPointerPressed(object? sender, PointerPressedEventArgs args)
