@@ -49,7 +49,7 @@ export function resolveReflowProgress(
   if (timing.durationMs <= 0) return 1;
   return easingProgress(
     timing.easing,
-    Math.max(0, elapsedMs) / timing.durationMs,
+    Math.min(1, Math.max(0, elapsedMs) / timing.durationMs),
     timing.intensity,
   );
 }

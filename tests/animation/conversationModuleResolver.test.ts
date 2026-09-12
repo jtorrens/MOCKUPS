@@ -1097,20 +1097,15 @@ test("Conversation uses the same reflow timing after a message Out completes", (
   );
   assert.ok((started.messageReflow?.progress ?? 0) > 0);
 
-  const remainingY = (frame: number) => {
+  const reflowProgress = (frame: number) => {
     setConversationFrame(source, frame);
-    const bubble = findNodes(
-      conversationModuleToRenderable(source),
-      "component.bubble",
-    )[0];
-    assert.ok(bubble);
-    return renderableVisualBounds(bubble).y;
+    return resolveConversationModule(source).messageReflow?.progress ?? 1;
   };
-  const startY = remainingY(10);
-  const middleY = remainingY(14);
-  const finalY = remainingY(18);
-  assert.ok(startY > middleY);
-  assert.ok(middleY > finalY);
+  const startProgress = reflowProgress(10);
+  const middleProgress = reflowProgress(12);
+  const finalProgress = reflowProgress(14);
+  assert.ok(startProgress < middleProgress);
+  assert.ok(middleProgress < finalProgress);
 
   setConversationFrame(source, 14);
   const moving = resolveConversationModule(source);
@@ -1207,6 +1202,24 @@ test("Conversation can begin reflow on the first frame of message Out", () => {
   assert.ok(Math.abs(leavingDisplacement) > 0.001);
   assert.ok(Math.abs(remainingDisplacement) > 0.001);
   assert.ok(Math.abs(leavingDisplacement - remainingDisplacement) < 0.001);
+
+  const exitEndFrame = Number(runtime.messages[0]!.visibleDurationFrames);
+  setConversationFrame(source, exitEndFrame - 1);
+  const heldAtOutTail = resolveConversationModule(source);
+  assert.equal(heldAtOutTail.visibleMessages[0]?.id, "leaving");
+  assert.equal(heldAtOutTail.visibleMessages[0]?.presenceMotionKind, "exit");
+  assert.equal(heldAtOutTail.messageReflow?.progress, 1);
+  assert.deepEqual(
+    heldAtOutTail.messageReflow?.toMessages.map(({ id }) => id),
+    ["remaining", "appearing"],
+  );
+
+  setConversationFrame(source, exitEndFrame);
+  const completedOut = resolveConversationModule(source);
+  assert.deepEqual(
+    completedOut.visibleMessages.map(({ id }) => id),
+    ["remaining", "appearing"],
+  );
 });
 
 test("a nested full-screen Media keeps the exact root Screen coordinates", () => {
@@ -1220,6 +1233,7 @@ test("a nested full-screen Media keeps the exact root Screen coordinates", () =>
     direction: "outgoing",
     text: "Image",
     delayAfterPreviousFrames: 0,
+    startFrame: 0,
     postWriteOnHoldFrames: 0,
     keepCursorAfterWrite: false,
     statusVisible: false,
@@ -1307,6 +1321,14 @@ function committedConversationPayload(keepMessages = false): DesignPreviewPayloa
     config.conversation.showNavigationBar = false;
     config.conversation.showKeyboard = false;
     config.conversation.showTextInputBar = false;
+    const messages = (runtime.collections as Array<Record<string, unknown>>)
+      .find((collection) => collection.id === "messages");
+    assert.ok(messages);
+    const timeline = messages.animationTimeline as Record<string, unknown>;
+    timeline.ownerPhase = {
+      kind: "resolvedMotion",
+      motion: structuredClone(config.conversation.messageMotion),
+    };
     return {
       ...source,
       kind: "module",

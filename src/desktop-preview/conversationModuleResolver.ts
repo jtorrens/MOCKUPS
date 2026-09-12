@@ -666,7 +666,9 @@ function resolveMessageReflow(
         }]
       : [];
     return [...appearance, ...disappearance];
-  }).filter(({ startFrame }) => startFrame <= frame && frame < startFrame + durationFrames)
+  }).filter(({ startFrame, targetFrame }) =>
+    startFrame <= frame
+    && frame < Math.max(startFrame + durationFrames, targetFrame))
     .sort((a, b) => {
       if (a.kind !== b.kind) return a.kind === "disappearance" ? -1 : 1;
       return b.startFrame - a.startFrame;
