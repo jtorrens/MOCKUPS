@@ -112,6 +112,7 @@ function payload(
       typingIndicatorText: "•••",
       typingIndicatorSizeToken: "theme.typography.sizes.m",
       typingIndicatorAnimation: "pulsating",
+      reflowAtMessageOutStart: false,
       messages: completeMessages,
       inputs: [
         { id: "actor", jsonKey: "actorId", animationTimeline: { origin: { kind: "ownerStart" } } },
@@ -1115,6 +1116,57 @@ test("Conversation uses the same reflow timing after a message Out completes", (
   const moving = resolveConversationModule(source);
   assert.ok((moving.messageReflow?.progress ?? 0) > 0);
   assert.ok((moving.messageReflow?.progress ?? 1) < 1);
+});
+
+test("Conversation can begin reflow on the first frame of message Out", () => {
+  const source = committedConversationPayload(true);
+  const runtime = JSON.parse(source.designPreviewJson) as {
+    reflowAtMessageOutStart: boolean;
+    messages: Array<Record<string, unknown>>;
+  };
+  runtime.reflowAtMessageOutStart = true;
+  const original = runtime.messages[0]!;
+  const message = (id: string, visibleDurationFrames: number) => ({
+    ...original,
+    id,
+    direction: "incoming",
+    delayAfterPreviousFrames: 0,
+    postWriteOnHoldFrames: 0,
+    visibleDurationFrames,
+    writeOnTiming: {
+      mode: "fixed",
+      fixedFrames: 0,
+      paceToken: "theme.motion.naturalPace.normal",
+    },
+  });
+  runtime.messages = [message("leaving", 10), message("remaining", 0)];
+  source.designPreviewJson = JSON.stringify(runtime);
+
+  setConversationFrame(source, 4);
+  const started = resolveConversationModule(source);
+  assert.deepEqual(started.visibleMessages.map(({ id }) => id), ["leaving", "remaining"]);
+  assert.equal(started.visibleMessages[0]?.presenceMotionKind, "exit");
+  assert.deepEqual(
+    started.messageReflow?.fromMessages.map(({ id }) => id),
+    ["leaving", "remaining"],
+  );
+  assert.deepEqual(
+    started.messageReflow?.toMessages.map(({ id }) => id),
+    ["remaining"],
+  );
+  assert.ok((started.messageReflow?.progress ?? 0) > 0);
+
+  const remainingY = (frame: number) => {
+    setConversationFrame(source, frame);
+    const bubbles = findNodes(
+      conversationModuleToRenderable(source),
+      "component.bubble",
+    );
+    const remaining = bubbles[1];
+    assert.ok(remaining);
+    return renderableVisualBounds(remaining).y;
+  };
+  assert.ok(remainingY(4) > remainingY(6));
 });
 
 test("a nested full-screen Media keeps the exact root Screen coordinates", () => {

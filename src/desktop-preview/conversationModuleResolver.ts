@@ -134,6 +134,11 @@ export function resolveConversationModule(
     ),
     "module.core.chat.messageReflowTiming",
   );
+  const reflowAtMessageOutStart = requiredBoolean(
+    preview,
+    "reflowAtMessageOutStart",
+    "module.core.chat.input.reflowAtMessageOutStart",
+  );
   const messageReflow = resolveMessageReflow(
     resolvedMessages,
     screenFrame,
@@ -144,6 +149,7 @@ export function resolveConversationModule(
     !showKeyboard && !showTextInputBar,
     textInputComposerEnabled,
     reflowTiming,
+    reflowAtMessageOutStart,
     decorateMessage,
   );
   const keyboardVisible = composer.keyboardVisible
@@ -623,6 +629,7 @@ function resolveMessageReflow(
   writesInBubble: boolean,
   textInputComposerEnabled: boolean,
   reflowTiming: { durationMs: number; easing: string; intensity: number },
+  reflowAtMessageOutStart: boolean,
   decorateMessage: (
     message: UndecoratedConversationMessage,
   ) => ConversationMessageContract,
@@ -630,6 +637,10 @@ function resolveMessageReflow(
   const durationFrames = reflowTiming.durationMs / 1000
     * Math.max(1, payload.frameRate);
   if (durationFrames <= 0) return undefined;
+  const motionDurationFrames = Math.ceil(
+    motionTotalDurationMs(payload, messageMotion)
+      / 1000 * Math.max(1, payload.frameRate),
+  );
   const events = messages.flatMap((message) => {
     const visibleAt = messageVisibleAtFrame(
       message,
@@ -637,19 +648,36 @@ function resolveMessageReflow(
       writesInBubble,
       textInputComposerEnabled,
     );
-    const appearance = visibleAt > 0 ? [visibleAt] : [];
+    const appearance = visibleAt > 0
+      ? [{ startFrame: visibleAt, targetFrame: visibleAt }]
+      : [];
     const disappearance = message.hasExplicitPresenceEnd
       && message.presenceEndFrame < automaticEndFrame
-      ? [message.presenceEndFrame]
+      ? [{
+          startFrame: reflowAtMessageOutStart
+            ? Math.max(visibleAt, message.presenceEndFrame - motionDurationFrames)
+            : message.presenceEndFrame,
+          targetFrame: message.presenceEndFrame,
+        }]
       : [];
     return [...appearance, ...disappearance];
-  }).filter((eventFrame) => eventFrame <= frame && frame < eventFrame + durationFrames)
-    .sort((a, b) => b - a);
-  const startFrame = events[0];
-  if (startFrame === undefined) return undefined;
+  }).filter(({ startFrame }) => startFrame <= frame && frame < startFrame + durationFrames)
+    .sort((a, b) => b.startFrame - a.startFrame);
+  const event = events[0];
+  if (event === undefined) return undefined;
   const fromMessages = visibleMessages(
     messages,
-    Math.max(0, startFrame - 1),
+    Math.max(0, event.startFrame - 1),
+    timing,
+    payload,
+    messageMotion,
+    automaticEndFrame,
+    writesInBubble,
+    textInputComposerEnabled,
+  ).map(decorateMessage);
+  const toMessages = visibleMessages(
+    messages,
+    event.targetFrame,
     timing,
     payload,
     messageMotion,
@@ -660,9 +688,10 @@ function resolveMessageReflow(
   return {
     progress: resolveReflowProgress(
       reflowTiming,
-      (frame - startFrame + 1) / Math.max(1, payload.frameRate) * 1000,
+      (frame - event.startFrame + 1) / Math.max(1, payload.frameRate) * 1000,
     ),
     fromMessages,
+    toMessages,
   };
 }
 

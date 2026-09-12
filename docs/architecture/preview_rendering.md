@@ -357,10 +357,14 @@ send boundary and releases its Bubble. Bubble still forwards cursor state to
 Text Box, which owns the cursor's blinking presentation.
 
 Conversation Preview prepares message layout transitions by stable message id.
-At an appearance or completed explicit disappearance it resolves the previous
-and target vertical layouts once, then interpolates both sibling displacement
-and viewport overflow with the Conversation Variant's single reflow timing.
-The generic renderer only paints the resulting geometry.
+At an appearance it resolves the previous and target vertical layouts once. At
+an explicit disappearance, the Screen Runtime Input `Reflow at message Out
+start` selects either the first Out Motion/Fade frame or the completed-Out
+frame as that same reflow boundary. It then interpolates sibling displacement
+and viewport overflow with the Conversation Variant's single reflow timing;
+an exiting message remains in the painted set at its prior layout position
+until its Out completes. The generic renderer only paints the resulting
+geometry.
 
 Message starts reach Conversation only through the prepared common owner
 timeline. That timeline consumes the declared Screen-instance positioning mode

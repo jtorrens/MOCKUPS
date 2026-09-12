@@ -460,7 +460,10 @@ immediately applies the complete corresponding Bubble appearance.
 The Conversation Layout card exposes `Messages reflow timing` as duration and
 easing only. It controls both the upward/downward displacement that closes a
 message gap and the auto-scroll that accommodates a newly visible message;
-message presence and composer viewport Motion remain separate fields.
+message presence and composer viewport Motion remain separate fields. The
+Conversation Screen Runtime Timing group exposes `Reflow at message Out start`
+as a Boolean, disabled by default. Disabled starts gap closure after Out
+completes; enabled starts it on the same frame as the message Out Motion/Fade.
 
 ## Animation UX
 

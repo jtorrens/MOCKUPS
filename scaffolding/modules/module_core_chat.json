@@ -267,6 +267,18 @@
         "helpText": "Off sequences each message from the previous message end. On stores each message start relative to Screen frame zero."
       },
       {
+        "id": "reflowAtMessageOutStart",
+        "label": "Reflow at message Out start",
+        "jsonKey": "reflowAtMessageOutStart",
+        "kind": "boolean",
+        "defaultValue": "false",
+        "groupId": "timing",
+        "groupLabel": "Timing",
+        "groupOrder": 20,
+        "valueKind": "Boolean",
+        "helpText": "Off starts message reflow after Out completes. On starts reflow on the same frame as the message Out motion."
+      },
+      {
         "id": "headerSubtitle",
         "label": "Header subtitle",
         "jsonKey": "headerSubtitle",
@@ -449,6 +461,7 @@
     ],
     "conversationDurationFrames": 240,
     "messageAbsolutePositioning": false,
+    "reflowAtMessageOutStart": false,
     "messages": [
       {
         "direction": "incoming",

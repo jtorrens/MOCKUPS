@@ -91,10 +91,14 @@ Conversation owns message geometry separately from message presence. Its
 vertical reflow after an explicit message Out and the vertical auto-scroll
 needed when a newly visible message exceeds the viewport. The Bubble remains
 the owner of its resolved appearance and the Conversation message Motion
-remains the owner of Enter/Exit; neither owns sibling displacement. At the
-discrete frame boundary, the first frame of the new message layout consumes
-the first reflow sample so no unchanged hold frame separates Exit completion
-from sibling movement.
+remains the owner of Enter/Exit; neither owns sibling displacement. The Screen
+Runtime Input `Reflow at message Out start` selects the disappearance boundary:
+disabled starts sibling displacement when Out completes, while enabled starts
+it on the exact frame that the shared message Motion/Fade begins. The exiting
+message retains its pre-reflow position while its Out is painted. At either
+selected discrete frame boundary, the first frame consumes the first reflow
+sample so no unchanged hold frame separates that boundary from sibling
+movement.
 
 ## Temporal ownership
 

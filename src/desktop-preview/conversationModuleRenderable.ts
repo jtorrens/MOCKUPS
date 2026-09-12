@@ -308,8 +308,11 @@ function messageNodes(
     return { id: message.id, node, bounds, finalBounds, alignment: bubble.resolved.alignment };
   });
   const entries = resolveEntries(messages);
-  const totalHeight = entries.reduce((sum, entry) => sum + entry.finalBounds.height, 0)
-    + Math.max(0, entries.length - 1) * gap;
+  const targetEntries = messageReflow
+    ? resolveEntries(messageReflow.toMessages)
+    : entries;
+  const totalHeight = targetEntries.reduce((sum, entry) => sum + entry.finalBounds.height, 0)
+    + Math.max(0, targetEntries.length - 1) * gap;
   const viewportHeight = Math.max(0, bottom - top);
   const viewportBox: RenderableBox = {
     x: screen.x,
@@ -331,6 +334,12 @@ function messageNodes(
     previousYById.set(entry.id, previousY);
     previousY += entry.finalBounds.height + gap;
   });
+  const targetYById = new Map<string, number>();
+  let nextTargetY = top + gap - targetOverflow;
+  targetEntries.forEach((entry) => {
+    targetYById.set(entry.id, nextTargetY);
+    nextTargetY += entry.finalBounds.height + gap;
+  });
   let appearingY = previousY;
   return entries.map((entry, index) => {
     const { node, bounds, alignment } = entry;
@@ -340,9 +349,13 @@ function messageNodes(
       : alignment === "center"
         ? screen.x + screen.width / 2 - (bounds.x + bounds.width / 2)
         : screen.x + gutter.x - bounds.x;
-    const targetY = top + gap - targetOverflow
-      + entries.slice(0, index).reduce((sum, current) => sum + current.finalBounds.height + gap, 0);
     const previousEntryY = previousYById.get(message.id);
+    const targetY = targetYById.get(message.id) ?? previousEntryY
+      ?? top + gap - targetOverflow
+        + entries.slice(0, index).reduce(
+          (sum, current) => sum + current.finalBounds.height + gap,
+          0,
+        );
     const priorY = previousEntryY ?? appearingY;
     if (previousEntryY === undefined) {
       appearingY += entry.finalBounds.height + gap;

@@ -74,6 +74,7 @@ export interface ConversationModuleContract {
   messageReflow?: {
     progress: number;
     fromMessages: ConversationMessageContract[];
+    toMessages: ConversationMessageContract[];
   };
   textInputConfig?: JsonRecord;
 }
