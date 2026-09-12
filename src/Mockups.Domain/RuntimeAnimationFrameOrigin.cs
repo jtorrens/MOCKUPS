@@ -175,11 +175,6 @@ public static class RuntimeAnimationFrameOrigin
         int frameRate = 0)
     {
         converted = runtime.DeepClone().AsObject();
-        var requestedAbsolute = value is JsonValue requestedValue
-            && requestedValue.TryGetValue<bool>(out var requested)
-                ? requested
-                : throw new InvalidOperationException(
-                    $"Runtime collection positioning mode '{modeInputJsonKey}' must be a JSON boolean.");
         var inputs = Inputs(contract);
         var matches = Collections(contract)
             .Select((collection) => (
@@ -208,6 +203,11 @@ public static class RuntimeAnimationFrameOrigin
             .ToList();
         if (matches.Count == 0) return false;
 
+        var requestedAbsolute = value is JsonValue requestedValue
+            && requestedValue.TryGetValue<bool>(out var requested)
+                ? requested
+                : throw new InvalidOperationException(
+                    $"Runtime collection positioning mode '{modeInputJsonKey}' must be a JSON boolean.");
         var model = Model(
             contract,
             runtime,

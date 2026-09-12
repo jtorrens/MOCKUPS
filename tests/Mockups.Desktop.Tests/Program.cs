@@ -19558,6 +19558,14 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
     Equal("startFrame", absoluteResolved.Collections[0].Items[0].SerialEdit?.PositionFieldJsonKey);
     Equal(0, absoluteResolved.Collections[0].Items[0].SerialEdit?.PositionBaseFrame);
     Equal(0, absoluteResolved.Collections[0].Items[1].SerialEdit?.PositionBaseFrame);
+    True(!RuntimeAnimationFrameOrigin.TryChangeCollectionPositioningMode(
+        Object(absoluteContract),
+        absolutePreview,
+        new JsonObject(),
+        "conversationType",
+        JsonValue.Create("individual"),
+        out var unrelatedRuntimeInput));
+    True(JsonNode.DeepEquals(absolutePreview, unrelatedRuntimeInput));
     True(RuntimeAnimationFrameOrigin.TryChangeCollectionPositioningMode(
         Object(absoluteContract),
         absolutePreview,
