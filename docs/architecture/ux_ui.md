@@ -464,6 +464,8 @@ message presence and composer viewport Motion remain separate fields. The
 Conversation Screen Runtime Timing group exposes `Reflow at message Out start`
 as a Boolean, disabled by default. Disabled starts gap closure after Out
 completes; enabled starts it on the same frame as the message Out Motion/Fade.
+While both run, the exiting message moves with the same reflow as the adjacent
+messages and disappears only when its Out completes.
 
 ## Animation UX
 

@@ -94,11 +94,12 @@ the owner of its resolved appearance and the Conversation message Motion
 remains the owner of Enter/Exit; neither owns sibling displacement. The Screen
 Runtime Input `Reflow at message Out start` selects the disappearance boundary:
 disabled starts sibling displacement when Out completes, while enabled starts
-it on the exact frame that the shared message Motion/Fade begins. The exiting
-message retains its pre-reflow position while its Out is painted. At either
+it on the exact frame that the shared message Motion/Fade begins. During the
+concurrent interval the exiting message remains painted, combines its own
+Motion/Fade with the same resolved reflow displacement as the adjacent
+surviving messages and leaves the layout only when Out completes. At either
 selected discrete frame boundary, the first frame consumes the first reflow
-sample so no unchanged hold frame separates that boundary from sibling
-movement.
+sample so no unchanged hold frame separates that boundary from movement.
 
 ## Temporal ownership
 

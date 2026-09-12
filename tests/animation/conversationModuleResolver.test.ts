@@ -1156,17 +1156,25 @@ test("Conversation can begin reflow on the first frame of message Out", () => {
   );
   assert.ok((started.messageReflow?.progress ?? 0) > 0);
 
-  const remainingY = (frame: number) => {
+  const bubbleYs = (frame: number) => {
     setConversationFrame(source, frame);
     const bubbles = findNodes(
       conversationModuleToRenderable(source),
       "component.bubble",
     );
-    const remaining = bubbles[1];
-    assert.ok(remaining);
-    return renderableVisualBounds(remaining).y;
+    assert.equal(bubbles.length, 2);
+    return bubbles.map((bubble) => {
+      const bounds = renderableVisualBounds(bubble);
+      return bounds.y + (bubble.transform?.y ?? 0);
+    });
   };
-  assert.ok(remainingY(4) > remainingY(6));
+  const startedYs = bubbleYs(4);
+  const movingYs = bubbleYs(6);
+  const leavingDisplacement = startedYs[0]! - movingYs[0]!;
+  const remainingDisplacement = startedYs[1]! - movingYs[1]!;
+  assert.ok(Math.abs(leavingDisplacement) > 0.001);
+  assert.ok(Math.abs(remainingDisplacement) > 0.001);
+  assert.ok(Math.abs(leavingDisplacement - remainingDisplacement) < 0.001);
 });
 
 test("a nested full-screen Media keeps the exact root Screen coordinates", () => {

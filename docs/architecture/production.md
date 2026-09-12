@@ -391,9 +391,11 @@ Only an explicit pre-boundary Out runs the shared Motion in reverse. Presence
 never delays the next message and never retimes or rewrites message keyframes.
 The Screen instance also owns the required Boolean `Reflow at message Out
 start`, disabled by default. Disabled preserves reflow after the explicit Out
-completes; enabled begins sibling displacement on the exact first frame of the
-shared message Out Motion/Fade while the exiting message retains its prior
-layout position.
+completes; enabled begins displacement on the exact first frame of the shared
+message Out Motion/Fade. During that concurrent interval the exiting message
+receives the same resolved reflow displacement as the adjacent surviving
+messages while its own Motion/Fade continues; it leaves the painted set only
+when Out completes.
 Message In and Out never change the Conversation Screen duration. Conversation
 allows the Screen duration policy declared by its Module; its Duration field
 and General timeline lane are the same independent authoring value, may end

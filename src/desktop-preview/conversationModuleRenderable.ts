@@ -340,6 +340,27 @@ function messageNodes(
     targetYById.set(entry.id, nextTargetY);
     nextTargetY += entry.finalBounds.height + gap;
   });
+  const reflowDeltaForRemovedEntry = (id: string) => {
+    const previousIndex = previousEntries.findIndex((entry) => entry.id === id);
+    if (previousIndex < 0) return 0;
+    for (let index = previousIndex + 1; index < previousEntries.length; index += 1) {
+      const sibling = previousEntries[index]!;
+      const siblingPreviousY = previousYById.get(sibling.id);
+      const siblingTargetY = targetYById.get(sibling.id);
+      if (siblingPreviousY !== undefined && siblingTargetY !== undefined) {
+        return siblingTargetY - siblingPreviousY;
+      }
+    }
+    for (let index = previousIndex - 1; index >= 0; index -= 1) {
+      const sibling = previousEntries[index]!;
+      const siblingPreviousY = previousYById.get(sibling.id);
+      const siblingTargetY = targetYById.get(sibling.id);
+      if (siblingPreviousY !== undefined && siblingTargetY !== undefined) {
+        return siblingTargetY - siblingPreviousY;
+      }
+    }
+    return 0;
+  };
   let appearingY = previousY;
   return entries.map((entry, index) => {
     const { node, bounds, alignment } = entry;
@@ -350,7 +371,10 @@ function messageNodes(
         ? screen.x + screen.width / 2 - (bounds.x + bounds.width / 2)
         : screen.x + gutter.x - bounds.x;
     const previousEntryY = previousYById.get(message.id);
-    const targetY = targetYById.get(message.id) ?? previousEntryY
+    const targetY = targetYById.get(message.id)
+      ?? (previousEntryY === undefined
+        ? undefined
+        : previousEntryY + reflowDeltaForRemovedEntry(message.id))
       ?? top + gap - targetOverflow
         + entries.slice(0, index).reduce(
           (sum, current) => sum + current.finalBounds.height + gap,
