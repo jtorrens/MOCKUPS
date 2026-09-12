@@ -2791,17 +2791,17 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
             && exitStartFrame >= interval.EndFrame) return;
         if (enterEndFrame >= exitStartFrame)
         {
-            PreviewScreenTimelineHatch.Draw(context, block);
+            PreviewScreenTimelineHatch.DrawMotionPhase(context, block);
             return;
         }
-        PreviewScreenTimelineHatch.Draw(
+        PreviewScreenTimelineHatch.DrawMotionPhase(
             context,
             new Rect(
                 block.Left,
                 block.Top,
                 Math.Max(0, X(enterEndFrame) - block.Left),
                 block.Height));
-        PreviewScreenTimelineHatch.Draw(
+        PreviewScreenTimelineHatch.DrawMotionPhase(
             context,
             new Rect(
                 X(exitStartFrame),
@@ -3210,21 +3210,33 @@ internal static class PreviewScreenTimelineHatch
     private static readonly Pen HatchPen = new(
         new SolidColorBrush(Color.FromArgb(35, 143, 152, 168)),
         1);
+    private static readonly Pen MotionPhaseHatchPen = new(
+        new SolidColorBrush(Color.FromArgb(190, 220, 235, 255)),
+        1.25);
 
     public static void Draw(
         DrawingContext context,
-        Rect region)
+        Rect region) => DrawDiagonal(context, region, HatchPen, 11);
+
+    public static void DrawMotionPhase(
+        DrawingContext context,
+        Rect region) => DrawDiagonal(context, region, MotionPhaseHatchPen, 6);
+
+    private static void DrawDiagonal(
+        DrawingContext context,
+        Rect region,
+        Pen pen,
+        double spacing)
     {
         if (region.Width <= 0 || region.Height <= 0) return;
         using (context.PushClip(region))
         {
-            const double spacing = 11;
             for (var x = region.Left - region.Height;
                  x < region.Right;
                  x += spacing)
             {
                 context.DrawLine(
-                    HatchPen,
+                    pen,
                     new Point(x, region.Bottom),
                     new Point(x + region.Height, region.Top));
             }

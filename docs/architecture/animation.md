@@ -319,14 +319,16 @@ lane exposes the complete track and keyframe editor in Timeline.
 Item appearance blocks snap their start or outgoing edge to the
 playhead and to other visible item boundaries. Snap feedback is transient and
 amber; preroll and postroll boundaries remain neutral, diagonally hatched
-regions. Every Runtime collection presence block also uses that generic hatch
-inside its leading effective owner Motion/Fade span and, when it owns an
-explicit outgoing boundary, inside its trailing effective owner Motion/Fade
-span. These spans come from the common owner timeline after frame-rate and
-retime resolution; they are informational only and never alter presence,
-sequencing, snapping or keyframes. Collection collapse and viewport zoom are
-session-only. Block edits persist through their declared collection fields or
-animation document and do not rewrite owner-local keyframes.
+regions. Every Runtime collection presence block also uses a denser,
+higher-contrast diagonal hatch inside its leading effective owner Motion/Fade
+span and, when it owns an explicit outgoing boundary, inside its trailing
+effective owner Motion/Fade span. Its diagonal direction distinguishes the
+phase from the vertical boundary handles. These spans come from the common
+owner timeline after frame-rate and retime resolution; they are informational
+only and never alter presence, sequencing, snapping or keyframes. Collection
+collapse and viewport zoom are session-only. Block edits persist through their
+declared collection fields or animation document and do not rewrite owner-local
+keyframes.
 
 When Production Preview is owned by a Shot, that same Timeline surface changes
 coordinate owner instead of creating an editor-local timeline. It presents one
