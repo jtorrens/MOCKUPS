@@ -8,26 +8,53 @@ namespace Mockups.DesktopEditorShell.Common;
 
 internal static class EditorModalWindowPriority
 {
-    private static readonly TimeSpan[] OpeningPromotionDelays =
-    [
-        TimeSpan.FromMilliseconds(50),
-        TimeSpan.FromMilliseconds(150),
-        TimeSpan.FromMilliseconds(350),
-    ];
+    private static readonly TimeSpan PriorityMonitorInterval =
+        TimeSpan.FromMilliseconds(100);
 
     public static void Configure(Window dialog, Window owner)
     {
-        List<OwnedWindowState>? displacedWindows = null;
+        var rootOwner = RootOwner(owner);
+        var displacedWindows = new Dictionary<Window, OwnedWindowState>();
+        var priorityMonitor = new DispatcherTimer
+        {
+            Interval = PriorityMonitorInterval,
+        };
         var activationPending = false;
         var closed = false;
 
         bool HasActiveOwnerFamilyWindow() =>
-            owner.IsActive
-            || dialog.IsActive
-            || owner.OwnedWindows.Any((window) =>
-                !ReferenceEquals(window, dialog)
-                && window.IsVisible
-                && window.IsActive);
+            OwnerFamily(rootOwner).Any((window) =>
+                window.IsVisible && window.IsActive);
+
+        void DisplaceCompetingWindows()
+        {
+            foreach (var window in OwnerFamily(rootOwner))
+            {
+                if (ReferenceEquals(window, rootOwner)
+                    || ReferenceEquals(window, dialog)
+                    || IsOwnedBy(window, dialog)
+                    || !window.IsVisible)
+                {
+                    continue;
+                }
+
+                if (!displacedWindows.ContainsKey(window))
+                {
+                    displacedWindows.Add(
+                        window,
+                        new OwnedWindowState(
+                            window,
+                            window.Topmost,
+                            window.IsEnabled));
+                }
+
+                window.Topmost = false;
+                if (!IsOwnedBy(dialog, window))
+                {
+                    window.IsEnabled = false;
+                }
+            }
+        }
 
         void PromoteDialog(bool requireActiveOwnerFamily)
         {
@@ -64,51 +91,84 @@ internal static class EditorModalWindowPriority
             EventArgs args) =>
             PromoteDialog(requireActiveOwnerFamily: true);
 
+        void MonitorPriority(object? sender, EventArgs args)
+        {
+            if (closed || !dialog.IsVisible)
+            {
+                return;
+            }
+
+            DisplaceCompetingWindows();
+            if (!dialog.Topmost || !dialog.IsActive)
+            {
+                PromoteDialog(requireActiveOwnerFamily: true);
+            }
+        }
+
         dialog.ShowActivated = true;
         dialog.Topmost = true;
         owner.Activated += RestoreDialogAfterOwnerActivation;
         dialog.Deactivated += RestoreDialogAfterDeactivation;
+        priorityMonitor.Tick += MonitorPriority;
         dialog.Opened += (_, _) =>
         {
-            displacedWindows = owner.OwnedWindows
-                .Where((window) => !ReferenceEquals(window, dialog)
-                    && window.IsVisible
-                    && window.Topmost)
-                .Select((window) => new OwnedWindowState(
-                    window,
-                    window.Topmost,
-                    window.IsEnabled))
-                .ToList();
-            foreach (var displaced in displacedWindows)
-            {
-                displaced.Window.IsEnabled = false;
-                displaced.Window.Topmost = false;
-            }
+            DisplaceCompetingWindows();
             PromoteDialog(requireActiveOwnerFamily: false);
-            foreach (var delay in OpeningPromotionDelays)
-            {
-                DispatcherTimer.RunOnce(
-                    () => PromoteDialog(
-                        requireActiveOwnerFamily: false),
-                    delay);
-            }
+            priorityMonitor.Start();
         };
         dialog.Closed += (_, _) =>
         {
             closed = true;
+            priorityMonitor.Stop();
+            priorityMonitor.Tick -= MonitorPriority;
             owner.Activated -= RestoreDialogAfterOwnerActivation;
             dialog.Deactivated -= RestoreDialogAfterDeactivation;
-            if (displacedWindows is null)
-            {
-                return;
-            }
-            foreach (var displaced in displacedWindows)
+            foreach (var displaced in displacedWindows.Values)
             {
                 displaced.Window.Topmost = displaced.WasTopmost;
                 displaced.Window.IsEnabled = displaced.WasEnabled;
             }
-            displacedWindows = null;
+            displacedWindows.Clear();
         };
+    }
+
+    private static Window RootOwner(Window window)
+    {
+        var current = window;
+        while (current.Owner is Window parent)
+        {
+            current = parent;
+        }
+        return current;
+    }
+
+    private static IEnumerable<Window> OwnerFamily(Window root)
+    {
+        var pending = new Stack<Window>();
+        pending.Push(root);
+        while (pending.Count > 0)
+        {
+            var current = pending.Pop();
+            yield return current;
+            foreach (var child in current.OwnedWindows)
+            {
+                pending.Push(child);
+            }
+        }
+    }
+
+    private static bool IsOwnedBy(Window window, Window possibleOwner)
+    {
+        for (var current = window.Owner;
+             current is Window currentWindow;
+             current = currentWindow.Owner)
+        {
+            if (ReferenceEquals(currentWindow, possibleOwner))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     private sealed record OwnedWindowState(
