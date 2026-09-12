@@ -516,8 +516,8 @@ internal static class PreviewScreenTimelineSnapshotFactory
             ?? throw new InvalidOperationException(
                 $"Screen Timeline '{surface.Owner.Node.Id}' requires its prepared animation snapshot.");
         var contract = Parse(
-            animationSnapshot.Source.EffectiveContractJson,
-            "Screen Timeline Runtime contract");
+            animationSnapshot.Source.RuntimePreviewJson,
+            "Screen Timeline prepared Runtime contract");
         var runtime = surface.Preview;
         var animation = Parse(
             animationSnapshot.Source.AnimationJson,

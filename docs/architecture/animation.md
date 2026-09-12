@@ -141,6 +141,13 @@ resulting collection reflow. List follows this rule: List Item defines how one
 item enters or exits, List times `Present` and reflow, and List defines a
 separate boundary Motion for the complete List.
 
+A Runtime collection whose items use a config-owned presence Motion declares
+that source as `animationTimeline.ownerPhase` with `kind: configMotion` and an
+exact config path. `RuntimePreviewDocumentContract` hydrates it to
+`resolvedMotion`; the common owner timeline and Screen Timeline consume that
+same prepared contract. Resolvers never become an alternate timing-contract
+source merely because they also paint the resolved Motion.
+
 ## Persisted tracks
 
 Parameter animation is persisted only as version 2 tracks identified by stable

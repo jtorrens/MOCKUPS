@@ -19510,6 +19510,17 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
           }]
         }
         """;
+    static string PreparedTimelineContract(
+        string contractJson,
+        JsonObject runtimeValues)
+    {
+        var prepared = Object(contractJson);
+        foreach (var (key, value) in runtimeValues)
+        {
+            prepared[key] = value?.DeepClone();
+        }
+        return prepared.ToJsonString();
+    }
     var surface = new RuntimeInputSurface(
         new RuntimeInputOwner(
             node,
@@ -19526,7 +19537,7 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
             new ModuleInstanceAnimationSource(
                 "{}",
                 EmptyDocument().ToJson(),
-                preview.ToJsonString(),
+                PreparedTimelineContract(contract, preview),
                 "{}",
                 contract,
                 25),
@@ -19583,6 +19594,9 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
                 {
                     ThemeTokensJson = timelineMotionTheme,
                     EffectiveContractJson = motionContract.ToJsonString(),
+                    RuntimePreviewJson = PreparedTimelineContract(
+                        motionContract.ToJsonString(),
+                        preview),
                 },
             },
         },
@@ -19591,6 +19605,57 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
     Equal(0, motionResolved.Collections[0].Items[0].Intervals[0].ExitPhaseFrames);
     Equal(6, motionResolved.Collections[0].Items[1].Intervals[0].EnterPhaseFrames);
     Equal(6, motionResolved.Collections[0].Items[1].Intervals[0].ExitPhaseFrames);
+
+    var parityDatabase = new SqliteProjectTestContext(ParityDatabasePath());
+    const string conversationInstanceId =
+        "module_instance_a5af8afd87e44a4492eca7faac46c56e";
+    var conversationNode = Descendants(parityDatabase.LoadProjectTree())
+        .Single((candidate) => candidate.Id == conversationInstanceId);
+    var conversationSource = new ModuleInstanceTimelineDataSource(
+            parityDatabase.Production,
+            parityDatabase.Resources)
+        .Load(conversationInstanceId);
+    var conversationRuntime = Object(conversationSource.RuntimePreviewJson);
+    var conversationTimeline = PreviewScreenTimelineSnapshotFactory.Create(
+        new RuntimeInputSurface(
+            new RuntimeInputOwner(
+                conversationNode,
+                parityDatabase.GetModuleInstanceVariantSettings(
+                    conversationInstanceId).ConfigJson,
+                conversationSource.RuntimePreviewJson,
+                (_) => Task.CompletedTask,
+                IsInstance: true),
+            conversationRuntime,
+            [],
+            [new RuntimeInputCollectionDefinition(
+                "messages",
+                "Messages",
+                "messages",
+                "Message",
+                [])],
+            [],
+            AnimationSnapshot: new ModuleInstanceAnimationSnapshot(
+                conversationInstanceId,
+                new ModuleInstanceAnimationSource(
+                    parityDatabase.GetModuleInstanceVariantSettings(
+                        conversationInstanceId).ConfigJson,
+                    conversationSource.AnimationJson,
+                    conversationSource.RuntimePreviewJson,
+                    conversationSource.ThemeTokensJson,
+                    conversationSource.EffectiveContractJson,
+                    conversationSource.FrameRate),
+                conversationSource.StartFrame,
+                conversationSource.StartFrame
+                    + conversationSource.ActionDelayFrames,
+                conversationSource.PersistedDurationFrames)),
+        new PreviewScreenTimelineRange(
+            0,
+            conversationSource.PersistedDurationFrames,
+            0));
+    True(conversationTimeline.Collections[0].Items.Count > 0);
+    True(conversationTimeline.Collections[0].Items.All((item) =>
+        item.Intervals[0].EnterPhaseFrames == 7
+        && item.Intervals[0].ExitPhaseFrames == 7));
     var absolutePreview = Object(
         """{"absolutePositioning":true,"items":[{"id":"item_1","delay":-4,"startFrame":14,"visibleDurationFrames":0},{"id":"item_2","delay":0,"startFrame":3,"visibleDurationFrames":120}]}""");
     var absoluteContract =
@@ -19631,7 +19696,9 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
             {
                 Source = surface.AnimationSnapshot.Source with
                 {
-                    RuntimePreviewJson = absolutePreview.ToJsonString(),
+                    RuntimePreviewJson = PreparedTimelineContract(
+                        absoluteContract,
+                        absolutePreview),
                     EffectiveContractJson = absoluteContract,
                 },
             },
@@ -19679,6 +19746,9 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
             {
                 Source = surface.AnimationSnapshot.Source with
                 {
+                    RuntimePreviewJson = PreparedTimelineContract(
+                        derivedContract.ToJsonString(),
+                        preview),
                     EffectiveContractJson =
                         derivedContract.ToJsonString(),
                 },
@@ -19771,7 +19841,7 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
             new ModuleInstanceAnimationSource(
                 "{}",
                 stateAnimation.ToJson(),
-                stateRuntime.ToJsonString(),
+                PreparedTimelineContract(stateContract, stateRuntime),
                 "{}",
                 stateContract,
                 25),

@@ -2377,6 +2377,13 @@
         },
         "animationTimeline": {
           "sequence": "serial",
+          "ownerPhase": {
+            "kind": "configMotion",
+            "configPath": [
+              "conversation",
+              "messageMotion"
+            ]
+          },
           "positioning": {
             "modeInputId": "messageAbsolutePositioning",
             "relativeOffsetFieldId": "delay",
