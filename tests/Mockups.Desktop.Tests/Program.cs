@@ -6616,9 +6616,16 @@ static void PreviewControlsDetachIntoTopmostSessionWindow()
             Width = 320,
             Height = 180,
         };
+        var auxiliary = new Window
+        {
+            Width = 300,
+            Height = 180,
+        };
+        auxiliary.Show(owner);
         EditorSukiWindowTheme.ApplyDialogChrome(
             dialog,
             owner);
+        True(dialog.ShowActivated);
         True(dialog.Topmost);
         dialog.Show(owner);
         Dispatcher.UIThread.RunJobs();
@@ -6631,10 +6638,16 @@ static void PreviewControlsDetachIntoTopmostSessionWindow()
         Dispatcher.UIThread.RunJobs();
         True(dialog.Topmost);
         True(dialog.IsActive);
+        dialog.Topmost = false;
+        auxiliary.Activate();
+        Dispatcher.UIThread.RunJobs();
+        True(dialog.Topmost);
+        True(dialog.IsActive);
         dialog.Close();
         Dispatcher.UIThread.RunJobs();
         True(floating.Topmost);
         True(floating.IsEnabled);
+        auxiliary.Close();
 
         floating.Position = new PixelPoint(420, 240);
         floating.Close();

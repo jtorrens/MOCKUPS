@@ -21,7 +21,15 @@ internal static class EditorModalWindowPriority
         var activationPending = false;
         var closed = false;
 
-        void PromoteDialog(bool requireActiveApplicationWindow)
+        bool HasActiveOwnerFamilyWindow() =>
+            owner.IsActive
+            || dialog.IsActive
+            || owner.OwnedWindows.Any((window) =>
+                !ReferenceEquals(window, dialog)
+                && window.IsVisible
+                && window.IsActive);
+
+        void PromoteDialog(bool requireActiveOwnerFamily)
         {
             if (closed || !dialog.IsVisible || activationPending)
             {
@@ -34,12 +42,12 @@ internal static class EditorModalWindowPriority
                     activationPending = false;
                     if (closed
                         || !dialog.IsVisible
-                        || (requireActiveApplicationWindow
-                            && !owner.IsActive
-                            && !dialog.IsActive))
+                        || (requireActiveOwnerFamily
+                            && !HasActiveOwnerFamilyWindow()))
                     {
                         return;
                     }
+                    dialog.Topmost = false;
                     dialog.Topmost = true;
                     dialog.Activate();
                 },
@@ -49,13 +57,14 @@ internal static class EditorModalWindowPriority
         void RestoreDialogAfterOwnerActivation(
             object? sender,
             EventArgs args) =>
-            PromoteDialog(requireActiveApplicationWindow: true);
+            PromoteDialog(requireActiveOwnerFamily: true);
 
         void RestoreDialogAfterDeactivation(
             object? sender,
             EventArgs args) =>
-            PromoteDialog(requireActiveApplicationWindow: true);
+            PromoteDialog(requireActiveOwnerFamily: true);
 
+        dialog.ShowActivated = true;
         dialog.Topmost = true;
         owner.Activated += RestoreDialogAfterOwnerActivation;
         dialog.Deactivated += RestoreDialogAfterDeactivation;
@@ -75,12 +84,12 @@ internal static class EditorModalWindowPriority
                 displaced.Window.IsEnabled = false;
                 displaced.Window.Topmost = false;
             }
-            PromoteDialog(requireActiveApplicationWindow: false);
+            PromoteDialog(requireActiveOwnerFamily: false);
             foreach (var delay in OpeningPromotionDelays)
             {
                 DispatcherTimer.RunOnce(
                     () => PromoteDialog(
-                        requireActiveApplicationWindow: true),
+                        requireActiveOwnerFamily: true),
                     delay);
             }
         };
