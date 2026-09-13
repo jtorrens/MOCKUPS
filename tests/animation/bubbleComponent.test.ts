@@ -214,6 +214,38 @@ test("Bubble write-on Cursor stays on the final visible glyph line while text is
   assert.equal(cursor!.box!.y, finalVisibleText!.box!.y);
 });
 
+test("Bubble text paint clip extends past measured content without changing layout width", () => {
+  const source = committedComponentFixture("bubble");
+  const preview = JSON.parse(source.designPreviewJson) as Record<string, unknown>;
+  Object.assign(preview, {
+    sampleText: "No",
+    mediaType: "none",
+    statusState: "none",
+    statusText: "",
+    writeOnTrigger: false,
+    writeOnDurationFrames: 0,
+    writeOnFrame: 0,
+    keepCursorAfterWrite: true,
+  });
+  source.designPreviewJson = JSON.stringify(preview);
+
+  const bubble = resolveBubbleComponent(source);
+  const renderable = bubbleComponentToRenderable(source, bubble);
+  const nodes: RenderableNode[] = [];
+  const visit = (node: RenderableNode) => {
+    nodes.push(node);
+    node.children?.forEach(visit);
+  };
+  visit(renderable);
+
+  const textClip = nodes.find((node) => node.id === `${bubble.textBox.id}.textClip`);
+  const textLine = nodes.find((node) => node.id === `${bubble.textBox.id}.text.0`);
+  assert.notEqual(textClip?.box, undefined);
+  assert.notEqual(textLine?.box, undefined);
+  assert.ok(textClip!.box!.width > textLine!.box!.width);
+  assert.ok(textClip!.box!.x + textClip!.box!.width <= renderable.box!.x + renderable.box!.width);
+});
+
 test("Bubble remeasures wrapped lines from the current resolved text", () => {
   const renderedAt = (
     sampleText: string,

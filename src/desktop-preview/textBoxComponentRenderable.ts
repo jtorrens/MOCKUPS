@@ -314,6 +314,13 @@ export function textBoxComponentToRenderableAt(
       },
     };
   const cursorHeight = size.typography.fontSize * 1.05;
+  const trailingTextPaintSlack = size.hasRightIcons
+    ? Math.min(size.iconGap, textMetricSlack(size.typography.fontSize))
+    : paddingX;
+  const textPaintFrame = {
+    ...textFrame,
+    width: textFrame.width + Math.max(0, trailingTextPaintSlack),
+  };
   const cursorNode = inlineCursorShouldRender(textBox)
     ? cursorComponentToRenderableAt(
         payload,
@@ -414,7 +421,7 @@ export function textBoxComponentToRenderableAt(
         id: `${textBox.id}.textClip`,
         type: "group",
         frame: 0,
-        box: textFrame,
+        box: textPaintFrame,
         style: {
           alignItems: scrollAnchorsToBottom ? "stretch" : undefined,
           display: scrollAnchorsToBottom ? "flex" : undefined,

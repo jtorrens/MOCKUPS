@@ -28,11 +28,14 @@ export function cursorComponentToRenderableAt(
 ): RenderableNode {
   return {
     id: cursor.id,
-    type: "surface",
+    type: "path",
     frame: 0,
     box,
     style: {
-      background: selectedColor(payload, cursor.colorToken),
+      fill: selectedColor(payload, cursor.colorToken),
+      pathData: "M0 0H100V100H0Z",
+      preserveAspectRatio: "none",
+      viewBox: "0 0 100 100",
       opacity: cursor.opacity,
     },
   };

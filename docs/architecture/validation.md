@@ -226,8 +226,8 @@ persisted Runtime contracts. Focused resolver tests characterize Motion,
 write-on, playback, controls fade, reflow, key presses, authentication progress
 and Cursor propagation through embedded boundaries, including non-measuring,
 unclipped placement from the final visible-glyph line during write-on erasure.
-Cursor validation also requires the common Surface primitive so interactive
-Preview and SVG output consume the same resolved rectangle. The manifest is a current
+Text Box validation also proves that its trailing glyph paint allowance remains
+inside owned padding and does not enter layout measurement. The manifest is a current
 contract rather than a migration ledger; inert migration-state fields are
 rejected.
 
