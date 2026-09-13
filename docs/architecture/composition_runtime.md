@@ -250,7 +250,9 @@ contract to every Module that embeds Content Row; concrete Modules do not add
 their own visibility fields or filtering branches.
 
 Cursor is an inline Text Box decoration represented by an independent visual
-layer at the end of the resolved final line. It remains outside the clipped
+layer at the end of the resolved final line containing a visible glyph. A
+transient empty trailing line during write-on erasure does not move Cursor
+below that glyph. It remains outside the clipped
 text viewport, may paint beyond the text or Bubble edge, and never contributes
 to intrinsic width, wrapping or height. Showing, hiding or fading Cursor
 therefore cannot resize an owning Text Box or Bubble.

@@ -181,6 +181,39 @@ test("Bubble write-on Cursor never changes the measured Bubble width", () => {
   );
 });
 
+test("Bubble write-on Cursor stays on the final visible glyph line while text is erased", () => {
+  const source = committedComponentFixture("bubble");
+  const preview = JSON.parse(source.designPreviewJson) as Record<string, unknown>;
+  Object.assign(preview, {
+    sampleText: "N\n",
+    mediaType: "none",
+    statusState: "none",
+    statusText: "",
+    writeOnTrigger: false,
+    writeOnDurationFrames: 0,
+    writeOnFrame: 0,
+    keepCursorAfterWrite: true,
+  });
+  source.designPreviewJson = JSON.stringify(preview);
+
+  const bubble = resolveBubbleComponent(source);
+  const renderable = bubbleComponentToRenderable(source, bubble);
+  const nodes: RenderableNode[] = [];
+  const visit = (node: RenderableNode) => {
+    nodes.push(node);
+    node.children?.forEach(visit);
+  };
+  visit(renderable);
+
+  const finalVisibleText = nodes.find((node) =>
+    node.id === `${bubble.textBox.id}.text.0`
+  );
+  const cursor = nodes.find((node) => node.id === bubble.textBox.cursor.id);
+  assert.notEqual(finalVisibleText?.box, undefined);
+  assert.notEqual(cursor?.box, undefined);
+  assert.equal(cursor!.box!.y, finalVisibleText!.box!.y);
+});
+
 test("Bubble remeasures wrapped lines from the current resolved text", () => {
   const renderedAt = (
     sampleText: string,

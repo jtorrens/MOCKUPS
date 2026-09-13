@@ -293,23 +293,42 @@ export function textBoxComponentToRenderableAt(
   const renderedTextY = scrollAnchorsToBottom
     ? textFrame.y + textFrame.height - textContentHeight
     : textContentY;
-  const lastLine = wrappedLines.at(-1) ?? "";
+  const resolvedLines = wrappedLines.map((line, index) => ({
+    line,
+    box: {
+      x: textFrame.x,
+      y: renderedTextY + index * lineHeight,
+      width: textFrame.width,
+      height: lineHeight,
+    },
+  }));
+  const cursorLine = [...resolvedLines].reverse().find(({ line }) => line.length > 0)
+    ?? resolvedLines.at(-1)
+    ?? {
+      line: "",
+      box: {
+        x: textFrame.x,
+        y: renderedTextY,
+        width: textFrame.width,
+        height: lineHeight,
+      },
+    };
   const cursorHeight = size.typography.fontSize * 1.05;
   const cursorNode = inlineCursorShouldRender(textBox)
     ? cursorComponentToRenderableAt(
         payload,
         textBox.cursor,
         {
-          x: textFrame.x
+          x: cursorLine.box.x
             + lineStartOffset(
-              lastLine,
+              cursorLine.line,
               textBox.textAlign,
-              textFrame.width,
+              cursorLine.box.width,
               size.typography,
             )
-            + measuredTextWidth(lastLine, size.typography)
+            + measuredTextWidth(cursorLine.line, size.typography)
             + size.typography.fontSize * 0.01,
-          y: renderedTextY + (textLineCount - 1) * lineHeight,
+          y: cursorLine.box.y,
           width: cursorWidth,
           height: cursorHeight,
         },
@@ -403,15 +422,13 @@ export function textBoxComponentToRenderableAt(
           justifyContent: scrollAnchorsToBottom ? "flex-end" : undefined,
           overflow: "hidden",
         },
-        children: wrappedLines.flatMap((line, index) =>
+        children: resolvedLines.flatMap(({ line, box: lineBox }, index) =>
           textLineRenderableNodes({
             id: `${textBox.id}.text.${index}`,
             textBox,
             line,
             lineIndex: index,
-            lineHeight,
-            textFrame,
-            y: renderedTextY + index * lineHeight,
+            lineBox,
             style: textStyle,
             typography: size.typography,
           }),
@@ -427,9 +444,7 @@ function textLineRenderableNodes({
   textBox,
   line,
   lineIndex,
-  lineHeight,
-  textFrame,
-  y,
+  lineBox,
   style,
   typography,
 }: {
@@ -437,9 +452,7 @@ function textLineRenderableNodes({
   textBox: TextBoxDesignContract;
   line: string;
   lineIndex: number;
-  lineHeight: number;
-  textFrame: RenderableBox;
-  y: number;
+  lineBox: RenderableBox;
   style: Record<string, unknown>;
   typography: ResolvedTypographyStyle;
 }): RenderableNode[] {
@@ -448,12 +461,7 @@ function textLineRenderableNodes({
       id,
       type: "text",
       frame: 0,
-      box: {
-        x: textFrame.x,
-        y,
-        width: textFrame.width,
-        height: lineHeight,
-      },
+      box: lineBox,
       text: line,
       style,
     }];
@@ -461,7 +469,7 @@ function textLineRenderableNodes({
 
   const fontSize = typography.fontSize;
   const graphemes = textGraphemes(line);
-  let x = textFrame.x + lineStartOffset(line, textBox.textAlign, textFrame.width, typography);
+  let x = lineBox.x + lineStartOffset(line, textBox.textAlign, lineBox.width, typography);
   const cycle = textBox.textAnimation.phase;
   const minimumOpacity = Math.max(0.35, Math.min(1, textBox.textAnimation.minimumOpacity));
   return graphemes.map((grapheme, graphemeIndex) => {
@@ -481,9 +489,9 @@ function textLineRenderableNodes({
       frame: 0,
       box: {
         x,
-        y,
+        y: lineBox.y,
         width,
-        height: lineHeight,
+        height: lineBox.height,
       },
       text: grapheme,
       style: {
