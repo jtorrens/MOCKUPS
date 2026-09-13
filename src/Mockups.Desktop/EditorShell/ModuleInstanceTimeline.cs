@@ -51,10 +51,15 @@ internal static class ModuleInstanceTimeline
 
     public static int ShotDurationFrames(
         ModuleInstanceTimelineDataSource dataSource,
-        string shotId) =>
-        ScreenRanges(dataSource, shotId)
-            .Sum((range) =>
-                range.EffectiveDurationFrames);
+        string shotId)
+    {
+        var ranges = ScreenRanges(dataSource, shotId);
+        var transitionFrames = ranges.FirstOrDefault()?.TransitionFrameCount ?? 0;
+        return ScreenTimelineTiming.CalculatedShotDurationFrames(
+            ranges.Select((range) =>
+                (range.ActionDurationFrames, range.ActionDelayFrames)),
+            transitionFrames);
+    }
 
     public static IReadOnlyList<ScreenTimelineRange> ScreenRanges(
         ModuleInstanceTimelineDataSource dataSource,

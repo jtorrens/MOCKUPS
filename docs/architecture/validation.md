@@ -133,7 +133,7 @@ It includes:
   entry/exit boundaries proving exact-duration inverse Motion, arbitrary
   multi-lane overlap, stable owner-local frames, frozen action time,
   post-transition action delay, effective Screen/Shot duration and strict
-  current transition documents;
+  current transition documents, including Shot-clipped outer preroll/postroll;
 - headless Avalonia Preview shell visual-tree layout at 1040 and 1440 px,
   including real measure/arrange, panel bounds, tab headers, responsive Setup
   reflow and workspace restoration;
@@ -477,7 +477,7 @@ Database validation is read-only and confirms:
   identical effective metrics in Preview and Render preparation;
 - signed Screen starts, fixed calculated action duration, resizable explicit
   action duration, Shot-owned hatched entry/exit extensions, ordered overlap
-  composition and transparent Shot gaps;
+  composition, Shot-clipped outer transition spans and transparent Shot gaps;
 - exact Production Output settings and derivable Shot plans;
 - declared font, icon and media assets;
 - manifest-to-row agreement.

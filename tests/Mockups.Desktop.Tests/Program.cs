@@ -17772,8 +17772,7 @@ static void ShotScreenTracksResolveIndependentLanes()
                 "moduleInstanceId",
                 "moved Screen payload"));
         Equal(
-            ModuleInstanceTimeline.ScreenRanges(timeline, shot.Id)
-                .Sum((range) => range.EffectiveDurationFrames),
+            ModuleInstanceTimeline.ShotDurationFrames(timeline, shot.Id),
             database.GetShotSettings(shot.Id).DurationFrames);
     }
     finally

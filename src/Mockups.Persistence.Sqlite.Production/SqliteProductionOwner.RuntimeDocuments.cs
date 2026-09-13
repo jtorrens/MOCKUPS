@@ -571,15 +571,17 @@ internal sealed partial class SqliteProductionOwner
                 connection,
                 shot.Id);
             var shotSettings = _shotRepository.Get(connection, shot.Id);
+            var transitionFrames =
+                ScreenTimelineTiming.EffectiveTransitionDurationFrames(
+                    shotSettings.TransitionJson,
+                    shotSettings.TransitionDurationFrames);
             var startFrame = _moduleInstanceRepository.QueryByShot(connection, shot.Id)
                 .Select((screen) => screen.StartFrame
                     + EffectiveScreenDurationFrames(
                         screen,
                         shotSettings)
-                    - ScreenTimelineTiming.EffectiveTransitionDurationFrames(
-                        shotSettings.TransitionJson,
-                        shotSettings.TransitionDurationFrames))
-                .DefaultIfEmpty(0)
+                    - transitionFrames)
+                .DefaultIfEmpty(-transitionFrames)
                 .Max();
             var id = $"module_instance_{Guid.NewGuid():N}";
             var name = _moduleInstanceRepository.UniqueName(

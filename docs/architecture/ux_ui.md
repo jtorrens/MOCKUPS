@@ -192,7 +192,8 @@ General lane, Runtime collection lanes or animation detail editor. Screen lanes
 may move before or after the Shot clipping interval; only explicit-duration
 Screens expose their action-duration resize edge. Each Screen block includes
 its Shot-owned entry and inverse exit extensions as subdued diagonal hatches;
-overlaps and gaps remain visible exactly as authored. With a Screen selected, Timeline
+the hatch is clipped to the Shot interval. Overlaps and gaps remain
+visible exactly as authored. With a Screen selected, Timeline
 uses one compact transport
 above a tick ruler, then a General lane and one labelled group per Runtime
 collection with one lane per stable item. Collection groups are collapsible and

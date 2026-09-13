@@ -21,7 +21,9 @@ internal sealed record ScreenTimingPayload(
     int ScreenFrame,
     int TransitionFrameCount,
     int ActionDelayFrames,
-    int ActionDurationFrames)
+    int ActionDurationFrames,
+    int ScreenStartFrame,
+    int ShotDurationFrames)
 {
     public int ActionStartFrame =>
         TransitionFrameCount
@@ -265,6 +267,8 @@ internal static class DesignPreviewPayloadFactory
         var range =
             dataSource.ModuleInstanceScreenRange(
                 moduleInstanceId);
+        var source = dataSource.LoadModuleInstance(moduleInstanceId);
+        var shot = dataSource.LoadShotSettings(source.ShotId);
         var screenFrame =
             Math.Clamp(
                 shotFrame
@@ -292,14 +296,16 @@ internal static class DesignPreviewPayloadFactory
                         screenFrame,
                         range.TransitionFrameCount,
                         range.ActionDelayFrames,
-                        range.ActionDurationFrames),
+                        range.ActionDurationFrames,
+                        range.StartFrame,
+                        shot.DurationFrames),
             };
-        var phase = screenFrame < range.TransitionFrameCount
-            ? "enter"
-            : screenFrame >= range.ActionEndFrame
-                ? "exit"
-                : "content";
-        var source = dataSource.LoadModuleInstance(moduleInstanceId);
+        var phase = ScreenTransitionPhase(
+            range.StartFrame,
+            range.TransitionFrameCount,
+            range.ActionEndFrame,
+            shotFrame,
+            shot.DurationFrames);
         var slot = dataSource.LoadShotSlots(source.ShotId)
             .Single((candidate) => candidate.Id == moduleInstanceId);
         var elapsedFrames = phase == "enter"
@@ -327,6 +333,8 @@ internal static class DesignPreviewPayloadFactory
         int shotFrame,
         bool respectAuthoredAppearance)
     {
+        var shot = dataSource.LoadShotSettings(shotNode.Id);
+        if (shotFrame < 0 || shotFrame >= shot.DurationFrames) return null;
         var slots = dataSource.LoadShotSlots(shotNode.Id);
         if (slots.Count == 0) return null;
         var active = slots
@@ -344,6 +352,7 @@ internal static class DesignPreviewPayloadFactory
                 themeMode,
                 themeForScreen(slot.Id),
                 shotFrame,
+                shot.DurationFrames,
                 respectAuthoredAppearance))
             .ToArray();
         var top = layers[^1].Owner;
@@ -368,16 +377,18 @@ internal static class DesignPreviewPayloadFactory
         string themeMode,
         DesignPreviewThemeContext theme,
         int shotFrame,
+        int shotDurationFrames,
         bool respectAuthoredAppearance)
     {
         var screenFrame = shotFrame - slot.StartFrame;
         var actionStart = slot.TransitionFrameCount + slot.ActionDelayFrames;
         var actionEnd = actionStart + slot.ActionDurationFrames;
-        var phase = screenFrame < slot.TransitionFrameCount
-            ? "enter"
-            : screenFrame >= actionEnd
-                ? "exit"
-                : "content";
+        var phase = ScreenTransitionPhase(
+            slot.StartFrame,
+            slot.TransitionFrameCount,
+            actionEnd,
+            shotFrame,
+            shotDurationFrames);
         var elapsedFrames = phase switch
         {
             "enter" => screenFrame,
@@ -408,13 +419,38 @@ internal static class DesignPreviewPayloadFactory
                 screenFrame,
                 slot.TransitionFrameCount,
                 slot.ActionDelayFrames,
-                slot.ActionDurationFrames),
+                slot.ActionDurationFrames,
+                slot.StartFrame,
+                shotDurationFrames),
         };
         return new ScreenTransitionLayerPayload(
             owner,
             slot.TransitionJson,
             phase,
             elapsedFrames * 1000.0 / Math.Max(1, owner.FrameRate));
+    }
+
+    private static string ScreenTransitionPhase(
+        int screenStartFrame,
+        int transitionFrameCount,
+        int actionEndFrame,
+        int shotFrame,
+        int shotDurationFrames)
+    {
+        if (shotFrame < 0 || shotFrame >= shotDurationFrames)
+        {
+            return "content";
+        }
+        var screenFrame = shotFrame - screenStartFrame;
+        if (screenFrame < transitionFrameCount)
+        {
+            return "enter";
+        }
+        if (screenFrame >= actionEndFrame)
+        {
+            return "exit";
+        }
+        return "content";
     }
 
     private static ProjectTreeNode ScreenNode(string screenId) =>

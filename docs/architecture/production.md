@@ -322,7 +322,10 @@ overlap and all active layers are composed in order, with the highest ordered
 lane on top. A gap has no active Screen and produces a fully transparent Device
 image. Alignment is authored by the user; the system neither joins nor repairs
 boundaries. New Screens initially align their entry with the preceding Screen
-exit. The Shot interval is only the Preview/render clipping window, so portions
+exit; the first new Screen starts one transition before Shot In. Calculated
+Shot duration adds all Screen actions and delays plus one transition per
+internal ordered Screen boundary, leaving the first entry as preroll and the
+last exit as postroll. The Shot interval is only the Preview/render clipping window, so portions
 before frame zero or after the Shot end are not displayed or rendered. Moving a
 lane does not rewrite local keyframes or Shot duration. This
 Shot timeline is the shared **Timeline** utility in Preview when the selected

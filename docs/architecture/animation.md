@@ -133,7 +133,9 @@ timeline. Its effective extent is entry frames plus delay plus calculated or
 explicit action duration. Calculated duration is fixed; explicit (`Free`)
 duration is resizable at Shot level. Moving or resizing does not rewrite local
 keyframes. Shot calculated duration remains the sum of effective Screen extents,
-independent of their positions; an explicit Shot duration remains authoritative.
+excluding the first entry and last exit and counting one shared transition for
+each internal ordered Screen boundary; it is independent of authored lane
+positions. An explicit Shot duration remains authoritative.
 The Shot interval clips Preview and render. Outside it no frame is produced.
 Within it, gaps produce alpha zero and overlapping lanes resolve to the highest
 ordered Screen.
@@ -248,9 +250,11 @@ calculated immediately restores the common owner calculation.
 
 Those policies determine action duration, not the Shot-owned boundary intervals.
 The common Screen timeline prepends the exact Shot transition and authored
-action delay, then appends the same transition duration for inverse exit, when
-it calculates effective Screen and Shot duration. A truly disabled Motion adds
-zero boundary frames.
+action delay, then appends the same transition duration for inverse exit when
+it calculates each effective Screen extent. Shot calculated duration instead
+adds every action and delay plus one shared transition for each internal
+ordered boundary: the first entry is preroll before Shot In and the last exit
+is postroll after Shot Out. A truly disabled Motion adds zero boundary frames.
 
 An explicit default declares a positive frame count. Once selected, duration is
 edited only on the Screen instance, through either its Duration field or the

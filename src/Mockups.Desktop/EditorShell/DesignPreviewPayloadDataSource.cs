@@ -277,6 +277,9 @@ internal sealed class DesignPreviewPayloadDataSource
             .ToList();
     }
 
+    public ShotSettings LoadShotSettings(string shotId) =>
+        _timeline.GetTimelineShotSettings(shotId);
+
     public string ActiveShotScreenId(string shotId, int shotFrame) =>
         ProductionScreenPlaybackState.ActiveScreenId(
             ModuleInstanceTimeline.ScreenRanges(_timelineDataSource, shotId)

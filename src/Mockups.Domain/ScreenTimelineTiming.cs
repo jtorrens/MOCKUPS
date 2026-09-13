@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Mockups.DesktopEditorShell.Common;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -43,5 +45,32 @@ public static class ScreenTimelineTiming
             actionDurationFrames
             + transitionFrameCount * 2
             + actionDelayFrames);
+    }
+
+    public static int CalculatedShotDurationFrames(
+        IEnumerable<(int ActionDurationFrames, int ActionDelayFrames)> screens,
+        int transitionFrameCount)
+    {
+        if (transitionFrameCount < 0)
+        {
+            throw new InvalidOperationException(
+                "Shot transition duration must be non-negative.");
+        }
+        var ordered = screens.ToArray();
+        if (ordered.Any((screen) =>
+                screen.ActionDurationFrames <= 0
+                || screen.ActionDelayFrames < 0))
+        {
+            throw new InvalidOperationException(
+                "Shot Screen action duration must be positive and delay non-negative.");
+        }
+        return Math.Max(
+            1,
+            checked(
+                ordered.Sum((screen) =>
+                    screen.ActionDurationFrames
+                    + screen.ActionDelayFrames)
+                + Math.Max(0, ordered.Length - 1)
+                * transitionFrameCount));
     }
 }

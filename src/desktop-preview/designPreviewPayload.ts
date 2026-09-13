@@ -46,6 +46,8 @@ export interface ScreenTimingPayload {
   actionDelayFrames: number;
   actionDurationFrames: number;
   actionStartFrame: number;
+  screenStartFrame: number;
+  shotDurationFrames: number;
 }
 
 export interface DesignPreviewPayload {

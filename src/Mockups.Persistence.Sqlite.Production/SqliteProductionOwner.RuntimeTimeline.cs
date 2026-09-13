@@ -77,23 +77,17 @@ internal sealed partial class SqliteProductionOwner
                         instance.Id,
                         StringComparer.Ordinal)
                     .ToList();
-            var duration =
-                0;
-            for (var index = 0;
-                 index < ordered.Count;
-                 index++)
-            {
-                var current =
-                    ordered[index];
-                duration += EffectiveScreenDurationFrames(
-                    current,
-                    shot);
-            }
+            var transitionFrames =
+                ScreenTimelineTiming.EffectiveTransitionDurationFrames(
+                    shot.TransitionJson,
+                    shot.TransitionDurationFrames);
+            var duration = ScreenTimelineTiming.CalculatedShotDurationFrames(
+                ordered.Select((screen) =>
+                    (screen.DurationFrames, screen.ActionDelayFrames)),
+                transitionFrames);
             durationByShot.Add(
                 group.Key,
-                Math.Max(
-                    1,
-                    duration));
+                duration);
         }
         foreach (var shot in shots)
         {

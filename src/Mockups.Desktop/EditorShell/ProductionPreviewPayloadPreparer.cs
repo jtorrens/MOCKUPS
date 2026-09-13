@@ -277,11 +277,14 @@ internal sealed class ProductionPreviewPayloadPreparer
                 AtLocalFrame(
                     baseIncoming,
                     actionFrame);
-            var phase = frame < transition.DurationFrames
-                ? "enter"
-                : frame >= timing.ActionStartFrame + timing.ActionDurationFrames
-                    ? "exit"
-                    : "content";
+            var shotFrame = timing.ScreenStartFrame + frame;
+            var phase = shotFrame < 0 || shotFrame >= timing.ShotDurationFrames
+                ? "content"
+                : frame < transition.DurationFrames
+                    ? "enter"
+                    : frame >= timing.ActionStartFrame + timing.ActionDurationFrames
+                        ? "exit"
+                        : "content";
             var preparedOwner = incoming with
             {
                 Name = template.Name,

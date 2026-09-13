@@ -219,6 +219,10 @@ internal static class WebDesignPreviewRenderer
                             timing.ActionDurationFrames,
                         actionStartFrame =
                             timing.ActionStartFrame,
+                        screenStartFrame =
+                            timing.ScreenStartFrame,
+                        shotDurationFrames =
+                            timing.ShotDurationFrames,
                     },
             screenTransition =
                 payload.ScreenTransition is not { } transition

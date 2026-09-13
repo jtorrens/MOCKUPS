@@ -422,6 +422,9 @@ effective Device; each Screen carries its effective Theme and sparse
 non-geometric Device settings. The Screen document is applied only after the
 Shot Device is resolved. Gaps resolve to an empty alpha-zero frame and overlaps
 compose every active lane, painting the first/highest ordered lane last.
+The Shot interval hard-clips transition layers. Motion time outside it is never
+prepared or painted. A transition that crosses an outer cut contributes only
+its intersection inside the Shot.
 Production navigation,
 context presentation, validation,
 playhead controls, appearance selection, history subtitles and playback timing

@@ -183,7 +183,9 @@ between completion of Screen entry and the start of its internal timeline.
 Production owns these writes and resynchronizes the derived Shot duration after
 Shot Motion, transition duration or Screen delay changes. `duration_frames`
 remains the calculated or explicit action duration; it does not absorb
-transition or delay frames.
+transition or delay frames. A calculated Shot adds every Screen action and
+delay plus one effective transition for each internal ordered Screen boundary;
+the first entry preroll and final exit postroll do not extend it.
 `Mockups.Persistence.Sqlite.Resources` owns Palette,
 Theme, Device, Actor, Production Font and Icon Theme persistence plus their
 resource-specific field, token and asset operations.

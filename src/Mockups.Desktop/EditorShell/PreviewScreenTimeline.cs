@@ -22,7 +22,9 @@ internal sealed record PreviewScreenTimelineInterval(
     int MinimumStartFrame = 0,
     int MaximumEndFrame = int.MaxValue,
     int EnterPhaseFrames = 0,
-    int ExitPhaseFrames = 0);
+    int ExitPhaseFrames = 0,
+    int MotionClipStartFrame = int.MinValue,
+    int MotionClipEndFrame = int.MaxValue);
 
 internal sealed record PreviewScreenTimelineSerialEdit(
     string StorageCollectionJsonKey,
@@ -925,7 +927,9 @@ internal static class PreviewShotTimelineSnapshotFactory
                         screen.StartFrame,
                         screen.StartFrame + screen.DurationFrames,
                         EnterPhaseFrames: shot.TransitionFrameCount,
-                        ExitPhaseFrames: shot.TransitionFrameCount)],
+                        ExitPhaseFrames: shot.TransitionFrameCount,
+                        MotionClipStartFrame: 0,
+                        MotionClipEndFrame: shot.DurationFrames)],
                     ShotScreenEdit: new PreviewShotScreenTimelineEdit(
                         screen.IsDurationEditable,
                         screen.TransitionFrameCount * 2
@@ -2790,33 +2794,42 @@ internal sealed class PreviewScreenTimelineLane : PreviewScreenTimelineTrack
         PreviewScreenTimelineInterval interval,
         Rect block)
     {
-        var enterEndFrame = Math.Min(
+        var clipStartFrame = Math.Max(
+            interval.StartFrame,
+            interval.MotionClipStartFrame);
+        var clipEndFrame = Math.Min(
             interval.EndFrame,
+            interval.MotionClipEndFrame);
+        var enterStartFrame = clipStartFrame;
+        var enterEndFrame = Math.Min(
+            clipEndFrame,
             interval.StartFrame + Math.Max(0, interval.EnterPhaseFrames));
         var exitStartFrame = Math.Max(
-            interval.StartFrame,
+            clipStartFrame,
             interval.EndFrame - Math.Max(0, interval.ExitPhaseFrames));
-        if (enterEndFrame <= interval.StartFrame
-            && exitStartFrame >= interval.EndFrame) return;
-        if (enterEndFrame >= exitStartFrame)
+        var exitEndFrame = clipEndFrame;
+        if (enterEndFrame <= enterStartFrame
+            && exitStartFrame >= exitEndFrame) return;
+        if (enterEndFrame > enterStartFrame)
         {
-            PreviewScreenTimelineHatch.DrawMotionPhase(context, block);
-            return;
+            PreviewScreenTimelineHatch.DrawMotionPhase(
+                context,
+                new Rect(
+                    X(enterStartFrame),
+                    block.Top,
+                    Math.Max(0, X(enterEndFrame) - X(enterStartFrame)),
+                    block.Height));
         }
-        PreviewScreenTimelineHatch.DrawMotionPhase(
-            context,
-            new Rect(
-                block.Left,
-                block.Top,
-                Math.Max(0, X(enterEndFrame) - block.Left),
-                block.Height));
-        PreviewScreenTimelineHatch.DrawMotionPhase(
-            context,
-            new Rect(
-                X(exitStartFrame),
-                block.Top,
-                Math.Max(0, block.Right - X(exitStartFrame)),
-                block.Height));
+        if (exitEndFrame > exitStartFrame)
+        {
+            PreviewScreenTimelineHatch.DrawMotionPhase(
+                context,
+                new Rect(
+                    X(exitStartFrame),
+                    block.Top,
+                    Math.Max(0, X(exitEndFrame) - X(exitStartFrame)),
+                    block.Height));
+        }
     }
 
     private void OnPointerPressed(object? sender, PointerPressedEventArgs args)
