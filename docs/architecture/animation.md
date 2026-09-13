@@ -168,6 +168,15 @@ the Text Input Bar is active, a true effective value keeps only that outgoing
 message unsent; later messages retain their independently resolved timing. The
 first effective false releases the retained message Bubble.
 
+Discrete path values use that same generic parameter-animation contract. A
+`MediaFilePath` keyframe is validated through its declared Runtime Input
+`ValueKind`, accepts only the field's declared interpolations and resolves with
+`hold`: the prior path remains effective until the destination keyframe. In
+Conversation, each message's `mediaSource` track is message-owner-relative,
+starts at that message's text completion and may extend the owner duration.
+The common animation document remains the authored source; Conversation only
+consumes the resolved path for the requested frame.
+
 The common owner timeline derives:
 
 - effective origin;

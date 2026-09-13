@@ -43,10 +43,13 @@ arbitrary JSON text or infers authored references from file extensions.
 
 The index covers every complete Component Variant, every complete Module
 Variant, their Design Test Values and defaults, and every Production Screen
-payload and local Override. Each Production Font family directory and each Icon
-Theme directory is represented once; individual icon files and
-application-internal assets remain outside the inventory. Relative references resolve through the
-Project path resolver; absolute references retain their authored workstation
+payload, local Override and media-valued animation keyframe. An animated media
+usage retains the exact animation track and keyframe ids so replacement writes
+only that authored keyframe through the Module Instance animation owner. Each
+Production Font family directory and each Icon Theme directory is represented
+once; individual icon files and application-internal assets remain outside the
+inventory. Relative references resolve through the Project path resolver;
+absolute references retain their authored workstation
 location. Missing targets remain listed and are marked explicitly so stale
 authored references can be found without repairing or deleting them.
 

@@ -168,6 +168,7 @@ var tests = new (string Name, Action Run)[]
     ("invalid Conversation message Actor documents fail read-only", InvalidConversationMessageActorsFailReadOnly),
     ("explicit Usage references are exact typed and shared", ExplicitReferenceUsageIsExactTypedAndShared),
     ("External Media inventories declared authored media paths", ExternalMediaInventoriesDeclaredAuthoredPaths),
+    ("animated media paths validate and retain exact keyframe ownership", AnimatedMediaPathsValidateAndRetainKeyframeOwnership),
     ("External Media keeps existing paths and filenames visible", ExternalMediaKeepsExistingPathsVisible),
     ("Usage navigation preserves workspace node and embedded context", UsageNavigationPreservesTypedContext),
     ("Production Data owns actors devices and fonts", ProductionDataOwnsConcreteResources),
@@ -1438,6 +1439,28 @@ static void RuntimeInputDefinitionReadersAreStrict()
         .Animation!;
     Equal("writeOn", animatedDefinition.BaseDurationFieldId);
     Equal(2, animatedDefinition.MinimumEnabledKeyframes);
+    var animatedPreview = Preview(animated.DeepClone());
+    animatedPreview["title"] = "first";
+    var animationDocument = Object(
+        """{"schemaVersion":2,"tracks":[{"id":"track","fieldId":"title","keyframes":[{"id":"keyframe","frame":0,"value":"first","interpolation":"hold","enabled":true}]}]}""");
+    RuntimeInputAnimationValueContract.Validate(
+        animatedPreview,
+        animationDocument,
+        new Dictionary<string, IReadOnlySet<string>>(),
+        "Test animation");
+    animationDocument["tracks"]![0]!["keyframes"]![0]!["interpolation"] = "linear";
+    Throws<InvalidOperationException>(() => RuntimeInputAnimationValueContract.Validate(
+        animatedPreview,
+        animationDocument,
+        new Dictionary<string, IReadOnlySet<string>>(),
+        "Test animation"));
+    animationDocument["tracks"]![0]!["keyframes"]![0]!["interpolation"] = "hold";
+    animationDocument["tracks"]![0]!["keyframes"]![0]!["value"] = new JsonObject();
+    Throws<InvalidOperationException>(() => RuntimeInputAnimationValueContract.Validate(
+        animatedPreview,
+        animationDocument,
+        new Dictionary<string, IReadOnlySet<string>>(),
+        "Test animation"));
     var dynamic = Input();
     dynamic["optionsSourceCollectionJsonKey"] = "contentSets";
     dynamic["optionsSourceValueJsonKey"] = "id";
@@ -18817,6 +18840,121 @@ static void ExternalMediaInventoriesDeclaredAuthoredPaths()
         : File.Exists(usage.AbsoluteTargetPath))));
 }
 
+static void AnimatedMediaPathsValidateAndRetainKeyframeOwnership()
+{
+    var temporary = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-animated-media-{Guid.NewGuid():N}.sqlite");
+    File.Copy(ParityDatabasePath(), temporary, overwrite: true);
+    try
+    {
+        string screenId;
+        string targetId;
+        using (var connection = new SqliteConnection($"Data Source={temporary}"))
+        {
+            connection.Open();
+            using var select = connection.CreateCommand();
+            select.CommandText = """
+                SELECT mi.id, json_extract(mi.content_json, '$.messages[0].id')
+                FROM module_instances mi
+                JOIN modules m ON m.id = mi.module_id
+                WHERE m.record_class_id = 'module.core.chat'
+                ORDER BY mi.id
+                LIMIT 1
+                """;
+            using var reader = select.ExecuteReader();
+            True(reader.Read());
+            screenId = reader.GetString(0);
+            targetId = reader.GetString(1);
+            reader.Close();
+
+            using var update = connection.CreateCommand();
+            update.CommandText = """
+                UPDATE module_instances
+                SET animation_json = $animation
+                WHERE id = $id
+                """;
+            update.Parameters.AddWithValue("$id", screenId);
+            update.Parameters.AddWithValue(
+                "$animation",
+                new JsonObject
+                {
+                    ["schemaVersion"] = 2,
+                    ["tracks"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["id"] = "media-track",
+                            ["fieldId"] = "mediaSource",
+                            ["targetId"] = targetId,
+                            ["keyframes"] = new JsonArray
+                            {
+                                new JsonObject
+                                {
+                                    ["id"] = "media-keyframe",
+                                    ["frame"] = 0,
+                                    ["value"] = "media/gatos_V2-0012.mp4",
+                                    ["interpolation"] = "hold",
+                                    ["enabled"] = true,
+                                },
+                            },
+                        },
+                    },
+                }.ToJsonString());
+            Equal(1, update.ExecuteNonQuery());
+        }
+
+        var session = SqlitePersistence.OpenCurrent(temporary);
+        var project = session.Navigation.LoadProjectTree().Single();
+        var usage = session.ExternalMediaUsage
+            .GetExternalMediaUsageDetails(project.Id)
+            .Single(candidate => candidate.SourceNodeId == screenId
+                && candidate.AnimationTrackId == "media-track"
+                && candidate.AnimationKeyframeId == "media-keyframe");
+        Equal("mediaSource", usage.FieldId);
+        Equal(targetId, usage.ItemId);
+        Equal("media/gatos_V2-0012.mp4", usage.AuthoredPath);
+
+        var document = new ModuleInstanceAnimationDocument(
+            new JsonObject
+            {
+                ["schemaVersion"] = 2,
+                ["tracks"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["id"] = "media-track",
+                        ["fieldId"] = "mediaSource",
+                        ["targetId"] = targetId,
+                        ["keyframes"] = new JsonArray
+                        {
+                            new JsonObject
+                            {
+                                ["id"] = "media-keyframe",
+                                ["frame"] = 0,
+                                ["value"] = usage.AuthoredPath,
+                                ["interpolation"] = "hold",
+                                ["enabled"] = true,
+                            },
+                        },
+                    },
+                },
+            }.ToJsonString());
+        True(document.ReplaceKeyframeValue(
+            usage.AnimationTrackId,
+            usage.AnimationKeyframeId,
+            JsonValue.Create(usage.AuthoredPath)!,
+            JsonValue.Create("media/replacement.png")!));
+        Equal(
+            "media/replacement.png",
+            document.Tracks.Single().Keyframes.Single().Value!.GetValue<string>());
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
 static void ExternalMediaKeepsExistingPathsVisible()
 {
     using var session = HeadlessUnitTestSession.StartNew(
@@ -21143,14 +21281,14 @@ static void AnimatableFieldVocabularyIsConstrained()
         .Where(field => field["animatable"]?.GetValue<bool>() == true)
         .Select(field => field["id"]!.GetValue<string>());
     SequenceEqual(new[] { "actor", "headerSubtitle" }, screenAnimated);
-    SequenceEqual(new[] { "direction", "text", "keepCursorAfterWrite", "statusVisible", "status", "statusText", "isPlaying", "fullScreen", "showIconRow" }, messageAnimated);
+    SequenceEqual(new[] { "direction", "text", "keepCursorAfterWrite", "statusVisible", "status", "statusText", "mediaSource", "isPlaying", "fullScreen", "showIconRow" }, messageAnimated);
     Equal(
         "ownerStart",
         screenFields.Single(field => field["id"]!.GetValue<string>() == "actor")["animationTimeline"]!["origin"]!["kind"]!.GetValue<string>());
     Equal(
         "ownerStart",
         messageFields.Single(field => field["id"]!.GetValue<string>() == "text")["animationTimeline"]!["origin"]!["kind"]!.GetValue<string>());
-    foreach (var fieldId in new[] { "statusVisible", "status", "statusText", "isPlaying", "fullScreen" })
+    foreach (var fieldId in new[] { "statusVisible", "status", "statusText", "mediaSource", "isPlaying", "fullScreen" })
     {
         var origin = messageFields.Single(field => field["id"]!.GetValue<string>() == fieldId)["animationTimeline"]!["origin"]!.AsObject();
         Equal("fieldCompletion", origin["kind"]!.GetValue<string>());
@@ -21162,7 +21300,11 @@ static void AnimatableFieldVocabularyIsConstrained()
     Equal(
         "ownerStart",
         messageFields.Single(field => field["id"]!.GetValue<string>() == "showIconRow")["animationTimeline"]!["origin"]!["kind"]!.GetValue<string>());
-    foreach (var forbidden in new[] { "actor", "delay", "writeOn", "postWriteOnHold", "mediaSource" })
+    var mediaSource = messageFields.Single(field => field["id"]!.GetValue<string>() == "mediaSource");
+    Equal("MediaFilePath", mediaSource["valueKind"]!.GetValue<string>());
+    SequenceEqual(["hold"], mediaSource["animationInterpolations"]!.AsArray()
+        .Select(value => value!.GetValue<string>()));
+    foreach (var forbidden in new[] { "actor", "delay", "writeOn", "postWriteOnHold" })
         True(messageFields.Single(field => field["id"]!.GetValue<string>() == forbidden)["animatable"] is null);
 }
 

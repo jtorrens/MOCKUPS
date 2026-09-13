@@ -40,7 +40,9 @@ public sealed record ExternalMediaUsageDetail(
     string AbsoluteDirectoryPath,
     string FileName,
     bool IsDirectory,
-    bool Exists)
+    bool Exists,
+    string AnimationTrackId = "",
+    string AnimationKeyframeId = "")
 {
     public string SystemItem =>
         $"{SourceTypeLabel} · {SourceName} › {FieldLabel}";

@@ -91,6 +91,7 @@ function payload(
     { id: "statusVisible", jsonKey: "statusVisible", animationTimeline: { origin: { kind: "fieldCompletion", fieldId: "text", offsetFrames: 0 }, extendsOwnerDuration: false } },
     { id: "status", jsonKey: "statusState", animationTimeline: { origin: { kind: "fieldCompletion", fieldId: "text", offsetFrames: 0 }, extendsOwnerDuration: false } },
     { id: "statusText", jsonKey: "statusText", animationTimeline: { origin: { kind: "fieldCompletion", fieldId: "text", offsetFrames: 0 }, extendsOwnerDuration: false } },
+    { id: "mediaSource", jsonKey: "mediaSource", animationTimeline: { origin: { kind: "fieldCompletion", fieldId: "text", offsetFrames: 0 } } },
     { id: "isPlaying", jsonKey: "isPlaying", animationTimeline: { origin: { kind: "fieldCompletion", fieldId: "text", offsetFrames: 0 } } },
     { id: "showIconRow", jsonKey: "showIconRow", animationTimeline: { origin: { kind: "ownerStart" }, extendsOwnerDuration: false } },
     { id: "playDuration", jsonKey: "playDurationFrames" },
@@ -400,6 +401,27 @@ test("message direction resolves hold keyframes without replacing its Actor", ()
   assert.equal(before.direction, "incoming");
   assert.equal(after.actorId, "sam");
   assert.equal(after.direction, "outgoing");
+});
+
+test("message media source resolves as a generic hold path value", () => {
+  const messages = [{
+    id: "m1",
+    direction: "incoming",
+    text: "image",
+    mediaType: "image",
+    mediaSource: "media/base.png",
+  }];
+  const tracks = [track("mediaSource", "m1", [
+    { id: "m0", frame: 0, value: "media/first.png", interpolation: "hold" },
+    { id: "m1", frame: 5, value: "media/second.png", interpolation: "hold" },
+  ])];
+  const at = (frame: number) => {
+    const resolved = resolveConversationModuleFrame(payload(frame, tracks, messages))
+      .messages as Array<Record<string, unknown>>;
+    return resolved[0]!.mediaSource;
+  };
+  assert.equal(at(4), "media/first.png");
+  assert.equal(at(5), "media/second.png");
 });
 
 test("chat Actor resolves hold keyframes through the prepared record catalog", () => {

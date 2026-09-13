@@ -23,7 +23,7 @@ internal sealed class SqliteModuleInstanceAnimationStore(
                 .Select((option) => option.Value)
                 .ToHashSet(StringComparer.Ordinal),
         };
-        RuntimeInputAnimationRecordReferenceContract.Validate(
+        RuntimeInputAnimationValueContract.Validate(
             JsonPath.ParseRequiredObject(
                 production.GetModuleInstanceRuntimePreviewJson(moduleInstanceId),
                 $"Module Instance '{moduleInstanceId}' Runtime Preview"),

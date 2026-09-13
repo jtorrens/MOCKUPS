@@ -366,6 +366,13 @@ export function resolveConversationModuleFrame(
     message.statusVisible = resolve("statusVisible", message.statusVisible).value;
     message.statusState = resolve("status", message.statusState).value;
     message.statusText = resolve("statusText", message.statusText).value;
+    const mediaSource = resolve("mediaSource", message.mediaSource).value;
+    if (typeof mediaSource !== "string") {
+      throw new Error(
+        `module.core.chat.messages[${index}] mediaSource animation must resolve a string`,
+      );
+    }
+    message.mediaSource = mediaSource;
     message.showIconRow = resolve("showIconRow", message.showIconRow).value;
     const playing = resolve("isPlaying", message.isPlaying);
     message.isPlaying = playing.value;

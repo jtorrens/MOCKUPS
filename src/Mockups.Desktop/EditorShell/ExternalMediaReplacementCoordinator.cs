@@ -207,6 +207,12 @@ internal sealed class ExternalMediaReplacementCoordinator
         {
             await ReplaceEditorValueAsync(node, usage, replacement);
         }
+        else if (node.Kind == ProjectTreeNodeKind.ModuleInstance
+                 && usage.AnimationTrackId.Length > 0
+                 && usage.AnimationKeyframeId.Length > 0)
+        {
+            await ReplaceProductionAnimationValueAsync(node, usage, replacement);
+        }
         else if (node.Kind == ProjectTreeNodeKind.ModuleInstance)
         {
             await ReplaceProductionRuntimeValueAsync(node, usage, replacement);
@@ -215,6 +221,23 @@ internal sealed class ExternalMediaReplacementCoordinator
         {
             await ReplaceDesignPreviewValueAsync(node, usage, replacement);
         }
+    }
+
+    private async Task ReplaceProductionAnimationValueAsync(
+        ProjectTreeNode node,
+        ExternalMediaUsageDetail usage,
+        string replacement)
+    {
+        await _instanceDocuments.ExecuteAnimationMutationAsync(
+            node.Id,
+            (candidate) => candidate.ReplaceKeyframeValue(
+                usage.AnimationTrackId,
+                usage.AnimationKeyframeId,
+                JsonValue.Create(usage.AuthoredPath)!,
+                RuntimeInputValueKindContract.ParseValue(
+                    usage.ValueKind,
+                    replacement,
+                    $"Animation keyframe '{usage.AnimationKeyframeId}' replacement")));
     }
 
     private async Task ReplaceEditorValueAsync(

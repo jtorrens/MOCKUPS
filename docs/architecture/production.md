@@ -375,6 +375,12 @@ enabled; it does not change Shot Theme, Shot ownership or message direction.
 Design sample Actors are fixtures and never repair persisted Production
 messages.
 
+Each message's Media source is also a discrete animation target. It uses only
+`hold`, is relative to that message from text completion and changes the exact
+media path without changing Media type or the message's stable identity.
+Animation value validation, duration contribution and frame resolution belong
+to the common Runtime animation contract rather than Conversation or Media.
+
 An outgoing message with an explicit animated `text` track keeps the
 track-owned write interval for composer presence even though that track
 replaces the bubble's base write-on. Text Input Bar and Keyboard therefore

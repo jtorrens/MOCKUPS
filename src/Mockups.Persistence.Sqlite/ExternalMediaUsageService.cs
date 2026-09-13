@@ -312,7 +312,7 @@ internal sealed class ExternalMediaUsageService : IExternalMediaUsageQuery
         var modulesById = modules.ToDictionary((module) => module.Id, StringComparer.Ordinal);
         using var command = connection.CreateCommand();
         command.CommandText =
-            "SELECT mi.id, mi.name, mi.module_id, mi.content_json, mi.metadata_json FROM module_instances mi JOIN apps a ON a.id = mi.app_id WHERE a.project_id = $projectId";
+            "SELECT mi.id, mi.name, mi.module_id, mi.content_json, mi.metadata_json, mi.animation_json FROM module_instances mi JOIN apps a ON a.id = mi.app_id WHERE a.project_id = $projectId";
         command.Parameters.AddWithValue("$projectId", projectId);
         using var reader = command.ExecuteReader();
         while (reader.Read())
@@ -340,15 +340,87 @@ internal sealed class ExternalMediaUsageService : IExternalMediaUsageQuery
                 reader.GetString(1),
                 ReferenceUsageScope.Production,
                 ExternalMediaAuthoringSurface.PreviewAuthoring);
+            var content = RequiredObject(reader, 3, $"Screen '{instanceId}' content_json");
             AddRuntimeDocumentUsages(
                 module.DesignPreview,
                 variant.Config,
-                RequiredObject(reader, 3, $"Screen '{instanceId}' content_json"),
+                content,
                 source,
                 componentIndex,
                 mediaRoot,
                 usages,
                 RuntimeValueSource.ProductionPayload);
+            AddAnimationUsages(
+                module.DesignPreview,
+                variant.Config,
+                content,
+                RequiredObject(reader, 5, $"Screen '{instanceId}' animation_json"),
+                source,
+                mediaRoot,
+                usages);
+        }
+    }
+
+    private static void AddAnimationUsages(
+        JsonObject runtimePreview,
+        JsonObject config,
+        JsonObject values,
+        JsonObject animation,
+        SourceContext source,
+        string mediaRoot,
+        ICollection<ExternalMediaUsageDetail> usages)
+    {
+        var targets = RuntimeInputAnimationValueContract.ReadTargets(
+                runtimePreview,
+                config,
+                values)
+            .ToDictionary((target) => (target.FieldId, target.TargetId));
+        foreach (var track in JsonPath.RequiredArray(
+                     animation,
+                     "tracks",
+                     $"Screen '{source.NodeId}' animation_json").OfType<JsonObject>())
+        {
+            var fieldId = JsonPath.RequiredString(
+                track,
+                "fieldId",
+                $"Screen '{source.NodeId}' animation track");
+            var targetId = track["targetId"]?.GetValue<string>() ?? "";
+            if (!targets.TryGetValue((fieldId, targetId), out var target)
+                || !MediaValueKinds.Contains(target.Input.ValueKind))
+            {
+                continue;
+            }
+            var trackId = JsonPath.RequiredString(
+                track,
+                "id",
+                $"Screen '{source.NodeId}' animation track");
+            foreach (var keyframe in JsonPath.RequiredArray(
+                         track,
+                         "keyframes",
+                         $"Screen '{source.NodeId}' animation track '{trackId}'").OfType<JsonObject>())
+            {
+                var keyframeId = JsonPath.RequiredString(
+                    keyframe,
+                    "id",
+                    $"Screen '{source.NodeId}' animation track '{trackId}' keyframe");
+                var frame = JsonPath.RequiredInteger(
+                    keyframe,
+                    "frame",
+                    $"Screen '{source.NodeId}' animation keyframe '{keyframeId}'");
+                AddPath(
+                    usages,
+                    source,
+                    target.Input.Id,
+                    target.Input.Id,
+                    target.Input.JsonKey,
+                    $"{target.Input.Label} · Keyframe {frame}",
+                    StringValue(keyframe["value"]!),
+                    target.Input.ValueKind,
+                    mediaRoot,
+                    itemId: targetId,
+                    animationTrackId: trackId,
+                    animationKeyframeId: keyframeId);
+            }
         }
     }
 
@@ -757,7 +829,9 @@ internal sealed class ExternalMediaUsageService : IExternalMediaUsageQuery
         IReadOnlyList<string>? slotFieldIds = null,
         string itemId = "",
         bool isRuntimeDefault = false,
-        ExternalMediaDirectoryKind directoryKind = ExternalMediaDirectoryKind.None)
+        ExternalMediaDirectoryKind directoryKind = ExternalMediaDirectoryKind.None,
+        string animationTrackId = "",
+        string animationKeyframeId = "")
     {
         if (string.IsNullOrWhiteSpace(authoredPath)) return;
         var absolute = Resolve(source, authoredPath, valueKind, mediaRoot);
@@ -797,7 +871,9 @@ internal sealed class ExternalMediaUsageService : IExternalMediaUsageQuery
                 }
                 : Path.GetFileName(absolute),
             isDirectory,
-            isDirectory ? Directory.Exists(absolute) : File.Exists(absolute)));
+            isDirectory ? Directory.Exists(absolute) : File.Exists(absolute),
+            animationTrackId,
+            animationKeyframeId));
     }
 
     private static string Resolve(
@@ -959,7 +1035,7 @@ internal sealed class ExternalMediaUsageService : IExternalMediaUsageQuery
         reader.IsDBNull(ordinal) ? "" : reader.GetString(ordinal);
 
     private static string UsageIdentity(ExternalMediaUsageDetail usage) =>
-        $"{usage.SourceNodeId}\u001f{usage.AuthoringSurface}\u001f{string.Join('/', usage.SlotFieldIds)}\u001f{usage.FieldId}\u001f{usage.DeclaredFieldId}\u001f{usage.ItemId}\u001f{usage.IsRuntimeDefault}\u001f{usage.AbsoluteTargetPath}";
+        $"{usage.SourceNodeId}\u001f{usage.AuthoringSurface}\u001f{string.Join('/', usage.SlotFieldIds)}\u001f{usage.FieldId}\u001f{usage.DeclaredFieldId}\u001f{usage.ItemId}\u001f{usage.IsRuntimeDefault}\u001f{usage.AnimationTrackId}\u001f{usage.AnimationKeyframeId}\u001f{usage.AbsoluteTargetPath}";
 
     private sealed record SourceContext(
         string ProjectId,

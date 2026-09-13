@@ -2732,6 +2732,17 @@
             "kind": "mediaFilePath",
             "valueKind": "MediaFilePath",
             "defaultValue": "",
+            "animatable": true,
+            "animationInterpolations": [
+              "hold"
+            ],
+            "animationTimeline": {
+              "origin": {
+                "kind": "fieldCompletion",
+                "fieldId": "text",
+                "offsetFrames": 0
+              }
+            },
             "enabledWhenItemJsonKey": "mediaType",
             "enabledWhenItemValues": [
               "image",

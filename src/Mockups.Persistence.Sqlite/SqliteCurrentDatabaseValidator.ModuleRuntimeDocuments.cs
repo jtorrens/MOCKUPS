@@ -36,7 +36,7 @@ internal sealed partial class SqliteCurrentDatabaseValidator
                     instance.Id,
                     content,
                     projectActorIds);
-                RuntimeInputAnimationRecordReferenceContract.Validate(
+                RuntimeInputAnimationValueContract.Validate(
                     ParseRequiredObject(
                         _productionOwner.GetModuleInstanceRuntimePreviewJson(instance.Id),
                         $"Module Instance '{instance.Id}' Runtime Preview"),

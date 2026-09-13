@@ -187,6 +187,43 @@ internal sealed class ModuleInstanceAnimationDocument
         if (keyframe is not null) keyframes!.Remove(keyframe);
     }
 
+    public bool ReplaceKeyframeValue(
+        string trackId,
+        string keyframeId,
+        JsonNode expectedValue,
+        JsonNode replacementValue)
+    {
+        var tracks = _tracks.OfType<JsonObject>()
+            .Where((track) => track["id"]?.GetValue<string>() == trackId)
+            .ToArray();
+        if (tracks.Length != 1)
+        {
+            throw new InvalidOperationException(
+                $"Animation track '{trackId}' has {tracks.Length} exact matches.");
+        }
+        var keyframes = tracks[0]["keyframes"] as JsonArray
+            ?? throw new InvalidOperationException(
+                $"Animation track '{trackId}' has no keyframes array.");
+        var matches = keyframes.OfType<JsonObject>()
+            .Where((keyframe) => keyframe["id"]?.GetValue<string>() == keyframeId)
+            .ToArray();
+        if (matches.Length != 1)
+        {
+            throw new InvalidOperationException(
+                $"Animation keyframe '{keyframeId}' has {matches.Length} exact matches.");
+        }
+        var current = matches[0]["value"]
+            ?? throw new InvalidOperationException(
+                $"Animation keyframe '{keyframeId}' has no value.");
+        if (!JsonNode.DeepEquals(current, expectedValue))
+        {
+            throw new InvalidOperationException(
+                $"Animation keyframe '{keyframeId}' no longer contains the selected value.");
+        }
+        matches[0]["value"] = replacementValue.DeepClone();
+        return true;
+    }
+
     public bool TryMoveKeyframe(string fieldId, string targetId, int sourceFrame, int destinationFrame)
     {
         if (sourceFrame == 0 || destinationFrame < 0 || sourceFrame == destinationFrame) return false;
