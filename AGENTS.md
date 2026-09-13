@@ -385,12 +385,13 @@ across Projects.
 
 Conversation messages own Actor independently:
 
-- incoming requires an explicit same-Project Actor;
-- outgoing stores no Actor and resolves the Shot owner in the Production
-  payload;
-- system may optionally reference a same-Project Actor.
+- incoming, outgoing and system each require and retain an explicit
+  same-Project Actor;
+- changing direction never clears, replaces or derives the message Actor;
+- the Conversation chat Actor remains a separate required Runtime Input and
+  never supplies message ownership or derives from the Shot owner.
 
-Direction changes that clear an Actor are one atomic prepared write.
+Direction and Actor changes remain independent prepared writes.
 
 ## Hard rule: resource and asset parity
 
