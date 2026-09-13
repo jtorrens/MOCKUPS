@@ -55,7 +55,6 @@
               {
                 "id": "button_001",
                 "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                "state": "normal",
                 "iconToken": "media_camera",
                 "text": "",
                 "buttonOverrides": {},
@@ -70,7 +69,6 @@
         "buttonInputs": [
           {
             "id": "button_001",
-            "state": "normal",
             "sampleText": "",
             "iconToken": "media_camera",
             "iconSizeToken": "theme.iconSizes.m",
@@ -83,7 +81,9 @@
             "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
             "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
             "iconColorToken": "theme.colors.icon",
-            "textColorToken": "theme.colors.textPrimary"
+            "textColorToken": "theme.colors.textPrimary",
+            "enabled": true,
+            "pressed": false
           }
         ]
       },
@@ -95,7 +95,6 @@
               {
                 "id": "button_001",
                 "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                "state": "normal",
                 "iconToken": "media_play",
                 "text": "",
                 "buttonOverrides": {},
@@ -110,7 +109,6 @@
         "buttonInputs": [
           {
             "id": "button_001",
-            "state": "normal",
             "sampleText": "",
             "iconToken": "media_play",
             "iconSizeToken": "theme.iconSizes.m",
@@ -123,7 +121,9 @@
             "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
             "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
             "iconColorToken": "theme.colors.icon",
-            "textColorToken": "theme.colors.textPrimary"
+            "textColorToken": "theme.colors.textPrimary",
+            "enabled": true,
+            "pressed": false
           }
         ]
       },
@@ -135,7 +135,6 @@
               {
                 "id": "button_001",
                 "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                "state": "normal",
                 "iconToken": "nav_more_horizontal",
                 "text": "",
                 "buttonOverrides": {},
@@ -150,7 +149,6 @@
         "buttonInputs": [
           {
             "id": "button_001",
-            "state": "normal",
             "sampleText": "",
             "iconToken": "nav_more_horizontal",
             "iconSizeToken": "theme.iconSizes.m",
@@ -163,7 +161,9 @@
             "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
             "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
             "iconColorToken": "theme.colors.icon",
-            "textColorToken": "theme.colors.textPrimary"
+            "textColorToken": "theme.colors.textPrimary",
+            "enabled": true,
+            "pressed": false
           }
         ]
       },
@@ -175,7 +175,6 @@
               {
                 "id": "button_001",
                 "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                "state": "normal",
                 "iconToken": "media_camera",
                 "text": "",
                 "buttonOverrides": {},
@@ -190,7 +189,6 @@
         "buttonInputs": [
           {
             "id": "button_001",
-            "state": "normal",
             "sampleText": "",
             "iconToken": "media_camera",
             "iconSizeToken": "theme.iconSizes.m",
@@ -203,7 +201,9 @@
             "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
             "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
             "iconColorToken": "theme.colors.icon",
-            "textColorToken": "theme.colors.textPrimary"
+            "textColorToken": "theme.colors.textPrimary",
+            "enabled": true,
+            "pressed": false
           }
         ]
       },
@@ -215,7 +215,6 @@
               {
                 "id": "button_001",
                 "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                "state": "normal",
                 "iconToken": "media_pause",
                 "text": "",
                 "buttonOverrides": {},
@@ -230,7 +229,6 @@
         "buttonInputs": [
           {
             "id": "button_001",
-            "state": "normal",
             "sampleText": "",
             "iconToken": "media_pause",
             "iconSizeToken": "theme.iconSizes.m",
@@ -243,7 +241,9 @@
             "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
             "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
             "iconColorToken": "theme.colors.icon",
-            "textColorToken": "theme.colors.textPrimary"
+            "textColorToken": "theme.colors.textPrimary",
+            "enabled": true,
+            "pressed": false
           }
         ]
       },
@@ -255,7 +255,6 @@
               {
                 "id": "button_001",
                 "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                "state": "normal",
                 "iconToken": "nav_more_horizontal",
                 "text": "",
                 "buttonOverrides": {},
@@ -270,7 +269,6 @@
         "buttonInputs": [
           {
             "id": "button_001",
-            "state": "normal",
             "sampleText": "",
             "iconToken": "nav_more_horizontal",
             "iconSizeToken": "theme.iconSizes.m",
@@ -283,7 +281,9 @@
             "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
             "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
             "iconColorToken": "theme.colors.icon",
-            "textColorToken": "theme.colors.textPrimary"
+            "textColorToken": "theme.colors.textPrimary",
+            "enabled": true,
+            "pressed": false
           }
         ]
       },
@@ -320,7 +320,6 @@
                 {
                   "id": "button_001",
                   "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                  "state": "normal",
                   "iconToken": "media_camera",
                   "text": "",
                   "buttonOverrides": {},
@@ -335,7 +334,6 @@
           "buttonInputs": [
             {
               "id": "button_001",
-              "state": "normal",
               "sampleText": "",
               "iconToken": "media_camera",
               "iconSizeToken": "theme.iconSizes.m",
@@ -348,7 +346,9 @@
               "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
               "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
               "iconColorToken": "theme.colors.icon",
-              "textColorToken": "theme.colors.textPrimary"
+              "textColorToken": "theme.colors.textPrimary",
+              "enabled": true,
+              "pressed": false
             }
           ]
         },
@@ -360,7 +360,6 @@
                 {
                   "id": "button_001",
                   "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                  "state": "normal",
                   "iconToken": "media_play",
                   "text": "",
                   "buttonOverrides": {},
@@ -375,7 +374,6 @@
           "buttonInputs": [
             {
               "id": "button_001",
-              "state": "normal",
               "sampleText": "",
               "iconToken": "media_play",
               "iconSizeToken": "theme.iconSizes.m",
@@ -388,7 +386,9 @@
               "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
               "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
               "iconColorToken": "theme.colors.icon",
-              "textColorToken": "theme.colors.textPrimary"
+              "textColorToken": "theme.colors.textPrimary",
+              "enabled": true,
+              "pressed": false
             }
           ]
         },
@@ -400,7 +400,6 @@
                 {
                   "id": "button_001",
                   "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                  "state": "normal",
                   "iconToken": "nav_more_horizontal",
                   "text": "",
                   "buttonOverrides": {},
@@ -415,7 +414,6 @@
           "buttonInputs": [
             {
               "id": "button_001",
-              "state": "normal",
               "sampleText": "",
               "iconToken": "nav_more_horizontal",
               "iconSizeToken": "theme.iconSizes.m",
@@ -428,7 +426,9 @@
               "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
               "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
               "iconColorToken": "theme.colors.icon",
-              "textColorToken": "theme.colors.textPrimary"
+              "textColorToken": "theme.colors.textPrimary",
+              "enabled": true,
+              "pressed": false
             }
           ]
         },
@@ -440,7 +440,6 @@
                 {
                   "id": "button_001",
                   "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                  "state": "normal",
                   "iconToken": "media_camera",
                   "text": "",
                   "buttonOverrides": {},
@@ -455,7 +454,6 @@
           "buttonInputs": [
             {
               "id": "button_001",
-              "state": "normal",
               "sampleText": "",
               "iconToken": "media_camera",
               "iconSizeToken": "theme.iconSizes.m",
@@ -468,7 +466,9 @@
               "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
               "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
               "iconColorToken": "theme.colors.icon",
-              "textColorToken": "theme.colors.textPrimary"
+              "textColorToken": "theme.colors.textPrimary",
+              "enabled": true,
+              "pressed": false
             }
           ]
         },
@@ -480,7 +480,6 @@
                 {
                   "id": "button_001",
                   "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                  "state": "normal",
                   "iconToken": "media_pause",
                   "text": "",
                   "buttonOverrides": {},
@@ -495,7 +494,6 @@
           "buttonInputs": [
             {
               "id": "button_001",
-              "state": "normal",
               "sampleText": "",
               "iconToken": "media_pause",
               "iconSizeToken": "theme.iconSizes.m",
@@ -508,7 +506,9 @@
               "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
               "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
               "iconColorToken": "theme.colors.icon",
-              "textColorToken": "theme.colors.textPrimary"
+              "textColorToken": "theme.colors.textPrimary",
+              "enabled": true,
+              "pressed": false
             }
           ]
         },
@@ -520,7 +520,6 @@
                 {
                   "id": "button_001",
                   "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                  "state": "normal",
                   "iconToken": "nav_more_horizontal",
                   "text": "",
                   "buttonOverrides": {},
@@ -535,7 +534,6 @@
           "buttonInputs": [
             {
               "id": "button_001",
-              "state": "normal",
               "sampleText": "",
               "iconToken": "nav_more_horizontal",
               "iconSizeToken": "theme.iconSizes.m",
@@ -548,7 +546,9 @@
               "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
               "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
               "iconColorToken": "theme.colors.icon",
-              "textColorToken": "theme.colors.textPrimary"
+              "textColorToken": "theme.colors.textPrimary",
+              "enabled": true,
+              "pressed": false
             }
           ]
         },
@@ -587,7 +587,6 @@
                   {
                     "id": "button_001",
                     "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                    "state": "normal",
                     "iconToken": "system_add",
                     "text": "",
                     "buttonOverrides": {},
@@ -602,7 +601,6 @@
             "buttonInputs": [
               {
                 "id": "button_001",
-                "state": "normal",
                 "sampleText": "",
                 "iconToken": "system_add",
                 "iconSizeToken": "theme.iconSizes.m",
@@ -615,7 +613,9 @@
                 "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
                 "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
                 "iconColorToken": "theme.colors.icon",
-                "textColorToken": "theme.colors.textPrimary"
+                "textColorToken": "theme.colors.textPrimary",
+                "enabled": true,
+                "pressed": false
               }
             ]
           },
@@ -638,7 +638,6 @@
                   {
                     "id": "button_001",
                     "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                    "state": "normal",
                     "iconToken": "media_camera",
                     "text": "",
                     "buttonOverrides": {},
@@ -648,7 +647,6 @@
                   {
                     "id": "button_002",
                     "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                    "state": "normal",
                     "iconToken": "media_mic",
                     "text": "",
                     "buttonOverrides": {},
@@ -663,7 +661,6 @@
             "buttonInputs": [
               {
                 "id": "button_001",
-                "state": "normal",
                 "sampleText": "",
                 "iconToken": "media_camera",
                 "iconSizeToken": "theme.iconSizes.m",
@@ -676,11 +673,12 @@
                 "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
                 "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
                 "iconColorToken": "theme.colors.icon",
-                "textColorToken": "theme.colors.textPrimary"
+                "textColorToken": "theme.colors.textPrimary",
+                "enabled": true,
+                "pressed": false
               },
               {
                 "id": "button_002",
-                "state": "normal",
                 "sampleText": "",
                 "iconToken": "media_mic",
                 "iconSizeToken": "theme.iconSizes.m",
@@ -693,7 +691,9 @@
                 "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
                 "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
                 "iconColorToken": "theme.colors.icon",
-                "textColorToken": "theme.colors.textPrimary"
+                "textColorToken": "theme.colors.textPrimary",
+                "enabled": true,
+                "pressed": false
               }
             ]
           },
@@ -705,7 +705,6 @@
                   {
                     "id": "button_001",
                     "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                    "state": "normal",
                     "iconToken": "media_camera",
                     "text": "",
                     "buttonOverrides": {},
@@ -720,7 +719,6 @@
             "buttonInputs": [
               {
                 "id": "button_001",
-                "state": "normal",
                 "sampleText": "",
                 "iconToken": "media_camera",
                 "iconSizeToken": "theme.iconSizes.m",
@@ -733,7 +731,9 @@
                 "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
                 "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
                 "iconColorToken": "theme.colors.icon",
-                "textColorToken": "theme.colors.textPrimary"
+                "textColorToken": "theme.colors.textPrimary",
+                "enabled": true,
+                "pressed": false
               }
             ]
           },
@@ -756,7 +756,6 @@
                   {
                     "id": "button_001",
                     "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                    "state": "normal",
                     "iconToken": "chat_send",
                     "text": "",
                     "buttonOverrides": {},
@@ -771,7 +770,6 @@
             "buttonInputs": [
               {
                 "id": "button_001",
-                "state": "normal",
                 "sampleText": "",
                 "iconToken": "chat_send",
                 "iconSizeToken": "theme.iconSizes.m",
@@ -784,7 +782,9 @@
                 "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
                 "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
                 "iconColorToken": "theme.colors.icon",
-                "textColorToken": "theme.colors.textPrimary"
+                "textColorToken": "theme.colors.textPrimary",
+                "enabled": true,
+                "pressed": false
               }
             ]
           },
@@ -822,7 +822,6 @@
                   {
                     "id": "button_001",
                     "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                    "state": "normal",
                     "iconToken": "app_language",
                     "text": "",
                     "buttonOverrides": {},
@@ -837,7 +836,6 @@
             "buttonInputs": [
               {
                 "id": "button_001",
-                "state": "normal",
                 "sampleText": "",
                 "iconToken": "app_language",
                 "iconSizeToken": "theme.iconSizes.m",
@@ -850,7 +848,9 @@
                 "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
                 "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
                 "iconColorToken": "theme.colors.icon",
-                "textColorToken": "theme.colors.textPrimary"
+                "textColorToken": "theme.colors.textPrimary",
+                "enabled": true,
+                "pressed": false
               }
             ]
           },
@@ -873,7 +873,6 @@
                   {
                     "id": "button_001",
                     "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                    "state": "normal",
                     "iconToken": "media_mic",
                     "text": "",
                     "buttonOverrides": {},
@@ -888,7 +887,6 @@
             "buttonInputs": [
               {
                 "id": "button_001",
-                "state": "normal",
                 "sampleText": "",
                 "iconToken": "media_mic",
                 "iconSizeToken": "theme.iconSizes.m",
@@ -901,7 +899,9 @@
                 "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
                 "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
                 "iconColorToken": "theme.colors.icon",
-                "textColorToken": "theme.colors.textPrimary"
+                "textColorToken": "theme.colors.textPrimary",
+                "enabled": true,
+                "pressed": false
               }
             ]
           },
@@ -913,7 +913,6 @@
                   {
                     "id": "button_001",
                     "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                    "state": "normal",
                     "iconToken": "media_camera",
                     "text": "",
                     "buttonOverrides": {},
@@ -928,7 +927,6 @@
             "buttonInputs": [
               {
                 "id": "button_001",
-                "state": "normal",
                 "sampleText": "",
                 "iconToken": "media_camera",
                 "iconSizeToken": "theme.iconSizes.m",
@@ -941,7 +939,9 @@
                 "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
                 "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
                 "iconColorToken": "theme.colors.icon",
-                "textColorToken": "theme.colors.textPrimary"
+                "textColorToken": "theme.colors.textPrimary",
+                "enabled": true,
+                "pressed": false
               }
             ]
           },
@@ -964,7 +964,6 @@
                   {
                     "id": "button_001",
                     "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                    "state": "normal",
                     "iconToken": "chat_send",
                     "text": "",
                     "buttonOverrides": {},
@@ -979,7 +978,6 @@
             "buttonInputs": [
               {
                 "id": "button_001",
-                "state": "normal",
                 "sampleText": "",
                 "iconToken": "chat_send",
                 "iconSizeToken": "theme.iconSizes.m",
@@ -992,7 +990,9 @@
                 "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
                 "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
                 "iconColorToken": "theme.colors.icon",
-                "textColorToken": "theme.colors.textPrimary"
+                "textColorToken": "theme.colors.textPrimary",
+                "enabled": true,
+                "pressed": false
               }
             ]
           },

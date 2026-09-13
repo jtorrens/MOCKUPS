@@ -164,16 +164,20 @@ reference and explicit local `buttonOverrides`. The editor shows Variant,
 navigation to Button and the shared Overrides action. It does not show a
 Component selector.
 
-Button Variants own their content layout: icon, text or icon with text. This
-structural choice is not a Runtime Input and therefore changes with the exact
+Button Variants own their content layout (icon, text or icon with text), one
+base appearance, `disabledOpacity` and `pressedScale`. The appearance is the
+former Normal appearance and remains authoritative for every Runtime value.
+Content layout is not a Runtime Input and therefore changes with the exact
 Button Variant without rewriting current content values.
 
 Icon Row structure is authored in the Variant. Runtime supplies one exact
 Button Runtime value for every stable Variant item id, including icon, label,
-Button state, colors, push values and Badge values. Runtime never adds, removes
-or reorders Icon Row items. An owning parent receives and forwards that same
-Icon Row Runtime contract; it does not declare a reduced or renamed copy of
-Button fields.
+the independent `enabled` and `pressed` booleans, colors and Badge values.
+`enabled=false` applies the Variant opacity and `pressed=true` applies the
+Variant scale; both may be true independently and neither rewrites the other.
+Runtime never adds, removes or reorders Icon Row items. An owning parent
+receives and forwards that same Icon Row Runtime contract; it does not declare
+a reduced or renamed copy of Button fields.
 
 A fixed structural Runtime collection declares its source config path, source
 and Runtime id keys, and field bindings. The common Runtime projection creates,
@@ -193,17 +197,16 @@ identity rebase, animation-target map and global uniqueness validation.
 The parent persists only the projected Runtime object (for Icon Row,
 `buttonInputs`). Structural items, Variant references and local Overrides stay
 exclusively in the selected child Variant slot. Fields declared `calculated`
-may exist in the prepared Preview value but are never copied into persisted
-parent Runtime rows. This projection is owned by the common Runtime document
-contract and is applied identically to Module and Component parents.
-Consequently, the calculated Button inputs `pushTrigger` and `pushElapsedMs`
-belong only to Runtime `buttonInputs`; an Icon Row structural item that owns a
-`buttonVariantReference` never stores either field.
+may exist in a prepared Preview value but the generic recursive authoring clone
+removes them before an effective collection reaches the editor or persistence.
+This projection is owned by the common Runtime document contract and is applied
+identically to Module and Component parents. Button declares no calculated
+press fields and an Icon Row structural item stores no Button Runtime state.
 
 Text Input Bar forwards its explicit runtime text and may expose explicitly
 selected Icon Bar item values by stable id. The Icon Bar Variant owns the
 number, order and zone of those items through its local Icon Row slot Overrides;
-parent Runtime values may change their glyph, Button state and other declared
+parent Runtime values may change their glyph, `enabled`, `pressed` and other declared
 dynamic values but never their cardinality or order. Bubble and Text Input Bar
 customize their selected Text Box slot through local Overrides.
 Component embedded slots declare whether their descendant Runtime Inputs may
@@ -215,8 +218,10 @@ resolution.
 Bubble additionally owns one optional fixed Icon Row boundary. The boundary
 stores an exact Icon Row Variant and local Overrides in its Runtime collection
 item payload. Its explicit `showIconRow` visibility is a forwardable, animatable
-Runtime Input, while its `theme.spacing.*` gap remains Variant configuration.
-When visible, it is centered in the Bubble content width
+Runtime Input, while its `theme.spacing.*` gap and symmetric vertical padding
+remain Bubble Variant configuration. The vertical padding is additive to the
+Bubble outer padding and the gap, and contributes only while the row is visible.
+When visible, the row is centered in the Bubble content width
 and follows the complete text/media block: it appears below media when media is
 present and below text otherwise. Status is always laid out after that Icon Row
 and cannot remain inline with the text while the row is visible. Bubble receives

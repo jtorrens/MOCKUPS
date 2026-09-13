@@ -11,7 +11,20 @@ public static class StructuredCollectionDocumentContract
     public static JsonArray StoredClone(
         JsonArray items,
         RuntimeInputCollectionDefinition definition,
-        string owner)
+        string owner) =>
+        AuthoringClone(items, definition, owner, includeStructureOwnedFields: false);
+
+    public static JsonArray EffectiveAuthoringClone(
+        JsonArray items,
+        RuntimeInputCollectionDefinition definition,
+        string owner) =>
+        AuthoringClone(items, definition, owner, includeStructureOwnedFields: true);
+
+    private static JsonArray AuthoringClone(
+        JsonArray items,
+        RuntimeInputCollectionDefinition definition,
+        string owner,
+        bool includeStructureOwnedFields)
     {
         RuntimeCollectionDocumentContract.Validate(items, owner);
         var result = new JsonArray();
@@ -26,20 +39,25 @@ public static class StructuredCollectionDocumentContract
                 $"{owner} item at index {index}");
             var stored = new JsonObject { ["id"] = itemId };
             foreach (var field in definition.Fields.Where((candidate) =>
-                         candidate.Source == ComponentInputSource.Runtime))
+                         candidate.Source == ComponentInputSource.Runtime
+                         || (includeStructureOwnedFields
+                             && candidate.Source == ComponentInputSource.Variant
+                             && definition.StructureOwnedFieldJsonKeys?.Contains(
+                                 candidate.JsonKey) == true)))
             {
                 var value = item[field.JsonKey]
                     ?? throw new InvalidOperationException(
                         $"{owner} item '{itemId}' requires field '{field.JsonKey}'.");
                 stored[field.JsonKey] = field.ValueKind == ValueKind.StructuredCollection
-                    ? StoredClone(
+                    ? AuthoringClone(
                         value as JsonArray
                             ?? throw new InvalidOperationException(
                                 $"{owner} item '{itemId}' field '{field.JsonKey}' must be an array."),
                         field.StructuredCollection
                             ?? throw new InvalidOperationException(
                                 $"{owner} item '{itemId}' field '{field.JsonKey}' requires a collection contract."),
-                        $"{owner} item '{itemId}' field '{field.JsonKey}'")
+                        $"{owner} item '{itemId}' field '{field.JsonKey}'",
+                        includeStructureOwnedFields)
                     : value.DeepClone();
             }
             if (definition.ComponentItems is { } componentItems)
@@ -69,7 +87,7 @@ public static class StructuredCollectionDocumentContract
             }
             result.Add(stored);
         }
-        Validate(result, definition, owner);
+        Validate(result, definition, owner, includeStructureOwnedFields);
         return result;
     }
 

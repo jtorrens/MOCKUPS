@@ -50,6 +50,7 @@ export interface BubbleMediaSlotContract {
 export interface BubbleIconRowSlotContract {
   showIconRow: boolean;
   gapToken: string;
+  verticalPaddingToken: string;
   iconRow?: IconRowDesignContract;
 }
 

@@ -17,7 +17,8 @@ test("a parent Runtime value changes an Icon Bar glyph without changing its Vari
               activeRightIconRowInputs: {
                 buttonInputs: [{
                   id: "button_001",
-                  state: "normal",
+                  enabled: true,
+                  pressed: false,
                   sampleText: "",
                   iconToken: "chat_send",
                   iconSizeToken: "theme.iconSizes.m",

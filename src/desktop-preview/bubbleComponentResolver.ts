@@ -320,6 +320,11 @@ export function resolveBubbleComponent(
         "iconRowGapToken",
         "component.bubble.iconRowGapToken",
       ),
+      verticalPaddingToken: requiredString(
+        bubble,
+        "iconRowVerticalPaddingToken",
+        "component.bubble.iconRowVerticalPaddingToken",
+      ),
       iconRow: showIconRow ? resolvedIconRow : undefined,
     },
     actorLabelSlot: {

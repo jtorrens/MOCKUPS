@@ -150,7 +150,6 @@
                   "buttonInputs": [
                     {
                       "id": "button_001",
-                      "state": "normal",
                       "sampleText": "",
                       "iconToken": "app_language",
                       "iconSizeToken": "theme.iconSizes.m",
@@ -163,7 +162,9 @@
                       "badgeBackgroundPaletteColor": "blue",
                       "badgeContentPaletteColor": "gray_100",
                       "iconColorToken": "theme.colors.icon",
-                      "textColorToken": "theme.colors.textPrimary"
+                      "textColorToken": "theme.colors.textPrimary",
+                      "enabled": true,
+                      "pressed": false
                     }
                   ]
                 },
@@ -178,7 +179,6 @@
                         {
                           "id": "button_001",
                           "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                          "state": "normal",
                           "iconToken": "app_language",
                           "text": "",
                           "buttonOverrides": {},
@@ -212,7 +212,7 @@
         "jsonKey": "text",
         "kind": "multilineText",
         "valueKind": "StringMultiline",
-        "defaultValue": "Hola \uD83D\uDE00\uD83D\uDE03\uD83D\uDE04",
+        "defaultValue": "Hola 😀😃😄",
         "minimum": 0,
         "maximum": 9999,
         "increment": 1,
@@ -300,7 +300,7 @@
       }
     ],
     "collections": [],
-    "text": "Hola \uD83D\uDE00\uD83D\uDE03\uD83D\uDE04",
+    "text": "Hola 😀😃😄",
     "currentCharacter": 1,
     "trigger": false
   },
@@ -875,7 +875,7 @@
         "keyboard",
         "motion"
       ],
-      "defaultValue": "{\u0022transition\u0022:\u0022slide\u0022,\u0022direction\u0022:\u0022bottom\u0022,\u0022bounds\u0022:\u0022screen\u0022,\u0022fade\u0022:false,\u0022translate\u0022:true,\u0022scale\u0022:false}",
+      "defaultValue": "{\"transition\":\"slide\",\"direction\":\"bottom\",\"bounds\":\"screen\",\"fade\":false,\"translate\":true,\"scale\":false}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
@@ -982,7 +982,7 @@
         "keyboard",
         "typography"
       ],
-      "defaultValue": "{\u0022fontFamilyId\u0022:\u0022theme.system\u0022,\u0022weight\u0022:\u0022theme.typography.weight\u0022,\u0022style\u0022:\u0022theme.typography.style\u0022,\u0022sizeToken\u0022:\u0022theme.typography.sizes.s\u0022,\u0022lineHeight\u0022:\u0022theme.typography.lineHeights.normal\u0022}",
+      "defaultValue": "{\"fontFamilyId\":\"theme.system\",\"weight\":\"theme.typography.weight\",\"style\":\"theme.typography.style\",\"sizeToken\":\"theme.typography.sizes.s\",\"lineHeight\":\"theme.typography.lineHeights.normal\"}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,

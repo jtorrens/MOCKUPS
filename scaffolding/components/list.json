@@ -1318,7 +1318,7 @@
                 "componentType": "label",
                 "sampleText": "Diana",
                 "sampleSize": 256,
-                "sampleSubtext": "\u2199 WhatsApp de v\u00EDdeo",
+                "sampleSubtext": "↙ WhatsApp de vídeo",
                 "inputs": [
                   {
                     "id": "sampleText",
@@ -1390,7 +1390,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
+                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -1493,7 +1493,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
+                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -1596,7 +1596,7 @@
                 "componentType": "label",
                 "sampleText": "Diana",
                 "sampleSize": 256,
-                "sampleSubtext": "\u2199 WhatsApp de v\u00EDdeo",
+                "sampleSubtext": "↙ WhatsApp de vídeo",
                 "inputs": [
                   {
                     "id": "sampleText",
@@ -1668,7 +1668,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
+                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -1771,7 +1771,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
+                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -1874,7 +1874,7 @@
                 "componentType": "label",
                 "sampleText": "Diana",
                 "sampleSize": 256,
-                "sampleSubtext": "\u2199 WhatsApp de v\u00EDdeo",
+                "sampleSubtext": "↙ WhatsApp de vídeo",
                 "inputs": [
                   {
                     "id": "sampleText",
@@ -1946,7 +1946,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
+                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -2049,7 +2049,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
+                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -2188,36 +2188,19 @@
                       "itemLabel": "Button",
                       "fields": [
                         {
-                          "id": "state",
-                          "label": "State",
-                          "jsonKey": "state",
-                          "kind": "option",
-                          "valueKind": "OptionToken",
-                          "defaultValue": "normal",
+                          "id": "enabled",
+                          "label": "Enabled",
+                          "jsonKey": "enabled",
+                          "kind": "boolean",
+                          "valueKind": "Boolean",
+                          "defaultValue": "true",
                           "minimum": 0,
                           "maximum": 9999,
                           "increment": 1,
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "normal",
-                              "label": "Normal"
-                            },
-                            {
-                              "value": "active",
-                              "label": "Active"
-                            },
-                            {
-                              "value": "pushed",
-                              "label": "Pushed"
-                            },
-                            {
-                              "value": "disabled",
-                              "label": "Disabled"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -2229,7 +2212,52 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 10
+                          "uiOrder": 10,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
+                        },
+                        {
+                          "id": "pressed",
+                          "label": "Pressed",
+                          "jsonKey": "pressed",
+                          "kind": "boolean",
+                          "valueKind": "Boolean",
+                          "defaultValue": "false",
+                          "minimum": 0,
+                          "maximum": 9999,
+                          "increment": 1,
+                          "tableId": "",
+                          "resolvedJsonKey": "",
+                          "componentType": "",
+                          "options": [],
+                          "pairFirstLabel": "W",
+                          "pairSecondLabel": "H",
+                          "visibleWhenPath": "",
+                          "visibleWhenValue": "",
+                          "source": "runtime",
+                          "uiOrigin": "embedded",
+                          "uiGroupId": "state",
+                          "uiGroupLabel": "State",
+                          "uiParentGroupId": "",
+                          "transition": null,
+                          "unit": "",
+                          "uiOrder": 11,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "sampleText",
@@ -2380,60 +2408,6 @@
                           "transition": null,
                           "unit": "",
                           "uiOrder": 24
-                        },
-                        {
-                          "id": "pushTrigger",
-                          "label": "Push",
-                          "jsonKey": "pushTrigger",
-                          "kind": "boolean",
-                          "valueKind": "Boolean",
-                          "defaultValue": "false",
-                          "minimum": 0,
-                          "maximum": 9999,
-                          "increment": 1,
-                          "tableId": "",
-                          "resolvedJsonKey": "",
-                          "componentType": "",
-                          "options": [],
-                          "pairFirstLabel": "W",
-                          "pairSecondLabel": "H",
-                          "visibleWhenPath": "",
-                          "visibleWhenValue": "",
-                          "source": "calculated",
-                          "uiOrigin": "embedded",
-                          "uiGroupId": "action",
-                          "uiGroupLabel": "Action",
-                          "uiParentGroupId": "",
-                          "transition": null,
-                          "unit": "",
-                          "uiOrder": 30
-                        },
-                        {
-                          "id": "pushElapsedMs",
-                          "label": "Push elapsed",
-                          "jsonKey": "pushElapsedMs",
-                          "kind": "number",
-                          "valueKind": "Decimal",
-                          "defaultValue": "0",
-                          "minimum": 0,
-                          "maximum": 60000,
-                          "increment": 10,
-                          "tableId": "",
-                          "resolvedJsonKey": "",
-                          "componentType": "",
-                          "options": [],
-                          "pairFirstLabel": "W",
-                          "pairSecondLabel": "H",
-                          "visibleWhenPath": "",
-                          "visibleWhenValue": "",
-                          "source": "calculated",
-                          "uiOrigin": "embedded",
-                          "uiGroupId": "action",
-                          "uiGroupLabel": "Action",
-                          "uiParentGroupId": "",
-                          "transition": null,
-                          "unit": "ms",
-                          "uiOrder": 31
                         },
                         {
                           "id": "showBadge",
@@ -2691,8 +2665,7 @@
                       "itemPresentation": {
                         "subtitleFieldIds": [
                           "sampleText",
-                          "iconToken",
-                          "state"
+                          "iconToken"
                         ],
                         "subtitleMaxCharacters": 72,
                         "fallbackIcon": "component"
@@ -2704,13 +2677,10 @@
                 "buttonInputs": [
                   {
                     "id": "primary",
-                    "state": "normal",
                     "sampleText": "",
                     "iconToken": "nav_back",
                     "iconSizeToken": "theme.iconSizes.m",
                     "textSizeToken": "theme.typography.sizes.s",
-                    "pushTrigger": false,
-                    "pushElapsedMs": 0,
                     "iconColorToken": "theme.colors.accent",
                     "textColorToken": "theme.colors.textSecondary",
                     "showBadge": false,
@@ -2719,17 +2689,16 @@
                     "badgeText": "1",
                     "badgeSize": 18,
                     "badgeBackgroundPaletteColor": "green",
-                    "badgeContentPaletteColor": "gray_100"
+                    "badgeContentPaletteColor": "gray_100",
+                    "enabled": true,
+                    "pressed": false
                   },
                   {
                     "id": "secondary",
-                    "state": "normal",
                     "sampleText": "",
                     "iconToken": "phone_call",
                     "iconSizeToken": "theme.iconSizes.m",
                     "textSizeToken": "theme.typography.sizes.s",
-                    "pushTrigger": false,
-                    "pushElapsedMs": 0,
                     "iconColorToken": "theme.colors.accent",
                     "textColorToken": "theme.colors.textSecondary",
                     "showBadge": false,
@@ -2738,7 +2707,9 @@
                     "badgeText": "1",
                     "badgeSize": 18,
                     "badgeBackgroundPaletteColor": "green",
-                    "badgeContentPaletteColor": "gray_100"
+                    "badgeContentPaletteColor": "gray_100",
+                    "enabled": true,
+                    "pressed": false
                   }
                 ]
               }
@@ -2784,36 +2755,19 @@
                       "itemLabel": "Button",
                       "fields": [
                         {
-                          "id": "state",
-                          "label": "State",
-                          "jsonKey": "state",
-                          "kind": "option",
-                          "valueKind": "OptionToken",
-                          "defaultValue": "normal",
+                          "id": "enabled",
+                          "label": "Enabled",
+                          "jsonKey": "enabled",
+                          "kind": "boolean",
+                          "valueKind": "Boolean",
+                          "defaultValue": "true",
                           "minimum": 0,
                           "maximum": 9999,
                           "increment": 1,
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "normal",
-                              "label": "Normal"
-                            },
-                            {
-                              "value": "active",
-                              "label": "Active"
-                            },
-                            {
-                              "value": "pushed",
-                              "label": "Pushed"
-                            },
-                            {
-                              "value": "disabled",
-                              "label": "Disabled"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -2825,7 +2779,52 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 10
+                          "uiOrder": 10,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
+                        },
+                        {
+                          "id": "pressed",
+                          "label": "Pressed",
+                          "jsonKey": "pressed",
+                          "kind": "boolean",
+                          "valueKind": "Boolean",
+                          "defaultValue": "false",
+                          "minimum": 0,
+                          "maximum": 9999,
+                          "increment": 1,
+                          "tableId": "",
+                          "resolvedJsonKey": "",
+                          "componentType": "",
+                          "options": [],
+                          "pairFirstLabel": "W",
+                          "pairSecondLabel": "H",
+                          "visibleWhenPath": "",
+                          "visibleWhenValue": "",
+                          "source": "runtime",
+                          "uiOrigin": "embedded",
+                          "uiGroupId": "state",
+                          "uiGroupLabel": "State",
+                          "uiParentGroupId": "",
+                          "transition": null,
+                          "unit": "",
+                          "uiOrder": 11,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "sampleText",
@@ -2976,60 +2975,6 @@
                           "transition": null,
                           "unit": "",
                           "uiOrder": 24
-                        },
-                        {
-                          "id": "pushTrigger",
-                          "label": "Push",
-                          "jsonKey": "pushTrigger",
-                          "kind": "boolean",
-                          "valueKind": "Boolean",
-                          "defaultValue": "false",
-                          "minimum": 0,
-                          "maximum": 9999,
-                          "increment": 1,
-                          "tableId": "",
-                          "resolvedJsonKey": "",
-                          "componentType": "",
-                          "options": [],
-                          "pairFirstLabel": "W",
-                          "pairSecondLabel": "H",
-                          "visibleWhenPath": "",
-                          "visibleWhenValue": "",
-                          "source": "calculated",
-                          "uiOrigin": "embedded",
-                          "uiGroupId": "action",
-                          "uiGroupLabel": "Action",
-                          "uiParentGroupId": "",
-                          "transition": null,
-                          "unit": "",
-                          "uiOrder": 30
-                        },
-                        {
-                          "id": "pushElapsedMs",
-                          "label": "Push elapsed",
-                          "jsonKey": "pushElapsedMs",
-                          "kind": "number",
-                          "valueKind": "Decimal",
-                          "defaultValue": "0",
-                          "minimum": 0,
-                          "maximum": 60000,
-                          "increment": 10,
-                          "tableId": "",
-                          "resolvedJsonKey": "",
-                          "componentType": "",
-                          "options": [],
-                          "pairFirstLabel": "W",
-                          "pairSecondLabel": "H",
-                          "visibleWhenPath": "",
-                          "visibleWhenValue": "",
-                          "source": "calculated",
-                          "uiOrigin": "embedded",
-                          "uiGroupId": "action",
-                          "uiGroupLabel": "Action",
-                          "uiParentGroupId": "",
-                          "transition": null,
-                          "unit": "ms",
-                          "uiOrder": 31
                         },
                         {
                           "id": "showBadge",
@@ -3287,8 +3232,7 @@
                       "itemPresentation": {
                         "subtitleFieldIds": [
                           "sampleText",
-                          "iconToken",
-                          "state"
+                          "iconToken"
                         ],
                         "subtitleMaxCharacters": 72,
                         "fallbackIcon": "component"
@@ -3300,13 +3244,10 @@
                 "buttonInputs": [
                   {
                     "id": "primary",
-                    "state": "normal",
                     "sampleText": "",
                     "iconToken": "nav_back",
                     "iconSizeToken": "theme.iconSizes.m",
                     "textSizeToken": "theme.typography.sizes.s",
-                    "pushTrigger": false,
-                    "pushElapsedMs": 0,
                     "iconColorToken": "theme.colors.accent",
                     "textColorToken": "theme.colors.textSecondary",
                     "showBadge": false,
@@ -3315,17 +3256,16 @@
                     "badgeText": "1",
                     "badgeSize": 18,
                     "badgeBackgroundPaletteColor": "green",
-                    "badgeContentPaletteColor": "gray_100"
+                    "badgeContentPaletteColor": "gray_100",
+                    "enabled": true,
+                    "pressed": false
                   },
                   {
                     "id": "secondary",
-                    "state": "normal",
                     "sampleText": "",
                     "iconToken": "phone_call",
                     "iconSizeToken": "theme.iconSizes.m",
                     "textSizeToken": "theme.typography.sizes.s",
-                    "pushTrigger": false,
-                    "pushElapsedMs": 0,
                     "iconColorToken": "theme.colors.accent",
                     "textColorToken": "theme.colors.textSecondary",
                     "showBadge": false,
@@ -3334,7 +3274,9 @@
                     "badgeText": "1",
                     "badgeSize": 18,
                     "badgeBackgroundPaletteColor": "green",
-                    "badgeContentPaletteColor": "gray_100"
+                    "badgeContentPaletteColor": "gray_100",
+                    "enabled": true,
+                    "pressed": false
                   }
                 ]
               }
@@ -3380,36 +3322,19 @@
                       "itemLabel": "Button",
                       "fields": [
                         {
-                          "id": "state",
-                          "label": "State",
-                          "jsonKey": "state",
-                          "kind": "option",
-                          "valueKind": "OptionToken",
-                          "defaultValue": "normal",
+                          "id": "enabled",
+                          "label": "Enabled",
+                          "jsonKey": "enabled",
+                          "kind": "boolean",
+                          "valueKind": "Boolean",
+                          "defaultValue": "true",
                           "minimum": 0,
                           "maximum": 9999,
                           "increment": 1,
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "normal",
-                              "label": "Normal"
-                            },
-                            {
-                              "value": "active",
-                              "label": "Active"
-                            },
-                            {
-                              "value": "pushed",
-                              "label": "Pushed"
-                            },
-                            {
-                              "value": "disabled",
-                              "label": "Disabled"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -3421,7 +3346,52 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 10
+                          "uiOrder": 10,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
+                        },
+                        {
+                          "id": "pressed",
+                          "label": "Pressed",
+                          "jsonKey": "pressed",
+                          "kind": "boolean",
+                          "valueKind": "Boolean",
+                          "defaultValue": "false",
+                          "minimum": 0,
+                          "maximum": 9999,
+                          "increment": 1,
+                          "tableId": "",
+                          "resolvedJsonKey": "",
+                          "componentType": "",
+                          "options": [],
+                          "pairFirstLabel": "W",
+                          "pairSecondLabel": "H",
+                          "visibleWhenPath": "",
+                          "visibleWhenValue": "",
+                          "source": "runtime",
+                          "uiOrigin": "embedded",
+                          "uiGroupId": "state",
+                          "uiGroupLabel": "State",
+                          "uiParentGroupId": "",
+                          "transition": null,
+                          "unit": "",
+                          "uiOrder": 11,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "sampleText",
@@ -3572,60 +3542,6 @@
                           "transition": null,
                           "unit": "",
                           "uiOrder": 24
-                        },
-                        {
-                          "id": "pushTrigger",
-                          "label": "Push",
-                          "jsonKey": "pushTrigger",
-                          "kind": "boolean",
-                          "valueKind": "Boolean",
-                          "defaultValue": "false",
-                          "minimum": 0,
-                          "maximum": 9999,
-                          "increment": 1,
-                          "tableId": "",
-                          "resolvedJsonKey": "",
-                          "componentType": "",
-                          "options": [],
-                          "pairFirstLabel": "W",
-                          "pairSecondLabel": "H",
-                          "visibleWhenPath": "",
-                          "visibleWhenValue": "",
-                          "source": "calculated",
-                          "uiOrigin": "embedded",
-                          "uiGroupId": "action",
-                          "uiGroupLabel": "Action",
-                          "uiParentGroupId": "",
-                          "transition": null,
-                          "unit": "",
-                          "uiOrder": 30
-                        },
-                        {
-                          "id": "pushElapsedMs",
-                          "label": "Push elapsed",
-                          "jsonKey": "pushElapsedMs",
-                          "kind": "number",
-                          "valueKind": "Decimal",
-                          "defaultValue": "0",
-                          "minimum": 0,
-                          "maximum": 60000,
-                          "increment": 10,
-                          "tableId": "",
-                          "resolvedJsonKey": "",
-                          "componentType": "",
-                          "options": [],
-                          "pairFirstLabel": "W",
-                          "pairSecondLabel": "H",
-                          "visibleWhenPath": "",
-                          "visibleWhenValue": "",
-                          "source": "calculated",
-                          "uiOrigin": "embedded",
-                          "uiGroupId": "action",
-                          "uiGroupLabel": "Action",
-                          "uiParentGroupId": "",
-                          "transition": null,
-                          "unit": "ms",
-                          "uiOrder": 31
                         },
                         {
                           "id": "showBadge",
@@ -3883,8 +3799,7 @@
                       "itemPresentation": {
                         "subtitleFieldIds": [
                           "sampleText",
-                          "iconToken",
-                          "state"
+                          "iconToken"
                         ],
                         "subtitleMaxCharacters": 72,
                         "fallbackIcon": "component"
@@ -3896,13 +3811,10 @@
                 "buttonInputs": [
                   {
                     "id": "primary",
-                    "state": "normal",
                     "sampleText": "",
                     "iconToken": "nav_back",
                     "iconSizeToken": "theme.iconSizes.m",
                     "textSizeToken": "theme.typography.sizes.s",
-                    "pushTrigger": false,
-                    "pushElapsedMs": 0,
                     "iconColorToken": "theme.colors.accent",
                     "textColorToken": "theme.colors.textSecondary",
                     "showBadge": false,
@@ -3911,17 +3823,16 @@
                     "badgeText": "1",
                     "badgeSize": 18,
                     "badgeBackgroundPaletteColor": "green",
-                    "badgeContentPaletteColor": "gray_100"
+                    "badgeContentPaletteColor": "gray_100",
+                    "enabled": true,
+                    "pressed": false
                   },
                   {
                     "id": "secondary",
-                    "state": "normal",
                     "sampleText": "",
                     "iconToken": "phone_call",
                     "iconSizeToken": "theme.iconSizes.m",
                     "textSizeToken": "theme.typography.sizes.s",
-                    "pushTrigger": false,
-                    "pushElapsedMs": 0,
                     "iconColorToken": "theme.colors.accent",
                     "textColorToken": "theme.colors.textSecondary",
                     "showBadge": false,
@@ -3930,7 +3841,9 @@
                     "badgeText": "1",
                     "badgeSize": 18,
                     "badgeBackgroundPaletteColor": "green",
-                    "badgeContentPaletteColor": "gray_100"
+                    "badgeContentPaletteColor": "gray_100",
+                    "enabled": true,
+                    "pressed": false
                   }
                 ]
               }
@@ -4958,9 +4871,9 @@
               "contentSetId": "list_item_missed_set_b",
               "runtimeInputs": {
                 "componentType": "label",
-                "sampleText": "\u002B34 848 983 160",
+                "sampleText": "+34 848 983 160",
                 "sampleSize": 256,
-                "sampleSubtext": "\u2199 Pamplona / Iru\u00F1a",
+                "sampleSubtext": "↙ Pamplona / Iruña",
                 "inputs": [
                   {
                     "id": "sampleText",
@@ -5032,7 +4945,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
+                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -5135,7 +5048,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
+                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -5236,9 +5149,9 @@
               "contentSetId": "list_item_missed_set_b_2",
               "runtimeInputs": {
                 "componentType": "label",
-                "sampleText": "\u002B34 848 983 160",
+                "sampleText": "+34 848 983 160",
                 "sampleSize": 256,
-                "sampleSubtext": "\u2199 Pamplona / Iru\u00F1a",
+                "sampleSubtext": "↙ Pamplona / Iruña",
                 "inputs": [
                   {
                     "id": "sampleText",
@@ -5310,7 +5223,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
+                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -5413,7 +5326,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
+                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -5514,9 +5427,9 @@
               "contentSetId": "list_item_missed_set_b_2_3",
               "runtimeInputs": {
                 "componentType": "label",
-                "sampleText": "\u002B34 848 983 160",
+                "sampleText": "+34 848 983 160",
                 "sampleSize": 256,
-                "sampleSubtext": "\u2199 Pamplona / Iru\u00F1a",
+                "sampleSubtext": "↙ Pamplona / Iruña",
                 "inputs": [
                   {
                     "id": "sampleText",
@@ -5588,7 +5501,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
+                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -5691,7 +5604,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
+                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -5830,36 +5743,19 @@
                       "itemLabel": "Button",
                       "fields": [
                         {
-                          "id": "state",
-                          "label": "State",
-                          "jsonKey": "state",
-                          "kind": "option",
-                          "valueKind": "OptionToken",
-                          "defaultValue": "normal",
+                          "id": "enabled",
+                          "label": "Enabled",
+                          "jsonKey": "enabled",
+                          "kind": "boolean",
+                          "valueKind": "Boolean",
+                          "defaultValue": "true",
                           "minimum": 0,
                           "maximum": 9999,
                           "increment": 1,
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "normal",
-                              "label": "Normal"
-                            },
-                            {
-                              "value": "active",
-                              "label": "Active"
-                            },
-                            {
-                              "value": "pushed",
-                              "label": "Pushed"
-                            },
-                            {
-                              "value": "disabled",
-                              "label": "Disabled"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -5871,7 +5767,52 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 10
+                          "uiOrder": 10,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
+                        },
+                        {
+                          "id": "pressed",
+                          "label": "Pressed",
+                          "jsonKey": "pressed",
+                          "kind": "boolean",
+                          "valueKind": "Boolean",
+                          "defaultValue": "false",
+                          "minimum": 0,
+                          "maximum": 9999,
+                          "increment": 1,
+                          "tableId": "",
+                          "resolvedJsonKey": "",
+                          "componentType": "",
+                          "options": [],
+                          "pairFirstLabel": "W",
+                          "pairSecondLabel": "H",
+                          "visibleWhenPath": "",
+                          "visibleWhenValue": "",
+                          "source": "runtime",
+                          "uiOrigin": "embedded",
+                          "uiGroupId": "state",
+                          "uiGroupLabel": "State",
+                          "uiParentGroupId": "",
+                          "transition": null,
+                          "unit": "",
+                          "uiOrder": 11,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "sampleText",
@@ -6022,60 +5963,6 @@
                           "transition": null,
                           "unit": "",
                           "uiOrder": 24
-                        },
-                        {
-                          "id": "pushTrigger",
-                          "label": "Push",
-                          "jsonKey": "pushTrigger",
-                          "kind": "boolean",
-                          "valueKind": "Boolean",
-                          "defaultValue": "false",
-                          "minimum": 0,
-                          "maximum": 9999,
-                          "increment": 1,
-                          "tableId": "",
-                          "resolvedJsonKey": "",
-                          "componentType": "",
-                          "options": [],
-                          "pairFirstLabel": "W",
-                          "pairSecondLabel": "H",
-                          "visibleWhenPath": "",
-                          "visibleWhenValue": "",
-                          "source": "calculated",
-                          "uiOrigin": "embedded",
-                          "uiGroupId": "action",
-                          "uiGroupLabel": "Action",
-                          "uiParentGroupId": "",
-                          "transition": null,
-                          "unit": "",
-                          "uiOrder": 30
-                        },
-                        {
-                          "id": "pushElapsedMs",
-                          "label": "Push elapsed",
-                          "jsonKey": "pushElapsedMs",
-                          "kind": "number",
-                          "valueKind": "Decimal",
-                          "defaultValue": "0",
-                          "minimum": 0,
-                          "maximum": 60000,
-                          "increment": 10,
-                          "tableId": "",
-                          "resolvedJsonKey": "",
-                          "componentType": "",
-                          "options": [],
-                          "pairFirstLabel": "W",
-                          "pairSecondLabel": "H",
-                          "visibleWhenPath": "",
-                          "visibleWhenValue": "",
-                          "source": "calculated",
-                          "uiOrigin": "embedded",
-                          "uiGroupId": "action",
-                          "uiGroupLabel": "Action",
-                          "uiParentGroupId": "",
-                          "transition": null,
-                          "unit": "ms",
-                          "uiOrder": 31
                         },
                         {
                           "id": "showBadge",
@@ -6333,8 +6220,7 @@
                       "itemPresentation": {
                         "subtitleFieldIds": [
                           "sampleText",
-                          "iconToken",
-                          "state"
+                          "iconToken"
                         ],
                         "subtitleMaxCharacters": 72,
                         "fallbackIcon": "component"
@@ -6346,13 +6232,10 @@
                 "buttonInputs": [
                   {
                     "id": "primary",
-                    "state": "normal",
                     "sampleText": "",
                     "iconToken": "nav_forward",
                     "iconSizeToken": "theme.iconSizes.m",
                     "textSizeToken": "theme.typography.sizes.s",
-                    "pushTrigger": false,
-                    "pushElapsedMs": 0,
                     "iconColorToken": "theme.colors.accent",
                     "textColorToken": "theme.colors.textSecondary",
                     "showBadge": false,
@@ -6361,17 +6244,16 @@
                     "badgeText": "1",
                     "badgeSize": 18,
                     "badgeBackgroundPaletteColor": "green",
-                    "badgeContentPaletteColor": "gray_100"
+                    "badgeContentPaletteColor": "gray_100",
+                    "enabled": true,
+                    "pressed": false
                   },
                   {
                     "id": "secondary",
-                    "state": "normal",
                     "sampleText": "",
                     "iconToken": "phone_call",
                     "iconSizeToken": "theme.iconSizes.m",
                     "textSizeToken": "theme.typography.sizes.s",
-                    "pushTrigger": false,
-                    "pushElapsedMs": 0,
                     "iconColorToken": "theme.colors.accent",
                     "textColorToken": "theme.colors.textSecondary",
                     "showBadge": false,
@@ -6380,7 +6262,9 @@
                     "badgeText": "1",
                     "badgeSize": 18,
                     "badgeBackgroundPaletteColor": "green",
-                    "badgeContentPaletteColor": "gray_100"
+                    "badgeContentPaletteColor": "gray_100",
+                    "enabled": true,
+                    "pressed": false
                   }
                 ]
               }
@@ -6426,36 +6310,19 @@
                       "itemLabel": "Button",
                       "fields": [
                         {
-                          "id": "state",
-                          "label": "State",
-                          "jsonKey": "state",
-                          "kind": "option",
-                          "valueKind": "OptionToken",
-                          "defaultValue": "normal",
+                          "id": "enabled",
+                          "label": "Enabled",
+                          "jsonKey": "enabled",
+                          "kind": "boolean",
+                          "valueKind": "Boolean",
+                          "defaultValue": "true",
                           "minimum": 0,
                           "maximum": 9999,
                           "increment": 1,
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "normal",
-                              "label": "Normal"
-                            },
-                            {
-                              "value": "active",
-                              "label": "Active"
-                            },
-                            {
-                              "value": "pushed",
-                              "label": "Pushed"
-                            },
-                            {
-                              "value": "disabled",
-                              "label": "Disabled"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -6467,7 +6334,52 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 10
+                          "uiOrder": 10,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
+                        },
+                        {
+                          "id": "pressed",
+                          "label": "Pressed",
+                          "jsonKey": "pressed",
+                          "kind": "boolean",
+                          "valueKind": "Boolean",
+                          "defaultValue": "false",
+                          "minimum": 0,
+                          "maximum": 9999,
+                          "increment": 1,
+                          "tableId": "",
+                          "resolvedJsonKey": "",
+                          "componentType": "",
+                          "options": [],
+                          "pairFirstLabel": "W",
+                          "pairSecondLabel": "H",
+                          "visibleWhenPath": "",
+                          "visibleWhenValue": "",
+                          "source": "runtime",
+                          "uiOrigin": "embedded",
+                          "uiGroupId": "state",
+                          "uiGroupLabel": "State",
+                          "uiParentGroupId": "",
+                          "transition": null,
+                          "unit": "",
+                          "uiOrder": 11,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "sampleText",
@@ -6618,60 +6530,6 @@
                           "transition": null,
                           "unit": "",
                           "uiOrder": 24
-                        },
-                        {
-                          "id": "pushTrigger",
-                          "label": "Push",
-                          "jsonKey": "pushTrigger",
-                          "kind": "boolean",
-                          "valueKind": "Boolean",
-                          "defaultValue": "false",
-                          "minimum": 0,
-                          "maximum": 9999,
-                          "increment": 1,
-                          "tableId": "",
-                          "resolvedJsonKey": "",
-                          "componentType": "",
-                          "options": [],
-                          "pairFirstLabel": "W",
-                          "pairSecondLabel": "H",
-                          "visibleWhenPath": "",
-                          "visibleWhenValue": "",
-                          "source": "calculated",
-                          "uiOrigin": "embedded",
-                          "uiGroupId": "action",
-                          "uiGroupLabel": "Action",
-                          "uiParentGroupId": "",
-                          "transition": null,
-                          "unit": "",
-                          "uiOrder": 30
-                        },
-                        {
-                          "id": "pushElapsedMs",
-                          "label": "Push elapsed",
-                          "jsonKey": "pushElapsedMs",
-                          "kind": "number",
-                          "valueKind": "Decimal",
-                          "defaultValue": "0",
-                          "minimum": 0,
-                          "maximum": 60000,
-                          "increment": 10,
-                          "tableId": "",
-                          "resolvedJsonKey": "",
-                          "componentType": "",
-                          "options": [],
-                          "pairFirstLabel": "W",
-                          "pairSecondLabel": "H",
-                          "visibleWhenPath": "",
-                          "visibleWhenValue": "",
-                          "source": "calculated",
-                          "uiOrigin": "embedded",
-                          "uiGroupId": "action",
-                          "uiGroupLabel": "Action",
-                          "uiParentGroupId": "",
-                          "transition": null,
-                          "unit": "ms",
-                          "uiOrder": 31
                         },
                         {
                           "id": "showBadge",
@@ -6929,8 +6787,7 @@
                       "itemPresentation": {
                         "subtitleFieldIds": [
                           "sampleText",
-                          "iconToken",
-                          "state"
+                          "iconToken"
                         ],
                         "subtitleMaxCharacters": 72,
                         "fallbackIcon": "component"
@@ -6942,13 +6799,10 @@
                 "buttonInputs": [
                   {
                     "id": "primary",
-                    "state": "normal",
                     "sampleText": "",
                     "iconToken": "nav_forward",
                     "iconSizeToken": "theme.iconSizes.m",
                     "textSizeToken": "theme.typography.sizes.s",
-                    "pushTrigger": false,
-                    "pushElapsedMs": 0,
                     "iconColorToken": "theme.colors.accent",
                     "textColorToken": "theme.colors.textSecondary",
                     "showBadge": false,
@@ -6957,17 +6811,16 @@
                     "badgeText": "1",
                     "badgeSize": 18,
                     "badgeBackgroundPaletteColor": "green",
-                    "badgeContentPaletteColor": "gray_100"
+                    "badgeContentPaletteColor": "gray_100",
+                    "enabled": true,
+                    "pressed": false
                   },
                   {
                     "id": "secondary",
-                    "state": "normal",
                     "sampleText": "",
                     "iconToken": "phone_call",
                     "iconSizeToken": "theme.iconSizes.m",
                     "textSizeToken": "theme.typography.sizes.s",
-                    "pushTrigger": false,
-                    "pushElapsedMs": 0,
                     "iconColorToken": "theme.colors.accent",
                     "textColorToken": "theme.colors.textSecondary",
                     "showBadge": false,
@@ -6976,7 +6829,9 @@
                     "badgeText": "1",
                     "badgeSize": 18,
                     "badgeBackgroundPaletteColor": "green",
-                    "badgeContentPaletteColor": "gray_100"
+                    "badgeContentPaletteColor": "gray_100",
+                    "enabled": true,
+                    "pressed": false
                   }
                 ]
               }
@@ -7022,36 +6877,19 @@
                       "itemLabel": "Button",
                       "fields": [
                         {
-                          "id": "state",
-                          "label": "State",
-                          "jsonKey": "state",
-                          "kind": "option",
-                          "valueKind": "OptionToken",
-                          "defaultValue": "normal",
+                          "id": "enabled",
+                          "label": "Enabled",
+                          "jsonKey": "enabled",
+                          "kind": "boolean",
+                          "valueKind": "Boolean",
+                          "defaultValue": "true",
                           "minimum": 0,
                           "maximum": 9999,
                           "increment": 1,
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "normal",
-                              "label": "Normal"
-                            },
-                            {
-                              "value": "active",
-                              "label": "Active"
-                            },
-                            {
-                              "value": "pushed",
-                              "label": "Pushed"
-                            },
-                            {
-                              "value": "disabled",
-                              "label": "Disabled"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -7063,7 +6901,52 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 10
+                          "uiOrder": 10,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
+                        },
+                        {
+                          "id": "pressed",
+                          "label": "Pressed",
+                          "jsonKey": "pressed",
+                          "kind": "boolean",
+                          "valueKind": "Boolean",
+                          "defaultValue": "false",
+                          "minimum": 0,
+                          "maximum": 9999,
+                          "increment": 1,
+                          "tableId": "",
+                          "resolvedJsonKey": "",
+                          "componentType": "",
+                          "options": [],
+                          "pairFirstLabel": "W",
+                          "pairSecondLabel": "H",
+                          "visibleWhenPath": "",
+                          "visibleWhenValue": "",
+                          "source": "runtime",
+                          "uiOrigin": "embedded",
+                          "uiGroupId": "state",
+                          "uiGroupLabel": "State",
+                          "uiParentGroupId": "",
+                          "transition": null,
+                          "unit": "",
+                          "uiOrder": 11,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "sampleText",
@@ -7214,60 +7097,6 @@
                           "transition": null,
                           "unit": "",
                           "uiOrder": 24
-                        },
-                        {
-                          "id": "pushTrigger",
-                          "label": "Push",
-                          "jsonKey": "pushTrigger",
-                          "kind": "boolean",
-                          "valueKind": "Boolean",
-                          "defaultValue": "false",
-                          "minimum": 0,
-                          "maximum": 9999,
-                          "increment": 1,
-                          "tableId": "",
-                          "resolvedJsonKey": "",
-                          "componentType": "",
-                          "options": [],
-                          "pairFirstLabel": "W",
-                          "pairSecondLabel": "H",
-                          "visibleWhenPath": "",
-                          "visibleWhenValue": "",
-                          "source": "calculated",
-                          "uiOrigin": "embedded",
-                          "uiGroupId": "action",
-                          "uiGroupLabel": "Action",
-                          "uiParentGroupId": "",
-                          "transition": null,
-                          "unit": "",
-                          "uiOrder": 30
-                        },
-                        {
-                          "id": "pushElapsedMs",
-                          "label": "Push elapsed",
-                          "jsonKey": "pushElapsedMs",
-                          "kind": "number",
-                          "valueKind": "Decimal",
-                          "defaultValue": "0",
-                          "minimum": 0,
-                          "maximum": 60000,
-                          "increment": 10,
-                          "tableId": "",
-                          "resolvedJsonKey": "",
-                          "componentType": "",
-                          "options": [],
-                          "pairFirstLabel": "W",
-                          "pairSecondLabel": "H",
-                          "visibleWhenPath": "",
-                          "visibleWhenValue": "",
-                          "source": "calculated",
-                          "uiOrigin": "embedded",
-                          "uiGroupId": "action",
-                          "uiGroupLabel": "Action",
-                          "uiParentGroupId": "",
-                          "transition": null,
-                          "unit": "ms",
-                          "uiOrder": 31
                         },
                         {
                           "id": "showBadge",
@@ -7525,8 +7354,7 @@
                       "itemPresentation": {
                         "subtitleFieldIds": [
                           "sampleText",
-                          "iconToken",
-                          "state"
+                          "iconToken"
                         ],
                         "subtitleMaxCharacters": 72,
                         "fallbackIcon": "component"
@@ -7538,13 +7366,10 @@
                 "buttonInputs": [
                   {
                     "id": "primary",
-                    "state": "normal",
                     "sampleText": "",
                     "iconToken": "nav_forward",
                     "iconSizeToken": "theme.iconSizes.m",
                     "textSizeToken": "theme.typography.sizes.s",
-                    "pushTrigger": false,
-                    "pushElapsedMs": 0,
                     "iconColorToken": "theme.colors.accent",
                     "textColorToken": "theme.colors.textSecondary",
                     "showBadge": false,
@@ -7553,17 +7378,16 @@
                     "badgeText": "1",
                     "badgeSize": 18,
                     "badgeBackgroundPaletteColor": "green",
-                    "badgeContentPaletteColor": "gray_100"
+                    "badgeContentPaletteColor": "gray_100",
+                    "enabled": true,
+                    "pressed": false
                   },
                   {
                     "id": "secondary",
-                    "state": "normal",
                     "sampleText": "",
                     "iconToken": "phone_call",
                     "iconSizeToken": "theme.iconSizes.m",
                     "textSizeToken": "theme.typography.sizes.s",
-                    "pushTrigger": false,
-                    "pushElapsedMs": 0,
                     "iconColorToken": "theme.colors.accent",
                     "textColorToken": "theme.colors.textSecondary",
                     "showBadge": false,
@@ -7572,7 +7396,9 @@
                     "badgeText": "1",
                     "badgeSize": 18,
                     "badgeBackgroundPaletteColor": "green",
-                    "badgeContentPaletteColor": "gray_100"
+                    "badgeContentPaletteColor": "gray_100",
+                    "enabled": true,
+                    "pressed": false
                   }
                 ]
               }
@@ -8602,7 +8428,7 @@
                 "componentType": "label",
                 "sampleText": "Dave",
                 "sampleSize": 256,
-                "sampleSubtext": "Thank you pal \uD83D\uDE01",
+                "sampleSubtext": "Thank you pal 😁",
                 "inputs": [
                   {
                     "id": "sampleText",
@@ -8674,7 +8500,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
+                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -8777,7 +8603,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
+                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -8880,7 +8706,7 @@
                 "componentType": "label",
                 "sampleText": "Dave",
                 "sampleSize": 256,
-                "sampleSubtext": "Thank you pal \uD83D\uDE01",
+                "sampleSubtext": "Thank you pal 😁",
                 "inputs": [
                   {
                     "id": "sampleText",
@@ -8952,7 +8778,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
+                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -9055,7 +8881,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
+                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -9158,7 +8984,7 @@
                 "componentType": "label",
                 "sampleText": "Dave",
                 "sampleSize": 256,
-                "sampleSubtext": "Thank you pal \uD83D\uDE01",
+                "sampleSubtext": "Thank you pal 😁",
                 "inputs": [
                   {
                     "id": "sampleText",
@@ -9230,7 +9056,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
+                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -9333,7 +9159,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
+                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -9472,36 +9298,19 @@
                       "itemLabel": "Button",
                       "fields": [
                         {
-                          "id": "state",
-                          "label": "State",
-                          "jsonKey": "state",
-                          "kind": "option",
-                          "valueKind": "OptionToken",
-                          "defaultValue": "normal",
+                          "id": "enabled",
+                          "label": "Enabled",
+                          "jsonKey": "enabled",
+                          "kind": "boolean",
+                          "valueKind": "Boolean",
+                          "defaultValue": "true",
                           "minimum": 0,
                           "maximum": 9999,
                           "increment": 1,
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "normal",
-                              "label": "Normal"
-                            },
-                            {
-                              "value": "active",
-                              "label": "Active"
-                            },
-                            {
-                              "value": "pushed",
-                              "label": "Pushed"
-                            },
-                            {
-                              "value": "disabled",
-                              "label": "Disabled"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -9513,7 +9322,52 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 10
+                          "uiOrder": 10,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
+                        },
+                        {
+                          "id": "pressed",
+                          "label": "Pressed",
+                          "jsonKey": "pressed",
+                          "kind": "boolean",
+                          "valueKind": "Boolean",
+                          "defaultValue": "false",
+                          "minimum": 0,
+                          "maximum": 9999,
+                          "increment": 1,
+                          "tableId": "",
+                          "resolvedJsonKey": "",
+                          "componentType": "",
+                          "options": [],
+                          "pairFirstLabel": "W",
+                          "pairSecondLabel": "H",
+                          "visibleWhenPath": "",
+                          "visibleWhenValue": "",
+                          "source": "runtime",
+                          "uiOrigin": "embedded",
+                          "uiGroupId": "state",
+                          "uiGroupLabel": "State",
+                          "uiParentGroupId": "",
+                          "transition": null,
+                          "unit": "",
+                          "uiOrder": 11,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "sampleText",
@@ -9664,60 +9518,6 @@
                           "transition": null,
                           "unit": "",
                           "uiOrder": 24
-                        },
-                        {
-                          "id": "pushTrigger",
-                          "label": "Push",
-                          "jsonKey": "pushTrigger",
-                          "kind": "boolean",
-                          "valueKind": "Boolean",
-                          "defaultValue": "false",
-                          "minimum": 0,
-                          "maximum": 9999,
-                          "increment": 1,
-                          "tableId": "",
-                          "resolvedJsonKey": "",
-                          "componentType": "",
-                          "options": [],
-                          "pairFirstLabel": "W",
-                          "pairSecondLabel": "H",
-                          "visibleWhenPath": "",
-                          "visibleWhenValue": "",
-                          "source": "calculated",
-                          "uiOrigin": "embedded",
-                          "uiGroupId": "action",
-                          "uiGroupLabel": "Action",
-                          "uiParentGroupId": "",
-                          "transition": null,
-                          "unit": "",
-                          "uiOrder": 30
-                        },
-                        {
-                          "id": "pushElapsedMs",
-                          "label": "Push elapsed",
-                          "jsonKey": "pushElapsedMs",
-                          "kind": "number",
-                          "valueKind": "Decimal",
-                          "defaultValue": "0",
-                          "minimum": 0,
-                          "maximum": 60000,
-                          "increment": 10,
-                          "tableId": "",
-                          "resolvedJsonKey": "",
-                          "componentType": "",
-                          "options": [],
-                          "pairFirstLabel": "W",
-                          "pairSecondLabel": "H",
-                          "visibleWhenPath": "",
-                          "visibleWhenValue": "",
-                          "source": "calculated",
-                          "uiOrigin": "embedded",
-                          "uiGroupId": "action",
-                          "uiGroupLabel": "Action",
-                          "uiParentGroupId": "",
-                          "transition": null,
-                          "unit": "ms",
-                          "uiOrder": 31
                         },
                         {
                           "id": "showBadge",
@@ -9975,8 +9775,7 @@
                       "itemPresentation": {
                         "subtitleFieldIds": [
                           "sampleText",
-                          "iconToken",
-                          "state"
+                          "iconToken"
                         ],
                         "subtitleMaxCharacters": 72,
                         "fallbackIcon": "component"
@@ -9988,13 +9787,10 @@
                 "buttonInputs": [
                   {
                     "id": "primary",
-                    "state": "normal",
                     "sampleText": "19:18",
                     "iconToken": "system_check",
                     "iconSizeToken": "theme.iconSizes.m",
                     "textSizeToken": "theme.typography.sizes.s",
-                    "pushTrigger": false,
-                    "pushElapsedMs": 0,
                     "iconColorToken": "theme.colors.accent",
                     "textColorToken": "theme.colors.accent",
                     "showBadge": false,
@@ -10003,17 +9799,16 @@
                     "badgeText": "1",
                     "badgeSize": 18,
                     "badgeBackgroundPaletteColor": "green",
-                    "badgeContentPaletteColor": "gray_100"
+                    "badgeContentPaletteColor": "gray_100",
+                    "enabled": true,
+                    "pressed": false
                   },
                   {
                     "id": "secondary",
-                    "state": "active",
                     "sampleText": "1",
                     "iconToken": "system_check",
                     "iconSizeToken": "theme.iconSizes.m",
                     "textSizeToken": "theme.typography.sizes.s",
-                    "pushTrigger": false,
-                    "pushElapsedMs": 0,
                     "iconColorToken": "theme.colors.accent",
                     "textColorToken": "theme.colors.accent",
                     "showBadge": false,
@@ -10022,7 +9817,9 @@
                     "badgeText": "1",
                     "badgeSize": 18,
                     "badgeBackgroundPaletteColor": "green",
-                    "badgeContentPaletteColor": "gray_100"
+                    "badgeContentPaletteColor": "gray_100",
+                    "enabled": true,
+                    "pressed": false
                   }
                 ]
               }
@@ -10068,36 +9865,19 @@
                       "itemLabel": "Button",
                       "fields": [
                         {
-                          "id": "state",
-                          "label": "State",
-                          "jsonKey": "state",
-                          "kind": "option",
-                          "valueKind": "OptionToken",
-                          "defaultValue": "normal",
+                          "id": "enabled",
+                          "label": "Enabled",
+                          "jsonKey": "enabled",
+                          "kind": "boolean",
+                          "valueKind": "Boolean",
+                          "defaultValue": "true",
                           "minimum": 0,
                           "maximum": 9999,
                           "increment": 1,
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "normal",
-                              "label": "Normal"
-                            },
-                            {
-                              "value": "active",
-                              "label": "Active"
-                            },
-                            {
-                              "value": "pushed",
-                              "label": "Pushed"
-                            },
-                            {
-                              "value": "disabled",
-                              "label": "Disabled"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -10109,7 +9889,52 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 10
+                          "uiOrder": 10,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
+                        },
+                        {
+                          "id": "pressed",
+                          "label": "Pressed",
+                          "jsonKey": "pressed",
+                          "kind": "boolean",
+                          "valueKind": "Boolean",
+                          "defaultValue": "false",
+                          "minimum": 0,
+                          "maximum": 9999,
+                          "increment": 1,
+                          "tableId": "",
+                          "resolvedJsonKey": "",
+                          "componentType": "",
+                          "options": [],
+                          "pairFirstLabel": "W",
+                          "pairSecondLabel": "H",
+                          "visibleWhenPath": "",
+                          "visibleWhenValue": "",
+                          "source": "runtime",
+                          "uiOrigin": "embedded",
+                          "uiGroupId": "state",
+                          "uiGroupLabel": "State",
+                          "uiParentGroupId": "",
+                          "transition": null,
+                          "unit": "",
+                          "uiOrder": 11,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "sampleText",
@@ -10260,60 +10085,6 @@
                           "transition": null,
                           "unit": "",
                           "uiOrder": 24
-                        },
-                        {
-                          "id": "pushTrigger",
-                          "label": "Push",
-                          "jsonKey": "pushTrigger",
-                          "kind": "boolean",
-                          "valueKind": "Boolean",
-                          "defaultValue": "false",
-                          "minimum": 0,
-                          "maximum": 9999,
-                          "increment": 1,
-                          "tableId": "",
-                          "resolvedJsonKey": "",
-                          "componentType": "",
-                          "options": [],
-                          "pairFirstLabel": "W",
-                          "pairSecondLabel": "H",
-                          "visibleWhenPath": "",
-                          "visibleWhenValue": "",
-                          "source": "calculated",
-                          "uiOrigin": "embedded",
-                          "uiGroupId": "action",
-                          "uiGroupLabel": "Action",
-                          "uiParentGroupId": "",
-                          "transition": null,
-                          "unit": "",
-                          "uiOrder": 30
-                        },
-                        {
-                          "id": "pushElapsedMs",
-                          "label": "Push elapsed",
-                          "jsonKey": "pushElapsedMs",
-                          "kind": "number",
-                          "valueKind": "Decimal",
-                          "defaultValue": "0",
-                          "minimum": 0,
-                          "maximum": 60000,
-                          "increment": 10,
-                          "tableId": "",
-                          "resolvedJsonKey": "",
-                          "componentType": "",
-                          "options": [],
-                          "pairFirstLabel": "W",
-                          "pairSecondLabel": "H",
-                          "visibleWhenPath": "",
-                          "visibleWhenValue": "",
-                          "source": "calculated",
-                          "uiOrigin": "embedded",
-                          "uiGroupId": "action",
-                          "uiGroupLabel": "Action",
-                          "uiParentGroupId": "",
-                          "transition": null,
-                          "unit": "ms",
-                          "uiOrder": 31
                         },
                         {
                           "id": "showBadge",
@@ -10571,8 +10342,7 @@
                       "itemPresentation": {
                         "subtitleFieldIds": [
                           "sampleText",
-                          "iconToken",
-                          "state"
+                          "iconToken"
                         ],
                         "subtitleMaxCharacters": 72,
                         "fallbackIcon": "component"
@@ -10584,13 +10354,10 @@
                 "buttonInputs": [
                   {
                     "id": "primary",
-                    "state": "normal",
                     "sampleText": "19:18",
                     "iconToken": "system_check",
                     "iconSizeToken": "theme.iconSizes.m",
                     "textSizeToken": "theme.typography.sizes.s",
-                    "pushTrigger": false,
-                    "pushElapsedMs": 0,
                     "iconColorToken": "theme.colors.accent",
                     "textColorToken": "theme.colors.accent",
                     "showBadge": false,
@@ -10599,17 +10366,16 @@
                     "badgeText": "1",
                     "badgeSize": 18,
                     "badgeBackgroundPaletteColor": "green",
-                    "badgeContentPaletteColor": "gray_100"
+                    "badgeContentPaletteColor": "gray_100",
+                    "enabled": true,
+                    "pressed": false
                   },
                   {
                     "id": "secondary",
-                    "state": "active",
                     "sampleText": "1",
                     "iconToken": "system_check",
                     "iconSizeToken": "theme.iconSizes.m",
                     "textSizeToken": "theme.typography.sizes.s",
-                    "pushTrigger": false,
-                    "pushElapsedMs": 0,
                     "iconColorToken": "theme.colors.accent",
                     "textColorToken": "theme.colors.accent",
                     "showBadge": false,
@@ -10618,7 +10384,9 @@
                     "badgeText": "1",
                     "badgeSize": 18,
                     "badgeBackgroundPaletteColor": "green",
-                    "badgeContentPaletteColor": "gray_100"
+                    "badgeContentPaletteColor": "gray_100",
+                    "enabled": true,
+                    "pressed": false
                   }
                 ]
               }
@@ -10664,36 +10432,19 @@
                       "itemLabel": "Button",
                       "fields": [
                         {
-                          "id": "state",
-                          "label": "State",
-                          "jsonKey": "state",
-                          "kind": "option",
-                          "valueKind": "OptionToken",
-                          "defaultValue": "normal",
+                          "id": "enabled",
+                          "label": "Enabled",
+                          "jsonKey": "enabled",
+                          "kind": "boolean",
+                          "valueKind": "Boolean",
+                          "defaultValue": "true",
                           "minimum": 0,
                           "maximum": 9999,
                           "increment": 1,
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "normal",
-                              "label": "Normal"
-                            },
-                            {
-                              "value": "active",
-                              "label": "Active"
-                            },
-                            {
-                              "value": "pushed",
-                              "label": "Pushed"
-                            },
-                            {
-                              "value": "disabled",
-                              "label": "Disabled"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -10705,7 +10456,52 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 10
+                          "uiOrder": 10,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
+                        },
+                        {
+                          "id": "pressed",
+                          "label": "Pressed",
+                          "jsonKey": "pressed",
+                          "kind": "boolean",
+                          "valueKind": "Boolean",
+                          "defaultValue": "false",
+                          "minimum": 0,
+                          "maximum": 9999,
+                          "increment": 1,
+                          "tableId": "",
+                          "resolvedJsonKey": "",
+                          "componentType": "",
+                          "options": [],
+                          "pairFirstLabel": "W",
+                          "pairSecondLabel": "H",
+                          "visibleWhenPath": "",
+                          "visibleWhenValue": "",
+                          "source": "runtime",
+                          "uiOrigin": "embedded",
+                          "uiGroupId": "state",
+                          "uiGroupLabel": "State",
+                          "uiParentGroupId": "",
+                          "transition": null,
+                          "unit": "",
+                          "uiOrder": 11,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "sampleText",
@@ -10856,60 +10652,6 @@
                           "transition": null,
                           "unit": "",
                           "uiOrder": 24
-                        },
-                        {
-                          "id": "pushTrigger",
-                          "label": "Push",
-                          "jsonKey": "pushTrigger",
-                          "kind": "boolean",
-                          "valueKind": "Boolean",
-                          "defaultValue": "false",
-                          "minimum": 0,
-                          "maximum": 9999,
-                          "increment": 1,
-                          "tableId": "",
-                          "resolvedJsonKey": "",
-                          "componentType": "",
-                          "options": [],
-                          "pairFirstLabel": "W",
-                          "pairSecondLabel": "H",
-                          "visibleWhenPath": "",
-                          "visibleWhenValue": "",
-                          "source": "calculated",
-                          "uiOrigin": "embedded",
-                          "uiGroupId": "action",
-                          "uiGroupLabel": "Action",
-                          "uiParentGroupId": "",
-                          "transition": null,
-                          "unit": "",
-                          "uiOrder": 30
-                        },
-                        {
-                          "id": "pushElapsedMs",
-                          "label": "Push elapsed",
-                          "jsonKey": "pushElapsedMs",
-                          "kind": "number",
-                          "valueKind": "Decimal",
-                          "defaultValue": "0",
-                          "minimum": 0,
-                          "maximum": 60000,
-                          "increment": 10,
-                          "tableId": "",
-                          "resolvedJsonKey": "",
-                          "componentType": "",
-                          "options": [],
-                          "pairFirstLabel": "W",
-                          "pairSecondLabel": "H",
-                          "visibleWhenPath": "",
-                          "visibleWhenValue": "",
-                          "source": "calculated",
-                          "uiOrigin": "embedded",
-                          "uiGroupId": "action",
-                          "uiGroupLabel": "Action",
-                          "uiParentGroupId": "",
-                          "transition": null,
-                          "unit": "ms",
-                          "uiOrder": 31
                         },
                         {
                           "id": "showBadge",
@@ -11167,8 +10909,7 @@
                       "itemPresentation": {
                         "subtitleFieldIds": [
                           "sampleText",
-                          "iconToken",
-                          "state"
+                          "iconToken"
                         ],
                         "subtitleMaxCharacters": 72,
                         "fallbackIcon": "component"
@@ -11180,13 +10921,10 @@
                 "buttonInputs": [
                   {
                     "id": "primary",
-                    "state": "normal",
                     "sampleText": "19:18",
                     "iconToken": "system_check",
                     "iconSizeToken": "theme.iconSizes.m",
                     "textSizeToken": "theme.typography.sizes.s",
-                    "pushTrigger": false,
-                    "pushElapsedMs": 0,
                     "iconColorToken": "theme.colors.accent",
                     "textColorToken": "theme.colors.accent",
                     "showBadge": false,
@@ -11195,17 +10933,16 @@
                     "badgeText": "1",
                     "badgeSize": 18,
                     "badgeBackgroundPaletteColor": "green",
-                    "badgeContentPaletteColor": "gray_100"
+                    "badgeContentPaletteColor": "gray_100",
+                    "enabled": true,
+                    "pressed": false
                   },
                   {
                     "id": "secondary",
-                    "state": "active",
                     "sampleText": "1",
                     "iconToken": "system_check",
                     "iconSizeToken": "theme.iconSizes.m",
                     "textSizeToken": "theme.typography.sizes.s",
-                    "pushTrigger": false,
-                    "pushElapsedMs": 0,
                     "iconColorToken": "theme.colors.accent",
                     "textColorToken": "theme.colors.accent",
                     "showBadge": false,
@@ -11214,7 +10951,9 @@
                     "badgeText": "1",
                     "badgeSize": 18,
                     "badgeBackgroundPaletteColor": "green",
-                    "badgeContentPaletteColor": "gray_100"
+                    "badgeContentPaletteColor": "gray_100",
+                    "enabled": true,
+                    "pressed": false
                   }
                 ]
               }
@@ -12244,7 +11983,7 @@
                 "componentType": "label",
                 "sampleText": "Dave",
                 "sampleSize": 256,
-                "sampleSubtext": "Thank you pal \uD83D\uDE01",
+                "sampleSubtext": "Thank you pal 😁",
                 "inputs": [
                   {
                     "id": "sampleText",
@@ -12316,7 +12055,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
+                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -12419,7 +12158,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
+                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -12522,7 +12261,7 @@
                 "componentType": "label",
                 "sampleText": "Dave",
                 "sampleSize": 256,
-                "sampleSubtext": "Thank you pal \uD83D\uDE01",
+                "sampleSubtext": "Thank you pal 😁",
                 "inputs": [
                   {
                     "id": "sampleText",
@@ -12594,7 +12333,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
+                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -12697,7 +12436,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
+                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -12800,7 +12539,7 @@
                 "componentType": "label",
                 "sampleText": "Dave",
                 "sampleSize": 256,
-                "sampleSubtext": "Thank you pal \uD83D\uDE01",
+                "sampleSubtext": "Thank you pal 😁",
                 "inputs": [
                   {
                     "id": "sampleText",
@@ -12872,7 +12611,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
+                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -12975,7 +12714,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
+                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -13114,36 +12853,19 @@
                       "itemLabel": "Button",
                       "fields": [
                         {
-                          "id": "state",
-                          "label": "State",
-                          "jsonKey": "state",
-                          "kind": "option",
-                          "valueKind": "OptionToken",
-                          "defaultValue": "normal",
+                          "id": "enabled",
+                          "label": "Enabled",
+                          "jsonKey": "enabled",
+                          "kind": "boolean",
+                          "valueKind": "Boolean",
+                          "defaultValue": "true",
                           "minimum": 0,
                           "maximum": 9999,
                           "increment": 1,
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "normal",
-                              "label": "Normal"
-                            },
-                            {
-                              "value": "active",
-                              "label": "Active"
-                            },
-                            {
-                              "value": "pushed",
-                              "label": "Pushed"
-                            },
-                            {
-                              "value": "disabled",
-                              "label": "Disabled"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -13155,7 +12877,52 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 10
+                          "uiOrder": 10,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
+                        },
+                        {
+                          "id": "pressed",
+                          "label": "Pressed",
+                          "jsonKey": "pressed",
+                          "kind": "boolean",
+                          "valueKind": "Boolean",
+                          "defaultValue": "false",
+                          "minimum": 0,
+                          "maximum": 9999,
+                          "increment": 1,
+                          "tableId": "",
+                          "resolvedJsonKey": "",
+                          "componentType": "",
+                          "options": [],
+                          "pairFirstLabel": "W",
+                          "pairSecondLabel": "H",
+                          "visibleWhenPath": "",
+                          "visibleWhenValue": "",
+                          "source": "runtime",
+                          "uiOrigin": "embedded",
+                          "uiGroupId": "state",
+                          "uiGroupLabel": "State",
+                          "uiParentGroupId": "",
+                          "transition": null,
+                          "unit": "",
+                          "uiOrder": 11,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "sampleText",
@@ -13306,60 +13073,6 @@
                           "transition": null,
                           "unit": "",
                           "uiOrder": 24
-                        },
-                        {
-                          "id": "pushTrigger",
-                          "label": "Push",
-                          "jsonKey": "pushTrigger",
-                          "kind": "boolean",
-                          "valueKind": "Boolean",
-                          "defaultValue": "false",
-                          "minimum": 0,
-                          "maximum": 9999,
-                          "increment": 1,
-                          "tableId": "",
-                          "resolvedJsonKey": "",
-                          "componentType": "",
-                          "options": [],
-                          "pairFirstLabel": "W",
-                          "pairSecondLabel": "H",
-                          "visibleWhenPath": "",
-                          "visibleWhenValue": "",
-                          "source": "calculated",
-                          "uiOrigin": "embedded",
-                          "uiGroupId": "action",
-                          "uiGroupLabel": "Action",
-                          "uiParentGroupId": "",
-                          "transition": null,
-                          "unit": "",
-                          "uiOrder": 30
-                        },
-                        {
-                          "id": "pushElapsedMs",
-                          "label": "Push elapsed",
-                          "jsonKey": "pushElapsedMs",
-                          "kind": "number",
-                          "valueKind": "Decimal",
-                          "defaultValue": "0",
-                          "minimum": 0,
-                          "maximum": 60000,
-                          "increment": 10,
-                          "tableId": "",
-                          "resolvedJsonKey": "",
-                          "componentType": "",
-                          "options": [],
-                          "pairFirstLabel": "W",
-                          "pairSecondLabel": "H",
-                          "visibleWhenPath": "",
-                          "visibleWhenValue": "",
-                          "source": "calculated",
-                          "uiOrigin": "embedded",
-                          "uiGroupId": "action",
-                          "uiGroupLabel": "Action",
-                          "uiParentGroupId": "",
-                          "transition": null,
-                          "unit": "ms",
-                          "uiOrder": 31
                         },
                         {
                           "id": "showBadge",
@@ -13617,8 +13330,7 @@
                       "itemPresentation": {
                         "subtitleFieldIds": [
                           "sampleText",
-                          "iconToken",
-                          "state"
+                          "iconToken"
                         ],
                         "subtitleMaxCharacters": 72,
                         "fallbackIcon": "component"
@@ -13630,13 +13342,10 @@
                 "buttonInputs": [
                   {
                     "id": "primary",
-                    "state": "normal",
                     "sampleText": "19:18",
                     "iconToken": "system_check",
                     "iconSizeToken": "theme.iconSizes.m",
                     "textSizeToken": "theme.typography.sizes.s",
-                    "pushTrigger": false,
-                    "pushElapsedMs": 0,
                     "iconColorToken": "theme.colors.accent",
                     "textColorToken": "theme.colors.accent",
                     "showBadge": false,
@@ -13645,17 +13354,16 @@
                     "badgeText": "1",
                     "badgeSize": 18,
                     "badgeBackgroundPaletteColor": "green",
-                    "badgeContentPaletteColor": "gray_100"
+                    "badgeContentPaletteColor": "gray_100",
+                    "enabled": true,
+                    "pressed": false
                   },
                   {
                     "id": "secondary",
-                    "state": "active",
                     "sampleText": "1",
                     "iconToken": "system_check",
                     "iconSizeToken": "theme.iconSizes.m",
                     "textSizeToken": "theme.typography.sizes.s",
-                    "pushTrigger": false,
-                    "pushElapsedMs": 0,
                     "iconColorToken": "theme.colors.accent",
                     "textColorToken": "theme.colors.accent",
                     "showBadge": false,
@@ -13664,7 +13372,9 @@
                     "badgeText": "1",
                     "badgeSize": 18,
                     "badgeBackgroundPaletteColor": "green",
-                    "badgeContentPaletteColor": "gray_100"
+                    "badgeContentPaletteColor": "gray_100",
+                    "enabled": true,
+                    "pressed": false
                   }
                 ]
               }
@@ -13710,36 +13420,19 @@
                       "itemLabel": "Button",
                       "fields": [
                         {
-                          "id": "state",
-                          "label": "State",
-                          "jsonKey": "state",
-                          "kind": "option",
-                          "valueKind": "OptionToken",
-                          "defaultValue": "normal",
+                          "id": "enabled",
+                          "label": "Enabled",
+                          "jsonKey": "enabled",
+                          "kind": "boolean",
+                          "valueKind": "Boolean",
+                          "defaultValue": "true",
                           "minimum": 0,
                           "maximum": 9999,
                           "increment": 1,
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "normal",
-                              "label": "Normal"
-                            },
-                            {
-                              "value": "active",
-                              "label": "Active"
-                            },
-                            {
-                              "value": "pushed",
-                              "label": "Pushed"
-                            },
-                            {
-                              "value": "disabled",
-                              "label": "Disabled"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -13751,7 +13444,52 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 10
+                          "uiOrder": 10,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
+                        },
+                        {
+                          "id": "pressed",
+                          "label": "Pressed",
+                          "jsonKey": "pressed",
+                          "kind": "boolean",
+                          "valueKind": "Boolean",
+                          "defaultValue": "false",
+                          "minimum": 0,
+                          "maximum": 9999,
+                          "increment": 1,
+                          "tableId": "",
+                          "resolvedJsonKey": "",
+                          "componentType": "",
+                          "options": [],
+                          "pairFirstLabel": "W",
+                          "pairSecondLabel": "H",
+                          "visibleWhenPath": "",
+                          "visibleWhenValue": "",
+                          "source": "runtime",
+                          "uiOrigin": "embedded",
+                          "uiGroupId": "state",
+                          "uiGroupLabel": "State",
+                          "uiParentGroupId": "",
+                          "transition": null,
+                          "unit": "",
+                          "uiOrder": 11,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "sampleText",
@@ -13902,60 +13640,6 @@
                           "transition": null,
                           "unit": "",
                           "uiOrder": 24
-                        },
-                        {
-                          "id": "pushTrigger",
-                          "label": "Push",
-                          "jsonKey": "pushTrigger",
-                          "kind": "boolean",
-                          "valueKind": "Boolean",
-                          "defaultValue": "false",
-                          "minimum": 0,
-                          "maximum": 9999,
-                          "increment": 1,
-                          "tableId": "",
-                          "resolvedJsonKey": "",
-                          "componentType": "",
-                          "options": [],
-                          "pairFirstLabel": "W",
-                          "pairSecondLabel": "H",
-                          "visibleWhenPath": "",
-                          "visibleWhenValue": "",
-                          "source": "calculated",
-                          "uiOrigin": "embedded",
-                          "uiGroupId": "action",
-                          "uiGroupLabel": "Action",
-                          "uiParentGroupId": "",
-                          "transition": null,
-                          "unit": "",
-                          "uiOrder": 30
-                        },
-                        {
-                          "id": "pushElapsedMs",
-                          "label": "Push elapsed",
-                          "jsonKey": "pushElapsedMs",
-                          "kind": "number",
-                          "valueKind": "Decimal",
-                          "defaultValue": "0",
-                          "minimum": 0,
-                          "maximum": 60000,
-                          "increment": 10,
-                          "tableId": "",
-                          "resolvedJsonKey": "",
-                          "componentType": "",
-                          "options": [],
-                          "pairFirstLabel": "W",
-                          "pairSecondLabel": "H",
-                          "visibleWhenPath": "",
-                          "visibleWhenValue": "",
-                          "source": "calculated",
-                          "uiOrigin": "embedded",
-                          "uiGroupId": "action",
-                          "uiGroupLabel": "Action",
-                          "uiParentGroupId": "",
-                          "transition": null,
-                          "unit": "ms",
-                          "uiOrder": 31
                         },
                         {
                           "id": "showBadge",
@@ -14213,8 +13897,7 @@
                       "itemPresentation": {
                         "subtitleFieldIds": [
                           "sampleText",
-                          "iconToken",
-                          "state"
+                          "iconToken"
                         ],
                         "subtitleMaxCharacters": 72,
                         "fallbackIcon": "component"
@@ -14226,13 +13909,10 @@
                 "buttonInputs": [
                   {
                     "id": "primary",
-                    "state": "normal",
                     "sampleText": "19:18",
                     "iconToken": "system_check",
                     "iconSizeToken": "theme.iconSizes.m",
                     "textSizeToken": "theme.typography.sizes.s",
-                    "pushTrigger": false,
-                    "pushElapsedMs": 0,
                     "iconColorToken": "theme.colors.accent",
                     "textColorToken": "theme.colors.accent",
                     "showBadge": false,
@@ -14241,17 +13921,16 @@
                     "badgeText": "1",
                     "badgeSize": 18,
                     "badgeBackgroundPaletteColor": "green",
-                    "badgeContentPaletteColor": "gray_100"
+                    "badgeContentPaletteColor": "gray_100",
+                    "enabled": true,
+                    "pressed": false
                   },
                   {
                     "id": "secondary",
-                    "state": "active",
                     "sampleText": "1",
                     "iconToken": "system_check",
                     "iconSizeToken": "theme.iconSizes.m",
                     "textSizeToken": "theme.typography.sizes.s",
-                    "pushTrigger": false,
-                    "pushElapsedMs": 0,
                     "iconColorToken": "theme.colors.accent",
                     "textColorToken": "theme.colors.accent",
                     "showBadge": false,
@@ -14260,7 +13939,9 @@
                     "badgeText": "1",
                     "badgeSize": 18,
                     "badgeBackgroundPaletteColor": "green",
-                    "badgeContentPaletteColor": "gray_100"
+                    "badgeContentPaletteColor": "gray_100",
+                    "enabled": true,
+                    "pressed": false
                   }
                 ]
               }
@@ -14306,36 +13987,19 @@
                       "itemLabel": "Button",
                       "fields": [
                         {
-                          "id": "state",
-                          "label": "State",
-                          "jsonKey": "state",
-                          "kind": "option",
-                          "valueKind": "OptionToken",
-                          "defaultValue": "normal",
+                          "id": "enabled",
+                          "label": "Enabled",
+                          "jsonKey": "enabled",
+                          "kind": "boolean",
+                          "valueKind": "Boolean",
+                          "defaultValue": "true",
                           "minimum": 0,
                           "maximum": 9999,
                           "increment": 1,
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "normal",
-                              "label": "Normal"
-                            },
-                            {
-                              "value": "active",
-                              "label": "Active"
-                            },
-                            {
-                              "value": "pushed",
-                              "label": "Pushed"
-                            },
-                            {
-                              "value": "disabled",
-                              "label": "Disabled"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -14347,7 +14011,52 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 10
+                          "uiOrder": 10,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
+                        },
+                        {
+                          "id": "pressed",
+                          "label": "Pressed",
+                          "jsonKey": "pressed",
+                          "kind": "boolean",
+                          "valueKind": "Boolean",
+                          "defaultValue": "false",
+                          "minimum": 0,
+                          "maximum": 9999,
+                          "increment": 1,
+                          "tableId": "",
+                          "resolvedJsonKey": "",
+                          "componentType": "",
+                          "options": [],
+                          "pairFirstLabel": "W",
+                          "pairSecondLabel": "H",
+                          "visibleWhenPath": "",
+                          "visibleWhenValue": "",
+                          "source": "runtime",
+                          "uiOrigin": "embedded",
+                          "uiGroupId": "state",
+                          "uiGroupLabel": "State",
+                          "uiParentGroupId": "",
+                          "transition": null,
+                          "unit": "",
+                          "uiOrder": 11,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "sampleText",
@@ -14498,60 +14207,6 @@
                           "transition": null,
                           "unit": "",
                           "uiOrder": 24
-                        },
-                        {
-                          "id": "pushTrigger",
-                          "label": "Push",
-                          "jsonKey": "pushTrigger",
-                          "kind": "boolean",
-                          "valueKind": "Boolean",
-                          "defaultValue": "false",
-                          "minimum": 0,
-                          "maximum": 9999,
-                          "increment": 1,
-                          "tableId": "",
-                          "resolvedJsonKey": "",
-                          "componentType": "",
-                          "options": [],
-                          "pairFirstLabel": "W",
-                          "pairSecondLabel": "H",
-                          "visibleWhenPath": "",
-                          "visibleWhenValue": "",
-                          "source": "calculated",
-                          "uiOrigin": "embedded",
-                          "uiGroupId": "action",
-                          "uiGroupLabel": "Action",
-                          "uiParentGroupId": "",
-                          "transition": null,
-                          "unit": "",
-                          "uiOrder": 30
-                        },
-                        {
-                          "id": "pushElapsedMs",
-                          "label": "Push elapsed",
-                          "jsonKey": "pushElapsedMs",
-                          "kind": "number",
-                          "valueKind": "Decimal",
-                          "defaultValue": "0",
-                          "minimum": 0,
-                          "maximum": 60000,
-                          "increment": 10,
-                          "tableId": "",
-                          "resolvedJsonKey": "",
-                          "componentType": "",
-                          "options": [],
-                          "pairFirstLabel": "W",
-                          "pairSecondLabel": "H",
-                          "visibleWhenPath": "",
-                          "visibleWhenValue": "",
-                          "source": "calculated",
-                          "uiOrigin": "embedded",
-                          "uiGroupId": "action",
-                          "uiGroupLabel": "Action",
-                          "uiParentGroupId": "",
-                          "transition": null,
-                          "unit": "ms",
-                          "uiOrder": 31
                         },
                         {
                           "id": "showBadge",
@@ -14809,8 +14464,7 @@
                       "itemPresentation": {
                         "subtitleFieldIds": [
                           "sampleText",
-                          "iconToken",
-                          "state"
+                          "iconToken"
                         ],
                         "subtitleMaxCharacters": 72,
                         "fallbackIcon": "component"
@@ -14822,13 +14476,10 @@
                 "buttonInputs": [
                   {
                     "id": "primary",
-                    "state": "normal",
                     "sampleText": "19:18",
                     "iconToken": "system_check",
                     "iconSizeToken": "theme.iconSizes.m",
                     "textSizeToken": "theme.typography.sizes.s",
-                    "pushTrigger": false,
-                    "pushElapsedMs": 0,
                     "iconColorToken": "theme.colors.accent",
                     "textColorToken": "theme.colors.accent",
                     "showBadge": false,
@@ -14837,17 +14488,16 @@
                     "badgeText": "1",
                     "badgeSize": 18,
                     "badgeBackgroundPaletteColor": "green",
-                    "badgeContentPaletteColor": "gray_100"
+                    "badgeContentPaletteColor": "gray_100",
+                    "enabled": true,
+                    "pressed": false
                   },
                   {
                     "id": "secondary",
-                    "state": "active",
                     "sampleText": "1",
                     "iconToken": "system_check",
                     "iconSizeToken": "theme.iconSizes.m",
                     "textSizeToken": "theme.typography.sizes.s",
-                    "pushTrigger": false,
-                    "pushElapsedMs": 0,
                     "iconColorToken": "theme.colors.accent",
                     "textColorToken": "theme.colors.accent",
                     "showBadge": false,
@@ -14856,7 +14506,9 @@
                     "badgeText": "1",
                     "badgeSize": 18,
                     "badgeBackgroundPaletteColor": "green",
-                    "badgeContentPaletteColor": "gray_100"
+                    "badgeContentPaletteColor": "gray_100",
+                    "enabled": true,
+                    "pressed": false
                   }
                 ]
               }
@@ -15886,7 +15538,7 @@
                 "componentType": "label",
                 "sampleText": "Diana",
                 "sampleSize": 256,
-                "sampleSubtext": "\u2199 WhatsApp de v\u00EDdeo",
+                "sampleSubtext": "↙ WhatsApp de vídeo",
                 "inputs": [
                   {
                     "id": "sampleText",
@@ -15958,7 +15610,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
+                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -16061,7 +15713,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
+                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -16164,7 +15816,7 @@
                 "componentType": "label",
                 "sampleText": "Diana",
                 "sampleSize": 256,
-                "sampleSubtext": "\u2199 WhatsApp de v\u00EDdeo",
+                "sampleSubtext": "↙ WhatsApp de vídeo",
                 "inputs": [
                   {
                     "id": "sampleText",
@@ -16236,7 +15888,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
+                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -16339,7 +15991,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
+                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -16442,7 +16094,7 @@
                 "componentType": "label",
                 "sampleText": "Diana",
                 "sampleSize": 256,
-                "sampleSubtext": "\u2199 WhatsApp de v\u00EDdeo",
+                "sampleSubtext": "↙ WhatsApp de vídeo",
                 "inputs": [
                   {
                     "id": "sampleText",
@@ -16514,7 +16166,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
+                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -16617,7 +16269,7 @@
                         "countDown"
                       ],
                       "replacementValue": "00:00",
-                      "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
+                      "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
                       "forwardedTargetOnly": true
                     },
                     "unit": "",
@@ -16756,36 +16408,19 @@
                       "itemLabel": "Button",
                       "fields": [
                         {
-                          "id": "state",
-                          "label": "State",
-                          "jsonKey": "state",
-                          "kind": "option",
-                          "valueKind": "OptionToken",
-                          "defaultValue": "normal",
+                          "id": "enabled",
+                          "label": "Enabled",
+                          "jsonKey": "enabled",
+                          "kind": "boolean",
+                          "valueKind": "Boolean",
+                          "defaultValue": "true",
                           "minimum": 0,
                           "maximum": 9999,
                           "increment": 1,
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "normal",
-                              "label": "Normal"
-                            },
-                            {
-                              "value": "active",
-                              "label": "Active"
-                            },
-                            {
-                              "value": "pushed",
-                              "label": "Pushed"
-                            },
-                            {
-                              "value": "disabled",
-                              "label": "Disabled"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -16797,7 +16432,52 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 10
+                          "uiOrder": 10,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
+                        },
+                        {
+                          "id": "pressed",
+                          "label": "Pressed",
+                          "jsonKey": "pressed",
+                          "kind": "boolean",
+                          "valueKind": "Boolean",
+                          "defaultValue": "false",
+                          "minimum": 0,
+                          "maximum": 9999,
+                          "increment": 1,
+                          "tableId": "",
+                          "resolvedJsonKey": "",
+                          "componentType": "",
+                          "options": [],
+                          "pairFirstLabel": "W",
+                          "pairSecondLabel": "H",
+                          "visibleWhenPath": "",
+                          "visibleWhenValue": "",
+                          "source": "runtime",
+                          "uiOrigin": "embedded",
+                          "uiGroupId": "state",
+                          "uiGroupLabel": "State",
+                          "uiParentGroupId": "",
+                          "transition": null,
+                          "unit": "",
+                          "uiOrder": 11,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "sampleText",
@@ -16948,60 +16628,6 @@
                           "transition": null,
                           "unit": "",
                           "uiOrder": 24
-                        },
-                        {
-                          "id": "pushTrigger",
-                          "label": "Push",
-                          "jsonKey": "pushTrigger",
-                          "kind": "boolean",
-                          "valueKind": "Boolean",
-                          "defaultValue": "false",
-                          "minimum": 0,
-                          "maximum": 9999,
-                          "increment": 1,
-                          "tableId": "",
-                          "resolvedJsonKey": "",
-                          "componentType": "",
-                          "options": [],
-                          "pairFirstLabel": "W",
-                          "pairSecondLabel": "H",
-                          "visibleWhenPath": "",
-                          "visibleWhenValue": "",
-                          "source": "calculated",
-                          "uiOrigin": "embedded",
-                          "uiGroupId": "action",
-                          "uiGroupLabel": "Action",
-                          "uiParentGroupId": "",
-                          "transition": null,
-                          "unit": "",
-                          "uiOrder": 30
-                        },
-                        {
-                          "id": "pushElapsedMs",
-                          "label": "Push elapsed",
-                          "jsonKey": "pushElapsedMs",
-                          "kind": "number",
-                          "valueKind": "Decimal",
-                          "defaultValue": "0",
-                          "minimum": 0,
-                          "maximum": 60000,
-                          "increment": 10,
-                          "tableId": "",
-                          "resolvedJsonKey": "",
-                          "componentType": "",
-                          "options": [],
-                          "pairFirstLabel": "W",
-                          "pairSecondLabel": "H",
-                          "visibleWhenPath": "",
-                          "visibleWhenValue": "",
-                          "source": "calculated",
-                          "uiOrigin": "embedded",
-                          "uiGroupId": "action",
-                          "uiGroupLabel": "Action",
-                          "uiParentGroupId": "",
-                          "transition": null,
-                          "unit": "ms",
-                          "uiOrder": 31
                         },
                         {
                           "id": "showBadge",
@@ -17259,8 +16885,7 @@
                       "itemPresentation": {
                         "subtitleFieldIds": [
                           "sampleText",
-                          "iconToken",
-                          "state"
+                          "iconToken"
                         ],
                         "subtitleMaxCharacters": 72,
                         "fallbackIcon": "component"
@@ -17272,13 +16897,10 @@
                 "buttonInputs": [
                   {
                     "id": "primary",
-                    "state": "normal",
                     "sampleText": "",
                     "iconToken": "nav_back",
                     "iconSizeToken": "theme.iconSizes.m",
                     "textSizeToken": "theme.typography.sizes.s",
-                    "pushTrigger": false,
-                    "pushElapsedMs": 0,
                     "iconColorToken": "theme.colors.accent",
                     "textColorToken": "theme.colors.textSecondary",
                     "showBadge": false,
@@ -17287,17 +16909,16 @@
                     "badgeText": "1",
                     "badgeSize": 18,
                     "badgeBackgroundPaletteColor": "green",
-                    "badgeContentPaletteColor": "gray_100"
+                    "badgeContentPaletteColor": "gray_100",
+                    "enabled": true,
+                    "pressed": false
                   },
                   {
                     "id": "secondary",
-                    "state": "normal",
                     "sampleText": "",
                     "iconToken": "phone_call",
                     "iconSizeToken": "theme.iconSizes.m",
                     "textSizeToken": "theme.typography.sizes.s",
-                    "pushTrigger": false,
-                    "pushElapsedMs": 0,
                     "iconColorToken": "theme.colors.accent",
                     "textColorToken": "theme.colors.textSecondary",
                     "showBadge": false,
@@ -17306,7 +16927,9 @@
                     "badgeText": "1",
                     "badgeSize": 18,
                     "badgeBackgroundPaletteColor": "green",
-                    "badgeContentPaletteColor": "gray_100"
+                    "badgeContentPaletteColor": "gray_100",
+                    "enabled": true,
+                    "pressed": false
                   }
                 ]
               }
@@ -17352,36 +16975,19 @@
                       "itemLabel": "Button",
                       "fields": [
                         {
-                          "id": "state",
-                          "label": "State",
-                          "jsonKey": "state",
-                          "kind": "option",
-                          "valueKind": "OptionToken",
-                          "defaultValue": "normal",
+                          "id": "enabled",
+                          "label": "Enabled",
+                          "jsonKey": "enabled",
+                          "kind": "boolean",
+                          "valueKind": "Boolean",
+                          "defaultValue": "true",
                           "minimum": 0,
                           "maximum": 9999,
                           "increment": 1,
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "normal",
-                              "label": "Normal"
-                            },
-                            {
-                              "value": "active",
-                              "label": "Active"
-                            },
-                            {
-                              "value": "pushed",
-                              "label": "Pushed"
-                            },
-                            {
-                              "value": "disabled",
-                              "label": "Disabled"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -17393,7 +16999,52 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 10
+                          "uiOrder": 10,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
+                        },
+                        {
+                          "id": "pressed",
+                          "label": "Pressed",
+                          "jsonKey": "pressed",
+                          "kind": "boolean",
+                          "valueKind": "Boolean",
+                          "defaultValue": "false",
+                          "minimum": 0,
+                          "maximum": 9999,
+                          "increment": 1,
+                          "tableId": "",
+                          "resolvedJsonKey": "",
+                          "componentType": "",
+                          "options": [],
+                          "pairFirstLabel": "W",
+                          "pairSecondLabel": "H",
+                          "visibleWhenPath": "",
+                          "visibleWhenValue": "",
+                          "source": "runtime",
+                          "uiOrigin": "embedded",
+                          "uiGroupId": "state",
+                          "uiGroupLabel": "State",
+                          "uiParentGroupId": "",
+                          "transition": null,
+                          "unit": "",
+                          "uiOrder": 11,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "sampleText",
@@ -17544,60 +17195,6 @@
                           "transition": null,
                           "unit": "",
                           "uiOrder": 24
-                        },
-                        {
-                          "id": "pushTrigger",
-                          "label": "Push",
-                          "jsonKey": "pushTrigger",
-                          "kind": "boolean",
-                          "valueKind": "Boolean",
-                          "defaultValue": "false",
-                          "minimum": 0,
-                          "maximum": 9999,
-                          "increment": 1,
-                          "tableId": "",
-                          "resolvedJsonKey": "",
-                          "componentType": "",
-                          "options": [],
-                          "pairFirstLabel": "W",
-                          "pairSecondLabel": "H",
-                          "visibleWhenPath": "",
-                          "visibleWhenValue": "",
-                          "source": "calculated",
-                          "uiOrigin": "embedded",
-                          "uiGroupId": "action",
-                          "uiGroupLabel": "Action",
-                          "uiParentGroupId": "",
-                          "transition": null,
-                          "unit": "",
-                          "uiOrder": 30
-                        },
-                        {
-                          "id": "pushElapsedMs",
-                          "label": "Push elapsed",
-                          "jsonKey": "pushElapsedMs",
-                          "kind": "number",
-                          "valueKind": "Decimal",
-                          "defaultValue": "0",
-                          "minimum": 0,
-                          "maximum": 60000,
-                          "increment": 10,
-                          "tableId": "",
-                          "resolvedJsonKey": "",
-                          "componentType": "",
-                          "options": [],
-                          "pairFirstLabel": "W",
-                          "pairSecondLabel": "H",
-                          "visibleWhenPath": "",
-                          "visibleWhenValue": "",
-                          "source": "calculated",
-                          "uiOrigin": "embedded",
-                          "uiGroupId": "action",
-                          "uiGroupLabel": "Action",
-                          "uiParentGroupId": "",
-                          "transition": null,
-                          "unit": "ms",
-                          "uiOrder": 31
                         },
                         {
                           "id": "showBadge",
@@ -17855,8 +17452,7 @@
                       "itemPresentation": {
                         "subtitleFieldIds": [
                           "sampleText",
-                          "iconToken",
-                          "state"
+                          "iconToken"
                         ],
                         "subtitleMaxCharacters": 72,
                         "fallbackIcon": "component"
@@ -17868,13 +17464,10 @@
                 "buttonInputs": [
                   {
                     "id": "primary",
-                    "state": "normal",
                     "sampleText": "",
                     "iconToken": "nav_back",
                     "iconSizeToken": "theme.iconSizes.m",
                     "textSizeToken": "theme.typography.sizes.s",
-                    "pushTrigger": false,
-                    "pushElapsedMs": 0,
                     "iconColorToken": "theme.colors.accent",
                     "textColorToken": "theme.colors.textSecondary",
                     "showBadge": false,
@@ -17883,17 +17476,16 @@
                     "badgeText": "1",
                     "badgeSize": 18,
                     "badgeBackgroundPaletteColor": "green",
-                    "badgeContentPaletteColor": "gray_100"
+                    "badgeContentPaletteColor": "gray_100",
+                    "enabled": true,
+                    "pressed": false
                   },
                   {
                     "id": "secondary",
-                    "state": "normal",
                     "sampleText": "",
                     "iconToken": "phone_call",
                     "iconSizeToken": "theme.iconSizes.m",
                     "textSizeToken": "theme.typography.sizes.s",
-                    "pushTrigger": false,
-                    "pushElapsedMs": 0,
                     "iconColorToken": "theme.colors.accent",
                     "textColorToken": "theme.colors.textSecondary",
                     "showBadge": false,
@@ -17902,7 +17494,9 @@
                     "badgeText": "1",
                     "badgeSize": 18,
                     "badgeBackgroundPaletteColor": "green",
-                    "badgeContentPaletteColor": "gray_100"
+                    "badgeContentPaletteColor": "gray_100",
+                    "enabled": true,
+                    "pressed": false
                   }
                 ]
               }
@@ -17948,36 +17542,19 @@
                       "itemLabel": "Button",
                       "fields": [
                         {
-                          "id": "state",
-                          "label": "State",
-                          "jsonKey": "state",
-                          "kind": "option",
-                          "valueKind": "OptionToken",
-                          "defaultValue": "normal",
+                          "id": "enabled",
+                          "label": "Enabled",
+                          "jsonKey": "enabled",
+                          "kind": "boolean",
+                          "valueKind": "Boolean",
+                          "defaultValue": "true",
                           "minimum": 0,
                           "maximum": 9999,
                           "increment": 1,
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "normal",
-                              "label": "Normal"
-                            },
-                            {
-                              "value": "active",
-                              "label": "Active"
-                            },
-                            {
-                              "value": "pushed",
-                              "label": "Pushed"
-                            },
-                            {
-                              "value": "disabled",
-                              "label": "Disabled"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -17989,7 +17566,52 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 10
+                          "uiOrder": 10,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
+                        },
+                        {
+                          "id": "pressed",
+                          "label": "Pressed",
+                          "jsonKey": "pressed",
+                          "kind": "boolean",
+                          "valueKind": "Boolean",
+                          "defaultValue": "false",
+                          "minimum": 0,
+                          "maximum": 9999,
+                          "increment": 1,
+                          "tableId": "",
+                          "resolvedJsonKey": "",
+                          "componentType": "",
+                          "options": [],
+                          "pairFirstLabel": "W",
+                          "pairSecondLabel": "H",
+                          "visibleWhenPath": "",
+                          "visibleWhenValue": "",
+                          "source": "runtime",
+                          "uiOrigin": "embedded",
+                          "uiGroupId": "state",
+                          "uiGroupLabel": "State",
+                          "uiParentGroupId": "",
+                          "transition": null,
+                          "unit": "",
+                          "uiOrder": 11,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "sampleText",
@@ -18140,60 +17762,6 @@
                           "transition": null,
                           "unit": "",
                           "uiOrder": 24
-                        },
-                        {
-                          "id": "pushTrigger",
-                          "label": "Push",
-                          "jsonKey": "pushTrigger",
-                          "kind": "boolean",
-                          "valueKind": "Boolean",
-                          "defaultValue": "false",
-                          "minimum": 0,
-                          "maximum": 9999,
-                          "increment": 1,
-                          "tableId": "",
-                          "resolvedJsonKey": "",
-                          "componentType": "",
-                          "options": [],
-                          "pairFirstLabel": "W",
-                          "pairSecondLabel": "H",
-                          "visibleWhenPath": "",
-                          "visibleWhenValue": "",
-                          "source": "calculated",
-                          "uiOrigin": "embedded",
-                          "uiGroupId": "action",
-                          "uiGroupLabel": "Action",
-                          "uiParentGroupId": "",
-                          "transition": null,
-                          "unit": "",
-                          "uiOrder": 30
-                        },
-                        {
-                          "id": "pushElapsedMs",
-                          "label": "Push elapsed",
-                          "jsonKey": "pushElapsedMs",
-                          "kind": "number",
-                          "valueKind": "Decimal",
-                          "defaultValue": "0",
-                          "minimum": 0,
-                          "maximum": 60000,
-                          "increment": 10,
-                          "tableId": "",
-                          "resolvedJsonKey": "",
-                          "componentType": "",
-                          "options": [],
-                          "pairFirstLabel": "W",
-                          "pairSecondLabel": "H",
-                          "visibleWhenPath": "",
-                          "visibleWhenValue": "",
-                          "source": "calculated",
-                          "uiOrigin": "embedded",
-                          "uiGroupId": "action",
-                          "uiGroupLabel": "Action",
-                          "uiParentGroupId": "",
-                          "transition": null,
-                          "unit": "ms",
-                          "uiOrder": 31
                         },
                         {
                           "id": "showBadge",
@@ -18451,8 +18019,7 @@
                       "itemPresentation": {
                         "subtitleFieldIds": [
                           "sampleText",
-                          "iconToken",
-                          "state"
+                          "iconToken"
                         ],
                         "subtitleMaxCharacters": 72,
                         "fallbackIcon": "component"
@@ -18464,13 +18031,10 @@
                 "buttonInputs": [
                   {
                     "id": "primary",
-                    "state": "normal",
                     "sampleText": "",
                     "iconToken": "nav_back",
                     "iconSizeToken": "theme.iconSizes.m",
                     "textSizeToken": "theme.typography.sizes.s",
-                    "pushTrigger": false,
-                    "pushElapsedMs": 0,
                     "iconColorToken": "theme.colors.accent",
                     "textColorToken": "theme.colors.textSecondary",
                     "showBadge": false,
@@ -18479,17 +18043,16 @@
                     "badgeText": "1",
                     "badgeSize": 18,
                     "badgeBackgroundPaletteColor": "green",
-                    "badgeContentPaletteColor": "gray_100"
+                    "badgeContentPaletteColor": "gray_100",
+                    "enabled": true,
+                    "pressed": false
                   },
                   {
                     "id": "secondary",
-                    "state": "normal",
                     "sampleText": "",
                     "iconToken": "phone_call",
                     "iconSizeToken": "theme.iconSizes.m",
                     "textSizeToken": "theme.typography.sizes.s",
-                    "pushTrigger": false,
-                    "pushElapsedMs": 0,
                     "iconColorToken": "theme.colors.accent",
                     "textColorToken": "theme.colors.textSecondary",
                     "showBadge": false,
@@ -18498,7 +18061,9 @@
                     "badgeText": "1",
                     "badgeSize": 18,
                     "badgeBackgroundPaletteColor": "green",
-                    "badgeContentPaletteColor": "gray_100"
+                    "badgeContentPaletteColor": "gray_100",
+                    "enabled": true,
+                    "pressed": false
                   }
                 ]
               }
@@ -18522,7 +18087,7 @@
         "list",
         "collectionStackSlot"
       ],
-      "defaultValue": "{\u0022variantReference\u0022:\u0022component_project_foqn_s2_collectionStack::variant::default\u0022,\u0022overrides\u0022:{}}",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_collectionStack::variant::default\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
@@ -18939,7 +18504,7 @@
         "list",
         "listItemSlot"
       ],
-      "defaultValue": "{\u0022variantReference\u0022:\u0022component_project_foqn_s2_list_item::variant::default\u0022,\u0022overrides\u0022:{}}",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_list_item::variant::default\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
@@ -18966,7 +18531,7 @@
       "jsonPath": [
         "boundaryMotion"
       ],
-      "defaultValue": "{\u0022transition\u0022:\u0022slide\u0022,\u0022direction\u0022:\u0022bottom\u0022,\u0022bounds\u0022:\u0022screen\u0022,\u0022fade\u0022:true,\u0022translate\u0022:true,\u0022scale\u0022:false}",
+      "defaultValue": "{\"transition\":\"slide\",\"direction\":\"bottom\",\"bounds\":\"screen\",\"fade\":true,\"translate\":true,\"scale\":false}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
@@ -19118,7 +18683,7 @@
         "list",
         "surfaceSlot"
       ],
-      "defaultValue": "{\u0022variantReference\u0022:\u0022component_project_foqn_s2_surface::variant::default\u0022,\u0022overrides\u0022:{}}",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_surface::variant::default\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,

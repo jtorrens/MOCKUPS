@@ -50,7 +50,7 @@
     },
     "textInput": {
       "height": 35,
-      "placeholder": "Escribe aqu\u00ED...",
+      "placeholder": "Escribe aquí...",
       "idleTextColorToken": "theme.colors.textSecondary",
       "cursorColorToken": "theme.cursor.color",
       "cursorWidth": 2,
@@ -108,7 +108,6 @@
                     {
                       "id": "button_attachment",
                       "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                      "state": "normal",
                       "iconToken": "chat_attach",
                       "text": "",
                       "iconSizeToken": "theme.iconSizes.m",
@@ -167,7 +166,7 @@
       },
       "textInput": {
         "height": 35,
-        "placeholder": "Escribe aqu\u00ED...",
+        "placeholder": "Escribe aquí...",
         "idleTextColorToken": "theme.colors.textSecondary",
         "cursorColorToken": "theme.cursor.color",
         "cursorWidth": 2,
@@ -225,7 +224,6 @@
                       {
                         "id": "button_attachment",
                         "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                        "state": "normal",
                         "iconToken": "chat_attach",
                         "text": "",
                         "iconSizeToken": "theme.iconSizes.m",
@@ -286,7 +284,7 @@
         },
         "textInput": {
           "height": 25,
-          "placeholder": "Escribe aqu\u00ED...",
+          "placeholder": "Escribe aquí...",
           "idleTextColorToken": "theme.colors.textSecondary",
           "cursorColorToken": "theme.cursor.color",
           "cursorWidth": 2,
@@ -347,7 +345,6 @@
                         {
                           "id": "button_attachment",
                           "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                          "state": "normal",
                           "iconToken": "chat_attach",
                           "text": "",
                           "iconSizeToken": "theme.iconSizes.m",
@@ -424,7 +421,7 @@
         },
         "textInput": {
           "height": 35,
-          "placeholder": "Escribe aqu\u00ED...",
+          "placeholder": "Escribe aquí...",
           "idleTextColorToken": "theme.colors.textSecondary",
           "cursorColorToken": "theme.cursor.color",
           "cursorWidth": 2,
@@ -482,7 +479,6 @@
                         {
                           "id": "button_attachment",
                           "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                          "state": "normal",
                           "iconToken": "chat_attach",
                           "text": "",
                           "iconSizeToken": "theme.iconSizes.m",
@@ -859,7 +855,7 @@
         "textInput",
         "textBoxInputs"
       ],
-      "defaultValue": "{\u0022placeholder\u0022:\u0022Message\u0022}",
+      "defaultValue": "{\"placeholder\":\"Message\"}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,

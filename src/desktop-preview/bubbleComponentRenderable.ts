@@ -109,6 +109,10 @@ export function bubbleComponentToRenderable(
     : undefined;
   const statusGap = Math.max(0, numberToken(payload, bubble.status.gapToken) * scale);
   const iconRowGap = Math.max(0, numberToken(payload, bubble.iconRowSlot.gapToken) * scale);
+  const iconRowVerticalPadding = Math.max(
+    0,
+    numberToken(payload, bubble.iconRowSlot.verticalPaddingToken) * scale,
+  );
   let measuredTextBox = measureTextBoxComponent(payload, textBoxForContent);
   if (!fixed && mediaSize
       && (bubble.mediaSlot.position === "top" || bubble.mediaSlot.position === "bottom")
@@ -149,6 +153,7 @@ export function bubbleComponentToRenderable(
     actorLabelSize?.width ?? 0,
     statusGap,
     iconRowGap,
+    iconRowVerticalPadding,
     inlineStatusWidth,
   );
   const baseSurfaceBox = {
@@ -226,6 +231,7 @@ export function bubbleComponentToRenderable(
     Math.max(0, labelMinimumSurfaceWidth - contentPadding.left - contentPadding.right),
     statusGap,
     iconRowGap,
+    iconRowVerticalPadding,
     inlineStatusWidth,
     Math.max(0, avatarMinimumSurfaceSize.height - contentPadding.top - contentPadding.bottom),
   );
@@ -443,16 +449,19 @@ function bubbleContentLayout(
   minimumContentWidth = 0,
   statusGap = 0,
   iconRowGap = 0,
+  iconRowVerticalPadding = 0,
   inlineStatusWidth?: number,
   minimumContentHeight = 0,
 ) {
   const statusIsInline = statusSize !== undefined && inlineStatusWidth !== undefined;
   const statusBlockHeight = statusSize && !statusIsInline ? statusGap + statusSize.height : 0;
-  const iconRowBlockHeight = iconRowSize ? iconRowGap + iconRowSize.height : 0;
+  const iconRowBlockHeight = iconRowSize
+    ? iconRowGap + iconRowVerticalPadding * 2 + iconRowSize.height
+    : 0;
   const iconRowBoxAt = (contentWidth: number, precedingHeight: number) => iconRowSize
     ? {
         x: padding.left + (contentWidth - iconRowSize.width) / 2,
-        y: padding.top + precedingHeight + iconRowGap,
+        y: padding.top + precedingHeight + iconRowGap + iconRowVerticalPadding,
         width: iconRowSize.width,
         height: iconRowSize.height,
       }

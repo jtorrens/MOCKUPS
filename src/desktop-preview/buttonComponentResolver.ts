@@ -2,16 +2,16 @@ import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { embeddedComponentConfig } from "./componentPreviewDefaults.js";
 import {
   parseObject,
+  requiredBoolean,
   requiredNumber,
   requiredNumberPair,
   requiredStringPair,
   requiredString,
   requiredRecord,
 } from "./componentResolverCommon.js";
-import type { ButtonContentMode, ButtonDesignContract, ButtonState, ButtonStateDesignContract } from "./buttonComponentContract.js";
+import type { ButtonAppearanceContract, ButtonContentMode, ButtonDesignContract } from "./buttonComponentContract.js";
 import { literalLabelPreview, resolveLabelComponentFromRecords, staticLabelFrameContext } from "./labelComponentResolver.js";
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
-import { requiredBoolean } from "./componentResolverCommon.js";
 import { resolveBadgeComponentFromRecords } from "./badgeComponentResolver.js";
 
 export function resolveButtonComponent(payload: DesignPreviewPayload): ButtonDesignContract {
@@ -31,9 +31,16 @@ export function resolveButtonComponentFromRecords(
   const contentMode = buttonContentMode(
     requiredString(button, "contentMode", "component.button.contentMode"),
   );
-  const state = typeof preview.pushTrigger === "boolean" && preview.pushTrigger
-    ? "pushed"
-    : buttonState(typeof preview.state === "string" ? preview.state : "normal");
+  const enabled = requiredBoolean(preview, "enabled", "component.button.input.enabled");
+  const pressed = requiredBoolean(preview, "pressed", "component.button.input.pressed");
+  const disabledOpacity = unitInterval(
+    requiredNumber(button, "disabledOpacity", "component.button.disabledOpacity"),
+    "component.button.disabledOpacity",
+  );
+  const pressedScale = positive(
+    requiredNumber(button, "pressedScale", "component.button.pressedScale"),
+    "component.button.pressedScale",
+  );
   const dimensionMode = requiredString(button, "dimensionMode", "component.button.dimensionMode");
   if (dimensionMode !== "content" && dimensionMode !== "fixed") {
     throw new Error(`Unsupported button dimension mode ${dimensionMode}`);
@@ -48,7 +55,10 @@ export function resolveButtonComponentFromRecords(
   return {
     id,
     contentMode,
-    state,
+    enabled,
+    pressed,
+    opacity: enabled ? 1 : disabledOpacity,
+    scale: pressed ? pressedScale : 1,
     dimensionMode,
     size,
     padding: { xToken: rawPadding.first, yToken: rawPadding.second },
@@ -57,7 +67,7 @@ export function resolveButtonComponentFromRecords(
       ? preview.iconToken
       : requiredString(button, "iconToken", "component.button.iconToken"),
     iconSizeToken: requiredString(preview, "iconSizeToken", "component.button.input.iconSizeToken"),
-    stateStyle: resolveButtonStateStyle(button, state, contentMode, text, preview, bases, size),
+    appearance: resolveButtonAppearance(button, contentMode, text, preview, bases, size),
     badge: showBadge ? resolveBadgeComponentFromRecords(
       embeddedComponentConfig(bases, badgeSlot, "badge", "component.button.badgeSlot"),
       {
@@ -73,25 +83,23 @@ export function resolveButtonComponentFromRecords(
   };
 }
 
-function resolveButtonStateStyle(
+function resolveButtonAppearance(
   button: Record<string, unknown>,
-  state: ButtonState,
   contentMode: ButtonContentMode,
   text: string,
   preview: Record<string, unknown>,
   bases: Record<string, unknown>,
   size: { width: number; height: number },
-): ButtonStateDesignContract {
-  const states = requiredRecord(button, "states", "component.button.states");
-  const style = requiredRecord(states, state, `component.button.states.${state}`);
-  const surfaceSlot = requiredRecord(style, "surfaceSlot", `component.button.states.${state}.surfaceSlot`);
-  const labelSlot = requiredRecord(style, "labelSlot", `component.button.states.${state}.labelSlot`);
+): ButtonAppearanceContract {
+  const appearance = requiredRecord(button, "appearance", "component.button.appearance");
+  const surfaceSlot = requiredRecord(appearance, "surfaceSlot", "component.button.appearance.surfaceSlot");
+  const labelSlot = requiredRecord(appearance, "labelSlot", "component.button.appearance.labelSlot");
   return {
     iconColorToken: typeof preview.iconColorToken === "string" && preview.iconColorToken.trim()
       ? preview.iconColorToken
-      : requiredString(style, "iconColorToken", `component.button.states.${state}.iconColorToken`),
+      : requiredString(appearance, "iconColorToken", "component.button.appearance.iconColorToken"),
     label: contentMode === "icon" || !text.trim() ? undefined : resolveLabelComponentFromRecords(
-      embeddedComponentConfig(bases, labelSlot, "label", `component.button.states.${state}.labelSlot`),
+      embeddedComponentConfig(bases, labelSlot, "label", "component.button.appearance.labelSlot"),
       {
         ...literalLabelPreview(text),
         textSizeToken: requiredString(preview, "textSizeToken", "component.button.input.textSizeToken"),
@@ -100,13 +108,13 @@ function resolveButtonStateStyle(
           : {}),
       },
       bases,
-      `component.button.${state}.label`,
+      "component.button.appearance.label",
       staticLabelFrameContext,
     ),
     surface: resolveSurfaceComponentAtSize(
-      embeddedComponentConfig(bases, surfaceSlot, "surface", `component.button.states.${state}.surfaceSlot`),
+      embeddedComponentConfig(bases, surfaceSlot, "surface", "component.button.appearance.surfaceSlot"),
       size,
-      `component.button.${state}.surface`,
+      "component.button.appearance.surface",
     ),
   };
 }
@@ -116,7 +124,12 @@ function buttonContentMode(value: string): ButtonContentMode {
   throw new Error(`Unsupported button content mode ${value}`);
 }
 
-function buttonState(value: string): ButtonState {
-  if (value === "normal" || value === "active" || value === "pushed" || value === "disabled") return value;
-  throw new Error(`Unsupported button state ${value}`);
+function unitInterval(value: number, owner: string) {
+  if (value >= 0 && value <= 1) return value;
+  throw new Error(`${owner} must be between 0 and 1`);
+}
+
+function positive(value: number, owner: string) {
+  if (value > 0) return value;
+  throw new Error(`${owner} must be positive`);
 }

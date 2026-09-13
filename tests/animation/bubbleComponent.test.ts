@@ -444,6 +444,50 @@ test("Bubble centers its active Icon Row after content and before Status", () =>
   }
 });
 
+test("Bubble applies symmetric Variant-owned vertical padding only around a visible Icon Row", () => {
+  const renderedAt = (verticalPaddingToken: string) => {
+    const payload = committedComponentFixture("bubble", "default_copy");
+    const config = JSON.parse(payload.configJson) as {
+      bubble: { iconRowVerticalPaddingToken: string };
+    };
+    config.bubble.iconRowVerticalPaddingToken = verticalPaddingToken;
+    payload.configJson = JSON.stringify(config);
+    const preview = JSON.parse(payload.designPreviewJson) as Record<string, unknown>;
+    Object.assign(preview, {
+      showIconRow: true,
+      mediaType: "none",
+      statusState: "sent",
+      statusText: "10:42",
+      writeOnTrigger: false,
+      keepCursorAfterWrite: false,
+    });
+    payload.designPreviewJson = JSON.stringify(preview);
+    const resolved = resolveBubbleComponent(payload);
+    const rendered = bubbleComponentToRenderable(payload, resolved);
+    return {
+      token: resolved.iconRowSlot.verticalPaddingToken,
+      surface: requiredNode(rendered, "component.bubble.surface").box!,
+      text: requiredNode(rendered, "component.bubble.textBox").box!,
+      iconRow: requiredNode(rendered, "component.bubble.iconRow").box!,
+      status: requiredNode(rendered, "component.bubble.status").box!,
+    };
+  };
+
+  const none = renderedAt("theme.spacing.none");
+  const padded = renderedAt("theme.spacing.m");
+  assert.equal(none.token, "theme.spacing.none");
+  assert.equal(padded.token, "theme.spacing.m");
+  const topPadding =
+    (padded.iconRow.y - padded.text.y - padded.text.height)
+    - (none.iconRow.y - none.text.y - none.text.height);
+  const bottomPadding =
+    (padded.status.y - padded.iconRow.y - padded.iconRow.height)
+    - (none.status.y - none.iconRow.y - none.iconRow.height);
+  assert.ok(topPadding > 0);
+  approximatelyEqual(bottomPadding, topPadding);
+  approximatelyEqual(padded.surface.height - none.surface.height, topPadding * 2);
+});
+
 test("Bubble places its active Icon Row directly below text when media is absent", () => {
   const payload = committedComponentFixture("bubble");
   const preview = JSON.parse(payload.designPreviewJson) as Record<string, unknown>;

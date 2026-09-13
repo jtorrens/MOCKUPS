@@ -238,7 +238,6 @@
                   {
                     "id": "button_95660b921b614784b6ba1955721adea1",
                     "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-                    "state": "normal",
                     "iconToken": "media_mic",
                     "text": "",
                     "iconSizeToken": "theme.iconSizes.m",
@@ -466,7 +465,7 @@
         },
         {
           "value": "content",
-          "label": "Content \u002B padding",
+          "label": "Content + padding",
           "colorHex": null,
           "isNeutral": false,
           "groupValue": "",
@@ -1608,7 +1607,7 @@
         "textBox",
         "typography"
       ],
-      "defaultValue": "{\u0022fontFamilyId\u0022:\u0022theme\u0022,\u0022weight\u0022:\u0022theme.typography.weight\u0022,\u0022style\u0022:\u0022theme.typography.style\u0022,\u0022sizeToken\u0022:\u0022theme.typography.sizes.s\u0022,\u0022lineHeight\u0022:\u0022theme.typography.lineHeights.normal\u0022}",
+      "defaultValue": "{\"fontFamilyId\":\"theme\",\"weight\":\"theme.typography.weight\",\"style\":\"theme.typography.style\",\"sizeToken\":\"theme.typography.sizes.s\",\"lineHeight\":\"theme.typography.lineHeights.normal\"}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,

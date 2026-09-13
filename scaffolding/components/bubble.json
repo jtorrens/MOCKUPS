@@ -155,7 +155,8 @@
         "gapToken": "theme.spacing.xs"
       },
       "iconRowChildCount": 1,
-      "iconRowGapToken": "theme.spacing.s"
+      "iconRowGapToken": "theme.spacing.s",
+      "iconRowVerticalPaddingToken": "theme.spacing.none"
     }
   },
   "defaultVariant": {
@@ -280,7 +281,8 @@
           "gapToken": "theme.spacing.xs"
         },
         "iconRowChildCount": 1,
-        "iconRowGapToken": "theme.spacing.s"
+        "iconRowGapToken": "theme.spacing.s",
+        "iconRowVerticalPaddingToken": "theme.spacing.none"
       }
     }
   },
@@ -456,7 +458,8 @@
             "gapToken": "theme.spacing.xs"
           },
           "iconRowChildCount": 1,
-          "iconRowGapToken": "theme.spacing.s"
+          "iconRowGapToken": "theme.spacing.s",
+          "iconRowVerticalPaddingToken": "theme.spacing.none"
         }
       }
     }
@@ -1363,7 +1366,7 @@
               "jsonKey": "buttonInputs",
               "kind": "collection",
               "valueKind": "StructuredCollection",
-              "defaultValue": "[{\"id\":\"button_001\",\"state\":\"normal\",\"sampleText\":\"\",\"iconToken\":\"system_check\",\"iconSizeToken\":\"theme.iconSizes.m\",\"textSizeToken\":\"theme.typography.sizes.s\",\"showBadge\":false,\"badgeContentMode\":\"text\",\"badgeIconToken\":\"system_check\",\"badgeText\":\"1\",\"badgeSize\":20,\"badgeBackgroundPaletteColor\":\"palette_project_foqn_s2_blue\",\"badgeContentPaletteColor\":\"palette_project_foqn_s2_gray_100\",\"iconColorToken\":\"theme.colors.icon\",\"textColorToken\":\"theme.colors.textPrimary\"}]",
+              "defaultValue": "[{\"id\":\"button_001\",\"sampleText\":\"\",\"iconToken\":\"system_check\",\"iconSizeToken\":\"theme.iconSizes.m\",\"textSizeToken\":\"theme.typography.sizes.s\",\"showBadge\":false,\"badgeContentMode\":\"text\",\"badgeIconToken\":\"system_check\",\"badgeText\":\"1\",\"badgeSize\":20,\"badgeBackgroundPaletteColor\":\"palette_project_foqn_s2_blue\",\"badgeContentPaletteColor\":\"palette_project_foqn_s2_gray_100\",\"iconColorToken\":\"theme.colors.icon\",\"textColorToken\":\"theme.colors.textPrimary\",\"enabled\":true,\"pressed\":false}]",
               "minimum": 0,
               "maximum": 9999,
               "increment": 1,
@@ -1389,36 +1392,19 @@
                 "itemLabel": "Button",
                 "fields": [
                   {
-                    "id": "state",
-                    "label": "State",
-                    "jsonKey": "state",
-                    "kind": "option",
-                    "valueKind": "OptionToken",
-                    "defaultValue": "normal",
+                    "id": "enabled",
+                    "label": "Enabled",
+                    "jsonKey": "enabled",
+                    "kind": "boolean",
+                    "valueKind": "Boolean",
+                    "defaultValue": "true",
                     "minimum": 0,
                     "maximum": 9999,
                     "increment": 1,
                     "tableId": "",
                     "resolvedJsonKey": "",
                     "componentType": "",
-                    "options": [
-                      {
-                        "value": "normal",
-                        "label": "Normal"
-                      },
-                      {
-                        "value": "active",
-                        "label": "Active"
-                      },
-                      {
-                        "value": "pushed",
-                        "label": "Pushed"
-                      },
-                      {
-                        "value": "disabled",
-                        "label": "Disabled"
-                      }
-                    ],
+                    "options": [],
                     "pairFirstLabel": "W",
                     "pairSecondLabel": "H",
                     "visibleWhenPath": "",
@@ -1430,7 +1416,52 @@
                     "uiParentGroupId": "",
                     "transition": null,
                     "unit": "",
-                    "uiOrder": 10
+                    "uiOrder": 10,
+                    "animatable": true,
+                    "animationInterpolations": [
+                      "hold"
+                    ],
+                    "animationTimeline": {
+                      "origin": {
+                        "kind": "ownerStart"
+                      }
+                    }
+                  },
+                  {
+                    "id": "pressed",
+                    "label": "Pressed",
+                    "jsonKey": "pressed",
+                    "kind": "boolean",
+                    "valueKind": "Boolean",
+                    "defaultValue": "false",
+                    "minimum": 0,
+                    "maximum": 9999,
+                    "increment": 1,
+                    "tableId": "",
+                    "resolvedJsonKey": "",
+                    "componentType": "",
+                    "options": [],
+                    "pairFirstLabel": "W",
+                    "pairSecondLabel": "H",
+                    "visibleWhenPath": "",
+                    "visibleWhenValue": "",
+                    "source": "runtime",
+                    "uiOrigin": "embedded",
+                    "uiGroupId": "state",
+                    "uiGroupLabel": "State",
+                    "uiParentGroupId": "",
+                    "transition": null,
+                    "unit": "",
+                    "uiOrder": 11,
+                    "animatable": true,
+                    "animationInterpolations": [
+                      "hold"
+                    ],
+                    "animationTimeline": {
+                      "origin": {
+                        "kind": "ownerStart"
+                      }
+                    }
                   },
                   {
                     "id": "sampleText",
@@ -1581,60 +1612,6 @@
                     "transition": null,
                     "unit": "",
                     "uiOrder": 24
-                  },
-                  {
-                    "id": "pushTrigger",
-                    "label": "Push",
-                    "jsonKey": "pushTrigger",
-                    "kind": "boolean",
-                    "valueKind": "Boolean",
-                    "defaultValue": "false",
-                    "minimum": 0,
-                    "maximum": 9999,
-                    "increment": 1,
-                    "tableId": "",
-                    "resolvedJsonKey": "",
-                    "componentType": "",
-                    "options": [],
-                    "pairFirstLabel": "W",
-                    "pairSecondLabel": "H",
-                    "visibleWhenPath": "",
-                    "visibleWhenValue": "",
-                    "source": "calculated",
-                    "uiOrigin": "embedded",
-                    "uiGroupId": "action",
-                    "uiGroupLabel": "Action",
-                    "uiParentGroupId": "",
-                    "transition": null,
-                    "unit": "",
-                    "uiOrder": 30
-                  },
-                  {
-                    "id": "pushElapsedMs",
-                    "label": "Push elapsed",
-                    "jsonKey": "pushElapsedMs",
-                    "kind": "number",
-                    "valueKind": "Decimal",
-                    "defaultValue": "0",
-                    "minimum": 0,
-                    "maximum": 60000,
-                    "increment": 10,
-                    "tableId": "",
-                    "resolvedJsonKey": "",
-                    "componentType": "",
-                    "options": [],
-                    "pairFirstLabel": "W",
-                    "pairSecondLabel": "H",
-                    "visibleWhenPath": "",
-                    "visibleWhenValue": "",
-                    "source": "calculated",
-                    "uiOrigin": "embedded",
-                    "uiGroupId": "action",
-                    "uiGroupLabel": "Action",
-                    "uiParentGroupId": "",
-                    "transition": null,
-                    "unit": "ms",
-                    "uiOrder": 31
                   },
                   {
                     "id": "showBadge",
@@ -1892,8 +1869,7 @@
                 "itemPresentation": {
                   "subtitleFieldIds": [
                     "sampleText",
-                    "iconToken",
-                    "state"
+                    "iconToken"
                   ],
                   "subtitleMaxCharacters": 72,
                   "fallbackIcon": "component"
@@ -1904,7 +1880,6 @@
                   "sourceIdJsonKey": "id",
                   "runtimeIdJsonKey": "id",
                   "fieldBindings": {
-                    "state": "state",
                     "sampleText": "text",
                     "iconToken": "iconToken",
                     "iconSizeToken": "iconSizeToken",
@@ -1918,7 +1893,6 @@
           "buttonInputs": [
             {
               "id": "button_001",
-              "state": "normal",
               "sampleText": "",
               "iconToken": "system_check",
               "iconSizeToken": "theme.iconSizes.m",
@@ -1931,7 +1905,9 @@
               "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
               "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
               "iconColorToken": "theme.colors.icon",
-              "textColorToken": "theme.colors.textPrimary"
+              "textColorToken": "theme.colors.textPrimary",
+              "enabled": true,
+              "pressed": false
             }
           ],
           "collections": [],
@@ -2202,6 +2178,93 @@
         "iconRowGapToken"
       ],
       "defaultValue": "theme.spacing.s",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xl",
+          "label": "spacing.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xxl",
+          "label": "spacing.xxl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.bubble.iconRow.verticalPadding",
+      "label": "Vertical padding",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "bubble",
+        "iconRowVerticalPaddingToken"
+      ],
+      "defaultValue": "theme.spacing.none",
       "isEditable": true,
       "options": [
         {
@@ -4615,6 +4678,11 @@
               {
                 "id": "component.bubble.iconRow.gap",
                 "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.bubble.iconRow.verticalPadding",
+                "order": 20,
                 "visible": true
               }
             ]

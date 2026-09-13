@@ -27,7 +27,7 @@
     ]
   },
   "owners": {
-    "contractExport": "ButtonStateDesignContract",
+    "contractExport": "ButtonAppearanceContract",
     "resolverExport": "resolveButtonComponent",
     "renderableExport": "buttonComponentToRenderable",
     "registryMode": "simple",
@@ -54,78 +54,32 @@
       "padding": "theme.spacing.s|theme.spacing.s",
       "contentGapToken": "theme.spacing.m",
       "iconToken": "media_play_fill",
-      "states": {
-        "normal": {
-          "surfaceSlot": {
-            "variantReference": "component_project_foqn_s2_surface::variant::default_copy_4",
-            "overrides": {}
-          },
-          "labelSlot": {
-            "variantReference": "component_project_foqn_s2_label::variant::default",
-            "overrides": {
-              "label": {
-                "textTypography": {
-                  "sizeToken": "theme.typography.sizes.m"
-                },
-                "reserveSubtextSpace": false,
-                "subtextVerticalPosition": "bottom",
-                "subtextHorizontalAlign": "center"
-              }
-            }
-          },
-          "iconColorToken": "theme.colors.icon"
-        },
-        "active": {
-          "surfaceSlot": {
-            "variantReference": "component_project_foqn_s2_surface::variant::surface_00_copy",
-            "overrides": {
-              "surface": {
-                "backgroundAlpha": 0.2,
-                "borderAlpha": 1
-              },
-              "style": {}
-            }
-          },
-          "labelSlot": {
-            "variantReference": "component_project_foqn_s2_label::variant::default",
-            "overrides": {}
-          },
-          "iconColorToken": "theme.colors.accent"
-        },
-        "pushed": {
-          "surfaceSlot": {
-            "variantReference": "component_project_foqn_s2_surface::variant::default",
-            "overrides": {}
-          },
-          "labelSlot": {
-            "variantReference": "component_project_foqn_s2_label::variant::default",
-            "overrides": {}
-          },
-          "iconColorToken": "theme.icons.primary"
-        },
-        "disabled": {
-          "surfaceSlot": {
-            "variantReference": "component_project_foqn_s2_surface::variant::default",
-            "overrides": {}
-          },
-          "labelSlot": {
-            "variantReference": "component_project_foqn_s2_label::variant::default",
-            "overrides": {
-              "label": {
-                "textColorToken": "theme.colors.textSecondary",
-                "reserveSubtextSpace": false,
-                "subtextVerticalPosition": "bottom",
-                "subtextHorizontalAlign": "center"
-              }
-            }
-          },
-          "iconColorToken": "theme.icons.secondary"
-        }
-      },
       "badgeSlot": {
         "variantReference": "component_project_foqn_s2_badge::variant::default",
         "overrides": {}
-      }
+      },
+      "appearance": {
+        "surfaceSlot": {
+          "variantReference": "component_project_foqn_s2_surface::variant::default_copy_4",
+          "overrides": {}
+        },
+        "labelSlot": {
+          "variantReference": "component_project_foqn_s2_label::variant::default",
+          "overrides": {
+            "label": {
+              "textTypography": {
+                "sizeToken": "theme.typography.sizes.m"
+              },
+              "reserveSubtextSpace": false,
+              "subtextVerticalPosition": "bottom",
+              "subtextHorizontalAlign": "center"
+            }
+          }
+        },
+        "iconColorToken": "theme.colors.icon"
+      },
+      "disabledOpacity": 0.36,
+      "pressedScale": 0.94
     }
   },
   "defaultVariant": {
@@ -153,78 +107,32 @@
         "padding": "theme.spacing.s|theme.spacing.s",
         "contentGapToken": "theme.spacing.m",
         "iconToken": "media_play_fill",
-        "states": {
-          "normal": {
-            "surfaceSlot": {
-              "variantReference": "component_project_foqn_s2_surface::variant::default_copy_4",
-              "overrides": {}
-            },
-            "labelSlot": {
-              "variantReference": "component_project_foqn_s2_label::variant::default",
-              "overrides": {
-                "label": {
-                  "textTypography": {
-                    "sizeToken": "theme.typography.sizes.m"
-                  },
-                  "reserveSubtextSpace": false,
-                  "subtextVerticalPosition": "bottom",
-                  "subtextHorizontalAlign": "center"
-                }
-              }
-            },
-            "iconColorToken": "theme.colors.icon"
-          },
-          "active": {
-            "surfaceSlot": {
-              "variantReference": "component_project_foqn_s2_surface::variant::surface_00_copy",
-              "overrides": {
-                "surface": {
-                  "backgroundAlpha": 0.2,
-                  "borderAlpha": 1
-                },
-                "style": {}
-              }
-            },
-            "labelSlot": {
-              "variantReference": "component_project_foqn_s2_label::variant::default",
-              "overrides": {}
-            },
-            "iconColorToken": "theme.colors.accent"
-          },
-          "pushed": {
-            "surfaceSlot": {
-              "variantReference": "component_project_foqn_s2_surface::variant::default",
-              "overrides": {}
-            },
-            "labelSlot": {
-              "variantReference": "component_project_foqn_s2_label::variant::default",
-              "overrides": {}
-            },
-            "iconColorToken": "theme.icons.primary"
-          },
-          "disabled": {
-            "surfaceSlot": {
-              "variantReference": "component_project_foqn_s2_surface::variant::default",
-              "overrides": {}
-            },
-            "labelSlot": {
-              "variantReference": "component_project_foqn_s2_label::variant::default",
-              "overrides": {
-                "label": {
-                  "textColorToken": "theme.colors.textSecondary",
-                  "reserveSubtextSpace": false,
-                  "subtextVerticalPosition": "bottom",
-                  "subtextHorizontalAlign": "center"
-                }
-              }
-            },
-            "iconColorToken": "theme.icons.secondary"
-          }
-        },
         "badgeSlot": {
           "variantReference": "component_project_foqn_s2_badge::variant::default",
           "overrides": {}
-        }
+        },
+        "appearance": {
+          "surfaceSlot": {
+            "variantReference": "component_project_foqn_s2_surface::variant::default_copy_4",
+            "overrides": {}
+          },
+          "labelSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {
+              "label": {
+                "textTypography": {
+                  "sizeToken": "theme.typography.sizes.m"
+                },
+                "reserveSubtextSpace": false,
+                "subtextVerticalPosition": "bottom",
+                "subtextHorizontalAlign": "center"
+              }
+            }
+          },
+          "iconColorToken": "theme.colors.icon"
+        },
+        "disabledOpacity": 0.36,
+        "pressedScale": 0.94
       }
     }
   },
@@ -254,70 +162,37 @@
           "padding": "theme.spacing.none|theme.spacing.none",
           "contentGapToken": "theme.spacing.s",
           "iconToken": "media_play_fill",
-          "states": {
-            "normal": {
-              "surfaceSlot": {
-                "variantReference": "component_project_foqn_s2_surface::variant::default",
-                "overrides": {
-                  "surface": {
-                    "tail": {
-                      "size": "40|30"
-                    },
-                    "backgroundAlpha": 0,
-                    "borderAlpha": 1
-                  }
-                }
-              },
-              "labelSlot": {
-                "variantReference": "component_project_foqn_s2_label::variant::default",
-                "overrides": {}
-              },
-              "iconColorToken": "theme.colors.icon"
-            },
-            "active": {
-              "surfaceSlot": {
-                "variantReference": "component_project_foqn_s2_surface::variant::default",
-                "overrides": {}
-              },
-              "labelSlot": {
-                "variantReference": "component_project_foqn_s2_label::variant::default",
-                "overrides": {}
-              },
-              "iconColorToken": "theme.colors.accent"
-            },
-            "pushed": {
-              "surfaceSlot": {
-                "variantReference": "component_project_foqn_s2_surface::variant::default",
-                "overrides": {}
-              },
-              "labelSlot": {
-                "variantReference": "component_project_foqn_s2_label::variant::default",
-                "overrides": {}
-              },
-              "iconColorToken": "theme.colors.accent"
-            },
-            "disabled": {
-              "surfaceSlot": {
-                "variantReference": "component_project_foqn_s2_surface::variant::default",
-                "overrides": {}
-              },
-              "labelSlot": {
-                "variantReference": "component_project_foqn_s2_label::variant::default",
-                "overrides": {}
-              },
-              "iconColorToken": "theme.colors.icon"
-            }
-          },
           "badgeSlot": {
             "variantReference": "component_project_foqn_s2_badge::variant::default",
             "overrides": {}
-          }
+          },
+          "appearance": {
+            "surfaceSlot": {
+              "variantReference": "component_project_foqn_s2_surface::variant::default",
+              "overrides": {
+                "surface": {
+                  "tail": {
+                    "size": "40|30"
+                  },
+                  "backgroundAlpha": 0,
+                  "borderAlpha": 1
+                }
+              }
+            },
+            "labelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {}
+            },
+            "iconColorToken": "theme.colors.icon"
+          },
+          "disabledOpacity": 0.36,
+          "pressedScale": 0.94
         }
       }
     },
     {
       "id": "ios_answer",
-      "name": "iOS \u00B7 Accept",
+      "name": "iOS · Accept",
       "protected": false,
       "locked": false,
       "config": {
@@ -340,250 +215,73 @@
           "padding": "theme.spacing.s|theme.spacing.s",
           "contentGapToken": "theme.spacing.s",
           "iconToken": "phone_call",
-          "states": {
-            "normal": {
-              "surfaceSlot": {
-                "variantReference": "component_project_foqn_s2_surface::variant::android_buttons_copy",
-                "overrides": {
-                  "style": {
-                    "cornerRadiusToken": "theme.radii.full"
-                  },
-                  "surface": {
-                    "backgroundColorToken": "theme.colors.positive",
-                    "borderAlpha": 0
-                  }
-                }
-              },
-              "labelSlot": {
-                "variantReference": "component_project_foqn_s2_label::variant::default",
-                "overrides": {
-                  "style": {
-                    "shadowEnabled": false,
-                    "reliefEnabled": false,
-                    "borderWidth": 0
-                  },
-                  "label": {
-                    "dimensionMode": "content",
-                    "size": "100|32",
-                    "padding": "theme.spacing.none|theme.spacing.none",
-                    "textColorToken": "theme.colors.onAction",
-                    "subtextColorToken": "theme.colors.onAction",
-                    "textAlign": "center",
-                    "textGapToken": "theme.spacing.xs",
-                    "reserveSubtextSpace": false,
-                    "subtextVerticalPosition": "bottom",
-                    "subtextHorizontalAlign": "center",
-                    "textTypography": {
-                      "fontFamilyId": "theme",
-                      "weight": "600",
-                      "style": "normal",
-                      "sizeToken": "theme.typography.sizes.s",
-                      "lineHeight": "theme.typography.lineHeights.normal"
-                    },
-                    "subtextTypography": {
-                      "fontFamilyId": "theme",
-                      "weight": "400",
-                      "style": "normal",
-                      "sizeToken": "theme.typography.sizes.xs",
-                      "lineHeight": "theme.typography.lineHeights.normal"
-                    },
-                    "surfaceSlot": {
-                      "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
-                      "overrides": {}
-                    }
-                  }
-                }
-              },
-              "iconColorToken": "theme.colors.onAction"
-            },
-            "active": {
-              "surfaceSlot": {
-                "variantReference": "component_project_foqn_s2_surface::variant::default",
-                "overrides": {
-                  "style": {
-                    "shadowEnabled": false,
-                    "reliefEnabled": false,
-                    "borderWidth": 0,
-                    "cornerRadiusToken": "theme.radii.full"
-                  },
-                  "surface": {
-                    "backgroundColorToken": "theme.colors.positive",
-                    "backgroundAlpha": 0.9,
-                    "borderAlpha": 0
-                  }
-                }
-              },
-              "labelSlot": {
-                "variantReference": "component_project_foqn_s2_label::variant::default",
-                "overrides": {
-                  "style": {
-                    "shadowEnabled": false,
-                    "reliefEnabled": false,
-                    "borderWidth": 0
-                  },
-                  "label": {
-                    "dimensionMode": "content",
-                    "size": "100|32",
-                    "padding": "theme.spacing.none|theme.spacing.none",
-                    "textColorToken": "theme.colors.onAction",
-                    "subtextColorToken": "theme.colors.onAction",
-                    "textAlign": "center",
-                    "textGapToken": "theme.spacing.xs",
-                    "reserveSubtextSpace": false,
-                    "subtextVerticalPosition": "bottom",
-                    "subtextHorizontalAlign": "center",
-                    "textTypography": {
-                      "fontFamilyId": "theme",
-                      "weight": "600",
-                      "style": "normal",
-                      "sizeToken": "theme.typography.sizes.s",
-                      "lineHeight": "theme.typography.lineHeights.normal"
-                    },
-                    "subtextTypography": {
-                      "fontFamilyId": "theme",
-                      "weight": "400",
-                      "style": "normal",
-                      "sizeToken": "theme.typography.sizes.xs",
-                      "lineHeight": "theme.typography.lineHeights.normal"
-                    },
-                    "surfaceSlot": {
-                      "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
-                      "overrides": {}
-                    }
-                  }
-                }
-              },
-              "iconColorToken": "theme.colors.onAction"
-            },
-            "pushed": {
-              "surfaceSlot": {
-                "variantReference": "component_project_foqn_s2_surface::variant::default",
-                "overrides": {
-                  "style": {
-                    "shadowEnabled": false,
-                    "reliefEnabled": false,
-                    "borderWidth": 0,
-                    "cornerRadiusToken": "theme.radii.full"
-                  },
-                  "surface": {
-                    "backgroundColorToken": "theme.colors.positive",
-                    "backgroundAlpha": 0.78,
-                    "borderAlpha": 0
-                  }
-                }
-              },
-              "labelSlot": {
-                "variantReference": "component_project_foqn_s2_label::variant::default",
-                "overrides": {
-                  "style": {
-                    "shadowEnabled": false,
-                    "reliefEnabled": false,
-                    "borderWidth": 0
-                  },
-                  "label": {
-                    "dimensionMode": "content",
-                    "size": "100|32",
-                    "padding": "theme.spacing.none|theme.spacing.none",
-                    "textColorToken": "theme.colors.onAction",
-                    "subtextColorToken": "theme.colors.onAction",
-                    "textAlign": "center",
-                    "textGapToken": "theme.spacing.xs",
-                    "reserveSubtextSpace": false,
-                    "subtextVerticalPosition": "bottom",
-                    "subtextHorizontalAlign": "center",
-                    "textTypography": {
-                      "fontFamilyId": "theme",
-                      "weight": "600",
-                      "style": "normal",
-                      "sizeToken": "theme.typography.sizes.s",
-                      "lineHeight": "theme.typography.lineHeights.normal"
-                    },
-                    "subtextTypography": {
-                      "fontFamilyId": "theme",
-                      "weight": "400",
-                      "style": "normal",
-                      "sizeToken": "theme.typography.sizes.xs",
-                      "lineHeight": "theme.typography.lineHeights.normal"
-                    },
-                    "surfaceSlot": {
-                      "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
-                      "overrides": {}
-                    }
-                  }
-                }
-              },
-              "iconColorToken": "theme.colors.onAction"
-            },
-            "disabled": {
-              "surfaceSlot": {
-                "variantReference": "component_project_foqn_s2_surface::variant::default",
-                "overrides": {
-                  "style": {
-                    "shadowEnabled": false,
-                    "reliefEnabled": false,
-                    "borderWidth": 0,
-                    "cornerRadiusToken": "theme.radii.full"
-                  },
-                  "surface": {
-                    "backgroundColorToken": "theme.colors.positive",
-                    "backgroundAlpha": 0.36,
-                    "borderAlpha": 0
-                  }
-                }
-              },
-              "labelSlot": {
-                "variantReference": "component_project_foqn_s2_label::variant::default",
-                "overrides": {
-                  "style": {
-                    "shadowEnabled": false,
-                    "reliefEnabled": false,
-                    "borderWidth": 0
-                  },
-                  "label": {
-                    "dimensionMode": "content",
-                    "size": "100|32",
-                    "padding": "theme.spacing.none|theme.spacing.none",
-                    "textColorToken": "theme.colors.onAction",
-                    "subtextColorToken": "theme.colors.onAction",
-                    "textAlign": "center",
-                    "textGapToken": "theme.spacing.xs",
-                    "reserveSubtextSpace": false,
-                    "subtextVerticalPosition": "bottom",
-                    "subtextHorizontalAlign": "center",
-                    "textTypography": {
-                      "fontFamilyId": "theme",
-                      "weight": "600",
-                      "style": "normal",
-                      "sizeToken": "theme.typography.sizes.s",
-                      "lineHeight": "theme.typography.lineHeights.normal"
-                    },
-                    "subtextTypography": {
-                      "fontFamilyId": "theme",
-                      "weight": "400",
-                      "style": "normal",
-                      "sizeToken": "theme.typography.sizes.xs",
-                      "lineHeight": "theme.typography.lineHeights.normal"
-                    },
-                    "surfaceSlot": {
-                      "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
-                      "overrides": {}
-                    }
-                  }
-                }
-              },
-              "iconColorToken": "theme.colors.onAction"
-            }
-          },
           "badgeSlot": {
             "variantReference": "component_project_foqn_s2_badge::variant::default",
             "overrides": {}
-          }
+          },
+          "appearance": {
+            "surfaceSlot": {
+              "variantReference": "component_project_foqn_s2_surface::variant::android_buttons_copy",
+              "overrides": {
+                "style": {
+                  "cornerRadiusToken": "theme.radii.full"
+                },
+                "surface": {
+                  "backgroundColorToken": "theme.colors.positive",
+                  "borderAlpha": 0
+                }
+              }
+            },
+            "labelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {
+                "style": {
+                  "shadowEnabled": false,
+                  "reliefEnabled": false,
+                  "borderWidth": 0
+                },
+                "label": {
+                  "dimensionMode": "content",
+                  "size": "100|32",
+                  "padding": "theme.spacing.none|theme.spacing.none",
+                  "textColorToken": "theme.colors.onAction",
+                  "subtextColorToken": "theme.colors.onAction",
+                  "textAlign": "center",
+                  "textGapToken": "theme.spacing.xs",
+                  "reserveSubtextSpace": false,
+                  "subtextVerticalPosition": "bottom",
+                  "subtextHorizontalAlign": "center",
+                  "textTypography": {
+                    "fontFamilyId": "theme",
+                    "weight": "600",
+                    "style": "normal",
+                    "sizeToken": "theme.typography.sizes.s",
+                    "lineHeight": "theme.typography.lineHeights.normal"
+                  },
+                  "subtextTypography": {
+                    "fontFamilyId": "theme",
+                    "weight": "400",
+                    "style": "normal",
+                    "sizeToken": "theme.typography.sizes.xs",
+                    "lineHeight": "theme.typography.lineHeights.normal"
+                  },
+                  "surfaceSlot": {
+                    "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
+                    "overrides": {}
+                  }
+                }
+              }
+            },
+            "iconColorToken": "theme.colors.onAction"
+          },
+          "disabledOpacity": 0.36,
+          "pressedScale": 0.94
         }
       }
     },
     {
       "id": "ios_decline",
-      "name": "iOS \u00B7 Decline",
+      "name": "iOS · Decline",
       "protected": false,
       "locked": false,
       "config": {
@@ -606,249 +304,72 @@
           "padding": "theme.spacing.s|theme.spacing.s",
           "contentGapToken": "theme.spacing.s",
           "iconToken": "phone_hangup",
-          "states": {
-            "normal": {
-              "surfaceSlot": {
-                "variantReference": "component_project_foqn_s2_surface::variant::default",
-                "overrides": {
-                  "style": {
-                    "cornerRadiusToken": "theme.radii.full"
-                  },
-                  "surface": {
-                    "backgroundColorToken": "theme.colors.negative"
-                  }
-                }
-              },
-              "labelSlot": {
-                "variantReference": "component_project_foqn_s2_label::variant::default",
-                "overrides": {
-                  "style": {
-                    "shadowEnabled": false,
-                    "reliefEnabled": false,
-                    "borderWidth": 0
-                  },
-                  "label": {
-                    "dimensionMode": "content",
-                    "size": "100|32",
-                    "padding": "theme.spacing.none|theme.spacing.none",
-                    "textColorToken": "theme.colors.onAction",
-                    "subtextColorToken": "theme.colors.onAction",
-                    "textAlign": "center",
-                    "textGapToken": "theme.spacing.xs",
-                    "reserveSubtextSpace": false,
-                    "subtextVerticalPosition": "bottom",
-                    "subtextHorizontalAlign": "center",
-                    "textTypography": {
-                      "fontFamilyId": "theme",
-                      "weight": "600",
-                      "style": "normal",
-                      "sizeToken": "theme.typography.sizes.s",
-                      "lineHeight": "theme.typography.lineHeights.normal"
-                    },
-                    "subtextTypography": {
-                      "fontFamilyId": "theme",
-                      "weight": "400",
-                      "style": "normal",
-                      "sizeToken": "theme.typography.sizes.xs",
-                      "lineHeight": "theme.typography.lineHeights.normal"
-                    },
-                    "surfaceSlot": {
-                      "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
-                      "overrides": {}
-                    }
-                  }
-                }
-              },
-              "iconColorToken": "theme.colors.onAction"
-            },
-            "active": {
-              "surfaceSlot": {
-                "variantReference": "component_project_foqn_s2_surface::variant::default",
-                "overrides": {
-                  "style": {
-                    "shadowEnabled": false,
-                    "reliefEnabled": false,
-                    "borderWidth": 0,
-                    "cornerRadiusToken": "theme.radii.full"
-                  },
-                  "surface": {
-                    "backgroundColorToken": "theme.colors.negative",
-                    "backgroundAlpha": 0.9,
-                    "borderAlpha": 0
-                  }
-                }
-              },
-              "labelSlot": {
-                "variantReference": "component_project_foqn_s2_label::variant::default",
-                "overrides": {
-                  "style": {
-                    "shadowEnabled": false,
-                    "reliefEnabled": false,
-                    "borderWidth": 0
-                  },
-                  "label": {
-                    "dimensionMode": "content",
-                    "size": "100|32",
-                    "padding": "theme.spacing.none|theme.spacing.none",
-                    "textColorToken": "theme.colors.onAction",
-                    "subtextColorToken": "theme.colors.onAction",
-                    "textAlign": "center",
-                    "textGapToken": "theme.spacing.xs",
-                    "reserveSubtextSpace": false,
-                    "subtextVerticalPosition": "bottom",
-                    "subtextHorizontalAlign": "center",
-                    "textTypography": {
-                      "fontFamilyId": "theme",
-                      "weight": "600",
-                      "style": "normal",
-                      "sizeToken": "theme.typography.sizes.s",
-                      "lineHeight": "theme.typography.lineHeights.normal"
-                    },
-                    "subtextTypography": {
-                      "fontFamilyId": "theme",
-                      "weight": "400",
-                      "style": "normal",
-                      "sizeToken": "theme.typography.sizes.xs",
-                      "lineHeight": "theme.typography.lineHeights.normal"
-                    },
-                    "surfaceSlot": {
-                      "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
-                      "overrides": {}
-                    }
-                  }
-                }
-              },
-              "iconColorToken": "theme.colors.onAction"
-            },
-            "pushed": {
-              "surfaceSlot": {
-                "variantReference": "component_project_foqn_s2_surface::variant::default",
-                "overrides": {
-                  "style": {
-                    "shadowEnabled": false,
-                    "reliefEnabled": false,
-                    "borderWidth": 0,
-                    "cornerRadiusToken": "theme.radii.full"
-                  },
-                  "surface": {
-                    "backgroundColorToken": "theme.colors.negative",
-                    "backgroundAlpha": 0.78,
-                    "borderAlpha": 0
-                  }
-                }
-              },
-              "labelSlot": {
-                "variantReference": "component_project_foqn_s2_label::variant::default",
-                "overrides": {
-                  "style": {
-                    "shadowEnabled": false,
-                    "reliefEnabled": false,
-                    "borderWidth": 0
-                  },
-                  "label": {
-                    "dimensionMode": "content",
-                    "size": "100|32",
-                    "padding": "theme.spacing.none|theme.spacing.none",
-                    "textColorToken": "theme.colors.onAction",
-                    "subtextColorToken": "theme.colors.onAction",
-                    "textAlign": "center",
-                    "textGapToken": "theme.spacing.xs",
-                    "reserveSubtextSpace": false,
-                    "subtextVerticalPosition": "bottom",
-                    "subtextHorizontalAlign": "center",
-                    "textTypography": {
-                      "fontFamilyId": "theme",
-                      "weight": "600",
-                      "style": "normal",
-                      "sizeToken": "theme.typography.sizes.s",
-                      "lineHeight": "theme.typography.lineHeights.normal"
-                    },
-                    "subtextTypography": {
-                      "fontFamilyId": "theme",
-                      "weight": "400",
-                      "style": "normal",
-                      "sizeToken": "theme.typography.sizes.xs",
-                      "lineHeight": "theme.typography.lineHeights.normal"
-                    },
-                    "surfaceSlot": {
-                      "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
-                      "overrides": {}
-                    }
-                  }
-                }
-              },
-              "iconColorToken": "theme.colors.onAction"
-            },
-            "disabled": {
-              "surfaceSlot": {
-                "variantReference": "component_project_foqn_s2_surface::variant::default",
-                "overrides": {
-                  "style": {
-                    "shadowEnabled": false,
-                    "reliefEnabled": false,
-                    "borderWidth": 0,
-                    "cornerRadiusToken": "theme.radii.full"
-                  },
-                  "surface": {
-                    "backgroundColorToken": "theme.colors.negative",
-                    "backgroundAlpha": 0.36,
-                    "borderAlpha": 0
-                  }
-                }
-              },
-              "labelSlot": {
-                "variantReference": "component_project_foqn_s2_label::variant::default",
-                "overrides": {
-                  "style": {
-                    "shadowEnabled": false,
-                    "reliefEnabled": false,
-                    "borderWidth": 0
-                  },
-                  "label": {
-                    "dimensionMode": "content",
-                    "size": "100|32",
-                    "padding": "theme.spacing.none|theme.spacing.none",
-                    "textColorToken": "theme.colors.onAction",
-                    "subtextColorToken": "theme.colors.onAction",
-                    "textAlign": "center",
-                    "textGapToken": "theme.spacing.xs",
-                    "reserveSubtextSpace": false,
-                    "subtextVerticalPosition": "bottom",
-                    "subtextHorizontalAlign": "center",
-                    "textTypography": {
-                      "fontFamilyId": "theme",
-                      "weight": "600",
-                      "style": "normal",
-                      "sizeToken": "theme.typography.sizes.s",
-                      "lineHeight": "theme.typography.lineHeights.normal"
-                    },
-                    "subtextTypography": {
-                      "fontFamilyId": "theme",
-                      "weight": "400",
-                      "style": "normal",
-                      "sizeToken": "theme.typography.sizes.xs",
-                      "lineHeight": "theme.typography.lineHeights.normal"
-                    },
-                    "surfaceSlot": {
-                      "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
-                      "overrides": {}
-                    }
-                  }
-                }
-              },
-              "iconColorToken": "theme.colors.onAction"
-            }
-          },
           "badgeSlot": {
             "variantReference": "component_project_foqn_s2_badge::variant::default",
             "overrides": {}
-          }
+          },
+          "appearance": {
+            "surfaceSlot": {
+              "variantReference": "component_project_foqn_s2_surface::variant::default",
+              "overrides": {
+                "style": {
+                  "cornerRadiusToken": "theme.radii.full"
+                },
+                "surface": {
+                  "backgroundColorToken": "theme.colors.negative"
+                }
+              }
+            },
+            "labelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {
+                "style": {
+                  "shadowEnabled": false,
+                  "reliefEnabled": false,
+                  "borderWidth": 0
+                },
+                "label": {
+                  "dimensionMode": "content",
+                  "size": "100|32",
+                  "padding": "theme.spacing.none|theme.spacing.none",
+                  "textColorToken": "theme.colors.onAction",
+                  "subtextColorToken": "theme.colors.onAction",
+                  "textAlign": "center",
+                  "textGapToken": "theme.spacing.xs",
+                  "reserveSubtextSpace": false,
+                  "subtextVerticalPosition": "bottom",
+                  "subtextHorizontalAlign": "center",
+                  "textTypography": {
+                    "fontFamilyId": "theme",
+                    "weight": "600",
+                    "style": "normal",
+                    "sizeToken": "theme.typography.sizes.s",
+                    "lineHeight": "theme.typography.lineHeights.normal"
+                  },
+                  "subtextTypography": {
+                    "fontFamilyId": "theme",
+                    "weight": "400",
+                    "style": "normal",
+                    "sizeToken": "theme.typography.sizes.xs",
+                    "lineHeight": "theme.typography.lineHeights.normal"
+                  },
+                  "surfaceSlot": {
+                    "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
+                    "overrides": {}
+                  }
+                }
+              }
+            },
+            "iconColorToken": "theme.colors.onAction"
+          },
+          "disabledOpacity": 0.36,
+          "pressedScale": 0.94
         }
       }
     },
     {
       "id": "android_answer",
-      "name": "Android \u00B7 Accept",
+      "name": "Android · Accept",
       "protected": false,
       "locked": false,
       "config": {
@@ -871,254 +392,77 @@
           "padding": "theme.spacing.l|theme.spacing.m",
           "contentGapToken": "theme.spacing.s",
           "iconToken": "phone_call",
-          "states": {
-            "normal": {
-              "surfaceSlot": {
-                "variantReference": "component_project_foqn_s2_surface::variant::default_copy_5",
-                "overrides": {
-                  "style": {
-                    "shadowEnabled": false,
-                    "reliefEnabled": false,
-                    "borderWidth": 0,
-                    "cornerRadiusToken": "theme.radii.m"
-                  },
-                  "surface": {
-                    "backgroundColorToken": "theme.colors.positive",
-                    "backgroundAlpha": 1,
-                    "borderAlpha": 0
-                  }
-                }
-              },
-              "labelSlot": {
-                "variantReference": "component_project_foqn_s2_label::variant::default",
-                "overrides": {
-                  "style": {
-                    "shadowEnabled": false,
-                    "reliefEnabled": false,
-                    "borderWidth": 0
-                  },
-                  "label": {
-                    "dimensionMode": "content",
-                    "size": "100|32",
-                    "padding": "theme.spacing.none|theme.spacing.none",
-                    "textColorToken": "theme.colors.onAction",
-                    "subtextColorToken": "theme.colors.onAction",
-                    "textAlign": "center",
-                    "textGapToken": "theme.spacing.xs",
-                    "reserveSubtextSpace": false,
-                    "subtextVerticalPosition": "bottom",
-                    "subtextHorizontalAlign": "center",
-                    "textTypography": {
-                      "fontFamilyId": "theme",
-                      "weight": "600",
-                      "style": "normal",
-                      "sizeToken": "theme.typography.sizes.s",
-                      "lineHeight": "theme.typography.lineHeights.normal"
-                    },
-                    "subtextTypography": {
-                      "fontFamilyId": "theme",
-                      "weight": "400",
-                      "style": "normal",
-                      "sizeToken": "theme.typography.sizes.xs",
-                      "lineHeight": "theme.typography.lineHeights.normal"
-                    },
-                    "surfaceSlot": {
-                      "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
-                      "overrides": {}
-                    }
-                  }
-                }
-              },
-              "iconColorToken": "theme.colors.onAction"
-            },
-            "active": {
-              "surfaceSlot": {
-                "variantReference": "component_project_foqn_s2_surface::variant::default_copy_5",
-                "overrides": {
-                  "style": {
-                    "shadowEnabled": false,
-                    "reliefEnabled": false,
-                    "borderWidth": 0,
-                    "cornerRadiusToken": "theme.radii.full"
-                  },
-                  "surface": {
-                    "backgroundColorToken": "theme.colors.positive",
-                    "backgroundAlpha": 0.9,
-                    "borderAlpha": 0
-                  }
-                }
-              },
-              "labelSlot": {
-                "variantReference": "component_project_foqn_s2_label::variant::default",
-                "overrides": {
-                  "style": {
-                    "shadowEnabled": false,
-                    "reliefEnabled": false,
-                    "borderWidth": 0
-                  },
-                  "label": {
-                    "dimensionMode": "content",
-                    "size": "100|32",
-                    "padding": "theme.spacing.none|theme.spacing.none",
-                    "textColorToken": "theme.colors.onAction",
-                    "subtextColorToken": "theme.colors.onAction",
-                    "textAlign": "center",
-                    "textGapToken": "theme.spacing.xs",
-                    "reserveSubtextSpace": false,
-                    "subtextVerticalPosition": "bottom",
-                    "subtextHorizontalAlign": "center",
-                    "textTypography": {
-                      "fontFamilyId": "theme",
-                      "weight": "600",
-                      "style": "normal",
-                      "sizeToken": "theme.typography.sizes.s",
-                      "lineHeight": "theme.typography.lineHeights.normal"
-                    },
-                    "subtextTypography": {
-                      "fontFamilyId": "theme",
-                      "weight": "400",
-                      "style": "normal",
-                      "sizeToken": "theme.typography.sizes.xs",
-                      "lineHeight": "theme.typography.lineHeights.normal"
-                    },
-                    "surfaceSlot": {
-                      "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
-                      "overrides": {}
-                    }
-                  }
-                }
-              },
-              "iconColorToken": "theme.colors.onAction"
-            },
-            "pushed": {
-              "surfaceSlot": {
-                "variantReference": "component_project_foqn_s2_surface::variant::default_copy_5",
-                "overrides": {
-                  "style": {
-                    "shadowEnabled": false,
-                    "reliefEnabled": false,
-                    "borderWidth": 0,
-                    "cornerRadiusToken": "theme.radii.full"
-                  },
-                  "surface": {
-                    "backgroundColorToken": "theme.colors.positive",
-                    "backgroundAlpha": 0.78,
-                    "borderAlpha": 0
-                  }
-                }
-              },
-              "labelSlot": {
-                "variantReference": "component_project_foqn_s2_label::variant::default",
-                "overrides": {
-                  "style": {
-                    "shadowEnabled": false,
-                    "reliefEnabled": false,
-                    "borderWidth": 0
-                  },
-                  "label": {
-                    "dimensionMode": "content",
-                    "size": "100|32",
-                    "padding": "theme.spacing.none|theme.spacing.none",
-                    "textColorToken": "theme.colors.onAction",
-                    "subtextColorToken": "theme.colors.onAction",
-                    "textAlign": "center",
-                    "textGapToken": "theme.spacing.xs",
-                    "reserveSubtextSpace": false,
-                    "subtextVerticalPosition": "bottom",
-                    "subtextHorizontalAlign": "center",
-                    "textTypography": {
-                      "fontFamilyId": "theme",
-                      "weight": "600",
-                      "style": "normal",
-                      "sizeToken": "theme.typography.sizes.s",
-                      "lineHeight": "theme.typography.lineHeights.normal"
-                    },
-                    "subtextTypography": {
-                      "fontFamilyId": "theme",
-                      "weight": "400",
-                      "style": "normal",
-                      "sizeToken": "theme.typography.sizes.xs",
-                      "lineHeight": "theme.typography.lineHeights.normal"
-                    },
-                    "surfaceSlot": {
-                      "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
-                      "overrides": {}
-                    }
-                  }
-                }
-              },
-              "iconColorToken": "theme.colors.onAction"
-            },
-            "disabled": {
-              "surfaceSlot": {
-                "variantReference": "component_project_foqn_s2_surface::variant::default_copy_5",
-                "overrides": {
-                  "style": {
-                    "shadowEnabled": false,
-                    "reliefEnabled": false,
-                    "borderWidth": 0,
-                    "cornerRadiusToken": "theme.radii.full"
-                  },
-                  "surface": {
-                    "backgroundColorToken": "theme.colors.positive",
-                    "backgroundAlpha": 0.36,
-                    "borderAlpha": 0
-                  }
-                }
-              },
-              "labelSlot": {
-                "variantReference": "component_project_foqn_s2_label::variant::default",
-                "overrides": {
-                  "style": {
-                    "shadowEnabled": false,
-                    "reliefEnabled": false,
-                    "borderWidth": 0
-                  },
-                  "label": {
-                    "dimensionMode": "content",
-                    "size": "100|32",
-                    "padding": "theme.spacing.none|theme.spacing.none",
-                    "textColorToken": "theme.colors.onAction",
-                    "subtextColorToken": "theme.colors.onAction",
-                    "textAlign": "center",
-                    "textGapToken": "theme.spacing.xs",
-                    "reserveSubtextSpace": false,
-                    "subtextVerticalPosition": "bottom",
-                    "subtextHorizontalAlign": "center",
-                    "textTypography": {
-                      "fontFamilyId": "theme",
-                      "weight": "600",
-                      "style": "normal",
-                      "sizeToken": "theme.typography.sizes.s",
-                      "lineHeight": "theme.typography.lineHeights.normal"
-                    },
-                    "subtextTypography": {
-                      "fontFamilyId": "theme",
-                      "weight": "400",
-                      "style": "normal",
-                      "sizeToken": "theme.typography.sizes.xs",
-                      "lineHeight": "theme.typography.lineHeights.normal"
-                    },
-                    "surfaceSlot": {
-                      "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
-                      "overrides": {}
-                    }
-                  }
-                }
-              },
-              "iconColorToken": "theme.colors.onAction"
-            }
-          },
           "badgeSlot": {
             "variantReference": "component_project_foqn_s2_badge::variant::default",
             "overrides": {}
-          }
+          },
+          "appearance": {
+            "surfaceSlot": {
+              "variantReference": "component_project_foqn_s2_surface::variant::default_copy_5",
+              "overrides": {
+                "style": {
+                  "shadowEnabled": false,
+                  "reliefEnabled": false,
+                  "borderWidth": 0,
+                  "cornerRadiusToken": "theme.radii.m"
+                },
+                "surface": {
+                  "backgroundColorToken": "theme.colors.positive",
+                  "backgroundAlpha": 1,
+                  "borderAlpha": 0
+                }
+              }
+            },
+            "labelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {
+                "style": {
+                  "shadowEnabled": false,
+                  "reliefEnabled": false,
+                  "borderWidth": 0
+                },
+                "label": {
+                  "dimensionMode": "content",
+                  "size": "100|32",
+                  "padding": "theme.spacing.none|theme.spacing.none",
+                  "textColorToken": "theme.colors.onAction",
+                  "subtextColorToken": "theme.colors.onAction",
+                  "textAlign": "center",
+                  "textGapToken": "theme.spacing.xs",
+                  "reserveSubtextSpace": false,
+                  "subtextVerticalPosition": "bottom",
+                  "subtextHorizontalAlign": "center",
+                  "textTypography": {
+                    "fontFamilyId": "theme",
+                    "weight": "600",
+                    "style": "normal",
+                    "sizeToken": "theme.typography.sizes.s",
+                    "lineHeight": "theme.typography.lineHeights.normal"
+                  },
+                  "subtextTypography": {
+                    "fontFamilyId": "theme",
+                    "weight": "400",
+                    "style": "normal",
+                    "sizeToken": "theme.typography.sizes.xs",
+                    "lineHeight": "theme.typography.lineHeights.normal"
+                  },
+                  "surfaceSlot": {
+                    "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
+                    "overrides": {}
+                  }
+                }
+              }
+            },
+            "iconColorToken": "theme.colors.onAction"
+          },
+          "disabledOpacity": 0.36,
+          "pressedScale": 0.94
         }
       }
     },
     {
       "id": "android_decline",
-      "name": "Android \u00B7 Decline",
+      "name": "Android · Decline",
       "protected": false,
       "locked": false,
       "config": {
@@ -1141,242 +485,65 @@
           "padding": "theme.spacing.l|theme.spacing.m",
           "contentGapToken": "theme.spacing.s",
           "iconToken": "phone_hangup",
-          "states": {
-            "normal": {
-              "surfaceSlot": {
-                "variantReference": "component_project_foqn_s2_surface::variant::default_copy_5",
-                "overrides": {
-                  "style": {},
-                  "surface": {
-                    "backgroundColorToken": "theme.colors.negative",
-                    "borderAlpha": 0
-                  }
-                }
-              },
-              "labelSlot": {
-                "variantReference": "component_project_foqn_s2_label::variant::default",
-                "overrides": {
-                  "style": {
-                    "shadowEnabled": false,
-                    "reliefEnabled": false,
-                    "borderWidth": 0
-                  },
-                  "label": {
-                    "dimensionMode": "content",
-                    "size": "100|32",
-                    "padding": "theme.spacing.none|theme.spacing.none",
-                    "textColorToken": "theme.colors.onAction",
-                    "subtextColorToken": "theme.colors.onAction",
-                    "textAlign": "center",
-                    "textGapToken": "theme.spacing.xs",
-                    "reserveSubtextSpace": false,
-                    "subtextVerticalPosition": "bottom",
-                    "subtextHorizontalAlign": "center",
-                    "textTypography": {
-                      "fontFamilyId": "theme",
-                      "weight": "600",
-                      "style": "normal",
-                      "sizeToken": "theme.typography.sizes.s",
-                      "lineHeight": "theme.typography.lineHeights.normal"
-                    },
-                    "subtextTypography": {
-                      "fontFamilyId": "theme",
-                      "weight": "400",
-                      "style": "normal",
-                      "sizeToken": "theme.typography.sizes.xs",
-                      "lineHeight": "theme.typography.lineHeights.normal"
-                    },
-                    "surfaceSlot": {
-                      "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
-                      "overrides": {}
-                    }
-                  }
-                }
-              },
-              "iconColorToken": "theme.colors.onAction"
-            },
-            "active": {
-              "surfaceSlot": {
-                "variantReference": "component_project_foqn_s2_surface::variant::default_copy_5",
-                "overrides": {
-                  "style": {
-                    "shadowEnabled": false,
-                    "reliefEnabled": false,
-                    "borderWidth": 0,
-                    "cornerRadiusToken": "theme.radii.full"
-                  },
-                  "surface": {
-                    "backgroundColorToken": "theme.colors.negative",
-                    "backgroundAlpha": 0.9,
-                    "borderAlpha": 0
-                  }
-                }
-              },
-              "labelSlot": {
-                "variantReference": "component_project_foqn_s2_label::variant::default",
-                "overrides": {
-                  "style": {
-                    "shadowEnabled": false,
-                    "reliefEnabled": false,
-                    "borderWidth": 0
-                  },
-                  "label": {
-                    "dimensionMode": "content",
-                    "size": "100|32",
-                    "padding": "theme.spacing.none|theme.spacing.none",
-                    "textColorToken": "theme.colors.onAction",
-                    "subtextColorToken": "theme.colors.onAction",
-                    "textAlign": "center",
-                    "textGapToken": "theme.spacing.xs",
-                    "reserveSubtextSpace": false,
-                    "subtextVerticalPosition": "bottom",
-                    "subtextHorizontalAlign": "center",
-                    "textTypography": {
-                      "fontFamilyId": "theme",
-                      "weight": "600",
-                      "style": "normal",
-                      "sizeToken": "theme.typography.sizes.s",
-                      "lineHeight": "theme.typography.lineHeights.normal"
-                    },
-                    "subtextTypography": {
-                      "fontFamilyId": "theme",
-                      "weight": "400",
-                      "style": "normal",
-                      "sizeToken": "theme.typography.sizes.xs",
-                      "lineHeight": "theme.typography.lineHeights.normal"
-                    },
-                    "surfaceSlot": {
-                      "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
-                      "overrides": {}
-                    }
-                  }
-                }
-              },
-              "iconColorToken": "theme.colors.onAction"
-            },
-            "pushed": {
-              "surfaceSlot": {
-                "variantReference": "component_project_foqn_s2_surface::variant::default_copy_5",
-                "overrides": {
-                  "style": {
-                    "shadowEnabled": false,
-                    "reliefEnabled": false,
-                    "borderWidth": 0,
-                    "cornerRadiusToken": "theme.radii.full"
-                  },
-                  "surface": {
-                    "backgroundColorToken": "theme.colors.negative",
-                    "backgroundAlpha": 0.78,
-                    "borderAlpha": 0
-                  }
-                }
-              },
-              "labelSlot": {
-                "variantReference": "component_project_foqn_s2_label::variant::default",
-                "overrides": {
-                  "style": {
-                    "shadowEnabled": false,
-                    "reliefEnabled": false,
-                    "borderWidth": 0
-                  },
-                  "label": {
-                    "dimensionMode": "content",
-                    "size": "100|32",
-                    "padding": "theme.spacing.none|theme.spacing.none",
-                    "textColorToken": "theme.colors.onAction",
-                    "subtextColorToken": "theme.colors.onAction",
-                    "textAlign": "center",
-                    "textGapToken": "theme.spacing.xs",
-                    "reserveSubtextSpace": false,
-                    "subtextVerticalPosition": "bottom",
-                    "subtextHorizontalAlign": "center",
-                    "textTypography": {
-                      "fontFamilyId": "theme",
-                      "weight": "600",
-                      "style": "normal",
-                      "sizeToken": "theme.typography.sizes.s",
-                      "lineHeight": "theme.typography.lineHeights.normal"
-                    },
-                    "subtextTypography": {
-                      "fontFamilyId": "theme",
-                      "weight": "400",
-                      "style": "normal",
-                      "sizeToken": "theme.typography.sizes.xs",
-                      "lineHeight": "theme.typography.lineHeights.normal"
-                    },
-                    "surfaceSlot": {
-                      "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
-                      "overrides": {}
-                    }
-                  }
-                }
-              },
-              "iconColorToken": "theme.colors.onAction"
-            },
-            "disabled": {
-              "surfaceSlot": {
-                "variantReference": "component_project_foqn_s2_surface::variant::default_copy_5",
-                "overrides": {
-                  "style": {
-                    "shadowEnabled": false,
-                    "reliefEnabled": false,
-                    "borderWidth": 0,
-                    "cornerRadiusToken": "theme.radii.full"
-                  },
-                  "surface": {
-                    "backgroundColorToken": "theme.colors.negative",
-                    "backgroundAlpha": 0.36,
-                    "borderAlpha": 0
-                  }
-                }
-              },
-              "labelSlot": {
-                "variantReference": "component_project_foqn_s2_label::variant::default",
-                "overrides": {
-                  "style": {
-                    "shadowEnabled": false,
-                    "reliefEnabled": false,
-                    "borderWidth": 0
-                  },
-                  "label": {
-                    "dimensionMode": "content",
-                    "size": "100|32",
-                    "padding": "theme.spacing.none|theme.spacing.none",
-                    "textColorToken": "theme.colors.onAction",
-                    "subtextColorToken": "theme.colors.onAction",
-                    "textAlign": "center",
-                    "textGapToken": "theme.spacing.xs",
-                    "reserveSubtextSpace": false,
-                    "subtextVerticalPosition": "bottom",
-                    "subtextHorizontalAlign": "center",
-                    "textTypography": {
-                      "fontFamilyId": "theme",
-                      "weight": "600",
-                      "style": "normal",
-                      "sizeToken": "theme.typography.sizes.s",
-                      "lineHeight": "theme.typography.lineHeights.normal"
-                    },
-                    "subtextTypography": {
-                      "fontFamilyId": "theme",
-                      "weight": "400",
-                      "style": "normal",
-                      "sizeToken": "theme.typography.sizes.xs",
-                      "lineHeight": "theme.typography.lineHeights.normal"
-                    },
-                    "surfaceSlot": {
-                      "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
-                      "overrides": {}
-                    }
-                  }
-                }
-              },
-              "iconColorToken": "theme.colors.onAction"
-            }
-          },
           "badgeSlot": {
             "variantReference": "component_project_foqn_s2_badge::variant::default",
             "overrides": {}
-          }
+          },
+          "appearance": {
+            "surfaceSlot": {
+              "variantReference": "component_project_foqn_s2_surface::variant::default_copy_5",
+              "overrides": {
+                "style": {},
+                "surface": {
+                  "backgroundColorToken": "theme.colors.negative",
+                  "borderAlpha": 0
+                }
+              }
+            },
+            "labelSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {
+                "style": {
+                  "shadowEnabled": false,
+                  "reliefEnabled": false,
+                  "borderWidth": 0
+                },
+                "label": {
+                  "dimensionMode": "content",
+                  "size": "100|32",
+                  "padding": "theme.spacing.none|theme.spacing.none",
+                  "textColorToken": "theme.colors.onAction",
+                  "subtextColorToken": "theme.colors.onAction",
+                  "textAlign": "center",
+                  "textGapToken": "theme.spacing.xs",
+                  "reserveSubtextSpace": false,
+                  "subtextVerticalPosition": "bottom",
+                  "subtextHorizontalAlign": "center",
+                  "textTypography": {
+                    "fontFamilyId": "theme",
+                    "weight": "600",
+                    "style": "normal",
+                    "sizeToken": "theme.typography.sizes.s",
+                    "lineHeight": "theme.typography.lineHeights.normal"
+                  },
+                  "subtextTypography": {
+                    "fontFamilyId": "theme",
+                    "weight": "400",
+                    "style": "normal",
+                    "sizeToken": "theme.typography.sizes.xs",
+                    "lineHeight": "theme.typography.lineHeights.normal"
+                  },
+                  "surfaceSlot": {
+                    "variantReference": "component_project_foqn_s2_surface::variant::surface_inputbox_copy",
+                    "overrides": {}
+                  }
+                }
+              }
+            },
+            "iconColorToken": "theme.colors.onAction"
+          },
+          "disabledOpacity": 0.36,
+          "pressedScale": 0.94
         }
       }
     }
@@ -1388,36 +555,19 @@
     "sampleSize": 256,
     "inputs": [
       {
-        "id": "state",
-        "label": "State",
-        "jsonKey": "state",
-        "kind": "option",
-        "valueKind": "OptionToken",
-        "defaultValue": "normal",
+        "id": "enabled",
+        "label": "Enabled",
+        "jsonKey": "enabled",
+        "kind": "boolean",
+        "valueKind": "Boolean",
+        "defaultValue": "true",
         "minimum": 0,
         "maximum": 9999,
         "increment": 1,
         "tableId": "",
         "resolvedJsonKey": "",
         "componentType": "",
-        "options": [
-          {
-            "value": "normal",
-            "label": "Normal"
-          },
-          {
-            "value": "active",
-            "label": "Active"
-          },
-          {
-            "value": "pushed",
-            "label": "Pushed"
-          },
-          {
-            "value": "disabled",
-            "label": "Disabled"
-          }
-        ],
+        "options": [],
         "pairFirstLabel": "W",
         "pairSecondLabel": "H",
         "visibleWhenPath": "",
@@ -1429,7 +579,52 @@
         "uiParentGroupId": "",
         "transition": null,
         "unit": "",
-        "uiOrder": 10
+        "uiOrder": 10,
+        "animatable": true,
+        "animationInterpolations": [
+          "hold"
+        ],
+        "animationTimeline": {
+          "origin": {
+            "kind": "ownerStart"
+          }
+        }
+      },
+      {
+        "id": "pressed",
+        "label": "Pressed",
+        "jsonKey": "pressed",
+        "kind": "boolean",
+        "valueKind": "Boolean",
+        "defaultValue": "false",
+        "minimum": 0,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "embedded",
+        "uiGroupId": "state",
+        "uiGroupLabel": "State",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 11,
+        "animatable": true,
+        "animationInterpolations": [
+          "hold"
+        ],
+        "animationTimeline": {
+          "origin": {
+            "kind": "ownerStart"
+          }
+        }
       },
       {
         "id": "sampleText",
@@ -1580,60 +775,6 @@
         "transition": null,
         "unit": "",
         "uiOrder": 24
-      },
-      {
-        "id": "pushTrigger",
-        "label": "Push",
-        "jsonKey": "pushTrigger",
-        "kind": "boolean",
-        "valueKind": "Boolean",
-        "defaultValue": "false",
-        "minimum": 0,
-        "maximum": 9999,
-        "increment": 1,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "source": "calculated",
-        "uiOrigin": "embedded",
-        "uiGroupId": "action",
-        "uiGroupLabel": "Action",
-        "uiParentGroupId": "",
-        "transition": null,
-        "unit": "",
-        "uiOrder": 30
-      },
-      {
-        "id": "pushElapsedMs",
-        "label": "Push elapsed",
-        "jsonKey": "pushElapsedMs",
-        "kind": "number",
-        "valueKind": "Decimal",
-        "defaultValue": "0",
-        "minimum": 0,
-        "maximum": 60000,
-        "increment": 10,
-        "tableId": "",
-        "resolvedJsonKey": "",
-        "componentType": "",
-        "options": [],
-        "pairFirstLabel": "W",
-        "pairSecondLabel": "H",
-        "visibleWhenPath": "",
-        "visibleWhenValue": "",
-        "source": "calculated",
-        "uiOrigin": "embedded",
-        "uiGroupId": "action",
-        "uiGroupLabel": "Action",
-        "uiParentGroupId": "",
-        "transition": null,
-        "unit": "ms",
-        "uiOrder": 31
       },
       {
         "id": "showBadge",
@@ -1888,20 +1029,7 @@
         "uiOrder": 22
       }
     ],
-    "pushTrigger": false,
-    "pushElapsedMs": 0,
-    "actions": [
-      {
-        "id": "push",
-        "label": "Push",
-        "playInputId": "pushTrigger",
-        "durationThemeToken": "theme.motion.buttonPushedDurationMs",
-        "timeJsonKey": "pushElapsedMs",
-        "timeUnit": "milliseconds",
-        "prewarmFrames": false,
-        "completionBehavior": "reset"
-      }
-    ],
+    "actions": [],
     "iconSizeToken": "theme.iconSizes.m",
     "textSizeToken": "theme.typography.sizes.s",
     "showBadge": false,
@@ -1914,13 +1042,423 @@
     "iconColorToken": "theme.colors.icon",
     "textColorToken": "theme.colors.textPrimary",
     "collections": [],
-    "state": "normal",
-    "iconToken": "media_play_fill"
+    "iconToken": "media_play_fill",
+    "enabled": true,
+    "pressed": false
   },
   "metadata": {
     "note": "Seeded reusable component class."
   },
   "dictionaryFields": [
+    {
+      "id": "component.button.appearance.iconColorToken",
+      "label": "Icon color",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "button",
+        "appearance",
+        "iconColorToken"
+      ],
+      "defaultValue": "theme.colors.icon",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.colors.background",
+          "label": "colors.background",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.surface",
+          "label": "colors.surface",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.card",
+          "label": "colors.card",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.label",
+          "label": "colors.label",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.text",
+          "label": "colors.text",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.textPrimary",
+          "label": "colors.textPrimary",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.textSecondary",
+          "label": "colors.textSecondary",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.icon",
+          "label": "colors.icon",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.button",
+          "label": "colors.button",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.field",
+          "label": "colors.field",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.checkbox",
+          "label": "colors.checkbox",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.radio",
+          "label": "colors.radio",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.switch",
+          "label": "colors.switch",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.tab",
+          "label": "colors.tab",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.menuItem",
+          "label": "colors.menuItem",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.badge",
+          "label": "colors.badge",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.toast",
+          "label": "colors.toast",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.divider",
+          "label": "colors.divider",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.accent",
+          "label": "colors.accent",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.positive",
+          "label": "colors.positive",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.negative",
+          "label": "colors.negative",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.colors.onAction",
+          "label": "colors.onAction",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.icons.primary",
+          "label": "icons.primary",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.icons.secondary",
+          "label": "icons.secondary",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.icons.alternate",
+          "label": "icons.alternate",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.icons.accent",
+          "label": "icons.accent",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.borders.primary",
+          "label": "borders.primary",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.borders.secondary",
+          "label": "borders.secondary",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.borders.alternate",
+          "label": "borders.alternate",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.cursor.color",
+          "label": "cursor.color",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.keyboard.background",
+          "label": "keyboard.background",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.keyboard.keyBackground",
+          "label": "keyboard.keyBackground",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.keyboard.specialKeyBackground",
+          "label": "keyboard.specialKeyBackground",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.keyboard.pressedKeyBackground",
+          "label": "keyboard.pressedKeyBackground",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.keyboard.keyBorder",
+          "label": "keyboard.keyBorder",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.keyboard.text",
+          "label": "keyboard.text",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.button.appearance.label.editor",
+      "label": "Label",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "button",
+        "appearance",
+        "labelSlot",
+        "variantReference"
+      ],
+      "defaultValue": "default",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "label",
+        "label": "Normal label",
+        "recordClassId": "component.label",
+        "allowRuntimeInputForwarding": true
+      }
+    },
+    {
+      "id": "component.button.appearance.surface.editor",
+      "label": "Surface",
+      "valueKind": "ComponentVariant",
+      "jsonPath": [
+        "button",
+        "appearance",
+        "surfaceSlot",
+        "variantReference"
+      ],
+      "defaultValue": "default",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "surface",
+        "label": "Normal surface",
+        "recordClassId": "component.surface",
+        "allowRuntimeInputForwarding": true
+      }
+    },
     {
       "id": "component.button.badge.editor",
       "label": "Badge",
@@ -2068,7 +1606,7 @@
         },
         {
           "value": "iconText",
-          "label": "Icon \u002B text",
+          "label": "Icon + text",
           "colorHex": null,
           "isNeutral": false,
           "groupValue": "",
@@ -2110,7 +1648,7 @@
         },
         {
           "value": "content",
-          "label": "Content \u002B padding",
+          "label": "Content + padding",
           "colorHex": null,
           "isNeutral": false,
           "groupValue": "",
@@ -2118,6 +1656,29 @@
           "localLabel": ""
         }
       ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.button.disabledOpacity",
+      "label": "Disabled opacity",
+      "valueKind": "Alpha",
+      "jsonPath": [
+        "button",
+        "disabledOpacity"
+      ],
+      "defaultValue": "0.36",
+      "isEditable": true,
+      "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
@@ -2244,6 +1805,35 @@
       "embeddedSlot": null
     },
     {
+      "id": "component.button.pressedScale",
+      "label": "Pressed scale",
+      "valueKind": "Decimal",
+      "jsonPath": [
+        "button",
+        "pressedScale"
+      ],
+      "defaultValue": "0.94",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": {
+        "minimum": 0.8,
+        "maximum": 1.2,
+        "increment": 0.01,
+        "decimalPlaces": 2,
+        "useSlider": true
+      },
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
       "id": "component.button.size",
       "label": "Fixed size",
       "valueKind": "IntegerPair",
@@ -2268,1654 +1858,6 @@
       "valuePattern": "",
       "valuePatternMessage": "",
       "embeddedSlot": null
-    },
-    {
-      "id": "component.button.states.active.iconColorToken",
-      "label": "Icon color",
-      "valueKind": "ThemeToken",
-      "jsonPath": [
-        "button",
-        "states",
-        "active",
-        "iconColorToken"
-      ],
-      "defaultValue": "theme.colors.accent",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "theme.colors.background",
-          "label": "colors.background",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.surface",
-          "label": "colors.surface",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.card",
-          "label": "colors.card",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.label",
-          "label": "colors.label",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.text",
-          "label": "colors.text",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.textPrimary",
-          "label": "colors.textPrimary",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.textSecondary",
-          "label": "colors.textSecondary",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.icon",
-          "label": "colors.icon",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.button",
-          "label": "colors.button",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.field",
-          "label": "colors.field",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.checkbox",
-          "label": "colors.checkbox",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.radio",
-          "label": "colors.radio",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.switch",
-          "label": "colors.switch",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.tab",
-          "label": "colors.tab",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.menuItem",
-          "label": "colors.menuItem",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.badge",
-          "label": "colors.badge",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.toast",
-          "label": "colors.toast",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.divider",
-          "label": "colors.divider",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.accent",
-          "label": "colors.accent",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.positive",
-          "label": "colors.positive",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.negative",
-          "label": "colors.negative",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.onAction",
-          "label": "colors.onAction",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.icons.primary",
-          "label": "icons.primary",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.icons.secondary",
-          "label": "icons.secondary",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.icons.alternate",
-          "label": "icons.alternate",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.icons.accent",
-          "label": "icons.accent",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.borders.primary",
-          "label": "borders.primary",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.borders.secondary",
-          "label": "borders.secondary",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.borders.alternate",
-          "label": "borders.alternate",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.cursor.color",
-          "label": "cursor.color",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.keyboard.background",
-          "label": "keyboard.background",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.keyboard.keyBackground",
-          "label": "keyboard.keyBackground",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.keyboard.specialKeyBackground",
-          "label": "keyboard.specialKeyBackground",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.keyboard.pressedKeyBackground",
-          "label": "keyboard.pressedKeyBackground",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.keyboard.keyBorder",
-          "label": "keyboard.keyBorder",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.keyboard.text",
-          "label": "keyboard.text",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        }
-      ],
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "component.button.states.active.label.editor",
-      "label": "Label",
-      "valueKind": "ComponentVariant",
-      "jsonPath": [
-        "button",
-        "states",
-        "active",
-        "labelSlot",
-        "variantReference"
-      ],
-      "defaultValue": "default",
-      "isEditable": true,
-      "options": [],
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": {
-        "componentType": "label",
-        "label": "Active label",
-        "recordClassId": "component.label",
-        "allowRuntimeInputForwarding": true
-      }
-    },
-    {
-      "id": "component.button.states.active.surface.editor",
-      "label": "Surface",
-      "valueKind": "ComponentVariant",
-      "jsonPath": [
-        "button",
-        "states",
-        "active",
-        "surfaceSlot",
-        "variantReference"
-      ],
-      "defaultValue": "default",
-      "isEditable": true,
-      "options": [],
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": {
-        "componentType": "surface",
-        "label": "Active surface",
-        "recordClassId": "component.surface",
-        "allowRuntimeInputForwarding": true
-      }
-    },
-    {
-      "id": "component.button.states.disabled.iconColorToken",
-      "label": "Icon color",
-      "valueKind": "ThemeToken",
-      "jsonPath": [
-        "button",
-        "states",
-        "disabled",
-        "iconColorToken"
-      ],
-      "defaultValue": "theme.colors.icon",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "theme.colors.background",
-          "label": "colors.background",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.surface",
-          "label": "colors.surface",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.card",
-          "label": "colors.card",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.label",
-          "label": "colors.label",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.text",
-          "label": "colors.text",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.textPrimary",
-          "label": "colors.textPrimary",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.textSecondary",
-          "label": "colors.textSecondary",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.icon",
-          "label": "colors.icon",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.button",
-          "label": "colors.button",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.field",
-          "label": "colors.field",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.checkbox",
-          "label": "colors.checkbox",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.radio",
-          "label": "colors.radio",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.switch",
-          "label": "colors.switch",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.tab",
-          "label": "colors.tab",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.menuItem",
-          "label": "colors.menuItem",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.badge",
-          "label": "colors.badge",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.toast",
-          "label": "colors.toast",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.divider",
-          "label": "colors.divider",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.accent",
-          "label": "colors.accent",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.positive",
-          "label": "colors.positive",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.negative",
-          "label": "colors.negative",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.onAction",
-          "label": "colors.onAction",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.icons.primary",
-          "label": "icons.primary",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.icons.secondary",
-          "label": "icons.secondary",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.icons.alternate",
-          "label": "icons.alternate",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.icons.accent",
-          "label": "icons.accent",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.borders.primary",
-          "label": "borders.primary",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.borders.secondary",
-          "label": "borders.secondary",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.borders.alternate",
-          "label": "borders.alternate",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.cursor.color",
-          "label": "cursor.color",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.keyboard.background",
-          "label": "keyboard.background",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.keyboard.keyBackground",
-          "label": "keyboard.keyBackground",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.keyboard.specialKeyBackground",
-          "label": "keyboard.specialKeyBackground",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.keyboard.pressedKeyBackground",
-          "label": "keyboard.pressedKeyBackground",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.keyboard.keyBorder",
-          "label": "keyboard.keyBorder",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.keyboard.text",
-          "label": "keyboard.text",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        }
-      ],
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "component.button.states.disabled.label.editor",
-      "label": "Label",
-      "valueKind": "ComponentVariant",
-      "jsonPath": [
-        "button",
-        "states",
-        "disabled",
-        "labelSlot",
-        "variantReference"
-      ],
-      "defaultValue": "default",
-      "isEditable": true,
-      "options": [],
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": {
-        "componentType": "label",
-        "label": "Disabled label",
-        "recordClassId": "component.label",
-        "allowRuntimeInputForwarding": true
-      }
-    },
-    {
-      "id": "component.button.states.disabled.surface.editor",
-      "label": "Surface",
-      "valueKind": "ComponentVariant",
-      "jsonPath": [
-        "button",
-        "states",
-        "disabled",
-        "surfaceSlot",
-        "variantReference"
-      ],
-      "defaultValue": "default",
-      "isEditable": true,
-      "options": [],
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": {
-        "componentType": "surface",
-        "label": "Disabled surface",
-        "recordClassId": "component.surface",
-        "allowRuntimeInputForwarding": true
-      }
-    },
-    {
-      "id": "component.button.states.normal.iconColorToken",
-      "label": "Icon color",
-      "valueKind": "ThemeToken",
-      "jsonPath": [
-        "button",
-        "states",
-        "normal",
-        "iconColorToken"
-      ],
-      "defaultValue": "theme.colors.icon",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "theme.colors.background",
-          "label": "colors.background",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.surface",
-          "label": "colors.surface",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.card",
-          "label": "colors.card",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.label",
-          "label": "colors.label",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.text",
-          "label": "colors.text",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.textPrimary",
-          "label": "colors.textPrimary",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.textSecondary",
-          "label": "colors.textSecondary",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.icon",
-          "label": "colors.icon",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.button",
-          "label": "colors.button",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.field",
-          "label": "colors.field",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.checkbox",
-          "label": "colors.checkbox",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.radio",
-          "label": "colors.radio",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.switch",
-          "label": "colors.switch",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.tab",
-          "label": "colors.tab",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.menuItem",
-          "label": "colors.menuItem",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.badge",
-          "label": "colors.badge",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.toast",
-          "label": "colors.toast",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.divider",
-          "label": "colors.divider",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.accent",
-          "label": "colors.accent",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.positive",
-          "label": "colors.positive",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.negative",
-          "label": "colors.negative",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.onAction",
-          "label": "colors.onAction",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.icons.primary",
-          "label": "icons.primary",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.icons.secondary",
-          "label": "icons.secondary",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.icons.alternate",
-          "label": "icons.alternate",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.icons.accent",
-          "label": "icons.accent",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.borders.primary",
-          "label": "borders.primary",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.borders.secondary",
-          "label": "borders.secondary",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.borders.alternate",
-          "label": "borders.alternate",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.cursor.color",
-          "label": "cursor.color",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.keyboard.background",
-          "label": "keyboard.background",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.keyboard.keyBackground",
-          "label": "keyboard.keyBackground",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.keyboard.specialKeyBackground",
-          "label": "keyboard.specialKeyBackground",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.keyboard.pressedKeyBackground",
-          "label": "keyboard.pressedKeyBackground",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.keyboard.keyBorder",
-          "label": "keyboard.keyBorder",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.keyboard.text",
-          "label": "keyboard.text",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        }
-      ],
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "component.button.states.normal.label.editor",
-      "label": "Label",
-      "valueKind": "ComponentVariant",
-      "jsonPath": [
-        "button",
-        "states",
-        "normal",
-        "labelSlot",
-        "variantReference"
-      ],
-      "defaultValue": "default",
-      "isEditable": true,
-      "options": [],
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": {
-        "componentType": "label",
-        "label": "Normal label",
-        "recordClassId": "component.label",
-        "allowRuntimeInputForwarding": true
-      }
-    },
-    {
-      "id": "component.button.states.normal.surface.editor",
-      "label": "Surface",
-      "valueKind": "ComponentVariant",
-      "jsonPath": [
-        "button",
-        "states",
-        "normal",
-        "surfaceSlot",
-        "variantReference"
-      ],
-      "defaultValue": "default",
-      "isEditable": true,
-      "options": [],
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": {
-        "componentType": "surface",
-        "label": "Normal surface",
-        "recordClassId": "component.surface",
-        "allowRuntimeInputForwarding": true
-      }
-    },
-    {
-      "id": "component.button.states.pushed.iconColorToken",
-      "label": "Icon color",
-      "valueKind": "ThemeToken",
-      "jsonPath": [
-        "button",
-        "states",
-        "pushed",
-        "iconColorToken"
-      ],
-      "defaultValue": "theme.colors.accent",
-      "isEditable": true,
-      "options": [
-        {
-          "value": "theme.colors.background",
-          "label": "colors.background",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.surface",
-          "label": "colors.surface",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.card",
-          "label": "colors.card",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.label",
-          "label": "colors.label",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.text",
-          "label": "colors.text",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.textPrimary",
-          "label": "colors.textPrimary",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.textSecondary",
-          "label": "colors.textSecondary",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.icon",
-          "label": "colors.icon",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.button",
-          "label": "colors.button",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.field",
-          "label": "colors.field",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.checkbox",
-          "label": "colors.checkbox",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.radio",
-          "label": "colors.radio",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.switch",
-          "label": "colors.switch",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.tab",
-          "label": "colors.tab",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.menuItem",
-          "label": "colors.menuItem",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.badge",
-          "label": "colors.badge",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.toast",
-          "label": "colors.toast",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.divider",
-          "label": "colors.divider",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.accent",
-          "label": "colors.accent",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.positive",
-          "label": "colors.positive",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.negative",
-          "label": "colors.negative",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.colors.onAction",
-          "label": "colors.onAction",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.icons.primary",
-          "label": "icons.primary",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.icons.secondary",
-          "label": "icons.secondary",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.icons.alternate",
-          "label": "icons.alternate",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.icons.accent",
-          "label": "icons.accent",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.borders.primary",
-          "label": "borders.primary",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.borders.secondary",
-          "label": "borders.secondary",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.borders.alternate",
-          "label": "borders.alternate",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.cursor.color",
-          "label": "cursor.color",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.keyboard.background",
-          "label": "keyboard.background",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.keyboard.keyBackground",
-          "label": "keyboard.keyBackground",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.keyboard.specialKeyBackground",
-          "label": "keyboard.specialKeyBackground",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.keyboard.pressedKeyBackground",
-          "label": "keyboard.pressedKeyBackground",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.keyboard.keyBorder",
-          "label": "keyboard.keyBorder",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        },
-        {
-          "value": "theme.keyboard.text",
-          "label": "keyboard.text",
-          "colorHex": null,
-          "isNeutral": false,
-          "groupValue": "",
-          "groupLabel": "",
-          "localLabel": ""
-        }
-      ],
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": null
-    },
-    {
-      "id": "component.button.states.pushed.label.editor",
-      "label": "Label",
-      "valueKind": "ComponentVariant",
-      "jsonPath": [
-        "button",
-        "states",
-        "pushed",
-        "labelSlot",
-        "variantReference"
-      ],
-      "defaultValue": "default",
-      "isEditable": true,
-      "options": [],
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": {
-        "componentType": "label",
-        "label": "Pushed label",
-        "recordClassId": "component.label",
-        "allowRuntimeInputForwarding": true
-      }
-    },
-    {
-      "id": "component.button.states.pushed.surface.editor",
-      "label": "Surface",
-      "valueKind": "ComponentVariant",
-      "jsonPath": [
-        "button",
-        "states",
-        "pushed",
-        "surfaceSlot",
-        "variantReference"
-      ],
-      "defaultValue": "default",
-      "isEditable": true,
-      "options": [],
-      "pairLabels": null,
-      "number": null,
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "componentVariantType": "",
-      "runtimeInputComponentVariantFieldId": "",
-      "unit": "",
-      "helpText": "",
-      "valuePattern": "",
-      "valuePatternMessage": "",
-      "embeddedSlot": {
-        "componentType": "surface",
-        "label": "Pushed surface",
-        "recordClassId": "component.surface",
-        "allowRuntimeInputForwarding": true
-      }
     }
   ],
   "editorLayout": {
@@ -4025,104 +1967,39 @@
                 "id": "component.button.badge.editor",
                 "order": 20,
                 "visible": true
+              },
+              {
+                "id": "component.button.disabledOpacity",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "component.button.pressedScale",
+                "order": 40,
+                "visible": true
               }
             ]
           },
           {
-            "id": "normalState",
-            "label": "Normal",
+            "id": "appearance",
+            "label": "Appearance",
             "icon": "navigation-asset:Normal",
             "presentation": "verticalCards",
             "order": 40,
             "visible": true,
             "fields": [
               {
-                "id": "component.button.states.normal.surface.editor",
+                "id": "component.button.appearance.surface.editor",
                 "order": 10,
                 "visible": true
               },
               {
-                "id": "component.button.states.normal.label.editor",
+                "id": "component.button.appearance.label.editor",
                 "order": 20,
                 "visible": true
               },
               {
-                "id": "component.button.states.normal.iconColorToken",
-                "order": 30,
-                "visible": true
-              }
-            ]
-          },
-          {
-            "id": "activeState",
-            "label": "Active",
-            "icon": "status",
-            "presentation": "verticalCards",
-            "order": 50,
-            "visible": true,
-            "fields": [
-              {
-                "id": "component.button.states.active.surface.editor",
-                "order": 10,
-                "visible": true
-              },
-              {
-                "id": "component.button.states.active.label.editor",
-                "order": 20,
-                "visible": true
-              },
-              {
-                "id": "component.button.states.active.iconColorToken",
-                "order": 30,
-                "visible": true
-              }
-            ]
-          },
-          {
-            "id": "pushedState",
-            "label": "Pushed",
-            "icon": "navigation-asset:Push",
-            "presentation": "verticalCards",
-            "order": 60,
-            "visible": true,
-            "fields": [
-              {
-                "id": "component.button.states.pushed.surface.editor",
-                "order": 10,
-                "visible": true
-              },
-              {
-                "id": "component.button.states.pushed.label.editor",
-                "order": 20,
-                "visible": true
-              },
-              {
-                "id": "component.button.states.pushed.iconColorToken",
-                "order": 30,
-                "visible": true
-              }
-            ]
-          },
-          {
-            "id": "disabledState",
-            "label": "Disabled",
-            "icon": "navigation-asset:Disabled",
-            "presentation": "verticalCards",
-            "order": 70,
-            "visible": true,
-            "fields": [
-              {
-                "id": "component.button.states.disabled.surface.editor",
-                "order": 10,
-                "visible": true
-              },
-              {
-                "id": "component.button.states.disabled.label.editor",
-                "order": 20,
-                "visible": true
-              },
-              {
-                "id": "component.button.states.disabled.iconColorToken",
+                "id": "component.button.appearance.iconColorToken",
                 "order": 30,
                 "visible": true
               }

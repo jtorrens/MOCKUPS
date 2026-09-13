@@ -380,7 +380,7 @@
                   "jsonKey": "buttonInputs",
                   "kind": "collection",
                   "valueKind": "StructuredCollection",
-                  "defaultValue": "[{\"id\":\"button_001\",\"state\":\"normal\",\"sampleText\":\"\",\"iconToken\":\"system_check\",\"iconSizeToken\":\"theme.iconSizes.m\",\"textSizeToken\":\"theme.typography.sizes.s\",\"showBadge\":false,\"badgeContentMode\":\"text\",\"badgeIconToken\":\"system_check\",\"badgeText\":\"1\",\"badgeSize\":20,\"badgeBackgroundPaletteColor\":\"palette_project_foqn_s2_blue\",\"badgeContentPaletteColor\":\"palette_project_foqn_s2_gray_100\",\"iconColorToken\":\"theme.colors.icon\",\"textColorToken\":\"theme.colors.textPrimary\"}]",
+                  "defaultValue": "[{\"id\":\"button_001\",\"sampleText\":\"\",\"iconToken\":\"system_check\",\"iconSizeToken\":\"theme.iconSizes.m\",\"textSizeToken\":\"theme.typography.sizes.s\",\"showBadge\":false,\"badgeContentMode\":\"text\",\"badgeIconToken\":\"system_check\",\"badgeText\":\"1\",\"badgeSize\":20,\"badgeBackgroundPaletteColor\":\"palette_project_foqn_s2_blue\",\"badgeContentPaletteColor\":\"palette_project_foqn_s2_gray_100\",\"iconColorToken\":\"theme.colors.icon\",\"textColorToken\":\"theme.colors.textPrimary\",\"enabled\":true,\"pressed\":false}]",
                   "minimum": 0,
                   "maximum": 9999,
                   "increment": 1,
@@ -406,36 +406,19 @@
                     "itemLabel": "Button",
                     "fields": [
                       {
-                        "id": "state",
-                        "label": "State",
-                        "jsonKey": "state",
-                        "kind": "option",
-                        "valueKind": "OptionToken",
-                        "defaultValue": "normal",
+                        "id": "enabled",
+                        "label": "Enabled",
+                        "jsonKey": "enabled",
+                        "kind": "boolean",
+                        "valueKind": "Boolean",
+                        "defaultValue": "true",
                         "minimum": 0,
                         "maximum": 9999,
                         "increment": 1,
                         "tableId": "",
                         "resolvedJsonKey": "",
                         "componentType": "",
-                        "options": [
-                          {
-                            "value": "normal",
-                            "label": "Normal"
-                          },
-                          {
-                            "value": "active",
-                            "label": "Active"
-                          },
-                          {
-                            "value": "pushed",
-                            "label": "Pushed"
-                          },
-                          {
-                            "value": "disabled",
-                            "label": "Disabled"
-                          }
-                        ],
+                        "options": [],
                         "pairFirstLabel": "W",
                         "pairSecondLabel": "H",
                         "visibleWhenPath": "",
@@ -447,7 +430,52 @@
                         "uiParentGroupId": "",
                         "transition": null,
                         "unit": "",
-                        "uiOrder": 10
+                        "uiOrder": 10,
+                        "animatable": true,
+                        "animationInterpolations": [
+                          "hold"
+                        ],
+                        "animationTimeline": {
+                          "origin": {
+                            "kind": "ownerStart"
+                          }
+                        }
+                      },
+                      {
+                        "id": "pressed",
+                        "label": "Pressed",
+                        "jsonKey": "pressed",
+                        "kind": "boolean",
+                        "valueKind": "Boolean",
+                        "defaultValue": "false",
+                        "minimum": 0,
+                        "maximum": 9999,
+                        "increment": 1,
+                        "tableId": "",
+                        "resolvedJsonKey": "",
+                        "componentType": "",
+                        "options": [],
+                        "pairFirstLabel": "W",
+                        "pairSecondLabel": "H",
+                        "visibleWhenPath": "",
+                        "visibleWhenValue": "",
+                        "source": "runtime",
+                        "uiOrigin": "embedded",
+                        "uiGroupId": "state",
+                        "uiGroupLabel": "State",
+                        "uiParentGroupId": "",
+                        "transition": null,
+                        "unit": "",
+                        "uiOrder": 11,
+                        "animatable": true,
+                        "animationInterpolations": [
+                          "hold"
+                        ],
+                        "animationTimeline": {
+                          "origin": {
+                            "kind": "ownerStart"
+                          }
+                        }
                       },
                       {
                         "id": "sampleText",
@@ -598,60 +626,6 @@
                         "transition": null,
                         "unit": "",
                         "uiOrder": 24
-                      },
-                      {
-                        "id": "pushTrigger",
-                        "label": "Push",
-                        "jsonKey": "pushTrigger",
-                        "kind": "boolean",
-                        "valueKind": "Boolean",
-                        "defaultValue": "false",
-                        "minimum": 0,
-                        "maximum": 9999,
-                        "increment": 1,
-                        "tableId": "",
-                        "resolvedJsonKey": "",
-                        "componentType": "",
-                        "options": [],
-                        "pairFirstLabel": "W",
-                        "pairSecondLabel": "H",
-                        "visibleWhenPath": "",
-                        "visibleWhenValue": "",
-                        "source": "calculated",
-                        "uiOrigin": "embedded",
-                        "uiGroupId": "action",
-                        "uiGroupLabel": "Action",
-                        "uiParentGroupId": "",
-                        "transition": null,
-                        "unit": "",
-                        "uiOrder": 30
-                      },
-                      {
-                        "id": "pushElapsedMs",
-                        "label": "Push elapsed",
-                        "jsonKey": "pushElapsedMs",
-                        "kind": "number",
-                        "valueKind": "Decimal",
-                        "defaultValue": "0",
-                        "minimum": 0,
-                        "maximum": 60000,
-                        "increment": 10,
-                        "tableId": "",
-                        "resolvedJsonKey": "",
-                        "componentType": "",
-                        "options": [],
-                        "pairFirstLabel": "W",
-                        "pairSecondLabel": "H",
-                        "visibleWhenPath": "",
-                        "visibleWhenValue": "",
-                        "source": "calculated",
-                        "uiOrigin": "embedded",
-                        "uiGroupId": "action",
-                        "uiGroupLabel": "Action",
-                        "uiParentGroupId": "",
-                        "transition": null,
-                        "unit": "ms",
-                        "uiOrder": 31
                       },
                       {
                         "id": "showBadge",
@@ -909,8 +883,7 @@
                     "itemPresentation": {
                       "subtitleFieldIds": [
                         "sampleText",
-                        "iconToken",
-                        "state"
+                        "iconToken"
                       ],
                       "subtitleMaxCharacters": 72,
                       "fallbackIcon": "component"
@@ -921,7 +894,6 @@
                       "sourceIdJsonKey": "id",
                       "runtimeIdJsonKey": "id",
                       "fieldBindings": {
-                        "state": "state",
                         "sampleText": "text",
                         "iconToken": "iconToken",
                         "iconSizeToken": "iconSizeToken",
@@ -935,7 +907,6 @@
               "buttonInputs": [
                 {
                   "id": "button_001",
-                  "state": "normal",
                   "sampleText": "",
                   "iconToken": "system_check",
                   "iconSizeToken": "theme.iconSizes.m",
@@ -948,7 +919,9 @@
                   "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
                   "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
                   "iconColorToken": "theme.colors.icon",
-                  "textColorToken": "theme.colors.textPrimary"
+                  "textColorToken": "theme.colors.textPrimary",
+                  "enabled": true,
+                  "pressed": false
                 }
               ],
               "collections": [],
@@ -1648,36 +1621,38 @@
                   ]
                 },
                 {
-                  "id": "state",
-                  "label": "State",
-                  "jsonKey": "state",
-                  "kind": "option",
-                  "valueKind": "OptionToken",
-                  "defaultValue": "normal",
-                  "options": [
-                    {
-                      "value": "normal",
-                      "label": "Normal"
-                    },
-                    {
-                      "value": "active",
-                      "label": "Active"
-                    },
-                    {
-                      "value": "pushed",
-                      "label": "Pushed"
-                    },
-                    {
-                      "value": "disabled",
-                      "label": "Disabled"
-                    }
-                  ],
+                  "id": "enabled",
+                  "label": "Enabled",
+                  "jsonKey": "enabled",
+                  "kind": "boolean",
+                  "valueKind": "Boolean",
+                  "defaultValue": "true",
+                  "options": [],
                   "source": "runtime",
                   "uiOrder": 40,
                   "enabledWhenItemJsonKey": "kind",
                   "enabledWhenItemValues": [
                     "icon"
-                  ]
+                  ],
+                  "uiGroupId": "state",
+                  "uiGroupLabel": "State"
+                },
+                {
+                  "id": "pressed",
+                  "label": "Pressed",
+                  "jsonKey": "pressed",
+                  "kind": "boolean",
+                  "valueKind": "Boolean",
+                  "defaultValue": "false",
+                  "options": [],
+                  "source": "runtime",
+                  "uiOrder": 41,
+                  "enabledWhenItemJsonKey": "kind",
+                  "enabledWhenItemValues": [
+                    "icon"
+                  ],
+                  "uiGroupId": "state",
+                  "uiGroupLabel": "State"
                 }
               ],
               "itemPresentation": {
@@ -1820,36 +1795,38 @@
                   ]
                 },
                 {
-                  "id": "state",
-                  "label": "State",
-                  "jsonKey": "state",
-                  "kind": "option",
-                  "valueKind": "OptionToken",
-                  "defaultValue": "normal",
-                  "options": [
-                    {
-                      "value": "normal",
-                      "label": "Normal"
-                    },
-                    {
-                      "value": "active",
-                      "label": "Active"
-                    },
-                    {
-                      "value": "pushed",
-                      "label": "Pushed"
-                    },
-                    {
-                      "value": "disabled",
-                      "label": "Disabled"
-                    }
-                  ],
+                  "id": "enabled",
+                  "label": "Enabled",
+                  "jsonKey": "enabled",
+                  "kind": "boolean",
+                  "valueKind": "Boolean",
+                  "defaultValue": "true",
+                  "options": [],
                   "source": "runtime",
                   "uiOrder": 40,
                   "enabledWhenItemJsonKey": "kind",
                   "enabledWhenItemValues": [
                     "icon"
-                  ]
+                  ],
+                  "uiGroupId": "state",
+                  "uiGroupLabel": "State"
+                },
+                {
+                  "id": "pressed",
+                  "label": "Pressed",
+                  "jsonKey": "pressed",
+                  "kind": "boolean",
+                  "valueKind": "Boolean",
+                  "defaultValue": "false",
+                  "options": [],
+                  "source": "runtime",
+                  "uiOrder": 41,
+                  "enabledWhenItemJsonKey": "kind",
+                  "enabledWhenItemValues": [
+                    "icon"
+                  ],
+                  "uiGroupId": "state",
+                  "uiGroupLabel": "State"
                 }
               ],
               "itemPresentation": {
@@ -1967,35 +1944,40 @@
             "actorId": "actor_alex",
             "label": "Alex Q",
             "sublabel": "@alexq · 2 min",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "row1_slot2",
             "actorId": "actor_alex",
             "label": "250",
             "sublabel": "Publicaciones",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "row1_slot3",
             "actorId": "actor_alex",
             "label": "135",
             "sublabel": "Seguidores",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "row1_slot4",
             "actorId": "actor_alex",
             "label": "54",
             "sublabel": "Siguiendo",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "row1_slot5",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           }
         ]
       },
@@ -2007,35 +1989,40 @@
             "actorId": "actor_alex",
             "label": "#FOQN",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "row2_slot2",
             "actorId": "actor_alex",
             "label": "#ASDF",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "row2_slot3",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "row2_slot4",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "row2_slot5",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           }
         ]
       }
@@ -2049,35 +2036,40 @@
             "actorId": "actor_alex",
             "label": "Alex Q",
             "sublabel": "@alexq · 2 min",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "footerRow1_slot2",
             "actorId": "actor_alex",
             "label": "250",
             "sublabel": "Publicaciones",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "footerRow1_slot3",
             "actorId": "actor_alex",
             "label": "135",
             "sublabel": "Seguidores",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "footerRow1_slot4",
             "actorId": "actor_alex",
             "label": "54",
             "sublabel": "Siguiendo",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "footerRow1_slot5",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           }
         ]
       },
@@ -2089,35 +2081,40 @@
             "actorId": "actor_alex",
             "label": "#FOQN",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "footerRow2_slot2",
             "actorId": "actor_alex",
             "label": "#ASDF",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "footerRow2_slot3",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "footerRow2_slot4",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "footerRow2_slot5",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           }
         ]
       }
@@ -2461,7 +2458,7 @@
                     "jsonKey": "buttonInputs",
                     "kind": "collection",
                     "valueKind": "StructuredCollection",
-                    "defaultValue": "[{\"id\":\"button_001\",\"state\":\"normal\",\"sampleText\":\"\",\"iconToken\":\"system_check\",\"iconSizeToken\":\"theme.iconSizes.m\",\"textSizeToken\":\"theme.typography.sizes.s\",\"showBadge\":false,\"badgeContentMode\":\"text\",\"badgeIconToken\":\"system_check\",\"badgeText\":\"1\",\"badgeSize\":20,\"badgeBackgroundPaletteColor\":\"palette_project_foqn_s2_blue\",\"badgeContentPaletteColor\":\"palette_project_foqn_s2_gray_100\",\"iconColorToken\":\"theme.colors.icon\",\"textColorToken\":\"theme.colors.textPrimary\"}]",
+                    "defaultValue": "[{\"id\":\"button_001\",\"sampleText\":\"\",\"iconToken\":\"system_check\",\"iconSizeToken\":\"theme.iconSizes.m\",\"textSizeToken\":\"theme.typography.sizes.s\",\"showBadge\":false,\"badgeContentMode\":\"text\",\"badgeIconToken\":\"system_check\",\"badgeText\":\"1\",\"badgeSize\":20,\"badgeBackgroundPaletteColor\":\"palette_project_foqn_s2_blue\",\"badgeContentPaletteColor\":\"palette_project_foqn_s2_gray_100\",\"iconColorToken\":\"theme.colors.icon\",\"textColorToken\":\"theme.colors.textPrimary\",\"enabled\":true,\"pressed\":false}]",
                     "minimum": 0,
                     "maximum": 9999,
                     "increment": 1,
@@ -2487,36 +2484,19 @@
                       "itemLabel": "Button",
                       "fields": [
                         {
-                          "id": "state",
-                          "label": "State",
-                          "jsonKey": "state",
-                          "kind": "option",
-                          "valueKind": "OptionToken",
-                          "defaultValue": "normal",
+                          "id": "enabled",
+                          "label": "Enabled",
+                          "jsonKey": "enabled",
+                          "kind": "boolean",
+                          "valueKind": "Boolean",
+                          "defaultValue": "true",
                           "minimum": 0,
                           "maximum": 9999,
                           "increment": 1,
                           "tableId": "",
                           "resolvedJsonKey": "",
                           "componentType": "",
-                          "options": [
-                            {
-                              "value": "normal",
-                              "label": "Normal"
-                            },
-                            {
-                              "value": "active",
-                              "label": "Active"
-                            },
-                            {
-                              "value": "pushed",
-                              "label": "Pushed"
-                            },
-                            {
-                              "value": "disabled",
-                              "label": "Disabled"
-                            }
-                          ],
+                          "options": [],
                           "pairFirstLabel": "W",
                           "pairSecondLabel": "H",
                           "visibleWhenPath": "",
@@ -2528,7 +2508,52 @@
                           "uiParentGroupId": "",
                           "transition": null,
                           "unit": "",
-                          "uiOrder": 10
+                          "uiOrder": 10,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
+                        },
+                        {
+                          "id": "pressed",
+                          "label": "Pressed",
+                          "jsonKey": "pressed",
+                          "kind": "boolean",
+                          "valueKind": "Boolean",
+                          "defaultValue": "false",
+                          "minimum": 0,
+                          "maximum": 9999,
+                          "increment": 1,
+                          "tableId": "",
+                          "resolvedJsonKey": "",
+                          "componentType": "",
+                          "options": [],
+                          "pairFirstLabel": "W",
+                          "pairSecondLabel": "H",
+                          "visibleWhenPath": "",
+                          "visibleWhenValue": "",
+                          "source": "runtime",
+                          "uiOrigin": "embedded",
+                          "uiGroupId": "state",
+                          "uiGroupLabel": "State",
+                          "uiParentGroupId": "",
+                          "transition": null,
+                          "unit": "",
+                          "uiOrder": 11,
+                          "animatable": true,
+                          "animationInterpolations": [
+                            "hold"
+                          ],
+                          "animationTimeline": {
+                            "origin": {
+                              "kind": "ownerStart"
+                            }
+                          }
                         },
                         {
                           "id": "sampleText",
@@ -2679,60 +2704,6 @@
                           "transition": null,
                           "unit": "",
                           "uiOrder": 24
-                        },
-                        {
-                          "id": "pushTrigger",
-                          "label": "Push",
-                          "jsonKey": "pushTrigger",
-                          "kind": "boolean",
-                          "valueKind": "Boolean",
-                          "defaultValue": "false",
-                          "minimum": 0,
-                          "maximum": 9999,
-                          "increment": 1,
-                          "tableId": "",
-                          "resolvedJsonKey": "",
-                          "componentType": "",
-                          "options": [],
-                          "pairFirstLabel": "W",
-                          "pairSecondLabel": "H",
-                          "visibleWhenPath": "",
-                          "visibleWhenValue": "",
-                          "source": "calculated",
-                          "uiOrigin": "embedded",
-                          "uiGroupId": "action",
-                          "uiGroupLabel": "Action",
-                          "uiParentGroupId": "",
-                          "transition": null,
-                          "unit": "",
-                          "uiOrder": 30
-                        },
-                        {
-                          "id": "pushElapsedMs",
-                          "label": "Push elapsed",
-                          "jsonKey": "pushElapsedMs",
-                          "kind": "number",
-                          "valueKind": "Decimal",
-                          "defaultValue": "0",
-                          "minimum": 0,
-                          "maximum": 60000,
-                          "increment": 10,
-                          "tableId": "",
-                          "resolvedJsonKey": "",
-                          "componentType": "",
-                          "options": [],
-                          "pairFirstLabel": "W",
-                          "pairSecondLabel": "H",
-                          "visibleWhenPath": "",
-                          "visibleWhenValue": "",
-                          "source": "calculated",
-                          "uiOrigin": "embedded",
-                          "uiGroupId": "action",
-                          "uiGroupLabel": "Action",
-                          "uiParentGroupId": "",
-                          "transition": null,
-                          "unit": "ms",
-                          "uiOrder": 31
                         },
                         {
                           "id": "showBadge",
@@ -2990,8 +2961,7 @@
                       "itemPresentation": {
                         "subtitleFieldIds": [
                           "sampleText",
-                          "iconToken",
-                          "state"
+                          "iconToken"
                         ],
                         "subtitleMaxCharacters": 72,
                         "fallbackIcon": "component"
@@ -3002,7 +2972,6 @@
                         "sourceIdJsonKey": "id",
                         "runtimeIdJsonKey": "id",
                         "fieldBindings": {
-                          "state": "state",
                           "sampleText": "text",
                           "iconToken": "iconToken",
                           "iconSizeToken": "iconSizeToken",
@@ -3016,7 +2985,6 @@
                 "buttonInputs": [
                   {
                     "id": "button_001",
-                    "state": "normal",
                     "sampleText": "",
                     "iconToken": "system_check",
                     "iconSizeToken": "theme.iconSizes.m",
@@ -3029,7 +2997,9 @@
                     "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
                     "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
                     "iconColorToken": "theme.colors.icon",
-                    "textColorToken": "theme.colors.textPrimary"
+                    "textColorToken": "theme.colors.textPrimary",
+                    "enabled": true,
+                    "pressed": false
                   }
                 ],
                 "collections": [],

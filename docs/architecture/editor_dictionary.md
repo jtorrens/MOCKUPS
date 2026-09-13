@@ -225,8 +225,9 @@ its metadata: a fixed boundary, a component-item boundary or complete
 collection definitions and stable item ids; no concrete collection or
 Component receives a discovery or persistence branch. An Icon Row item is one
 instance of that contract through its fixed Button boundary and typed local
-`buttonOverrides` document. Its selected icon, label, state and Button Variant
-reference remain direct Icon Row Variant data and are not projected.
+`buttonOverrides` document. Its selected icon, label and Button Variant
+reference remain direct Icon Row Variant data and are not projected. The
+independent `enabled` and `pressed` values belong to the projected Runtime row.
 
 ## Session view state
 

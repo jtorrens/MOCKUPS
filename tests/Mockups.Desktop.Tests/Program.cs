@@ -191,6 +191,7 @@ var tests = new (string Name, Action Run)[]
     ("Component Variant changes clear complete boundary Overrides", ComponentVariantChangesClearCompleteBoundaryOverrides),
     ("Default Variant editing unlock is session-only", DefaultVariantEditingUnlockIsSessionOnly),
     ("fixed structural Runtime collections reconcile by stable ids", FixedStructuralRuntimeCollectionsReconcileByStableIds),
+    ("effective collection authoring clones recursively exclude calculated fields", EffectiveCollectionAuthoringClonesExcludeCalculatedFieldsRecursively),
     ("Icon Bar Variants own exact zone topology", IconBarVariantsOwnExactZoneTopology),
     ("Incoming Call exposes exact Avatar and Icon Row Runtime boundaries", IncomingCallExposesExactChildRuntimeBoundaries),
     ("Preview references share Project media path resolution", PreviewReferencesShareProjectMediaPathResolution),
@@ -323,8 +324,7 @@ static void ExactComponentVariantSlotsReplaceInheritedBoundaries()
         """
         {
           "button": {
-            "states": {
-              "normal": {
+            "appearance": {
                 "surfaceSlot": {
                   "variantReference": "surface::variant::negative",
                   "overrides": {
@@ -337,7 +337,6 @@ static void ExactComponentVariantSlotsReplaceInheritedBoundaries()
                     }
                   }
                 }
-              }
             }
           }
         }
@@ -347,8 +346,7 @@ static void ExactComponentVariantSlotsReplaceInheritedBoundaries()
         """
         {
           "button": {
-            "states": {
-              "normal": {
+            "appearance": {
                 "surfaceSlot": {
                   "variantReference": "surface::variant::neutral",
                   "overrides": {
@@ -357,7 +355,6 @@ static void ExactComponentVariantSlotsReplaceInheritedBoundaries()
                     }
                   }
                 }
-              }
             }
           }
         }
@@ -365,7 +362,7 @@ static void ExactComponentVariantSlotsReplaceInheritedBoundaries()
         ?? throw new InvalidOperationException("Missing exact Component Variant Slot Override.");
 
     ComponentConfigOverrideMerger.MergeInto(target, exactSlotOverride);
-    var selectedSlot = target["button"]?["states"]?["normal"]?["surfaceSlot"]?.AsObject()
+    var selectedSlot = target["button"]?["appearance"]?["surfaceSlot"]?.AsObject()
         ?? throw new InvalidOperationException("Missing selected Component Variant Slot.");
     Equal("surface::variant::neutral", selectedSlot["variantReference"]?.GetValue<string>());
     Equal(1, selectedSlot["overrides"]?["surface"]?.AsObject().Count ?? -1);
@@ -375,8 +372,7 @@ static void ExactComponentVariantSlotsReplaceInheritedBoundaries()
         """
         {
           "button": {
-            "states": {
-              "normal": {
+            "appearance": {
                 "surfaceSlot": {
                   "overrides": {
                     "surface": {
@@ -384,7 +380,6 @@ static void ExactComponentVariantSlotsReplaceInheritedBoundaries()
                     }
                   }
                 }
-              }
             }
           }
         }
@@ -394,8 +389,7 @@ static void ExactComponentVariantSlotsReplaceInheritedBoundaries()
         """
         {
           "button": {
-            "states": {
-              "normal": {
+            "appearance": {
                 "surfaceSlot": {
                   "variantReference": "surface::variant::negative",
                   "overrides": {
@@ -405,7 +399,6 @@ static void ExactComponentVariantSlotsReplaceInheritedBoundaries()
                     }
                   }
                 }
-              }
             }
           }
         }
@@ -413,7 +406,7 @@ static void ExactComponentVariantSlotsReplaceInheritedBoundaries()
         ?? throw new InvalidOperationException("Missing partial Component config target.");
 
     ComponentConfigOverrideMerger.MergeInto(partialTarget, partialOverride);
-    var partialSlot = partialTarget["button"]?["states"]?["normal"]?["surfaceSlot"]?.AsObject()
+    var partialSlot = partialTarget["button"]?["appearance"]?["surfaceSlot"]?.AsObject()
         ?? throw new InvalidOperationException("Missing merged Component Variant Slot.");
     Equal("surface::variant::negative", partialSlot["variantReference"]?.GetValue<string>());
     Equal(
@@ -2671,7 +2664,7 @@ static void DictionaryFreeFormInputsCommitOnlyOnConfirmation()
 static void FixedComponentCollectionBoundariesPreserveSequentialOverrides()
 {
     const string iconSlots = """
-        [{"id":"decline","buttonVariantReference":"component_project_foqn_s2_button::variant::default","state":"normal","iconToken":"phone_hangup","text":"Decline","iconSizeToken":"theme.iconSizes.m","textSizeToken":"theme.typography.sizes.s","buttonOverrides":{"button":{"dimensionMode":"fixed","size":"112|48"}}}]
+        [{"id":"decline","buttonVariantReference":"component_project_foqn_s2_button::variant::default","iconToken":"phone_hangup","text":"Decline","iconSizeToken":"theme.iconSizes.m","textSizeToken":"theme.typography.sizes.s","buttonOverrides":{"button":{"dimensionMode":"fixed","size":"112|48"}}}]
         """;
     var definition = ComponentClassFieldCatalog
         .Get("component.iconRow.items")
@@ -3597,12 +3590,12 @@ static void FixedStructuralRuntimeCollectionsReconcileByStableIds()
     var iosConfig = database.GetComponentVariantConfig(references["incoming_call_ios"]);
     StructuredRuntimeCollectionProjection.Apply(preview, iosConfig);
     var buttons = JsonPath.RequiredArray(preview, "buttonInputs", "Projected Icon Row Runtime");
-    buttons[1]!["state"] = "pushed";
+    buttons[1]!["pressed"] = true;
 
     var androidConfig = database.GetComponentVariantConfig(references["incoming_call_android"]);
     StructuredRuntimeCollectionProjection.Apply(preview, androidConfig);
     buttons = JsonPath.RequiredArray(preview, "buttonInputs", "Reprojected Icon Row Runtime");
-    Equal("normal", buttons[1]?["state"]?.GetValue<string>() ?? "");
+    True(buttons[1]?["pressed"]?.GetValue<bool>() == true);
 
     var reorderedAndroid = androidConfig.DeepClone().AsObject();
     var structuralItems = JsonPath.RequiredArray(
@@ -3617,7 +3610,7 @@ static void FixedStructuralRuntimeCollectionsReconcileByStableIds()
     SequenceEqual(
         ["answer", "decline"],
         buttons.OfType<JsonObject>().Select((item) => JsonPath.RequiredString(item, "id", "Reordered button")));
-    Equal("normal", buttons[0]?["state"]?.GetValue<string>() ?? "");
+    True(buttons[0]?["pressed"]?.GetValue<bool>() == true);
 
     var emptyConfig = database.GetComponentVariantConfig(references["default"]);
     JsonPath.RequiredArray(
@@ -3694,6 +3687,7 @@ static void FixedStructuralRuntimeCollectionsReconcileByStableIds()
             }
             if (value.ContainsKey("buttonVariantReference"))
             {
+                True(!value.ContainsKey("state"));
                 True(!value.ContainsKey("pushTrigger"));
                 True(!value.ContainsKey("pushElapsedMs"));
             }
@@ -3703,6 +3697,62 @@ static void FixedStructuralRuntimeCollectionsReconcileByStableIds()
             }
         }
     }
+}
+
+static void EffectiveCollectionAuthoringClonesExcludeCalculatedFieldsRecursively()
+{
+    var child = new RuntimeInputCollectionDefinition(
+        "children",
+        "Children",
+        "children",
+        "Child",
+        [
+            new ComponentInputDefinition(
+                "enabled", "Enabled", "enabled", ComponentInputKind.Boolean,
+                ValueKind.Boolean, "true"),
+            new ComponentInputDefinition(
+                "kind", "Kind", "kind", ComponentInputKind.Text,
+                ValueKind.StringReadOnly, "icon", Source: ComponentInputSource.Variant),
+            new ComponentInputDefinition(
+                "elapsed", "Elapsed", "elapsed", ComponentInputKind.Number,
+                ValueKind.Decimal, "0", Source: ComponentInputSource.Calculated),
+        ],
+        StructureOwnedFieldJsonKeys: new HashSet<string>(["kind"], StringComparer.Ordinal));
+    var parent = new RuntimeInputCollectionDefinition(
+        "parents",
+        "Parents",
+        "parents",
+        "Parent",
+        [
+            new ComponentInputDefinition(
+                "children", "Children", "children", ComponentInputKind.Text,
+                ValueKind.StructuredCollection, "[]", StructuredCollection: child),
+            new ComponentInputDefinition(
+                "trigger", "Trigger", "trigger", ComponentInputKind.Boolean,
+                ValueKind.Boolean, "false", Source: ComponentInputSource.Calculated),
+        ]);
+    var effective = JsonPath.ParseRequiredArray(
+        """
+        [{"id":"parent","trigger":true,"children":[{"id":"child","enabled":false,"kind":"icon","elapsed":125}]}]
+        """,
+        "Effective nested collection");
+
+    var authoring = StructuredCollectionDocumentContract.EffectiveAuthoringClone(
+        effective,
+        parent,
+        "Effective nested collection");
+    var parentItem = authoring.OfType<JsonObject>().Single();
+    True(!parentItem.ContainsKey("trigger"));
+    var childItem = JsonPath.RequiredArray(parentItem, "children", "Authoring parent")
+        .OfType<JsonObject>()
+        .Single();
+    True(childItem["enabled"]?.GetValue<bool>() == false);
+    Equal("icon", JsonPath.RequiredString(childItem, "kind", "Authoring child"));
+    True(!childItem.ContainsKey("elapsed"));
+    StructuredCollectionDocumentContract.ValidateEffective(
+        authoring,
+        parent,
+        "Authoring nested collection");
 }
 
 static void IconBarVariantsOwnExactZoneTopology()
@@ -3825,7 +3875,9 @@ static void IncomingCallExposesExactChildRuntimeBoundaries()
         ["decline", "answer"],
         buttonInputs.OfType<JsonObject>()
             .Select((item) => JsonPath.RequiredString(item, "id", "Incoming Call button")));
-    True(buttonInputs.OfType<JsonObject>().All((item) => item["state"] is JsonValue));
+    True(buttonInputs.OfType<JsonObject>().All((item) =>
+        item["enabled"]?.GetValue<bool>() == true
+        && item["pressed"]?.GetValue<bool>() == false));
 
     var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
     var payload = Required(CreatePreviewPayload(database, ios, theme.Id));
@@ -8830,8 +8882,8 @@ static void PreviewAuthoringFocusRevealsExactCard()
                 StructuredCollection: descriptor.StructuredCollection),
             """
             [
-              {"id":"button_other","buttonVariantReference":"component_button::variant::default","state":"normal","iconToken":"other","text":"","iconSizeToken":"theme.iconSizes.m","textSizeToken":"theme.typography.sizes.s","buttonOverrides":{}},
-              {"id":"button_attachment","buttonVariantReference":"component_button::variant::default","state":"normal","iconToken":"chat_attach","text":"","iconSizeToken":"theme.iconSizes.m","textSizeToken":"theme.typography.sizes.s","buttonOverrides":{}}
+              {"id":"button_other","buttonVariantReference":"component_button::variant::default","iconToken":"other","text":"","iconSizeToken":"theme.iconSizes.m","textSizeToken":"theme.typography.sizes.s","buttonOverrides":{}},
+              {"id":"button_attachment","buttonVariantReference":"component_button::variant::default","iconToken":"chat_attach","text":"","iconSizeToken":"theme.iconSizes.m","textSizeToken":"theme.typography.sizes.s","buttonOverrides":{}}
             ]
             """,
             new DictionaryFieldServices(

@@ -2,6 +2,7 @@ import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { componentVariantConfig, mergeComponentDefaults } from "./componentPreviewDefaults.js";
 import {
   parseObject,
+  requiredBoolean,
   requiredNumber,
   requiredPossiblyEmptyString,
   requiredRecord,
@@ -51,15 +52,14 @@ export function iconRowButtonRuntimeDefaults(
 ) {
   return items.map((item, index) => ({
     id: requiredString(item, "id", `component.iconRow.items[${index}].id`),
-    state: requiredString(item, "state", `component.iconRow.items[${index}].state`),
+    enabled: true,
+    pressed: false,
     sampleText: typeof item.sampleText === "string"
       ? item.sampleText
       : typeof item.text === "string" ? item.text : "",
     iconToken: requiredString(item, "iconToken", `component.iconRow.items[${index}].iconToken`),
     iconSizeToken: requiredString(item, "iconSizeToken", `component.iconRow.items[${index}].iconSizeToken`),
     textSizeToken: requiredString(item, "textSizeToken", `component.iconRow.items[${index}].textSizeToken`),
-    pushTrigger: item.pushTrigger === true,
-    pushElapsedMs: typeof item.pushElapsedMs === "number" ? item.pushElapsedMs : 0,
     iconColorToken: typeof item.iconColorToken === "string" ? item.iconColorToken : "theme.colors.icon",
     textColorToken: typeof item.textColorToken === "string" ? item.textColorToken : "theme.colors.textPrimary",
     showBadge: item.showBadge === true,
@@ -118,14 +118,16 @@ export function resolveIconRowComponentFromRecords(
       componentVariantConfig(componentBaseConfigs, "button", buttonVariantReference),
       requiredRecord(item, "buttonOverrides", `component.iconRow.items[${index}].buttonOverrides`),
     );
-    const state = requiredString(runtime, "state", `component.iconRow.buttonInputs[${index}].state`);
+    const enabled = requiredBoolean(runtime, "enabled", `component.iconRow.buttonInputs[${index}].enabled`);
+    const pressed = requiredBoolean(runtime, "pressed", `component.iconRow.buttonInputs[${index}].pressed`);
     const showBadge = runtime.showBadge === true;
     return {
       id: itemId,
       button: resolveButtonComponentFromRecords(
         baseButtonConfig,
         {
-          state,
+          enabled,
+          pressed,
           iconToken: requiredString(runtime, "iconToken", `component.iconRow.buttonInputs[${index}].iconToken`),
           iconSizeToken: sizeSource === "perButton" && !inheritedIconSize
             ? requiredString(runtime, "iconSizeToken", `component.iconRow.buttonInputs[${index}].iconSizeToken`)
@@ -138,8 +140,6 @@ export function resolveIconRowComponentFromRecords(
             "sampleText",
             `component.iconRow.buttonInputs[${index}].sampleText`,
           ),
-          pushTrigger: runtime.pushTrigger === true,
-          pushElapsedMs: typeof runtime.pushElapsedMs === "number" ? runtime.pushElapsedMs : 0,
           showBadge,
           badgeContentMode: showBadge
             ? requiredString(runtime, "badgeContentMode", `component.iconRow.buttonInputs[${index}].badgeContentMode`)

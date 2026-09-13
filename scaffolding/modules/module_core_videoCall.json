@@ -992,7 +992,9 @@
                   "source": "runtime",
                   "uiOrder": 10,
                   "enabledWhenItemJsonKey": "kind",
-                  "enabledWhenItemValues": ["avatar"]
+                  "enabledWhenItemValues": [
+                    "avatar"
+                  ]
                 },
                 {
                   "id": "label",
@@ -1004,7 +1006,10 @@
                   "source": "runtime",
                   "uiOrder": 20,
                   "enabledWhenItemJsonKey": "kind",
-                  "enabledWhenItemValues": ["avatar", "label"]
+                  "enabledWhenItemValues": [
+                    "avatar",
+                    "label"
+                  ]
                 },
                 {
                   "id": "sublabel",
@@ -1016,37 +1021,44 @@
                   "source": "runtime",
                   "uiOrder": 30,
                   "enabledWhenItemJsonKey": "kind",
-                  "enabledWhenItemValues": ["avatar", "label"]
+                  "enabledWhenItemValues": [
+                    "avatar",
+                    "label"
+                  ]
                 },
                 {
-                  "id": "state",
-                  "label": "State",
-                  "jsonKey": "state",
-                  "kind": "option",
-                  "valueKind": "OptionToken",
-                  "defaultValue": "normal",
-                  "options": [
-                    {
-                      "value": "normal",
-                      "label": "Normal"
-                    },
-                    {
-                      "value": "active",
-                      "label": "Active"
-                    },
-                    {
-                      "value": "pushed",
-                      "label": "Pushed"
-                    },
-                    {
-                      "value": "disabled",
-                      "label": "Disabled"
-                    }
-                  ],
+                  "id": "enabled",
+                  "label": "Enabled",
+                  "jsonKey": "enabled",
+                  "kind": "boolean",
+                  "valueKind": "Boolean",
+                  "defaultValue": "true",
+                  "options": [],
                   "source": "runtime",
                   "uiOrder": 40,
                   "enabledWhenItemJsonKey": "kind",
-                  "enabledWhenItemValues": ["icon"]
+                  "enabledWhenItemValues": [
+                    "icon"
+                  ],
+                  "uiGroupId": "state",
+                  "uiGroupLabel": "State"
+                },
+                {
+                  "id": "pressed",
+                  "label": "Pressed",
+                  "jsonKey": "pressed",
+                  "kind": "boolean",
+                  "valueKind": "Boolean",
+                  "defaultValue": "false",
+                  "options": [],
+                  "source": "runtime",
+                  "uiOrder": 41,
+                  "enabledWhenItemJsonKey": "kind",
+                  "enabledWhenItemValues": [
+                    "icon"
+                  ],
+                  "uiGroupId": "state",
+                  "uiGroupLabel": "State"
                 }
               ],
               "itemPresentation": {
@@ -1154,7 +1166,9 @@
                   "source": "runtime",
                   "uiOrder": 10,
                   "enabledWhenItemJsonKey": "kind",
-                  "enabledWhenItemValues": ["avatar"]
+                  "enabledWhenItemValues": [
+                    "avatar"
+                  ]
                 },
                 {
                   "id": "label",
@@ -1166,7 +1180,10 @@
                   "source": "runtime",
                   "uiOrder": 20,
                   "enabledWhenItemJsonKey": "kind",
-                  "enabledWhenItemValues": ["avatar", "label"]
+                  "enabledWhenItemValues": [
+                    "avatar",
+                    "label"
+                  ]
                 },
                 {
                   "id": "sublabel",
@@ -1178,37 +1195,44 @@
                   "source": "runtime",
                   "uiOrder": 30,
                   "enabledWhenItemJsonKey": "kind",
-                  "enabledWhenItemValues": ["avatar", "label"]
+                  "enabledWhenItemValues": [
+                    "avatar",
+                    "label"
+                  ]
                 },
                 {
-                  "id": "state",
-                  "label": "State",
-                  "jsonKey": "state",
-                  "kind": "option",
-                  "valueKind": "OptionToken",
-                  "defaultValue": "normal",
-                  "options": [
-                    {
-                      "value": "normal",
-                      "label": "Normal"
-                    },
-                    {
-                      "value": "active",
-                      "label": "Active"
-                    },
-                    {
-                      "value": "pushed",
-                      "label": "Pushed"
-                    },
-                    {
-                      "value": "disabled",
-                      "label": "Disabled"
-                    }
-                  ],
+                  "id": "enabled",
+                  "label": "Enabled",
+                  "jsonKey": "enabled",
+                  "kind": "boolean",
+                  "valueKind": "Boolean",
+                  "defaultValue": "true",
+                  "options": [],
                   "source": "runtime",
                   "uiOrder": 40,
                   "enabledWhenItemJsonKey": "kind",
-                  "enabledWhenItemValues": ["icon"]
+                  "enabledWhenItemValues": [
+                    "icon"
+                  ],
+                  "uiGroupId": "state",
+                  "uiGroupLabel": "State"
+                },
+                {
+                  "id": "pressed",
+                  "label": "Pressed",
+                  "jsonKey": "pressed",
+                  "kind": "boolean",
+                  "valueKind": "Boolean",
+                  "defaultValue": "false",
+                  "options": [],
+                  "source": "runtime",
+                  "uiOrder": 41,
+                  "enabledWhenItemJsonKey": "kind",
+                  "enabledWhenItemValues": [
+                    "icon"
+                  ],
+                  "uiGroupId": "state",
+                  "uiGroupLabel": "State"
                 }
               ],
               "itemPresentation": {
@@ -1316,7 +1340,9 @@
                   "source": "runtime",
                   "uiOrder": 10,
                   "enabledWhenItemJsonKey": "kind",
-                  "enabledWhenItemValues": ["avatar"]
+                  "enabledWhenItemValues": [
+                    "avatar"
+                  ]
                 },
                 {
                   "id": "label",
@@ -1328,7 +1354,10 @@
                   "source": "runtime",
                   "uiOrder": 20,
                   "enabledWhenItemJsonKey": "kind",
-                  "enabledWhenItemValues": ["avatar", "label"]
+                  "enabledWhenItemValues": [
+                    "avatar",
+                    "label"
+                  ]
                 },
                 {
                   "id": "sublabel",
@@ -1340,37 +1369,44 @@
                   "source": "runtime",
                   "uiOrder": 30,
                   "enabledWhenItemJsonKey": "kind",
-                  "enabledWhenItemValues": ["avatar", "label"]
+                  "enabledWhenItemValues": [
+                    "avatar",
+                    "label"
+                  ]
                 },
                 {
-                  "id": "state",
-                  "label": "State",
-                  "jsonKey": "state",
-                  "kind": "option",
-                  "valueKind": "OptionToken",
-                  "defaultValue": "normal",
-                  "options": [
-                    {
-                      "value": "normal",
-                      "label": "Normal"
-                    },
-                    {
-                      "value": "active",
-                      "label": "Active"
-                    },
-                    {
-                      "value": "pushed",
-                      "label": "Pushed"
-                    },
-                    {
-                      "value": "disabled",
-                      "label": "Disabled"
-                    }
-                  ],
+                  "id": "enabled",
+                  "label": "Enabled",
+                  "jsonKey": "enabled",
+                  "kind": "boolean",
+                  "valueKind": "Boolean",
+                  "defaultValue": "true",
+                  "options": [],
                   "source": "runtime",
                   "uiOrder": 40,
                   "enabledWhenItemJsonKey": "kind",
-                  "enabledWhenItemValues": ["icon"]
+                  "enabledWhenItemValues": [
+                    "icon"
+                  ],
+                  "uiGroupId": "state",
+                  "uiGroupLabel": "State"
+                },
+                {
+                  "id": "pressed",
+                  "label": "Pressed",
+                  "jsonKey": "pressed",
+                  "kind": "boolean",
+                  "valueKind": "Boolean",
+                  "defaultValue": "false",
+                  "options": [],
+                  "source": "runtime",
+                  "uiOrder": 41,
+                  "enabledWhenItemJsonKey": "kind",
+                  "enabledWhenItemValues": [
+                    "icon"
+                  ],
+                  "uiGroupId": "state",
+                  "uiGroupLabel": "State"
                 }
               ],
               "itemPresentation": {
@@ -1651,35 +1687,40 @@
             "actorId": "actor_alex",
             "label": "Alex Q",
             "sublabel": "@alexq · 2 min",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "row1_slot2",
             "actorId": "actor_alex",
             "label": "250",
             "sublabel": "Publicaciones",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "row1_slot3",
             "actorId": "actor_alex",
             "label": "135",
             "sublabel": "Seguidores",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "row1_slot4",
             "actorId": "actor_alex",
             "label": "54",
             "sublabel": "Siguiendo",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "row1_slot5",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           }
         ]
       },
@@ -1691,35 +1732,40 @@
             "actorId": "actor_alex",
             "label": "#FOQN",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "row2_slot2",
             "actorId": "actor_alex",
             "label": "#ASDF",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "row2_slot3",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "row2_slot4",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "row2_slot5",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           }
         ]
       }
@@ -1733,35 +1779,40 @@
             "actorId": "actor_alex",
             "label": "Alex Q",
             "sublabel": "@alexq · 2 min",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "footerRow1_slot2",
             "actorId": "actor_alex",
             "label": "250",
             "sublabel": "Publicaciones",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "footerRow1_slot3",
             "actorId": "actor_alex",
             "label": "135",
             "sublabel": "Seguidores",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "footerRow1_slot4",
             "actorId": "actor_alex",
             "label": "54",
             "sublabel": "Siguiendo",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "footerRow1_slot5",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           }
         ]
       },
@@ -1773,35 +1824,40 @@
             "actorId": "actor_alex",
             "label": "#FOQN",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "footerRow2_slot2",
             "actorId": "actor_alex",
             "label": "#ASDF",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "footerRow2_slot3",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "footerRow2_slot4",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "footerRow2_slot5",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           }
         ]
       }
@@ -1815,35 +1871,40 @@
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "mainRow1_slot2",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "mainRow1_slot3",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "mainRow1_slot4",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "mainRow1_slot5",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           }
         ]
       },
@@ -1855,35 +1916,40 @@
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "mainRow2_slot2",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "mainRow2_slot3",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "mainRow2_slot4",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "mainRow2_slot5",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           }
         ]
       },
@@ -1895,35 +1961,40 @@
             "actorId": "actor_alex",
             "label": "Alex Q",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "mainRow3_slot2",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "mainRow3_slot3",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "mainRow3_slot4",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           },
           {
             "id": "mainRow3_slot5",
             "actorId": "actor_alex",
             "label": "",
             "sublabel": "",
-            "state": "normal"
+            "enabled": true,
+            "pressed": false
           }
         ]
       }

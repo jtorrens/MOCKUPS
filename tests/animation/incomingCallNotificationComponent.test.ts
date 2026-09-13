@@ -62,13 +62,13 @@ test("Incoming Call Notification consumes exact Avatar and Icon Row Runtime cont
     }>;
     iconRowRuntime: Array<{
       runtimeInputs: {
-        buttonInputs: Array<{ id: string; iconToken: string; state: string }>;
+        buttonInputs: Array<{ id: string; iconToken: string; pressed: boolean }>;
       };
     }>;
   };
   preview.avatarRuntime[0]!.runtimeInputs.sampleSubtext = "WhatsApp audio";
   preview.iconRowRuntime[0]!.runtimeInputs.buttonInputs[1]!.iconToken = "phone_in_talk";
-  preview.iconRowRuntime[0]!.runtimeInputs.buttonInputs[1]!.state = "pushed";
+  preview.iconRowRuntime[0]!.runtimeInputs.buttonInputs[1]!.pressed = true;
   source.designPreviewJson = JSON.stringify(preview);
 
   const resolved = resolveIncomingCallNotificationComponent(source);
@@ -76,7 +76,8 @@ test("Incoming Call Notification consumes exact Avatar and Icon Row Runtime cont
   assert.equal(resolved.avatar.labelSlot.label?.text, "Alex");
   assert.equal(resolved.avatar.labelSlot.label?.subtext, "WhatsApp audio");
   assert.equal(resolved.iconRow.items[1]?.button.iconToken, "phone_in_talk");
-  assert.equal(resolved.iconRow.items[1]?.button.state, "pushed");
+  assert.equal(resolved.iconRow.items[1]?.button.pressed, true);
+  assert.equal(resolved.iconRow.items[1]?.button.scale, 0.94);
 });
 
 test("Incoming Call Notification preserves an exact nested Button Surface selection", () => {
@@ -102,16 +103,14 @@ test("Incoming Call Notification preserves an exact nested Button Surface select
   );
   structuralItems[0]!.buttonOverrides = {
     button: {
-      states: {
-        normal: {
-          surfaceSlot: {
-            variantReference: "component_project_foqn_s2_surface::variant::default",
-            overrides: {
-              style: { cornerRadiusToken: "theme.radii.m" },
-              surface: {
-                backgroundColorToken: "theme.colors.surface",
-                backgroundAlpha: 0.7,
-              },
+      appearance: {
+        surfaceSlot: {
+          variantReference: "component_project_foqn_s2_surface::variant::default",
+          overrides: {
+            style: { cornerRadiusToken: "theme.radii.m" },
+            surface: {
+              backgroundColorToken: "theme.colors.surface",
+              backgroundAlpha: 0.7,
             },
           },
         },
@@ -123,12 +122,12 @@ test("Incoming Call Notification preserves an exact nested Button Surface select
 
   const resolved = resolveIncomingCallNotificationComponent(source);
   assert.equal(
-    resolved.iconRow.items[0]?.button.stateStyle.surface.backgroundColorToken,
+    resolved.iconRow.items[0]?.button.appearance.surface.backgroundColorToken,
     "theme.colors.surface",
   );
-  assert.equal(resolved.iconRow.items[0]?.button.stateStyle.surface.backgroundAlpha, 0.7);
+  assert.equal(resolved.iconRow.items[0]?.button.appearance.surface.backgroundAlpha, 0.7);
   assert.equal(
-    resolved.iconRow.items[0]?.button.stateStyle.surface.surface.cornerRadiusToken,
+    resolved.iconRow.items[0]?.button.appearance.surface.surface.cornerRadiusToken,
     "theme.radii.m",
   );
 });

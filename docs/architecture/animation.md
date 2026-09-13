@@ -413,9 +413,11 @@ passes that number to its renderable. Text Box and Text Input Bar forward the
 frame through their declared embedded boundaries; they do not restart the
 Cursor clock or paint a fixed replacement opacity.
 
-Button pressed-state duration belongs to its declared Runtime action and
-`BehaviorTiming`; Button Variant config does not persist a second duration.
-Likewise, Text Input Bar persists no Cursor blink duration. It forwards the
+Button `enabled` and `pressed` are independent animatable Runtime booleans.
+They use explicit hold keyframes on the owner timeline and declare no action,
+duration, Motion or `BehaviorTiming`; the Screen author controls exactly how
+long either value remains visible. Likewise, Text Input Bar persists no Cursor
+blink duration. It forwards the
 resolved child frame and Cursor remains the only owner of that continuous
 state.
 

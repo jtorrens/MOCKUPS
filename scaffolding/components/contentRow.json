@@ -414,48 +414,62 @@
               ]
             },
             {
-              "id": "state",
-              "label": "State",
-              "jsonKey": "state",
-              "kind": "option",
-              "valueKind": "OptionToken",
-              "defaultValue": "normal",
+              "id": "enabled",
+              "label": "Enabled",
+              "jsonKey": "enabled",
+              "kind": "boolean",
+              "valueKind": "Boolean",
+              "defaultValue": "true",
               "minimum": 0,
               "maximum": 9999,
               "increment": 1,
               "tableId": "",
               "resolvedJsonKey": "",
               "componentType": "",
-              "options": [
-                {
-                  "value": "normal",
-                  "label": "Normal"
-                },
-                {
-                  "value": "active",
-                  "label": "Active"
-                },
-                {
-                  "value": "pushed",
-                  "label": "Pushed"
-                },
-                {
-                  "value": "disabled",
-                  "label": "Disabled"
-                }
-              ],
+              "options": [],
               "pairFirstLabel": "W",
               "pairSecondLabel": "H",
               "visibleWhenPath": "",
               "visibleWhenValue": "",
               "source": "runtime",
               "uiOrigin": "embedded",
-              "uiGroupId": "content",
-              "uiGroupLabel": "Content",
+              "uiGroupId": "state",
+              "uiGroupLabel": "State",
               "uiParentGroupId": "",
               "transition": null,
               "unit": "",
               "uiOrder": 40,
+              "enabledWhenItemJsonKey": "kind",
+              "enabledWhenItemValues": [
+                "icon"
+              ]
+            },
+            {
+              "id": "pressed",
+              "label": "Pressed",
+              "jsonKey": "pressed",
+              "kind": "boolean",
+              "valueKind": "Boolean",
+              "defaultValue": "false",
+              "minimum": 0,
+              "maximum": 9999,
+              "increment": 1,
+              "tableId": "",
+              "resolvedJsonKey": "",
+              "componentType": "",
+              "options": [],
+              "pairFirstLabel": "W",
+              "pairSecondLabel": "H",
+              "visibleWhenPath": "",
+              "visibleWhenValue": "",
+              "source": "runtime",
+              "uiOrigin": "embedded",
+              "uiGroupId": "state",
+              "uiGroupLabel": "State",
+              "uiParentGroupId": "",
+              "transition": null,
+              "unit": "",
+              "uiOrder": 41,
               "enabledWhenItemJsonKey": "kind",
               "enabledWhenItemValues": [
                 "icon"
@@ -496,35 +510,40 @@
         "actorId": "actor_alex",
         "label": "",
         "sublabel": "",
-        "state": "normal"
+        "enabled": true,
+        "pressed": false
       },
       {
         "id": "slot2",
         "actorId": "actor_alex",
         "label": "",
         "sublabel": "",
-        "state": "normal"
+        "enabled": true,
+        "pressed": false
       },
       {
         "id": "slot3",
         "actorId": "actor_alex",
         "label": "",
         "sublabel": "",
-        "state": "normal"
+        "enabled": true,
+        "pressed": false
       },
       {
         "id": "slot4",
         "actorId": "actor_alex",
         "label": "",
         "sublabel": "",
-        "state": "normal"
+        "enabled": true,
+        "pressed": false
       },
       {
         "id": "slot5",
         "actorId": "actor_alex",
         "label": "",
         "sublabel": "",
-        "state": "normal"
+        "enabled": true,
+        "pressed": false
       }
     ]
   },

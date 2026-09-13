@@ -55,7 +55,6 @@
         {
           "id": "button_001",
           "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-          "state": "normal",
           "iconToken": "system_check",
           "text": "",
           "buttonOverrides": {},
@@ -94,7 +93,6 @@
           {
             "id": "button_001",
             "buttonVariantReference": "component_project_foqn_s2_button::variant::icon_only",
-            "state": "normal",
             "iconToken": "system_check",
             "text": "",
             "buttonOverrides": {},
@@ -109,7 +107,7 @@
   "additionalVariants": [
     {
       "id": "incoming_call_ios",
-      "name": "Incoming Call \u00B7 iOS",
+      "name": "Incoming Call · iOS",
       "protected": false,
       "locked": false,
       "config": {
@@ -134,7 +132,6 @@
           "items": [
             {
               "id": "decline",
-              "state": "normal",
               "iconToken": "phone_hangup",
               "iconSizeToken": "theme.iconSizes.l",
               "textSizeToken": "theme.typography.sizes.s",
@@ -144,7 +141,6 @@
             },
             {
               "id": "answer",
-              "state": "normal",
               "iconToken": "phone_call",
               "iconSizeToken": "theme.iconSizes.l",
               "textSizeToken": "theme.typography.sizes.s",
@@ -159,7 +155,7 @@
     },
     {
       "id": "incoming_call_android",
-      "name": "Incoming Call \u00B7 Android",
+      "name": "Incoming Call · Android",
       "protected": false,
       "locked": false,
       "config": {
@@ -184,7 +180,6 @@
           "items": [
             {
               "id": "decline",
-              "state": "normal",
               "iconToken": "phone_hangup",
               "iconSizeToken": "theme.iconSizes.m",
               "textSizeToken": "theme.typography.sizes.s",
@@ -194,7 +189,6 @@
             },
             {
               "id": "answer",
-              "state": "normal",
               "iconToken": "phone_call",
               "iconSizeToken": "theme.iconSizes.m",
               "textSizeToken": "theme.typography.sizes.s",
@@ -220,7 +214,7 @@
         "jsonKey": "buttonInputs",
         "kind": "collection",
         "valueKind": "StructuredCollection",
-        "defaultValue": "[{\"id\":\"button_001\",\"state\":\"normal\",\"sampleText\":\"\",\"iconToken\":\"system_check\",\"iconSizeToken\":\"theme.iconSizes.m\",\"textSizeToken\":\"theme.typography.sizes.s\",\"showBadge\":false,\"badgeContentMode\":\"text\",\"badgeIconToken\":\"system_check\",\"badgeText\":\"1\",\"badgeSize\":20,\"badgeBackgroundPaletteColor\":\"palette_project_foqn_s2_blue\",\"badgeContentPaletteColor\":\"palette_project_foqn_s2_gray_100\",\"iconColorToken\":\"theme.colors.icon\",\"textColorToken\":\"theme.colors.textPrimary\"}]",
+        "defaultValue": "[{\"id\":\"button_001\",\"sampleText\":\"\",\"iconToken\":\"system_check\",\"iconSizeToken\":\"theme.iconSizes.m\",\"textSizeToken\":\"theme.typography.sizes.s\",\"showBadge\":false,\"badgeContentMode\":\"text\",\"badgeIconToken\":\"system_check\",\"badgeText\":\"1\",\"badgeSize\":20,\"badgeBackgroundPaletteColor\":\"palette_project_foqn_s2_blue\",\"badgeContentPaletteColor\":\"palette_project_foqn_s2_gray_100\",\"iconColorToken\":\"theme.colors.icon\",\"textColorToken\":\"theme.colors.textPrimary\",\"enabled\":true,\"pressed\":false}]",
         "minimum": 0,
         "maximum": 9999,
         "increment": 1,
@@ -246,36 +240,19 @@
           "itemLabel": "Button",
           "fields": [
             {
-              "id": "state",
-              "label": "State",
-              "jsonKey": "state",
-              "kind": "option",
-              "valueKind": "OptionToken",
-              "defaultValue": "normal",
+              "id": "enabled",
+              "label": "Enabled",
+              "jsonKey": "enabled",
+              "kind": "boolean",
+              "valueKind": "Boolean",
+              "defaultValue": "true",
               "minimum": 0,
               "maximum": 9999,
               "increment": 1,
               "tableId": "",
               "resolvedJsonKey": "",
               "componentType": "",
-              "options": [
-                {
-                  "value": "normal",
-                  "label": "Normal"
-                },
-                {
-                  "value": "active",
-                  "label": "Active"
-                },
-                {
-                  "value": "pushed",
-                  "label": "Pushed"
-                },
-                {
-                  "value": "disabled",
-                  "label": "Disabled"
-                }
-              ],
+              "options": [],
               "pairFirstLabel": "W",
               "pairSecondLabel": "H",
               "visibleWhenPath": "",
@@ -287,7 +264,52 @@
               "uiParentGroupId": "",
               "transition": null,
               "unit": "",
-              "uiOrder": 10
+              "uiOrder": 10,
+              "animatable": true,
+              "animationInterpolations": [
+                "hold"
+              ],
+              "animationTimeline": {
+                "origin": {
+                  "kind": "ownerStart"
+                }
+              }
+            },
+            {
+              "id": "pressed",
+              "label": "Pressed",
+              "jsonKey": "pressed",
+              "kind": "boolean",
+              "valueKind": "Boolean",
+              "defaultValue": "false",
+              "minimum": 0,
+              "maximum": 9999,
+              "increment": 1,
+              "tableId": "",
+              "resolvedJsonKey": "",
+              "componentType": "",
+              "options": [],
+              "pairFirstLabel": "W",
+              "pairSecondLabel": "H",
+              "visibleWhenPath": "",
+              "visibleWhenValue": "",
+              "source": "runtime",
+              "uiOrigin": "embedded",
+              "uiGroupId": "state",
+              "uiGroupLabel": "State",
+              "uiParentGroupId": "",
+              "transition": null,
+              "unit": "",
+              "uiOrder": 11,
+              "animatable": true,
+              "animationInterpolations": [
+                "hold"
+              ],
+              "animationTimeline": {
+                "origin": {
+                  "kind": "ownerStart"
+                }
+              }
             },
             {
               "id": "sampleText",
@@ -438,60 +460,6 @@
               "transition": null,
               "unit": "",
               "uiOrder": 24
-            },
-            {
-              "id": "pushTrigger",
-              "label": "Push",
-              "jsonKey": "pushTrigger",
-              "kind": "boolean",
-              "valueKind": "Boolean",
-              "defaultValue": "false",
-              "minimum": 0,
-              "maximum": 9999,
-              "increment": 1,
-              "tableId": "",
-              "resolvedJsonKey": "",
-              "componentType": "",
-              "options": [],
-              "pairFirstLabel": "W",
-              "pairSecondLabel": "H",
-              "visibleWhenPath": "",
-              "visibleWhenValue": "",
-              "source": "calculated",
-              "uiOrigin": "embedded",
-              "uiGroupId": "action",
-              "uiGroupLabel": "Action",
-              "uiParentGroupId": "",
-              "transition": null,
-              "unit": "",
-              "uiOrder": 30
-            },
-            {
-              "id": "pushElapsedMs",
-              "label": "Push elapsed",
-              "jsonKey": "pushElapsedMs",
-              "kind": "number",
-              "valueKind": "Decimal",
-              "defaultValue": "0",
-              "minimum": 0,
-              "maximum": 60000,
-              "increment": 10,
-              "tableId": "",
-              "resolvedJsonKey": "",
-              "componentType": "",
-              "options": [],
-              "pairFirstLabel": "W",
-              "pairSecondLabel": "H",
-              "visibleWhenPath": "",
-              "visibleWhenValue": "",
-              "source": "calculated",
-              "uiOrigin": "embedded",
-              "uiGroupId": "action",
-              "uiGroupLabel": "Action",
-              "uiParentGroupId": "",
-              "transition": null,
-              "unit": "ms",
-              "uiOrder": 31
             },
             {
               "id": "showBadge",
@@ -749,8 +717,7 @@
           "itemPresentation": {
             "subtitleFieldIds": [
               "sampleText",
-              "iconToken",
-              "state"
+              "iconToken"
             ],
             "subtitleMaxCharacters": 72,
             "fallbackIcon": "component"
@@ -761,7 +728,6 @@
             "sourceIdJsonKey": "id",
             "runtimeIdJsonKey": "id",
             "fieldBindings": {
-              "state": "state",
               "sampleText": "text",
               "iconToken": "iconToken",
               "iconSizeToken": "iconSizeToken",
@@ -775,7 +741,6 @@
     "buttonInputs": [
       {
         "id": "button_001",
-        "state": "normal",
         "sampleText": "",
         "iconToken": "system_check",
         "iconSizeToken": "theme.iconSizes.m",
@@ -788,7 +753,9 @@
         "badgeBackgroundPaletteColor": "palette_project_foqn_s2_blue",
         "badgeContentPaletteColor": "palette_project_foqn_s2_gray_100",
         "iconColorToken": "theme.colors.icon",
-        "textColorToken": "theme.colors.textPrimary"
+        "textColorToken": "theme.colors.textPrimary",
+        "enabled": true,
+        "pressed": false
       }
     ],
     "collections": [],
@@ -1026,20 +993,6 @@
             "componentType": "button"
           },
           {
-            "id": "state",
-            "label": "State",
-            "jsonKey": "state",
-            "kind": "Option",
-            "valueKind": "OptionToken",
-            "defaultValue": "normal",
-            "options": [
-              { "value": "normal", "label": "Normal" },
-              { "value": "active", "label": "Active" },
-              { "value": "pushed", "label": "Pushed" },
-              { "value": "disabled", "label": "Disabled" }
-            ]
-          },
-          {
             "id": "iconToken",
             "label": "Icon",
             "jsonKey": "iconToken",
@@ -1063,11 +1016,26 @@
             "valueKind": "OptionToken",
             "defaultValue": "theme.iconSizes.m",
             "options": [
-              { "value": "theme.iconSizes.xs", "label": "Extra small" },
-              { "value": "theme.iconSizes.s", "label": "Small" },
-              { "value": "theme.iconSizes.m", "label": "Medium" },
-              { "value": "theme.iconSizes.l", "label": "Large" },
-              { "value": "theme.iconSizes.xl", "label": "Extra large" }
+              {
+                "value": "theme.iconSizes.xs",
+                "label": "Extra small"
+              },
+              {
+                "value": "theme.iconSizes.s",
+                "label": "Small"
+              },
+              {
+                "value": "theme.iconSizes.m",
+                "label": "Medium"
+              },
+              {
+                "value": "theme.iconSizes.l",
+                "label": "Large"
+              },
+              {
+                "value": "theme.iconSizes.xl",
+                "label": "Extra large"
+              }
             ]
           },
           {
@@ -1078,18 +1046,33 @@
             "valueKind": "OptionToken",
             "defaultValue": "theme.typography.sizes.s",
             "options": [
-              { "value": "theme.typography.sizes.xs", "label": "Extra small" },
-              { "value": "theme.typography.sizes.s", "label": "Small" },
-              { "value": "theme.typography.sizes.m", "label": "Medium" },
-              { "value": "theme.typography.sizes.l", "label": "Large" },
-              { "value": "theme.typography.sizes.xl", "label": "Extra large" }
+              {
+                "value": "theme.typography.sizes.xs",
+                "label": "Extra small"
+              },
+              {
+                "value": "theme.typography.sizes.s",
+                "label": "Small"
+              },
+              {
+                "value": "theme.typography.sizes.m",
+                "label": "Medium"
+              },
+              {
+                "value": "theme.typography.sizes.l",
+                "label": "Large"
+              },
+              {
+                "value": "theme.typography.sizes.xl",
+                "label": "Extra large"
+              }
             ]
           }
         ],
         "itemPresentation": {
           "titleFieldId": "text",
           "firstItemBadge": "",
-          "subtitleFieldIds": ["state"],
+          "subtitleFieldIds": [],
           "subtitleMaxCharacters": 72,
           "iconFieldId": "iconToken",
           "fallbackIcon": "component",

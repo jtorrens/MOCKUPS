@@ -15,16 +15,36 @@ import { mediaComponentToRenderableAt } from "../../src/desktop-preview/mediaCom
 import { resolveNotificationComponent } from "../../src/desktop-preview/notificationComponentResolver.js";
 import { committedComponentFixture } from "./committedComponentFixture.js";
 
-test("Button push resolves the pushed state without render-time interpretation", () => {
+test("Button resolves independent enabled opacity and pressed scale", () => {
   const source = withInputDefaults(committedComponentFixture("button"));
-  assert.notEqual(resolveButtonComponent(source).state, "pushed");
-  assert.equal(
-    resolveButtonComponent(withValues(source, {
-      pushTrigger: true,
-      pushElapsedMs: 50,
-    })).state,
-    "pushed",
-  );
+  const base = resolveButtonComponent(source);
+  assert.equal(base.opacity, 1);
+  assert.equal(base.scale, 1);
+  const modified = resolveButtonComponent(withValues(source, {
+    enabled: false,
+    pressed: true,
+  }));
+  assert.equal(modified.opacity, 0.36);
+  assert.equal(modified.scale, 0.94);
+});
+
+test("Button declares only independent hold-animatable enabled and pressed state", () => {
+  const source = committedComponentFixture("button");
+  const preview = JSON.parse(source.designPreviewJson) as {
+    inputs: Array<Record<string, unknown>>;
+    actions: unknown[];
+  };
+  const stateInputs = preview.inputs.filter((input) =>
+    input.id === "enabled" || input.id === "pressed");
+  assert.deepEqual(stateInputs.map((input) => input.id), ["enabled", "pressed"]);
+  for (const input of stateInputs) {
+    assert.equal(input.animatable, true);
+    assert.deepEqual(input.animationInterpolations, ["hold"]);
+    assert.deepEqual(input.animationTimeline, { origin: { kind: "ownerStart" } });
+  }
+  assert.equal(preview.inputs.some((input) =>
+    input.id === "state" || input.id === "pushTrigger" || input.id === "pushElapsedMs"), false);
+  assert.deepEqual(preview.actions, []);
 });
 
 test("Audio playback resolves clamped and looped progress", () => {

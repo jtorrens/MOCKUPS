@@ -74,7 +74,7 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
             };
             return;
         }
-        StructuredCollectionDocumentContract.ValidateEffective(
+        _items = StructuredCollectionDocumentContract.EffectiveAuthoringClone(
             _items,
             collection,
             $"Structured collection '{collection.Id}'");

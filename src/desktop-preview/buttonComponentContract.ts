@@ -4,9 +4,8 @@ import type { SurfaceDesignContract } from "./surfaceComponentContract.js";
 import type { BadgeDesignContract } from "./badgeComponentContract.js";
 
 export type ButtonContentMode = "icon" | "text" | "iconText";
-export type ButtonState = "normal" | "active" | "pushed" | "disabled";
 
-export interface ButtonStateDesignContract {
+export interface ButtonAppearanceContract {
   iconColorToken: string;
   label?: LabelDesignContract;
   surface: SurfaceDesignContract;
@@ -15,13 +14,16 @@ export interface ButtonStateDesignContract {
 export interface ButtonDesignContract {
   id: string;
   contentMode: ButtonContentMode;
-  state: ButtonState;
+  enabled: boolean;
+  pressed: boolean;
+  opacity: number;
+  scale: number;
   dimensionMode: "content" | "fixed";
   size: { width: number; height: number };
   padding: SpacingPairContract;
   contentGapToken: string;
   iconToken: string;
   iconSizeToken: string;
-  stateStyle: ButtonStateDesignContract;
+  appearance: ButtonAppearanceContract;
   badge?: BadgeDesignContract;
 }

@@ -84,8 +84,8 @@ function resolveSlot(
       id, order: index,
       kind,
       content: resolveButtonComponentFromRecords(buttonConfig, {
-        state: requiredString(runtime, "state", `${path}.runtime.state`),
-        pushTrigger: false,
+        enabled: requiredBoolean(runtime, "enabled", `${path}.runtime.enabled`),
+        pressed: requiredBoolean(runtime, "pressed", `${path}.runtime.pressed`),
         sampleText: label,
         iconSizeToken: requiredString(slot, "iconSizeToken", `${path}.iconSizeToken`),
         showBadge: false,
