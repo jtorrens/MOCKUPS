@@ -135,7 +135,6 @@ function textMarkup(node: RenderableNode): string {
   const tspans = lines.map((line, index) =>
     `<tspan x="${number(x)}" dy="${index === 0 ? 0 : number(lineHeight)}">${escapeText(line)}</tspan>`,
   ).join("");
-  const cursor = inlineCursorMarkup(node, x, box.y + fontSize, fontSize, textAlign);
   return `<text ${attributes({
     x,
     y: box.y + fontSize,
@@ -146,7 +145,7 @@ function textMarkup(node: RenderableNode): string {
     "font-weight": style.fontWeight === undefined ? undefined : String(style.fontWeight),
     "text-anchor": anchor,
     "xml:space": "preserve",
-  })}>${tspans}</text>${cursor}`;
+  })}>${tspans}</text>`;
 }
 
 function outlinedTextMarkup(node: RenderableNode, fontFaces: RenderableFontFace[]): string {
@@ -180,7 +179,7 @@ function outlinedTextMarkup(node: RenderableNode, fontFaces: RenderableFontFace[
       : run.advanceWidth;
     return markup;
   }).join("");
-  return `<g ${attributes({ fill: color(style.textColor ?? style.color ?? style.foreground) ?? "currentColor" })}>${paths}</g>${inlineCursorMarkup(node, left, box.y + fontSize, fontSize, "left")}`;
+  return `<g ${attributes({ fill: color(style.textColor ?? style.color ?? style.foreground) ?? "currentColor" })}>${paths}</g>`;
 }
 
 function emojiMarkup(grapheme: string, x: number, y: number, fontSize: number) {
@@ -199,24 +198,6 @@ function outlineFont(fontFamilyValue: unknown, fontFaces: RenderableFontFace[]) 
   const opened = fontkit.openSync(filePath) as unknown as OutlineFont;
   outlinedFontCache.set(filePath, opened);
   return opened;
-}
-
-function inlineCursorMarkup(node: RenderableNode, x: number, baseline: number, fontSize: number, textAlign: string) {
-  const cursor = node.metadata?.inlineCursor;
-  if (!cursor) return "";
-  const cursorColor = color(cursor.color);
-  if (!cursorColor) return "";
-  const estimate = (node.text ?? "").length * fontSize * 0.52;
-  const cursorX = textAlign === "right" ? x - estimate : textAlign === "center" ? x + estimate / 2 : x + estimate;
-  return `<rect ${attributes({
-    x: cursorX,
-    y: baseline - fontSize,
-    width: cursor.width,
-    height: fontSize * 1.05,
-    rx: Math.min(cursor.width / 2, 2),
-    fill: cursorColor,
-    opacity: cursor.opacity ?? 1,
-  })}/>`;
 }
 
 function imageMarkup(node: RenderableNode, target: "web" | "affinity"): string {

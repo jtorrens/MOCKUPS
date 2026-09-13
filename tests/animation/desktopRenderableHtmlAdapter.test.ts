@@ -37,7 +37,7 @@ test("the generic HTML adapter paints a resolved text shadow", () => {
   assert.match(markup, /text-shadow:1px 2px 3px rgba\(0, 0, 0, 0\.5\)/);
 });
 
-test("both generic renderers consume the same exact Renderable metadata", () => {
+test("both generic renderers reject retired inline Cursor metadata", () => {
   const tree = {
     id: "label.text",
     type: "text" as const,
@@ -49,20 +49,13 @@ test("both generic renderers consume the same exact Renderable metadata", () => 
       inlineCursor: { color: "#FF0000", width: 2, opacity: 0.5 },
     },
   };
-  const html = renderToStaticMarkup(React.createElement(DesktopRenderableHtmlAdapter, { tree }));
-  const svg = renderableToSvg(tree);
-  assert.match(html, /background:#FF0000/);
-  assert.match(svg, /fill="#FF0000"/);
-
-  const invalid = {
-    ...tree,
-    metadata: { inlineCursor: [] },
-  };
   assert.throws(() => renderToStaticMarkup(React.createElement(
     DesktopRenderableHtmlAdapter,
-    { tree: invalid as unknown as typeof tree },
+    { tree: tree as unknown as Parameters<typeof DesktopRenderableHtmlAdapter>[0]["tree"] },
   )));
-  assert.throws(() => renderableToSvg(invalid as unknown as typeof tree));
+  assert.throws(() => renderableToSvg(
+    tree as unknown as Parameters<typeof renderableToSvg>[0],
+  ));
 });
 
 test("both generic renderers reject incomplete complex visual styles", () => {

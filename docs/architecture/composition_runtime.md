@@ -249,9 +249,11 @@ and inter-row gap calculation. The common row collection owner applies this
 contract to every Module that embeds Content Row; concrete Modules do not add
 their own visibility fields or filtering branches.
 
-Cursor is an inline Text Box decoration. It is painted inside the resolved text
-viewport and never contributes to intrinsic width, wrapping or height. Showing,
-hiding or fading Cursor therefore cannot resize an owning Text Box or Bubble.
+Cursor is an inline Text Box decoration represented by an independent visual
+layer at the end of the resolved final line. It remains outside the clipped
+text viewport, may paint beyond the text or Bubble edge, and never contributes
+to intrinsic width, wrapping or height. Showing, hiding or fading Cursor
+therefore cannot resize an owning Text Box or Bubble.
 
 Text Box measures only the text resolved for the current frame. When a word
 crosses the wrap boundary, the common text layout first detects the overflow

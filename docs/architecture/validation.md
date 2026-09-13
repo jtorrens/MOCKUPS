@@ -224,7 +224,8 @@ Preview capability matrix inventories every root action, collection-item
 action and frame-owned behavior, and validation requires exact parity with the
 persisted Runtime contracts. Focused resolver tests characterize Motion,
 write-on, playback, controls fade, reflow, key presses, authentication progress
-and Cursor propagation through embedded boundaries. The manifest is a current
+and Cursor propagation through embedded boundaries, including non-measuring,
+unclipped final-line Cursor placement. The manifest is a current
 contract rather than a migration ledger; inert migration-state fields are
 rejected.
 

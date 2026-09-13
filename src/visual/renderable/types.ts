@@ -59,11 +59,6 @@ export interface RenderableMetadata {
   imageOffsetX?: number;
   imageOffsetY?: number;
   imageScale?: number;
-  inlineCursor?: {
-    color: string;
-    width: number;
-    opacity?: number;
-  };
   paintRole?: "moduleBackground";
 }
 

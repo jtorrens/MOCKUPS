@@ -355,6 +355,9 @@ composer and suppresses only its Bubble. Later messages remain independent and
 may appear on their own timelines. The first effective false is that message's
 send boundary and releases its Bubble. Bubble still forwards cursor state to
 Text Box, which owns the cursor's blinking presentation.
+Text Box paints that Cursor as a separate resolved child after text layout. The
+cursor never participates in text measurement or wrapping and is not clipped
+when its final-line position extends beyond the text or Bubble edge.
 
 Conversation Preview prepares message layout transitions by stable message id.
 At an appearance it resolves the previous and target vertical layouts once. At

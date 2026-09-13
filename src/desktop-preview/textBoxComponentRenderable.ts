@@ -25,6 +25,7 @@ import {
   surfaceComponentToRenderableAtWithColors,
   type SurfaceColorOverride,
 } from "./surfaceComponentRenderable.js";
+import { cursorComponentToRenderableAt } from "./cursorComponentRenderable.js";
 import type { TextBoxDesignContract } from "./textBoxComponentContract.js";
 
 export interface TextBoxColorOverride {
@@ -271,7 +272,6 @@ export function textBoxComponentToRenderableAt(
   };
   const textIsEmpty = textBox.text.length === 0;
   const cursorWidth = Math.max(1, textBox.cursor.width * scale);
-  const cursorMetadata = inlineCursorMetadata(payload, textBox, cursorWidth);
   const wrappedLines = measuredWrappedTextLines(
     size.contentText,
     size.typography,
@@ -293,6 +293,28 @@ export function textBoxComponentToRenderableAt(
   const renderedTextY = scrollAnchorsToBottom
     ? textFrame.y + textFrame.height - textContentHeight
     : textContentY;
+  const lastLine = wrappedLines.at(-1) ?? "";
+  const cursorHeight = size.typography.fontSize * 1.05;
+  const cursorNode = inlineCursorShouldRender(textBox)
+    ? cursorComponentToRenderableAt(
+        payload,
+        textBox.cursor,
+        {
+          x: textFrame.x
+            + lineStartOffset(
+              lastLine,
+              textBox.textAlign,
+              textFrame.width,
+              size.typography,
+            )
+            + measuredTextWidth(lastLine, size.typography)
+            + size.typography.fontSize * 0.01,
+          y: renderedTextY + (textLineCount - 1) * lineHeight,
+          width: cursorWidth,
+          height: cursorHeight,
+        },
+      )
+    : undefined;
   const textStyle = {
     textColor: textIsEmpty
       ? options.textColors?.placeholderColor
@@ -387,16 +409,15 @@ export function textBoxComponentToRenderableAt(
             textBox,
             line,
             lineIndex: index,
-            lineCount: wrappedLines.length,
             lineHeight,
             textFrame,
             y: renderedTextY + index * lineHeight,
             style: textStyle,
             typography: size.typography,
-            cursorMetadata: index === wrappedLines.length - 1 ? cursorMetadata : undefined,
           }),
         ),
       },
+      ...(cursorNode ? [cursorNode] : []),
     ],
   };
 }
@@ -406,25 +427,21 @@ function textLineRenderableNodes({
   textBox,
   line,
   lineIndex,
-  lineCount,
   lineHeight,
   textFrame,
   y,
   style,
   typography,
-  cursorMetadata,
 }: {
   id: string;
   textBox: TextBoxDesignContract;
   line: string;
   lineIndex: number;
-  lineCount: number;
   lineHeight: number;
   textFrame: RenderableBox;
   y: number;
   style: Record<string, unknown>;
   typography: ResolvedTypographyStyle;
-  cursorMetadata: RenderableNode["metadata"];
 }): RenderableNode[] {
   if (textBox.textAnimation.mode === "none" || line.length === 0) {
     return [{
@@ -439,7 +456,6 @@ function textLineRenderableNodes({
       },
       text: line,
       style,
-      metadata: cursorMetadata,
     }];
   }
 
@@ -480,9 +496,6 @@ function textLineRenderableNodes({
         scale,
         opacity,
       },
-      metadata: lineIndex === lineCount - 1 && graphemeIndex === graphemes.length - 1
-        ? cursorMetadata
-        : undefined,
     };
     x += width;
     return node;
@@ -508,22 +521,6 @@ function visibleText(textBox: TextBoxDesignContract) {
 function inlineCursorShouldRender(textBox: TextBoxDesignContract) {
   return textBox.cursorVisible
     && (textBox.text.length > 0 || textBox.placeholder.length === 0);
-}
-
-function inlineCursorMetadata(
-  payload: DesignPreviewPayload,
-  textBox: TextBoxDesignContract,
-  cursorWidth: number,
-) {
-  return inlineCursorShouldRender(textBox)
-    ? {
-        inlineCursor: {
-          color: selectedColor(payload, textBox.cursor.colorToken),
-          width: cursorWidth,
-          opacity: textBox.cursor.opacity,
-        },
-      }
-    : undefined;
 }
 
 function effectiveCornerTextInset(cornerRadius: number, width: number, height: number) {

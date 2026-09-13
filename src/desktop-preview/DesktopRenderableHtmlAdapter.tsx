@@ -363,29 +363,7 @@ function iconContent(node: RenderableNode): ReactNode {
 }
 
 function textContent(node: RenderableNode): ReactNode {
-  const inlineCursor = node.metadata?.inlineCursor;
-  if (!inlineCursor) return node.text;
-
-  return (
-    <>
-      {node.text}
-      <span
-        aria-hidden="true"
-        style={{
-          background: inlineCursor.color,
-          borderRadius: Math.min(inlineCursor.width * 0.5, 2),
-          display: "inline-block",
-          flex: "0 0 auto",
-          height: "1.05em",
-          marginLeft: "0.01em",
-          minWidth: inlineCursor.width,
-          opacity: inlineCursor.opacity ?? 1,
-          verticalAlign: "text-bottom",
-          width: inlineCursor.width,
-        }}
-      />
-    </>
-  );
+  return node.text;
 }
 
 function nodeContent(node: RenderableNode): ReactNode {
