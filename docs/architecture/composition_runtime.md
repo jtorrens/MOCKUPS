@@ -256,9 +256,9 @@ below that glyph. It remains outside the clipped
 text viewport, may paint beyond the text or Bubble edge, and never contributes
 to intrinsic width, wrapping or height. Showing, hiding or fading Cursor
 therefore cannot resize an owning Text Box or Bubble. Text Box gives the final
-glyph a trailing paint allowance inside its owned padding so platform raster
-metrics cannot clip a glyph whose measured advance already fits; that allowance
-does not change intrinsic size, line breaking or Cursor placement.
+painted text line and Cursor one shared vertical origin. A resolved line whose
+baseline falls outside the clipped text viewport cannot become Cursor's line;
+Cursor never exposes text that the owning Text Box does not paint.
 
 Text Box measures only the text resolved for the current frame. When a word
 crosses the wrap boundary, the common text layout first detects the overflow

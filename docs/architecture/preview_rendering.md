@@ -358,9 +358,9 @@ Text Box, which owns the cursor's blinking presentation.
 Text Box paints that Cursor as a separate resolved child after text layout. The
 cursor never participates in text measurement or wrapping and is not clipped
 when its final-line position extends beyond the text or Bubble edge. The text
-paint clip may extend into Text Box's trailing padding so the platform painter
-cannot cut off the last glyph at the exact measured advance. That paint-only
-allowance never enters text measurement, wrapping or Bubble sizing.
+and Cursor consume the same resolved painted-line origin. Lines whose baselines
+fall outside Text Box's clipped text viewport remain layout results only and
+cannot move the independently painted Cursor.
 
 Conversation Preview prepares message layout transitions by stable message id.
 At an appearance it resolves the previous and target vertical layouts once. At

@@ -3,6 +3,10 @@ import test from "node:test";
 
 import { resolveBubbleComponent } from "../../src/desktop-preview/bubbleComponentResolver.js";
 import { bubbleComponentToRenderable } from "../../src/desktop-preview/bubbleComponentRenderable.js";
+import {
+  measureTextBoxComponent,
+  textBoxComponentToRenderableAt,
+} from "../../src/desktop-preview/textBoxComponentRenderable.js";
 import type { RenderableNode } from "../../src/visual/renderable/types.js";
 import { committedComponentFixture } from "./committedComponentFixture.js";
 
@@ -214,7 +218,7 @@ test("Bubble write-on Cursor stays on the final visible glyph line while text is
   assert.equal(cursor!.box!.y, finalVisibleText!.box!.y);
 });
 
-test("Bubble text paint clip extends past measured content without changing layout width", () => {
+test("Bubble Cursor uses the final painted line when a resolved line falls below the text viewport", () => {
   const source = committedComponentFixture("bubble");
   const preview = JSON.parse(source.designPreviewJson) as Record<string, unknown>;
   Object.assign(preview, {
@@ -230,7 +234,18 @@ test("Bubble text paint clip extends past measured content without changing layo
   source.designPreviewJson = JSON.stringify(preview);
 
   const bubble = resolveBubbleComponent(source);
-  const renderable = bubbleComponentToRenderable(source, bubble);
+  const textBox = {
+    ...bubble.textBox,
+    dimensionMode: "content" as const,
+    overflowMode: "clip" as const,
+  };
+  const measured = measureTextBoxComponent(source, textBox);
+  const renderable = textBoxComponentToRenderableAt(source, textBox, {
+    x: 0,
+    y: 0,
+    width: measured.width - 4,
+    height: measured.height,
+  });
   const nodes: RenderableNode[] = [];
   const visit = (node: RenderableNode) => {
     nodes.push(node);
@@ -238,12 +253,14 @@ test("Bubble text paint clip extends past measured content without changing layo
   };
   visit(renderable);
 
-  const textClip = nodes.find((node) => node.id === `${bubble.textBox.id}.textClip`);
-  const textLine = nodes.find((node) => node.id === `${bubble.textBox.id}.text.0`);
-  assert.notEqual(textClip?.box, undefined);
-  assert.notEqual(textLine?.box, undefined);
-  assert.ok(textClip!.box!.width > textLine!.box!.width);
-  assert.ok(textClip!.box!.x + textClip!.box!.width <= renderable.box!.x + renderable.box!.width);
+  const visibleLine = nodes.find((node) => node.id === `${bubble.textBox.id}.text.0`);
+  const clippedLine = nodes.find((node) => node.id === `${bubble.textBox.id}.text.1`);
+  const cursor = nodes.find((node) => node.id === bubble.textBox.cursor.id);
+  assert.notEqual(visibleLine?.box, undefined);
+  assert.notEqual(clippedLine?.box, undefined);
+  assert.notEqual(cursor?.box, undefined);
+  assert.equal(cursor!.box!.y, visibleLine!.box!.y);
+  assert.notEqual(cursor!.box!.y, clippedLine!.box!.y);
 });
 
 test("Bubble remeasures wrapped lines from the current resolved text", () => {
