@@ -157,6 +157,15 @@ source merely because they also paint the resolved Motion.
 Parameter animation is persisted only as version 2 tracks identified by stable
 `fieldId` and `targetId`. A track is relative to its declared owner.
 
+An animatable field inside nested structured Runtime collections keeps the
+outer temporal owner's `targetId`. Its `fieldId` is the complete dotted stable
+path formed from each declared field id and collection item id; storage wrapper
+keys such as `runtimeInputs` are not path segments. For example, a message-owned
+Icon Row Button state is addressed as
+`iconRowRuntime.<iconRowId>.buttonInputs.<buttonId>.enabled` with the message id
+as `targetId`. The common owner timeline, editor target catalog, persisted-track
+validation and Preview resolution all consume this same identity.
+
 Discrete Conversation direction and chat-Actor tracks use `hold`. Direction is
 message-owner-relative and changes presentation without changing the message's
 stable Actor reference. The chat Actor is Screen-owner-relative, resolves
@@ -176,6 +185,11 @@ Conversation, each message's `mediaSource` track is message-owner-relative,
 starts at that message's text completion and may extend the owner duration.
 The common animation document remains the authored source; Conversation only
 consumes the resolved path for the requested frame.
+
+Icon Row Button `enabled` and `pressed` values use the same nested identity and
+only `hold` interpolation. The complete ordered `buttonInputs` collection is
+retained in the message Screen payload; resolution changes the two declared
+values without replacing ids, topology or the local Button boundary.
 
 The common owner timeline derives:
 

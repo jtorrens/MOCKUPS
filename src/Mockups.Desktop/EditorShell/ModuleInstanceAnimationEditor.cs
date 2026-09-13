@@ -145,8 +145,10 @@ internal sealed class ModuleInstanceAnimationEditor
         ProjectTreeNode node,
         ComponentInputDefinition input,
         string targetId,
-        string baseValue)
+        string baseValue,
+        string? fieldId = null)
     {
+        fieldId ??= input.Id;
         var animationDefinition = input.Animation
             ?? throw new InvalidOperationException($"Input '{input.Id}' is not animatable.");
         var value = ValueNode(input.ValueKind, baseValue);
@@ -155,7 +157,7 @@ internal sealed class ModuleInstanceAnimationEditor
             || input.ValueKind is not (ValueKind.StringSingleLine or ValueKind.StringMultiline))
         {
             document.AddTrack(
-                input.Id,
+                fieldId,
                 targetId,
                 value,
                 animationDefinition.Interpolations.First());
@@ -804,7 +806,8 @@ internal sealed class ModuleInstanceAnimationEditor
                         node,
                         target.Input,
                         target.TargetId,
-                        target.BaseValue);
+                        target.BaseValue,
+                        target.FieldId);
                     return true;
                 });
             };
@@ -1356,75 +1359,22 @@ internal sealed class ModuleInstanceAnimationEditor
         JsonObject themeTokens,
         int frameRate)
     {
-        var result = new List<AnimationTarget>();
-        foreach (var input in RuntimeInputDefinitionReader.ReadInputs(preview, config).Where((input) => input.Animation is not null))
-            result.Add(new AnimationTarget(
-                input.Id,
-                "",
-                input.Label,
-                input,
-                DesignPreviewTestValues.Value(preview, input),
-                RuntimeAnimationFrameOrigin.FieldOwnerFrameOrigin(preview, preview, animation, input.Id, "", themeTokens, frameRate),
-                RuntimeAnimationFrameOrigin.FieldReferenceDurationFrames(preview, preview, animation, input.Id, "", themeTokens, frameRate),
+        return RuntimeInputAnimationValueContract.ReadTargets(preview, config, preview)
+            .Select((target) => new AnimationTarget(
+                target.FieldId,
+                target.TargetId,
+                target.Input.Label,
+                target.Input,
+                target.BaseValue,
+                RuntimeAnimationFrameOrigin.FieldOwnerFrameOrigin(
+                    preview, preview, animation, target.FieldId, target.TargetId, themeTokens, frameRate),
+                RuntimeAnimationFrameOrigin.FieldReferenceDurationFrames(
+                    preview, preview, animation, target.FieldId, target.TargetId, themeTokens, frameRate),
                 (ownerFrame) => RuntimeAnimationFrameOrigin.ScreenFrameForOwnerFrame(
-                    preview, preview, animation, "", ownerFrame, themeTokens, frameRate),
+                    preview, preview, animation, target.TargetId, ownerFrame, themeTokens, frameRate),
                 (screenFrame) => RuntimeAnimationFrameOrigin.OwnerLocalFrame(
-                    preview, preview, animation, "", screenFrame, themeTokens, frameRate)));
-        foreach (var collection in RuntimeInputDefinitionReader.ReadCollections(preview, config))
-        {
-            var items = DesignPreviewTestValues.CollectionItems(preview, collection);
-            for (var index = 0; index < items.Count; index++)
-            {
-                var item = items[index];
-                var targetId = JsonPath.RequiredString(
-                    item,
-                    "id",
-                    $"Animation collection '{collection.Id}' item at index {index}");
-                foreach (var input in collection.Fields.Where((input) => input.Animation is not null))
-                {
-                    var targetInput = string.IsNullOrWhiteSpace(input.OptionsSourceCollectionJsonKey)
-                        ? input
-                        : input with { Options = RuntimeInputDynamicOptions.Resolve(ActiveInputOptions, input, item) };
-                    result.Add(new AnimationTarget(
-                        targetInput.Id,
-                        targetId,
-                        targetInput.Label,
-                        targetInput,
-                        DesignPreviewTestValues.CollectionValue(item, targetInput),
-                        RuntimeAnimationFrameOrigin.FieldOwnerFrameOrigin(preview, preview, animation, targetInput.Id, targetId, themeTokens, frameRate),
-                        RuntimeAnimationFrameOrigin.FieldReferenceDurationFrames(preview, preview, animation, targetInput.Id, targetId, themeTokens, frameRate),
-                        (ownerFrame) => RuntimeAnimationFrameOrigin.ScreenFrameForOwnerFrame(
-                            preview, preview, animation, targetId, ownerFrame, themeTokens, frameRate),
-                        (screenFrame) => RuntimeAnimationFrameOrigin.OwnerLocalFrame(
-                            preview, preview, animation, targetId, screenFrame, themeTokens, frameRate)));
-                }
-                if (!string.IsNullOrWhiteSpace(collection.ItemRuntimeContractJsonKey))
-                {
-                    var runtimeContract = JsonPath.RequiredObject(
-                        item,
-                        collection.ItemRuntimeContractJsonKey,
-                        $"Animation collection '{collection.Id}' item '{targetId}'");
-                    foreach (var input in RuntimeInputDefinitionReader
-                        .ReadInputs(runtimeContract, new JsonObject())
-                        .Where((input) => input.Animation is not null))
-                    {
-                        result.Add(new AnimationTarget(
-                            input.Id,
-                            targetId,
-                            input.Label,
-                            input,
-                            DesignPreviewTestValues.Value(runtimeContract, input),
-                            RuntimeAnimationFrameOrigin.FieldOwnerFrameOrigin(preview, preview, animation, input.Id, targetId, themeTokens, frameRate),
-                            RuntimeAnimationFrameOrigin.FieldReferenceDurationFrames(preview, preview, animation, input.Id, targetId, themeTokens, frameRate),
-                            (ownerFrame) => RuntimeAnimationFrameOrigin.ScreenFrameForOwnerFrame(
-                                preview, preview, animation, targetId, ownerFrame, themeTokens, frameRate),
-                            (screenFrame) => RuntimeAnimationFrameOrigin.OwnerLocalFrame(
-                                preview, preview, animation, targetId, screenFrame, themeTokens, frameRate)));
-                    }
-                }
-            }
-        }
-        return result;
+                    preview, preview, animation, target.TargetId, screenFrame, themeTokens, frameRate)))
+            .ToArray();
     }
 
     private DictionaryFieldServices DictionaryServices(

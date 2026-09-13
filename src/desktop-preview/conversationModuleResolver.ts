@@ -42,6 +42,7 @@ import {
   requiredReflowTiming,
   resolveReflowProgress,
 } from "./previewReflowHelpers.js";
+import { resolveNestedRuntimeAnimationValues } from "./runtimeNestedAnimationFields.js";
 
 export function resolveConversationModule(
   payload: DesignPreviewPayload,
@@ -188,6 +189,18 @@ export function resolveConversationModuleFrame(
   const screenFrame = rootScreenFrame(payload);
   const themeTokens = parseObject(payload.themeTokensJson);
   const messages = requiredObjectArray(preview, "messages", "module.conversation runtime");
+  const messagesCollection = requiredObjectArray(
+    preview,
+    "collections",
+    "module.conversation Runtime collections",
+  ).find((collection) => requiredString(
+    collection,
+    "id",
+    "module.conversation Runtime collection",
+  ) === "messages");
+  if (!messagesCollection) {
+    throw new Error("module.conversation requires Runtime collection 'messages'");
+  }
   messages.forEach(validateConversationMessageRuntime);
   const timeline = new RuntimeOwnerTimeline(
     preview,
@@ -413,7 +426,18 @@ export function resolveConversationModuleFrame(
         ownerFrame - fullScreen.sourceKeyframeFrame!,
       ) / Math.max(1, payload.frameRate) * 1000;
     }
-    return message;
+    return resolveNestedRuntimeAnimationValues(
+      messagesCollection,
+      message,
+      animation,
+      targetId,
+      (fieldId) => timeline.temporalLocalFrame(
+        fieldId,
+        targetId,
+        screenFrame,
+        message.hasExplicitPresenceEnd ? presenceEndFrame : undefined,
+      ),
+    );
   });
   return preview;
 }

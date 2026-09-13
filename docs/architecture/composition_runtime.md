@@ -228,6 +228,12 @@ and cannot remain inline with the text while the row is visible. Bubble receives
 and forwards the complete nested Icon Row Runtime contract; it never copies or
 renames Button Runtime fields.
 
+The generic structured-collection editor exposes an item's declared nested
+Runtime contract as Runtime-input fields. Nested collection commits persist the
+complete contract at the same stable outer item address, and animation controls
+retain that outer item as temporal owner while extending the field identity with
+the exact nested item path.
+
 Any Runtime collection item may declare a complete `ComponentVariantSlot` as
 the owner of its nested Runtime contract. The generic collection contract uses
 that item's exact `variantReference` and local `overrides` during preparation;

@@ -4,6 +4,7 @@ import { resolveBehaviorTimingFrames } from "./behaviorTiming.js";
 import { requiredNumberValue } from "./previewValueHelpers.js";
 import { validateTransientAnimationDocument } from "./transientAnimationDocument.js";
 import { motionTotalDurationMsForTheme, requiredMotionContract } from "./previewMotionHelpers.js";
+import { runtimeNestedAnimationFields } from "./runtimeNestedAnimationFields.js";
 
 type JsonRecord = Record<string, unknown>;
 type FieldTiming = { origin: number; completion: number; endExclusive: number };
@@ -872,23 +873,8 @@ function collectionKey(collection: JsonRecord) {
 }
 
 function itemFields(collection: JsonRecord, item: JsonRecord) {
-  const direct = optionalObjectArray(collection, "fields", "runtime owner collection");
-  const componentItems = optionalObject(collection, "componentItems", "runtime owner collection");
-  const inputsKey = optionalString(componentItems, "inputsJsonKey");
-  const embeddedInputs = inputsKey
-    ? requiredObject(item, inputsKey, `embedded Runtime collection item '${optionalString(item, "id")}'`)
-    : {};
-  const embedded = inputsKey
-    ? optionalObjectArray(embeddedInputs, "inputs", "embedded Runtime contract")
-    : [];
-  const runtimeContractKey = optionalString(collection, "itemRuntimeContractJsonKey");
-  const runtimeContract = runtimeContractKey
-    ? requiredObject(item, runtimeContractKey, `projected Runtime collection item '${optionalString(item, "id")}'`)
-    : {};
-  const runtime = runtimeContractKey
-    ? optionalObjectArray(runtimeContract, "inputs", "projected Runtime contract")
-    : [];
-  const fields = [...direct, ...embedded, ...runtime];
+  const fields = runtimeNestedAnimationFields(collection, item)
+    .map(({ definition }) => definition);
   fields.forEach(validateFieldTimeline);
   validateUniqueFieldIds(fields, "runtime owner item fields");
   return fields;

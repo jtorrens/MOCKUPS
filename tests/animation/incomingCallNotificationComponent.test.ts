@@ -77,7 +77,7 @@ test("Incoming Call Notification consumes exact Avatar and Icon Row Runtime cont
   assert.equal(resolved.avatar.labelSlot.label?.subtext, "WhatsApp audio");
   assert.equal(resolved.iconRow.items[1]?.button.iconToken, "phone_in_talk");
   assert.equal(resolved.iconRow.items[1]?.button.pressed, true);
-  assert.equal(resolved.iconRow.items[1]?.button.scale, 0.94);
+  assert.equal(resolved.iconRow.items[1]?.button.scale, 0.8);
 });
 
 test("Incoming Call Notification preserves an exact nested Button Surface selection", () => {

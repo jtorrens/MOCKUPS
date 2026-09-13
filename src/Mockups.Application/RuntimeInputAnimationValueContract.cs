@@ -9,7 +9,8 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 public sealed record RuntimeInputAnimationTargetDefinition(
     string FieldId,
     string TargetId,
-    ComponentInputDefinition Input);
+    ComponentInputDefinition Input,
+    string BaseValue);
 
 public static class RuntimeInputAnimationValueContract
 {
@@ -97,7 +98,7 @@ public static class RuntimeInputAnimationValueContract
     {
         var declarations = new Dictionary<
             (string FieldId, string TargetId),
-            ComponentInputDefinition>();
+            (ComponentInputDefinition Input, string BaseValue)>();
         AddDeclarations(
             declarations,
             values,
@@ -105,6 +106,7 @@ public static class RuntimeInputAnimationValueContract
                 runtimePreview,
                 config,
                 includeHidden: true),
+            "",
             "");
         foreach (var collection in RuntimeInputDefinitionReader.ReadCollections(
                      runtimePreview,
@@ -114,37 +116,40 @@ public static class RuntimeInputAnimationValueContract
             var collectionNode = values[collection.StorageJsonKey]
                 ?? values[collection.JsonKey];
             if (collectionNode is not JsonArray items) continue;
-            foreach (var item in items.OfType<JsonObject>())
-            {
-                AddDeclarations(
-                    declarations,
-                    item,
-                    collection.Fields,
-                    JsonPath.RequiredString(
-                        item,
-                        "id",
-                        $"Runtime collection '{collection.Id}' item"));
-            }
+            AddCollectionDeclarations(
+                declarations,
+                collection,
+                items.OfType<JsonObject>().ToArray(),
+                "",
+                "");
         }
         return declarations.Select((entry) =>
                 new RuntimeInputAnimationTargetDefinition(
                     entry.Key.FieldId,
                     entry.Key.TargetId,
-                    entry.Value))
+                    entry.Value.Input,
+                    entry.Value.BaseValue))
             .ToArray();
     }
 
     private static void AddDeclarations(
-        IDictionary<(string FieldId, string TargetId), ComponentInputDefinition> declarations,
+        IDictionary<(string FieldId, string TargetId), (ComponentInputDefinition Input, string BaseValue)> declarations,
         JsonObject values,
         IReadOnlyList<ComponentInputDefinition> inputs,
-        string targetId)
+        string targetId,
+        string prefix)
     {
         foreach (var input in inputs)
         {
+            var fieldId = RuntimeNestedAnimationFieldContract.Join(prefix, input.Id);
             if (input.Animation is not null)
             {
-                declarations.Add((input.Id, targetId), input);
+                AddDeclaration(
+                    declarations,
+                    fieldId,
+                    targetId,
+                    input,
+                    DesignPreviewTestValues.CollectionValue(values, input));
             }
             if (input.StructuredCollection is null
                 || values[input.JsonKey] is not JsonArray nestedItems)
@@ -153,15 +158,74 @@ public static class RuntimeInputAnimationValueContract
             }
             foreach (var nestedItem in nestedItems.OfType<JsonObject>())
             {
-                AddDeclarations(
+                AddCollectionDeclarations(
                     declarations,
-                    nestedItem,
-                    input.StructuredCollection.Fields,
-                    JsonPath.RequiredString(
-                        nestedItem,
-                        "id",
-                        $"Runtime structured collection '{input.Id}' item"));
+                    input.StructuredCollection,
+                    [nestedItem],
+                    targetId,
+                    fieldId);
             }
+        }
+    }
+
+    private static void AddCollectionDeclarations(
+        IDictionary<(string FieldId, string TargetId), (ComponentInputDefinition Input, string BaseValue)> declarations,
+        RuntimeInputCollectionDefinition collection,
+        IReadOnlyList<JsonObject> items,
+        string inheritedTargetId,
+        string prefix)
+    {
+        foreach (var item in items)
+        {
+            var itemId = JsonPath.RequiredString(
+                item,
+                "id",
+                $"Runtime collection '{collection.Id}' item");
+            var targetId = string.IsNullOrWhiteSpace(inheritedTargetId)
+                && string.IsNullOrWhiteSpace(prefix)
+                    ? itemId
+                    : inheritedTargetId;
+            var itemPrefix = string.IsNullOrWhiteSpace(prefix)
+                ? ""
+                : RuntimeNestedAnimationFieldContract.Join(prefix, itemId);
+            AddDeclarations(
+                declarations,
+                item,
+                collection.Fields,
+                targetId,
+                itemPrefix);
+
+            var runtimeKey = !string.IsNullOrWhiteSpace(collection.ItemRuntimeContractJsonKey)
+                ? collection.ItemRuntimeContractJsonKey
+                : collection.ComponentItems?.InputsJsonKey ?? "";
+            if (runtimeKey.Length == 0) continue;
+            var runtime = JsonPath.RequiredObject(
+                item,
+                runtimeKey,
+                $"Runtime collection '{collection.Id}' item '{itemId}'");
+            AddDeclarations(
+                declarations,
+                runtime,
+                RuntimeInputDefinitionReader.ReadInputs(
+                    runtime,
+                    new JsonObject(),
+                    includeHidden: true),
+                targetId,
+                itemPrefix);
+        }
+    }
+
+    private static void AddDeclaration(
+        IDictionary<(string FieldId, string TargetId), (ComponentInputDefinition Input, string BaseValue)> declarations,
+        string fieldId,
+        string targetId,
+        ComponentInputDefinition input,
+        string baseValue)
+    {
+        if (!declarations.TryAdd((fieldId, targetId), (input, baseValue)))
+        {
+            throw new InvalidOperationException(
+                $"Duplicate Runtime Input animation target '{fieldId}'/'{targetId}'.");
         }
     }
 }

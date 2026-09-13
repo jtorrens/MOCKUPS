@@ -1296,6 +1296,46 @@ test("a nested full-screen Media keeps the exact root Screen coordinates", () =>
   });
 });
 
+test("message Icon Row button states resolve as nested hold tracks owned by the message", () => {
+  const source = committedConversationPayload(true);
+  const runtime = JSON.parse(source.designPreviewJson) as {
+    messages: Array<{
+      id: string;
+      iconRowRuntime: Array<{
+        id: string;
+        runtimeInputs: { buttonInputs: Array<{ id: string; enabled: boolean; pressed: boolean }> };
+      }>;
+    }>;
+  };
+  const message = runtime.messages[0]!;
+  const iconRow = message.iconRowRuntime[0]!;
+  const button = iconRow.runtimeInputs.buttonInputs[0]!;
+  const prefix = `iconRowRuntime.${iconRow.id}.buttonInputs.${button.id}`;
+  const instance = JSON.parse(source.instanceJson) as Record<string, unknown>;
+  instance.animation = {
+    schemaVersion: 2,
+    tracks: [
+      track(`${prefix}.enabled`, message.id, [
+        { id: "enabled-base", frame: 0, value: true, interpolation: "hold", enabled: true },
+        { id: "enabled-off", frame: 1, value: false, interpolation: "hold", enabled: true },
+      ]),
+      track(`${prefix}.pressed`, message.id, [
+        { id: "pressed-base", frame: 0, value: false, interpolation: "hold", enabled: true },
+        { id: "pressed-on", frame: 1, value: true, interpolation: "hold", enabled: true },
+      ]),
+    ],
+  };
+  source.instanceJson = JSON.stringify(instance);
+  setConversationFrame(source, 120);
+
+  const resolved = resolveConversationModuleFrame(source) as typeof runtime;
+  const resolvedButtons = resolved.messages[0]!.iconRowRuntime[0]!.runtimeInputs.buttonInputs;
+  assert.equal(resolvedButtons.length, iconRow.runtimeInputs.buttonInputs.length);
+  assert.equal(resolvedButtons[0]!.id, button.id);
+  assert.equal(resolvedButtons[0]!.enabled, false);
+  assert.equal(resolvedButtons[0]!.pressed, true);
+});
+
 function committedConversationPayload(keepMessages = false): DesignPreviewPayload {
   const source = committedComponentFixture("avatar", "avatar_chat_header");
   const database = new Database(

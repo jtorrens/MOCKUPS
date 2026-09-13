@@ -1076,20 +1076,9 @@ public static class RuntimeAnimationFrameOrigin
 
     private static IReadOnlyList<JsonObject> Fields(JsonObject collection, JsonObject item)
     {
-        var fields = JsonPath.OptionalObjectArray(collection, "fields", "Runtime owner collection").ToList();
-        var runtimeContractKey = Text(collection["itemRuntimeContractJsonKey"]);
-        if (runtimeContractKey.Length > 0)
-        {
-            var targetId = JsonPath.RequiredString(item, "id", "Projected Runtime collection item");
-            var runtimeContract = JsonPath.RequiredObject(
-                item,
-                runtimeContractKey,
-                $"Projected Runtime collection item '{targetId}'");
-            fields.AddRange(JsonPath.OptionalObjectArray(
-                runtimeContract,
-                "inputs",
-                $"Projected Runtime contract '{targetId}'"));
-        }
+        var fields = RuntimeNestedAnimationFieldContract.CollectionItemFields(collection, item)
+            .Select((field) => field.Definition)
+            .ToList();
         foreach (var field in fields) ValidateFieldTimeline(field);
         ValidateUniqueFieldIds(fields, "Runtime owner item fields");
         return fields;

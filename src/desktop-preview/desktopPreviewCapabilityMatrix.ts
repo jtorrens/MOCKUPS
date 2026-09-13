@@ -59,7 +59,7 @@ export const desktopPreviewComponentCapabilities = {
   list: capabilities([], ["items.togglePresent"], ["presenceMotion"]),
   codeIndicator: capabilities(),
   avatar: capabilities(),
-  button: capabilities(["push"], [], ["pressedState"]),
+  button: capabilities([], [], ["pressedState"]),
   audio: capabilities(["play"], [], ["mediaPlayback"]),
   textInputBar: capabilities([], [], ["cursorBlink"]),
   keyboard: capabilities(

@@ -281,6 +281,37 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
         }
 
         var subcards = new List<EditorInternalNavigationSection>();
+        if (!string.IsNullOrWhiteSpace(collection.ItemRuntimeContractJsonKey))
+        {
+            var runtimeKey = collection.ItemRuntimeContractJsonKey;
+            var itemId = ItemId(item, itemIndex);
+            var runtime = JsonPath.RequiredObject(
+                item,
+                runtimeKey,
+                $"{collection.ItemLabel} '{itemId}' Runtime inputs");
+            var runtimeInputs = RuntimeInputDefinitionReader.ReadInputs(
+                runtime,
+                new JsonObject());
+            if (runtimeInputs.Count > 0)
+            {
+                var panel = new StackPanel { Spacing = 8 };
+                foreach (var input in runtimeInputs)
+                {
+                    panel.Children.Add(CreateRuntimeContractField(
+                        collection,
+                        item,
+                        itemIndex,
+                        runtime,
+                        input));
+                }
+                subcards.Add(new EditorInternalNavigationSection(
+                    "runtimeInputs",
+                    "Runtime inputs",
+                    EditorUiText.Count(runtimeInputs.Count, "runtime input"),
+                    EditorIcons.Component,
+                    panel));
+            }
+        }
         if (collection.ComponentItems is { } componentItems)
         {
             var variantReference = RuntimeComponentCollectionItemDocumentContract.RequireVariantReference(
@@ -317,6 +348,51 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
         return new StructuredCollectionItemContent(content, subcards);
     }
 
+    private Control CreateRuntimeContractField(
+        RuntimeInputCollectionDefinition collection,
+        JsonObject item,
+        int itemIndex,
+        JsonObject runtime,
+        ComponentInputDefinition input)
+    {
+        var itemId = ItemId(item, itemIndex);
+        var fieldId = RuntimeNestedAnimationFieldContract.Join(
+            _definition.Id,
+            itemId,
+            input.Id);
+        var services = _services with
+        {
+            UpdateStructuredCollectionValues = null,
+            MutateStructuredCollection = null,
+        };
+        var control = new DictionaryFieldControl(
+            new FieldValue(
+                CreateFieldDefinition(fieldId, input),
+                DesignPreviewTestValues.CollectionValue(runtime, input)),
+            services);
+        control.ValueCommitted += async (_, next) =>
+        {
+            runtime[input.JsonKey] = DesignPreviewTestValues.ValueNode(input, next);
+            item[collection.ItemRuntimeContractJsonKey] = runtime.DeepClone();
+            if (_services.UpdateStructuredCollectionValues is { } update)
+            {
+                await update(
+                    StructuredCollectionAddress.Root(collection.JsonKey),
+                    itemId,
+                    new Dictionary<string, JsonNode?>
+                    {
+                        [collection.ItemRuntimeContractJsonKey] = runtime,
+                    });
+            }
+            else
+            {
+                Publish(commit: true);
+            }
+        };
+        RegisterOverrideControl(control);
+        return control;
+    }
+
     private Control CreateItemField(
         RuntimeInputCollectionDefinition collection,
         JsonObject item,
@@ -344,42 +420,13 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
         var selectsFixedComponent = fixedBoundary is not null
             && input.JsonKey.Equals(fixedBoundary.VariantReferenceJsonKey, StringComparison.Ordinal);
         var selectsComponent = selectsRuntimeComponent || selectsFixedComponent;
-        var options = input.ValueKind switch
-        {
-            ValueKind.RecordReference =>
-                DictionaryRecordReferenceOptions.Resolve(
-                    _services,
-                    input.TableId,
-                    input.AllowEmpty,
-                    $"Structured collection record reference '{input.Id}'"),
-            ValueKind.ComponentVariant or ValueKind.ComponentVariantSlot
-                when !string.IsNullOrWhiteSpace(input.ComponentType) =>
-                ComponentVariantOptions(input, fixedBoundary),
-            ValueKind.PaletteColorToken => _services.GetPaletteColorOptions?.Invoke() ?? [],
-            _ => input.Options ?? [],
-        };
-        var definition = new FieldDefinition(
-            $"{_definition.Id}.{ItemId(item, 0)}.{input.Id}",
-            input.Label,
-            input.ValueKind,
-            IsEditable: _definition.IsEditable,
-            DefaultValue: input.DefaultValue,
-            Options: options,
-            PairLabels: input.PairLabels,
-            Number: input.ValueKind is ValueKind.Integer or ValueKind.Decimal or ValueKind.Alpha
-                ? new NumberDefinition(input.Minimum, input.Maximum, input.Increment, input.ValueKind == ValueKind.Integer ? 0 : 2)
-                : null,
-            RecordReference: input.ValueKind == ValueKind.RecordReference
-                ? new RecordReferenceDefinition(
-                    input.TableId,
-                    AllowEmpty: input.AllowEmpty)
-                : null,
-            SelectComponentClass: input.ValueKind is ValueKind.ComponentVariant or ValueKind.ComponentVariantSlot
-                && ComponentVariantOptionContract.SelectsComponentClass(input.ComponentType),
-            StructuredCollection: input.StructuredCollection,
-            Unit: input.Unit,
-            Animation: input.Animation,
-            BehaviorTiming: input.BehaviorTiming);
+        var definition = CreateFieldDefinition(
+            RuntimeNestedAnimationFieldContract.Join(
+                _definition.Id,
+                ItemId(item, itemIndex),
+                input.Id),
+            input,
+            fixedBoundary);
         var overridesKey = selectsRuntimeComponent
             ? componentItems!.OverridesJsonKey
             : selectsFixedComponent
@@ -483,8 +530,8 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
             var previous = DesignPreviewTestValues.CollectionValue(item, input);
             var nextReference = next;
             var componentChanged = selectsComponent
-                && !ComponentCategory(options, previous).Equals(
-                    ComponentCategory(options, nextReference),
+                && !ComponentCategory(definition.Options ?? [], previous).Equals(
+                    ComponentCategory(definition.Options ?? [], nextReference),
                     StringComparison.Ordinal);
             if (componentChanged)
             {
@@ -527,11 +574,58 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                 RuntimeContractChanged?.Invoke(this, EventArgs.Empty);
             }
         };
+        var animationInput = input with { Id = definition.Id };
         Control decorated = _services.DecorateStructuredCollectionField?.Invoke(
-            input,
-            ItemId(item, itemIndex),
+            animationInput,
+            string.IsNullOrWhiteSpace(_services.StructuredCollectionAnimationTargetId)
+                ? ItemId(item, itemIndex)
+                : _services.StructuredCollectionAnimationTargetId,
             control) ?? control;
         return decorated;
+    }
+
+    private FieldDefinition CreateFieldDefinition(
+        string fieldId,
+        ComponentInputDefinition input,
+        RuntimeFixedComponentBoundaryDefinition? fixedBoundary = null)
+    {
+        var options = input.ValueKind switch
+        {
+            ValueKind.RecordReference => DictionaryRecordReferenceOptions.Resolve(
+                _services,
+                input.TableId,
+                input.AllowEmpty,
+                $"Structured collection record reference '{input.Id}'"),
+            ValueKind.ComponentVariant or ValueKind.ComponentVariantSlot
+                when !string.IsNullOrWhiteSpace(input.ComponentType) =>
+                ComponentVariantOptions(input, fixedBoundary),
+            ValueKind.PaletteColorToken => _services.GetPaletteColorOptions?.Invoke() ?? [],
+            _ => input.Options ?? [],
+        };
+        return new FieldDefinition(
+            fieldId,
+            input.Label,
+            input.ValueKind,
+            IsEditable: _definition.IsEditable,
+            DefaultValue: input.DefaultValue,
+            Options: options,
+            PairLabels: input.PairLabels,
+            Number: input.ValueKind is ValueKind.Integer or ValueKind.Decimal or ValueKind.Alpha
+                ? new NumberDefinition(
+                    input.Minimum,
+                    input.Maximum,
+                    input.Increment,
+                    input.ValueKind == ValueKind.Integer ? 0 : 2)
+                : null,
+            RecordReference: input.ValueKind == ValueKind.RecordReference
+                ? new RecordReferenceDefinition(input.TableId, AllowEmpty: input.AllowEmpty)
+                : null,
+            SelectComponentClass: input.ValueKind is ValueKind.ComponentVariant or ValueKind.ComponentVariantSlot
+                && ComponentVariantOptionContract.SelectsComponentClass(input.ComponentType),
+            StructuredCollection: input.StructuredCollection,
+            Unit: input.Unit,
+            Animation: input.Animation,
+            BehaviorTiming: input.BehaviorTiming);
     }
 
     private void RegisterOverrideControl(DictionaryFieldControl control)

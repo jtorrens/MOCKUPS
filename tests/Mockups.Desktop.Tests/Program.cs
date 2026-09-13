@@ -1454,6 +1454,120 @@ static void RuntimeInputDefinitionReadersAreStrict()
         animationDocument,
         new Dictionary<string, IReadOnlySet<string>>(),
         "Test animation"));
+
+    static JsonObject BooleanInput(string id, bool defaultValue) => new()
+    {
+        ["id"] = id,
+        ["label"] = id,
+        ["jsonKey"] = id,
+        ["kind"] = "boolean",
+        ["valueKind"] = "Boolean",
+        ["defaultValue"] = defaultValue ? "true" : "false",
+        ["animatable"] = true,
+        ["animationInterpolations"] = new JsonArray("hold"),
+        ["animationTimeline"] = new JsonObject
+        {
+            ["origin"] = new JsonObject { ["kind"] = "ownerStart" },
+        },
+    };
+    var enabled = BooleanInput("enabled", true);
+    var pressed = BooleanInput("pressed", false);
+    var buttonInputs = new JsonObject
+    {
+        ["id"] = "buttonInputs",
+        ["label"] = "Buttons",
+        ["jsonKey"] = "buttonInputs",
+        ["kind"] = "collection",
+        ["valueKind"] = "StructuredCollection",
+        ["defaultValue"] = "[]",
+        ["structuredCollection"] = new JsonObject
+        {
+            ["id"] = "buttonInputs",
+            ["label"] = "Buttons",
+            ["jsonKey"] = "buttonInputs",
+            ["itemLabel"] = "Button",
+            ["fields"] = new JsonArray(enabled, pressed),
+        },
+    };
+    var iconRowRuntime = new JsonObject
+    {
+        ["id"] = "iconRowRuntime",
+        ["label"] = "Icon Row",
+        ["jsonKey"] = "iconRowRuntime",
+        ["kind"] = "collection",
+        ["valueKind"] = "StructuredCollection",
+        ["defaultValue"] = "[]",
+        ["structuredCollection"] = new JsonObject
+        {
+            ["id"] = "iconRowRuntime",
+            ["label"] = "Icon Row",
+            ["jsonKey"] = "iconRowRuntime",
+            ["itemLabel"] = "Icon Row",
+            ["fields"] = new JsonArray(),
+            ["itemRuntimeContractJsonKey"] = "runtimeInputs",
+        },
+    };
+    var nestedPreview = new JsonObject
+    {
+        ["inputs"] = new JsonArray(),
+        ["collections"] = new JsonArray
+        {
+            new JsonObject
+            {
+                ["id"] = "messages",
+                ["label"] = "Messages",
+                ["jsonKey"] = "messages",
+                ["itemLabel"] = "Message",
+                ["fields"] = new JsonArray(iconRowRuntime),
+            },
+        },
+        ["messages"] = new JsonArray
+        {
+            new JsonObject
+            {
+                ["id"] = "message_001",
+                ["iconRowRuntime"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["id"] = "icon_row_001",
+                        ["runtimeInputs"] = new JsonObject
+                        {
+                            ["inputs"] = new JsonArray(buttonInputs),
+                            ["buttonInputs"] = new JsonArray
+                            {
+                                new JsonObject
+                                {
+                                    ["id"] = "button_001",
+                                    ["enabled"] = true,
+                                    ["pressed"] = false,
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    };
+    var nestedTargets = RuntimeInputAnimationValueContract.ReadTargets(
+        nestedPreview,
+        new JsonObject(),
+        nestedPreview);
+    var nestedPrefix = "iconRowRuntime.icon_row_001.buttonInputs.button_001";
+    var enabledTarget = nestedTargets.Single((target) => target.FieldId == $"{nestedPrefix}.enabled");
+    var pressedTarget = nestedTargets.Single((target) => target.FieldId == $"{nestedPrefix}.pressed");
+    Equal("message_001", enabledTarget.TargetId);
+    Equal("message_001", pressedTarget.TargetId);
+    Equal("true", enabledTarget.BaseValue);
+    Equal("false", pressedTarget.BaseValue);
+    Equal("hold", enabledTarget.Input.Animation!.Interpolations.Single());
+    Equal("hold", pressedTarget.Input.Animation!.Interpolations.Single());
+    RuntimeInputAnimationValueContract.Validate(
+        nestedPreview,
+        Object($$"""{"schemaVersion":2,"tracks":[{"id":"enabled-track","fieldId":"{{nestedPrefix}}.enabled","targetId":"message_001","keyframes":[{"id":"enabled-keyframe","frame":0,"value":false,"interpolation":"hold","enabled":true}]},{"id":"pressed-track","fieldId":"{{nestedPrefix}}.pressed","targetId":"message_001","keyframes":[{"id":"pressed-keyframe","frame":0,"value":true,"interpolation":"hold","enabled":true}]}]}"""),
+        new Dictionary<string, IReadOnlySet<string>>(),
+        "Nested animation");
+
     var dynamic = Input();
     dynamic["optionsSourceCollectionJsonKey"] = "contentSets";
     dynamic["optionsSourceValueJsonKey"] = "id";
@@ -8586,7 +8700,7 @@ static void ConversationModuleEditorVisualTreeExposesTestValues()
                     decimal.ToDouble(readyFrameInput.Value ?? -1),
                     frameSlider.Value);
 
-                window.Hide();
+                window.Close();
             },
             CancellationToken.None).GetAwaiter().GetResult();
     }
@@ -13262,7 +13376,9 @@ static void AppModuleRepositoryPreservesFocusedContract()
         Equal(moduleSettings.ProjectId, module.ProjectId);
         Equal(moduleSettings.RecordClassId, module.RecordClassId);
         Equal(moduleSettings.SortOrder, module.SortOrder);
-        Equal(moduleSettings.ConfigJson, module.ConfigJson);
+        True(JsonNode.DeepEquals(
+            JsonPath.ParseRequiredObject(moduleSettings.ConfigJson, "Projected Module config"),
+            JsonPath.ParseRequiredObject(module.ConfigJson, "Stored Module config")));
         Equal(moduleSettings.DesignPreviewJson, module.DesignPreviewJson);
         Equal(moduleSettings.MetadataJson, module.MetadataJson);
         Equal(app, repository.GetModuleApp(module.Id));
@@ -13294,7 +13410,11 @@ static void AppModuleRepositoryPreservesFocusedContract()
         {
             repository.UpdateModuleConfig(connection, module.Id, moduleConfig.ToJsonString());
         }
-        Equal(moduleConfig.ToJsonString(), database.GetModuleSettings(module.Id).ConfigJson);
+        True(JsonNode.DeepEquals(
+            moduleConfig,
+            JsonPath.ParseRequiredObject(
+                database.GetModuleSettings(module.Id).ConfigJson,
+                "Updated projected Module config")));
         using (var connection = context.OpenConnection())
         {
             repository.UpdateModuleConfig(connection, module.Id, module.ConfigJson);
