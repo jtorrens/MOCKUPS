@@ -305,7 +305,7 @@ internal sealed class ProductionPreviewPayloadPreparer
                             ScreenTransition = null,
                         },
                         Phase = phase,
-                        ElapsedMilliseconds = elapsedFrames
+                        PhaseTimeMilliseconds = elapsedFrames
                             * 1000.0
                             / Math.Max(1, preparedOwner.FrameRate),
                     }],

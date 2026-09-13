@@ -23,9 +23,8 @@ export function screenTransitionLayers(
   }
   const screenBox = rootPreviewScreenBox(payload);
   return transition.layers.map((layer, index) => {
-    if (!Number.isFinite(layer.elapsedMilliseconds)
-        || layer.elapsedMilliseconds < 0) {
-      throw new Error("Screen transition elapsedMilliseconds must be non-negative.");
+    if (!Number.isFinite(layer.phaseTimeMilliseconds)) {
+      throw new Error("Screen transition phaseTimeMilliseconds must be finite.");
     }
     if (layer.phase === "content") return layers[index]!;
     const motion = requiredMotionContract(
@@ -44,7 +43,7 @@ export function screenTransitionLayers(
       layerMotion,
       {
         trigger: true,
-        elapsedMs: layer.elapsedMilliseconds,
+        elapsedMs: layer.phaseTimeMilliseconds,
         durationMs: transition.durationFrames * 1000 / layer.owner.frameRate,
       },
     );

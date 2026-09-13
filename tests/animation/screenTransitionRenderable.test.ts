@@ -76,7 +76,7 @@ const incomingNode: RenderableNode = {
 };
 
 function transition(
-  elapsedMilliseconds: number,
+  phaseTimeMilliseconds: number,
 ): ScreenTransitionPayload {
   return {
     layers: [
@@ -84,13 +84,13 @@ function transition(
         owner: outgoing,
         motionJson: leftMotion,
         phase: "exit",
-        elapsedMilliseconds,
+        phaseTimeMilliseconds,
       },
       {
         owner: incoming,
         motionJson: leftMotion,
         phase: "enter",
-        elapsedMilliseconds,
+        phaseTimeMilliseconds,
       },
     ],
     durationFrames: 5,
@@ -127,4 +127,20 @@ test("Screen exit and inverse entry Motion keep matching edges on the shared clo
   assert.equal(exit.children?.[0]?.transform?.opacity, 0.5);
   assert.equal(enter.children?.[0]?.transform?.x, 180);
   assert.equal(enter.children?.[0]?.transform?.opacity, 0.5);
+});
+
+test("signed pre-boundary time holds both Screen Motion layers at their initial state", () => {
+  const [exit, enter] = screenTransitionLayers(
+    {
+      ...incoming,
+      kind: "screenTransition",
+    },
+    transition(-40),
+    [outgoingNode, incomingNode],
+  );
+
+  assert.equal(exit.children?.[0]?.transform?.x, 0);
+  assert.equal(exit.children?.[0]?.transform?.opacity, 1);
+  assert.equal(enter.children?.[0]?.transform?.x, 360);
+  assert.equal(enter.children?.[0]?.transform?.opacity, 0);
 });

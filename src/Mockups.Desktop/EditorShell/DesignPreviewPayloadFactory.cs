@@ -11,7 +11,7 @@ internal sealed record ScreenTransitionLayerPayload(
     DesignPreviewPayload Owner,
     string MotionJson,
     string Phase,
-    double ElapsedMilliseconds);
+    double PhaseTimeMilliseconds);
 
 internal sealed record ScreenTransitionPayload(
     IReadOnlyList<ScreenTransitionLayerPayload> Layers,

@@ -446,3 +446,8 @@ both moving Screen edges coincide throughout a full-screen translation. It emits
 layers, so intentional overlaps remain visible and the highest ordered Screen
 is painted last. The HTML renderer never starts an animation, selects a Screen
 or repairs a gap or overlap.
+
+The Screen boundary clock is signed. A child track may begin before Screen or
+Shot frame zero; that negative child-owned time remains authored and Motion
+holds at boundary progress zero until its parent-owned appearance. Preparation
+never clamps or rewrites the child track to satisfy Screen transition timing.

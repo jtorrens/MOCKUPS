@@ -75,8 +75,9 @@ derives a record from the Shot context or falls back to another Actor.
 
 For every Shot frame, payload preparation selects all Screen lanes whose
 extended interval is active. Each prepared layer carries its exact Screen
-payload, the Shot-owned Motion, its entry/content/exit phase and non-negative
-phase elapsed interval. Entry holds the owner-local action at frame zero; exit
+payload, the Shot-owned Motion, its entry/content/exit phase and signed
+phase-relative clock. Time before the boundary holds Motion at progress zero;
+entry holds the owner-local action at frame zero and exit
 holds its final frame. The action delay also holds frame zero. The generic
 Screen transition resolver composes those already selected owners in lane order
 and reuses the common Motion geometry and easing with the Shot's exact duration.

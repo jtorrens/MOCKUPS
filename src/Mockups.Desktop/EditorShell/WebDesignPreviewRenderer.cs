@@ -233,7 +233,7 @@ internal static class WebDesignPreviewRenderer
                                 layer.Owner),
                             motionJson = layer.MotionJson,
                             phase = layer.Phase,
-                            elapsedMilliseconds = layer.ElapsedMilliseconds,
+                            phaseTimeMilliseconds = layer.PhaseTimeMilliseconds,
                         }),
                         durationFrames =
                             transition.DurationFrames,

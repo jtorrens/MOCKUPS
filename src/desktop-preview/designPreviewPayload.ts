@@ -32,7 +32,7 @@ export interface ScreenTransitionLayerPayload {
   owner: DesignPreviewPayload;
   motionJson: string;
   phase: "enter" | "content" | "exit";
-  elapsedMilliseconds: number;
+  phaseTimeMilliseconds: number;
 }
 
 export interface ScreenTransitionPayload {
