@@ -155,48 +155,6 @@ internal static class ComponentPreviewTransientValues
         {
             preview[key] = value?.DeepClone();
         }
-        foreach (var collection in
-                 RuntimeInputDefinitionReader.ReadCollections(
-                     preview,
-                     config,
-                     includeHidden: true))
-        {
-            foreach (var item in
-                     DesignPreviewTestValues.CurrentCollectionItems(
-                         preview,
-                         collection))
-            {
-                var runtimeKey = !string.IsNullOrWhiteSpace(
-                    collection.ItemRuntimeContractJsonKey)
-                    ? collection.ItemRuntimeContractJsonKey
-                    : collection.ComponentItems?.InputsJsonKey ?? "";
-                if (string.IsNullOrWhiteSpace(runtimeKey)
-                    || item[runtimeKey] is not JsonObject childRuntime)
-                {
-                    continue;
-                }
-
-                var childConfig = RuntimeCollectionItemContractOwner
-                    .ResolveItemVariantConfig(
-                        item,
-                        collection,
-                        config,
-                        componentVariantConfig);
-                if (childConfig.Count == 0)
-                {
-                    continue;
-                }
-                var preparedChild = RuntimePreviewDocumentContract.PrepareFixture(
-                    childRuntime,
-                    childConfig,
-                    componentVariantConfig);
-                childRuntime.Clear();
-                foreach (var (key, value) in preparedChild)
-                {
-                    childRuntime[key] = value?.DeepClone();
-                }
-            }
-        }
     }
 
     private static JsonObject ParseJsonObject(string json)

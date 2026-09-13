@@ -8956,6 +8956,67 @@ static void EmbeddedStructuralRuntimeProjectionsRefreshPreviewValues()
                 projected[0]!.AsObject(),
                 "iconToken",
                 "Conversation left Icon Row projected Button Runtime"));
+
+        var settings = database.GetModuleVariantSettings(conversation);
+        var preview = JsonPath.ParseRequiredObject(
+            settings.DesignPreviewJson,
+            "Conversation Design Preview");
+        var message = JsonPath.RequiredArray(
+                preview,
+                "messages",
+                "Conversation Design Preview")
+            .OfType<JsonObject>()
+            .First();
+        var iconRowRuntime = JsonPath.RequiredArray(
+                message,
+                "iconRowRuntime",
+                "Conversation message Runtime")
+            .OfType<JsonObject>()
+            .Single();
+        JsonPath.RequiredObject(
+            iconRowRuntime,
+            "iconRowSlot",
+            "Conversation message Icon Row Runtime")["variantReference"] =
+            "component_project_foqn_s2_iconRow::variant::incoming_call_ios";
+        var effective = ComponentPreviewTransientValues.Apply(
+            preview,
+            config,
+            ComponentPreviewTransientState.Capture(
+                ComponentPreviewTransientValues.ScopeKey(
+                    conversation,
+                    isInstance: false),
+                new Dictionary<string, string>(),
+                new Dictionary<string, JsonObject>()),
+            new ComponentPreviewInputDataSource(
+                    database.Design,
+                    database.Resources)
+                .ComponentVariantConfig);
+        var effectiveMessage = JsonPath.RequiredArray(
+                effective,
+                "messages",
+                "Effective Conversation Preview")
+            .OfType<JsonObject>()
+            .First();
+        var effectiveIconRow = JsonPath.RequiredArray(
+                effectiveMessage,
+                "iconRowRuntime",
+                "Effective Conversation message Runtime")
+            .OfType<JsonObject>()
+            .Single();
+        SequenceEqual(
+            ["decline", "answer"],
+            JsonPath.RequiredArray(
+                    JsonPath.RequiredObject(
+                        effectiveIconRow,
+                        "runtimeInputs",
+                        "Effective Conversation message Icon Row Runtime"),
+                    "buttonInputs",
+                    "Effective Conversation message Icon Row Runtime")
+                .OfType<JsonObject>()
+                .Select((item) => JsonPath.RequiredString(
+                    item,
+                    "id",
+                    "Effective Conversation message Icon Row Button")));
     }
     finally
     {
@@ -18343,7 +18404,8 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
         var baseline =
             RuntimeInputsCollectionEditor.PrepareDefaultPreview(
                 settings.DesignPreviewJson,
-                config);
+                config,
+                previewInputData.ComponentVariantConfig);
         Equal(
             0,
             DesignPreviewTestValues.Differences(

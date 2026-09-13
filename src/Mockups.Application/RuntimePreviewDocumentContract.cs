@@ -23,6 +23,10 @@ public static class RuntimePreviewDocumentContract
             effectiveConfig,
             componentVariantConfig);
         RuntimeTemporalPhaseContract.Hydrate(prepared, effectiveConfig);
+        PrepareNestedRuntimeContracts(
+            prepared,
+            effectiveConfig,
+            componentVariantConfig);
         return prepared;
     }
 
@@ -50,7 +54,85 @@ public static class RuntimePreviewDocumentContract
             prepared,
             effectiveConfig,
             componentVariantConfig);
+        PrepareNestedRuntimeContracts(
+            prepared,
+            effectiveConfig,
+            componentVariantConfig);
         return prepared;
+    }
+
+    private static void PrepareNestedRuntimeContracts(
+        JsonObject runtimeContract,
+        JsonObject effectiveConfig,
+        Func<string, JsonObject>? componentVariantConfig)
+    {
+        foreach (var collection in RuntimeInputDefinitionReader.ReadCollections(
+                     runtimeContract,
+                     effectiveConfig,
+                     includeHidden: true))
+        {
+            PrepareCollectionItems(
+                DesignPreviewTestValues.CurrentCollectionItems(
+                    runtimeContract,
+                    collection),
+                collection,
+                effectiveConfig,
+                componentVariantConfig);
+        }
+    }
+
+    private static void PrepareCollectionItems(
+        IReadOnlyList<JsonObject> items,
+        RuntimeInputCollectionDefinition collection,
+        JsonObject ownerConfig,
+        Func<string, JsonObject>? componentVariantConfig)
+    {
+        foreach (var item in items)
+        {
+            var runtimeKey = !string.IsNullOrWhiteSpace(
+                collection.ItemRuntimeContractJsonKey)
+                ? collection.ItemRuntimeContractJsonKey
+                : collection.ComponentItems?.InputsJsonKey ?? "";
+            if (!string.IsNullOrWhiteSpace(runtimeKey)
+                && item[runtimeKey] is JsonObject childRuntime)
+            {
+                var variantConfig = componentVariantConfig
+                    ?? throw new InvalidOperationException(
+                        $"Runtime collection '{collection.Id}' item contract "
+                        + "requires a Component Variant config resolver.");
+                var childConfig = RuntimeCollectionItemContractOwner
+                    .ResolveItemVariantConfig(
+                        item,
+                        collection,
+                        ownerConfig,
+                        variantConfig);
+                if (childConfig.Count > 0)
+                {
+                    item[runtimeKey] = PrepareFixture(
+                        childRuntime,
+                        childConfig,
+                        variantConfig);
+                }
+            }
+
+            foreach (var field in collection.Fields)
+            {
+                if (field.ValueKind != ValueKind.StructuredCollection
+                    || field.StructuredCollection is null
+                    || item[field.JsonKey] is not JsonArray nestedItems)
+                {
+                    continue;
+                }
+                RuntimeCollectionDocumentContract.Validate(
+                    nestedItems,
+                    $"Runtime collection '{collection.Id}' item field '{field.JsonKey}'");
+                PrepareCollectionItems(
+                    nestedItems.OfType<JsonObject>().ToList(),
+                    field.StructuredCollection,
+                    ownerConfig,
+                    componentVariantConfig);
+            }
+        }
     }
 }
 

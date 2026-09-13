@@ -1,10 +1,9 @@
 using Mockups.DesktopEditorShell.Common;
-using System;
 using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal static class RuntimeCollectionItemContractOwner
+public static class RuntimeCollectionItemContractOwner
 {
     public static JsonObject ResolveItemVariantConfig(
         JsonObject item,
