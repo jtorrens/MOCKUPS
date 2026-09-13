@@ -187,6 +187,7 @@ var tests = new (string Name, Action Run)[]
     ("Component and Module Variants share one full-reference grammar", ComponentAndModuleVariantsShareReferenceGrammar),
     ("Component and Module Variants share envelope lookup and id generation", ComponentAndModuleVariantsShareEnvelopeOperations),
     ("exact Component Variant Slots replace inherited boundaries atomically", ExactComponentVariantSlotsReplaceInheritedBoundaries),
+    ("Component Variant changes clear complete boundary Overrides", ComponentVariantChangesClearCompleteBoundaryOverrides),
     ("Default Variant editing unlock is session-only", DefaultVariantEditingUnlockIsSessionOnly),
     ("fixed structural Runtime collections reconcile by stable ids", FixedStructuralRuntimeCollectionsReconcileByStableIds),
     ("Icon Bar Variants own exact zone topology", IconBarVariantsOwnExactZoneTopology),
@@ -418,6 +419,98 @@ static void ExactComponentVariantSlotsReplaceInheritedBoundaries()
         "theme.colors.negative",
         partialSlot["overrides"]?["surface"]?["backgroundColorToken"]?.GetValue<string>());
     Equal(0.5, partialSlot["overrides"]?["surface"]?["backgroundAlpha"]?.GetValue<double>() ?? -1);
+}
+
+static void ComponentVariantChangesClearCompleteBoundaryOverrides()
+{
+    var source = ParityDatabasePath();
+    var temporary = Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "data",
+        $".mockups-component-variant-change-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SqliteProjectTestContext(temporary);
+        var nodes = database.LoadProjectTree()
+            .SelectMany(DescendantsAndSelf)
+            .ToList();
+        var projectId = nodes.Single((node) =>
+                node.Kind == ProjectTreeNodeKind.Project)
+            .Id;
+        var emptyIconBarReference = database
+            .GetComponentVariantReferenceOptionsByType(projectId, "iconBar")
+            .Single((option) => option.Label.Equals("Empty", StringComparison.Ordinal))
+            .Value;
+
+        var mediaVariant = nodes.Single((node) =>
+            node.Kind == ProjectTreeNodeKind.ComponentVariant
+            && node.Parent?.RecordClassId == "component.media"
+            && node.Name == "Media Imagen");
+        database.UpdateComponentVariantField(
+            mediaVariant,
+            "component.media.inlineTopIconBar.editor",
+            emptyIconBarReference);
+        AssertEmptyComponentVariantBoundary(
+            JsonPath.RequiredObject(
+                JsonPath.ParseRequiredObject(
+                    database.GetComponentVariantSelectionSettings(mediaVariant.Id).ConfigJson,
+                    "Media Imagen config"),
+                "media",
+                "Media Imagen config")["inlineTopIconBarSlot"]?.AsObject()
+                ?? throw new InvalidOperationException("Missing Media inline Top Icon Bar slot."),
+            emptyIconBarReference,
+            "Media inline Top Icon Bar slot");
+
+        var bubbleVariant = nodes.Single((node) =>
+            node.Kind == ProjectTreeNodeKind.ComponentVariant
+            && node.Parent?.RecordClassId == "component.bubble"
+            && node.Name == "Bubble");
+        ComponentDocuments(database).UpdateEmbeddedComponentField(
+            bubbleVariant,
+            [EmbeddedComponentSlotCatalog.Get("component.bubble.media.image.editor")],
+            "component.media.inlineTopIconBar.editor",
+            emptyIconBarReference);
+        var bubbleConfig = JsonPath.ParseRequiredObject(
+            database.GetComponentVariantSelectionSettings(bubbleVariant.Id).ConfigJson,
+            "Bubble config");
+        var imageMediaSlot = JsonPath.RequiredObject(
+            JsonPath.RequiredObject(bubbleConfig, "bubble", "Bubble config"),
+            "imageMediaSlot",
+            "Bubble config");
+        var imageMediaOverrides = JsonPath.RequiredObject(
+            imageMediaSlot,
+            "overrides",
+            "Bubble image Media slot");
+        var mediaOverrides = JsonPath.RequiredObject(
+            imageMediaOverrides,
+            "media",
+            "Bubble image Media Overrides");
+        AssertEmptyComponentVariantBoundary(
+            JsonPath.RequiredObject(
+                mediaOverrides,
+                "inlineTopIconBarSlot",
+                "Bubble image Media Overrides"),
+            emptyIconBarReference,
+            "Bubble nested Media inline Top Icon Bar slot");
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
+static void AssertEmptyComponentVariantBoundary(
+    JsonObject slot,
+    string expectedReference,
+    string owner)
+{
+    ComponentVariantSlotDocumentContract.Validate(slot, owner);
+    Equal(
+        expectedReference,
+        ComponentVariantSlotDocumentContract.VariantReference(slot, owner));
+    True(!OverrideDocumentContract.HasAuthoredValues(
+        ComponentVariantSlotDocumentContract.Overrides(slot, owner)));
 }
 
 static void DesignPreviewTransientSnapshotsRemainImmutable()
@@ -8013,7 +8106,7 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
             var slotControl = new DictionaryComponentVariantSlotControl(
                 listField.Definition,
                 """
-                {"variantReference":"component_project_foqn_s2_list::variant::chats","overrides":{"marker":"preserved"}}
+                {"variantReference":"component_project_foqn_s2_list::variant::chats","overrides":{"marker":"removed","nested":{"marker":"removed"}}}
                 """,
                 false,
                 null,
@@ -8024,24 +8117,20 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
             var serializedSlot = (string)typeof(DictionaryComponentVariantSlotControl)
                 .GetMethod("Serialize", BindingFlags.Instance | BindingFlags.NonPublic)!
                 .Invoke(slotControl, null)!;
-            var preservedSlot = JsonPath.ParseRequiredObject(
+            var changedSlot = JsonPath.ParseRequiredObject(
                 serializedSlot,
                 "Changed fixed Component slot");
             Equal(
                 nextListReference,
                 JsonPath.RequiredString(
-                    preservedSlot,
+                    changedSlot,
                     "variantReference",
                     "Changed fixed Component slot"));
-            Equal(
-                "preserved",
-                JsonPath.RequiredString(
-                    JsonPath.RequiredObject(
-                        preservedSlot,
-                        "overrides",
-                        "Changed fixed Component slot"),
-                    "marker",
-                    "Changed fixed Component slot Overrides"));
+            True(!OverrideDocumentContract.HasAuthoredValues(
+                JsonPath.RequiredObject(
+                    changedSlot,
+                    "overrides",
+                    "Changed fixed Component slot")));
 
             string? restoredSlotJson = null;
             var restorableSlot = new DictionaryComponentVariantSlotControl(

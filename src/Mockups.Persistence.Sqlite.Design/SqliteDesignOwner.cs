@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using Mockups.DesktopEditorShell.Common;
+using Mockups.DesktopEditorShell.EditorShell;
 using System.Collections.Generic;
 using System.Text.Json.Nodes;
 
@@ -71,6 +72,48 @@ internal sealed partial class SqliteDesignOwner :
         JsonPath.RemoveAndPruneEmptyObjects(
             root,
             path);
+
+    private static void SetComponentFieldValue(
+        JsonObject root,
+        ComponentClassFieldDescriptor descriptor,
+        string value)
+    {
+        var node = ComponentConfigJsonValue(descriptor, value);
+        if (!TryGetComponentVariantBoundary(descriptor, out var slot))
+        {
+            SetJsonValue(root, descriptor.JsonPath, node);
+            return;
+        }
+
+        var reference = node.GetValue<string>();
+        SetJsonValue(
+            root,
+            slot.SlotPath,
+            ComponentVariantSlotDocumentContract.CreateForVariantChange(
+                reference,
+                $"Component field '{descriptor.Id}' boundary"));
+    }
+
+    private static bool RemoveComponentFieldValue(
+        JsonObject root,
+        ComponentClassFieldDescriptor descriptor) =>
+        TryGetComponentVariantBoundary(descriptor, out var slot)
+            ? RemoveJsonValue(root, slot.SlotPath)
+            : RemoveJsonValue(root, descriptor.JsonPath);
+
+    private static bool TryGetComponentVariantBoundary(
+        ComponentClassFieldDescriptor descriptor,
+        out EmbeddedComponentSlotDefinition slot)
+    {
+        if (descriptor.ValueKind == ValueKind.ComponentVariant
+            && EmbeddedComponentSlotCatalog.TryGet(descriptor.Id, out slot))
+        {
+            return true;
+        }
+
+        slot = new EmbeddedComponentSlotDefinition("", "", "", "", []);
+        return false;
+    }
 
     private static JsonNode NumberNode(string value) =>
         JsonPath.NumberNode(value);

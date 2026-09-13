@@ -64,4 +64,9 @@ public static class ComponentVariantSlotDocumentContract
         Validate(slot, owner);
         return slot;
     }
+
+    public static JsonObject CreateForVariantChange(
+        string variantReference,
+        string owner) =>
+        Create(variantReference, new JsonObject(), owner);
 }

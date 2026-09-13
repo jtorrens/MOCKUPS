@@ -121,6 +121,13 @@ Variant reference and any unrelated Runtime values, and leaves an empty object
 only where the current document contract requires it. Empty objects alone do
 not mark a boundary as overridden.
 
+Changing a boundary's Variant is one atomic `ComponentVariantSlot` mutation.
+The selected full Variant reference is written together with a new empty local
+Overrides object, so Overrides authored for the previous Variant are removed at
+every nested depth. Restoring an inherited Variant selection removes the local
+boundary selection and exposes the inherited complete slot again. Neither
+operation changes the referenced Variant definition or an unrelated boundary.
+
 Override state aggregates through every dictionary container. A nested
 `ComponentVariantSlot` marks its structured-collection field, owning card and
 internal navigation path amber even when the collection value itself is direct

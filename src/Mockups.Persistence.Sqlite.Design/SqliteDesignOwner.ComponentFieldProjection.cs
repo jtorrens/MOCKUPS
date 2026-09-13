@@ -231,16 +231,14 @@ internal sealed partial class SqliteDesignOwner
 
         if (value == "inherited")
         {
-            RemoveJsonValue(overrides, descriptor.JsonPath);
+            RemoveComponentFieldValue(overrides, descriptor);
             return;
         }
 
-        SetJsonValue(
+        SetComponentFieldValue(
             overrides,
-            descriptor.JsonPath,
-            ComponentConfigJsonValue(
-                descriptor,
-                value));
+            descriptor,
+            value);
     }
 
     internal void UpdateRuntimeComponentOverride(
@@ -274,16 +272,14 @@ internal sealed partial class SqliteDesignOwner
             || descriptor.ValueKind == ValueKind.TypographyStyle
                 && TypographyStyleValue.IsEmpty(value))
         {
-            RemoveJsonValue(localOverrides, descriptor.JsonPath);
+            RemoveComponentFieldValue(localOverrides, descriptor);
             return;
         }
 
-        SetJsonValue(
+        SetComponentFieldValue(
             localOverrides,
-            descriptor.JsonPath,
-            ComponentConfigJsonValue(
-                descriptor,
-                value));
+            descriptor,
+            value);
     }
 
     internal FieldValue CreateEmbeddedComponentFieldValue(

@@ -283,16 +283,14 @@ internal sealed partial class SqliteDesignOwner
             || descriptor.ValueKind == ValueKind.TypographyStyle
                 && TypographyStyleValue.IsEmpty(value))
         {
-            RemoveJsonValue(overrides, descriptor.JsonPath);
+            RemoveComponentFieldValue(overrides, descriptor);
             return;
         }
 
-        SetJsonValue(
+        SetComponentFieldValue(
             overrides,
-            descriptor.JsonPath,
-            ComponentConfigJsonValue(
-                descriptor,
-                value));
+            descriptor,
+            value);
     }
 
     private static JsonObject? EmbeddedOverrides(

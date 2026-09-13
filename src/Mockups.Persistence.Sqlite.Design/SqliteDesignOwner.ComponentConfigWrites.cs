@@ -69,12 +69,10 @@ internal sealed partial class SqliteDesignOwner
                 componentClassId);
             var config = ParseJsonObject(settings.ConfigJson);
             var metadata = ParseJsonObject(settings.MetadataJson);
-            SetJsonValue(
+            SetComponentFieldValue(
                 config,
-                descriptor.JsonPath,
-                ComponentConfigJsonValue(
-                    descriptor,
-                    value));
+                descriptor,
+                value);
             ApplyComponentInputBindingsProjections(
                 connection,
                 settings.ProjectId,
@@ -116,12 +114,10 @@ internal sealed partial class SqliteDesignOwner
                 variantNode,
                 out var componentClassId,
                 out var metadata);
-            SetJsonValue(
+            SetComponentFieldValue(
                 config,
-                descriptor.JsonPath,
-                ComponentConfigJsonValue(
-                    descriptor,
-                    value));
+                descriptor,
+                value);
             PersistComponentVariantUpdate(
                 connection,
                 variantNode,
