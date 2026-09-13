@@ -255,7 +255,8 @@ transient empty trailing line during write-on erasure does not move Cursor
 below that glyph. It remains outside the clipped
 text viewport, may paint beyond the text or Bubble edge, and never contributes
 to intrinsic width, wrapping or height. Showing, hiding or fading Cursor
-therefore cannot resize an owning Text Box or Bubble.
+therefore cannot resize an owning Text Box or Bubble. Its rectangular visual is
+the common resolved Surface primitive in both interactive Preview and output.
 
 Text Box measures only the text resolved for the current frame. When a word
 crosses the wrap boundary, the common text layout first detects the overflow

@@ -357,7 +357,9 @@ send boundary and releases its Bubble. Bubble still forwards cursor state to
 Text Box, which owns the cursor's blinking presentation.
 Text Box paints that Cursor as a separate resolved child after text layout. The
 cursor never participates in text measurement or wrapping and is not clipped
-when its final-line position extends beyond the text or Bubble edge.
+when its final-line position extends beyond the text or Bubble edge. Cursor's
+rectangle is a resolved Surface primitive; Preview does not introduce a nested
+SVG viewport for this box, and SVG output maps the same Surface to a `rect`.
 
 Conversation Preview prepares message layout transitions by stable message id.
 At an appearance it resolves the previous and target vertical layouts once. At

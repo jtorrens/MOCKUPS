@@ -24,10 +24,10 @@ test("Cursor resolves its continuous fade completely from its owner frame", () =
   assert.equal(visible.opacity, 1);
   assertClose(faded.opacity, config.cursor.minimumFade);
   assert.equal(visibleAgain.opacity, 1);
-  assertClose(
-    cursorComponentToRenderable(source, faded).style?.opacity,
-    config.cursor.minimumFade,
-  );
+  const renderable = cursorComponentToRenderable(source, faded);
+  assert.equal(renderable.type, "surface");
+  assert.equal(renderable.style?.pathData, undefined);
+  assertClose(renderable.style?.opacity, config.cursor.minimumFade);
 });
 
 test("Text Box forwards its frame to its owned Cursor boundary", () => {
