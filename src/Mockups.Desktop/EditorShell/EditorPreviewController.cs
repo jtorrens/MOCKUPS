@@ -4565,12 +4565,17 @@ internal sealed class EditorPreviewController : IDisposable
     internal static string ProductionPayloadShotId(
         DesignPreviewPayload? payload)
     {
-        if (payload?.Kind != "moduleInstance")
+        if (payload is null)
+        {
+            return "";
+        }
+        var owner = DesignPreviewPayloadLayers.PrimaryOwner(payload);
+        if (owner.Kind != "moduleInstance")
         {
             return "";
         }
         var shotId = RuntimeContextValue(
-            payload,
+            owner,
             "shotId");
         if (string.IsNullOrWhiteSpace(shotId))
         {

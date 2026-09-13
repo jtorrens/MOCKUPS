@@ -257,11 +257,8 @@ internal sealed class ProductionPreviewPayloadPreparer
         if (template.ScreenTiming
             is { } timing)
         {
-            var transition = template.ScreenTransition
-                ?? throw new InvalidOperationException(
-                    $"Screen '{template.OwnerId}' playback template is missing its Shot transition contract.");
             var baseIncoming =
-                transition.Layers.Single().Owner
+                DesignPreviewPayloadLayers.PrimaryOwner(template)
                 with
                 {
                     ScreenTiming = null,
@@ -280,7 +277,7 @@ internal sealed class ProductionPreviewPayloadPreparer
             var shotFrame = timing.ScreenStartFrame + frame;
             var phase = shotFrame < 0 || shotFrame >= timing.ShotDurationFrames
                 ? "content"
-                : frame < transition.DurationFrames
+                : frame < timing.TransitionFrameCount
                     ? "enter"
                     : frame >= timing.ActionStartFrame + timing.ActionDurationFrames
                         ? "exit"
@@ -298,21 +295,19 @@ internal sealed class ProductionPreviewPayloadPreparer
             return preparedOwner with
             {
                 Kind = "screenTransition",
-                ScreenTransition = transition with
-                {
-                    Layers = [transition.Layers[0] with
-                    {
-                        Owner = preparedOwner with
+                ScreenTransition = new ScreenTransitionPayload(
+                    [new ScreenTransitionLayerPayload(
+                        Owner: preparedOwner with
                         {
                             ScreenTiming = null,
                             ScreenTransition = null,
                         },
-                        Phase = phase,
-                        PhaseTimeMilliseconds = elapsedFrames
+                        MotionJson: timing.TransitionMotionJson,
+                        Phase: phase,
+                        PhaseTimeMilliseconds: elapsedFrames
                             * 1000.0
-                            / Math.Max(1, preparedOwner.FrameRate),
-                    }],
-                },
+                            / Math.Max(1, preparedOwner.FrameRate))],
+                    timing.TransitionFrameCount),
             };
         }
 

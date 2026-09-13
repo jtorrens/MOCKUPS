@@ -16810,6 +16810,21 @@ static void ShotDeviceSettingsOverridesPreserveOwnership()
             shotNode.Id,
             EditorPreviewController.ProductionPayloadShotId(
                 productionPayload));
+        var transitionPayload = productionPayload with
+        {
+            Kind = "screenTransition",
+            ScreenTransition = new ScreenTransitionPayload(
+                [new ScreenTransitionLayerPayload(
+                    productionPayload,
+                    shot.TransitionJson,
+                    "enter",
+                    0)],
+                shot.TransitionDurationFrames),
+        };
+        Equal(
+            shotNode.Id,
+            EditorPreviewController.ProductionPayloadShotId(
+                transitionPayload));
         Equal(
             "",
             EditorPreviewController.ProductionPayloadShotId(
@@ -17472,8 +17487,17 @@ static void ProductionRuntimeCommitsDiscardTransientPreviewValues()
             screen.Id,
             "actorId",
             JsonValue.Create(actorIds[0]));
+        database.UpdateModuleInstanceField(
+            screen.Id,
+            "moduleInstance.startFrame",
+            "0");
+        database.UpdateShotField(
+            database.GetModuleInstanceSettings(screen.Id).ShotId,
+            "shot.transition",
+            """{"transition":"slide","direction":"left","bounds":"screen","fade":false,"translate":true,"scale":false}""");
         var payload = Required(
             CreatePreviewPayload(database, screen, null));
+        Equal("screenTransition", payload.Kind);
         var session = new ComponentPreviewInputSession(
             database.Design,
             database.DictionaryContext,
@@ -17729,7 +17753,11 @@ static void ShotScreenTracksResolveIndependentLanes()
                     "overlap Screen payload"),
                 "moduleInstanceId",
                 "overlap Screen payload"));
-        True(overlapPayload.ScreenTransition is null);
+        var overlapTransition = Required(
+            overlapPayload.ScreenTransition);
+        SequenceEqual(
+            new[] { lower.Id, top.Id },
+            overlapTransition.Layers.Select((layer) => layer.Owner.OwnerId));
 
         var topRange = ranges.Single((range) => range.ScreenId == top.Id);
         database.UpdateModuleInstanceField(

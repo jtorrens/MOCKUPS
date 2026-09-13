@@ -123,6 +123,7 @@ internal sealed class ComponentPreviewInputSession
             StopPlayback();
             return;
         }
+        payload = DesignPreviewPayloadLayers.PrimaryOwner(payload);
 
         ApplyProjectFrameRate(projectId);
         var config = ParseJsonObject(payload.ConfigJson);
@@ -559,6 +560,17 @@ internal sealed class ComponentPreviewInputSession
             return payload;
         }
 
+        return DesignPreviewPayloadLayers.MapPrimaryOwner(
+            payload,
+            (owner) => ApplyOwnerInputs(owner, themeMode, projectId));
+    }
+
+    private DesignPreviewPayload ApplyOwnerInputs(
+        DesignPreviewPayload payload,
+        string themeMode,
+        string? projectId)
+    {
+
         var config = ParseJsonObject(payload.ConfigJson);
         var preview = ComponentPreviewTransientValues.Apply(
             ParseJsonObject(payload.RuntimeContractJson),
@@ -729,11 +741,13 @@ internal sealed class ComponentPreviewInputSession
 
     private static bool SupportsInputs(DesignPreviewPayload payload)
     {
-        return payload.Kind is "componentClass" or "module" or "moduleInstance";
+        return DesignPreviewPayloadLayers.PrimaryOwner(payload).Kind
+            is "componentClass" or "module" or "moduleInstance";
     }
 
     private static string ScopeKey(DesignPreviewPayload payload) =>
-        ComponentPreviewTransientValues.ScopeKey(payload);
+        ComponentPreviewTransientValues.ScopeKey(
+            DesignPreviewPayloadLayers.PrimaryOwner(payload));
 
     private void EnsureValue(ComponentInputDefinition input, JsonObject preview)
     {

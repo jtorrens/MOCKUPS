@@ -82,6 +82,12 @@ holds its final frame. The action delay also holds frame zero. The generic
 Screen transition resolver composes those already selected owners in lane order
 and reuses the common Motion geometry and easing with the Shot's exact duration.
 Registries and concrete Module owners remain unaware of neighboring Screens.
+The generic payload-layer contract is the single owner of transition-envelope
+projection. Semantic reads use its highest ordered owner, transformations map
+the declared owner layers and the envelope is then synchronized from that
+primary owner while retaining its outer selection identity. A consumer never
+copies an ad hoc subset of owner fields or rejects a Screen merely because it
+is currently wrapped by entry, exit or overlap composition.
 
 `DesignPreviewPayload.ThemeMode` is authoritative when explicitly `light` or
 `dark`. Session mode applies only when the payload has no explicit effective

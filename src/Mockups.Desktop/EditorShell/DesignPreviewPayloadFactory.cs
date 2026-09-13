@@ -23,7 +23,8 @@ internal sealed record ScreenTimingPayload(
     int ActionDelayFrames,
     int ActionDurationFrames,
     int ScreenStartFrame,
-    int ShotDurationFrames)
+    int ShotDurationFrames,
+    string TransitionMotionJson)
 {
     public int ActionStartFrame =>
         TransitionFrameCount
@@ -59,6 +60,79 @@ internal sealed record DesignPreviewPayload(
     ScreenTransitionPayload? ScreenTransition = null,
     string RuntimeRecordReferencesJson = "{}",
     string ProjectId = "");
+
+internal static class DesignPreviewPayloadLayers
+{
+    public static DesignPreviewPayload PrimaryOwner(
+        DesignPreviewPayload payload) =>
+        payload.ScreenTransition is not { } transition
+            ? payload
+            : RequiredLayers(transition)[^1].Owner;
+
+    public static DesignPreviewPayload MapOwners(
+        DesignPreviewPayload payload,
+        Func<DesignPreviewPayload, DesignPreviewPayload> transform)
+    {
+        if (payload.ScreenTransition is not { } transition)
+        {
+            return transform(payload);
+        }
+
+        var layers = RequiredLayers(transition)
+            .Select((layer) => layer with
+            {
+                Owner = transform(layer.Owner),
+            })
+            .ToArray();
+        return Synchronize(payload, transition, layers);
+    }
+
+    public static DesignPreviewPayload MapPrimaryOwner(
+        DesignPreviewPayload payload,
+        Func<DesignPreviewPayload, DesignPreviewPayload> transform)
+    {
+        if (payload.ScreenTransition is not { } transition)
+        {
+            return transform(payload);
+        }
+
+        var layers = RequiredLayers(transition).ToArray();
+        layers[^1] = layers[^1] with
+        {
+            Owner = transform(layers[^1].Owner),
+        };
+        return Synchronize(payload, transition, layers);
+    }
+
+    private static DesignPreviewPayload Synchronize(
+        DesignPreviewPayload envelope,
+        ScreenTransitionPayload transition,
+        IReadOnlyList<ScreenTransitionLayerPayload> layers)
+    {
+        var primary = layers[^1].Owner;
+        return primary with
+        {
+            Kind = envelope.Kind,
+            Name = envelope.Name,
+            OwnerId = envelope.OwnerId,
+            ScreenTransition = transition with
+            {
+                Layers = layers,
+            },
+        };
+    }
+
+    private static IReadOnlyList<ScreenTransitionLayerPayload> RequiredLayers(
+        ScreenTransitionPayload transition)
+    {
+        if (transition.Layers.Count == 0)
+        {
+            throw new InvalidOperationException(
+                "A Screen transition payload requires at least one owner layer.");
+        }
+        return transition.Layers;
+    }
+}
 
 internal static class DesignPreviewPayloadFactory
 {
@@ -269,6 +343,8 @@ internal static class DesignPreviewPayloadFactory
                 moduleInstanceId);
         var source = dataSource.LoadModuleInstance(moduleInstanceId);
         var shot = dataSource.LoadShotSettings(source.ShotId);
+        var slot = dataSource.LoadShotSlots(source.ShotId)
+            .Single((candidate) => candidate.Id == moduleInstanceId);
         var screenFrame =
             Math.Clamp(
                 shotFrame
@@ -298,7 +374,9 @@ internal static class DesignPreviewPayloadFactory
                         range.ActionDelayFrames,
                         range.ActionDurationFrames,
                         range.StartFrame,
-                        shot.DurationFrames),
+                        shot.DurationFrames,
+                        slot.TransitionJson),
+                OwnerId = moduleInstanceId,
             };
         var phase = ScreenTransitionPhase(
             range.StartFrame,
@@ -306,8 +384,10 @@ internal static class DesignPreviewPayloadFactory
             range.ActionEndFrame,
             shotFrame,
             shot.DurationFrames);
-        var slot = dataSource.LoadShotSlots(source.ShotId)
-            .Single((candidate) => candidate.Id == moduleInstanceId);
+        if (phase == "content")
+        {
+            return owner;
+        }
         var elapsedFrames = phase == "enter"
             ? screenFrame
             : screenFrame - range.ActionEndFrame;
@@ -421,7 +501,9 @@ internal static class DesignPreviewPayloadFactory
                 slot.ActionDelayFrames,
                 slot.ActionDurationFrames,
                 slot.StartFrame,
-                shotDurationFrames),
+                shotDurationFrames,
+                slot.TransitionJson),
+            OwnerId = slot.Id,
         };
         return new ScreenTransitionLayerPayload(
             owner,

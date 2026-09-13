@@ -27,29 +27,11 @@ internal sealed class ProductionPreviewRuntimeResolver
 
     public DesignPreviewPayload Resolve(DesignPreviewPayload payload, string themeMode)
     {
-        if (payload.ScreenTransition is { } transition)
+        if (payload.ScreenTransition is not null)
         {
-            var layers = transition.Layers
-                .Select((layer) => layer with
-                {
-                    Owner = Resolve(layer.Owner, themeMode),
-                })
-                .ToArray();
-            var incoming = layers[^1].Owner;
-            return payload with
-            {
-                ConfigJson = incoming.ConfigJson,
-                DesignPreviewJson =
-                    incoming.DesignPreviewJson,
-                RuntimeContractJson =
-                    incoming.RuntimeContractJson,
-                InstanceJson = incoming.InstanceJson,
-                ScreenTransition =
-                    transition with
-                    {
-                        Layers = layers,
-                    },
-            };
+            return DesignPreviewPayloadLayers.MapOwners(
+                payload,
+                (owner) => Resolve(owner, themeMode));
         }
 
         var preview = ParseObject(payload.DesignPreviewJson);
