@@ -43,7 +43,8 @@ internal sealed record PreviewScreenTimelineStateEdit(
 internal sealed record PreviewScreenTimelineDurationEdit;
 
 internal sealed record PreviewShotScreenTimelineEdit(
-    bool CanResizeEnd);
+    bool CanResizeEnd,
+    int NonActionFrames);
 
 internal sealed record PreviewShotTimelineMutation(
     Func<string, string, int, Task> UpdateScreenFieldAsync);
@@ -922,9 +923,13 @@ internal static class PreviewShotTimelineSnapshotFactory
                     screen.StartFrame + screen.DurationFrames,
                     [new PreviewScreenTimelineInterval(
                         screen.StartFrame,
-                        screen.StartFrame + screen.DurationFrames)],
+                        screen.StartFrame + screen.DurationFrames,
+                        EnterPhaseFrames: shot.TransitionFrameCount,
+                        ExitPhaseFrames: shot.TransitionFrameCount)],
                     ShotScreenEdit: new PreviewShotScreenTimelineEdit(
-                        screen.IsDurationEditable),
+                        screen.IsDurationEditable,
+                        screen.TransitionFrameCount * 2
+                        + screen.ActionDelayFrames),
                     MinimumStartFrame: -100000))
             .ToArray();
         return new PreviewScreenTimelineSnapshot(
@@ -1677,7 +1682,11 @@ internal sealed class PreviewScreenTimelineSurface : Border
                 await shotMutation.UpdateScreenFieldAsync(
                     item.Id,
                     "moduleInstance.durationFrames",
-                    Math.Max(1, edit.EndFrame - edit.StartFrame));
+                    Math.Max(
+                        1,
+                        edit.EndFrame
+                        - edit.StartFrame
+                        - shotScreen.NonActionFrames));
             }
             return;
         }

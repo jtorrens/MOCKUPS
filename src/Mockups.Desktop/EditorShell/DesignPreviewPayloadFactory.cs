@@ -7,12 +7,14 @@ using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
+internal sealed record ScreenTransitionLayerPayload(
+    DesignPreviewPayload Owner,
+    string MotionJson,
+    string Phase,
+    double ElapsedMilliseconds);
+
 internal sealed record ScreenTransitionPayload(
-    DesignPreviewPayload Outgoing,
-    DesignPreviewPayload Incoming,
-    string OutgoingMotionJson,
-    string IncomingMotionJson,
-    double ElapsedMilliseconds,
+    IReadOnlyList<ScreenTransitionLayerPayload> Layers,
     int DurationFrames);
 
 internal sealed record ScreenTimingPayload(
@@ -103,7 +105,11 @@ internal static class DesignPreviewPayloadFactory
                 node,
                 theme.DeviceId,
                 themeMode,
-                theme,
+                (screenId) => dataSource.LoadThemeContext(
+                    ScreenNode(screenId),
+                    themeId)
+                    ?? throw new InvalidOperationException(
+                        $"Screen '{screenId}' has no Preview Theme context."),
                 timelineFrame,
                 respectAuthoredAppearance: false),
             _ => null,
@@ -139,12 +145,6 @@ internal static class DesignPreviewPayloadFactory
             shot.Id,
             shotFrame);
         if (string.IsNullOrWhiteSpace(screenId)) return null;
-        var theme = dataSource.LoadProductionRenderThemeContext(
-            shot,
-            screenId,
-            themeStrategy,
-            themeId,
-            deviceId);
         var payload = FromShot(
             dataSource,
             shot,
@@ -152,11 +152,23 @@ internal static class DesignPreviewPayloadFactory
             ModuleAppearanceModeContract.RequireResolved(
                 requestedThemeMode,
                 $"Shot '{shot.Id}' render appearance"),
-            theme,
+            (candidateScreenId) =>
+                dataSource.LoadProductionRenderThemeContext(
+                    shot,
+                    candidateScreenId,
+                    themeStrategy,
+                    themeId,
+                    deviceId),
             shotFrame,
             respectAuthoredAppearance: true)
             ?? throw new InvalidOperationException(
                 $"Shot '{shot.Name}' did not resolve its active Screen '{screenId}'.");
+        var theme = dataSource.LoadProductionRenderThemeContext(
+            shot,
+            screenId,
+            themeStrategy,
+            themeId,
+            deviceId);
         return payload with
         {
             OwnerId = shot.Id,
@@ -265,7 +277,7 @@ internal static class DesignPreviewPayloadFactory
                 - range.ActionStartFrame,
                 0,
                 range.ActionDurationFrames - 1);
-        return FromModuleInstance(
+        var owner = FromModuleInstance(
             dataSource,
             moduleInstanceId,
             deviceId,
@@ -282,6 +294,28 @@ internal static class DesignPreviewPayloadFactory
                         range.ActionDelayFrames,
                         range.ActionDurationFrames),
             };
+        var phase = screenFrame < range.TransitionFrameCount
+            ? "enter"
+            : screenFrame >= range.ActionEndFrame
+                ? "exit"
+                : "content";
+        var source = dataSource.LoadModuleInstance(moduleInstanceId);
+        var slot = dataSource.LoadShotSlots(source.ShotId)
+            .Single((candidate) => candidate.Id == moduleInstanceId);
+        var elapsedFrames = phase == "enter"
+            ? screenFrame
+            : screenFrame - range.ActionEndFrame;
+        return owner with
+        {
+            Kind = "screenTransition",
+            ScreenTransition = new ScreenTransitionPayload(
+                [new ScreenTransitionLayerPayload(
+                    owner,
+                    slot.TransitionJson,
+                    phase,
+                    elapsedFrames * 1000.0 / Math.Max(1, owner.FrameRate))],
+                range.TransitionFrameCount),
+        };
     }
 
     private static DesignPreviewPayload? FromShot(
@@ -289,54 +323,108 @@ internal static class DesignPreviewPayloadFactory
         ProjectTreeNode shotNode,
         string deviceId,
         string themeMode,
-        DesignPreviewThemeContext theme,
+        Func<string, DesignPreviewThemeContext> themeForScreen,
         int shotFrame,
         bool respectAuthoredAppearance)
     {
         var slots = dataSource.LoadShotSlots(shotNode.Id);
         if (slots.Count == 0) return null;
-        var active = slots.FirstOrDefault((slot) =>
-            shotFrame >= slot.StartFrame
-            && shotFrame < slot.StartFrame + slot.EffectiveDurationFrames);
-        if (active is null) return null;
-        var screenFrame =
-            shotFrame - active.StartFrame;
-        var actionStartFrame =
-            active.TransitionFrameCount
-            + active.ActionDelayFrames;
-        var actionFrame =
-            Math.Clamp(
-                screenFrame
-                - actionStartFrame,
-                0,
-                active.ActionDurationFrames - 1);
-        var incoming = FromModuleInstance(
+        var active = slots
+            .Where((slot) =>
+                shotFrame >= slot.StartFrame
+                && shotFrame < slot.StartFrame + slot.EffectiveDurationFrames)
+            .ToArray();
+        if (active.Length == 0) return null;
+        var layers = active
+            .Reverse()
+            .Select((slot) => CreateScreenLayer(
+                dataSource,
+                slot,
+                deviceId,
+                themeMode,
+                themeForScreen(slot.Id),
+                shotFrame,
+                respectAuthoredAppearance))
+            .ToArray();
+        var top = layers[^1].Owner;
+        if (layers.Length == 1
+            && layers[0].Phase == "content")
+        {
+            return top;
+        }
+        return top with
+        {
+            Kind = "screenTransition",
+            ScreenTransition = new ScreenTransitionPayload(
+                layers,
+                active[0].TransitionFrameCount),
+        };
+    }
+
+    private static ScreenTransitionLayerPayload CreateScreenLayer(
+        DesignPreviewPayloadDataSource dataSource,
+        DesignPreviewShotSlot slot,
+        string deviceId,
+        string themeMode,
+        DesignPreviewThemeContext theme,
+        int shotFrame,
+        bool respectAuthoredAppearance)
+    {
+        var screenFrame = shotFrame - slot.StartFrame;
+        var actionStart = slot.TransitionFrameCount + slot.ActionDelayFrames;
+        var actionEnd = actionStart + slot.ActionDurationFrames;
+        var phase = screenFrame < slot.TransitionFrameCount
+            ? "enter"
+            : screenFrame >= actionEnd
+                ? "exit"
+                : "content";
+        var elapsedFrames = phase switch
+        {
+            "enter" => screenFrame,
+            "exit" => screenFrame - actionEnd,
+            _ => 0,
+        };
+        var actionFrame = Math.Clamp(
+            screenFrame - actionStart,
+            0,
+            slot.ActionDurationFrames - 1);
+        var owner = FromModuleInstance(
             dataSource,
-            active.Id,
+            slot.Id,
             deviceId,
             themeMode,
             theme,
             actionFrame,
             respectAuthoredAppearance);
-        var shotPreview = DesignPreviewTestValues.Parse(incoming.DesignPreviewJson);
+        var shotPreview = DesignPreviewTestValues.Parse(owner.DesignPreviewJson);
         shotPreview.Remove("actions");
-        incoming = incoming with
+        owner = owner with
         {
-            Name = active.Name,
+            Name = slot.Name,
             DesignPreviewJson = shotPreview.ToJsonString(),
-            ThemeStatusBarVariantReference =
-                theme.StatusBarVariantReference,
-            ThemeNavigationBarVariantReference =
-                theme.NavigationBarVariantReference,
-            ScreenTiming =
-                new ScreenTimingPayload(
-                    screenFrame,
-                    active.TransitionFrameCount,
-                    active.ActionDelayFrames,
-                    active.ActionDurationFrames),
+            ThemeStatusBarVariantReference = theme.StatusBarVariantReference,
+            ThemeNavigationBarVariantReference = theme.NavigationBarVariantReference,
+            ScreenTiming = new ScreenTimingPayload(
+                screenFrame,
+                slot.TransitionFrameCount,
+                slot.ActionDelayFrames,
+                slot.ActionDurationFrames),
         };
-        return incoming;
+        return new ScreenTransitionLayerPayload(
+            owner,
+            slot.TransitionJson,
+            phase,
+            elapsedFrames * 1000.0 / Math.Max(1, owner.FrameRate));
     }
+
+    private static ProjectTreeNode ScreenNode(string screenId) =>
+        new(
+            ProjectTreeNodeKind.ModuleInstance,
+            screenId,
+            screenId,
+            "",
+            ProjectTreeNode.DefaultRecordClassId(
+                ProjectTreeNodeKind.ModuleInstance));
 
     private static DesignPreviewPayload FromModuleSource(
         DesignPreviewPayloadDataSource dataSource,

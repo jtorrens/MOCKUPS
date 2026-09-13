@@ -68,6 +68,7 @@ internal sealed partial class SqliteCurrentDatabaseValidator
         ("episodes", "metadata_json", "object"),
         ("episodes", "shot_manager_episode_path_segments_json", "array"),
         ("shots", "canvas_json", "object"),
+        ("shots", "transition_json", "object"),
         ("module_instances", "device_overrides_json", "object"),
         ("shots", "reference_video_json", "object"),
         ("shots", "metadata_json", "object"),
@@ -76,7 +77,6 @@ internal sealed partial class SqliteCurrentDatabaseValidator
         ("modules", "config_json", "object"),
         ("modules", "design_preview_json", "object"),
         ("modules", "metadata_json", "object"),
-        ("module_instances", "transition_json", "object"),
         ("module_instances", "content_json", "object"),
         ("module_instances", "behavior_json", "object"),
         ("module_instances", "animation_json", "object"),
@@ -103,7 +103,7 @@ internal sealed partial class SqliteCurrentDatabaseValidator
         ValidateCurrentJsonColumns(connection);
         ValidateCurrentDeviceMetrics(connection);
         ValidateCurrentShotDeviceOverrides(connection);
-        ValidateCurrentScreenTransitions(
+        ValidateCurrentShotTransitions(
             connection);
         ValidateCurrentProductionOutput(connection);
         ValidateCurrentProductionFontFiles(connection);
@@ -190,13 +190,13 @@ internal sealed partial class SqliteCurrentDatabaseValidator
         }
     }
 
-    private void ValidateCurrentScreenTransitions(
+    private void ValidateCurrentShotTransitions(
         SqliteConnection connection)
     {
         using var command =
             connection.CreateCommand();
         command.CommandText =
-            "SELECT id, transition_json FROM module_instances";
+            "SELECT id, transition_json, transition_duration_frames FROM shots";
         using var reader =
             command.ExecuteReader();
         while (reader.Read())
@@ -207,11 +207,16 @@ internal sealed partial class SqliteCurrentDatabaseValidator
             {
                 _ = MotionVariantValue.Parse(
                     reader.GetString(1));
+                if (reader.GetInt32(2) <= 0)
+                {
+                    throw new InvalidOperationException(
+                        "transition_duration_frames must be positive.");
+                }
             }
             catch (InvalidOperationException exception)
             {
                 throw InvalidCurrentDatabase(
-                    $"Screen '{id}' transition_json is invalid: {exception.Message}");
+                    $"Shot '{id}' transition contract is invalid: {exception.Message}");
             }
         }
         RequireNoRows(

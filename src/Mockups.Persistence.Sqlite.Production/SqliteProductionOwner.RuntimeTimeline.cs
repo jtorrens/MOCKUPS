@@ -67,14 +67,6 @@ internal sealed partial class SqliteProductionOwner
             var shot =
                 shots.Single((candidate) =>
                     candidate.Id == group.Key);
-            var project =
-                _projectEpisodeRepository
-                    .GetProjectSettings(
-                        connection,
-                        shot.ProjectId);
-            var frameRate =
-                shot.FpsOverride
-                ?? project.DefaultFps;
             var ordered =
                 group.OrderBy((instance) =>
                         instance.SortOrder)
@@ -94,9 +86,8 @@ internal sealed partial class SqliteProductionOwner
                 var current =
                     ordered[index];
                 duration += EffectiveScreenDurationFrames(
-                    connection,
                     current,
-                    frameRate);
+                    shot);
             }
             durationByShot.Add(
                 group.Key,
@@ -132,19 +123,13 @@ internal sealed partial class SqliteProductionOwner
     }
 
     private int EffectiveScreenDurationFrames(
-        SqliteConnection connection,
         ModuleInstanceRecord screen,
-        int frameRate)
+        ShotRecord shot)
     {
-        var theme = _moduleInstanceThemeContextService.GetTokensJson(
-            connection,
-            screen.Id);
-        var transitionFrames = ScreenTimelineTiming.TransitionFrameCount(
-            MotionVariantValue.NoneValue.ToJsonString(),
-            screen.TransitionJson,
-            theme,
-            theme,
-            frameRate);
+        var transitionFrames =
+            ScreenTimelineTiming.EffectiveTransitionDurationFrames(
+                shot.TransitionJson,
+                shot.TransitionDurationFrames);
         return ScreenTimelineTiming.EffectiveDurationFrames(
             screen.DurationFrames,
             transitionFrames,

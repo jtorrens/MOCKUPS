@@ -5,7 +5,7 @@ Status: normative.
 ## Database scope
 
 The desktop application persists one complete Project workspace in SQLite.
-Schema version `18` is the only current schema. Every row belongs directly or
+Schema version `19` is the only current schema. Every row belongs directly or
 indirectly to a Project and cross-Project lookup is invalid.
 
 The current tables are:
@@ -125,7 +125,7 @@ Production repositories itself. Shot settings, portable manual render-name
 resolution, external association fields and Shot field writes execute in
 Production as well. Desktop composition resolves that context against either
 the manual contract or its workstation-local, read-only Shot Manager document.
-Screen reads, identity, transition projection, ordering, renaming and effective
+Screen reads, identity, ordering, renaming and effective
 Module Variant resolution execute there through `IModuleVariantCatalog`, a
 read-only contract implemented by Design and declared in Contracts. Batch
 module-name projection avoids per-Screen database reads. Production has no
@@ -170,18 +170,20 @@ mutates a local collection first, fabricates id mappings or performs animation
 cleanup as a separate commit; this rule is identical for top-level and nested
 collections.
 
-`module_instances.transition_json` is one complete current `Motion` document.
-It uses the same strict transition, direction, bounds, fade, translate and
-scale fields as reusable Component boundary Motion. A retired cut discriminator
-or a partial Motion is invalid current data. Production owns its read and
-write; the Shot timeline consumes the prepared value without reconstructing it
-from a label or Screen position.
+`shots.transition_json` is one complete current `Motion` document and
+`shots.transition_duration_frames` is its positive exact duration in Shot
+frames. The Motion uses the same strict transition, direction, bounds, fade,
+translate and scale fields as reusable Component boundary Motion. A retired
+cut discriminator or partial Motion is invalid current data. The same Shot
+contract drives entry and inverse exit for every Screen; Screens store no
+parallel transition value. A truly disabled Motion has an effective duration
+of zero while retaining the configured duration for later editing.
 `module_instances.action_delay_frames` is the non-negative authored wait
-between completion of the Screen's entry boundary and the start of its internal
-timeline. Production owns the scalar write and resynchronizes the derived Shot
-duration after either Motion or delay changes. `duration_frames` remains the
-calculated or explicit action duration; it does not absorb transition or delay
-frames.
+between completion of Screen entry and the start of its internal timeline.
+Production owns these writes and resynchronizes the derived Shot duration after
+Shot Motion, transition duration or Screen delay changes. `duration_frames`
+remains the calculated or explicit action duration; it does not absorb
+transition or delay frames.
 `Mockups.Persistence.Sqlite.Resources` owns Palette,
 Theme, Device, Actor, Production Font and Icon Theme persistence plus their
 resource-specific field, token and asset operations.
@@ -437,7 +439,7 @@ object
   modules.design_preview_json
   modules.metadata_json
   module_instances.device_overrides_json
-  module_instances.transition_json
+  shots.transition_json
   module_instances.content_json
   module_instances.behavior_json
   module_instances.animation_json

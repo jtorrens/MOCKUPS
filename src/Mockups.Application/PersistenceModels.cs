@@ -36,6 +36,8 @@ public sealed record ShotSettings(
     int DurationFrames,
     ShotDurationPolicy DurationPolicy,
     int ExplicitDurationFrames,
+    string TransitionJson,
+    int TransitionDurationFrames,
     string OwnerActorId,
     string? DeviceOverrideId,
     string CanvasJson,
@@ -105,7 +107,6 @@ public sealed record ModuleInstanceSettings(
     int ActionDelayFrames,
     string DeviceOverridesJson,
     string? ThemeOverrideId,
-    string TransitionJson,
     string ContentJson,
     string BehaviorJson,
     string AnimationJson,
@@ -243,8 +244,6 @@ public sealed record ModuleInstanceSlot(
     string ModuleName,
     int SortOrder,
     int StartFrame,
-    string TransitionJson,
-    string TransitionType,
     int StoredDurationFrames,
     int ActionDelayFrames);
 

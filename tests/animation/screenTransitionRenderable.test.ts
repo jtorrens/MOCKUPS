@@ -57,14 +57,6 @@ const leftMotion = JSON.stringify({
   translate: true,
   scale: false,
 });
-const rightMotion = JSON.stringify({
-  transition: "slide",
-  direction: "right",
-  bounds: "screen",
-  fade: true,
-  translate: true,
-  scale: false,
-});
 const outgoingNode: RenderableNode = {
   id: "outgoing",
   type: "group",
@@ -87,11 +79,20 @@ function transition(
   elapsedMilliseconds: number,
 ): ScreenTransitionPayload {
   return {
-    outgoing,
-    incoming,
-    outgoingMotionJson: leftMotion,
-    incomingMotionJson: rightMotion,
-    elapsedMilliseconds,
+    layers: [
+      {
+        owner: outgoing,
+        motionJson: leftMotion,
+        phase: "exit",
+        elapsedMilliseconds,
+      },
+      {
+        owner: incoming,
+        motionJson: leftMotion,
+        phase: "enter",
+        elapsedMilliseconds,
+      },
+    ],
     durationFrames: 5,
   };
 }
@@ -103,13 +104,12 @@ test("Screen exit and entry Motion start simultaneously", () => {
       kind: "screenTransition",
     },
     transition(0),
-    outgoingNode,
-    incomingNode,
+    [outgoingNode, incomingNode],
   );
 
   assert.equal(exit.children?.[0]?.transform?.x, 0);
   assert.equal(exit.children?.[0]?.transform?.opacity, 1);
-  assert.equal(enter.children?.[0]?.transform?.x, 360);
+  assert.equal(enter.children?.[0]?.transform?.x, -360);
   assert.equal(enter.children?.[0]?.transform?.opacity, 0);
 });
 
@@ -120,12 +120,11 @@ test("Screen exit and entry Motion share the same elapsed transition clock", () 
       kind: "screenTransition",
     },
     transition(100),
-    outgoingNode,
-    incomingNode,
+    [outgoingNode, incomingNode],
   );
 
   assert.equal(exit.children?.[0]?.transform?.x, -180);
   assert.equal(exit.children?.[0]?.transform?.opacity, 0.5);
-  assert.equal(enter.children?.[0]?.transform?.x, 180);
+  assert.equal(enter.children?.[0]?.transform?.x, -180);
   assert.equal(enter.children?.[0]?.transform?.opacity, 0.5);
 });

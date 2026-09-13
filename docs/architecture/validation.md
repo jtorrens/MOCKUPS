@@ -129,10 +129,11 @@ It includes:
 - macOS display-aware launcher ownership and command tests;
 - Preview and desktop animation tests, including failed and rapid desktop
   commands that prove rollback to the confirmed document and ordered
-  composition over the latest successful snapshot, plus Shot Screen boundaries
-proving simultaneous outgoing and incoming Motion, stable owner-local frames
-  frozen incoming action time, post-transition action delay, effective
-  Screen/Shot duration and strict current transition documents;
+  composition over the latest successful snapshot, plus Shot-owned Screen
+  entry/exit boundaries proving exact-duration inverse Motion, arbitrary
+  multi-lane overlap, stable owner-local frames, frozen action time,
+  post-transition action delay, effective Screen/Shot duration and strict
+  current transition documents;
 - headless Avalonia Preview shell visual-tree layout at 1040 and 1440 px,
   including real measure/arrange, panel bounds, tab headers, responsive Setup
   reflow and workspace restoration;
@@ -474,8 +475,9 @@ Database validation is read-only and confirms:
 - strict Screen-local non-geometric Device override documents, rejection of
   geometry keys, per-field Restore, preservation across Shot Device changes and
   identical effective metrics in Preview and Render preparation;
-- signed Screen starts, fixed calculated duration, resizable explicit duration,
-  top-lane overlap priority and transparent Shot gaps;
+- signed Screen starts, fixed calculated action duration, resizable explicit
+  action duration, Shot-owned hatched entry/exit extensions, ordered overlap
+  composition and transparent Shot gaps;
 - exact Production Output settings and derivable Shot plans;
 - declared font, icon and media assets;
 - manifest-to-row agreement.

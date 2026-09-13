@@ -5,8 +5,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed record ProductionScreenPresentationSource(
     string Module,
     string Variant,
-    int DurationFrames,
-    string Transition);
+    int DurationFrames);
 
 internal sealed class ProductionScreenPresentationDataSource
 {
@@ -36,7 +35,6 @@ internal sealed class ProductionScreenPresentationDataSource
                 .ScreenRange(
                     _timelineDataSource,
                     moduleInstanceId)
-                .EffectiveDurationFrames,
-            _timeline.GetModuleInstanceTransitionType(moduleInstanceId));
+                .ActionDurationFrames);
     }
 }

@@ -73,15 +73,14 @@ the declared keyframe ids. Frame resolution selects the already prepared
 record by its resolved stable id; it never re-reads persistence per frame,
 derives a record from the Shot context or falls back to another Actor.
 
-For a Shot frame inside a Screen boundary transition, the prepared payload also
-contains the exact outgoing and incoming Screen payloads, their complete Motion
-documents and the shared non-negative elapsed interval. The outgoing payload is
-fixed at its final owner-local frame; the incoming payload is fixed at local
-frame zero. After the transition, payload preparation keeps that incoming frame
-zero through the Screen action delay and then advances its local action frame.
-The generic Screen transition resolver composes those already
-selected owners and reuses the common Motion helpers. Registries and concrete
-Module owners remain unaware of neighboring Screens.
+For every Shot frame, payload preparation selects all Screen lanes whose
+extended interval is active. Each prepared layer carries its exact Screen
+payload, the Shot-owned Motion, its entry/content/exit phase and non-negative
+phase elapsed interval. Entry holds the owner-local action at frame zero; exit
+holds its final frame. The action delay also holds frame zero. The generic
+Screen transition resolver composes those already selected owners in lane order
+and reuses the common Motion geometry and easing with the Shot's exact duration.
+Registries and concrete Module owners remain unaware of neighboring Screens.
 
 `DesignPreviewPayload.ThemeMode` is authoritative when explicitly `light` or
 `dark`. Session mode applies only when the payload has no explicit effective
@@ -414,13 +413,14 @@ one, and visual refresh, playback preparation and reference browsing consume
 only the latest committed snapshot without direct persistence reads.
 
 The same preparation closes the complete current Production timeline catalog:
-each Shot's frame rate, ordered Screen lanes, signed starts, exact effective frame ranges and
-action-shifted keyframes, Shot reference-video document, plus each Screen's transition Motion, action delay,
-action duration and Variant config. Each Shot carries its exact Actor and one
+each Shot's frame rate, ordered Screen lanes, signed starts, exact effective
+frame ranges, shared transition Motion and duration, action-shifted keyframes
+and reference-video document, plus each Screen's action delay, action duration
+and Variant config. Each Shot carries its exact Actor and one
 effective Device; each Screen carries its effective Theme and sparse
 non-geometric Device settings. The Screen document is applied only after the
 Shot Device is resolved. Gaps resolve to an empty alpha-zero frame and overlaps
-select the first/highest ordered lane.
+compose every active lane, painting the first/highest ordered lane last.
 Production navigation,
 context presentation, validation,
 playhead controls, appearance selection, history subtitles and playback timing
@@ -435,8 +435,8 @@ An authored Preview mutation in Production follows the same catalog boundary,
 even when the tree itself is unchanged. It invalidates prepared playback and
 prepares a replacement Production catalog before the next interactive Preview
 or Play request. This keeps the slider range, active Screen, payload frame list
-and playback duration on one committed revision after a Screen duration,
-transition, delay, animation or Runtime collection change.
+and playback duration on one committed revision after a Shot transition or a
+Screen duration, delay, animation or Runtime collection change.
 
 Interactive render requests follow the same revision rule. After the external
 renderer returns, the Preview host checks the request sequence before either

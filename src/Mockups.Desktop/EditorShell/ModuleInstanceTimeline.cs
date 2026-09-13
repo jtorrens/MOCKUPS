@@ -16,6 +16,10 @@ internal sealed record ScreenTimelineRange(
         TransitionFrameCount
         + ActionDelayFrames;
 
+    public int ActionEndFrame =>
+        ActionStartFrame
+        + ActionDurationFrames;
+
     public int EffectiveDurationFrames =>
         ScreenTimelineTiming.EffectiveDurationFrames(
             ActionDurationFrames,
@@ -61,6 +65,11 @@ internal static class ModuleInstanceTimeline
         var sources =
             ids.Select(dataSource.Load)
                 .ToList();
+        var shot = dataSource.LoadShot(shotId);
+        var transitionFrames =
+            ScreenTimelineTiming.EffectiveTransitionDurationFrames(
+                shot.TransitionJson,
+                shot.TransitionDurationFrames);
         var ranges =
             new List<ScreenTimelineRange>(
                 sources.Count);
@@ -70,13 +79,6 @@ internal static class ModuleInstanceTimeline
         {
             var source =
                 sources[index];
-            var transitionFrames =
-                ScreenTimelineTiming.TransitionFrameCount(
-                    MotionVariantValue.NoneValue.ToJsonString(),
-                    source.TransitionJson,
-                    source.ThemeTokensJson,
-                    source.ThemeTokensJson,
-                    source.FrameRate);
             var range =
                 new ScreenTimelineRange(
                     ids[index],

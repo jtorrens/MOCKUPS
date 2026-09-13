@@ -225,20 +225,16 @@ internal static class WebDesignPreviewRenderer
                     ? null
                     : new
                     {
-                        outgoing = CreateRequest(
-                            metrics,
-                            showMarks,
-                            transition.Outgoing),
-                        incoming = CreateRequest(
-                            metrics,
-                            showMarks,
-                            transition.Incoming),
-                        outgoingMotionJson =
-                            transition.OutgoingMotionJson,
-                        incomingMotionJson =
-                            transition.IncomingMotionJson,
-                        elapsedMilliseconds =
-                            transition.ElapsedMilliseconds,
+                        layers = transition.Layers.Select((layer) => new
+                        {
+                            owner = CreateRequest(
+                                metrics,
+                                showMarks,
+                                layer.Owner),
+                            motionJson = layer.MotionJson,
+                            phase = layer.Phase,
+                            elapsedMilliseconds = layer.ElapsedMilliseconds,
+                        }),
                         durationFrames =
                             transition.DurationFrames,
                     },

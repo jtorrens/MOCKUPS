@@ -10072,7 +10072,7 @@ static void PersistedJsonRootsAreStrict()
     {
         using var command = connection.CreateCommand();
         command.CommandText =
-            """UPDATE module_instances SET transition_json = '{"type":"cut"}' WHERE id = (SELECT id FROM module_instances LIMIT 1)""";
+            """UPDATE shots SET transition_json = '{"type":"cut"}' WHERE id = (SELECT id FROM shots LIMIT 1)""";
         command.ExecuteNonQuery();
     });
 }
@@ -12085,7 +12085,6 @@ static void ProductionScreenPresentationBoundaryPreservesCurrentData()
                     screen.Id)
                 .EffectiveDurationFrames,
             source.DurationFrames);
-        Equal(database.GetModuleInstanceTransitionType(screen.Id), source.Transition);
 
         var after = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, after);
@@ -12663,8 +12662,8 @@ static void ProductionPreviewSessionBoundaryPreservesCurrentData()
             database.GetModuleInstanceVariantSettings(screen.Id).ConfigJson,
             preparedScreen.VariantConfigJson);
         Equal(
-            database.GetModuleInstanceSettings(screen.Id).TransitionJson,
-            preparedScreen.TransitionJson);
+            database.GetShotSettings(shot.Id).TransitionJson,
+            preparedShot.TransitionJson);
         SequenceEqual(
             database.GetShotModuleInstanceSlots(shot.Id).Select((slot) => slot.Id),
             preparedShot.Screens.Select(
@@ -13573,44 +13572,6 @@ static void ModuleInstanceRepositoryPreservesFocusedContract()
         True(JsonPath.ParseRequiredObject(
             database.GetModuleInstanceSettings(original.Id).ContentJson,
             "repository test content")["repositoryTest"]?.GetValue<bool>() == true);
-
-        var transition =
-            (MotionVariantValue.NoneValue with
-            {
-                Transition =
-                    MotionVariantValue.Slide,
-                Direction =
-                    MotionVariantValue.Left,
-                Fade = true,
-                Translate = true,
-            }).ToJsonString();
-        using (var connection =
-               context.OpenConnection())
-        {
-            repository.UpdateTransition(
-                connection,
-                original.Id,
-                transition);
-        }
-        Equal(
-            MotionVariantValue.Parse(
-                transition),
-            MotionVariantValue.Parse(
-                repository.Get(
-                    original.Id).TransitionJson));
-        using (var connection =
-               context.OpenConnection())
-        {
-            Throws<InvalidOperationException>(
-                () => repository.UpdateTransition(
-                    connection,
-                    original.Id,
-                    """{"type":"cut"}"""));
-            repository.UpdateTransition(
-                connection,
-                original.Id,
-                original.TransitionJson);
-        }
 
         var animation = JsonPath.ParseRequiredObject(original.AnimationJson, $"Module instance '{original.Id}' animation_json");
         animation["repositoryTest"] = true;
@@ -19872,6 +19833,8 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
         "shot_timeline",
         FrameRate: 25,
         DurationFrames: 100,
+        TransitionJson: MotionVariantValue.NoneValue.ToJsonString(),
+        TransitionFrameCount: 0,
         DeviceId: "device",
         DeviceMetrics: new DevicePreviewMetrics(
             "Device",
@@ -19922,7 +19885,6 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
                     0,
                     0,
                     DeviceModuleTransparencyOverride.Disabled),
-                TransitionJson: "{}",
                 VariantConfigJson: "{}",
                 ShotKeyframeFrames: []),
             new ProductionPreviewScreenSnapshot(
@@ -19950,7 +19912,6 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
                     0,
                     0,
                     DeviceModuleTransparencyOverride.Disabled),
-                TransitionJson: "{}",
                 VariantConfigJson: "{}",
                 ShotKeyframeFrames: []),
         ]);
@@ -24230,7 +24191,8 @@ static string CreateDesktopTestDatabase(
             INSERT INTO shots (
               id, episode_id, name, slug, version, notes, sort_order,
               fps_override, duration_frames, duration_policy,
-              explicit_duration_frames, owner_actor_id, device_override_id,
+              explicit_duration_frames, transition_json,
+              transition_duration_frames, owner_actor_id, device_override_id,
               canvas_json,
               metadata_json, shot_number, shot_manager_association_state,
               shot_manager_reference_production_id, shot_manager_shot_id,
@@ -24239,7 +24201,8 @@ static string CreateDesktopTestDatabase(
               'shot_001', episode_id, 'Shot fixture',
               '__desktop_test_shot_001__', version, notes,
               sort_order, fps_override, duration_frames, duration_policy,
-              explicit_duration_frames, owner_actor_id, device_override_id,
+              explicit_duration_frames, transition_json,
+              transition_duration_frames, owner_actor_id, device_override_id,
               canvas_json,
               metadata_json, 900001, 'free', '', '', '',
               reference_video_json
@@ -24250,14 +24213,14 @@ static string CreateDesktopTestDatabase(
               id, shot_id, app_id, module_id, name, notes, sort_order,
               start_frame, duration_frames, duration_policy, action_delay_frames,
               device_overrides_json, theme_override_id,
-              transition_json, content_json, behavior_json, animation_json,
+              content_json, behavior_json, animation_json,
               metadata_json)
             SELECT
               'module_instance_6ba3837154634771b40a25ca64160bc4',
               'shot_001', app_id, module_id, name, notes, 1,
               start_frame, duration_frames, duration_policy, action_delay_frames,
               device_overrides_json, theme_override_id,
-              transition_json, content_json, behavior_json, animation_json,
+              content_json, behavior_json, animation_json,
               metadata_json
             FROM module_instances
             WHERE id = $lockScreenId;
@@ -24266,14 +24229,14 @@ static string CreateDesktopTestDatabase(
               id, shot_id, app_id, module_id, name, notes, sort_order,
               start_frame, duration_frames, duration_policy, action_delay_frames,
               device_overrides_json, theme_override_id,
-              transition_json, content_json, behavior_json, animation_json,
+              content_json, behavior_json, animation_json,
               metadata_json)
             SELECT
               'module_instance_900f1616432d4f63a97f2a74dd647e08',
               'shot_001', app_id, module_id, name, notes, 2,
               start_frame, duration_frames, duration_policy, action_delay_frames,
               device_overrides_json, theme_override_id,
-              transition_json, content_json, behavior_json,
+              content_json, behavior_json,
               animation_json, metadata_json
             FROM module_instances
             WHERE id = $conversationId;

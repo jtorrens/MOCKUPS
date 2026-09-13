@@ -248,6 +248,7 @@ internal sealed class DesignPreviewPayloadDataSource
 
     public IReadOnlyList<DesignPreviewShotSlot> LoadShotSlots(string shotId)
     {
+        var shot = _timeline.GetTimelineShotSettings(shotId);
         var slots =
             _timeline.GetShotModuleInstanceSlots(
                 shotId)
@@ -271,7 +272,7 @@ internal sealed class DesignPreviewPayloadDataSource
                     range.TransitionFrameCount,
                     range.ActionDelayFrames,
                     range.ActionDurationFrames,
-                    slot.TransitionJson);
+                    shot.TransitionJson);
             })
             .ToList();
     }

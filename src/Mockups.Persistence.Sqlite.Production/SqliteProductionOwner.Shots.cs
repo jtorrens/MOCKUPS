@@ -27,6 +27,8 @@ internal sealed partial class SqliteProductionOwner
             record.DurationFrames,
             ShotTimelineDuration.ParsePolicy(record.DurationPolicy),
             record.ExplicitDurationFrames,
+            record.TransitionJson,
+            record.TransitionDurationFrames,
             record.OwnerActorId,
             record.DeviceOverrideId,
             record.CanvasJson,
@@ -183,7 +185,9 @@ internal sealed partial class SqliteProductionOwner
         var changesContext = fieldId is "shot.ownerActorId"
             or "shot.deviceOverrideId"
             or "shot.durationPolicy"
-            or "shot.durationFrames";
+            or "shot.durationFrames"
+            or "shot.transition"
+            or "shot.transitionDurationFrames";
         if (fieldId == "shot.ownerActorId")
         {
             _moduleInstanceThemeContextService.RequireShotOwnerChange(

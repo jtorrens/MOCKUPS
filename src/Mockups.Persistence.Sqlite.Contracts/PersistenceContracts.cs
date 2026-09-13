@@ -21,6 +21,8 @@ internal sealed record ShotRecord(
     int DurationFrames,
     string DurationPolicy,
     int ExplicitDurationFrames,
+    string TransitionJson,
+    int TransitionDurationFrames,
     string OwnerActorId,
     string? DeviceOverrideId,
     string CanvasJson,
@@ -152,7 +154,6 @@ internal sealed record ModuleInstanceRecord(
     int ActionDelayFrames,
     string DeviceOverridesJson,
     string? ThemeOverrideId,
-    string TransitionJson,
     string ContentJson,
     string BehaviorJson,
     string AnimationJson,
@@ -607,11 +608,6 @@ internal interface IModuleInstanceRepository
     void UpdateContent(SqliteConnection connection, string moduleInstanceId, string contentJson);
 
     void UpdateAnimation(SqliteConnection connection, string moduleInstanceId, string animationJson);
-
-    void UpdateTransition(
-        SqliteConnection connection,
-        string moduleInstanceId,
-        string transitionJson);
 
     void UpdateActionDelay(
         SqliteConnection connection,

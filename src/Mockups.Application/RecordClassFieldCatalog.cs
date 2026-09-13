@@ -155,6 +155,16 @@ public static class RecordClassFieldCatalog
             Unit: "frames"),
         ["shot.durationFrames"] = new("shot.durationFrames", "Duration", ValueKind.Integer, IsEditable: false, Unit: "frames"),
         ["shot.fps"] = new("shot.fps", "Frame rate", ValueKind.Integer, Unit: "fps"),
+        ["shot.transition"] = new(
+            "shot.transition",
+            "Screen transition",
+            ValueKind.Motion),
+        ["shot.transitionDurationFrames"] = new(
+            "shot.transitionDurationFrames",
+            "Transition duration",
+            ValueKind.Integer,
+            Number: new NumberDefinition(1, 100000, 1, 0),
+            Unit: "frames"),
         ["shot.ownerActorId"] = new(
             "shot.ownerActorId",
             "Owner Actor",
@@ -291,10 +301,6 @@ public static class RecordClassFieldCatalog
             IsEditable: false,
             Number: new NumberDefinition(1, 100000, 1, 0),
             Unit: "frames"),
-        ["moduleInstance.transition"] = new(
-            "moduleInstance.transition",
-            "Transition",
-            ValueKind.Motion),
         ["moduleInstance.actionDelayFrames"] = new(
             "moduleInstance.actionDelayFrames",
             "Action delay",

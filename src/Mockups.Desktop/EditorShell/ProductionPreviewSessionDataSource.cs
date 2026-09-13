@@ -18,7 +18,6 @@ internal sealed record ProductionPreviewScreenSnapshot(
     bool IsDurationEditable,
     string DeviceId,
     DevicePreviewMetrics DeviceMetrics,
-    string TransitionJson,
     string VariantConfigJson,
     IReadOnlyList<int> ShotKeyframeFrames)
 {
@@ -30,6 +29,8 @@ internal sealed record ProductionPreviewShotSnapshot(
     string ShotId,
     int FrameRate,
     int DurationFrames,
+    string TransitionJson,
+    int TransitionFrameCount,
     string DeviceId,
     DevicePreviewMetrics DeviceMetrics,
     ProductionShotContext Context,
@@ -175,7 +176,6 @@ internal sealed class ProductionPreviewSessionDataSource
                             == RuntimeDurationPolicy.Explicit,
                         deviceId,
                         DeviceSettingsFieldContract.PreviewMetrics(effectiveDevice),
-                        source.TransitionJson,
                         _timeline
                             .GetModuleInstanceVariantSettings(
                                 screenId)
@@ -202,6 +202,10 @@ internal sealed class ProductionPreviewSessionDataSource
                     shotNode.Id,
                     shotSettings.Fps,
                     shotSettings.DurationFrames,
+                    shotSettings.TransitionJson,
+                    ScreenTimelineTiming.EffectiveTransitionDurationFrames(
+                        shotSettings.TransitionJson,
+                        shotSettings.TransitionDurationFrames),
                     shotDeviceId,
                     shotDeviceMetrics,
                     _shotContexts.Resolve(

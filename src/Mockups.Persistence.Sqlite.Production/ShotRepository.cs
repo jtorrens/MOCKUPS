@@ -101,6 +101,8 @@ internal sealed class ShotRepository : IShotRepository
             240,
             "calculated",
             240,
+            MotionVariantValue.NoneValue.ToJsonString(),
+            10,
             actorId,
             null,
             "{}",
@@ -222,6 +224,35 @@ internal sealed class ShotRepository : IShotRepository
                 ("$duration", policy == ShotDurationPolicy.Explicit
                     ? record.DurationFrames
                     : record.ExplicitDurationFrames));
+            return;
+        }
+
+        if (fieldId == "shot.transition")
+        {
+            var transitionJson = MotionVariantValue.Parse(value).ToJsonString();
+            _ = Get(connection, shotId);
+            _context.Execute(
+                connection,
+                "UPDATE shots SET transition_json = $value WHERE id = $id",
+                ("$id", shotId),
+                ("$value", transitionJson));
+            return;
+        }
+
+        if (fieldId == "shot.transitionDurationFrames")
+        {
+            var duration = NumericText.Int32(value, 0);
+            if (duration <= 0)
+            {
+                throw new InvalidOperationException(
+                    $"Shot '{shotId}' transition duration must be positive.");
+            }
+            _ = Get(connection, shotId);
+            _context.Execute(
+                connection,
+                "UPDATE shots SET transition_duration_frames = $value WHERE id = $id",
+                ("$id", shotId),
+                ("$value", duration));
             return;
         }
 
@@ -456,6 +487,7 @@ internal sealed class ShotRepository : IShotRepository
             INSERT INTO shots (
               id, episode_id, name, slug, version, notes, sort_order, fps_override,
               duration_frames, duration_policy, explicit_duration_frames,
+              transition_json, transition_duration_frames,
               owner_actor_id, device_override_id,
               canvas_json, reference_video_json, metadata_json, shot_number,
               shot_manager_association_state,
@@ -465,6 +497,7 @@ internal sealed class ShotRepository : IShotRepository
             VALUES (
               $id, $episodeId, $name, $slug, $version, $notes, $sortOrder, $fpsOverride,
               $durationFrames, $durationPolicy, $explicitDurationFrames,
+              $transitionJson, $transitionDurationFrames,
               $ownerActorId, $deviceOverrideId,
               $canvasJson, $referenceVideoJson, $metadataJson, $shotNumber,
               $shotManagerAssociationState,
@@ -483,6 +516,8 @@ internal sealed class ShotRepository : IShotRepository
             ("$durationFrames", record.DurationFrames),
             ("$durationPolicy", record.DurationPolicy),
             ("$explicitDurationFrames", record.ExplicitDurationFrames),
+            ("$transitionJson", record.TransitionJson),
+            ("$transitionDurationFrames", record.TransitionDurationFrames),
             ("$ownerActorId", record.OwnerActorId),
             ("$deviceOverrideId", (object?)record.DeviceOverrideId ?? DBNull.Value),
             ("$canvasJson", record.CanvasJson),
@@ -520,14 +555,16 @@ internal sealed class ShotRepository : IShotRepository
             SqliteCommandExecutor.ReadString(reader, 11),
             reader.GetInt32(12),
             SqliteCommandExecutor.ReadString(reader, 13),
-            reader.IsDBNull(14) ? null : reader.GetString(14),
+            reader.GetInt32(14),
             SqliteCommandExecutor.ReadString(reader, 15),
-            SqliteCommandExecutor.ReadString(reader, 16),
+            reader.IsDBNull(16) ? null : reader.GetString(16),
             SqliteCommandExecutor.ReadString(reader, 17),
             SqliteCommandExecutor.ReadString(reader, 18),
             SqliteCommandExecutor.ReadString(reader, 19),
             SqliteCommandExecutor.ReadString(reader, 20),
-            SqliteCommandExecutor.ReadString(reader, 21));
+            SqliteCommandExecutor.ReadString(reader, 21),
+            SqliteCommandExecutor.ReadString(reader, 22),
+            SqliteCommandExecutor.ReadString(reader, 23));
         Validate(record);
         return record;
     }
@@ -560,6 +597,12 @@ internal sealed class ShotRepository : IShotRepository
         if (record.ExplicitDurationFrames <= 0)
         {
             throw new InvalidOperationException($"Shot '{record.Id}' explicit duration must be positive.");
+        }
+        _ = MotionVariantValue.Parse(record.TransitionJson);
+        if (record.TransitionDurationFrames <= 0)
+        {
+            throw new InvalidOperationException(
+                $"Shot '{record.Id}' transition duration must be positive.");
         }
         JsonPath.ParseRequiredObject(record.CanvasJson, $"Shot '{record.Id}' canvas_json");
         JsonPath.ParseRequiredObject(record.MetadataJson, $"Shot '{record.Id}' metadata_json");
@@ -641,7 +684,8 @@ internal sealed class ShotRepository : IShotRepository
         SELECT s.id, s.episode_id, e.project_id, s.name, s.slug, s.shot_number,
                s.version, s.notes,
                s.sort_order, s.fps_override, s.duration_frames, s.duration_policy,
-               s.explicit_duration_frames, s.owner_actor_id,
+               s.explicit_duration_frames, s.transition_json,
+               s.transition_duration_frames, s.owner_actor_id,
                s.device_override_id,
                s.canvas_json,
                s.reference_video_json, s.metadata_json,

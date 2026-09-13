@@ -305,7 +305,6 @@ A Screen is a persisted Module Instance. It owns:
 - order within its Shot;
 - a signed Shot-frame start;
 - an optional Theme override and sparse non-geometric Device overrides;
-- transition document;
 - non-negative action delay in frames;
 - Runtime Input payload in `content_json`;
 - behavior and animation documents;
@@ -313,15 +312,19 @@ A Screen is a persisted Module Instance. It owns:
 - duration when that selected policy is explicit;
 - current metadata.
 
-Each Screen is an independent Shot lane. Its start may be negative, inside the
-Shot or after the Shot end. Its local entry Motion, action delay and action
-timeline determine its effective extent; it never composites a transition with
-another Screen. Calculated duration is fixed in the Shot timeline and explicit
-(`Free`) duration can be resized there. Lanes may overlap; the highest ordered
-lane wins for the overlap. A gap has no active Screen and produces a fully
-transparent Device image. The Shot interval is only the Preview/render clipping
-window, so portions before frame zero or after the Shot end are not displayed or
-rendered. Moving a lane does not rewrite local keyframes or Shot duration. This
+Each Shot owns one complete transition Motion and one positive duration in
+frames. Every Screen lane extends through entry preroll, action delay, action
+duration and inverse exit postroll. A disabled Motion contributes zero frames.
+The Screen start is the start of entry preroll and may be negative, inside the
+Shot or after the Shot end. Calculated action duration is fixed in the Shot
+timeline and explicit (`Free`) action duration can be resized there. Lanes may
+overlap and all active layers are composed in order, with the highest ordered
+lane on top. A gap has no active Screen and produces a fully transparent Device
+image. Alignment is authored by the user; the system neither joins nor repairs
+boundaries. New Screens initially align their entry with the preceding Screen
+exit. The Shot interval is only the Preview/render clipping window, so portions
+before frame zero or after the Shot end are not displayed or rendered. Moving a
+lane does not rewrite local keyframes or Shot duration. This
 Shot timeline is the shared **Timeline** utility in Preview when the selected
 context is a Shot. The Shot editor keeps only the ordered Screen collection and
 does not embed another temporal surface.

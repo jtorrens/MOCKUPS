@@ -42,8 +42,8 @@ internal sealed class SqliteModuleInstanceTimelinePort(
     public string GetModuleInstanceModuleName(string moduleInstanceId) =>
         target.GetModuleInstanceModuleName(moduleInstanceId);
 
-    public string GetModuleInstanceTransitionType(string moduleInstanceId) =>
-        target.GetModuleInstanceTransitionType(moduleInstanceId);
+    public ShotSettings GetTimelineShotSettings(string shotId) =>
+        target.GetTimelineShotSettings(shotId);
 
     public string GetModuleInstanceEffectiveContractJson(
         string moduleInstanceId) =>
@@ -620,9 +620,8 @@ internal sealed class SqliteRenderSnapshotPort(
         string moduleInstanceId) =>
         timeline.GetModuleInstanceModuleName(moduleInstanceId);
 
-    public string GetModuleInstanceTransitionType(
-        string moduleInstanceId) =>
-        timeline.GetModuleInstanceTransitionType(moduleInstanceId);
+    public ShotSettings GetTimelineShotSettings(string shotId) =>
+        timeline.GetTimelineShotSettings(shotId);
 
     public string GetModuleInstanceEffectiveContractJson(
         string moduleInstanceId) =>

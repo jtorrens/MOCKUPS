@@ -461,15 +461,6 @@ internal sealed partial class SqliteProductionOwner
                     RuntimeDurationContract.FormatPolicy(policy));
                 SynchronizeTimelineDurations(connection);
                 return;
-            case "moduleInstance.transition":
-                _moduleInstanceRepository.UpdateTransition(
-                    connection,
-                    moduleInstanceId,
-                    MotionVariantValue.Parse(
-                        value).ToJsonString());
-                SynchronizeTimelineDurations(
-                    connection);
-                return;
             case "moduleInstance.actionDelayFrames":
                 _moduleInstanceRepository.UpdateActionDelay(
                     connection,
@@ -580,17 +571,14 @@ internal sealed partial class SqliteProductionOwner
                 connection,
                 shot.Id);
             var shotSettings = _shotRepository.Get(connection, shot.Id);
-            var projectSettings = _projectEpisodeRepository.GetProjectSettings(
-                connection,
-                shotSettings.ProjectId);
-            var frameRate = shotSettings.FpsOverride
-                ?? projectSettings.DefaultFps;
             var startFrame = _moduleInstanceRepository.QueryByShot(connection, shot.Id)
                 .Select((screen) => screen.StartFrame
                     + EffectiveScreenDurationFrames(
-                        connection,
                         screen,
-                        frameRate))
+                        shotSettings)
+                    - ScreenTimelineTiming.EffectiveTransitionDurationFrames(
+                        shotSettings.TransitionJson,
+                        shotSettings.TransitionDurationFrames))
                 .DefaultIfEmpty(0)
                 .Max();
             var id = $"module_instance_{Guid.NewGuid():N}";
@@ -614,7 +602,6 @@ internal sealed partial class SqliteProductionOwner
                     0,
                     "{}",
                     null,
-                    MotionVariantValue.NoneValue.ToJsonString(),
                     content.ToJsonString(),
                     "{}",
                     DefaultModuleAnimationJson(),

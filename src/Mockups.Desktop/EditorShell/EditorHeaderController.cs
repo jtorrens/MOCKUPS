@@ -281,7 +281,6 @@ internal sealed class EditorHeaderController
             new EditorContextIdentity("Module", context.Module),
             new EditorContextIdentity("Variant", context.Variant),
             new EditorContextIdentity("Duration", $"{context.DurationFrames} frames"),
-            new EditorContextIdentity("Transition", EditorUiText.IdentifierLabel(context.Transition)),
         ];
     }
 

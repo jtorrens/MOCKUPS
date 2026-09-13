@@ -405,7 +405,7 @@ public interface IModuleInstanceTimelineStore
     ModuleInstanceSettings GetModuleInstanceSettings(string moduleInstanceId);
     ModuleSettings GetModuleInstanceVariantSettings(string moduleInstanceId);
     string GetModuleInstanceModuleName(string moduleInstanceId);
-    string GetModuleInstanceTransitionType(string moduleInstanceId);
+    ShotSettings GetTimelineShotSettings(string shotId);
     string GetModuleInstanceEffectiveContractJson(string moduleInstanceId);
     string GetModuleInstanceRuntimePreviewJson(string moduleInstanceId);
     IReadOnlyList<ModuleInstanceSlot> GetShotModuleInstanceSlots(

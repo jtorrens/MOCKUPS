@@ -29,14 +29,13 @@ internal sealed class ProductionPreviewRuntimeResolver
     {
         if (payload.ScreenTransition is { } transition)
         {
-            var outgoing =
-                Resolve(
-                    transition.Outgoing,
-                    themeMode);
-            var incoming =
-                Resolve(
-                    transition.Incoming,
-                    themeMode);
+            var layers = transition.Layers
+                .Select((layer) => layer with
+                {
+                    Owner = Resolve(layer.Owner, themeMode),
+                })
+                .ToArray();
+            var incoming = layers[^1].Owner;
             return payload with
             {
                 ConfigJson = incoming.ConfigJson,
@@ -48,8 +47,7 @@ internal sealed class ProductionPreviewRuntimeResolver
                 ScreenTransition =
                     transition with
                     {
-                        Outgoing = outgoing,
-                        Incoming = incoming,
+                        Layers = layers,
                     },
             };
         }

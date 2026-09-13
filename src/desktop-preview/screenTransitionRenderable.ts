@@ -15,53 +15,48 @@ import {
 export function screenTransitionLayers(
   payload: DesignPreviewPayload,
   transition: ScreenTransitionPayload,
-  outgoing: RenderableNode,
-  incoming: RenderableNode,
+  layers: RenderableNode[],
 ): RenderableNode[] {
-  if (!Number.isFinite(transition.elapsedMilliseconds)
-      || transition.elapsedMilliseconds < 0) {
-    throw new Error("Screen transition elapsedMilliseconds must be non-negative.");
+  if (layers.length !== transition.layers.length) {
+    throw new Error("Screen transition layer payload and renderable counts differ.");
   }
-
-  const outgoingMotion = requiredMotionContract(
-    { motion: parseObject(transition.outgoingMotionJson, "outgoing Screen Motion") },
-    "motion",
-    "outgoing Screen Motion",
-  );
-  const incomingMotion = requiredMotionContract(
-    { motion: parseObject(transition.incomingMotionJson, "incoming Screen Motion") },
-    "motion",
-    "incoming Screen Motion",
-  );
   const screenBox = rootPreviewScreenBox(payload);
-  const clock = {
-    trigger: true,
-    elapsedMs: transition.elapsedMilliseconds,
-  };
-  return [
-    wrapExitMotionFrame(
-      transition.outgoing,
-      outgoing,
-      outgoingMotion,
-      resolveMotionFrame(
-        transition.outgoing,
-        outgoingMotion,
-        clock,
-      ),
-      screenBox,
-      screenBox,
-    ),
-    wrapMotionFrame(
-      transition.incoming,
-      incoming,
-      incomingMotion,
-      resolveMotionFrame(
-        transition.incoming,
-        incomingMotion,
-        clock,
-      ),
-      screenBox,
-      screenBox,
-    ),
-  ];
+  return transition.layers.map((layer, index) => {
+    if (!Number.isFinite(layer.elapsedMilliseconds)
+        || layer.elapsedMilliseconds < 0) {
+      throw new Error("Screen transition elapsedMilliseconds must be non-negative.");
+    }
+    if (layer.phase === "content") return layers[index]!;
+    const motion = requiredMotionContract(
+      { motion: parseObject(layer.motionJson, "Shot Screen Motion") },
+      "motion",
+      "Shot Screen Motion",
+    );
+    const frame = resolveMotionFrame(
+      layer.owner,
+      motion,
+      {
+        trigger: true,
+        elapsedMs: layer.elapsedMilliseconds,
+        durationMs: transition.durationFrames * 1000 / layer.owner.frameRate,
+      },
+    );
+    return layer.phase === "exit"
+      ? wrapExitMotionFrame(
+          layer.owner,
+          layers[index]!,
+          motion,
+          frame,
+          screenBox,
+          screenBox,
+        )
+      : wrapMotionFrame(
+          layer.owner,
+          layers[index]!,
+          motion,
+          frame,
+          screenBox,
+          screenBox,
+        );
+  });
 }

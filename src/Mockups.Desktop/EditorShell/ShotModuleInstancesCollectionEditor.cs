@@ -118,7 +118,7 @@ internal sealed class ShotModuleInstancesCollectionEditor
                     new TextBlock
                     {
                         Text =
-                            $"{slot.ModuleName} · {slot.TransitionType}",
+                            slot.ModuleName,
                         Opacity = 0.66,
                         FontSize = 11,
                     },
@@ -218,7 +218,7 @@ internal sealed class ShotModuleInstancesCollectionEditor
             ProjectTreeNodeKind.ModuleInstance,
             slot.Id,
             slot.Name,
-            $"{slot.ModuleName} · {slot.TransitionType}",
+            slot.ModuleName,
             ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ModuleInstance),
             shot);
 

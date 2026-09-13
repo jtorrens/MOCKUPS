@@ -15,12 +15,6 @@ internal static class SqliteProjectTestContextModuleInstanceExtensions
         string moduleInstanceId) =>
         engine.Production.GetModuleInstanceModuleName(moduleInstanceId);
 
-    internal static string GetModuleInstanceTransitionType(
-        this SqliteProjectTestContext engine,
-        string moduleInstanceId) =>
-        engine.Production.GetModuleInstanceTransitionType(
-            moduleInstanceId);
-
     internal static string GetModuleInstanceRuntimePreviewJson(
         this SqliteProjectTestContext engine,
         string moduleInstanceId) =>

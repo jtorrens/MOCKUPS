@@ -26,9 +26,9 @@ playhead, but it never becomes a second timing owner after synchronization.
 
 Production Preview exposes a Screen-relative Timeline over that same clock.
 Its visible range includes three contiguous zones: negative preroll for the
-incoming transition plus action delay, editable Screen content beginning at
-frame zero, and positive postroll for the outgoing transition into the next
-Screen. The playhead may traverse all three zones. General remains the
+Shot-owned entry transition plus action delay, editable Screen content beginning
+at frame zero, and positive postroll for the inverse Shot-owned exit transition.
+The playhead may traverse all three zones. General remains the
 Screen-duration lane. Collection-item lanes may be authored before or after the
 content zone; the parent Screen still clips their resolved output outside its
 own interval. Transition preroll and postroll remain parent-owned playback
@@ -246,9 +246,11 @@ instance switch between them. Switching to explicit preserves the current
 effective duration as its initial editable frame count. Switching back to
 calculated immediately restores the common owner calculation.
 
-Those policies determine action duration, not the parent-owned entry interval.
-The common Screen timeline prepends the resolved entry transition and the
-authored action delay when it calculates effective Screen and Shot duration.
+Those policies determine action duration, not the Shot-owned boundary intervals.
+The common Screen timeline prepends the exact Shot transition and authored
+action delay, then appends the same transition duration for inverse exit, when
+it calculates effective Screen and Shot duration. A truly disabled Motion adds
+zero boundary frames.
 
 An explicit default declares a positive frame count. Once selected, duration is
 edited only on the Screen instance, through either its Duration field or the
@@ -436,7 +438,10 @@ resolved child frame and Cursor remains the only owner of that continuous
 state.
 
 Screen transition composition follows the same frame-data boundary. Payload
-preparation selects the two exact Screen owners and their local frames. The
-generic transition resolver applies the existing Motion timing helpers to the
-shared elapsed interval and emits two resolved layers. The HTML renderer never
-starts an animation or chooses an outgoing or incoming Screen.
+preparation selects every Screen lane active at the Shot frame, resolves its
+entry, content or exit phase and fixes its owner-local action frame. The generic
+transition resolver applies the Shot Motion with the exact Shot frame duration;
+entry uses it forward and exit uses its inverse. It emits ordered resolved
+layers, so intentional overlaps remain visible and the highest ordered Screen
+is painted last. The HTML renderer never starts an animation, selects a Screen
+or repairs a gap or overlap.

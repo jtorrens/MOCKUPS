@@ -1,6 +1,7 @@
 using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json.Nodes;
 using System.Threading;
 
@@ -256,11 +257,11 @@ internal sealed class ProductionPreviewPayloadPreparer
         if (template.ScreenTiming
             is { } timing)
         {
-            var transition =
-                template.ScreenTransition;
+            var transition = template.ScreenTransition
+                ?? throw new InvalidOperationException(
+                    $"Screen '{template.OwnerId}' playback template is missing its Shot transition contract.");
             var baseIncoming =
-                (transition?.Incoming
-                    ?? template)
+                transition.Layers.Single().Owner
                 with
                 {
                     ScreenTiming = null,
@@ -276,52 +277,39 @@ internal sealed class ProductionPreviewPayloadPreparer
                 AtLocalFrame(
                     baseIncoming,
                     actionFrame);
-            if (transition is null
-                || frame
-                    >= transition.DurationFrames)
+            var phase = frame < transition.DurationFrames
+                ? "enter"
+                : frame >= timing.ActionStartFrame + timing.ActionDurationFrames
+                    ? "exit"
+                    : "content";
+            var preparedOwner = incoming with
             {
-                return incoming with
-                {
-                    Name = template.Name,
-                    OwnerId = template.OwnerId,
-                    ScreenTiming =
-                        timing with
-                        {
-                            ScreenFrame = frame,
-                        },
-                };
-            }
-
-            var outgoing =
-                AtLocalFrame(
-                    transition.Outgoing,
-                    transition.Outgoing.LocalFrame);
-            return incoming with
-            {
-                Kind = "screenTransition",
                 Name = template.Name,
                 OwnerId = template.OwnerId,
-                ScreenTiming =
-                    timing with
+                ScreenTiming = timing with { ScreenFrame = frame },
+            };
+            if (phase == "content") return preparedOwner;
+            var elapsedFrames = phase == "enter"
+                ? frame
+                : frame - timing.ActionStartFrame - timing.ActionDurationFrames;
+            return preparedOwner with
+            {
+                Kind = "screenTransition",
+                ScreenTransition = transition with
+                {
+                    Layers = [transition.Layers[0] with
                     {
-                        ScreenFrame = frame,
-                    },
-                ScreenTransition =
-                    transition with
-                    {
-                        Outgoing = outgoing,
-                        Incoming =
-                            incoming with
-                            {
-                                ScreenTiming = null,
-                            },
-                        ElapsedMilliseconds =
-                            frame
+                        Owner = preparedOwner with
+                        {
+                            ScreenTiming = null,
+                            ScreenTransition = null,
+                        },
+                        Phase = phase,
+                        ElapsedMilliseconds = elapsedFrames
                             * 1000.0
-                            / Math.Max(
-                                1,
-                                incoming.FrameRate),
-                    },
+                            / Math.Max(1, preparedOwner.FrameRate),
+                    }],
+                },
             };
         }
 

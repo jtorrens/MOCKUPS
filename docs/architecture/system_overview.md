@@ -87,9 +87,10 @@ never resolve across Projects.
 ### Production sequence
 
 - An Episode owns ordered Shots.
-- A Shot owns an explicit Actor and ordered Screens.
+- A Shot owns an explicit Actor, one shared Screen transition Motion and exact
+  transition duration, and ordered Screens.
 - A Screen is a persisted Module Instance with one exact Module Variant,
-  payload, transition, duration and animation document.
+  payload, action delay, duration and animation document.
 - Shot time is the ordered aggregate of its Screens.
 - Every Shot owns a stable number. Its code, technical render name and portable
   route are derived from its Project and Episode contracts.
@@ -252,12 +253,14 @@ slots.
 Episode, Shot and Screen repositories. Its owner contains Project/Episode and
 Production Output application operations; Shot settings, field writes and
 render identity reads also execute there.
-Screen settings, identity, transition projection, ordering, renaming and
+Screen settings, identity, ordering, renaming and
 effective Module Variant resolution execute in Production through the narrow
 `IModuleVariantCatalog`; Production cannot reference or construct the Design
 owner. Screen creation, Runtime payload mutation, exact Runtime field and
 collection validation, Module Variant transitions, orphaned animation-track
-cleanup and animation writes execute in the same owner. Composition supplies
+cleanup and animation writes execute in the same owner. Shot transition
+projection and timing also execute there and apply uniformly to every Screen
+lane in that Shot. Composition supplies
 only the valid Actor ids resolved from Resources when the Module's strict
 Runtime document contract requires them. Production also owns calculated
 Screen duration resolution and Shot duration synchronization; composition only

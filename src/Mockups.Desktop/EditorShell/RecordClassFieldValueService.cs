@@ -753,8 +753,6 @@ internal sealed class RecordClassFieldValueService
                     .ToString(),
             "moduleInstance.actionDelayFrames" =>
                 settings.ActionDelayFrames.ToString(),
-            "moduleInstance.transition" =>
-                settings.TransitionJson,
             "moduleInstance.device" => _production.GetShotSettings(settings.ShotId)
                 .EffectiveDeviceId(
                     _resources.GetActorSettings(
@@ -777,6 +775,9 @@ internal sealed class RecordClassFieldValueService
             "shot.calculatedDurationFrames" => ModuleInstanceTimeline.ShotDurationFrames(_timelineDataSource, shotId).ToString(),
             "shot.durationFrames" => settings.DurationFrames.ToString(),
             "shot.fps" => settings.Fps.ToString(),
+            "shot.transition" => settings.TransitionJson,
+            "shot.transitionDurationFrames" =>
+                settings.TransitionDurationFrames.ToString(),
             "shot.ownerActorId" => settings.OwnerActorId,
             "shot.deviceOverrideId" => settings.DeviceOverrideId ?? "",
             "shot.referenceVideoPath" => settings.ReferenceVideo.SourcePath,

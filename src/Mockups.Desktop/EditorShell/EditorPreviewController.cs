@@ -263,7 +263,7 @@ internal sealed class EditorPreviewController : IDisposable
         return new PreviewScreenTimelineRange(
             screen.TransitionFrameCount + screen.ActionDelayFrames,
             screen.ActionDurationFrames,
-            ScreenPostRollFrames(moduleInstanceId));
+            screen.TransitionFrameCount);
     }
 
     public void SetProductionScreenTimelineFrame(
@@ -273,7 +273,7 @@ internal sealed class EditorPreviewController : IDisposable
         var screen = PreparedProductionSession().Screen(moduleInstanceId);
         var minimum = -screen.TransitionFrameCount - screen.ActionDelayFrames;
         var maximum = screen.ActionDurationFrames
-            + ScreenPostRollFrames(moduleInstanceId) - 1;
+            + screen.TransitionFrameCount - 1;
         SetShotPreviewFrame(
             screen.StartFrame
             + screen.TransitionFrameCount
@@ -352,7 +352,7 @@ internal sealed class EditorPreviewController : IDisposable
             .Where((marker) =>
                 marker.Frame >= -screen.TransitionFrameCount - screen.ActionDelayFrames
                 && marker.Frame < screen.ActionDurationFrames
-                    + ScreenPostRollFrames(moduleInstanceId))
+                    + screen.TransitionFrameCount)
             .ToArray();
     }
 
@@ -3535,30 +3535,11 @@ internal sealed class EditorPreviewController : IDisposable
         var screen =
             PreparedProductionSession()
                 .Screen(moduleInstanceId);
-        var postRollFrames = ScreenPostRollFrames(moduleInstanceId);
         return (
             screen.StartFrame,
             screen.StartFrame
-                + screen.DurationFrames
-                + postRollFrames - 1,
-            screen.DurationFrames
-                + postRollFrames);
-    }
-
-    private int ScreenPostRollFrames(string moduleInstanceId)
-    {
-        var screen = PreparedProductionSession().Screen(moduleInstanceId);
-        var screens = PreparedProductionSession().Shot(screen.ShotId).Screens;
-        var index = screens
-            .Select((candidate, candidateIndex) => (candidate, candidateIndex))
-            .Single((candidate) =>
-                candidate.candidate.ScreenId.Equals(
-                    moduleInstanceId,
-                    StringComparison.Ordinal))
-            .candidateIndex;
-        return index + 1 < screens.Count
-            ? screens[index + 1].TransitionFrameCount
-            : 0;
+                + screen.DurationFrames - 1,
+            screen.DurationFrames);
     }
 
     private void MoveAnimationKeyframe(int direction)

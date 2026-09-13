@@ -190,7 +190,9 @@ the selected owner lane in Timeline is the only detailed animation editor. A
 it reuses the same timeline surface with one lane per ordered Screen, without a
 General lane, Runtime collection lanes or animation detail editor. Screen lanes
 may move before or after the Shot clipping interval; only explicit-duration
-Screens expose their outgoing resize edge. With a Screen selected, Timeline
+Screens expose their action-duration resize edge. Each Screen block includes
+its Shot-owned entry and inverse exit extensions as subdued diagonal hatches;
+overlaps and gaps remain visible exactly as authored. With a Screen selected, Timeline
 uses one compact transport
 above a tick ruler, then a General lane and one labelled group per Runtime
 collection with one lane per stable item. Collection groups are collapsible and
@@ -495,11 +497,13 @@ Different collection items never share a lane. Protected origin markers use a
 vector outline instead of a filled marker; labels never depend on Unicode glyph
 coverage.
 
-The Screen General card exposes its boundary Transition through the registered
-Motion control used by Components and its Action delay through the registered
-integer control in frames. Playing the Shot starts the outgoing and incoming
-Motion together at each Screen boundary, holds the incoming Screen at local
-frame zero for the delay, then starts its actions.
+The Shot General card exposes the shared boundary Transition through the
+registered Motion control used by Components and its exact Duration through the
+registered integer control in frames. The Screen General card exposes only its
+Action delay. Playing the Shot resolves each lane independently: entry uses the
+Shot Motion forward, exit uses it in reverse, and action time remains fixed
+during both boundary intervals and the delay. Alignment is a user-authored
+timeline decision; the editor does not repair overlaps or gaps.
 
 Play and Restore apply to the currently visible authoring context. Cancelling a
 drag or playback returns to the current authored frame without writing

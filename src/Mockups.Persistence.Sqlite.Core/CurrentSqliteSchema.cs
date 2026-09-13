@@ -69,6 +69,9 @@ internal static class CurrentSqliteSchema
             CHECK(duration_policy IN ('calculated', 'explicit')),
           explicit_duration_frames INTEGER NOT NULL DEFAULT 240
             CHECK(explicit_duration_frames > 0),
+          transition_json TEXT NOT NULL DEFAULT '{"transition":"none","direction":"bottom","bounds":"screen","fade":false,"translate":false,"scale":false}',
+          transition_duration_frames INTEGER NOT NULL DEFAULT 10
+            CHECK(transition_duration_frames > 0),
           owner_actor_id TEXT NOT NULL REFERENCES actors(id) ON DELETE RESTRICT,
           device_override_id TEXT REFERENCES devices(id) ON DELETE RESTRICT,
           canvas_json TEXT NOT NULL DEFAULT '{}',
@@ -128,7 +131,6 @@ internal static class CurrentSqliteSchema
           action_delay_frames INTEGER NOT NULL DEFAULT 0,
           device_overrides_json TEXT NOT NULL DEFAULT '{}',
           theme_override_id TEXT REFERENCES themes(id) ON DELETE RESTRICT,
-          transition_json TEXT NOT NULL DEFAULT '{"transition":"none","direction":"bottom","bounds":"screen","fade":false,"translate":false,"scale":false}',
           content_json TEXT NOT NULL DEFAULT '{}',
           behavior_json TEXT NOT NULL DEFAULT '{}',
           animation_json TEXT NOT NULL DEFAULT '{"schemaVersion":2,"tracks":[]}',
@@ -220,7 +222,7 @@ internal static class CurrentSqliteSchema
           layout_json TEXT NOT NULL
         );
 
-        PRAGMA user_version = 18;
+        PRAGMA user_version = 19;
         """;
 
 }

@@ -395,7 +395,7 @@ internal sealed class SqliteEditorNavigationStore
                 ProjectTreeNodeKind.ModuleInstance,
                 moduleInstance.Id,
                 moduleInstance.Name,
-                $"{moduleName} · {moduleInstance.DurationFrames} frames · {ModuleTransitionLabel(moduleInstance.TransitionJson)}",
+                $"{moduleName} · {moduleInstance.DurationFrames} frames",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ModuleInstance),
                 shot));
         }
@@ -411,14 +411,6 @@ internal sealed class SqliteEditorNavigationStore
         string id)
     {
         return index.ContainsKey(new ReferenceTarget(kind, id));
-    }
-
-    private static string ModuleTransitionLabel(string transitionJson)
-    {
-        var type = MotionVariantValue.Parse(
-            transitionJson).Transition;
-        return char.ToUpperInvariant(type[0])
-            + type[1..];
     }
 
     private static IReadOnlyList<DesktopPreviewComponentCategory> ComponentClassNavigationGroups()

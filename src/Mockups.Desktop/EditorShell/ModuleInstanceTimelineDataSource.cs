@@ -9,7 +9,6 @@ internal sealed record ModuleInstanceTimelineSource(
     int StartFrame,
     int PersistedDurationFrames,
     int ActionDelayFrames,
-    string TransitionJson,
     string ContentJson,
     string AnimationJson,
     string EffectiveContractJson,
@@ -38,7 +37,6 @@ internal sealed class ModuleInstanceTimelineDataSource
             instance.StartFrame,
             instance.DurationFrames,
             instance.ActionDelayFrames,
-            instance.TransitionJson,
             instance.ContentJson,
             instance.AnimationJson,
             _database.GetModuleInstanceEffectiveContractJson(moduleInstanceId),
@@ -60,4 +58,7 @@ internal sealed class ModuleInstanceTimelineDataSource
         ShotSlotIds(shotId)
             .Select(Load)
             .ToList();
+
+    public ShotSettings LoadShot(string shotId) =>
+        _database.GetTimelineShotSettings(shotId);
 }

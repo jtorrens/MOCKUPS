@@ -24,7 +24,6 @@ internal sealed partial class SqliteProductionOwner
             record.ActionDelayFrames,
             record.DeviceOverridesJson,
             record.ThemeOverrideId,
-            record.TransitionJson,
             record.ContentJson,
             record.BehaviorJson,
             record.AnimationJson,
@@ -40,13 +39,8 @@ internal sealed partial class SqliteProductionOwner
         return _moduleVariantCatalog.GetModuleName(instance.ModuleId);
     }
 
-    public string GetModuleInstanceTransitionType(
-        string moduleInstanceId)
-    {
-        return MotionVariantValue.Parse(
-            GetModuleInstanceSettings(moduleInstanceId)
-                .TransitionJson).Transition;
-    }
+    public ShotSettings GetTimelineShotSettings(string shotId) =>
+        GetShotSettings(shotId);
 
     public IReadOnlyList<ModuleInstanceSlot> GetShotModuleInstanceSlots(
         string shotId)
@@ -71,9 +65,6 @@ internal sealed partial class SqliteProductionOwner
                             $"Missing module '{instance.ModuleId}'."),
                 instance.SortOrder,
                 instance.StartFrame,
-                instance.TransitionJson,
-                MotionVariantValue.Parse(
-                    instance.TransitionJson).Transition,
                 instance.DurationFrames,
                 instance.ActionDelayFrames))
             .ToList();

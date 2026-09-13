@@ -26,7 +26,7 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
         using var command = connection.CreateCommand();
         command.CommandText = """
             SELECT id, shot_id, app_id, module_id, name, notes, sort_order, start_frame, duration_frames, duration_policy, action_delay_frames,
-                   device_overrides_json, theme_override_id, transition_json, content_json, behavior_json, animation_json, metadata_json
+                   device_overrides_json, theme_override_id, content_json, behavior_json, animation_json, metadata_json
             FROM module_instances
             WHERE id = $id
             """;
@@ -45,7 +45,7 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
         using var command = connection.CreateCommand();
         command.CommandText = """
             SELECT id, shot_id, app_id, module_id, name, notes, sort_order, start_frame, duration_frames, duration_policy, action_delay_frames,
-                   device_overrides_json, theme_override_id, transition_json, content_json, behavior_json, animation_json, metadata_json
+                   device_overrides_json, theme_override_id, content_json, behavior_json, animation_json, metadata_json
             FROM module_instances
             ORDER BY shot_id, sort_order, name, id
             """;
@@ -57,7 +57,7 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
         using var command = connection.CreateCommand();
         command.CommandText = """
             SELECT id, shot_id, app_id, module_id, name, notes, sort_order, start_frame, duration_frames, duration_policy, action_delay_frames,
-                   device_overrides_json, theme_override_id, transition_json, content_json, behavior_json, animation_json, metadata_json
+                   device_overrides_json, theme_override_id, content_json, behavior_json, animation_json, metadata_json
             FROM module_instances
             WHERE shot_id = $shotId
             ORDER BY sort_order, name, id
@@ -99,11 +99,11 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
             INSERT INTO module_instances (
               id, shot_id, app_id, module_id, name, notes, sort_order, start_frame, duration_frames,
               duration_policy, action_delay_frames, device_overrides_json, theme_override_id,
-              transition_json, content_json, behavior_json, animation_json, metadata_json)
+              content_json, behavior_json, animation_json, metadata_json)
             VALUES (
               $id, $shotId, $appId, $moduleId, $name, $notes, $sortOrder, $startFrame, $durationFrames,
               $durationPolicy, $actionDelayFrames, $deviceOverridesJson, $themeOverrideId,
-              $transitionJson, $contentJson, $behaviorJson, $animationJson, $metadataJson)
+              $contentJson, $behaviorJson, $animationJson, $metadataJson)
             """,
             ("$id", record.Id),
             ("$shotId", record.ShotId),
@@ -118,7 +118,6 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
             ("$actionDelayFrames", record.ActionDelayFrames),
             ("$deviceOverridesJson", record.DeviceOverridesJson),
             ("$themeOverrideId", (object?)record.ThemeOverrideId ?? DBNull.Value),
-            ("$transitionJson", record.TransitionJson),
             ("$contentJson", record.ContentJson),
             ("$behaviorJson", record.BehaviorJson),
             ("$animationJson", record.AnimationJson),
@@ -142,10 +141,10 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
             INSERT INTO module_instances (
               id, shot_id, app_id, module_id, name, notes, sort_order, start_frame, duration_frames,
               duration_policy, action_delay_frames, device_overrides_json, theme_override_id,
-              transition_json, content_json, behavior_json, animation_json, metadata_json)
+              content_json, behavior_json, animation_json, metadata_json)
             SELECT $id, $shotId, app_id, module_id, $name, notes, $sortOrder, start_frame, duration_frames,
                    duration_policy, action_delay_frames, device_overrides_json, theme_override_id,
-                   transition_json, content_json, behavior_json, animation_json, metadata_json
+                   content_json, behavior_json, animation_json, metadata_json
             FROM module_instances
             WHERE id = $sourceId
             """,
@@ -176,23 +175,6 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
             connection,
             "UPDATE module_instances SET animation_json = $animationJson WHERE id = $id",
             ("$animationJson", animationJson),
-            ("$id", moduleInstanceId));
-    }
-
-    public void UpdateTransition(
-        SqliteConnection connection,
-        string moduleInstanceId,
-        string transitionJson)
-    {
-        _ = MotionVariantValue.Parse(
-            transitionJson);
-        _ = Get(
-            connection,
-            moduleInstanceId);
-        _context.Execute(
-            connection,
-            "UPDATE module_instances SET transition_json = $transitionJson WHERE id = $id",
-            ("$transitionJson", transitionJson),
             ("$id", moduleInstanceId));
     }
 
@@ -431,8 +413,7 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
             SqliteCommandExecutor.ReadString(reader, 13),
             SqliteCommandExecutor.ReadString(reader, 14),
             SqliteCommandExecutor.ReadString(reader, 15),
-            SqliteCommandExecutor.ReadString(reader, 16),
-            SqliteCommandExecutor.ReadString(reader, 17));
+            SqliteCommandExecutor.ReadString(reader, 16));
         Validate(record);
         return record;
     }
@@ -454,9 +435,6 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
             throw new InvalidOperationException(
                 $"Module instance '{record.Id}' action delay must be non-negative.");
         }
-        ValidateObject(record.TransitionJson, record.Id, "transition_json");
-        _ = MotionVariantValue.Parse(
-            record.TransitionJson);
         ValidateObject(record.ContentJson, record.Id, "content_json");
         ValidateObject(record.BehaviorJson, record.Id, "behavior_json");
         ValidateObject(record.AnimationJson, record.Id, "animation_json");

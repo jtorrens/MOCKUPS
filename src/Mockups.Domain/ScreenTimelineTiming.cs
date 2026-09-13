@@ -1,40 +1,26 @@
 using System;
-using System.Text.Json.Nodes;
 using Mockups.DesktopEditorShell.Common;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
 public static class ScreenTimelineTiming
 {
-    public static int TransitionFrameCount(
-        string outgoingMotionJson,
-        string incomingMotionJson,
-        string outgoingThemeTokensJson,
-        string incomingThemeTokensJson,
-        int frameRate)
+    public static int EffectiveTransitionDurationFrames(
+        string motionJson,
+        int configuredDurationFrames)
     {
-        if (frameRate <= 0)
+        if (configuredDurationFrames <= 0)
         {
             throw new InvalidOperationException(
-                "Screen transition frame rate must be positive.");
+                "Shot transition duration must be positive.");
         }
-
-        var outgoingMilliseconds =
-            MotionTimingDuration.ResolveMilliseconds(
-                Parse(outgoingThemeTokensJson, "outgoing Screen Theme tokens"),
-                Parse(outgoingMotionJson, "outgoing Screen Motion"),
-                "outgoing Screen Motion");
-        var incomingMilliseconds =
-            MotionTimingDuration.ResolveMilliseconds(
-                Parse(incomingThemeTokensJson, "incoming Screen Theme tokens"),
-                Parse(incomingMotionJson, "incoming Screen Motion"),
-                "incoming Screen Motion");
-        return Math.Max(
-            0,
-            (int)Math.Ceiling(
-                Math.Max(outgoingMilliseconds, incomingMilliseconds)
-                / 1000.0
-                * frameRate));
+        var motion = MotionVariantValue.Parse(motionJson);
+        return motion.Transition == MotionVariantValue.None
+            && !motion.Fade
+            && !motion.Translate
+            && !motion.Scale
+                ? 0
+                : configuredDurationFrames;
     }
 
     public static int EffectiveDurationFrames(
@@ -55,14 +41,7 @@ public static class ScreenTimelineTiming
         }
         return checked(
             actionDurationFrames
-            + transitionFrameCount
+            + transitionFrameCount * 2
             + actionDelayFrames);
     }
-
-    private static JsonObject Parse(
-        string json,
-        string owner) =>
-        JsonPath.ParseRequiredObject(
-            json,
-            owner);
 }

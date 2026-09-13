@@ -22,6 +22,7 @@ type ComponentMotionClock = {
   trigger: boolean;
   elapsedMs: number;
   reverse?: boolean;
+  durationMs?: number;
 };
 
 export function resolveMotionFrame(
@@ -158,6 +159,16 @@ function resolvedMotionProgress(
   }
 
   const timing = motionTiming(payload, motion.transition === "none" ? "fade" : motion.transition);
+  if (frame.durationMs !== undefined) {
+    if (!Number.isFinite(frame.durationMs) || frame.durationMs <= 0) {
+      return 1;
+    }
+    const linearProgress = Math.max(
+      0,
+      Math.min(1, frame.elapsedMs / frame.durationMs),
+    );
+    return easingProgress(timing.easing, linearProgress, timing.intensity);
+  }
   if (timing.durationMs <= 0) {
     return 1;
   }

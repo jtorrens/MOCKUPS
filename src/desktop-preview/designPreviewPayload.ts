@@ -28,12 +28,15 @@ export interface DesignPreviewFontFacePayload {
   style: string;
 }
 
-export interface ScreenTransitionPayload {
-  outgoing: DesignPreviewPayload;
-  incoming: DesignPreviewPayload;
-  outgoingMotionJson: string;
-  incomingMotionJson: string;
+export interface ScreenTransitionLayerPayload {
+  owner: DesignPreviewPayload;
+  motionJson: string;
+  phase: "enter" | "content" | "exit";
   elapsedMilliseconds: number;
+}
+
+export interface ScreenTransitionPayload {
+  layers: ScreenTransitionLayerPayload[];
   durationFrames: number;
 }
 

@@ -58,19 +58,15 @@ function screenTransitionChildren(payload: DesignPreviewPayload): RenderableNode
   if (!transition) {
     throw new Error("Screen transition payload is missing its resolved transition.");
   }
-  const outgoing = screenLayer(
-    transition.outgoing,
-    "design_preview.screen.outgoing",
-  );
-  const incoming = screenLayer(
-    transition.incoming,
-    "design_preview.screen.incoming",
-  );
+  const layers = transition.layers.map((layer, index) =>
+    screenLayer(
+      layer.owner,
+      `design_preview.screen.layer.${index}`,
+    ));
   return screenTransitionLayers(
     payload,
     transition,
-    outgoing,
-    incoming,
+    layers,
   );
 }
 
@@ -95,7 +91,8 @@ function screenLayer(
 export function previewCanvasBackground(
   payload: DesignPreviewPayload,
 ): string | undefined {
-  return payload.previewFrame.moduleTransparency.enabled
+  return payload.kind === "screenTransition"
+    || payload.previewFrame.moduleTransparency.enabled
     ? undefined
     : selectedColor(payload, "theme.colors.background");
 }
