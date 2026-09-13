@@ -440,8 +440,9 @@ state.
 Screen transition composition follows the same frame-data boundary. Payload
 preparation selects every Screen lane active at the Shot frame, resolves its
 entry, content or exit phase and fixes its owner-local action frame. The generic
-transition resolver applies the Shot Motion with the exact Shot frame duration;
-entry uses it forward and exit uses its inverse. It emits ordered resolved
+transition resolver applies the Shot Motion with the exact Shot frame duration.
+Its direction names the outgoing travel; entry starts at the opposite edge, so
+both moving Screen edges coincide throughout a full-screen translation. It emits ordered resolved
 layers, so intentional overlaps remain visible and the highest ordered Screen
 is painted last. The HTML renderer never starts an animation, selects a Screen
 or repairs a gap or overlap.

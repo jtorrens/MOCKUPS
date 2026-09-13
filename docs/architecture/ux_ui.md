@@ -500,8 +500,8 @@ coverage.
 The Shot General card exposes the shared boundary Transition through the
 registered Motion control used by Components and its exact Duration through the
 registered integer control in frames. The Screen General card exposes only its
-Action delay. Playing the Shot resolves each lane independently: entry uses the
-Shot Motion forward, exit uses it in reverse, and action time remains fixed
+Action delay. Playing the Shot resolves each lane independently: the declared
+direction drives exit and entry comes from the opposite edge, while action time remains fixed
 during both boundary intervals and the delay. Alignment is a user-authored
 timeline decision; the editor does not repair overlaps or gaps.
 

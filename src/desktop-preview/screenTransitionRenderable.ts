@@ -3,6 +3,7 @@ import type {
   DesignPreviewPayload,
   ScreenTransitionPayload,
 } from "./designPreviewPayload.js";
+import type { ComponentMotionContract } from "./previewComponentContracts.js";
 import { rootPreviewScreenBox } from "./previewGeometryHelpers.js";
 import { parseObject } from "./previewJsonHelpers.js";
 import {
@@ -32,9 +33,15 @@ export function screenTransitionLayers(
       "motion",
       "Shot Screen Motion",
     );
+    const layerMotion = layer.phase === "enter"
+      ? {
+          ...motion,
+          direction: oppositeDirection(motion.direction),
+        }
+      : motion;
     const frame = resolveMotionFrame(
       layer.owner,
-      motion,
+      layerMotion,
       {
         trigger: true,
         elapsedMs: layer.elapsedMilliseconds,
@@ -45,7 +52,7 @@ export function screenTransitionLayers(
       ? wrapExitMotionFrame(
           layer.owner,
           layers[index]!,
-          motion,
+          layerMotion,
           frame,
           screenBox,
           screenBox,
@@ -53,10 +60,21 @@ export function screenTransitionLayers(
       : wrapMotionFrame(
           layer.owner,
           layers[index]!,
-          motion,
+          layerMotion,
           frame,
           screenBox,
           screenBox,
         );
   });
+}
+
+function oppositeDirection(
+  direction: ComponentMotionContract["direction"],
+): ComponentMotionContract["direction"] {
+  switch (direction) {
+    case "top": return "bottom";
+    case "bottom": return "top";
+    case "left": return "right";
+    case "right": return "left";
+  }
 }

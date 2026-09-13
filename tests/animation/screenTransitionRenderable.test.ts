@@ -97,7 +97,7 @@ function transition(
   };
 }
 
-test("Screen exit and entry Motion start simultaneously", () => {
+test("Screen exit and inverse entry Motion start with matching edges", () => {
   const [exit, enter] = screenTransitionLayers(
     {
       ...incoming,
@@ -109,11 +109,11 @@ test("Screen exit and entry Motion start simultaneously", () => {
 
   assert.equal(exit.children?.[0]?.transform?.x, 0);
   assert.equal(exit.children?.[0]?.transform?.opacity, 1);
-  assert.equal(enter.children?.[0]?.transform?.x, -360);
+  assert.equal(enter.children?.[0]?.transform?.x, 360);
   assert.equal(enter.children?.[0]?.transform?.opacity, 0);
 });
 
-test("Screen exit and entry Motion share the same elapsed transition clock", () => {
+test("Screen exit and inverse entry Motion keep matching edges on the shared clock", () => {
   const [exit, enter] = screenTransitionLayers(
     {
       ...incoming,
@@ -125,6 +125,6 @@ test("Screen exit and entry Motion share the same elapsed transition clock", () 
 
   assert.equal(exit.children?.[0]?.transform?.x, -180);
   assert.equal(exit.children?.[0]?.transform?.opacity, 0.5);
-  assert.equal(enter.children?.[0]?.transform?.x, -180);
+  assert.equal(enter.children?.[0]?.transform?.x, 180);
   assert.equal(enter.children?.[0]?.transform?.opacity, 0.5);
 });
