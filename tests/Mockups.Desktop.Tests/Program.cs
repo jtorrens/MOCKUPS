@@ -8923,6 +8923,36 @@ static void PreviewAuthoringNavigationUsesExactOwnerAndSlots()
     Equal("component.iconRow", focus?.RecordClassId);
     Equal("component.iconRow.items", focus?.FieldId);
     Equal("button_attachment", focus?.ItemId);
+    Equal(EditorAuthoringFocusSurface.Editor, focus?.Surface);
+
+    var screenOwner = new ProjectTreeNode(
+        ProjectTreeNodeKind.ModuleInstance,
+        "screen_conversation",
+        "Conversation",
+        "",
+        "module.core.chat");
+    selected = null;
+    focus = null;
+    var screenNavigator = new PreviewAuthoringNavigator(
+        () => selected,
+        (nodeId) =>
+        {
+            if (!nodeId.Equals(screenOwner.Id, StringComparison.Ordinal)) return false;
+            selected = screenOwner;
+            return true;
+        },
+        (context) => opened = context,
+        (request) => focus = request,
+        messages);
+    True(screenNavigator.Navigate(
+        new PreviewAuthoringNavigationTarget(
+            screenOwner.Id,
+            [],
+            "messages",
+            "message_005")));
+    Equal(EditorAuthoringFocusSurface.PreviewAuthoring, focus?.Surface);
+    Equal("messages", focus?.FieldId);
+    Equal("message_005", focus?.ItemId);
 
     selected = null;
     opened = null;

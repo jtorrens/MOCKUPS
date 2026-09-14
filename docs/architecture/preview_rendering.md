@@ -301,6 +301,8 @@ renderable boundary must also match the exact current authoring
 `recordClassId` before it may append its slot and move the scope to the declared
 child record class. A child reached without its declared parent therefore
 inherits the nearest valid target instead of publishing an invalid shortcut.
+An exact Screen owner with no embedded slot focuses its Screen Payload surface;
+an embedded slot focuses the contextual Overrides editor for that slot chain.
 Interactive Production Preview documents publish their exact Screen owner so
 the same opaque target can reach Screen Payload, local Overrides or a complete
 referenced Variant through the declared boundary chain. Navigation crosses to

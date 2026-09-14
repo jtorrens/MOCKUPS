@@ -151,7 +151,11 @@ internal sealed class PreviewAuthoringNavigator
                 : owner.RecordClassId,
             target.SlotFieldIds,
             target.FocusFieldId,
-            target.FocusItemId));
+            target.FocusItemId,
+            owner.Kind == ProjectTreeNodeKind.ModuleInstance
+                && slots.Length == 0
+                ? EditorAuthoringFocusSurface.PreviewAuthoring
+                : EditorAuthoringFocusSurface.Editor));
         if (slots.Length > 0)
         {
             _showEmbeddedContext(new EditorEmbeddedContext(owner, slots));
