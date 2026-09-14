@@ -32,7 +32,12 @@ export async function installMacDesktopApp(
   await mkdir(applicationsDirectory, { recursive: true });
   await rm(staging, { recursive: true, force: true });
   await rm(backup, { recursive: true, force: true });
-  await cp(source, staging, { recursive: true, force: false, errorOnExist: true });
+  await cp(source, staging, {
+    recursive: true,
+    force: false,
+    errorOnExist: true,
+    verbatimSymlinks: true,
+  });
   let replaced = false;
   try {
     await rename(destination, backup).then(

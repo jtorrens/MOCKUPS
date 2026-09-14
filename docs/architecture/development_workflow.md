@@ -299,6 +299,21 @@ The packaged bundle copies the application-owned `.icns` from
 `assets/system/application` into `Contents/Resources` and declares it through
 `CFBundleIconFile`; this identity remains separate from in-product system
 action icons.
+Packaging keeps only the real root executable in `Contents/MacOS`. The
+self-contained .NET runtime and application data live in `Contents/Resources`
+under a private runtime directory; relative links from `Contents/MacOS`
+preserve the executable's adjacent-file lookup without duplicating payloads.
+Packaging discovers the workstation's single valid Apple Development identity,
+signs each nested Mach-O binary in Resources leaf-first and then signs the root
+bundle with that certificate. Zero or multiple matching identities fail
+explicitly; packaging never falls back to an ad-hoc or deep signature. It
+verifies every signed binary and the strict root resource seal through the same
+explicit boundary.
+Atomic installation preserves those relative links verbatim; it never expands
+them to paths in the build checkout, so copying the signed bundle cannot change
+its resource seal or create a dependency on `out/desktop`.
+The stable Team-backed designated requirement lets macOS retain local privacy
+authorization across rebuilds without changing the application bundle id.
 Automated macOS UI review uses one of these launchers; headless checks continue
 to use the Avalonia headless platform.
 

@@ -1,6 +1,17 @@
 import { execFileSync } from "node:child_process";
 import { constants } from "node:fs";
-import { access, chmod, cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  access,
+  chmod,
+  cp,
+  mkdir,
+  open,
+  readdir,
+  readFile,
+  rm,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import { homedir } from "node:os";
 import { basename, dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -82,15 +93,77 @@ export function macDesktopInfoPlist(
 `;
 }
 
-export function macDesktopCodeSignArgs(appDir) {
+export function parseMacAppleDevelopmentSigningIdentities(output) {
+  return output
+    .split(/\r?\n/u)
+    .map((line) => line.match(
+      /^\s*\d+\)\s+([0-9A-F]{40})\s+"(Apple Development:[^"]+)"\s*$/u,
+    ))
+    .filter((match) => match !== null)
+    .map((match) => ({ fingerprint: match[1], name: match[2] }));
+}
+
+export function requireMacAppleDevelopmentSigningIdentity(output) {
+  const identities = parseMacAppleDevelopmentSigningIdentities(output);
+  if (identities.length !== 1) {
+    throw new Error(
+      "macOS packaging requires exactly one valid Apple Development "
+      + `signing identity, but found ${identities.length}.`,
+    );
+  }
+  return identities[0];
+}
+
+export function macDesktopCodeSignArgs(appDir, signingIdentity) {
   return [
     "--force",
-    "--deep",
     "--sign",
-    "-",
+    signingIdentity,
     "--timestamp=none",
     appDir,
   ];
+}
+
+const macMachOMagics = new Set([
+  0xfeedface,
+  0xcefaedfe,
+  0xfeedfacf,
+  0xcffaedfe,
+  0xcafebabe,
+  0xbebafeca,
+  0xcafebabf,
+  0xbfbafeca,
+]);
+
+export function isMacMachOHeader(header) {
+  return header.length >= 4 && macMachOMagics.has(header.readUInt32BE(0));
+}
+
+async function isMacMachOFile(filePath) {
+  const handle = await open(filePath, "r");
+  try {
+    const header = Buffer.alloc(4);
+    const { bytesRead } = await handle.read(header, 0, header.length, 0);
+    return bytesRead === header.length && isMacMachOHeader(header);
+  } finally {
+    await handle.close();
+  }
+}
+
+export async function findMacNestedCodePaths(directory) {
+  const paths = [];
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const entryPath = resolve(directory, entry.name);
+    if (entry.isDirectory()) {
+      paths.push(...await findMacNestedCodePaths(entryPath));
+    } else if (
+      entry.isFile()
+      && await isMacMachOFile(entryPath)
+    ) {
+      paths.push(entryPath);
+    }
+  }
+  return paths.sort();
 }
 
 export function verifyMacDesktopBuildIdentity(expected, actual) {
@@ -113,6 +186,7 @@ export async function packageMacDesktopApp(root = repoRoot) {
   const contentsDir = resolve(appDir, "Contents");
   const macOsDir = resolve(contentsDir, "MacOS");
   const resourcesDir = resolve(contentsDir, "Resources");
+  const runtimeDir = resolve(resourcesDir, "runtime");
   const infoPlistPath = resolve(contentsDir, "Info.plist");
   const executablePath = resolve(macOsDir, macDesktopExecutableName);
   const publishedExecutablePath = resolve(
@@ -146,7 +220,15 @@ export async function packageMacDesktopApp(root = repoRoot) {
   await rm(appDir, { force: true, recursive: true });
   await mkdir(macOsDir, { recursive: true });
   await mkdir(resourcesDir, { recursive: true });
-  await cp(publishDir, macOsDir, { recursive: true });
+  await cp(publishDir, runtimeDir, { recursive: true });
+  await cp(resolve(runtimeDir, macDesktopExecutableName), executablePath);
+  await rm(resolve(runtimeDir, macDesktopExecutableName));
+  for (const entry of await readdir(runtimeDir, { withFileTypes: true })) {
+    await symlink(
+      `../Resources/runtime/${entry.name}`,
+      resolve(macOsDir, entry.name),
+    );
+  }
   await cp(iconSourcePath, iconBundlePath);
 
   const playwrightBrowsers = JSON.parse(await readFile(
@@ -205,14 +287,38 @@ export async function packageMacDesktopApp(root = repoRoot) {
   execFileSync("plutil", ["-lint", infoPlistPath], {
     stdio: "inherit",
   });
+  const signingIdentity = requireMacAppleDevelopmentSigningIdentity(
+    execFileSync(
+      "security",
+      ["find-identity", "-v", "-p", "codesigning"],
+      { encoding: "utf8" },
+    ),
+  );
+  const nestedCodePaths = await findMacNestedCodePaths(
+    resourcesDir,
+  );
+  for (const nestedCodePath of nestedCodePaths) {
+    execFileSync(
+      "codesign",
+      macDesktopCodeSignArgs(nestedCodePath, signingIdentity.fingerprint),
+      { stdio: "inherit" },
+    );
+  }
   execFileSync(
     "codesign",
-    macDesktopCodeSignArgs(appDir),
+    macDesktopCodeSignArgs(appDir, signingIdentity.fingerprint),
     { stdio: "inherit" },
   );
+  for (const nestedCodePath of nestedCodePaths) {
+    execFileSync(
+      "codesign",
+      ["--verify", "--strict", nestedCodePath],
+      { stdio: "inherit" },
+    );
+  }
   execFileSync(
     "codesign",
-    ["--verify", "--deep", "--strict", appDir],
+    ["--verify", "--strict", appDir],
     { stdio: "inherit" },
   );
 
