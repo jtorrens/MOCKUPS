@@ -1211,9 +1211,16 @@ public partial class MainWindow : SukiWindow
             PreviewUtilityTabs.SelectedItem = selectedTab;
             if (authoringSurface is not null)
             {
-                _authoringFocusController.ApplyPreviewAuthoring(
-                    node,
-                    authoringSurface.Content);
+                if (_authoringFocusController.ApplyPreviewAuthoring(
+                        node,
+                        authoringSurface.Content))
+                {
+                    PreviewUtilityTabs.SelectedItem =
+                        PreviewAuthoringDataTab;
+                    _editorSessionUiState.Select(
+                        _previewUtilityTabStateKey,
+                        PreviewUtilityAuthoringDataId);
+                }
             }
         }
         finally

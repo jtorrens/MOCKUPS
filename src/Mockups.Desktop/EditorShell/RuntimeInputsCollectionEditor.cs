@@ -1618,7 +1618,7 @@ internal sealed class RuntimeInputsCollectionEditor
             _sessionUiState,
             canEditStructure: collection.CanEditStructure
                 && string.IsNullOrWhiteSpace(collection.StorageCollectionJsonKey));
-        return editor.Create();
+        return editor.Create(collection.Id);
     }
 
     private void NotifyStructuredCollectionChanged(

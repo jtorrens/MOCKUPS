@@ -39,23 +39,53 @@ internal sealed record EditorInternalNavigationSection(
     bool ShowLabel = true,
     bool Reveal = false);
 
-internal sealed class EditorSubcardLayoutHost : ContentControl
+internal sealed class EditorSubcardLayoutHost : ContentControl, IEditorAuthoringItemTarget
 {
+    private readonly Dictionary<string, InstantEditorCard> _flatCards =
+        new(StringComparer.Ordinal);
+
     public EditorSubcardLayoutHost(
         IReadOnlyList<EditorInternalNavigationSection> subcards,
         EditorSubcardLayout layout,
         string? selectedId = null,
         Action<string>? selectionChanged = null,
         double? navigationWidth = null,
-        Action<double>? navigationWidthChanged = null)
+        Action<double>? navigationWidthChanged = null,
+        string authoringFieldId = "")
     {
         Layout = layout;
+        FieldId = authoringFieldId;
         HorizontalAlignment = HorizontalAlignment.Stretch;
         VerticalAlignment = VerticalAlignment.Top;
-        Content = Compose(subcards, layout, selectedId, selectionChanged, navigationWidth, navigationWidthChanged);
+        Content = Compose(
+            subcards,
+            layout,
+            selectedId,
+            selectionChanged,
+            navigationWidth,
+            navigationWidthChanged,
+            _flatCards);
     }
 
     public EditorSubcardLayout Layout { get; }
+    public string FieldId { get; }
+
+    public bool SelectItem(string itemId)
+    {
+        if (string.IsNullOrWhiteSpace(FieldId)
+            || !_flatCards.TryGetValue(itemId, out var selected))
+        {
+            return false;
+        }
+        foreach (var (candidateId, card) in _flatCards)
+        {
+            card.IsExpanded = candidateId.Equals(
+                itemId,
+                StringComparison.Ordinal);
+        }
+        DeferredBringIntoView.Request(selected);
+        return true;
+    }
 
     internal static Control ComposeSectionContent(EditorInternalNavigationSection section)
     {
@@ -89,7 +119,8 @@ internal sealed class EditorSubcardLayoutHost : ContentControl
         string? selectedId,
         Action<string>? selectionChanged,
         double? navigationWidth = null,
-        Action<double>? navigationWidthChanged = null)
+        Action<double>? navigationWidthChanged = null,
+        Dictionary<string, InstantEditorCard>? flatCards = null)
     {
         if (layout == EditorSubcardLayout.VerticalCards)
         {
@@ -138,6 +169,7 @@ internal sealed class EditorSubcardLayoutHost : ContentControl
                 {
                     Dispatcher.UIThread.Post(card.BringIntoView, DispatcherPriority.Loaded);
                 }
+                flatCards?.Add(subcard.Id, card);
                 cards.Add(card);
             }
             EditorGroupBlock.WireExclusiveCards(cards);
@@ -149,7 +181,7 @@ internal sealed class EditorSubcardLayoutHost : ContentControl
     }
 }
 
-internal sealed class EditorInternalNavigation : Grid
+internal sealed class EditorInternalNavigation : Grid, IEditorAuthoringSectionTarget
 {
     public const double DefaultNavigationWidth = 190;
     private const double MinimumNavigationWidth = 120;
@@ -393,6 +425,69 @@ internal sealed class EditorInternalNavigation : Grid
         _content.Content = selectedContent;
         RefreshVisuals();
         if (notify) _selectionChanged?.Invoke(section.Id);
+    }
+
+    public bool RevealAuthoringTarget(string fieldId, bool selectsItem)
+    {
+        var matches = _sections
+            .Where((section) => ContainsAuthoringTarget(
+                section,
+                fieldId,
+                selectsItem))
+            .ToArray();
+        if (matches.Length != 1)
+        {
+            return false;
+        }
+
+        Select(matches[0].Id, notify: true);
+        if (ContainsAuthoringTarget(
+                _content,
+                fieldId,
+                selectsItem))
+        {
+            return true;
+        }
+
+        return _content
+            .GetLogicalDescendants()
+            .OfType<IEditorAuthoringSectionTarget>()
+            .Any((target) => target.RevealAuthoringTarget(
+                fieldId,
+                selectsItem));
+    }
+
+    private static bool ContainsAuthoringTarget(
+        EditorInternalNavigationSection section,
+        string fieldId,
+        bool selectsItem) =>
+        ContainsAuthoringTarget(section.Content, fieldId, selectsItem)
+        || (section.Subcards?.Any((subcard) =>
+            ContainsAuthoringTarget(subcard, fieldId, selectsItem)) ?? false);
+
+    private static bool ContainsAuthoringTarget(
+        Control content,
+        string fieldId,
+        bool selectsItem)
+    {
+        if (selectsItem)
+        {
+            return (content is IEditorAuthoringItemTarget direct
+                    && direct.FieldId.Equals(fieldId, StringComparison.Ordinal))
+                || content.GetLogicalDescendants()
+                    .OfType<IEditorAuthoringItemTarget>()
+                    .Any((target) => target.FieldId.Equals(
+                        fieldId,
+                        StringComparison.Ordinal));
+        }
+
+        return (content is DictionaryFieldControl field
+                && field.FieldId.Equals(fieldId, StringComparison.Ordinal))
+            || content.GetLogicalDescendants()
+                .OfType<DictionaryFieldControl>()
+                .Any((target) => target.FieldId.Equals(
+                    fieldId,
+                    StringComparison.Ordinal));
     }
 
     private static Control CreateSelectedContent(EditorInternalNavigationSection section)

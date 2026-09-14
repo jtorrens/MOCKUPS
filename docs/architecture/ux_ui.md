@@ -313,6 +313,15 @@ disabled and reports that it has no associated editor. The interaction never
 derives authoring context from a renderable id, primitive type, label,
 hierarchy position or visual geometry.
 
+When the exact field belongs to an internal editor section, the shared section
+navigator selects that section before revealing the field or stable collection
+item. This applies equally to every Screen Payload and Test Values collection;
+the structured-collection host expands the exact stable item and the focus
+controller never infers a section or item from a concrete field name. A
+successfully resolved Preview-authoring focus also activates its Screen Payload
+or Test Values utility tab; the previously locked Preview remains mounted as
+the retained visual context.
+
 When a visible value originates in Screen Payload and is explicitly forwarded
 through Component Runtime Inputs, the leaf row navigates back to that exact
 Runtime field and stable collection item. Its surrounding rows may still lead

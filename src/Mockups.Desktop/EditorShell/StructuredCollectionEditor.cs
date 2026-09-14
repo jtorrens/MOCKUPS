@@ -65,7 +65,7 @@ internal sealed class StructuredCollectionEditor
 
     public StructuredCollectionEditingContext Context => _context;
 
-    public Control Create()
+    public Control Create(string authoringFieldId = "")
     {
         var footer = EditorCollectionItemControls.CreateFooter(
             _itemLabel,
@@ -112,7 +112,10 @@ internal sealed class StructuredCollectionEditor
         }
 
         var result = new StackPanel { Spacing = EditorUiDensity.Card(8) };
-        result.Children.Add(new EditorSubcardLayoutHost(subcards, EditorSubcardLayout.FlatStack));
+        result.Children.Add(new EditorSubcardLayoutHost(
+            subcards,
+            EditorSubcardLayout.FlatStack,
+            authoringFieldId: authoringFieldId));
         if (footer is Panel panel && panel.Children.Count > 0) result.Children.Add(footer);
         return result;
     }

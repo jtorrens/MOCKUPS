@@ -27,6 +27,11 @@ internal interface IEditorAuthoringItemTarget
     bool SelectItem(string itemId);
 }
 
+internal interface IEditorAuthoringSectionTarget
+{
+    bool RevealAuthoringTarget(string fieldId, bool selectsItem);
+}
+
 internal sealed class EditorAuthoringFocusController
 {
     private readonly Action _cancelViewRestore;
@@ -88,6 +93,10 @@ internal sealed class EditorAuthoringFocusController
         }
 
         _pending = null;
+        RevealPreviewAuthoringSection(
+            content,
+            pending.FieldId,
+            !string.IsNullOrWhiteSpace(pending.ItemId));
         if (!string.IsNullOrWhiteSpace(pending.ItemId))
         {
             var itemTargets = content
@@ -101,7 +110,7 @@ internal sealed class EditorAuthoringFocusController
                 || !itemTargets[0].SelectItem(pending.ItemId))
             {
                 _messages.Warning(
-                    "External Media",
+                    "Preview element",
                     $"Preview authoring field '{pending.FieldId}' has no item '{pending.ItemId}'.");
                 return false;
             }
@@ -122,7 +131,7 @@ internal sealed class EditorAuthoringFocusController
         if (fields.Length != 1)
         {
             _messages.Warning(
-                "External Media",
+                "Preview element",
                 fields.Length == 0
                     ? $"Preview authoring field '{pending.FieldId}' is unavailable."
                     : $"More than one Preview authoring control owns '{pending.FieldId}'.");
@@ -130,6 +139,28 @@ internal sealed class EditorAuthoringFocusController
         }
         DeferredBringIntoView.Request(fields[0]);
         return true;
+    }
+
+    private static void RevealPreviewAuthoringSection(
+        Control content,
+        string fieldId,
+        bool selectsItem)
+    {
+        var navigators = content
+            .GetLogicalDescendants()
+            .OfType<IEditorAuthoringSectionTarget>()
+            .ToArray();
+        if (content is IEditorAuthoringSectionTarget root)
+        {
+            navigators = [root, .. navigators];
+        }
+        foreach (var navigator in navigators)
+        {
+            if (navigator.RevealAuthoringTarget(fieldId, selectsItem))
+            {
+                return;
+            }
+        }
     }
 
     private bool ApplyEditor(

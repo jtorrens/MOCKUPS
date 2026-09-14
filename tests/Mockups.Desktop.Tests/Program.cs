@@ -9075,6 +9075,70 @@ static void PreviewAuthoringFocusRevealsExactCard()
             "component.iconRow.items:button_attachment:expanded"));
         Equal(0, messages.Warnings.Count);
         window.Close();
+
+        var previewItemTarget = new EditorSubcardLayoutHost(
+            [
+                new EditorInternalNavigationSection(
+                    "message_other",
+                    "Message 1",
+                    "Other",
+                    EditorIcons.Component,
+                    new TextBlock { Text = "Other" }),
+                new EditorInternalNavigationSection(
+                    "message_005",
+                    "Message 2",
+                    "Target",
+                    EditorIcons.Component,
+                    new TextBlock { Text = "Target" }),
+            ],
+            EditorSubcardLayout.FlatStack,
+            authoringFieldId: "messages");
+        var previewNavigation = new EditorSubcardLayoutHost(
+            [
+                new EditorInternalNavigationSection(
+                    "general",
+                    "General",
+                    "Runtime inputs",
+                    EditorIcons.General,
+                    new TextBlock { Text = "General" }),
+                new EditorInternalNavigationSection(
+                    "messages",
+                    "Messages",
+                    "1 active instance",
+                    EditorIcons.Component,
+                    previewItemTarget),
+            ],
+            EditorSubcardLayout.VerticalCards);
+        var previewOwner = new ProjectTreeNode(
+            ProjectTreeNodeKind.ModuleInstance,
+            "screen_conversation",
+            "Conversation",
+            "",
+            "module.core.chat");
+        var previewWindow = new Window { Content = previewNavigation };
+        previewWindow.Show();
+        Dispatcher.UIThread.RunJobs();
+        focus.Request(new EditorAuthoringFocusRequest(
+            previewOwner.Id,
+            previewOwner.RecordClassId,
+            [],
+            "messages",
+            "message_005",
+            EditorAuthoringFocusSurface.PreviewAuthoring));
+
+        True(focus.ApplyPreviewAuthoring(
+            previewOwner,
+            previewNavigation));
+        var previewCards = previewItemTarget
+            .GetLogicalDescendants()
+            .OfType<InstantEditorCard>()
+            .ToArray();
+        Equal(2, previewCards.Length);
+        True(!previewCards[0].IsExpanded);
+        True(previewCards[1].IsExpanded);
+        True(previewItemTarget.IsAttachedToVisualTree());
+        Equal(0, messages.Warnings.Count);
+        previewWindow.Close();
     },
     CancellationToken.None);
 }
