@@ -351,10 +351,8 @@
                           "textSizeToken": "theme.typography.sizes.s",
                           "buttonOverrides": {
                             "button": {
-                              "states": {
-                                "normal": {
-                                  "iconColorToken": "theme.borders.alternate"
-                                }
+                              "appearance": {
+                                "iconColorToken": "theme.borders.alternate"
                               },
                               "size": "25|25"
                             }

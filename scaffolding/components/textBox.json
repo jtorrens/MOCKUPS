@@ -244,13 +244,11 @@
                     "textSizeToken": "theme.typography.sizes.s",
                     "buttonOverrides": {
                       "button": {
-                        "states": {
-                          "normal": {
-                            "surfaceSlot": {
-                              "overrides": {
-                                "surface": {},
-                                "style": {}
-                              }
+                        "appearance": {
+                          "surfaceSlot": {
+                            "overrides": {
+                              "surface": {},
+                              "style": {}
                             }
                           }
                         }

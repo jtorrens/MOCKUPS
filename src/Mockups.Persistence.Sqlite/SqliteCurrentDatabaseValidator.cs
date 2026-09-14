@@ -117,8 +117,56 @@ internal sealed partial class SqliteCurrentDatabaseValidator
         ValidateCurrentModuleRuntimeDocuments(connection);
         ValidateCurrentComponentVariants(connection);
         ValidateCurrentModuleVariantsAndAnimations(connection);
+        ValidateNoRetiredButtonStates(connection);
         ValidateCurrentSemanticTypographyReferences(connection);
         ValidateForeignKeyIntegrity(connection);
+    }
+
+    private void ValidateNoRetiredButtonStates(SqliteConnection connection)
+    {
+        foreach (var (table, column, _) in CurrentJsonColumns)
+        {
+            using var command = connection.CreateCommand();
+            command.CommandText = $"SELECT rowid, {column} FROM {table} ORDER BY rowid";
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                var context = $"{table} row {reader.GetInt64(0)} {column}";
+                ValidateNoRetiredButtonStatesNode(
+                    JsonNode.Parse(reader.GetString(1))
+                        ?? throw InvalidCurrentDatabase($"{context} is required."),
+                    context);
+            }
+        }
+    }
+
+    private void ValidateNoRetiredButtonStatesNode(
+        JsonNode node,
+        string context)
+    {
+        if (node is JsonArray array)
+        {
+            foreach (var child in array)
+            {
+                if (child is not null)
+                    ValidateNoRetiredButtonStatesNode(child, context);
+            }
+            return;
+        }
+        if (node is not JsonObject owner) return;
+
+        if (owner["button"] is JsonObject button
+            && button.ContainsKey("states"))
+        {
+            throw InvalidCurrentDatabase(
+                $"{context} contains retired button.states. Button overrides must use button.appearance.");
+        }
+
+        foreach (var (_, child) in owner)
+        {
+            if (child is not null)
+                ValidateNoRetiredButtonStatesNode(child, context);
+        }
     }
 
     private void ValidateCurrentProductionPalette(SqliteConnection connection)
