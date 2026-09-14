@@ -12316,7 +12316,6 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
         var store = new RuntimeInputInstanceDocumentStore(
             new SqliteRuntimeInputInstanceStore(
                 database.Context,
-                database.Design,
                 database.Production,
                 database.Resources),
             database.Production,
@@ -13386,12 +13385,10 @@ static void AppModuleRepositoryPreservesFocusedContract()
         var app = repository.GetApp(appNode.Id);
         var module = repository.GetModule(moduleNode.Id);
 
-        Equal(appSettings.ProjectId, app.ProjectId);
         Equal(appSettings.BundleKey, app.BundleKey);
         Equal(appSettings.AppType, app.AppType);
         Equal(appSettings.ConfigJson, app.ConfigJson);
         Equal(appSettings.MetadataJson, app.MetadataJson);
-        Equal(moduleSettings.ProjectId, module.ProjectId);
         Equal(moduleSettings.RecordClassId, module.RecordClassId);
         Equal(moduleSettings.SortOrder, module.SortOrder);
         True(JsonNode.DeepEquals(
@@ -14697,11 +14694,11 @@ static void ConversationPlayMessagesAdvancesRootOwnerFrame()
             database.Resources,
             database.ProjectPaths,
             () => { });
-        inputSession.UpdateForPayload(payload, module.ProjectId);
+        inputSession.UpdateForPayload(payload, payload.ProjectId);
         var interactivePayload = inputSession.ApplyInputs(
             payload,
             "light",
-            module.ProjectId);
+            payload.ProjectId);
 
         var frames = EditorPreviewController.PlaybackFramePayloads(
                 payload,
@@ -14717,7 +14714,7 @@ static void ConversationPlayMessagesAdvancesRootOwnerFrame()
         var previousFramePayload = inputSession.ApplyInputs(
             payload,
             "light",
-            module.ProjectId);
+            payload.ProjectId);
         Equal(frames.Count - 2, previousFramePayload.LocalFrame);
         Equal(true, JsonPath.RequiredBoolean(
             JsonPath.ParseRequiredObject(
@@ -14739,14 +14736,14 @@ static void ConversationPlayMessagesAdvancesRootOwnerFrame()
         Equal(4, inputSession.ApplyInputs(
             payload,
             "light",
-            module.ProjectId).LocalFrame);
+            payload.ProjectId).LocalFrame);
         True(inputSession.SetActionFrame(action.Id, frames.Count + 20));
         Equal(frames.Count - 1, inputSession.CurrentActionFrame(action.Id));
         True(inputSession.RestoreAction(action.Id));
         var restoredPayload = inputSession.ApplyInputs(
             payload,
             "light",
-            module.ProjectId);
+            payload.ProjectId);
         Equal(0, restoredPayload.LocalFrame);
         Equal(true, JsonPath.RequiredBoolean(
             JsonPath.ParseRequiredObject(
@@ -17489,9 +17486,8 @@ static void ProductionRuntimeCommitsDiscardTransientPreviewValues()
             node.Kind == ProjectTreeNodeKind.ModuleInstance
             && database.GetModuleInstanceVariantSettings(node.Id)
                 .RecordClassId == ModuleRuntimeDocumentContracts.ConversationRecordClassId);
-        var projectId = database
-            .GetModuleInstanceVariantSettings(screen.Id)
-            .ProjectId;
+        var instance = database.GetModuleInstanceSettings(screen.Id);
+        var projectId = database.GetShotSettings(instance.ShotId).ProjectId;
         var actorIds = nodes
             .Where((node) => node.Kind == ProjectTreeNodeKind.Actor)
             .Select((node) => node.Id)
@@ -18106,7 +18102,6 @@ static void ConversationMessageActorsFollowDirectionContract()
         var store = new RuntimeInputInstanceDocumentStore(
             new SqliteRuntimeInputInstanceStore(
                 database.Context,
-                database.Design,
                 database.Production,
                 database.Resources),
             database.Production,
@@ -24546,7 +24541,6 @@ internal sealed class RecordingVariantHistoryStore : IVariantHistoryStore
     {
         ReadThreadIds.Add(Environment.CurrentManagedThreadId);
         return new ModuleSettings(
-            "project",
             "module.history",
             0,
             ConfigByVariant[variantNode.Id],

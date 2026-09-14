@@ -11,7 +11,6 @@
   "module": {
     "moduleId": "module_project_foqn_s2_lock_screen",
     "appId": "app_project_foqn_s2_system",
-    "projectId": "project_foqn_s2",
     "recordClassId": "module.core.lockScreen",
     "name": "Lock Screen",
     "notes": "Initial Lock Screen module: inherited Actor wallpaper and dedicated system component variants.",

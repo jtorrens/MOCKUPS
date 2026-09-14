@@ -6,7 +6,6 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed class SqliteRuntimeInputInstanceStore(
     SqliteProjectContext context,
-    SqliteDesignOwner design,
     SqliteProductionOwner production,
     SqliteResourceOwner resources)
     : IRuntimeInputInstanceStore
@@ -81,12 +80,12 @@ internal sealed class SqliteRuntimeInputInstanceStore(
         var instance = production.ModuleInstanceRepository.Get(
             connection,
             moduleInstanceId);
-        var module = design.AppModuleRepository.GetModule(
+        var shot = production.ShotRepository.Get(
             connection,
-            instance.ModuleId);
+            instance.ShotId);
         return resources.ActorRepository.QueryAll(connection)
             .Where((actor) => actor.ProjectId.Equals(
-                module.ProjectId,
+                shot.ProjectId,
                 StringComparison.Ordinal))
             .Select((actor) => actor.Id)
             .ToHashSet(StringComparer.Ordinal);

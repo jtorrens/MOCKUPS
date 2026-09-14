@@ -11,7 +11,6 @@
   "module": {
     "moduleId": "module_project_foqn_s2_video_call",
     "appId": "app_project_foqn_s2_video_call",
-    "projectId": "project_foqn_s2",
     "recordClassId": "module.core.videoCall",
     "name": "Video Call",
     "notes": "Hybrid mobile video call for one-to-one and group layouts.",

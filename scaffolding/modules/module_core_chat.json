@@ -11,7 +11,6 @@
   "module": {
     "moduleId": "module_core_chat",
     "appId": "app_core_chat",
-    "projectId": "project_foqn_s2",
     "recordClassId": "module.core.chat",
     "name": "Conversation",
     "notes": "Seed conversation module linked to Chat app.",

@@ -237,7 +237,7 @@ internal sealed class ReferenceUsageService :
 
         using (var command = connection.CreateCommand())
         {
-            command.CommandText = "SELECT mi.id, mi.name, mi.shot_id, mi.app_id, mi.module_id, mi.metadata_json, mi.theme_override_id, a.project_id FROM module_instances mi JOIN apps a ON a.id = mi.app_id";
+            command.CommandText = "SELECT mi.id, mi.name, mi.shot_id, mi.app_id, mi.module_id, mi.metadata_json, mi.theme_override_id, e.project_id FROM module_instances mi JOIN shots s ON s.id = mi.shot_id JOIN episodes e ON e.id = s.episode_id";
             using var reader = command.ExecuteReader();
             while (reader.Read())
             {
@@ -259,11 +259,11 @@ internal sealed class ReferenceUsageService :
 
         using (var command = connection.CreateCommand())
         {
-            command.CommandText = "SELECT m.id, m.name, m.app_id, a.project_id FROM modules m JOIN apps a ON a.id = m.app_id";
+            command.CommandText = "SELECT m.id, m.name, m.app_id FROM modules m";
             using var reader = command.ExecuteReader();
             while (reader.Read())
             {
-                var source = new SourceContext(reader.GetString(0), ProjectTreeNodeKind.Module, "Module", reader.GetString(1), ReferenceUsageScope.Design, reader.GetString(3));
+                var source = new SourceContext(reader.GetString(0), ProjectTreeNodeKind.Module, "Module", reader.GetString(1), ReferenceUsageScope.Design);
                 AddExact(usages, targets, ProjectTreeNodeKind.App, reader.GetString(2), source, "App");
             }
         }
@@ -369,11 +369,11 @@ internal sealed class ReferenceUsageService :
         ICollection<ReferenceUsageRecord> usages)
     {
         using var command = connection.CreateCommand();
-        command.CommandText = "SELECT id, name, config_json, project_id FROM apps";
+        command.CommandText = "SELECT id, name, config_json FROM apps";
         using var reader = command.ExecuteReader();
         while (reader.Read())
         {
-            var source = new SourceContext(reader.GetString(0), ProjectTreeNodeKind.App, "App", reader.GetString(1), ReferenceUsageScope.Design, reader.GetString(3));
+            var source = new SourceContext(reader.GetString(0), ProjectTreeNodeKind.App, "App", reader.GetString(1), ReferenceUsageScope.Design);
             var config = JsonPath.ParseRequiredObject(ReadString(reader, 2), $"App '{source.NodeId}' config_json");
             foreach (var declaration in AppPaletteReferencePaths)
             {
@@ -440,13 +440,12 @@ internal sealed class ReferenceUsageService :
                     ProjectTreeNodeKind.ModuleVariant,
                     "Module Variant",
                     $"{module.Name} · {variant.Name}",
-                    ReferenceUsageScope.Design,
-                    module.ProjectId);
+                    ReferenceUsageScope.Design);
                 ScanModuleConfig(variant.Config, source, targets, usages, componentsByReference);
             }
 
             var defaultVariant = module.Variants.Single((variant) => variant.Id.Equals(VariantEnvelopeContract.DefaultId, StringComparison.Ordinal));
-            var previewSource = new SourceContext(module.Id, ProjectTreeNodeKind.Module, "Module", module.Name, ReferenceUsageScope.Design, module.ProjectId);
+            var previewSource = new SourceContext(module.Id, ProjectTreeNodeKind.Module, "Module", module.Name, ReferenceUsageScope.Design);
             AddRuntimeDocumentReferences(
                 module.DesignPreview,
                 defaultVariant.Config,
@@ -469,7 +468,7 @@ internal sealed class ReferenceUsageService :
         var modulesById = modules.ToDictionary((module) => module.Id, StringComparer.Ordinal);
         var componentsByReference = ComponentReferenceIndex(components);
         using var command = connection.CreateCommand();
-        command.CommandText = "SELECT mi.id, mi.name, mi.module_id, mi.content_json, mi.metadata_json, a.project_id FROM module_instances mi JOIN apps a ON a.id = mi.app_id";
+        command.CommandText = "SELECT mi.id, mi.name, mi.module_id, mi.content_json, mi.metadata_json, e.project_id FROM module_instances mi JOIN shots s ON s.id = mi.shot_id JOIN episodes e ON e.id = s.episode_id";
         using var reader = command.ExecuteReader();
         while (reader.Read())
         {
@@ -991,18 +990,17 @@ internal sealed class ReferenceUsageService :
     {
         var modules = new List<ModuleOwner>();
         using var command = connection.CreateCommand();
-        command.CommandText = "SELECT m.id, a.project_id, m.name, m.design_preview_json, m.metadata_json FROM modules m JOIN apps a ON a.id = m.app_id";
+        command.CommandText = "SELECT m.id, m.name, m.design_preview_json, m.metadata_json FROM modules m";
         using var reader = command.ExecuteReader();
         while (reader.Read())
         {
             var id = reader.GetString(0);
-            var metadata = JsonPath.ParseRequiredObject(ReadString(reader, 4), $"Module '{id}' metadata_json");
+            var metadata = JsonPath.ParseRequiredObject(ReadString(reader, 3), $"Module '{id}' metadata_json");
             var variants = ReadVariants(metadata, "variants", id, "variant");
             modules.Add(new ModuleOwner(
                 id,
                 reader.GetString(1),
-                reader.GetString(2),
-                JsonPath.ParseRequiredObject(ReadString(reader, 3), $"Module '{id}' design_preview_json"),
+                JsonPath.ParseRequiredObject(ReadString(reader, 2), $"Module '{id}' design_preview_json"),
                 variants));
         }
         return modules;
@@ -1108,7 +1106,6 @@ internal sealed class ReferenceUsageService :
 
     private sealed record ModuleOwner(
         string Id,
-        string ProjectId,
         string Name,
         JsonObject DesignPreview,
         IReadOnlyList<VariantOwner> Variants);

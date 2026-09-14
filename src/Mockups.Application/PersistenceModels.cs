@@ -67,14 +67,12 @@ public sealed record ProductionOutputShotContext(
     ShotManagerShotAssociation ShotManagerShot);
 
 public sealed record AppSettings(
-    string ProjectId,
     string BundleKey,
     string AppType,
     string ConfigJson,
     string MetadataJson);
 
 public sealed record ModuleSettings(
-    string ProjectId,
     string RecordClassId,
     int SortOrder,
     string ConfigJson,

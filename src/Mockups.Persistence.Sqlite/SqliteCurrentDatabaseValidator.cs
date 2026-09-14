@@ -950,7 +950,6 @@ internal sealed partial class SqliteCurrentDatabaseValidator
     private void ValidateCurrentReferences(SqliteConnection connection)
     {
         RequireNoRows(connection, "SELECT 1 FROM shots s LEFT JOIN episodes e ON e.id = s.episode_id WHERE e.id IS NULL", "shot without episode");
-        RequireNoRows(connection, "SELECT 1 FROM apps a LEFT JOIN projects p ON p.id = a.project_id WHERE p.id IS NULL", "app without project");
         RequireNoRows(connection, "SELECT 1 FROM modules m LEFT JOIN apps a ON a.id = m.app_id WHERE a.id IS NULL", "module without app");
         RequireNoRows(connection, "SELECT 1 FROM module_instances mi LEFT JOIN shots s ON s.id = mi.shot_id WHERE s.id IS NULL", "module instance without shot");
         RequireNoRows(connection, "SELECT 1 FROM module_instances mi LEFT JOIN modules m ON m.id = mi.module_id WHERE m.id IS NULL", "module instance without module");

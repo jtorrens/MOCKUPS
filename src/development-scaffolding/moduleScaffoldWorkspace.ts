@@ -264,15 +264,12 @@ export function verifyModuleScaffoldImplementation(
     const row = database.prepare(`
       SELECT m.id,
              m.app_id,
-             a.project_id,
              m.record_class_id
       FROM modules m
-      JOIN apps a ON a.id = m.app_id
       WHERE m.id = ?
     `).get(spec.module.moduleId) as {
       id: string;
       app_id: string;
-      project_id: string;
       record_class_id: string;
     } | undefined;
     if (!row) {
@@ -281,13 +278,11 @@ export function verifyModuleScaffoldImplementation(
       const identity = {
         id: row.id,
         appId: row.app_id,
-        projectId: row.project_id,
         recordClassId: row.record_class_id,
       };
       if (canonicalJson(identity) !== canonicalJson({
         id: spec.module.moduleId,
         appId: spec.module.appId,
-        projectId: spec.module.projectId,
         recordClassId: spec.module.recordClassId,
       })) {
         violations.push(`Module '${spec.module.moduleId}' stable identity differs.`);

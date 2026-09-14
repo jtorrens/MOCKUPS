@@ -24,7 +24,7 @@ internal sealed class AppModuleRepository : IAppModuleRepository
     public AppDefinitionRecord GetApp(SqliteConnection connection, string appId)
     {
         using var command = connection.CreateCommand();
-        command.CommandText = "SELECT id, project_id, record_class_id, name, bundle_key, app_type, notes, sort_order, config_json, metadata_json FROM apps WHERE id = $id";
+        command.CommandText = "SELECT id, record_class_id, name, bundle_key, app_type, notes, sort_order, config_json, metadata_json FROM apps WHERE id = $id";
         command.Parameters.AddWithValue("$id", appId);
         using var reader = command.ExecuteReader();
         if (!reader.Read())
@@ -45,10 +45,9 @@ internal sealed class AppModuleRepository : IAppModuleRepository
     {
         using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT m.id, m.app_id, a.project_id, m.record_class_id, m.name, m.notes, m.sort_order,
+            SELECT m.id, m.app_id, m.record_class_id, m.name, m.notes, m.sort_order,
                    m.config_json, m.design_preview_json, m.metadata_json
             FROM modules m
-            JOIN apps a ON a.id = m.app_id
             WHERE m.id = $id
             """;
         command.Parameters.AddWithValue("$id", moduleId);
@@ -72,7 +71,7 @@ internal sealed class AppModuleRepository : IAppModuleRepository
     {
         var rows = new List<AppDefinitionRecord>();
         using var command = connection.CreateCommand();
-        command.CommandText = "SELECT id, project_id, record_class_id, name, bundle_key, app_type, notes, sort_order, config_json, metadata_json FROM apps ORDER BY sort_order, name, id";
+        command.CommandText = "SELECT id, record_class_id, name, bundle_key, app_type, notes, sort_order, config_json, metadata_json FROM apps ORDER BY sort_order, name, id";
         using var reader = command.ExecuteReader();
         while (reader.Read())
         {
@@ -87,10 +86,9 @@ internal sealed class AppModuleRepository : IAppModuleRepository
         var rows = new List<ModuleDefinitionRecord>();
         using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT m.id, m.app_id, a.project_id, m.record_class_id, m.name, m.notes, m.sort_order,
+            SELECT m.id, m.app_id, m.record_class_id, m.name, m.notes, m.sort_order,
                    m.config_json, m.design_preview_json, m.metadata_json
             FROM modules m
-            JOIN apps a ON a.id = m.app_id
             ORDER BY m.sort_order, m.name, m.id
             """;
         using var reader = command.ExecuteReader();
@@ -227,10 +225,9 @@ internal sealed class AppModuleRepository : IAppModuleRepository
             reader.GetString(3),
             SqliteCommandExecutor.ReadString(reader, 4),
             SqliteCommandExecutor.ReadString(reader, 5),
-            SqliteCommandExecutor.ReadString(reader, 6),
-            reader.GetInt32(7),
-            SqliteCommandExecutor.ReadString(reader, 8),
-            SqliteCommandExecutor.ReadString(reader, 9));
+            reader.GetInt32(6),
+            SqliteCommandExecutor.ReadString(reader, 7),
+            SqliteCommandExecutor.ReadString(reader, 8));
         JsonPath.ParseRequiredObject(record.ConfigJson, $"App '{record.Id}' config_json");
         JsonPath.ParseRequiredObject(record.MetadataJson, $"App '{record.Id}' metadata_json");
         return record;
@@ -243,12 +240,11 @@ internal sealed class AppModuleRepository : IAppModuleRepository
             reader.GetString(1),
             reader.GetString(2),
             reader.GetString(3),
-            reader.GetString(4),
-            SqliteCommandExecutor.ReadString(reader, 5),
-            reader.GetInt32(6),
+            SqliteCommandExecutor.ReadString(reader, 4),
+            reader.GetInt32(5),
+            SqliteCommandExecutor.ReadString(reader, 6),
             SqliteCommandExecutor.ReadString(reader, 7),
-            SqliteCommandExecutor.ReadString(reader, 8),
-            SqliteCommandExecutor.ReadString(reader, 9));
+            SqliteCommandExecutor.ReadString(reader, 8));
         CurrentModuleConfigContract.Validate(
             record.RecordClassId,
             JsonPath.ParseRequiredObject(record.ConfigJson, $"Module '{record.Id}' config_json"),

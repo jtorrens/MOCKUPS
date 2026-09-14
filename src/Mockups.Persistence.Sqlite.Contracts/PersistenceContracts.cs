@@ -114,7 +114,6 @@ internal sealed record IconThemeRecord(
 
 internal sealed record AppDefinitionRecord(
     string Id,
-    string ProjectId,
     string RecordClassId,
     string Name,
     string BundleKey,
@@ -127,7 +126,6 @@ internal sealed record AppDefinitionRecord(
 internal sealed record ModuleDefinitionRecord(
     string Id,
     string AppId,
-    string ProjectId,
     string RecordClassId,
     string Name,
     string Notes,

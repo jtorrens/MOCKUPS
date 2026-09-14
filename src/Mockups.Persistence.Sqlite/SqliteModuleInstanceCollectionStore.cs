@@ -31,7 +31,6 @@ internal sealed class SqliteModuleInstanceCollectionStore
         var shot = _production.ShotRepository.Get(connection, shotId);
         var apps = _design.AppModuleRepository
             .QueryApps(connection)
-            .Where((app) => app.ProjectId == shot.ProjectId)
             .OrderBy((app) => app.SortOrder)
             .ThenBy((app) => app.Name)
             .ToDictionary((app) => app.Id, StringComparer.Ordinal);
@@ -56,12 +55,12 @@ internal sealed class SqliteModuleInstanceCollectionStore
         ShotModuleInstanceDraft draft)
     {
         using var connection = _context.OpenConnection();
-        var module = _design.GetModuleSettings(draft.Module.Id);
+        var shotSettings = _production.GetShotSettings(shot.Id);
         return _production.AddModuleInstance(
             connection,
             shot,
             draft,
-            ProjectActorIds(connection, module.ProjectId));
+            ProjectActorIds(connection, shotSettings.ProjectId));
     }
 
     internal void Delete(ProjectTreeNode node)

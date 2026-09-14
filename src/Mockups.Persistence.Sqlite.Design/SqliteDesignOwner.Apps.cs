@@ -11,7 +11,6 @@ internal sealed partial class SqliteDesignOwner
         var record = _appModuleRepository.GetApp(appId);
 
         return new AppSettings(
-            record.ProjectId,
             record.BundleKey,
             record.AppType,
             record.ConfigJson,

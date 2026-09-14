@@ -59,7 +59,7 @@ internal static class EditorNavigationMetadata
         return node.Kind switch
         {
             ProjectTreeNodeKind.Project => "Episodes, shots, screens and modules",
-            ProjectTreeNodeKind.AppsRoot => "Apps and module defaults",
+            ProjectTreeNodeKind.AppsRoot => "System Apps, Modules and Variants",
             ProjectTreeNodeKind.RenderQueueRoot => "Local render jobs and history",
             ProjectTreeNodeKind.ExternalMediaRoot => "Authored external files and folders",
             ProjectTreeNodeKind.ProductionDataRoot => "Actors, devices, fonts, themes and Palette values",

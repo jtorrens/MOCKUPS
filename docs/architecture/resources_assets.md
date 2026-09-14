@@ -45,10 +45,10 @@ paths. It traverses only fields declared with the corresponding media
 Theme asset-root documents owned by their repositories. It never scans
 arbitrary JSON text or infers authored references from file extensions.
 
-The index covers Project-owned Module Variants and their Design Test Values,
-plus every Production Screen payload, local Override and media-valued animation
-keyframe. Global Component Design fixtures live in App Support and remain
-outside every Project inventory. An animated media
+The index projects global App relative resource paths through the selected
+Project media root and covers every Production Screen payload, local Override
+and media-valued animation keyframe. Global Component and Module Design
+fixtures live in App Support and remain outside every Project inventory. An animated media
 usage retains the exact animation track and keyframe ids so replacement writes
 only that authored keyframe through the Module Instance animation owner. Each
 Production Font family directory is represented once. System Icon Theme

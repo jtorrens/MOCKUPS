@@ -94,7 +94,6 @@ internal sealed class SqliteProjectTestContext
         RuntimeInputInstances =
             new SqliteRuntimeInputInstanceStore(
                 context,
-                Design,
                 Production,
                 Resources);
 

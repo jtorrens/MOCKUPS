@@ -15,11 +15,12 @@ internal sealed class SqliteModuleInstanceAnimationStore(
         string moduleInstanceId,
         string animationJson)
     {
-        var module = production.GetModuleInstanceVariantSettings(moduleInstanceId);
+        var instance = production.GetModuleInstanceSettings(moduleInstanceId);
+        var shot = production.GetShotSettings(instance.ShotId);
         var recordIds = new Dictionary<string, IReadOnlySet<string>>(
             StringComparer.Ordinal)
         {
-            ["actors"] = resources.GetRequiredActorOptions(module.ProjectId)
+            ["actors"] = resources.GetRequiredActorOptions(shot.ProjectId)
                 .Select((option) => option.Value)
                 .ToHashSet(StringComparer.Ordinal),
         };

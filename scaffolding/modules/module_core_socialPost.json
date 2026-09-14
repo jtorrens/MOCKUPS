@@ -3,7 +3,6 @@
   "module": {
     "moduleId": "module_project_foqn_s2_social_post",
     "appId": "app_project_foqn_s2_social_media",
-    "projectId": "project_foqn_s2",
     "recordClassId": "module.core.socialPost",
     "name": "Social Post",
     "notes": "Social Post header phase with two symmetric five-slot rows.",

@@ -85,7 +85,6 @@ internal static class SqliteProjectSessionFactory
         var runtimeInputInstances =
             new SqliteRuntimeInputInstanceStore(
                 context,
-                design,
                 production,
                 resources);
         var animations =

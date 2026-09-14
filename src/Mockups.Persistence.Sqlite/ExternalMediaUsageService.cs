@@ -73,8 +73,7 @@ internal sealed class ExternalMediaUsageService : IExternalMediaUsageQuery
         using (var command = connection.CreateCommand())
         {
             command.CommandText =
-                "SELECT id, name, record_class_id, config_json FROM apps WHERE project_id = $projectId";
-            command.Parameters.AddWithValue("$projectId", projectId);
+                "SELECT id, name, record_class_id, config_json FROM apps";
             using var reader = command.ExecuteReader();
             while (reader.Read())
             {
@@ -281,7 +280,7 @@ internal sealed class ExternalMediaUsageService : IExternalMediaUsageQuery
         var modulesById = modules.ToDictionary((module) => module.Id, StringComparer.Ordinal);
         using var command = connection.CreateCommand();
         command.CommandText =
-            "SELECT mi.id, mi.name, mi.module_id, mi.content_json, mi.metadata_json, mi.animation_json FROM module_instances mi JOIN apps a ON a.id = mi.app_id WHERE a.project_id = $projectId";
+            "SELECT mi.id, mi.name, mi.module_id, mi.content_json, mi.metadata_json, mi.animation_json FROM module_instances mi JOIN shots s ON s.id = mi.shot_id JOIN episodes e ON e.id = s.episode_id WHERE e.project_id = $projectId";
         command.Parameters.AddWithValue("$projectId", projectId);
         using var reader = command.ExecuteReader();
         while (reader.Read())
@@ -957,8 +956,7 @@ internal sealed class ExternalMediaUsageService : IExternalMediaUsageQuery
         var result = new List<ModuleOwner>();
         using var command = connection.CreateCommand();
         command.CommandText =
-            "SELECT m.id, m.name, m.record_class_id, m.design_preview_json, m.metadata_json FROM modules m JOIN apps a ON a.id = m.app_id WHERE a.project_id = $projectId";
-        command.Parameters.AddWithValue("$projectId", projectId);
+            "SELECT m.id, m.name, m.record_class_id, m.design_preview_json, m.metadata_json FROM modules m";
         using var reader = command.ExecuteReader();
         while (reader.Read())
         {

@@ -330,7 +330,6 @@ internal sealed partial class SqliteDesignOwner
                     "Module variant has no config.");
             UpdateModuleConfigFieldValue(
                 connection,
-                module.ProjectId,
                 module.RecordClassId,
                 config,
                 fieldId,

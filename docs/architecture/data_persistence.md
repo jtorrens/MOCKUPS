@@ -5,7 +5,7 @@ Status: normative.
 ## Database scope
 
 The desktop application persists one complete Project workspace in SQLite.
-Schema version `22` is the only current schema. Authored Production rows belong
+Schema version `23` is the only current schema. Authored Production rows belong
 directly or indirectly to a Project; System catalog rows are explicitly global.
 Cross-Project lookup remains invalid.
 
@@ -15,7 +15,7 @@ The current tables are:
 | --- | --- | --- |
 | Workspace | `projects` | Root of all authored data |
 | Production | `episodes`, `shots`, `module_instances` | Project → Episode → Shot → ordered Screen |
-| Project definitions | `apps`, `modules` | Project-owned reusable definitions |
+| System definitions | `apps`, `modules` | Global Apps, Modules and complete Module Variants |
 | System Components | `component_classes` | Global Component Classes and complete Variants |
 | System Palette | `palette_colors` | Global identities and default RGB values |
 | Production Palette | `production_palette_values` | Complete Project-specific RGB values for the System catalog |

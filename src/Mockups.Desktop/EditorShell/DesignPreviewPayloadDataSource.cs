@@ -211,7 +211,11 @@ internal sealed class DesignPreviewPayloadDataSource
     public DesignPreviewModuleSource LoadModule(ProjectTreeNode node)
     {
         var settings = _database.GetModuleSettings(node.Id);
-        return ModuleSource(settings, node.Name, node.Id);
+        return ModuleSource(
+            settings,
+            node.Name,
+            node.Id,
+            ProjectAncestor(node).Id);
     }
 
     public DesignPreviewModuleSource LoadModuleVariant(ProjectTreeNode node)
@@ -225,7 +229,11 @@ internal sealed class DesignPreviewPayloadDataSource
                 $"Invalid Module Variant reference '{node.Id}'.");
         }
         var settings = _database.GetModuleVariantSettings(node);
-        return ModuleSource(settings, node.Name, moduleId);
+        return ModuleSource(
+            settings,
+            node.Name,
+            moduleId,
+            ProjectAncestor(node).Id);
     }
 
     public DesignPreviewModuleInstanceSource LoadModuleInstance(string moduleInstanceId)
@@ -237,12 +245,12 @@ internal sealed class DesignPreviewPayloadDataSource
         var shot = _database.GetShotSettings(instance.ShotId);
         return new DesignPreviewModuleInstanceSource(
             instance.Name,
-            module.ProjectId,
+            shot.ProjectId,
             instance.ShotId,
             module.RecordClassId,
             module.ConfigJson,
             _timeline.GetModuleInstanceRuntimePreviewJson(moduleInstanceId),
-            _database.GetComponentClassBaseConfigsJson(module.ProjectId),
+            _database.GetComponentClassBaseConfigsJson(shot.ProjectId),
             app.ConfigJson,
             instance.AnimationJson,
             shot.Fps);
@@ -349,15 +357,16 @@ internal sealed class DesignPreviewPayloadDataSource
     private DesignPreviewModuleSource ModuleSource(
         ModuleSettings settings,
         string name,
-        string moduleId)
+        string moduleId,
+        string projectId)
     {
         return new DesignPreviewModuleSource(
             name,
-            settings.ProjectId,
+            projectId,
             settings.RecordClassId,
             settings.ConfigJson,
             settings.DesignPreviewJson,
-            _database.GetComponentClassBaseConfigsJson(settings.ProjectId),
+            _database.GetComponentClassBaseConfigsJson(projectId),
             _database.GetModuleAppSettings(moduleId).ConfigJson);
     }
 

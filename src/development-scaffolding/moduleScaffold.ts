@@ -55,7 +55,6 @@ export interface ModuleScaffoldSpec {
   module: {
     moduleId: string;
     appId: string;
-    projectId: string;
     recordClassId: string;
     name: string;
     notes: string;
@@ -112,14 +111,12 @@ export interface ModuleScaffoldSpec {
 interface ModuleInventoryRow {
   id: string;
   appId: string;
-  projectId: string;
   recordClassId: string;
   name: string;
 }
 
 interface AppInventoryRow {
   id: string;
-  projectId: string;
   name: string;
 }
 
@@ -134,7 +131,6 @@ interface RuntimeSourceRow {
 export interface ModuleScaffoldInventory {
   moduleClasses: ReadonlySet<string>;
   componentTypes: ReadonlySet<string>;
-  projectIds: ReadonlySet<string>;
   recordClassIds: ReadonlySet<string>;
   apps: readonly AppInventoryRow[];
   modules: readonly ModuleInventoryRow[];
@@ -251,7 +247,6 @@ export function parseModuleScaffoldSpec(value: unknown): ModuleScaffoldSpec {
   requireExactKeys(module, [
     "moduleId",
     "appId",
-    "projectId",
     "recordClassId",
     "name",
     "notes",
@@ -346,7 +341,6 @@ export function parseModuleScaffoldSpec(value: unknown): ModuleScaffoldSpec {
     module: {
       moduleId: requiredString(module.moduleId, "Module scaffold moduleId"),
       appId: requiredString(module.appId, "Module scaffold appId"),
-      projectId: requiredString(module.projectId, "Module scaffold projectId"),
       recordClassId: requiredString(module.recordClassId, "Module scaffold recordClassId"),
       name: requiredString(module.name, "Module scaffold name"),
       notes: requiredString(module.notes, "Module scaffold notes", true),
@@ -445,26 +439,20 @@ export function loadModuleScaffoldInventory(
     return {
       moduleClasses: new Set(Object.keys(modules)),
       componentTypes: new Set(Object.keys(components)),
-      projectIds: new Set(
-        (database.prepare("SELECT id FROM projects").all() as Array<{ id: string }>)
-          .map((row) => row.id),
-      ),
       recordClassIds: new Set(
         (database.prepare("SELECT record_class_id AS id FROM editor_layouts").all() as Array<{ id: string }>)
           .map((row) => row.id),
       ),
       apps: database.prepare(`
-        SELECT id, project_id AS projectId, name
+        SELECT id, name
         FROM apps
       `).all() as AppInventoryRow[],
       modules: database.prepare(`
         SELECT m.id,
                m.app_id AS appId,
-               a.project_id AS projectId,
                m.record_class_id AS recordClassId,
                m.name
         FROM modules m
-        JOIN apps a ON a.id = m.app_id
       `).all() as ModuleInventoryRow[],
       valueKinds,
       runtimeSources: database.prepare(`
@@ -503,7 +491,6 @@ export function createModuleScaffoldPlan(
   }
   validateIdentity(spec.module.moduleId, /^[a-z][a-z0-9_]*$/, "moduleId", violations);
   validateIdentity(spec.module.appId, /^[a-z][a-z0-9_]*$/, "appId", violations);
-  validateIdentity(spec.module.projectId, /^[a-z][a-z0-9_]*$/, "projectId", violations);
   validateIdentity(
     spec.module.recordClassId,
     /^module\.[A-Za-z][A-Za-z0-9_.]*$/,
@@ -517,13 +504,6 @@ export function createModuleScaffoldPlan(
   const app = inventory.apps.find((candidate) => candidate.id === spec.module.appId);
   if (!app) {
     violations.push(`App '${spec.module.appId}' does not exist.`);
-  } else if (app.projectId !== spec.module.projectId) {
-    violations.push(
-      `App '${spec.module.appId}' belongs to Project '${app.projectId}', not '${spec.module.projectId}'.`,
-    );
-  }
-  if (!inventory.projectIds.has(spec.module.projectId)) {
-    violations.push(`Project '${spec.module.projectId}' does not exist.`);
   }
   if (inventory.moduleClasses.has(spec.module.recordClassId)) {
     violations.push(`Module class '${spec.module.recordClassId}' already exists in the manifest.`);
@@ -720,9 +700,8 @@ export function moduleScaffoldTemplate(): ModuleScaffoldSpec {
       productionContext: "Use exact Screen → Shot → Actor → Theme/Device context.",
     },
     module: {
-      moduleId: "module_project_foqn_s2_replace_me",
+      moduleId: "module_system_replace_me",
       appId: "app_core_chat",
-      projectId: "project_foqn_s2",
       recordClassId: "module.core.replaceMe",
       name: "Replace Me",
       notes: "Replace every example identity before implementation.",

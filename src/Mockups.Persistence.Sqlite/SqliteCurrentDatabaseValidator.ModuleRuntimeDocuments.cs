@@ -23,7 +23,8 @@ internal sealed partial class SqliteCurrentDatabaseValidator
             {
                 continue;
             }
-            var projectActorIds = actorIdsByProject.TryGetValue(module.ProjectId, out var knownActorIds)
+            var shot = _productionOwner.ShotRepository.Get(connection, instance.ShotId);
+            var projectActorIds = actorIdsByProject.TryGetValue(shot.ProjectId, out var knownActorIds)
                 ? knownActorIds
                 : new System.Collections.Generic.HashSet<string>(StringComparer.Ordinal);
             try

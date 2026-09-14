@@ -20,7 +20,6 @@ internal sealed partial class SqliteDesignOwner
             ComponentInputBindingsProjectionCatalog.RecordOwners());
 
         return new ModuleSettings(
-            record.ProjectId,
             record.RecordClassId,
             record.SortOrder,
             config.ToJsonString(),
@@ -56,7 +55,6 @@ internal sealed partial class SqliteDesignOwner
         var record = _appModuleRepository.GetModuleApp(moduleId);
 
         return new AppSettings(
-            record.ProjectId,
             record.BundleKey,
             record.AppType,
             record.ConfigJson,
@@ -191,7 +189,6 @@ internal sealed partial class SqliteDesignOwner
 
         UpdateModuleConfigFieldValue(
             connection,
-            module.ProjectId,
             module.RecordClassId,
             config,
             fieldId,
@@ -204,7 +201,6 @@ internal sealed partial class SqliteDesignOwner
 
     internal void UpdateModuleConfigFieldValue(
         SqliteConnection connection,
-        string projectId,
         string recordClassId,
         JsonObject config,
         string fieldId,

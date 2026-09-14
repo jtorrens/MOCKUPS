@@ -102,7 +102,7 @@ internal sealed class SqliteEditorNavigationStore
                 ProjectTreeNodeKind.AppsRoot,
                 $"apps_root_{project.Id}",
                 "Apps",
-                "Apps available in this project.",
+                "System Apps and reusable Modules.",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.AppsRoot),
                 project);
             var paletteRoot = new ProjectTreeNode(
@@ -199,48 +199,49 @@ internal sealed class SqliteEditorNavigationStore
             episodeRootNodes[project.Id] = episodesRoot;
         }
 
-        var appNodes = new Dictionary<string, ProjectTreeNode>();
-        foreach (var app in apps.OrderBy((app) => app.SortOrder).ThenBy((app) => app.Name))
+        foreach (var appsRoot in appRootNodes.Values)
         {
-            if (!appRootNodes.TryGetValue(app.ProjectId, out var appsRoot)) continue;
-
-            var node = new ProjectTreeNode(
-                ProjectTreeNodeKind.App,
-                app.Id,
-                app.Name,
-                app.Notes,
-                app.RecordClassId,
-                appsRoot);
-            appsRoot.AddChild(node);
-            appNodes[node.Id] = node;
-        }
-
-        foreach (var module in modules.OrderBy((module) => module.SortOrder).ThenBy((module) => module.Name))
-        {
-            if (!appNodes.TryGetValue(module.AppId, out var app)) continue;
-
-            var moduleNode = new ProjectTreeNode(
-                ProjectTreeNodeKind.Module,
-                module.Id,
-                module.Name,
-                module.Notes,
-                module.RecordClassId,
-                app);
-            app.AddChild(moduleNode);
-            foreach (var variant in SqliteDesignOwner.ModuleVariants(module.MetadataJson))
+            var appNodes = new Dictionary<string, ProjectTreeNode>(StringComparer.Ordinal);
+            foreach (var app in apps.OrderBy((app) => app.SortOrder).ThenBy((app) => app.Name))
             {
-                var reference = VariantReferenceId.Format(module.Id, variant.Id);
-                var used = IsUsed(referenceUsageIndex, ProjectTreeNodeKind.ModuleVariant, reference);
-                moduleNode.AddChild(new ProjectTreeNode(
-                    ProjectTreeNodeKind.ModuleVariant,
-                    reference,
-                    variant.Name,
-                    variant.IsProtected ? "Protected module variant" : "Module variant",
-                    ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ModuleVariant),
-                    moduleNode,
-                    isUsed: used,
-                    isProtected: variant.IsProtected,
-                    isLocked: _designOwner.IsVariantLockedForEditing(module.Id, variant.Id, variant.IsLocked)));
+                var node = new ProjectTreeNode(
+                    ProjectTreeNodeKind.App,
+                    app.Id,
+                    app.Name,
+                    app.Notes,
+                    app.RecordClassId,
+                    appsRoot);
+                appsRoot.AddChild(node);
+                appNodes[node.Id] = node;
+            }
+
+            foreach (var module in modules.OrderBy((module) => module.SortOrder).ThenBy((module) => module.Name))
+            {
+                if (!appNodes.TryGetValue(module.AppId, out var app)) continue;
+
+                var moduleNode = new ProjectTreeNode(
+                    ProjectTreeNodeKind.Module,
+                    module.Id,
+                    module.Name,
+                    module.Notes,
+                    module.RecordClassId,
+                    app);
+                app.AddChild(moduleNode);
+                foreach (var variant in SqliteDesignOwner.ModuleVariants(module.MetadataJson))
+                {
+                    var reference = VariantReferenceId.Format(module.Id, variant.Id);
+                    var used = IsUsed(referenceUsageIndex, ProjectTreeNodeKind.ModuleVariant, reference);
+                    moduleNode.AddChild(new ProjectTreeNode(
+                        ProjectTreeNodeKind.ModuleVariant,
+                        reference,
+                        variant.Name,
+                        variant.IsProtected ? "Protected module variant" : "Module variant",
+                        ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ModuleVariant),
+                        moduleNode,
+                        isUsed: used,
+                        isProtected: variant.IsProtected,
+                        isLocked: _designOwner.IsVariantLockedForEditing(module.Id, variant.Id, variant.IsLocked)));
+                }
             }
         }
 

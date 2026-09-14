@@ -9,7 +9,7 @@ resources. It establishes the exact contracts that Production later consumes:
 
 - System Palette Colors and Icon Themes;
 - Component Classes and Component Variants;
-- Project-owned Apps, Modules and Module Variants;
+- System Apps, Modules and Module Variants;
 - isolated Preview fixtures and temporary Test Values.
 
 Design does not create Production sequences or persist Screen payloads.
@@ -100,7 +100,10 @@ workstation-local queue jobs and are never Component or Module Variants.
 
 ## Apps, Modules and Module Variants
 
-An App groups Module definitions. A Module owns:
+Apps, Modules and their complete Module Variants are System records. They have
+no Project owner and appear in every Production's Design tree through the same
+stable ids. Editing any of them changes the reusable definition consumed by
+all Productions. An App groups Module definitions. A Module owns:
 
 - an exact manifest id and route;
 - its Runtime Input and collection contract;
@@ -118,6 +121,13 @@ contract, migration and validation surface.
 Module Variants are authored data. They can be created by cloning the active
 complete Variant, duplicated, renamed and deleted when unused, unlocked and
 not protected. Production stores an exact Module Variant id.
+
+Project context is supplied only by the selected Design-tree projection or by
+the Production Screen's owning Shot. It is never stored on the App, Module or
+Module Variant. App wallpaper and icon paths remain authored relative resource
+references: Preview resolves them against the explicit Project context, so
+each Production must provide the referenced files. Module Design Test Values
+instead use only the System Preview fixture catalog.
 
 ## Isolated Design Preview
 

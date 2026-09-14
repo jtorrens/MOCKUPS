@@ -424,12 +424,12 @@ internal sealed partial class SqliteProductionRecordFieldStore
         var instance = _production.ModuleInstanceRepository.Get(
             connection,
             moduleInstanceId);
-        var module = _design.AppModuleRepository.GetModule(
+        var shot = _production.ShotRepository.Get(
             connection,
-            instance.ModuleId);
+            instance.ShotId);
         return _resources.ActorRepository.QueryAll(connection)
             .Where((actor) => actor.ProjectId.Equals(
-                module.ProjectId,
+                shot.ProjectId,
                 StringComparison.Ordinal))
             .Select((actor) => actor.Id)
             .ToHashSet(StringComparer.Ordinal);

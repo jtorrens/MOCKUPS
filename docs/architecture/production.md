@@ -358,10 +358,10 @@ Screen → effective Theme (Screen override ?? Actor default)
               → visual context
 ```
 
-Missing, blank or cross-Project context fails explicitly. App, Module, Variant,
-name, type, order and position cannot supply an Actor, Theme or Device
-implicitly. Actor identity always remains the Shot owner even when either
-visual resource is overridden.
+Missing, blank or cross-Project Production-resource context fails explicitly.
+App, Module and Variant references are global and cannot supply an Actor, Theme
+or Device implicitly; neither can name, type, order or position. Actor identity
+always remains the Shot owner even when either visual resource is overridden.
 
 The Preview context shown to the user is derived from the selected Shot and
 Screen. Switching to a referenced definition also switches to the correct

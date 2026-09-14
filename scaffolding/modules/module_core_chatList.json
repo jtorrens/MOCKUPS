@@ -11,7 +11,6 @@
   "module": {
     "moduleId": "module_project_foqn_s2_chat_list",
     "appId": "app_core_chat",
-    "projectId": "project_foqn_s2",
     "recordClassId": "module.core.chatList",
     "name": "Chat List",
     "notes": "Chat App Screen composed from the exact List Chats Variant Runtime contract.",

@@ -93,7 +93,6 @@ internal static class CurrentSqliteSchema
 
         CREATE TABLE IF NOT EXISTS apps (
           id TEXT PRIMARY KEY,
-          project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
           record_class_id TEXT NOT NULL,
           name TEXT NOT NULL,
           bundle_key TEXT NOT NULL DEFAULT '',
@@ -225,7 +224,7 @@ internal static class CurrentSqliteSchema
           layout_json TEXT NOT NULL
         );
 
-        PRAGMA user_version = 22;
+        PRAGMA user_version = 23;
         """;
 
 }
