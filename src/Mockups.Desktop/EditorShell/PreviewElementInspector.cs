@@ -144,7 +144,7 @@ internal static class PreviewElementInspector
             .preview-element-inspector-open {
               display: grid;
               width: 100%;
-              grid-template-columns: minmax(0, 1fr) auto;
+              grid-template-columns: minmax(0, 1fr) auto auto;
               align-items: center;
               gap: 8px;
               min-height: 31px;
@@ -157,6 +157,10 @@ internal static class PreviewElementInspector
               cursor: pointer;
             }
 
+            .preview-element-inspector-open.is-actionable {
+              box-shadow: inset 3px 0 #2F80ED;
+            }
+
             .preview-element-inspector-open:hover:not(:disabled) {
               background: {{row}};
               box-shadow: inset 0 0 0 1px {{border}};
@@ -165,6 +169,11 @@ internal static class PreviewElementInspector
             .preview-element-inspector-open:disabled {
               cursor: default;
               opacity: .58;
+            }
+
+            .preview-element-inspector-navigation-indicator {
+              color: #2F80ED;
+              font: 800 15px/1 sans-serif;
             }
 
             .preview-element-inspector-id {
@@ -335,6 +344,7 @@ internal static class PreviewElementInspector
             type.textContent = owner.getAttribute("data-renderable-type") ?? "node";
             const authoringTarget = previewAuthoringTarget(owner);
             open.disabled = authoringTarget === null;
+            open.classList.toggle("is-actionable", authoringTarget !== null);
             open.title = authoringTarget === null
               ? "Sin editor asociado"
               : "Abrir el editor que gobierna este nivel";
@@ -353,7 +363,12 @@ internal static class PreviewElementInspector
                 );
               });
             }
+            const navigationIndicator = document.createElement("span");
+            navigationIndicator.className = "preview-element-inspector-navigation-indicator";
+            navigationIndicator.setAttribute("aria-hidden", "true");
+            navigationIndicator.textContent = "›";
             open.append(id, type);
+            if (authoringTarget !== null) open.append(navigationIndicator);
             item.append(open);
             previewElementInspectorPath.appendChild(item);
           });

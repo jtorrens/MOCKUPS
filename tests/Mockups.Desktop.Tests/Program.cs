@@ -8861,6 +8861,12 @@ static void PreviewElementIdentificationUsesRenderableIdentity()
     True(PreviewElementInspector.Css(isDark: true).Contains(
         ".preview-element-inspector",
         StringComparison.Ordinal));
+    True(PreviewElementInspector.Css(isDark: true).Contains(
+        ".preview-element-inspector-open.is-actionable",
+        StringComparison.Ordinal));
+    True(PreviewElementInspector.Script.Contains(
+        "preview-element-inspector-navigation-indicator",
+        StringComparison.Ordinal));
     True(!PreviewElementInspector.Script.Contains(
         "variantReference",
         StringComparison.Ordinal));
@@ -14643,10 +14649,19 @@ static void AnimatedConversationComposerRemainsVisible()
             "preview-error",
             StringComparison.Ordinal));
         True(html.Contains(
+            $"data-preview-authoring-owner-id=\"{conversation.Id}\"",
+            StringComparison.Ordinal));
+        True(html.Contains(
             "data-renderable-id=\"component.keyboard\"",
             StringComparison.Ordinal));
         True(html.Contains(
             "data-renderable-id=\"component.textInputBar\"",
+            StringComparison.Ordinal));
+        var rasterHtml = DesignWebPreviewPane.BuildRasterHtmlAsync(
+            database.GetDevicePreviewMetrics(payload.DeviceId),
+            payload).GetAwaiter().GetResult();
+        True(!rasterHtml.Contains(
+            "data-preview-authoring-owner-id",
             StringComparison.Ordinal));
     }
     finally

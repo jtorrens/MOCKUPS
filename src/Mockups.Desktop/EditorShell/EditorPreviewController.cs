@@ -179,6 +179,8 @@ internal sealed class EditorPreviewController : IDisposable
     private readonly Func<string, bool> _selectNodeById;
     private readonly Func<EditorWorkspace, string, Task<bool>>
         _navigateNodeInWorkspace;
+    private readonly Action<PreviewAuthoringNavigationTarget>
+        _navigateAuthoringTarget;
     private readonly TextBlock _designContextText;
     private readonly Button _designContextHistoryButton;
     private readonly Button _designContextAddHistoryButton;
@@ -504,6 +506,7 @@ internal sealed class EditorPreviewController : IDisposable
         _selectedNode = selectedNode;
         _selectNodeById = selectNodeById;
         _navigateNodeInWorkspace = navigateNodeInWorkspace;
+        _navigateAuthoringTarget = navigateAuthoringTarget;
         _designContextText = designContextText;
         _designContextHistoryButton = designContextHistoryButton;
         _designContextAddHistoryButton = designContextAddHistoryButton;
@@ -533,7 +536,7 @@ internal sealed class EditorPreviewController : IDisposable
             if (targetId == PreviewRetryTargetId) Refresh();
             else _selectNodeById(targetId);
         };
-        _designPreviewPane.AuthoringTargetRequested += navigateAuthoringTarget;
+        _designPreviewPane.AuthoringTargetRequested += NavigatePreviewAuthoringTarget;
         _designPreviewPane.NavigationKeyRequested += OnWebPreviewNavigationKey;
         _designInputsPanel.PlaybackStarted += OnPlaybackStarted;
         _designInputsPanel.PlaybackStopped += OnPlaybackStopped;
@@ -4005,6 +4008,29 @@ internal sealed class EditorPreviewController : IDisposable
             return;
         }
 
+        if (TryKeepCurrentPreviewContext())
+        {
+            Refresh();
+        }
+    }
+
+    private void NavigatePreviewAuthoringTarget(
+        PreviewAuthoringNavigationTarget target)
+    {
+        if (_lockedPreviewContext is null
+            && !TryKeepCurrentPreviewContext())
+        {
+            _messages.Warning(
+                "Preview element",
+                "The current Preview context cannot be retained for authoring navigation.");
+            return;
+        }
+
+        _navigateAuthoringTarget(target);
+    }
+
+    private bool TryKeepCurrentPreviewContext()
+    {
         var target = PreviewWorkspace() switch
         {
             EditorWorkspace.Design =>
@@ -4016,7 +4042,7 @@ internal sealed class EditorPreviewController : IDisposable
         if (target is null)
         {
             UpdateDesignContextChrome(null);
-            return;
+            return false;
         }
 
         var workspace = PreviewWorkspace();
@@ -4040,7 +4066,7 @@ internal sealed class EditorPreviewController : IDisposable
             target,
             _designContextText.Text ?? "",
             path);
-        Refresh();
+        return true;
     }
 
     private void UpdateDesignContextChrome(DesignPreviewPayload? payload)

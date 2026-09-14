@@ -33,7 +33,27 @@ internal static class WebDesignPreviewRenderer
         bool showMarks,
         DesignPreviewPayload payload)
     {
-        return await RenderBodyAsync(metrics, showMarks, payload, PersistentRenderer, "interactive");
+        return await RenderBodyAsync(
+            metrics,
+            showMarks,
+            payload,
+            PersistentRenderer,
+            "interactive",
+            includeAuthoringTargets: true);
+    }
+
+    public static async Task<string> RenderRasterBodyAsync(
+        DevicePreviewMetrics metrics,
+        bool showMarks,
+        DesignPreviewPayload payload)
+    {
+        return await RenderBodyAsync(
+            metrics,
+            showMarks,
+            payload,
+            PersistentRenderer,
+            "raster",
+            includeAuthoringTargets: false);
     }
 
     public static async Task<string> RenderPrewarmBodyAsync(
@@ -41,7 +61,13 @@ internal static class WebDesignPreviewRenderer
         bool showMarks,
         DesignPreviewPayload payload)
     {
-        return await RenderBodyAsync(metrics, showMarks, payload, PrewarmPersistentRenderer, "prewarm");
+        return await RenderBodyAsync(
+            metrics,
+            showMarks,
+            payload,
+            PrewarmPersistentRenderer,
+            "prewarm",
+            includeAuthoringTargets: true);
     }
 
     private static async Task<string> RenderBodyAsync(
@@ -49,10 +75,15 @@ internal static class WebDesignPreviewRenderer
         bool showMarks,
         DesignPreviewPayload payload,
         PersistentPreviewRenderer persistentRenderer,
-        string lane)
+        string lane,
+        bool includeAuthoringTargets)
     {
         var stopwatch = Stopwatch.StartNew();
-        var request = CreateRequest(metrics, showMarks, payload);
+        var request = CreateRequest(
+            metrics,
+            showMarks,
+            payload,
+            includeAuthoringTargets);
         var requestJson = JsonSerializer.Serialize(request);
         var renderer = ResolveRendererCommand();
         var requestHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(requestJson)));
@@ -163,14 +194,15 @@ internal static class WebDesignPreviewRenderer
     private static object CreateRequest(
         DevicePreviewMetrics metrics,
         bool showMarks,
-        DesignPreviewPayload payload)
+        DesignPreviewPayload payload,
+        bool includeAuthoringTargets)
     {
         return new
         {
             kind = payload.Kind,
-            authoringOwnerId = payload.Kind == "moduleInstance"
-                ? ""
-                : payload.OwnerId,
+            authoringOwnerId = includeAuthoringTargets
+                ? payload.OwnerId
+                : "",
             authoringRecordClassId = payload.Kind == "componentClass"
                 ? $"component.{payload.ComponentType}"
                 : payload.ComponentType,
@@ -235,7 +267,8 @@ internal static class WebDesignPreviewRenderer
                             owner = CreateRequest(
                                 metrics,
                                 showMarks,
-                                layer.Owner),
+                                layer.Owner,
+                                includeAuthoringTargets),
                             motionJson = layer.MotionJson,
                             phase = layer.Phase,
                             phaseTimeMilliseconds = layer.PhaseTimeMilliseconds,

@@ -292,8 +292,11 @@ the item visible in Preview without releasing the lock.
 In the interactive Preview, hovering a resolved element shows its exact
 renderable identity. Right click pins that element and presents its ordered
 rendered ancestor path. Every path level with an explicit authoring target is
-selectable. Selection opens the exact Design owner and Variant, then the exact
-nested Overrides context represented by its declared slot chain. When that
+selectable and carries the shared forward indicator; informational levels have
+neutral styling and no indicator. Selection first fixes the current Preview
+context with the same lock owned by the Preview chrome, then opens the exact
+Screen Payload or Design owner and Variant followed by the exact nested
+Overrides context represented by its declared slot chain. When that
 target also declares an exact visible dictionary field, the completed editor
 transition expands the unique top-level card containing that field and brings
 it into view, including when the card was already open. A structured field may

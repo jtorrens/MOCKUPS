@@ -1977,7 +1977,7 @@ internal sealed class DesignWebPreviewPane : WebPreviewPane
         DevicePreviewMetrics metrics,
         DesignPreviewPayload payload)
     {
-        var bodyContent = await WebDesignPreviewRenderer.RenderBodyAsync(
+        var bodyContent = await WebDesignPreviewRenderer.RenderRasterBodyAsync(
             metrics,
             showMarks: false,
             payload);

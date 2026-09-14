@@ -297,7 +297,10 @@ renderable boundary must also match the exact current authoring
 `recordClassId` before it may append its slot and move the scope to the declared
 child record class. A child reached without its declared parent therefore
 inherits the nearest valid target instead of publishing an invalid shortcut.
-Production, raster and Render Queue documents expose no authoring target.
+Interactive Production Preview documents publish their exact Screen owner so
+the same opaque target can reach Screen Payload, local Overrides or a complete
+referenced Variant through the declared boundary chain. Raster and Render
+Queue documents expose no authoring target.
 
 The resident desktop WebView boundary normalizes `InvokeScript` results before
 Preview code consumes them. A plain result and the equivalent JSON string
