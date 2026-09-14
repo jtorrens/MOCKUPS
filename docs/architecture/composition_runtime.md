@@ -322,6 +322,13 @@ as compact rows in Variant order, and their shared `…` action reveals the
 child's exact Runtime values directly. The editor does not add an intermediate
 Content Sets section or nested child navigation.
 
+When a collection item owns one Runtime contract whose fields form part of the
+same semantic property category, it declares `itemRuntimePresentation: inline`.
+The generic collection editor then places those fields after the item's own
+fields instead of manufacturing a nested Runtime Inputs navigation section.
+The owning field still declares its normal `uiOrigin` and group metadata, so
+the parent category is selected entirely from metadata.
+
 An embedded child edit replaces that exact stable child item in its owning
 Content Set collection before the enclosing List Item Runtime is published.
 The selected `activeSet` therefore resolves the current Avatar, Label and Icon

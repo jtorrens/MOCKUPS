@@ -1801,12 +1801,19 @@ internal sealed class RuntimeInputsCollectionEditor
                     nestedPanel.Children.Add(CreateNestedComponentInputControl(
                         owner, collection, address, itemIndex, item, itemRuntimeContract, nestedInput));
                 }
-                groupSubcards.Add(new EditorInternalNavigationSection(
-                    "componentInputs",
-                    string.IsNullOrWhiteSpace(collection.ItemRuntimeContractJsonKey) ? "Component inputs" : "Runtime inputs",
-                    $"{EditorUiText.Count(nestedInputs.Count, "runtime input")} · {EditorUiText.Count(nestedActions.Count, "action")}",
-                    EditorIcons.Component,
-                    nestedPanel));
+                if (collection.ItemRuntimePresentation.Equals("inline", StringComparison.Ordinal))
+                {
+                    content.Children.Add(nestedPanel);
+                }
+                else
+                {
+                    groupSubcards.Add(new EditorInternalNavigationSection(
+                        "componentInputs",
+                        string.IsNullOrWhiteSpace(collection.ItemRuntimeContractJsonKey) ? "Component inputs" : "Runtime inputs",
+                        $"{EditorUiText.Count(nestedInputs.Count, "runtime input")} · {EditorUiText.Count(nestedActions.Count, "action")}",
+                        EditorIcons.Component,
+                        nestedPanel));
+                }
             }
         }
         subcards = groupSubcards;

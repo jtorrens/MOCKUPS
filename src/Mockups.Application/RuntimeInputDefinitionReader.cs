@@ -289,7 +289,7 @@ public static class RuntimeInputDefinitionReader
                     $"Runtime Input collection '{id}' has unsupported uiPresentation '{uiPresentation}'.");
             }
             var itemRuntimePresentation = JsonString(collection, "itemRuntimePresentation", "card");
-            if (itemRuntimePresentation is not "card" and not "sections")
+            if (itemRuntimePresentation is not "card" and not "sections" and not "inline")
             {
                 throw new InvalidOperationException(
                     $"Runtime Input collection '{id}' has unsupported itemRuntimePresentation '{itemRuntimePresentation}'.");

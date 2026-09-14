@@ -304,12 +304,19 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                         runtime,
                         input));
                 }
-                subcards.Add(new EditorInternalNavigationSection(
-                    "runtimeInputs",
-                    "Runtime inputs",
-                    EditorUiText.Count(runtimeInputs.Count, "runtime input"),
-                    EditorIcons.Component,
-                    panel));
+                if (collection.ItemRuntimePresentation.Equals("inline", StringComparison.Ordinal))
+                {
+                    content.Children.Add(panel);
+                }
+                else
+                {
+                    subcards.Add(new EditorInternalNavigationSection(
+                        "runtimeInputs",
+                        "Runtime inputs",
+                        EditorUiText.Count(runtimeInputs.Count, "runtime input"),
+                        EditorIcons.Component,
+                        panel));
+                }
             }
         }
         if (collection.ComponentItems is { } componentItems)
