@@ -351,6 +351,12 @@ internal sealed class SqliteEditorNodeCommandPort(
         int shotNumber) =>
         target.DuplicateShot(shot, shotNumber);
 
+    public ProjectTreeNode TransferProductionNode(
+        ProjectTreeNode source,
+        ProjectTreeNode destination,
+        ProductionHierarchyTransferMode mode) =>
+        target.TransferProductionNode(source, destination, mode);
+
     public ProjectTreeNode RenameDirectNode(
         ProjectTreeNode node,
         string name) =>

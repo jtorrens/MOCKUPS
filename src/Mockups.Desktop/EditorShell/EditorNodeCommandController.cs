@@ -224,6 +224,32 @@ internal sealed class EditorNodeCommandController
         }
     }
 
+    public async Task TransferProductionNode(
+        ProjectTreeNode source,
+        ProjectTreeNode target,
+        ProductionHierarchyTransferMode mode)
+    {
+        try
+        {
+            var transferred = await _operations.ExecuteAsync(
+                () => _database.TransferProductionNode(
+                    source,
+                    target,
+                    mode));
+            _reloadAndSelect(transferred);
+        }
+        catch (OperationCanceledException)
+        {
+            // The editor session no longer owns the queued operation.
+        }
+        catch (Exception exception)
+        {
+            _messages.Error(
+                $"{mode} {EditorNavigationMetadata.Title(source)}",
+                exception);
+        }
+    }
+
     public async Task ToggleVariantLock(ProjectTreeNode node)
     {
         if (node.Kind is not ProjectTreeNodeKind.ComponentVariant and not ProjectTreeNodeKind.ModuleVariant)

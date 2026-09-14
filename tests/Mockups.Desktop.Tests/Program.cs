@@ -131,6 +131,7 @@ var tests = new (string Name, Action Run)[]
     ("Module Instance repository preserves Screen rows and prepared documents", ModuleInstanceRepositoryPreservesFocusedContract),
     ("Shot repository preserves its focused Production contract", ShotRepositoryPreservesFocusedContract),
     ("Shot duplication copies Screens and clears Shot Manager", ShotDuplicationCopiesScreensAndClearsShotManager),
+    ("Production hierarchy transfer copies and moves Shots and Screens atomically", ProductionHierarchyTransferCopiesAndMovesShotsAndScreens),
     ("Shot reference video documents preserve In and stable video markers", ShotReferenceVideoDocumentsAreStrict),
     ("Production Output generates exact Shot names and portable render routes", ProductionOutputGeneratesExactShotPlans),
     ("Shot Manager output captures exact associations and resolves offline", ShotManagerOutputResolvesExactAssociations),
@@ -14081,6 +14082,168 @@ static void ShotDuplicationCopiesScreensAndClearsShotManager()
     }
 }
 
+static void ProductionHierarchyTransferCopiesAndMovesShotsAndScreens()
+{
+    var source = ParityDatabasePath();
+    var temporary = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-production-transfer-{Guid.NewGuid():N}.sqlite");
+    File.Copy(source, temporary, overwrite: true);
+    try
+    {
+        var database = new SqliteProjectTestContext(temporary);
+        var context = new SqliteProjectContext(temporary);
+        IShotRepository shots = new ShotRepository(context);
+        IModuleInstanceRepository screens =
+            new ModuleInstanceRepository(context);
+        var tree = database.LoadProjectTree();
+        var sourceShotNode = Descendants(tree).Single((node) =>
+            node.Id == "shot_001");
+        var targetEpisodeNode = Descendants(tree).Single((node) =>
+            node.Id == "episode_002");
+        var sourceShot = shots.Get(sourceShotNode.Id);
+        IReadOnlyList<ModuleInstanceRecord> sourceScreens;
+        using (var connection = context.OpenConnection())
+        {
+            sourceScreens = screens.QueryByShot(
+                connection,
+                sourceShot.Id);
+            True(sourceScreens.Count > 0);
+            context.Execute(
+                connection,
+                """
+                UPDATE shots
+                SET shot_manager_association_state = 'associated',
+                    shot_manager_reference_production_id = '11111111-1111-4111-8111-111111111111',
+                    shot_manager_shot_id = '22222222-2222-4222-8222-222222222222',
+                    shot_manager_canonical_name = 'TRANSFER_TEST'
+                WHERE id = $id
+                """,
+                ("$id", sourceShot.Id));
+        }
+
+        var commands = NodeCommands(database);
+        var copiedShotNode = commands.TransferProductionNode(
+            sourceShotNode,
+            targetEpisodeNode,
+            ProductionHierarchyTransferMode.Copy);
+        True(!copiedShotNode.Id.Equals(
+            sourceShot.Id,
+            StringComparison.Ordinal));
+        var copiedShot = shots.Get(copiedShotNode.Id);
+        Equal(targetEpisodeNode.Id, copiedShot.EpisodeId);
+        Equal(sourceShot.ShotNumber, copiedShot.ShotNumber);
+        Equal(sourceShot.Slug, copiedShot.Slug);
+        Equal("free", copiedShot.ShotManagerAssociationState);
+        Equal("", copiedShot.ShotManagerShotId);
+        using (var connection = context.OpenConnection())
+        {
+            var copiedScreens = screens.QueryByShot(
+                connection,
+                copiedShot.Id);
+            Equal(sourceScreens.Count, copiedScreens.Count);
+            for (var index = 0; index < sourceScreens.Count; index++)
+            {
+                Equal(
+                    sourceScreens[index] with
+                    {
+                        Id = copiedScreens[index].Id,
+                        ShotId = copiedShot.Id,
+                    },
+                    copiedScreens[index]);
+            }
+        }
+        commands.Delete(copiedShotNode);
+
+        var movedShotNode = commands.TransferProductionNode(
+            sourceShotNode,
+            targetEpisodeNode,
+            ProductionHierarchyTransferMode.Move);
+        Equal(sourceShot.Id, movedShotNode.Id);
+        var movedShot = shots.Get(sourceShot.Id);
+        Equal(targetEpisodeNode.Id, movedShot.EpisodeId);
+        Equal("free", movedShot.ShotManagerAssociationState);
+        Equal(
+            "22222222-2222-4222-8222-222222222222",
+            movedShot.ShotManagerShotId);
+
+        var reloadedTargetEpisode = Descendants(database.LoadProjectTree())
+            .Single((node) => node.Id == targetEpisodeNode.Id);
+        var targetShotNode = database.AddShot(
+            reloadedTargetEpisode,
+            movedShot.OwnerActorId,
+            database.SuggestShotNumber(reloadedTargetEpisode.Id));
+        var reloadedSourceScreenNode = Descendants(database.LoadProjectTree())
+            .First((node) =>
+                node.Kind == ProjectTreeNodeKind.ModuleInstance
+                && node.Parent?.Id == movedShot.Id);
+        database.UpdateModuleInstanceField(
+            reloadedSourceScreenNode.Id,
+            "moduleInstance.startFrame",
+            "500");
+        var sourceScreen = database.GetModuleInstanceSettings(
+            reloadedSourceScreenNode.Id);
+
+        var copiedScreenNode = commands.TransferProductionNode(
+            reloadedSourceScreenNode,
+            targetShotNode,
+            ProductionHierarchyTransferMode.Copy);
+        var copiedScreen = database.GetModuleInstanceSettings(
+            copiedScreenNode.Id);
+        True(!copiedScreenNode.Id.Equals(
+            reloadedSourceScreenNode.Id,
+            StringComparison.Ordinal));
+        Equal(targetShotNode.Id, copiedScreen.ShotId);
+        Equal(sourceScreen.StartFrame, copiedScreen.StartFrame);
+        var targetShotSettings = database.GetShotSettings(
+            targetShotNode.Id);
+        var targetTransitionFrames =
+            ScreenTimelineTiming.EffectiveTransitionDurationFrames(
+                targetShotSettings.TransitionJson,
+                targetShotSettings.TransitionDurationFrames);
+        Equal(
+            sourceScreen.StartFrame
+            + ScreenTimelineTiming.EffectiveDurationFrames(
+                sourceScreen.DurationFrames,
+                targetTransitionFrames,
+                sourceScreen.ActionDelayFrames),
+            targetShotSettings.DurationFrames);
+
+        var movedScreenNode = commands.TransferProductionNode(
+            reloadedSourceScreenNode,
+            targetShotNode,
+            ProductionHierarchyTransferMode.Move);
+        Equal(reloadedSourceScreenNode.Id, movedScreenNode.Id);
+        Equal(
+            targetShotNode.Id,
+            database.GetModuleInstanceSettings(
+                reloadedSourceScreenNode.Id).ShotId);
+        using (var connection = context.OpenConnection())
+        {
+            Equal(
+                0,
+                screens.QueryByShot(connection, movedShot.Id).Count);
+        }
+
+        Equal(
+            ProductionHierarchyTransferMode.Copy,
+            ProductionNavigationTransferGesture.TransferMode(
+                KeyModifiers.Meta));
+        Equal(
+            ProductionHierarchyTransferMode.Move,
+            ProductionNavigationTransferGesture.TransferMode(
+                KeyModifiers.Alt));
+        Equal(
+            null,
+            ProductionNavigationTransferGesture.TransferMode(
+                KeyModifiers.Meta | KeyModifiers.Alt));
+    }
+    finally
+    {
+        File.Delete(temporary);
+    }
+}
+
 static void ShotReferenceVideoDocumentsAreStrict()
 {
     var document = new ShotReferenceVideoDocument(
@@ -20977,6 +21140,16 @@ static void ShotDurationPolicyIsContractOwned()
         ShotDurationPolicy.Explicit,
         calculatedDurationFrames: 120,
         explicitDurationFrames: 0));
+    Equal(
+        85,
+        ScreenTimelineTiming.CalculatedShotDurationFrames(
+            [(60, 15, 0)],
+            transitionFrameCount: 5));
+    Equal(
+        45,
+        ScreenTimelineTiming.CalculatedShotDurationFrames(
+            [(0, 20, 0), (15, 20, 0)],
+            transitionFrameCount: 5));
 }
 
 static void TargetFieldsUseRelativeOrigins()

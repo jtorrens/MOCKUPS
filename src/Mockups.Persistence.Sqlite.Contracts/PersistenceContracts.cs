@@ -256,6 +256,20 @@ internal interface IShotRepository
         string shotCode,
         SqliteTransaction? transaction = null);
 
+    ShotRecord DuplicateToEpisode(
+        SqliteConnection connection,
+        string sourceId,
+        string id,
+        string targetEpisodeId,
+        string name,
+        SqliteTransaction transaction);
+
+    ShotRecord MoveToEpisode(
+        SqliteConnection connection,
+        string shotId,
+        string targetEpisodeId,
+        SqliteTransaction transaction);
+
     IReadOnlyDictionary<string, string> DuplicateForEpisode(
         SqliteConnection connection,
         IReadOnlyList<ShotRecord> sourceShots,
@@ -613,6 +627,13 @@ internal interface IModuleInstanceRepository
         int sortOrder,
         SqliteTransaction? transaction = null);
 
+    ModuleInstanceRecord MoveToShot(
+        SqliteConnection connection,
+        string moduleInstanceId,
+        string targetShotId,
+        int sortOrder,
+        SqliteTransaction transaction);
+
     void UpdateContent(SqliteConnection connection, string moduleInstanceId, string contentJson);
 
     void UpdateAnimation(SqliteConnection connection, string moduleInstanceId, string animationJson);
@@ -625,7 +646,8 @@ internal interface IModuleInstanceRepository
     void UpdateStartFrame(
         SqliteConnection connection,
         string moduleInstanceId,
-        int startFrame);
+        int startFrame,
+        SqliteTransaction? transaction = null);
 
     void UpdateTheme(
         SqliteConnection connection,

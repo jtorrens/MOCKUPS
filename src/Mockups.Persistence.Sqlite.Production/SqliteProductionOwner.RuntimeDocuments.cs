@@ -396,10 +396,19 @@ internal sealed partial class SqliteProductionOwner
         switch (fieldId)
         {
             case "moduleInstance.startFrame":
-                _moduleInstanceRepository.UpdateStartFrame(
-                    connection,
-                    moduleInstanceId,
-                    NumericText.Int32(value, 0));
+                lock (WriteGate)
+                {
+                    using var transaction = connection.BeginTransaction();
+                    _moduleInstanceRepository.UpdateStartFrame(
+                        connection,
+                        moduleInstanceId,
+                        NumericText.Int32(value, 0),
+                        transaction);
+                    SynchronizeTimelineDurations(
+                        connection,
+                        transaction: transaction);
+                    transaction.Commit();
+                }
                 return;
             case "moduleInstance.themeId":
                 var resourceInstance = _moduleInstanceRepository.Get(connection, moduleInstanceId);

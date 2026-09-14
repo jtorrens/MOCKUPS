@@ -194,8 +194,10 @@ the selected owner lane in Timeline is the only detailed animation editor. A
 **Timeline** tab appears for a Production Shot or Screen. With a Shot selected,
 it reuses the same timeline surface with one lane per ordered Screen, without a
 General lane, Runtime collection lanes or animation detail editor. Screen lanes
-may move before or after the Shot clipping interval; only explicit-duration
-Screens expose their action-duration resize edge. Each Screen block includes
+may move before frame zero. A calculated Shot expands when a lane's complete
+effective end moves beyond it; an explicit Shot may retain lanes after its
+clipping interval. Only explicit-duration Screens expose their action-duration
+resize edge. Each Screen block includes
 its Shot-owned entry and inverse exit extensions as subdued diagonal hatches;
 the hatch is clipped to the Shot interval. Overlaps and gaps remain
 visible exactly as authored. With a Screen selected, Timeline
@@ -462,6 +464,13 @@ navigation labels state that operation explicitly.
 Within each Episode, the Production navigation tree presents Shots in stable
 alphabetical order by the authored Shot name. Creation order and persisted
 `sortOrder` do not determine this navigation projection.
+
+Production hierarchy transfer uses one modifier-owned drag gesture.
+Command-drag copies a Shot onto another Episode or a Screen onto another
+existing Shot; Option-drag moves the same source types. The valid destination
+receives an amber outline, the operation appends there and selects the resulting
+node after the atomic tree/catalog refresh. Plain drag, mixed Command+Option
+drag and an invalid or same-parent destination perform no mutation.
 
 Declared `RecordReference` Overrides use this same action and standard
 inherited controls. Their metadata declares the referenced class, sparse local

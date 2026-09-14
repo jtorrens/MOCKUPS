@@ -92,6 +92,13 @@ The duplicated Shot preserves its authored Actor, resources, Overrides,
 reference video and timing, but always starts free of Shot Manager association
 and must be associated explicitly.
 
+In the Production tree, Command-drag copies a Shot into another Episode and
+Option-drag moves it. Both append at the destination. A copy receives new Shot
+and Screen identities and clears its Shot Manager reference. A move preserves
+those identities and complete documents, but the moved Shot becomes free; a
+retained external reference remains available for later recovery or explicit
+reassociation. Destination Shot-number or Shot-code collisions fail explicitly.
+
 ## Production Output ownership
 
 MOCKUPS is the sole owner of its Projects, Episodes and Shots. A Project chooses
@@ -328,15 +335,23 @@ overlap and all active layers are composed in order, with the highest ordered
 lane on top. A gap has no active Screen and produces a fully transparent Device
 image. Alignment is authored by the user; the system neither joins nor repairs
 boundaries. New Screens initially align their entry with the preceding Screen
-exit; the first new Screen starts one transition before Shot In. Calculated
-Shot duration adds all Screen actions and delays plus one transition per
-internal ordered Screen boundary, leaving the first entry as preroll and the
-last exit as postroll. The Shot interval is only the Preview/render clipping window, so portions
-before frame zero or after the Shot end are not displayed or rendered. Moving a
-lane does not rewrite local keyframes or Shot duration. This
+exit; the first new Screen starts one transition before Shot In. The calculated
+Shot duration is the greater of the ordered aggregate and the latest complete
+effective Screen end from its signed start. The Shot interval remains the
+Preview/render clipping window, so portions before frame zero or beyond an
+explicit Shot end are not displayed or rendered. Moving a lane never rewrites
+local keyframes; it resynchronizes a calculated Shot and leaves an explicit
+Shot duration unchanged. This
 Shot timeline is the shared **Timeline** utility in Preview when the selected
 context is a Shot. The Shot editor keeps only the ordered Screen collection and
 does not embed another temporal surface.
+
+Command-drag copies a Screen into another existing Shot and Option-drag moves
+it. The destination appends the Screen while preserving its signed
+Shot-relative start and every local keyframe. Copy creates a new Screen
+identity; move retains the existing identity. Neither operation aligns or
+clamps the Screen. The user may reposition content that remains outside an
+explicit Shot interval.
 
 Screen payload is authored in Preview because that is where its effect can be
 checked, but ownership remains with the Screen instance.

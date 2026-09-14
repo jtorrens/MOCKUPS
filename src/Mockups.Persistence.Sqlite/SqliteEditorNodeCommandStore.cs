@@ -261,6 +261,19 @@ internal sealed class SqliteEditorNodeCommandStore
             shot.Parent);
     }
 
+    internal ProjectTreeNode TransferProductionNode(
+        ProjectTreeNode source,
+        ProjectTreeNode target,
+        ProductionHierarchyTransferMode mode)
+    {
+        using var connection = _context.OpenConnection();
+        return _production.TransferProductionNode(
+            connection,
+            source,
+            target,
+            mode);
+    }
+
     internal ProjectTreeNode RenameDirectNode(
         ProjectTreeNode node,
         string name) =>

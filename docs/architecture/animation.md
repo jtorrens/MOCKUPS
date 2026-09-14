@@ -132,10 +132,12 @@ its non-negative action delay at local frame zero and then starts its internal
 timeline. Its effective extent is entry frames plus delay plus calculated or
 explicit action duration. Calculated duration is fixed; explicit (`Free`)
 duration is resizable at Shot level. Moving or resizing does not rewrite local
-keyframes. Shot calculated duration remains the sum of effective Screen extents,
+keyframes. Shot calculated duration uses the sum of effective Screen extents,
 excluding the first entry and last exit and counting one shared transition for
-each internal ordered Screen boundary; it is independent of authored lane
-positions. An explicit Shot duration remains authoritative.
+each internal ordered Screen boundary, as its base aggregate. Its resolved
+duration is the greater of that aggregate and the latest complete effective
+Screen end from its signed authored start. An explicit Shot duration remains
+authoritative.
 The Shot interval clips Preview and render. Outside it no frame is produced.
 Within it, gaps produce alpha zero and overlapping lanes resolve to the highest
 ordered Screen.
@@ -254,7 +256,9 @@ action delay, then appends the same transition duration for inverse exit when
 it calculates each effective Screen extent. Shot calculated duration instead
 adds every action and delay plus one shared transition for each internal
 ordered boundary: the first entry is preroll before Shot In and the last exit
-is postroll after Shot Out. A truly disabled Motion adds zero boundary frames.
+is postroll after Shot Out. It then expands when a signed Screen origin places
+that Screen's complete effective end beyond the aggregate. A truly disabled
+Motion adds zero boundary frames.
 
 An explicit default declares a positive frame count. Once selected, duration is
 edited only on the Screen instance, through either its Duration field or the
@@ -375,8 +379,9 @@ coordinate owner instead of creating an editor-local timeline. It presents one
 ordered lane per Screen on the absolute Shot clock and omits General, Runtime
 collection and animation-editor lanes. Moving a Screen writes its signed Shot
 start; resizing its outgoing edge writes duration only when its selected policy
-is explicit. The viewport may expose authored portions outside the Shot while
-Preview and Render continue to clip them to the Shot interval.
+is explicit. A moved Screen resynchronizes a calculated Shot through this common
+owner; an explicit Shot keeps its authored interval and Preview and Render clip
+anything outside it.
 
 Selecting General or one stable item lane selects that exact temporal owner.
 The complete lane receives the selected treatment and one contextual animation

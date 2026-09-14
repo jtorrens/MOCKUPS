@@ -39,6 +39,10 @@ dictionary field id and every value is its current scalar storage string;
 Restore removes that key.
 `module_instances.start_frame` is the signed Shot-frame origin of the Screen.
 It may place a Screen before frame zero or beyond the Shot end.
+For a calculated Shot, synchronization takes the greater of its ordered
+aggregate duration and the latest effective Screen end resolved from that
+signed origin. An explicit Shot duration remains authoritative and may clip a
+Screen whose authored interval lies outside it.
 `shots.shot_number` is a positive stable identity owned by MOCKUPS and unique
 inside its Episode. `shots.slug` stores the explicit Shot Code, which is unique
 inside its Episode and accepts letters, numbers, hyphen and underscore. It is
@@ -163,6 +167,16 @@ Shot context and local documents but clears every Shot Manager association
 field so reassociation is always explicit. Failure to duplicate any Screen
 rolls back the complete new Shot.
 
+Cross-parent Shot and Screen transfer is one Production-owned hierarchy
+mutation with explicit `copy` or `move` intent. A Shot targets another Episode;
+a Screen targets another existing Shot. Copy assigns new aggregate identities,
+while move retains them, and both append at the destination. A copied Shot
+clears its Shot Manager reference; a moved Shot becomes free while retaining
+its prior reference. Screen transfer preserves its signed `start_frame` and
+complete documents. The source and destination timeline durations are
+synchronized inside the same transaction. Shot number or code collisions at
+the destination fail explicitly rather than being renamed or reassigned.
+
 Every structured Runtime collection lifecycle operation is one generic
 Application mutation addressed by a typed stable collection/item path. Add,
 duplicate, move and delete use discriminated commands; insertion is expressed
@@ -189,9 +203,12 @@ between completion of Screen entry and the start of its internal timeline.
 Production owns these writes and resynchronizes the derived Shot duration after
 Shot Motion, transition duration or Screen delay changes. `duration_frames`
 remains the calculated or explicit action duration; it does not absorb
-transition or delay frames. A calculated Shot adds every Screen action and
-delay plus one effective transition for each internal ordered Screen boundary;
-the first entry preroll and final exit postroll do not extend it.
+transition or delay frames. A calculated Shot begins with every Screen action
+and delay plus one effective transition for each internal ordered Screen
+boundary; the first entry preroll and final exit postroll do not extend that
+sequential aggregate. Its final duration is the greater of that aggregate and
+the latest authored Screen end, including the Screen's complete effective
+entry, delay, action and exit extent from its signed start.
 `Mockups.Persistence.Sqlite.Resources` owns Palette,
 Theme, Device, Actor, Production Font and Icon Theme persistence plus their
 resource-specific field, token and asset operations.

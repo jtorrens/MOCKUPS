@@ -26,6 +26,11 @@ internal sealed class EditorNavigationRenderer
     private readonly Func<ProjectTreeNode, Task> _renameNode;
     private readonly Func<ProjectTreeNode, Task> _deleteNode;
     private readonly Func<ProjectTreeNode, Task> _toggleVariantLock;
+    private readonly Func<
+        ProjectTreeNode,
+        ProjectTreeNode,
+        ProductionHierarchyTransferMode,
+        Task> _transferProductionNode;
     private readonly Func<ProjectTreeNode, bool> _canExposeChildren;
     private readonly Func<ProjectTreeNode, bool> _isNodeEnabled;
     private readonly Func<string> _activePreviewNodeId;
@@ -44,6 +49,11 @@ internal sealed class EditorNavigationRenderer
         Func<ProjectTreeNode, Task> renameNode,
         Func<ProjectTreeNode, Task> deleteNode,
         Func<ProjectTreeNode, Task> toggleVariantLock,
+        Func<
+            ProjectTreeNode,
+            ProjectTreeNode,
+            ProductionHierarchyTransferMode,
+            Task> transferProductionNode,
         Func<ProjectTreeNode, bool> canExposeChildren,
         Func<ProjectTreeNode, bool> isNodeEnabled,
         Func<string> activePreviewNodeId,
@@ -59,6 +69,7 @@ internal sealed class EditorNavigationRenderer
         _renameNode = renameNode;
         _deleteNode = deleteNode;
         _toggleVariantLock = toggleVariantLock;
+        _transferProductionNode = transferProductionNode;
         _canExposeChildren = canExposeChildren;
         _isNodeEnabled = isNodeEnabled;
         _activePreviewNodeId = activePreviewNodeId;
@@ -223,11 +234,16 @@ internal sealed class EditorNavigationRenderer
             lockedAction,
             add,
             options);
-        parent.Children.Add(EditorHierarchicalNavigationRow.Create(
+        var row = (Border)EditorHierarchicalNavigationRow.Create(
             metadata,
             _isDark(),
             () => { if (nodeEnabled) ActivateNavigationNode(node); },
-            hasChildren ? () => _toggleGroup(node) : null));
+            hasChildren ? () => _toggleGroup(node) : null);
+        ProductionNavigationTransferGesture.Attach(
+            row,
+            node,
+            _transferProductionNode);
+        parent.Children.Add(row);
         if (!expanded) return;
         for (var index = 0; index < visibleChildren.Count; index++)
         {

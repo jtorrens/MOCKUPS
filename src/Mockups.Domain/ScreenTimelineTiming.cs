@@ -48,7 +48,10 @@ public static class ScreenTimelineTiming
     }
 
     public static int CalculatedShotDurationFrames(
-        IEnumerable<(int ActionDurationFrames, int ActionDelayFrames)> screens,
+        IEnumerable<(
+            int StartFrame,
+            int ActionDurationFrames,
+            int ActionDelayFrames)> screens,
         int transitionFrameCount)
     {
         if (transitionFrameCount < 0)
@@ -64,13 +67,25 @@ public static class ScreenTimelineTiming
             throw new InvalidOperationException(
                 "Shot Screen action duration must be positive and delay non-negative.");
         }
+        var sequentialDuration = checked(
+            ordered.Sum((screen) =>
+                screen.ActionDurationFrames
+                + screen.ActionDelayFrames)
+            + Math.Max(0, ordered.Length - 1)
+            * transitionFrameCount);
+        var latestAuthoredEnd = ordered
+            .Select((screen) => checked(
+                screen.StartFrame
+                + EffectiveDurationFrames(
+                    screen.ActionDurationFrames,
+                    transitionFrameCount,
+                    screen.ActionDelayFrames)))
+            .DefaultIfEmpty(1)
+            .Max();
         return Math.Max(
             1,
-            checked(
-                ordered.Sum((screen) =>
-                    screen.ActionDurationFrames
-                    + screen.ActionDelayFrames)
-                + Math.Max(0, ordered.Length - 1)
-                * transitionFrameCount));
+            Math.Max(
+                sequentialDuration,
+                latestAuthoredEnd));
     }
 }

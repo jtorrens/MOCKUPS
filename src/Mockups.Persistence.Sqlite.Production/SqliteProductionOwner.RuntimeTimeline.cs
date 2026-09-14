@@ -83,7 +83,10 @@ internal sealed partial class SqliteProductionOwner
                     shot.TransitionDurationFrames);
             var duration = ScreenTimelineTiming.CalculatedShotDurationFrames(
                 ordered.Select((screen) =>
-                    (screen.DurationFrames, screen.ActionDelayFrames)),
+                    (
+                        screen.StartFrame,
+                        screen.DurationFrames,
+                        screen.ActionDelayFrames)),
                 transitionFrames);
             durationByShot.Add(
                 group.Key,

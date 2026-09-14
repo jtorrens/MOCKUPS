@@ -96,6 +96,10 @@ It includes:
   paths, nullable In projection, source-change reset, stable video-time markers
   and focused repository round trips, plus loopback byte-range streaming for
   large seekable local sources;
+- generic Production hierarchy transfer, covering Command-copy and Option-move
+  gesture intent, valid cross-Episode Shot and cross-Shot Screen destinations,
+  aggregate identity replacement versus retention, Shot Manager release,
+  preserved signed Screen origins and atomic calculated-duration synchronization;
 - operation-coordinated Production playback payload preparation, covering exact
   frame order, preserved local frames, Actor and animation documents,
   cancellation, byte-for-byte read-only persistence and exact owner/frame

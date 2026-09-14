@@ -57,7 +57,10 @@ internal static class ModuleInstanceTimeline
         var transitionFrames = ranges.FirstOrDefault()?.TransitionFrameCount ?? 0;
         return ScreenTimelineTiming.CalculatedShotDurationFrames(
             ranges.Select((range) =>
-                (range.ActionDurationFrames, range.ActionDelayFrames)),
+                (
+                    range.StartFrame,
+                    range.ActionDurationFrames,
+                    range.ActionDelayFrames)),
             transitionFrames);
     }
 

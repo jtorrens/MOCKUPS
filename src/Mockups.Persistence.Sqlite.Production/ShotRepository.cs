@@ -159,6 +159,100 @@ internal sealed class ShotRepository : IShotRepository
         return Get(connection, id);
     }
 
+    public ShotRecord DuplicateToEpisode(
+        SqliteConnection connection,
+        string sourceId,
+        string id,
+        string targetEpisodeId,
+        string name,
+        SqliteTransaction transaction)
+    {
+        var source = Get(connection, sourceId);
+        var targetProjectId = RequiredProjectId(
+            connection,
+            targetEpisodeId);
+        if (!source.ProjectId.Equals(
+                targetProjectId,
+                StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "A Shot can only be copied inside its current Project.");
+        }
+        RequireAvailableShotNumber(
+            connection,
+            targetEpisodeId,
+            source.ShotNumber);
+        RequireAvailableShotCode(
+            connection,
+            targetEpisodeId,
+            source.Id,
+            source.Slug);
+        var duplicate = source with
+        {
+            Id = id,
+            EpisodeId = targetEpisodeId,
+            Name = name,
+            SortOrder = SqliteCommandExecutor.NextSortOrder(
+                connection,
+                "shots",
+                "episode_id",
+                targetEpisodeId),
+            ShotManagerAssociationState = "free",
+            ShotManagerReferenceProductionId = "",
+            ShotManagerShotId = "",
+            ShotManagerCanonicalName = "",
+        };
+        Insert(connection, duplicate, transaction);
+        return Get(connection, id);
+    }
+
+    public ShotRecord MoveToEpisode(
+        SqliteConnection connection,
+        string shotId,
+        string targetEpisodeId,
+        SqliteTransaction transaction)
+    {
+        var source = Get(connection, shotId);
+        var targetProjectId = RequiredProjectId(
+            connection,
+            targetEpisodeId);
+        if (!source.ProjectId.Equals(
+                targetProjectId,
+                StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "A Shot can only be moved inside its current Project.");
+        }
+        if (source.EpisodeId.Equals(
+                targetEpisodeId,
+                StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "The Shot already belongs to the target Episode.");
+        }
+        RequireAvailableShotNumber(
+            connection,
+            targetEpisodeId,
+            source.ShotNumber);
+        RequireAvailableShotCode(
+            connection,
+            targetEpisodeId,
+            source.Id,
+            source.Slug);
+        _context.Execute(
+            connection,
+            transaction,
+            "UPDATE shots SET episode_id = $episodeId, sort_order = $sortOrder, shot_manager_association_state = 'free' WHERE id = $id",
+            ("$episodeId", targetEpisodeId),
+            ("$sortOrder", SqliteCommandExecutor.NextSortOrder(
+                connection,
+                "shots",
+                "episode_id",
+                targetEpisodeId)),
+            ("$id", shotId));
+        return Get(connection, shotId);
+    }
+
     public IReadOnlyDictionary<string, string> DuplicateForEpisode(
         SqliteConnection connection,
         IReadOnlyList<ShotRecord> sourceShots,

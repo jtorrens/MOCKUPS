@@ -300,6 +300,10 @@ public interface IEditorNodeCommandStore
     EditorShell.ProjectTreeNode DuplicateShot(
         EditorShell.ProjectTreeNode shot,
         int shotNumber);
+    EditorShell.ProjectTreeNode TransferProductionNode(
+        EditorShell.ProjectTreeNode source,
+        EditorShell.ProjectTreeNode target,
+        EditorShell.ProductionHierarchyTransferMode mode);
     EditorShell.ProjectTreeNode RenameDirectNode(
         EditorShell.ProjectTreeNode node,
         string name);

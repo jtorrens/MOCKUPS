@@ -156,6 +156,31 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
         return Get(connection, id);
     }
 
+    public ModuleInstanceRecord MoveToShot(
+        SqliteConnection connection,
+        string moduleInstanceId,
+        string targetShotId,
+        int sortOrder,
+        SqliteTransaction transaction)
+    {
+        var source = Get(connection, moduleInstanceId);
+        if (source.ShotId.Equals(
+                targetShotId,
+                StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "The Screen already belongs to the target Shot.");
+        }
+        _context.Execute(
+            connection,
+            transaction,
+            "UPDATE module_instances SET shot_id = $shotId, sort_order = $sortOrder WHERE id = $id",
+            ("$shotId", targetShotId),
+            ("$sortOrder", sortOrder),
+            ("$id", moduleInstanceId));
+        return Get(connection, moduleInstanceId);
+    }
+
     public void UpdateContent(SqliteConnection connection, string moduleInstanceId, string contentJson)
     {
         ValidateObject(contentJson, moduleInstanceId, "content_json");
@@ -199,11 +224,13 @@ internal sealed class ModuleInstanceRepository : IModuleInstanceRepository
     public void UpdateStartFrame(
         SqliteConnection connection,
         string moduleInstanceId,
-        int startFrame)
+        int startFrame,
+        SqliteTransaction? transaction = null)
     {
         _ = Get(connection, moduleInstanceId);
         _context.Execute(
             connection,
+            transaction,
             "UPDATE module_instances SET start_frame = $startFrame WHERE id = $id",
             ("$startFrame", startFrame),
             ("$id", moduleInstanceId));
