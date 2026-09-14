@@ -240,6 +240,7 @@ public partial class MainWindow : SukiWindow
             _nodeCommands.DeleteNode,
             _nodeCommands.ToggleVariantLock,
             _nodeCommands.TransferProductionNode,
+            _nodeCommands.ReportProductionTransferGestureFailure,
             productionShotContext.CanExposeChildren,
             productionShotContext.IsNavigationNodeEnabled,
             () => _previewController.ActiveNavigationNodeId,

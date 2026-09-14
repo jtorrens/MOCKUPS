@@ -31,6 +31,7 @@ internal sealed class EditorNavigationRenderer
         ProjectTreeNode,
         ProductionHierarchyTransferMode,
         Task> _transferProductionNode;
+    private readonly Action<Exception> _reportProductionTransferGestureFailure;
     private readonly Func<ProjectTreeNode, bool> _canExposeChildren;
     private readonly Func<ProjectTreeNode, bool> _isNodeEnabled;
     private readonly Func<string> _activePreviewNodeId;
@@ -54,6 +55,7 @@ internal sealed class EditorNavigationRenderer
             ProjectTreeNode,
             ProductionHierarchyTransferMode,
             Task> transferProductionNode,
+        Action<Exception> reportProductionTransferGestureFailure,
         Func<ProjectTreeNode, bool> canExposeChildren,
         Func<ProjectTreeNode, bool> isNodeEnabled,
         Func<string> activePreviewNodeId,
@@ -70,6 +72,8 @@ internal sealed class EditorNavigationRenderer
         _deleteNode = deleteNode;
         _toggleVariantLock = toggleVariantLock;
         _transferProductionNode = transferProductionNode;
+        _reportProductionTransferGestureFailure =
+            reportProductionTransferGestureFailure;
         _canExposeChildren = canExposeChildren;
         _isNodeEnabled = isNodeEnabled;
         _activePreviewNodeId = activePreviewNodeId;
@@ -242,7 +246,8 @@ internal sealed class EditorNavigationRenderer
         ProductionNavigationTransferGesture.Attach(
             row,
             node,
-            _transferProductionNode);
+            _transferProductionNode,
+            _reportProductionTransferGestureFailure);
         parent.Children.Add(row);
         if (!expanded) return;
         for (var index = 0; index < visibleChildren.Count; index++)

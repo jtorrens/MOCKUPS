@@ -250,6 +250,12 @@ internal sealed class EditorNodeCommandController
         }
     }
 
+    public void ReportProductionTransferGestureFailure(
+        Exception exception) =>
+        _messages.Error(
+            "Start Production hierarchy transfer",
+            exception);
+
     public async Task ToggleVariantLock(ProjectTreeNode node)
     {
         if (node.Kind is not ProjectTreeNodeKind.ComponentVariant and not ProjectTreeNodeKind.ModuleVariant)
