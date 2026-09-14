@@ -1,7 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
-using Avalonia.Controls.Primitives.PopupPositioning;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
@@ -115,13 +114,13 @@ internal static class ProductionNavigationTransferGesture
                     return;
                 }
                 dragging = true;
-                badge = new TransferBadge(row, node.Kind);
             }
 
             var target = TargetAt(args);
             SetActiveTarget(target);
+            badge ??= TransferBadge.TryCreate(row, node.Kind);
             badge?.Show(
-                args.GetPosition(row),
+                args,
                 mode.Value,
                 target is not null);
             args.Handled = true;
@@ -261,14 +260,16 @@ internal static class ProductionNavigationTransferGesture
             new SolidColorBrush(Color.Parse("#F020252D"));
 
         private readonly ProjectTreeNodeKind _sourceKind;
+        private readonly OverlayLayer _overlay;
         private readonly TextBlock _label;
         private readonly Border _content;
-        private readonly Popup _popup;
+        private readonly TranslateTransform _position = new();
 
-        public TransferBadge(
-            Border placementTarget,
+        private TransferBadge(
+            OverlayLayer overlay,
             ProjectTreeNodeKind sourceKind)
         {
+            _overlay = overlay;
             _sourceKind = sourceKind;
             _label = new TextBlock
             {
@@ -291,24 +292,22 @@ internal static class ProductionNavigationTransferGesture
                     }),
                 IsHitTestVisible = false,
                 Child = _label,
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top,
+                RenderTransform = _position,
             };
-            _popup = new Popup
-            {
-                PlacementTarget = placementTarget,
-                Placement = PlacementMode.AnchorAndGravity,
-                PlacementAnchor = PopupAnchor.TopLeft,
-                PlacementGravity = PopupGravity.BottomRight,
-                PlacementConstraintAdjustment =
-                    PopupPositionerConstraintAdjustment.SlideX
-                    | PopupPositionerConstraintAdjustment.SlideY,
-                ShouldUseOverlayLayer = true,
-                TakesFocusFromNativeControl = false,
-                Child = _content,
-            };
+            _overlay.Children.Add(_content);
         }
 
+        public static TransferBadge? TryCreate(
+            Border placementTarget,
+            ProjectTreeNodeKind sourceKind) =>
+            OverlayLayer.GetOverlayLayer(placementTarget) is { } overlay
+                ? new TransferBadge(overlay, sourceKind)
+                : null;
+
         public void Show(
-            Point position,
+            PointerEventArgs args,
             ProductionHierarchyTransferMode mode,
             bool isValid)
         {
@@ -318,17 +317,14 @@ internal static class ProductionNavigationTransferGesture
             _label.Text = isValid
                 ? $"{ActionPrefix(mode)} {ActionName(mode)} {SourceName()}"
                 : $"× {ActionName(mode)} {SourceName()} · destino no válido";
-            _popup.PlacementRect = new Rect(
-                position.X + 14,
-                position.Y + 16,
-                1,
-                1);
-            _popup.IsOpen = true;
+            var position = args.GetPosition(_overlay);
+            _position.X = position.X + 14;
+            _position.Y = position.Y + 16;
         }
 
         public void Hide()
         {
-            _popup.IsOpen = false;
+            _overlay.Children.Remove(_content);
         }
 
         private string SourceName() =>
