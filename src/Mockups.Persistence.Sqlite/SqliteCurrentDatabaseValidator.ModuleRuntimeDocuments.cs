@@ -2,6 +2,7 @@ using Microsoft.Data.Sqlite;
 using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Linq;
+using System.Text.Json.Nodes;
 
 namespace Mockups.DesktopEditorShell.Data;
 
@@ -38,9 +39,7 @@ internal sealed partial class SqliteCurrentDatabaseValidator
                     content,
                     projectActorIds);
                 RuntimeInputAnimationValueContract.Validate(
-                    ParseRequiredObject(
-                        _productionOwner.GetModuleInstanceRuntimePreviewJson(instance.Id),
-                        $"Module Instance '{instance.Id}' Runtime Preview"),
+                    ValidateProductionRuntimeFixtures(instance.Id),
                     ParseRequiredObject(
                         instance.AnimationJson,
                         $"Module Instance '{instance.Id}' animation_json"),
@@ -58,5 +57,20 @@ internal sealed partial class SqliteCurrentDatabaseValidator
                 throw InvalidCurrentDatabase(exception.Message);
             }
         }
+    }
+
+    private JsonObject ValidateProductionRuntimeFixtures(string moduleInstanceId)
+    {
+        var runtime = ParseRequiredObject(
+            _productionOwner.GetModuleInstanceRuntimePreviewJson(moduleInstanceId),
+            $"Module Instance '{moduleInstanceId}' Runtime Preview");
+        var config = ParseRequiredObject(
+            _productionOwner.GetModuleInstanceVariantSettings(moduleInstanceId).ConfigJson,
+            $"Module Instance '{moduleInstanceId}' Variant config");
+        ProductionRuntimeFixtureIsolationContract.Validate(
+            runtime,
+            config,
+            $"Module Instance '{moduleInstanceId}'");
+        return runtime;
     }
 }

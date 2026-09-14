@@ -38,6 +38,10 @@ internal sealed class ProductionPreviewRuntimeResolver
         var timelineFrameBefore =
             ResolvedTimelineFrame(preview);
         var config = ParseObject(payload.ConfigJson);
+        ProductionRuntimeFixtureIsolationContract.Validate(
+            preview,
+            config,
+            $"Module Instance '{payload.OwnerId}'");
         var instance = ParseObject(payload.InstanceJson);
         var animation = JsonPath.RequiredObject(
             instance,

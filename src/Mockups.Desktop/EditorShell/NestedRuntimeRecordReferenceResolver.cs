@@ -42,7 +42,8 @@ internal sealed class NestedRuntimeRecordReferenceResolver
     {
         foreach (var input in inputs.Where((field) =>
                      field.Kind == ComponentInputKind.RecordReference
-                     && !string.IsNullOrWhiteSpace(field.ResolvedJsonKey)))
+                     && !string.IsNullOrWhiteSpace(field.ResolvedJsonKey)
+                     && CollectionFieldAvailability.IsEnabled(values, field)))
         {
             var recordId = values[input.JsonKey]?.GetValue<string>() ?? "";
             values[input.ResolvedJsonKey] = _recordInputResolver.ResolvedPreviewValue(
@@ -57,7 +58,8 @@ internal sealed class NestedRuntimeRecordReferenceResolver
 
         foreach (var input in inputs.Where((field) =>
                      field.ValueKind == ValueKind.StructuredCollection
-                     && field.StructuredCollection is not null))
+                     && field.StructuredCollection is not null
+                     && CollectionFieldAvailability.IsEnabled(values, field)))
         {
             if (values[input.JsonKey] is not JsonArray items) continue;
             foreach (var item in items.OfType<JsonObject>())
