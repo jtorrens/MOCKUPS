@@ -101,6 +101,7 @@ internal sealed partial class SqliteCurrentDatabaseValidator
         ValidateSqliteRuntime(connection);
         ValidatePhysicalSchema(connection);
         ValidateCurrentJsonColumns(connection);
+        ValidateCurrentSystemPreviewFixtures(connection);
         ValidateCurrentProductionPalette(connection);
         ValidateCurrentDeviceMetrics(connection);
         ValidateCurrentShotDeviceOverrides(connection);
@@ -121,6 +122,103 @@ internal sealed partial class SqliteCurrentDatabaseValidator
         ValidateNoRetiredButtonStates(connection);
         ValidateCurrentSemanticTypographyReferences(connection);
         ValidateForeignKeyIntegrity(connection);
+    }
+
+    private void ValidateCurrentSystemPreviewFixtures(
+        SqliteConnection connection)
+    {
+        foreach (var table in new[] { "component_classes", "modules" })
+        {
+            using var command = connection.CreateCommand();
+            command.CommandText = $"SELECT id, design_preview_json FROM {table} ORDER BY id";
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                var id = reader.GetString(0);
+                var preview = JsonPath.ParseRequiredObject(
+                    reader.GetString(1),
+                    $"{table} '{id}' design_preview_json");
+                ValidateSystemPreviewFixtureNode(
+                    preview,
+                    $"{table} '{id}' Design Preview");
+            }
+        }
+    }
+
+    private void ValidateSystemPreviewFixtureNode(
+        JsonNode? node,
+        string owner)
+    {
+        if (node is JsonArray array)
+        {
+            foreach (var child in array)
+            {
+                ValidateSystemPreviewFixtureNode(child, owner);
+            }
+            return;
+        }
+        if (node is not JsonObject value) return;
+
+        var actorId = value["actorId"]?.GetValue<string>() ?? "";
+        if (actorId.Length > 0 && !SystemPreviewFixtureCatalog.IsActor(actorId))
+        {
+            throw InvalidCurrentDatabase(
+                $"{owner} references Production Actor '{actorId}' instead of a System Preview fixture.");
+        }
+        if (JsonPath.String(value, "tableId", "") == "actors")
+        {
+            var defaultActorId = JsonPath.String(value, "defaultValue", "");
+            if (defaultActorId.Length > 0
+                && !SystemPreviewFixtureCatalog.IsActor(defaultActorId))
+            {
+                throw InvalidCurrentDatabase(
+                    $"{owner} declares Production Actor default '{defaultActorId}' instead of a System Preview fixture.");
+            }
+        }
+
+        foreach (var key in new[] { "mediaSource", "mediaDirectory", "galleryDirectory" })
+        {
+            var reference = value[key]?.GetValue<string>() ?? "";
+            if (reference.Length > 0
+                && !SystemPreviewFixtureCatalog.IsMediaReference(reference))
+            {
+                throw InvalidCurrentDatabase(
+                    $"{owner} references Production media '{reference}' instead of a System Preview fixture.");
+            }
+        }
+        var valueKind = JsonPath.String(value, "valueKind", "");
+        if (valueKind is "MediaFilePath" or "MediaDirectoryPath")
+        {
+            var defaultReference = JsonPath.String(value, "defaultValue", "");
+            if (defaultReference.Length > 0
+                && !SystemPreviewFixtureCatalog.IsMediaReference(defaultReference))
+            {
+                throw InvalidCurrentDatabase(
+                    $"{owner} declares Production media default '{defaultReference}' instead of a System Preview fixture.");
+            }
+        }
+
+        foreach (var (_, child) in value)
+        {
+            ValidateSystemPreviewFixtureNode(child, owner);
+            if (child is not JsonValue jsonValue
+                || !jsonValue.TryGetValue<string>(out var serialized))
+            {
+                continue;
+            }
+            var trimmed = serialized.TrimStart();
+            if (!(trimmed.StartsWith('{') || trimmed.StartsWith('['))) continue;
+            try
+            {
+                ValidateSystemPreviewFixtureNode(
+                    JsonNode.Parse(serialized),
+                    owner);
+            }
+            catch (System.Text.Json.JsonException)
+            {
+                // Ordinary authored strings may begin with JSON punctuation.
+            }
+        }
     }
 
     private void ValidateCurrentIconThemeAssets(SqliteConnection connection)
@@ -766,7 +864,8 @@ internal sealed partial class SqliteCurrentDatabaseValidator
         {
             if (!string.Equals(expectedEntries[key], actualEntries[key], StringComparison.Ordinal))
             {
-                throw InvalidCurrentDatabase($"physical definition for '{key}' differs from the canonical schema");
+                throw InvalidCurrentDatabase(
+                    $"physical definition for '{key}' differs from the canonical schema; expected [{expectedEntries[key]}], actual [{actualEntries[key]}]");
             }
         }
     }
@@ -907,7 +1006,6 @@ internal sealed partial class SqliteCurrentDatabaseValidator
                     $"Component Variant '{row.Id}::{variant.Id}'");
                 _designOwner.ValidateDeclaredComponentVariantReferences(
                     connection,
-                    row.ProjectId,
                     variantConfig);
                 documents.Add(($"component variant '{row.Id}::{variant.Id}'", variantConfig));
             }
@@ -919,7 +1017,6 @@ internal sealed partial class SqliteCurrentDatabaseValidator
                 $"Component Class '{row.Id}' config_json");
             _designOwner.ValidateDeclaredComponentVariantReferences(
                 connection,
-                row.ProjectId,
                 classConfig);
             documents.Add(($"component class '{row.Id}' config_json", classConfig));
             var designPreview = ParseRequiredObject(

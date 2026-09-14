@@ -11,7 +11,6 @@
     "componentType": "incomingCallNotification",
     "category": "component",
     "componentClassId": "component_project_foqn_s2_incoming_call_notification",
-    "projectId": "project_foqn_s2",
     "recordClassId": "component.incomingCallNotification",
     "name": "Incoming Call Notification",
     "notes": "Reusable iOS and Android incoming-call notification with independently placed Avatar and Icon Row boundaries."

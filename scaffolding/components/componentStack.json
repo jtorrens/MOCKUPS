@@ -11,7 +11,6 @@
     "componentType": "componentStack",
     "category": "atom",
     "componentClassId": "component_project_foqn_s2_componentStack",
-    "projectId": "project_foqn_s2",
     "recordClassId": "component.componentStack",
     "name": "Component Stack",
     "notes": "Component stack atom"

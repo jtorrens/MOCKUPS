@@ -803,6 +803,12 @@ internal sealed class ExternalMediaUsageService : IExternalMediaUsageQuery
         string animationKeyframeId = "")
     {
         if (string.IsNullOrWhiteSpace(authoredPath)) return;
+        if (authoredPath.StartsWith(
+                SystemPreviewFixtureCatalog.MediaScheme,
+                StringComparison.Ordinal))
+        {
+            return;
+        }
         var absolute = Resolve(source, authoredPath, valueKind, mediaRoot);
         var isDirectory = valueKind == ValueKind.MediaDirectoryPath;
         var directory = isDirectory
@@ -927,8 +933,7 @@ internal sealed class ExternalMediaUsageService : IExternalMediaUsageQuery
         var result = new List<ComponentOwner>();
         using var command = connection.CreateCommand();
         command.CommandText =
-            "SELECT id, component_type, name, record_class_id, design_preview_json, metadata_json FROM component_classes WHERE project_id = $projectId";
-        command.Parameters.AddWithValue("$projectId", projectId);
+            "SELECT id, component_type, name, record_class_id, design_preview_json, metadata_json FROM component_classes";
         using var reader = command.ExecuteReader();
         while (reader.Read())
         {

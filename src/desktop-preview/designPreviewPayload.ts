@@ -76,6 +76,7 @@ export interface DesignPreviewPayload {
   paletteNeutralColors?: Record<string, boolean>;
   projectMediaRoot?: string;
   projectMediaFiles?: string[];
+  systemPreviewFixtureRoot?: string;
   showMarks?: boolean;
   themeMode: string;
   themeTokensJson: string;

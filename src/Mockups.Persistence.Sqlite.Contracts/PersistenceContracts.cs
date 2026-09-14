@@ -138,7 +138,6 @@ internal sealed record ModuleDefinitionRecord(
 
 internal sealed record ComponentClassDefinitionRecord(
     string Id,
-    string ProjectId,
     string ComponentType,
     string RecordClassId,
     string Name,
@@ -572,8 +571,6 @@ internal interface IComponentClassRepository
     ComponentClassDefinitionRecord Get(SqliteConnection connection, string componentClassId);
 
     IReadOnlyList<ComponentClassDefinitionRecord> QueryAll(SqliteConnection connection);
-
-    IReadOnlyList<ComponentClassDefinitionRecord> QueryByProject(SqliteConnection connection, string projectId);
 
     void UpdateDesignPreview(string componentClassId, string designPreviewJson);
 

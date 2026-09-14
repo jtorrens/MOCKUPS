@@ -420,6 +420,12 @@ position. The visual shell shows the shared loading state and constructs
 controls only from the prepared result whose selection revision is still
 current.
 
+Design preparation may resolve only the synthetic Actor and media identities
+declared by the System Preview fixture catalog. The payload carries the exact
+App Support fixture root, and `system-preview://` is resolved only while that
+root is present. Production preparation never carries it and rejects those
+identities rather than falling back to Project data.
+
 Preview Setup resource options follow the same rule. Device options and their
 exact metrics, Theme options and the Project media root are loaded together on
 the session operation worker. The Preview controller retains only that

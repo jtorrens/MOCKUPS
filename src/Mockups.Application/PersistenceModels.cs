@@ -185,7 +185,6 @@ public sealed record IconThemeGenerateResult(
     IconThemeRefreshResult RefreshResult);
 
 public sealed record ComponentClassSettings(
-    string ProjectId,
     string ComponentType,
     string RecordClassId,
     string Name,
@@ -203,7 +202,6 @@ public sealed record ThemeTokenOption(
     string? DarkColorHex);
 
 public sealed record ComponentVariantSelectionSettings(
-    string ProjectId,
     string ComponentType,
     string RecordClassId,
     string ConfigJson);

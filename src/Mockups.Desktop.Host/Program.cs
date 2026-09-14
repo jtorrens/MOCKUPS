@@ -60,6 +60,8 @@ internal static class Program
             return;
         }
 
+        SystemPreviewFixtureCatalog.ValidateInstalled();
+
         BuildAvaloniaApp()
             .StartWithClassicDesktopLifetime(
                 avaloniaArgs);

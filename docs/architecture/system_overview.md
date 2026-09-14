@@ -71,7 +71,8 @@ SQLite current project data
 
 ### Resource scope
 
-System Palette identities and Icon Themes are shared by every Project.
+System Palette identities, Icon Themes, Component Classes and their complete
+Variants are shared by every Project.
 Production Palette values, Themes, Actors, Devices and Production Fonts remain
 owned by one exact Project. Project-owned records never resolve through another
 Project.
@@ -81,7 +82,7 @@ Project.
 - System Palette Colors and Icon Themes define shared semantic identities;
   Project Themes select them for Production.
 - Apps group Modules.
-- Component Classes define schema and resolver identity.
+- Component Classes define one global schema and resolver identity.
 - Component Variants are complete named snapshots.
 - Modules define Production Screen behavior.
 - Module Variants are complete named snapshots.

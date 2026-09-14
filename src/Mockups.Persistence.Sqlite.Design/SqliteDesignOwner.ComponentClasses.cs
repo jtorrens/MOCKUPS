@@ -498,7 +498,6 @@ internal sealed partial class SqliteDesignOwner
     private static ComponentClassSettings ComponentClassSettingsFrom(
         ComponentClassDefinitionRecord record) =>
         new(
-            record.ProjectId,
             record.ComponentType,
             record.RecordClassId,
             record.Name,
@@ -516,7 +515,6 @@ internal sealed partial class SqliteDesignOwner
         var config = ParseJsonObject(settings.ConfigJson);
         ApplyComponentInputBindingsProjections(
             connection,
-            settings.ProjectId,
             config,
             ComponentInputBindingsProjectionCatalog.ComponentOwners());
         return settings with { ConfigJson = config.ToJsonString() };

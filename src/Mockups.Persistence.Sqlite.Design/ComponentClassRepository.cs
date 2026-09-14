@@ -27,7 +27,7 @@ internal sealed class ComponentClassRepository : IComponentClassRepository
     {
         using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT id, project_id, component_type, record_class_id, name, notes,
+            SELECT id, component_type, record_class_id, name, notes,
                    config_json, design_preview_json, metadata_json
             FROM component_classes
             WHERE id = $id
@@ -47,36 +47,11 @@ internal sealed class ComponentClassRepository : IComponentClassRepository
         var rows = new List<ComponentClassDefinitionRecord>();
         using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT id, project_id, component_type, record_class_id, name, notes,
+            SELECT id, component_type, record_class_id, name, notes,
                    config_json, design_preview_json, metadata_json
             FROM component_classes
             ORDER BY component_type, name, id
             """;
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            rows.Add(Read(reader));
-        }
-
-        return rows;
-    }
-
-    public IReadOnlyList<ComponentClassDefinitionRecord> QueryByProject(
-        SqliteConnection connection,
-        string projectId)
-    {
-        var rows = new List<ComponentClassDefinitionRecord>();
-        using var command = connection.CreateCommand();
-        command.CommandText = """
-            SELECT id, project_id, component_type, record_class_id, name, notes,
-                   config_json, design_preview_json, metadata_json
-            FROM component_classes
-            WHERE project_id = $projectId
-            ORDER BY CASE WHEN id = 'component_' || $projectId || '_' || component_type THEN 0 ELSE 1 END,
-                     name,
-                     id
-            """;
-        command.Parameters.AddWithValue("$projectId", projectId);
         using var reader = command.ExecuteReader();
         while (reader.Read())
         {
@@ -182,8 +157,7 @@ internal sealed class ComponentClassRepository : IComponentClassRepository
             reader.GetString(4),
             SqliteCommandExecutor.ReadString(reader, 5),
             SqliteCommandExecutor.ReadString(reader, 6),
-            SqliteCommandExecutor.ReadString(reader, 7),
-            SqliteCommandExecutor.ReadString(reader, 8));
+            SqliteCommandExecutor.ReadString(reader, 7));
         var config = JsonPath.ParseRequiredObject(record.ConfigJson, $"Component class '{record.Id}' config_json");
         var preview = JsonPath.ParseRequiredObject(
             record.DesignPreviewJson,

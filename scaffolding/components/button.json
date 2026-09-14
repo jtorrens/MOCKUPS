@@ -11,7 +11,6 @@
     "componentType": "button",
     "category": "atom",
     "componentClassId": "component_project_foqn_s2_button",
-    "projectId": "project_foqn_s2",
     "recordClassId": "component.button",
     "name": "Button",
     "notes": "Button component"

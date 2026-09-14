@@ -5,7 +5,7 @@ Status: normative.
 ## Database scope
 
 The desktop application persists one complete Project workspace in SQLite.
-Schema version `21` is the only current schema. Authored Production rows belong
+Schema version `22` is the only current schema. Authored Production rows belong
 directly or indirectly to a Project; System catalog rows are explicitly global.
 Cross-Project lookup remains invalid.
 
@@ -15,13 +15,14 @@ The current tables are:
 | --- | --- | --- |
 | Workspace | `projects` | Root of all authored data |
 | Production | `episodes`, `shots`, `module_instances` | Project → Episode → Shot → ordered Screen |
-| Definitions | `apps`, `modules`, `component_classes` | Project-owned reusable definitions |
+| Project definitions | `apps`, `modules` | Project-owned reusable definitions |
+| System Components | `component_classes` | Global Component Classes and complete Variants |
 | System Palette | `palette_colors` | Global identities and default RGB values |
 | Production Palette | `production_palette_values` | Complete Project-specific RGB values for the System catalog |
 | System Icon Themes | `icon_themes` | Global icon-set identities, mappings and System asset roots |
 | Visual resources | `themes` | Project-owned semantic resources |
 | Production resources | `actors`, `devices`, `production_fonts` | Project-owned Production Data |
-| Editor description | `editor_layouts` | Project-owned layout metadata |
+| Editor description | `editor_layouts` | Global layout metadata keyed by record class |
 
 `shots.owner_actor_id` is required and uses a restricted foreign key.
 `shots.device_override_id` is one nullable restricted foreign key. `NULL`

@@ -9,7 +9,6 @@ internal sealed partial class SqliteDesignOwner
 {
     private void ApplyComponentInputBindingsProjections(
         SqliteConnection connection,
-        string projectId,
         JsonObject ownerConfig,
         IReadOnlyList<ComponentInputBindingsProjectionDefinition> definitions)
     {
@@ -40,7 +39,6 @@ internal sealed partial class SqliteDesignOwner
                     $"{definition.Id} Component Variant slot");
             var contract = EffectiveComponentRuntimeContract(
                 connection,
-                projectId,
                 reference,
                 JsonPath.RequiredObject(
                     slot,
@@ -58,7 +56,6 @@ internal sealed partial class SqliteDesignOwner
 
     private JsonObject EffectiveComponentRuntimeContract(
         SqliteConnection connection,
-        string projectId,
         string variantReference,
         JsonObject overrides)
     {
@@ -73,11 +70,6 @@ internal sealed partial class SqliteDesignOwner
         var row = _componentClassRepository.Get(
             connection,
             componentClassId);
-        if (!row.ProjectId.Equals(projectId, StringComparison.Ordinal))
-        {
-            throw new InvalidOperationException(
-                $"Component Variant '{variantReference}' belongs to another Project.");
-        }
         var variant = RequiredComponentClassVariants(row)
             .Single((candidate) => candidate.Id.Equals(
                 variantId,

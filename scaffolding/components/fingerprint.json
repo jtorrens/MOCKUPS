@@ -11,7 +11,6 @@
     "componentType": "fingerprint",
     "category": "system",
     "componentClassId": "component_project_foqn_s2_fingerprint",
-    "projectId": "project_foqn_s2",
     "recordClassId": "component.fingerprint",
     "name": "Default Fingerprint",
     "notes": "Fingerprint component"

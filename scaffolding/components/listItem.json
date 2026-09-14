@@ -11,7 +11,6 @@
     "componentType": "listItem",
     "category": "component",
     "componentClassId": "component_project_foqn_s2_list_item",
-    "projectId": "project_foqn_s2",
     "recordClassId": "component.listItem",
     "name": "List Item",
     "notes": "Reusable item model with Variant-authored composition and Runtime content sets."

@@ -75,7 +75,6 @@ internal sealed partial class SqliteDesignOwner
                 value);
             ApplyComponentInputBindingsProjections(
                 connection,
-                settings.ProjectId,
                 config,
                 ComponentInputBindingsProjectionCatalog.ComponentOwners());
             CurrentComponentConfigContract.Validate(
@@ -84,7 +83,6 @@ internal sealed partial class SqliteDesignOwner
                 $"Component class '{componentClassId}' config_json");
             ValidateDeclaredComponentVariantReferences(
                 connection,
-                settings.ProjectId,
                 config);
             SetDefaultComponentVariantConfig(metadata, config);
             _componentClassRepository.UpdateConfigAndMetadata(
@@ -149,7 +147,6 @@ internal sealed partial class SqliteDesignOwner
                 componentClassId);
             ApplyComponentInputBindingsProjections(
                 connection,
-                settings.ProjectId,
                 nextConfig,
                 ComponentInputBindingsProjectionCatalog.ComponentOwners());
             CurrentComponentConfigContract.Validate(
@@ -158,7 +155,6 @@ internal sealed partial class SqliteDesignOwner
                 $"Component class '{componentClassId}' Variant '{variantId}' config");
             ValidateDeclaredComponentVariantReferences(
                 connection,
-                settings.ProjectId,
                 nextConfig);
             var metadata = ParseJsonObject(settings.MetadataJson);
             var variants = VariantEnvelopeContract.RequiredArray(
@@ -198,7 +194,6 @@ internal sealed partial class SqliteDesignOwner
             componentClassId);
         ApplyComponentInputBindingsProjections(
             connection,
-            component.ProjectId,
             config,
             ComponentInputBindingsProjectionCatalog.ComponentOwners());
         CurrentComponentConfigContract.Validate(
@@ -207,7 +202,6 @@ internal sealed partial class SqliteDesignOwner
             $"Component class '{componentClassId}' Default Variant config");
         ValidateDeclaredComponentVariantReferences(
             connection,
-            component.ProjectId,
             config);
         SetDefaultComponentVariantConfig(metadata, config);
         _componentClassRepository.UpdateConfigAndMetadata(
@@ -238,7 +232,6 @@ internal sealed partial class SqliteDesignOwner
             componentClassId);
         ApplyComponentInputBindingsProjections(
             connection,
-            component.ProjectId,
             config,
             ComponentInputBindingsProjectionCatalog.ComponentOwners());
         CurrentComponentConfigContract.Validate(
@@ -247,7 +240,6 @@ internal sealed partial class SqliteDesignOwner
             $"Component class '{componentClassId}' Variant '{variantId}' config");
         ValidateDeclaredComponentVariantReferences(
             connection,
-            component.ProjectId,
             config);
         if (variantId.Equals(
                 VariantEnvelopeContract.DefaultId,

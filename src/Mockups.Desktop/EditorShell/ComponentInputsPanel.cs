@@ -46,6 +46,7 @@ internal sealed class ComponentPreviewInputSession
     private bool _awaitingPlaybackPresentation;
     private bool _stopAfterPlaybackPresentation;
     private string _heldFinalActionId = "";
+    private bool _allowSystemPreviewFixtures;
 
     public bool PresentEveryPlaybackFrame
     {
@@ -120,10 +121,12 @@ internal sealed class ComponentPreviewInputSession
             _config = [];
             _themeTokens = [];
             _runtimePreview = [];
+            _allowSystemPreviewFixtures = false;
             StopPlayback();
             return;
         }
         payload = DesignPreviewPayloadLayers.PrimaryOwner(payload);
+        _allowSystemPreviewFixtures = payload.Kind is "componentClass" or "module";
 
         ApplyProjectFrameRate(projectId);
         var config = ParseJsonObject(payload.ConfigJson);
@@ -577,7 +580,11 @@ internal sealed class ComponentPreviewInputSession
             config,
             CaptureTransientState(payload),
             _previewInputData.ComponentVariantConfig);
-        _nestedRecordInputResolver.Resolve(config, themeMode, payload.PaletteColors);
+        _nestedRecordInputResolver.Resolve(
+            config,
+            themeMode,
+            payload.PaletteColors,
+            _allowSystemPreviewFixtures);
         _runtimePreview = preview;
         var inputs = RuntimeInputDefinitionReader.ReadInputs(preview, config);
         var collections = RuntimeInputDefinitionReader.ReadCollections(preview, config);
@@ -644,7 +651,11 @@ internal sealed class ComponentPreviewInputSession
                 themeMode,
                 payload.PaletteColors);
         }
-        _nestedRecordInputResolver.Resolve(preview, themeMode, payload.PaletteColors);
+        _nestedRecordInputResolver.Resolve(
+            preview,
+            themeMode,
+            payload.PaletteColors,
+            _allowSystemPreviewFixtures);
 
         var preparedPreviewJson = preview.ToJsonString();
         var result = payload with
@@ -654,7 +665,8 @@ internal sealed class ComponentPreviewInputSession
             RuntimeContractJson = runtimeContractJson,
             ProjectMediaFiles = PreviewMediaDirectoryCatalog.Resolve(
                 payload.ProjectMediaRoot,
-                preparedPreviewJson),
+                preparedPreviewJson,
+                payload.SystemPreviewFixtureRoot),
         };
         var moduleFrameActions = _actions
             .Where((action) =>
@@ -684,7 +696,12 @@ internal sealed class ComponentPreviewInputSession
         {
             foreach (var item in DesignPreviewTestValues.CurrentCollectionItems(preview, collection))
             {
-                ResolveRecordReferenceInputs(item, collection.Fields, themeMode, paletteColors);
+                ResolveRecordReferenceInputs(
+                    item,
+                    collection.Fields,
+                    themeMode,
+                    paletteColors,
+                    _allowSystemPreviewFixtures);
                 if (collection.ComponentItems is not { } componentItems)
                 {
                     continue;
@@ -703,8 +720,9 @@ internal sealed class ComponentPreviewInputSession
                 ResolveRecordReferenceInputs(
                     componentInputs,
                     RuntimeInputDefinitionReader.ReadInputs(componentInputs, componentConfig),
-                    themeMode,
-                    paletteColors);
+                themeMode,
+                paletteColors,
+                _allowSystemPreviewFixtures);
             }
         }
     }
@@ -713,13 +731,15 @@ internal sealed class ComponentPreviewInputSession
         JsonObject values,
         IReadOnlyList<ComponentInputDefinition> inputs,
         string themeMode,
-        IReadOnlyDictionary<string, string> paletteColors)
+        IReadOnlyDictionary<string, string> paletteColors,
+        bool allowSystemPreviewFixtures)
     {
         _nestedRecordInputResolver.ResolveDeclaredValues(
             values,
             inputs,
             themeMode,
-            paletteColors);
+            paletteColors,
+            allowSystemPreviewFixtures);
     }
 
     private void ReconcileRuntimeStructure(
@@ -956,12 +976,17 @@ internal sealed class ComponentPreviewInputSession
             themeMode,
             paletteColors,
             input.Id,
-            input.AllowEmpty);
+            input.AllowEmpty,
+            _allowSystemPreviewFixtures);
     }
 
     private IReadOnlyList<FieldOption> RecordReferenceOptions(ComponentInputDefinition input, string projectId)
     {
-        return _recordInputResolver.Options(projectId, input.TableId, input.Id);
+        return _recordInputResolver.Options(
+            projectId,
+            input.TableId,
+            input.Id,
+            _allowSystemPreviewFixtures);
     }
 
     private IReadOnlyList<FieldOption> ComponentVariantOptions(ComponentInputDefinition input, string projectId)

@@ -89,7 +89,6 @@ internal sealed class ThemeRepository : IThemeRepository
         JsonPath.ParseRequiredObject(metadataJson, "New Theme metadata_json");
         ValidateReferences(
             connection,
-            projectId,
             iconThemeId,
             statusBarId,
             navigationBarId,
@@ -144,7 +143,6 @@ internal sealed class ThemeRepository : IThemeRepository
         };
         ValidateReferences(
             connection,
-            copy.ProjectId,
             copy.IconThemeId,
             copy.StatusBarId,
             copy.NavigationBarId,
@@ -228,7 +226,6 @@ internal sealed class ThemeRepository : IThemeRepository
             case "theme.statusBarId":
                 ProjectReferenceIntegrity.RequireComponentVariantReference(
                     connection,
-                    theme.ProjectId,
                     value,
                     StatusBarComponentConfigContract.ComponentType,
                     $"Theme '{theme.Id}' Status Bar");
@@ -236,7 +233,6 @@ internal sealed class ThemeRepository : IThemeRepository
             case "theme.navigationBarId":
                 ProjectReferenceIntegrity.RequireComponentVariantReference(
                     connection,
-                    theme.ProjectId,
                     value,
                     NavigationBarComponentConfigContract.ComponentType,
                     $"Theme '{theme.Id}' Navigation Bar");
@@ -248,7 +244,6 @@ internal sealed class ThemeRepository : IThemeRepository
 
     private static void ValidateReferences(
         SqliteConnection connection,
-        string projectId,
         string iconThemeId,
         string statusBarId,
         string navigationBarId,
@@ -261,13 +256,11 @@ internal sealed class ThemeRepository : IThemeRepository
             $"{context} Icon Theme");
         ProjectReferenceIntegrity.RequireComponentVariantReference(
             connection,
-            projectId,
             statusBarId,
             StatusBarComponentConfigContract.ComponentType,
             $"{context} Status Bar");
         ProjectReferenceIntegrity.RequireComponentVariantReference(
             connection,
-            projectId,
             navigationBarId,
             NavigationBarComponentConfigContract.ComponentType,
             $"{context} Navigation Bar");

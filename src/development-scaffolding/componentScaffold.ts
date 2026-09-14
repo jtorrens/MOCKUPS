@@ -66,7 +66,6 @@ export interface ComponentScaffoldSpec {
     componentType: string;
     category: ComponentScaffoldCategory;
     componentClassId: string;
-    projectId: string;
     recordClassId: string;
     name: string;
     notes: string;
@@ -109,7 +108,6 @@ export interface ComponentScaffoldSpec {
 
 interface ComponentInventoryRow {
   id: string;
-  projectId: string;
   componentType: string;
   recordClassId: string;
   name: string;
@@ -117,7 +115,6 @@ interface ComponentInventoryRow {
 
 export interface ComponentScaffoldInventory {
   componentTypes: ReadonlySet<string>;
-  projectIds: ReadonlySet<string>;
   recordClassIds: ReadonlySet<string>;
   componentClasses: readonly ComponentInventoryRow[];
   valueKinds: ReadonlySet<string>;
@@ -158,7 +155,6 @@ export interface ComponentScaffoldPlan {
     table: "component_classes";
     row: {
       id: string;
-      project_id: string;
       component_type: string;
       record_class_id: string;
       name: string;
@@ -289,7 +285,6 @@ export function parseComponentScaffoldSpec(value: unknown): ComponentScaffoldSpe
     "componentType",
     "category",
     "componentClassId",
-    "projectId",
     "recordClassId",
     "name",
     "notes",
@@ -418,7 +413,6 @@ export function parseComponentScaffoldSpec(value: unknown): ComponentScaffoldSpe
         component.componentClassId,
         "Component scaffold componentClassId",
       ),
-      projectId: requiredString(component.projectId, "Component scaffold projectId"),
       recordClassId: requiredString(
         component.recordClassId,
         "Component scaffold recordClassId",
@@ -524,13 +518,8 @@ export function loadComponentScaffoldInventory(
     readonly: true,
   });
   try {
-    const projectIds = new Set(
-      (database.prepare("SELECT id FROM projects").all() as Array<{ id: string }>)
-        .map((row) => row.id),
-    );
     const componentClasses = database.prepare(`
       SELECT id,
-             project_id AS projectId,
              component_type AS componentType,
              record_class_id AS recordClassId,
              name
@@ -542,7 +531,6 @@ export function loadComponentScaffoldInventory(
     );
     return {
       componentTypes: new Set(Object.keys(components)),
-      projectIds,
       recordClassIds,
       componentClasses,
       valueKinds,
@@ -579,7 +567,6 @@ export function createComponentScaffoldPlan(
   const {
     componentType,
     componentClassId,
-    projectId,
     recordClassId,
     name,
   } = spec.component;
@@ -598,7 +585,6 @@ export function createComponentScaffoldPlan(
 
   validateIdentity(componentType, /^[a-z][A-Za-z0-9_]*$/, "componentType", violations);
   validateIdentity(componentClassId, /^[a-z][A-Za-z0-9_]*$/, "componentClassId", violations);
-  validateIdentity(projectId, /^[a-z][a-z0-9_]*$/, "projectId", violations);
   validateIdentity(
     recordClassId,
     /^component\.[A-Za-z][A-Za-z0-9_]*$/,
@@ -607,9 +593,6 @@ export function createComponentScaffoldPlan(
   );
   if (!name.trim()) violations.push("Component name must not be blank.");
 
-  if (!inventory.projectIds.has(projectId)) {
-    violations.push(`Project '${projectId}' does not exist in the current database.`);
-  }
   if (inventory.componentTypes.has(componentType)) {
     violations.push(`Component type '${componentType}' already exists in the manifest.`);
   }
@@ -621,11 +604,10 @@ export function createComponentScaffoldPlan(
     violations.push(`Record class id '${recordClassId}' already exists.`);
   }
   if (inventory.componentClasses.some((row) =>
-    row.projectId === projectId
-    && row.componentType === componentType
+    row.componentType === componentType
     && row.name === name)) {
     violations.push(
-      `Component name '${name}' already exists for type '${componentType}' in Project '${projectId}'.`,
+      `Component name '${name}' already exists for global type '${componentType}'.`,
     );
   }
 
@@ -803,7 +785,6 @@ export function createComponentScaffoldPlan(
       table: "component_classes",
       row: {
         id: componentClassId,
-        project_id: projectId,
         component_type: componentType,
         record_class_id: recordClassId,
         name: spec.component.name,
@@ -854,7 +835,6 @@ export function componentScaffoldTemplate(): ComponentScaffoldSpec {
       componentType: "replaceMe",
       category: "atom",
       componentClassId: "component_project_foqn_s2_replace_me",
-      projectId: "project_foqn_s2",
       recordClassId: "component.replaceMe",
       name: "Replace Me",
       notes: "Replace every example identity and supply the real owner semantics before implementation.",

@@ -10,11 +10,10 @@ internal sealed partial class SqliteDesignOwner
 {
     internal void ValidateDeclaredComponentVariantReferences(
         SqliteConnection connection,
-        string projectId,
         JsonObject config)
     {
         var componentRows = _componentClassRepository
-            .QueryByProject(connection, projectId);
+            .QueryAll(connection);
         foreach (var slot in EmbeddedComponentSlotCatalog.All())
         {
             if (JsonPath.Get(config, slot.SlotPath)
@@ -75,7 +74,7 @@ internal sealed partial class SqliteDesignOwner
                     StringComparison.Ordinal)))
             {
                 throw new InvalidOperationException(
-                    $"Structured collection field '{descriptor.Id}' fixed Component class '{boundary.ComponentClassId}' is not a {boundary.ComponentType} class in project '{projectId}'.");
+                    $"Structured collection field '{descriptor.Id}' fixed Component class '{boundary.ComponentClassId}' is not a global {boundary.ComponentType} class.");
             }
             var node = JsonPath.Get(config, descriptor.JsonPath);
             if (node is null) continue;
@@ -94,7 +93,6 @@ internal sealed partial class SqliteDesignOwner
                     $"Structured collection field '{descriptor.Id}'");
                 _ = ValidateComponentVariantReference(
                     connection,
-                    projectId,
                     boundary.ComponentType,
                     reference);
             }
@@ -103,7 +101,6 @@ internal sealed partial class SqliteDesignOwner
 
     internal string ValidateComponentVariantReference(
         SqliteConnection connection,
-        string projectId,
         string componentType,
         string reference,
         bool allowEmpty = false)
@@ -129,7 +126,7 @@ internal sealed partial class SqliteDesignOwner
         }
 
         var componentClass = _componentClassRepository
-            .QueryByProject(connection, projectId)
+            .QueryAll(connection)
             .Where(
                 (candidate) => candidate.ComponentType.Equals(
                     componentType,
@@ -141,7 +138,7 @@ internal sealed partial class SqliteDesignOwner
         if (componentClass is null)
         {
             throw new InvalidOperationException(
-                $"Component variant reference '{reference}' does not name a {componentType} class in project '{projectId}'.");
+                $"Component variant reference '{reference}' does not name a global {componentType} class.");
         }
 
         var metadata = ParseJsonObject(componentClass.MetadataJson);

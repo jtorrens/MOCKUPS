@@ -11,7 +11,6 @@
     "componentType": "media",
     "category": "component",
     "componentClassId": "component_project_foqn_s2_media",
-    "projectId": "project_foqn_s2",
     "recordClassId": "component.media",
     "name": "Media",
     "notes": "Media component"

@@ -114,11 +114,13 @@ internal sealed class DictionaryFieldContextDataSource
             new JsonObject(),
             []);
 
-    public DictionaryComponentVariantSelectionSource ComponentVariantSelection(string variantReference)
+    public DictionaryComponentVariantSelectionSource ComponentVariantSelection(
+        string projectId,
+        string variantReference)
     {
         var selected = _database.GetComponentVariantSelectionSettings(variantReference);
         return new DictionaryComponentVariantSelectionSource(
-            selected.ProjectId,
+            projectId,
             selected.ComponentType,
             selected.RecordClassId,
             selected.ConfigJson);

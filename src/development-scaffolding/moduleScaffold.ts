@@ -126,7 +126,6 @@ interface AppInventoryRow {
 interface RuntimeSourceRow {
   componentClassId: string;
   componentType: string;
-  projectId: string;
   configJson: string;
   designPreviewJson: string;
   metadataJson: string;
@@ -471,7 +470,6 @@ export function loadModuleScaffoldInventory(
       runtimeSources: database.prepare(`
         SELECT id AS componentClassId,
                component_type AS componentType,
-               project_id AS projectId,
                config_json AS configJson,
                design_preview_json AS designPreviewJson,
                metadata_json AS metadataJson
@@ -875,11 +873,10 @@ function resolveRuntimeSource(
     );
   }
   const matches = inventory.runtimeSources.filter((candidate) =>
-    candidate.projectId === spec.module.projectId
-    && candidate.componentType === sourceSpec.componentType);
+    candidate.componentType === sourceSpec.componentType);
   if (matches.length !== 1) {
     violations.push(
-      `Runtime source '${sourceSpec.componentType}' requires exactly one same-Project Component Class; found ${matches.length}.`,
+      `Runtime source '${sourceSpec.componentType}' requires exactly one global Component Class; found ${matches.length}.`,
     );
     return undefined;
   }

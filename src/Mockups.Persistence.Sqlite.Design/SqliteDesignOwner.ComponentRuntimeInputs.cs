@@ -131,7 +131,6 @@ internal sealed partial class SqliteDesignOwner
                     variantId,
                     StringComparison.Ordinal));
         return new ComponentVariantSelectionSettings(
-            row.ProjectId,
             row.ComponentType,
             row.RecordClassId,
             variant.ConfigJson);
@@ -171,7 +170,7 @@ internal sealed partial class SqliteDesignOwner
             overrides);
         return GetEmbeddedComponentVariantName(
             connection,
-            row.ProjectId,
+            "",
             ownerConfig,
             slots);
     }

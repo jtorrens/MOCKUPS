@@ -196,6 +196,7 @@ internal sealed class EditorDictionaryContextPreparer
             runtimeCollections[variantReference] = collections;
             selections[variantReference] =
                 _contextData.ComponentVariantSelection(
+                    projectId,
                     variantReference);
             foreach (var binding in bindings)
             {
@@ -222,7 +223,11 @@ internal sealed class EditorDictionaryContextPreparer
                 _runtimeInputOptions.RecordReferenceOptions(
                     projectId,
                     key.TableId,
-                    key.IncludeNone)
+                    key.IncludeNone,
+                    node.Kind is ProjectTreeNodeKind.ComponentClass
+                        or ProjectTreeNodeKind.ComponentVariant
+                        or ProjectTreeNodeKind.Module
+                        or ProjectTreeNodeKind.ModuleVariant)
                 .ToList()
                 .AsReadOnly();
         }

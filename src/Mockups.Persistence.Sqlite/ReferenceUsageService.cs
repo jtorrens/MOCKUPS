@@ -398,7 +398,7 @@ internal sealed class ReferenceUsageService :
                     "Component Variant",
                     $"{component.Name} · {variant.Name}",
                     ReferenceUsageScope.Design,
-                    component.ProjectId,
+                    "",
                     component);
                 ScanComponentConfig(variant.Config, source, targets, usages, componentsByReference, depth: 0);
             }
@@ -410,7 +410,7 @@ internal sealed class ReferenceUsageService :
                 "Component Class",
                 component.Name,
                 ReferenceUsageScope.Design,
-                component.ProjectId,
+                "",
                 component);
             AddRuntimeDocumentReferences(
                 component.DesignPreview,
@@ -970,19 +970,18 @@ internal sealed class ReferenceUsageService :
     {
         var components = new List<ComponentOwner>();
         using var command = connection.CreateCommand();
-        command.CommandText = "SELECT id, project_id, component_type, name, design_preview_json, metadata_json FROM component_classes";
+        command.CommandText = "SELECT id, component_type, name, design_preview_json, metadata_json FROM component_classes";
         using var reader = command.ExecuteReader();
         while (reader.Read())
         {
             var id = reader.GetString(0);
-            var metadata = JsonPath.ParseRequiredObject(ReadString(reader, 5), $"Component class '{id}' metadata_json");
+            var metadata = JsonPath.ParseRequiredObject(ReadString(reader, 4), $"Component class '{id}' metadata_json");
             var variants = ReadVariants(metadata, "variants", id, "variant");
             components.Add(new ComponentOwner(
                 id,
                 reader.GetString(1),
                 reader.GetString(2),
-                reader.GetString(3),
-                JsonPath.ParseRequiredObject(ReadString(reader, 4), $"Component class '{id}' design_preview_json"),
+                JsonPath.ParseRequiredObject(ReadString(reader, 3), $"Component class '{id}' design_preview_json"),
                 variants));
         }
         return components;
@@ -1093,7 +1092,6 @@ internal sealed class ReferenceUsageService :
 
     private sealed record ComponentOwner(
         string Id,
-        string ProjectId,
         string ComponentType,
         string Name,
         JsonObject DesignPreview,

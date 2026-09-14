@@ -27,16 +27,18 @@ internal sealed class NestedRuntimeRecordReferenceResolver
     public void Resolve(
         JsonNode? root,
         string themeMode,
-        IReadOnlyDictionary<string, string> paletteColors)
+        IReadOnlyDictionary<string, string> paletteColors,
+        bool allowSystemPreviewFixtures = false)
     {
-        Visit(root, themeMode, paletteColors);
+        Visit(root, themeMode, paletteColors, allowSystemPreviewFixtures);
     }
 
     public void ResolveDeclaredValues(
         JsonObject values,
         IReadOnlyList<ComponentInputDefinition> inputs,
         string themeMode,
-        IReadOnlyDictionary<string, string> paletteColors)
+        IReadOnlyDictionary<string, string> paletteColors,
+        bool allowSystemPreviewFixtures = false)
     {
         foreach (var input in inputs.Where((field) =>
                      field.Kind == ComponentInputKind.RecordReference
@@ -49,7 +51,8 @@ internal sealed class NestedRuntimeRecordReferenceResolver
                 themeMode,
                 paletteColors,
                 input.Id,
-                CollectionFieldAvailability.AllowsEmpty(values, input));
+                CollectionFieldAvailability.AllowsEmpty(values, input),
+                allowSystemPreviewFixtures);
         }
 
         foreach (var input in inputs.Where((field) =>
@@ -63,7 +66,8 @@ internal sealed class NestedRuntimeRecordReferenceResolver
                     item,
                     input.StructuredCollection!.Fields,
                     themeMode,
-                    paletteColors);
+                    paletteColors,
+                    allowSystemPreviewFixtures);
             }
         }
     }
@@ -253,23 +257,24 @@ internal sealed class NestedRuntimeRecordReferenceResolver
     private void Visit(
         JsonNode? node,
         string themeMode,
-        IReadOnlyDictionary<string, string> paletteColors)
+        IReadOnlyDictionary<string, string> paletteColors,
+        bool allowSystemPreviewFixtures)
     {
         switch (node)
         {
             case JsonArray array:
                 foreach (var child in array.ToList())
                 {
-                    Visit(child, themeMode, paletteColors);
+                    Visit(child, themeMode, paletteColors, allowSystemPreviewFixtures);
                 }
                 break;
             case JsonObject obj:
-                ResolveDeclaredInputs(obj, themeMode, paletteColors);
+                ResolveDeclaredInputs(obj, themeMode, paletteColors, allowSystemPreviewFixtures);
                 foreach (var (key, child) in obj.ToList())
                 {
                     if (!key.Equals("inputs", StringComparison.Ordinal) || child is not JsonArray)
                     {
-                        Visit(child, themeMode, paletteColors);
+                        Visit(child, themeMode, paletteColors, allowSystemPreviewFixtures);
                     }
                 }
                 break;
@@ -279,7 +284,8 @@ internal sealed class NestedRuntimeRecordReferenceResolver
     private void ResolveDeclaredInputs(
         JsonObject values,
         string themeMode,
-        IReadOnlyDictionary<string, string> paletteColors)
+        IReadOnlyDictionary<string, string> paletteColors,
+        bool allowSystemPreviewFixtures)
     {
         if (values["inputs"] is JsonArray)
         {
@@ -287,7 +293,8 @@ internal sealed class NestedRuntimeRecordReferenceResolver
                 values,
                 RuntimeInputDefinitionReader.ReadInputs(values, new JsonObject()),
                 themeMode,
-                paletteColors);
+                paletteColors,
+                allowSystemPreviewFixtures);
         }
 
         if (values["collections"] is not JsonArray) return;
@@ -302,7 +309,8 @@ internal sealed class NestedRuntimeRecordReferenceResolver
                     item,
                     collection.Fields,
                     themeMode,
-                    paletteColors);
+                    paletteColors,
+                    allowSystemPreviewFixtures);
             }
         }
     }

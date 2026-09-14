@@ -1,4 +1,5 @@
 using Mockups.DesktopEditorShell.Data;
+using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
 using System.Text.Json.Nodes;
@@ -10,7 +11,8 @@ internal interface IRuntimeInputOptionsDataSource
     IReadOnlyList<FieldOption> RecordReferenceOptions(
         string projectId,
         string tableId,
-        bool includeNone);
+        bool includeNone,
+        bool systemPreviewFixtures);
 
     IReadOnlyList<FieldOption> ComponentVariantOptions(
         string projectId,
@@ -46,11 +48,14 @@ internal sealed class RuntimeInputOptionsDataSource :
     public IReadOnlyList<FieldOption> RecordReferenceOptions(
         string projectId,
         string tableId,
-        bool includeNone)
+        bool includeNone,
+        bool systemPreviewFixtures)
     {
         return tableId switch
         {
-            "actors" => ActorOptions(projectId, includeNone),
+            "actors" => systemPreviewFixtures
+                ? SystemPreviewFixtureCatalog.ActorOptions(includeNone)
+                : ActorOptions(projectId, includeNone),
             _ => throw new InvalidOperationException(
                 $"Runtime record reference table '{tableId}' has no options owner."),
         };
@@ -89,9 +94,14 @@ internal sealed class PreparedRuntimeInputOptionsDataSource :
     public IReadOnlyList<FieldOption> RecordReferenceOptions(
         string projectId,
         string tableId,
-        bool includeNone)
+        bool includeNone,
+        bool systemPreviewFixtures)
     {
         RequireProject(projectId);
+        if (systemPreviewFixtures && tableId.Equals("actors", StringComparison.Ordinal))
+        {
+            return SystemPreviewFixtureCatalog.ActorOptions(includeNone);
+        }
         return _context.RecordOptions(
             tableId,
             includeNone);

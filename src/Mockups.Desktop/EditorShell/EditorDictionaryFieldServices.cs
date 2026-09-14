@@ -102,6 +102,7 @@ internal sealed class EditorDictionaryFieldServices
         Func<FieldDefinition, string, Task>?
             restoreRecordReferenceOverrides = null)
     {
+        var projectId = ProjectAncestor(node).Id;
         int ResolveBehaviorTimingFrames(
             FieldDefinition definition,
             string json)
@@ -136,6 +137,7 @@ internal sealed class EditorDictionaryFieldServices
                 : await _operations.ExecuteAsync(
                     () => _contextData
                         .ComponentVariantSelection(
+                            projectId,
                             variantReference));
             openRuntimeComponentOverrides(new EditorEmbeddedContext(
                 node,
@@ -248,7 +250,9 @@ internal sealed class EditorDictionaryFieldServices
             Func<JsonObject, Task> changed)
         {
             if (openRuntimeComponentOverrides is null) return Task.CompletedTask;
-            var selected = _contextData.ComponentVariantSelection(variantReference);
+            var selected = _contextData.ComponentVariantSelection(
+                projectId,
+                variantReference);
             openRuntimeComponentOverrides(new EditorEmbeddedContext(
                 node,
                 [],
@@ -274,7 +278,11 @@ internal sealed class EditorDictionaryFieldServices
             GetFieldValue: getFieldValue,
             GetPaletteColorOptions: () => _contextData.PaletteColorOptions(projectId),
             GetRecordReferenceOptions: (tableId, includeNone) =>
-                _runtimeInputOptions.RecordReferenceOptions(projectId, tableId, includeNone),
+                _runtimeInputOptions.RecordReferenceOptions(
+                    projectId,
+                    tableId,
+                    includeNone,
+                    systemPreviewFixtures: false),
             GetComponentVariantOptions: (componentType) => _contextData.ComponentVariantOptions(projectId, componentType),
             GetComponentVariantRuntimeInputs: _contextData.ComponentVariantRuntimeInputBindings,
             GetComponentVariantRuntimeValues: _contextData.ComponentVariantRuntimeValues,

@@ -302,7 +302,7 @@ internal sealed partial class SqliteDesignOwner
         var config = ParseJsonObject(settings.ConfigJson);
         var inheritedConfig = EffectiveEmbeddedBaseConfig(
             connection,
-            settings.ProjectId,
+            "",
             config,
             config,
             applyOwnerLocalOverrides: false,

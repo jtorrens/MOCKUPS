@@ -11,7 +11,6 @@
     "componentType": "list",
     "category": "component",
     "componentClassId": "component_project_foqn_s2_list",
-    "projectId": "project_foqn_s2",
     "recordClassId": "component.list",
     "name": "List",
     "notes": "Vertical collection of List Item instances with stable identity and presence."

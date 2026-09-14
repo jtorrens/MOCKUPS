@@ -11,7 +11,6 @@
     "componentType": "iconBar",
     "category": "atom",
     "componentClassId": "component_project_foqn_s2_iconBar",
-    "projectId": "project_foqn_s2",
     "recordClassId": "component.iconBar",
     "name": "Icon Bar",
     "notes": "Icon bar component"

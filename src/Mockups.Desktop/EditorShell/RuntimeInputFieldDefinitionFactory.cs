@@ -1,4 +1,5 @@
 using System;
+using Mockups.DesktopEditorShell.Common;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
@@ -12,12 +13,26 @@ internal static class RuntimeInputFieldDefinitionFactory
     {
         var projectId = ProjectAncestor(node).Id;
         var permitsEmpty = allowEmpty ?? input.AllowEmpty;
+        var isDesignTestValue = node.Kind is
+            ProjectTreeNodeKind.ComponentClass
+            or ProjectTreeNodeKind.ComponentVariant
+            or ProjectTreeNodeKind.Module
+            or ProjectTreeNodeKind.ModuleVariant;
+        var valueKind = input.ValueKind is ValueKind.MediaFilePath or ValueKind.MediaDirectoryPath
+            && isDesignTestValue
+                ? ValueKind.OptionToken
+                : input.ValueKind;
         var options = input.ValueKind switch
         {
             ValueKind.RecordReference => optionsDataSource.RecordReferenceOptions(
                 projectId,
                 input.TableId,
-                permitsEmpty),
+                permitsEmpty,
+                isDesignTestValue),
+            ValueKind.MediaFilePath when isDesignTestValue =>
+                SystemPreviewFixtureCatalog.MediaOptions(),
+            ValueKind.MediaDirectoryPath when isDesignTestValue =>
+                SystemPreviewFixtureCatalog.MediaDirectoryOptions(),
             ValueKind.ComponentVariant or ValueKind.ComponentVariantSlot
                 when !string.IsNullOrWhiteSpace(input.ComponentType) =>
                 optionsDataSource.ComponentVariantOptions(projectId, input.ComponentType, permitsEmpty),
@@ -27,7 +42,7 @@ internal static class RuntimeInputFieldDefinitionFactory
         return new FieldDefinition(
             input.Id,
             input.Label,
-            input.ValueKind,
+            valueKind,
             DefaultValue: input.DefaultValue,
             Options: options,
             PairLabels: PairFieldLabelsContract.ForField(

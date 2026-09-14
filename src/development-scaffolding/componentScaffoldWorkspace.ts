@@ -209,7 +209,6 @@ export function integrateComponentScaffold(
       database.prepare(`
         INSERT INTO component_classes (
           id,
-          project_id,
           component_type,
           record_class_id,
           name,
@@ -218,10 +217,9 @@ export function integrateComponentScaffold(
           design_preview_json,
           metadata_json
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         spec.component.componentClassId,
-        spec.component.projectId,
         componentType,
         spec.component.recordClassId,
         spec.component.name,
@@ -417,14 +415,12 @@ export function verifyComponentScaffoldImplementation(
   try {
     const row = database.prepare(`
       SELECT id,
-             project_id,
              component_type,
              record_class_id
       FROM component_classes
       WHERE id = ?
     `).get(spec.component.componentClassId) as {
       id: string;
-      project_id: string;
       component_type: string;
       record_class_id: string;
     } | undefined;
@@ -435,13 +431,11 @@ export function verifyComponentScaffoldImplementation(
     } else {
       const expectedIdentity = {
         id: spec.component.componentClassId,
-        project_id: spec.component.projectId,
         component_type: componentType,
         record_class_id: spec.component.recordClassId,
       };
       const actualIdentity = {
         id: row.id,
-        project_id: row.project_id,
         component_type: row.component_type,
         record_class_id: row.record_class_id,
       };

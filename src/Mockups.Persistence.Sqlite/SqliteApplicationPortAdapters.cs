@@ -320,10 +320,10 @@ internal sealed class SqliteComponentClassFieldPort(
     : IComponentClassFieldStore
 {
     public FieldValue CreateComponentClassFieldValue(
-        string componentClassId,
+        ProjectTreeNode componentClassNode,
         string fieldId) =>
         target.CreateComponentClassFieldValue(
-            componentClassId,
+            componentClassNode,
             fieldId);
 
     public FieldValue CreateComponentVariantFieldValue(

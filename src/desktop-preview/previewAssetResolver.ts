@@ -120,6 +120,25 @@ export function mediaFrameUriForPath(
     return localMediaFrameUri(fileURLToPath(trimmed), timeSeconds);
   }
 
+  if (/^system-preview:\/\//i.test(trimmed)) {
+    const fixtureRoot = payload.systemPreviewFixtureRoot?.trim() ?? "";
+    if (!fixtureRoot) {
+      return { uri: "", error: "System Preview fixtures are unavailable outside Design" };
+    }
+    const relative = trimmed.slice("system-preview://".length);
+    if (!relative || path.isAbsolute(relative)) {
+      return { uri: "", error: `Invalid System Preview media reference: ${trimmed}` };
+    }
+    const fullPath = path.resolve(fixtureRoot, relative);
+    const relativeToRoot = path.relative(path.resolve(fixtureRoot), fullPath);
+    if (relativeToRoot.startsWith("..") || path.isAbsolute(relativeToRoot)) {
+      return { uri: "", error: `System Preview media reference escapes its root: ${trimmed}` };
+    }
+    return existsSync(fullPath)
+      ? localMediaFrameUri(fullPath, timeSeconds)
+      : { uri: "", error: `System Preview media fixture not found: ${trimmed}` };
+  }
+
   const candidates = mediaSourceCandidates(payload.projectMediaRoot ?? "", trimmed);
   const fullPath = candidates.find((candidate) => existsSync(candidate));
   return fullPath

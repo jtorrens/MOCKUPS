@@ -16,7 +16,6 @@ internal sealed partial class SqliteDesignOwner
         var config = ParseJsonObject(record.ConfigJson);
         ApplyComponentInputBindingsProjections(
             connection,
-            record.ProjectId,
             config,
             ComponentInputBindingsProjectionCatalog.RecordOwners());
 
@@ -228,7 +227,6 @@ internal sealed partial class SqliteDesignOwner
                     next = JsonValue.Create(
                         ValidateComponentVariantReference(
                             connection,
-                            projectId,
                             generated.ComponentVariantType,
                             next.GetValue<string>()))!;
                 }
@@ -241,7 +239,6 @@ internal sealed partial class SqliteDesignOwner
                     var reference =
                         ValidateComponentVariantReference(
                             connection,
-                            projectId,
                             generated.ComponentVariantType,
                             ComponentVariantSlotDocumentContract
                                 .VariantReference(slot, owner));
@@ -259,7 +256,6 @@ internal sealed partial class SqliteDesignOwner
             JsonPath.Set(config, generated.JsonPath, next);
             ApplyComponentInputBindingsProjections(
                 connection,
-                projectId,
                 config,
                 ComponentInputBindingsProjectionCatalog.RecordOwners());
             CurrentModuleConfigContract.Validate(
@@ -285,7 +281,6 @@ internal sealed partial class SqliteDesignOwner
 
         ApplyComponentInputBindingsProjections(
             connection,
-            projectId,
             config,
             ComponentInputBindingsProjectionCatalog.RecordOwners());
         CurrentModuleConfigContract.Validate(

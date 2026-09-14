@@ -11,7 +11,6 @@
     "componentType": "navigation_bar",
     "category": "system",
     "componentClassId": "component_project_foqn_s2_navigation_bar",
-    "projectId": "project_foqn_s2",
     "recordClassId": "component.navigation_bar",
     "name": "Navigation Bar",
     "notes": "Navigation bar component"

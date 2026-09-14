@@ -4,13 +4,12 @@ Status: normative.
 
 ## Design workflow
 
-Design is the authoring workspace for System-wide reusable definitions and
-visual resources. It establishes the exact contracts that Production later
-consumes:
+Design is the authoring workspace for reusable definitions and visual
+resources. It establishes the exact contracts that Production later consumes:
 
 - System Palette Colors and Icon Themes;
 - Component Classes and Component Variants;
-- Apps, Modules and Module Variants;
+- Project-owned Apps, Modules and Module Variants;
 - isolated Preview fixtures and temporary Test Values.
 
 Design does not create Production sequences or persist Screen payloads.
@@ -59,6 +58,12 @@ A Component Class owns:
 - renderable implementation;
 - declared embedded dependencies;
 - editor layout metadata.
+
+Component Classes and their complete Variants are System records. They have no
+Project owner and appear in every Production's Design tree through the same
+stable ids. Editing one class or Variant therefore changes the definition used
+by every Production; Production-specific visual resolution remains owned by
+that Production's Theme and Palette values.
 
 The manifest and committed Component Class row must agree. A generic runtime
 catalog never manufactures definitions.
@@ -119,6 +124,12 @@ not protected. Production stores an exact Module Variant id.
 Design Preview uses the current selected Variant and an isolated sample
 fixture. Temporary Test Values exercise declared Runtime Inputs without
 changing the Variant until the user explicitly saves them as defaults.
+
+Actor and media Test Values resolve only through the System Preview fixture
+catalog installed in App Support. They never store a Production Actor id or a
+Project media path. Media file and media-directory Test Values use bounded
+fixture selectors instead of filesystem browsers. Production payloads reject
+System Preview actor ids and `system-preview://` media references.
 
 Runtime Inputs remain product inputs. The Design Preview surface does not
 create a separate input contract and does not own Component-specific behavior.

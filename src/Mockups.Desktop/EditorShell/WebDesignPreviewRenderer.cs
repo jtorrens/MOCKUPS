@@ -188,6 +188,7 @@ internal static class WebDesignPreviewRenderer
             paletteNeutralColors = payload.PaletteNeutralColors,
             projectMediaRoot = payload.ProjectMediaRoot,
             projectMediaFiles = payload.ProjectMediaFiles,
+            systemPreviewFixtureRoot = payload.SystemPreviewFixtureRoot,
             fontFaces = payload.FontFaces.Select((face) => new
             {
                 fontId = face.FontId,

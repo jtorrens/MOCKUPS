@@ -18,11 +18,17 @@ internal sealed class ComponentPreviewRecordInputResolver
         _projectPaths = projectPaths;
     }
 
-    public IReadOnlyList<FieldOption> Options(string projectId, string tableId, string inputId)
+    public IReadOnlyList<FieldOption> Options(
+        string projectId,
+        string tableId,
+        string inputId,
+        bool allowSystemPreviewFixtures = false)
     {
         return tableId switch
         {
-            "actors" => _actorDataSource.Options(projectId),
+            "actors" => allowSystemPreviewFixtures
+                ? SystemPreviewFixtureCatalog.ActorOptions(includeNone: true)
+                : _actorDataSource.Options(projectId),
             _ => throw new InvalidOperationException(
                 $"Unsupported record reference input table '{tableId}' for '{inputId}'."),
         };
@@ -34,10 +40,16 @@ internal sealed class ComponentPreviewRecordInputResolver
         string themeMode,
         IReadOnlyDictionary<string, string> paletteColors,
         string inputId,
-        bool allowEmpty = false)
+        bool allowEmpty = false,
+        bool allowSystemPreviewFixtures = false)
     {
         return tableId switch
         {
+            "actors" when SystemPreviewFixtureCatalog.IsActor(recordId) =>
+                allowSystemPreviewFixtures
+                    ? SystemPreviewFixtureCatalog.ActorPreview(recordId)
+                    : throw new InvalidOperationException(
+                        $"Production Runtime Input '{inputId}' cannot reference System Preview Actor '{recordId}'."),
             "actors" => !string.IsNullOrWhiteSpace(recordId)
                 ? ActorPreviewInputFactory.Create(
                     _actorDataSource,

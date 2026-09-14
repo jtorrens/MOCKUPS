@@ -72,13 +72,11 @@ internal static class ProjectReferenceIntegrity
                 $"Theme '{theme.Id}' Icon Theme");
             RequireComponentVariantReference(
                 connection,
-                theme.ProjectId,
                 theme.StatusBarId,
                 StatusBarComponentConfigContract.ComponentType,
                 $"Theme '{theme.Id}' Status Bar");
             RequireComponentVariantReference(
                 connection,
-                theme.ProjectId,
                 theme.NavigationBarId,
                 NavigationBarComponentConfigContract.ComponentType,
                 $"Theme '{theme.Id}' Navigation Bar");
@@ -146,7 +144,6 @@ internal static class ProjectReferenceIntegrity
 
     public static void RequireComponentVariantReference(
         SqliteConnection connection,
-        string ownerProjectId,
         string reference,
         string expectedComponentType,
         string context)
@@ -163,7 +160,7 @@ internal static class ProjectReferenceIntegrity
 
         using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT project_id, component_type, metadata_json
+            SELECT component_type, metadata_json
             FROM component_classes
             WHERE id = $id
             """;
@@ -174,14 +171,8 @@ internal static class ProjectReferenceIntegrity
             throw new InvalidOperationException($"{context} references missing Component Class '{componentClassId}'.");
         }
 
-        var projectId = reader.GetString(0);
-        var componentType = reader.GetString(1);
-        var metadataJson = reader.GetString(2);
-        if (!projectId.Equals(ownerProjectId, StringComparison.Ordinal))
-        {
-            throw new InvalidOperationException(
-                $"{context} references Component Class '{componentClassId}' from another Project.");
-        }
+        var componentType = reader.GetString(0);
+        var metadataJson = reader.GetString(1);
         if (!componentType.Equals(expectedComponentType, StringComparison.Ordinal))
         {
             throw new InvalidOperationException(

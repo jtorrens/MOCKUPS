@@ -36,7 +36,7 @@ internal sealed class ComponentClassFieldValueService
 
         var fieldValue = node.Kind == ProjectTreeNodeKind.ComponentVariant
             ? _database.CreateComponentVariantFieldValue(node, fieldId)
-            : _database.CreateComponentClassFieldValue(node.Id, fieldId);
+            : _database.CreateComponentClassFieldValue(node, fieldId);
         return ValidateFieldValue(ApplyVariantLock(node, fieldValue));
     }
 

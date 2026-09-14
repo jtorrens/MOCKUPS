@@ -28,11 +28,14 @@ internal sealed class SqliteComponentDocumentStore
         _design.GetComponentVariantSettings(variantNode);
 
     internal FieldValue CreateComponentClassFieldValue(
-        string componentClassId,
+        ProjectTreeNode componentClassNode,
         string fieldId)
     {
-        var settings = _design.GetComponentClassSettings(componentClassId);
-        return CreateComponentFieldValue(settings, fieldId);
+        var settings = _design.GetComponentClassSettings(componentClassNode.Id);
+        return CreateComponentFieldValue(
+            settings,
+            ProjectAncestor(componentClassNode).Id,
+            fieldId);
     }
 
     internal FieldValue CreateComponentVariantFieldValue(
@@ -40,7 +43,10 @@ internal sealed class SqliteComponentDocumentStore
         string fieldId)
     {
         var settings = _design.GetComponentVariantSettings(variantNode);
-        return CreateComponentFieldValue(settings, fieldId);
+        return CreateComponentFieldValue(
+            settings,
+            ProjectAncestor(variantNode).Id,
+            fieldId);
     }
 
     internal void UpdateComponentClassField(
@@ -142,7 +148,7 @@ internal sealed class SqliteComponentDocumentStore
         }
 
         var descriptor = ComponentClassFieldCatalog.Get(embeddedFieldId);
-        var projectId = settings?.ProjectId ?? moduleSettings!.ProjectId;
+        var projectId = ProjectAncestor(ownerNode).Id;
         var options = _fieldOptions.Resolve(projectId, descriptor);
         return _design.CreateEmbeddedComponentFieldValue(
             ownerNode.Kind,
@@ -181,54 +187,6 @@ internal sealed class SqliteComponentDocumentStore
             projectId,
             baseConfigJson,
             overrides,
-            slots,
-            descriptor,
-            options);
-    }
-
-    internal FieldValue CreateEmbeddedComponentFieldValue(
-        string componentClassId,
-        string slotFieldId,
-        string embeddedComponentType,
-        string embeddedFieldId)
-    {
-        var settings =
-            _design.GetComponentClassSettings(componentClassId);
-        var descriptor =
-            ComponentClassFieldCatalog.Get(embeddedFieldId);
-        var options = _fieldOptions.Resolve(
-            settings.ProjectId,
-            descriptor);
-        return _design.CreateEmbeddedComponentFieldValue(
-            settings,
-            slotFieldId,
-            embeddedComponentType,
-            descriptor,
-            options);
-    }
-
-    internal FieldValue CreateEmbeddedComponentFieldValue(
-        string componentClassId,
-        IReadOnlyList<EmbeddedComponentSlotDefinition> slots,
-        string embeddedFieldId)
-    {
-        if (slots.Count == 0)
-        {
-            throw new InvalidOperationException(
-                $"Embedded component field '{embeddedFieldId}' needs at least one slot.");
-        }
-
-        var settings =
-            _design.GetComponentClassSettings(componentClassId);
-        var descriptor =
-            ComponentClassFieldCatalog.Get(embeddedFieldId);
-        var options = _fieldOptions.Resolve(
-            settings.ProjectId,
-            descriptor);
-        return _design.CreateEmbeddedComponentFieldValue(
-            ProjectTreeNodeKind.ComponentClass,
-            settings.ProjectId,
-            settings.ConfigJson,
             slots,
             descriptor,
             options);
@@ -298,16 +256,29 @@ internal sealed class SqliteComponentDocumentStore
 
     private FieldValue CreateComponentFieldValue(
         ComponentClassSettings settings,
+        string projectId,
         string fieldId)
     {
         var descriptor = ComponentClassFieldCatalog.Get(fieldId);
         var options = _fieldOptions.Resolve(
-            settings.ProjectId,
+            projectId,
             descriptor);
         return _design.CreateComponentFieldValue(
             settings,
             descriptor,
             options);
+    }
+
+    private static ProjectTreeNode ProjectAncestor(ProjectTreeNode node)
+    {
+        var current = node;
+        while (current.Kind != ProjectTreeNodeKind.Project)
+        {
+            current = current.Parent ?? throw new InvalidOperationException(
+                $"{node.Kind} has no project ancestor.");
+        }
+
+        return current;
     }
 
     private static EmbeddedComponentUsage ToEmbeddedComponentUsage(

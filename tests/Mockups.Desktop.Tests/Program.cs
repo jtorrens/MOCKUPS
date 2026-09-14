@@ -529,7 +529,7 @@ static void DesignPreviewTransientSnapshotsRemainImmutable()
         database.Resources,
         database.ProjectPaths,
         () => { });
-    session.UpdateForPayload(payload, settings.ProjectId);
+    session.UpdateForPayload(payload, ProjectId(settings));
 
     var sourcePreview = JsonPath.ParseRequiredObject(
         payload.DesignPreviewJson,
@@ -619,7 +619,7 @@ static void ListRuntimeUpdatesFollowStableIdentityAfterReorder()
         database.Resources,
         database.ProjectPaths,
         () => { });
-    session.UpdateForPayload(payload, settings.ProjectId);
+    session.UpdateForPayload(payload, ProjectId(settings));
 
     var sourcePreview = JsonPath.ParseRequiredObject(
         payload.DesignPreviewJson,
@@ -719,7 +719,7 @@ static void ListPresenceReplaysAndRestoresItsOrigin()
     {
         PresentEveryPlaybackFrame = true,
     };
-    session.UpdateForPayload(payload, settings.ProjectId);
+    session.UpdateForPayload(payload, ProjectId(settings));
     var durationMethod = typeof(ComponentPreviewInputSession).GetMethod(
         "DurationFrames",
         BindingFlags.Instance | BindingFlags.NonPublic)
@@ -742,7 +742,7 @@ static void ListPresenceReplaysAndRestoresItsOrigin()
 
     JsonObject EffectiveItem()
     {
-        var effectivePayload = session.ApplyInputs(payload, "light", settings.ProjectId);
+        var effectivePayload = session.ApplyInputs(payload, "light", ProjectId(settings));
         var effectivePreview = JsonPath.ParseRequiredObject(
             effectivePayload.DesignPreviewJson,
             "Effective List Design Preview");
@@ -2524,8 +2524,8 @@ static void TextBoxPreviewResolvesVariantOwnedIconRowSlots()
         database.Resources,
         database.ProjectPaths,
         () => { });
-    session.UpdateForPayload(payload, settings.ProjectId);
-    var resolved = session.ApplyInputs(payload, "light", settings.ProjectId);
+    session.UpdateForPayload(payload, ProjectId(settings));
+    var resolved = session.ApplyInputs(payload, "light", ProjectId(settings));
     var preview = DesignPreviewTestValues.Parse(resolved.DesignPreviewJson);
     var config = JsonPath.ParseRequiredObject(resolved.ConfigJson, "Text Box Preview config");
     var textBoxConfig = JsonPath.RequiredObject(config, "textBox", "Text Box Preview config");
@@ -4015,11 +4015,11 @@ static void IncomingCallExposesExactChildRuntimeBoundaries()
         database.ProjectPaths,
         () => { });
     var defaultIconRowPayload = payload with { ConfigJson = changedConfig.ToJsonString() };
-    session.UpdateForPayload(defaultIconRowPayload, database.GetComponentClassSettings(incomingCall.Id).ProjectId);
+    session.UpdateForPayload(defaultIconRowPayload, ProjectId(database.GetComponentClassSettings(incomingCall.Id)));
     var defaultIconRowResolved = session.ApplyInputs(
         defaultIconRowPayload,
         "light",
-        database.GetComponentClassSettings(incomingCall.Id).ProjectId);
+        ProjectId(database.GetComponentClassSettings(incomingCall.Id)));
     var defaultIconRowRuntime = JsonPath.ParseRequiredObject(
         defaultIconRowResolved.DesignPreviewJson,
         "Incoming Call default Icon Row Runtime");
@@ -4039,11 +4039,11 @@ static void IncomingCallExposesExactChildRuntimeBoundaries()
     var androidPayload = Required(CreatePreviewPayload(database, android, theme.Id));
     session.UpdateForPayload(
         androidPayload,
-        database.GetComponentClassSettings(incomingCall.Id).ProjectId);
+        ProjectId(database.GetComponentClassSettings(incomingCall.Id)));
     var androidResolved = session.ApplyInputs(
         androidPayload,
         "light",
-        database.GetComponentClassSettings(incomingCall.Id).ProjectId);
+        ProjectId(database.GetComponentClassSettings(incomingCall.Id)));
     var androidPreview = JsonPath.ParseRequiredObject(
         androidResolved.DesignPreviewJson,
         "Incoming Call Android Runtime");
@@ -8030,7 +8030,7 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
             var effectiveListPayload = listInputSession.ApplyInputs(
                 listPayload,
                 "light",
-                listSettings.ProjectId);
+                ProjectId(listSettings));
             var effectiveListRuntime = JsonPath.ParseRequiredObject(
                 effectiveListPayload.DesignPreviewJson,
                 "Effective List Runtime");
@@ -9614,7 +9614,7 @@ void ManifestOwnersRenderCommittedFixturesAndModulesAdvanceTime()
                         .Where((node) => node.Kind == ProjectTreeNodeKind.ComponentVariant)
                         .ToList();
                     True(fixtures.Count > 0);
-                    var projectId = database.GetComponentClassSettings(component.Id).ProjectId;
+                    var projectId = ProjectId(database.GetComponentClassSettings(component.Id));
                     foreach (var fixture in fixtures)
                     {
                         foreach (var themeMode in new[] { "light", "dark" })
@@ -11333,15 +11333,15 @@ static void ActorPreviewDataBoundaryPreservesCurrentValues()
         var context = dataSource.LoadContext(actor.Id);
         var previewSource = dataSource.LoadPreview(actor.Id);
 
-        Equal(settings.ProjectId, context.ProjectId);
+        Equal(ProjectId(settings), context.ProjectId);
         Equal(settings.DisplayName, context.DisplayName);
         Equal(settings.DefaultDeviceId, context.DefaultDeviceId);
         Equal(settings.DefaultThemeId, context.DefaultThemeId);
-        Equal(settings.ProjectId, previewSource.ProjectId);
+        Equal(ProjectId(settings), previewSource.ProjectId);
         Equal(settings.DisplayName, previewSource.DisplayName);
         Equal(settings.ShortName, previewSource.ShortName);
         Equal(settings.MetadataJson, previewSource.MetadataJson);
-        Equal(database.GetProjectSettings(settings.ProjectId).MediaRoot, previewSource.ProjectMediaRoot);
+        Equal(database.GetProjectSettings(ProjectId(settings)).MediaRoot, previewSource.ProjectMediaRoot);
         Equal(database.GetActorFieldValue(actor.Id, "actor.color.modes"), previewSource.ColorModes);
         Equal(database.GetActorFieldValue(actor.Id, "actor.avatarTextColor.modes"), previewSource.AvatarTextColorModes);
         Equal(database.GetActorFieldValue(actor.Id, "actor.avatar.filePath"), previewSource.AvatarFilePath);
@@ -11350,13 +11350,13 @@ static void ActorPreviewDataBoundaryPreservesCurrentValues()
         Equal(database.GetActorFieldValue(actor.Id, "actor.avatar.useInitials"), previewSource.AvatarUseInitials);
         Equal(database.GetActorFieldValue(actor.Id, "actor.avatar.initialsPadding"), previewSource.AvatarInitialsPadding);
         SequenceEqual(
-            database.GetActorOptions(settings.ProjectId).Select((option) => option.Value),
-            dataSource.Options(settings.ProjectId).Select((option) => option.Value));
+            database.GetActorOptions(ProjectId(settings)).Select((option) => option.Value),
+            dataSource.Options(ProjectId(settings)).Select((option) => option.Value));
         SequenceEqual(
-            database.GetPaletteColorOptions(settings.ProjectId).Select((option) => option.Value),
-            dataSource.PaletteColorOptions(settings.ProjectId).Select((option) => option.Value));
+            database.GetPaletteColorOptions(ProjectId(settings)).Select((option) => option.Value),
+            dataSource.PaletteColorOptions(ProjectId(settings)).Select((option) => option.Value));
 
-        var paletteColors = database.GetPaletteColorMap(settings.ProjectId);
+        var paletteColors = database.GetPaletteColorMap(ProjectId(settings));
         var lightPayload = ActorPreviewInputFactory.Create(
             dataSource,
             database.ProjectPaths,
@@ -11675,7 +11675,7 @@ static void FixedComponentBoundariesUseExactDefaultVariant()
     var listVariant = list.Children.Single((node) =>
         node.Kind == ProjectTreeNodeKind.ComponentVariant
         && node.Id.EndsWith("::variant::default", StringComparison.Ordinal));
-    var projectId = database.GetComponentClassSettings(list.Id).ProjectId;
+    const string projectId = "project_foqn_s2";
     foreach (var (fieldId, componentType) in new[]
     {
         ("component.list.collectionStack", "collectionStack"),
@@ -11783,8 +11783,10 @@ static void DictionaryFieldContextBoundaryPreservesCurrentData()
                 .Select((collection) => $"{collection.Id}\u001f{collection.JsonKey}\u001f{collection.Fields.Count}"));
 
         var expectedSelection = database.GetComponentVariantSelectionSettings(variant.Id);
-        var selection = dataSource.ComponentVariantSelection(variant.Id);
-        Equal(expectedSelection.ProjectId, selection.ProjectId);
+        var selection = dataSource.ComponentVariantSelection(
+            project.Id,
+            variant.Id);
+        Equal(ProjectId(expectedSelection), ProjectId(selection));
         Equal(expectedSelection.ComponentType, selection.ComponentType);
         Equal(expectedSelection.RecordClassId, selection.RecordClassId);
         Equal(expectedSelection.ConfigJson, selection.ConfigJson);
@@ -11863,7 +11865,7 @@ static void EmbeddedComponentDocumentStorePreservesOwnership()
             audioVariant,
             [],
             new RuntimeComponentOverrideSource(
-                selection.ProjectId,
+                ProjectId(selection),
                 audioVariant.Id,
                 selection.ComponentType,
                 selection.RecordClassId,
@@ -12003,7 +12005,7 @@ static void FailedRuntimeOverridePersistenceRestoresConfirmedDocument()
             audioVariant,
             [],
             new RuntimeComponentOverrideSource(
-                selection.ProjectId,
+                ProjectId(selection),
                 audioVariant.Id,
                 selection.ComponentType,
                 selection.RecordClassId,
@@ -12156,8 +12158,8 @@ static void ComponentPreviewInputBoundaryPreservesCurrentContracts()
         var settings = database.GetComponentClassSettings(componentClass.Id);
 
         Equal(
-            database.GetProjectSettings(settings.ProjectId).DefaultFps,
-            dataSource.ProjectDefaultFrameRate(settings.ProjectId));
+            database.GetProjectSettings(ProjectId(settings)).DefaultFps,
+            dataSource.ProjectDefaultFrameRate(ProjectId(settings)));
         Equal(
             database.GetComponentVariantConfig(variant.Id).ToJsonString(),
             dataSource.ComponentVariantConfig(variant.Id).ToJsonString());
@@ -12166,11 +12168,11 @@ static void ComponentPreviewInputBoundaryPreservesCurrentContracts()
             dataSource.ComponentVariantRuntimeContract(variant.Id).ToJsonString());
         Equal(
             database.ValidateComponentVariantReferenceValue(
-                settings.ProjectId,
+                ProjectId(settings),
                 settings.ComponentType,
                 variant.Id),
             dataSource.ValidateComponentVariantReference(
-                settings.ProjectId,
+                ProjectId(settings),
                 settings.ComponentType,
                 variant.Id));
 
@@ -12234,8 +12236,10 @@ static void RuntimeInputOwnerStorePreservesCurrentDocuments()
         Equal(RuntimeInputDesignPreviewOwnerKind.None, instanceSource.DesignPreviewOwnerKind);
 
         var selection = database.GetComponentVariantSelectionSettings(componentVariant.Id);
-        var selectionSource = store.ComponentVariantSelection(componentVariant.Id);
-        Equal(selection.ProjectId, selectionSource.ProjectId);
+        var selectionSource = store.ComponentVariantSelection(
+            "project_foqn_s2",
+            componentVariant.Id);
+        Equal(ProjectId(selection), selectionSource.ProjectId);
         Equal(selection.ComponentType, selectionSource.ComponentType);
         Equal(selection.RecordClassId, selectionSource.RecordClassId);
         Equal(selection.ConfigJson, selectionSource.ConfigJson);
@@ -13025,7 +13029,7 @@ static void ThemeRepositoryPreservesFocusedContract()
         var settings = database.GetThemeSettings(theme.Id);
         var record = themeRepository.Get(theme.Id);
 
-        Equal(settings.ProjectId, record.ProjectId);
+        Equal(ProjectId(settings), record.ProjectId);
         Equal(settings.Name, record.Name);
         Equal(settings.Family, record.Family);
         Equal(settings.IconThemeId, record.IconThemeId);
@@ -13479,7 +13483,6 @@ static void ComponentClassRepositoryPreservesFocusedContract()
         var original = repository.Get(componentNode.Id);
         var settings = database.GetComponentClassSettings(componentNode.Id);
 
-        Equal(original.ProjectId, settings.ProjectId);
         Equal(original.ComponentType, settings.ComponentType);
         Equal(original.RecordClassId, settings.RecordClassId);
         Equal(original.DesignPreviewJson, settings.DesignPreviewJson);
@@ -13487,7 +13490,6 @@ static void ComponentClassRepositoryPreservesFocusedContract()
         using (var connection = context.OpenConnection())
         {
             True(repository.QueryAll(connection).Any((candidate) => candidate.Id == original.Id));
-            True(repository.QueryByProject(connection, original.ProjectId).Any((candidate) => candidate.Id == original.Id));
         }
 
         var preview = JsonPath.ParseRequiredObject(original.DesignPreviewJson, $"Component class '{original.Id}' design_preview_json");
@@ -13714,7 +13716,7 @@ static void ShotRepositoryPreservesFocusedContract()
         var original = repository.Get(node.Id);
         var settings = database.GetShotSettings(node.Id);
 
-        Equal(original.ProjectId, settings.ProjectId);
+        Equal(original.ProjectId, ProjectId(settings));
         Equal(original.EpisodeId, settings.EpisodeId);
         Equal(original.Slug, settings.Slug);
         Equal(original.ShotNumber, settings.ShotNumber);
@@ -16574,10 +16576,10 @@ static void ShotResourceOverridesResolveIndependently()
             screen.Id,
             "moduleInstance.themeOverrideId",
             "inherited");
-        var deviceOverrideId = database.GetDeviceOptions(settings.ProjectId)
+        var deviceOverrideId = database.GetDeviceOptions(ProjectId(settings))
             .Select((option) => option.Value)
             .First((id) => !id.Equals(actor.DefaultDeviceId, StringComparison.Ordinal));
-        var themeOverrideId = database.GetThemeOptions(settings.ProjectId)
+        var themeOverrideId = database.GetThemeOptions(ProjectId(settings))
             .Select((option) => option.Value)
             .First((id) => !id.Equals(actor.DefaultThemeId, StringComparison.Ordinal));
         var values = new RecordClassFieldValueService(
@@ -18748,10 +18750,10 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
             database.Resources,
             database.ProjectPaths,
             () => { });
-        session.UpdateForPayload(payload, settings.ProjectId);
+        session.UpdateForPayload(payload, ProjectId(settings));
         var deletedStateId = items[0]?["alternatives"]?[1]?["id"]?.GetValue<string>() ?? "";
         True(session.TriggerAction(stateAction.Id, deletedStateId));
-        var selected = session.ApplyInputs(payload, "light", settings.ProjectId);
+        var selected = session.ApplyInputs(payload, "light", ProjectId(settings));
         var selectedPreview = DesignPreviewTestValues.Parse(selected.DesignPreviewJson);
         Equal(deletedStateId, selectedPreview[slots.JsonKey]?[0]?["runtimeStateId"]?.GetValue<string>() ?? "");
         var themeTokens = JsonNode.Parse(payload.ThemeTokensJson) as JsonObject
@@ -18795,8 +18797,8 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
         (stackItems[0]?["alternatives"] as JsonArray)?.RemoveAt(1);
         database.UpdateModuleVariantField(moduleVariant, "module.core.lockScreen.stackItems", stackItems.ToJsonString());
         var updatedPayload = Required(CreatePreviewPayload(database, moduleVariant, theme.Id));
-        session.UpdateForPayload(updatedPayload, settings.ProjectId);
-        var normalized = session.ApplyInputs(updatedPayload, "light", settings.ProjectId);
+        session.UpdateForPayload(updatedPayload, ProjectId(settings));
+        var normalized = session.ApplyInputs(updatedPayload, "light", ProjectId(settings));
         var normalizedPreview = DesignPreviewTestValues.Parse(normalized.DesignPreviewJson);
         var firstRemainingStateId = normalizedPreview[slots.SourceCollectionJsonKey]?[0]?["alternatives"]?[0]?["id"]?.GetValue<string>() ?? "";
         Equal(firstRemainingStateId, normalizedPreview[slots.JsonKey]?[0]?["runtimeStateId"]?.GetValue<string>() ?? "");
@@ -22042,7 +22044,7 @@ static void ComponentStackSeedOpensAndRenders()
         var reflowGapItem = new JsonObject { ["gapBeforeMode"] = "reflow" };
         True(!CollectionFieldAvailability.IsEnabled(reflowGapItem, fixedGapField, 1));
         True(CollectionFieldAvailability.IsEnabled(reflowGapItem, reflowWeightField, 1));
-        var componentOptions = database.GetComponentVariantReferenceOptions(settings.ProjectId, "*,-componentStack");
+        var componentOptions = database.GetComponentVariantReferenceOptions(ProjectId(settings), "*,-componentStack");
         True(componentOptions.All((option) => !option.Value.StartsWith(stack.Id + "::variant::", StringComparison.Ordinal)));
         True(componentOptions.All((option) => !string.IsNullOrWhiteSpace(option.GroupValue)));
         True(componentOptions.GroupBy((option) => option.GroupValue)
@@ -22058,8 +22060,8 @@ static void ComponentStackSeedOpensAndRenders()
             database.Resources,
             database.ProjectPaths,
             () => refreshCount++);
-        inputSession.UpdateForPayload(payload, settings.ProjectId);
-        var resolvedPayload = inputSession.ApplyInputs(payload, "light", settings.ProjectId);
+        inputSession.UpdateForPayload(payload, ProjectId(settings));
+        var resolvedPayload = inputSession.ApplyInputs(payload, "light", ProjectId(settings));
         var resolvedPreview = DesignPreviewTestValues.Parse(resolvedPayload.DesignPreviewJson);
         True(resolvedPreview["items"]?[1]?["alternatives"]?[0]?["inputs"]?["showBadge"]?.GetValue<bool>() == true);
         var html = WebDesignPreviewRenderer.RenderBodyAsync(
@@ -22069,7 +22071,7 @@ static void ComponentStackSeedOpensAndRenders()
         True(!string.IsNullOrWhiteSpace(html));
         True(!html.Contains("preview-error", StringComparison.Ordinal));
 
-        var childVariant = database.GetComponentVariantReferenceOptionsByType(settings.ProjectId, "audio").First().Value;
+        var childVariant = database.GetComponentVariantReferenceOptionsByType(ProjectId(settings), "audio").First().Value;
         var audioInputs = database.GetComponentVariantRuntimeInputs(childVariant);
         True(audioInputs["showBadge"] is JsonValue);
         Equal("icon", audioInputs["badgeContentMode"]?.GetValue<string>() ?? "");
@@ -22106,10 +22108,10 @@ static void ComponentStackSeedOpensAndRenders()
             childVariantNode,
             "component.audio.surface.editor").Definition.SelectComponentClass);
         var otherPayload = Required(CreatePreviewPayload(database, childVariantNode, theme.Id));
-        inputSession.UpdateForPayload(otherPayload, settings.ProjectId);
+        inputSession.UpdateForPayload(otherPayload, ProjectId(settings));
         var revisitedPreview = inputSession.ApplyTransientTestValues(designPreview, payload);
         Equal(1, (revisitedPreview["items"] as JsonArray)?.Count ?? -1);
-        var transientPayload = inputSession.ApplyInputs(payload, "light", settings.ProjectId);
+        var transientPayload = inputSession.ApplyInputs(payload, "light", ProjectId(settings));
         var transientPreview = JsonNode.Parse(transientPayload.DesignPreviewJson) as JsonObject
             ?? throw new InvalidOperationException("Missing transient Component Stack preview.");
         Equal(1, (transientPreview["items"] as JsonArray)?.Count ?? -1);
@@ -22129,7 +22131,7 @@ static void ComponentStackSeedOpensAndRenders()
             defaultVariant,
             [],
             new RuntimeComponentOverrideSource(
-                selectedComponent.ProjectId,
+                ProjectId(selectedComponent),
                 childVariant,
                 selectedComponent.ComponentType,
                 selectedComponent.RecordClassId,
@@ -22172,13 +22174,13 @@ static void ComponentStackSeedOpensAndRenders()
             .Select((field) => field.Id)
             .First(ComponentClassFieldCatalog.IsRuntimeOverrideField);
         _ = embeddedDocuments.CreateFieldValue(nestedRuntimeContext, nestedFieldId);
-        var avatarVariant = database.GetComponentVariantReferenceOptionsByType(settings.ProjectId, "avatar").First().Value;
+        var avatarVariant = database.GetComponentVariantReferenceOptionsByType(ProjectId(settings), "avatar").First().Value;
         var avatarSelection = database.GetComponentVariantSelectionSettings(avatarVariant);
         var avatarContext = new EditorEmbeddedContext(
             defaultVariant,
             [],
             new RuntimeComponentOverrideSource(
-                avatarSelection.ProjectId,
+                ProjectId(avatarSelection),
                 avatarVariant,
                 avatarSelection.ComponentType,
                 avatarSelection.RecordClassId,
@@ -22206,7 +22208,7 @@ static void ComponentStackSeedOpensAndRenders()
                      .Distinct(StringComparer.Ordinal))
         {
             _ = database.CreateRuntimeComponentOverrideFieldValue(
-                selectedComponent.ProjectId,
+                ProjectId(selectedComponent),
                 selectedComponent.ConfigJson,
                 overrides,
                 fieldId);
@@ -22215,20 +22217,20 @@ static void ComponentStackSeedOpensAndRenders()
         True(!ComponentClassFieldCatalog.IsRuntimeOverrideField("core.notes"));
         True(ComponentClassFieldCatalog.IsRuntimeOverrideField("component.audio.padding"));
         var inheritedPadding = database.CreateRuntimeComponentOverrideFieldValue(
-            selectedComponent.ProjectId,
+            ProjectId(selectedComponent),
             selectedComponent.ConfigJson,
             overrides,
             "component.audio.padding");
         True(inheritedPadding.IsInherited);
         database.UpdateRuntimeComponentOverride(overrides, "component.audio.padding", "theme.spacing.xl|theme.spacing.l");
         True(!database.CreateRuntimeComponentOverrideFieldValue(
-            selectedComponent.ProjectId,
+            ProjectId(selectedComponent),
             selectedComponent.ConfigJson,
             overrides,
             "component.audio.padding").IsInherited);
         database.UpdateRuntimeComponentOverride(overrides, "component.audio.padding", "inherited");
         True(database.CreateRuntimeComponentOverrideFieldValue(
-            selectedComponent.ProjectId,
+            ProjectId(selectedComponent),
             selectedComponent.ConfigJson,
             overrides,
             "component.audio.padding").IsInherited);
@@ -22242,8 +22244,8 @@ static void ComponentStackSeedOpensAndRenders()
             database.Resources,
             database.ProjectPaths,
             () => { });
-        populatedInputSession.UpdateForPayload(populatedPayloadSource, settings.ProjectId);
-        var populatedPayload = populatedInputSession.ApplyInputs(populatedPayloadSource, "light", settings.ProjectId);
+        populatedInputSession.UpdateForPayload(populatedPayloadSource, ProjectId(settings));
+        var populatedPayload = populatedInputSession.ApplyInputs(populatedPayloadSource, "light", ProjectId(settings));
         var populatedPreview = DesignPreviewTestValues.Parse(populatedPayload.DesignPreviewJson);
         True(populatedPreview["items"]?[0]?["alternatives"]?[0]?["inputs"]?["showBadge"] is JsonValue);
         var populatedHtml = WebDesignPreviewRenderer.RenderBodyAsync(
@@ -22324,9 +22326,10 @@ static void ComponentInputBindingsResolveRecordReferences()
         {
             optionRequests.Add((tableId, allowEmpty));
             return optionsData.RecordReferenceOptions(
-                settings.ProjectId,
+                ProjectId(settings),
                 tableId,
-                allowEmpty);
+                allowEmpty,
+                systemPreviewFixtures: false);
         });
     const string slotVariantReference =
         "component_project_foqn_s2_collectionStack::variant::default";
@@ -22518,7 +22521,7 @@ static void CollectionStackSeedOpensAndRenders()
         Equal("items", collection.JsonKey);
         Equal("*,-collectionStack", collection.Fields.Single((field) => field.Id == "variantReference").ComponentType);
 
-        var componentOptions = database.GetComponentVariantReferenceOptions(settings.ProjectId, "*,-collectionStack");
+        var componentOptions = database.GetComponentVariantReferenceOptions(ProjectId(settings), "*,-collectionStack");
         True(componentOptions.All((option) => !option.Value.StartsWith(stack.Id + "::variant::", StringComparison.Ordinal)));
         True(componentOptions.Any((option) => option.GroupValue.EndsWith("componentStack", StringComparison.Ordinal)));
 
@@ -22531,11 +22534,11 @@ static void CollectionStackSeedOpensAndRenders()
             database.Resources,
             database.ProjectPaths,
             () => { });
-        inputSession.UpdateForPayload(payload, settings.ProjectId);
+        inputSession.UpdateForPayload(payload, ProjectId(settings));
         var html = WebDesignPreviewRenderer.RenderBodyAsync(
             database.GetDevicePreviewMetrics(device.Id),
             false,
-            inputSession.ApplyInputs(payload, "light", settings.ProjectId)).GetAwaiter().GetResult();
+            inputSession.ApplyInputs(payload, "light", ProjectId(settings))).GetAwaiter().GetResult();
         True(!string.IsNullOrWhiteSpace(html));
         True(!html.Contains("preview-error", StringComparison.Ordinal));
     }
@@ -22647,10 +22650,10 @@ static void NotificationsSeedOpensAndRenders()
                 database.Resources,
                 database.ProjectPaths,
                 () => { });
-            inputSession.UpdateForPayload(payload, database.GetComponentClassSettings(variant.Parent!.Id).ProjectId);
+            inputSession.UpdateForPayload(payload, ProjectId(database.GetComponentClassSettings(variant.Parent!.Id)));
             var html = WebDesignPreviewRenderer.RenderBodyAsync(
                 database.GetDevicePreviewMetrics(device.Id), false,
-                inputSession.ApplyInputs(payload, "light", database.GetComponentClassSettings(variant.Parent.Id).ProjectId)).GetAwaiter().GetResult();
+                inputSession.ApplyInputs(payload, "light", ProjectId(database.GetComponentClassSettings(variant.Parent.Id)))).GetAwaiter().GetResult();
             True(!html.Contains("preview-error", StringComparison.Ordinal));
         }
 
@@ -22669,7 +22672,7 @@ static void NotificationsSeedOpensAndRenders()
             () => { });
         var transitionBusy = false;
         transitionSession.PlaybackBusyChanged += (value) => transitionBusy = value;
-        transitionSession.UpdateForPayload(transitionPayload, database.GetComponentClassSettings(notification.Id).ProjectId);
+        transitionSession.UpdateForPayload(transitionPayload, ProjectId(database.GetComponentClassSettings(notification.Id)));
         var durationMethod = typeof(ComponentPreviewInputSession).GetMethod(
             "DurationFrames",
             BindingFlags.Instance | BindingFlags.NonPublic)
@@ -22709,10 +22712,10 @@ static void NotificationsSeedOpensAndRenders()
             database.Resources,
             database.ProjectPaths,
             () => { });
-        wrappingSession.UpdateForPayload(wrappingPayload, wrappingSettings.ProjectId);
+        wrappingSession.UpdateForPayload(wrappingPayload, ProjectId(wrappingSettings));
         var wrappingHtml = WebDesignPreviewRenderer.RenderBodyAsync(
             database.GetDevicePreviewMetrics(device.Id), false,
-            wrappingSession.ApplyInputs(wrappingPayload, "light", wrappingSettings.ProjectId)).GetAwaiter().GetResult();
+            wrappingSession.ApplyInputs(wrappingPayload, "light", ProjectId(wrappingSettings))).GetAwaiter().GetResult();
         True(wrappingHtml.Contains("component.notification.label.text.1", StringComparison.Ordinal));
         database.UpdateComponentClassDesignPreviewJson(notification.Id, wrappingSettings.DesignPreviewJson);
 
@@ -22758,7 +22761,7 @@ static void NotificationsSeedOpensAndRenders()
             database.Resources,
             database.ProjectPaths,
             () => { });
-        populatedSession.UpdateForPayload(populated, settings.ProjectId);
+        populatedSession.UpdateForPayload(populated, ProjectId(settings));
         var populatedContract = JsonNode.Parse(populated.DesignPreviewJson)?.AsObject()
             ?? throw new InvalidOperationException("Missing populated Notifications contract.");
         var embeddedActions = ComponentPreviewActions.ReadWithEmbedded(
@@ -22770,7 +22773,7 @@ static void NotificationsSeedOpensAndRenders()
         True(embeddedActions.All((action) => string.IsNullOrWhiteSpace(action.TargetJsonPath)));
         var firstDisplayAction = embeddedActions.Single((action) => action.CollectionItemId == "notification_1");
         True(populatedSession.TriggerAction(firstDisplayAction.Id, "detail"));
-        var targetedPayload = populatedSession.ApplyInputs(populated, "light", settings.ProjectId);
+        var targetedPayload = populatedSession.ApplyInputs(populated, "light", ProjectId(settings));
         var targetedItems = JsonNode.Parse(targetedPayload.DesignPreviewJson)?["items"]?.AsArray()
             ?? throw new InvalidOperationException("Missing targeted Notification items.");
         Equal("detail", targetedItems[0]?["displayMode"]?.GetValue<string>() ?? "");
@@ -22778,7 +22781,7 @@ static void NotificationsSeedOpensAndRenders()
         True(populatedSession.RestoreAction(firstDisplayAction.Id));
         var populatedHtml = WebDesignPreviewRenderer.RenderBodyAsync(
             database.GetDevicePreviewMetrics(device.Id), false,
-            populatedSession.ApplyInputs(populated, "light", settings.ProjectId)).GetAwaiter().GetResult();
+            populatedSession.ApplyInputs(populated, "light", ProjectId(settings))).GetAwaiter().GetResult();
         if (populatedHtml.Contains("preview-error", StringComparison.Ordinal))
             throw new InvalidOperationException("Stacked Notifications preview failed.");
         if (!populatedHtml.Contains("component.notifications.badge", StringComparison.Ordinal))
@@ -22786,7 +22789,7 @@ static void NotificationsSeedOpensAndRenders()
         populatedSession.SetExternalInputValue("distributionMode", "flow");
         var flowHtml = WebDesignPreviewRenderer.RenderBodyAsync(
             database.GetDevicePreviewMetrics(device.Id), false,
-            populatedSession.ApplyInputs(populated, "light", settings.ProjectId)).GetAwaiter().GetResult();
+            populatedSession.ApplyInputs(populated, "light", ProjectId(settings))).GetAwaiter().GetResult();
         if (flowHtml.Contains("preview-error", StringComparison.Ordinal))
             throw new InvalidOperationException("Flow Notifications preview failed.");
         if (flowHtml.Contains("component.notifications.badge", StringComparison.Ordinal))
@@ -22854,10 +22857,10 @@ static void KeypadSeedOpensAndRenders()
             database.Resources,
             database.ProjectPaths,
             () => { });
-        inputSession.UpdateForPayload(payload, settings.ProjectId);
+        inputSession.UpdateForPayload(payload, ProjectId(settings));
         inputSession.SetExternalInputValue("activeKey", "5");
         inputSession.SetExternalInputValue("pushedKey", "5");
-        var resolvedPayload = inputSession.ApplyInputs(payload, "light", settings.ProjectId);
+        var resolvedPayload = inputSession.ApplyInputs(payload, "light", ProjectId(settings));
         var html = WebDesignPreviewRenderer.RenderBodyAsync(
             database.GetDevicePreviewMetrics(device.Id),
             false,
@@ -22937,7 +22940,7 @@ static void PasswordSeedOpensAndRenders()
             () => { });
         var playbackBusy = false;
         inputSession.PlaybackBusyChanged += (value) => playbackBusy = value;
-        inputSession.UpdateForPayload(payload, settings.ProjectId);
+        inputSession.UpdateForPayload(payload, ProjectId(settings));
         var durationMethod = typeof(ComponentPreviewInputSession).GetMethod(
             "DurationFrames",
             BindingFlags.Instance | BindingFlags.NonPublic)
@@ -22959,7 +22962,7 @@ static void PasswordSeedOpensAndRenders()
         True(!inputSession.IsPlaybackActive);
         True(!playbackBusy);
         Equal(16, inputSession.CurrentPreviewFrame);
-        var resolvedPayload = inputSession.ApplyInputs(payload, "light", settings.ProjectId);
+        var resolvedPayload = inputSession.ApplyInputs(payload, "light", ProjectId(settings));
         var finalPreview = JsonNode.Parse(resolvedPayload.DesignPreviewJson) as JsonObject
             ?? throw new InvalidOperationException("Missing resolved Password preview.");
         Equal(true, finalPreview["entryTrigger"]?.GetValue<bool>() ?? false);
@@ -22973,7 +22976,7 @@ static void PasswordSeedOpensAndRenders()
         True(inputSession.CanRestoreAction(action.Id));
         True(inputSession.RestoreAction(action.Id));
         True(inputSession.CanRestoreAction(action.Id));
-        var restoredPayload = inputSession.ApplyInputs(payload, "light", settings.ProjectId);
+        var restoredPayload = inputSession.ApplyInputs(payload, "light", ProjectId(settings));
         var restoredPreview = JsonNode.Parse(restoredPayload.DesignPreviewJson) as JsonObject
             ?? throw new InvalidOperationException("Missing restored Password preview.");
         Equal(true, restoredPreview["entryTrigger"]?.GetValue<bool>() ?? false);
@@ -23175,8 +23178,8 @@ static void SocialPostComposesHeaderRows()
         database.Resources,
         database.ProjectPaths,
         () => { });
-    session.UpdateForPayload(payload, settings.ProjectId);
-    var resolved = session.ApplyInputs(payload, "light", settings.ProjectId);
+    session.UpdateForPayload(payload, ProjectId(settings));
+    var resolved = session.ApplyInputs(payload, "light", ProjectId(settings));
     var html = WebDesignPreviewRenderer.RenderBodyAsync(
         database.GetDevicePreviewMetrics(device.Id),
         false,
@@ -23775,8 +23778,8 @@ static void LockScreenComposesRuntimeStack()
             database.Resources,
             database.ProjectPaths,
             () => { });
-        session.UpdateForPayload(payload, settings.ProjectId);
-        var resolved = session.ApplyInputs(payload, "light", settings.ProjectId);
+        session.UpdateForPayload(payload, ProjectId(settings));
+        var resolved = session.ApplyInputs(payload, "light", ProjectId(settings));
         var resolvedPreview = JsonNode.Parse(resolved.DesignPreviewJson) as JsonObject
             ?? throw new InvalidOperationException("Missing resolved Lock Screen preview.");
         foreach (var forwardedInput in inputs.Skip(3))
@@ -23790,7 +23793,7 @@ static void LockScreenComposesRuntimeStack()
             resolved).GetAwaiter().GetResult();
         True(!html.Contains("preview-error", StringComparison.Ordinal));
 
-        var childVariant = database.GetComponentVariantReferenceOptionsByType(settings.ProjectId, "label").First().Value;
+        var childVariant = database.GetComponentVariantReferenceOptionsByType(ProjectId(settings), "label").First().Value;
         var childInputs = database.GetComponentVariantRuntimeInputs(childVariant);
         var subtitleBinding = database.GetComponentVariantRuntimeInputBindings(childVariant)
             .Single((input) => input.Id == "sampleSubtext");
@@ -23839,7 +23842,7 @@ static void LockScreenComposesRuntimeStack()
             database.Resources,
             database.ProjectPaths,
             () => { });
-        populatedSession.UpdateForPayload(populatedPayload, settings.ProjectId);
+        populatedSession.UpdateForPayload(populatedPayload, ProjectId(settings));
         var populatedPreview = JsonNode.Parse(populatedPayload.DesignPreviewJson) as JsonObject ?? new JsonObject();
         var populatedConfig = JsonNode.Parse(populatedPayload.ConfigJson) as JsonObject ?? new JsonObject();
         var populatedCollections = RuntimeInputDefinitionReader.ReadCollections(populatedPreview, populatedConfig);
@@ -23859,7 +23862,7 @@ static void LockScreenComposesRuntimeStack()
             populatedStateItems);
         populatedSession.SetExternalInputValue("showStatusBar", "false");
         populatedSession.SetExternalInputValue("showNavigationBar", "false");
-        var populated = populatedSession.ApplyInputs(populatedPayload, "light", settings.ProjectId);
+        var populated = populatedSession.ApplyInputs(populatedPayload, "light", ProjectId(settings));
         var populatedHtml = WebDesignPreviewRenderer.RenderBodyAsync(
             database.GetDevicePreviewMetrics(device.Id),
             false,
@@ -24453,6 +24456,19 @@ static void Throws<TException>(
         $"Expected {typeof(TException).Name} at test source line {callerLine}: {expression}.");
 }
 
+static string ProjectId(object settings)
+{
+    if (settings is ComponentClassSettings
+        or ComponentVariantSelectionSettings
+        or ComponentClassDefinitionRecord)
+    {
+        return "project_foqn_s2";
+    }
+    return settings.GetType().GetProperty("ProjectId")?.GetValue(settings) as string
+        ?? throw new InvalidOperationException(
+            $"{settings.GetType().Name} has no Project context.");
+}
+
 internal sealed class RecordingMessageSink : IEditorShellMessageSink
 {
     public List<string> Warnings { get; } = [];
@@ -24516,7 +24532,6 @@ internal sealed class RecordingVariantHistoryStore : IVariantHistoryStore
     {
         ReadThreadIds.Add(Environment.CurrentManagedThreadId);
         return new ComponentClassSettings(
-            "project",
             "history",
             "component.history",
             variantNode.Name,

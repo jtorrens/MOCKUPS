@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "actors": [
+    {
+      "id": "system_preview_actor_primary",
+      "label": "Sample One",
+      "shortName": "One",
+      "initials": "SO",
+      "avatar": "avatars/sample-one.svg",
+      "backgroundColor": "#3657D6",
+      "textColor": "#FFFFFF"
+    },
+    {
+      "id": "system_preview_actor_secondary",
+      "label": "Sample Two",
+      "shortName": "Two",
+      "initials": "ST",
+      "avatar": "avatars/sample-two.svg",
+      "backgroundColor": "#C84C73",
+      "textColor": "#FFFFFF"
+    }
+  ],
+  "media": [
+    {
+      "id": "system-preview://media/test-image.svg",
+      "label": "Synthetic image",
+      "kind": "image"
+    },
+    {
+      "id": "system-preview://media/test-video.mp4",
+      "label": "Synthetic video",
+      "kind": "video"
+    },
+    {
+      "id": "system-preview://media/test-audio.wav",
+      "label": "Synthetic audio",
+      "kind": "audio"
+    }
+  ],
+  "mediaDirectories": [
+    {
+      "id": "system-preview://media/gallery",
+      "label": "Synthetic gallery",
+      "kind": "directory"
+    }
+  ]
+}

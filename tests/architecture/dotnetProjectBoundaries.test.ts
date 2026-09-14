@@ -592,6 +592,7 @@ test("production projects expose only allowlisted physical compilation channels"
         relative === "scripts/icon-themes/sync-icon-theme-token.cjs"
           || relative.startsWith("dist/desktop-preview/")
           || relative.startsWith("assets/system/icon-themes/")
+          || relative.startsWith("assets/system/preview-fixtures/")
           || relative.startsWith("assets/system/system_icons/"),
         `Host links undeclared external Content ${relative}`,
       );

@@ -35,7 +35,6 @@ internal sealed partial class SqliteDesignOwner
                 var config = ParseJsonObject(variant.ConfigJson);
                 ApplyComponentInputBindingsProjections(
                     connection,
-                    module.ProjectId,
                     config,
                     ComponentInputBindingsProjectionCatalog.RecordOwners());
                 return variant with { ConfigJson = config.ToJsonString() };
@@ -68,7 +67,6 @@ internal sealed partial class SqliteDesignOwner
         var config = ParseJsonObject(variant.ConfigJson);
         ApplyComponentInputBindingsProjections(
             connection,
-            settings.ProjectId,
             config,
             ComponentInputBindingsProjectionCatalog.RecordOwners());
         return settings with { ConfigJson = config.ToJsonString() };
@@ -434,7 +432,6 @@ internal sealed partial class SqliteDesignOwner
                     "Module variant has no config.");
             ApplyComponentInputBindingsProjections(
                 connection,
-                module.ProjectId,
                 config,
                 ComponentInputBindingsProjectionCatalog.RecordOwners());
             CurrentModuleConfigContract.Validate(

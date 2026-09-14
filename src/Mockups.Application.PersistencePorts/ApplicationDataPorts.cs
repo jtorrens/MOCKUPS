@@ -150,7 +150,7 @@ public interface IResourceRecordFieldStore
 public interface IComponentClassFieldStore
 {
     EditorShell.FieldValue CreateComponentClassFieldValue(
-        string componentClassId,
+        EditorShell.ProjectTreeNode componentClassNode,
         string fieldId);
     EditorShell.FieldValue CreateComponentVariantFieldValue(
         EditorShell.ProjectTreeNode variantNode,

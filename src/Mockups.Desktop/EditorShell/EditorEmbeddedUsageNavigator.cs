@@ -58,7 +58,7 @@ internal sealed class EditorEmbeddedUsageNavigator
                     var settings = _database.GetComponentClassSettings(
                         node.Id);
                     var usages = _database.GetEmbeddedComponentUsages(
-                        settings.ProjectId,
+                        ProjectAncestor(node).Id,
                         settings.ComponentType,
                         node.Id);
                     var variantUsages = variantNode is null
@@ -86,6 +86,18 @@ internal sealed class EditorEmbeddedUsageNavigator
         }
     }
 
+    private static ProjectTreeNode ProjectAncestor(ProjectTreeNode node)
+    {
+        var current = node;
+        while (current.Kind != ProjectTreeNodeKind.Project)
+        {
+            current = current.Parent
+                ?? throw new InvalidOperationException(
+                    $"{node.Kind} has no Project context.");
+        }
+        return current;
+    }
+
     public async Task ShowForEmbedded(ProjectTreeNode ownerNode, EmbeddedComponentSlotDefinition slot)
     {
         try
@@ -94,10 +106,8 @@ internal sealed class EditorEmbeddedUsageNavigator
                 "Preparing embedded usage…",
                 () =>
                 {
-                    var ownerSettings =
-                        _database.GetComponentClassSettings(ownerNode.Id);
                     return _database.GetEmbeddedComponentUsages(
-                        ownerSettings.ProjectId,
+                        ProjectAncestor(ownerNode).Id,
                         slot.EmbeddedComponentType);
                 });
             var selected = await new EditorEmbeddedUsageDialog(_owner, _isDark()).Show(

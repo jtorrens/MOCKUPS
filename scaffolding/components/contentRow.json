@@ -11,7 +11,6 @@
     "componentType": "contentRow",
     "category": "component",
     "componentClassId": "component_project_foqn_s2_content_row",
-    "projectId": "project_foqn_s2",
     "recordClassId": "component.contentRow",
     "name": "Content Row",
     "notes": "Reusable ordered content row for module header, footer and main overlays."

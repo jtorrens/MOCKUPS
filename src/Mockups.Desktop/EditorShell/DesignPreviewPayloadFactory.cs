@@ -59,7 +59,8 @@ internal sealed record DesignPreviewPayload(
     ScreenTimingPayload? ScreenTiming = null,
     ScreenTransitionPayload? ScreenTransition = null,
     string RuntimeRecordReferencesJson = "{}",
-    string ProjectId = "");
+    string ProjectId = "",
+    string SystemPreviewFixtureRoot = "");
 
 internal static class DesignPreviewPayloadLayers
 {
@@ -565,7 +566,11 @@ internal static class DesignPreviewPayloadFactory
         var actorId = runtimePreview["actorId"]?.GetValue<string>() ?? "";
         runtimePreview["actor"] = string.IsNullOrWhiteSpace(actorId)
             ? ActorPreviewInputFactory.CreateSample()
-            : dataSource.CreateActorPreview(actorId, effectiveThemeMode, theme.PaletteColors);
+            : dataSource.CreateActorPreview(
+                actorId,
+                effectiveThemeMode,
+                theme.PaletteColors,
+                allowSystemPreviewFixtures: true);
         dataSource.ResolveNestedRuntimeRecordReferences(
             runtimePreview,
             effectiveThemeMode,
@@ -579,7 +584,10 @@ internal static class DesignPreviewPayloadFactory
             theme.PaletteColors,
             theme.PaletteNeutralColors,
             theme.ProjectMediaRoot,
-            PreviewMediaDirectoryCatalog.Resolve(theme.ProjectMediaRoot, runtimePreviewJson),
+            PreviewMediaDirectoryCatalog.Resolve(
+                theme.ProjectMediaRoot,
+                runtimePreviewJson,
+                SystemPreviewFixtureCatalog.Root),
             theme.IconAssetRoot,
             theme.IconMappingJson,
             theme.FontFaces,
@@ -589,7 +597,8 @@ internal static class DesignPreviewPayloadFactory
             effectiveThemeMode,
             settings.ComponentBaseConfigsJson,
             settings.AppConfigJson,
-            ProjectId: settings.ProjectId);
+            ProjectId: settings.ProjectId,
+            SystemPreviewFixtureRoot: SystemPreviewFixtureCatalog.Root);
     }
 
     private static string ResolveEffectiveThemeMode(
@@ -638,7 +647,10 @@ internal static class DesignPreviewPayloadFactory
             theme.PaletteColors,
             theme.PaletteNeutralColors,
             theme.ProjectMediaRoot,
-            PreviewMediaDirectoryCatalog.Resolve(theme.ProjectMediaRoot, designPreviewJson),
+            PreviewMediaDirectoryCatalog.Resolve(
+                theme.ProjectMediaRoot,
+                designPreviewJson,
+                SystemPreviewFixtureCatalog.Root),
             theme.IconAssetRoot,
             theme.IconMappingJson,
             theme.FontFaces,
@@ -647,7 +659,8 @@ internal static class DesignPreviewPayloadFactory
             runtimeContractJson,
             effectiveThemeMode,
             settings.ComponentBaseConfigsJson,
-            ProjectId: settings.ProjectId);
+            ProjectId: settings.ProjectId,
+            SystemPreviewFixtureRoot: SystemPreviewFixtureCatalog.Root);
     }
 
     private static string ResolveActionDurationsJson(

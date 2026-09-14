@@ -88,7 +88,7 @@ Given a user description, Codex first converts it into an explicit authoring
 contract:
 
 1. responsibility and visual boundaries;
-2. stable Component Class id and manifest category;
+2. stable global Component Class id and manifest category;
 3. dictionary fields grouped into Variant values and Runtime Inputs;
 4. canonical `ValueKind` for every editable value;
 5. protected Default Variant as a complete snapshot;
@@ -97,7 +97,8 @@ contract:
 7. explicit forwarding declarations;
 8. runtime actions, duration metadata and temporal owners;
 9. resolver output expressed through generic primitives;
-10. Design Preview fixture and Test Values;
+10. Design Preview fixture and Test Values using only System Preview Actor and
+    media identities;
 11. editor layout metadata;
 12. persistence/seed migration and complete validations.
 

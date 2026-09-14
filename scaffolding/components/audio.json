@@ -11,7 +11,6 @@
     "componentType": "audio",
     "category": "component",
     "componentClassId": "component_project_foqn_s2_audio",
-    "projectId": "project_foqn_s2",
     "recordClassId": "component.audio",
     "name": "Audio",
     "notes": "Audio component"

@@ -11,7 +11,6 @@
     "componentType": "faceRecognition",
     "category": "system",
     "componentClassId": "component_project_foqn_s2_faceRecognition",
-    "projectId": "project_foqn_s2",
     "recordClassId": "component.faceRecognition",
     "name": "Default Face Recognition",
     "notes": "Face recognition component"

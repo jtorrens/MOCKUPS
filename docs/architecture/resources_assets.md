@@ -4,7 +4,8 @@ Status: normative.
 
 ## Resource ownership
 
-Palette Color identities and Icon Themes are System-owned SQLite records. Every
+Palette Color identities, Icon Themes, Component Classes and complete Component
+Variants are System-owned SQLite records. Every
 Project owns a complete set of RGB values for the fixed Palette catalog.
 Themes, Actors, Devices and Production Fonts remain Project-owned SQLite
 records. Asset files are referenced by those current records and resolved
@@ -44,13 +45,15 @@ paths. It traverses only fields declared with the corresponding media
 Theme asset-root documents owned by their repositories. It never scans
 arbitrary JSON text or infers authored references from file extensions.
 
-The index covers every complete Component Variant, every complete Module
-Variant, their Design Test Values and defaults, and every Production Screen
-payload, local Override and media-valued animation keyframe. An animated media
+The index covers Project-owned Module Variants and their Design Test Values,
+plus every Production Screen payload, local Override and media-valued animation
+keyframe. Global Component Design fixtures live in App Support and remain
+outside every Project inventory. An animated media
 usage retains the exact animation track and keyframe ids so replacement writes
 only that authored keyframe through the Module Instance animation owner. Each
 Production Font family directory is represented once. System Icon Theme
-directories, individual icon files and application-internal assets remain
+directories, individual icon files, System Preview fixtures and other
+application-internal assets remain
 outside the Project inventory. Relative references resolve through the Project
 path resolver; absolute references retain their authored workstation location.
 Missing targets remain listed and are marked explicitly so stale authored

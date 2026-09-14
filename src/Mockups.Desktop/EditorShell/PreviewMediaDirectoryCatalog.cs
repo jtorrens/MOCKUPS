@@ -11,10 +11,9 @@ internal static class PreviewMediaDirectoryCatalog
 {
     public static IReadOnlyList<string> Resolve(
         string projectMediaRoot,
-        string preparedPreviewJson)
+        string preparedPreviewJson,
+        string systemPreviewFixtureRoot = "")
     {
-        if (string.IsNullOrWhiteSpace(projectMediaRoot)) return [];
-        var mediaRoot = Path.GetFullPath(projectMediaRoot);
         var directories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         CollectMediaDirectories(
             JsonPath.ParseRequiredObject(
@@ -30,6 +29,28 @@ internal static class PreviewMediaDirectoryCatalog
         foreach (var directory in directories)
         {
             if (string.IsNullOrWhiteSpace(directory)) continue;
+            if (directory.StartsWith(
+                    SystemPreviewFixtureCatalog.MediaScheme,
+                    StringComparison.Ordinal))
+            {
+                if (string.IsNullOrWhiteSpace(systemPreviewFixtureRoot))
+                {
+                    throw new InvalidOperationException(
+                        $"System Preview media directory '{directory}' is not allowed outside Design Preview.");
+                }
+                AddSystemFixtureFiles(
+                    files,
+                    directory,
+                    systemPreviewFixtureRoot,
+                    extensions);
+                continue;
+            }
+            if (string.IsNullOrWhiteSpace(projectMediaRoot))
+            {
+                throw new InvalidOperationException(
+                    $"Media directory '{directory}' requires a Project media root.");
+            }
+            var mediaRoot = Path.GetFullPath(projectMediaRoot);
             var fullDirectory = Path.GetFullPath(
                 Path.IsPathFullyQualified(directory)
                     ? directory
@@ -54,6 +75,32 @@ internal static class PreviewMediaDirectoryCatalog
             }
         }
         return files.OrderBy((file) => file, StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    private static void AddSystemFixtureFiles(
+        ISet<string> files,
+        string reference,
+        string fixtureRoot,
+        ISet<string> extensions)
+    {
+        var root = Path.GetFullPath(fixtureRoot);
+        var relativeDirectory = reference[SystemPreviewFixtureCatalog.MediaScheme.Length..];
+        var directory = Path.GetFullPath(Path.Combine(root, relativeDirectory));
+        if (!IsInsideRoot(directory, root) || !Directory.Exists(directory))
+        {
+            throw new InvalidOperationException(
+                $"System Preview media directory '{reference}' is missing or escapes its fixture root.");
+        }
+        foreach (var file in Directory.EnumerateFiles(
+                     directory,
+                     "*",
+                     SearchOption.TopDirectoryOnly))
+        {
+            if (!extensions.Contains(Path.GetExtension(file))) continue;
+            files.Add(
+                SystemPreviewFixtureCatalog.MediaScheme
+                + Path.GetRelativePath(root, file).Replace('\\', '/'));
+        }
     }
 
     private static void CollectMediaDirectories(

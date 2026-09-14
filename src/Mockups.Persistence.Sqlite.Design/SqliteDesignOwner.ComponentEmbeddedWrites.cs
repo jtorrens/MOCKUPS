@@ -29,7 +29,6 @@ internal sealed partial class SqliteDesignOwner
                 EmbeddedOverrides(config, slots, createIfMissing: false)?.Clear();
                 ApplyComponentInputBindingsProjections(
                     connection,
-                    settings.ProjectId,
                     config,
                     ComponentInputBindingsProjectionCatalog.RecordOwners());
                 if (ownerNode.Kind == ProjectTreeNodeKind.Module)
@@ -253,7 +252,6 @@ internal sealed partial class SqliteDesignOwner
                 value);
             ApplyComponentInputBindingsProjections(
                 connection,
-                settings.ProjectId,
                 config,
                 ComponentInputBindingsProjectionCatalog.RecordOwners());
             if (ownerNode.Kind == ProjectTreeNodeKind.Module)

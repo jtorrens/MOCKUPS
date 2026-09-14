@@ -11,7 +11,6 @@
     "componentType": "label",
     "category": "atom",
     "componentClassId": "component_project_foqn_s2_label",
-    "projectId": "project_foqn_s2",
     "recordClassId": "component.label",
     "name": "Label",
     "notes": "Label component"

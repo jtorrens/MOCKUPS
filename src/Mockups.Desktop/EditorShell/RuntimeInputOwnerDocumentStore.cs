@@ -161,11 +161,13 @@ internal sealed class RuntimeInputOwnerDocumentStore
         return _database.GetComponentVariantRuntimeInputs(variantReference);
     }
 
-    public RuntimeComponentVariantSelectionSource ComponentVariantSelection(string variantReference)
+    public RuntimeComponentVariantSelectionSource ComponentVariantSelection(
+        string projectId,
+        string variantReference)
     {
         var selected = _database.GetComponentVariantSelectionSettings(variantReference);
         return new RuntimeComponentVariantSelectionSource(
-            selected.ProjectId,
+            projectId,
             selected.ComponentType,
             selected.RecordClassId,
             selected.ConfigJson);

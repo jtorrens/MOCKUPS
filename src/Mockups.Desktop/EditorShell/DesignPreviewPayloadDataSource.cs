@@ -199,13 +199,13 @@ internal sealed class DesignPreviewPayloadDataSource
     public DesignPreviewComponentSource LoadComponentClass(ProjectTreeNode node)
     {
         var settings = _database.GetComponentClassSettings(node.Id);
-        return ComponentSource(settings);
+        return ComponentSource(settings, ProjectAncestor(node).Id);
     }
 
     public DesignPreviewComponentSource LoadComponentVariant(ProjectTreeNode node)
     {
         var settings = _database.GetComponentVariantSettings(node);
-        return ComponentSource(settings);
+        return ComponentSource(settings, ProjectAncestor(node).Id);
     }
 
     public DesignPreviewModuleSource LoadModule(ProjectTreeNode node)
@@ -301,8 +301,18 @@ internal sealed class DesignPreviewPayloadDataSource
     public JsonObject CreateActorPreview(
         string actorId,
         string themeMode,
-        IReadOnlyDictionary<string, string> paletteColors)
+        IReadOnlyDictionary<string, string> paletteColors,
+        bool allowSystemPreviewFixtures = false)
     {
+        if (SystemPreviewFixtureCatalog.IsActor(actorId))
+        {
+            if (!allowSystemPreviewFixtures)
+            {
+                throw new InvalidOperationException(
+                    $"Production Preview cannot reference System Preview Actor '{actorId}'.");
+            }
+            return SystemPreviewFixtureCatalog.ActorPreview(actorId);
+        }
         return ActorPreviewInputFactory.Create(
             _actorDataSource,
             _projectPaths,
@@ -316,18 +326,24 @@ internal sealed class DesignPreviewPayloadDataSource
         string themeMode,
         IReadOnlyDictionary<string, string> paletteColors)
     {
-        _nestedRuntimeRecordReferenceResolver.Resolve(runtime, themeMode, paletteColors);
+        _nestedRuntimeRecordReferenceResolver.Resolve(
+            runtime,
+            themeMode,
+            paletteColors,
+            allowSystemPreviewFixtures: true);
     }
 
-    private DesignPreviewComponentSource ComponentSource(ComponentClassSettings settings)
+    private DesignPreviewComponentSource ComponentSource(
+        ComponentClassSettings settings,
+        string projectId)
     {
         return new DesignPreviewComponentSource(
             settings.Name,
-            settings.ProjectId,
+            projectId,
             settings.ComponentType,
-            _database.ValidateComponentVariantReferencesForPreview(settings.ProjectId, settings.ConfigJson),
+            _database.ValidateComponentVariantReferencesForPreview(projectId, settings.ConfigJson),
             settings.DesignPreviewJson,
-            _database.GetComponentClassBaseConfigsJson(settings.ProjectId));
+            _database.GetComponentClassBaseConfigsJson(projectId));
     }
 
     private DesignPreviewModuleSource ModuleSource(
@@ -358,6 +374,18 @@ internal sealed class DesignPreviewPayloadDataSource
 
         _database.GetDeviceSettings(deviceId);
         return deviceId;
+    }
+
+    private static ProjectTreeNode ProjectAncestor(ProjectTreeNode node)
+    {
+        var current = node;
+        while (current.Kind != ProjectTreeNodeKind.Project)
+        {
+            current = current.Parent
+                ?? throw new InvalidOperationException(
+                    $"{node.Kind} has no Project context.");
+        }
+        return current;
     }
 
     private (ShotSettings Shot, ActorPreviewContextSource Actor)

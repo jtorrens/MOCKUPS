@@ -1937,7 +1937,9 @@ internal sealed class RuntimeInputsCollectionEditor
             item,
             componentItems.DocumentKeys,
             $"Runtime collection '{collection.Id}' item '{ItemId(item, itemIndex)}'");
-        var selected = _ownerDocuments.ComponentVariantSelection(variantReference);
+        var selected = _ownerDocuments.ComponentVariantSelection(
+            ProjectAncestor(owner.Node).Id,
+            variantReference);
         _openEmbeddedContext(new EditorEmbeddedContext(
             owner.Node,
             [],

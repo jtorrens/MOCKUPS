@@ -116,6 +116,11 @@ Design places Preview authoring above the Preview in two horizontal tabs:
 - **Test Values**
 - **Preview**
 
+Actor, media-file and media-directory controls in Design Test Values are
+bounded selectors backed by the synthetic System Preview fixture catalog. They
+do not open Project media browsers. The equivalent Production Runtime Inputs
+retain their Project-owned selectors and browsers.
+
 Preview combines the visual-context setup and the generic Preview controls in
 one scrollable Design surface. Both sections retain their existing semantic
 owners and state. Production uses the same combined Preview surface; its

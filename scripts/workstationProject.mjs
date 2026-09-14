@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
   constants,
+  cpSync,
   copyFileSync,
   existsSync,
   mkdirSync,
@@ -142,7 +143,16 @@ export function bootstrapWorkstationProject(
     validateDatabase(root, paths.workstationDatabase);
     requireDatabaseParity(paths);
   }
+  syncSystemPreviewFixtures(root, paths.workstationRoot);
   return paths;
+}
+
+function syncSystemPreviewFixtures(root, workstationRoot) {
+  const source = path.join(root, "assets", "system", "preview-fixtures");
+  const destination = path.join(workstationRoot, "system-preview-fixtures");
+  requireFile(path.join(source, "manifest.json"), "System Preview fixture manifest");
+  mkdirSync(destination, { recursive: true });
+  cpSync(source, destination, { recursive: true, force: true });
 }
 
 function requireClosedDatabase(databasePath) {

@@ -197,7 +197,6 @@ internal static class CurrentSqliteSchema
 
         CREATE TABLE IF NOT EXISTS component_classes (
           id TEXT PRIMARY KEY,
-          project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
           component_type TEXT NOT NULL,
           record_class_id TEXT NOT NULL,
           name TEXT NOT NULL,
@@ -205,7 +204,7 @@ internal static class CurrentSqliteSchema
           config_json TEXT NOT NULL DEFAULT '{}',
           design_preview_json TEXT NOT NULL DEFAULT '{}',
           metadata_json TEXT NOT NULL DEFAULT '{}',
-          UNIQUE(project_id, component_type, name)
+          UNIQUE(component_type, name)
         );
 
         CREATE TABLE IF NOT EXISTS themes (
@@ -226,7 +225,7 @@ internal static class CurrentSqliteSchema
           layout_json TEXT NOT NULL
         );
 
-        PRAGMA user_version = 21;
+        PRAGMA user_version = 22;
         """;
 
 }

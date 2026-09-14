@@ -362,33 +362,35 @@ internal sealed class SqliteEditorNavigationStore
 
         foreach (var componentClass in componentClasses.OrderBy((componentClass) => componentClass.ComponentType).ThenBy((componentClass) => componentClass.Name))
         {
-            if (!componentClassGroupNodes.TryGetValue(componentClass.ProjectId, out var componentGroups)) continue;
-            var groupNode = componentGroups[DesktopPreviewManifest.ComponentCategory(componentClass.ComponentType)];
-
-            var componentNode = new ProjectTreeNode(
-                ProjectTreeNodeKind.ComponentClass,
-                componentClass.Id,
-                componentClass.Name,
-                string.IsNullOrWhiteSpace(componentClass.Notes) ? EditorUiText.IdentifierLabel(componentClass.ComponentType) : componentClass.Notes,
-                componentClass.RecordClassId,
-                groupNode,
-                isUsed: IsUsed(referenceUsageIndex, ProjectTreeNodeKind.ComponentClass, componentClass.Id));
-            groupNode.AddChild(componentNode);
-
-            foreach (var variant in
-                     SqliteDesignOwner.ComponentClassVariants(
-                         componentClass.MetadataJson))
+            foreach (var componentGroups in componentClassGroupNodes.Values)
             {
-                componentNode.AddChild(new ProjectTreeNode(
-                    ProjectTreeNodeKind.ComponentVariant,
-                    VariantReferenceId.Format(componentClass.Id, variant.Id),
-                    variant.Name,
-                    variant.IsProtected ? "Protected component variant" : "Component variant",
-                    ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ComponentVariant),
-                    componentNode,
-                    isUsed: IsUsed(referenceUsageIndex, ProjectTreeNodeKind.ComponentVariant, VariantReferenceId.Format(componentClass.Id, variant.Id)),
-                    isProtected: variant.IsProtected,
-                    isLocked: _designOwner.IsVariantLockedForEditing(componentClass.Id, variant.Id, variant.IsLocked)));
+                var groupNode = componentGroups[DesktopPreviewManifest.ComponentCategory(componentClass.ComponentType)];
+
+                var componentNode = new ProjectTreeNode(
+                    ProjectTreeNodeKind.ComponentClass,
+                    componentClass.Id,
+                    componentClass.Name,
+                    string.IsNullOrWhiteSpace(componentClass.Notes) ? EditorUiText.IdentifierLabel(componentClass.ComponentType) : componentClass.Notes,
+                    componentClass.RecordClassId,
+                    groupNode,
+                    isUsed: IsUsed(referenceUsageIndex, ProjectTreeNodeKind.ComponentClass, componentClass.Id));
+                groupNode.AddChild(componentNode);
+
+                foreach (var variant in
+                         SqliteDesignOwner.ComponentClassVariants(
+                             componentClass.MetadataJson))
+                {
+                    componentNode.AddChild(new ProjectTreeNode(
+                        ProjectTreeNodeKind.ComponentVariant,
+                        VariantReferenceId.Format(componentClass.Id, variant.Id),
+                        variant.Name,
+                        variant.IsProtected ? "Protected component variant" : "Component variant",
+                        ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ComponentVariant),
+                        componentNode,
+                        isUsed: IsUsed(referenceUsageIndex, ProjectTreeNodeKind.ComponentVariant, VariantReferenceId.Format(componentClass.Id, variant.Id)),
+                        isProtected: variant.IsProtected,
+                        isLocked: _designOwner.IsVariantLockedForEditing(componentClass.Id, variant.Id, variant.IsLocked)));
+                }
             }
         }
 

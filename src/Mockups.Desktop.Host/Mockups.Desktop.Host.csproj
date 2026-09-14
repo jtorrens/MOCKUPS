@@ -40,6 +40,7 @@
       CopyToOutputDirectory="PreserveNewest" />
     <Content Include="../../assets/system/system_icons/**/*.svg" Link="assets/system/system_icons/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="../../assets/system/icon-themes/**/*" Link="assets/system/icon-themes/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../../assets/system/preview-fixtures/**/*" Link="assets/system/preview-fixtures/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <Target

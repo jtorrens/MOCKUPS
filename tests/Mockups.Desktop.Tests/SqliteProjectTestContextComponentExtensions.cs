@@ -30,7 +30,7 @@ internal static class SqliteProjectTestContextComponentExtensions
         string componentClassId,
         string fieldId) =>
         engine.ComponentDocuments.CreateComponentClassFieldValue(
-            componentClassId,
+            ComponentNode(engine, componentClassId),
             fieldId);
 
     internal static FieldValue CreateComponentVariantFieldValue(
@@ -118,9 +118,8 @@ internal static class SqliteProjectTestContextComponentExtensions
         string embeddedComponentType,
         string embeddedFieldId) =>
         engine.ComponentDocuments.CreateEmbeddedComponentFieldValue(
-            componentClassId,
-            slotFieldId,
-            embeddedComponentType,
+            ComponentNode(engine, componentClassId),
+            [EmbeddedComponentSlotCatalog.Get(slotFieldId)],
             embeddedFieldId);
 
     internal static FieldValue CreateEmbeddedComponentFieldValue(
@@ -129,9 +128,31 @@ internal static class SqliteProjectTestContextComponentExtensions
         IReadOnlyList<EmbeddedComponentSlotDefinition> slots,
         string embeddedFieldId) =>
         engine.ComponentDocuments.CreateEmbeddedComponentFieldValue(
-            componentClassId,
+            ComponentNode(engine, componentClassId),
             slots,
             embeddedFieldId);
+
+    private static ProjectTreeNode ComponentNode(
+        SqliteProjectTestContext engine,
+        string componentClassId) =>
+        engine.LoadProjectTree()
+            .SelectMany(DescendantsAndSelf)
+            .First((node) =>
+                node.Kind == ProjectTreeNodeKind.ComponentClass
+                && node.Id == componentClassId);
+
+    private static IEnumerable<ProjectTreeNode> DescendantsAndSelf(
+        ProjectTreeNode node)
+    {
+        yield return node;
+        foreach (var child in node.Children)
+        {
+            foreach (var descendant in DescendantsAndSelf(child))
+            {
+                yield return descendant;
+            }
+        }
+    }
 
     internal static FieldValue CreateEmbeddedComponentFieldValue(
         this SqliteProjectTestContext engine,

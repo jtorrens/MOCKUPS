@@ -18,7 +18,7 @@ internal sealed partial class SqliteDesignOwner
     {
         using var connection = OpenConnection();
         var rows = _componentClassRepository
-            .QueryByProject(connection, projectId)
+            .QueryAll(connection)
             .Where((row) =>
                 !row.Id.Equals(
                     excludedComponentClassId,
@@ -100,7 +100,7 @@ internal sealed partial class SqliteDesignOwner
         var ownerConfig = ParseJsonObject(settings.ConfigJson);
         return GetEmbeddedComponentVariantName(
             connection,
-            settings.ProjectId,
+            "",
             ownerConfig,
             slots);
     }
@@ -115,23 +115,6 @@ internal sealed partial class SqliteDesignOwner
         }
 
         using var connection = OpenConnection();
-        var projectId = ownerNode.Kind switch
-        {
-            ProjectTreeNodeKind.ComponentClass =>
-                GetComponentClassSettings(
-                    connection,
-                    ownerNode.Id).ProjectId,
-            ProjectTreeNodeKind.ComponentVariant =>
-                GetComponentVariantSettings(
-                    connection,
-                    ownerNode).ProjectId,
-            ProjectTreeNodeKind.Module =>
-                GetModuleSettings(ownerNode.Id).ProjectId,
-            ProjectTreeNodeKind.ModuleVariant =>
-                GetModuleVariantSettings(ownerNode).ProjectId,
-            _ => throw new InvalidOperationException(
-                $"Embedded component variants are not supported for '{ownerNode.Kind}'."),
-        };
         var ownerConfigJson = ownerNode.Kind switch
         {
             ProjectTreeNodeKind.Module =>
@@ -152,7 +135,7 @@ internal sealed partial class SqliteDesignOwner
         var ownerConfig = ParseJsonObject(ownerConfigJson);
         return GetEmbeddedComponentVariantName(
             connection,
-            projectId,
+            "",
             ownerConfig,
             slots);
     }
@@ -210,7 +193,7 @@ internal sealed partial class SqliteDesignOwner
         var variants = new JsonObject();
         var variantTypes = new JsonObject();
         foreach (var row in _componentClassRepository
-                     .QueryByProject(connection, projectId))
+                     .QueryAll(connection))
         {
             AddComponentVariantConfigs(connection, variants, row);
             foreach (var variant in RequiredComponentClassVariants(row))
@@ -231,12 +214,10 @@ internal sealed partial class SqliteDesignOwner
                     $"Component class '{row.Id}'"));
             ApplyComponentInputBindingsProjections(
                 connection,
-                projectId,
                 defaultConfig,
                 ComponentInputBindingsProjectionCatalog.ComponentOwners());
             ValidateDeclaredComponentVariantReferences(
                 connection,
-                projectId,
                 defaultConfig);
             configs[row.ComponentType] = defaultConfig;
         }
@@ -254,7 +235,6 @@ internal sealed partial class SqliteDesignOwner
         var config = ParseJsonObject(configJson);
         ValidateDeclaredComponentVariantReferences(
             connection,
-            projectId,
             config);
         return config.ToJsonString();
     }
@@ -269,12 +249,10 @@ internal sealed partial class SqliteDesignOwner
             var config = ParseJsonObject(variant.ConfigJson);
             ApplyComponentInputBindingsProjections(
                 connection,
-                row.ProjectId,
                 config,
                 ComponentInputBindingsProjectionCatalog.ComponentOwners());
             ValidateDeclaredComponentVariantReferences(
                 connection,
-                row.ProjectId,
                 config);
             target[
                 VariantReferenceId.Format(row.Id, variant.Id)] =
@@ -305,7 +283,6 @@ internal sealed partial class SqliteDesignOwner
         using var connection = OpenConnection();
         var options = ComponentClassRowsByType(
                 connection,
-                projectId,
                 componentType)
             .Select((row) => new FieldOption(row.Id, row.Name))
             .ToList();
@@ -366,7 +343,7 @@ internal sealed partial class SqliteDesignOwner
             .Select((part) => part[1..])
             .ToHashSet(StringComparer.Ordinal);
         var rows = _componentClassRepository
-            .QueryByProject(connection, projectId)
+            .QueryAll(connection)
             .Where((row) => !excludedTypes.Contains(row.ComponentType))
             .Where((row) =>
                 includeAll
@@ -407,7 +384,6 @@ internal sealed partial class SqliteDesignOwner
         using var connection = OpenConnection();
         return ValidateComponentVariantReference(
             connection,
-            projectId,
             componentType,
             reference,
             allowEmpty);
@@ -420,11 +396,10 @@ internal sealed partial class SqliteDesignOwner
     {
         var componentClass = ComponentClassRowsByType(
                 connection,
-                projectId,
                 componentType)
             .FirstOrDefault()
             ?? throw new InvalidOperationException(
-                $"Project '{projectId}' has no {componentType} component class.");
+                $"The System catalog has no {componentType} component class.");
         var variant = RequiredComponentClassVariants(componentClass)
             .FirstOrDefault((candidate) =>
                 candidate.Id.Equals(
@@ -439,21 +414,14 @@ internal sealed partial class SqliteDesignOwner
 
     private List<ComponentClassDefinitionRecord> ComponentClassRowsByType(
         SqliteConnection connection,
-        string projectId,
         string componentType) =>
         _componentClassRepository
-            .QueryByProject(connection, projectId)
+            .QueryAll(connection)
             .Where((row) =>
                 row.ComponentType.Equals(
                     componentType,
                     StringComparison.Ordinal))
-            .OrderBy((row) =>
-                row.Id.Equals(
-                    $"component_{projectId}_{componentType}",
-                    StringComparison.Ordinal)
-                    ? 0
-                    : 1)
-            .ThenBy((row) => row.Name, StringComparer.Ordinal)
+            .OrderBy((row) => row.Name, StringComparer.Ordinal)
             .ToList();
 
     internal static IReadOnlyList<ComponentClassVariant>
@@ -479,7 +447,7 @@ internal sealed partial class SqliteDesignOwner
         }
 
         var referencedRow = _componentClassRepository
-            .QueryByProject(connection, projectId)
+            .QueryAll(connection)
             .FirstOrDefault((row) =>
                 row.Id.Equals(
                     componentClassId,
@@ -514,7 +482,7 @@ internal sealed partial class SqliteDesignOwner
     {
         using var connection = OpenConnection();
         var name = _componentClassRepository
-            .QueryByProject(connection, projectId)
+            .QueryAll(connection)
             .FirstOrDefault((row) =>
                 row.RecordClassId.Equals(
                     recordClassId,
@@ -546,7 +514,7 @@ internal sealed partial class SqliteDesignOwner
         }
 
         var row = _componentClassRepository
-            .QueryByProject(connection, projectId)
+            .QueryAll(connection)
             .FirstOrDefault((candidate) =>
                 candidate.Id.Equals(
                     componentClassId,
