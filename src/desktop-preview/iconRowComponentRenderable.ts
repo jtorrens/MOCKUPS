@@ -66,7 +66,7 @@ export function iconRowComponentToRenderableAt(
       ),
     );
   });
-  return { id: iconRow.id, type: "group", frame: 0, box, style: { overflow: "hidden" }, children };
+  return { id: iconRow.id, type: "group", frame: 0, box, style: { overflow: "visible" }, children };
 }
 
 export function iconRowAssignedSize(

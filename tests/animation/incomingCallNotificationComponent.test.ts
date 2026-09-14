@@ -243,14 +243,14 @@ test("Icon Row Fill parent distributes only its orientation axis", () => {
     horizontalButtons[0]!.box!.height,
     horizontalIntrinsic.sizes[0]!.height,
   );
-  const clipped = iconRowComponentToRenderableAt(
+  const narrow = iconRowComponentToRenderableAt(
     source,
     row,
     { x: 10, y: 20, width: 1, height: horizontalIntrinsic.height },
   );
-  assert.equal(clipped.style?.overflow, "hidden");
+  assert.equal(narrow.style?.overflow, "visible");
   assert.deepEqual(
-    clipped.children?.map((button) => button.box?.width),
+    narrow.children?.map((button) => button.box?.width),
     [0, 0],
   );
 
