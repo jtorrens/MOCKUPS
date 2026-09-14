@@ -48,7 +48,6 @@ internal sealed class SqliteEditorNodeCommandStore
             or ProjectTreeNodeKind.ModuleInstance
             or ProjectTreeNodeKind.Episode
             or ProjectTreeNodeKind.Theme
-            or ProjectTreeNodeKind.PaletteColor
             or ProjectTreeNodeKind.Device
             or ProjectTreeNodeKind.Actor
             or ProjectTreeNodeKind.ProductionFont
@@ -83,11 +82,6 @@ internal sealed class SqliteEditorNodeCommandStore
                 return;
             case ProjectTreeNodeKind.Episode:
                 _production.ProjectEpisodeRepository.DeleteEpisode(
-                    connection,
-                    node.Id);
-                return;
-            case ProjectTreeNodeKind.PaletteColor:
-                _resources.PaletteRepository.Delete(
                     connection,
                     node.Id);
                 return;
@@ -161,21 +155,6 @@ internal sealed class SqliteEditorNodeCommandStore
                     copy.Notes,
                     node.RecordClassId,
                     node.Parent);
-            }
-            case ProjectTreeNodeKind.PaletteColor:
-            {
-                var copy = _resources.PaletteRepository.Duplicate(
-                    connection,
-                    node.Id);
-                return new ProjectTreeNode(
-                    ProjectTreeNodeKind.PaletteColor,
-                    copy.Id,
-                    copy.Token,
-                    copy.Note,
-                    node.RecordClassId,
-                    node.Parent,
-                    copy.ValueHex,
-                    false);
             }
             case ProjectTreeNodeKind.Device:
             {

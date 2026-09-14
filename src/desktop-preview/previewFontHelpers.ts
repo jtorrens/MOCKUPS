@@ -17,16 +17,30 @@ function themeTypographyFontId(payload: DesignPreviewPayload, key: string) {
   return requiredString(typography, key, `theme.typography.${key}`);
 }
 
+function resolvedThemeFontId(
+  payload: DesignPreviewPayload,
+  fontFamilyId: string,
+) {
+  if (fontFamilyId === "theme") {
+    return themeTypographyFontId(payload, "fontFamilyId");
+  }
+  if (fontFamilyId === "theme.system") {
+    return themeTypographyFontId(payload, "systemFontFamilyId");
+  }
+  if (fontFamilyId === "theme.emoji") {
+    return themeTypographyFontId(payload, "emojiFontFamilyId");
+  }
+  throw new Error(
+    `Typography fontFamilyId must reference Theme, Theme System or Theme Emoji, not '${fontFamilyId || "<empty>"}'.`,
+  );
+}
+
 export function fontIdsForTypography(
   payload: DesignPreviewPayload,
   fontFamilyId: string,
 ) {
   return {
-    primaryFontId: fontFamilyId === "theme"
-      ? themeTypographyFontId(payload, "fontFamilyId")
-      : fontFamilyId === "theme.system"
-        ? themeTypographyFontId(payload, "systemFontFamilyId")
-        : fontFamilyId,
+    primaryFontId: resolvedThemeFontId(payload, fontFamilyId),
     emojiFontId: themeTypographyFontId(payload, "emojiFontFamilyId"),
   };
 }

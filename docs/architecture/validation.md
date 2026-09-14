@@ -469,7 +469,9 @@ Database validation is read-only and confirms:
   retired geometry and scale fields, incomplete Module transparency policies,
   separation of background opacity from the global gradient mask, the required
   minimum fully-opaque extent for variable starts,
-  and Palette tokens that do not exist in the same Project;
+  global Palette ids without a required RGB value in the same Production;
+- the complete System Palette value set for every Production, valid System
+  defaults and valid Production RGB values;
 - complete Component and Module Variants;
 - full reference formats and same-Project integrity through the same guard used
   by repository writes;
@@ -483,6 +485,8 @@ Database validation is read-only and confirms:
   composition, Shot-clipped outer transition spans and transparent Shot gaps;
 - exact Production Output settings and derivable Shot plans;
 - declared font, icon and media assets;
+- rejection of every direct Production Font reference outside Theme; authored
+  typography uses only `theme`, `theme.system` or `theme.emoji`;
 - manifest-to-row agreement.
 
 Lifecycle and migration tests operate on disposable database copies.

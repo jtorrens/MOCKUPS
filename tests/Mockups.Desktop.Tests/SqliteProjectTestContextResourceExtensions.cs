@@ -69,7 +69,7 @@ internal static class SqliteProjectTestContextResourceExtensions
     internal static PaletteColorSettings GetPaletteColorSettings(
         this SqliteProjectTestContext engine,
         string colorId) =>
-        engine.Resources.GetPaletteColorSettings(colorId);
+        engine.Resources.GetPaletteColorSettings(OnlyProjectId(engine), colorId);
 
     internal static void UpdatePaletteColorField(
         this SqliteProjectTestContext engine,
@@ -77,7 +77,20 @@ internal static class SqliteProjectTestContextResourceExtensions
         string colorId,
         string fieldId,
         string value) =>
-        engine.Resources.UpdatePaletteColorField(colorId, fieldId, value);
+        engine.Resources.UpdatePaletteColorField(
+            OnlyProjectId(engine),
+            colorId,
+            fieldId,
+            value);
+
+    private static string OnlyProjectId(SqliteProjectTestContext engine)
+    {
+        using var connection = engine.Context.OpenConnection();
+        return SqliteCommandExecutor.ScalarString(
+            connection,
+            "SELECT id FROM projects ORDER BY id LIMIT 1")
+            ?? throw new System.InvalidOperationException("Test fixture requires one Project.");
+    }
 
     internal static IReadOnlyList<FieldOption> GetPaletteColorOptions(
         this SqliteProjectTestContext engine,

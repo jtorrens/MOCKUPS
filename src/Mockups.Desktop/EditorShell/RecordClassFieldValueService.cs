@@ -62,7 +62,7 @@ internal sealed class RecordClassFieldValueService
             ProjectTreeNodeKind.ModuleInstance => fieldId.StartsWith("moduleInstance.", StringComparison.Ordinal),
             ProjectTreeNodeKind.Episode => fieldId.StartsWith("episode.", StringComparison.Ordinal),
             ProjectTreeNodeKind.Shot => fieldId.StartsWith("shot.", StringComparison.Ordinal),
-            ProjectTreeNodeKind.PaletteColor => fieldId.StartsWith("palette.", StringComparison.Ordinal),
+            ProjectTreeNodeKind.PaletteColor => fieldId == "palette.valueHex",
             ProjectTreeNodeKind.Device => fieldId.StartsWith("device.", StringComparison.Ordinal),
             ProjectTreeNodeKind.Theme => fieldId.StartsWith("theme.", StringComparison.Ordinal),
             ProjectTreeNodeKind.Actor => fieldId.StartsWith("actor.", StringComparison.Ordinal),
@@ -84,7 +84,7 @@ internal sealed class RecordClassFieldValueService
             ProjectTreeNodeKind.ModuleInstance => ModuleInstanceFieldValue(node.Id, field.Id),
             ProjectTreeNodeKind.Episode => EpisodeFieldValue(node.Id, field.Id),
             ProjectTreeNodeKind.Shot => ShotFieldValue(node.Id, field.Id),
-            ProjectTreeNodeKind.PaletteColor => PaletteColorFieldValue(node.Id, field.Id),
+            ProjectTreeNodeKind.PaletteColor => PaletteColorFieldValue(node, field.Id),
             ProjectTreeNodeKind.Device => DeviceFieldValue(node.Id, field.Id),
             ProjectTreeNodeKind.Theme => ThemeFieldValue(node.Id, field.Id),
             ProjectTreeNodeKind.Actor => ActorFieldValue(node.Id, field.Id),
@@ -248,12 +248,6 @@ internal sealed class RecordClassFieldValueService
             current.Definition,
             value,
             $"Dictionary field '{fieldId}'");
-        if (node.Kind == ProjectTreeNodeKind.PaletteColor && fieldId == "palette.token")
-        {
-            var renamed = _resources.RenamePaletteColor(node, value);
-            node.Name = renamed.Name;
-            return;
-        }
         switch (node.Kind)
         {
             case ProjectTreeNodeKind.Project when fieldId.StartsWith("project.", StringComparison.Ordinal):
@@ -387,7 +381,11 @@ internal sealed class RecordClassFieldValueService
                 _production.UpdateShotField(node.Id, fieldId, value);
                 return;
             case ProjectTreeNodeKind.PaletteColor when fieldId.StartsWith("palette.", StringComparison.Ordinal):
-                _resources.UpdatePaletteColorField(node.Id, fieldId, value);
+                _resources.UpdatePaletteColorField(
+                    RequiredProjectId(node),
+                    node.Id,
+                    fieldId,
+                    value);
                 return;
             case ProjectTreeNodeKind.Device when fieldId.StartsWith("device.", StringComparison.Ordinal):
                 _resources.UpdateDeviceField(node.Id, fieldId, value);
@@ -814,9 +812,11 @@ internal sealed class RecordClassFieldValueService
         };
     }
 
-    private string PaletteColorFieldValue(string colorId, string fieldId)
+    private string PaletteColorFieldValue(ProjectTreeNode node, string fieldId)
     {
-        var settings = _resources.GetPaletteColorSettings(colorId);
+        var settings = _resources.GetPaletteColorSettings(
+            RequiredProjectId(node),
+            node.Id);
         return fieldId switch
         {
             "palette.token" => settings.Token,

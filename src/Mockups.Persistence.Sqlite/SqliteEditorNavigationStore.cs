@@ -107,9 +107,9 @@ internal sealed class SqliteEditorNavigationStore
                 ProjectTreeNodeKind.PaletteRoot,
                 $"palette_root_{project.Id}",
                 "Palette Colors",
-                "Project primitive color tokens.",
+                "Production RGB values for the fixed System Palette catalog.",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.PaletteRoot),
-                systemDataRoot);
+                productionDataRoot);
             var devicesRoot = new ProjectTreeNode(
                 ProjectTreeNodeKind.DevicesRoot,
                 $"devices_root_{project.Id}",

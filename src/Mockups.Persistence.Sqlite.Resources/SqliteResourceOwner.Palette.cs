@@ -7,39 +7,25 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SqliteResourceOwner
 {
-    public PaletteColorSettings GetPaletteColorSettings(string colorId)
+    public PaletteColorSettings GetPaletteColorSettings(
+        string projectId,
+        string colorId)
     {
-        return _paletteRepository.GetSettings(colorId);
+        return _paletteRepository.GetSettings(projectId, colorId);
     }
 
-    public void UpdatePaletteColorField(string colorId, string fieldId, string value)
+    public void UpdatePaletteColorField(
+        string projectId,
+        string colorId,
+        string fieldId,
+        string value)
     {
-        if (fieldId == "palette.token")
+        if (fieldId != "palette.valueHex")
         {
-            RenamePaletteToken(colorId, value);
-            return;
+            throw new System.InvalidOperationException(
+                $"Production Palette exposes only its RGB value; field '{fieldId}' belongs to the System catalog.");
         }
-
-        _paletteRepository.UpdateField(colorId, fieldId, value);
-    }
-
-    private void RenamePaletteToken(string colorId, string token)
-    {
-        using var connection = OpenConnection();
-        using var transaction = connection.BeginTransaction();
-        var palette = _paletteRepository.RequireRecord(connection, colorId);
-        if (palette.Token.Equals(token, System.StringComparison.Ordinal))
-        {
-            transaction.Commit();
-            return;
-        }
-
-        _paletteRepository.RenameToken(
-            connection,
-            transaction,
-            colorId,
-            token);
-        transaction.Commit();
+        _paletteRepository.UpdateProductionValue(projectId, colorId, value);
     }
 
     public IReadOnlyList<FieldOption> GetPaletteColorOptions(string projectId)
@@ -59,8 +45,8 @@ internal sealed partial class SqliteResourceOwner
         return _paletteRepository.GetNeutralMap(projectId);
     }
 
-    internal IReadOnlyList<PaletteColorRecord> QueryPaletteColorRows(SqliteConnection connection)
+    internal IReadOnlyList<ProductionPaletteColorRecord> QueryPaletteColorRows(SqliteConnection connection)
     {
-        return _paletteRepository.QueryAll(connection);
+        return _paletteRepository.QueryAllProductionValues(connection);
     }
 }

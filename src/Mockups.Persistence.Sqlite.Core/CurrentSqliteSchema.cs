@@ -142,12 +142,17 @@ internal static class CurrentSqliteSchema
 
         CREATE TABLE IF NOT EXISTS palette_colors (
           id TEXT PRIMARY KEY,
-          project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-          token TEXT NOT NULL,
-          value_hex TEXT NOT NULL,
+          token TEXT NOT NULL UNIQUE,
+          default_value_hex TEXT NOT NULL,
           metadata_json TEXT NOT NULL DEFAULT '{}',
-          is_neutral INTEGER NOT NULL DEFAULT 0,
-          UNIQUE(project_id, token)
+          is_neutral INTEGER NOT NULL DEFAULT 0
+        );
+
+        CREATE TABLE IF NOT EXISTS production_palette_values (
+          project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+          palette_color_id TEXT NOT NULL REFERENCES palette_colors(id) ON DELETE CASCADE,
+          value_hex TEXT NOT NULL,
+          PRIMARY KEY(project_id, palette_color_id)
         );
 
         CREATE TABLE IF NOT EXISTS devices (
@@ -222,7 +227,7 @@ internal static class CurrentSqliteSchema
           layout_json TEXT NOT NULL
         );
 
-        PRAGMA user_version = 19;
+        PRAGMA user_version = 20;
         """;
 
 }

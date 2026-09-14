@@ -10916,7 +10916,6 @@ static void RecordCreationUsesOneDeclarativeLifecycle()
 {
     var expectedOperations = new Dictionary<ProjectTreeNodeKind, EditorAddOperationKind>
     {
-        [ProjectTreeNodeKind.PaletteRoot] = EditorAddOperationKind.CreateRecord,
         [ProjectTreeNodeKind.IconThemesRoot] = EditorAddOperationKind.RefreshIconThemes,
         [ProjectTreeNodeKind.DevicesRoot] = EditorAddOperationKind.ImportDevice,
         [ProjectTreeNodeKind.ActorsRoot] = EditorAddOperationKind.CreateRecord,
@@ -10932,6 +10931,7 @@ static void RecordCreationUsesOneDeclarativeLifecycle()
         Equal(operationKind, operation.Kind);
         True(!string.IsNullOrWhiteSpace(operation.Label));
     }
+    True(!EditorAddOperationCatalog.TryGet(ProjectTreeNodeKind.PaletteRoot, out _));
     True(!EditorAddOperationCatalog.TryGet(ProjectTreeNodeKind.Actor, out _));
     var childPortMethods = typeof(IEditorChildStore).GetMethods()
         .Select((method) => method.Name)
@@ -11095,7 +11095,7 @@ static void ResourceRepositoriesPreserveFocusedContract()
                 .Select((field) => field.Id)
                 .Where((id) => id.StartsWith("device.", StringComparison.Ordinal)));
 
-        Equal(database.GetPaletteColorSettings(color.Id), paletteRepository.GetSettings(color.Id));
+        Equal(database.GetPaletteColorSettings(color.Id), paletteRepository.GetSettings(project.Id, color.Id));
         Equal(database.GetDeviceSettings(device.Id), deviceRepository.GetSettings(device.Id));
         Equal(database.GetActorSettings(actor.Id), actorRepository.GetSettings(actor.Id));
         SequenceEqual(
@@ -11118,10 +11118,10 @@ static void ResourceRepositoriesPreserveFocusedContract()
         }
 
         var originalColor = database.GetPaletteColorSettings(color.Id);
-        paletteRepository.UpdateField(color.Id, "palette.valueHex", "#123456");
+        paletteRepository.UpdateProductionValue(project.Id, color.Id, "#123456");
         Equal("#123456", database.GetPaletteColorSettings(color.Id).ValueHex);
         database.UpdatePaletteColorField(color.Id, "palette.valueHex", originalColor.ValueHex);
-        Equal(originalColor, paletteRepository.GetSettings(color.Id));
+        Equal(originalColor, paletteRepository.GetSettings(project.Id, color.Id));
 
         var alex = Descendants(tree).Single((node) =>
             node.Kind == ProjectTreeNodeKind.Actor
@@ -11137,23 +11137,17 @@ static void ResourceRepositoriesPreserveFocusedContract()
             node.Kind == ProjectTreeNodeKind.PaletteColor
             && node.Id == actorLightColor);
         const string renamedPaletteToken = "palette_rename_test";
-        database.UpdatePaletteColorField(
+        Throws<InvalidOperationException>(() => database.UpdatePaletteColorField(
             referencedColor.Id,
             "palette.token",
-            renamedPaletteToken);
+            renamedPaletteToken));
         Equal(
             alexColorModes,
             database.GetActorFieldValue(alex.Id, "actor.color.modes"));
         Equal(
             actorLightColor,
             referencedColor.Id);
-        database.UpdatePaletteColorField(
-            referencedColor.Id,
-            "palette.token",
-            actorLightColor);
-        Equal(
-            alexColorModes,
-            database.GetActorFieldValue(alex.Id, "actor.color.modes"));
+        Equal(actorLightColor, referencedColor.Id);
 
         var originalDevice = database.GetDeviceSettings(device.Id);
         var originalBackgroundOpacity = database.GetDeviceMetricFieldValue(
@@ -11219,19 +11213,9 @@ static void ResourceRepositoriesPreserveFocusedContract()
 
         var paletteRoot = Descendants(database.LoadProjectTree())
             .Single((node) => node.Kind == ProjectTreeNodeKind.PaletteRoot);
-        var createdColor = database.AddChild(paletteRoot);
-        var duplicatedColor = database.Duplicate(createdColor);
-        duplicatedColor.Name = "resource_test_token";
-        duplicatedColor.Notes = "Repository lifecycle note";
-        database.UpdateNode(duplicatedColor);
-        using (var connection = context.OpenConnection())
-        {
-            var persisted = paletteRepository.QueryAll(connection).Single((row) => row.Id == duplicatedColor.Id);
-            Equal(duplicatedColor.Name, persisted.Token);
-            Equal(duplicatedColor.Notes, persisted.Note);
-        }
-        database.Delete(duplicatedColor);
-        database.Delete(createdColor);
+        True(!EditorAddOperationCatalog.TryGet(paletteRoot.Kind, out _));
+        Throws<InvalidOperationException>(() => database.Duplicate(color));
+        Throws<InvalidOperationException>(() => database.Delete(color));
 
         var devicesRoot = Descendants(database.LoadProjectTree())
             .Single((node) => node.Kind == ProjectTreeNodeKind.DevicesRoot);

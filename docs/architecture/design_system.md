@@ -17,13 +17,18 @@ Design does not create Production sequences or persist Screen payloads.
 ## Tokens, palette and Themes
 
 Theme tokens are semantic values, not UI styling shortcuts. Components refer
-to tokens and Palette Color ids; resolution to final light/dark values happens
-in the Preview pipeline.
+to tokens and global Palette Color ids; resolution to the active Production's
+required RGB values and final light/dark values happens in the Preview pipeline.
 
 Positive and negative actions use `theme.colors.positive` and
 `theme.colors.negative`; their foreground uses `theme.colors.onAction`.
-Components never hardcode the resolved Palette Colors, so each Theme owns the
-exact light/dark treatment and contrast.
+Components never hardcode resolved RGB values. A direct Palette id is stable
+across Productions while each Production owns its RGB; Theme owns semantic
+light/dark selection and contrast.
+
+Typography never stores a concrete Production Font id outside Theme. Reusable
+and Runtime documents use only `theme`, `theme.system` or `theme.emoji`; Theme
+maps those roles to its exact text, system and emoji Production Fonts.
 
 Visual spacing fields use `theme.spacing.*` tokens. Compound light/dark values
 preserve their explicit pair labels and use their registered dictionary

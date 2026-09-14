@@ -26,7 +26,6 @@ internal sealed class SqliteEditorChildStore
         _resources = resources;
         _creationPreparers = new Dictionary<string, Func<ProjectTreeNode, RecordCreationDefinition>>(StringComparer.Ordinal)
         {
-            ["palette"] = PreparePaletteCreation,
             ["device"] = PrepareBlankDeviceCreation,
             ["actor"] = PrepareActorCreation,
             ["theme"] = PrepareThemeCreation,
@@ -35,7 +34,6 @@ internal sealed class SqliteEditorChildStore
         };
         _creationCommitters = new Dictionary<string, Func<ProjectTreeNode, IReadOnlyDictionary<string, string>, ProjectTreeNode>>(StringComparer.Ordinal)
         {
-            ["palette"] = CreatePalette,
             ["device"] = CreateBlankDevice,
             ["actor"] = CreateActor,
             ["theme"] = CreateTheme,
@@ -71,12 +69,6 @@ internal sealed class SqliteEditorChildStore
                 $"Record creation '{draft.DefinitionId}' has no commit owner.");
         }
         return commit(parent, draft.Values);
-    }
-
-    private RecordCreationDefinition PreparePaletteCreation(ProjectTreeNode parent)
-    {
-        RequireParent(parent, ProjectTreeNodeKind.PaletteRoot, "palette");
-        return EmptyCreation("palette", "paletteColor", "Add palette color");
     }
 
     private RecordCreationDefinition PrepareBlankDeviceCreation(ProjectTreeNode parent)
@@ -147,14 +139,6 @@ internal sealed class SqliteEditorChildStore
             ]);
     }
 
-    private ProjectTreeNode CreatePalette(ProjectTreeNode parent, IReadOnlyDictionary<string, string> values)
-    {
-        using var connection = _context.OpenConnection();
-        var color = _resources.PaletteRepository.Create(connection, ProjectAncestor(parent).Id);
-        return new ProjectTreeNode(ProjectTreeNodeKind.PaletteColor, color.Id, color.Token, color.Note,
-            ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.PaletteColor), parent, color.ValueHex, false);
-    }
-
     private ProjectTreeNode CreateBlankDevice(ProjectTreeNode parent, IReadOnlyDictionary<string, string> values)
     {
         using var connection = _context.OpenConnection();
@@ -182,7 +166,6 @@ internal sealed class SqliteEditorChildStore
         var projectId = ProjectAncestor(parent).Id;
         var family = Required(values, "theme.family");
         var paletteIds = _resources.PaletteRepository.QueryAll(connection)
-            .Where((color) => color.ProjectId == projectId)
             .GroupBy((color) => color.Token, StringComparer.Ordinal)
             .ToDictionary((group) => group.Key, (group) => group.Single().Id, StringComparer.Ordinal);
         var created = _resources.ThemeRepository.Create(

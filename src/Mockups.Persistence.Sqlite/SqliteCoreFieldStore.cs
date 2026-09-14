@@ -40,13 +40,6 @@ internal sealed class SqliteCoreFieldStore
                     node.Name,
                     node.Notes);
                 return;
-            case ProjectTreeNodeKind.PaletteColor:
-                _resources.PaletteRepository.UpdateNode(
-                    connection,
-                    node.Id,
-                    node.Name,
-                    node.Notes);
-                return;
             case ProjectTreeNodeKind.Device:
                 _resources.DeviceRepository.Rename(
                     connection,
@@ -126,7 +119,6 @@ internal sealed class SqliteCoreFieldStore
                 _production.RenameModuleInstance(node, name),
             ProjectTreeNodeKind.Episode
                 or ProjectTreeNodeKind.Shot
-                or ProjectTreeNodeKind.PaletteColor
                 or ProjectTreeNodeKind.IconTheme
                 or ProjectTreeNodeKind.Device
                 or ProjectTreeNodeKind.Actor

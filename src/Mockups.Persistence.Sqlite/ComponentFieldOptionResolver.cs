@@ -54,9 +54,7 @@ internal sealed class ComponentFieldOptionResolver
             ValueKind.TypographyStyle =>
             [
                 new FieldOption("theme", "Theme"),
-                .. _resourceOptions.GetProductionFontOptions(
-                    projectId,
-                    "text"),
+                new FieldOption("theme.emoji", "Theme Emoji"),
             ],
             _ => descriptor.Options,
         };

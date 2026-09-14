@@ -17,16 +17,24 @@ internal sealed class PaletteRepository : IPaletteRepository
         _context = context;
     }
 
-    public PaletteColorSettings GetSettings(string colorId)
+    public PaletteColorSettings GetSettings(string projectId, string colorId)
     {
         using var connection = _context.OpenConnection();
         using var command = connection.CreateCommand();
-        command.CommandText = "SELECT token, value_hex, metadata_json, is_neutral FROM palette_colors WHERE id = $id";
+        command.CommandText =
+            """
+            SELECT c.token, v.value_hex, c.metadata_json, c.is_neutral
+            FROM palette_colors c
+            JOIN production_palette_values v ON v.palette_color_id = c.id
+            WHERE c.id = $id AND v.project_id = $projectId
+            """;
         command.Parameters.AddWithValue("$id", colorId);
+        command.Parameters.AddWithValue("$projectId", projectId);
         using var reader = command.ExecuteReader();
         if (!reader.Read())
         {
-            throw new InvalidOperationException($"Missing palette color '{colorId}'.");
+            throw new InvalidOperationException(
+                $"Missing Production Palette value for color '{colorId}' in Production '{projectId}'.");
         }
 
         var metadataJson = SqliteCommandExecutor.ReadString(reader, 2);
@@ -40,34 +48,19 @@ internal sealed class PaletteRepository : IPaletteRepository
             MetadataString(metadataJson, "note"));
     }
 
-    public void UpdateField(string colorId, string fieldId, string value)
+    public void UpdateProductionValue(string projectId, string colorId, string value)
     {
         using var connection = _context.OpenConnection();
-        switch (fieldId)
+        using var command = connection.CreateCommand();
+        command.CommandText =
+            "UPDATE production_palette_values SET value_hex = $value WHERE project_id = $projectId AND palette_color_id = $id";
+        command.Parameters.AddWithValue("$projectId", projectId);
+        command.Parameters.AddWithValue("$id", colorId);
+        command.Parameters.AddWithValue("$value", HexColorText.Normalize(value));
+        if (command.ExecuteNonQuery() != 1)
         {
-            case "palette.token":
-                _context.Execute(connection, "UPDATE palette_colors SET token = $value WHERE id = $id", ("$id", colorId), ("$value", value));
-                return;
-            case "palette.valueHex":
-                _context.Execute(connection, "UPDATE palette_colors SET value_hex = $value WHERE id = $id", ("$id", colorId), ("$value", HexColorText.Normalize(value)));
-                return;
-            case "palette.isNeutral":
-                _context.Execute(connection, "UPDATE palette_colors SET is_neutral = $value WHERE id = $id", ("$id", colorId), ("$value", BooleanText.ParseRequired(value, fieldId) ? 1 : 0));
-                return;
-            case "palette.source":
-                UpdateMetadata(connection, colorId, "source", value);
-                return;
-            case "palette.protected":
-                UpdateMetadata(connection, colorId, "protected", BooleanText.ParseRequired(value, fieldId));
-                return;
-            case "palette.hiddenFromPickers":
-                UpdateMetadata(connection, colorId, "hiddenFromPickers", BooleanText.ParseRequired(value, fieldId));
-                return;
-            case "palette.note":
-                UpdateMetadata(connection, colorId, "note", value);
-                return;
-            default:
-                throw new InvalidOperationException($"Unknown palette field '{fieldId}'.");
+            throw new InvalidOperationException(
+                $"Missing Production Palette value for color '{colorId}' in Production '{projectId}'.");
         }
     }
 
@@ -96,8 +89,7 @@ internal sealed class PaletteRepository : IPaletteRepository
     public IReadOnlyList<PaletteColorOption> GetOptions(string projectId)
     {
         using var connection = _context.OpenConnection();
-        return QueryAll(connection)
-            .Where((color) => color.ProjectId == projectId)
+        return QueryProject(connection, projectId)
             .OrderBy((color) => color.Token)
             .Select((color) => new PaletteColorOption(color.Id, color.Token, color.ValueHex, color.IsNeutral))
             .ToList();
@@ -106,8 +98,7 @@ internal sealed class PaletteRepository : IPaletteRepository
     public IReadOnlyDictionary<string, string> GetColorMap(string projectId)
     {
         using var connection = _context.OpenConnection();
-        return QueryAll(connection)
-            .Where((color) => color.ProjectId == projectId)
+        return QueryProject(connection, projectId)
             .GroupBy((color) => color.Id, StringComparer.Ordinal)
             .ToDictionary(
                 (group) => group.Key,
@@ -118,8 +109,7 @@ internal sealed class PaletteRepository : IPaletteRepository
     public IReadOnlyDictionary<string, bool> GetNeutralMap(string projectId)
     {
         using var connection = _context.OpenConnection();
-        return QueryAll(connection)
-            .Where((color) => color.ProjectId == projectId)
+        return QueryProject(connection, projectId)
             .GroupBy((color) => color.Id, StringComparer.Ordinal)
             .ToDictionary(
                 (group) => group.Key,
@@ -131,12 +121,46 @@ internal sealed class PaletteRepository : IPaletteRepository
     {
         var rows = new List<PaletteColorRecord>();
         using var command = connection.CreateCommand();
-        command.CommandText = "SELECT id, project_id, token, value_hex, metadata_json, is_neutral FROM palette_colors ORDER BY token";
+        command.CommandText = "SELECT id, token, default_value_hex, metadata_json, is_neutral FROM palette_colors ORDER BY token";
         using var reader = command.ExecuteReader();
         while (reader.Read())
         {
-            var metadataJson = SqliteCommandExecutor.ReadString(reader, 4);
+            var metadataJson = SqliteCommandExecutor.ReadString(reader, 3);
             rows.Add(new PaletteColorRecord(
+                reader.GetString(0),
+                reader.GetString(1),
+                reader.GetString(2),
+                MetadataString(metadataJson, "note"),
+                reader.GetInt32(4) != 0,
+                metadataJson));
+        }
+
+        return rows;
+    }
+
+    public IReadOnlyList<ProductionPaletteColorRecord> QueryAllProductionValues(SqliteConnection connection)
+    {
+        var rows = new List<ProductionPaletteColorRecord>();
+        using var command = connection.CreateCommand();
+        command.CommandText =
+            """
+            SELECT p.id, c.id, c.token, v.value_hex, c.metadata_json, c.is_neutral
+            FROM projects p
+            CROSS JOIN palette_colors c
+            LEFT JOIN production_palette_values v
+              ON v.project_id = p.id AND v.palette_color_id = c.id
+            ORDER BY p.id, c.token
+            """;
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            if (reader.IsDBNull(3))
+            {
+                throw new InvalidOperationException(
+                    $"Missing Production Palette value for color '{reader.GetString(1)}' in Production '{reader.GetString(0)}'.");
+            }
+            var metadataJson = SqliteCommandExecutor.ReadString(reader, 4);
+            rows.Add(new ProductionPaletteColorRecord(
                 reader.GetString(0),
                 reader.GetString(1),
                 reader.GetString(2),
@@ -145,54 +169,16 @@ internal sealed class PaletteRepository : IPaletteRepository
                 reader.GetInt32(5) != 0,
                 metadataJson));
         }
-
         return rows;
     }
 
-    public PaletteColorRecord Create(SqliteConnection connection, string projectId)
+    private IReadOnlyList<ProductionPaletteColorRecord> QueryProject(
+        SqliteConnection connection,
+        string projectId)
     {
-        var id = $"palette_{Guid.NewGuid():N}";
-        var token = $"color_{SqliteCommandExecutor.ScalarLong(connection, "SELECT COUNT(*) FROM palette_colors WHERE project_id = $projectId", ("$projectId", projectId)) + 1}";
-        const string valueHex = "#808080";
-        const string note = "Project palette primitive color.";
-        var metadataJson = new JsonObject { ["note"] = note }.ToJsonString();
-        _context.Execute(
-            connection,
-            """
-            INSERT INTO palette_colors (id, project_id, token, value_hex, metadata_json, is_neutral)
-            VALUES ($id, $projectId, $token, $valueHex, $metadataJson, 1)
-            """,
-            ("$id", id),
-            ("$projectId", projectId),
-            ("$token", token),
-            ("$valueHex", valueHex),
-            ("$metadataJson", metadataJson));
-
-        return new PaletteColorRecord(id, projectId, token, valueHex, note, true, metadataJson);
-    }
-
-    public PaletteColorRecord Duplicate(SqliteConnection connection, string sourceId)
-    {
-        var source = QueryAll(connection).SingleOrDefault((color) => color.Id == sourceId)
-            ?? throw new InvalidOperationException($"Missing palette color '{sourceId}'.");
-        var copy = source with
-        {
-            Id = $"palette_{Guid.NewGuid():N}",
-            Token = $"{source.Token}_copy",
-        };
-        _context.Execute(
-            connection,
-            """
-            INSERT INTO palette_colors (id, project_id, token, value_hex, metadata_json, is_neutral)
-            VALUES ($id, $projectId, $token, $valueHex, $metadataJson, $isNeutral)
-            """,
-            ("$id", copy.Id),
-            ("$projectId", copy.ProjectId),
-            ("$token", copy.Token),
-            ("$valueHex", copy.ValueHex),
-            ("$metadataJson", copy.MetadataJson),
-            ("$isNeutral", copy.IsNeutral ? 1 : 0));
-        return copy;
+        return QueryAllProductionValues(connection)
+            .Where((color) => color.ProjectId == projectId)
+            .ToList();
     }
 
     public void Delete(SqliteConnection connection, string colorId)

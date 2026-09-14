@@ -5,8 +5,9 @@ Status: normative.
 ## Database scope
 
 The desktop application persists one complete Project workspace in SQLite.
-Schema version `19` is the only current schema. Every row belongs directly or
-indirectly to a Project and cross-Project lookup is invalid.
+Schema version `20` is the only current schema. Authored Production rows belong
+directly or indirectly to a Project; System catalog rows are explicitly global.
+Cross-Project lookup remains invalid.
 
 The current tables are:
 
@@ -15,7 +16,9 @@ The current tables are:
 | Workspace | `projects` | Root of all authored data |
 | Production | `episodes`, `shots`, `module_instances` | Project → Episode → Shot → ordered Screen |
 | Definitions | `apps`, `modules`, `component_classes` | Project-owned reusable definitions |
-| Visual resources | `palette_colors`, `themes`, `icon_themes` | Project-owned semantic resources |
+| System Palette | `palette_colors` | Global identities and default RGB values |
+| Production Palette | `production_palette_values` | Complete Project-specific RGB values for the System catalog |
+| Visual resources | `themes`, `icon_themes` | Project-owned semantic resources |
 | Production resources | `actors`, `devices`, `production_fonts` | Project-owned Production Data |
 | Editor description | `editor_layouts` | Project-owned layout metadata |
 
@@ -198,6 +201,17 @@ cross-owner application stores. `SqliteProjectSessionFactory` constructs the
 graph in local variables and publishes only the named session ports; there is
 no universal project engine object or Application interface implementation.
 UI packages are unavailable to every persistence assembly.
+
+`palette_colors` is the immutable-at-Production System catalog: stable id,
+token, default RGB, metadata and neutral classification. Every Project owns
+exactly one `production_palette_values` row for every System color and may edit
+only that row's RGB. Readers join the complete Project value set and fail when
+any value is absent; the System default is creation seed data, never a runtime
+fallback. Production cannot create, duplicate, rename or delete catalog rows.
+Deleting a System color is a development workflow allowed only after the typed
+reference-usage owner reports zero usages across System definitions and every
+Project; the associated Production values are then removed in the same
+maintenance transaction.
 Persistence integration tests may compose raw owners through the test-only
 `SqliteProjectTestContext`; that fixture is compiled in the test assembly and
 is not a production capability or a session dependency.

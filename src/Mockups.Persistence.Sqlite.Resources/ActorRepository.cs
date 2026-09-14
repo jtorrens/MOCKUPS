@@ -310,14 +310,15 @@ internal sealed class ActorRepository : IActorRepository
         var ids = normalized.Split('|', StringSplitOptions.None);
         foreach (var id in ids)
         {
-            var referencedProjectId = SqliteCommandExecutor.ScalarString(
+            var exists = SqliteCommandExecutor.ScalarLong(
                 connection,
-                "SELECT project_id FROM palette_colors WHERE id = $id",
+                "SELECT COUNT(*) FROM production_palette_values WHERE project_id = $projectId AND palette_color_id = $id",
+                ("$projectId", projectId),
                 ("$id", id));
-            if (!projectId.Equals(referencedProjectId, StringComparison.Ordinal))
+            if (exists != 1)
             {
                 throw new InvalidOperationException(
-                    $"{owner} references missing or cross-Project Palette Color '{id}'.");
+                    $"{owner} references Palette Color '{id}' without a value in Production '{projectId}'.");
             }
         }
         return (ids[0], ids[1]);

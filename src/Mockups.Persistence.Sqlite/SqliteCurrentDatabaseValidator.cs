@@ -101,6 +101,7 @@ internal sealed partial class SqliteCurrentDatabaseValidator
         ValidateSqliteRuntime(connection);
         ValidatePhysicalSchema(connection);
         ValidateCurrentJsonColumns(connection);
+        ValidateCurrentProductionPalette(connection);
         ValidateCurrentDeviceMetrics(connection);
         ValidateCurrentShotDeviceOverrides(connection);
         ValidateCurrentShotTransitions(
@@ -116,7 +117,91 @@ internal sealed partial class SqliteCurrentDatabaseValidator
         ValidateCurrentModuleRuntimeDocuments(connection);
         ValidateCurrentComponentVariants(connection);
         ValidateCurrentModuleVariantsAndAnimations(connection);
+        ValidateCurrentSemanticTypographyReferences(connection);
         ValidateForeignKeyIntegrity(connection);
+    }
+
+    private void ValidateCurrentProductionPalette(SqliteConnection connection)
+    {
+        RequireNoRows(
+            connection,
+            """
+            SELECT 1
+            FROM projects p
+            CROSS JOIN palette_colors c
+            LEFT JOIN production_palette_values v
+              ON v.project_id = p.id AND v.palette_color_id = c.id
+            WHERE v.palette_color_id IS NULL
+            """,
+            "Production without a complete System Palette value set");
+
+        using var command = connection.CreateCommand();
+        command.CommandText =
+            """
+            SELECT 'System Palette ' || id, default_value_hex FROM palette_colors
+            UNION ALL
+            SELECT 'Production Palette ' || project_id || '/' || palette_color_id, value_hex
+            FROM production_palette_values
+            """;
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            try
+            {
+                _ = HexColorText.Normalize(reader.GetString(1));
+            }
+            catch (InvalidOperationException exception)
+            {
+                throw InvalidCurrentDatabase($"{reader.GetString(0)}: {exception.Message}");
+            }
+        }
+    }
+
+    private void ValidateCurrentSemanticTypographyReferences(SqliteConnection connection)
+    {
+        foreach (var (table, column, _) in CurrentJsonColumns.Where((entry) => entry.Table != "themes"))
+        {
+            using var command = connection.CreateCommand();
+            command.CommandText = $"SELECT rowid, {column} FROM {table} ORDER BY rowid";
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                var context = $"{table} row {reader.GetInt64(0)} {column}";
+                ValidateSemanticTypographyNode(
+                    JsonNode.Parse(reader.GetString(1))
+                        ?? throw InvalidCurrentDatabase($"{context} is required."),
+                    context);
+            }
+        }
+    }
+
+    private void ValidateSemanticTypographyNode(JsonNode node, string context)
+    {
+        if (node is JsonArray array)
+        {
+            foreach (var child in array)
+            {
+                if (child is not null) ValidateSemanticTypographyNode(child, context);
+            }
+            return;
+        }
+        if (node is not JsonObject owner) return;
+
+        if (owner[TypographyStyleValue.FontFamilyId] is { } fontNode)
+        {
+            if (fontNode is not JsonValue fontValue
+                || !fontValue.TryGetValue<string>(out var fontId)
+                || fontId is not ("theme" or "theme.system" or "theme.emoji"))
+            {
+                throw InvalidCurrentDatabase(
+                    $"{context} contains a direct Production Font reference. Typography fontFamilyId must be 'theme', 'theme.system' or 'theme.emoji'.");
+            }
+        }
+
+        foreach (var (_, child) in owner)
+        {
+            if (child is not null) ValidateSemanticTypographyNode(child, context);
+        }
     }
 
     private void ValidateCurrentShotDeviceOverrides(
@@ -158,11 +243,11 @@ internal sealed partial class SqliteCurrentDatabaseValidator
         using var command = connection.CreateCommand();
         command.CommandText =
             """
-            SELECT d.id, d.metrics_json, p.id
+            SELECT d.id, d.metrics_json, p.palette_color_id
             FROM devices d
-            LEFT JOIN palette_colors p
+            LEFT JOIN production_palette_values p
               ON p.project_id = d.project_id
-                 AND p.id = json_extract(
+                 AND p.palette_color_id = json_extract(
                  d.metrics_json,
                  '$.moduleTransparency.paletteColor')
             """;
@@ -179,7 +264,7 @@ internal sealed partial class SqliteCurrentDatabaseValidator
                 if (reader.IsDBNull(2))
                 {
                     throw new InvalidOperationException(
-                        $"moduleTransparency.paletteColor '{values.ModuleTransparency.PaletteColor}' must reference a Palette color in the same Project.");
+                        $"moduleTransparency.paletteColor '{values.ModuleTransparency.PaletteColor}' must reference a System Palette color with a value in the same Production.");
                 }
             }
             catch (InvalidOperationException exception)

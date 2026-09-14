@@ -644,6 +644,7 @@ function fontRequirementsForPayload(payload: DesignPreviewPayload) {
       requirements,
       themeFontId,
       themeSystemFontId,
+      themeEmojiFontId,
       themeWeight,
       themeStyle,
     );
@@ -657,12 +658,13 @@ function collectTypographyFontRequirements(
   requirements: Map<string, FontRequirement>,
   themeFontId: string,
   themeSystemFontId: string,
+  themeEmojiFontId: string,
   themeWeight: number,
   themeStyle: string,
 ) {
   if (Array.isArray(value)) {
     for (const entry of value) {
-      collectTypographyFontRequirements(entry, requirements, themeFontId, themeSystemFontId, themeWeight, themeStyle);
+      collectTypographyFontRequirements(entry, requirements, themeFontId, themeSystemFontId, themeEmojiFontId, themeWeight, themeStyle);
     }
     return;
   }
@@ -675,7 +677,13 @@ function collectTypographyFontRequirements(
       ? themeFontId
       : fontId === "theme.system"
         ? themeSystemFontId
-        : fontId;
+        : fontId === "theme.emoji"
+          ? themeEmojiFontId
+          : (() => {
+              throw new Error(
+                `Typography fontFamilyId must reference Theme, Theme System or Theme Emoji, not '${fontId || "<empty>"}'.`,
+              );
+            })();
     if (resolvedFontId) {
       addFontRequirement(
         requirements,
@@ -687,7 +695,7 @@ function collectTypographyFontRequirements(
   }
 
   for (const child of Object.values(record)) {
-    collectTypographyFontRequirements(child, requirements, themeFontId, themeSystemFontId, themeWeight, themeStyle);
+    collectTypographyFontRequirements(child, requirements, themeFontId, themeSystemFontId, themeEmojiFontId, themeWeight, themeStyle);
   }
 }
 

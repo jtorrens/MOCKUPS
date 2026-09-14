@@ -106,10 +106,13 @@ public interface IDesignRecordFieldStore
 
 public interface IResourceRecordFieldStore
 {
-    PaletteColorSettings GetPaletteColorSettings(string colorId);
+    PaletteColorSettings GetPaletteColorSettings(
+        string projectId,
+        string colorId);
     IReadOnlyList<EditorShell.FieldOption> GetPaletteColorOptions(
         string projectId);
     void UpdatePaletteColorField(
+        string projectId,
         string colorId,
         string fieldId,
         string value);
@@ -137,9 +140,6 @@ public interface IResourceRecordFieldStore
         string fontId,
         string fieldId,
         string value);
-    EditorShell.ProjectTreeNode RenamePaletteColor(
-        EditorShell.ProjectTreeNode node,
-        string name);
 }
 
 public interface IComponentClassFieldStore

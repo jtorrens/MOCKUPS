@@ -65,8 +65,10 @@ Runtime projection, then overlays the owner Runtime document (Design Test
 Values or Production Screen content). A resolver consumes only that prepared
 document and never chooses, merges, defaults or repairs a second Variant,
 Override or Runtime value source. Theme-token and Palette resolution remains
-the subsequent declared visual-resolution stage; it is not a parallel config
-or Runtime path.
+the subsequent declared visual-resolution stage; it joins global Palette ids
+to the exact active Production's complete RGB value set and is not a parallel
+config or Runtime path. Typography roles resolve through Theme; Preview rejects
+direct Production Font ids outside Theme.
 
 Animatable Runtime record references are prepared once as an exact catalog of
 the declared keyframe ids. Frame resolution selects the already prepared

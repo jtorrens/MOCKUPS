@@ -52,7 +52,15 @@ internal sealed record PaletteColorOption(
 
 internal sealed record PaletteColorRecord(
     string Id,
+    string Token,
+    string DefaultValueHex,
+    string Note,
+    bool IsNeutral,
+    string MetadataJson);
+
+internal sealed record ProductionPaletteColorRecord(
     string ProjectId,
+    string Id,
     string Token,
     string ValueHex,
     string Note,
@@ -283,9 +291,9 @@ internal interface IShotRepository
 
 internal interface IPaletteRepository
 {
-    PaletteColorSettings GetSettings(string colorId);
+    PaletteColorSettings GetSettings(string projectId, string colorId);
 
-    void UpdateField(string colorId, string fieldId, string value);
+    void UpdateProductionValue(string projectId, string colorId, string value);
 
     IReadOnlyList<PaletteColorOption> GetOptions(string projectId);
 
@@ -295,6 +303,8 @@ internal interface IPaletteRepository
 
     IReadOnlyList<PaletteColorRecord> QueryAll(SqliteConnection connection);
 
+    IReadOnlyList<ProductionPaletteColorRecord> QueryAllProductionValues(SqliteConnection connection);
+
     PaletteColorRecord RequireRecord(SqliteConnection connection, string colorId);
 
     void RenameToken(
@@ -302,10 +312,6 @@ internal interface IPaletteRepository
         SqliteTransaction transaction,
         string colorId,
         string token);
-
-    PaletteColorRecord Create(SqliteConnection connection, string projectId);
-
-    PaletteColorRecord Duplicate(SqliteConnection connection, string sourceId);
 
     void Delete(SqliteConnection connection, string colorId);
 

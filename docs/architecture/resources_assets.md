@@ -4,11 +4,14 @@ Status: normative.
 
 ## Resource ownership
 
-Palette Colors, Themes, Icon Themes, Actors, Devices and Production Fonts are
-Project-owned SQLite records. Asset files are referenced by
-those current records and resolved through the owning resource service.
+Palette Color identities are System-owned SQLite records. Every Project owns a
+complete set of RGB values for that fixed catalog. Themes, Icon Themes, Actors,
+Devices and Production Fonts remain Project-owned SQLite records. Asset files
+are referenced by those current records and resolved through the owning
+resource service.
 
-There are no cross-Project records and no cross-Project fallback.
+There is no cross-Project fallback. Global Palette identities resolve only
+through the exact active Project's required RGB rows.
 
 Each Project stores either no media root or one absolute external directory
 path in `projects.media_root`. The database location never owns or implies that
@@ -88,13 +91,23 @@ resource directories retain their stricter Project media-root ownership.
 
 ## Palette and Themes
 
-Palette records provide stable semantic color identities. Themes provide
-complete token documents and explicit light/dark values. Alpha is part of the
-complete resolved visual value and applies consistently to colors and images
-where the owning visual contract declares it.
+System Palette records provide stable semantic color identities and creation
+defaults. A Project Palette can edit only the RGB corresponding to each fixed
+identity; it cannot add, duplicate, rename or delete identities. Themes provide
+complete token documents and explicit light/dark references to those global
+identities. Alpha is part of the complete resolved visual value and applies
+consistently to colors and images where the owning visual contract declares it.
+
+Every Project Palette is complete. Missing values fail validation and Preview;
+the System default is copied only when the Project is explicitly created.
 
 Theme interpretation stays in common domain services and Preview resolution,
 not repositories or shell code.
+
+Theme is the sole owner of concrete Production Font ids for text, system and
+emoji typography. Component, Module, Variant, Override and Runtime typography
+stores only `theme`, `theme.system` or `theme.emoji`; direct Production Font ids
+outside Theme are invalid current data.
 
 ## Actors
 
