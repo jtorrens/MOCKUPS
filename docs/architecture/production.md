@@ -28,7 +28,13 @@ Production exposes:
 - Episodes, Shots and Screens in the sequence tree;
 - one permanent **Render Queue** section for workstation-local jobs;
 - the shared permanent **External Media** inventory for authored Project paths;
-- one **Production Data** card containing Actors, Devices and Production Fonts.
+- one **Production Data** card containing Actors, Devices, Production Fonts,
+  Themes and Production Palette Colors.
+
+Production Palette Colors expose only the RGB for the current Production.
+Their System identity, default, creation, duplication, rename and deletion
+remain in the Design-owned System Palette editor. Themes are authored only
+inside Production Data.
 
 Future Project duplication may offer:
 

@@ -209,20 +209,30 @@ internal sealed class SqliteResourceRecordFieldPort(
     : IResourceRecordFieldStore
 {
     public PaletteColorSettings GetPaletteColorSettings(
+        string colorId) =>
+        target.GetPaletteColorSettings(colorId);
+
+    public ProductionPaletteColorSettings GetProductionPaletteColorSettings(
         string projectId,
         string colorId) =>
-        target.GetPaletteColorSettings(projectId, colorId);
+        target.GetProductionPaletteColorSettings(projectId, colorId);
 
     public IReadOnlyList<FieldOption> GetPaletteColorOptions(
         string projectId) =>
         target.GetPaletteColorOptions(projectId);
 
     public void UpdatePaletteColorField(
+        string colorId,
+        string fieldId,
+        string value) =>
+        target.UpdatePaletteColorField(colorId, fieldId, value);
+
+    public void UpdateProductionPaletteColorField(
         string projectId,
         string colorId,
         string fieldId,
         string value) =>
-        target.UpdatePaletteColorField(projectId, colorId, fieldId, value);
+        target.UpdateProductionPaletteColorField(projectId, colorId, fieldId, value);
 
     public DeviceSettings GetDeviceSettings(string deviceId) =>
         target.GetDeviceSettings(deviceId);

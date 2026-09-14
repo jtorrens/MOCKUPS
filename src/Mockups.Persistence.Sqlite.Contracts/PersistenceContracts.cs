@@ -291,7 +291,13 @@ internal interface IShotRepository
 
 internal interface IPaletteRepository
 {
-    PaletteColorSettings GetSettings(string projectId, string colorId);
+    PaletteColorSettings GetSystemSettings(string colorId);
+
+    ProductionPaletteColorSettings GetProductionSettings(
+        string projectId,
+        string colorId);
+
+    void UpdateSystemField(string colorId, string fieldId, string value);
 
     void UpdateProductionValue(string projectId, string colorId, string value);
 
@@ -312,6 +318,15 @@ internal interface IPaletteRepository
         SqliteTransaction transaction,
         string colorId,
         string token);
+
+    PaletteColorRecord CreateSystemColor(
+        SqliteConnection connection,
+        string token,
+        string defaultValueHex);
+
+    PaletteColorRecord DuplicateSystemColor(
+        SqliteConnection connection,
+        string sourceId);
 
     void Delete(SqliteConnection connection, string colorId);
 

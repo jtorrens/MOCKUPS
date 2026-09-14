@@ -4,15 +4,19 @@ Status: normative.
 
 ## Design workflow
 
-Design is the authoring workspace for reusable definitions and visual
-resources. It establishes the exact contracts that Production later consumes:
+Design is the authoring workspace for System-wide reusable definitions and
+visual resources. It establishes the exact contracts that Production later
+consumes:
 
-- tokens, Palette Colors, Themes and Icon Themes;
+- System Palette Colors and Icon Themes;
 - Component Classes and Component Variants;
 - Apps, Modules and Module Variants;
 - isolated Preview fixtures and temporary Test Values.
 
 Design does not create Production sequences or persist Screen payloads.
+
+Themes and Production Palette values are not Design editors. They are
+Production-owned resources presented inside Production Data.
 
 ## Tokens, palette and Themes
 

@@ -12,6 +12,7 @@ public enum ProjectTreeNodeKind
     SystemDataRoot,
     AppsRoot,
     PaletteRoot,
+    ProductionPaletteRoot,
     IconThemesRoot,
     ComponentClassesRoot,
     ComponentClassGroup,
@@ -27,6 +28,7 @@ public enum ProjectTreeNodeKind
     Shot,
     ModuleInstance,
     PaletteColor,
+    ProductionPaletteColor,
     IconTheme,
     ComponentClass,
     ComponentVariant,
@@ -116,6 +118,7 @@ public sealed class ProjectTreeNode
         and not ProjectTreeNodeKind.SystemDataRoot
         and not ProjectTreeNodeKind.AppsRoot
         and not ProjectTreeNodeKind.PaletteRoot
+        and not ProjectTreeNodeKind.ProductionPaletteRoot
         and not ProjectTreeNodeKind.IconThemesRoot
         and not ProjectTreeNodeKind.ComponentClassesRoot
         and not ProjectTreeNodeKind.ComponentClassGroup
@@ -146,6 +149,7 @@ public sealed class ProjectTreeNode
             ProjectTreeNodeKind.SystemDataRoot => "navigation.system_data",
             ProjectTreeNodeKind.AppsRoot => "navigation.apps",
             ProjectTreeNodeKind.PaletteRoot => "navigation.palette",
+            ProjectTreeNodeKind.ProductionPaletteRoot => "navigation.production_palette",
             ProjectTreeNodeKind.IconThemesRoot => "navigation.icon_themes",
             ProjectTreeNodeKind.ComponentClassesRoot => "navigation.component_classes",
             ProjectTreeNodeKind.ComponentClassGroup => "navigation.component_class_group",
@@ -159,6 +163,7 @@ public sealed class ProjectTreeNode
             ProjectTreeNodeKind.Shot => "shot",
             ProjectTreeNodeKind.ModuleInstance => "module_instance",
             ProjectTreeNodeKind.PaletteColor => "palette_color",
+            ProjectTreeNodeKind.ProductionPaletteColor => "production_palette_color",
             ProjectTreeNodeKind.IconTheme => "icon_theme",
             ProjectTreeNodeKind.ComponentClass => "component.avatar",
             ProjectTreeNodeKind.ComponentVariant => "component.variant",

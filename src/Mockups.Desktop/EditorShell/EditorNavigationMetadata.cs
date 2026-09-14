@@ -62,13 +62,14 @@ internal static class EditorNavigationMetadata
             ProjectTreeNodeKind.AppsRoot => "Apps and module defaults",
             ProjectTreeNodeKind.RenderQueueRoot => "Local render jobs and history",
             ProjectTreeNodeKind.ExternalMediaRoot => "Authored external files and folders",
-            ProjectTreeNodeKind.ProductionDataRoot => "Actors, devices and production fonts",
-            ProjectTreeNodeKind.SystemDataRoot => "Themes, icon sets, component variants, palette and media",
+            ProjectTreeNodeKind.ProductionDataRoot => "Actors, devices, fonts, themes and Palette values",
+            ProjectTreeNodeKind.SystemDataRoot => "Icon sets, component variants and System Palette",
             ProjectTreeNodeKind.ProductionFontsRoot => "Approved production font families",
             ProjectTreeNodeKind.IconThemesRoot => "Semantic icon tokens shared by every set",
             ProjectTreeNodeKind.ComponentClassesRoot => "Reusable component defaults",
             ProjectTreeNodeKind.ComponentClassGroup => "Component class group",
             ProjectTreeNodeKind.ThemesRoot => "Visual theme definitions",
+            ProjectTreeNodeKind.ProductionPaletteRoot => "Production RGB values for the System Palette",
             _ => node.Notes,
         };
     }

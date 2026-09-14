@@ -106,12 +106,17 @@ public interface IDesignRecordFieldStore
 
 public interface IResourceRecordFieldStore
 {
-    PaletteColorSettings GetPaletteColorSettings(
+    PaletteColorSettings GetPaletteColorSettings(string colorId);
+    ProductionPaletteColorSettings GetProductionPaletteColorSettings(
         string projectId,
         string colorId);
     IReadOnlyList<EditorShell.FieldOption> GetPaletteColorOptions(
         string projectId);
     void UpdatePaletteColorField(
+        string colorId,
+        string fieldId,
+        string value);
+    void UpdateProductionPaletteColorField(
         string projectId,
         string colorId,
         string fieldId,

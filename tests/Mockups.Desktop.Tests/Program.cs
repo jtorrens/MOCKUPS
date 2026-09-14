@@ -10916,6 +10916,7 @@ static void RecordCreationUsesOneDeclarativeLifecycle()
 {
     var expectedOperations = new Dictionary<ProjectTreeNodeKind, EditorAddOperationKind>
     {
+        [ProjectTreeNodeKind.PaletteRoot] = EditorAddOperationKind.CreateRecord,
         [ProjectTreeNodeKind.IconThemesRoot] = EditorAddOperationKind.RefreshIconThemes,
         [ProjectTreeNodeKind.DevicesRoot] = EditorAddOperationKind.ImportDevice,
         [ProjectTreeNodeKind.ActorsRoot] = EditorAddOperationKind.CreateRecord,
@@ -10931,7 +10932,7 @@ static void RecordCreationUsesOneDeclarativeLifecycle()
         Equal(operationKind, operation.Kind);
         True(!string.IsNullOrWhiteSpace(operation.Label));
     }
-    True(!EditorAddOperationCatalog.TryGet(ProjectTreeNodeKind.PaletteRoot, out _));
+    True(!EditorAddOperationCatalog.TryGet(ProjectTreeNodeKind.ProductionPaletteRoot, out _));
     True(!EditorAddOperationCatalog.TryGet(ProjectTreeNodeKind.Actor, out _));
     var childPortMethods = typeof(IEditorChildStore).GetMethods()
         .Select((method) => method.Name)
@@ -11095,7 +11096,7 @@ static void ResourceRepositoriesPreserveFocusedContract()
                 .Select((field) => field.Id)
                 .Where((id) => id.StartsWith("device.", StringComparison.Ordinal)));
 
-        Equal(database.GetPaletteColorSettings(color.Id), paletteRepository.GetSettings(project.Id, color.Id));
+        Equal(database.GetPaletteColorSettings(color.Id), paletteRepository.GetSystemSettings(color.Id));
         Equal(database.GetDeviceSettings(device.Id), deviceRepository.GetSettings(device.Id));
         Equal(database.GetActorSettings(actor.Id), actorRepository.GetSettings(actor.Id));
         SequenceEqual(
@@ -11118,10 +11119,14 @@ static void ResourceRepositoriesPreserveFocusedContract()
         }
 
         var originalColor = database.GetPaletteColorSettings(color.Id);
-        paletteRepository.UpdateProductionValue(project.Id, color.Id, "#123456");
-        Equal("#123456", database.GetPaletteColorSettings(color.Id).ValueHex);
-        database.UpdatePaletteColorField(color.Id, "palette.valueHex", originalColor.ValueHex);
-        Equal(originalColor, paletteRepository.GetSettings(project.Id, color.Id));
+        paletteRepository.UpdateSystemField(color.Id, "palette.defaultValueHex", "#123456");
+        Equal("#123456", database.GetPaletteColorSettings(color.Id).DefaultValueHex);
+        database.UpdatePaletteColorField(color.Id, "palette.defaultValueHex", originalColor.DefaultValueHex);
+        Equal(originalColor, paletteRepository.GetSystemSettings(color.Id));
+        var originalProductionColor = database.GetProductionPaletteColorSettings(project.Id, color.Id);
+        paletteRepository.UpdateProductionValue(project.Id, color.Id, "#654321");
+        Equal("#654321", database.GetProductionPaletteColorSettings(project.Id, color.Id).ValueHex);
+        database.UpdateProductionPaletteColorField(project.Id, color.Id, originalProductionColor.ValueHex);
 
         var alex = Descendants(tree).Single((node) =>
             node.Kind == ProjectTreeNodeKind.Actor
@@ -11137,16 +11142,21 @@ static void ResourceRepositoriesPreserveFocusedContract()
             node.Kind == ProjectTreeNodeKind.PaletteColor
             && node.Id == actorLightColor);
         const string renamedPaletteToken = "palette_rename_test";
-        Throws<InvalidOperationException>(() => database.UpdatePaletteColorField(
+        var originalSystemColor = database.GetPaletteColorSettings(referencedColor.Id);
+        database.UpdatePaletteColorField(
             referencedColor.Id,
             "palette.token",
-            renamedPaletteToken));
+            renamedPaletteToken);
         Equal(
             alexColorModes,
             database.GetActorFieldValue(alex.Id, "actor.color.modes"));
         Equal(
             actorLightColor,
             referencedColor.Id);
+        database.UpdatePaletteColorField(
+            referencedColor.Id,
+            "palette.token",
+            originalSystemColor.Token);
         Equal(actorLightColor, referencedColor.Id);
 
         var originalDevice = database.GetDeviceSettings(device.Id);
@@ -11213,9 +11223,29 @@ static void ResourceRepositoriesPreserveFocusedContract()
 
         var paletteRoot = Descendants(database.LoadProjectTree())
             .Single((node) => node.Kind == ProjectTreeNodeKind.PaletteRoot);
-        True(!EditorAddOperationCatalog.TryGet(paletteRoot.Kind, out _));
-        Throws<InvalidOperationException>(() => database.Duplicate(color));
-        Throws<InvalidOperationException>(() => database.Delete(color));
+        var paletteCreation = database.Children.PrepareRecordCreation(
+            paletteRoot,
+            "palette");
+        var paletteValues = paletteCreation.Fields.ToDictionary(
+            (field) => field.Definition.Id,
+            (field) => field.Value,
+            StringComparer.Ordinal);
+        paletteValues["palette.token"] = "resource_test_created";
+        var createdColor = database.Children.CreateRecord(
+            paletteRoot,
+            new RecordCreationDraft(paletteCreation.Id, paletteValues));
+        var duplicatedColor = database.Duplicate(createdColor);
+        duplicatedColor.Name = "resource_test_token";
+        duplicatedColor.Notes = "Repository lifecycle note";
+        database.UpdateNode(duplicatedColor);
+        using (var connection = context.OpenConnection())
+        {
+            var persisted = paletteRepository.QueryAll(connection).Single((row) => row.Id == duplicatedColor.Id);
+            Equal(duplicatedColor.Name, persisted.Token);
+            Equal(duplicatedColor.Notes, persisted.Note);
+        }
+        database.Delete(duplicatedColor);
+        database.Delete(createdColor);
 
         var devicesRoot = Descendants(database.LoadProjectTree())
             .Single((node) => node.Kind == ProjectTreeNodeKind.DevicesRoot);
@@ -19245,19 +19275,27 @@ static void ProductionDataOwnsConcreteResources()
             ProjectTreeNodeKind.ActorsRoot,
             ProjectTreeNodeKind.DevicesRoot,
             ProjectTreeNodeKind.ProductionFontsRoot,
+            ProjectTreeNodeKind.ThemesRoot,
+            ProjectTreeNodeKind.ProductionPaletteRoot,
         },
         productionData.Children.Select((node) => node.Kind));
     True(productionData.Children.All((node) =>
         EditorNavigationMetadata.WorkspaceScope(node.Kind) == EditorWorkspaceScope.Production));
-    True(productionData.Children.All((node) => EditorNavigationRenderer.ShowsActions(node, null)));
+    True(productionData.Children
+        .Where((node) => node.Kind != ProjectTreeNodeKind.ProductionPaletteRoot)
+        .All((node) => EditorNavigationRenderer.ShowsActions(node, null)));
+    True(!EditorNavigationRenderer.ShowsActions(
+        productionData.Children.Single((node) => node.Kind == ProjectTreeNodeKind.ProductionPaletteRoot),
+        null));
 
     var designSections = EditorWorkspaceNavigation.SectionRoots(project, EditorWorkspace.Design);
-    True(designSections.Any((node) => node.Kind == ProjectTreeNodeKind.ThemesRoot));
+    True(designSections.Any((node) => node.Kind == ProjectTreeNodeKind.PaletteRoot));
     True(designSections.All((node) => node.Kind is not ProjectTreeNodeKind.DevicesRoot
         and not ProjectTreeNodeKind.ProductionFontsRoot
-        and not ProjectTreeNodeKind.ActorsRoot));
+        and not ProjectTreeNodeKind.ActorsRoot
+        and not ProjectTreeNodeKind.ThemesRoot));
     var themeRoot = DescendantsAndSelf(project).Single((node) => node.Kind == ProjectTreeNodeKind.ThemesRoot);
-    Equal(ProjectTreeNodeKind.SystemDataRoot, Required(themeRoot.Parent).Kind);
+    Equal(ProjectTreeNodeKind.ProductionDataRoot, Required(themeRoot.Parent).Kind);
 }
 
 static void ProductionTreeOrdersShotsByName()

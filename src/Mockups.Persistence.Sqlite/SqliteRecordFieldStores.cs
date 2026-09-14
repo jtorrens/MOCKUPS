@@ -278,20 +278,33 @@ internal sealed class SqliteResourceRecordFieldStore :
     }
 
     public PaletteColorSettings GetPaletteColorSettings(
+        string colorId) =>
+        _resources.GetPaletteColorSettings(colorId);
+
+    public ProductionPaletteColorSettings GetProductionPaletteColorSettings(
         string projectId,
         string colorId) =>
-        _resources.GetPaletteColorSettings(projectId, colorId);
+        _resources.GetProductionPaletteColorSettings(projectId, colorId);
 
     public IReadOnlyList<FieldOption> GetPaletteColorOptions(
         string projectId) =>
         _resources.GetPaletteColorOptions(projectId);
 
     public void UpdatePaletteColorField(
-        string projectId,
         string colorId,
         string fieldId,
         string value) =>
         _resources.UpdatePaletteColorField(
+            colorId,
+            fieldId,
+            value);
+
+    public void UpdateProductionPaletteColorField(
+        string projectId,
+        string colorId,
+        string fieldId,
+        string value) =>
+        _resources.UpdateProductionPaletteColorField(
             projectId,
             colorId,
             fieldId,

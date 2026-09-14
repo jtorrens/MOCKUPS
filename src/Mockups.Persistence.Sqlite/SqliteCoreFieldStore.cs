@@ -58,6 +58,13 @@ internal sealed class SqliteCoreFieldStore
                     node.Id,
                     node.Name);
                 return;
+            case ProjectTreeNodeKind.PaletteColor:
+                _resources.PaletteRepository.UpdateNode(
+                    connection,
+                    node.Id,
+                    node.Name,
+                    node.Notes);
+                return;
             case ProjectTreeNodeKind.ProductionFont:
                 _resources.ProductionFontRepository.Rename(
                     connection,
@@ -119,6 +126,7 @@ internal sealed class SqliteCoreFieldStore
                 _production.RenameModuleInstance(node, name),
             ProjectTreeNodeKind.Episode
                 or ProjectTreeNodeKind.Shot
+                or ProjectTreeNodeKind.PaletteColor
                 or ProjectTreeNodeKind.IconTheme
                 or ProjectTreeNodeKind.Device
                 or ProjectTreeNodeKind.Actor

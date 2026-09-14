@@ -43,7 +43,8 @@ internal sealed class SqliteEditorNavigationStore
             (module) => module.Id,
             (module) => module.Name,
             StringComparer.Ordinal);
-        var paletteColors = _resourceOwner.QueryPaletteColorRows(connection);
+        var systemPaletteColors = _resourceOwner.PaletteRepository.QueryAll(connection);
+        var productionPaletteColors = _resourceOwner.QueryPaletteColorRows(connection);
         var devices = _resourceOwner.QueryDeviceRows(connection);
         var actors = _resourceOwner.QueryActorRows(connection);
         var themes = _resourceOwner.ThemeRepository.QueryAll(connection);
@@ -64,6 +65,7 @@ internal sealed class SqliteEditorNavigationStore
 
         var appRootNodes = new Dictionary<string, ProjectTreeNode>();
         var paletteRootNodes = new Dictionary<string, ProjectTreeNode>();
+        var productionPaletteRootNodes = new Dictionary<string, ProjectTreeNode>();
         var deviceRootNodes = new Dictionary<string, ProjectTreeNode>();
         var actorRootNodes = new Dictionary<string, ProjectTreeNode>();
         var themeRootNodes = new Dictionary<string, ProjectTreeNode>();
@@ -106,9 +108,16 @@ internal sealed class SqliteEditorNavigationStore
             var paletteRoot = new ProjectTreeNode(
                 ProjectTreeNodeKind.PaletteRoot,
                 $"palette_root_{project.Id}",
-                "Palette Colors",
-                "Production RGB values for the fixed System Palette catalog.",
+                "System Palette Colors",
+                "Global color identities and Production creation defaults.",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.PaletteRoot),
+                systemDataRoot);
+            var productionPaletteRoot = new ProjectTreeNode(
+                ProjectTreeNodeKind.ProductionPaletteRoot,
+                $"production_palette_root_{project.Id}",
+                "Production Palette Colors",
+                "RGB values for this Production's fixed System Palette catalog.",
+                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ProductionPaletteRoot),
                 productionDataRoot);
             var devicesRoot = new ProjectTreeNode(
                 ProjectTreeNodeKind.DevicesRoot,
@@ -130,7 +139,7 @@ internal sealed class SqliteEditorNavigationStore
                 "Themes",
                 "Production visual themes.",
                 ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ThemesRoot),
-                systemDataRoot);
+                productionDataRoot);
             var productionFontsRoot = new ProjectTreeNode(
                 ProjectTreeNodeKind.ProductionFontsRoot,
                 $"production_fonts_root_{project.Id}",
@@ -168,7 +177,8 @@ internal sealed class SqliteEditorNavigationStore
             productionDataRoot.AddChild(actorsRoot);
             productionDataRoot.AddChild(devicesRoot);
             productionDataRoot.AddChild(productionFontsRoot);
-            systemDataRoot.AddChild(themesRoot);
+            productionDataRoot.AddChild(themesRoot);
+            productionDataRoot.AddChild(productionPaletteRoot);
             systemDataRoot.AddChild(paletteRoot);
             systemDataRoot.AddChild(iconThemesRoot);
             systemDataRoot.AddChild(componentClassesRoot);
@@ -179,6 +189,7 @@ internal sealed class SqliteEditorNavigationStore
             project.AddChild(systemDataRoot);
             appRootNodes[project.Id] = appsRoot;
             paletteRootNodes[project.Id] = paletteRoot;
+            productionPaletteRootNodes[project.Id] = productionPaletteRoot;
             deviceRootNodes[project.Id] = devicesRoot;
             actorRootNodes[project.Id] = actorsRoot;
             themeRootNodes[project.Id] = themesRoot;
@@ -248,19 +259,34 @@ internal sealed class SqliteEditorNavigationStore
             episodeNodes[node.Id] = node;
         }
 
-        foreach (var color in paletteColors.OrderBy((color) => color.Token))
+        foreach (var project in projectNodes.Values)
         {
-            if (!paletteRootNodes.TryGetValue(color.ProjectId, out var paletteRoot)) continue;
+            if (!paletteRootNodes.TryGetValue(project.Id, out var paletteRoot)) continue;
+            foreach (var color in systemPaletteColors.OrderBy((color) => color.Token))
+            {
+                paletteRoot.AddChild(new ProjectTreeNode(
+                    ProjectTreeNodeKind.PaletteColor,
+                    color.Id,
+                    color.Token,
+                    color.Note,
+                    ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.PaletteColor),
+                    paletteRoot,
+                    color.DefaultValueHex,
+                    IsUsed(referenceUsageIndex, ProjectTreeNodeKind.PaletteColor, color.Id)));
+            }
+        }
 
+        foreach (var color in productionPaletteColors.OrderBy((color) => color.Token))
+        {
+            if (!productionPaletteRootNodes.TryGetValue(color.ProjectId, out var paletteRoot)) continue;
             paletteRoot.AddChild(new ProjectTreeNode(
-                ProjectTreeNodeKind.PaletteColor,
-                color.Id,
+                ProjectTreeNodeKind.ProductionPaletteColor,
+                ProductionPaletteColorNodeId.Format(color.ProjectId, color.Id),
                 color.Token,
-                color.Note,
-                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.PaletteColor),
+                "Production RGB value",
+                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ProductionPaletteColor),
                 paletteRoot,
-                color.ValueHex,
-                IsUsed(referenceUsageIndex, ProjectTreeNodeKind.PaletteColor, color.Id)));
+                color.ValueHex));
         }
 
         foreach (var device in devices.OrderBy((device) => device.Name))

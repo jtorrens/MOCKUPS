@@ -249,12 +249,17 @@ public sealed record ModuleInstanceSlot(
 
 public sealed record PaletteColorSettings(
     string Token,
-    string ValueHex,
+    string DefaultValueHex,
     bool IsNeutral,
     string Source,
     bool IsProtected,
     bool HiddenFromPickers,
     string Note);
+
+public sealed record ProductionPaletteColorSettings(
+    string PaletteColorId,
+    string Token,
+    string ValueHex);
 
 public sealed record DeviceSettings(
     string ProjectId,

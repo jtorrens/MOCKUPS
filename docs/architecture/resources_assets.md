@@ -101,6 +101,13 @@ consistently to colors and images where the owning visual contract declares it.
 Every Project Palette is complete. Missing values fail validation and Preview;
 the System default is copied only when the Project is explicitly created.
 
+Design exposes a `System Palette Color` editor for the global identity,
+creation default and lifecycle. Production Data exposes a distinct
+`Production Palette Color` editor whose exact owner is the Project plus System
+color id and whose only editable field is RGB. Themes also live in Production
+Data. The two Palette record classes never share layout metadata or mutation
+actions.
+
 Theme interpretation stays in common domain services and Preview resolution,
 not repositories or shell code.
 

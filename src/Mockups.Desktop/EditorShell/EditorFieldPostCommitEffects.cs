@@ -87,7 +87,8 @@ internal sealed class EditorFieldPostCommitEffects
             return;
         }
 
-        if (node.Kind == ProjectTreeNodeKind.PaletteColor && fieldId == "palette.valueHex")
+        if ((node.Kind == ProjectTreeNodeKind.PaletteColor && fieldId == "palette.defaultValueHex")
+            || (node.Kind == ProjectTreeNodeKind.ProductionPaletteColor && fieldId == "productionPalette.valueHex"))
         {
             node.ColorHex = value;
             _rebuildNavigation();

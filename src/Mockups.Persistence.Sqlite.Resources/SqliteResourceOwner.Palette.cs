@@ -7,24 +7,33 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SqliteResourceOwner
 {
-    public PaletteColorSettings GetPaletteColorSettings(
-        string projectId,
-        string colorId)
+    public PaletteColorSettings GetPaletteColorSettings(string colorId)
     {
-        return _paletteRepository.GetSettings(projectId, colorId);
+        return _paletteRepository.GetSystemSettings(colorId);
     }
 
+    public ProductionPaletteColorSettings GetProductionPaletteColorSettings(
+        string projectId,
+        string colorId) =>
+        _paletteRepository.GetProductionSettings(projectId, colorId);
+
     public void UpdatePaletteColorField(
+        string colorId,
+        string fieldId,
+        string value)
+    {
+        _paletteRepository.UpdateSystemField(colorId, fieldId, value);
+    }
+
+    public void UpdateProductionPaletteColorField(
         string projectId,
         string colorId,
         string fieldId,
         string value)
     {
-        if (fieldId != "palette.valueHex")
-        {
+        if (fieldId != "productionPalette.valueHex")
             throw new System.InvalidOperationException(
-                $"Production Palette exposes only its RGB value; field '{fieldId}' belongs to the System catalog.");
-        }
+                $"Production Palette exposes only its RGB value, not '{fieldId}'.");
         _paletteRepository.UpdateProductionValue(projectId, colorId, value);
     }
 

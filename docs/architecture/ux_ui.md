@@ -366,6 +366,11 @@ render progress is monotonic and cannot visually restart on every frame.
 Pause lets the active job finish and prevents the next pending job from
 starting.
 
+The **Production Data** card lists Actors, Devices, Production Fonts, Themes
+and Production Palette Colors. The last editor shows the fixed System color
+name and edits only the current Production RGB. System Palette identity and
+lifecycle remain a separate Design editor.
+
 ## Lifecycle consistency
 
 An action may be available in more than one useful context.

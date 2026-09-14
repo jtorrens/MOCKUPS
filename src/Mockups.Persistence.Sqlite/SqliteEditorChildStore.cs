@@ -26,6 +26,7 @@ internal sealed class SqliteEditorChildStore
         _resources = resources;
         _creationPreparers = new Dictionary<string, Func<ProjectTreeNode, RecordCreationDefinition>>(StringComparer.Ordinal)
         {
+            ["palette"] = PreparePaletteCreation,
             ["device"] = PrepareBlankDeviceCreation,
             ["actor"] = PrepareActorCreation,
             ["theme"] = PrepareThemeCreation,
@@ -34,12 +35,28 @@ internal sealed class SqliteEditorChildStore
         };
         _creationCommitters = new Dictionary<string, Func<ProjectTreeNode, IReadOnlyDictionary<string, string>, ProjectTreeNode>>(StringComparer.Ordinal)
         {
+            ["palette"] = CreatePalette,
             ["device"] = CreateBlankDevice,
             ["actor"] = CreateActor,
             ["theme"] = CreateTheme,
             ["episode"] = CreateEpisode,
             ["shot"] = CreateShot,
         };
+    }
+
+    private RecordCreationDefinition PreparePaletteCreation(ProjectTreeNode parent)
+    {
+        RequireParent(parent, ProjectTreeNodeKind.PaletteRoot, "palette");
+        return new RecordCreationDefinition(
+            "palette",
+            "paletteColor",
+            "Add System palette color",
+            "Define the stable System token and the RGB copied into every Production.",
+            "Add",
+            [
+                Field(RecordClassFieldCatalog.Get("palette.token"), ""),
+                Field(RecordClassFieldCatalog.Get("palette.defaultValueHex"), "#808080"),
+            ]);
     }
 
     internal RecordCreationDefinition PrepareRecordCreation(
@@ -145,6 +162,25 @@ internal sealed class SqliteEditorChildStore
         var device = _resources.DeviceRepository.Create(connection, ProjectAncestor(parent).Id);
         return new ProjectTreeNode(ProjectTreeNodeKind.Device, device.Id, device.Name, "",
             ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Device), parent);
+    }
+
+    private ProjectTreeNode CreatePalette(
+        ProjectTreeNode parent,
+        IReadOnlyDictionary<string, string> values)
+    {
+        using var connection = _context.OpenConnection();
+        var color = _resources.PaletteRepository.CreateSystemColor(
+            connection,
+            Required(values, "palette.token"),
+            Required(values, "palette.defaultValueHex"));
+        return new ProjectTreeNode(
+            ProjectTreeNodeKind.PaletteColor,
+            color.Id,
+            color.Token,
+            color.Note,
+            ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.PaletteColor),
+            parent,
+            color.DefaultValueHex);
     }
 
     private ProjectTreeNode CreateActor(ProjectTreeNode parent, IReadOnlyDictionary<string, string> values)

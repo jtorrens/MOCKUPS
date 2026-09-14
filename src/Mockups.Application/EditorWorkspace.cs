@@ -32,6 +32,9 @@ public static class EditorWorkspacePolicy
                 EditorWorkspaceScope.Design,
             ProjectTreeNodeKind.PaletteRoot or ProjectTreeNodeKind.PaletteColor =>
                 EditorWorkspaceScope.Design,
+            ProjectTreeNodeKind.ProductionPaletteRoot
+                or ProjectTreeNodeKind.ProductionPaletteColor =>
+                EditorWorkspaceScope.Production,
             ProjectTreeNodeKind.IconThemesRoot or ProjectTreeNodeKind.IconTheme =>
                 EditorWorkspaceScope.Design,
             ProjectTreeNodeKind.ComponentClassesRoot
@@ -40,7 +43,7 @@ public static class EditorWorkspacePolicy
                 or ProjectTreeNodeKind.ComponentVariant =>
                 EditorWorkspaceScope.Design,
             ProjectTreeNodeKind.ThemesRoot or ProjectTreeNodeKind.Theme =>
-                EditorWorkspaceScope.Design,
+                EditorWorkspaceScope.Production,
             ProjectTreeNodeKind.EpisodesRoot or ProjectTreeNodeKind.Episode
                 or ProjectTreeNodeKind.Shot or ProjectTreeNodeKind.ModuleInstance =>
                 EditorWorkspaceScope.Production,
@@ -59,7 +62,6 @@ public static class EditorWorkspacePolicy
     {
         return kind is ProjectTreeNodeKind.AppsRoot
             or ProjectTreeNodeKind.ComponentClassesRoot
-            or ProjectTreeNodeKind.ThemesRoot
             or ProjectTreeNodeKind.PaletteRoot
             or ProjectTreeNodeKind.IconThemesRoot
             or ProjectTreeNodeKind.EpisodesRoot
@@ -74,9 +76,8 @@ public static class EditorWorkspacePolicy
         {
             ProjectTreeNodeKind.AppsRoot => 10,
             ProjectTreeNodeKind.ComponentClassesRoot => 20,
-            ProjectTreeNodeKind.ThemesRoot => 30,
-            ProjectTreeNodeKind.PaletteRoot => 40,
-            ProjectTreeNodeKind.IconThemesRoot => 50,
+            ProjectTreeNodeKind.PaletteRoot => 30,
+            ProjectTreeNodeKind.IconThemesRoot => 40,
             ProjectTreeNodeKind.EpisodesRoot => 10,
             ProjectTreeNodeKind.RenderQueueRoot => 20,
             ProjectTreeNodeKind.ExternalMediaRoot => 30,

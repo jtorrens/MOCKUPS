@@ -22,6 +22,7 @@ public static class EditorAddOperationCatalog
     private static readonly IReadOnlyDictionary<ProjectTreeNodeKind, EditorAddOperationDefinition>
         Definitions = new Dictionary<ProjectTreeNodeKind, EditorAddOperationDefinition>
         {
+            [ProjectTreeNodeKind.PaletteRoot] = new("palette.create", EditorAddOperationKind.CreateRecord, "Add System palette color", "palette"),
             [ProjectTreeNodeKind.IconThemesRoot] = new("icon-themes.refresh", EditorAddOperationKind.RefreshIconThemes, "Refresh icon sets"),
             [ProjectTreeNodeKind.DevicesRoot] = new("device.import", EditorAddOperationKind.ImportDevice, "Import device"),
             [ProjectTreeNodeKind.ActorsRoot] = new("actor.create", EditorAddOperationKind.CreateRecord, "Add actor", "actor"),
