@@ -63,9 +63,16 @@ export function committedComponentFixture(
     }
     const selectedReference = `${component.id}::variant::${variantId}`;
     const preview = JSON.parse(component.design_preview_json) as Record<string, unknown>;
-    const paletteRows = database.prepare(
-      "SELECT id, token, value_hex, is_neutral FROM palette_colors WHERE project_id = 'project_foqn_s2'",
-    ).all() as Array<{
+    const paletteRows = database.prepare(`
+      SELECT colors.id,
+             colors.token,
+             values_by_production.value_hex,
+             colors.is_neutral
+      FROM palette_colors colors
+      JOIN production_palette_values values_by_production
+        ON values_by_production.palette_color_id = colors.id
+      WHERE values_by_production.project_id = 'project_foqn_s2'
+    `).all() as Array<{
       id: string;
       token: string;
       value_hex: string;
@@ -157,6 +164,60 @@ function resolvedActor(
   database: Database.Database,
   palette: Record<string, string>,
 ) {
+  if (actorId.startsWith("system_preview_actor_")) {
+    const fixtureRoot = path.resolve(
+      "assets/system/preview-fixtures",
+    );
+    const manifest = JSON.parse(readFileSync(
+      path.join(fixtureRoot, "manifest.json"),
+      "utf8",
+    )) as {
+      actors: Array<{
+        id: string;
+        label: string;
+        shortName: string;
+        initials: string;
+        avatar: string;
+        backgroundColor: string;
+        textColor: string;
+      }>;
+    };
+    const actor = manifest.actors.find((candidate) =>
+      candidate.id === actorId);
+    assert.ok(actor, `Missing System Preview Actor fixture '${actorId}'`);
+    const avatar = readFileSync(path.join(fixtureRoot, actor.avatar));
+    return {
+      id: actor.id,
+      displayName: actor.label,
+      shortName: actor.shortName,
+      initials: actor.initials,
+      wallpaper: {
+        kind: "solid",
+        opacity: 1,
+        images: {
+          light: { filePath: "" },
+          dark: { filePath: "" },
+        },
+      },
+      modes: {
+        light: {
+          wallpaper: { color: "palette_project_foqn_s2_gray_100" },
+        },
+        dark: {
+          wallpaper: { color: "palette_project_foqn_s2_gray_000" },
+        },
+      },
+      avatar: {
+        imageUri: `data:image/svg+xml;base64,${avatar.toString("base64")}`,
+        backgroundColor: actor.backgroundColor,
+        textColor: actor.textColor,
+        scale: 1,
+        offsetX: 0,
+        offsetY: 0,
+        baseSize: 640,
+      },
+    };
+  }
   const actor = database.prepare(
     "SELECT id, display_name, short_name, metadata_json FROM actors WHERE id = ?",
   ).get(actorId) as {

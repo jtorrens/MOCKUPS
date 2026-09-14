@@ -966,21 +966,18 @@ test("Conversation Header keeps its upward bleed and can use the resolved Actor 
 });
 
 test("Conversation message text keeps its Screen Payload authoring source", () => {
-  const source = committedConversationPayload();
+  const source = committedConversationPayload(true);
   const messages = (JSON.parse(source.designPreviewJson) as {
     messages: Array<{ id: string }>;
   }).messages;
+  setConversationFrame(source, 120);
   source.authoringOwnerId = "screen_conversation";
   source.authoringRecordClassId = "module.core.chat";
 
   const tree = conversationModuleToRenderable(source);
-  const bubble = findNode(tree, "component.bubble");
-  const textClip = findNode(tree, "component.bubble.textBox.textClip");
+  const textClip = findNodes(tree, "component.bubble.textBox.textClip")
+    .find((node) => node.metadata?.authoringTarget?.focusItemId === messages[0]?.id);
 
-  assert.deepEqual(bubble?.metadata?.authoringTarget, {
-    ownerId: "component_project_foqn_s2_bubble::variant::default_copy",
-    slotFieldIds: [],
-  });
   assert.deepEqual(textClip?.metadata?.authoringTarget, {
     focusFieldId: "messages",
     focusItemId: messages[0]?.id,

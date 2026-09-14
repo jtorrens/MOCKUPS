@@ -22,6 +22,7 @@ internal sealed class EditorAddChildWorkflow
     private readonly IProjectPathResolver _projectPaths;
     private readonly EditorOperationCoordinator _operations;
     private readonly Func<string, string, Task> _showInfo;
+    private readonly Func<string, ValueKind, Task<string?>>? _browsePath;
 
     public EditorAddChildWorkflow(
         Window owner,
@@ -29,7 +30,8 @@ internal sealed class EditorAddChildWorkflow
         IModuleInstanceCollectionStore moduleInstances,
         IProjectPathResolver projectPaths,
         EditorOperationCoordinator operations,
-        Func<string, string, Task> showInfo)
+        Func<string, string, Task> showInfo,
+        Func<string, ValueKind, Task<string?>>? browsePath = null)
     {
         _owner = owner;
         _database = database;
@@ -37,6 +39,7 @@ internal sealed class EditorAddChildWorkflow
         _projectPaths = projectPaths;
         _operations = operations;
         _showInfo = showInfo;
+        _browsePath = browsePath;
     }
 
     public async Task<ProjectTreeNode?> TryAdd(ProjectTreeNode parent)
@@ -85,10 +88,26 @@ internal sealed class EditorAddChildWorkflow
     {
         var draft = await new ShotModulePickerDialog(
             _owner, _moduleInstances, _operations).Show(shot.Id);
-        return draft is null
+        if (draft is null) return null;
+        var definition = await _operations.ExecuteWithActivityAsync(
+            "Preparing Screen Runtime Inputs…",
+            () => _moduleInstances.PrepareModuleInstanceCreation(shot, draft));
+        var runtimeValues = definition.RequiresConfirmation
+            ? await new RecordCreationDialog(
+                _owner,
+                new DictionaryFieldServices(BrowsePath: _browsePath)).Show(definition)
+            : new RecordCreationDraft(
+                definition.Id,
+                definition.Fields.ToDictionary(
+                    (field) => field.Definition.Id,
+                    (field) => field.Value,
+                    StringComparer.Ordinal));
+        return runtimeValues is null
             ? null
             : await _operations.ExecuteAsync(
-                () => _moduleInstances.AddModuleInstance(shot, draft));
+                () => _moduleInstances.AddModuleInstance(
+                    shot,
+                    new ShotModuleInstanceCreationDraft(draft, runtimeValues)));
     }
 
     private async Task<ProjectTreeNode> RefreshAndReturn(ProjectTreeNode parent)

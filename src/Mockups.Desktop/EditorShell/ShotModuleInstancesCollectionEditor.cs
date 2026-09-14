@@ -16,7 +16,7 @@ internal sealed class ShotModuleInstancesCollectionEditor
     private readonly IEditorShellMessageSink _messages;
     private readonly Action _onChanged;
     private readonly Action<ProjectTreeNode> _reloadAndSelect;
-    private readonly Func<string, Task<ShotModuleInstanceDraft?>> _defineModuleInstance;
+    private readonly Func<string, Task<ShotModuleInstanceCreationDraft?>> _defineModuleInstance;
     private readonly Func<ProjectTreeNode, Task<bool>> _confirmDelete;
     public ShotModuleInstancesCollectionEditor(
         IModuleInstanceCollectionStore database,
@@ -25,7 +25,7 @@ internal sealed class ShotModuleInstancesCollectionEditor
         IEditorShellMessageSink messages,
         Action onChanged,
         Action<ProjectTreeNode> reloadAndSelect,
-        Func<string, Task<ShotModuleInstanceDraft?>> defineModuleInstance,
+        Func<string, Task<ShotModuleInstanceCreationDraft?>> defineModuleInstance,
         Func<ProjectTreeNode, Task<bool>> confirmDelete)
     {
         _database = database;

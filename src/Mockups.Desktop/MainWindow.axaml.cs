@@ -189,20 +189,6 @@ public partial class MainWindow : SukiWindow
                 _workspaceCoordinator,
                 _previewController);
         _previewController.ThemeChanged += _activeFieldControls.RefreshPreviews;
-        _nodeCommands = new EditorNodeCommandController(
-            this,
-            data.NodeCommands,
-            data.ReferenceUsage,
-            data.Children,
-            data.ModuleInstances,
-            data.ProjectPaths,
-            application.Operations,
-            () => _themeController.IsDark,
-            () => Session.TreeRoots,
-            LoadProjectTreeAsync,
-            ReloadAndSelectAsync,
-            NavigateToReferenceUsage,
-            _messages);
         _navigationPanel =
             new EditorNavigationPanelController(
                 ShellColumns,
@@ -218,6 +204,29 @@ public partial class MainWindow : SukiWindow
                 this,
                 ShellColumns,
                 shellStatePath);
+        var pathBrowser = new EditorPathBrowser(
+            StorageProvider,
+            data.Presentation,
+            data.ProjectPaths,
+            () => Session.SelectedNode,
+            (title, message) => new EditorDialogService(
+                this,
+                _themeController.IsDark).ShowInfo(title, message));
+        _nodeCommands = new EditorNodeCommandController(
+            this,
+            data.NodeCommands,
+            data.ReferenceUsage,
+            data.Children,
+            data.ModuleInstances,
+            data.ProjectPaths,
+            application.Operations,
+            () => _themeController.IsDark,
+            () => Session.TreeRoots,
+            LoadProjectTreeAsync,
+            ReloadAndSelectAsync,
+            NavigateToReferenceUsage,
+            _messages,
+            pathBrowser.BrowsePath);
         _productionNavigationActions = new EditorProductionNavigationActions(
             this,
             ProductionActionButton,
@@ -260,12 +269,6 @@ public partial class MainWindow : SukiWindow
             previewAuthoringRefresh.Notify,
             RefreshPreviewOptions,
             RefreshProductionPicker);
-        var pathBrowser = new EditorPathBrowser(
-            StorageProvider,
-            data.Presentation,
-            data.ProjectPaths,
-            () => Session.SelectedNode,
-            _nodeCommands.ShowInfoDialog);
         var domainDialogs = new EditorDomainDialogService(
             this,
             data.ModuleInstances,
@@ -273,8 +276,11 @@ public partial class MainWindow : SukiWindow
             data.ThemeTokens,
             application.Operations,
             () => _themeController.IsDark,
-            _nodeCommands.ShowInfoDialog,
+            (title, message) => new EditorDialogService(
+                this,
+                _themeController.IsDark).ShowInfo(title, message),
             pathBrowser.BrowseSvgFile,
+            pathBrowser.BrowsePath,
             ReloadAndSelect);
         var dictionaryFieldServices = new EditorDictionaryFieldServices(
             data.Dictionary,

@@ -8,6 +8,7 @@ import { DesktopRenderableHtmlAdapter } from "../../src/desktop-preview/DesktopR
 import type { DesignPreviewPayload } from "../../src/desktop-preview/designPreviewPayload.js";
 import {
   assignAuthoringTargetToInput,
+  authoringCollectionItemPayload,
   authoringVariantPayload,
   forwardAuthoringInputTarget,
   renderAuthoringCollectionItem,
@@ -184,7 +185,7 @@ test("explicit Runtime Input forwarding preserves the source authoring target", 
       authoringOwnerId: "screen_conversation",
       authoringRecordClassId: "module.core.chat",
       authoringSlotFieldIds: [],
-    } as DesignPreviewPayload,
+    } as unknown as DesignPreviewPayload,
     "module.core.chat",
     "messages",
     "message_005",

@@ -16,8 +16,15 @@ internal sealed class RecordCreationDialog
     internal const double DialogMinimumWidth = 720;
 
     private readonly Window _owner;
+    private readonly DictionaryFieldServices _services;
 
-    public RecordCreationDialog(Window owner) => _owner = owner;
+    public RecordCreationDialog(
+        Window owner,
+        DictionaryFieldServices? services = null)
+    {
+        _owner = owner;
+        _services = services ?? new DictionaryFieldServices();
+    }
 
     public async Task<RecordCreationDraft?> Show(RecordCreationDefinition definition)
     {
@@ -52,7 +59,7 @@ internal sealed class RecordCreationDialog
         {
             var field = new DictionaryFieldControl(
                 fieldValue,
-                new DictionaryFieldServices(AllowIncompleteDraft: true));
+                _services with { AllowIncompleteDraft = true });
             void Changed(string value)
             {
                 values[fieldValue.Definition.Id] = value;

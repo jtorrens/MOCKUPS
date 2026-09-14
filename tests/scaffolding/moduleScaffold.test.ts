@@ -88,7 +88,7 @@ test("Module scaffold derives one exact child Runtime contract", () => {
 
 test("Module scaffold rejects Runtime source drift and invalid duration", () => {
   const drifted = validSpec();
-  drifted.runtimeContract.source.inputIds = ["itemWidth"];
+  drifted.runtimeContract.source!.inputIds = ["itemWidth"];
   assert.throws(
     () => createModuleScaffoldPlan(
       drifted,
@@ -111,7 +111,7 @@ test("Module scaffold rejects Runtime source drift and invalid duration", () => 
   );
 
   const invalidSourcePath = validSpec();
-  invalidSourcePath.runtimeContract.source.variantReferenceConfigPath =
+  invalidSourcePath.runtimeContract.source!.variantReferenceConfigPath =
     "chatList.missing.variantReference";
   assert.throws(
     () => createModuleScaffoldPlan(
@@ -293,7 +293,6 @@ function validSpec(): ModuleScaffoldSpec {
     module: {
       moduleId: "module_project_foqn_s2_scaffold_test",
       appId: "app_core_chat",
-      projectId: "project_foqn_s2",
       recordClassId: "module.core.scaffoldTest",
       name: "Scaffold Test",
       notes: "Test-only Module contract.",

@@ -22,6 +22,7 @@ internal sealed class EditorNodeCommandController
     private readonly Func<ProjectTreeNode, Task> _reloadAndSelect;
     private readonly Func<ReferenceUsageDetail, Task> _navigateToUsage;
     private readonly IEditorShellMessageSink _messages;
+    private readonly Func<string, ValueKind, Task<string?>>? _browsePath;
 
     public EditorNodeCommandController(
         Window owner,
@@ -36,7 +37,8 @@ internal sealed class EditorNodeCommandController
         Func<Task<bool>> loadProjectTree,
         Func<ProjectTreeNode, Task> reloadAndSelect,
         Func<ReferenceUsageDetail, Task> navigateToUsage,
-        IEditorShellMessageSink messages)
+        IEditorShellMessageSink messages,
+        Func<string, ValueKind, Task<string?>>? browsePath = null)
     {
         _owner = owner;
         _database = database;
@@ -51,6 +53,7 @@ internal sealed class EditorNodeCommandController
         _reloadAndSelect = reloadAndSelect;
         _navigateToUsage = navigateToUsage;
         _messages = messages;
+        _browsePath = browsePath;
     }
 
     public async Task SaveCurrentVariant(ProjectTreeNode node)
@@ -141,7 +144,8 @@ internal sealed class EditorNodeCommandController
             _moduleInstances,
             _projectPaths,
             _operations,
-            ShowInfoDialog);
+            ShowInfoDialog,
+            _browsePath);
         var child = await workflow.TryAdd(parent);
         if (child is null) return;
 

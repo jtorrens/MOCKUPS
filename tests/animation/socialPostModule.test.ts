@@ -112,7 +112,7 @@ test("Social Post owns two fixed structure-projected Runtime row sections", () =
   assert.equal(contract.rows[0].content.slots[0].kind, "avatar");
   const headerAvatar = contract.rows[0].content.slots[0].content;
   assert.ok(headerAvatar && "actor" in headerAvatar);
-  assert.equal(headerAvatar.actor.id, "actor_alex");
+  assert.equal(headerAvatar.actor.id, "system_preview_actor_primary");
   assert.equal(headerAvatar.actor.displayName, "Alex Q");
   assert.equal(contract.rows[1].content.slots[0].kind, "label");
   const headerLabel = contract.rows[1].content.slots[0].content;

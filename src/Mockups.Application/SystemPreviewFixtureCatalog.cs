@@ -117,6 +117,33 @@ public static class SystemPreviewFixtureCatalog
             ["displayName"] = actor.Label,
             ["shortName"] = actor.ShortName,
             ["initials"] = actor.Initials,
+            ["wallpaper"] = new JsonObject
+            {
+                ["kind"] = "solid",
+                ["opacity"] = 1,
+                ["images"] = new JsonObject
+                {
+                    ["light"] = new JsonObject { ["filePath"] = "" },
+                    ["dark"] = new JsonObject { ["filePath"] = "" },
+                },
+            },
+            ["modes"] = new JsonObject
+            {
+                ["light"] = new JsonObject
+                {
+                    ["wallpaper"] = new JsonObject
+                    {
+                        ["color"] = "palette_project_foqn_s2_gray_100",
+                    },
+                },
+                ["dark"] = new JsonObject
+                {
+                    ["wallpaper"] = new JsonObject
+                    {
+                        ["color"] = "palette_project_foqn_s2_gray_000",
+                    },
+                },
+            },
             ["avatar"] = new JsonObject
             {
                 ["imageUri"] = imageUri,

@@ -50,17 +50,33 @@ internal sealed class SqliteModuleInstanceCollectionStore
             .ToList();
     }
 
-    internal ProjectTreeNode AddModuleInstance(
+    internal RecordCreationDefinition PrepareModuleInstanceCreation(
         ProjectTreeNode shot,
         ShotModuleInstanceDraft draft)
     {
         using var connection = _context.OpenConnection();
         var shotSettings = _production.GetShotSettings(shot.Id);
+        return _production.PrepareModuleInstanceCreation(
+            connection,
+            shot,
+            draft,
+            _resources.GetRequiredActorOptions(shotSettings.ProjectId));
+    }
+
+    internal ProjectTreeNode AddModuleInstance(
+        ProjectTreeNode shot,
+        ShotModuleInstanceCreationDraft draft)
+    {
+        using var connection = _context.OpenConnection();
+        var shotSettings = _production.GetShotSettings(shot.Id);
+        var actorOptions = _resources.GetRequiredActorOptions(
+            shotSettings.ProjectId);
         return _production.AddModuleInstance(
             connection,
             shot,
             draft,
-            ProjectActorIds(connection, shotSettings.ProjectId));
+            ProjectActorIds(connection, shotSettings.ProjectId),
+            actorOptions);
     }
 
     internal void Delete(ProjectTreeNode node)

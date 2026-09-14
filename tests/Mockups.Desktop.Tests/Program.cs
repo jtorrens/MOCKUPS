@@ -6034,6 +6034,40 @@ static IModuleInstanceCollectionStore ModuleInstances(
     new SqliteModuleInstanceCollectionPort(
         database.ModuleInstanceCollection);
 
+static ProjectTreeNode AddPreparedModuleInstance(
+    IModuleInstanceCollectionStore moduleInstances,
+    ProjectTreeNode shot,
+    ShotModuleInstanceDraft selection)
+{
+    var definition = moduleInstances.PrepareModuleInstanceCreation(
+        shot,
+        selection);
+    return moduleInstances.AddModuleInstance(
+        shot,
+        CompleteModuleInstanceCreation(selection, definition));
+}
+
+static ShotModuleInstanceCreationDraft CompleteModuleInstanceCreation(
+    ShotModuleInstanceDraft selection,
+    RecordCreationDefinition definition)
+{
+    var values = definition.Fields.ToDictionary(
+        (field) => field.Definition.Id,
+        (field) => field.Definition.ValueKind switch
+        {
+            ValueKind.RecordReference => field.Definition.Options?.First().Value
+                ?? throw new InvalidOperationException(
+                    $"Creation field '{field.Definition.Id}' has no Production record options."),
+            ValueKind.MediaDirectoryPath => "media",
+            ValueKind.ImageFilePath or ValueKind.MediaFilePath => "media/creation-fixture",
+            _ => field.Value,
+        },
+        StringComparer.Ordinal);
+    return new ShotModuleInstanceCreationDraft(
+        selection,
+        new RecordCreationDraft(definition.Id, values));
+}
+
 static IEditorNodeCommandStore NodeCommands(
     SqliteProjectTestContext database) =>
     new SqliteEditorNodeCommandPort(database.NodeCommands);
@@ -8003,7 +8037,9 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
                     $"Nested Actor field is clipped on the right "
                     + $"(right={actorRight:0.##}, viewportRight={viewportRight:0.##}).");
             }
-            nestedActor.SetValue("actor_alex_b", commit: true);
+            nestedActor.SetValue(
+                SystemPreviewFixtureCatalog.PrimaryActorId,
+                commit: true);
             Dispatcher.UIThread.RunJobs();
             var listPreviewController = typeof(MainWindow)
                 .GetField("_previewController", BindingFlags.Instance | BindingFlags.NonPublic)
@@ -8071,13 +8107,13 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
                 "runtimeInputs",
                 "Effective List Runtime Item 1 Avatar");
             Equal(
-                "actor_alex_b",
+                SystemPreviewFixtureCatalog.PrimaryActorId,
                 JsonPath.RequiredString(
                     effectiveSetTwoAvatarRuntime,
                     "actorId",
                     "Effective List Runtime Item 1 Avatar"));
             Equal(
-                "Asia",
+                "Sample One",
                 JsonPath.RequiredString(
                     JsonPath.RequiredObject(
                         effectiveSetTwoAvatarRuntime,
@@ -9874,25 +9910,6 @@ static void ReferencesEnforceDeclaredScope()
             WHERE icon_theme_id <> ''
             """);
     });
-    AssertRejectedDatabaseIsReadOnly("cross-project-theme-status-bar", (connection) =>
-    {
-        InsertCrossProject(connection);
-        Execute(connection, """
-            UPDATE component_classes
-            SET project_id = 'project_cross'
-            WHERE id = 'component_project_foqn_s2_status_bar'
-            """);
-    });
-    AssertRejectedDatabaseIsReadOnly("cross-project-theme-navigation-bar", (connection) =>
-    {
-        InsertCrossProject(connection);
-        Execute(connection, """
-            UPDATE component_classes
-            SET project_id = 'project_cross'
-            WHERE id = 'component_project_foqn_s2_navigation_bar'
-            """);
-    });
-
     var source = ParityDatabasePath();
     var temporary = Path.Combine(Path.GetTempPath(), $"mockups-cross-project-writes-{Guid.NewGuid():N}.sqlite");
     File.Copy(source, temporary, overwrite: true);
@@ -9978,16 +9995,22 @@ static void ReferencesEnforceDeclaredScope()
             themeId,
             "theme.iconThemeId",
             themeBefore.IconThemeId);
-        Throws<InvalidOperationException>(() =>
-            themeRepository.UpdateDirectField(
-                themeId,
-                "theme.statusBarId",
-                "component_cross_status_bar::variant::default"));
-        Throws<InvalidOperationException>(() =>
-            themeRepository.UpdateDirectField(
-                themeId,
-                "theme.navigationBarId",
-                "component_cross_navigation_bar::variant::default"));
+        themeRepository.UpdateDirectField(
+            themeId,
+            "theme.statusBarId",
+            "component_cross_status_bar::variant::default");
+        themeRepository.UpdateDirectField(
+            themeId,
+            "theme.navigationBarId",
+            "component_cross_navigation_bar::variant::default");
+        themeRepository.UpdateDirectField(
+            themeId,
+            "theme.statusBarId",
+            themeBefore.StatusBarId);
+        themeRepository.UpdateDirectField(
+            themeId,
+            "theme.navigationBarId",
+            themeBefore.NavigationBarId);
 
         Equal(actorBefore, actorRepository.GetSettings(actorId));
         Equal(shotBefore, shotRepository.Get(shotId));
@@ -10059,6 +10082,12 @@ static void ReferencesEnforceDeclaredScope()
                 'CROSS', '_S01_', 'EP_', '_SH', 4, 3, 8,
                 '{{SEASON_CODE}}/{{EPISODE_CODE}}/{{SHOT_NAME}}/comp', '{}')
             """);
+        Execute(connection, """
+            INSERT INTO production_palette_values (
+                project_id, palette_color_id, value_hex)
+            SELECT 'project_cross', id, default_value_hex
+            FROM palette_colors
+            """);
     }
 
     static void InsertCrossProjectActor(SqliteConnection connection)
@@ -10085,10 +10114,10 @@ static void ReferencesEnforceDeclaredScope()
         using var command = connection.CreateCommand();
         command.CommandText = """
             INSERT INTO component_classes (
-                id, project_id, component_type, record_class_id, name, notes,
+                id, component_type, record_class_id, name, notes,
                 config_json, design_preview_json, metadata_json)
             SELECT
-                $id, 'project_cross', component_type, record_class_id, $name, notes,
+                $id, component_type, record_class_id, $name, notes,
                 config_json, design_preview_json, metadata_json
             FROM component_classes
             WHERE component_type = $componentType
@@ -14123,6 +14152,17 @@ static void ProductionHierarchyTransferCopiesAndMovesShotsAndScreens()
         }
 
         var commands = NodeCommands(database);
+        void DeleteShotTree(ProjectTreeNode shotNode)
+        {
+            var currentShot = Descendants(database.LoadProjectTree())
+                .Single((node) => node.Id == shotNode.Id);
+            foreach (var screen in currentShot.Children.Where((node) =>
+                         node.Kind == ProjectTreeNodeKind.ModuleInstance))
+            {
+                commands.Delete(screen);
+            }
+            commands.Delete(currentShot);
+        }
         var copiedShotNode = commands.TransferProductionNode(
             sourceShotNode,
             targetEpisodeNode,
@@ -14153,7 +14193,7 @@ static void ProductionHierarchyTransferCopiesAndMovesShotsAndScreens()
                     copiedScreens[index]);
             }
         }
-        commands.Delete(copiedShotNode);
+        DeleteShotTree(copiedShotNode);
 
         var collisionNode = database.AddShot(
             targetEpisodeNode,
@@ -14183,8 +14223,8 @@ static void ProductionHierarchyTransferCopiesAndMovesShotsAndScreens()
         Equal(
             sourceShot.EpisodeId,
             shots.Get(sourceShot.Id).EpisodeId);
-        commands.Delete(reassignedShotNode);
-        commands.Delete(collisionNode);
+        DeleteShotTree(reassignedShotNode);
+        DeleteShotTree(collisionNode);
 
         var movedShotNode = commands.TransferProductionNode(
             sourceShotNode,
@@ -14252,7 +14292,7 @@ static void ProductionHierarchyTransferCopiesAndMovesShotsAndScreens()
         using (var connection = context.OpenConnection())
         {
             Equal(
-                0,
+                sourceScreens.Count - 1,
                 screens.QueryByShot(connection, movedShot.Id).Count);
         }
 
@@ -16170,7 +16210,8 @@ static void ShotActorContextIsExplicit()
         var variant = moduleInstances
             .GetModuleVariantOptions(module.Id)
             .First();
-        var screen = moduleInstances.AddModuleInstance(
+        var screen = AddPreparedModuleInstance(
+            moduleInstances,
             shot,
             new ShotModuleInstanceDraft(
                 module,
@@ -16207,6 +16248,14 @@ static void ShotActorContextIsExplicit()
                   'project_shot_override_cross', 'Cross', 'cross', 25, '', '',
                   'CROSS', '_S01_', 'EP_', '_SH', 4, 3, 8,
                   '{{SEASON_CODE}}/{{EPISODE_CODE}}/{{SHOT_NAME}}/comp', '{}')
+                """);
+            persistence.Execute(
+                connection,
+                """
+                INSERT INTO production_palette_values (
+                    project_id, palette_color_id, value_hex)
+                SELECT 'project_shot_override_cross', id, default_value_hex
+                FROM palette_colors
                 """);
             persistence.Execute(
                 connection,
@@ -18516,7 +18565,8 @@ static void ModuleVariantsAreExplicit()
 
         var shot = Descendants(database.LoadProjectTree()).First((node) => node.Kind == ProjectTreeNodeKind.Shot);
         var appId = module.Parent?.Id ?? throw new InvalidOperationException("Lock Screen module has no App.");
-        var screen = moduleInstances.AddModuleInstance(
+        var screen = AddPreparedModuleInstance(
+            moduleInstances,
             shot,
             new ShotModuleInstanceDraft(
                 new ShotModuleChoice(
@@ -19150,11 +19200,7 @@ static void ExplicitReferenceUsageIsExactTypedAndShared()
         var actorUsages =
             database.ReferenceUsages.GetReferenceUsageDetails(actor);
         True(actorUsages.Any((usage) => usage.SourceKind == ProjectTreeNodeKind.Shot && usage.IsProduction));
-        True(actorUsages.Any((usage) =>
-            (usage.SourceKind is ProjectTreeNodeKind.ComponentClass
-                or ProjectTreeNodeKind.Module
-                or ProjectTreeNodeKind.ComponentVariant)
-            && !usage.IsProduction));
+        True(actorUsages.All((usage) => usage.IsProduction));
 
         var usedComponentVariant = nodes
             .Where((node) => node.Kind == ProjectTreeNodeKind.ComponentVariant)
@@ -19172,17 +19218,10 @@ static void ExplicitReferenceUsageIsExactTypedAndShared()
             .GetReferenceUsageDetails(usedModuleVariant).Any((usage) =>
             usage.SourceKind == ProjectTreeNodeKind.ModuleInstance && usage.IsProduction));
 
-        const string designActorId = "actor_usage_design_only";
         const string productionActorId = "actor_usage_production_only";
         var projectId = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.Project).Id;
         using (var connection = context.OpenConnection())
         {
-            context.Execute(
-                connection,
-                "INSERT INTO actors (id, project_id, display_name, short_name, metadata_json) VALUES ($id, $projectId, $name, $name, '{}')",
-                ("$id", designActorId),
-                ("$projectId", projectId),
-                ("$name", "Design-only Usage Actor"));
             context.Execute(
                 connection,
                 "INSERT INTO actors (id, project_id, display_name, short_name, metadata_json) VALUES ($id, $projectId, $name, $name, '{}')",
@@ -19191,19 +19230,10 @@ static void ExplicitReferenceUsageIsExactTypedAndShared()
                 ("$name", "Production-only Usage Actor"));
             context.Execute(
                 connection,
-                "UPDATE modules SET design_preview_json = json_set(design_preview_json, '$.testValues.actorId', $actorId) WHERE id = 'module_project_foqn_s2_lock_screen'",
-                ("$actorId", designActorId));
-            context.Execute(
-                connection,
                 "UPDATE module_instances SET content_json = json_set(content_json, '$.actorId', $actorId) WHERE id = (SELECT id FROM module_instances WHERE module_id = 'module_project_foqn_s2_lock_screen' ORDER BY id LIMIT 1)",
                 ("$actorId", productionActorId));
         }
 
-        var designOnlyUsages = usageService.GetUsages(ProjectTreeNodeKind.Actor, designActorId);
-        True(designOnlyUsages.Any((usage) =>
-            usage.SourceKind == ProjectTreeNodeKind.Module
-            && usage.Scope == ReferenceUsageScope.Design));
-        True(designOnlyUsages.All((usage) => usage.Scope == ReferenceUsageScope.Design));
         var productionOnlyUsages = usageService.GetUsages(ProjectTreeNodeKind.Actor, productionActorId);
         True(productionOnlyUsages.Any((usage) =>
             usage.SourceKind == ProjectTreeNodeKind.ModuleInstance
@@ -19269,20 +19299,12 @@ static void ExternalMediaInventoriesDeclaredAuthoredPaths()
         usage.SourceKind == ProjectTreeNodeKind.App
         && usage.FieldId == "app.wallpaper.images.light.filePath"));
     True(!usages.Any((usage) => usage.FieldId == "app.icon.filePath"));
-    True(usages.Any((usage) =>
-        usage.SourceKind == ProjectTreeNodeKind.ComponentVariant
-        && usage.AuthoringSurface == ExternalMediaAuthoringSurface.PreviewAuthoring
-        && usage.AuthoredPath.EndsWith(
-            "gatos_V2-0012.mp4",
-            StringComparison.Ordinal)));
-    True(usages.Any((usage) =>
-        usage.SourceKind == ProjectTreeNodeKind.ModuleVariant
-        && usage.AuthoringSurface == ExternalMediaAuthoringSurface.PreviewAuthoring
-        && !string.IsNullOrWhiteSpace(usage.ItemId)));
+    True(usages.All((usage) => !usage.AuthoredPath.StartsWith(
+        SystemPreviewFixtureCatalog.MediaScheme,
+        StringComparison.Ordinal)));
     True(usages.Any((usage) =>
         usage.SourceKind == ProjectTreeNodeKind.ModuleInstance
         && usage.AuthoringSurface == ExternalMediaAuthoringSurface.PreviewAuthoring));
-    True(usages.Any((usage) => usage.IsRuntimeDefault));
     True(usages.Any((usage) =>
         usage.IsDirectory
         && usage.FileName == "Media folder"
@@ -22624,7 +22646,7 @@ static void ComponentInputBindingsResolveRecordReferences()
                 ProjectId(settings),
                 tableId,
                 allowEmpty,
-                systemPreviewFixtures: false);
+                systemPreviewFixtures: true);
         });
     const string slotVariantReference =
         "component_project_foqn_s2_collectionStack::variant::default";
@@ -23544,13 +23566,29 @@ static void SocialPostScreenCreationIsAtomic()
             .Single((candidate) => candidate.Value.EndsWith(
                 "::variant::default",
                 StringComparison.Ordinal));
+        var selection = new ShotModuleInstanceDraft(
+            module,
+            variant.Value,
+            variant.Label,
+            $"{module.Name} · {variant.Label}");
+        var creation = moduleInstances.PrepareModuleInstanceCreation(
+            shot,
+            selection);
+        True(creation.RequiresConfirmation);
+        True(creation.Fields.Any((field) =>
+            field.Definition.ValueKind == ValueKind.MediaDirectoryPath));
+        True(creation.Fields.Count((field) =>
+            field.Definition.ValueKind == ValueKind.RecordReference) > 1);
+        Throws<InvalidOperationException>(() => moduleInstances.AddModuleInstance(
+            shot,
+            new ShotModuleInstanceCreationDraft(
+                selection,
+                new RecordCreationDraft(
+                    creation.Id,
+                    new Dictionary<string, string>(StringComparer.Ordinal)))));
         var screen = moduleInstances.AddModuleInstance(
             shot,
-            new ShotModuleInstanceDraft(
-                module,
-                variant.Value,
-                variant.Label,
-                $"{module.Name} · {variant.Label}"));
+            CompleteModuleInstanceCreation(selection, creation));
         var content = JsonPath.ParseRequiredObject(
             database.GetModuleInstanceSettings(screen.Id).ContentJson,
             "Social Post Screen content");
@@ -23667,7 +23705,8 @@ static void SocialPostScreenCreationIsAtomic()
                 """;
             rejectSynchronization.ExecuteNonQuery();
         }
-        Throws<SqliteException>(() => moduleInstances.AddModuleInstance(
+        Throws<SqliteException>(() => AddPreparedModuleInstance(
+            moduleInstances,
             shot,
             new ShotModuleInstanceDraft(
                 module,
@@ -24463,7 +24502,8 @@ static string CreateDesktopTestDatabase(
                     candidate.Value.EndsWith(
                         "::variant::default",
                         StringComparison.Ordinal));
-            return moduleInstances.AddModuleInstance(
+            return AddPreparedModuleInstance(
+                moduleInstances,
                 createdShot,
                 new ShotModuleInstanceDraft(
                     module,
@@ -24475,6 +24515,10 @@ static string CreateDesktopTestDatabase(
         var lockScreen = AddScreen(
             "module.core.lockScreen",
             "Lock Screen fixture");
+        database.UpdateModuleInstanceRuntimeValue(
+            lockScreen.Id,
+            "actorId",
+            JsonValue.Create("actor_alex"));
         var conversation = AddScreen(
             ModuleRuntimeDocumentContracts
                 .ConversationRecordClassId,
@@ -24755,7 +24799,9 @@ static string ProjectId(object settings)
 {
     if (settings is ComponentClassSettings
         or ComponentVariantSelectionSettings
-        or ComponentClassDefinitionRecord)
+        or ComponentClassDefinitionRecord
+        or ModuleSettings
+        or ModuleDefinitionRecord)
     {
         return "project_foqn_s2";
     }

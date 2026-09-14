@@ -60,12 +60,10 @@ function inventory(
 ): ComponentScaffoldInventory {
   return {
     componentTypes: new Set(["label", "surface"]),
-    projectIds: new Set(["project_foqn_s2"]),
     recordClassIds: new Set(["component.label", "component.surface"]),
     componentClasses: [
       {
         id: "component_project_foqn_s2_label",
-        projectId: "project_foqn_s2",
         componentType: "label",
         recordClassId: "component.label",
         name: "Label",
@@ -99,7 +97,6 @@ function validSpec(): ComponentScaffoldSpec {
     componentType: "scaffoldFixture",
     category: "atom",
     componentClassId: "component_project_foqn_s2_scaffold_fixture",
-    projectId: "project_foqn_s2",
     recordClassId: "component.scaffoldFixture",
     name: "Scaffold Fixture",
     notes: "Disposable contract used only by scaffolding tests.",
@@ -154,13 +151,15 @@ test("Authored Component scaffold contract produces a deterministic read-only ow
   );
   assert.deepEqual(first.manifestEntry.embeds, []);
   assert.equal(first.registryRoute.mode, "simple");
+  const metadata = first.persistedDefinition.row.metadata_json as {
+    variants: Array<{ id?: unknown }>;
+  };
   assert.equal(
-    first.persistedDefinition.row.metadata_json.variants?.[0]
-      && (first.persistedDefinition.row.metadata_json.variants[0] as { id?: unknown }).id,
+    metadata.variants[0]?.id,
     "default",
   );
   assert.equal(
-    (first.persistedDefinition.row.metadata_json.variants as unknown[]).length,
+    metadata.variants.length,
     1,
   );
   assert.equal(first.editorLayout.row.record_class_id, "component.scaffoldFixture");
@@ -441,19 +440,15 @@ test("Component scaffold inventory opens the database read-only", () => {
   try {
     const database = new Database(databasePath);
     database.exec(`
-      CREATE TABLE projects (id TEXT PRIMARY KEY);
       CREATE TABLE component_classes (
         id TEXT PRIMARY KEY,
-        project_id TEXT NOT NULL,
         component_type TEXT NOT NULL,
         record_class_id TEXT NOT NULL,
         name TEXT NOT NULL
       );
       CREATE TABLE editor_layouts (record_class_id TEXT PRIMARY KEY);
-      INSERT INTO projects VALUES ('project_fixture');
       INSERT INTO component_classes VALUES (
         'component_project_fixture_label',
-        'project_fixture',
         'label',
         'component.label',
         'Label'
@@ -466,7 +461,6 @@ test("Component scaffold inventory opens the database read-only", () => {
     const loaded = loadComponentScaffoldInventory(repositoryRoot, databasePath);
 
     assert.equal(sha256(databasePath), before);
-    assert.ok(loaded.projectIds.has("project_fixture"));
     assert.ok(loaded.componentTypes.has("label"));
     assert.ok(loaded.recordClassIds.has("component.label"));
     assert.ok(loaded.valueKinds.has("ComponentVariantSlot"));
@@ -769,12 +763,8 @@ function prepareIntegrationFixture(
   const database = new Database(databasePath);
   try {
     database.exec(`
-      CREATE TABLE projects (
-        id TEXT PRIMARY KEY
-      );
       CREATE TABLE component_classes (
         id TEXT PRIMARY KEY,
-        project_id TEXT NOT NULL,
         component_type TEXT NOT NULL,
         record_class_id TEXT NOT NULL,
         name TEXT NOT NULL,
@@ -787,7 +777,6 @@ function prepareIntegrationFixture(
         record_class_id TEXT PRIMARY KEY,
         layout_json TEXT NOT NULL
       );
-      INSERT INTO projects VALUES ('project_foqn_s2');
     `);
   } finally {
     database.close();

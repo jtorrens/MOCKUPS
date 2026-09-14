@@ -436,9 +436,12 @@ public interface IModuleInstanceAnimationStore
 
 public interface IModuleInstanceCollectionStore
 {
-    EditorShell.ProjectTreeNode AddModuleInstance(
+    EditorShell.RecordCreationDefinition PrepareModuleInstanceCreation(
         EditorShell.ProjectTreeNode shot,
         ShotModuleInstanceDraft draft);
+    EditorShell.ProjectTreeNode AddModuleInstance(
+        EditorShell.ProjectTreeNode shot,
+        ShotModuleInstanceCreationDraft draft);
     void Delete(EditorShell.ProjectTreeNode node);
     EditorShell.ProjectTreeNode Duplicate(EditorShell.ProjectTreeNode node);
     void MoveModuleInstance(string moduleInstanceId, int offset);

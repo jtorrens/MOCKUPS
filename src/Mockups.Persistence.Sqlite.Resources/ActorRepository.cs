@@ -47,7 +47,8 @@ internal sealed class ActorRepository : IActorRepository
                     settings.ProjectId,
                     ProjectReferenceKind.Theme,
                     value,
-                    $"Actor '{actorId}' default Theme");
+                    $"Actor '{actorId}' default Theme",
+                    required: true);
                 _context.Execute(connection, "UPDATE actors SET default_theme_id = $value WHERE id = $id", ("$id", actorId), ("$value", value));
                 return;
         }

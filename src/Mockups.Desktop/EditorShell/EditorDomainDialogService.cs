@@ -17,6 +17,7 @@ internal sealed class EditorDomainDialogService
     private readonly Func<bool> _isDark;
     private readonly Func<string, string, Task> _showInfo;
     private readonly Func<Task<string?>> _browseSvgFile;
+    private readonly Func<string, ValueKind, Task<string?>> _browsePath;
     private readonly Action<ProjectTreeNode> _reloadAndSelect;
 
     public EditorDomainDialogService(
@@ -28,6 +29,7 @@ internal sealed class EditorDomainDialogService
         Func<bool> isDark,
         Func<string, string, Task> showInfo,
         Func<Task<string?>> browseSvgFile,
+        Func<string, ValueKind, Task<string?>> browsePath,
         Action<ProjectTreeNode> reloadAndSelect)
     {
         _owner = owner;
@@ -38,6 +40,7 @@ internal sealed class EditorDomainDialogService
         _isDark = isDark;
         _showInfo = showInfo;
         _browseSvgFile = browseSvgFile;
+        _browsePath = browsePath;
         _reloadAndSelect = reloadAndSelect;
     }
 
@@ -93,12 +96,35 @@ internal sealed class EditorDomainDialogService
             height: 250);
     }
 
-    public Task<ShotModuleInstanceDraft?> DefineModuleInstanceForShot(string shotId)
+    public async Task<ShotModuleInstanceCreationDraft?> DefineModuleInstanceForShot(string shotId)
     {
-        return new ShotModulePickerDialog(
+        var selection = await new ShotModulePickerDialog(
             _owner,
             _moduleInstances,
             _operations).Show(shotId);
+        if (selection is null) return null;
+        var shot = new ProjectTreeNode(
+            ProjectTreeNodeKind.Shot,
+            shotId,
+            "Shot",
+            "",
+            ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Shot));
+        var definition = await _operations.ExecuteWithActivityAsync(
+            "Preparing Screen Runtime Inputs…",
+            () => _moduleInstances.PrepareModuleInstanceCreation(shot, selection));
+        var runtimeValues = definition.RequiresConfirmation
+            ? await new RecordCreationDialog(
+                _owner,
+                new DictionaryFieldServices(BrowsePath: _browsePath)).Show(definition)
+            : new RecordCreationDraft(
+                definition.Id,
+                definition.Fields.ToDictionary(
+                    (field) => field.Definition.Id,
+                    (field) => field.Value,
+                    StringComparer.Ordinal));
+        return runtimeValues is null
+            ? null
+            : new ShotModuleInstanceCreationDraft(selection, runtimeValues);
     }
 
     public Task<bool> ConfirmModuleInstanceDelete(ProjectTreeNode node)

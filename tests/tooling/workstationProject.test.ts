@@ -45,9 +45,22 @@ test("one maintenance cycle snapshots only the canonical workstation database", 
   const repository = path.join(temporary, "repository");
   const workstation = path.join(temporary, "workstation");
   mkdirSync(path.join(repository, "data"), { recursive: true });
-  mkdirSync(path.join(repository, "assets"), { recursive: true });
+  mkdirSync(
+    path.join(repository, "assets", "system", "preview-fixtures"),
+    { recursive: true },
+  );
   writeFileSync(path.join(repository, "data", "mockups.sqlite"), "initial");
   writeFileSync(path.join(repository, "assets", "fixture.txt"), "asset");
+  writeFileSync(
+    path.join(
+      repository,
+      "assets",
+      "system",
+      "preview-fixtures",
+      "manifest.json",
+    ),
+    "{}\n",
+  );
   try {
     const paths = bootstrapWorkstationProject(repository, workstation, () => {});
     assert.equal(readFileSync(paths.workstationDatabase, "utf8"), "initial");

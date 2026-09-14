@@ -73,8 +73,8 @@ test("Incoming Call Notification consumes exact Avatar and Icon Row Runtime cont
   source.designPreviewJson = JSON.stringify(preview);
 
   const resolved = resolveIncomingCallNotificationComponent(source);
-  assert.equal(resolved.avatar.actor.displayName, "Alex");
-  assert.equal(resolved.avatar.labelSlot.label?.text, "Alex");
+  assert.equal(resolved.avatar.actor.displayName, "Sample One");
+  assert.equal(resolved.avatar.labelSlot.label?.text, "Sample One");
   assert.equal(resolved.avatar.labelSlot.label?.subtext, "WhatsApp audio");
   assert.equal(resolved.iconRow.items[1]?.button.iconToken, "phone_in_talk");
   assert.equal(resolved.iconRow.items[1]?.button.pressed, true);

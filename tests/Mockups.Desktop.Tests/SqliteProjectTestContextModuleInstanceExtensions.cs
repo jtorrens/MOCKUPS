@@ -92,7 +92,7 @@ internal static class SqliteProjectTestContextModuleInstanceExtensions
     internal static ProjectTreeNode AddModuleInstance(
         this SqliteProjectTestContext engine,
         ProjectTreeNode shot,
-        ShotModuleInstanceDraft draft) =>
+        ShotModuleInstanceCreationDraft draft) =>
         engine.ModuleInstanceCollection.AddModuleInstance(
             shot,
             draft);

@@ -497,40 +497,47 @@ internal sealed partial class SqliteProductionOwner
         }
     }
 
-    internal ProjectTreeNode AddModuleInstance(
+    internal RecordCreationDefinition PrepareModuleInstanceCreation(
         SqliteConnection connection,
         ProjectTreeNode shot,
         ShotModuleInstanceDraft draft,
-        IReadOnlySet<string> projectActorIds)
+        IReadOnlyList<FieldOption> actorOptions)
     {
-        if (shot.Kind != ProjectTreeNodeKind.Shot)
-        {
-            throw new InvalidOperationException(
-                "A module instance can only be added to a Shot.");
-        }
+        RequireModuleInstanceSelection(shot, draft);
+        var metadata = ModuleInstanceMetadata(draft);
+        var contract = ResolveModuleInstanceContract(
+            draft.Module.Id,
+            metadata.ToJsonString());
+        var content = RuntimeInputDocumentContract.CreateContentForContract(
+            new JsonObject(),
+            contract);
+        var moduleSettings = _moduleVariantCatalog.GetModuleSettings(
+            draft.Module.Id);
+        var config = ParseJsonObject(moduleSettings.ConfigJson);
+        var runtime = RuntimePreviewDocumentContract.PrepareRuntime(
+            ParseJsonObject(moduleSettings.DesignPreviewJson),
+            config,
+            content,
+            _componentVariantConfigCatalog.GetComponentVariantConfig);
+        return ProductionRuntimeCreationContract.Prepare(
+            ModuleInstanceCreationDefinitionId(draft),
+            content,
+            runtime,
+            config,
+            actorOptions);
+    }
 
+    internal ProjectTreeNode AddModuleInstance(
+        SqliteConnection connection,
+        ProjectTreeNode shot,
+        ShotModuleInstanceCreationDraft creation,
+        IReadOnlySet<string> projectActorIds,
+        IReadOnlyList<FieldOption> actorOptions)
+    {
+        var draft = creation.Selection;
+        RequireModuleInstanceSelection(shot, draft);
         var module = draft.Module;
-        if (!VariantReferenceId.TryParse(
-                draft.VariantReference,
-                out var variantModuleId,
-                out var variantId)
-            || !variantModuleId.Equals(
-                module.Id,
-                StringComparison.Ordinal)
-            || _moduleVariantCatalog.GetModuleVariants(module.Id)
-                .All((variant) => variant.Id != variantId))
-        {
-            throw new InvalidOperationException(
-                "The selected Variant does not belong to the selected Module.");
-        }
-
         var requestedName = draft.Name.Trim();
-        if (requestedName.Length == 0)
-        {
-            throw new InvalidOperationException(
-                "A Module Instance name is required.");
-        }
-
         var moduleSettings =
             _moduleVariantCatalog.GetModuleSettings(module.Id);
         var initialDuration =
@@ -542,18 +549,27 @@ internal sealed partial class SqliteProductionOwner
         var initialThemeId = _moduleInstanceThemeContextService.GetInitialThemeId(
             connection,
             shot.Id);
-        var metadata = new JsonObject
-        {
-            ["moduleVariantReference"] =
-                draft.VariantReference,
-        };
+        var metadata = ModuleInstanceMetadata(draft);
         var contract = ResolveModuleInstanceContract(
             module.Id,
             metadata.ToJsonString());
-        var content =
+        var initialContent =
             RuntimeInputDocumentContract.CreateContentForContract(
                 new JsonObject(),
                 contract);
+        var moduleConfig = ParseJsonObject(moduleSettings.ConfigJson);
+        var initialRuntime = RuntimePreviewDocumentContract.PrepareRuntime(
+            ParseJsonObject(moduleSettings.DesignPreviewJson),
+            moduleConfig,
+            initialContent,
+            _componentVariantConfigCatalog.GetComponentVariantConfig);
+        var content = ProductionRuntimeCreationContract.Complete(
+            ModuleInstanceCreationDefinitionId(draft),
+            initialContent,
+            initialRuntime,
+            moduleConfig,
+            actorOptions,
+            creation.RuntimeValues);
         RuntimeInputDocumentContract.ValidateCurrentCollections(
             contract,
             content,
@@ -567,6 +583,15 @@ internal sealed partial class SqliteProductionOwner
             $"New Module Instance '{module.Id}' content_json",
             content,
             projectActorIds);
+        var effectiveRuntime = RuntimePreviewDocumentContract.PrepareRuntime(
+            ParseJsonObject(moduleSettings.DesignPreviewJson),
+            moduleConfig,
+            content,
+            _componentVariantConfigCatalog.GetComponentVariantConfig);
+        ProductionRuntimeFixtureIsolationContract.Validate(
+            effectiveRuntime,
+            moduleConfig,
+            $"New Module Instance '{module.Id}'");
 
         lock (WriteGate)
         {
@@ -631,6 +656,42 @@ internal sealed partial class SqliteProductionOwner
                 shot);
         }
     }
+
+    private void RequireModuleInstanceSelection(
+        ProjectTreeNode shot,
+        ShotModuleInstanceDraft draft)
+    {
+        if (shot.Kind != ProjectTreeNodeKind.Shot)
+        {
+            throw new InvalidOperationException(
+                "A module instance can only be added to a Shot.");
+        }
+        if (!VariantReferenceId.TryParse(
+                draft.VariantReference,
+                out var variantModuleId,
+                out var variantId)
+            || !variantModuleId.Equals(draft.Module.Id, StringComparison.Ordinal)
+            || _moduleVariantCatalog.GetModuleVariants(draft.Module.Id)
+                .All((variant) => variant.Id != variantId))
+        {
+            throw new InvalidOperationException(
+                "The selected Variant does not belong to the selected Module.");
+        }
+        if (string.IsNullOrWhiteSpace(draft.Name))
+        {
+            throw new InvalidOperationException(
+                "A Module Instance name is required.");
+        }
+    }
+
+    private static JsonObject ModuleInstanceMetadata(ShotModuleInstanceDraft draft) =>
+        new()
+        {
+            ["moduleVariantReference"] = draft.VariantReference,
+        };
+
+    private static string ModuleInstanceCreationDefinitionId(ShotModuleInstanceDraft draft) =>
+        $"screen-runtime:{draft.Module.Id}:{draft.VariantReference}";
 
     private void SaveModuleInstanceRuntimeContent(
         SqliteConnection connection,

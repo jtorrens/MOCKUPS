@@ -109,9 +109,14 @@ internal sealed class SqliteModuleInstanceCollectionPort(
     SqliteModuleInstanceCollectionStore target)
     : IModuleInstanceCollectionStore
 {
-    public ProjectTreeNode AddModuleInstance(
+    public RecordCreationDefinition PrepareModuleInstanceCreation(
         ProjectTreeNode shot,
         ShotModuleInstanceDraft draft) =>
+        target.PrepareModuleInstanceCreation(shot, draft);
+
+    public ProjectTreeNode AddModuleInstance(
+        ProjectTreeNode shot,
+        ShotModuleInstanceCreationDraft draft) =>
         target.AddModuleInstance(shot, draft);
 
     public void Delete(ProjectTreeNode node) =>

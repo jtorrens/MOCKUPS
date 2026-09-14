@@ -92,6 +92,10 @@ public sealed record ShotModuleInstanceDraft(
     string VariantName,
     string Name);
 
+public sealed record ShotModuleInstanceCreationDraft(
+    ShotModuleInstanceDraft Selection,
+    RecordCreationDraft RuntimeValues);
+
 public sealed record ModuleInstanceSettings(
     string ShotId,
     string AppId,

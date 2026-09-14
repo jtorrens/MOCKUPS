@@ -12,7 +12,7 @@ test("Call Participant uses the Variant status while a track is connecting", () 
   const participant = resolveCallParticipantComponent(source);
   assert.equal(participant.videoPresent, false);
   assert.equal(participant.statusLabel.text, "Connecting…");
-  assert.equal(participant.avatar.actor.displayName, "Alex");
+  assert.equal(participant.avatar.actor.displayName, "Sample One");
   const node = callParticipantComponentToRenderable(source, participant, { x: 0, y: 0, width: 360, height: 360 });
   assert.ok(node.children?.some(child => child.id === "component.callParticipant.avatar"));
   assert.ok(node.children?.some(child => child.id === "component.callParticipant.status"));
