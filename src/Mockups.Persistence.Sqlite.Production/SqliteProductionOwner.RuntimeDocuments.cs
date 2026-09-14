@@ -401,25 +401,20 @@ internal sealed partial class SqliteProductionOwner
                     moduleInstanceId,
                     NumericText.Int32(value, 0));
                 return;
-            case "moduleInstance.themeOverrideId":
+            case "moduleInstance.themeId":
                 var resourceInstance = _moduleInstanceRepository.Get(connection, moduleInstanceId);
                 var resourceShot = _shotRepository.Get(connection, resourceInstance.ShotId);
-                var inherited = value == "inherited";
-                if (!inherited)
-                {
-                    ProjectReferenceIntegrity.RequireSameProjectReference(
-                        connection,
-                        resourceShot.ProjectId,
-                        ProjectReferenceKind.Theme,
-                        value,
-                        $"Screen '{moduleInstanceId}' Theme override",
-                        required: true);
-                }
-                _moduleInstanceRepository.UpdateResourceOverride(
+                ProjectReferenceIntegrity.RequireSameProjectReference(
+                    connection,
+                    resourceShot.ProjectId,
+                    ProjectReferenceKind.Theme,
+                    value,
+                    $"Screen '{moduleInstanceId}' Theme",
+                    required: true);
+                _moduleInstanceRepository.UpdateTheme(
                     connection,
                     moduleInstanceId,
-                    "theme_override_id",
-                    inherited ? null : value);
+                    value);
                 return;
             case "moduleInstance.variant":
                 UpdateModuleInstanceVariant(
@@ -535,7 +530,7 @@ internal sealed partial class SqliteProductionOwner
         var initialDurationPolicy = RuntimeDurationContract.FormatPolicy(
             RuntimeDurationContract.Policy(
                 moduleSettings.DesignPreviewJson));
-        _moduleInstanceThemeContextService.RequireShotContext(
+        var initialThemeId = _moduleInstanceThemeContextService.GetInitialThemeId(
             connection,
             shot.Id);
         var metadata = new JsonObject
@@ -603,7 +598,7 @@ internal sealed partial class SqliteProductionOwner
                     initialDurationPolicy,
                     0,
                     "{}",
-                    null,
+                    initialThemeId,
                     content.ToJsonString(),
                     "{}",
                     DefaultModuleAnimationJson(),

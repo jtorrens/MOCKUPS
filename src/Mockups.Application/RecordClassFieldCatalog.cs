@@ -279,11 +279,11 @@ public static class RecordClassFieldCatalog
                 OverrideRecordClassId: "device",
                 OverrideDocumentFieldId: "moduleInstance.deviceOverrides",
                 OverrideFieldIds: DeviceSettingsFieldContract.ScreenOverrideableFieldIds)),
-        ["moduleInstance.themeOverrideId"] = new(
-            "moduleInstance.themeOverrideId",
-            "Theme override",
+        ["moduleInstance.themeId"] = new(
+            "moduleInstance.themeId",
+            "Theme",
             ValueKind.RecordReference,
-            RecordReference: new RecordReferenceDefinition("themes", AllowEmpty: true)),
+            RecordReference: new RecordReferenceDefinition("themes")),
         ["moduleInstance.durationPolicy"] = new(
             "moduleInstance.durationPolicy",
             "Duration mode",

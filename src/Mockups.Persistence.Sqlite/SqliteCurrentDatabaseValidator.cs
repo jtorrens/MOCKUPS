@@ -960,22 +960,19 @@ internal sealed partial class SqliteCurrentDatabaseValidator
             "Shot with blank Device override");
         RequireNoRows(
             connection,
-            "SELECT 1 FROM module_instances WHERE theme_override_id = ''",
-            "Screen with blank Theme override");
+            "SELECT 1 FROM module_instances WHERE theme_id = ''",
+            "Screen with blank Theme");
         RequireNoRows(
             connection,
             """
             SELECT 1
             FROM module_instances mi
             JOIN shots s ON s.id = mi.shot_id
-            LEFT JOIN actors actor ON actor.id = s.owner_actor_id
-            LEFT JOIN themes t
-              ON t.id = COALESCE(mi.theme_override_id, actor.default_theme_id)
-            WHERE s.owner_actor_id = '' OR actor.id IS NULL
-               OR COALESCE(mi.theme_override_id, actor.default_theme_id) = ''
-               OR t.id IS NULL
+            JOIN episodes e ON e.id = s.episode_id
+            LEFT JOIN themes t ON t.id = mi.theme_id AND t.project_id = e.project_id
+            WHERE mi.theme_id = '' OR t.id IS NULL
             """,
-            "module instance without explicit Shot owner Theme context");
+            "module instance without exact same-Project Theme");
         try
         {
             ProjectReferenceIntegrity.ValidateCurrentDatabase(connection);

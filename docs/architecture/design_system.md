@@ -40,10 +40,13 @@ control.
 A Production Screen receives Theme context only through its exact ownership:
 
 ```text
-Screen → Screen Theme override ?? (Shot → Shot owner Actor → Actor default Theme)
+Screen → exact Screen Theme
 ```
 
-There is no Theme inference from App, Module, Variant, label, order or type.
+The Shot Actor default Theme initializes a newly created Screen once. Changing
+that Actor default later does not change an existing Screen. There is no Theme
+inference or runtime fallback from Actor, App, Module, Variant, label, order or
+type.
 
 ## Component Classes
 

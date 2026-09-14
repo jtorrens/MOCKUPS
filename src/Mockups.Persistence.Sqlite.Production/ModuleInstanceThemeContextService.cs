@@ -28,10 +28,7 @@ internal sealed class ModuleInstanceThemeContextService : IModuleInstanceThemeCo
             FROM module_instances target
             JOIN shots s ON s.id = target.shot_id
             JOIN episodes e ON e.id = s.episode_id
-            JOIN actors actor ON actor.id = s.owner_actor_id AND actor.project_id = e.project_id
-            JOIN themes t
-              ON t.id = COALESCE(target.theme_override_id, actor.default_theme_id)
-             AND t.project_id = actor.project_id
+            JOIN themes t ON t.id = target.theme_id AND t.project_id = e.project_id
             WHERE target.id = $id
             """,
             ("$id", moduleInstanceId))
@@ -41,11 +38,21 @@ internal sealed class ModuleInstanceThemeContextService : IModuleInstanceThemeCo
         return tokensJson;
     }
 
-    public void RequireShotContext(SqliteConnection connection, string shotId)
+    public string GetInitialThemeId(SqliteConnection connection, string shotId)
     {
-        if (HasShotThemeContext(connection, shotId)) return;
-        throw new InvalidOperationException(
-            "Select a Shot owner Actor with an explicit default Theme before adding a Screen.");
+        return SqliteCommandExecutor.ScalarString(
+            connection,
+            """
+            SELECT actor.default_theme_id
+            FROM shots s
+            JOIN episodes e ON e.id = s.episode_id
+            JOIN actors actor ON actor.id = s.owner_actor_id AND actor.project_id = e.project_id
+            JOIN themes t ON t.id = actor.default_theme_id AND t.project_id = e.project_id
+            WHERE s.id = $shotId
+            """,
+            ("$shotId", shotId))
+            ?? throw new InvalidOperationException(
+                "Select a Shot owner Actor with an explicit default Theme before adding a Screen.");
     }
 
     public void RequireEpisodeActor(SqliteConnection connection, string episodeId, string actorId)
@@ -65,45 +72,6 @@ internal sealed class ModuleInstanceThemeContextService : IModuleInstanceThemeCo
             throw new InvalidOperationException(
                 "A Shot requires an owner Actor from the same Project.");
         }
-        if (!ShotHasModuleInstances(connection, shotId) || HasActorThemeContext(connection, actorId)) return;
-        throw new InvalidOperationException(
-            "A Shot containing Screens requires an owner Actor with an explicit default Theme.");
-    }
-
-    public void RequireActorThemeChange(
-        SqliteConnection connection,
-        string actorId,
-        string themeId)
-    {
-        if (!ActorOwnsModuleInstances(connection, actorId)) return;
-        if (ThemeBelongsToActorProject(connection, actorId, themeId)) return;
-        throw new InvalidOperationException(
-            "An Actor used as the owner of a Shot containing Screens requires an explicit default Theme.");
-    }
-
-    private static bool HasShotThemeContext(SqliteConnection connection, string shotId)
-    {
-        return SqliteCommandExecutor.ScalarLong(
-            connection,
-            """
-            SELECT COUNT(*)
-            FROM shots s
-            JOIN episodes e ON e.id = s.episode_id
-            JOIN actors actor ON actor.id = s.owner_actor_id AND actor.project_id = e.project_id
-            JOIN themes t
-              ON t.id = actor.default_theme_id
-             AND t.project_id = actor.project_id
-            WHERE s.id = $shotId
-            """,
-            ("$shotId", shotId)) == 1;
-    }
-
-    private static bool ShotHasModuleInstances(SqliteConnection connection, string shotId)
-    {
-        return SqliteCommandExecutor.ScalarLong(
-            connection,
-            "SELECT COUNT(*) FROM module_instances WHERE shot_id = $shotId",
-            ("$shotId", shotId)) > 0;
     }
 
     private static bool ActorBelongsToEpisodeProject(
@@ -141,46 +109,4 @@ internal sealed class ModuleInstanceThemeContextService : IModuleInstanceThemeCo
             ("$actorId", actorId)) == 1;
     }
 
-    private static bool HasActorThemeContext(SqliteConnection connection, string actorId)
-    {
-        return SqliteCommandExecutor.ScalarLong(
-            connection,
-            """
-            SELECT COUNT(*)
-            FROM actors actor
-            JOIN themes t ON t.id = actor.default_theme_id AND t.project_id = actor.project_id
-            WHERE actor.id = $actorId
-            """,
-            ("$actorId", actorId)) == 1;
-    }
-
-    private static bool ActorOwnsModuleInstances(SqliteConnection connection, string actorId)
-    {
-        return SqliteCommandExecutor.ScalarLong(
-            connection,
-            """
-            SELECT COUNT(*)
-            FROM module_instances mi
-            JOIN shots s ON s.id = mi.shot_id
-            WHERE s.owner_actor_id = $actorId
-            """,
-            ("$actorId", actorId)) > 0;
-    }
-
-    private static bool ThemeBelongsToActorProject(
-        SqliteConnection connection,
-        string actorId,
-        string themeId)
-    {
-        return SqliteCommandExecutor.ScalarLong(
-            connection,
-            """
-            SELECT COUNT(*)
-            FROM actors actor
-            JOIN themes t ON t.project_id = actor.project_id
-            WHERE actor.id = $actorId AND t.id = $themeId
-            """,
-            ("$actorId", actorId),
-            ("$themeId", themeId)) == 1;
-    }
 }

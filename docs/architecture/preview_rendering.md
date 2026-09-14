@@ -442,7 +442,7 @@ each Shot's frame rate, ordered Screen lanes, signed starts, exact effective
 frame ranges, shared transition Motion and duration, action-shifted keyframes
 and reference-video document, plus each Screen's action delay, action duration
 and Variant config. Each Shot carries its exact Actor and one
-effective Device; each Screen carries its effective Theme and sparse
+effective Device; each Screen carries its exact authored Theme and sparse
 non-geometric Device settings. The Screen document is applied only after the
 Shot Device is resolved. Gaps resolve to an empty alpha-zero frame and overlaps
 compose every active lane, painting the first/highest ordered lane last.

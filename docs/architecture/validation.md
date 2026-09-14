@@ -475,8 +475,8 @@ Database validation is read-only and confirms:
 - complete Component and Module Variants;
 - full reference formats and same-Project integrity through the same guard used
   by repository writes;
-- required Shot Actor, its nullable Device override and each Screen's nullable
-  Theme override with exact same-Project Production context;
+- required Shot Actor, its nullable Device override and each Screen's required
+  exact Theme with same-Project Production context;
 - strict Screen-local non-geometric Device override documents, rejection of
   geometry keys, per-field Restore, preservation across Shot Device changes and
   identical effective metrics in Preview and Render preparation;
@@ -524,7 +524,7 @@ For any editor or Preview change, exercise at least:
     manual behavior, broken-association errors and retained output folders on
     Shot deletion.
 14. Shot Render action on a pre-association Shot, Actor loaded before routing,
-    automatic route proposal, Shot Device and per-Screen Theme/visual overrides,
+    automatic route proposal, Shot Device and exact per-Screen Theme/visual overrides,
     Light/Dark/Both naming,
     manual job-start folder creation, managed missing-folder rejection, queue
     progress, cancel/retry/pause and output

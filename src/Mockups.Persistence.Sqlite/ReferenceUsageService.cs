@@ -237,7 +237,7 @@ internal sealed class ReferenceUsageService :
 
         using (var command = connection.CreateCommand())
         {
-            command.CommandText = "SELECT mi.id, mi.name, mi.shot_id, mi.app_id, mi.module_id, mi.metadata_json, mi.theme_override_id, e.project_id FROM module_instances mi JOIN shots s ON s.id = mi.shot_id JOIN episodes e ON e.id = s.episode_id";
+            command.CommandText = "SELECT mi.id, mi.name, mi.shot_id, mi.app_id, mi.module_id, mi.metadata_json, mi.theme_id, e.project_id FROM module_instances mi JOIN shots s ON s.id = mi.shot_id JOIN episodes e ON e.id = s.episode_id";
             using var reader = command.ExecuteReader();
             while (reader.Read())
             {
@@ -245,7 +245,7 @@ internal sealed class ReferenceUsageService :
                 AddExact(usages, targets, ProjectTreeNodeKind.Shot, reader.GetString(2), source, "Shot");
                 AddExact(usages, targets, ProjectTreeNodeKind.App, reader.GetString(3), source, "App");
                 AddExact(usages, targets, ProjectTreeNodeKind.Module, reader.GetString(4), source, "Module");
-                AddExact(usages, targets, ProjectTreeNodeKind.Theme, ReadString(reader, 6), source, "Theme override");
+                AddExact(usages, targets, ProjectTreeNodeKind.Theme, ReadString(reader, 6), source, "Theme");
                 var metadata = JsonPath.ParseRequiredObject(ReadString(reader, 5), $"Module Instance '{source.NodeId}' metadata_json");
                 AddExact(
                     usages,

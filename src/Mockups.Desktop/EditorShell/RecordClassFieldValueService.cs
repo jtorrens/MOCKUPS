@@ -157,18 +157,12 @@ internal sealed class RecordClassFieldValueService
         }
 
         if (node.Kind == ProjectTreeNodeKind.ModuleInstance
-            && field.Id is "moduleInstance.device" or "moduleInstance.themeOverrideId")
+            && field.Id == "moduleInstance.device")
         {
             var settings = _timeline.GetModuleInstanceSettings(node.Id);
             var shot = _production.GetShotSettings(settings.ShotId);
             var actor = _resources.GetActorSettings(shot.OwnerActorId);
-            var isDevice = field.Id == "moduleInstance.device";
-            var inheritedValue = isDevice
-                ? shot.EffectiveDeviceId(actor.DefaultDeviceId)
-                : actor.DefaultThemeId;
-            var localValue = isDevice
-                ? inheritedValue
-                : settings.ThemeOverrideId;
+            var inheritedValue = shot.EffectiveDeviceId(actor.DefaultDeviceId);
             var resourceOverrideResult = ValidateFieldValue(new FieldValue(
                 new FieldDefinition(
                     field.Id,
@@ -177,7 +171,7 @@ internal sealed class RecordClassFieldValueService
                     IsEditable: field.IsEditable,
                     DefaultValue: inheritedValue,
                     CommitAsDefault: false,
-                    CanInherit: !isDevice,
+                    CanInherit: false,
                     InheritedValue: inheritedValue,
                     Options: options,
                     PairLabels: field.PairLabels,
@@ -190,10 +184,9 @@ internal sealed class RecordClassFieldValueService
                     RuntimeCollectionComponentVariantFieldId: field.RuntimeCollectionComponentVariantFieldId,
                     Unit: field.Unit,
                     MotionTiming: field.MotionTiming),
-                localValue ?? inheritedValue,
-                IsInherited: !isDevice && localValue is null));
-            return isDevice
-                && OverrideDocumentContract.HasAuthoredValues(
+                inheritedValue,
+                IsInherited: false));
+            return OverrideDocumentContract.HasAuthoredValues(
                     DeviceSettingsFieldContract.ParseScreenOverrides(
                         settings.DeviceOverridesJson,
                         $"Screen '{node.Id}' Device overrides"))
@@ -767,7 +760,7 @@ internal sealed class RecordClassFieldValueService
                     _resources.GetActorSettings(
                         _production.GetShotSettings(settings.ShotId).OwnerActorId)
                     .DefaultDeviceId),
-            "moduleInstance.themeOverrideId" => settings.ThemeOverrideId ?? "",
+            "moduleInstance.themeId" => settings.ThemeId,
             _ => throw new InvalidOperationException($"Unknown module instance field '{fieldId}'."),
         };
     }

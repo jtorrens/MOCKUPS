@@ -2,10 +2,6 @@ using Mockups.DesktopEditorShell.Data;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
-internal sealed record ProductionThemeContextSource(
-    string Name,
-    string DefaultMode);
-
 internal sealed class ProductionShotContextDataSource
 {
     private readonly IPreviewInputRepository _database;
@@ -32,10 +28,4 @@ internal sealed class ProductionShotContextDataSource
         return _database.GetDeviceSettings(deviceId).Name;
     }
 
-    public ProductionThemeContextSource LoadTheme(string themeId)
-    {
-        return new ProductionThemeContextSource(
-            _database.GetThemeSettings(themeId).Name,
-            _database.GetThemeFieldValue(themeId, "theme.defaultMode"));
-    }
 }

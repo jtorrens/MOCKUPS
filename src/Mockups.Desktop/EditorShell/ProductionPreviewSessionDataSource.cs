@@ -18,6 +18,8 @@ internal sealed record ProductionPreviewScreenSnapshot(
     bool IsDurationEditable,
     string DeviceId,
     DevicePreviewMetrics DeviceMetrics,
+    string ThemeId,
+    string ThemeName,
     string VariantConfigJson,
     IReadOnlyList<int> ShotKeyframeFrames)
 {
@@ -151,6 +153,7 @@ internal sealed class ProductionPreviewSessionDataSource
                     throw new InvalidOperationException($"Screen '{screenId}' has no effective Device.");
                 var effectiveDevice = screenSettings.EffectiveDeviceSettings(
                     _database.GetDeviceSettings(deviceId));
+                var theme = _database.GetThemeSettings(screenSettings.ThemeId);
                 if (!source.ShotId.Equals(
                         shotNode.Id,
                         StringComparison.Ordinal))
@@ -176,6 +179,8 @@ internal sealed class ProductionPreviewSessionDataSource
                             == RuntimeDurationPolicy.Explicit,
                         deviceId,
                         DeviceSettingsFieldContract.PreviewMetrics(effectiveDevice),
+                        screenSettings.ThemeId,
+                        theme.Name,
                         _timeline
                             .GetModuleInstanceVariantSettings(
                                 screenId)

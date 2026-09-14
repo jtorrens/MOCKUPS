@@ -16,11 +16,6 @@ internal sealed partial class SqliteResourceOwner
 
     public void UpdateActorField(string actorId, string fieldId, string value)
     {
-        if (fieldId == "actor.defaultThemeId")
-        {
-            using var connection = OpenConnection();
-            _moduleInstanceThemeContextService.RequireActorThemeChange(connection, actorId, value);
-        }
         _actorRepository.UpdateField(actorId, fieldId, value);
     }
 

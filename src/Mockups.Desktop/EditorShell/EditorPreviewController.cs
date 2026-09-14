@@ -4402,7 +4402,12 @@ internal sealed class EditorPreviewController : IDisposable
                     .Context;
             actorName = inherited.Actor;
             device = inherited.Device;
-            theme = inherited.Theme;
+            var screenId = selected?.Kind == ProjectTreeNodeKind.ModuleInstance
+                ? selected.Id
+                : ActiveNavigationNodeId;
+            theme = string.IsNullOrWhiteSpace(screenId)
+                ? "No active Screen"
+                : PreparedProductionSession().Screen(screenId).ThemeName;
             mode = EditorUiText.IdentifierLabel(_selectedMode);
         }
         ProductionPreviewContextStrip.Render(

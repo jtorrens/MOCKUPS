@@ -50,7 +50,7 @@ An Episode owns ordered Shots. A Shot owns:
 
 - stable identity and order;
 - one required explicit owner Actor;
-- independently inherited Device and Theme references;
+- one inherited Device reference;
 - frame rate and current canvas metadata;
 - ordered Screens;
 - aggregate duration;
@@ -74,8 +74,9 @@ Device selection is one optional same-Project Shot field: `NULL` inherits the
 required Actor default and a local reference replaces it. Every Screen uses
 that same Device and therefore the same canvas and screen geometry.
 
-Theme selection is Screen-owned. Its optional same-Project override inherits
-the Shot Actor default independently for each Screen. The Screen also exposes
+Theme selection is Screen-owned and is one required exact same-Project
+reference. The Shot Actor default Theme initializes a new Screen once; later
+Actor changes never alter an existing Screen. The Screen also exposes
 the shared Device Overrides action against the Shot's effective Device, but its
 sparse document is restricted to the declared non-geometric Module transparency
 fields. Restore removes one local value. The action opens the referenced Device
@@ -197,10 +198,9 @@ The add modal exposes:
 - a job-owned output mode;
 - an editable safe base name.
 
-`Screen` resolves the Theme independently for every active Screen from that
-Screen's override or, when inherited, the Shot owner Actor's default Theme. An
+`Screen` resolves the exact Theme independently for every active Screen. An
 explicit Theme selection forces that exact Theme on every Screen and ignores
-their local Theme overrides for that job. It does not rewrite authored Screen
+their authored Theme for that job. It does not rewrite authored Screen
 data. Each active Screen applies its own declared Module-transparency overrides
 over the job Device without changing raster dimensions. Frames with no active
 Screen are stored as fully transparent documents.
@@ -310,7 +310,7 @@ A Screen is a persisted Module Instance. It owns:
 - exact App, Module and Module Variant references;
 - order within its Shot;
 - a signed Shot-frame start;
-- an optional Theme override and sparse non-geometric Device overrides;
+- one required exact Theme and sparse non-geometric Device overrides;
 - non-negative action delay in frames;
 - Runtime Input payload in `content_json`;
 - behavior and animation documents;
@@ -353,12 +353,14 @@ Every Screen resolves through its exact Shot. A complete valid route is:
 ```text
 Screen → Shot → owner Actor
               → effective Device (Shot override ?? Actor default)
-Screen → effective Theme (Screen override ?? Actor default)
+Screen → exact authored Theme
        → sparse Module-transparency overrides
               → visual context
 ```
 
 Missing, blank or cross-Project Production-resource context fails explicitly.
+The Actor default Theme is creation seed data and is not consulted while an
+existing Screen is prepared.
 App, Module and Variant references are global and cannot supply an Actor, Theme
 or Device implicitly; neither can name, type, order or position. Actor identity
 always remains the Shot owner even when either visual resource is overridden.

@@ -93,8 +93,8 @@ Project.
 - An Episode owns ordered Shots.
 - A Shot owns an explicit Actor, one shared Screen transition Motion and exact
   transition duration, and ordered Screens.
-- A Screen is a persisted Module Instance with one exact Module Variant,
-  payload, action delay, duration and animation document.
+- A Screen is a persisted Module Instance with one exact Module Variant, one
+  exact Project Theme, payload, action delay, duration and animation document.
 - Shot time is the ordered aggregate of its Screens.
 - Every Shot owns a stable number. Its code, technical render name and portable
   route are derived from its Project and Episode contracts.

@@ -129,7 +129,7 @@ internal static class CurrentSqliteSchema
             CHECK(duration_policy IN ('calculated', 'explicit')),
           action_delay_frames INTEGER NOT NULL DEFAULT 0,
           device_overrides_json TEXT NOT NULL DEFAULT '{}',
-          theme_override_id TEXT REFERENCES themes(id) ON DELETE RESTRICT,
+          theme_id TEXT NOT NULL REFERENCES themes(id) ON DELETE RESTRICT,
           content_json TEXT NOT NULL DEFAULT '{}',
           behavior_json TEXT NOT NULL DEFAULT '{}',
           animation_json TEXT NOT NULL DEFAULT '{"schemaVersion":2,"tracks":[]}',
@@ -224,7 +224,7 @@ internal static class CurrentSqliteSchema
           layout_json TEXT NOT NULL
         );
 
-        PRAGMA user_version = 23;
+        PRAGMA user_version = 24;
         """;
 
 }

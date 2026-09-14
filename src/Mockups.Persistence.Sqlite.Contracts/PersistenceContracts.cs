@@ -157,7 +157,7 @@ internal sealed record ModuleInstanceRecord(
     string DurationPolicy,
     int ActionDelayFrames,
     string DeviceOverridesJson,
-    string? ThemeOverrideId,
+    string ThemeId,
     string ContentJson,
     string BehaviorJson,
     string AnimationJson,
@@ -627,11 +627,10 @@ internal interface IModuleInstanceRepository
         string moduleInstanceId,
         int startFrame);
 
-    void UpdateResourceOverride(
+    void UpdateTheme(
         SqliteConnection connection,
         string moduleInstanceId,
-        string column,
-        string? value);
+        string themeId);
 
     void UpdateDeviceOverrides(
         SqliteConnection connection,
@@ -684,13 +683,12 @@ internal interface IModuleInstanceThemeContextService
 
     string GetTokensJson(SqliteConnection connection, string moduleInstanceId);
 
-    void RequireShotContext(SqliteConnection connection, string shotId);
+    string GetInitialThemeId(SqliteConnection connection, string shotId);
 
     void RequireEpisodeActor(SqliteConnection connection, string episodeId, string actorId);
 
     void RequireShotOwnerChange(SqliteConnection connection, string shotId, string actorId);
 
-    void RequireActorThemeChange(SqliteConnection connection, string actorId, string themeId);
 }
 
 internal interface IReferenceUsageService

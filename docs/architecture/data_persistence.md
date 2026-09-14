@@ -5,7 +5,7 @@ Status: normative.
 ## Database scope
 
 The desktop application persists one complete Project workspace in SQLite.
-Schema version `23` is the only current schema. Authored Production rows belong
+Schema version `24` is the only current schema. Authored Production rows belong
 directly or indirectly to a Project; System catalog rows are explicitly global.
 Cross-Project lookup remains invalid.
 
@@ -29,8 +29,9 @@ The current tables are:
 inherits the required Actor default; a local value must resolve inside the Shot
 Project. It is the only Device reference used by every Screen so canvas and
 screen geometry remain stable for the complete Shot.
-`module_instances.theme_override_id` is independently nullable and inherits the
-Shot Actor default Theme. `module_instances.device_overrides_json` is a required
+`module_instances.theme_id` is required and identifies the exact Theme owned by
+that Screen. The Shot Actor default Theme seeds a new Screen once and is never a
+runtime fallback. `module_instances.device_overrides_json` is a required
 object containing sparse Screen-local values from the declared non-geometric
 Device subset (`device.metrics.moduleTransparency.*`). Geometry, manufacturer,
 model and OS cannot be overridden by a Screen. Every key is an exact current
@@ -68,7 +69,7 @@ updated explicitly before its referenced definition can be removed.
 `ProjectReferenceIntegrity` is the single cross-domain data guard for
 relational references. Focused repositories invoke it before writes and startup
 validation invokes the same owner read-only. Actor Device and Theme, Shot Actor
-and its optional Device override, Screen Theme override, and Theme Status Bar
+and its optional Device override, Screen Theme, and Theme Status Bar
 and Navigation Bar references must resolve inside the owner's exact Project.
 Theme Icon Theme references resolve against the one global System catalog.
 Status and Navigation references additionally require a complete existing
@@ -285,7 +286,7 @@ Module Instance Runtime writes belong to
 `SqliteProductionRecordFieldStore`, and animation/read models to the Production
 owner. The session composes one Runtime Input store instance.
 Shot scalar writes and inherited Device projection remain Production-owned.
-Screen scalar writes, inherited Theme projection and the Screen-local
+Screen scalar writes, exact Theme projection and the Screen-local
 non-geometric Device settings override document remain Production-owned. The sparse document
 is exposed independently through `IRecordReferenceOverrideStore`; its session
 adapter cannot be cast to the Production scalar-field adapter. The generic
@@ -581,7 +582,7 @@ it is revisioned and runs through the same session operation worker.
 That operation also prepares the complete Production Preview session catalog:
 Shot frame rates, ordered Screen lanes with signed starts, ranges and keyframes,
 and exact Screen Variant configs. Each Shot entry includes its effective Device
-and Actor context; each Screen entry includes its effective Theme and
+and Actor context; each Screen entry includes its exact authored Theme and
 non-geometric Device overrides. Timeline controls, context presentation and playback
 consume the catalog and hold no timeline or Shot-context persistence data
 source. Later tree reads remain candidates until this complete catalog and its

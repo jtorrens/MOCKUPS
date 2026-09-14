@@ -119,8 +119,9 @@ outside Theme are invalid current data.
 
 ## Actors
 
-An Actor owns its stable Production identity, Theme choice and associated
-visual metadata. A Shot always names one Actor. Component-specific Actor use,
+An Actor owns its stable Production identity, default Theme used to initialize
+new Screens, and associated visual metadata. Existing Screens retain their own
+exact Theme when the Actor default changes. A Shot always names one Actor. Component-specific Actor use,
 such as a conversation message owner, remains a separate explicit reference.
 
 Usage actions navigate to Design or Production as required, open the exact tree

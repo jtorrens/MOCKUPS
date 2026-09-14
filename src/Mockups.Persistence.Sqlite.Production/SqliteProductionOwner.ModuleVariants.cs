@@ -23,7 +23,7 @@ internal sealed partial class SqliteProductionOwner
             record.DurationPolicy,
             record.ActionDelayFrames,
             record.DeviceOverridesJson,
-            record.ThemeOverrideId,
+            record.ThemeId,
             record.ContentJson,
             record.BehaviorJson,
             record.AnimationJson,

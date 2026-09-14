@@ -126,9 +126,7 @@ internal sealed class DesignPreviewPayloadDataSource
         }
         var effectiveThemeId = themeStrategy switch
         {
-            RenderThemeStrategy.Screen => screen.EffectiveThemeId(
-                _actorDataSource.LoadContext(
-                    settings.OwnerActorId).DefaultThemeId),
+            RenderThemeStrategy.Screen => screen.ThemeId,
             RenderThemeStrategy.Forced => themeId,
             _ => throw new InvalidOperationException(
                 $"Unsupported render Theme strategy '{themeStrategy}'."),
@@ -184,12 +182,11 @@ internal sealed class DesignPreviewPayloadDataSource
         var screen = node.Kind == ProjectTreeNodeKind.ModuleInstance
             ? _timeline.GetModuleInstanceSettings(node.Id)
             : null;
-        var themeId = screen?.EffectiveThemeId(actor.DefaultThemeId)
-            ?? actor.DefaultThemeId;
+        var themeId = screen?.ThemeId ?? selectedThemeId;
         if (string.IsNullOrWhiteSpace(themeId))
         {
             throw new InvalidOperationException(
-                $"Actor '{actor.DisplayName}' has no explicit default Theme for Production Preview.");
+                $"Production Preview for Actor '{actor.DisplayName}' has no exact Screen Theme.");
         }
 
         _database.GetThemeSettings(themeId);

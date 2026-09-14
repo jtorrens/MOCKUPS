@@ -59,8 +59,9 @@ internal static class ProjectReferenceIntegrity
                 connection,
                 screen.ProjectId,
                 ProjectReferenceKind.Theme,
-                screen.ThemeOverrideId,
-                $"Screen '{screen.Id}' Theme override");
+                screen.ThemeId,
+                $"Screen '{screen.Id}' Theme",
+                required: true);
         }
 
         foreach (var theme in ThemeReferences(connection))
@@ -241,7 +242,7 @@ internal static class ProjectReferenceIntegrity
         var rows = new List<ScreenReferenceRow>();
         using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT mi.id, e.project_id, mi.theme_override_id
+            SELECT mi.id, e.project_id, mi.theme_id
             FROM module_instances mi
             JOIN shots s ON s.id = mi.shot_id
             JOIN episodes e ON e.id = s.episode_id
@@ -315,7 +316,7 @@ internal static class ProjectReferenceIntegrity
     private sealed record ScreenReferenceRow(
         string Id,
         string ProjectId,
-        string ThemeOverrideId);
+        string ThemeId);
 
     private sealed record ThemeReferenceRow(
         string Id,

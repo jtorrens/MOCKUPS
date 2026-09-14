@@ -152,7 +152,7 @@ var tests = new (string Name, Action Run)[]
     ("Render executor publishes a clean PNG sequence", RenderExecutorPublishesCleanPngSequence),
     ("Shots require an explicit replaceable owner Actor", ShotActorContextIsExplicit),
     ("Production Shot context boundary preserves explicit resolved context read-only", ProductionShotContextBoundaryPreservesResolvedContext),
-    ("Shot Device and Theme overrides resolve independently across Production", ShotResourceOverridesResolveIndependently),
+    ("Shot Device and Screen Theme resolve independently across Production", ShotResourceOverridesResolveIndependently),
     ("Shot Device settings overrides preserve local ownership across Device changes", ShotDeviceSettingsOverridesPreserveOwnership),
     ("declared RecordReference Overrides use the shared action", DeclaredRecordReferenceOverridesUseSharedAction),
     ("Preview payload rejects incomplete Production context without selector fallbacks", PreviewPayloadRejectsIncompleteProductionContext),
@@ -9755,10 +9755,10 @@ static void ReferencesEnforceDeclaredScope()
         Execute(connection, "PRAGMA foreign_keys = OFF");
         Execute(connection, "UPDATE shots SET device_override_id = 'missing_device' WHERE id = 'shot_001'");
     });
-    AssertRejectedDatabaseIsReadOnly("missing-screen-theme-override", (connection) =>
+    AssertRejectedDatabaseIsReadOnly("missing-screen-theme", (connection) =>
     {
         Execute(connection, "PRAGMA foreign_keys = OFF");
-        Execute(connection, "UPDATE module_instances SET theme_override_id = 'missing_theme' WHERE id = (SELECT id FROM module_instances WHERE shot_id = 'shot_001' ORDER BY sort_order, id LIMIT 1)");
+        Execute(connection, "UPDATE module_instances SET theme_id = 'missing_theme' WHERE id = (SELECT id FROM module_instances WHERE shot_id = 'shot_001' ORDER BY sort_order, id LIMIT 1)");
     });
     AssertRejectedDatabaseIsReadOnly("blank-shot-resource-override", (connection) =>
     {
@@ -14456,7 +14456,7 @@ static void ProductionRenderOverridesRespectScreenAppearance()
                     StringComparison.Ordinal));
         database.UpdateModuleInstanceField(
             firstScreen.Id,
-            "moduleInstance.themeOverrideId",
+            "moduleInstance.themeId",
             actor.DefaultThemeId);
         var payload = Required(DesignPreviewPayloadFactory.CreateProductionRender(
             new DesignPreviewPayloadDataSource(
@@ -15926,7 +15926,7 @@ static void ShotActorContextIsExplicit()
             "device_shot_override_cross"));
         Throws<InvalidOperationException>(() => database.UpdateModuleInstanceField(
             screen.Id,
-            "moduleInstance.themeOverrideId",
+            "moduleInstance.themeId",
             "theme_shot_override_cross"));
 
         var duplicate = moduleInstances.Duplicate(screen);
@@ -16536,10 +16536,7 @@ static void ProductionShotContextBoundaryPreservesResolvedContext()
         Equal(actor.DisplayName, context.Actor);
         var resolvedDeviceId = shotSettings.DeviceOverrideId
             ?? actor.DefaultDeviceId;
-        var resolvedThemeId = actor.DefaultThemeId;
         Equal(database.GetDeviceSettings(resolvedDeviceId).Name, context.Device);
-        Equal(database.GetThemeSettings(resolvedThemeId).Name, context.Theme);
-        Equal(database.GetThemeFieldValue(resolvedThemeId, "theme.defaultMode"), context.ThemeMode);
         True(service.CanExposeChildren(shot));
         True(shot.Children.All(service.IsNavigationNodeEnabled));
 
@@ -16568,17 +16565,14 @@ static void ShotResourceOverridesResolveIndependently()
         var actor = database.GetActorSettings(settings.OwnerActorId);
         var screen = shot.Children.First((node) =>
             node.Kind == ProjectTreeNodeKind.ModuleInstance);
+        var initialThemeId = database.GetModuleInstanceSettings(screen.Id).ThemeId;
         database.UpdateShotField(shot.Id, "shot.deviceOverrideId", "inherited");
-        database.UpdateModuleInstanceField(
-            screen.Id,
-            "moduleInstance.themeOverrideId",
-            "inherited");
         var deviceOverrideId = database.GetDeviceOptions(ProjectId(settings))
             .Select((option) => option.Value)
             .First((id) => !id.Equals(actor.DefaultDeviceId, StringComparison.Ordinal));
-        var themeOverrideId = database.GetThemeOptions(ProjectId(settings))
+        var screenThemeId = database.GetThemeOptions(ProjectId(settings))
             .Select((option) => option.Value)
-            .First((id) => !id.Equals(actor.DefaultThemeId, StringComparison.Ordinal));
+            .First((id) => !id.Equals(initialThemeId, StringComparison.Ordinal));
         var values = new RecordClassFieldValueService(
             ProductionRecordFields(database),
             RecordReferenceOverrides(database),
@@ -16590,13 +16584,14 @@ static void ShotResourceOverridesResolveIndependently()
         var inheritedDevice = values.CreateFieldValue(
             shot,
             "shot.deviceOverrideId");
-        var inheritedTheme = values.CreateFieldValue(
+        var screenTheme = values.CreateFieldValue(
             screen,
-            "moduleInstance.themeOverrideId");
+            "moduleInstance.themeId");
         True(inheritedDevice.IsInherited);
-        True(inheritedTheme.IsInherited);
+        True(!screenTheme.IsInherited);
+        True(!screenTheme.Definition.CanInherit);
         Equal(actor.DefaultDeviceId, inheritedDevice.Definition.InheritedValue);
-        Equal(actor.DefaultThemeId, inheritedTheme.Definition.InheritedValue);
+        Equal(initialThemeId, screenTheme.Value);
 
         database.UpdateShotField(
             shot.Id,
@@ -16604,7 +16599,7 @@ static void ShotResourceOverridesResolveIndependently()
             deviceOverrideId);
         var deviceOnly = database.GetShotSettings(shot.Id);
         Equal(deviceOverrideId, deviceOnly.DeviceOverrideId);
-        True(database.GetModuleInstanceSettings(screen.Id).ThemeOverrideId is null);
+        Equal(initialThemeId, database.GetModuleInstanceSettings(screen.Id).ThemeId);
 
         var contextService = new ProductionShotContextService(
             new ProductionShotContextDataSource(
@@ -16612,7 +16607,6 @@ static void ShotResourceOverridesResolveIndependently()
                 database.Resources));
         var deviceContext = contextService.Resolve(shot.Id);
         Equal(database.GetDeviceSettings(deviceOverrideId).Name, deviceContext.Device);
-        Equal(database.GetThemeSettings(actor.DefaultThemeId).Name, deviceContext.Theme);
 
         var payloadData = new DesignPreviewPayloadDataSource(
             database.PreviewInputs,
@@ -16622,24 +16616,18 @@ static void ShotResourceOverridesResolveIndependently()
             database.ProjectPaths);
         var deviceThemeContext = Required(payloadData.LoadThemeContext(screen, null));
         Equal(deviceOverrideId, deviceThemeContext.DeviceId);
-        Equal(actor.DefaultThemeId, payloadData.ResolveThemeId(screen, null));
+        Equal(initialThemeId, payloadData.ResolveThemeId(screen, null));
 
         database.UpdateModuleInstanceField(
             screen.Id,
-            "moduleInstance.themeOverrideId",
-            themeOverrideId);
-        var overridden = database.GetModuleInstanceSettings(screen.Id);
+            "moduleInstance.themeId",
+            screenThemeId);
+        var changed = database.GetModuleInstanceSettings(screen.Id);
         Equal(deviceOverrideId, database.GetShotSettings(shot.Id).DeviceOverrideId);
-        Equal(themeOverrideId, overridden.ThemeOverrideId);
-        var overrideContext = contextService.Resolve(shot.Id);
-        Equal(database.GetDeviceSettings(deviceOverrideId).Name, overrideContext.Device);
-        Equal(database.GetThemeSettings(actor.DefaultThemeId).Name, overrideContext.Theme);
+        Equal(screenThemeId, changed.ThemeId);
+        Equal(screenThemeId, payloadData.ResolveThemeId(screen, null));
         Equal(
-            database.GetThemeFieldValue(actor.DefaultThemeId, "theme.defaultMode"),
-            overrideContext.ThemeMode);
-        Equal(themeOverrideId, payloadData.ResolveThemeId(screen, null));
-        Equal(
-            database.GetThemeSettings(themeOverrideId).TokensJson,
+            database.GetThemeSettings(screenThemeId).TokensJson,
             database.GetModuleInstanceThemeTokensJson(screen.Id));
 
         var draft = new RenderJobSnapshotFactory(
@@ -16659,10 +16647,10 @@ static void ShotResourceOverridesResolveIndependently()
             .Any((usage) => usage.SourceNodeId == shot.Id
                 && usage.Field == "Device override"));
         var themeNode = Descendants(database.LoadProjectTree())
-            .Single((node) => node.Id == themeOverrideId);
+            .Single((node) => node.Id == screenThemeId);
         True(database.ReferenceUsages.GetReferenceUsageDetails(themeNode)
             .Any((usage) => usage.SourceNodeId == screen.Id
-                && usage.Field == "Theme override"));
+                && usage.Field == "Theme"));
 
         database.UpdateShotField(
             shot.Id,
@@ -16670,19 +16658,11 @@ static void ShotResourceOverridesResolveIndependently()
             "inherited");
         var themeOnly = database.GetShotSettings(shot.Id);
         True(themeOnly.DeviceOverrideId is null);
-        Equal(themeOverrideId,
-            database.GetModuleInstanceSettings(screen.Id).ThemeOverrideId);
+        Equal(screenThemeId,
+            database.GetModuleInstanceSettings(screen.Id).ThemeId);
         Equal(
             database.GetDeviceSettings(actor.DefaultDeviceId).Name,
             contextService.Resolve(shot.Id).Device);
-
-        database.UpdateModuleInstanceField(
-            screen.Id,
-            "moduleInstance.themeOverrideId",
-            "inherited");
-        var inherited = database.GetShotSettings(shot.Id);
-        True(inherited.DeviceOverrideId is null);
-        True(database.GetModuleInstanceSettings(screen.Id).ThemeOverrideId is null);
     }
     finally
     {
@@ -17207,9 +17187,10 @@ static void PreviewPayloadRejectsIncompleteProductionContext()
         var shot = database.GetShotSettings(shotId);
         var actorId = shot.OwnerActorId;
         var actor = database.GetActorSettings(actorId);
+        var screenThemeId = database.GetModuleInstanceSettings(screen.Id).ThemeId;
 
         Equal(actor.DefaultThemeId, dataSource.ResolveThemeId(component, actor.DefaultThemeId));
-        Equal(actor.DefaultThemeId, dataSource.ResolveThemeId(screen, actor.DefaultThemeId));
+        Equal(screenThemeId, dataSource.ResolveThemeId(screen, actor.DefaultThemeId));
         True(dataSource.LoadThemeContext(screen, actor.DefaultThemeId) is not null);
 
         UpdateProductionContext("UPDATE shots SET owner_actor_id = '' WHERE id = $id", shotId);
@@ -17217,10 +17198,10 @@ static void PreviewPayloadRejectsIncompleteProductionContext()
 
         UpdateProductionContext("UPDATE shots SET owner_actor_id = $value WHERE id = $id", shotId, actorId);
         UpdateProductionContext("UPDATE actors SET default_theme_id = '' WHERE id = $id", actorId);
-        Throws<InvalidOperationException>(() => dataSource.ResolveThemeId(screen, actor.DefaultThemeId));
+        Equal(screenThemeId, dataSource.ResolveThemeId(screen, actor.DefaultThemeId));
 
         UpdateProductionContext("UPDATE actors SET default_theme_id = $value WHERE id = $id", actorId, "missing_theme");
-        Throws<InvalidOperationException>(() => dataSource.ResolveThemeId(screen, actor.DefaultThemeId));
+        Equal(screenThemeId, dataSource.ResolveThemeId(screen, actor.DefaultThemeId));
 
         UpdateProductionContext("UPDATE actors SET default_theme_id = $value WHERE id = $id", actorId, actor.DefaultThemeId);
         database.UpdateShotField(
@@ -17232,6 +17213,10 @@ static void PreviewPayloadRejectsIncompleteProductionContext()
 
         UpdateProductionContext("UPDATE actors SET default_device_id = $value WHERE id = $id", actorId, "missing_device");
         Throws<InvalidOperationException>(() => dataSource.LoadThemeContext(screen, actor.DefaultThemeId));
+
+        UpdateProductionContext("UPDATE actors SET default_device_id = $value WHERE id = $id", actorId, actor.DefaultDeviceId);
+        UpdateProductionContext("UPDATE module_instances SET theme_id = $value WHERE id = $id", screen.Id, "missing_theme");
+        Throws<InvalidOperationException>(() => dataSource.ResolveThemeId(screen, actor.DefaultThemeId));
 
         void UpdateProductionContext(string sql, string id, string? value = null)
         {
@@ -19897,9 +19882,7 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
             true,
             "",
             "Actor",
-            "Device",
-            "Theme",
-            "light"),
+            "Device"),
         ReferenceVideo: ShotReferenceVideoDocument.Empty,
         Screens:
         [
@@ -19928,6 +19911,8 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
                     0,
                     0,
                     DeviceModuleTransparencyOverride.Disabled),
+                ThemeId: "theme",
+                ThemeName: "Theme",
                 VariantConfigJson: "{}",
                 ShotKeyframeFrames: []),
             new ProductionPreviewScreenSnapshot(
@@ -19955,6 +19940,8 @@ static void ScreenTimelineSeparatesPlaybackAndEditingZones()
                     0,
                     0,
                     DeviceModuleTransparencyOverride.Disabled),
+                ThemeId: "theme",
+                ThemeName: "Theme",
                 VariantConfigJson: "{}",
                 ShotKeyframeFrames: []),
         ]);
@@ -24256,14 +24243,14 @@ static string CreateDesktopTestDatabase(
             INSERT INTO module_instances (
               id, shot_id, app_id, module_id, name, notes, sort_order,
               start_frame, duration_frames, duration_policy, action_delay_frames,
-              device_overrides_json, theme_override_id,
+              device_overrides_json, theme_id,
               content_json, behavior_json, animation_json,
               metadata_json)
             SELECT
               'module_instance_6ba3837154634771b40a25ca64160bc4',
               'shot_001', app_id, module_id, name, notes, 1,
               start_frame, duration_frames, duration_policy, action_delay_frames,
-              device_overrides_json, theme_override_id,
+              device_overrides_json, theme_id,
               content_json, behavior_json, animation_json,
               metadata_json
             FROM module_instances
@@ -24272,14 +24259,14 @@ static string CreateDesktopTestDatabase(
             INSERT INTO module_instances (
               id, shot_id, app_id, module_id, name, notes, sort_order,
               start_frame, duration_frames, duration_policy, action_delay_frames,
-              device_overrides_json, theme_override_id,
+              device_overrides_json, theme_id,
               content_json, behavior_json, animation_json,
               metadata_json)
             SELECT
               'module_instance_900f1616432d4f63a97f2a74dd647e08',
               'shot_001', app_id, module_id, name, notes, 2,
               start_frame, duration_frames, duration_policy, action_delay_frames,
-              device_overrides_json, theme_override_id,
+              device_overrides_json, theme_id,
               content_json, behavior_json,
               animation_json, metadata_json
             FROM module_instances

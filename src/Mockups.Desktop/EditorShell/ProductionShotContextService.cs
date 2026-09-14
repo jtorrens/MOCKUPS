@@ -6,9 +6,7 @@ internal sealed record ProductionShotContext(
     bool IsValid,
     string Error,
     string Actor,
-    string Device,
-    string Theme,
-    string ThemeMode);
+    string Device);
 
 internal sealed class ProductionShotContextService
 {
@@ -37,20 +35,18 @@ internal sealed class ProductionShotContextService
             return Invalid($"Shot {shotId} references a missing Actor.");
         }
         var deviceId = shot.EffectiveDeviceId(actor.DefaultDeviceId);
-        var themeId = actor.DefaultThemeId;
-        if (string.IsNullOrWhiteSpace(deviceId) || string.IsNullOrWhiteSpace(themeId))
+        if (string.IsNullOrWhiteSpace(deviceId))
         {
-            return Invalid($"Actor {actor.DisplayName} must define a default Device and Theme.", actor.DisplayName);
+            return Invalid($"Actor {actor.DisplayName} must define a default Device.", actor.DisplayName);
         }
         try
         {
             var device = _dataSource.LoadDeviceName(deviceId);
-            var theme = _dataSource.LoadTheme(themeId);
-            return new ProductionShotContext(true, "", actor.DisplayName, device, theme.Name, theme.DefaultMode);
+            return new ProductionShotContext(true, "", actor.DisplayName, device);
         }
         catch (Exception)
         {
-            return Invalid($"Actor {actor.DisplayName} references a missing Device or Theme.", actor.DisplayName);
+            return Invalid($"Actor {actor.DisplayName} references a missing Device.", actor.DisplayName);
         }
     }
 
@@ -67,5 +63,5 @@ internal sealed class ProductionShotContextService
     }
 
     private static ProductionShotContext Invalid(string error, string actor = "Required Actor missing") =>
-        new(false, error, actor, "Unavailable", "Unavailable", "Unavailable");
+        new(false, error, actor, "Unavailable");
 }

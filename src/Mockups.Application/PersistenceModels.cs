@@ -104,7 +104,7 @@ public sealed record ModuleInstanceSettings(
     string DurationPolicy,
     int ActionDelayFrames,
     string DeviceOverridesJson,
-    string? ThemeOverrideId,
+    string ThemeId,
     string ContentJson,
     string BehaviorJson,
     string AnimationJson,
@@ -117,8 +117,6 @@ public sealed record ModuleInstanceSettings(
             DeviceOverridesJson,
             $"Screen '{Name}' Device overrides");
 
-    public string EffectiveThemeId(string actorDefaultThemeId) =>
-        ThemeOverrideId ?? actorDefaultThemeId;
 }
 
 public sealed record ThemeSettings(
