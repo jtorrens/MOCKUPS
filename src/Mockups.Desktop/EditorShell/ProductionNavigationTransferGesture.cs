@@ -1,5 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
+using Avalonia.Controls.Primitives.PopupPositioning;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
@@ -49,6 +51,7 @@ internal static class ProductionNavigationTransferGesture
         IPointer? pointer = null;
         ProductionHierarchyTransferMode? mode = null;
         TransferTarget? activeTarget = null;
+        TransferBadge? badge = null;
         var dragging = false;
 
         row.AddHandler(
@@ -112,9 +115,15 @@ internal static class ProductionNavigationTransferGesture
                     return;
                 }
                 dragging = true;
+                badge = new TransferBadge(row, node.Kind);
             }
 
-            SetActiveTarget(TargetAt(args));
+            var target = TargetAt(args);
+            SetActiveTarget(target);
+            badge?.Show(
+                args.GetPosition(row),
+                mode.Value,
+                target is not null);
             args.Handled = true;
         }
 
@@ -193,6 +202,8 @@ internal static class ProductionNavigationTransferGesture
             mode = null;
             dragging = false;
             SetActiveTarget(null);
+            badge?.Hide();
+            badge = null;
             capturedPointer?.Capture(null);
         }
     }
@@ -238,5 +249,103 @@ internal static class ProductionNavigationTransferGesture
                 current.BorderThickness = originalThickness;
             }
         }
+    }
+
+    private sealed class TransferBadge
+    {
+        private static readonly IBrush ValidBrush =
+            new SolidColorBrush(Color.Parse("#D6A638"));
+        private static readonly IBrush InvalidBrush =
+            new SolidColorBrush(Color.Parse("#E06C75"));
+        private static readonly IBrush BackgroundBrush =
+            new SolidColorBrush(Color.Parse("#F020252D"));
+
+        private readonly ProjectTreeNodeKind _sourceKind;
+        private readonly TextBlock _label;
+        private readonly Border _content;
+        private readonly Popup _popup;
+
+        public TransferBadge(
+            Border placementTarget,
+            ProjectTreeNodeKind sourceKind)
+        {
+            _sourceKind = sourceKind;
+            _label = new TextBlock
+            {
+                FontSize = 12,
+                FontWeight = FontWeight.SemiBold,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+            };
+            _content = new Border
+            {
+                Padding = new Thickness(9, 5),
+                CornerRadius = new CornerRadius(10),
+                BorderThickness = new Thickness(1),
+                Background = BackgroundBrush,
+                BoxShadow = new BoxShadows(
+                    new BoxShadow
+                    {
+                        Blur = 10,
+                        OffsetY = 3,
+                        Color = Color.Parse("#66000000"),
+                    }),
+                IsHitTestVisible = false,
+                Child = _label,
+            };
+            _popup = new Popup
+            {
+                PlacementTarget = placementTarget,
+                Placement = PlacementMode.AnchorAndGravity,
+                PlacementAnchor = PopupAnchor.TopLeft,
+                PlacementGravity = PopupGravity.BottomRight,
+                PlacementConstraintAdjustment =
+                    PopupPositionerConstraintAdjustment.SlideX
+                    | PopupPositionerConstraintAdjustment.SlideY,
+                ShouldUseOverlayLayer = true,
+                TakesFocusFromNativeControl = false,
+                Child = _content,
+            };
+        }
+
+        public void Show(
+            Point position,
+            ProductionHierarchyTransferMode mode,
+            bool isValid)
+        {
+            var brush = isValid ? ValidBrush : InvalidBrush;
+            _content.BorderBrush = brush;
+            _label.Foreground = brush;
+            _label.Text = isValid
+                ? $"{ActionPrefix(mode)} {ActionName(mode)} {SourceName()}"
+                : $"× {ActionName(mode)} {SourceName()} · destino no válido";
+            _popup.PlacementRect = new Rect(
+                position.X + 14,
+                position.Y + 16,
+                1,
+                1);
+            _popup.IsOpen = true;
+        }
+
+        public void Hide()
+        {
+            _popup.IsOpen = false;
+        }
+
+        private string SourceName() =>
+            _sourceKind == ProjectTreeNodeKind.Shot
+                ? "Shot"
+                : "Screen";
+
+        private static string ActionPrefix(
+            ProductionHierarchyTransferMode mode) =>
+            mode == ProductionHierarchyTransferMode.Copy
+                ? "+"
+                : "↕";
+
+        private static string ActionName(
+            ProductionHierarchyTransferMode mode) =>
+            mode == ProductionHierarchyTransferMode.Copy
+                ? "Copiar"
+                : "Mover";
     }
 }
