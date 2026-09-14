@@ -1,6 +1,5 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
@@ -17,6 +16,12 @@ internal static class ProductionNavigationTransferGesture
     private static readonly ConditionalWeakTable<
         Border,
         TransferTarget> Targets = new();
+    private static readonly Cursor CopyCursor =
+        new(StandardCursorType.DragCopy);
+    private static readonly Cursor MoveCursor =
+        new(StandardCursorType.DragMove);
+    private static readonly Cursor InvalidCursor =
+        new(StandardCursorType.No);
 
     internal static void Attach(
         Border row,
@@ -50,7 +55,7 @@ internal static class ProductionNavigationTransferGesture
         IPointer? pointer = null;
         ProductionHierarchyTransferMode? mode = null;
         TransferTarget? activeTarget = null;
-        TransferBadge? badge = null;
+        var originalCursor = row.Cursor;
         var dragging = false;
 
         row.AddHandler(
@@ -118,11 +123,11 @@ internal static class ProductionNavigationTransferGesture
 
             var target = TargetAt(args);
             SetActiveTarget(target);
-            badge ??= TransferBadge.TryCreate(row, node.Kind);
-            badge?.Show(
-                args,
-                mode.Value,
-                target is not null);
+            row.Cursor = target is null
+                ? InvalidCursor
+                : mode == ProductionHierarchyTransferMode.Copy
+                    ? CopyCursor
+                    : MoveCursor;
             args.Handled = true;
         }
 
@@ -201,8 +206,7 @@ internal static class ProductionNavigationTransferGesture
             mode = null;
             dragging = false;
             SetActiveTarget(null);
-            badge?.Hide();
-            badge = null;
+            row.Cursor = originalCursor;
             capturedPointer?.Capture(null);
         }
     }
@@ -250,98 +254,4 @@ internal static class ProductionNavigationTransferGesture
         }
     }
 
-    private sealed class TransferBadge
-    {
-        private static readonly IBrush ValidBrush =
-            new SolidColorBrush(Color.Parse("#D6A638"));
-        private static readonly IBrush InvalidBrush =
-            new SolidColorBrush(Color.Parse("#E06C75"));
-        private static readonly IBrush BackgroundBrush =
-            new SolidColorBrush(Color.Parse("#F020252D"));
-
-        private readonly ProjectTreeNodeKind _sourceKind;
-        private readonly OverlayLayer _overlay;
-        private readonly TextBlock _label;
-        private readonly Border _content;
-        private readonly TranslateTransform _position = new();
-
-        private TransferBadge(
-            OverlayLayer overlay,
-            ProjectTreeNodeKind sourceKind)
-        {
-            _overlay = overlay;
-            _sourceKind = sourceKind;
-            _label = new TextBlock
-            {
-                FontSize = 12,
-                FontWeight = FontWeight.SemiBold,
-                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-            };
-            _content = new Border
-            {
-                Padding = new Thickness(9, 5),
-                CornerRadius = new CornerRadius(10),
-                BorderThickness = new Thickness(1),
-                Background = BackgroundBrush,
-                BoxShadow = new BoxShadows(
-                    new BoxShadow
-                    {
-                        Blur = 10,
-                        OffsetY = 3,
-                        Color = Color.Parse("#66000000"),
-                    }),
-                IsHitTestVisible = false,
-                Child = _label,
-                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left,
-                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top,
-                RenderTransform = _position,
-            };
-            _overlay.Children.Add(_content);
-        }
-
-        public static TransferBadge? TryCreate(
-            Border placementTarget,
-            ProjectTreeNodeKind sourceKind) =>
-            OverlayLayer.GetOverlayLayer(placementTarget) is { } overlay
-                ? new TransferBadge(overlay, sourceKind)
-                : null;
-
-        public void Show(
-            PointerEventArgs args,
-            ProductionHierarchyTransferMode mode,
-            bool isValid)
-        {
-            var brush = isValid ? ValidBrush : InvalidBrush;
-            _content.BorderBrush = brush;
-            _label.Foreground = brush;
-            _label.Text = isValid
-                ? $"{ActionPrefix(mode)} {ActionName(mode)} {SourceName()}"
-                : $"× {ActionName(mode)} {SourceName()} · destino no válido";
-            var position = args.GetPosition(_overlay);
-            _position.X = position.X + 14;
-            _position.Y = position.Y + 16;
-        }
-
-        public void Hide()
-        {
-            _overlay.Children.Remove(_content);
-        }
-
-        private string SourceName() =>
-            _sourceKind == ProjectTreeNodeKind.Shot
-                ? "Shot"
-                : "Screen";
-
-        private static string ActionPrefix(
-            ProductionHierarchyTransferMode mode) =>
-            mode == ProductionHierarchyTransferMode.Copy
-                ? "+"
-                : "↕";
-
-        private static string ActionName(
-            ProductionHierarchyTransferMode mode) =>
-            mode == ProductionHierarchyTransferMode.Copy
-                ? "Copiar"
-                : "Mover";
-    }
 }
