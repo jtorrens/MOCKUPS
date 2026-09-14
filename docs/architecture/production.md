@@ -97,7 +97,10 @@ Option-drag moves it. Both append at the destination. A copy receives new Shot
 and Screen identities and clears its Shot Manager reference. A move preserves
 those identities and complete documents, but the moved Shot becomes free; a
 retained external reference remains available for later recovery or explicit
-reassociation. Destination Shot-number or Shot-code collisions fail explicitly.
+reassociation. A copy preserves its Shot number and code when both are free at
+the destination; otherwise Production assigns the next available number and
+generates its corresponding Production Output code. Destination collisions on
+a move fail explicitly rather than renumbering the existing Shot.
 
 ## Production Output ownership
 

@@ -239,6 +239,12 @@ internal interface IShotRepository
 
     int SuggestShotNumber(SqliteConnection connection, string episodeId);
 
+    bool IsShotIdentityAvailable(
+        SqliteConnection connection,
+        string episodeId,
+        int shotNumber,
+        string shotCode);
+
     ShotRecord Create(
         SqliteConnection connection,
         string episodeId,
@@ -262,6 +268,8 @@ internal interface IShotRepository
         string id,
         string targetEpisodeId,
         string name,
+        int shotNumber,
+        string shotCode,
         SqliteTransaction transaction);
 
     ShotRecord MoveToEpisode(

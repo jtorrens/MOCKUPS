@@ -174,8 +174,12 @@ while move retains them, and both append at the destination. A copied Shot
 clears its Shot Manager reference; a moved Shot becomes free while retaining
 its prior reference. Screen transfer preserves its signed `start_frame` and
 complete documents. The source and destination timeline durations are
-synchronized inside the same transaction. Shot number or code collisions at
-the destination fail explicitly rather than being renamed or reassigned.
+synchronized inside the same transaction. A copied Shot preserves its number
+and code when both are available at the destination. If either collides,
+Production assigns the next available Shot number and generates its
+corresponding current Production Output code inside the same aggregate
+transaction. A moved Shot never changes identity silently; number or code
+collisions at the destination fail explicitly.
 
 Every structured Runtime collection lifecycle operation is one generic
 Application mutation addressed by a typed stable collection/item path. Add,

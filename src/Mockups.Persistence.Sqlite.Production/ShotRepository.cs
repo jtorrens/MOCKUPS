@@ -74,6 +74,30 @@ internal sealed class ShotRepository : IShotRepository
         return checked((int)maximum + 1);
     }
 
+    public bool IsShotIdentityAvailable(
+        SqliteConnection connection,
+        string episodeId,
+        int shotNumber,
+        string shotCode)
+    {
+        if (shotNumber <= 0
+            || string.IsNullOrWhiteSpace(shotCode))
+        {
+            return false;
+        }
+        return SqliteCommandExecutor.ScalarLong(
+            connection,
+            """
+            SELECT COUNT(*)
+            FROM shots
+            WHERE episode_id = $episodeId
+              AND (shot_number = $shotNumber OR slug = $shotCode)
+            """,
+            ("$episodeId", episodeId),
+            ("$shotNumber", shotNumber),
+            ("$shotCode", shotCode)) == 0;
+    }
+
     public ShotRecord Create(
         SqliteConnection connection,
         string episodeId,
@@ -165,6 +189,8 @@ internal sealed class ShotRepository : IShotRepository
         string id,
         string targetEpisodeId,
         string name,
+        int shotNumber,
+        string shotCode,
         SqliteTransaction transaction)
     {
         var source = Get(connection, sourceId);
@@ -181,17 +207,19 @@ internal sealed class ShotRepository : IShotRepository
         RequireAvailableShotNumber(
             connection,
             targetEpisodeId,
-            source.ShotNumber);
+            shotNumber);
         RequireAvailableShotCode(
             connection,
             targetEpisodeId,
             source.Id,
-            source.Slug);
+            shotCode);
         var duplicate = source with
         {
             Id = id,
             EpisodeId = targetEpisodeId,
             Name = name,
+            Slug = shotCode,
+            ShotNumber = shotNumber,
             SortOrder = SqliteCommandExecutor.NextSortOrder(
                 connection,
                 "shots",

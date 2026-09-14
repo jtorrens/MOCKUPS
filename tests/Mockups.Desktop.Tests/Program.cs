@@ -14155,6 +14155,37 @@ static void ProductionHierarchyTransferCopiesAndMovesShotsAndScreens()
         }
         commands.Delete(copiedShotNode);
 
+        var collisionNode = database.AddShot(
+            targetEpisodeNode,
+            sourceShot.OwnerActorId,
+            sourceShot.ShotNumber);
+        var expectedReassignedNumber = database.SuggestShotNumber(
+            targetEpisodeNode.Id);
+        var reassignedShotNode = commands.TransferProductionNode(
+            sourceShotNode,
+            targetEpisodeNode,
+            ProductionHierarchyTransferMode.Copy);
+        var reassignedShot = shots.Get(reassignedShotNode.Id);
+        var projectSettings = database.GetProjectSettings(
+            sourceShot.ProjectId);
+        Equal(expectedReassignedNumber, reassignedShot.ShotNumber);
+        Equal(
+            ProductionOutputContract.CreateShotCode(
+                projectSettings.ProductionOutput.ShotPrefix,
+                expectedReassignedNumber,
+                projectSettings.ProductionOutput.ShotNumberPadding),
+            reassignedShot.Slug);
+        Throws<InvalidOperationException>(() =>
+            commands.TransferProductionNode(
+                sourceShotNode,
+                targetEpisodeNode,
+                ProductionHierarchyTransferMode.Move));
+        Equal(
+            sourceShot.EpisodeId,
+            shots.Get(sourceShot.Id).EpisodeId);
+        commands.Delete(reassignedShotNode);
+        commands.Delete(collisionNode);
+
         var movedShotNode = commands.TransferProductionNode(
             sourceShotNode,
             targetEpisodeNode,

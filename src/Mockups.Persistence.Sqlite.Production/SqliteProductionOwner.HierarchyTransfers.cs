@@ -70,12 +70,18 @@ internal sealed partial class SqliteProductionOwner
         ShotRecord transferred;
         if (mode == ProductionHierarchyTransferMode.Copy)
         {
+            var identity = ResolveTransferredShotCopyIdentity(
+                connection,
+                source,
+                targetEpisode.Id);
             transferred = _shotRepository.DuplicateToEpisode(
                 connection,
                 source.Id,
                 $"shot_{Guid.NewGuid():N}",
                 targetEpisode.Id,
                 $"{source.Name} copy",
+                identity.ShotNumber,
+                identity.ShotCode,
                 transaction);
             foreach (var screen in _moduleInstanceRepository
                          .QueryByShot(connection, source.Id))
@@ -106,6 +112,42 @@ internal sealed partial class SqliteProductionOwner
             transferred.Notes,
             sourceNode.RecordClassId,
             targetEpisodeNode);
+    }
+
+    private (int ShotNumber, string ShotCode)
+        ResolveTransferredShotCopyIdentity(
+            SqliteConnection connection,
+            ShotRecord source,
+            string targetEpisodeId)
+    {
+        if (_shotRepository.IsShotIdentityAvailable(
+                connection,
+                targetEpisodeId,
+                source.ShotNumber,
+                source.Slug))
+        {
+            return (source.ShotNumber, source.Slug);
+        }
+
+        var shotNumber = _shotRepository.SuggestShotNumber(
+            connection,
+            targetEpisodeId);
+        while (true)
+        {
+            var plan = ResolveNewShotPlan(
+                connection,
+                targetEpisodeId,
+                shotNumber);
+            if (_shotRepository.IsShotIdentityAvailable(
+                    connection,
+                    targetEpisodeId,
+                    shotNumber,
+                    plan.ShotCode))
+            {
+                return (shotNumber, plan.ShotCode);
+            }
+            shotNumber = checked(shotNumber + 1);
+        }
     }
 
     private ProjectTreeNode TransferScreen(
