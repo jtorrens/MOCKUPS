@@ -149,18 +149,33 @@ internal sealed class EditorNavigationRenderer
 
     public void BringNodeIntoView(Control navigationRoot, string nodeId)
     {
-        Dispatcher.UIThread.Post(() =>
-        {
-            var target = navigationRoot.GetVisualDescendants()
-                .OfType<Control>()
-                .FirstOrDefault((control) => control.Tag switch
-                {
-                    string renderedNodeId => renderedNodeId.Equals(nodeId, StringComparison.Ordinal),
-                    EditorHierarchicalNavigationMetadata metadata => metadata.NodeId.Equals(nodeId, StringComparison.Ordinal),
-                    _ => false,
-                });
-            target?.BringIntoView();
-        }, DispatcherPriority.Background);
+        Dispatcher.UIThread.Post(
+            () => BringNodeIntoViewCore(navigationRoot, nodeId),
+            DispatcherPriority.Background);
+    }
+
+    public async Task BringNodeIntoViewAsync(
+        Control navigationRoot,
+        string nodeId)
+    {
+        await Dispatcher.UIThread.InvokeAsync(
+            () => BringNodeIntoViewCore(navigationRoot, nodeId),
+            DispatcherPriority.Background);
+    }
+
+    private static void BringNodeIntoViewCore(
+        Control navigationRoot,
+        string nodeId)
+    {
+        var target = navigationRoot.GetVisualDescendants()
+            .OfType<Control>()
+            .FirstOrDefault((control) => control.Tag switch
+            {
+                string renderedNodeId => renderedNodeId.Equals(nodeId, StringComparison.Ordinal),
+                EditorHierarchicalNavigationMetadata metadata => metadata.NodeId.Equals(nodeId, StringComparison.Ordinal),
+                _ => false,
+            });
+        target?.BringIntoView();
     }
 
     private void AddNavigationSection(StackPanel parent, ProjectTreeNode sectionRoot)

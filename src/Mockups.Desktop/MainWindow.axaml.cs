@@ -200,7 +200,7 @@ public partial class MainWindow : SukiWindow
             () => _themeController.IsDark,
             () => Session.TreeRoots,
             LoadProjectTreeAsync,
-            ReloadAndSelect,
+            ReloadAndSelectAsync,
             NavigateToReferenceUsage,
             _messages);
         _navigationPanel =
@@ -1629,7 +1629,7 @@ public partial class MainWindow : SukiWindow
         _editorHeader.RefreshRootTitle(title);
     }
 
-    private async void ReloadAndSelect(ProjectTreeNode node)
+    private async Task ReloadAndSelectAsync(ProjectTreeNode node)
     {
         try
         {
@@ -1637,9 +1637,14 @@ public partial class MainWindow : SukiWindow
             {
                 return;
             }
-            NavigateToNodeById(
-                node.Id,
-                "reload-select");
+            if (NavigateToNodeById(
+                    node.Id,
+                    "reload-select"))
+            {
+                await _navigationRenderer.BringNodeIntoViewAsync(
+                    NavigationCardsPanel,
+                    node.Id);
+            }
         }
         catch (Exception exception)
         {
@@ -1647,6 +1652,11 @@ public partial class MainWindow : SukiWindow
                 $"Reload and select {node.Name}",
                 exception);
         }
+    }
+
+    private async void ReloadAndSelect(ProjectTreeNode node)
+    {
+        await ReloadAndSelectAsync(node);
     }
 
     private bool SelectNodeById(string nodeId)

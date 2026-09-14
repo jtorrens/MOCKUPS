@@ -19,7 +19,7 @@ internal sealed class EditorNodeCommandController
     private readonly Func<bool> _isDark;
     private readonly Func<IReadOnlyList<ProjectTreeNode>> _treeRoots;
     private readonly Func<Task<bool>> _loadProjectTree;
-    private readonly Action<ProjectTreeNode> _reloadAndSelect;
+    private readonly Func<ProjectTreeNode, Task> _reloadAndSelect;
     private readonly Func<ReferenceUsageDetail, Task> _navigateToUsage;
     private readonly IEditorShellMessageSink _messages;
 
@@ -34,7 +34,7 @@ internal sealed class EditorNodeCommandController
         Func<bool> isDark,
         Func<IReadOnlyList<ProjectTreeNode>> treeRoots,
         Func<Task<bool>> loadProjectTree,
-        Action<ProjectTreeNode> reloadAndSelect,
+        Func<ProjectTreeNode, Task> reloadAndSelect,
         Func<ReferenceUsageDetail, Task> navigateToUsage,
         IEditorShellMessageSink messages)
     {
@@ -76,7 +76,7 @@ internal sealed class EditorNodeCommandController
                     _ => throw new InvalidOperationException(
                         "Variants can only be saved from a selected variant."),
                 });
-            _reloadAndSelect(variant);
+            await _reloadAndSelect(variant);
         }
         catch (Exception exception)
         {
@@ -125,7 +125,7 @@ internal sealed class EditorNodeCommandController
                             snapshot.ConfigJson);
                     }
                 });
-            _reloadAndSelect(node);
+            await _reloadAndSelect(node);
         }
         catch (Exception exception)
         {
@@ -152,7 +152,7 @@ internal sealed class EditorNodeCommandController
             return;
         }
 
-        _reloadAndSelect(child);
+        await _reloadAndSelect(child);
     }
 
     public async void DuplicateNode(ProjectTreeNode node)
@@ -173,7 +173,7 @@ internal sealed class EditorNodeCommandController
                     () => _database.DuplicateShot(
                         node,
                         shotNumber.Value));
-                _reloadAndSelect(copy);
+                await _reloadAndSelect(copy);
             }
             catch (Exception exception)
             {
@@ -189,7 +189,7 @@ internal sealed class EditorNodeCommandController
                 () => node.Kind == ProjectTreeNodeKind.ModuleInstance
                     ? _moduleInstances.Duplicate(node)
                     : _database.Duplicate(node));
-            _reloadAndSelect(copy);
+            await _reloadAndSelect(copy);
         }
         catch (Exception exception)
         {
@@ -216,7 +216,7 @@ internal sealed class EditorNodeCommandController
         {
             var renamed = await _operations.ExecuteAsync(
                 () => _database.RenameDirectNode(node, nextName));
-            _reloadAndSelect(renamed);
+            await _reloadAndSelect(renamed);
         }
         catch (Exception exception)
         {
@@ -236,7 +236,7 @@ internal sealed class EditorNodeCommandController
                     source,
                     target,
                     mode));
-            _reloadAndSelect(transferred);
+            await _reloadAndSelect(transferred);
         }
         catch (OperationCanceledException)
         {
@@ -269,7 +269,7 @@ internal sealed class EditorNodeCommandController
                 () => node.Kind == ProjectTreeNodeKind.ComponentVariant
                     ? _database.ToggleComponentVariantLock(node)
                     : _database.ToggleModuleVariantLock(node));
-            _reloadAndSelect(toggled);
+            await _reloadAndSelect(toggled);
         }
         catch (Exception exception)
         {
@@ -331,7 +331,7 @@ internal sealed class EditorNodeCommandController
             node.Parent.Name,
             node.Parent.Notes,
             node.Parent.RecordClassId);
-        _reloadAndSelect(nextSelection);
+        await _reloadAndSelect(nextSelection);
     }
 
     public Task ShowInfoDialog(string title, string message)

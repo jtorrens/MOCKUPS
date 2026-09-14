@@ -469,8 +469,11 @@ Production hierarchy transfer uses one modifier-owned drag gesture.
 Command-drag copies a Shot onto another Episode or a Screen onto another
 existing Shot; Option-drag moves the same source types. The valid destination
 receives an amber outline, the operation appends there and selects the resulting
-node after the atomic tree/catalog refresh. Plain drag, mixed Command+Option
-drag and an invalid or same-parent destination perform no mutation.
+node after the atomic tree/catalog refresh. The mutation remains active until
+that refresh completes; navigation expands the destination ancestry and brings
+the copied or moved node into view before completing the command. Plain drag,
+mixed Command+Option drag and an invalid or same-parent destination perform no
+mutation.
 
 Declared `RecordReference` Overrides use this same action and standard
 inherited controls. Their metadata declares the referenced class, sparse local
