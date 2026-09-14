@@ -107,7 +107,6 @@ internal sealed record ProductionFontRecord(
 
 internal sealed record IconThemeRecord(
     string Id,
-    string ProjectId,
     string Name,
     string AssetRoot,
     string MappingJson,
@@ -457,7 +456,6 @@ internal interface IIconThemeRepository
         SqliteConnection connection,
         SqliteTransaction transaction,
         string id,
-        string projectId,
         string name,
         string assetRoot,
         string mappingJson,
@@ -477,12 +475,6 @@ internal interface IIconThemeRepository
         SqliteConnection connection,
         SqliteTransaction transaction,
         string iconThemeId,
-        string mappingJson);
-
-    void UpdateAssets(
-        SqliteConnection connection,
-        string iconThemeId,
-        string assetRoot,
         string mappingJson);
 
     void UpdateIdentity(

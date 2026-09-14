@@ -50,23 +50,22 @@ internal sealed partial class SqliteResourceOwner
         }
 
         using var connection = OpenConnection();
-        var projectId = ProjectIdForIconTheme(connection, iconThemeId);
-        var mediaRoot = ResolveProjectPath(GetProjectSettings(projectId).MediaRoot);
-        var rows = _iconThemeRepository.QueryAll(connection).Where((row) => row.ProjectId == projectId).ToList();
+        _ = _iconThemeRepository.Get(connection, iconThemeId);
+        var rows = _iconThemeRepository.QueryAll(connection).ToList();
         if (rows.Count == 0)
         {
             throw new InvalidOperationException("Refresh icon sets before generating tokens.");
         }
 
         var requestPath = Path.Combine(Path.GetTempPath(), $"mockups-icon-generate-{Guid.NewGuid():N}.json");
-        var setsRoot = Path.GetDirectoryName(Path.Combine(mediaRoot, rows[0].AssetRoot)) ?? mediaRoot;
+        var setsRoot = SystemIconThemesRoot();
         var request = new JsonObject
         {
             ["token"] = token,
             ["category"] = string.IsNullOrWhiteSpace(category) ? IconTokenCategory(token) : category.Trim(),
             ["description"] = description.Trim(),
             ["iconThemesRoot"] = setsRoot,
-            ["mediaRoot"] = mediaRoot,
+            ["systemAssetsRoot"] = _systemAssets.Root,
             ["selectedSources"] = new JsonObject
             {
                 ["lucide"] = lucideSource,
@@ -76,7 +75,7 @@ internal sealed partial class SqliteResourceOwner
             {
                 ["id"] = row.Id,
                 ["name"] = Path.GetFileName(row.AssetRoot),
-                ["path"] = Path.Combine(mediaRoot, row.AssetRoot),
+                ["path"] = IconThemeAssetDirectory(row.AssetRoot),
                 ["iconSet"] = IconSetDefinition(row),
             }).ToArray<JsonNode?>()),
         };
@@ -88,8 +87,8 @@ internal sealed partial class SqliteResourceOwner
             "--request",
             requestPath,
         ], cancellationToken);
-        var refresh = RefreshIconThemeSets(connection, projectId);
-        UpdateIconThemeTokenMetadata(connection, projectId, token, category, description, lucideSource, materialSource);
+        var refresh = RefreshIconThemeSets(connection);
+        UpdateIconThemeTokenMetadata(connection, token, category, description, lucideSource, materialSource);
         return new IconThemeGenerateResult(token, JsonInt(parsed, ["writtenFileCount"], rows.Count), refresh);
     }
 
@@ -182,14 +181,13 @@ internal sealed partial class SqliteResourceOwner
 
     private void UpdateIconThemeTokenMetadata(
         SqliteConnection connection,
-        string projectId,
         string token,
         string category,
         string description,
         string lucideSource,
         string materialSource)
     {
-        var rows = _iconThemeRepository.QueryAll(connection).Where((row) => row.ProjectId == projectId).ToList();
+        var rows = _iconThemeRepository.QueryAll(connection);
         foreach (var row in rows)
         {
             var mapping = ParseJsonObject(row.MappingJson);

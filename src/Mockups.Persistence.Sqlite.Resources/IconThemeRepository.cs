@@ -24,7 +24,7 @@ internal sealed class IconThemeRepository : IIconThemeRepository
     public IconThemeRecord Get(SqliteConnection connection, string iconThemeId)
     {
         using var command = connection.CreateCommand();
-        command.CommandText = "SELECT id, project_id, name, asset_root, mapping_json, metadata_json FROM icon_themes WHERE id = $id";
+        command.CommandText = "SELECT id, name, asset_root, mapping_json, metadata_json FROM icon_themes WHERE id = $id";
         command.Parameters.AddWithValue("$id", iconThemeId);
         using var reader = command.ExecuteReader();
         if (!reader.Read())
@@ -39,7 +39,7 @@ internal sealed class IconThemeRepository : IIconThemeRepository
     {
         var rows = new List<IconThemeRecord>();
         using var command = connection.CreateCommand();
-        command.CommandText = "SELECT id, project_id, name, asset_root, mapping_json, metadata_json FROM icon_themes ORDER BY name, id";
+        command.CommandText = "SELECT id, name, asset_root, mapping_json, metadata_json FROM icon_themes ORDER BY name, id";
         using var reader = command.ExecuteReader();
         while (reader.Read())
         {
@@ -53,7 +53,6 @@ internal sealed class IconThemeRepository : IIconThemeRepository
         SqliteConnection connection,
         SqliteTransaction transaction,
         string id,
-        string projectId,
         string name,
         string assetRoot,
         string mappingJson,
@@ -65,15 +64,14 @@ internal sealed class IconThemeRepository : IIconThemeRepository
             connection,
             transaction,
             """
-            INSERT INTO icon_themes (id, project_id, name, asset_root, mapping_json, metadata_json)
-            VALUES ($id, $projectId, $name, $assetRoot, $mappingJson, $metadataJson)
-            ON CONFLICT(project_id, name) DO UPDATE SET
+            INSERT INTO icon_themes (id, name, asset_root, mapping_json, metadata_json)
+            VALUES ($id, $name, $assetRoot, $mappingJson, $metadataJson)
+            ON CONFLICT(name) DO UPDATE SET
               asset_root = excluded.asset_root,
               mapping_json = excluded.mapping_json,
               metadata_json = excluded.metadata_json
             """,
             ("$id", id),
-            ("$projectId", projectId),
             ("$name", name),
             ("$assetRoot", assetRoot),
             ("$mappingJson", mappingJson),
@@ -93,11 +91,10 @@ internal sealed class IconThemeRepository : IIconThemeRepository
         _context.Execute(
             connection,
             """
-            INSERT INTO icon_themes (id, project_id, name, asset_root, mapping_json, metadata_json)
-            VALUES ($id, $projectId, $name, $assetRoot, $mappingJson, $metadataJson)
+            INSERT INTO icon_themes (id, name, asset_root, mapping_json, metadata_json)
+            VALUES ($id, $name, $assetRoot, $mappingJson, $metadataJson)
             """,
             ("$id", id),
-            ("$projectId", source.ProjectId),
             ("$name", name),
             ("$assetRoot", assetRoot),
             ("$mappingJson", source.MappingJson),
@@ -122,23 +119,6 @@ internal sealed class IconThemeRepository : IIconThemeRepository
             transaction,
             "UPDATE icon_themes SET mapping_json = $mappingJson WHERE id = $id",
             ("$id", iconThemeId),
-            ("$mappingJson", mappingJson));
-    }
-
-    public void UpdateAssets(
-        SqliteConnection connection,
-        string iconThemeId,
-        string assetRoot,
-        string mappingJson)
-    {
-        JsonPath.ParseRequiredObject(
-            mappingJson,
-            $"Icon Theme '{iconThemeId}' mapping_json");
-        _context.Execute(
-            connection,
-            "UPDATE icon_themes SET asset_root = $assetRoot, mapping_json = $mappingJson WHERE id = $id",
-            ("$id", iconThemeId),
-            ("$assetRoot", assetRoot),
             ("$mappingJson", mappingJson));
     }
 
@@ -169,10 +149,9 @@ internal sealed class IconThemeRepository : IIconThemeRepository
         var record = new IconThemeRecord(
             reader.GetString(0),
             reader.GetString(1),
-            reader.GetString(2),
+            SqliteCommandExecutor.ReadString(reader, 2),
             SqliteCommandExecutor.ReadString(reader, 3),
-            SqliteCommandExecutor.ReadString(reader, 4),
-            SqliteCommandExecutor.ReadString(reader, 5));
+            SqliteCommandExecutor.ReadString(reader, 4));
         JsonPath.ParseRequiredObject(record.MappingJson, $"Icon Theme '{record.Id}' mapping_json");
         JsonPath.ParseRequiredObject(record.MetadataJson, $"Icon Theme '{record.Id}' metadata_json");
         return record;

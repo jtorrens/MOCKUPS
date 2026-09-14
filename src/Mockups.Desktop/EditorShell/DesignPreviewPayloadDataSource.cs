@@ -163,7 +163,9 @@ internal sealed class DesignPreviewPayloadDataSource
             _database.GetPaletteNeutralMap(theme.ProjectId),
             _projectPaths.ResolveProjectPath(
                 _actors.GetProjectSettings(theme.ProjectId).MediaRoot),
-            iconTheme?.AssetRoot ?? "",
+            iconTheme is null
+                ? ""
+                : _database.ResolveIconThemeAssetDirectory(theme.IconThemeId),
             iconTheme?.MappingJson ?? "{}",
             _database.GetProductionFontFaces(theme.ProjectId),
             theme.StatusBarId,

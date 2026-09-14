@@ -211,6 +211,7 @@ public interface IPreviewInputRepository
     IReadOnlyList<ProductionFontFace> GetProductionFontFaces(
         string projectId);
     IconThemeSettings GetIconThemeSettings(string iconThemeId);
+    string ResolveIconThemeAssetDirectory(string iconThemeId);
 }
 
 public interface IActorPreviewRepository : IProjectSettingsQuery
@@ -489,9 +490,6 @@ public interface IExternalMediaAssetReplacementStore
 {
     void ReplaceProductionFontFamilyDirectory(
         string productionFontId,
-        string relativeDirectory);
-    void ReplaceIconThemeDirectory(
-        string iconThemeId,
         string relativeDirectory);
 }
 

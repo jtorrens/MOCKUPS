@@ -196,13 +196,6 @@ internal sealed class ExternalMediaReplacementCoordinator
                     usage.SourceNodeId,
                     replacement));
         }
-        else if (usage.DirectoryKind == ExternalMediaDirectoryKind.IconTheme)
-        {
-            await _operations.ExecuteAsync(() =>
-                _assetDirectories.ReplaceIconThemeDirectory(
-                    usage.SourceNodeId,
-                    replacement));
-        }
         else if (usage.AuthoringSurface == ExternalMediaAuthoringSurface.Editor)
         {
             await ReplaceEditorValueAsync(node, usage, replacement);

@@ -5,7 +5,7 @@ Status: normative.
 ## Database scope
 
 The desktop application persists one complete Project workspace in SQLite.
-Schema version `20` is the only current schema. Authored Production rows belong
+Schema version `21` is the only current schema. Authored Production rows belong
 directly or indirectly to a Project; System catalog rows are explicitly global.
 Cross-Project lookup remains invalid.
 
@@ -18,7 +18,8 @@ The current tables are:
 | Definitions | `apps`, `modules`, `component_classes` | Project-owned reusable definitions |
 | System Palette | `palette_colors` | Global identities and default RGB values |
 | Production Palette | `production_palette_values` | Complete Project-specific RGB values for the System catalog |
-| Visual resources | `themes`, `icon_themes` | Project-owned semantic resources |
+| System Icon Themes | `icon_themes` | Global icon-set identities, mappings and System asset roots |
+| Visual resources | `themes` | Project-owned semantic resources |
 | Production resources | `actors`, `devices`, `production_fonts` | Project-owned Production Data |
 | Editor description | `editor_layouts` | Project-owned layout metadata |
 
@@ -64,11 +65,11 @@ Definition references are also restricted: authored Production data must be
 updated explicitly before its referenced definition can be removed.
 
 `ProjectReferenceIntegrity` is the single cross-domain data guard for
-Project-owned relational references. Focused repositories invoke it before
-writes and startup validation invokes the same owner read-only. Actor Device
-and Theme, Shot Actor and its optional Device override, Screen Theme override,
-and Theme Icon Theme, Status Bar and
-Navigation Bar references must resolve inside the owner's exact Project.
+relational references. Focused repositories invoke it before writes and startup
+validation invokes the same owner read-only. Actor Device and Theme, Shot Actor
+and its optional Device override, Screen Theme override, and Theme Status Bar
+and Navigation Bar references must resolve inside the owner's exact Project.
+Theme Icon Theme references resolve against the one global System catalog.
 Status and Navigation references additionally require a complete existing
 Component Variant of their exact declared type.
 
@@ -677,6 +678,7 @@ same revision:
 
 - `data/mockups.sqlite`;
 - affected files under `assets/FOQN_S2`;
+- affected files under `assets/system/icon-themes`;
 - affected files under `assets/system/system_icons`.
 
 `data/mockups.sqlite` is a versioned snapshot, never a second authoring

@@ -69,14 +69,17 @@ SQLite current project data
 
 ## Core domains
 
-### Project resources
+### Resource scope
 
-A Project owns every reusable and Production record in its workspace. Records
-never resolve across Projects.
+System Palette identities and Icon Themes are shared by every Project.
+Production Palette values, Themes, Actors, Devices and Production Fonts remain
+owned by one exact Project. Project-owned records never resolve through another
+Project.
 
 ### Design definitions
 
-- Palette Colors, Themes and Icon Themes define semantic visual context.
+- System Palette Colors and Icon Themes define shared semantic identities;
+  Project Themes select them for Production.
 - Apps group Modules.
 - Component Classes define schema and resolver identity.
 - Component Variants are complete named snapshots.

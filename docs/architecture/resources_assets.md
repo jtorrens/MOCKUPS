@@ -4,11 +4,11 @@ Status: normative.
 
 ## Resource ownership
 
-Palette Color identities are System-owned SQLite records. Every Project owns a
-complete set of RGB values for that fixed catalog. Themes, Icon Themes, Actors,
-Devices and Production Fonts remain Project-owned SQLite records. Asset files
-are referenced by those current records and resolved through the owning
-resource service.
+Palette Color identities and Icon Themes are System-owned SQLite records. Every
+Project owns a complete set of RGB values for the fixed Palette catalog.
+Themes, Actors, Devices and Production Fonts remain Project-owned SQLite
+records. Asset files are referenced by those current records and resolved
+through the owning resource service.
 
 There is no cross-Project fallback. Global Palette identities resolve only
 through the exact active Project's required RGB rows.
@@ -49,29 +49,27 @@ Variant, their Design Test Values and defaults, and every Production Screen
 payload, local Override and media-valued animation keyframe. An animated media
 usage retains the exact animation track and keyframe ids so replacement writes
 only that authored keyframe through the Module Instance animation owner. Each
-Production Font family directory and each Icon Theme directory is represented
-once; individual icon files and application-internal assets remain outside the
-inventory. Relative references resolve through the Project path resolver;
-absolute references retain their authored workstation
-location. Missing targets remain listed and are marked explicitly so stale
-authored references can be found without repairing or deleting them.
+Production Font family directory is represented once. System Icon Theme
+directories, individual icon files and application-internal assets remain
+outside the Project inventory. Relative references resolve through the Project
+path resolver; absolute references retain their authored workstation location.
+Missing targets remain listed and are marked explicitly so stale authored
+references can be found without repairing or deleting them.
 
 Each result retains its exact owner, authoring surface, field, nested slot path
 and stable structured-item id. The UI can therefore navigate to the owning
 editor and focus that exact field or item without matching labels, types or
 positions. A file row shows its absolute parent path and filename separately.
 A directory row shows only the absolute directory path and the indicative File
-name text `Media folder`, `Font family folder` or `Icon folder`; it never
+name text `Media folder` or `Font family folder`; it never
 expands the directory into synthetic file usages.
 
 The File name cell exposes `Replace media…`, `Replace media folder…`, `Replace
-font family…` or `Replace icon folder…` according to the declared owner, for
-both existing and missing references. Production Font replacement rebuilds the
-family's exact file/style/weight document from the selected directory; Icon
-Theme replacement rebuilds its token mapping from the selected SVG directory.
-Both contextual menus expose `Show in Finder` as a separate action when the
-target exists; right-click never reveals a target directly. The replacement
-action uses the
+font family…` according to the declared owner, for both existing and missing
+references. Production Font replacement rebuilds the family's exact
+file/style/weight document from the selected directory. Contextual menus expose
+`Show in Finder` as a separate action when the target exists; right-click never
+reveals a target directly. The replacement action uses the
 declared field `ValueKind` picker, preserves that picker's relative/absolute
 storage policy and commits only the exact owner, nested slot and stable item
 identified by the row through the existing editor, Design Test Values or
@@ -194,9 +192,18 @@ with the owning font and path identified.
 
 ## Icon Themes
 
-An Icon Theme owns one current mapping document plus metadata. Every token maps
-explicitly to an asset. Icon selection, mapping validation and asset resolution
-live in the resource owner, not `MainWindow`, a generic editor or the renderer.
+An Icon Theme owns one global current mapping document plus metadata. Every
+token maps explicitly to one asset under `assets/system/icon-themes`. The full
+set catalog is shared by every Production: stable Icon Theme ids and token ids
+are never copied or remapped when a Production is created. Editing a mapped SVG
+therefore changes every Production that resolves that Icon Theme and token.
+Icon selection, mapping validation and System asset resolution live in the
+resource owner, not `MainWindow`, a generic editor or the renderer.
+
+Design exposes the one System Icon Themes editor. Theme remains
+Production-owned and selects a System Icon Theme by its stable global id.
+Preview receives the resolved System directory explicitly and never probes a
+Project media root or a hardcoded Production directory for icon assets.
 
 The shared SVG transformation workflow emits a filled icon as direct filled
 geometry. It does not encode that geometry through a background mask.

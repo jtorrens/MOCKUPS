@@ -27,6 +27,7 @@ internal sealed partial class SqliteResourceOwner :
     private readonly IThemeRepository _themeRepository;
     private readonly IProductionFontRepository _productionFontRepository;
     private readonly IIconThemeRepository _iconThemeRepository;
+    private readonly SystemAssetPathResolver _systemAssets;
 
     internal SqliteResourceOwner(
         SqliteProjectContext context,
@@ -42,6 +43,7 @@ internal sealed partial class SqliteResourceOwner :
         _themeRepository = new ThemeRepository(context);
         _productionFontRepository = new ProductionFontRepository(context);
         _iconThemeRepository = new IconThemeRepository(context);
+        _systemAssets = SystemAssetPathResolver.Discover();
     }
 
     internal IPaletteRepository PaletteRepository => _paletteRepository;
@@ -64,6 +66,9 @@ internal sealed partial class SqliteResourceOwner :
 
     private string NormalizeRelativePath(string path) =>
         _context.ProjectPaths.NormalizeRelativePath(path);
+
+    private string ResolveSystemAssetPath(string path) =>
+        _systemAssets.Resolve(path);
 
     public ProjectSettings GetProjectSettings(string projectId) =>
         _projectEpisodeRepository.GetProjectSettings(projectId);

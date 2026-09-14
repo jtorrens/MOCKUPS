@@ -65,9 +65,8 @@ internal static class ProjectReferenceIntegrity
 
         foreach (var theme in ThemeReferences(connection))
         {
-            RequireSameProjectReference(
+            RequireGlobalReference(
                 connection,
-                theme.ProjectId,
                 ProjectReferenceKind.IconTheme,
                 theme.IconThemeId,
                 $"Theme '{theme.Id}' Icon Theme");
@@ -115,6 +114,33 @@ internal static class ProjectReferenceIntegrity
         {
             throw new InvalidOperationException(
                 $"{context} references {ReferenceLabel(referenceKind)} '{referenceId}' from another Project.");
+        }
+    }
+
+    public static void RequireGlobalReference(
+        SqliteConnection connection,
+        ProjectReferenceKind referenceKind,
+        string referenceId,
+        string context,
+        bool required = false)
+    {
+        if (string.IsNullOrWhiteSpace(referenceId))
+        {
+            if (required)
+            {
+                throw new InvalidOperationException($"{context} requires an explicit reference.");
+            }
+            return;
+        }
+
+        var exists = SqliteCommandExecutor.ScalarLong(
+            connection,
+            $"SELECT COUNT(*) FROM {TableName(referenceKind)} WHERE id = $id",
+            ("$id", referenceId)) == 1;
+        if (!exists)
+        {
+            throw new InvalidOperationException(
+                $"{context} references missing {ReferenceLabel(referenceKind)} '{referenceId}'.");
         }
     }
 

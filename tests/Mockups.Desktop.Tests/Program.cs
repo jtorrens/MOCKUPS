@@ -66,7 +66,7 @@ var tests = new (string Name, Action Run)[]
     ("v2 document rejects malformed roots", RejectsMalformedDocuments),
     ("opening an existing desktop database is byte-for-byte read-only", ExistingDatabaseOpenIsReadOnly),
     ("rejected databases remain byte-for-byte unchanged", RejectedDatabaseOpenIsReadOnly),
-    ("Project-owned references reject cross-Project reads and writes", ProjectOwnedReferencesRejectCrossProjectValues),
+    ("References enforce their declared Project or System scope", ReferencesEnforceDeclaredScope),
     ("current editor layouts reject retired or incomplete roots read-only", CurrentEditorLayoutContractFailsReadOnly),
     ("persisted JSON roots reject blank malformed and wrong shapes", PersistedJsonRootsAreStrict),
     ("Device metric documents reject retired and incomplete properties read-only", DeviceMetricDocumentsAreStrict),
@@ -9724,7 +9724,7 @@ static void RejectedDatabaseOpenIsReadOnly()
     });
 }
 
-static void ProjectOwnedReferencesRejectCrossProjectValues()
+static void ReferencesEnforceDeclaredScope()
 {
     AssertRejectedDatabaseIsReadOnly("cross-project-actor-device", (connection) =>
     {
@@ -9765,18 +9765,12 @@ static void ProjectOwnedReferencesRejectCrossProjectValues()
         Execute(connection, "PRAGMA foreign_keys = OFF");
         Execute(connection, "UPDATE shots SET device_override_id = '' WHERE id = 'shot_001'");
     });
-    AssertRejectedDatabaseIsReadOnly("cross-project-theme-icon-theme", (connection) =>
+    AssertRejectedDatabaseIsReadOnly("missing-theme-icon-theme", (connection) =>
     {
-        InsertCrossProject(connection);
         Execute(connection, """
-            UPDATE icon_themes
-            SET project_id = 'project_cross'
-            WHERE id = (
-                SELECT icon_theme_id
-                FROM themes
-                WHERE icon_theme_id <> ''
-                ORDER BY id
-                LIMIT 1)
+            UPDATE themes
+            SET icon_theme_id = 'missing_icon_theme'
+            WHERE icon_theme_id <> ''
             """);
     });
     AssertRejectedDatabaseIsReadOnly("cross-project-theme-status-bar", (connection) =>
@@ -9832,9 +9826,9 @@ static void ProjectOwnedReferencesRejectCrossProjectValues()
                 """);
             Execute(connection, """
                 INSERT INTO icon_themes (
-                    id, project_id, name, asset_root, mapping_json, metadata_json)
+                    id, name, asset_root, mapping_json, metadata_json)
                 SELECT
-                    'icon_theme_cross', 'project_cross', 'Cross Icon Theme',
+                    'icon_theme_cross', 'Cross Icon Theme',
                     asset_root, mapping_json, metadata_json
                 FROM icon_themes
                 ORDER BY id
@@ -9872,8 +9866,17 @@ static void ProjectOwnedReferencesRejectCrossProjectValues()
             Throws<InvalidOperationException>(() =>
                 shotRepository.UpdateField(connection, shotId, "shot.ownerActorId", "actor_cross"));
         }
-        Throws<InvalidOperationException>(() =>
-            themeRepository.UpdateDirectField(themeId, "theme.iconThemeId", "icon_theme_cross"));
+        themeRepository.UpdateDirectField(
+            themeId,
+            "theme.iconThemeId",
+            "icon_theme_cross");
+        Equal(
+            "icon_theme_cross",
+            themeRepository.Get(themeId).IconThemeId);
+        themeRepository.UpdateDirectField(
+            themeId,
+            "theme.iconThemeId",
+            themeBefore.IconThemeId);
         Throws<InvalidOperationException>(() =>
             themeRepository.UpdateDirectField(
                 themeId,
@@ -13244,7 +13247,6 @@ static void IconThemeRepositoryPreservesFocusedContract()
             SequenceEqual(
                 database.GetIconThemeOptions(project.Id).Skip(1).Select((option) => option.Value),
                 repository.QueryAll(connection)
-                    .Where((iconTheme) => iconTheme.ProjectId == project.Id)
                     .OrderBy((iconTheme) => iconTheme.Name)
                     .Select((iconTheme) => iconTheme.Id));
         }
@@ -13306,7 +13308,6 @@ static void IconThemeRepositoryPreservesFocusedContract()
                 connection,
                 transaction,
                 "invalid_icon_theme",
-                project.Id,
                 "Invalid Icon Theme",
                 "icon-themes/invalid",
                 "{}",
@@ -19005,10 +19006,6 @@ static void ExternalMediaInventoriesDeclaredAuthoredPaths()
         usage.SourceKind == ProjectTreeNodeKind.ProductionFont
         && usage.DirectoryKind == ExternalMediaDirectoryKind.ProductionFontFamily
         && usage.FileName == "Font family folder"));
-    True(usages.Any((usage) =>
-        usage.SourceKind == ProjectTreeNodeKind.IconTheme
-        && usage.DirectoryKind == ExternalMediaDirectoryKind.IconTheme
-        && usage.FileName == "Icon folder"));
     True(usages.All((usage) => usage.Exists == (usage.IsDirectory
         ? Directory.Exists(usage.AbsoluteTargetPath)
         : File.Exists(usage.AbsoluteTargetPath))));

@@ -334,12 +334,6 @@ internal sealed class SqliteExternalMediaAssetReplacementPort(
             productionFontId,
             relativeDirectory);
 
-    public void ReplaceIconThemeDirectory(
-        string iconThemeId,
-        string relativeDirectory) =>
-        target.ReplaceIconThemeDirectory(
-            iconThemeId,
-            relativeDirectory);
 }
 
 internal sealed class SqliteEditorNodeCommandPort(
@@ -469,6 +463,9 @@ internal sealed class SqlitePreviewInputPort(
 
     public IconThemeSettings GetIconThemeSettings(string iconThemeId) =>
         resources.GetIconThemeSettings(iconThemeId);
+
+    public string ResolveIconThemeAssetDirectory(string iconThemeId) =>
+        resources.ResolveIconThemeAssetDirectory(iconThemeId);
 }
 
 internal sealed class SqliteDictionaryFieldContextPort(
@@ -708,4 +705,7 @@ internal sealed class SqliteRenderSnapshotPort(
 
     public IconThemeSettings GetIconThemeSettings(string iconThemeId) =>
         preview.GetIconThemeSettings(iconThemeId);
+
+    public string ResolveIconThemeAssetDirectory(string iconThemeId) =>
+        preview.ResolveIconThemeAssetDirectory(iconThemeId);
 }

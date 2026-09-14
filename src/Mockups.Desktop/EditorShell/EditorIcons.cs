@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Mockups.DesktopEditorShell.Common;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -402,20 +403,16 @@ internal static class EditorIcons
             return SystemIconsDirectoryCache;
         }
 
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null)
+        try
         {
-            var candidate = Path.Combine(directory.FullName, "assets", "system", "system_icons");
-            if (Directory.Exists(candidate))
-            {
-                SystemIconsDirectoryCache = candidate;
-                return candidate;
-            }
-
-            directory = directory.Parent;
+            SystemIconsDirectoryCache =
+                SystemAssetPathResolver.Discover().Resolve("system_icons");
+            return SystemIconsDirectoryCache;
         }
-
-        return null;
+        catch (InvalidOperationException)
+        {
+            return null;
+        }
     }
 
     private static string? PathData(string name)

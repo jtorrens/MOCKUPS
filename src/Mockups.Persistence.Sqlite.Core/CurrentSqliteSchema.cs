@@ -188,12 +188,11 @@ internal static class CurrentSqliteSchema
 
         CREATE TABLE IF NOT EXISTS icon_themes (
           id TEXT PRIMARY KEY,
-          project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
           name TEXT NOT NULL,
           asset_root TEXT NOT NULL DEFAULT '',
           mapping_json TEXT NOT NULL DEFAULT '{}',
           metadata_json TEXT NOT NULL DEFAULT '{}',
-          UNIQUE(project_id, name)
+          UNIQUE(name)
         );
 
         CREATE TABLE IF NOT EXISTS component_classes (
@@ -227,7 +226,7 @@ internal static class CurrentSqliteSchema
           layout_json TEXT NOT NULL
         );
 
-        PRAGMA user_version = 20;
+        PRAGMA user_version = 21;
         """;
 
 }

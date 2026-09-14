@@ -204,8 +204,6 @@ internal sealed class SqliteCoreFieldStore
             node.Name);
         var metadata = SqliteResourceOwner.IconThemeMetadata(
             _resources.IconThemeAssetDirectory(
-                connection,
-                row.ProjectId,
                 renamedAssets.AssetRoot),
             renamedAssets.Name);
         _resources.IconThemeRepository.UpdateIdentity(

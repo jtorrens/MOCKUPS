@@ -296,8 +296,6 @@ internal sealed class ExternalMediaTableControl : StackPanel
             {
                 ExternalMediaDirectoryKind.ProductionFontFamily =>
                     "Right-click for font family actions",
-                ExternalMediaDirectoryKind.IconTheme =>
-                    "Right-click for icon folder actions",
                 ExternalMediaDirectoryKind.Media =>
                     "Right-click for media folder actions",
                 _ => "Right-click for media file actions",
@@ -324,8 +322,6 @@ internal sealed class ExternalMediaTableControl : StackPanel
             {
                 ExternalMediaDirectoryKind.ProductionFontFamily =>
                     "Replace font family…",
-                ExternalMediaDirectoryKind.IconTheme =>
-                    "Replace icon folder…",
                 ExternalMediaDirectoryKind.Media =>
                     "Replace media folder…",
                 _ => "Replace media…",

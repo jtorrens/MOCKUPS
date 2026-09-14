@@ -77,15 +77,8 @@ export function iconUriForToken(payload: DesignPreviewPayload, token: string) {
     throw new Error(`Missing Icon Theme asset root for token ${token}`);
   }
   const assetRoot = payload.iconAssetRoot.replace(/\/+$/g, "");
-
-  const candidates = [
-    path.resolve(payload.projectMediaRoot ?? "", assetRoot, file),
-    path.resolve("assets/FOQN_S2", assetRoot, file),
-    path.resolve("assets", assetRoot, file),
-    path.resolve(assetRoot, file),
-  ];
-  const fullPath = candidates.find((candidate) => existsSync(candidate));
-  if (!fullPath) return "";
+  const fullPath = path.resolve(assetRoot, file);
+  if (!existsSync(fullPath)) return "";
 
   const svg = readFileSync(fullPath);
   return `data:image/svg+xml;base64,${svg.toString("base64")}`;

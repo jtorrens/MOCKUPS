@@ -347,16 +347,17 @@ internal sealed class SqliteEditorNavigationStore
 
         foreach (var iconTheme in iconThemes.OrderBy((iconTheme) => iconTheme.Name))
         {
-            if (!iconThemeRootNodes.TryGetValue(iconTheme.ProjectId, out var iconThemesRoot)) continue;
-
-            iconThemesRoot.AddChild(new ProjectTreeNode(
-                ProjectTreeNodeKind.IconTheme,
-                iconTheme.Id,
-                iconTheme.Name,
-                $"{SqliteResourceOwner.IconThemeTokenCount(iconTheme.MappingJson)} tokens · {iconTheme.AssetRoot}",
-                ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.IconTheme),
-                iconThemesRoot,
-                isUsed: IsUsed(referenceUsageIndex, ProjectTreeNodeKind.IconTheme, iconTheme.Id)));
+            foreach (var iconThemesRoot in iconThemeRootNodes.Values)
+            {
+                iconThemesRoot.AddChild(new ProjectTreeNode(
+                    ProjectTreeNodeKind.IconTheme,
+                    iconTheme.Id,
+                    iconTheme.Name,
+                    $"{SqliteResourceOwner.IconThemeTokenCount(iconTheme.MappingJson)} tokens · {iconTheme.AssetRoot}",
+                    ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.IconTheme),
+                    iconThemesRoot,
+                    isUsed: IsUsed(referenceUsageIndex, ProjectTreeNodeKind.IconTheme, iconTheme.Id)));
+            }
         }
 
         foreach (var componentClass in componentClasses.OrderBy((componentClass) => componentClass.ComponentType).ThenBy((componentClass) => componentClass.Name))

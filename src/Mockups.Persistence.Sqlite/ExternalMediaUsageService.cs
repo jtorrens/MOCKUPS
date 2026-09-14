@@ -176,37 +176,6 @@ internal sealed class ExternalMediaUsageService : IExternalMediaUsageQuery
             }
         }
 
-        using (var command = connection.CreateCommand())
-        {
-            command.CommandText =
-                "SELECT id, name, asset_root FROM icon_themes WHERE project_id = $projectId";
-            command.Parameters.AddWithValue("$projectId", projectId);
-            using var reader = command.ExecuteReader();
-            while (reader.Read())
-            {
-                var source = new SourceContext(
-                    projectId,
-                    projectRoot,
-                    reader.GetString(0),
-                    ProjectTreeNodeKind.IconTheme,
-                    ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.IconTheme),
-                    "Icon Theme",
-                    reader.GetString(1),
-                    ReferenceUsageScope.Design,
-                    ExternalMediaAuthoringSurface.Editor);
-                AddPath(
-                    usages,
-                    source,
-                    "iconTheme.assetRoot",
-                    "iconTheme.assetRoot",
-                    "assetRoot",
-                    "Icon directory",
-                    ReadString(reader, 2),
-                    ValueKind.MediaDirectoryPath,
-                    mediaRoot,
-                    directoryKind: ExternalMediaDirectoryKind.IconTheme);
-            }
-        }
     }
 
     private static void AddComponentUsages(
@@ -866,7 +835,6 @@ internal sealed class ExternalMediaUsageService : IExternalMediaUsageQuery
                 ? directoryKind switch
                 {
                     ExternalMediaDirectoryKind.ProductionFontFamily => "Font family folder",
-                    ExternalMediaDirectoryKind.IconTheme => "Icon folder",
                     _ => "Media folder",
                 }
                 : Path.GetFileName(absolute),

@@ -219,9 +219,8 @@ internal sealed class ThemeRepository : IThemeRepository
             case "theme.family":
                 return;
             case "theme.iconThemeId":
-                ProjectReferenceIntegrity.RequireSameProjectReference(
+                ProjectReferenceIntegrity.RequireGlobalReference(
                     connection,
-                    theme.ProjectId,
                     ProjectReferenceKind.IconTheme,
                     value,
                     $"Theme '{theme.Id}' Icon Theme");
@@ -255,9 +254,8 @@ internal sealed class ThemeRepository : IThemeRepository
         string navigationBarId,
         string context)
     {
-        ProjectReferenceIntegrity.RequireSameProjectReference(
+        ProjectReferenceIntegrity.RequireGlobalReference(
             connection,
-            projectId,
             ProjectReferenceKind.IconTheme,
             iconThemeId,
             $"{context} Icon Theme");

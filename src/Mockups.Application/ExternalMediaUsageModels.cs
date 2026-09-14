@@ -14,7 +14,6 @@ public enum ExternalMediaDirectoryKind
     None,
     Media,
     ProductionFontFamily,
-    IconTheme,
 }
 
 public sealed record ExternalMediaUsageDetail(

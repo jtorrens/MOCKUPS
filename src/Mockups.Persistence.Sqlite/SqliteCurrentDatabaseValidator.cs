@@ -108,6 +108,7 @@ internal sealed partial class SqliteCurrentDatabaseValidator
             connection);
         ValidateCurrentProductionOutput(connection);
         ValidateCurrentProductionFontFiles(connection);
+        ValidateCurrentIconThemeAssets(connection);
         ValidateCurrentEditorLayouts(connection);
         ValidateCurrentDefinitionLifecycle(connection);
         ValidateCurrentPreviewManifest(connection);
@@ -120,6 +121,44 @@ internal sealed partial class SqliteCurrentDatabaseValidator
         ValidateNoRetiredButtonStates(connection);
         ValidateCurrentSemanticTypographyReferences(connection);
         ValidateForeignKeyIntegrity(connection);
+    }
+
+    private void ValidateCurrentIconThemeAssets(SqliteConnection connection)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText =
+            "SELECT id, asset_root FROM icon_themes ORDER BY id";
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            var id = reader.GetString(0);
+            try
+            {
+                var directory = _resourceOwner.ResolveIconThemeAssetDirectory(id);
+                if (!Directory.Exists(directory))
+                {
+                    throw new InvalidOperationException(
+                        $"missing System asset directory '{reader.GetString(1)}'.");
+                }
+
+                foreach (var token in _resourceOwner.GetIconThemeTokens(id))
+                {
+                    var path = _resourceOwner.ResolveIconThemeAssetPath(
+                        id,
+                        token.File);
+                    if (!File.Exists(path))
+                    {
+                        throw new InvalidOperationException(
+                            $"token '{token.Token}' references missing SVG '{token.File}'.");
+                    }
+                }
+            }
+            catch (InvalidOperationException exception)
+            {
+                throw InvalidCurrentDatabase(
+                    $"Icon Theme '{id}' is invalid: {exception.Message}");
+            }
+        }
     }
 
     private void ValidateNoRetiredButtonStates(SqliteConnection connection)

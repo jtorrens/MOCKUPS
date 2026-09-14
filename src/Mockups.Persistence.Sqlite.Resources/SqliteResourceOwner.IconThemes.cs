@@ -16,7 +16,6 @@ internal sealed partial class SqliteResourceOwner
     {
         using var connection = OpenConnection();
         var options = _iconThemeRepository.QueryAll(connection)
-            .Where((theme) => theme.ProjectId == projectId)
             .OrderBy((theme) => theme.Name)
             .Select((theme) => new FieldOption(theme.Id, theme.Name))
             .ToList();
@@ -57,7 +56,6 @@ internal sealed partial class SqliteResourceOwner
     {
         using var connection = OpenConnection();
         var tokens = _iconThemeRepository.QueryAll(connection)
-            .Where((row) => row.ProjectId == projectId)
             .SelectMany((row) => IconThemeTokens(row.MappingJson).Select((token) => token.Token))
             .ToHashSet(StringComparer.Ordinal);
         if (!string.IsNullOrWhiteSpace(currentToken))
@@ -76,10 +74,13 @@ internal sealed partial class SqliteResourceOwner
 
     public string ResolveIconThemeAssetPath(string iconThemeId, string file)
     {
+        return Path.Combine(ResolveIconThemeAssetDirectory(iconThemeId), file);
+    }
+
+    public string ResolveIconThemeAssetDirectory(string iconThemeId)
+    {
         var settings = GetIconThemeSettings(iconThemeId);
-        var projectId = ProjectIdForIconTheme(iconThemeId);
-        var mediaRoot = ResolveProjectPath(GetProjectSettings(projectId).MediaRoot);
-        return Path.Combine(mediaRoot, settings.AssetRoot, file);
+        return IconThemeAssetDirectory(settings.AssetRoot);
     }
 
     public IconThemeRefreshResult RefreshIconThemeSets(ProjectTreeNode iconThemesRoot)
@@ -89,52 +90,15 @@ internal sealed partial class SqliteResourceOwner
             throw new InvalidOperationException("Icon themes can only be refreshed from the Icon Themes root.");
         }
 
-        var project = ProjectAncestor(iconThemesRoot);
         using var connection = OpenConnection();
-        return RefreshIconThemeSets(connection, project.Id);
+        return RefreshIconThemeSets(connection);
     }
 
     public IconThemeRefreshResult RefreshIconThemeSetsForTheme(string iconThemeId)
     {
         using var connection = OpenConnection();
-        return RefreshIconThemeSets(connection, ProjectIdForIconTheme(connection, iconThemeId));
-    }
-
-    public void ReplaceIconThemeDirectory(
-        string iconThemeId,
-        string relativeDirectory)
-    {
-        using var connection = OpenConnection();
-        var row = _iconThemeRepository.Get(connection, iconThemeId);
-        var mediaRoot = ResolveProjectPath(
-            GetProjectSettings(connection, row.ProjectId).MediaRoot);
-        var normalizedDirectory = NormalizeRelativePath(relativeDirectory);
-        var absoluteDirectory = Path.GetFullPath(
-            Path.Combine(mediaRoot, normalizedDirectory));
-        var relativeToRoot = Path.GetRelativePath(mediaRoot, absoluteDirectory);
-        if (relativeToRoot.StartsWith("..", StringComparison.Ordinal)
-            || Path.IsPathFullyQualified(relativeToRoot)
-            || !Directory.Exists(absoluteDirectory))
-        {
-            throw new InvalidOperationException(
-                "Icon Theme directory must exist inside the Project media root.");
-        }
-
-        var tokens = IconTokenRules.SvgTokenSet(absoluteDirectory);
-        if (tokens.Count == 0)
-        {
-            throw new InvalidOperationException(
-                "Icon Theme directory contains no SVG icons.");
-        }
-
-        var mapping = BuildIconThemeMapping(
-            row.MappingJson,
-            tokens).ToJsonString();
-        _iconThemeRepository.UpdateAssets(
-            connection,
-            iconThemeId,
-            normalizedDirectory,
-            mapping);
+        _ = _iconThemeRepository.Get(connection, iconThemeId);
+        return RefreshIconThemeSets(connection);
     }
 
     public void DeleteIconThemeToken(string iconThemeId, string token)
@@ -145,26 +109,25 @@ internal sealed partial class SqliteResourceOwner
         }
 
         using var connection = OpenConnection();
-        var projectId = ProjectIdForIconTheme(connection, iconThemeId);
-        var rows = _iconThemeRepository.QueryAll(connection).Where((row) => row.ProjectId == projectId).ToList();
-        var mediaRoot = ResolveProjectPath(GetProjectSettings(projectId).MediaRoot);
+        _ = _iconThemeRepository.Get(connection, iconThemeId);
+        var rows = _iconThemeRepository.QueryAll(connection);
         foreach (var row in rows)
         {
-            var fullPath = Path.Combine(mediaRoot, row.AssetRoot, $"{token}.svg");
+            var fullPath = Path.Combine(IconThemeAssetDirectory(row.AssetRoot), $"{token}.svg");
             if (File.Exists(fullPath))
             {
                 File.Delete(fullPath);
             }
         }
 
-        RefreshIconThemeSets(connection, projectId);
+        RefreshIconThemeSets(connection);
     }
 
     public IconThemeTokenSvg ReadIconThemeTokenSvg(string iconThemeId, string token)
     {
         using var connection = OpenConnection();
         var (row, file) = IconThemeTokenFile(connection, iconThemeId, token);
-        var path = Path.Combine(IconThemeAssetDirectory(connection, row.ProjectId, row.AssetRoot), file);
+        var path = Path.Combine(IconThemeAssetDirectory(row.AssetRoot), file);
         if (!File.Exists(path))
         {
             throw new InvalidOperationException($"Missing SVG file '{file}'.");
@@ -178,7 +141,7 @@ internal sealed partial class SqliteResourceOwner
         svgText = SvgReplacementService.Validate(svgText);
         using var connection = OpenConnection();
         var (row, file) = IconThemeTokenFile(connection, iconThemeId, token);
-        var targetDirectory = IconThemeAssetDirectory(connection, row.ProjectId, row.AssetRoot);
+        var targetDirectory = IconThemeAssetDirectory(row.AssetRoot);
         Directory.CreateDirectory(targetDirectory);
         File.WriteAllText(Path.Combine(targetDirectory, file), svgText);
         return new IconThemeReplaceSvgResult(token, file);
@@ -198,9 +161,8 @@ internal sealed partial class SqliteResourceOwner
         }
 
         using var connection = OpenConnection();
-        var projectId = ProjectIdForIconTheme(connection, iconThemeId);
-        var mediaRoot = ResolveProjectPath(GetProjectSettings(projectId).MediaRoot);
-        var rows = _iconThemeRepository.QueryAll(connection).Where((row) => row.ProjectId == projectId).ToList();
+        _ = _iconThemeRepository.Get(connection, iconThemeId);
+        var rows = _iconThemeRepository.QueryAll(connection);
         if (rows.Count == 0)
         {
             throw new InvalidOperationException("Refresh icon sets before saving tokens.");
@@ -208,15 +170,14 @@ internal sealed partial class SqliteResourceOwner
 
         foreach (var row in rows)
         {
-            var targetDirectory = Path.Combine(mediaRoot, row.AssetRoot);
+            var targetDirectory = IconThemeAssetDirectory(row.AssetRoot);
             Directory.CreateDirectory(targetDirectory);
             File.WriteAllText(Path.Combine(targetDirectory, $"{token}.svg"), svgText);
         }
 
-        var refresh = RefreshIconThemeSets(connection, projectId);
+        var refresh = RefreshIconThemeSets(connection);
         UpdateIconThemeTokenMetadata(
             connection,
-            projectId,
             token,
             IconTokenCategory(token),
             description,
@@ -240,10 +201,9 @@ internal sealed partial class SqliteResourceOwner
         return ReplaceIconThemeTokenSvg(iconThemeId, token, File.ReadAllText(sourcePath));
     }
 
-    private IconThemeRefreshResult RefreshIconThemeSets(SqliteConnection connection, string projectId)
+    private IconThemeRefreshResult RefreshIconThemeSets(SqliteConnection connection)
     {
-        var mediaRoot = ResolveProjectPath(GetProjectSettings(connection, projectId).MediaRoot);
-        var iconThemesRoot = Path.Combine(mediaRoot, "icon-themes");
+        var iconThemesRoot = SystemIconThemesRoot();
         Directory.CreateDirectory(iconThemesRoot);
 
         var setDirectories = Directory
@@ -253,21 +213,19 @@ internal sealed partial class SqliteResourceOwner
             .OrderBy(Path.GetFileName)
             .ToList();
 
-        var existingRows = _iconThemeRepository.QueryAll(connection)
-            .Where((row) => row.ProjectId == projectId)
-            .ToList();
+        var existingRows = _iconThemeRepository.QueryAll(connection).ToList();
         var discovered = new List<(IconThemeRecord Row, string MetadataJson)>();
         foreach (var directory in setDirectories)
         {
             var setName = Path.GetFileName(directory);
             var existing = existingRows.SingleOrDefault((row) => row.Name == setName);
-            var id = existing?.Id ?? $"icon_theme_{projectId}_{Slug(setName)}";
-            var assetRoot = NormalizeRelativePath(Path.GetRelativePath(mediaRoot, directory));
+            var id = existing?.Id ?? $"icon_theme_system_{Slug(setName)}";
+            var assetRoot = NormalizeRelativePath(
+                Path.GetRelativePath(_systemAssets.Root, directory));
             var metadata = IconThemeMetadata(directory, setName);
             discovered.Add((
                 new IconThemeRecord(
                     id,
-                    projectId,
                     setName,
                     assetRoot,
                     existing?.MappingJson ?? "{}",
@@ -282,7 +240,7 @@ internal sealed partial class SqliteResourceOwner
             .ToList();
         var tokensBySet = rows.ToDictionary(
             (row) => row.Id,
-            (row) => IconTokenRules.SvgTokenSet(Path.Combine(mediaRoot, row.AssetRoot)));
+            (row) => IconTokenRules.SvgTokenSet(IconThemeAssetDirectory(row.AssetRoot)));
         var commonTokens = tokensBySet.Values.FirstOrDefault()?.ToHashSet(StringComparer.OrdinalIgnoreCase) ?? [];
         foreach (var setTokens in tokensBySet.Values.Skip(1))
         {
@@ -301,7 +259,6 @@ internal sealed partial class SqliteResourceOwner
                 connection,
                 transaction,
                 item.Row.Id,
-                projectId,
                 item.Row.Name,
                 item.Row.AssetRoot,
                 mappings[item.Row.Id],
@@ -365,17 +322,6 @@ internal sealed partial class SqliteResourceOwner
     private static string IconTokenCategory(string token)
     {
         return IconTokenRules.CategoryFromToken(token);
-    }
-
-    private string ProjectIdForIconTheme(SqliteConnection connection, string iconThemeId)
-    {
-        return _iconThemeRepository.Get(connection, iconThemeId).ProjectId;
-    }
-
-    private string ProjectIdForIconTheme(string iconThemeId)
-    {
-        using var connection = OpenConnection();
-        return ProjectIdForIconTheme(connection, iconThemeId);
     }
 
     internal static JsonObject IconThemeMetadata(string directory, string setName)

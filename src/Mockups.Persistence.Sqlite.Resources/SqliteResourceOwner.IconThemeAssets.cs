@@ -10,40 +10,38 @@ internal sealed partial class SqliteResourceOwner
 {
     internal IconThemeAssetMoveResult DuplicateIconThemeAssets(SqliteConnection connection, IconThemeRecord source, string targetName)
     {
-        var sourceDirectory = IconThemeAssetDirectory(connection, source.ProjectId, source.AssetRoot);
+        var sourceDirectory = IconThemeAssetDirectory(source.AssetRoot);
         if (!Directory.Exists(sourceDirectory))
         {
             throw new InvalidOperationException($"Missing icon theme asset directory '{source.AssetRoot}'.");
         }
 
-        var mediaRoot = ResolveProjectPath(GetProjectSettings(connection, source.ProjectId).MediaRoot);
-        var iconThemesRoot = Path.Combine(mediaRoot, "icon-themes");
+        var iconThemesRoot = SystemIconThemesRoot();
         Directory.CreateDirectory(iconThemesRoot);
         var targetDirectory = UniqueIconThemeDirectory(iconThemesRoot, IconThemeDirectoryName(targetName));
         CopyDirectory(sourceDirectory, targetDirectory);
         RewriteIconThemeManifestName(targetDirectory, Path.GetFileName(targetDirectory));
         return new IconThemeAssetMoveResult(
-            NormalizeRelativePath(Path.GetRelativePath(mediaRoot, targetDirectory)),
+            NormalizeRelativePath(Path.GetRelativePath(_systemAssets.Root, targetDirectory)),
             Path.GetFileName(targetDirectory));
     }
 
     internal IconThemeAssetMoveResult RenameIconThemeAssets(SqliteConnection connection, IconThemeRecord source, string targetName)
     {
-        var sourceDirectory = IconThemeAssetDirectory(connection, source.ProjectId, source.AssetRoot);
+        var sourceDirectory = IconThemeAssetDirectory(source.AssetRoot);
         if (!Directory.Exists(sourceDirectory))
         {
             throw new InvalidOperationException($"Missing icon theme asset directory '{source.AssetRoot}'.");
         }
 
-        var mediaRoot = ResolveProjectPath(GetProjectSettings(connection, source.ProjectId).MediaRoot);
-        var iconThemesRoot = Path.Combine(mediaRoot, "icon-themes");
+        var iconThemesRoot = SystemIconThemesRoot();
         Directory.CreateDirectory(iconThemesRoot);
         var targetDirectory = Path.Combine(iconThemesRoot, IconThemeDirectoryName(targetName));
         if (Path.GetFullPath(sourceDirectory).Equals(Path.GetFullPath(targetDirectory), StringComparison.Ordinal))
         {
             RewriteIconThemeManifestName(sourceDirectory, Path.GetFileName(sourceDirectory));
             return new IconThemeAssetMoveResult(
-                NormalizeRelativePath(Path.GetRelativePath(mediaRoot, sourceDirectory)),
+                NormalizeRelativePath(Path.GetRelativePath(_systemAssets.Root, sourceDirectory)),
                 Path.GetFileName(sourceDirectory));
         }
 
@@ -55,15 +53,26 @@ internal sealed partial class SqliteResourceOwner
         Directory.Move(sourceDirectory, targetDirectory);
         RewriteIconThemeManifestName(targetDirectory, Path.GetFileName(targetDirectory));
         return new IconThemeAssetMoveResult(
-            NormalizeRelativePath(Path.GetRelativePath(mediaRoot, targetDirectory)),
+            NormalizeRelativePath(Path.GetRelativePath(_systemAssets.Root, targetDirectory)),
             Path.GetFileName(targetDirectory));
     }
 
-    internal string IconThemeAssetDirectory(SqliteConnection connection, string projectId, string assetRoot)
+    internal string IconThemeAssetDirectory(string assetRoot)
     {
-        var mediaRoot = ResolveProjectPath(GetProjectSettings(connection, projectId).MediaRoot);
-        return Path.GetFullPath(Path.Combine(mediaRoot, assetRoot));
+        var directory = ResolveSystemAssetPath(assetRoot);
+        var relative = Path.GetRelativePath(SystemIconThemesRoot(), directory);
+        if (relative.StartsWith("..", StringComparison.Ordinal)
+            || Path.IsPathFullyQualified(relative))
+        {
+            throw new InvalidOperationException(
+                $"Icon Theme asset root '{assetRoot}' is outside the System Icon Themes root.");
+        }
+
+        return directory;
     }
+
+    internal string SystemIconThemesRoot() =>
+        ResolveSystemAssetPath("icon-themes");
 
     private static string UniqueIconThemeDirectory(string iconThemesRoot, string directoryName)
     {
@@ -118,12 +127,10 @@ internal sealed partial class SqliteResourceOwner
         }
     }
 
-    internal void DeleteIconThemeAssetDirectory(SqliteConnection connection, string projectId, string assetRoot)
+    internal void DeleteIconThemeAssetDirectory(string assetRoot)
     {
-        var mediaRoot = ResolveProjectPath(GetProjectSettings(connection, projectId).MediaRoot);
-        var targetDirectory = Path.GetFullPath(Path.Combine(mediaRoot, assetRoot));
-        var fullMediaRoot = Path.GetFullPath(mediaRoot);
-        var relative = Path.GetRelativePath(fullMediaRoot, targetDirectory);
+        var targetDirectory = IconThemeAssetDirectory(assetRoot);
+        var relative = Path.GetRelativePath(SystemIconThemesRoot(), targetDirectory);
         if (relative.StartsWith("..", StringComparison.Ordinal) || Path.IsPathFullyQualified(relative)) return;
         if (Directory.Exists(targetDirectory))
         {

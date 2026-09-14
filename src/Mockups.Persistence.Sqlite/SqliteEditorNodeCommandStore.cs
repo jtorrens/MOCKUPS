@@ -370,8 +370,6 @@ internal sealed class SqliteEditorNodeCommandStore
             $"{node.Name} copy");
         var metadata = SqliteResourceOwner.IconThemeMetadata(
             _resources.IconThemeAssetDirectory(
-                connection,
-                source.ProjectId,
                 duplicatedAssets.AssetRoot),
             duplicatedAssets.Name);
         try
@@ -387,8 +385,6 @@ internal sealed class SqliteEditorNodeCommandStore
         catch
         {
             _resources.DeleteIconThemeAssetDirectory(
-                connection,
-                source.ProjectId,
                 duplicatedAssets.AssetRoot);
             throw;
         }
@@ -410,8 +406,6 @@ internal sealed class SqliteEditorNodeCommandStore
             connection,
             iconThemeId);
         _resources.DeleteIconThemeAssetDirectory(
-            connection,
-            iconTheme.ProjectId,
             iconTheme.AssetRoot);
         _resources.IconThemeRepository.Delete(
             connection,
