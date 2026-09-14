@@ -453,6 +453,10 @@ public static class DesignPreviewTestValues
 
     public static JsonNode? ValueNode(ComponentInputDefinition input, string value)
     {
+        if (input.AllowEmpty && string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
         return RuntimeInputValueKindContract.ParseValue(
             input.ValueKind,
             value,
@@ -466,6 +470,10 @@ public static class DesignPreviewTestValues
     {
         if (value is null)
         {
+            if (input.AllowEmpty)
+            {
+                return "";
+            }
             throw new InvalidOperationException($"{owner} cannot be null.");
         }
         return RuntimeInputValueKindContract.CurrentStorageText(input.ValueKind, value, owner);

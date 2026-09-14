@@ -5,6 +5,7 @@ import {
   requiredBoolean,
   requiredNumber,
   requiredNumberPair,
+  requiredNullableString,
   requiredStringPair,
   requiredString,
   requiredRecord,
@@ -63,8 +64,8 @@ export function resolveButtonComponentFromRecords(
     size,
     padding: { xToken: rawPadding.first, yToken: rawPadding.second },
     contentGapToken: requiredString(button, "contentGapToken", "component.button.contentGapToken"),
-    iconToken: typeof preview.iconToken === "string" && preview.iconToken.trim()
-      ? preview.iconToken
+    iconToken: Object.hasOwn(preview, "iconToken")
+      ? requiredNullableString(preview, "iconToken", "component.button.input.iconToken")
       : requiredString(button, "iconToken", "component.button.iconToken"),
     iconSizeToken: requiredString(preview, "iconSizeToken", "component.button.input.iconSizeToken"),
     appearance: resolveButtonAppearance(button, contentMode, text, preview, bases, size),

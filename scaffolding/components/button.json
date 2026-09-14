@@ -659,6 +659,7 @@
         "kind": "icon",
         "valueKind": "IconToken",
         "defaultValue": "media_play_fill",
+        "allowEmpty": true,
         "minimum": 0,
         "maximum": 9999,
         "increment": 1,

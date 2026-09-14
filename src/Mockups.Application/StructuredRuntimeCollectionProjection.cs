@@ -236,17 +236,18 @@ public static class StructuredRuntimeCollectionProjection
                 {
                     continue;
                 }
-                JsonNode value;
+                JsonNode? value;
                 // A declared structure binding is authored by the selected
                 // Variant (including its local Override).  Only fields without
                 // a binding are Runtime-owned and may retain their current
                 // value when the structure is reconciled.
                 if (sourceKeyByRuntimeKey.TryGetValue(runtimeKey, out var sourceKey)
-                    && sourceItem[sourceKey] is { } sourceValue)
+                    && sourceItem.TryGetPropertyValue(sourceKey, out var sourceValue))
                 {
-                    value = sourceValue.DeepClone();
+                    value = sourceValue?.DeepClone();
                 }
-                else if (currentItem?[runtimeKey] is { } currentValue)
+                else if (currentItem is not null
+                         && currentItem.TryGetPropertyValue(runtimeKey, out var currentValue))
                 {
                     value = typedDefinition.ValueKind == ValueKind.StructuredCollection
                         ? StructuredCollectionDocumentContract.StoredClone(
@@ -257,7 +258,7 @@ public static class StructuredRuntimeCollectionProjection
                                 ?? throw new InvalidOperationException(
                                     $"{owner} Runtime item '{id}' field '{runtimeKey}' requires a collection contract."),
                             $"{owner} Runtime item '{id}' field '{runtimeKey}'")
-                        : currentValue.DeepClone();
+                        : currentValue?.DeepClone();
                 }
                 else
                 {

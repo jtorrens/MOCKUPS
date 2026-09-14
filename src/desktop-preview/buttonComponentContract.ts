@@ -22,7 +22,7 @@ export interface ButtonDesignContract {
   size: { width: number; height: number };
   padding: SpacingPairContract;
   contentGapToken: string;
-  iconToken: string;
+  iconToken: string | null;
   iconSizeToken: string;
   appearance: ButtonAppearanceContract;
   badge?: BadgeDesignContract;

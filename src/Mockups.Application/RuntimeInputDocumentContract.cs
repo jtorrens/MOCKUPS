@@ -325,7 +325,7 @@ public static class RuntimeInputDocumentContract
                     input,
                     currentValue,
                     $"Current Runtime Input '{inputId}'");
-                next[jsonKey] = currentValue!.DeepClone();
+                next[jsonKey] = currentValue?.DeepClone();
             }
             else
             {

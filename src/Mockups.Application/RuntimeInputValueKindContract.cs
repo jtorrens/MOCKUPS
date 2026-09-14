@@ -244,6 +244,10 @@ public static class RuntimeInputValueKindContract
         var valueKind = RequireCompatible(kind, valueKindName, owner);
         if (value is null)
         {
+            if (definition["allowEmpty"]?.GetValue<bool>() == true)
+            {
+                return;
+            }
             throw new InvalidOperationException($"{owner} value cannot be null.");
         }
 
@@ -267,6 +271,10 @@ public static class RuntimeInputValueKindContract
     {
         if (value is null)
         {
+            if (definition.AllowEmpty)
+            {
+                return;
+            }
             throw new InvalidOperationException($"{owner} value cannot be null.");
         }
         ValidateValue(definition.ValueKind, value, owner);

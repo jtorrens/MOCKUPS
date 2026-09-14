@@ -7,6 +7,7 @@ import {
   iconRowComponentToRenderableAt,
   measureIconRowComponent,
 } from "../../src/desktop-preview/iconRowComponentRenderable.js";
+import { resolveIconRowComponent } from "../../src/desktop-preview/iconRowComponentResolver.js";
 import { committedComponentFixture } from "./committedComponentFixture.js";
 
 const fixture = (variantId = "default") =>
@@ -78,6 +79,40 @@ test("Incoming Call Notification consumes exact Avatar and Icon Row Runtime cont
   assert.equal(resolved.iconRow.items[1]?.button.iconToken, "phone_in_talk");
   assert.equal(resolved.iconRow.items[1]?.button.pressed, true);
   assert.equal(resolved.iconRow.items[1]?.button.scale, 0.8);
+});
+
+test("Icon Row preserves an explicit null Button icon and renders its text independently", () => {
+  const source = committedComponentFixture("iconRow", "incoming_call___android_copy");
+  const config = JSON.parse(source.configJson) as {
+    iconRow: { items: Array<Record<string, unknown>> };
+  };
+  const preview = JSON.parse(source.designPreviewJson) as {
+    buttonInputs: Array<Record<string, unknown>>;
+  };
+  const runtimeTemplate = preview.buttonInputs[0]!;
+  preview.buttonInputs = config.iconRow.items.map((item) => ({
+    ...runtimeTemplate,
+    id: item.id,
+    sampleText: item.text,
+    iconToken: item.iconToken,
+    iconSizeToken: item.iconSizeToken,
+    textSizeToken: item.textSizeToken,
+  }));
+  source.designPreviewJson = JSON.stringify(preview);
+  source.runtimeContractJson = source.designPreviewJson;
+
+  const resolved = resolveIconRowComponent(source);
+  assert.equal(resolved.items[0]?.button.iconToken, null);
+  assert.equal(resolved.items[0]?.button.appearance.label?.text, "Cancelar");
+  const rendered = iconRowComponentToRenderableAt(
+    source,
+    resolved,
+    { x: 0, y: 0, width: 320, height: 80 },
+  );
+  assert.equal(
+    rendered.children?.[0]?.children?.some((child) => child.id.endsWith(".glyph")),
+    false,
+  );
 });
 
 test("Incoming Call Notification preserves an exact nested Button Surface selection", () => {

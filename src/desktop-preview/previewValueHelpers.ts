@@ -83,6 +83,17 @@ export function optionalString(value: Record<string, unknown>, key: string) {
   return typeof raw === "string" ? raw : "";
 }
 
+export function requiredNullableString(
+  value: Record<string, unknown>,
+  key: string,
+  path: string,
+): string | null {
+  const raw = value[key];
+  if (raw === null) return null;
+  if (typeof raw === "string" && raw.trim()) return raw;
+  throw new Error(`Missing nullable string value ${path}`);
+}
+
 export function requiredPossiblyEmptyString(
   value: Record<string, unknown>,
   key: string,

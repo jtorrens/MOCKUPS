@@ -179,6 +179,10 @@ Runtime never adds, removes or reorders Icon Row items. An owning parent
 receives and forwards that same Icon Row Runtime contract; it does not declare
 a reduced or renamed copy of Button fields.
 
+The Button icon Runtime value is explicitly nullable. `null` means that the
+Button paints no icon; text remains independent, and a Button with neither
+icon nor text is a valid empty visual boundary.
+
 A fixed structural Runtime collection declares its source config path, source
 and Runtime id keys, and field bindings. The common Runtime projection creates,
 removes and orders Runtime rows from the selected Variant structure while

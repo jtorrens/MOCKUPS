@@ -13,6 +13,7 @@ export {
   requiredFontFamilyId,
   requiredNumber,
   requiredNumberPair,
+  requiredNullableString,
   requiredPlacement,
   requiredRecord,
   requiredPossiblyEmptyString,

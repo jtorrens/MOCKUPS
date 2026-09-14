@@ -23,9 +23,13 @@ export function buttonComponentToRenderable(payload: DesignPreviewPayload, butto
 
 export function measureButtonComponent(payload: DesignPreviewPayload, button: ButtonDesignContract) {
   const scale = renderScale(payload);
-  const iconSize = button.contentMode === "text" ? 0 : numberToken(payload, button.iconSizeToken) * scale;
+  const iconSize = button.contentMode === "text" || button.iconToken === null
+    ? 0
+    : numberToken(payload, button.iconSizeToken) * scale;
   const labelSize = button.appearance.label ? measureLabelComponent(button.appearance.label, payload) : undefined;
-  const gap = button.contentMode === "iconText" ? numberToken(payload, button.contentGapToken) * scale : 0;
+  const gap = button.contentMode === "iconText" && iconSize > 0 && labelSize
+    ? numberToken(payload, button.contentGapToken) * scale
+    : 0;
   const paddingX = numberToken(payload, button.padding.xToken) * scale;
   const paddingY = numberToken(payload, button.padding.yToken) * scale;
   const contentWidth = iconSize + gap + (labelSize?.width ?? 0);
@@ -41,14 +45,18 @@ export function buttonComponentToRenderableAt(
   box: RenderableBox,
 ): RenderableNode {
   const scale = renderScale(payload);
-  const iconSize = button.contentMode === "text" ? 0 : numberToken(payload, button.iconSizeToken) * scale;
+  const iconSize = button.contentMode === "text" || button.iconToken === null
+    ? 0
+    : numberToken(payload, button.iconSizeToken) * scale;
   const labelSize = button.appearance.label ? measureLabelComponent(button.appearance.label, payload) : undefined;
-  const gap = button.contentMode === "iconText" ? numberToken(payload, button.contentGapToken) * scale : 0;
+  const gap = button.contentMode === "iconText" && iconSize > 0 && labelSize
+    ? numberToken(payload, button.contentGapToken) * scale
+    : 0;
   const contentWidth = iconSize + gap + (labelSize?.width ?? 0);
   const contentX = box.x + (box.width - contentWidth) * 0.5;
   const children: RenderableNode[] = [surfaceComponentToRenderableAt(payload, button.appearance.surface, box)];
 
-  if (iconSize > 0) {
+  if (iconSize > 0 && button.iconToken !== null) {
     children.push({
       id: `${button.id}.glyph`, type: "icon", frame: 0,
       box: { x: contentX, y: box.y + (box.height - iconSize) * 0.5, width: iconSize, height: iconSize },

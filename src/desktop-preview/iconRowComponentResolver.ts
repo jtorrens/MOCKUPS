@@ -4,6 +4,7 @@ import {
   parseObject,
   requiredBoolean,
   requiredNumber,
+  requiredNullableString,
   requiredPossiblyEmptyString,
   requiredRecord,
   requiredString,
@@ -57,7 +58,7 @@ export function iconRowButtonRuntimeDefaults(
     sampleText: typeof item.sampleText === "string"
       ? item.sampleText
       : typeof item.text === "string" ? item.text : "",
-    iconToken: requiredString(item, "iconToken", `component.iconRow.items[${index}].iconToken`),
+    iconToken: requiredNullableString(item, "iconToken", `component.iconRow.items[${index}].iconToken`),
     iconSizeToken: requiredString(item, "iconSizeToken", `component.iconRow.items[${index}].iconSizeToken`),
     textSizeToken: requiredString(item, "textSizeToken", `component.iconRow.items[${index}].textSizeToken`),
     iconColorToken: typeof item.iconColorToken === "string" ? item.iconColorToken : "theme.colors.icon",
@@ -128,7 +129,7 @@ export function resolveIconRowComponentFromRecords(
         {
           enabled,
           pressed,
-          iconToken: requiredString(runtime, "iconToken", `component.iconRow.buttonInputs[${index}].iconToken`),
+          iconToken: requiredNullableString(runtime, "iconToken", `component.iconRow.buttonInputs[${index}].iconToken`),
           iconSizeToken: sizeSource === "perButton" && !inheritedIconSize
             ? requiredString(runtime, "iconSizeToken", `component.iconRow.buttonInputs[${index}].iconSizeToken`)
             : sharedIconSize,

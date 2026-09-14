@@ -782,6 +782,11 @@ internal sealed class ComponentPreviewInputSession
         }
         if (stored is null)
         {
+            if (input.AllowEmpty)
+            {
+                _values[key] = "";
+                return;
+            }
             throw new InvalidOperationException(
                 $"Design Preview Runtime value '{input.JsonKey}' cannot be null.");
         }

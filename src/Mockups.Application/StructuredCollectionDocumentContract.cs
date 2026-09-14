@@ -45,9 +45,11 @@ public static class StructuredCollectionDocumentContract
                              && definition.StructureOwnedFieldJsonKeys?.Contains(
                                  candidate.JsonKey) == true)))
             {
-                var value = item[field.JsonKey]
-                    ?? throw new InvalidOperationException(
+                if (!item.TryGetPropertyValue(field.JsonKey, out var value))
+                {
+                    throw new InvalidOperationException(
                         $"{owner} item '{itemId}' requires field '{field.JsonKey}'.");
+                }
                 stored[field.JsonKey] = field.ValueKind == ValueKind.StructuredCollection
                     ? AuthoringClone(
                         value as JsonArray
@@ -58,7 +60,7 @@ public static class StructuredCollectionDocumentContract
                                 $"{owner} item '{itemId}' field '{field.JsonKey}' requires a collection contract."),
                         $"{owner} item '{itemId}' field '{field.JsonKey}'",
                         includeStructureOwnedFields)
-                    : value.DeepClone();
+                    : value?.DeepClone();
             }
             if (definition.ComponentItems is { } componentItems)
             {
@@ -193,9 +195,11 @@ public static class StructuredCollectionDocumentContract
             }
             foreach (var field in storedFields)
             {
-                var value = item[field.JsonKey]
-                    ?? throw new InvalidOperationException(
+                if (!item.TryGetPropertyValue(field.JsonKey, out var value))
+                {
+                    throw new InvalidOperationException(
                         $"{owner} item '{itemId}' requires field '{field.JsonKey}'.");
+                }
                 if (includeStructureOwnedFields
                     && field.ValueKind == ValueKind.StructuredCollection
                     && field.StructuredCollection?.StructureOwnedFieldJsonKeys
