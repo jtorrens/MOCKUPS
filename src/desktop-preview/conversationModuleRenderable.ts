@@ -32,6 +32,8 @@ import {
 import { wallpaperRenderable } from "./wallpaperRenderable.js";
 import { resolveConversationModule } from "./conversationModuleResolver.js";
 import {
+  assignAuthoringTargetToInput,
+  authoringCollectionItemPayload,
   authoringVariantPayload,
   renderAuthoringSlot,
 } from "./previewAuthoringTarget.js";
@@ -246,58 +248,70 @@ function messageNodes(
     "bubbleSlot",
     "module.core.chat.bubbleSlot",
   );
-  const bubbleNode = (message: ConversationMessageContract, writeOnTrigger: boolean) =>
-    resolveComponentRenderable(
-      childPayload(
-        payload,
+  const bubbleNode = (message: ConversationMessageContract, writeOnTrigger: boolean) => {
+    const messagePayload = authoringCollectionItemPayload(
+      payload,
+      "module.core.chat",
+      "messages",
+      message.id,
+    );
+    const bubblePayload = childPayload(
+      messagePayload,
+      "bubble",
+      "component.bubble",
+      requiredString(bubbleSlot, "variantReference", "module.core.chat.bubbleSlot"),
+      {
+        state: message.state,
+        sampleText: message.text,
+        actorId: message.actor?.id ?? "",
+        actorName: message.actor?.displayName ?? "",
+        actor: message.actor,
+        actorIdentityVisible: message.actorIdentityVisible,
+        mediaType: message.mediaType,
+        mediaSource: message.mediaSource,
+        viewportSize: message.viewportSize,
+        mediaScale: message.mediaScale,
+        mediaOffset: message.mediaOffset,
+        isPlaying: message.isPlaying,
+        currentTimeSeconds: message.playbackTimeSeconds,
+        durationSeconds: message.durationSeconds,
+        playbackMode: message.playbackMode,
+        isFullScreen: message.isFullScreen,
+        fullScreenTransition: message.fullScreenTransition,
+        fullframeOrientation: message.fullframeOrientation,
+        controlsElapsedMs: message.controlsElapsedMs,
+        motionElapsedMs: message.fullScreenMotionElapsedMs,
+        showIconRow: message.showIconRow,
+        iconRowRuntime: message.iconRowRuntime,
+        maxWidth: optionalNumber(conversation, "bubbleMaxWidth", 66),
+        textSizeToken: message.isTypingIndicator ? timing.typingIndicatorSizeToken : undefined,
+        textAnimationMode: message.isTypingIndicator ? timing.typingIndicatorAnimation : undefined,
+        textAnimationElapsedMs: message.isTypingIndicator ? motionElapsedMs : undefined,
+        typingIndicator: message.isTypingIndicator,
+        writeOnTrigger,
+        writeOnFrame: message.writeOnFrame,
+        writeOnDurationFrames: message.writeOnDurationFrames,
+        keepCursorAfterWrite: message.keepCursorAfterWrite,
+        statusState: message.statusVisible ? message.statusState : "none",
+        statusText: message.statusVisible ? message.statusText : "",
+      },
+      embeddedComponentConfig(
+        componentBaseConfigs,
+        bubbleSlot,
         "bubble",
-        "component.bubble",
-        requiredString(bubbleSlot, "variantReference", "module.core.chat.bubbleSlot"),
-        {
-          state: message.state,
-          sampleText: message.text,
-          actorId: message.actor?.id ?? "",
-          actorName: message.actor?.displayName ?? "",
-          actor: message.actor,
-          actorIdentityVisible: message.actorIdentityVisible,
-          mediaType: message.mediaType,
-          mediaSource: message.mediaSource,
-          viewportSize: message.viewportSize,
-          mediaScale: message.mediaScale,
-          mediaOffset: message.mediaOffset,
-          isPlaying: message.isPlaying,
-          currentTimeSeconds: message.playbackTimeSeconds,
-          durationSeconds: message.durationSeconds,
-          playbackMode: message.playbackMode,
-          isFullScreen: message.isFullScreen,
-          fullScreenTransition: message.fullScreenTransition,
-          fullframeOrientation: message.fullframeOrientation,
-          controlsElapsedMs: message.controlsElapsedMs,
-          motionElapsedMs: message.fullScreenMotionElapsedMs,
-          showIconRow: message.showIconRow,
-          iconRowRuntime: message.iconRowRuntime,
-          maxWidth: optionalNumber(conversation, "bubbleMaxWidth", 66),
-          textSizeToken: message.isTypingIndicator ? timing.typingIndicatorSizeToken : undefined,
-          textAnimationMode: message.isTypingIndicator ? timing.typingIndicatorAnimation : undefined,
-          textAnimationElapsedMs: message.isTypingIndicator ? motionElapsedMs : undefined,
-          typingIndicator: message.isTypingIndicator,
-          writeOnTrigger,
-          writeOnFrame: message.writeOnFrame,
-          writeOnDurationFrames: message.writeOnDurationFrames,
-          keepCursorAfterWrite: message.keepCursorAfterWrite,
-          statusState: message.statusVisible ? message.statusState : "none",
-          statusText: message.statusVisible ? message.statusText : "",
-        },
-        embeddedComponentConfig(
-          componentBaseConfigs,
-          bubbleSlot,
-          "bubble",
-          "module.core.chat.bubbleSlot",
-        ),
+        "module.core.chat.bubbleSlot",
+      ),
+    );
+    return resolveComponentRenderable(
+      assignAuthoringTargetToInput(
+        bubblePayload,
+        "component.bubble.input.sampleText",
+        messagePayload,
       ),
       resolveBubbleComponent,
       bubbleComponentToRenderable,
     );
+  };
   const resolveEntries = (sourceMessages: ConversationMessageContract[]) => sourceMessages.map((message) => {
     const bubble = bubbleNode(message, message.writeOnTrigger);
     const node = bubble.renderable;

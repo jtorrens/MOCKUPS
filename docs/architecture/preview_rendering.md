@@ -283,7 +283,11 @@ and resets its slot chain; a `ComponentVariantSlot` keeps the current owner and
 appends its declared slot. Renderable owners attach that opaque authoring target
 at the boundary they own, and the generic HTML adapter exposes it without
 interpreting Component types, Variants, Overrides, collection positions or card
-layout. Selecting a path level sends that exact target to the desktop authoring
+layout. Explicit Runtime Input forwarding separately carries the source
+authoring target alongside the forwarded value. A leaf that paints that value
+publishes its Runtime source target, while surrounding appearance boundaries
+retain their Variant or local Override targets. Selecting a path level sends
+that exact target to the desktop authoring
 navigator, which selects the owner and resolves every slot through
 `EmbeddedComponentSlotCatalog`. After the asynchronous prepared editor commit,
 the desktop resolves an optional field id through that prepared layout, expands
@@ -299,8 +303,10 @@ child record class. A child reached without its declared parent therefore
 inherits the nearest valid target instead of publishing an invalid shortcut.
 Interactive Production Preview documents publish their exact Screen owner so
 the same opaque target can reach Screen Payload, local Overrides or a complete
-referenced Variant through the declared boundary chain. Raster and Render
-Queue documents expose no authoring target.
+referenced Variant through the declared boundary chain. Navigation crosses to
+the workspace that owns the exact target while the locked Preview retains its
+Production context. Raster and Render Queue documents expose no authoring
+target.
 
 The resident desktop WebView boundary normalizes `InvokeScript` results before
 Preview code consumes them. A plain result and the equivalent JSON string

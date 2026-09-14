@@ -7,9 +7,12 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { DesktopRenderableHtmlAdapter } from "../../src/desktop-preview/DesktopRenderableHtmlAdapter.js";
 import type { DesignPreviewPayload } from "../../src/desktop-preview/designPreviewPayload.js";
 import {
+  assignAuthoringTargetToInput,
   authoringVariantPayload,
+  forwardAuthoringInputTarget,
   renderAuthoringCollectionItem,
   renderAuthoringSlot,
+  withAuthoringInputTarget,
   withAuthoringTarget,
 } from "../../src/desktop-preview/previewAuthoringTarget.js";
 import {
@@ -173,6 +176,52 @@ test("structured authoring targets preserve the exact stable item id", () => {
     markup,
     /data-preview-authoring-focus-item-id="button_attachment"/,
   );
+});
+
+test("explicit Runtime Input forwarding preserves the source authoring target", () => {
+  const screenPayload = authoringCollectionItemPayload(
+    {
+      authoringOwnerId: "screen_conversation",
+      authoringRecordClassId: "module.core.chat",
+      authoringSlotFieldIds: [],
+    } as DesignPreviewPayload,
+    "module.core.chat",
+    "messages",
+    "message_005",
+  );
+  const bubblePayload = assignAuthoringTargetToInput(
+    authoringVariantPayload(
+      screenPayload,
+      "component_bubble::variant::chat",
+      "component.bubble",
+    ),
+    "component.bubble.input.sampleText",
+    screenPayload,
+  );
+  const textBoxPayload = forwardAuthoringInputTarget(
+    bubblePayload,
+    "component.bubble.input.sampleText",
+    "component.textBox.input.sampleText",
+  );
+  const text = withAuthoringInputTarget(
+    textBoxPayload,
+    "component.textBox.input.sampleText",
+    { id: "component.textBox.textClip", type: "group" },
+  );
+
+  assert.deepEqual(text.metadata?.authoringTarget, {
+    focusFieldId: "messages",
+    focusItemId: "message_005",
+    ownerId: "screen_conversation",
+    slotFieldIds: [],
+  });
+  assert.deepEqual(withAuthoringTarget(bubblePayload, {
+    id: "component.bubble",
+    type: "group",
+  }).metadata?.authoringTarget, {
+    ownerId: "component_bubble::variant::chat",
+    slotFieldIds: [],
+  });
 });
 
 test("a non-authoring payload emits no navigation metadata", () => {

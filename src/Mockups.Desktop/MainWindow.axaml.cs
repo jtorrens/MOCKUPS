@@ -114,9 +114,7 @@ public partial class MainWindow : SukiWindow
             _messages);
         var previewAuthoringNavigator = new PreviewAuthoringNavigator(
             () => Session.SelectedNode,
-            (nodeId) => NavigateToNodeById(
-                nodeId,
-                "preview-element"),
+            NavigateToPreviewAuthoringOwner,
             ShowEmbeddedContext,
             _authoringFocusController.Request,
             _messages);
@@ -1745,14 +1743,55 @@ public partial class MainWindow : SukiWindow
             return false;
         }
 
+        return NavigateToNodeInWorkspace(
+            workspace,
+            node,
+            source);
+    }
+
+    private bool NavigateToPreviewAuthoringOwner(string nodeId)
+    {
+        var node = EditorNodeSelectionState.FindNodeById(
+            Session.TreeRoots,
+            nodeId);
+        if (node is null)
+        {
+            return false;
+        }
+        var workspace = EditorWorkspaceNavigation.Contains(
+            Session.Workspace,
+            node)
+                ? Session.Workspace
+                : EditorWorkspaceNavigation.Contains(
+                    EditorWorkspace.Design,
+                    node)
+                    ? EditorWorkspace.Design
+                    : EditorWorkspace.Production;
+        return EditorWorkspaceNavigation.Contains(workspace, node)
+            && NavigateToNodeInWorkspace(
+                workspace,
+                node,
+                "preview-element");
+    }
+
+    private bool NavigateToNodeInWorkspace(
+        EditorWorkspace workspace,
+        ProjectTreeNode node,
+        string source)
+    {
+        if (!EditorWorkspaceNavigation.Contains(workspace, node))
+        {
+            return false;
+        }
+
         _navigationPanel.EnsureVisible();
         CaptureActiveEditorViewState();
         using var transaction = BeginContextTransaction(
             source,
-            nodeId);
+            node.Id);
         if (!_workspaceCoordinator.TrySelectNodeInWorkspace(
                 workspace,
-                nodeId,
+                node.Id,
                 source,
                 out var transition))
         {
@@ -1766,7 +1805,7 @@ public partial class MainWindow : SukiWindow
         RenderRootSelection(transition, rebuildTree: true, transaction);
         _navigationRenderer.BringNodeIntoView(
             NavigationCardsPanel,
-            transition.Current.SelectedNode?.Id ?? nodeId);
+            transition.Current.SelectedNode?.Id ?? node.Id);
         return true;
     }
 

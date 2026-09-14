@@ -50,6 +50,13 @@ export interface ScreenTimingPayload {
   shotDurationFrames: number;
 }
 
+export interface PreviewAuthoringTargetPayload {
+  focusFieldId?: string;
+  focusItemId?: string;
+  ownerId: string;
+  slotFieldIds: string[];
+}
+
 export interface DesignPreviewPayload {
   kind: "componentClass" | "module" | "moduleInstance" | "screenTransition";
   authoringOwnerId?: string;
@@ -57,6 +64,7 @@ export interface DesignPreviewPayload {
   authoringFocusItemId?: string;
   authoringRecordClassId?: string;
   authoringSlotFieldIds?: string[];
+  authoringInputTargets?: Record<string, PreviewAuthoringTargetPayload>;
   componentType: string;
   componentBaseConfigsJson: string;
   appConfigJson: string;

@@ -965,6 +965,30 @@ test("Conversation Header keeps its upward bleed and can use the resolved Actor 
   });
 });
 
+test("Conversation message text keeps its Screen Payload authoring source", () => {
+  const source = committedConversationPayload();
+  const messages = (JSON.parse(source.designPreviewJson) as {
+    messages: Array<{ id: string }>;
+  }).messages;
+  source.authoringOwnerId = "screen_conversation";
+  source.authoringRecordClassId = "module.core.chat";
+
+  const tree = conversationModuleToRenderable(source);
+  const bubble = findNode(tree, "component.bubble");
+  const textClip = findNode(tree, "component.bubble.textBox.textClip");
+
+  assert.deepEqual(bubble?.metadata?.authoringTarget, {
+    ownerId: "component_project_foqn_s2_bubble::variant::default_copy",
+    slotFieldIds: [],
+  });
+  assert.deepEqual(textClip?.metadata?.authoringTarget, {
+    focusFieldId: "messages",
+    focusItemId: messages[0]?.id,
+    ownerId: "screen_conversation",
+    slotFieldIds: [],
+  });
+});
+
 test("Conversation message presence ends at its explicit resolved Out", () => {
   const source = committedConversationPayload(true);
   const runtime = JSON.parse(source.designPreviewJson) as {

@@ -29,7 +29,10 @@ import {
   variants,
 } from "./componentRenderableCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import { renderAuthoringSlot } from "./previewAuthoringTarget.js";
+import {
+  forwardAuthoringInputTarget,
+  renderAuthoringSlot,
+} from "./previewAuthoringTarget.js";
 import {
   labelComponentToRenderableAt,
   measureLabelComponent,
@@ -344,19 +347,26 @@ export function bubbleComponentToRenderable(
         "component.bubble.textBox.editor",
         "component.textBox",
         "component.textBox.dimensionMode",
-        (slotPayload) => textBoxComponentToRenderableAt(
-          slotPayload,
-          textBoxForContent,
-          textBox,
-          {
-            surfaceVisible: false,
-            verticalTextAlignment: fixed ? "top" : "center",
-            textColors: {
-              textColor,
-              placeholderColor: textColor,
+        (slotPayload) => {
+          const textBoxPayload = forwardAuthoringInputTarget(
+            slotPayload,
+            "component.bubble.input.sampleText",
+            "component.textBox.input.sampleText",
+          );
+          return textBoxComponentToRenderableAt(
+            textBoxPayload,
+            textBoxForContent,
+            textBox,
+            {
+              surfaceVisible: false,
+              verticalTextAlignment: fixed ? "top" : "center",
+              textColors: {
+                textColor,
+                placeholderColor: textColor,
+              },
             },
-          },
-        ),
+          );
+        },
       ),
       ...(inlineMediaNode ? [inlineMediaNode] : []),
       ...(iconRow && iconRowBox

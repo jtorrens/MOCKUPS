@@ -1,5 +1,24 @@
 import type { RenderableNode } from "../visual/renderable/types.js";
-import type { DesignPreviewPayload } from "./designPreviewPayload.js";
+import type {
+  DesignPreviewPayload,
+  PreviewAuthoringTargetPayload,
+} from "./designPreviewPayload.js";
+
+function authoringTarget(
+  payload: DesignPreviewPayload,
+): PreviewAuthoringTargetPayload | undefined {
+  if (!payload.authoringOwnerId) return undefined;
+  return {
+    ...(payload.authoringFocusFieldId
+      ? { focusFieldId: payload.authoringFocusFieldId }
+      : {}),
+    ...(payload.authoringFocusItemId
+      ? { focusItemId: payload.authoringFocusItemId }
+      : {}),
+    ownerId: payload.authoringOwnerId,
+    slotFieldIds: [...(payload.authoringSlotFieldIds ?? [])],
+  };
+}
 
 export function authoringSlotPayload(
   payload: DesignPreviewPayload,
@@ -71,16 +90,61 @@ export function withAuthoringTarget(
     ...node,
     metadata: {
       ...node.metadata,
-      authoringTarget: {
-        ...(payload.authoringFocusFieldId
-          ? { focusFieldId: payload.authoringFocusFieldId }
-          : {}),
-        ...(payload.authoringFocusItemId
-          ? { focusItemId: payload.authoringFocusItemId }
-          : {}),
-        ownerId: payload.authoringOwnerId,
-        slotFieldIds: [...(payload.authoringSlotFieldIds ?? [])],
-      },
+      authoringTarget: authoringTarget(payload),
+    },
+  };
+}
+
+export function assignAuthoringTargetToInput(
+  payload: DesignPreviewPayload,
+  inputFieldId: string,
+  sourcePayload: DesignPreviewPayload,
+): DesignPreviewPayload {
+  const target = authoringTarget(sourcePayload);
+  if (!target) return payload;
+  if (!inputFieldId.trim()) {
+    throw new Error("Authoring input target requires a stable input field id.");
+  }
+  return {
+    ...payload,
+    authoringInputTargets: {
+      ...(payload.authoringInputTargets ?? {}),
+      [inputFieldId]: target,
+    },
+  };
+}
+
+export function forwardAuthoringInputTarget(
+  payload: DesignPreviewPayload,
+  sourceInputFieldId: string,
+  targetInputFieldId: string,
+): DesignPreviewPayload {
+  const target = payload.authoringInputTargets?.[sourceInputFieldId];
+  if (!target) return payload;
+  if (!targetInputFieldId.trim()) {
+    throw new Error("Forwarded authoring input target requires a stable target field id.");
+  }
+  return {
+    ...payload,
+    authoringInputTargets: {
+      ...(payload.authoringInputTargets ?? {}),
+      [targetInputFieldId]: target,
+    },
+  };
+}
+
+export function withAuthoringInputTarget(
+  payload: DesignPreviewPayload,
+  inputFieldId: string,
+  node: RenderableNode,
+): RenderableNode {
+  const target = payload.authoringInputTargets?.[inputFieldId];
+  if (!target) return node;
+  return {
+    ...node,
+    metadata: {
+      ...node.metadata,
+      authoringTarget: target,
     },
   };
 }

@@ -6,7 +6,10 @@ import {
   selectedColor,
 } from "./componentRenderableCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
-import { renderAuthoringSlot } from "./previewAuthoringTarget.js";
+import {
+  renderAuthoringSlot,
+  withAuthoringInputTarget,
+} from "./previewAuthoringTarget.js";
 import {
   measuredMultilineTextSize,
   measuredTextWidth,
@@ -416,30 +419,34 @@ export function textBoxComponentToRenderableAt(
             }),
           )]
         : []),
-      {
-        id: `${textBox.id}.textClip`,
-        type: "group",
-        frame: 0,
-        box: textFrame,
-        style: {
-          alignItems: scrollAnchorsToBottom ? "stretch" : undefined,
-          display: scrollAnchorsToBottom ? "flex" : undefined,
-          flexDirection: scrollAnchorsToBottom ? "column" : undefined,
-          justifyContent: scrollAnchorsToBottom ? "flex-end" : undefined,
-          overflow: "hidden",
+      withAuthoringInputTarget(
+        payload,
+        "component.textBox.input.sampleText",
+        {
+          id: `${textBox.id}.textClip`,
+          type: "group",
+          frame: 0,
+          box: textFrame,
+          style: {
+            alignItems: scrollAnchorsToBottom ? "stretch" : undefined,
+            display: scrollAnchorsToBottom ? "flex" : undefined,
+            flexDirection: scrollAnchorsToBottom ? "column" : undefined,
+            justifyContent: scrollAnchorsToBottom ? "flex-end" : undefined,
+            overflow: "hidden",
+          },
+          children: resolvedLines.flatMap(({ line, box: lineBox }, index) =>
+            textLineRenderableNodes({
+              id: `${textBox.id}.text.${index}`,
+              textBox,
+              line,
+              lineIndex: index,
+              lineBox,
+              style: textStyle,
+              typography: size.typography,
+            }),
+          ),
         },
-        children: resolvedLines.flatMap(({ line, box: lineBox }, index) =>
-          textLineRenderableNodes({
-            id: `${textBox.id}.text.${index}`,
-            textBox,
-            line,
-            lineIndex: index,
-            lineBox,
-            style: textStyle,
-            typography: size.typography,
-          }),
-        ),
-      },
+      ),
       ...(cursorNode ? [cursorNode] : []),
     ],
   };

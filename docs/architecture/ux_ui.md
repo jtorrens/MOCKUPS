@@ -313,6 +313,13 @@ disabled and reports that it has no associated editor. The interaction never
 derives authoring context from a renderable id, primitive type, label,
 hierarchy position or visual geometry.
 
+When a visible value originates in Screen Payload and is explicitly forwarded
+through Component Runtime Inputs, the leaf row navigates back to that exact
+Runtime field and stable collection item. Its surrounding rows may still lead
+to the Component Variant or local Override that owns their appearance. A
+cross-workspace destination switches the editor workspace only after Preview
+has retained the original context with its session lock.
+
 When a finite action completes, its final frame remains visible and Play
 becomes available again. Play repeats the same initial-to-final action without
 repreparing unchanged frames. Restore returns to the captured initial state.
