@@ -13,9 +13,8 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal static class ProductionNavigationTransferGesture
 {
-    private static readonly DataFormat<string> TransferFormat =
-        DataFormat.CreateStringApplicationFormat(
-            "mockups-production-hierarchy-transfer");
+    private const string TransferPrefix =
+        "MOCKUPS-PRODUCTION-HIERARCHY-TRANSFER-V1\n";
 
     internal static void Attach(
         Border row,
@@ -158,8 +157,7 @@ internal static class ProductionNavigationTransferGesture
                 try
                 {
                     var data = new DataTransfer();
-                    data.Add(DataTransferItem.Create(
-                        TransferFormat,
+                    data.Add(DataTransferItem.CreateText(
                         Serialize(node, mode)));
                     await DragDrop.DoDragDropAsync(
                         trigger,
@@ -203,8 +201,11 @@ internal static class ProductionNavigationTransferGesture
 
     private static TransferDrag? Transfer(DragEventArgs args)
     {
-        var serialized = args.DataTransfer.TryGetValue(TransferFormat);
-        if (string.IsNullOrWhiteSpace(serialized))
+        var serialized = args.DataTransfer.TryGetText();
+        if (string.IsNullOrWhiteSpace(serialized)
+            || !serialized.StartsWith(
+                TransferPrefix,
+                StringComparison.Ordinal))
         {
             return null;
         }
@@ -212,7 +213,7 @@ internal static class ProductionNavigationTransferGesture
         try
         {
             var payload = JsonSerializer.Deserialize<TransferPayload>(
-                serialized);
+                serialized[TransferPrefix.Length..]);
             if (payload is null
                 || payload.SourceKind is not ProjectTreeNodeKind.Shot
                     and not ProjectTreeNodeKind.ModuleInstance
@@ -261,15 +262,16 @@ internal static class ProductionNavigationTransferGesture
         var project = ProjectAncestor(source)
             ?? throw new InvalidOperationException(
                 $"Missing Project owner for {source.Kind} '{source.Id}'.");
-        return JsonSerializer.Serialize(new TransferPayload(
-            source.Kind,
-            source.Id,
-            source.Name,
-            source.Notes,
-            source.RecordClassId,
-            source.Parent!.Id,
-            project.Id,
-            mode));
+        return TransferPrefix
+            + JsonSerializer.Serialize(new TransferPayload(
+                source.Kind,
+                source.Id,
+                source.Name,
+                source.Notes,
+                source.RecordClassId,
+                source.Parent!.Id,
+                project.Id,
+                mode));
     }
 
     private static ProjectTreeNode? ProjectAncestor(ProjectTreeNode node)
