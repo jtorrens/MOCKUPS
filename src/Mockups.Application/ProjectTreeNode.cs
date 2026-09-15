@@ -5,6 +5,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 public enum ProjectTreeNodeKind
 {
+    ProjectsRoot,
     Project,
     ProductionDataRoot,
     RenderQueueRoot,
@@ -116,7 +117,8 @@ public sealed class ProjectTreeNode
         or ProjectTreeNodeKind.ProductionFont
         || (Kind == ProjectTreeNodeKind.ComponentVariant && !IsProtected && !IsLocked)
         || (Kind == ProjectTreeNodeKind.ModuleVariant && !IsProtected && !IsLocked);
-    public bool CanOpenEditor => Kind is not ProjectTreeNodeKind.ProductionDataRoot
+    public bool CanOpenEditor => Kind is not ProjectTreeNodeKind.ProjectsRoot
+        and not ProjectTreeNodeKind.ProductionDataRoot
         and not ProjectTreeNodeKind.SystemDataRoot
         and not ProjectTreeNodeKind.AppsRoot
         and not ProjectTreeNodeKind.PaletteRoot
@@ -144,6 +146,7 @@ public sealed class ProjectTreeNode
     {
         return kind switch
         {
+            ProjectTreeNodeKind.ProjectsRoot => "navigation.projects",
             ProjectTreeNodeKind.Project => "project",
             ProjectTreeNodeKind.ProductionDataRoot => "navigation.production_data",
             ProjectTreeNodeKind.RenderQueueRoot => "navigation.render_queue",

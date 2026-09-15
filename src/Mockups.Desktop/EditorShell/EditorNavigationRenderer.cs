@@ -122,22 +122,34 @@ internal sealed class EditorNavigationRenderer
         var candidate = new StackPanel();
         _renderedActivePreviewNodeId = _activePreviewNodeId();
 
-        foreach (var project in treeRoots)
+        if (workspace == EditorWorkspace.Design)
         {
-            if (workspace == EditorWorkspace.Production
-                && !string.Equals(project.Id, productionId, StringComparison.Ordinal))
+            AddProjectsSection(candidate, treeRoots);
+            var project = DesignContextProject(
+                treeRoots,
+                _selectedNode());
+            if (project is not null)
             {
-                continue;
+                foreach (var root in EditorWorkspaceNavigation.SectionRoots(
+                             project,
+                             workspace))
+                {
+                    AddNavigationSection(candidate, root);
+                }
             }
-
-            if (workspace != EditorWorkspace.Production)
+        }
+        else
+        {
+            var project = treeRoots.FirstOrDefault((candidate) =>
+                candidate.Id.Equals(productionId, StringComparison.Ordinal));
+            if (project is not null)
             {
-                candidate.Children.Add(CreateNavigationRow(project, EditorIcons.ForNavigationTreeNode(project)));
-            }
-
-            foreach (var root in EditorWorkspaceNavigation.SectionRoots(project, workspace))
-            {
-                AddNavigationSection(candidate, root);
+                foreach (var root in EditorWorkspaceNavigation.SectionRoots(
+                             project,
+                             workspace))
+                {
+                    AddNavigationSection(candidate, root);
+                }
             }
         }
 
@@ -145,6 +157,55 @@ internal sealed class EditorNavigationRenderer
         candidate.Children.Clear();
         target.Children.Clear();
         foreach (var child in replacement) target.Children.Add(child);
+    }
+
+    private void AddProjectsSection(
+        StackPanel parent,
+        IReadOnlyList<ProjectTreeNode> projects)
+    {
+        var projectsRoot = new ProjectTreeNode(
+            ProjectTreeNodeKind.ProjectsRoot,
+            EditorNavigationMetadata.ProjectsRootId,
+            "Projects",
+            "Create and select Projects.",
+            ProjectTreeNode.DefaultRecordClassId(
+                ProjectTreeNodeKind.ProjectsRoot));
+        var content = new StackPanel
+        {
+            Spacing = 1,
+            Margin = new Thickness(2, 5, 0, 0),
+        };
+        for (var index = 0; index < projects.Count; index++)
+        {
+            AddHierarchicalNode(
+                content,
+                projects[index],
+                0,
+                index,
+                index == projects.Count - 1,
+                []);
+        }
+        AddNavigationCard(
+            parent,
+            projectsRoot,
+            content,
+            EditorNavigationMetadata.SectionIcon(projectsRoot));
+    }
+
+    internal static ProjectTreeNode? DesignContextProject(
+        IReadOnlyList<ProjectTreeNode> projects,
+        ProjectTreeNode? selected)
+    {
+        var current = selected;
+        while (current?.Parent is not null)
+        {
+            current = current.Parent;
+        }
+        return current?.Kind == ProjectTreeNodeKind.Project
+            ? projects.FirstOrDefault((project) =>
+                project.Id.Equals(current.Id, StringComparison.Ordinal))
+                ?? projects.FirstOrDefault()
+            : projects.FirstOrDefault();
     }
 
     public void BringNodeIntoView(Control navigationRoot, string nodeId)
@@ -195,10 +256,16 @@ internal sealed class EditorNavigationRenderer
         AddNavigationCard(parent, sectionRoot, content, EditorNavigationMetadata.SectionIcon(sectionRoot));
     }
 
-    private void AddHierarchicalNode(StackPanel parent, ProjectTreeNode node, int depth, int siblingIndex, bool isLastSibling)
+    private void AddHierarchicalNode(
+        StackPanel parent,
+        ProjectTreeNode node,
+        int depth,
+        int siblingIndex,
+        bool isLastSibling,
+        IReadOnlyList<ProjectTreeNode>? visibleChildrenOverride = null)
     {
         var exposeChildren = _canExposeChildren(node);
-        var visibleChildren = node.Children;
+        var visibleChildren = visibleChildrenOverride ?? node.Children;
         var hasChildren = visibleChildren.Count > 0 || node.HasAddOperation;
         var nodeEnabled = _isNodeEnabled(node);
         var expanded = hasChildren && _isExpanded(node);

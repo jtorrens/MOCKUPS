@@ -52,7 +52,7 @@ internal sealed class SqliteEditorChildStore
     {
         RequireCreationContext(
             context,
-            ProjectTreeNodeKind.Project,
+            ProjectTreeNodeKind.ProjectsRoot,
             "project");
         using var connection = _context.OpenConnection();
         var sequence = _production.ProjectEpisodeRepository
@@ -250,7 +250,7 @@ internal sealed class SqliteEditorChildStore
     {
         RequireCreationContext(
             context,
-            ProjectTreeNodeKind.Project,
+            ProjectTreeNodeKind.ProjectsRoot,
             "project");
         var output = new ProductionOutputSettings(
             Required(values, "project.productionCode"),

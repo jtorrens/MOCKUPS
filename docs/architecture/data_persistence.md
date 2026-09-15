@@ -278,8 +278,9 @@ placement. The focused Project repository inserts the complete Project row and
 the focused Palette repository inserts one Production value from every System
 Palette default inside the same composition-owned transaction. No Episode,
 Shot, Actor, Device, Theme, Production Font, media entry or asset is created.
-The returned navigation node is a root; it is never attached to the Project
-used as the creation context.
+The permanent Design Projects navigation root supplies the creation context;
+it is UI metadata and is never persisted. The returned Project navigation node
+is a real root and is never attached beneath another Project.
 
 Project deletion remains in the generic node-command contract. Its focused SQL
 owner deletes the Project only when an atomic persisted predicate proves that

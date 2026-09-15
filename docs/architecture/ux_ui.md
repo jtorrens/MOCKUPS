@@ -464,14 +464,21 @@ definition validates. Actor, Theme and Shot do not own creation dialogs.
 Import, refresh and bounded selection remain distinct operations and their
 navigation labels state that operation explicitly.
 
-Each Design Project row exposes the declared **New project** action. It opens
-the same shared Dictionary-backed creation modal for the Project identity,
-frame rate and manual Production Output fields. Confirmation creates a new
-empty root Project, reloads the complete tree and selects that new root; it
-does not nest the result beneath the Project from which the action was opened.
-Project rows also expose Delete. The destructive confirmation is always shown;
-after confirmation the persistence owner either removes a Project with no
-Shots or reports that its Shots block deletion.
+Design begins with one permanent **Projects** navigation card. Its header owns
+the declared **New project** action and remains available when the database has
+no Projects. Its content is an expanded tree of Project rows; each row selects
+that Project and exposes Rename and Delete, but never another Add action. The
+shared Dictionary-backed creation modal collects the Project identity, frame
+rate and manual Production Output fields, then reloads and selects the new root.
+
+The global Design sections—Apps, Component Classes, System Palette and Icon
+Themes—render once using the selected Project as their exact Preview and asset
+context, or the first Project when selection has no Project context. External
+Media is likewise shown once for that active Project. Changing the selected
+Project replaces that contextual section set; global sections are never
+duplicated once per Project. Project Delete always shows its destructive
+confirmation; persistence either removes a Project with no Shots or reports
+that its Shots block deletion.
 
 Within each Episode, the Production navigation tree presents Shots in stable
 alphabetical order by the authored Shot name. Creation order and persisted

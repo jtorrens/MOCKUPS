@@ -4,6 +4,8 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal static class EditorNavigationMetadata
 {
+    public const string ProjectsRootId = "navigation:projects";
+
     public static EditorWorkspaceScope WorkspaceScope(ProjectTreeNodeKind kind)
         => EditorWorkspacePolicy.Scope(kind);
 
@@ -15,7 +17,8 @@ internal static class EditorNavigationMetadata
 
     public static bool IsTopLevelSection(ProjectTreeNode node)
     {
-        return node.Kind is ProjectTreeNodeKind.AppsRoot
+        return node.Kind is ProjectTreeNodeKind.ProjectsRoot
+            or ProjectTreeNodeKind.AppsRoot
             or ProjectTreeNodeKind.RenderQueueRoot
             or ProjectTreeNodeKind.ExternalMediaRoot
             or ProjectTreeNodeKind.ProductionDataRoot
@@ -45,7 +48,8 @@ internal static class EditorNavigationMetadata
     {
         return node.Kind switch
         {
-            ProjectTreeNodeKind.Project => "Project",
+            ProjectTreeNodeKind.ProjectsRoot => "Projects",
+            ProjectTreeNodeKind.Project => node.Name,
             ProjectTreeNodeKind.RenderQueueRoot => "Render Queue",
             ProjectTreeNodeKind.ExternalMediaRoot => "External Media",
             ProjectTreeNodeKind.ProductionDataRoot => "Production data",
@@ -58,7 +62,12 @@ internal static class EditorNavigationMetadata
     {
         return node.Kind switch
         {
-            ProjectTreeNodeKind.Project => "Episodes, shots, screens and modules",
+            ProjectTreeNodeKind.ProjectsRoot =>
+                "Create and select Projects",
+            ProjectTreeNodeKind.Project =>
+                string.IsNullOrWhiteSpace(node.Notes)
+                    ? "Project"
+                    : node.Notes,
             ProjectTreeNodeKind.AppsRoot => "System Apps, Modules and Variants",
             ProjectTreeNodeKind.RenderQueueRoot => "Local render jobs and history",
             ProjectTreeNodeKind.ExternalMediaRoot => "Authored external files and folders",

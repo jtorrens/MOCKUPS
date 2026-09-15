@@ -14,15 +14,19 @@ internal sealed class EditorTreeExpansionState
 
     public void EnsureInitial(IReadOnlyList<ProjectTreeNode> treeRoots)
     {
-        if (_expandedNodeIds.Count == 0 && treeRoots.Count > 0)
+        if (_expandedNodeIds.Count == 0)
         {
-            _expandedNodeIds.Add(treeRoots[0].Id);
+            _expandedNodeIds.Add(EditorNavigationMetadata.ProjectsRootId);
+            if (treeRoots.Count > 0)
+            {
+                _expandedNodeIds.Add(treeRoots[0].Id);
+            }
         }
     }
 
     public void Toggle(ProjectTreeNode node)
     {
-        if (node.Children.Count == 0) return;
+        if (node.Children.Count == 0 && !node.HasAddOperation) return;
 
         if (_expandedNodeIds.Contains(node.Id))
         {

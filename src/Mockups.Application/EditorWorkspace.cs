@@ -25,6 +25,7 @@ public static class EditorWorkspacePolicy
     {
         return kind switch
         {
+            ProjectTreeNodeKind.ProjectsRoot => EditorWorkspaceScope.Design,
             ProjectTreeNodeKind.Project => EditorWorkspaceScope.Both,
             ProjectTreeNodeKind.ExternalMediaRoot => EditorWorkspaceScope.Both,
             ProjectTreeNodeKind.AppsRoot or ProjectTreeNodeKind.App
@@ -60,7 +61,8 @@ public static class EditorWorkspacePolicy
 
     public static bool IsSectionRoot(ProjectTreeNodeKind kind)
     {
-        return kind is ProjectTreeNodeKind.AppsRoot
+        return kind is ProjectTreeNodeKind.ProjectsRoot
+            or ProjectTreeNodeKind.AppsRoot
             or ProjectTreeNodeKind.ComponentClassesRoot
             or ProjectTreeNodeKind.PaletteRoot
             or ProjectTreeNodeKind.IconThemesRoot
@@ -74,6 +76,7 @@ public static class EditorWorkspacePolicy
     {
         return kind switch
         {
+            ProjectTreeNodeKind.ProjectsRoot => 0,
             ProjectTreeNodeKind.AppsRoot => 10,
             ProjectTreeNodeKind.ComponentClassesRoot => 20,
             ProjectTreeNodeKind.PaletteRoot => 30,

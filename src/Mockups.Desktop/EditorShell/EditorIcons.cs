@@ -102,6 +102,7 @@ internal static class EditorIcons
     {
         return kind switch
         {
+            ProjectTreeNodeKind.ProjectsRoot => Project,
             ProjectTreeNodeKind.Project => Project,
             ProjectTreeNodeKind.ProductionDataRoot => Content,
             ProjectTreeNodeKind.RenderQueueRoot => Render,
@@ -162,6 +163,7 @@ internal static class EditorIcons
 
         return node.Kind switch
         {
+            ProjectTreeNodeKind.ProjectsRoot => NavigationAsset("Project"),
             ProjectTreeNodeKind.Project => NavigationAsset("Project"),
             ProjectTreeNodeKind.AppsRoot => NavigationAsset("Apps"),
             ProjectTreeNodeKind.App => node.RecordClassId.Contains(".chat", StringComparison.Ordinal)

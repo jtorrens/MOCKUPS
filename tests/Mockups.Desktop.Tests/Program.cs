@@ -11064,7 +11064,7 @@ static void RecordCreationUsesOneDeclarativeLifecycle()
 {
     var expectedOperations = new Dictionary<ProjectTreeNodeKind, EditorAddOperationKind>
     {
-        [ProjectTreeNodeKind.Project] = EditorAddOperationKind.CreateRecord,
+        [ProjectTreeNodeKind.ProjectsRoot] = EditorAddOperationKind.CreateRecord,
         [ProjectTreeNodeKind.PaletteRoot] = EditorAddOperationKind.CreateRecord,
         [ProjectTreeNodeKind.IconThemesRoot] = EditorAddOperationKind.RefreshIconThemes,
         [ProjectTreeNodeKind.DevicesRoot] = EditorAddOperationKind.ImportDevice,
@@ -11083,6 +11083,7 @@ static void RecordCreationUsesOneDeclarativeLifecycle()
     }
     True(!EditorAddOperationCatalog.TryGet(ProjectTreeNodeKind.ProductionPaletteRoot, out _));
     True(!EditorAddOperationCatalog.TryGet(ProjectTreeNodeKind.Actor, out _));
+    True(!EditorAddOperationCatalog.TryGet(ProjectTreeNodeKind.Project, out _));
     var childPortMethods = typeof(IEditorChildStore).GetMethods()
         .Select((method) => method.Name)
         .ToHashSet(StringComparer.Ordinal);
@@ -11101,8 +11102,14 @@ static void RecordCreationUsesOneDeclarativeLifecycle()
     {
         var database = new SqliteProjectTestContext(temporary);
         var tree = database.LoadProjectTree();
-        var projectContext = Descendants(tree)
-            .Single((node) => node.Kind == ProjectTreeNodeKind.Project);
+        var persistedProject = tree.Single();
+        var projectContext = new ProjectTreeNode(
+            ProjectTreeNodeKind.ProjectsRoot,
+            EditorNavigationMetadata.ProjectsRootId,
+            "Projects",
+            "",
+            ProjectTreeNode.DefaultRecordClassId(
+                ProjectTreeNodeKind.ProjectsRoot));
         var project = database.Children.PrepareRecordCreation(
             projectContext,
             "project");
@@ -11130,6 +11137,16 @@ static void RecordCreationUsesOneDeclarativeLifecycle()
             new RecordCreationDraft(project.Id, projectValues));
         True(createdProject.Parent is null);
         Equal("Empty Project", createdProject.Name);
+        Equal(
+            createdProject.Id,
+            EditorNavigationRenderer.DesignContextProject(
+                [persistedProject, createdProject],
+                createdProject)?.Id);
+        Equal(
+            persistedProject.Id,
+            EditorNavigationRenderer.DesignContextProject(
+                [persistedProject, createdProject],
+                selected: null)?.Id);
         using (var connection = new SqliteProjectContext(temporary)
                    .OpenConnection())
         {

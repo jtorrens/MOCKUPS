@@ -112,3 +112,24 @@ test("empty Project creation is one atomic root aggregate", () => {
     /DELETE FROM projects[\s\S]*NOT EXISTS[\s\S]*JOIN shots/,
   );
 });
+
+test("Design renders one permanent Projects tree and one contextual global set", () => {
+  const catalog = read(
+    "src/Mockups.Application/EditorAddOperationCatalog.cs",
+  );
+  const renderer = read(
+    "src/Mockups.Desktop/EditorShell/EditorNavigationRenderer.cs",
+  );
+
+  assert.match(
+    catalog,
+    /\[ProjectTreeNodeKind\.ProjectsRoot\][\s\S]*"project\.create"/,
+  );
+  assert.doesNotMatch(
+    catalog,
+    /\[ProjectTreeNodeKind\.Project\][\s\S]*"project\.create"/,
+  );
+  assert.match(renderer, /AddProjectsSection\(candidate, treeRoots\)/);
+  assert.match(renderer, /DesignContextProject/);
+  assert.match(renderer, /AddHierarchicalNode\([\s\S]*projects\[index\]/);
+});

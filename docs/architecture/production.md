@@ -44,9 +44,10 @@ copy current records | regenerate from current seeds | create empty
 
 That choice is explicit per resource group. Resource lookup must never fall back to records from another Project.
 
-Creating a Project is an authored root-record operation. The shared creation
-form requires its identity, frame rate and complete manual Production Output
-contract before insertion. The result is otherwise empty: it contains no
+Creating a Project is an authored root-record operation declared by the
+permanent Design Projects section. The shared creation form requires its
+identity, frame rate and complete manual Production Output contract before
+insertion. The result is otherwise empty: it contains no
 Episodes, Shots, Actors, Devices, Themes, Production Fonts, media entries or
 assets. Its only dependent rows are the mandatory Production Palette values,
 copied from the current System defaults in the same atomic write. Those copied
