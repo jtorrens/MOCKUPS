@@ -273,6 +273,20 @@ Records whose declared defaults are already complete may skip the form, but
 they use the same prepare/validate/commit contract. Records requiring explicit
 references cannot be inserted with empty placeholders for later editing.
 
+Project creation uses that same contract with an explicitly declared root
+placement. The focused Project repository inserts the complete Project row and
+the focused Palette repository inserts one Production value from every System
+Palette default inside the same composition-owned transaction. No Episode,
+Shot, Actor, Device, Theme, Production Font, media entry or asset is created.
+The returned navigation node is a root; it is never attached to the Project
+used as the creation context.
+
+Project deletion remains in the generic node-command contract. Its focused SQL
+owner deletes the Project only when an atomic persisted predicate proves that
+no Shot exists below any of its Episodes. The foreign-key cascade removes its
+empty Episodes and all remaining Project-owned relational data, including its
+Production Palette values; files outside the database are never removed.
+
 The Node Command membrane exposes exactly `IEditorNodeCommandStore`; it has no
 child creation, Module Instance, timeline or Reference Usage members and uses
 no runtime casts to recover them.

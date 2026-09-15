@@ -263,6 +263,25 @@ internal sealed class PaletteRepository : IPaletteRepository
         return new PaletteColorRecord(id, token, valueHex, note, true, metadataJson);
     }
 
+    public void CreateProductionValuesForProject(
+        SqliteConnection connection,
+        SqliteTransaction transaction,
+        string projectId)
+    {
+        _context.Execute(
+            connection,
+            transaction,
+            """
+            INSERT INTO production_palette_values (
+              project_id,
+              palette_color_id,
+              value_hex)
+            SELECT $projectId, id, default_value_hex
+            FROM palette_colors
+            """,
+            ("$projectId", projectId));
+    }
+
     public PaletteColorRecord DuplicateSystemColor(
         SqliteConnection connection,
         string sourceId)

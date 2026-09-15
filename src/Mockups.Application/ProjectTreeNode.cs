@@ -77,7 +77,8 @@ public sealed class ProjectTreeNode
     public List<ProjectTreeNode> Children { get; } = [];
 
     public int Level => Parent is null ? 0 : Parent.Level + 1;
-    public bool CanAddChild => EditorAddOperationCatalog.TryGet(Kind, out _);
+    public bool HasAddOperation =>
+        EditorAddOperationCatalog.TryGet(Kind, out _);
     public bool CanDuplicate => Kind is ProjectTreeNodeKind.ModuleVariant
         or ProjectTreeNodeKind.ModuleInstance
         or ProjectTreeNodeKind.Episode
@@ -103,7 +104,8 @@ public sealed class ProjectTreeNode
         or ProjectTreeNodeKind.Actor
         or ProjectTreeNodeKind.Theme
         or ProjectTreeNodeKind.ProductionFont;
-    public bool CanDelete => Kind is ProjectTreeNodeKind.ModuleInstance
+    public bool CanDelete => Kind is ProjectTreeNodeKind.Project
+        or ProjectTreeNodeKind.ModuleInstance
         or ProjectTreeNodeKind.Episode
         or ProjectTreeNodeKind.Shot
         or ProjectTreeNodeKind.PaletteColor

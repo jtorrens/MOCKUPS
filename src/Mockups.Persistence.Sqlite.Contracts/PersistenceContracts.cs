@@ -214,6 +214,16 @@ internal interface IProjectEpisodeRepository
 
     IReadOnlyList<ProjectRecord> QueryProjects(SqliteConnection connection);
 
+    ProjectRecord CreateProject(
+        SqliteConnection connection,
+        SqliteTransaction transaction,
+        string name,
+        string slug,
+        int defaultFps,
+        ProductionOutputSettings productionOutput);
+
+    void DeleteProject(SqliteConnection connection, string projectId);
+
     IReadOnlyList<EpisodeRecord> QueryEpisodes(SqliteConnection connection);
 
     EpisodeRecord CreateEpisode(SqliteConnection connection, string projectId);
@@ -341,6 +351,11 @@ internal interface IPaletteRepository
         SqliteConnection connection,
         string token,
         string defaultValueHex);
+
+    void CreateProductionValuesForProject(
+        SqliteConnection connection,
+        SqliteTransaction transaction,
+        string projectId);
 
     PaletteColorRecord DuplicateSystemColor(
         SqliteConnection connection,

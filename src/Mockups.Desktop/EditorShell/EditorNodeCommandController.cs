@@ -3,6 +3,7 @@ using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
@@ -283,7 +284,7 @@ internal sealed class EditorNodeCommandController
 
     public async Task DeleteNode(ProjectTreeNode node)
     {
-        if (node.Parent is null || !node.CanDelete) return;
+        if (!node.CanDelete) return;
 
         var deleteNodeId = node.Id;
         if (!await _loadProjectTree())
@@ -291,7 +292,6 @@ internal sealed class EditorNodeCommandController
             return;
         }
         node = EditorNodeSelectionState.FindNodeById(_treeRoots(), deleteNodeId) ?? node;
-        if (node.Parent is null) return;
 
         var usages = await _operations.ExecuteWithActivityAsync(
             "Checking reference usage…",
@@ -317,7 +317,9 @@ internal sealed class EditorNodeCommandController
             : await Dialogs().ConfirmDelete(node);
         if (!confirmed) return;
 
-        var nextSelectionId = node.Parent.Id;
+        var nextSelection = node.Parent is null
+            ? _treeRoots().FirstOrDefault((root) => root.Id != node.Id)
+            : node.Parent;
         try
         {
             await _operations.ExecuteAsync(
@@ -329,12 +331,11 @@ internal sealed class EditorNodeCommandController
             return;
         }
 
-        var nextSelection = new ProjectTreeNode(
-            node.Parent.Kind,
-            nextSelectionId,
-            node.Parent.Name,
-            node.Parent.Notes,
-            node.Parent.RecordClassId);
+        if (nextSelection is null)
+        {
+            await _loadProjectTree();
+            return;
+        }
         await _reloadAndSelect(nextSelection);
     }
 

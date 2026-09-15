@@ -199,7 +199,7 @@ internal sealed class EditorNavigationRenderer
     {
         var exposeChildren = _canExposeChildren(node);
         var visibleChildren = node.Children;
-        var hasChildren = visibleChildren.Count > 0 || node.CanAddChild;
+        var hasChildren = visibleChildren.Count > 0 || node.HasAddOperation;
         var nodeEnabled = _isNodeEnabled(node);
         var expanded = hasChildren && _isExpanded(node);
         var options = new List<EditorNavigationRowAction>();
@@ -224,7 +224,7 @@ internal sealed class EditorNavigationRenderer
         {
             options.Add(new($"Delete {EditorNavigationMetadata.Title(node)}", EditorIcons.Delete, () => _ = _deleteNode(node), node.CanDelete));
         }
-        var add = node.CanAddChild
+        var add = node.HasAddOperation
             ? new EditorNavigationRowAction(EditorNavigationMetadata.AddChildLabel(node), EditorIcons.Add, () => _ = _addChild(node), exposeChildren)
             : null;
         var status = !nodeEnabled ? "Unavailable" : node.IsProtected ? "Protected" : node.IsLocked ? "Locked" : node.IsUsed ? "Used" : "";
@@ -273,7 +273,7 @@ internal sealed class EditorNavigationRenderer
 
     private void AddNavigationNode(StackPanel parent, ProjectTreeNode node)
     {
-        if (node.Children.Count > 0 || node.CanAddChild)
+        if (node.Children.Count > 0 || node.HasAddOperation)
         {
             var content = new StackPanel
             {
@@ -309,7 +309,7 @@ internal sealed class EditorNavigationRenderer
 
     private Control CreateNavigationHeader(ProjectTreeNode node, string? iconName, bool isExpanded)
     {
-        var canExpand = node.Children.Count > 0 || node.CanAddChild;
+        var canExpand = node.Children.Count > 0 || node.HasAddOperation;
         var grid = new Grid
         {
             ColumnDefinitions = iconName is null
@@ -550,7 +550,7 @@ internal sealed class EditorNavigationRenderer
             actions.Children.Add(CreateVariantLockButton(node));
         }
 
-        if (node.CanAddChild)
+        if (node.HasAddOperation)
         {
             actions.Children.Add(CreateTreeActionButton(EditorIcons.Create(EditorIcons.Add, 14), EditorNavigationMetadata.AddChildLabel(node), async (_, e) =>
             {
@@ -617,7 +617,7 @@ internal sealed class EditorNavigationRenderer
 
     internal static bool ShowsActions(ProjectTreeNode node, ProjectTreeNode? selected) =>
         selected?.Id == node.Id
-            || (node.CanAddChild && node.Parent?.Kind == ProjectTreeNodeKind.ProductionDataRoot)
+            || (node.HasAddOperation && node.Parent?.Kind == ProjectTreeNodeKind.ProductionDataRoot)
             || (node.Kind == ProjectTreeNodeKind.ComponentClass
                 && selected?.Kind == ProjectTreeNodeKind.ComponentVariant
                 && selected.Parent?.Id == node.Id)

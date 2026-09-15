@@ -445,6 +445,119 @@ internal sealed class ProjectEpisodeRepository : IProjectEpisodeRepository
         return rows;
     }
 
+    public ProjectRecord CreateProject(
+        SqliteConnection connection,
+        SqliteTransaction transaction,
+        string name,
+        string slug,
+        int defaultFps,
+        ProductionOutputSettings productionOutput)
+    {
+        var normalizedName = name.Trim();
+        var normalizedSlug = slug.Trim();
+        if (normalizedName.Length == 0 || normalizedSlug.Length == 0)
+        {
+            throw new InvalidOperationException(
+                "A Project requires a name and slug.");
+        }
+        if (defaultFps <= 0)
+        {
+            throw new InvalidOperationException(
+                "A Project requires a positive default FPS.");
+        }
+        var output = ProductionOutputContract.Require(
+            productionOutput,
+            "New Project Production output");
+        var id = $"project_{Guid.NewGuid():N}";
+        _context.Execute(
+            connection,
+            transaction,
+            """
+            INSERT INTO projects (
+              id,
+              name,
+              slug,
+              default_fps,
+              notes,
+              media_root,
+              production_code,
+              production_season_code,
+              episode_prefix,
+              shot_prefix,
+              shot_number_padding,
+              output_version_padding,
+              output_frame_padding,
+              output_relative_directory_template,
+              production_output_mode,
+              metadata_json)
+            VALUES (
+              $id,
+              $name,
+              $slug,
+              $defaultFps,
+              '',
+              '',
+              $productionCode,
+              $productionSeasonCode,
+              $episodePrefix,
+              $shotPrefix,
+              $shotNumberPadding,
+              $outputVersionPadding,
+              $outputFramePadding,
+              $outputRelativeDirectoryTemplate,
+              'manual',
+              '{}')
+            """,
+            ("$id", id),
+            ("$name", normalizedName),
+            ("$slug", normalizedSlug),
+            ("$defaultFps", defaultFps),
+            ("$productionCode", output.TechnicalCode),
+            ("$productionSeasonCode", output.SeasonCode),
+            ("$episodePrefix", output.EpisodePrefix),
+            ("$shotPrefix", output.ShotPrefix),
+            ("$shotNumberPadding", output.ShotNumberPadding),
+            ("$outputVersionPadding", output.VersionPadding),
+            ("$outputFramePadding", output.FramePadding),
+            ("$outputRelativeDirectoryTemplate", output.RelativeDirectoryTemplate));
+        return new ProjectRecord(id, normalizedName, "");
+    }
+
+    public void DeleteProject(
+        SqliteConnection connection,
+        string projectId)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText =
+            """
+            DELETE FROM projects
+            WHERE id = $projectId
+              AND NOT EXISTS (
+                SELECT 1
+                FROM episodes episode
+                JOIN shots shot ON shot.episode_id = episode.id
+                WHERE episode.project_id = projects.id
+              )
+            """;
+        command.Parameters.AddWithValue("$projectId", projectId);
+        if (command.ExecuteNonQuery() == 1)
+        {
+            return;
+        }
+
+        using var existence = connection.CreateCommand();
+        existence.CommandText =
+            "SELECT EXISTS(SELECT 1 FROM projects WHERE id = $projectId)";
+        existence.Parameters.AddWithValue("$projectId", projectId);
+        if (Convert.ToInt32(existence.ExecuteScalar()) == 0)
+        {
+            throw new InvalidOperationException(
+                $"Missing Project '{projectId}'.");
+        }
+        throw new InvalidOperationException(
+            "A Project containing one or more Shots cannot be deleted.");
+    }
+
     public IReadOnlyList<EpisodeRecord> QueryEpisodes(SqliteConnection connection)
     {
         var rows = new List<EpisodeRecord>();

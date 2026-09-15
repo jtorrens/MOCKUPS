@@ -31,6 +31,8 @@ public static partial class ProductionOutputContract
     public const string SeasonCodeToken = "{{SEASON_CODE}}";
     public const string EpisodeCodeToken = "{{EPISODE_CODE}}";
     public const string ShotNameToken = "{{SHOT_NAME}}";
+    public const string DefaultRelativeDirectoryTemplate =
+        "{{SEASON_CODE}}/{{EPISODE_CODE}}/{{SHOT_NAME}}/comp";
 
     private static readonly string[] RequiredTokens =
     [

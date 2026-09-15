@@ -107,7 +107,9 @@ internal sealed class EditorDialogService
 
     public Task<bool> ConfirmDelete(ProjectTreeNode node)
     {
-        var message = node.Kind == ProjectTreeNodeKind.Episode
+        var message = node.Kind == ProjectTreeNodeKind.Project
+            ? "This permanently removes the Project and all of its Production data. Files outside MOCKUPS are retained. A Project containing Shots cannot be deleted."
+            : node.Kind == ProjectTreeNodeKind.Episode
             ? "This will also remove the Shots inside this Episode from the current Project."
             : node.Kind == ProjectTreeNodeKind.App
                 ? "This will also remove the Modules inside this App from the current Project."

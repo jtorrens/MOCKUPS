@@ -82,3 +82,33 @@ test("Episode and Icon Theme aggregate writes are atomic", () => {
     /VALUES \(\$id, \$projectId, \$name, \$assetRoot, '\{\}'/,
   );
 });
+
+test("empty Project creation is one atomic root aggregate", () => {
+  const application = read(
+    "src/Mockups.Application/RecordCreationContract.cs",
+  );
+  const persistence = read(
+    "src/Mockups.Persistence.Sqlite/SqliteEditorChildStore.cs",
+  );
+  const projects = read(
+    "src/Mockups.Persistence.Sqlite.Production/ProjectEpisodeRepository.cs",
+  );
+  const palettes = read(
+    "src/Mockups.Persistence.Sqlite.Resources/PaletteRepository.cs",
+  );
+
+  assert.match(application, /enum RecordCreationPlacement/);
+  assert.match(persistence, /Placement: RecordCreationPlacement\.Root/);
+  assert.match(persistence, /using var transaction = connection\.BeginTransaction\(\)/);
+  assert.match(persistence, /CreateProductionValuesForProject/);
+  assert.match(persistence, /transaction\.Commit\(\)/);
+  assert.match(projects, /INSERT INTO projects/);
+  assert.match(
+    palettes,
+    /INSERT INTO production_palette_values[\s\S]*SELECT[\s\S]*FROM palette_colors/,
+  );
+  assert.match(
+    projects,
+    /DELETE FROM projects[\s\S]*NOT EXISTS[\s\S]*JOIN shots/,
+  );
+});

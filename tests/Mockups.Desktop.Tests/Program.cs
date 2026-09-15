@@ -11064,6 +11064,7 @@ static void RecordCreationUsesOneDeclarativeLifecycle()
 {
     var expectedOperations = new Dictionary<ProjectTreeNodeKind, EditorAddOperationKind>
     {
+        [ProjectTreeNodeKind.Project] = EditorAddOperationKind.CreateRecord,
         [ProjectTreeNodeKind.PaletteRoot] = EditorAddOperationKind.CreateRecord,
         [ProjectTreeNodeKind.IconThemesRoot] = EditorAddOperationKind.RefreshIconThemes,
         [ProjectTreeNodeKind.DevicesRoot] = EditorAddOperationKind.ImportDevice,
@@ -11100,6 +11101,117 @@ static void RecordCreationUsesOneDeclarativeLifecycle()
     {
         var database = new SqliteProjectTestContext(temporary);
         var tree = database.LoadProjectTree();
+        var projectContext = Descendants(tree)
+            .Single((node) => node.Kind == ProjectTreeNodeKind.Project);
+        var project = database.Children.PrepareRecordCreation(
+            projectContext,
+            "project");
+        SequenceEqual(
+            new[]
+            {
+                "core.name", "project.slug", "project.defaultFps",
+                "project.productionCode", "project.productionSeasonCode",
+                "project.episodePrefix", "project.shotPrefix",
+                "project.shotNumberPadding", "project.outputVersionPadding",
+                "project.outputFramePadding",
+                "project.outputRelativeDirectoryTemplate",
+            },
+            project.Fields.Select((field) => field.Definition.Id));
+        Equal(RecordCreationPlacement.Root, project.Placement);
+        True(project.RequiresConfirmation);
+        var projectValues = project.Fields.ToDictionary(
+            (field) => field.Definition.Id,
+            (field) => field.Value,
+            StringComparer.Ordinal);
+        projectValues["core.name"] = "Empty Project";
+        projectValues["project.slug"] = "empty_project";
+        var createdProject = database.Children.CreateRecord(
+            projectContext,
+            new RecordCreationDraft(project.Id, projectValues));
+        True(createdProject.Parent is null);
+        Equal("Empty Project", createdProject.Name);
+        using (var connection = new SqliteProjectContext(temporary)
+                   .OpenConnection())
+        {
+            long CountProjectRows(string table)
+            {
+                using var command = connection.CreateCommand();
+                command.CommandText =
+                    $"SELECT COUNT(*) FROM {table} WHERE project_id = $projectId";
+                command.Parameters.AddWithValue("$projectId", createdProject.Id);
+                return Convert.ToInt64(
+                    command.ExecuteScalar(),
+                    CultureInfo.InvariantCulture);
+            }
+
+            Equal(0L, CountProjectRows("episodes"));
+            Equal(0L, CountProjectRows("devices"));
+            Equal(0L, CountProjectRows("actors"));
+            Equal(0L, CountProjectRows("production_fonts"));
+            Equal(0L, CountProjectRows("themes"));
+            using var palette = connection.CreateCommand();
+            palette.CommandText =
+                """
+                SELECT COUNT(*)
+                FROM production_palette_values values_by_project
+                JOIN palette_colors color
+                  ON color.id = values_by_project.palette_color_id
+                WHERE values_by_project.project_id = $projectId
+                  AND values_by_project.value_hex = color.default_value_hex
+                """;
+            palette.Parameters.AddWithValue(
+                "$projectId",
+                createdProject.Id);
+            using var paletteCatalog = connection.CreateCommand();
+            paletteCatalog.CommandText = "SELECT COUNT(*) FROM palette_colors";
+            Equal(
+                Convert.ToInt64(
+                    paletteCatalog.ExecuteScalar(),
+                    CultureInfo.InvariantCulture),
+                Convert.ToInt64(
+                    palette.ExecuteScalar(),
+                    CultureInfo.InvariantCulture));
+        }
+
+        Throws<InvalidOperationException>(() =>
+            database.Delete(projectContext));
+        var createdProjectRoot = database.LoadProjectTree()
+            .Single((root) => root.Id == createdProject.Id);
+        var createdEpisodesRoot = Descendants([createdProjectRoot])
+            .Single((node) => node.Kind == ProjectTreeNodeKind.EpisodesRoot);
+        _ = database.Children.CreateRecord(
+            createdEpisodesRoot,
+            new RecordCreationDraft(
+                "episode",
+                new Dictionary<string, string>(StringComparer.Ordinal)));
+        database.Delete(createdProjectRoot);
+        using (var connection = new SqliteProjectContext(temporary)
+                   .OpenConnection())
+        {
+            using var projectCount = connection.CreateCommand();
+            projectCount.CommandText =
+                "SELECT COUNT(*) FROM projects WHERE id = $projectId";
+            projectCount.Parameters.AddWithValue(
+                "$projectId",
+                createdProject.Id);
+            Equal(
+                0L,
+                Convert.ToInt64(
+                    projectCount.ExecuteScalar(),
+                    CultureInfo.InvariantCulture));
+            using var paletteCount = connection.CreateCommand();
+            paletteCount.CommandText =
+                "SELECT COUNT(*) FROM production_palette_values WHERE project_id = $projectId";
+            paletteCount.Parameters.AddWithValue(
+                "$projectId",
+                createdProject.Id);
+            Equal(
+                0L,
+                Convert.ToInt64(
+                    paletteCount.ExecuteScalar(),
+                    CultureInfo.InvariantCulture));
+        }
+
         var actorsRoot = Descendants(tree).Single((node) => node.Kind == ProjectTreeNodeKind.ActorsRoot);
         var actor = database.Children.PrepareRecordCreation(actorsRoot, "actor");
         SequenceEqual(
@@ -22217,13 +22329,13 @@ static void AppAndModuleDefinitionsExposeRenameOnlyLifecycleActions()
     var customVariant = new ProjectTreeNode(
         ProjectTreeNodeKind.ModuleVariant, "module::variant::custom", "Custom", "", "module.variant", module);
 
-    True(!appsRoot.CanAddChild);
+    True(!appsRoot.HasAddOperation);
     True(app.CanRenameDirectly);
-    True(!app.CanAddChild);
+    True(!app.HasAddOperation);
     True(!app.CanDuplicate);
     True(!app.CanDelete);
     True(module.CanRenameDirectly);
-    True(!module.CanAddChild);
+    True(!module.HasAddOperation);
     True(!module.CanDuplicate);
     True(!module.CanDelete);
     True(defaultVariant.CanRenameDirectly);
@@ -24268,7 +24380,7 @@ static void LifecycleActionsStayConsistentAcrossNavigationAndEditors()
         "module_instance",
         shot);
 
-    True(shot.CanAddChild);
+    True(shot.HasAddOperation);
     True(episode.CanRenameDirectly);
     True(shot.CanRenameDirectly);
     True(screen.CanRenameDirectly);

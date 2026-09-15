@@ -5,6 +5,12 @@ using System.Linq;
 
 namespace Mockups.DesktopEditorShell.EditorShell;
 
+public enum RecordCreationPlacement
+{
+    Child,
+    Root,
+}
+
 public sealed record RecordCreationDefinition(
     string Id,
     string RecordClassId,
@@ -12,7 +18,8 @@ public sealed record RecordCreationDefinition(
     string Description,
     string ActionLabel,
     IReadOnlyList<FieldValue> Fields,
-    bool RequiresConfirmation = true)
+    bool RequiresConfirmation = true,
+    RecordCreationPlacement Placement = RecordCreationPlacement.Child)
 {
     public string? ValidationError(IReadOnlyDictionary<string, string> values)
     {

@@ -1,4 +1,5 @@
 using Mockups.DesktopEditorShell.EditorShell;
+using System.Globalization;
 using System.Text.Json;
 
 namespace Mockups.DesktopEditorShell.Data;
@@ -26,6 +27,7 @@ internal sealed class SqliteEditorChildStore
         _resources = resources;
         _creationPreparers = new Dictionary<string, Func<ProjectTreeNode, RecordCreationDefinition>>(StringComparer.Ordinal)
         {
+            ["project"] = PrepareProjectCreation,
             ["palette"] = PreparePaletteCreation,
             ["device"] = PrepareBlankDeviceCreation,
             ["actor"] = PrepareActorCreation,
@@ -35,6 +37,7 @@ internal sealed class SqliteEditorChildStore
         };
         _creationCommitters = new Dictionary<string, Func<ProjectTreeNode, IReadOnlyDictionary<string, string>, ProjectTreeNode>>(StringComparer.Ordinal)
         {
+            ["project"] = CreateProject,
             ["palette"] = CreatePalette,
             ["device"] = CreateBlankDevice,
             ["actor"] = CreateActor,
@@ -44,9 +47,72 @@ internal sealed class SqliteEditorChildStore
         };
     }
 
+    private RecordCreationDefinition PrepareProjectCreation(
+        ProjectTreeNode context)
+    {
+        RequireCreationContext(
+            context,
+            ProjectTreeNodeKind.Project,
+            "project");
+        using var connection = _context.OpenConnection();
+        var sequence = _production.ProjectEpisodeRepository
+            .QueryProjects(connection)
+            .Count + 1;
+        return new RecordCreationDefinition(
+            "project",
+            "project",
+            "New project",
+            "Create an empty Project with a complete manual Production Output contract.",
+            "Create",
+            [
+                Field(
+                    "core.name",
+                    "Name",
+                    ValueKind.StringSingleLine,
+                    $"Project {sequence}"),
+                Field(
+                    RecordClassFieldCatalog.Get("project.slug"),
+                    $"project_{sequence}"),
+                Field(
+                    RecordClassFieldCatalog.Get("project.defaultFps"),
+                    "25"),
+                Field(
+                    RecordClassFieldCatalog.Get("project.productionCode"),
+                    $"PROJECT_{sequence}_"),
+                Field(
+                    RecordClassFieldCatalog.Get(
+                        "project.productionSeasonCode"),
+                    "S01_"),
+                Field(
+                    RecordClassFieldCatalog.Get("project.episodePrefix"),
+                    "EP_"),
+                Field(
+                    RecordClassFieldCatalog.Get("project.shotPrefix"),
+                    "SH"),
+                Field(
+                    RecordClassFieldCatalog.Get(
+                        "project.shotNumberPadding"),
+                    "4"),
+                Field(
+                    RecordClassFieldCatalog.Get(
+                        "project.outputVersionPadding"),
+                    "3"),
+                Field(
+                    RecordClassFieldCatalog.Get(
+                        "project.outputFramePadding"),
+                    "8"),
+                Field(
+                    RecordClassFieldCatalog.Get(
+                        "project.outputRelativeDirectoryTemplate"),
+                    ProductionOutputContract
+                        .DefaultRelativeDirectoryTemplate),
+            ],
+            Placement: RecordCreationPlacement.Root);
+    }
+
     private RecordCreationDefinition PreparePaletteCreation(ProjectTreeNode parent)
     {
-        RequireParent(parent, ProjectTreeNodeKind.PaletteRoot, "palette");
+        RequireCreationContext(parent, ProjectTreeNodeKind.PaletteRoot, "palette");
         return new RecordCreationDefinition(
             "palette",
             "paletteColor",
@@ -85,18 +151,32 @@ internal sealed class SqliteEditorChildStore
             throw new InvalidOperationException(
                 $"Record creation '{draft.DefinitionId}' has no commit owner.");
         }
-        return commit(parent, draft.Values);
+        var created = commit(parent, draft.Values);
+        if (definition.Placement == RecordCreationPlacement.Root)
+        {
+            if (created.Parent is not null)
+            {
+                throw new InvalidOperationException(
+                    $"Root creation '{definition.Id}' returned a child record.");
+            }
+        }
+        else if (created.Parent?.Id != parent.Id)
+        {
+            throw new InvalidOperationException(
+                $"Child creation '{definition.Id}' returned a record outside its declared parent.");
+        }
+        return created;
     }
 
     private RecordCreationDefinition PrepareBlankDeviceCreation(ProjectTreeNode parent)
     {
-        RequireParent(parent, ProjectTreeNodeKind.DevicesRoot, "device");
+        RequireCreationContext(parent, ProjectTreeNodeKind.DevicesRoot, "device");
         return EmptyCreation("device", "device", "Add blank device");
     }
 
     private RecordCreationDefinition PrepareActorCreation(ProjectTreeNode parent)
     {
-        RequireParent(parent, ProjectTreeNodeKind.ActorsRoot, "actor");
+        RequireCreationContext(parent, ProjectTreeNodeKind.ActorsRoot, "actor");
         using var connection = _context.OpenConnection();
         var projectId = ProjectAncestor(parent).Id;
         var index = SqliteCommandExecutor.ScalarLong(
@@ -120,7 +200,7 @@ internal sealed class SqliteEditorChildStore
 
     private RecordCreationDefinition PrepareThemeCreation(ProjectTreeNode parent)
     {
-        RequireParent(parent, ProjectTreeNodeKind.ThemesRoot, "theme");
+        RequireCreationContext(parent, ProjectTreeNodeKind.ThemesRoot, "theme");
         var projectId = ProjectAncestor(parent).Id;
         return new RecordCreationDefinition(
             "theme", "theme", "Create theme",
@@ -137,13 +217,13 @@ internal sealed class SqliteEditorChildStore
 
     private RecordCreationDefinition PrepareEpisodeCreation(ProjectTreeNode parent)
     {
-        RequireParent(parent, ProjectTreeNodeKind.EpisodesRoot, "episode");
+        RequireCreationContext(parent, ProjectTreeNodeKind.EpisodesRoot, "episode");
         return EmptyCreation("episode", "episode", "Add episode");
     }
 
     private RecordCreationDefinition PrepareShotCreation(ProjectTreeNode parent)
     {
-        RequireParent(parent, ProjectTreeNodeKind.Episode, "shot");
+        RequireCreationContext(parent, ProjectTreeNodeKind.Episode, "shot");
         var projectId = ProjectAncestor(parent).Id;
         return new RecordCreationDefinition(
             "shot", "shot", "Add Shot",
@@ -162,6 +242,60 @@ internal sealed class SqliteEditorChildStore
         var device = _resources.DeviceRepository.Create(connection, ProjectAncestor(parent).Id);
         return new ProjectTreeNode(ProjectTreeNodeKind.Device, device.Id, device.Name, "",
             ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Device), parent);
+    }
+
+    private ProjectTreeNode CreateProject(
+        ProjectTreeNode context,
+        IReadOnlyDictionary<string, string> values)
+    {
+        RequireCreationContext(
+            context,
+            ProjectTreeNodeKind.Project,
+            "project");
+        var output = new ProductionOutputSettings(
+            Required(values, "project.productionCode"),
+            Required(values, "project.productionSeasonCode"),
+            Required(values, "project.episodePrefix"),
+            Required(values, "project.shotPrefix"),
+            int.Parse(
+                Required(values, "project.shotNumberPadding"),
+                CultureInfo.InvariantCulture),
+            int.Parse(
+                Required(values, "project.outputVersionPadding"),
+                CultureInfo.InvariantCulture),
+            int.Parse(
+                Required(values, "project.outputFramePadding"),
+                CultureInfo.InvariantCulture),
+            Required(
+                values,
+                "project.outputRelativeDirectoryTemplate"));
+        lock (_context.WriteGate)
+        {
+            using var connection = _context.OpenConnection();
+            using var transaction = connection.BeginTransaction();
+            var project = _production.ProjectEpisodeRepository.CreateProject(
+                connection,
+                transaction,
+                Required(values, "core.name"),
+                Required(values, "project.slug"),
+                int.Parse(
+                    Required(values, "project.defaultFps"),
+                    CultureInfo.InvariantCulture),
+                output);
+            _resources.PaletteRepository
+                .CreateProductionValuesForProject(
+                    connection,
+                    transaction,
+                    project.Id);
+            transaction.Commit();
+            return new ProjectTreeNode(
+                ProjectTreeNodeKind.Project,
+                project.Id,
+                project.Name,
+                project.Notes,
+                ProjectTreeNode.DefaultRecordClassId(
+                    ProjectTreeNodeKind.Project));
+        }
     }
 
     private ProjectTreeNode CreatePalette(
@@ -324,7 +458,7 @@ internal sealed class SqliteEditorChildStore
             ? value
             : throw new InvalidOperationException($"Creation value '{fieldId}' is required.");
 
-    private static void RequireParent(
+    private static void RequireCreationContext(
         ProjectTreeNode parent,
         ProjectTreeNodeKind expected,
         string creationId)
@@ -332,7 +466,7 @@ internal sealed class SqliteEditorChildStore
         if (parent.Kind != expected)
         {
             throw new InvalidOperationException(
-                $"Record creation '{creationId}' requires parent {expected}, not {parent.Kind}.");
+                $"Record creation '{creationId}' requires context {expected}, not {parent.Kind}.");
         }
     }
 

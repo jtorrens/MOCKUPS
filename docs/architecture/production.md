@@ -44,6 +44,21 @@ copy current records | regenerate from current seeds | create empty
 
 That choice is explicit per resource group. Resource lookup must never fall back to records from another Project.
 
+Creating a Project is an authored root-record operation. The shared creation
+form requires its identity, frame rate and complete manual Production Output
+contract before insertion. The result is otherwise empty: it contains no
+Episodes, Shots, Actors, Devices, Themes, Production Fonts, media entries or
+assets. Its only dependent rows are the mandatory Production Palette values,
+copied from the current System defaults in the same atomic write. Those copied
+values are owned by the new Project and are not runtime fallbacks.
+
+A Project exposes Delete even though it is a navigation root, and deletion
+always requires explicit confirmation. The persisted delete succeeds only when
+none of the Project's Episodes contains a Shot. It may therefore remove empty
+Episodes and other Project-owned Production data, but an existing Shot blocks
+the entire operation without changing the database. External media and output
+files remain on disk.
+
 ## Episodes and Shots
 
 An Episode owns ordered Shots. A Shot owns:

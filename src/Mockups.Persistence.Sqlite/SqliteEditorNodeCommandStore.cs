@@ -44,7 +44,8 @@ internal sealed class SqliteEditorNodeCommandStore
 
         using var connection = _context.OpenConnection();
         if (node.Kind is not (
-            ProjectTreeNodeKind.Shot
+            ProjectTreeNodeKind.Project
+            or ProjectTreeNodeKind.Shot
             or ProjectTreeNodeKind.ModuleInstance
             or ProjectTreeNodeKind.Episode
             or ProjectTreeNodeKind.Theme
@@ -70,6 +71,11 @@ internal sealed class SqliteEditorNodeCommandStore
 
         switch (node.Kind)
         {
+            case ProjectTreeNodeKind.Project:
+                _production.ProjectEpisodeRepository.DeleteProject(
+                    connection,
+                    node.Id);
+                return;
             case ProjectTreeNodeKind.PaletteColor:
                 _resources.PaletteRepository.Delete(connection, node.Id);
                 return;
