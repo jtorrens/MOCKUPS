@@ -20,24 +20,51 @@ test("record creation has one catalog, form and persistence route", () => {
   const navigation = read(
     "src/Mockups.Desktop/EditorShell/EditorNavigationMetadata.cs",
   );
+  const nodeCommands = read(
+    "src/Mockups.Persistence.Sqlite/SqliteEditorNodeCommandStore.cs",
+  );
+  const moduleCollection = read(
+    "src/Mockups.Persistence.Sqlite/SqliteModuleInstanceCollectionStore.cs",
+  );
 
   assert.match(port, /PrepareRecordCreation/);
   assert.match(port, /CreateRecord/);
   assert.doesNotMatch(port, /ProjectTreeNode AddChild\(/);
   assert.doesNotMatch(port, /ProjectTreeNode AddShot\(/);
   assert.doesNotMatch(port, /ProjectTreeNode AddTheme\(/);
+  assert.match(port, /PrepareRecordDuplication/);
+  assert.match(port, /ProjectTreeNode Duplicate\([\s\S]*RecordCreationDraft draft/);
+  assert.match(port, /void Move\(EditorShell\.ProjectTreeNode node, int offset\)/);
+  assert.doesNotMatch(port, /PrepareModuleInstanceCreation/);
+  assert.doesNotMatch(port, /AddModuleInstance/);
+  assert.doesNotMatch(port, /DuplicateShot/);
+  assert.doesNotMatch(port, /MoveModuleInstance/);
   assert.doesNotMatch(workflow, /parent\.Kind\s*==/);
   assert.match(workflow, /EditorAddOperationCatalog\.TryGet/);
   assert.match(persistence, /_creationPreparers/);
   assert.match(persistence, /_creationCommitters/);
+  assert.match(persistence, /\["moduleInstance"\] = PrepareModuleInstanceCreation/);
   assert.doesNotMatch(persistence, /internal ProjectTreeNode AddChild/);
   assert.doesNotMatch(persistence, /internal ProjectTreeNode AddShot/);
   assert.doesNotMatch(persistence, /internal ProjectTreeNode AddTheme/);
   assert.match(navigation, /EditorAddOperationCatalog\.Require/);
+  assert.match(nodeCommands, /PrepareRecordDuplication/);
+  assert.match(nodeCommands, /internal void Move\(ProjectTreeNode node, int offset\)/);
+  assert.doesNotMatch(moduleCollection, /internal ProjectTreeNode AddModuleInstance/);
+  assert.doesNotMatch(moduleCollection, /internal ProjectTreeNode Duplicate/);
+  assert.doesNotMatch(moduleCollection, /internal void Delete/);
+  assert.doesNotMatch(moduleCollection, /internal void MoveModuleInstance/);
   assert.equal(
     existsSync(path.join(
       root,
       "src/Mockups.Desktop/EditorShell/ShotCreationDialog.cs",
+    )),
+    false,
+  );
+  assert.equal(
+    existsSync(path.join(
+      root,
+      "src/Mockups.Desktop/EditorShell/ShotDuplicationDialog.cs",
     )),
     false,
   );

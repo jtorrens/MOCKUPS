@@ -454,6 +454,25 @@ test("generic renderers and helpers cannot depend on Preview owners", () => {
   assert.deepEqual(violations, []);
 });
 
+test("Text Input Bar forwarding semantics stay in its declared owner", () => {
+  const forwardingIdentity =
+    "forwarded.component.textInputBar.textBox.inputs.sampleText";
+  const owners = previewSourceFiles()
+    .filter((fullPath) => readFileSync(fullPath, "utf8")
+      .includes(forwardingIdentity))
+    .map(repositoryPath);
+  assert.deepEqual(owners, [
+    "src/desktop-preview/textInputBarComponentResolver.ts",
+  ]);
+  assert.equal(
+    existsSync(path.join(
+      previewDirectory,
+      "textInputBarRuntimeConfig.ts",
+    )),
+    false,
+  );
+});
+
 test("Preview filesystem imports stay at explicit request and asset boundaries", () => {
   const allowed = new Set([
     "src/desktop-preview/previewAssetResolver.ts",

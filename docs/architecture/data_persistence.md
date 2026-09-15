@@ -358,9 +358,12 @@ Production. Effective Theme-token resolution is not part of that timeline
 contract: it is a separate Resources capability composed only by consumers
 that calculate Theme-dependent timing.
 
-`IModuleInstanceCollectionStore` owns only Screen collection mutations and
-selection options. It does not inherit timeline reads; the Shot collection
-editor receives collection, timeline and Theme-token ports independently.
+`IModuleInstanceCollectionStore` owns only the bounded Module and Variant
+selection options needed before Screen creation. Screen creation reaches
+`IEditorChildStore`; deletion, duplication and reordering reach the generic
+`IEditorNodeCommandStore`. It does not inherit timeline reads; the Shot
+collection editor receives lifecycle, selection, timeline and Theme-token
+ports independently.
 
 `IRuntimeInputInstanceStore` owns only explicit Runtime payload mutations. It
 does not inherit `IModuleInstanceAnimationStore`; animation is an independent

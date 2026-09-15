@@ -373,9 +373,10 @@ first immutable navigation-tree snapshot before publishing the session, so
 `MainWindow` performs no startup SQLite read. Startup returns one typed result;
 only `Success` can create `MainWindow`. Missing or invalid inputs open a
 recovery surface without constructing a partial editor session.
-`Mockups.Desktop` declares its two allowed code dependencies directly:
-Application for application ports and session coordination, and Domain for the
-pure value objects used by visual adapters. `MainWindow`
+`Mockups.Desktop` declares its three allowed code dependencies directly:
+Application for session coordination, Application.PersistencePorts for the
+narrow persistence-facing capabilities, and Domain for the pure value objects
+used by visual adapters. `MainWindow`
 receives an already composed session and cannot compile a reference to the
 database context, SQLite packages or the Persistence assembly.
 

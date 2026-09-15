@@ -4484,33 +4484,71 @@ static void VisualPersistenceWritersRequireOperationCoordination()
 
 static void MainWindowRetainsOnlyShellServices()
 {
-    var retainedTypes = typeof(MainWindow)
+    var retainedFields = typeof(MainWindow)
         .GetFields(
             BindingFlags.Instance
-            | BindingFlags.NonPublic)
-        .Select((field) => field.FieldType)
-        .ToHashSet();
-    foreach (var constructionOnlyType in new[]
-             {
-                 typeof(CoreFieldValueService),
-                 typeof(RecordClassFieldValueService),
-                 typeof(ComponentClassFieldValueService),
-                 typeof(IEditorInlinePreviewController),
-                 typeof(ProductionShotContextService),
-                 typeof(EditorFieldPostCommitEffects),
-                 typeof(EditorPathBrowser),
-                 typeof(EditorDomainDialogService),
-                 typeof(EditorDictionaryFieldServices),
-                 typeof(EditorFieldValueRouter),
-                 typeof(EditorLayoutCardFactory),
-                 typeof(EditorFieldCommitCoordinator),
-             })
+            | BindingFlags.NonPublic
+            | BindingFlags.DeclaredOnly)
+        .Where((field) => field.Name.StartsWith(
+            "_",
+            StringComparison.Ordinal))
+        .ToDictionary(
+            (field) => field.Name,
+            (field) => field.FieldType,
+            StringComparer.Ordinal);
+    var expected = new Dictionary<string, Type>(StringComparer.Ordinal)
     {
-        True(!retainedTypes.Contains(constructionOnlyType));
+        ["_collectionCards"] = typeof(EditorCollectionCardFactory),
+        ["_previewController"] = typeof(EditorPreviewController),
+        ["_screenTimeline"] = typeof(PreviewScreenTimelineController),
+        ["_messages"] = typeof(IEditorShellMessageSink),
+        ["_themeController"] = typeof(EditorThemeController),
+        ["_nodeCommands"] = typeof(EditorNodeCommandController),
+        ["_shellState"] = typeof(EditorShellStateService),
+        ["_navigationPanel"] = typeof(EditorNavigationPanelController),
+        ["_previewControlsDock"] = typeof(PreviewControlsDockController),
+        ["_navigationRenderer"] = typeof(EditorNavigationRenderer),
+        ["_editorViewState"] = typeof(EditorViewStateController),
+        ["_authoringFocusController"] = typeof(EditorAuthoringFocusController),
+        ["_editorSessionUiState"] = typeof(EditorSessionUiState),
+        ["_editorContent"] = typeof(EditorContentController),
+        ["_embeddedEditors"] = typeof(EditorEmbeddedEditorController),
+        ["_embeddedUsageNavigator"] = typeof(EditorEmbeddedUsageNavigator),
+        ["_referenceUsageNavigator"] = typeof(EditorReferenceUsageNavigator),
+        ["_operationActivityPresenter"] = typeof(EditorOperationActivityPresenter),
+        ["_editorHeader"] = typeof(EditorHeaderController),
+        ["_variantHistory"] = typeof(EditorVariantHistoryService),
+        ["_productionNavigationActions"] = typeof(EditorProductionNavigationActions),
+        ["_applicationBackups"] = typeof(EditorApplicationBackupController),
+        ["_treeExpansion"] = typeof(EditorTreeExpansionState),
+        ["_activeFieldControls"] = typeof(EditorActiveFieldControls),
+        ["_workspaceCoordinator"] = typeof(EditorWorkspaceCoordinator),
+        ["_treePreviewTransitions"] = typeof(EditorTreePreviewTransitionCoordinator),
+        ["_isUpdatingProductionPicker"] = typeof(bool),
+        ["_previewUtilityTabStateKey"] = typeof(string),
+        ["_isUpdatingPreviewUtilityTab"] = typeof(bool),
+        ["_renderedPreviewNavigationNodeId"] = typeof(string),
+        ["_pendingEditorCardExpansion"] = typeof((string NodeId, string CardId)?),
+        ["_closeApproved"] = typeof(bool),
+        ["_sessionDisposed"] = typeof(bool),
+    };
+    var unexpected = retainedFields.Keys
+        .Except(expected.Keys, StringComparer.Ordinal)
+        .OrderBy((name) => name, StringComparer.Ordinal)
+        .ToList();
+    var missing = expected.Keys
+        .Except(retainedFields.Keys, StringComparer.Ordinal)
+        .OrderBy((name) => name, StringComparer.Ordinal)
+        .ToList();
+    if (unexpected.Count > 0 || missing.Count > 0)
+    {
+        throw new Exception(
+            $"MainWindow retained-field contract changed. Unexpected: {string.Join(", ", unexpected)}. Missing: {string.Join(", ", missing)}.");
     }
-
-    True(retainedTypes.Contains(
-        typeof(EditorWorkspaceCoordinator)));
+    foreach (var (name, type) in expected)
+    {
+        Equal(type, retainedFields[name]);
+    }
 }
 
 static void DesktopBuildIdentityIsEmbedded()
