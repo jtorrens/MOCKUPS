@@ -16,6 +16,9 @@ function authoringTarget(
       ? { focusItemId: payload.authoringFocusItemId }
       : {}),
     ownerId: payload.authoringOwnerId,
+    ...(payload.authoringRuntimeComponentSlot
+      ? { runtimeComponentSlot: payload.authoringRuntimeComponentSlot }
+      : {}),
     slotFieldIds: [...(payload.authoringSlotFieldIds ?? [])],
   };
 }
@@ -40,6 +43,43 @@ export function authoringSlotPayload(
   };
 }
 
+export function authoringRuntimeComponentSlotPayload(
+  payload: DesignPreviewPayload,
+  ownerRecordClassId: string,
+  collectionFieldId: string,
+  itemId: string,
+  slotFieldId: string,
+  childRecordClassId: string,
+  childFocusFieldId: string,
+): DesignPreviewPayload {
+  if (!payload.authoringOwnerId
+    || payload.authoringRecordClassId !== ownerRecordClassId) {
+    return payload;
+  }
+  for (const [label, value] of Object.entries({
+    collectionFieldId,
+    itemId,
+    slotFieldId,
+    childRecordClassId,
+  })) {
+    if (!value.trim()) {
+      throw new Error(`Runtime Component authoring target requires ${label}.`);
+    }
+  }
+  return {
+    ...payload,
+    authoringFocusFieldId: childFocusFieldId,
+    authoringFocusItemId: undefined,
+    authoringRecordClassId: childRecordClassId,
+    authoringRuntimeComponentSlot: {
+      collectionFieldId,
+      itemId,
+      slotFieldId,
+      recordClassId: childRecordClassId,
+    },
+  };
+}
+
 export function authoringVariantPayload(
   payload: DesignPreviewPayload,
   variantReference: string,
@@ -57,6 +97,7 @@ export function authoringVariantPayload(
     authoringFocusFieldId: undefined,
     authoringFocusItemId: undefined,
     authoringRecordClassId: childRecordClassId,
+    authoringRuntimeComponentSlot: undefined,
     authoringSlotFieldIds: [],
   };
 }
@@ -181,6 +222,28 @@ export function renderAuthoringSlot(
     payload,
     ownerRecordClassId,
     fieldId,
+    childRecordClassId,
+    childFocusFieldId,
+  );
+  return withAuthoringTarget(slotPayload, render(slotPayload));
+}
+
+export function renderAuthoringRuntimeComponentSlot(
+  payload: DesignPreviewPayload,
+  ownerRecordClassId: string,
+  collectionFieldId: string,
+  itemId: string,
+  slotFieldId: string,
+  childRecordClassId: string,
+  childFocusFieldId: string,
+  render: (slotPayload: DesignPreviewPayload) => RenderableNode,
+): RenderableNode {
+  const slotPayload = authoringRuntimeComponentSlotPayload(
+    payload,
+    ownerRecordClassId,
+    collectionFieldId,
+    itemId,
+    slotFieldId,
     childRecordClassId,
     childFocusFieldId,
   );

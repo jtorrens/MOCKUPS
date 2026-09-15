@@ -39,7 +39,8 @@ internal sealed record EditorInternalNavigationSection(
     bool ShowLabel = true,
     bool Reveal = false);
 
-internal sealed class EditorSubcardLayoutHost : ContentControl, IEditorAuthoringItemTarget
+internal sealed class EditorSubcardLayoutHost : ContentControl, IEditorAuthoringItemTarget,
+    IEditorAuthoringRuntimeComponentTarget
 {
     private readonly Dictionary<string, InstantEditorCard> _flatCards =
         new(StringComparer.Ordinal);
@@ -85,6 +86,26 @@ internal sealed class EditorSubcardLayoutHost : ContentControl, IEditorAuthoring
         }
         DeferredBringIntoView.Request(selected);
         return true;
+    }
+
+    public async System.Threading.Tasks.Task<bool> OpenRuntimeComponentOverridesAsync(
+        string itemId,
+        string slotFieldId)
+    {
+        if (!SelectItem(itemId)
+            || !_flatCards.TryGetValue(itemId, out var selected))
+        {
+            return false;
+        }
+        var fields = selected
+            .GetLogicalDescendants()
+            .OfType<DictionaryFieldControl>()
+            .Where((field) => field.FieldId.Equals(
+                slotFieldId,
+                StringComparison.Ordinal))
+            .ToArray();
+        return fields.Length == 1
+            && await fields[0].OpenRuntimeComponentOverridesAsync();
     }
 
     internal static Control ComposeSectionContent(EditorInternalNavigationSection section)

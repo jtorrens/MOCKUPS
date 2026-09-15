@@ -31,6 +31,7 @@ import {
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import {
   forwardAuthoringInputTarget,
+  renderAuthoringRuntimeComponentSlot,
   renderAuthoringSlot,
 } from "./previewAuthoringTarget.js";
 import {
@@ -370,10 +371,12 @@ export function bubbleComponentToRenderable(
       ),
       ...(inlineMediaNode ? [inlineMediaNode] : []),
       ...(iconRow && iconRowBox
-        ? [renderAuthoringSlot(
+        ? [renderAuthoringRuntimeComponentSlot(
             payload,
             "component.bubble",
-            "component.bubble.iconRow.editor",
+            "iconRowRuntime",
+            "iconRow",
+            "iconRowSlot",
             "component.iconRow",
             "component.iconRow.items",
             (slotPayload) => iconRowComponentToRenderableAt(

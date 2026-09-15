@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.LogicalTree;
 
@@ -12,7 +13,9 @@ internal sealed record EditorAuthoringFocusRequest(
     IReadOnlyList<string> SlotFieldIds,
     string FieldId,
     string ItemId = "",
-    EditorAuthoringFocusSurface Surface = EditorAuthoringFocusSurface.Editor);
+    EditorAuthoringFocusSurface Surface = EditorAuthoringFocusSurface.Editor,
+    PreviewAuthoringRuntimeComponentSlotTarget? RuntimeComponentSlot = null,
+    IReadOnlyList<string>? RuntimeNestedSlotFieldIds = null);
 
 internal enum EditorAuthoringFocusSurface
 {
@@ -25,6 +28,15 @@ internal interface IEditorAuthoringItemTarget
     string FieldId { get; }
 
     bool SelectItem(string itemId);
+}
+
+internal interface IEditorAuthoringRuntimeComponentTarget
+{
+    string FieldId { get; }
+
+    Task<bool> OpenRuntimeComponentOverridesAsync(
+        string itemId,
+        string slotFieldId);
 }
 
 internal interface IEditorAuthoringSectionTarget
@@ -93,6 +105,14 @@ internal sealed class EditorAuthoringFocusController
         }
 
         _pending = null;
+        if (pending.RuntimeComponentSlot is { } runtimeSlot)
+        {
+            return OpenRuntimeComponentTarget(
+                owner,
+                content,
+                pending,
+                runtimeSlot);
+        }
         RevealPreviewAuthoringSection(
             content,
             pending.FieldId,
@@ -139,6 +159,72 @@ internal sealed class EditorAuthoringFocusController
         }
         DeferredBringIntoView.Request(fields[0]);
         return true;
+    }
+
+    private bool OpenRuntimeComponentTarget(
+        ProjectTreeNode owner,
+        Control content,
+        EditorAuthoringFocusRequest pending,
+        PreviewAuthoringRuntimeComponentSlotTarget runtimeSlot)
+    {
+        RevealPreviewAuthoringSection(
+            content,
+            runtimeSlot.CollectionFieldId,
+            selectsItem: true);
+        var targets = content
+            .GetLogicalDescendants()
+            .OfType<IEditorAuthoringRuntimeComponentTarget>()
+            .Where((target) => target.FieldId.Equals(
+                runtimeSlot.CollectionFieldId,
+                StringComparison.Ordinal))
+            .ToArray();
+        if (targets.Length != 1)
+        {
+            _messages.Warning(
+                "Preview element",
+                targets.Length == 0
+                    ? $"Preview authoring field '{runtimeSlot.CollectionFieldId}' cannot open a Runtime Component slot."
+                    : $"More than one Preview authoring control owns '{runtimeSlot.CollectionFieldId}'.");
+            return false;
+        }
+
+        _pending = new EditorAuthoringFocusRequest(
+            owner.Id,
+            runtimeSlot.RecordClassId,
+            pending.RuntimeNestedSlotFieldIds ?? [],
+            pending.FieldId,
+            pending.ItemId);
+        var open = targets[0].OpenRuntimeComponentOverridesAsync(
+            runtimeSlot.ItemId,
+            runtimeSlot.SlotFieldId);
+        if (!open.IsCompletedSuccessfully)
+        {
+            _ = ObserveRuntimeComponentOpenAsync(open);
+            return true;
+        }
+        if (open.Result) return true;
+        _pending = null;
+        _messages.Warning(
+            "Preview element",
+            $"Runtime collection '{runtimeSlot.CollectionFieldId}' has no Component slot '{runtimeSlot.SlotFieldId}' on item '{runtimeSlot.ItemId}'.");
+        return false;
+    }
+
+    private async Task ObserveRuntimeComponentOpenAsync(Task<bool> open)
+    {
+        try
+        {
+            if (await open) return;
+            _pending = null;
+            _messages.Warning(
+                "Preview element",
+                "The exact Runtime Component slot is unavailable.");
+        }
+        catch (Exception error)
+        {
+            _pending = null;
+            _messages.Error("Preview element", error);
+        }
     }
 
     private static void RevealPreviewAuthoringSection(

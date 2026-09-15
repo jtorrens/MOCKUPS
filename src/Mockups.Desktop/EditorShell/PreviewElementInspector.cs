@@ -251,15 +251,20 @@ internal static class PreviewElementInspector
             const ownerId = current.getAttribute?.("data-preview-authoring-owner-id") ?? "";
             const focusFieldId = current.getAttribute?.("data-preview-authoring-focus-field-id") ?? "";
             const focusItemId = current.getAttribute?.("data-preview-authoring-focus-item-id") ?? "";
+            const runtimeComponentSlotJson = current.getAttribute?.("data-preview-authoring-runtime-component-slot");
             const slotFieldIdsJson = current.getAttribute?.("data-preview-authoring-slot-field-ids");
             if (ownerId && slotFieldIdsJson !== null) {
               try {
                 const slotFieldIds = JSON.parse(slotFieldIdsJson);
                 if (Array.isArray(slotFieldIds)
                   && slotFieldIds.every((fieldId) => typeof fieldId === "string" && fieldId.length > 0)) {
+                  const runtimeComponentSlot = runtimeComponentSlotJson
+                    ? JSON.parse(runtimeComponentSlotJson)
+                    : null;
                   return {
                     ownerId,
                     slotFieldIds,
+                    ...(runtimeComponentSlot ? { runtimeComponentSlot } : {}),
                     ...(focusFieldId ? { focusFieldId } : {}),
                     ...(focusItemId ? { focusItemId } : {}),
                   };

@@ -49,6 +49,12 @@ export interface RenderableMetadata {
     focusFieldId?: string;
     focusItemId?: string;
     ownerId: string;
+    runtimeComponentSlot?: {
+      collectionFieldId: string;
+      itemId: string;
+      slotFieldId: string;
+      recordClassId: string;
+    };
     slotFieldIds: string[];
   };
   fontFaces?: RenderableFontFace[];

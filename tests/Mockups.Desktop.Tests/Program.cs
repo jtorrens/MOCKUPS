@@ -8962,6 +8962,21 @@ static void PreviewAuthoringNavigationUsesExactOwnerAndSlots()
     Equal("button_attachment", focus?.ItemId);
     Equal(EditorAuthoringFocusSurface.Editor, focus?.Surface);
 
+    var runtimeSerialized =
+        """mockups-preview-authoring:{"ownerId":"component_bubble::variant::default","slotFieldIds":[],"focusFieldId":"component.iconRow.items","runtimeComponentSlot":{"collectionFieldId":"iconRowRuntime","itemId":"iconRow","slotFieldId":"iconRowSlot","recordClassId":"component.iconRow"}}""";
+    True(PreviewAuthoringNavigationMessage.TryParse(
+        runtimeSerialized,
+        out var runtimeTarget));
+    Equal("iconRowRuntime", runtimeTarget.RuntimeComponentSlot?.CollectionFieldId);
+    Equal("iconRow", runtimeTarget.RuntimeComponentSlot?.ItemId);
+    Equal("iconRowSlot", runtimeTarget.RuntimeComponentSlot?.SlotFieldId);
+    Equal("component.iconRow", runtimeTarget.RuntimeComponentSlot?.RecordClassId);
+    True(navigator.Navigate(runtimeTarget));
+    Equal(EditorAuthoringFocusSurface.PreviewAuthoring, focus?.Surface);
+    Equal(owner.RecordClassId, focus?.RecordClassId);
+    Equal("component.iconRow.items", focus?.FieldId);
+    Equal("iconRowRuntime", focus?.RuntimeComponentSlot?.CollectionFieldId);
+
     var screenOwner = new ProjectTreeNode(
         ProjectTreeNodeKind.ModuleInstance,
         "screen_conversation",

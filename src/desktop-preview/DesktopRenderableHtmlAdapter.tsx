@@ -446,6 +446,11 @@ function RenderNode({
       data-preview-authoring-focus-field-id={node.metadata?.authoringTarget?.focusFieldId}
       data-preview-authoring-focus-item-id={node.metadata?.authoringTarget?.focusItemId}
       data-preview-authoring-owner-id={node.metadata?.authoringTarget?.ownerId}
+      data-preview-authoring-runtime-component-slot={
+        node.metadata?.authoringTarget?.runtimeComponentSlot
+          ? JSON.stringify(node.metadata.authoringTarget.runtimeComponentSlot)
+          : undefined
+      }
       data-preview-authoring-slot-field-ids={
         node.metadata?.authoringTarget
           ? JSON.stringify(node.metadata.authoringTarget.slotFieldIds)

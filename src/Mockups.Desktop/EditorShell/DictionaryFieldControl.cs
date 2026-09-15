@@ -205,6 +205,11 @@ internal sealed class DictionaryFieldControl : Grid, IDictionaryOverrideStateCon
 
     public string Value => _value;
 
+    internal Task<bool> OpenRuntimeComponentOverridesAsync() =>
+        _valueControl is DictionaryComponentVariantSlotControl slot
+            ? slot.OpenOverridesAsync()
+            : Task.FromResult(false);
+
     public bool RequiresLocalHorizontalViewport => _valueControl switch
     {
         DictionaryPalettePairControl pair => pair.RequiresLocalHorizontalViewport,

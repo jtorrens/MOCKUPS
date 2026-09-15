@@ -301,6 +301,11 @@ renderable boundary must also match the exact current authoring
 `recordClassId` before it may append its slot and move the scope to the declared
 child record class. A child reached without its declared parent therefore
 inherits the nearest valid target instead of publishing an invalid shortcut.
+When that boundary is a Runtime collection item's declared
+`ComponentVariantSlot`, its opaque target names the collection field, stable
+item id, slot field and child record class. Desktop activates that exact
+registered Runtime control and opens its existing Runtime Override source;
+it never manufactures an `EmbeddedComponentSlotCatalog` entry for Runtime data.
 An exact Screen owner with no embedded slot focuses its Screen Payload surface;
 an embedded slot focuses the contextual Overrides editor for that slot chain.
 Interactive Production Preview documents publish their exact Screen owner so

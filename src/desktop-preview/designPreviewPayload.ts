@@ -54,7 +54,15 @@ export interface PreviewAuthoringTargetPayload {
   focusFieldId?: string;
   focusItemId?: string;
   ownerId: string;
+  runtimeComponentSlot?: PreviewAuthoringRuntimeComponentSlotPayload;
   slotFieldIds: string[];
+}
+
+export interface PreviewAuthoringRuntimeComponentSlotPayload {
+  collectionFieldId: string;
+  itemId: string;
+  slotFieldId: string;
+  recordClassId: string;
 }
 
 export interface DesignPreviewPayload {
@@ -63,6 +71,7 @@ export interface DesignPreviewPayload {
   authoringFocusFieldId?: string;
   authoringFocusItemId?: string;
   authoringRecordClassId?: string;
+  authoringRuntimeComponentSlot?: PreviewAuthoringRuntimeComponentSlotPayload;
   authoringSlotFieldIds?: string[];
   authoringInputTargets?: Record<string, PreviewAuthoringTargetPayload>;
   componentType: string;

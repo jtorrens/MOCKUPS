@@ -58,6 +58,12 @@ const RenderableMetadataSchema = z.object({
     focusFieldId: z.string().min(1).optional(),
     focusItemId: z.string().min(1).optional(),
     ownerId: z.string().min(1),
+    runtimeComponentSlot: z.object({
+      collectionFieldId: z.string().min(1),
+      itemId: z.string().min(1),
+      slotFieldId: z.string().min(1),
+      recordClassId: z.string().min(1),
+    }).strict().optional(),
     slotFieldIds: z.array(z.string().min(1)),
   }).strict().optional(),
   fontFaces: z.array(z.object({

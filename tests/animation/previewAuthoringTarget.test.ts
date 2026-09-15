@@ -12,6 +12,7 @@ import {
   authoringVariantPayload,
   forwardAuthoringInputTarget,
   renderAuthoringCollectionItem,
+  renderAuthoringRuntimeComponentSlot,
   renderAuthoringSlot,
   withAuthoringInputTarget,
   withAuthoringTarget,
@@ -177,6 +178,36 @@ test("structured authoring targets preserve the exact stable item id", () => {
     markup,
     /data-preview-authoring-focus-item-id="button_attachment"/,
   );
+});
+
+test("Runtime Component slots preserve their exact collection item owner", () => {
+  const payload = {
+    authoringOwnerId: "component_bubble::variant::default",
+    authoringRecordClassId: "component.bubble",
+    authoringSlotFieldIds: [] as string[],
+  } as DesignPreviewPayload;
+  const iconRow = renderAuthoringRuntimeComponentSlot(
+    payload,
+    "component.bubble",
+    "iconRowRuntime",
+    "iconRow",
+    "iconRowSlot",
+    "component.iconRow",
+    "component.iconRow.items",
+    () => ({ id: "component.bubble.iconRow", type: "group" }),
+  );
+
+  assert.deepEqual(iconRow.metadata?.authoringTarget, {
+    focusFieldId: "component.iconRow.items",
+    ownerId: "component_bubble::variant::default",
+    runtimeComponentSlot: {
+      collectionFieldId: "iconRowRuntime",
+      itemId: "iconRow",
+      slotFieldId: "iconRowSlot",
+      recordClassId: "component.iconRow",
+    },
+    slotFieldIds: [],
+  });
 });
 
 test("explicit Runtime Input forwarding preserves the source authoring target", () => {

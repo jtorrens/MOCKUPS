@@ -37,7 +37,7 @@ internal sealed class DictionaryComponentVariantSlotControl : StackPanel, IDicti
             $"Dictionary field '{definition.Id}'");
         Func<string, Task>? openOverrides = _openRuntimeComponentOverrides is null
             ? null
-            : async (_) => await OpenOverrides();
+            : async (_) => await OpenOverridesAsync();
         Func<string, Task>? restoreOverrides = _openRuntimeComponentOverrides is null
             ? null
             : (_) => RestoreOverrides();
@@ -123,9 +123,9 @@ internal sealed class DictionaryComponentVariantSlotControl : StackPanel, IDicti
         return Task.CompletedTask;
     }
 
-    private async Task OpenOverrides()
+    internal async Task<bool> OpenOverridesAsync()
     {
-        if (_openRuntimeComponentOverrides is null) return;
+        if (_openRuntimeComponentOverrides is null) return false;
         var owner = $"Dictionary field '{_definition.Id}'";
         var currentReference = ComponentVariantSlotDocumentContract.VariantReference(_slot, owner);
         var currentOverrides = ComponentVariantSlotDocumentContract.Overrides(_slot, owner);
@@ -142,6 +142,7 @@ internal sealed class DictionaryComponentVariantSlotControl : StackPanel, IDicti
                 ValueCommitted?.Invoke(this, serialized);
                 return Task.CompletedTask;
             });
+        return true;
     }
 
     private string Serialize()

@@ -9,7 +9,14 @@ internal sealed record PreviewAuthoringNavigationTarget(
     string OwnerId,
     IReadOnlyList<string> SlotFieldIds,
     string FocusFieldId = "",
-    string FocusItemId = "");
+    string FocusItemId = "",
+    PreviewAuthoringRuntimeComponentSlotTarget? RuntimeComponentSlot = null);
+
+internal sealed record PreviewAuthoringRuntimeComponentSlotTarget(
+    string CollectionFieldId,
+    string ItemId,
+    string SlotFieldId,
+    string RecordClassId);
 
 internal static class PreviewAuthoringNavigationMessage
 {
@@ -36,13 +43,14 @@ internal static class PreviewAuthoringNavigationMessage
         }
 
         if (document is null
-            || document.Count is < 2 or > 4
+            || document.Count is < 2 or > 5
             || document.Any((property) =>
                 property.Key is not
                     "ownerId"
                     and not "slotFieldIds"
                     and not "focusFieldId"
-                    and not "focusItemId")
+                    and not "focusItemId"
+                    and not "runtimeComponentSlot")
             || document["ownerId"] is not JsonValue ownerValue
             || !ownerValue.TryGetValue<string>(out var ownerId)
             || string.IsNullOrWhiteSpace(ownerId)
@@ -88,11 +96,49 @@ internal static class PreviewAuthoringNavigationMessage
             return false;
         }
 
+        PreviewAuthoringRuntimeComponentSlotTarget? runtimeComponentSlot = null;
+        if (document.TryGetPropertyValue(
+                "runtimeComponentSlot",
+                out var runtimeSlotNode))
+        {
+            if (runtimeSlotNode is not JsonObject runtimeSlot
+                || runtimeSlot.Count != 4
+                || !RequiredString(runtimeSlot, "collectionFieldId", out var collectionFieldId)
+                || !RequiredString(runtimeSlot, "itemId", out var runtimeItemId)
+                || !RequiredString(runtimeSlot, "slotFieldId", out var slotFieldId)
+                || !RequiredString(runtimeSlot, "recordClassId", out var recordClassId))
+            {
+                return false;
+            }
+            runtimeComponentSlot = new(
+                collectionFieldId,
+                runtimeItemId,
+                slotFieldId,
+                recordClassId);
+        }
+
         target = new PreviewAuthoringNavigationTarget(
             ownerId,
             slotFieldIds,
             focusFieldId,
-            focusItemId);
+            focusItemId,
+            runtimeComponentSlot);
+        return true;
+    }
+
+    private static bool RequiredString(
+        JsonObject document,
+        string key,
+        out string value)
+    {
+        value = "";
+        if (document[key] is not JsonValue node
+            || !node.TryGetValue<string>(out var parsed)
+            || string.IsNullOrWhiteSpace(parsed))
+        {
+            return false;
+        }
+        value = parsed;
         return true;
     }
 }
@@ -146,17 +192,24 @@ internal sealed class PreviewAuthoringNavigator
 
         _requestFocus(new EditorAuthoringFocusRequest(
             owner.Id,
-            slots.Length > 0
+            target.RuntimeComponentSlot is not null
+                ? owner.RecordClassId
+                : slots.Length > 0
                 ? slots[^1].RecordClassId
                 : owner.RecordClassId,
-            target.SlotFieldIds,
+            target.RuntimeComponentSlot is not null
+                ? []
+                : target.SlotFieldIds,
             target.FocusFieldId,
             target.FocusItemId,
-            owner.Kind == ProjectTreeNodeKind.ModuleInstance
+            target.RuntimeComponentSlot is not null
+                || owner.Kind == ProjectTreeNodeKind.ModuleInstance
                 && slots.Length == 0
                 ? EditorAuthoringFocusSurface.PreviewAuthoring
-                : EditorAuthoringFocusSurface.Editor));
-        if (slots.Length > 0)
+                : EditorAuthoringFocusSurface.Editor,
+            target.RuntimeComponentSlot,
+            target.SlotFieldIds));
+        if (slots.Length > 0 && target.RuntimeComponentSlot is null)
         {
             _showEmbeddedContext(new EditorEmbeddedContext(owner, slots));
         }

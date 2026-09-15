@@ -307,7 +307,10 @@ registered dictionary control selects that item without deriving it from the
 renderable name or collection position. Full Component Variant references
 cross to that referenced Variant as the new authoring owner, while
 `ComponentVariantSlot` boundaries retain their current owner and append their
-declared local Overrides path. This explicit focus supersedes pending session
+declared local Overrides path. A Runtime collection slot first resolves its
+exact collection field, stable item and declared slot field through the
+registered Runtime control, then opens that same local Overrides context.
+This explicit focus supersedes pending session
 scroll restoration only for that navigation. A missing or ambiguous
 field-to-card or field-to-item match reports a warning and never falls back to
 a label, prefix, position or first match. A level without an explicit target is
