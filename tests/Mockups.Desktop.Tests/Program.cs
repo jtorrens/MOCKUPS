@@ -427,12 +427,8 @@ static void ComponentVariantChangesClearCompleteBoundaryOverrides()
     try
     {
         var database = new SqliteProjectTestContext(temporary);
-        var nodes = database.LoadProjectTree()
-            .SelectMany(DescendantsAndSelf)
-            .ToList();
-        var projectId = nodes.Single((node) =>
-                node.Kind == ProjectTreeNodeKind.Project)
-            .Id;
+        var nodes = CanonicalProjectNodes(database);
+        var projectId = CanonicalProject(database).Id;
         var emptyIconBarReference = database
             .GetComponentVariantReferenceOptionsByType(projectId, "iconBar")
             .Single((option) => option.Label.Equals("Empty", StringComparison.Ordinal))
@@ -511,9 +507,7 @@ static void AssertEmptyComponentVariantBoundary(
 static void DesignPreviewTransientSnapshotsRemainImmutable()
 {
     var database = new SqliteProjectTestContext(ParityDatabasePath());
-    var nodes = database.LoadProjectTree()
-        .SelectMany(DescendantsAndSelf)
-        .ToList();
+    var nodes = CanonicalProjectNodes(database);
     var listVariant = nodes.Single((node) =>
         node.Kind == ProjectTreeNodeKind.ComponentVariant
         && node.Id ==
@@ -606,7 +600,7 @@ static void DesignPreviewTransientSnapshotsRemainImmutable()
 static void ListRuntimeUpdatesFollowStableIdentityAfterReorder()
 {
     var database = new SqliteProjectTestContext(ParityDatabasePath());
-    var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
+    var nodes = CanonicalProjectNodes(database);
     var listVariant = nodes.Single((node) =>
         node.Kind == ProjectTreeNodeKind.ComponentVariant
         && node.Id == "component_project_foqn_s2_list::variant::default");
@@ -687,7 +681,7 @@ static void ListRuntimeUpdatesFollowStableIdentityAfterReorder()
 static void ListPresenceReplaysAndRestoresItsOrigin()
 {
     var database = new SqliteProjectTestContext(ParityDatabasePath());
-    var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
+    var nodes = CanonicalProjectNodes(database);
     var listVariant = nodes.Single((node) =>
         node.Kind == ProjectTreeNodeKind.ComponentVariant
         && node.Id == "component_project_foqn_s2_list::variant::default");
@@ -1299,7 +1293,7 @@ static void TypographyStyleKeepsOnlyExplicitSentinels()
     try
     {
         var database = new SqliteProjectTestContext(temporary);
-        var keyboard = Descendants(database.LoadProjectTree()).Single((node) =>
+        var keyboard = CanonicalProjectNodes(database).Single((node) =>
             node.Kind == ProjectTreeNodeKind.ComponentClass
             && database.GetComponentClassSettings(node.Id).ComponentType == "keyboard");
         var beforeRejectedWrite = database.GetComponentClassSettings(keyboard.Id).ConfigJson;
@@ -1857,7 +1851,7 @@ static void ComponentDictionaryFieldsUseExactValueKinds()
     try
     {
         var database = new SqliteProjectTestContext(temporary);
-        var components = Descendants(database.LoadProjectTree())
+        var components = CanonicalProjectNodes(database)
             .Where((node) => node.Kind == ProjectTreeNodeKind.ComponentClass)
             .ToList();
         var componentFieldIds = ComponentClassFieldCatalog.All()
@@ -2508,7 +2502,7 @@ static void SystemHexColorPickersPreserveRgbValues()
 static void TextBoxPreviewResolvesVariantOwnedIconRowSlots()
 {
     var database = new SqliteProjectTestContext(ParityDatabasePath());
-    var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
+    var nodes = CanonicalProjectNodes(database);
     var textBox = nodes.Single((node) =>
         node.Kind == ProjectTreeNodeKind.ComponentClass
         && database.GetComponentClassSettings(node.Id).ComponentType == "textBox");
@@ -2592,7 +2586,7 @@ static void PairFieldsRequireExplicitLabels()
     }
 
     var database = new SqliteProjectTestContext(ParityDatabasePath());
-    var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
+    var nodes = CanonicalProjectNodes(database);
     foreach (var variant in nodes.Where((node) => node.Kind == ProjectTreeNodeKind.ComponentVariant))
     {
         foreach (var input in database.GetComponentVariantRuntimeInputBindings(variant.Id))
@@ -3241,7 +3235,7 @@ static void PreviewActionContractsAreStrict()
         }
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
         var database = new SqliteProjectTestContext(temporary);
-        var nodes = Descendants(database.LoadProjectTree()).ToList();
+        var nodes = CanonicalProjectNodes(database);
         var keyboardVariant = nodes.Single((node) =>
             node.Kind == ProjectTreeNodeKind.ComponentVariant
             && node.Parent?.Id == "component_project_foqn_s2_keyboard"
@@ -3256,7 +3250,7 @@ static void PreviewActionContractsAreStrict()
     }
 
     var currentDatabase = new SqliteProjectTestContext(sourcePath);
-    var currentNodes = Descendants(currentDatabase.LoadProjectTree()).ToList();
+    var currentNodes = CanonicalProjectNodes(currentDatabase);
     var bubbleVariant = currentNodes.Single((node) =>
         node.Kind == ProjectTreeNodeKind.ComponentVariant
         && node.Parent?.Id == "component_project_foqn_s2_bubble"
@@ -3539,9 +3533,7 @@ static void DefaultVariantEditingUnlockIsSessionOnly()
     try
     {
         var database = new SqliteProjectTestContext(temporary);
-        var nodes = database.LoadProjectTree()
-            .SelectMany(DescendantsAndSelf)
-            .ToList();
+        var nodes = CanonicalProjectNodes(database);
         var componentDefault = nodes.Single((node) =>
             node.Id == "component_project_foqn_s2_label::variant::default");
         var moduleDefault = nodes.Single((node) =>
@@ -3572,9 +3564,7 @@ static void DefaultVariantEditingUnlockIsSessionOnly()
         Equal(true, PersistedDefaultLock(temporary, "modules", "module_core_chat"));
 
         var nextSession = new SqliteProjectTestContext(temporary);
-        var nextNodes = nextSession.LoadProjectTree()
-            .SelectMany(DescendantsAndSelf)
-            .ToList();
+        var nextNodes = CanonicalProjectNodes(nextSession);
         var nextComponentDefault = nextNodes.Single((node) =>
             node.Id == componentDefault.Id);
         var nextModuleDefault = nextNodes.Single((node) =>
@@ -3618,8 +3608,7 @@ static void FixedStructuralRuntimeCollectionsReconcileByStableIds()
 {
     var database = new SqliteProjectTestContext(ParityDatabasePath());
     AssertIconRowStructureExcludesCalculatedButtonInputs();
-    var iconRow = database.LoadProjectTree()
-        .SelectMany(DescendantsAndSelf)
+    var iconRow = CanonicalProjectNodes(database)
         .Single((node) =>
             node.Kind == ProjectTreeNodeKind.ComponentClass
             && database.GetComponentClassSettings(node.Id).ComponentType == "iconRow");
@@ -3873,8 +3862,7 @@ static void EffectiveCollectionAuthoringClonesExcludeCalculatedFieldsRecursively
 static void IconBarVariantsOwnExactZoneTopology()
 {
     var database = new SqliteProjectTestContext(ParityDatabasePath());
-    var iconBar = database.LoadProjectTree()
-        .SelectMany(DescendantsAndSelf)
+    var iconBar = CanonicalProjectNodes(database)
         .Single((node) =>
             node.Kind == ProjectTreeNodeKind.ComponentClass
             && database.GetComponentClassSettings(node.Id).ComponentType == "iconBar");
@@ -3945,9 +3933,7 @@ static void IconBarVariantsOwnExactZoneTopology()
 static void IncomingCallExposesExactChildRuntimeBoundaries()
 {
     var database = new SqliteProjectTestContext(ParityDatabasePath());
-    var nodes = database.LoadProjectTree()
-        .SelectMany(DescendantsAndSelf)
-        .ToList();
+    var nodes = CanonicalProjectNodes(database);
     var incomingCall = nodes.Single((node) =>
         node.Kind == ProjectTreeNodeKind.ComponentClass
         && database.GetComponentClassSettings(node.Id).ComponentType == "incomingCallNotification");
@@ -4942,9 +4928,7 @@ static void FlatVariantOverridesUseRestoreSemantics()
                         "Missing prepared editor content owner.");
                 var database =
                     new SqliteProjectTestContext(temporary);
-                var nodes = database.LoadProjectTree()
-                    .SelectMany(DescendantsAndSelf)
-                    .ToList();
+                var nodes = CanonicalProjectNodes(database);
                 foreach (var candidate in nodes.Where((node) =>
                              node.Kind is
                                  ProjectTreeNodeKind.ComponentVariant
@@ -6270,6 +6254,8 @@ static void EditorViewStateSurvivesRealNavigation()
             var scroll = Required(window.FindControl<ScrollViewer>("EditorScrollViewer"));
 
             ProjectTreeNode Component(string recordClassId) => treeRoots
+                .Single((root) => root.Id == "project_foqn_s2")
+                .Children
                 .SelectMany(DescendantsAndSelf)
                 .Single((node) =>
                     node.Kind == ProjectTreeNodeKind.ComponentClass
@@ -6516,6 +6502,8 @@ static void SameOwnerEditorRefreshKeepsCardsMounted()
                 window.FindControl<ContentControl>("PreviewAuthoringDataHost"));
 
             ProjectTreeNode Component(string recordClassId) => treeRoots
+                .Single((root) => root.Id == "project_foqn_s2")
+                .Children
                 .SelectMany(DescendantsAndSelf)
                 .Single((node) =>
                     node.Kind == ProjectTreeNodeKind.ComponentClass
@@ -7799,6 +7787,7 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
             Dispatcher.UIThread.RunJobs();
 
             var treeRoots = WindowSession(window).TreeRoots;
+            var projectNodes = CanonicalProjectNodesFromRoots(treeRoots);
             var selectNode = typeof(MainWindow).GetMethod(
                 "SelectNodeById",
                 BindingFlags.Instance | BindingFlags.NonPublic,
@@ -7813,8 +7802,7 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
 
             Control SelectComponent(string componentId)
             {
-                var component = treeRoots
-                    .SelectMany(DescendantsAndSelf)
+                var component = projectNodes
                     .Single((node) => node.Kind == ProjectTreeNodeKind.ComponentClass && node.Id == componentId);
                 try
                 {
@@ -8107,8 +8095,7 @@ static void ListRuntimeEditorVisualTreeExposesDynamicSetsAndState()
                 ?? throw new InvalidOperationException("Missing Preview controller.");
             var selectedListNode = Required(
                 WindowSession(window).SelectedNode);
-            var selectedTheme = treeRoots
-                .SelectMany(DescendantsAndSelf)
+            var selectedTheme = projectNodes
                 .First((node) => node.Kind == ProjectTreeNodeKind.Theme);
             var listPayload = Required(DesignPreviewPayloadFactory.Create(
                 new DesignPreviewPayloadDataSource(
@@ -8293,8 +8280,8 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
             Dispatcher.UIThread.RunJobs();
 
             var treeRoots = WindowSession(window).TreeRoots;
-            var chatApp = treeRoots
-                .SelectMany(DescendantsAndSelf)
+            var projectNodes = CanonicalProjectNodesFromRoots(treeRoots);
+            var chatApp = projectNodes
                 .Single((node) =>
                     node.Kind == ProjectTreeNodeKind.App
                     && node.Id == "app_core_chat");
@@ -8352,10 +8339,7 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
                 ResourceRecordFields(database),
                 database.Production,
                 database.Resources);
-            var projectId = treeRoots
-                .SelectMany(DescendantsAndSelf)
-                .Single((node) => node.Kind == ProjectTreeNodeKind.Project)
-                .Id;
+            var projectId = CanonicalProjectFromRoots(treeRoots).Id;
             foreach (var (fieldId, componentType) in new[]
             {
                 ("module.core.chatList.stack", "componentStack"),
@@ -8697,8 +8681,8 @@ static void ConversationModuleEditorVisualTreeExposesTestValues()
                 window.Show();
                 Dispatcher.UIThread.RunJobs();
 
-                var conversation = WindowSession(window).TreeRoots
-                    .SelectMany(DescendantsAndSelf)
+                var conversation = CanonicalProjectNodesFromRoots(
+                        WindowSession(window).TreeRoots)
                     .Single((node) =>
                         node.Kind == ProjectTreeNodeKind.Module
                         && node.Id == "module_core_chat");
@@ -9266,9 +9250,7 @@ static void ConversationPreviewTargetsExactIconRowItems()
     try
     {
         var database = new SqliteProjectTestContext(temporary);
-        var nodes = database.LoadProjectTree()
-            .SelectMany(DescendantsAndSelf)
-            .ToList();
+        var nodes = CanonicalProjectNodes(database);
         var conversation = nodes.Single((node) =>
             node.Kind == ProjectTreeNodeKind.ModuleVariant
             && node.Id == "module_core_chat::variant::default");
@@ -9375,8 +9357,7 @@ static void EmbeddedIconRowOverridesRetainStructuredCollectionContract()
     try
     {
         var database = new SqliteProjectTestContext(temporary);
-        var conversation = database.LoadProjectTree()
-            .SelectMany(DescendantsAndSelf)
+        var conversation = CanonicalProjectNodes(database)
             .Single((node) => node.Kind == ProjectTreeNodeKind.ModuleVariant
                 && node.Id == "module_core_chat::variant::default");
         var field = database.CreateEmbeddedComponentFieldValue(
@@ -9406,8 +9387,7 @@ static void EmbeddedStructuralRuntimeProjectionsRefreshPreviewValues()
     try
     {
         var database = new SqliteProjectTestContext(temporary);
-        var conversation = database.LoadProjectTree()
-            .SelectMany(DescendantsAndSelf)
+        var conversation = CanonicalProjectNodes(database)
             .Single((node) => node.Kind == ProjectTreeNodeKind.ModuleVariant
                 && node.Id == "module_core_chat::variant::default");
         conversation = NodeCommands(database)
@@ -9535,9 +9515,8 @@ static void PinnedModuleVariantPreviewSurvivesEditorSelection()
                 window.Show();
                 Dispatcher.UIThread.RunJobs();
 
-                var nodes = WindowSession(window).TreeRoots
-                    .SelectMany(DescendantsAndSelf)
-                    .ToList();
+                var nodes = CanonicalProjectNodesFromRoots(
+                    WindowSession(window).TreeRoots);
                 var conversation = nodes.Single((node) =>
                     node.Kind == ProjectTreeNodeKind.Module
                     && node.Id == "module_core_chat");
@@ -10663,7 +10642,7 @@ static void ModuleConfigsUseOwnerContracts()
     try
     {
         var database = new SqliteProjectTestContext(temporary);
-        var nodes = Descendants(database.LoadProjectTree()).ToList();
+        var nodes = CanonicalProjectNodes(database);
         var conversation = nodes.Single((node) => node.Id == "module_core_chat");
         var conversationVariant = nodes.Single((node) => node.Id == "module_core_chat::variant::default");
         var lockScreen = nodes.Single((node) => node.Id == "module_project_foqn_s2_lock_screen");
@@ -10775,7 +10754,7 @@ static void SystemBarItemsUseFixedDictionaryCollections()
     try
     {
         var database = new SqliteProjectTestContext(temporary);
-        var nodes = Descendants(database.LoadProjectTree()).ToList();
+        var nodes = CanonicalProjectNodes(database);
         var statusClass = nodes.Single((node) => node.Id == "component_project_foqn_s2_status_bar");
         var statusDefault = nodes.Single((node) => node.Id == $"{statusClass.Id}::variant::default");
         True(!new ComponentClassFieldValueService(
@@ -10908,7 +10887,7 @@ static void VariantWritesDoNotRepairMissingArrays()
     try
     {
         var database = new SqliteProjectTestContext(temporary);
-        var defaultVariant = Descendants(database.LoadProjectTree()).Single((node) =>
+        var defaultVariant = CanonicalProjectNodes(database).Single((node) =>
             node.Id == "component_project_foqn_s2_label::variant::default");
         using (var connection = new SqliteConnection($"Data Source={temporary}"))
         {
@@ -10940,7 +10919,7 @@ static void VariantWritesDoNotRepairMissingArrays()
     try
     {
         var database = new SqliteProjectTestContext(temporary);
-        var defaultVariant = Descendants(database.LoadProjectTree()).Single((node) =>
+        var defaultVariant = CanonicalProjectNodes(database).Single((node) =>
             node.Id == "module_core_chat::variant::default");
         using (var connection = new SqliteConnection($"Data Source={temporary}"))
         {
@@ -11044,8 +11023,8 @@ static void ExtractedRepositoriesPreserveFocusedContract()
             shotRepository,
             new ModuleInstanceRepository(context));
 
-        var tree = database.LoadProjectTree();
-        var project = Descendants(tree).Single((node) => node.Kind == ProjectTreeNodeKind.Project);
+        var project = CanonicalProject(database);
+        var tree = new[] { project };
         var episode = Descendants(tree).First((node) => node.Kind == ProjectTreeNodeKind.Episode);
 
         Equal(database.GetProjectSettings(project.Id), projectEpisodeRepository.GetProjectSettings(project.Id));
@@ -11102,7 +11081,7 @@ static void ExtractedRepositoriesPreserveFocusedContract()
         episode.Name = originalEpisodeName;
         database.UpdateNode(episode);
 
-        var episodesRoot = Descendants(database.LoadProjectTree())
+        var episodesRoot = CanonicalProjectNodes(database)
             .Single((node) => node.Kind == ProjectTreeNodeKind.EpisodesRoot);
         var createdEpisode = database.AddChild(episodesRoot);
         using (var connection = context.OpenConnection())
@@ -11161,8 +11140,9 @@ static void RecordCreationUsesOneDeclarativeLifecycle()
     try
     {
         var database = new SqliteProjectTestContext(temporary);
-        var tree = database.LoadProjectTree();
-        var persistedProject = tree.Single();
+        var persistedProject = database.LoadProjectTree().Single((root) =>
+            root.Id == "project_foqn_s2");
+        var tree = new[] { persistedProject };
         var projectContext = new ProjectTreeNode(
             ProjectTreeNodeKind.ProjectsRoot,
             EditorNavigationMetadata.ProjectsRootId,
@@ -11400,8 +11380,8 @@ static void ResourceRepositoriesPreserveFocusedContract()
         IDeviceRepository deviceRepository = new DeviceRepository(context);
         IActorRepository actorRepository = new ActorRepository(context);
 
-        var tree = database.LoadProjectTree();
-        var project = Descendants(tree).Single((node) => node.Kind == ProjectTreeNodeKind.Project);
+        var project = CanonicalProject(database);
+        var tree = new[] { project };
         var color = Descendants(tree).First((node) => node.Kind == ProjectTreeNodeKind.PaletteColor);
         var device = Descendants(tree).First((node) => node.Kind == ProjectTreeNodeKind.Device);
         var actor = Descendants(tree).First((node) => node.Kind == ProjectTreeNodeKind.Actor);
@@ -11558,7 +11538,7 @@ static void ResourceRepositoriesPreserveFocusedContract()
         database.UpdateActorField(actor.Id, "actor.wallpaper.opacity", originalWallpaperOpacity);
         Equal(originalActor, actorRepository.GetSettings(actor.Id));
 
-        var paletteRoot = Descendants(database.LoadProjectTree())
+        var paletteRoot = CanonicalProjectNodes(database)
             .Single((node) => node.Kind == ProjectTreeNodeKind.PaletteRoot);
         var paletteCreation = database.Children.PrepareRecordCreation(
             paletteRoot,
@@ -11584,7 +11564,7 @@ static void ResourceRepositoriesPreserveFocusedContract()
         database.Delete(duplicatedColor);
         database.Delete(createdColor);
 
-        var devicesRoot = Descendants(database.LoadProjectTree())
+        var devicesRoot = CanonicalProjectNodes(database)
             .Single((node) => node.Kind == ProjectTreeNodeKind.DevicesRoot);
         var createdDevice = database.AddChild(devicesRoot);
         var duplicatedDevice = database.Duplicate(createdDevice);
@@ -11599,7 +11579,7 @@ static void ResourceRepositoriesPreserveFocusedContract()
         database.Delete(duplicatedDevice);
         database.Delete(createdDevice);
 
-        var actorsRoot = Descendants(database.LoadProjectTree())
+        var actorsRoot = CanonicalProjectNodes(database)
             .Single((node) => node.Kind == ProjectTreeNodeKind.ActorsRoot);
         var actorCreation = database.Children.PrepareRecordCreation(actorsRoot, "actor");
         var actorValues = actorCreation.Fields.ToDictionary(
@@ -11734,8 +11714,7 @@ static void RuntimeInputOptionBoundaryPreservesDictionaryOptions()
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
         var database = new SqliteProjectTestContext(temporary);
         var dataSource = new RuntimeInputOptionsDataSource(database.DictionaryContext, database.Resources);
-        var project = Descendants(database.LoadProjectTree())
-            .Single((node) => node.Kind == ProjectTreeNodeKind.Project);
+        var project = CanonicalProject(database);
 
         var actorInput = new ComponentInputDefinition(
             "actor", "Actor", "actorId", ComponentInputKind.RecordReference,
@@ -12001,8 +11980,7 @@ static void FixedComponentBoundariesUseExactDefaultVariant()
     True(ComponentVariantOptionContract.SelectsComponentClass("*,-componentStack"));
 
     var database = new SqliteProjectTestContext(ParityDatabasePath());
-    var list = database.LoadProjectTree()
-        .SelectMany(DescendantsAndSelf)
+    var list = CanonicalProjectNodes(database)
         .Single((node) =>
             node.Kind == ProjectTreeNodeKind.ComponentClass
             && node.Id == "component_project_foqn_s2_list");
@@ -12066,8 +12044,8 @@ static void DictionaryFieldContextBoundaryPreservesCurrentData()
             database.Resources,
             database.Resources,
             database.ProjectPaths);
-        var nodes = Descendants(database.LoadProjectTree()).ToList();
-        var project = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.Project);
+        var nodes = CanonicalProjectNodes(database);
+        var project = CanonicalProject(database);
         var componentClass = nodes.First((node) => node.Kind == ProjectTreeNodeKind.ComponentClass);
         var variant = componentClass.Children.First((node) => node.Kind == ProjectTreeNodeKind.ComponentVariant);
         var componentSettings = database.GetComponentClassSettings(componentClass.Id);
@@ -12251,7 +12229,7 @@ static void EmbeddedFieldsResolveInheritedNestedOverrides()
     try
     {
         var database = new SqliteProjectTestContext(temporary);
-        var conversation = Descendants(database.LoadProjectTree())
+        var conversation = CanonicalProjectNodes(database)
             .Single((node) => node.Kind == ProjectTreeNodeKind.ModuleVariant
                 && node.Id == "module_core_chat::variant::foqn_chats_sin_cabecera_copy");
         conversation = NodeCommands(database).SaveModuleVariant(
@@ -12386,8 +12364,8 @@ static void EditorPresentationContextBoundaryPreservesCurrentData()
         var database = new SqliteProjectTestContext(temporary);
         var dataSource =
             new EditorPresentationContextDataSource(database.Resources);
-        var nodes = Descendants(database.LoadProjectTree()).ToList();
-        var project = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.Project);
+        var nodes = CanonicalProjectNodes(database);
+        var project = CanonicalProject(database);
         var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
         var productionFont = nodes.First((node) => node.Kind == ProjectTreeNodeKind.ProductionFont);
         var themeSettings = database.Resources.GetThemeSettings(theme.Id);
@@ -12533,7 +12511,7 @@ static void RuntimeInputOwnerStorePreservesCurrentDocuments()
             database.Design,
             database.Production,
             operations);
-        var nodes = Descendants(database.LoadProjectTree()).ToList();
+        var nodes = CanonicalProjectNodes(database);
         var module = nodes.Single((node) =>
             node.Kind == ProjectTreeNodeKind.Module
             && node.Id == "module_core_chat");
@@ -12919,8 +12897,8 @@ static void PreviewVisualContextBoundaryPreservesResolvedResources()
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
         var database = new SqliteProjectTestContext(temporary);
         var dataSource = new PreviewVisualContextDataSource(database.PreviewInputs, database.Resources);
-        var tree = database.LoadProjectTree();
-        var project = Descendants(tree).Single((node) => node.Kind == ProjectTreeNodeKind.Project);
+        var project = CanonicalProject(database);
+        var tree = new[] { project };
         var device = Descendants(tree).First((node) => node.Kind == ProjectTreeNodeKind.Device);
         var snapshot = dataSource.LoadSnapshot(project.Id);
 
@@ -13356,8 +13334,8 @@ static void ThemeRepositoryPreservesFocusedContract()
         var context = new SqliteProjectContext(temporary);
         IThemeRepository themeRepository = new ThemeRepository(context);
         IModuleInstanceThemeContextService themeContextService = new ModuleInstanceThemeContextService(context);
-        var tree = database.LoadProjectTree();
-        var project = Descendants(tree).Single((node) => node.Kind == ProjectTreeNodeKind.Project);
+        var project = CanonicalProject(database);
+        var tree = new[] { project };
         var theme = Descendants(tree).First((node) => node.Kind == ProjectTreeNodeKind.Theme);
         var settings = database.GetThemeSettings(theme.Id);
         var record = themeRepository.Get(theme.Id);
@@ -13392,7 +13370,7 @@ static void ThemeRepositoryPreservesFocusedContract()
         database.UpdateThemeField(theme.Id, "theme.colors.background", originalBackground);
         Equal(settings.TokensJson, themeRepository.Get(theme.Id).TokensJson);
 
-        var themesRoot = Descendants(database.LoadProjectTree())
+        var themesRoot = CanonicalProjectNodes(database)
             .Single((node) => node.Kind == ProjectTreeNodeKind.ThemesRoot);
         var created = database.AddTheme(themesRoot, "ios");
         var duplicated = database.Duplicate(created);
@@ -13402,7 +13380,7 @@ static void ThemeRepositoryPreservesFocusedContract()
         database.Delete(duplicated);
         database.Delete(created);
 
-        var moduleInstance = Descendants(database.LoadProjectTree())
+        var moduleInstance = CanonicalProjectNodes(database)
             .First((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance);
         Equal(
             database.GetModuleInstanceThemeTokensJson(moduleInstance.Id),
@@ -13431,8 +13409,8 @@ static void ProductionFontRepositoryPreservesFocusedContract()
         var database = new SqliteProjectTestContext(temporary);
         var context = new SqliteProjectContext(temporary);
         IProductionFontRepository repository = new ProductionFontRepository(context);
-        var tree = database.LoadProjectTree();
-        var project = Descendants(tree).Single((node) => node.Kind == ProjectTreeNodeKind.Project);
+        var project = CanonicalProject(database);
+        var tree = new[] { project };
         var fontNode = Descendants(tree).First((node) => node.Kind == ProjectTreeNodeKind.ProductionFont);
         var settings = database.GetProductionFontSettings(fontNode.Id);
         var record = repository.Get(fontNode.Id);
@@ -13569,8 +13547,8 @@ static void IconThemeRepositoryPreservesFocusedContract()
         var database = new SqliteProjectTestContext(temporary);
         var context = new SqliteProjectContext(temporary);
         IIconThemeRepository repository = new IconThemeRepository(context);
-        var tree = database.LoadProjectTree();
-        var project = Descendants(tree).Single((node) => node.Kind == ProjectTreeNodeKind.Project);
+        var project = CanonicalProject(database);
+        var tree = new[] { project };
         var iconThemeNode = Descendants(tree).First((node) => node.Kind == ProjectTreeNodeKind.IconTheme);
         var settings = database.GetIconThemeSettings(iconThemeNode.Id);
         var record = repository.Get(iconThemeNode.Id);
@@ -15141,9 +15119,7 @@ static void AnimatedConversationComposerRemainsVisible()
     try
     {
         var database = new SqliteProjectTestContext(temporary);
-        var nodes = database.LoadProjectTree()
-            .SelectMany(DescendantsAndSelf)
-            .ToList();
+        var nodes = CanonicalProjectNodes(database);
         var conversation = nodes.Single((node) =>
             node.Kind == ProjectTreeNodeKind.ModuleInstance
             && node.Id
@@ -15225,9 +15201,7 @@ static void ConversationPlayMessagesAdvancesRootOwnerFrame()
     try
     {
         var database = new SqliteProjectTestContext(temporary);
-        var nodes = database.LoadProjectTree()
-            .SelectMany(DescendantsAndSelf)
-            .ToList();
+        var nodes = CanonicalProjectNodes(database);
         var conversation = nodes.Single((node) =>
             node.Kind == ProjectTreeNodeKind.ModuleVariant
             && node.Id == "module_core_chat::variant::default");
@@ -16554,7 +16528,7 @@ static void ProductionOutputGeneratesExactShotPlans()
         roots.Set(plan.ProjectId, outputRoot);
         Equal(Path.GetFullPath(outputRoot), roots.Get(plan.ProjectId));
 
-        var project = database.LoadProjectTree().Single();
+        var project = CanonicalProject(database);
         var episode = DescendantsAndSelf(project).Single((node) =>
             node.Id == "episode_001");
         var created = database.AddShot(
@@ -16606,7 +16580,7 @@ static void ProductionOutputGeneratesExactShotPlans()
             plan.ProjectId,
             "project.episodePrefix",
             "");
-        var episodesRoot = Descendants(database.LoadProjectTree())
+        var episodesRoot = CanonicalProjectNodes(database)
             .Single((node) => node.Kind == ProjectTreeNodeKind.EpisodesRoot);
         var unprefixedEpisode = database.AddChild(episodesRoot);
         Equal("03", database.GetEpisodeSettings(unprefixedEpisode.Id).Slug);
@@ -16620,8 +16594,7 @@ static void ProductionOutputGeneratesExactShotPlans()
                 database.ProjectPaths,
                 roots)
             .LoadDraftAsync(
-                DescendantsAndSelf(
-                        database.LoadProjectTree().Single())
+                DescendantsAndSelf(CanonicalProject(database))
                     .Single((node) => node.Id == "shot_001"))
             .GetAwaiter()
             .GetResult();
@@ -18834,6 +18807,23 @@ static IEnumerable<ProjectTreeNode> Descendants(IEnumerable<ProjectTreeNode> nod
     }
 }
 
+static ProjectTreeNode CanonicalProject(
+    SqliteProjectTestContext database) =>
+    CanonicalProjectFromRoots(database.LoadProjectTree());
+
+static ProjectTreeNode CanonicalProjectFromRoots(
+    IEnumerable<ProjectTreeNode> projects) =>
+    projects.Single((project) =>
+        project.Id == "project_foqn_s2");
+
+static IReadOnlyList<ProjectTreeNode> CanonicalProjectNodes(
+    SqliteProjectTestContext database) =>
+    DescendantsAndSelf(CanonicalProject(database)).ToList();
+
+static IReadOnlyList<ProjectTreeNode> CanonicalProjectNodesFromRoots(
+    IEnumerable<ProjectTreeNode> projects) =>
+    DescendantsAndSelf(CanonicalProjectFromRoots(projects)).ToList();
+
 static void LabelSubtextPlacementUsesCurrentContract()
 {
     var source = ParityDatabasePath();
@@ -19158,8 +19148,7 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
     try
     {
         var database = new SqliteProjectTestContext(temporary);
-        var moduleVariant = database.LoadProjectTree()
-            .SelectMany(DescendantsAndSelf)
+        var moduleVariant = CanonicalProjectNodes(database)
             .Single((node) => node.Kind == ProjectTreeNodeKind.ModuleVariant
                 && node.Parent?.RecordClassId == "module.core.lockScreen"
                 && node.Name == "Default");
@@ -19292,7 +19281,7 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
         Equal("exitMotion", stateAction.DurationExitMotionJsonKey);
         SequenceEqual(["theme.motion.reflowDurationMs"], stateAction.DurationAdditionalThemeTokens.ToList());
 
-        var theme = database.LoadProjectTree().SelectMany(DescendantsAndSelf)
+        var theme = CanonicalProjectNodes(database)
             .First((node) => node.Kind == ProjectTreeNodeKind.Theme);
         var payload = Required(CreatePreviewPayload(database, moduleVariant, theme.Id));
         var session = new ComponentPreviewInputSession(
@@ -19382,7 +19371,7 @@ static void ExplicitReferenceUsageIsExactTypedAndShared()
     try
     {
         var database = new SqliteProjectTestContext(temporary);
-        var nodes = Descendants(database.LoadProjectTree()).ToList();
+        var nodes = CanonicalProjectNodes(database);
         var context = new SqliteProjectContext(temporary);
         IReferenceUsageService usageService = new ReferenceUsageService(context);
         using (var connection = context.OpenConnection())
@@ -19489,7 +19478,8 @@ static void ExplicitReferenceUsageIsExactTypedAndShared()
 static void ExternalMediaInventoriesDeclaredAuthoredPaths()
 {
     var session = SqlitePersistence.OpenCurrent(ParityDatabasePath());
-    var project = session.Navigation.LoadProjectTree().Single();
+    var project = session.Navigation.LoadProjectTree().Single((root) =>
+        root.Id == "project_foqn_s2");
     var designSections = EditorWorkspaceNavigation.SectionRoots(
         project,
         EditorWorkspace.Design);
@@ -19601,7 +19591,8 @@ static void AnimatedMediaPathsValidateAndRetainKeyframeOwnership()
         }
 
         var session = SqlitePersistence.OpenCurrent(temporary);
-        var project = session.Navigation.LoadProjectTree().Single();
+        var project = session.Navigation.LoadProjectTree().Single((root) =>
+            root.Id == "project_foqn_s2");
         var usage = session.ExternalMediaUsage
             .GetExternalMediaUsageDetails(project.Id)
             .Single(candidate => candidate.SourceNodeId == screenId
@@ -19778,7 +19769,7 @@ static void UsageNavigationPreservesTypedContext()
 static void ProductionDataOwnsConcreteResources()
 {
     var database = new SqliteProjectTestContext(ParityDatabasePath());
-    var project = database.LoadProjectTree().Single();
+    var project = CanonicalProject(database);
     var productionSections = EditorWorkspaceNavigation.SectionRoots(project, EditorWorkspace.Production);
     SequenceEqual(
         new[]
@@ -19963,7 +19954,7 @@ static void ProductionPreviewModeContextIsInteractive()
 static void RenderQueueNavigationAndSurfaceAreAlwaysAvailable()
 {
     var database = new SqliteProjectTestContext(ParityDatabasePath());
-    var project = database.LoadProjectTree().Single();
+    var project = CanonicalProject(database);
     var queueNode = EditorWorkspaceNavigation
         .SectionRoots(project, EditorWorkspace.Production)
         .Single((node) =>
@@ -21978,8 +21969,7 @@ static void AnimatableFieldVocabularyIsConstrained()
 {
     var source = ParityDatabasePath();
     var database = new SqliteProjectTestContext(source);
-    var module = database.LoadProjectTree()
-        .SelectMany(DescendantsAndSelf)
+    var module = CanonicalProjectNodes(database)
         .Single((node) => node.Kind == ProjectTreeNodeKind.Module
             && database.GetModuleSettings(node.Id).RecordClassId == "module.core.chat");
     var settings = database.GetModuleSettings(module.Id);
@@ -22442,7 +22432,7 @@ static void AppAndModuleDefinitionsExposeRenameOnlyLifecycleActions()
     try
     {
         var database = new SqliteProjectTestContext(temporary);
-        var nodes = Descendants(database.LoadProjectTree()).ToList();
+        var nodes = CanonicalProjectNodes(database);
         var currentAppsRoot = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.AppsRoot);
         var currentApp = nodes.Single((node) => node.Id == "app_core_chat");
         var currentModule = nodes.Single((node) => node.Id == "module_core_chat");
@@ -22471,7 +22461,7 @@ static void AppAndModuleDefinitionsExposeRenameOnlyLifecycleActions()
         database.Delete(copiedVariant);
         Throws<InvalidOperationException>(() => database.Delete(renamedDefaultVariant));
 
-        var reloaded = Descendants(database.LoadProjectTree()).ToList();
+        var reloaded = CanonicalProjectNodes(database);
         Equal("Chat renamed", reloaded.Single((node) => node.Id == currentApp.Id).Name);
         Equal("Conversation renamed", reloaded.Single((node) => node.Id == currentModule.Id).Name);
         Equal("Primary", reloaded.Single((node) => node.Id == currentDefaultVariant.Id).Name);
@@ -22512,7 +22502,7 @@ static void OnlyDefaultSystemBarVariantsAreProtected()
     try
     {
         var database = new SqliteProjectTestContext(temporary);
-        var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
+        var nodes = CanonicalProjectNodes(database);
         foreach (var componentType in new[] { "status_bar", "navigation_bar" })
         {
             var componentClass = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentClass
@@ -22539,7 +22529,7 @@ static void ComponentStackSeedOpensAndRenders()
     try
     {
         var database = new SqliteProjectTestContext(temporary);
-        var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
+        var nodes = CanonicalProjectNodes(database);
         var stack = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentClass
             && database.GetComponentClassSettings(node.Id).ComponentType == "componentStack");
         Equal("Atoms", stack.Parent?.Name ?? "");
@@ -22803,9 +22793,7 @@ static void ComponentStackSeedOpensAndRenders()
 static void ComponentInputBindingsResolveRecordReferences()
 {
     var database = new SqliteProjectTestContext(ParityDatabasePath());
-    var nodes = database.LoadProjectTree()
-        .SelectMany(DescendantsAndSelf)
-        .ToList();
+    var nodes = CanonicalProjectNodes(database);
     var stack = nodes.Single((node) =>
         node.Kind == ProjectTreeNodeKind.ComponentClass
         && database.GetComponentClassSettings(node.Id).ComponentType
@@ -23026,7 +23014,7 @@ static void CollectionStackSeedOpensAndRenders()
     try
     {
         var database = new SqliteProjectTestContext(temporary);
-        var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
+        var nodes = CanonicalProjectNodes(database);
         var stack = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentClass
             && database.GetComponentClassSettings(node.Id).ComponentType == "collectionStack");
         Equal("Atoms", stack.Parent?.Name ?? "");
@@ -23091,7 +23079,7 @@ static void NotificationsSeedOpensAndRenders()
     try
     {
         var database = new SqliteProjectTestContext(temporary);
-        var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
+        var nodes = CanonicalProjectNodes(database);
         var theme = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Theme);
         var device = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Device);
         var notification = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentClass
@@ -23344,7 +23332,7 @@ static void KeypadSeedOpensAndRenders()
     try
     {
         var database = new SqliteProjectTestContext(temporary);
-        var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
+        var nodes = CanonicalProjectNodes(database);
         var keypad = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentClass
             && database.GetComponentClassSettings(node.Id).ComponentType == "keypad");
         Equal("System", keypad.Parent?.Name ?? "");
@@ -23417,7 +23405,7 @@ static void PasswordSeedOpensAndRenders()
     try
     {
         var database = new SqliteProjectTestContext(temporary);
-        var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
+        var nodes = CanonicalProjectNodes(database);
         var indicator = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.ComponentClass
             && database.GetComponentClassSettings(node.Id).ComponentType == "codeIndicator");
         Equal("Atoms", indicator.Parent?.Name ?? "");
@@ -23564,7 +23552,7 @@ static void PasswordSeedOpensAndRenders()
 static void SocialPostComposesHeaderRows()
 {
     var database = new SqliteProjectTestContext(ParityDatabasePath());
-    var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
+    var nodes = CanonicalProjectNodes(database);
     var module = nodes.Single((node) =>
         node.Kind == ProjectTreeNodeKind.Module
         && database.GetModuleSettings(node.Id).RecordClassId == "module.core.socialPost");
@@ -23966,8 +23954,8 @@ static void SocialPostEditorExposesCurrentHeaderContract()
             window.Height = 900;
             window.Show();
             Dispatcher.UIThread.RunJobs();
-            var socialPost = WindowSession(window).TreeRoots
-                .SelectMany(DescendantsAndSelf)
+            var socialPost = CanonicalProjectNodesFromRoots(
+                    WindowSession(window).TreeRoots)
                 .Single((node) =>
                     node.Kind == ProjectTreeNodeKind.Module
                     && node.Id
@@ -24048,7 +24036,7 @@ static void LockScreenComposesRuntimeStack()
     try
     {
         var database = new SqliteProjectTestContext(temporary);
-        var nodes = database.LoadProjectTree().SelectMany(DescendantsAndSelf).ToList();
+        var nodes = CanonicalProjectNodes(database);
         foreach (var screen in nodes.Where((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance))
         {
             var animation = JsonNode.Parse(database.GetModuleInstanceSettings(screen.Id).AnimationJson) as JsonObject;
