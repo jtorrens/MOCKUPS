@@ -144,6 +144,11 @@ public partial class MainWindow : SukiWindow
             PreviewTitlePanel,
             () => _themeController.IsDark,
             () => Session.SelectedNode,
+            (workspace, nodeId) =>
+                EditorWorkspaceNavigation.FindNode(
+                    Session.TreeRoots,
+                    workspace,
+                    nodeId),
             (nodeId) => NavigateToNodeById(
                 nodeId,
                 "preview-context"),

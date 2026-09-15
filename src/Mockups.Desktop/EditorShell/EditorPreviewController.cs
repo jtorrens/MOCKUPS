@@ -382,6 +382,8 @@ internal sealed class EditorPreviewController : IDisposable
         _activeProductionHistoryEntry;
     private readonly List<DesignPreviewHistoryEntry> _designHistory = [];
     private readonly List<DesignPreviewHistoryEntry> _productionHistory = [];
+    private readonly Func<EditorWorkspace, string, ProjectTreeNode?>
+        _resolveNodeInWorkspace;
     private EditorWorkspace _workspace = EditorWorkspace.Design;
     private string _selectedMode = "light";
     private string _selectedOrientation = "portrait";
@@ -464,6 +466,7 @@ internal sealed class EditorPreviewController : IDisposable
         Panel previewTitle,
         Func<bool> isDark,
         Func<ProjectTreeNode?> selectedNode,
+        Func<EditorWorkspace, string, ProjectTreeNode?> resolveNodeInWorkspace,
         Func<string, bool> selectNodeById,
         Func<EditorWorkspace, string, Task<bool>> navigateNodeInWorkspace,
         Action<PreviewAuthoringNavigationTarget> navigateAuthoringTarget,
@@ -504,6 +507,7 @@ internal sealed class EditorPreviewController : IDisposable
         _messages = messages;
         _isDark = isDark;
         _selectedNode = selectedNode;
+        _resolveNodeInWorkspace = resolveNodeInWorkspace;
         _selectNodeById = selectNodeById;
         _navigateNodeInWorkspace = navigateNodeInWorkspace;
         _navigateAuthoringTarget = navigateAuthoringTarget;
@@ -624,7 +628,14 @@ internal sealed class EditorPreviewController : IDisposable
             return;
         }
 
-        var payload = DesignPreviewPayloadFactory.Create(_previewPayloadData, key.ToNode(), _selectedThemeId, _selectedMode, _shotPreviewFrame);
+        var payload = DesignPreviewPayloadFactory.Create(
+            _previewPayloadData,
+            ResolvePreviewContextNode(
+                EditorWorkspace.Design,
+                key),
+            _selectedThemeId,
+            _selectedMode,
+            _shotPreviewFrame);
         if (payload is null)
         {
             return;
@@ -3175,7 +3186,14 @@ internal sealed class EditorPreviewController : IDisposable
         }
         if (LockedNode(EditorWorkspace.Design) is { } lockedNode)
         {
-            var lockedPayload = DesignPreviewPayloadFactory.Create(_previewPayloadData, lockedNode.ToNode(), _selectedThemeId, _selectedMode, _shotPreviewFrame);
+            var lockedPayload = DesignPreviewPayloadFactory.Create(
+                _previewPayloadData,
+                ResolvePreviewContextNode(
+                    EditorWorkspace.Design,
+                    lockedNode),
+                _selectedThemeId,
+                _selectedMode,
+                _shotPreviewFrame);
             if (lockedPayload is not null)
             {
                 _activeDesignPreviewNode = lockedNode;
@@ -4199,7 +4217,9 @@ internal sealed class EditorPreviewController : IDisposable
     {
         if (LockedNode(EditorWorkspace.Production) is { } locked)
         {
-            return locked.ToNode();
+            return ResolvePreviewContextNode(
+                EditorWorkspace.Production,
+                locked);
         }
         if (_workspace != EditorWorkspace.Production)
         {
@@ -4219,11 +4239,6 @@ internal sealed class EditorPreviewController : IDisposable
     private PreviewNodeKey? LockedNode(EditorWorkspace workspace) =>
         _lockedPreviewContext?.Workspace == workspace
             ? _lockedPreviewContext.Node
-            : null;
-
-    private ProjectTreeNode? LockedContextNode() =>
-        _lockedPreviewContext is { } locked
-            ? locked.Node.ToNode()
             : null;
 
     private PreviewNodeKey? ActiveProductionScreenPreviewNode()
@@ -4616,6 +4631,24 @@ internal sealed class EditorPreviewController : IDisposable
         return shotId;
     }
 
+    private ProjectTreeNode ResolvePreviewContextNode(
+        EditorWorkspace workspace,
+        PreviewNodeKey key)
+    {
+        var resolved = _resolveNodeInWorkspace(
+            workspace,
+            key.Id);
+        if (resolved is null
+            || resolved.Kind != key.Kind)
+        {
+            throw new InvalidOperationException(
+                $"Locked Preview context '{key.Kind}:{key.Id}' "
+                + "is not present in the current project tree.");
+        }
+
+        return resolved;
+    }
+
     internal static FieldOption? PreferredResourceOption(
         IReadOnlyList<FieldOption> options,
         string? selectedValue)
@@ -4631,10 +4664,6 @@ internal sealed class EditorPreviewController : IDisposable
             return new PreviewNodeKey(node.Kind, node.Id);
         }
 
-        public ProjectTreeNode ToNode()
-        {
-            return new ProjectTreeNode(Kind, Id, "", "", "");
-        }
     }
 
     private sealed record PreviewContextLock(
