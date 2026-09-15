@@ -48,9 +48,7 @@ internal sealed class SqliteProjectTestContext
             new SqliteModuleInstanceCollectionStore(
                 context,
                 Design,
-                Production,
-                Resources,
-                _referenceUsages);
+                Production);
         CoreFields = new SqliteCoreFieldStore(
             context,
             Design,

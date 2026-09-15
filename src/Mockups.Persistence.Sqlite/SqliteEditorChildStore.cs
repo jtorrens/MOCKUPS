@@ -6,13 +6,15 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed class SqliteEditorChildStore
 {
+    private static readonly IReadOnlyDictionary<string, string> EmptyValues =
+        new Dictionary<string, string>(StringComparer.Ordinal);
     private readonly SqliteProjectContext _context;
     private readonly SqliteDesignOwner _design;
     private readonly SqliteProductionOwner _production;
     private readonly SqliteResourceOwner _resources;
-    private readonly IReadOnlyDictionary<string, Func<ProjectTreeNode, RecordCreationDefinition>>
+    private readonly IReadOnlyDictionary<string, Func<ProjectTreeNode, IReadOnlyDictionary<string, string>, RecordCreationDefinition>>
         _creationPreparers;
-    private readonly IReadOnlyDictionary<string, Func<ProjectTreeNode, IReadOnlyDictionary<string, string>, ProjectTreeNode>>
+    private readonly IReadOnlyDictionary<string, Func<ProjectTreeNode, RecordCreationDraft, ProjectTreeNode>>
         _creationCommitters;
 
     internal SqliteEditorChildStore(
@@ -25,25 +27,27 @@ internal sealed class SqliteEditorChildStore
         _design = design;
         _production = production;
         _resources = resources;
-        _creationPreparers = new Dictionary<string, Func<ProjectTreeNode, RecordCreationDefinition>>(StringComparer.Ordinal)
+        _creationPreparers = new Dictionary<string, Func<ProjectTreeNode, IReadOnlyDictionary<string, string>, RecordCreationDefinition>>(StringComparer.Ordinal)
         {
-            ["project"] = PrepareProjectCreation,
-            ["palette"] = PreparePaletteCreation,
-            ["device"] = PrepareBlankDeviceCreation,
-            ["actor"] = PrepareActorCreation,
-            ["theme"] = PrepareThemeCreation,
-            ["episode"] = PrepareEpisodeCreation,
-            ["shot"] = PrepareShotCreation,
+            ["project"] = (parent, _) => PrepareProjectCreation(parent),
+            ["palette"] = (parent, _) => PreparePaletteCreation(parent),
+            ["device"] = (parent, _) => PrepareBlankDeviceCreation(parent),
+            ["actor"] = (parent, _) => PrepareActorCreation(parent),
+            ["theme"] = (parent, _) => PrepareThemeCreation(parent),
+            ["episode"] = (parent, _) => PrepareEpisodeCreation(parent),
+            ["shot"] = (parent, _) => PrepareShotCreation(parent),
+            ["moduleInstance"] = PrepareModuleInstanceCreation,
         };
-        _creationCommitters = new Dictionary<string, Func<ProjectTreeNode, IReadOnlyDictionary<string, string>, ProjectTreeNode>>(StringComparer.Ordinal)
+        _creationCommitters = new Dictionary<string, Func<ProjectTreeNode, RecordCreationDraft, ProjectTreeNode>>(StringComparer.Ordinal)
         {
-            ["project"] = CreateProject,
-            ["palette"] = CreatePalette,
-            ["device"] = CreateBlankDevice,
-            ["actor"] = CreateActor,
-            ["theme"] = CreateTheme,
-            ["episode"] = CreateEpisode,
-            ["shot"] = CreateShot,
+            ["project"] = (parent, draft) => CreateProject(parent, draft.Values),
+            ["palette"] = (parent, draft) => CreatePalette(parent, draft.Values),
+            ["device"] = (parent, draft) => CreateBlankDevice(parent, draft.Values),
+            ["actor"] = (parent, draft) => CreateActor(parent, draft.Values),
+            ["theme"] = (parent, draft) => CreateTheme(parent, draft.Values),
+            ["episode"] = (parent, draft) => CreateEpisode(parent, draft.Values),
+            ["shot"] = (parent, draft) => CreateShot(parent, draft.Values),
+            ["moduleInstance"] = CreateModuleInstance,
         };
     }
 
@@ -127,43 +131,57 @@ internal sealed class SqliteEditorChildStore
 
     internal RecordCreationDefinition PrepareRecordCreation(
         ProjectTreeNode parent,
-        string creationId)
+        string creationId,
+        IReadOnlyDictionary<string, string>? selectionValues = null)
     {
         if (!_creationPreparers.TryGetValue(creationId, out var prepare))
         {
             throw new InvalidOperationException(
                 $"Record creation '{creationId}' is not registered.");
         }
-        return prepare(parent);
+        return prepare(
+            parent,
+            selectionValues ?? EmptyValues);
     }
 
     internal ProjectTreeNode CreateRecord(
         ProjectTreeNode parent,
         RecordCreationDraft draft)
     {
-        var definition = PrepareRecordCreation(parent, draft.DefinitionId);
+        var operationId = draft.OperationId ?? draft.DefinitionId;
+        var definition = PrepareRecordCreation(
+            parent,
+            operationId,
+            draft.SelectionValues);
+        if (!draft.DefinitionId.Equals(
+                definition.Id,
+                StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"Creation draft '{draft.DefinitionId}' does not match '{definition.Id}'.");
+        }
         if (definition.ValidationError(draft.Values) is { } error)
         {
             throw new InvalidOperationException(error);
         }
-        if (!_creationCommitters.TryGetValue(draft.DefinitionId, out var commit))
+        if (!_creationCommitters.TryGetValue(operationId, out var commit))
         {
             throw new InvalidOperationException(
-                $"Record creation '{draft.DefinitionId}' has no commit owner.");
+                $"Record creation '{operationId}' has no commit owner.");
         }
-        var created = commit(parent, draft.Values);
+        var created = commit(parent, draft);
         if (definition.Placement == RecordCreationPlacement.Root)
         {
             if (created.Parent is not null)
             {
                 throw new InvalidOperationException(
-                    $"Root creation '{definition.Id}' returned a child record.");
+                    $"Root creation '{operationId}' returned a child record.");
             }
         }
         else if (created.Parent?.Id != parent.Id)
         {
             throw new InvalidOperationException(
-                $"Child creation '{definition.Id}' returned a record outside its declared parent.");
+                $"Child creation '{operationId}' returned a record outside its declared parent.");
         }
         return created;
     }
@@ -234,6 +252,94 @@ internal sealed class SqliteEditorChildStore
                     SuggestShotNumber(parent.Id).ToString(),
                     new NumberDefinition(1, 99_999_999, 1, 0)),
             ]);
+    }
+
+    private RecordCreationDefinition PrepareModuleInstanceCreation(
+        ProjectTreeNode shot,
+        IReadOnlyDictionary<string, string> selectionValues)
+    {
+        using var connection = _context.OpenConnection();
+        var selection = RequireModuleInstanceSelection(
+            connection,
+            shot,
+            selectionValues);
+        var shotSettings = _production.GetShotSettings(shot.Id);
+        return _production.PrepareModuleInstanceCreation(
+            connection,
+            shot,
+            selection,
+            _resources.GetRequiredActorOptions(shotSettings.ProjectId));
+    }
+
+    private ProjectTreeNode CreateModuleInstance(
+        ProjectTreeNode shot,
+        RecordCreationDraft draft)
+    {
+        using var connection = _context.OpenConnection();
+        var selection = RequireModuleInstanceSelection(
+            connection,
+            shot,
+            draft.SelectionValues ?? EmptyValues);
+        var shotSettings = _production.GetShotSettings(shot.Id);
+        var actorOptions = _resources.GetRequiredActorOptions(
+            shotSettings.ProjectId);
+        var actorIds = _resources.ActorRepository.QueryAll(connection)
+            .Where((actor) => actor.ProjectId.Equals(
+                shotSettings.ProjectId,
+                StringComparison.Ordinal))
+            .Select((actor) => actor.Id)
+            .ToHashSet(StringComparer.Ordinal);
+        return _production.AddModuleInstance(
+            connection,
+            shot,
+            new ShotModuleInstanceCreationDraft(selection, draft),
+            actorIds,
+            actorOptions);
+    }
+
+    private ShotModuleInstanceDraft RequireModuleInstanceSelection(
+        Microsoft.Data.Sqlite.SqliteConnection connection,
+        ProjectTreeNode shot,
+        IReadOnlyDictionary<string, string> values)
+    {
+        RequireCreationContext(
+            shot,
+            ProjectTreeNodeKind.Shot,
+            "moduleInstance");
+        var moduleId = Required(values, "moduleInstance.creation.moduleId");
+        var variantReference = Required(
+            values,
+            "moduleInstance.creation.variantReference");
+        var name = Required(values, "core.name");
+        var apps = _design.AppModuleRepository.QueryApps(connection)
+            .ToDictionary((app) => app.Id, StringComparer.Ordinal);
+        var module = _design.AppModuleRepository.QueryModules(connection)
+            .Where((candidate) => candidate.Id.Equals(
+                moduleId,
+                StringComparison.Ordinal))
+            .Select((candidate) => new ShotModuleChoice(
+                candidate.Id,
+                candidate.Name,
+                apps.TryGetValue(candidate.AppId, out var app)
+                    ? app.Name
+                    : throw new InvalidOperationException(
+                        $"Module '{candidate.Id}' has no App."),
+                candidate.AppId,
+                candidate.RecordClassId))
+            .SingleOrDefault()
+            ?? throw new InvalidOperationException(
+                $"Selected Module '{moduleId}' does not exist.");
+        var variant = _design.GetModuleVariantOptions(moduleId)
+            .SingleOrDefault((option) => option.Value.Equals(
+                variantReference,
+                StringComparison.Ordinal))
+            ?? throw new InvalidOperationException(
+                "The selected Variant does not belong to the selected Module.");
+        return new ShotModuleInstanceDraft(
+            module,
+            variant.Value,
+            variant.Label,
+            name);
     }
 
     private ProjectTreeNode CreateBlankDevice(ProjectTreeNode parent, IReadOnlyDictionary<string, string> values)

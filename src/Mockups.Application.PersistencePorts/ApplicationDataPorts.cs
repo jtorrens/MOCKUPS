@@ -266,7 +266,8 @@ public interface IEditorChildStore
 {
     EditorShell.RecordCreationDefinition PrepareRecordCreation(
         EditorShell.ProjectTreeNode parent,
-        string creationId);
+        string creationId,
+        IReadOnlyDictionary<string, string>? selectionValues = null);
     EditorShell.ProjectTreeNode CreateRecord(
         EditorShell.ProjectTreeNode parent,
         EditorShell.RecordCreationDraft draft);
@@ -295,11 +296,12 @@ public interface IThemeTokenQuery
 public interface IEditorNodeCommandStore
 {
     void Delete(EditorShell.ProjectTreeNode node);
-    EditorShell.ProjectTreeNode Duplicate(
+    EditorShell.RecordCreationDefinition PrepareRecordDuplication(
         EditorShell.ProjectTreeNode node);
-    EditorShell.ProjectTreeNode DuplicateShot(
-        EditorShell.ProjectTreeNode shot,
-        int shotNumber);
+    EditorShell.ProjectTreeNode Duplicate(
+        EditorShell.ProjectTreeNode node,
+        EditorShell.RecordCreationDraft draft);
+    void Move(EditorShell.ProjectTreeNode node, int offset);
     EditorShell.ProjectTreeNode TransferProductionNode(
         EditorShell.ProjectTreeNode source,
         EditorShell.ProjectTreeNode target,
@@ -436,15 +438,6 @@ public interface IModuleInstanceAnimationStore
 
 public interface IModuleInstanceCollectionStore
 {
-    EditorShell.RecordCreationDefinition PrepareModuleInstanceCreation(
-        EditorShell.ProjectTreeNode shot,
-        ShotModuleInstanceDraft draft);
-    EditorShell.ProjectTreeNode AddModuleInstance(
-        EditorShell.ProjectTreeNode shot,
-        ShotModuleInstanceCreationDraft draft);
-    void Delete(EditorShell.ProjectTreeNode node);
-    EditorShell.ProjectTreeNode Duplicate(EditorShell.ProjectTreeNode node);
-    void MoveModuleInstance(string moduleInstanceId, int offset);
     IReadOnlyList<ShotModuleChoice> GetAvailableShotModules(string shotId);
     IReadOnlyList<EditorShell.FieldOption> GetModuleVariantOptions(
         string moduleId);

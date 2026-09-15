@@ -10,6 +10,7 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 internal sealed class EditorDomainDialogService
 {
     private readonly Window _owner;
+    private readonly IEditorChildStore _children;
     private readonly IModuleInstanceCollectionStore _moduleInstances;
     private readonly IIconThemeAssetStore _iconThemes;
     private readonly IThemeTokenQuery _themeTokens;
@@ -22,6 +23,7 @@ internal sealed class EditorDomainDialogService
 
     public EditorDomainDialogService(
         Window owner,
+        IEditorChildStore children,
         IModuleInstanceCollectionStore moduleInstances,
         IIconThemeAssetStore iconThemes,
         IThemeTokenQuery themeTokens,
@@ -33,6 +35,7 @@ internal sealed class EditorDomainDialogService
         Action<ProjectTreeNode> reloadAndSelect)
     {
         _owner = owner;
+        _children = children;
         _moduleInstances = moduleInstances;
         _iconThemes = iconThemes;
         _themeTokens = themeTokens;
@@ -96,13 +99,15 @@ internal sealed class EditorDomainDialogService
             height: 250);
     }
 
-    public async Task<ShotModuleInstanceCreationDraft?> DefineModuleInstanceForShot(string shotId)
+    public async Task<RecordCreationDraft?> DefineModuleInstanceForShot(string shotId)
     {
         var selection = await new ShotModulePickerDialog(
             _owner,
             _moduleInstances,
             _operations).Show(shotId);
         if (selection is null) return null;
+        var selectionValues =
+            EditorAddChildWorkflow.ModuleInstanceSelectionValues(selection);
         var shot = new ProjectTreeNode(
             ProjectTreeNodeKind.Shot,
             shotId,
@@ -111,7 +116,10 @@ internal sealed class EditorDomainDialogService
             ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.Shot));
         var definition = await _operations.ExecuteWithActivityAsync(
             "Preparing Screen Runtime Inputs…",
-            () => _moduleInstances.PrepareModuleInstanceCreation(shot, selection));
+            () => _children.PrepareRecordCreation(
+                shot,
+                "moduleInstance",
+                selectionValues));
         var runtimeValues = definition.RequiresConfirmation
             ? await new RecordCreationDialog(
                 _owner,
@@ -124,7 +132,11 @@ internal sealed class EditorDomainDialogService
                     StringComparer.Ordinal));
         return runtimeValues is null
             ? null
-            : new ShotModuleInstanceCreationDraft(selection, runtimeValues);
+            : runtimeValues with
+            {
+                SelectionValues = selectionValues,
+                OperationId = "moduleInstance",
+            };
     }
 
     public Task<bool> ConfirmModuleInstanceDelete(ProjectTreeNode node)

@@ -4424,7 +4424,6 @@ static void VisualPersistenceWritersRequireOperationCoordination()
                  typeof(EditorNodeCommandController),
                  typeof(EditorDomainDialogService),
                  typeof(EditorCollectionCardFactory),
-                 typeof(ShotDuplicationDialog),
                  typeof(ShotModulePickerDialog),
                  typeof(ShotModuleInstancesCollectionEditor),
                  typeof(IconThemeTokensCollectionEditor),
@@ -6034,21 +6033,30 @@ static IModuleInstanceCollectionStore ModuleInstances(
     new SqliteModuleInstanceCollectionPort(
         database.ModuleInstanceCollection);
 
+static IEditorChildStore Children(
+    SqliteProjectTestContext database) =>
+    new SqliteEditorChildPort(database.Children);
+
 static ProjectTreeNode AddPreparedModuleInstance(
-    IModuleInstanceCollectionStore moduleInstances,
+    IEditorChildStore children,
     ProjectTreeNode shot,
     ShotModuleInstanceDraft selection)
 {
-    var definition = moduleInstances.PrepareModuleInstanceCreation(
+    var selectionValues =
+        EditorAddChildWorkflow.ModuleInstanceSelectionValues(selection);
+    var definition = children.PrepareRecordCreation(
         shot,
-        selection);
-    return moduleInstances.AddModuleInstance(
+        "moduleInstance",
+        selectionValues);
+    return children.CreateRecord(
         shot,
-        CompleteModuleInstanceCreation(selection, definition));
+        CompleteModuleInstanceCreation(
+            selectionValues,
+            definition));
 }
 
-static ShotModuleInstanceCreationDraft CompleteModuleInstanceCreation(
-    ShotModuleInstanceDraft selection,
+static RecordCreationDraft CompleteModuleInstanceCreation(
+    IReadOnlyDictionary<string, string> selectionValues,
     RecordCreationDefinition definition)
 {
     var values = definition.Fields.ToDictionary(
@@ -6063,14 +6071,32 @@ static ShotModuleInstanceCreationDraft CompleteModuleInstanceCreation(
             _ => field.Value,
         },
         StringComparer.Ordinal);
-    return new ShotModuleInstanceCreationDraft(
-        selection,
-        new RecordCreationDraft(definition.Id, values));
+    return new RecordCreationDraft(
+        definition.Id,
+        values,
+        selectionValues,
+        "moduleInstance");
 }
 
 static IEditorNodeCommandStore NodeCommands(
     SqliteProjectTestContext database) =>
     new SqliteEditorNodeCommandPort(database.NodeCommands);
+
+static ProjectTreeNode DuplicateRecord(
+    IEditorNodeCommandStore commands,
+    ProjectTreeNode node,
+    IReadOnlyDictionary<string, string>? values = null)
+{
+    var definition = commands.PrepareRecordDuplication(node);
+    return commands.Duplicate(
+        node,
+        new RecordCreationDraft(
+            definition.Id,
+            values ?? definition.Fields.ToDictionary(
+                (field) => field.Definition.Id,
+                (field) => field.Value,
+                StringComparer.Ordinal)));
+}
 
 static IProductionRecordFieldStore ProductionRecordFields(
     SqliteProjectTestContext database) =>
@@ -14161,9 +14187,15 @@ static void ShotDuplicationCopiesScreensAndClearsShotManager()
                 ("$id", sourceNode.Id));
         }
 
-        var duplicateNode = NodeCommands(database).DuplicateShot(
+        var duplicateNode = DuplicateRecord(
+            NodeCommands(database),
             sourceNode,
-            database.SuggestShotNumber(sourceShot.EpisodeId));
+            new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["shot.creation.shotNumber"] = database
+                    .SuggestShotNumber(sourceShot.EpisodeId)
+                    .ToString(),
+            });
         var duplicateShot = database.GetShotSettings(duplicateNode.Id);
         Equal(sourceShot.OwnerActorId, duplicateShot.OwnerActorId);
         True(!duplicateShot.ShotManagerShot.IsAssociated);
@@ -14235,9 +14267,15 @@ static void ShotDuplicationCopiesScreensAndClearsShotManager()
                 """);
         }
         Throws<SqliteException>(() =>
-            NodeCommands(database).DuplicateShot(
+            DuplicateRecord(
+                NodeCommands(database),
                 sourceNode,
-                database.SuggestShotNumber(sourceShot.EpisodeId)));
+                new Dictionary<string, string>(StringComparer.Ordinal)
+                {
+                    ["shot.creation.shotNumber"] = database
+                        .SuggestShotNumber(sourceShot.EpisodeId)
+                        .ToString(),
+                }));
         using (var connection = context.OpenConnection())
         {
             context.Execute(
@@ -16336,6 +16374,7 @@ static void ShotActorContextIsExplicit()
     {
         var database = new SqliteProjectTestContext(temporary);
         var moduleInstances = ModuleInstances(database);
+        var children = Children(database);
         var tree = database.LoadProjectTree();
         var episode = Descendants(tree)
             .First((node) => node.Kind == ProjectTreeNodeKind.Episode && node.Id == "episode_002");
@@ -16355,7 +16394,7 @@ static void ShotActorContextIsExplicit()
             .GetModuleVariantOptions(module.Id)
             .First();
         var screen = AddPreparedModuleInstance(
-            moduleInstances,
+            children,
             shot,
             new ShotModuleInstanceDraft(
                 module,
@@ -16425,10 +16464,11 @@ static void ShotActorContextIsExplicit()
             "moduleInstance.themeId",
             "theme_shot_override_cross"));
 
-        var duplicate = moduleInstances.Duplicate(screen);
-        moduleInstances.MoveModuleInstance(duplicate.Id, -1);
-        moduleInstances.Delete(duplicate);
-        moduleInstances.Delete(screen);
+        var commands = NodeCommands(database);
+        var duplicate = DuplicateRecord(commands, screen);
+        commands.Move(duplicate, -1);
+        commands.Delete(duplicate);
+        commands.Delete(screen);
         NodeCommands(database).Delete(shot);
         True(Descendants(database.LoadProjectTree()).All((node) =>
             node.Id != shot.Id
@@ -18710,7 +18750,7 @@ static void ModuleVariantsAreExplicit()
         var shot = Descendants(database.LoadProjectTree()).First((node) => node.Kind == ProjectTreeNodeKind.Shot);
         var appId = module.Parent?.Id ?? throw new InvalidOperationException("Lock Screen module has no App.");
         var screen = AddPreparedModuleInstance(
-            moduleInstances,
+            Children(database),
             shot,
             new ShotModuleInstanceDraft(
                 new ShotModuleChoice(
@@ -23699,6 +23739,7 @@ static void SocialPostScreenCreationIsAtomic()
     {
         var database = new SqliteProjectTestContext(temporary);
         var moduleInstances = ModuleInstances(database);
+        var children = Children(database);
         var shot = database.LoadProjectTree()
             .SelectMany(DescendantsAndSelf)
             .First((node) => node.Kind == ProjectTreeNodeKind.Shot);
@@ -23715,24 +23756,27 @@ static void SocialPostScreenCreationIsAtomic()
             variant.Value,
             variant.Label,
             $"{module.Name} · {variant.Label}");
-        var creation = moduleInstances.PrepareModuleInstanceCreation(
+        var selectionValues =
+            EditorAddChildWorkflow.ModuleInstanceSelectionValues(selection);
+        var creation = children.PrepareRecordCreation(
             shot,
-            selection);
+            "moduleInstance",
+            selectionValues);
         True(creation.RequiresConfirmation);
         True(creation.Fields.Any((field) =>
             field.Definition.ValueKind == ValueKind.MediaDirectoryPath));
         True(creation.Fields.Count((field) =>
             field.Definition.ValueKind == ValueKind.RecordReference) > 1);
-        Throws<InvalidOperationException>(() => moduleInstances.AddModuleInstance(
+        Throws<InvalidOperationException>(() => children.CreateRecord(
             shot,
-            new ShotModuleInstanceCreationDraft(
-                selection,
-                new RecordCreationDraft(
-                    creation.Id,
-                    new Dictionary<string, string>(StringComparer.Ordinal)))));
-        var screen = moduleInstances.AddModuleInstance(
+            new RecordCreationDraft(
+                creation.Id,
+                new Dictionary<string, string>(StringComparer.Ordinal),
+                selectionValues,
+                "moduleInstance")));
+        var screen = children.CreateRecord(
             shot,
-            CompleteModuleInstanceCreation(selection, creation));
+            CompleteModuleInstanceCreation(selectionValues, creation));
         var content = JsonPath.ParseRequiredObject(
             database.GetModuleInstanceSettings(screen.Id).ContentJson,
             "Social Post Screen content");
@@ -23850,7 +23894,7 @@ static void SocialPostScreenCreationIsAtomic()
             rejectSynchronization.ExecuteNonQuery();
         }
         Throws<SqliteException>(() => AddPreparedModuleInstance(
-            moduleInstances,
+            Children(database),
             shot,
             new ShotModuleInstanceDraft(
                 module,
@@ -24647,7 +24691,7 @@ static string CreateDesktopTestDatabase(
                         "::variant::default",
                         StringComparison.Ordinal));
             return AddPreparedModuleInstance(
-                moduleInstances,
+                Children(database),
                 createdShot,
                 new ShotModuleInstanceDraft(
                     module,

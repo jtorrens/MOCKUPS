@@ -72,8 +72,9 @@ internal sealed class SqliteEditorChildPort(SqliteEditorChildStore target)
 {
     public RecordCreationDefinition PrepareRecordCreation(
         ProjectTreeNode parent,
-        string creationId) =>
-        target.PrepareRecordCreation(parent, creationId);
+        string creationId,
+        IReadOnlyDictionary<string, string>? selectionValues = null) =>
+        target.PrepareRecordCreation(parent, creationId, selectionValues);
 
     public ProjectTreeNode CreateRecord(
         ProjectTreeNode parent,
@@ -109,25 +110,6 @@ internal sealed class SqliteModuleInstanceCollectionPort(
     SqliteModuleInstanceCollectionStore target)
     : IModuleInstanceCollectionStore
 {
-    public RecordCreationDefinition PrepareModuleInstanceCreation(
-        ProjectTreeNode shot,
-        ShotModuleInstanceDraft draft) =>
-        target.PrepareModuleInstanceCreation(shot, draft);
-
-    public ProjectTreeNode AddModuleInstance(
-        ProjectTreeNode shot,
-        ShotModuleInstanceCreationDraft draft) =>
-        target.AddModuleInstance(shot, draft);
-
-    public void Delete(ProjectTreeNode node) =>
-        target.Delete(node);
-
-    public ProjectTreeNode Duplicate(ProjectTreeNode node) =>
-        target.Duplicate(node);
-
-    public void MoveModuleInstance(string moduleInstanceId, int offset) =>
-        target.MoveModuleInstance(moduleInstanceId, offset);
-
     public IReadOnlyList<ShotModuleChoice> GetAvailableShotModules(
         string shotId) =>
         target.GetAvailableShotModules(shotId);
@@ -348,13 +330,17 @@ internal sealed class SqliteEditorNodeCommandPort(
     public void Delete(ProjectTreeNode node) =>
         target.Delete(node);
 
-    public ProjectTreeNode Duplicate(ProjectTreeNode node) =>
-        target.Duplicate(node);
+    public RecordCreationDefinition PrepareRecordDuplication(
+        ProjectTreeNode node) =>
+        target.PrepareRecordDuplication(node);
 
-    public ProjectTreeNode DuplicateShot(
-        ProjectTreeNode shot,
-        int shotNumber) =>
-        target.DuplicateShot(shot, shotNumber);
+    public ProjectTreeNode Duplicate(
+        ProjectTreeNode node,
+        RecordCreationDraft draft) =>
+        target.Duplicate(node, draft);
+
+    public void Move(ProjectTreeNode node, int offset) =>
+        target.Move(node, offset);
 
     public ProjectTreeNode TransferProductionNode(
         ProjectTreeNode source,

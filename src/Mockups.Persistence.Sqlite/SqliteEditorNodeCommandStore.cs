@@ -124,8 +124,71 @@ internal sealed class SqliteEditorNodeCommandStore
         }
     }
 
-    internal ProjectTreeNode Duplicate(ProjectTreeNode node)
+    internal RecordCreationDefinition PrepareRecordDuplication(
+        ProjectTreeNode node)
     {
+        if (!node.CanDuplicate)
+        {
+            throw new InvalidOperationException(
+                $"Cannot duplicate {node.Kind}.");
+        }
+        IReadOnlyList<FieldValue> fields;
+        if (node.Kind == ProjectTreeNodeKind.Shot)
+        {
+            using var connection = _context.OpenConnection();
+            var suggested = _production.ShotRepository.SuggestShotNumber(
+                connection,
+                node.Parent?.Id
+                    ?? throw new InvalidOperationException(
+                        "Shot duplication requires an Episode."));
+            fields =
+            [
+                new FieldValue(
+                    new FieldDefinition(
+                        "shot.creation.shotNumber",
+                        "Shot number",
+                        ValueKind.Integer,
+                        DefaultValue: suggested.ToString(),
+                        Number: new NumberDefinition(
+                            1,
+                            99_999_999,
+                            1,
+                            0)),
+                    suggested.ToString()),
+            ];
+        }
+        else
+        {
+            fields = [];
+        }
+        return new RecordCreationDefinition(
+            DuplicationDefinitionId(node),
+            node.RecordClassId,
+            $"Duplicate {node.Name}",
+            node.Kind == ProjectTreeNodeKind.Shot
+                ? "The duplicate keeps its original Actor. Choose its new Shot number."
+                : $"Create a complete copy of {node.Name}.",
+            "Duplicate",
+            fields,
+            RequiresConfirmation: fields.Count > 0);
+    }
+
+    internal ProjectTreeNode Duplicate(
+        ProjectTreeNode node,
+        RecordCreationDraft draft)
+    {
+        var definition = PrepareRecordDuplication(node);
+        if (!draft.DefinitionId.Equals(
+                definition.Id,
+                StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"Duplication draft '{draft.DefinitionId}' does not match '{definition.Id}'.");
+        }
+        if (definition.ValidationError(draft.Values) is { } error)
+        {
+            throw new InvalidOperationException(error);
+        }
         using var connection = _context.OpenConnection();
         switch (node.Kind)
         {
@@ -169,14 +232,41 @@ internal sealed class SqliteEditorNodeCommandStore
                     $"shot_{Guid.NewGuid():N}",
                     $"{node.Name} copy",
                     source.OwnerActorId,
-                    _production.ShotRepository.SuggestShotNumber(
-                        connection,
-                        source.EpisodeId));
+                    int.Parse(
+                        draft.Values["shot.creation.shotNumber"],
+                        System.Globalization.CultureInfo.InvariantCulture));
                 return new ProjectTreeNode(
                     ProjectTreeNodeKind.Shot,
                     copy.Id,
                     copy.Name,
                     copy.Notes,
+                    node.RecordClassId,
+                    node.Parent);
+            }
+            case ProjectTreeNodeKind.ModuleInstance:
+            {
+                var settings = _production.GetModuleInstanceSettings(node.Id);
+                var id = $"module_instance_{Guid.NewGuid():N}";
+                var sortOrder = _production.ModuleInstanceRepository
+                    .NextSortOrder(connection, settings.ShotId);
+                var copyName = _production.ModuleInstanceRepository
+                    .UniqueName(
+                        connection,
+                        settings.ShotId,
+                        $"{node.Name} copy");
+                _production.ModuleInstanceRepository.Duplicate(
+                    connection,
+                    node.Id,
+                    id,
+                    settings.ShotId,
+                    copyName,
+                    sortOrder);
+                _production.SynchronizeTimelineDurations(connection);
+                return new ProjectTreeNode(
+                    ProjectTreeNodeKind.ModuleInstance,
+                    id,
+                    copyName,
+                    node.Notes,
                     node.RecordClassId,
                     node.Parent);
             }
@@ -236,36 +326,18 @@ internal sealed class SqliteEditorNodeCommandStore
         }
     }
 
-    internal ProjectTreeNode DuplicateShot(
-        ProjectTreeNode shot,
-        int shotNumber)
+    internal void Move(ProjectTreeNode node, int offset)
     {
-        if (shot.Kind != ProjectTreeNodeKind.Shot
-            || shot.Parent?.Kind != ProjectTreeNodeKind.Episode)
+        if (node.Kind != ProjectTreeNodeKind.ModuleInstance)
         {
             throw new InvalidOperationException(
-                "Only a concrete Shot inside an Episode can be duplicated.");
+                $"Cannot move {node.Kind} through the record lifecycle.");
         }
-
-        using var connection = _context.OpenConnection();
-        var source = _production.ShotRepository.Get(
-            connection,
-            shot.Id);
-        var duplicate = _production.DuplicateShot(
-            connection,
-            shot.Id,
-            $"shot_{Guid.NewGuid():N}",
-            $"{shot.Name} copy",
-            source.OwnerActorId,
-            shotNumber);
-        return new ProjectTreeNode(
-            ProjectTreeNodeKind.Shot,
-            duplicate.Id,
-            duplicate.Name,
-            duplicate.Notes,
-            shot.RecordClassId,
-            shot.Parent);
+        _production.MoveModuleInstance(node.Id, offset);
     }
+
+    private static string DuplicationDefinitionId(ProjectTreeNode node) =>
+        $"duplicate:{node.RecordClassId}";
 
     internal ProjectTreeNode TransferProductionNode(
         ProjectTreeNode source,

@@ -92,10 +92,19 @@ internal static class SqliteProjectTestContextModuleInstanceExtensions
     internal static ProjectTreeNode AddModuleInstance(
         this SqliteProjectTestContext engine,
         ProjectTreeNode shot,
-        ShotModuleInstanceCreationDraft draft) =>
-        engine.ModuleInstanceCollection.AddModuleInstance(
+        ShotModuleInstanceCreationDraft draft)
+    {
+        var selectionValues =
+            EditorAddChildWorkflow.ModuleInstanceSelectionValues(
+                draft.Selection);
+        return engine.Children.CreateRecord(
             shot,
-            draft);
+            draft.RuntimeValues with
+            {
+                SelectionValues = selectionValues,
+                OperationId = "moduleInstance",
+            });
+    }
 
     internal static ProjectTreeNode RenameModuleInstance(
         this SqliteProjectTestContext engine,
@@ -107,8 +116,14 @@ internal static class SqliteProjectTestContextModuleInstanceExtensions
         this SqliteProjectTestContext engine,
         string moduleInstanceId,
         int offset) =>
-        engine.ModuleInstanceCollection.MoveModuleInstance(
-            moduleInstanceId,
+        engine.NodeCommands.Move(
+            new ProjectTreeNode(
+                ProjectTreeNodeKind.ModuleInstance,
+                moduleInstanceId,
+                "Screen",
+                "",
+                ProjectTreeNode.DefaultRecordClassId(
+                    ProjectTreeNodeKind.ModuleInstance)),
             offset);
 
     internal static void UpdateModuleInstanceField(

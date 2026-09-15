@@ -276,6 +276,7 @@ public partial class MainWindow : SukiWindow
             RefreshProductionPicker);
         var domainDialogs = new EditorDomainDialogService(
             this,
+            data.Children,
             data.ModuleInstances,
             data.IconThemes,
             data.ThemeTokens,
@@ -403,7 +404,8 @@ public partial class MainWindow : SukiWindow
             NavigateDesignHistory,
             _activeFieldControls);
         _collectionCards = new EditorCollectionCardFactory(
-            data.ModuleInstances,
+            data.Children,
+            data.NodeCommands,
             data.IconThemes,
             data.ComponentPreview,
             data.Dictionary,

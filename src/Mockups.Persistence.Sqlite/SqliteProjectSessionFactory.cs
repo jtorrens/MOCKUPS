@@ -39,9 +39,7 @@ internal static class SqliteProjectSessionFactory
             new SqliteModuleInstanceCollectionStore(
                 context,
                 design,
-                production,
-                resources,
-                referenceUsages);
+                production);
         var coreFields = new SqliteCoreFieldStore(
             context,
             design,

@@ -80,8 +80,18 @@ internal static class SqliteProjectTestContextExtensions
 
     internal static ProjectTreeNode Duplicate(
         this SqliteProjectTestContext engine,
-        ProjectTreeNode node) =>
-        engine.NodeCommands.Duplicate(node);
+        ProjectTreeNode node)
+    {
+        var definition = engine.NodeCommands.PrepareRecordDuplication(node);
+        return engine.NodeCommands.Duplicate(
+            node,
+            new RecordCreationDraft(
+                definition.Id,
+                definition.Fields.ToDictionary(
+                    (field) => field.Definition.Id,
+                    (field) => field.Value,
+                    StringComparer.Ordinal)));
+    }
 
     internal static void Delete(
         this SqliteProjectTestContext engine,

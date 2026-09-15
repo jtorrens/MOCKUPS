@@ -164,36 +164,22 @@ internal sealed class EditorNodeCommandController
     {
         if (node.Parent is null || !node.CanDuplicate) return;
 
-        if (node.Kind == ProjectTreeNodeKind.Shot)
-        {
-            try
-            {
-                var episode = node.Parent;
-                var shotNumber = await new ShotDuplicationDialog(
-                    _owner,
-                    _children,
-                    _operations).Show(episode);
-                if (shotNumber is null) return;
-                var copy = await _operations.ExecuteAsync(
-                    () => _database.DuplicateShot(
-                        node,
-                        shotNumber.Value));
-                await _reloadAndSelect(copy);
-            }
-            catch (Exception exception)
-            {
-                await ShowInfoDialog(
-                    "Shot duplication failed",
-                    exception.Message);
-            }
-            return;
-        }
         try
         {
+            var definition = await _operations.ExecuteWithActivityAsync(
+                "Preparing duplication…",
+                () => _database.PrepareRecordDuplication(node));
+            var draft = definition.RequiresConfirmation
+                ? await new RecordCreationDialog(_owner).Show(definition)
+                : new RecordCreationDraft(
+                    definition.Id,
+                    definition.Fields.ToDictionary(
+                        (field) => field.Definition.Id,
+                        (field) => field.Value,
+                        StringComparer.Ordinal));
+            if (draft is null) return;
             var copy = await _operations.ExecuteAsync(
-                () => node.Kind == ProjectTreeNodeKind.ModuleInstance
-                    ? _moduleInstances.Duplicate(node)
-                    : _database.Duplicate(node));
+                () => _database.Duplicate(node, draft));
             await _reloadAndSelect(copy);
         }
         catch (Exception exception)

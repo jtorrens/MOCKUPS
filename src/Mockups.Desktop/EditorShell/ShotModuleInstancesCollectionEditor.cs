@@ -10,25 +10,28 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 
 internal sealed class ShotModuleInstancesCollectionEditor
 {
-    private readonly IModuleInstanceCollectionStore _database;
+    private readonly IEditorChildStore _children;
+    private readonly IEditorNodeCommandStore _nodeCommands;
     private readonly IModuleInstanceTimelineStore _timeline;
     private readonly EditorOperationCoordinator _operations;
     private readonly IEditorShellMessageSink _messages;
     private readonly Action _onChanged;
     private readonly Action<ProjectTreeNode> _reloadAndSelect;
-    private readonly Func<string, Task<ShotModuleInstanceCreationDraft?>> _defineModuleInstance;
+    private readonly Func<string, Task<RecordCreationDraft?>> _defineModuleInstance;
     private readonly Func<ProjectTreeNode, Task<bool>> _confirmDelete;
     public ShotModuleInstancesCollectionEditor(
-        IModuleInstanceCollectionStore database,
+        IEditorChildStore children,
+        IEditorNodeCommandStore nodeCommands,
         IModuleInstanceTimelineStore timeline,
         EditorOperationCoordinator operations,
         IEditorShellMessageSink messages,
         Action onChanged,
         Action<ProjectTreeNode> reloadAndSelect,
-        Func<string, Task<ShotModuleInstanceCreationDraft?>> defineModuleInstance,
+        Func<string, Task<RecordCreationDraft?>> defineModuleInstance,
         Func<ProjectTreeNode, Task<bool>> confirmDelete)
     {
-        _database = database;
+        _children = children;
+        _nodeCommands = nodeCommands;
         _timeline = timeline;
         _operations = operations;
         _messages = messages;
@@ -50,7 +53,7 @@ internal sealed class ShotModuleInstancesCollectionEditor
                     var draft = await _defineModuleInstance(shot.Id);
                     if (draft is null) return;
                     var added = await _operations.ExecuteAsync(
-                        () => _database.AddModuleInstance(shot, draft));
+                        () => _children.CreateRecord(shot, draft));
                     _onChanged();
                     _reloadAndSelect(added);
                 });
@@ -142,9 +145,16 @@ internal sealed class ShotModuleInstancesCollectionEditor
                 "Duplicate Screen",
                 async () =>
                 {
+                    var instance = ScreenNode(shot, slot);
+                    var definition = await _operations.ExecuteAsync(
+                        () => _nodeCommands.PrepareRecordDuplication(instance));
                     var copy = await _operations.ExecuteAsync(
-                        () => _database.Duplicate(
-                            ScreenNode(shot, slot)));
+                        () => _nodeCommands.Duplicate(
+                            instance,
+                            new RecordCreationDraft(
+                                definition.Id,
+                                new System.Collections.Generic.Dictionary<string, string>(
+                                    StringComparer.Ordinal))));
                     _onChanged();
                     _reloadAndSelect(copy);
                 });
@@ -162,7 +172,7 @@ internal sealed class ShotModuleInstancesCollectionEditor
                     var instance = ScreenNode(shot, slot);
                     if (!await _confirmDelete(instance)) return;
                     await _operations.ExecuteAsync(
-                        () => _database.Delete(instance));
+                        () => _nodeCommands.Delete(instance));
                     _onChanged();
                     _reloadAndSelect(shot);
                 });
@@ -182,8 +192,8 @@ internal sealed class ShotModuleInstancesCollectionEditor
                     async () =>
                     {
                         await _operations.ExecuteAsync(
-                            () => _database.MoveModuleInstance(
-                                slot.Id,
+                            () => _nodeCommands.Move(
+                                ScreenNode(shot, slot),
                                 offset));
                         _onChanged();
                         _reloadAndSelect(shot);

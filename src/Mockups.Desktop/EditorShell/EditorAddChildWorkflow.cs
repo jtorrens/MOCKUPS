@@ -89,9 +89,13 @@ internal sealed class EditorAddChildWorkflow
         var draft = await new ShotModulePickerDialog(
             _owner, _moduleInstances, _operations).Show(shot.Id);
         if (draft is null) return null;
+        var selectionValues = ModuleInstanceSelectionValues(draft);
         var definition = await _operations.ExecuteWithActivityAsync(
             "Preparing Screen Runtime Inputs…",
-            () => _moduleInstances.PrepareModuleInstanceCreation(shot, draft));
+            () => _database.PrepareRecordCreation(
+                shot,
+                "moduleInstance",
+                selectionValues));
         var runtimeValues = definition.RequiresConfirmation
             ? await new RecordCreationDialog(
                 _owner,
@@ -101,14 +105,29 @@ internal sealed class EditorAddChildWorkflow
                 definition.Fields.ToDictionary(
                     (field) => field.Definition.Id,
                     (field) => field.Value,
-                    StringComparer.Ordinal));
+                    StringComparer.Ordinal),
+                selectionValues);
         return runtimeValues is null
             ? null
             : await _operations.ExecuteAsync(
-                () => _moduleInstances.AddModuleInstance(
+                () => _database.CreateRecord(
                     shot,
-                    new ShotModuleInstanceCreationDraft(draft, runtimeValues)));
+                    runtimeValues with
+                    {
+                        SelectionValues = selectionValues,
+                        OperationId = "moduleInstance",
+                    }));
     }
+
+    internal static IReadOnlyDictionary<string, string>
+        ModuleInstanceSelectionValues(ShotModuleInstanceDraft draft) =>
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["moduleInstance.creation.moduleId"] = draft.Module.Id,
+            ["moduleInstance.creation.variantReference"] =
+                draft.VariantReference,
+            ["core.name"] = draft.Name,
+        };
 
     private async Task<ProjectTreeNode> RefreshAndReturn(ProjectTreeNode parent)
     {

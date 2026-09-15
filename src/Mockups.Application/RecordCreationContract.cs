@@ -67,4 +67,6 @@ public sealed record RecordCreationDefinition(
 
 public sealed record RecordCreationDraft(
     string DefinitionId,
-    IReadOnlyDictionary<string, string> Values);
+    IReadOnlyDictionary<string, string> Values,
+    IReadOnlyDictionary<string, string>? SelectionValues = null,
+    string? OperationId = null);

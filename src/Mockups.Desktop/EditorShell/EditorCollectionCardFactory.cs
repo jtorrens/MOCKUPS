@@ -18,7 +18,8 @@ internal sealed record EditorPreparedPreviewAuthoringSurface(
 
 internal sealed class EditorCollectionCardFactory : IDisposable
 {
-    private readonly IModuleInstanceCollectionStore _moduleInstances;
+    private readonly IEditorChildStore _children;
+    private readonly IEditorNodeCommandStore _nodeCommands;
     private readonly IIconThemeAssetStore _iconThemes;
     private readonly IComponentPreviewInputRepository _componentPreview;
     private readonly IDictionaryFieldContextRepository _dictionary;
@@ -66,7 +67,8 @@ internal sealed class EditorCollectionCardFactory : IDisposable
     private bool _disposed;
 
     public EditorCollectionCardFactory(
-        IModuleInstanceCollectionStore moduleInstances,
+        IEditorChildStore children,
+        IEditorNodeCommandStore nodeCommands,
         IIconThemeAssetStore iconThemes,
         IComponentPreviewInputRepository componentPreview,
         IDictionaryFieldContextRepository dictionary,
@@ -111,7 +113,8 @@ internal sealed class EditorCollectionCardFactory : IDisposable
         Action toggleProductionPlayback,
         EditorSessionUiState sessionUiState)
     {
-        _moduleInstances = moduleInstances;
+        _children = children;
+        _nodeCommands = nodeCommands;
         _iconThemes = iconThemes;
         _componentPreview = componentPreview;
         _dictionary = dictionary;
@@ -201,7 +204,8 @@ internal sealed class EditorCollectionCardFactory : IDisposable
         var cards = new List<InstantEditorCard>
         {
             new ShotModuleInstancesCollectionEditor(
-                _moduleInstances,
+                _children,
+                _nodeCommands,
                 _timeline,
                 _operations,
                 _messages,
