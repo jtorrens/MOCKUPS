@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { resolveTextInputBarComponent } from "../../src/desktop-preview/textInputBarComponentResolver.js";
-import { resolvedTextInputBarRuntimeConfig } from "../../src/desktop-preview/textInputBarRuntimeConfig.js";
+import {
+  resolveTextInputBarComponent,
+  resolvedTextInputBarRuntimeConfig,
+} from "../../src/desktop-preview/textInputBarComponentResolver.js";
 import { committedComponentFixture } from "./committedComponentFixture.js";
 
 test("a parent Runtime value changes an Icon Bar glyph without changing its Variant topology", () => {

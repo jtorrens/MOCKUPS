@@ -35,7 +35,7 @@ import {
   resolveMotionFrame,
 } from "./previewMotionHelpers.js";
 import type { ComponentMotionContract } from "./previewComponentContracts.js";
-import { resolvedTextInputBarRuntimeConfig } from "./textInputBarRuntimeConfig.js";
+import { resolvedTextInputBarRuntimeConfig } from "./textInputBarComponentResolver.js";
 import { renderScale } from "./previewGeometryHelpers.js";
 import { resolvedRuntimeRecordReference } from "./runtimeRecordReferenceCatalog.js";
 import {

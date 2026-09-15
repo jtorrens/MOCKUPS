@@ -25,7 +25,7 @@ import { contentRowComponentToRenderable, contentRowHasRenderableContent } from 
 import { resolveSurfaceComponentAtSize } from "./surfaceComponentResolver.js";
 import { surfaceComponentToRenderableAt } from "./surfaceComponentRenderable.js";
 import { wallpaperRenderable } from "./wallpaperRenderable.js";
-import { resolvedTextInputBarRuntimeConfig } from "./textInputBarRuntimeConfig.js";
+import { resolvedTextInputBarRuntimeConfig } from "./textInputBarComponentResolver.js";
 
 interface SocialPostComposerLayout {
   top: number;
