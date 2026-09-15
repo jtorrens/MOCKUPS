@@ -388,6 +388,7 @@ internal sealed class EditorCollectionCardFactory : IDisposable
             _domainDialogs.ConfirmTestValueDefaults,
             _domainDialogs.ConfirmRuntimeCollectionItemDelete,
             _domainDialogs.ConfirmAnimationDisable,
+            _domainDialogs.ShowRuntimeCreation,
             _previewPlaybackState,
             _sessionUiState,
             _navigateToNode,

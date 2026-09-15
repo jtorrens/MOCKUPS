@@ -70,6 +70,8 @@ internal sealed class RuntimeInputsCollectionEditor
     private readonly Func<string, IReadOnlyList<string>, Task<bool>> _confirmSaveDefaults;
     private readonly Func<string, Task<bool>> _confirmCollectionItemDelete;
     private readonly Func<string, Task<bool>> _confirmAnimationDisable;
+    private readonly Func<RecordCreationDefinition, Task<RecordCreationDraft?>>
+        _showRuntimeCreation;
     private readonly PreviewPlaybackState _playbackState;
     private readonly Action<ProjectTreeNode>? _reloadAndSelect;
     private readonly EditorSessionUiState _sessionUiState;
@@ -119,6 +121,7 @@ internal sealed class RuntimeInputsCollectionEditor
         Func<string, IReadOnlyList<string>, Task<bool>> confirmSaveDefaults,
         Func<string, Task<bool>> confirmCollectionItemDelete,
         Func<string, Task<bool>> confirmAnimationDisable,
+        Func<RecordCreationDefinition, Task<RecordCreationDraft?>> showRuntimeCreation,
         PreviewPlaybackState playbackState,
         EditorSessionUiState sessionUiState,
         Func<string, bool> navigateToNode,
@@ -167,6 +170,7 @@ internal sealed class RuntimeInputsCollectionEditor
         _confirmSaveDefaults = confirmSaveDefaults;
         _confirmCollectionItemDelete = confirmCollectionItemDelete;
         _confirmAnimationDisable = confirmAnimationDisable;
+        _showRuntimeCreation = showRuntimeCreation;
         _playbackState = playbackState;
         _sessionUiState = sessionUiState;
         _navigateToNode = navigateToNode;
@@ -1455,9 +1459,14 @@ internal sealed class RuntimeInputsCollectionEditor
         return new StructuredCollectionActions(
             AddFirst: async () =>
             {
+                var prototype = await PrepareCollectionItemCreation(
+                    owner,
+                    collection,
+                    DefaultCollectionItem(owner, collection));
+                if (prototype is null) return;
                 var result = await Mutate(new AddStructuredCollectionItem(
                     address,
-                    DefaultCollectionItem(owner, collection),
+                    prototype,
                     items.Count == 0 ? null : ItemId(items[0], 0)));
                 activate(
                     result.Item ?? throw new InvalidOperationException(
@@ -1467,9 +1476,14 @@ internal sealed class RuntimeInputsCollectionEditor
             },
             AddAfter: async (itemIndex) =>
             {
+                var prototype = await PrepareCollectionItemCreation(
+                    owner,
+                    collection,
+                    DefaultCollectionItem(owner, collection));
+                if (prototype is null) return;
                 var result = await Mutate(new AddStructuredCollectionItem(
                     address,
-                    DefaultCollectionItem(owner, collection),
+                    prototype,
                     itemIndex + 1 < items.Count
                         ? ItemId(items[itemIndex + 1], itemIndex + 1)
                         : null));
@@ -1928,6 +1942,41 @@ internal sealed class RuntimeInputsCollectionEditor
                 ComponentVariantConfig));
     }
 
+    private async Task<JsonObject?> PrepareCollectionItemCreation(
+        RuntimeInputOwner owner,
+        RuntimeInputCollectionDefinition collection,
+        JsonObject prototype)
+    {
+        if (!owner.IsInstance)
+        {
+            return prototype;
+        }
+        var actorOptions = ActiveInputOptions.RecordReferenceOptions(
+            ProjectAncestor(owner.Node).Id,
+            "actors",
+            includeNone: false,
+            systemPreviewFixtures: false);
+        var definitionId = $"screen-collection-runtime:{owner.Node.Id}:{collection.Id}";
+        var definition = ProductionRuntimeCreationContract.PrepareStructuredCollectionItem(
+            definitionId,
+            collection.ItemLabel,
+            prototype,
+            actorOptions);
+        if (!definition.RequiresConfirmation)
+        {
+            return prototype;
+        }
+        var draft = await _showRuntimeCreation(definition);
+        return draft is null
+            ? null
+            : ProductionRuntimeCreationContract.CompleteStructuredCollectionItem(
+                definitionId,
+                collection.ItemLabel,
+                prototype,
+                actorOptions,
+                draft);
+    }
+
     private void OpenRuntimeComponentOverrides(
         RuntimeInputOwner owner,
         RuntimeInputCollectionDefinition collection,
@@ -2136,6 +2185,12 @@ internal sealed class RuntimeInputsCollectionEditor
                     _testValuesChanged();
                     return result;
                 }
+                : null,
+            PrepareStructuredCollectionItemCreation = owner.IsInstance
+                ? (nestedCollection, prototype) => PrepareCollectionItemCreation(
+                    owner,
+                    nestedCollection,
+                    prototype)
                 : null,
         };
         var definition = RuntimeInputFieldDefinitionFactory.Create(

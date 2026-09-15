@@ -375,6 +375,16 @@ explicit Shot interval.
 Screen payload is authored in Preview because that is where its effect can be
 checked, but ownership remains with the Screen instance.
 
+Creating a structured Runtime collection item in a Screen is one prepared
+Production creation workflow. The generic item prototype is inspected
+recursively before mutation. Any required Actor or media value inherited from
+a Design fixture is collected through the shared Dictionary-backed creation
+form and written to both the item's effective value and its embedded Runtime
+definition default where that definition travels with the item. Cancelling the
+form creates nothing. The completed effective Runtime document must pass
+fixture isolation before the mutation is persisted; no collection, Module or
+Component may replace a fixture identity implicitly.
+
 The first Preview tab is an authoring host, not a Preview-owned data store.
 
 The Runtime API diagnostic presentation is hidden in the current Design and

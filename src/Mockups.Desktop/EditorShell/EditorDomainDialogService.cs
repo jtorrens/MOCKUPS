@@ -74,6 +74,14 @@ internal sealed class EditorDomainDialogService
         return new EditorDialogService(_owner, _isDark()).ConfirmAnimationDisable(fieldLabel);
     }
 
+    public Task<RecordCreationDraft?> ShowRuntimeCreation(
+        RecordCreationDefinition definition)
+    {
+        return new RecordCreationDialog(
+            _owner,
+            new DictionaryFieldServices(BrowsePath: _browsePath)).Show(definition);
+    }
+
     public Task<bool> ConfirmStopRuntimeInputForwarding(string fieldLabel)
     {
         return new EditorDialogService(_owner, _isDark()).ConfirmAction(

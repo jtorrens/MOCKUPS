@@ -39,6 +39,8 @@ internal sealed record DictionaryFieldServices(
         UpdateStructuredCollectionValues = null,
     Func<StructuredCollectionMutation, Task<StructuredCollectionMutationResult>>?
         MutateStructuredCollection = null,
+    Func<RuntimeInputCollectionDefinition, JsonObject, Task<JsonObject?>>?
+        PrepareStructuredCollectionItemCreation = null,
     EditorSessionUiState? StructuredCollectionUiState = null,
     bool AllowIncompleteDraft = false,
     bool AllowRuntimeInputForwarding = true);

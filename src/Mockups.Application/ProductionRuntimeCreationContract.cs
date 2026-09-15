@@ -64,6 +64,77 @@ public static class ProductionRuntimeCreationContract
         return completed;
     }
 
+    public static RecordCreationDefinition PrepareStructuredCollectionItem(
+        string definitionId,
+        string itemLabel,
+        JsonObject prototype,
+        IReadOnlyList<FieldOption> actorOptions)
+    {
+        var requirements = Requirements(
+            prototype,
+            prototype,
+            new JsonObject(),
+            actorOptions);
+        return new RecordCreationDefinition(
+            definitionId,
+            ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ModuleInstance),
+            $"Complete {itemLabel}",
+            $"Choose the Production values required by this {itemLabel} before it is added.",
+            $"Add {itemLabel}",
+            requirements.Select((requirement) => requirement.Field).ToList(),
+            RequiresConfirmation: requirements.Count > 0);
+    }
+
+    public static JsonObject CompleteStructuredCollectionItem(
+        string definitionId,
+        string itemLabel,
+        JsonObject prototype,
+        IReadOnlyList<FieldOption> actorOptions,
+        RecordCreationDraft draft)
+    {
+        var definition = PrepareStructuredCollectionItem(
+            definitionId,
+            itemLabel,
+            prototype,
+            actorOptions);
+        if (!draft.DefinitionId.Equals(definition.Id, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"Structured collection creation draft '{draft.DefinitionId}' does not match '{definition.Id}'.");
+        }
+        var error = definition.ValidationError(draft.Values);
+        if (error is not null)
+        {
+            throw new InvalidOperationException(error);
+        }
+
+        var requirements = Requirements(
+            prototype,
+            prototype,
+            new JsonObject(),
+            actorOptions);
+        var expected = requirements
+            .Select((requirement) => requirement.Field.Definition.Id)
+            .ToHashSet(StringComparer.Ordinal);
+        if (draft.Values.Keys.Any((key) => !expected.Contains(key)))
+        {
+            throw new InvalidOperationException(
+                "Structured collection creation draft contains undeclared values.");
+        }
+
+        var completed = prototype.DeepClone().AsObject();
+        foreach (var requirement in requirements)
+        {
+            var value = JsonValue.Create(
+                draft.Values[requirement.Field.Definition.Id]);
+            foreach (var path in requirement.Paths)
+            {
+                SetValue(completed, path, value?.DeepClone());
+            }
+        }
+        return completed;
+    }
+
     private static IReadOnlyList<Requirement> Requirements(
         JsonObject content,
         JsonObject runtime,
@@ -111,6 +182,7 @@ public static class ProductionRuntimeCreationContract
                 input,
                 runtime[input.JsonKey],
                 [.. ownerPath, PathPart.Property(input.JsonKey)],
+                DefinitionDefaultPath(runtime, ownerPath, input),
                 input.Label,
                 actorOptions,
                 requirements);
@@ -147,6 +219,7 @@ public static class ProductionRuntimeCreationContract
                         field,
                         item[field.JsonKey],
                         fieldPath,
+                        null,
                         $"{collection.Label} {index + 1} · {field.Label}",
                         actorOptions,
                         requirements);
@@ -166,6 +239,7 @@ public static class ProductionRuntimeCreationContract
         ComponentInputDefinition input,
         JsonNode? value,
         IReadOnlyList<PathPart> path,
+        IReadOnlyList<PathPart>? defaultPath,
         string label,
         IReadOnlyList<FieldOption> actorOptions,
         List<Requirement> requirements)
@@ -185,7 +259,9 @@ public static class ProductionRuntimeCreationContract
                     : null,
                 HelpText: input.HelpText);
             requirements.Add(new Requirement(
-                path,
+                defaultPath is null
+                    ? [path]
+                    : [path, defaultPath],
                 input,
                 new FieldValue(definition, "")));
         }
@@ -220,7 +296,7 @@ public static class ProductionRuntimeCreationContract
                     PathPart.Property(field.JsonKey),
                 ];
                 var fieldLabel = $"{label} {index + 1} · {field.Label}";
-                AddInput(field, item[field.JsonKey], fieldPath, fieldLabel, actorOptions, requirements);
+                AddInput(field, item[field.JsonKey], fieldPath, null, fieldLabel, actorOptions, requirements);
                 VisitStructuredValue(
                     item[field.JsonKey],
                     field,
@@ -285,6 +361,30 @@ public static class ProductionRuntimeCreationContract
             : IsProductionMedia(input)
               && text.StartsWith(SystemPreviewFixtureCatalog.MediaScheme, StringComparison.Ordinal));
 
+    private static IReadOnlyList<PathPart>? DefinitionDefaultPath(
+        JsonObject runtime,
+        IReadOnlyList<PathPart> ownerPath,
+        ComponentInputDefinition input)
+    {
+        if (runtime["inputs"] is not JsonArray definitions)
+        {
+            return null;
+        }
+        var matches = definitions
+            .Select((node, index) => (Node: node as JsonObject, Index: index))
+            .Where((candidate) => candidate.Node?["id"]?.GetValue<string>() == input.Id)
+            .ToList();
+        return matches.Count == 1
+            ?
+            [
+                .. ownerPath,
+                PathPart.Property("inputs"),
+                PathPart.Index(matches[0].Index),
+                PathPart.Property("defaultValue"),
+            ]
+            : null;
+    }
+
     private static JsonNode? ValueAt(
         JsonObject root,
         IReadOnlyList<PathPart> path)
@@ -342,9 +442,12 @@ public static class ProductionRuntimeCreationContract
                 : part.ArrayIndex!.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)));
 
     private sealed record Requirement(
-        IReadOnlyList<PathPart> Path,
+        IReadOnlyList<IReadOnlyList<PathPart>> Paths,
         ComponentInputDefinition Input,
-        FieldValue Field);
+        FieldValue Field)
+    {
+        public IReadOnlyList<PathPart> Path => Paths[0];
+    }
 
     private sealed record PathPart(string? Name, int? ArrayIndex)
     {

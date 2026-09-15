@@ -111,14 +111,19 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                 RuntimeContractChanged?.Invoke(this, EventArgs.Empty);
             }
         }
-        JsonObject NewItem()
+        async Task<JsonObject?> NewItem()
         {
-            return StructuredCollectionItemFactory.Create(
+            var prototype = StructuredCollectionItemFactory.Create(
                 collection,
                 (field) => DefaultValue(collection, field),
                 (reference) => _services.GetComponentVariantRuntimeValues?.Invoke(reference)
                     ?? throw new InvalidOperationException(
                         $"Component Variant '{reference}' has no Runtime values provider."));
+            return _services.PrepareStructuredCollectionItemCreation is null
+                ? prototype
+                : await _services.PrepareStructuredCollectionItemCreation(
+                    collection,
+                    prototype);
         }
         var address = new StructuredCollectionAddress(
             collection.JsonKey,
@@ -179,9 +184,11 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
             new StructuredCollectionActions(
                 AddFirst: async () =>
                 {
+                    var prototype = await NewItem();
+                    if (prototype is null) return;
                     var result = await Mutate(new AddStructuredCollectionItem(
                         address,
-                        NewItem(),
+                        prototype,
                         items.Count == 0 ? null : ItemId(items[0], 0)));
                     editor!.ActivateOnly(
                         result.Item ?? throw new InvalidOperationException(
@@ -191,12 +198,14 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                 },
                 AddAfter: async (index) =>
                 {
+                    var prototype = await NewItem();
+                    if (prototype is null) return;
                     var beforeItemId = index + 1 < items.Count
                         ? ItemId(items[index + 1], index + 1)
                         : null;
                     var result = await Mutate(new AddStructuredCollectionItem(
                         address,
-                        NewItem(),
+                        prototype,
                         beforeItemId));
                     editor!.ActivateOnly(
                         result.Item ?? throw new InvalidOperationException(

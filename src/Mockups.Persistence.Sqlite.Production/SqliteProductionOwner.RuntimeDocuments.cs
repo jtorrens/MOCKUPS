@@ -738,6 +738,16 @@ internal sealed partial class SqliteProductionOwner
             $"Module Instance '{moduleInstanceId}' content_json",
             content,
             projectActorIds);
+        var config = ParseJsonObject(module.ConfigJson);
+        var effectiveRuntime = RuntimePreviewDocumentContract.PrepareRuntime(
+            ParseJsonObject(module.DesignPreviewJson),
+            config,
+            content,
+            _componentVariantConfigCatalog.GetComponentVariantConfig);
+        ProductionRuntimeFixtureIsolationContract.Validate(
+            effectiveRuntime,
+            config,
+            $"Module Instance '{moduleInstanceId}'");
     }
 
     private JsonArray RequireDeclaredRuntimeCollection(

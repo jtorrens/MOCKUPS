@@ -445,6 +445,10 @@ validator applies the same rule to the single effective Production Runtime
 document before Preview resolution. Conditional collection fields that are not
 enabled by their declared item discriminator are inert: neither reference
 resolution nor fixture-isolation validation consumes their placeholder value.
+Every Production Runtime write validates that same effective document before
+persistence. Structured-item creation first completes any recursively embedded
+fixture-owned required values through the shared creation contract, so Preview
+validation remains a strict boundary and never becomes a repair path.
 
 Preview Setup resource options follow the same rule. Device options and their
 exact metrics, Theme options and the Project media root are loaded together on
