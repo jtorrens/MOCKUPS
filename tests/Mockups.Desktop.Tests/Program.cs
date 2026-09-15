@@ -230,7 +230,7 @@ var tests = new (string Name, Action Run)[]
     ("editor view state survives real editor and breadcrumb navigation", EditorViewStateSurvivesRealNavigation),
     ("same-owner editor refresh keeps root and embedded cards mounted", SameOwnerEditorRefreshKeepsCardsMounted),
     ("Preview shell remains usable at 1040 and 1440 widths", PreviewShellLayoutIsResponsive),
-    ("Preview controls detach into one topmost session window", PreviewControlsDetachIntoTopmostSessionWindow),
+    ("Native modals temporarily displace auxiliary session windows", NativeModalsTemporarilyDisplaceAuxiliarySessionWindows),
     ("presented editor operations own the shared loading scrim", PresentedEditorOperationsOwnSharedLoadingScrim),
     ("navigation panel restores its width and opens for routed selection", NavigationPanelRestoresWidthAndOpensForRoutedSelection),
     ("real Preview shell layout remains usable at 1040 and 1440", PreviewShellVisualTreeIsResponsive),
@@ -6933,7 +6933,7 @@ static void NavigationPanelRestoresWidthAndOpensForRoutedSelection()
     }
 }
 
-static void PreviewControlsDetachIntoTopmostSessionWindow()
+static void NativeModalsTemporarilyDisplaceAuxiliarySessionWindows()
 {
     using var session = HeadlessUnitTestSession.StartNew(
         typeof(HeadlessTestApplication));
@@ -7040,19 +7040,15 @@ static void PreviewControlsDetachIntoTopmostSessionWindow()
             dialog,
             owner);
         True(dialog.ShowActivated);
-        True(dialog.Topmost);
-        dialog.Show(owner);
+        True(!dialog.Topmost);
+        True(owner.IsEnabled);
+        var dialogResult = dialog.ShowDialog<object?>(owner);
         Dispatcher.UIThread.RunJobs();
-        True(dialog.Topmost);
+        True(!dialog.Topmost);
         True(dialog.IsActive);
         True(!floating.Topmost);
         True(!floating.IsEnabled);
         True(!auxiliary.IsEnabled);
-        dialog.Topmost = false;
-        owner.Activate();
-        Dispatcher.UIThread.RunJobs();
-        True(dialog.Topmost);
-        True(dialog.IsActive);
 
         var childDialog = new SukiWindow
         {
@@ -7064,18 +7060,18 @@ static void PreviewControlsDetachIntoTopmostSessionWindow()
             dialog);
         var childResult = childDialog.ShowDialog<bool>(dialog);
         Dispatcher.UIThread.RunJobs();
-        True(childDialog.Topmost);
+        True(!childDialog.Topmost);
         True(childDialog.IsActive);
-        dialog.Topmost = false;
-        owner.Activate();
-        Dispatcher.UIThread.RunJobs();
         True(!dialog.Topmost);
-        True(childDialog.IsActive);
+        True(!floating.Topmost);
+        True(!floating.IsEnabled);
+        True(!auxiliary.IsEnabled);
         childDialog.Close(false);
         Equal(false, childResult.GetAwaiter().GetResult());
         Dispatcher.UIThread.RunJobs();
 
         dialog.Close();
+        Equal(null, dialogResult.GetAwaiter().GetResult());
         Dispatcher.UIThread.RunJobs();
         True(floating.Topmost);
         True(floating.IsEnabled);

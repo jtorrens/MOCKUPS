@@ -73,7 +73,7 @@ internal static class EditorSukiWindowTheme
         ApplyWindowChrome(dialog, owner);
         if (owner is not null)
         {
-            EditorModalWindowPriority.Configure(dialog, owner);
+            EditorModalWindowScope.Configure(dialog, owner);
         }
     }
 

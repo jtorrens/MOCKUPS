@@ -451,11 +451,13 @@ window, parallel panel or temporary editor. Modals remain bounded confirmation,
 selection, import or search workflows and never host persistent dictionary
 authoring.
 
-Bounded modal dialogs remain above their owning editor window. On macOS the
-shared modal-priority owner restores the visible dialog if the editor regains
-focus during the input-event handoff and reasserts that priority while native
-window ordering settles, while allowing the user to switch to a different
-application without the dialog stealing system focus.
+Bounded modal dialogs use `ShowDialog` with their exact visible owner and leave
+foreground ordering to the native modal relationship. Before the dialog is
+presented, the shared modal lifetime owner lowers and disables each visible
+auxiliary sibling once; nested dialogs leave their exact parent untouched.
+Closing the dialog restores the captured sibling state once. No timer,
+repeated `Topmost` mutation or reactive activation competes with native window
+ordering, and switching to another application never triggers focus recovery.
 
 Record creation that needs explicit values uses one shared modal generated
 from `RecordCreationDefinition`. Every scalar is rendered by its registered

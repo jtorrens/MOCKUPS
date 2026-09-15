@@ -73,9 +73,9 @@ It includes:
   `ComponentVariantSlot` fields inside structured collections, nested
   collection paths, amber propagation through field/card/internal navigation,
   and Restore persistence through the stable item path;
-- shared modal priority, including recovery during native opening-order
-  settling and when the owning editor regains focus, without stealing focus
-  from another application;
+- shared modal lifetime, including exact native `ShowDialog` ownership,
+  one-time displacement and restoration of auxiliary sibling windows, nested
+  owner preservation and absence of polling or reactive focus recovery;
 - Production tree Shot ordering by authored name rather than creation or
   persisted sort order;
 - Preview authoring exposes no synchronous Runtime Input visual-construction
