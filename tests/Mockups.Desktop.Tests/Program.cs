@@ -11749,6 +11749,49 @@ static void RuntimeInputOptionBoundaryPreservesDictionaryOptions()
             "",
             "Optional Runtime actor");
 
+        var videoCall = CanonicalProjectNodes(database).Single((node) =>
+            node.Kind == ProjectTreeNodeKind.Module
+            && node.RecordClassId == "module.core.videoCall");
+        var videoCallSettings = database.GetModuleSettings(videoCall.Id);
+        var videoCallPreview = DesignPreviewTestValues.Parse(
+            videoCallSettings.DesignPreviewJson);
+        var participantCollection = RuntimeInputDefinitionReader.ReadCollections(
+                videoCallPreview,
+                JsonPath.ParseRequiredObject(
+                    videoCallSettings.ConfigJson,
+                    "Video Call config"))
+            .Single((collection) => collection.Id == "participants");
+        var optionalMediaInput = participantCollection.Fields.Single((field) =>
+            field.Id == "mediaSource");
+        True(optionalMediaInput.AllowEmpty);
+        var optionalMediaDefinition = RuntimeInputFieldDefinitionFactory.Create(
+            dataSource,
+            videoCall,
+            optionalMediaInput);
+        Equal(ValueKind.OptionToken, optionalMediaDefinition.ValueKind);
+        Equal("", optionalMediaDefinition.Options!.First().Value);
+        foreach (var participant in DesignPreviewTestValues.CollectionItems(
+                     videoCallPreview,
+                     participantCollection))
+        {
+            DictionaryOptionSelector.SelectedOption(
+                optionalMediaDefinition,
+                DesignPreviewTestValues.CollectionValue(
+                    participant,
+                    optionalMediaInput));
+        }
+
+        var requiredMediaDefinition = RuntimeInputFieldDefinitionFactory.Create(
+            dataSource,
+            videoCall,
+            optionalMediaInput with { AllowEmpty = false });
+        True(requiredMediaDefinition.Options!.All((option) =>
+            !string.IsNullOrWhiteSpace(option.Value)));
+        Throws<InvalidOperationException>(() => FieldOptionContract.ValidateValue(
+            requiredMediaDefinition,
+            "",
+            "Required Design Runtime media"));
+
         var paletteInput = new ComponentInputDefinition(
             "color", "Color", "color", ComponentInputKind.Option,
             ValueKind.PaletteColorToken, "");

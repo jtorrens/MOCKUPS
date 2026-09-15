@@ -1535,7 +1535,8 @@
             "jsonKey": "mediaSource",
             "kind": "mediaFilePath",
             "valueKind": "MediaFilePath",
-            "defaultValue": ""
+            "defaultValue": "",
+            "allowEmpty": true
           },
           {
             "id": "videoPresent",

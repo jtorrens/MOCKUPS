@@ -83,20 +83,33 @@ public static class SystemPreviewFixtureCatalog
         return options;
     }
 
-    public static IReadOnlyList<FieldOption> MediaOptions() =>
-        Media.Select((fixture) => new FieldOption(
+    public static IReadOnlyList<FieldOption> MediaOptions(
+        bool includeNone = false) =>
+        OptionalOptions(Media.Select((fixture) => new FieldOption(
                 fixture.Reference,
                 fixture.Label,
                 GroupValue: fixture.Kind,
                 GroupLabel: char.ToUpperInvariant(fixture.Kind[0])
                     + fixture.Kind[1..]))
-            .ToList();
+            .ToList(), includeNone);
 
-    public static IReadOnlyList<FieldOption> MediaDirectoryOptions() =>
-        MediaDirectories.Select((fixture) => new FieldOption(
+    public static IReadOnlyList<FieldOption> MediaDirectoryOptions(
+        bool includeNone = false) =>
+        OptionalOptions(MediaDirectories.Select((fixture) => new FieldOption(
                 fixture.Reference,
                 fixture.Label))
-            .ToList();
+            .ToList(), includeNone);
+
+    private static IReadOnlyList<FieldOption> OptionalOptions(
+        List<FieldOption> options,
+        bool includeNone)
+    {
+        if (includeNone)
+        {
+            options.Insert(0, new FieldOption("", "None"));
+        }
+        return options;
+    }
 
     public static JsonObject ActorPreview(string actorId)
     {

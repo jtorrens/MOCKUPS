@@ -30,9 +30,9 @@ internal static class RuntimeInputFieldDefinitionFactory
                 permitsEmpty,
                 isDesignTestValue),
             ValueKind.MediaFilePath when isDesignTestValue =>
-                SystemPreviewFixtureCatalog.MediaOptions(),
+                SystemPreviewFixtureCatalog.MediaOptions(permitsEmpty),
             ValueKind.MediaDirectoryPath when isDesignTestValue =>
-                SystemPreviewFixtureCatalog.MediaDirectoryOptions(),
+                SystemPreviewFixtureCatalog.MediaDirectoryOptions(permitsEmpty),
             ValueKind.ComponentVariant or ValueKind.ComponentVariantSlot
                 when !string.IsNullOrWhiteSpace(input.ComponentType) =>
                 optionsDataSource.ComponentVariantOptions(projectId, input.ComponentType, permitsEmpty),
