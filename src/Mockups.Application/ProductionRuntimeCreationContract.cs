@@ -66,35 +66,34 @@ public static class ProductionRuntimeCreationContract
 
     public static RecordCreationDefinition PrepareStructuredCollectionItem(
         string definitionId,
-        string itemLabel,
+        RuntimeInputCollectionDefinition collection,
         JsonObject prototype,
         IReadOnlyList<FieldOption> actorOptions)
     {
-        var requirements = Requirements(
+        var requirements = StructuredCollectionItemRequirements(
             prototype,
-            prototype,
-            new JsonObject(),
+            collection,
             actorOptions);
         return new RecordCreationDefinition(
             definitionId,
             ProjectTreeNode.DefaultRecordClassId(ProjectTreeNodeKind.ModuleInstance),
-            $"Complete {itemLabel}",
-            $"Choose the Production values required by this {itemLabel} before it is added.",
-            $"Add {itemLabel}",
+            $"Complete {collection.ItemLabel}",
+            $"Choose the Production values required by this {collection.ItemLabel} before it is added.",
+            $"Add {collection.ItemLabel}",
             requirements.Select((requirement) => requirement.Field).ToList(),
             RequiresConfirmation: requirements.Count > 0);
     }
 
     public static JsonObject CompleteStructuredCollectionItem(
         string definitionId,
-        string itemLabel,
+        RuntimeInputCollectionDefinition collection,
         JsonObject prototype,
         IReadOnlyList<FieldOption> actorOptions,
         RecordCreationDraft draft)
     {
         var definition = PrepareStructuredCollectionItem(
             definitionId,
-            itemLabel,
+            collection,
             prototype,
             actorOptions);
         if (!draft.DefinitionId.Equals(definition.Id, StringComparison.Ordinal))
@@ -108,10 +107,9 @@ public static class ProductionRuntimeCreationContract
             throw new InvalidOperationException(error);
         }
 
-        var requirements = Requirements(
+        var requirements = StructuredCollectionItemRequirements(
             prototype,
-            prototype,
-            new JsonObject(),
+            collection,
             actorOptions);
         var expected = requirements
             .Select((requirement) => requirement.Field.Definition.Id)
@@ -133,6 +131,46 @@ public static class ProductionRuntimeCreationContract
             }
         }
         return completed;
+    }
+
+    private static IReadOnlyList<Requirement> StructuredCollectionItemRequirements(
+        JsonObject prototype,
+        RuntimeInputCollectionDefinition collection,
+        IReadOnlyList<FieldOption> actorOptions)
+    {
+        var requirements = new List<Requirement>();
+        foreach (var field in collection.Fields.Where((field) =>
+                     field.Source == ComponentInputSource.Runtime
+                     && CollectionFieldAvailability.IsEnabled(prototype, field)))
+        {
+            PathPart[] fieldPath = [PathPart.Property(field.JsonKey)];
+            AddInput(
+                field,
+                prototype[field.JsonKey],
+                fieldPath,
+                null,
+                field.Label,
+                actorOptions,
+                requirements);
+            VisitStructuredValue(
+                prototype[field.JsonKey],
+                field,
+                fieldPath,
+                field.Label,
+                actorOptions,
+                requirements);
+        }
+        VisitNestedContracts(
+            prototype,
+            [],
+            actorOptions,
+            requirements);
+
+        return requirements
+            .Where((requirement) => ValueAt(prototype, requirement.Path) is not null)
+            .GroupBy((requirement) => requirement.Field.Definition.Id, StringComparer.Ordinal)
+            .Select((group) => group.First())
+            .ToList();
     }
 
     private static IReadOnlyList<Requirement> Requirements(

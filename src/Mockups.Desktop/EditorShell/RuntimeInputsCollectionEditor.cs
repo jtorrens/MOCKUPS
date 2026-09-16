@@ -1959,7 +1959,7 @@ internal sealed class RuntimeInputsCollectionEditor
         var definitionId = $"screen-collection-runtime:{owner.Node.Id}:{collection.Id}";
         var definition = ProductionRuntimeCreationContract.PrepareStructuredCollectionItem(
             definitionId,
-            collection.ItemLabel,
+            collection,
             prototype,
             actorOptions);
         if (!definition.RequiresConfirmation)
@@ -1971,7 +1971,7 @@ internal sealed class RuntimeInputsCollectionEditor
             ? null
             : ProductionRuntimeCreationContract.CompleteStructuredCollectionItem(
                 definitionId,
-                collection.ItemLabel,
+                collection,
                 prototype,
                 actorOptions,
                 draft);

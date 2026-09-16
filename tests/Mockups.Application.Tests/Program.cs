@@ -41,12 +41,126 @@ var tests = new (string Name, Action Run)[]
     ("Runtime scalar patterns validate defaults and authored values", RuntimeScalarPatternsValidateValues),
     ("Runtime contract transitions retain only current values and animation owners", RuntimeContractTransitionsRetainCurrentOwners),
     ("structured collection mutations update nested content and animation together", StructuredCollectionMutationsAreAtomicDocuments),
+    ("Production collection creation replaces Preview fixtures through declared fields", ProductionCollectionCreationReplacesPreviewFixtures),
     ("Shot Manager readonly documents expose only the strict stable projection", ShotManagerReadonlyDocumentsAreStrict),
     ("editor operations execute away from the caller thread", EditorOperationsRunOnWorker),
     ("editor operations preserve their submission order", EditorOperationsAreSerialized),
     ("presented editor operations publish their complete activity lifetime", PresentedEditorOperationsPublishActivityLifetime),
     ("disposing editor operations cancels queued work", DisposeCancelsQueuedEditorOperations),
 };
+
+static void ProductionCollectionCreationReplacesPreviewFixtures()
+{
+    var actorOptions = new[]
+    {
+        new FieldOption("actor-production", "Production Actor"),
+    };
+    var actorField = new ComponentInputDefinition(
+        "actorId",
+        "Actor",
+        "actorId",
+        ComponentInputKind.RecordReference,
+        ValueKind.RecordReference,
+        SystemPreviewFixtureCatalog.PrimaryActorId,
+        TableId: "actors");
+    var mediaField = new ComponentInputDefinition(
+        "mediaSource",
+        "Video source",
+        "mediaSource",
+        ComponentInputKind.Text,
+        ValueKind.MediaFilePath,
+        "system-preview://media/test-video.mp4");
+    var participants = new RuntimeInputCollectionDefinition(
+        "participants",
+        "Participants",
+        "participants",
+        "Participant",
+        [actorField, mediaField]);
+    var participantPrototype = new JsonObject
+    {
+        ["id"] = "participant-a",
+        ["actorId"] = SystemPreviewFixtureCatalog.PrimaryActorId,
+        ["mediaSource"] = "system-preview://media/test-video.mp4",
+    };
+
+    var participantDefinition = ProductionRuntimeCreationContract.PrepareStructuredCollectionItem(
+        "participant-creation",
+        participants,
+        participantPrototype,
+        actorOptions);
+    Equal(true, participantDefinition.RequiresConfirmation);
+    Equal(2, participantDefinition.Fields.Count);
+    var participantValues = participantDefinition.Fields.ToDictionary(
+        (field) => field.Definition.Id,
+        (field) => field.Definition.ValueKind == ValueKind.RecordReference
+            ? "actor-production"
+            : "/project/media/participant.mp4",
+        StringComparer.Ordinal);
+    var participant = ProductionRuntimeCreationContract.CompleteStructuredCollectionItem(
+        "participant-creation",
+        participants,
+        participantPrototype,
+        actorOptions,
+        new RecordCreationDraft("participant-creation", participantValues));
+    Equal("actor-production", participant["actorId"]?.GetValue<string>());
+    Equal("/project/media/participant.mp4", participant["mediaSource"]?.GetValue<string>());
+
+    var reactions = new RuntimeInputCollectionDefinition(
+        "reactions",
+        "Reactions",
+        "reactions",
+        "Reaction",
+        [actorField]);
+    var messages = new RuntimeInputCollectionDefinition(
+        "messages",
+        "Messages",
+        "messages",
+        "Message",
+        [
+            new ComponentInputDefinition(
+                "reactions",
+                "Reactions",
+                "reactions",
+                ComponentInputKind.Text,
+                ValueKind.StructuredCollection,
+                "[]",
+                StructuredCollection: reactions),
+        ]);
+    var messagePrototype = new JsonObject
+    {
+        ["id"] = "message-a",
+        ["reactions"] = new JsonArray
+        {
+            new JsonObject
+            {
+                ["id"] = "reaction-a",
+                ["actorId"] = SystemPreviewFixtureCatalog.SecondaryActorId,
+            },
+        },
+    };
+
+    var messageDefinition = ProductionRuntimeCreationContract.PrepareStructuredCollectionItem(
+        "message-creation",
+        messages,
+        messagePrototype,
+        actorOptions);
+    Equal(true, messageDefinition.RequiresConfirmation);
+    Equal(1, messageDefinition.Fields.Count);
+    var message = ProductionRuntimeCreationContract.CompleteStructuredCollectionItem(
+        "message-creation",
+        messages,
+        messagePrototype,
+        actorOptions,
+        new RecordCreationDraft(
+            "message-creation",
+            new Dictionary<string, string>
+            {
+                [messageDefinition.Fields.Single().Definition.Id] = "actor-production",
+            }));
+    Equal(
+        "actor-production",
+        message["reactions"]?[0]?["actorId"]?.GetValue<string>());
+}
 
 static void ShotManagerReadonlyDocumentsAreStrict()
 {
