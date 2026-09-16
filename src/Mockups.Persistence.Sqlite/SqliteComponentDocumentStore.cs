@@ -254,6 +254,14 @@ internal sealed class SqliteComponentDocumentStore
             fieldId,
             value);
 
+    internal ProjectTreeNode PromoteModuleCollectionOverridesToVariant(
+        ComponentOverridePromotionRequest request) =>
+        _design.PromoteModuleCollectionOverridesToVariant(request);
+
+    internal ProjectTreeNode PromoteModuleFieldOverridesToVariant(
+        ComponentOverrideFieldPromotionRequest request) =>
+        _design.PromoteModuleFieldOverridesToVariant(request);
+
     private FieldValue CreateComponentFieldValue(
         ComponentClassSettings settings,
         string projectId,

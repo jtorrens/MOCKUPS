@@ -183,7 +183,7 @@ internal sealed class ComponentClassRepository : IComponentClassRepository
         return record;
     }
 
-    private static void ValidateVariantConfigs(
+    internal static void ValidateVariantConfigs(
         string componentType,
         string recordClassId,
         JsonObject metadata,
@@ -202,7 +202,7 @@ internal sealed class ComponentClassRepository : IComponentClassRepository
         }
     }
 
-    private static JsonObject ValidateMetadata(string metadataJson, string componentClassId)
+    internal static JsonObject ValidateMetadata(string metadataJson, string componentClassId)
     {
         var metadata = JsonPath.ParseRequiredObject(metadataJson, $"Component class '{componentClassId}' metadata_json");
         var variants = VariantEnvelopeContract.Read(metadata, "variants", $"Component class '{componentClassId}'");

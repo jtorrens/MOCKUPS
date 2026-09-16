@@ -454,6 +454,16 @@ window, parallel panel or temporary editor. Modals remain bounded confirmation,
 selection, import or search workflows and never host persistent dictionary
 authoring.
 
+When that context represents authored Component Overrides owned by a Module
+Variant collection boundary, the header exposes `Convert overrides to
+variant…`. Its required confirmation form collects the new Variant name and
+states that the parent reference will change. Accepting creates a complete,
+unlocked, unprotected Component Variant from the currently referenced Variant
+plus this boundary's Overrides, updates the Module Variant to reference it and
+clears only this boundary's Overrides. Nested component boundaries retain their
+own Overrides. Cancellation performs no write, and contexts without authored
+Overrides do not expose the action.
+
 Bounded modal dialogs use `ShowDialog` with their exact visible owner and leave
 foreground ordering to the native modal relationship. Before the dialog is
 presented, the shared modal lifetime owner lowers and disables each visible

@@ -29,6 +29,8 @@ internal sealed class EditorHeaderController
         _designNavigationAvailability;
     private readonly Action<int> _navigateDesignHistory;
     private readonly EditorActiveFieldControls _activeFieldControls;
+    private readonly Func<RecordCreationDefinition, Task<RecordCreationDraft?>>
+        _showCreation;
     private EditorPreparedHeader? _prepared;
 
     public EditorHeaderController(
@@ -47,7 +49,9 @@ internal sealed class EditorHeaderController
         Func<EditorDesignNavigationAvailability>
             designNavigationAvailability,
         Action<int> navigateDesignHistory,
-        EditorActiveFieldControls activeFieldControls)
+        EditorActiveFieldControls activeFieldControls,
+        Func<RecordCreationDefinition, Task<RecordCreationDraft?>>
+            showCreation)
     {
         _breadcrumbPanel = breadcrumbPanel;
         _contextStripHost = contextStripHost;
@@ -66,6 +70,7 @@ internal sealed class EditorHeaderController
         _navigateDesignHistory =
             navigateDesignHistory;
         _activeFieldControls = activeFieldControls;
+        _showCreation = showCreation;
     }
 
     public void SetRootTitle(
@@ -219,7 +224,7 @@ internal sealed class EditorHeaderController
                 ? null
                 : EditorStructureButton.Create(async () => await _embeddedUsageNavigator.ShowForEmbedded(context.OwnerNode, context.Slot)));
         SetHeaderActions(
-            CreateDesignNavigationButtons());
+            CreateEmbeddedHeaderActions(context));
         SetContextStrip(
             ContextMetadataForEmbedded(
                 context,
@@ -399,6 +404,81 @@ internal sealed class EditorHeaderController
             },
         };
     }
+
+    private Control CreateEmbeddedHeaderActions(
+        EditorEmbeddedContext context)
+    {
+        if (!context.IsRuntimeRoot
+            || context.RuntimeSource is not
+            {
+                PromoteOverridesToVariant: not null,
+            } source
+            || !OverrideDocumentContract.HasAuthoredValues(
+                source.Overrides))
+        {
+            return CreateDesignNavigationButtons();
+        }
+        return new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 6,
+            Children =
+            {
+                CreatePromoteOverridesButton(source),
+                CreateDesignNavigationButtons(),
+            },
+        };
+    }
+
+    private Button CreatePromoteOverridesButton(
+        RuntimeComponentOverrideSource source)
+    {
+        var button = new Button
+        {
+            Content = "Convert overrides to variant…",
+            Height = 34,
+            Padding = new Thickness(12, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        ToolTip.SetTip(
+            button,
+            "Create a Component Variant from these overrides and update the parent boundary.");
+        EditorAccessibility.Describe(
+            button,
+            "Convert overrides to a new component variant");
+        button.Click += async (_, _) =>
+        {
+            var draft = await _showCreation(
+                PromoteOverridesDefinition());
+            if (draft is null)
+            {
+                return;
+            }
+            var name = draft.Values["core.name"];
+            var variant = await source
+                .PromoteOverridesToVariant!(name);
+            _showNode(variant, true);
+        };
+        return button;
+    }
+
+    private static RecordCreationDefinition
+        PromoteOverridesDefinition() =>
+        new(
+            "component.variant.promoteOverrides",
+            "component.variant",
+            "Convert overrides to variant",
+            "This creates a complete Component Variant, updates the parent Module Variant to use it, and clears only the overrides at this boundary. Embedded overrides remain unchanged.",
+            "Convert to variant",
+            [
+                new FieldValue(
+                    new FieldDefinition(
+                        "core.name",
+                        "Name",
+                        ValueKind.StringSingleLine,
+                        DefaultValue: "New Variant"),
+                    "New Variant"),
+            ]);
 
     private Button CreateDesignNavigationButton(
         string icon,

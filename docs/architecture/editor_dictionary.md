@@ -128,6 +128,15 @@ every nested depth. Restoring an inherited Variant selection removes the local
 boundary selection and exposes the inherited complete slot again. Neither
 operation changes the referenced Variant definition or an unrelated boundary.
 
+An authored Component boundary inside a Module Variant may promote its local
+Overrides to a new complete Component Variant. The contextual Overrides editor
+requires a named confirmation, clones the currently referenced Variant config,
+applies only that boundary's sparse Overrides, updates the parent boundary to
+the new full Variant reference and replaces that boundary's Overrides with an
+empty object in one persisted mutation. Exact nested `ComponentVariantSlot`
+values remain complete boundaries in the promoted config, so their own local
+Overrides are preserved rather than flattened or promoted recursively.
+
 Override state aggregates through every dictionary container. A nested
 `ComponentVariantSlot` marks its structured-collection field, owning card and
 internal navigation path amber even when the collection value itself is direct

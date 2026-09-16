@@ -13,7 +13,8 @@ internal sealed class DictionaryComponentVariantSlotControl : StackPanel, IDicti
 {
     private readonly FieldDefinition _definition;
     private readonly DictionaryComponentVariantControl _variantControl;
-    private readonly Func<string, JsonObject, Func<JsonObject, Task>, Task>? _openRuntimeComponentOverrides;
+    private readonly Func<FieldDefinition, string, JsonObject, Func<JsonObject, Task>, Task>?
+        _openRuntimeComponentOverrides;
     private JsonObject _slot;
 
     public DictionaryComponentVariantSlotControl(
@@ -21,7 +22,8 @@ internal sealed class DictionaryComponentVariantSlotControl : StackPanel, IDicti
         string value,
         bool isInherited,
         Func<string, Task>? openComponentVariantReference,
-        Func<string, JsonObject, Func<JsonObject, Task>, Task>? openRuntimeComponentOverrides)
+        Func<FieldDefinition, string, JsonObject, Func<JsonObject, Task>, Task>?
+            openRuntimeComponentOverrides)
     {
         _definition = definition;
         _openRuntimeComponentOverrides = openRuntimeComponentOverrides;
@@ -130,6 +132,7 @@ internal sealed class DictionaryComponentVariantSlotControl : StackPanel, IDicti
         var currentReference = ComponentVariantSlotDocumentContract.VariantReference(_slot, owner);
         var currentOverrides = ComponentVariantSlotDocumentContract.Overrides(_slot, owner);
         await _openRuntimeComponentOverrides(
+            _definition,
             currentReference,
             currentOverrides.DeepClone().AsObject(),
             (next) =>

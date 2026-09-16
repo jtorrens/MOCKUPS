@@ -16,6 +16,7 @@ internal sealed class EditorDictionaryFieldServices
     private readonly RuntimeInputOptionsDataSource _runtimeInputOptions;
     private readonly EditorDictionaryContextPreparer _contextPreparer;
     private readonly EditorOperationCoordinator _operations;
+    private readonly ComponentClassFieldValueService _componentFields;
     private readonly Func<string?> _selectedThemeId;
     private readonly Action<string, string> _setRuntimeTestValue;
     private readonly EditorSessionUiState _structuredCollectionUiState = new();
@@ -30,6 +31,7 @@ internal sealed class EditorDictionaryFieldServices
         EditorPathBrowser pathBrowser,
         EditorDomainDialogService domainDialogs,
         EditorOperationCoordinator operations,
+        ComponentClassFieldValueService componentFields,
         Func<string?> selectedThemeId,
         Action<string, string> setRuntimeTestValue)
     {
@@ -43,6 +45,7 @@ internal sealed class EditorDictionaryFieldServices
         _pathBrowser = pathBrowser;
         _domainDialogs = domainDialogs;
         _operations = operations;
+        _componentFields = componentFields;
         _runtimeInputOptions =
             new RuntimeInputOptionsDataSource(database, actors);
         _contextPreparer = new EditorDictionaryContextPreparer(
@@ -122,6 +125,7 @@ internal sealed class EditorDictionaryFieldServices
                 context.ThemeTokens());
         }
         async Task OpenRuntimeOverrides(
+            FieldDefinition definition,
             string variantReference,
             JsonObject overrides,
             Func<JsonObject, Task> changed)
@@ -149,7 +153,18 @@ internal sealed class EditorDictionaryFieldServices
                     selected.RecordClassId,
                     selected.ConfigJson,
                     overrides,
-                    changed)));
+                    changed,
+                    node.Kind == ProjectTreeNodeKind.ModuleVariant
+                        && definition.ValueKind
+                            == ValueKind.ComponentVariantSlot
+                        ? (name) => _operations.ExecuteAsync(() =>
+                            _componentFields
+                                .PromoteModuleFieldOverridesToVariant(
+                                    new ComponentOverrideFieldPromotionRequest(
+                                        node,
+                                        definition.Id,
+                                        name)))
+                        : null)));
         }
         return new DictionaryFieldServices(
             BrowsePath: _pathBrowser.BrowsePath,
@@ -245,6 +260,7 @@ internal sealed class EditorDictionaryFieldServices
                 ThemeTokens());
         }
         Task OpenRuntimeOverrides(
+            FieldDefinition definition,
             string variantReference,
             JsonObject overrides,
             Func<JsonObject, Task> changed)
@@ -263,7 +279,18 @@ internal sealed class EditorDictionaryFieldServices
                     selected.RecordClassId,
                     selected.ConfigJson,
                     overrides,
-                    changed)));
+                    changed,
+                    node.Kind == ProjectTreeNodeKind.ModuleVariant
+                        && definition.ValueKind
+                            == ValueKind.ComponentVariantSlot
+                        ? (name) => _operations.ExecuteAsync(() =>
+                            _componentFields
+                                .PromoteModuleFieldOverridesToVariant(
+                                    new ComponentOverrideFieldPromotionRequest(
+                                        node,
+                                        definition.Id,
+                                        name)))
+                        : null)));
             return Task.CompletedTask;
         }
         return new DictionaryFieldServices(

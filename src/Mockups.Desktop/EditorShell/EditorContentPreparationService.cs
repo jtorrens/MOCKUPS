@@ -553,7 +553,16 @@ internal sealed class EditorContentPreparationService : IDisposable
                         owner,
                         itemPath,
                         boundary,
-                        changed));
+                        changed),
+                    owner.Context is null
+                        && node.Kind == ProjectTreeNodeKind.ModuleVariant
+                        ? (name) => PromoteCollectionOverridesAsync(
+                            node,
+                            owner,
+                            itemPath,
+                            boundary,
+                            name)
+                        : null);
                 PrepareOverrideContext(
                     new EditorEmbeddedContext(node, [], runtimeSource),
                     $"{pathLabel} · {boundary.Label} {presentation.Title}",
@@ -631,6 +640,59 @@ internal sealed class EditorContentPreparationService : IDisposable
                     value);
             }
         });
+
+    private Task<ProjectTreeNode> PromoteCollectionOverridesAsync(
+        ProjectTreeNode node,
+        PreparedBoundaryCollectionOwner owner,
+        IReadOnlyList<PreparedCollectionItemPathSegment> itemPath,
+        PreparedCollectionComponentBoundary boundary,
+        string name) =>
+        _operations.ExecuteAsync(() =>
+        {
+            if (itemPath.Count == 0)
+            {
+                throw new InvalidOperationException(
+                    $"Structured collection field '{owner.FieldId}' requires a target item.");
+            }
+            var address = PromotionAddress(
+                owner.Collection.JsonKey,
+                itemPath);
+            return _componentFields
+                .PromoteModuleCollectionOverridesToVariant(
+                    new ComponentOverridePromotionRequest(
+                        node,
+                        owner.FieldId,
+                        address,
+                        itemPath[^1].ItemId,
+                        boundary.PromotionBoundary,
+                        name));
+        });
+
+    private static StructuredCollectionAddress PromotionAddress(
+        string rootCollectionJsonKey,
+        IReadOnlyList<PreparedCollectionItemPathSegment> itemPath)
+    {
+        var owners = new List<StructuredCollectionOwnerSegment>();
+        var collectionJsonKey = rootCollectionJsonKey;
+        for (var index = 0; index < itemPath.Count - 1; index++)
+        {
+            var segment = itemPath[index];
+            owners.Add(new StructuredCollectionOwnerSegment(
+                collectionJsonKey,
+                segment.ItemId));
+            if (string.IsNullOrWhiteSpace(
+                    segment.ChildCollectionJsonKey))
+            {
+                throw new InvalidOperationException(
+                    $"Structured collection item '{segment.ItemId}' has no child collection address.");
+            }
+            collectionJsonKey = segment.ChildCollectionJsonKey;
+        }
+        return new StructuredCollectionAddress(
+            rootCollectionJsonKey,
+            owners,
+            collectionJsonKey);
+    }
 
     private static JsonObject FindCollectionItem(
         JsonArray root,
@@ -726,6 +788,12 @@ internal sealed class EditorContentPreparationService : IDisposable
         string VariantReferenceJsonKey,
         string OverridesJsonKey)
     {
+        public ComponentOverridePromotionBoundary PromotionBoundary =>
+            new(
+                SlotJsonKey,
+                VariantReferenceJsonKey,
+                OverridesJsonKey);
+
         public static PreparedCollectionComponentBoundary Separate(
             string label,
             string variantReferenceJsonKey,

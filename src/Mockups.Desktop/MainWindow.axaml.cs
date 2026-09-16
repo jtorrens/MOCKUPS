@@ -298,6 +298,7 @@ public partial class MainWindow : SukiWindow
             pathBrowser,
             domainDialogs,
             application.Operations,
+            componentClassFieldValues,
             () => _previewController.SelectedThemeId,
             _previewController.SetDesignPreviewTestValue);
         var fieldValues = new EditorFieldValueRouter(
@@ -401,7 +402,8 @@ public partial class MainWindow : SukiWindow
             () => _workspaceCoordinator
                 .DesignNavigationAvailability,
             NavigateDesignHistory,
-            _activeFieldControls);
+            _activeFieldControls,
+            domainDialogs.ShowRuntimeCreation);
         _collectionCards = new EditorCollectionCardFactory(
             data.Children,
             data.NodeCommands,

@@ -254,7 +254,7 @@ internal sealed class AppModuleRepository : IAppModuleRepository
         return record;
     }
 
-    private static void ValidateModuleMetadata(string metadataJson, string moduleId, string recordClassId)
+    internal static void ValidateModuleMetadata(string metadataJson, string moduleId, string recordClassId)
     {
         var metadata = JsonPath.ParseRequiredObject(metadataJson, $"Module '{moduleId}' metadata_json");
         var variants = VariantEnvelopeContract.Read(metadata, "variants", $"Module '{moduleId}'");

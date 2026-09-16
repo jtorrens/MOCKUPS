@@ -363,6 +363,10 @@ public interface IComponentDocumentStore
         IReadOnlyList<EditorShell.EmbeddedComponentSlotDefinition> slots,
         string fieldId,
         string value);
+    EditorShell.ProjectTreeNode PromoteModuleCollectionOverridesToVariant(
+        EditorShell.ComponentOverridePromotionRequest request);
+    EditorShell.ProjectTreeNode PromoteModuleFieldOverridesToVariant(
+        EditorShell.ComponentOverrideFieldPromotionRequest request);
 }
 
 public interface IRuntimeInputOwnerStore

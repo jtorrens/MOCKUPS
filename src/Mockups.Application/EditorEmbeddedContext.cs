@@ -83,4 +83,5 @@ public sealed record RuntimeComponentOverrideSource(
     string RecordClassId,
     string BaseConfigJson,
     JsonObject Overrides,
-    Func<JsonObject, Task> OverridesChanged);
+    Func<JsonObject, Task> OverridesChanged,
+    Func<string, Task<ProjectTreeNode>>? PromoteOverridesToVariant = null);

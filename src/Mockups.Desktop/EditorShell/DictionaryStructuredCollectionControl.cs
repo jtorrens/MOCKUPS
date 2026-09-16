@@ -467,7 +467,11 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                         item,
                         overridesKey,
                         $"{collection.ItemLabel} '{ItemId(item, itemIndex)}'");
-                    await _services.OpenRuntimeComponentOverrides(reference, currentOverrides, (next) =>
+                    await _services.OpenRuntimeComponentOverrides(
+                        definition,
+                        reference,
+                        currentOverrides,
+                        (next) =>
                     {
                         item[overridesKey] = next.DeepClone();
                         return PublishItemValuesAsync(

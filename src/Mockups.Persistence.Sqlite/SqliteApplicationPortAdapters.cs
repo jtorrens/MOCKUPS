@@ -472,6 +472,14 @@ internal sealed class SqliteComponentDocumentPort(
             slots,
             fieldId,
             value);
+
+    public ProjectTreeNode PromoteModuleCollectionOverridesToVariant(
+        ComponentOverridePromotionRequest request) =>
+        target.PromoteModuleCollectionOverridesToVariant(request);
+
+    public ProjectTreeNode PromoteModuleFieldOverridesToVariant(
+        ComponentOverrideFieldPromotionRequest request) =>
+        target.PromoteModuleFieldOverridesToVariant(request);
 }
 
 internal sealed class SqliteEditorLayoutPort(
