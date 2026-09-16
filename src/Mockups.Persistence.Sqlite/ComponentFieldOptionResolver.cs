@@ -28,13 +28,6 @@ internal sealed class ComponentFieldOptionResolver
                     projectId,
                     descriptor.DefaultValue),
             ValueKind.ComponentVariant
-                when EmbeddedComponentSlotCatalog.TryGet(
-                    descriptor.Id,
-                    out var slot) =>
-                _designOptions.GetComponentVariantReferenceOptionsByType(
-                    projectId,
-                    slot.EmbeddedComponentType),
-            ValueKind.ComponentVariant
                 or ValueKind.ComponentVariantSlot
                 when !string.IsNullOrWhiteSpace(
                     descriptor.ComponentVariantType) =>

@@ -1152,6 +1152,11 @@ function validateDictionaryFields(
         violations.push(`Dictionary field '${field.id}' number minimum exceeds its maximum.`);
       }
     }
+    if (field.valueKind === "ComponentVariantSlot" && !field.embeddedSlot) {
+      violations.push(
+        `Component Variant Slot field '${field.id}' must declare embeddedSlot metadata.`,
+      );
+    }
     if (field.embeddedSlot) {
       if (field.valueKind !== "ComponentVariantSlot") {
         violations.push(

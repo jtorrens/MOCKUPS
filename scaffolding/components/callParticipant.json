@@ -980,7 +980,12 @@
       "helpText": "",
       "valuePattern": "",
       "valuePatternMessage": "",
-      "embeddedSlot": null
+      "embeddedSlot": {
+        "componentType": "surface",
+        "label": "Surface",
+        "recordClassId": "component.surface",
+        "allowRuntimeInputForwarding": true
+      }
     },
     {
       "id": "component.callParticipant.media",
@@ -1003,7 +1008,12 @@
       "helpText": "",
       "valuePattern": "",
       "valuePatternMessage": "",
-      "embeddedSlot": null
+      "embeddedSlot": {
+        "componentType": "media",
+        "label": "Media",
+        "recordClassId": "component.media",
+        "allowRuntimeInputForwarding": true
+      }
     },
     {
       "id": "component.callParticipant.avatar",
@@ -1026,7 +1036,12 @@
       "helpText": "",
       "valuePattern": "",
       "valuePatternMessage": "",
-      "embeddedSlot": null
+      "embeddedSlot": {
+        "componentType": "avatar",
+        "label": "Avatar",
+        "recordClassId": "component.avatar",
+        "allowRuntimeInputForwarding": true
+      }
     },
     {
       "id": "component.callParticipant.statusLabel",
@@ -1049,7 +1064,12 @@
       "helpText": "",
       "valuePattern": "",
       "valuePatternMessage": "",
-      "embeddedSlot": null
+      "embeddedSlot": {
+        "componentType": "label",
+        "label": "Status label",
+        "recordClassId": "component.label",
+        "allowRuntimeInputForwarding": true
+      }
     },
     {
       "id": "component.callParticipant.nameLabel",
@@ -1072,7 +1092,12 @@
       "helpText": "",
       "valuePattern": "",
       "valuePatternMessage": "",
-      "embeddedSlot": null
+      "embeddedSlot": {
+        "componentType": "label",
+        "label": "Name label",
+        "recordClassId": "component.label",
+        "allowRuntimeInputForwarding": true
+      }
     }
   ],
   "editorLayout": {

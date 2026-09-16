@@ -18710,7 +18710,12 @@
       "helpText": "",
       "valuePattern": "",
       "valuePatternMessage": "",
-      "embeddedSlot": null
+      "embeddedSlot": {
+        "componentType": "surface",
+        "label": "Surface",
+        "recordClassId": "component.surface",
+        "allowRuntimeInputForwarding": true
+      }
     }
   ],
   "editorLayout": {
