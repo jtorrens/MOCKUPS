@@ -395,6 +395,7 @@ public partial class MainWindow : SukiWindow
                     node,
                     rebuildTree,
                     "editor-header"),
+            ReloadAndSelectAsync,
             ReturnToEmbeddedOwner,
             ShowEmbeddedContext,
             _variantHistory.Snapshots,

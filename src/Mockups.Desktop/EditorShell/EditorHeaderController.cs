@@ -21,6 +21,7 @@ internal sealed class EditorHeaderController
     private readonly Func<ProjectTreeNode, ProjectTreeNode> _preferredModuleVariantNode;
     private readonly EditorEmbeddedUsageNavigator _embeddedUsageNavigator;
     private readonly Action<ProjectTreeNode, bool> _showNode;
+    private readonly Func<ProjectTreeNode, Task> _reloadAndSelect;
     private readonly Action<ProjectTreeNode> _returnToEmbeddedOwner;
     private readonly Action<EditorEmbeddedContext> _showEmbeddedContext;
     private readonly Func<ProjectTreeNode, IReadOnlyList<EditorVariantHistorySnapshot>> _variantHistory;
@@ -42,6 +43,7 @@ internal sealed class EditorHeaderController
         Func<ProjectTreeNode, ProjectTreeNode> preferredModuleVariantNode,
         EditorEmbeddedUsageNavigator embeddedUsageNavigator,
         Action<ProjectTreeNode, bool> showNode,
+        Func<ProjectTreeNode, Task> reloadAndSelect,
         Action<ProjectTreeNode> returnToEmbeddedOwner,
         Action<EditorEmbeddedContext> showEmbeddedContext,
         Func<ProjectTreeNode, IReadOnlyList<EditorVariantHistorySnapshot>> variantHistory,
@@ -61,6 +63,7 @@ internal sealed class EditorHeaderController
         _preferredModuleVariantNode = preferredModuleVariantNode;
         _embeddedUsageNavigator = embeddedUsageNavigator;
         _showNode = showNode;
+        _reloadAndSelect = reloadAndSelect;
         _returnToEmbeddedOwner = returnToEmbeddedOwner;
         _showEmbeddedContext = showEmbeddedContext;
         _variantHistory = variantHistory;
@@ -457,7 +460,7 @@ internal sealed class EditorHeaderController
             var name = draft.Values["core.name"];
             var variant = await source
                 .PromoteOverridesToVariant!(name);
-            _showNode(variant, true);
+            await _reloadAndSelect(variant);
         };
         return button;
     }
