@@ -41,7 +41,8 @@ var tests = new (string Name, Action Run)[]
     ("Runtime scalar patterns validate defaults and authored values", RuntimeScalarPatternsValidateValues),
     ("Runtime contract transitions retain only current values and animation owners", RuntimeContractTransitionsRetainCurrentOwners),
     ("structured collection mutations update nested content and animation together", StructuredCollectionMutationsAreAtomicDocuments),
-    ("Production collection creation replaces Preview fixtures through declared fields", ProductionCollectionCreationReplacesPreviewFixtures),
+    ("Production collection creation requires Actors but not media", ProductionCollectionCreationRequiresActorsButNotMedia),
+    ("Production media falls back to the declared Design default", ProductionMediaFallsBackToDesignDefault),
     ("Shot Manager readonly documents expose only the strict stable projection", ShotManagerReadonlyDocumentsAreStrict),
     ("editor operations execute away from the caller thread", EditorOperationsRunOnWorker),
     ("editor operations preserve their submission order", EditorOperationsAreSerialized),
@@ -49,7 +50,7 @@ var tests = new (string Name, Action Run)[]
     ("disposing editor operations cancels queued work", DisposeCancelsQueuedEditorOperations),
 };
 
-static void ProductionCollectionCreationReplacesPreviewFixtures()
+static void ProductionCollectionCreationRequiresActorsButNotMedia()
 {
     var actorOptions = new[]
     {
@@ -89,12 +90,10 @@ static void ProductionCollectionCreationReplacesPreviewFixtures()
         participantPrototype,
         actorOptions);
     Equal(true, participantDefinition.RequiresConfirmation);
-    Equal(2, participantDefinition.Fields.Count);
+    Equal(1, participantDefinition.Fields.Count);
     var participantValues = participantDefinition.Fields.ToDictionary(
         (field) => field.Definition.Id,
-        (field) => field.Definition.ValueKind == ValueKind.RecordReference
-            ? "actor-production"
-            : "/project/media/participant.mp4",
+        (_) => "actor-production",
         StringComparer.Ordinal);
     var participant = ProductionRuntimeCreationContract.CompleteStructuredCollectionItem(
         "participant-creation",
@@ -103,7 +102,9 @@ static void ProductionCollectionCreationReplacesPreviewFixtures()
         actorOptions,
         new RecordCreationDraft("participant-creation", participantValues));
     Equal("actor-production", participant["actorId"]?.GetValue<string>());
-    Equal("/project/media/participant.mp4", participant["mediaSource"]?.GetValue<string>());
+    Equal(
+        "system-preview://media/test-video.mp4",
+        participant["mediaSource"]?.GetValue<string>());
 
     var reactions = new RuntimeInputCollectionDefinition(
         "reactions",
@@ -160,6 +161,66 @@ static void ProductionCollectionCreationReplacesPreviewFixtures()
     Equal(
         "actor-production",
         message["reactions"]?[0]?["actorId"]?.GetValue<string>());
+}
+
+static void ProductionMediaFallsBackToDesignDefault()
+{
+    var mediaDefinition = new JsonObject
+    {
+        ["id"] = "mediaSource",
+        ["label"] = "Media source",
+        ["jsonKey"] = "mediaSource",
+        ["kind"] = "mediaFilePath",
+        ["valueKind"] = nameof(ValueKind.MediaFilePath),
+        ["defaultValue"] = "system-preview://media/test-video.mp4",
+        ["source"] = "runtime",
+        ["animatable"] = true,
+        ["animationInterpolations"] = new JsonArray("hold"),
+    };
+    var runtime = new JsonObject
+    {
+        ["inputs"] = new JsonArray(mediaDefinition),
+        ["collections"] = new JsonArray(),
+        ["mediaSource"] = "/missing/production.mov",
+    };
+    var animation = new JsonObject
+    {
+        ["schemaVersion"] = 2,
+        ["tracks"] = new JsonArray
+        {
+            new JsonObject
+            {
+                ["id"] = "track-media",
+                ["fieldId"] = "mediaSource",
+                ["keyframes"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["id"] = "keyframe-media",
+                        ["frame"] = 0,
+                        ["value"] = "/missing/keyframe.mov",
+                        ["interpolation"] = "hold",
+                        ["enabled"] = true,
+                    },
+                },
+            },
+        },
+    };
+
+    RuntimePreviewDocumentContract.ApplyProductionMediaFallback(
+        runtime,
+        new JsonObject(),
+        animation,
+        (_, reference) => reference.StartsWith(
+            SystemPreviewFixtureCatalog.MediaScheme,
+            StringComparison.Ordinal));
+
+    Equal(
+        "system-preview://media/test-video.mp4",
+        runtime["mediaSource"]?.GetValue<string>());
+    Equal(
+        "system-preview://media/test-video.mp4",
+        animation["tracks"]?[0]?["keyframes"]?[0]?["value"]?.GetValue<string>());
 }
 
 static void ShotManagerReadonlyDocumentsAreStrict()

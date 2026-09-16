@@ -142,7 +142,9 @@ Actor and media Test Values resolve only through the System Preview fixture
 catalog installed in App Support. They never store a Production Actor id or a
 Project media path. Media file and media-directory Test Values use bounded
 fixture selectors instead of filesystem browsers. Production payloads reject
-System Preview actor ids and `system-preview://` media references.
+System Preview actor ids. They may carry a `system-preview://` media reference
+only when the effective Production Runtime boundary has selected that exact
+Design `defaultValue` for an empty or unavailable authored media value.
 
 Runtime Inputs remain product inputs. The Design Preview surface does not
 create a separate input contract and does not own Component-specific behavior.

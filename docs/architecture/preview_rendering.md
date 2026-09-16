@@ -438,17 +438,25 @@ current.
 
 Design preparation may resolve only the synthetic Actor and media identities
 declared by the System Preview fixture catalog. The payload carries the exact
-App Support fixture root, and `system-preview://` is resolved only while that
-root is present. Production preparation never carries it and rejects those
-identities rather than falling back to Project data. The current-database
-validator applies the same rule to the single effective Production Runtime
-document before Preview resolution. Conditional collection fields that are not
-enabled by their declared item discriminator are inert: neither reference
-resolution nor fixture-isolation validation consumes their placeholder value.
-Every Production Runtime write validates that same effective document before
-persistence. Structured-item creation first completes any recursively embedded
-fixture-owned required values through the shared creation contract, so Preview
-validation remains a strict boundary and never becomes a repair path.
+App Support fixture root. Production continues to reject System Preview Actor
+identities. Media is different: the single Runtime preparation boundary checks
+each declared image, media-file and media-directory value against its Project
+context. An empty or unavailable value is replaced in the effective document
+by that field's exact Design `defaultValue`, including structured items, nested
+Runtime contracts and media-valued animation keyframes. When that default uses
+`system-preview://`, the Production payload carries the bounded App Support
+fixture root required to resolve it. Persisted Production content remains
+unchanged; repositories, concrete resolvers, the bridge and the renderer never
+select or repair the fallback independently.
+
+The current-database validator applies Actor fixture isolation to the single
+effective Production Runtime document before Preview resolution. Conditional
+collection fields that are not enabled by their declared item discriminator
+are inert: neither reference resolution nor fixture-isolation validation
+consumes their placeholder value. Every Production Runtime write validates
+that same effective document before persistence. Structured-item creation
+first completes any recursively embedded required Actor through the shared
+creation contract; media never blocks creation.
 
 Preview Setup resource options follow the same rule. Device options and their
 exact metrics, Theme options and the Project media root are loaded together on

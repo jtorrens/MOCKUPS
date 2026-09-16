@@ -2,6 +2,7 @@ using Mockups.DesktopEditorShell.Common;
 using Mockups.DesktopEditorShell.Data;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.Json.Nodes;
 
@@ -89,6 +90,64 @@ internal sealed class DesignPreviewPayloadDataSource
             new NestedRuntimeRecordReferenceResolver(
                 _actorDataSource,
                 projectPaths);
+    }
+
+    public void ApplyProductionMediaFallback(
+        JsonObject runtime,
+        JsonObject config,
+        JsonObject animation,
+        string projectMediaRoot)
+    {
+        RuntimePreviewDocumentContract.ApplyProductionMediaFallback(
+            runtime,
+            config,
+            animation,
+            (valueKind, reference) => MediaExists(
+                valueKind,
+                reference,
+                projectMediaRoot));
+    }
+
+    private bool MediaExists(
+        ValueKind valueKind,
+        string reference,
+        string projectMediaRoot)
+    {
+        if (reference.StartsWith(
+                SystemPreviewFixtureCatalog.MediaScheme,
+                StringComparison.Ordinal))
+        {
+            if (!SystemPreviewFixtureCatalog.IsMediaReference(reference))
+            {
+                return false;
+            }
+            var relative = reference[
+                SystemPreviewFixtureCatalog.MediaScheme.Length..];
+            var root = Path.GetFullPath(SystemPreviewFixtureCatalog.Root);
+            var path = Path.GetFullPath(Path.Combine(root, relative));
+            var withinRoot = Path.GetRelativePath(root, path);
+            if (withinRoot.StartsWith("..", StringComparison.Ordinal)
+                || Path.IsPathFullyQualified(withinRoot))
+            {
+                return false;
+            }
+            return valueKind == ValueKind.MediaDirectoryPath
+                ? Directory.Exists(path)
+                : File.Exists(path);
+        }
+
+        if (Uri.TryCreate(reference, UriKind.Absolute, out var uri)
+            && uri.Scheme is "http" or "https" or "data")
+        {
+            return true;
+        }
+        var localPath = _projectPaths.ResolveLocalPath(
+            reference,
+            projectMediaRoot);
+        return !string.IsNullOrWhiteSpace(localPath)
+            && (valueKind == ValueKind.MediaDirectoryPath
+                ? Directory.Exists(localPath)
+                : File.Exists(localPath));
     }
 
     public DesignPreviewThemeContext? LoadThemeContext(

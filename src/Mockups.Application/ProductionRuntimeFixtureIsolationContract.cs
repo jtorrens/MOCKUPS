@@ -72,16 +72,6 @@ public static class ProductionRuntimeFixtureIsolationContract
                 throw new InvalidOperationException(
                     $"{owner} cannot reference System Preview Actor '{text}'.");
             }
-            if (input.ValueKind is ValueKind.ImageFilePath
-                    or ValueKind.MediaFilePath
-                    or ValueKind.MediaDirectoryPath
-                && text.StartsWith(
-                    SystemPreviewFixtureCatalog.MediaScheme,
-                    StringComparison.Ordinal))
-            {
-                throw new InvalidOperationException(
-                    $"{owner} cannot reference System Preview media '{text}'.");
-            }
         }
 
         if (input.ValueKind != ValueKind.StructuredCollection

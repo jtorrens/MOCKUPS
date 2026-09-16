@@ -377,13 +377,20 @@ checked, but ownership remains with the Screen instance.
 
 Creating a structured Runtime collection item in a Screen is one prepared
 Production creation workflow. The generic item prototype is inspected
-recursively before mutation. Any required Actor or media value inherited from
-a Design fixture is collected through the shared Dictionary-backed creation
-form and written to both the item's effective value and its embedded Runtime
-definition default where that definition travels with the item. Cancelling the
-form creates nothing. The completed effective Runtime document must pass
-fixture isolation before the mutation is persisted; no collection, Module or
-Component may replace a fixture identity implicitly.
+recursively before mutation. Any required Actor inherited from a Design
+fixture is collected through the shared Dictionary-backed creation form and
+written to both the item's effective value and its embedded Runtime definition
+default where that definition travels with the item. Media inputs are never a
+creation requirement. Cancelling the form creates nothing.
+
+Production preserves the authored media value, including an empty or currently
+unavailable path. When preparing the effective Runtime document, an empty or
+unavailable image, media-file or media-directory value resolves to that exact
+field's declared Design `defaultValue`. The same rule applies to structured
+items, nested Runtime contracts and media-valued animation keyframes. This is
+an effective-document projection only: it never repairs or rewrites persisted
+Production content. Actor fixture isolation remains strict; media fixture
+references are permitted only as the declared Design fallback.
 
 The first Preview tab is an authoring host, not a Preview-owned data store.
 

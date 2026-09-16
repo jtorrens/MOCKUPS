@@ -282,19 +282,18 @@ public static class ProductionRuntimeCreationContract
         IReadOnlyList<FieldOption> actorOptions,
         List<Requirement> requirements)
     {
-        if ((IsProductionActor(input) || IsProductionMedia(input))
+        if (IsProductionActor(input)
             && IsSystemPreviewValue(value, input))
         {
-            var options = IsProductionActor(input) ? actorOptions : input.Options;
             var definition = new FieldDefinition(
                 FieldId(path),
                 label,
                 input.ValueKind,
                 DefaultValue: "",
-                Options: options,
-                RecordReference: IsProductionActor(input)
-                    ? new RecordReferenceDefinition("actors", AllowEmpty: false)
-                    : null,
+                Options: actorOptions,
+                RecordReference: new RecordReferenceDefinition(
+                    "actors",
+                    AllowEmpty: false),
                 HelpText: input.HelpText);
             requirements.Add(new Requirement(
                 defaultPath is null
@@ -384,20 +383,13 @@ public static class ProductionRuntimeCreationContract
         input.ValueKind == ValueKind.RecordReference
         && input.TableId.Equals("actors", StringComparison.Ordinal);
 
-    private static bool IsProductionMedia(ComponentInputDefinition input) =>
-        input.ValueKind is ValueKind.ImageFilePath
-            or ValueKind.MediaFilePath
-            or ValueKind.MediaDirectoryPath;
-
     private static bool IsSystemPreviewValue(
         JsonNode? value,
         ComponentInputDefinition input) =>
         value is JsonValue scalar
         && scalar.TryGetValue<string>(out var text)
-        && (IsProductionActor(input)
-            ? SystemPreviewFixtureCatalog.IsActor(text)
-            : IsProductionMedia(input)
-              && text.StartsWith(SystemPreviewFixtureCatalog.MediaScheme, StringComparison.Ordinal));
+        && IsProductionActor(input)
+        && SystemPreviewFixtureCatalog.IsActor(text);
 
     private static IReadOnlyList<PathPart>? DefinitionDefaultPath(
         JsonObject runtime,

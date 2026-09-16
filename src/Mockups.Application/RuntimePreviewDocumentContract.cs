@@ -10,6 +10,62 @@ namespace Mockups.DesktopEditorShell.EditorShell;
 /// </summary>
 public static class RuntimePreviewDocumentContract
 {
+    public static void ApplyProductionMediaFallback(
+        JsonObject runtimeContract,
+        JsonObject effectiveConfig,
+        JsonObject animation,
+        Func<ValueKind, string, bool> isAvailable)
+    {
+        ApplyMediaFallbackToContract(
+            runtimeContract,
+            effectiveConfig,
+            isAvailable);
+        foreach (var (_, child) in runtimeContract)
+        {
+            ApplyMediaFallbackToNestedContracts(
+                child,
+                isAvailable);
+        }
+
+        var targets = RuntimeInputAnimationValueContract.ReadTargets(
+                runtimeContract,
+                effectiveConfig,
+                runtimeContract)
+            .ToDictionary(
+                (target) => (target.FieldId, target.TargetId));
+        foreach (var track in JsonPath.RequiredArray(
+                     animation,
+                     "tracks",
+                     "Production Runtime animation").OfType<JsonObject>())
+        {
+            var key = (
+                JsonPath.RequiredString(
+                    track,
+                    "fieldId",
+                    "Production Runtime animation track"),
+                track["targetId"]?.GetValue<string>() ?? "");
+            if (!targets.TryGetValue(key, out var target)
+                || !IsMedia(target.Input.ValueKind))
+            {
+                continue;
+            }
+            foreach (var keyframe in JsonPath.RequiredArray(
+                         track,
+                         "keyframes",
+                         $"Production Runtime animation track '{key.Item1}'")
+                     .OfType<JsonObject>())
+            {
+                if (!Available(
+                        target.Input.ValueKind,
+                        keyframe["value"],
+                        isAvailable))
+                {
+                    keyframe["value"] = target.Input.DefaultValue;
+                }
+            }
+        }
+    }
+
     public static JsonObject PrepareFixture(
         JsonObject previewFixture,
         JsonObject effectiveConfig,
@@ -59,6 +115,139 @@ public static class RuntimePreviewDocumentContract
             effectiveConfig,
             componentVariantConfig);
         return prepared;
+    }
+
+    private static void ApplyMediaFallbackToContract(
+        JsonObject runtime,
+        JsonObject config,
+        Func<ValueKind, string, bool> isAvailable)
+    {
+        foreach (var input in RuntimeInputDefinitionReader.ReadInputs(
+                     runtime,
+                     config,
+                     includeHidden: true))
+        {
+            if (input.Source != ComponentInputSource.Runtime
+                || !CollectionFieldAvailability.IsEnabled(runtime, input))
+            {
+                continue;
+            }
+            ApplyMediaFallback(runtime, input, isAvailable);
+            ApplyStructuredMediaFallback(
+                runtime[input.JsonKey],
+                input,
+                isAvailable);
+        }
+
+        foreach (var collection in RuntimeInputDefinitionReader.ReadCollections(
+                     runtime,
+                     config,
+                     includeHidden: true))
+        {
+            foreach (var item in DesignPreviewTestValues.CurrentCollectionItems(
+                         runtime,
+                         collection))
+            {
+                ApplyMediaFallbackToCollectionItem(
+                    item,
+                    collection,
+                    isAvailable);
+            }
+        }
+    }
+
+    private static void ApplyMediaFallbackToCollectionItem(
+        JsonObject item,
+        RuntimeInputCollectionDefinition collection,
+        Func<ValueKind, string, bool> isAvailable)
+    {
+        foreach (var field in collection.Fields.Where((field) =>
+                     field.Source == ComponentInputSource.Runtime
+                     && CollectionFieldAvailability.IsEnabled(item, field)))
+        {
+            ApplyMediaFallback(item, field, isAvailable);
+            ApplyStructuredMediaFallback(
+                item[field.JsonKey],
+                field,
+                isAvailable);
+        }
+    }
+
+    private static void ApplyStructuredMediaFallback(
+        JsonNode? value,
+        ComponentInputDefinition input,
+        Func<ValueKind, string, bool> isAvailable)
+    {
+        if (input.ValueKind != ValueKind.StructuredCollection
+            || input.StructuredCollection is null
+            || value is not JsonArray items)
+        {
+            return;
+        }
+        foreach (var item in items.OfType<JsonObject>())
+        {
+            ApplyMediaFallbackToCollectionItem(
+                item,
+                input.StructuredCollection,
+                isAvailable);
+        }
+    }
+
+    private static void ApplyMediaFallback(
+        JsonObject owner,
+        ComponentInputDefinition input,
+        Func<ValueKind, string, bool> isAvailable)
+    {
+        if (!IsMedia(input.ValueKind)
+            || Available(
+                input.ValueKind,
+                owner[input.JsonKey],
+                isAvailable))
+        {
+            return;
+        }
+        owner[input.JsonKey] = input.DefaultValue;
+    }
+
+    private static bool Available(
+        ValueKind valueKind,
+        JsonNode? value,
+        Func<ValueKind, string, bool> isAvailable) =>
+        value is JsonValue scalar
+        && scalar.TryGetValue<string>(out var text)
+        && !string.IsNullOrWhiteSpace(text)
+        && isAvailable(valueKind, text);
+
+    private static bool IsMedia(ValueKind valueKind) =>
+        valueKind is ValueKind.ImageFilePath
+            or ValueKind.MediaFilePath
+            or ValueKind.MediaDirectoryPath;
+
+    private static void ApplyMediaFallbackToNestedContracts(
+        JsonNode? node,
+        Func<ValueKind, string, bool> isAvailable)
+    {
+        if (node is JsonArray array)
+        {
+            foreach (var child in array)
+            {
+                ApplyMediaFallbackToNestedContracts(child, isAvailable);
+            }
+            return;
+        }
+        if (node is not JsonObject value) return;
+
+        if (value["inputs"] is JsonArray || value["collections"] is JsonArray)
+        {
+            ApplyMediaFallbackToContract(
+                value,
+                new JsonObject(),
+                isAvailable);
+        }
+        foreach (var (_, child) in value)
+        {
+            ApplyMediaFallbackToNestedContracts(child, isAvailable);
+        }
     }
 
     private static void PrepareNestedRuntimeContracts(

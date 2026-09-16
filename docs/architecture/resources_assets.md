@@ -59,6 +59,13 @@ path resolver; absolute references retain their authored workstation location.
 Missing targets remain listed and are marked explicitly so stale authored
 references can be found without repairing or deleting them.
 
+Missing Runtime media remains authored and visible in this inventory, but it
+does not block Production Preview or render preparation. The one effective
+Runtime-document boundary projects an empty or unavailable declared media
+value to that field's Design `defaultValue`. This fallback does not apply to
+Project-owned Actors, fonts, icons, wallpaper, Shot reference video or any
+other resource class, and it never changes the stored media reference.
+
 Each result retains its exact owner, authoring surface, field, nested slot path
 and stable structured-item id. The UI can therefore navigate to the owning
 editor and focus that exact field or item without matching labels, types or
