@@ -336,7 +336,9 @@ internal sealed class EditorContentPreparationService : IDisposable
         foreach (var field in rootFields.Values)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (EmbeddedComponentSlotCatalog.TryGet(
+            if (field.Definition.ValueKind
+                    == ValueKind.ComponentVariantSlot
+                && EmbeddedComponentSlotCatalog.TryGet(
                     field.Definition.Id,
                     out var slot))
             {
@@ -435,7 +437,9 @@ internal sealed class EditorContentPreparationService : IDisposable
         foreach (var field in fields.Values)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (EmbeddedComponentSlotCatalog.TryGet(
+            if (field.Definition.ValueKind
+                    == ValueKind.ComponentVariantSlot
+                && EmbeddedComponentSlotCatalog.TryGet(
                     field.Definition.Id,
                     out var nestedSlot)
                 && (field.IsHighlighted
@@ -555,7 +559,8 @@ internal sealed class EditorContentPreparationService : IDisposable
                         boundary,
                         changed),
                     owner.Context is null
-                        && node.Kind == ProjectTreeNodeKind.ModuleVariant
+                        && (node.Kind is ProjectTreeNodeKind.ModuleVariant
+                            or ProjectTreeNodeKind.ComponentVariant)
                         ? (name) => PromoteCollectionOverridesAsync(
                             node,
                             owner,
@@ -658,13 +663,14 @@ internal sealed class EditorContentPreparationService : IDisposable
                 owner.Collection.JsonKey,
                 itemPath);
             return _componentFields
-                .PromoteModuleCollectionOverridesToVariant(
+                .PromoteOverridesToVariant(
                     new ComponentOverridePromotionRequest(
                         node,
-                        owner.FieldId,
-                        address,
-                        itemPath[^1].ItemId,
-                        boundary.PromotionBoundary,
+                        new ComponentOverrideCollectionPromotionTarget(
+                            owner.FieldId,
+                            address,
+                            itemPath[^1].ItemId,
+                            boundary.PromotionBoundary),
                         name));
         });
 

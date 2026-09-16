@@ -5,15 +5,23 @@ public sealed record ComponentOverridePromotionBoundary(
     string VariantReferenceJsonKey,
     string OverridesJsonKey);
 
-public sealed record ComponentOverridePromotionRequest(
-    ProjectTreeNode OwnerNode,
+public abstract record ComponentOverridePromotionTarget;
+
+public sealed record ComponentOverrideFieldPromotionTarget(
+    string FieldId) : ComponentOverridePromotionTarget;
+
+public sealed record ComponentOverrideCollectionPromotionTarget(
     string CollectionFieldId,
     StructuredCollectionAddress CollectionAddress,
     string ItemId,
-    ComponentOverridePromotionBoundary Boundary,
-    string Name);
+    ComponentOverridePromotionBoundary Boundary)
+    : ComponentOverridePromotionTarget;
 
-public sealed record ComponentOverrideFieldPromotionRequest(
+public sealed record ComponentOverrideSlotPathPromotionTarget(
+    IReadOnlyList<EmbeddedComponentSlotDefinition> Slots)
+    : ComponentOverridePromotionTarget;
+
+public sealed record ComponentOverridePromotionRequest(
     ProjectTreeNode OwnerNode,
-    string FieldId,
+    ComponentOverridePromotionTarget Target,
     string Name);

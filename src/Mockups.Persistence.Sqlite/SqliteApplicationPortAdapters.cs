@@ -473,13 +473,17 @@ internal sealed class SqliteComponentDocumentPort(
             fieldId,
             value);
 
-    public ProjectTreeNode PromoteModuleCollectionOverridesToVariant(
+    public ProjectTreeNode PromoteOverridesToVariant(
         ComponentOverridePromotionRequest request) =>
-        target.PromoteModuleCollectionOverridesToVariant(request);
+        target.PromoteOverridesToVariant(request);
 
-    public ProjectTreeNode PromoteModuleFieldOverridesToVariant(
-        ComponentOverrideFieldPromotionRequest request) =>
-        target.PromoteModuleFieldOverridesToVariant(request);
+    public bool HasEmbeddedComponentOverrides(
+        ProjectTreeNode ownerNode,
+        IReadOnlyList<EmbeddedComponentSlotDefinition> slots) =>
+        target.HasEmbeddedComponentOverrides(
+            ownerNode,
+            slots);
+
 }
 
 internal sealed class SqliteEditorLayoutPort(

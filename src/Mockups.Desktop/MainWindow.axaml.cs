@@ -396,6 +396,15 @@ public partial class MainWindow : SukiWindow
                     rebuildTree,
                     "editor-header"),
             ReloadAndSelectAsync,
+            (context, name) =>
+                application.Operations.ExecuteAsync(() =>
+                    data.Components
+                        .PromoteOverridesToVariant(
+                            new ComponentOverridePromotionRequest(
+                                context.OwnerNode,
+                                new ComponentOverrideSlotPathPromotionTarget(
+                                    context.Slots),
+                                name))),
             ReturnToEmbeddedOwner,
             ShowEmbeddedContext,
             _variantHistory.Snapshots,

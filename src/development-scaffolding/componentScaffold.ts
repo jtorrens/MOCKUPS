@@ -1153,8 +1153,13 @@ function validateDictionaryFields(
       }
     }
     if (field.embeddedSlot) {
-      if (field.componentVariantType
-          && field.componentVariantType !== field.embeddedSlot.componentType) {
+      if (field.valueKind !== "ComponentVariantSlot") {
+        violations.push(
+          `Embedded slot field '${field.id}' must use ComponentVariantSlot.`,
+        );
+      }
+      if (!field.componentVariantType
+          || field.componentVariantType !== field.embeddedSlot.componentType) {
         violations.push(
           `Embedded slot field '${field.id}' must use the same componentVariantType.`,
         );

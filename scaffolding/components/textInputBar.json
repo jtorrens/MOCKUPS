@@ -650,20 +650,19 @@
     {
       "id": "component.textInputBar.barSurface.editor",
       "label": "Bar surface",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "textInput",
-        "barSurfaceSlot",
-        "variantReference"
+        "barSurfaceSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_surface::variant::default\",\"overrides\":{\"surface\":{\"backgroundAlpha\":1,\"borderAlpha\":1,\"backgroundColorToken\":\"theme.colors.switch\"},\"style\":{\"cornerRadiusToken\":\"theme.radii.none\",\"shadowEnabled\":true}}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "surface",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",
@@ -702,20 +701,19 @@
     {
       "id": "component.textInputBar.iconBar.editor",
       "label": "Icon bar",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "textInput",
-        "iconBarSlot",
-        "variantReference"
+        "iconBarSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_iconBar::variant::default\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "iconBar",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",
@@ -818,20 +816,19 @@
     {
       "id": "component.textInputBar.textBox.editor",
       "label": "Text box variant",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "textInput",
-        "textBoxSlot",
-        "variantReference"
+        "textBoxSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_textBox::variant::default_copy\",\"overrides\":{\"textBox\":{\"maxLines\":3,\"placeholder\":\"Message\",\"iconGap\":\"theme.spacing.s\",\"leftIconRowSlot\":{\"variantReference\":\"component_project_foqn_s2_iconRow::variant::default\",\"overrides\":{\"iconRow\":{\"items\":[],\"gap\":\"theme.spacing.s\",\"orientation\":\"horizontal\"}}},\"rightIconRowSlot\":{\"variantReference\":\"component_project_foqn_s2_iconRow::variant::default\",\"overrides\":{\"iconRow\":{\"items\":[{\"id\":\"button_attachment\",\"buttonVariantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"iconToken\":\"chat_attach\",\"text\":\"\",\"iconSizeToken\":\"theme.iconSizes.m\",\"textSizeToken\":\"theme.typography.sizes.s\",\"buttonOverrides\":{}}],\"gap\":\"theme.spacing.s\",\"orientation\":\"horizontal\"}}}}}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "textBox",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",

@@ -421,7 +421,11 @@ internal sealed class EditorLayoutCardFactory
             or ProjectTreeNodeKind.ComponentVariant
             or ProjectTreeNodeKind.Module
             or ProjectTreeNodeKind.ModuleVariant;
-        var hasEmbeddedSlot = EmbeddedComponentSlotCatalog.TryGet(field.Definition.Id, out _);
+        var hasEmbeddedSlot = field.Definition.ValueKind
+                == ValueKind.ComponentVariantSlot
+            && EmbeddedComponentSlotCatalog.TryGet(
+                field.Definition.Id,
+                out _);
         var services = _dictionaryFieldServices.ForPreparedNode(
             node,
             dictionaryContext,

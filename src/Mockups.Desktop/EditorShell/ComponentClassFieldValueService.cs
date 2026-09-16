@@ -190,13 +190,9 @@ internal sealed class ComponentClassFieldValueService
         EditorEmbeddedContext context) =>
         _embeddedDocuments.ClearOverridesAsync(context);
 
-    public ProjectTreeNode PromoteModuleCollectionOverridesToVariant(
+    public ProjectTreeNode PromoteOverridesToVariant(
         ComponentOverridePromotionRequest request) =>
-        _documents.PromoteModuleCollectionOverridesToVariant(request);
-
-    public ProjectTreeNode PromoteModuleFieldOverridesToVariant(
-        ComponentOverrideFieldPromotionRequest request) =>
-        _documents.PromoteModuleFieldOverridesToVariant(request);
+        _documents.PromoteOverridesToVariant(request);
 
     public void CommitEmbeddedFieldValue(
         EditorEmbeddedContext context,

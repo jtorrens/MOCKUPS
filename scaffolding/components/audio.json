@@ -64,20 +64,22 @@
           "offsetX": 4,
           "offsetY": 0
         },
-        "overrides": {
-          "avatar": {
-            "defaultSize": 32,
-            "labelSlot": {
-              "showLabel": false,
-              "showSubtext": false
+        "componentSlot": {
+          "variantReference": "component_project_foqn_s2_avatar::variant::default",
+          "overrides": {
+            "avatar": {
+              "defaultSize": 32,
+              "labelSlot": {
+                "showLabel": false,
+                "showSubtext": false
+              }
+            },
+            "style": {
+              "shadowEnabled": false,
+              "reliefEnabled": false
             }
-          },
-          "style": {
-            "shadowEnabled": false,
-            "reliefEnabled": false
           }
-        },
-        "variantReference": "component_project_foqn_s2_avatar::variant::default"
+        }
       },
       "badgeSlot": {
         "placement": {
@@ -87,8 +89,10 @@
           "offsetX": -5,
           "offsetY": -5
         },
-        "overrides": {},
-        "variantReference": "component_project_foqn_s2_badge::variant::default"
+        "componentSlot": {
+          "variantReference": "component_project_foqn_s2_badge::variant::default",
+          "overrides": {}
+        }
       },
       "progressKnobSize": 12,
       "backgroundColorToken": "theme.colors.surface",
@@ -179,20 +183,22 @@
             "offsetX": 4,
             "offsetY": 0
           },
-          "overrides": {
-            "avatar": {
-              "defaultSize": 32,
-              "labelSlot": {
-                "showLabel": false,
-                "showSubtext": false
+          "componentSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::default",
+            "overrides": {
+              "avatar": {
+                "defaultSize": 32,
+                "labelSlot": {
+                  "showLabel": false,
+                  "showSubtext": false
+                }
+              },
+              "style": {
+                "shadowEnabled": false,
+                "reliefEnabled": false
               }
-            },
-            "style": {
-              "shadowEnabled": false,
-              "reliefEnabled": false
             }
-          },
-          "variantReference": "component_project_foqn_s2_avatar::variant::default"
+          }
         },
         "badgeSlot": {
           "placement": {
@@ -202,8 +208,10 @@
             "offsetX": -5,
             "offsetY": -5
           },
-          "overrides": {},
-          "variantReference": "component_project_foqn_s2_badge::variant::default"
+          "componentSlot": {
+            "variantReference": "component_project_foqn_s2_badge::variant::default",
+            "overrides": {}
+          }
         },
         "progressKnobSize": 12,
         "backgroundColorToken": "theme.colors.surface",
@@ -296,20 +304,22 @@
               "offsetX": 4,
               "offsetY": 0
             },
-            "overrides": {
-              "avatar": {
-                "defaultSize": 32,
-                "labelSlot": {
-                  "showLabel": false,
-                  "showSubtext": false
+            "componentSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::default",
+              "overrides": {
+                "avatar": {
+                  "defaultSize": 32,
+                  "labelSlot": {
+                    "showLabel": false,
+                    "showSubtext": false
+                  }
+                },
+                "style": {
+                  "shadowEnabled": false,
+                  "reliefEnabled": false
                 }
-              },
-              "style": {
-                "shadowEnabled": false,
-                "reliefEnabled": false
               }
-            },
-            "variantReference": "component_project_foqn_s2_avatar::variant::default"
+            }
           },
           "badgeSlot": {
             "placement": {
@@ -319,8 +329,10 @@
               "offsetX": -5,
               "offsetY": -5
             },
-            "overrides": {},
-            "variantReference": "component_project_foqn_s2_badge::variant::default"
+            "componentSlot": {
+              "variantReference": "component_project_foqn_s2_badge::variant::default",
+              "overrides": {}
+            }
           },
           "progressKnobSize": 12,
           "backgroundColorToken": "theme.colors.surface",
@@ -751,20 +763,20 @@
     {
       "id": "component.audio.avatar.editor",
       "label": "Avatar",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "audio",
         "avatarSlot",
-        "variantReference"
+        "componentSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::default\",\"overrides\":{\"avatar\":{\"defaultSize\":32,\"labelSlot\":{\"showLabel\":false,\"showSubtext\":false}},\"style\":{\"shadowEnabled\":false,\"reliefEnabled\":false}}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "avatar",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",
@@ -786,7 +798,7 @@
         "avatarSlot",
         "placement"
       ],
-      "defaultValue": "{\u0022mode\u0022:\u0022outsideEdge\u0022,\u0022alignX\u0022:1,\u0022alignY\u0022:0.5,\u0022offsetX\u0022:4,\u0022offsetY\u0022:0}",
+      "defaultValue": "{\"mode\":\"outsideEdge\",\"alignX\":1,\"alignY\":0.5,\"offsetX\":4,\"offsetY\":0}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
@@ -828,20 +840,20 @@
     {
       "id": "component.audio.badge.editor",
       "label": "Badge",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "audio",
         "badgeSlot",
-        "variantReference"
+        "componentSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_badge::variant::default\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "badge",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",
@@ -863,7 +875,7 @@
         "badgeSlot",
         "placement"
       ],
-      "defaultValue": "{\u0022mode\u0022:\u0022center\u0022,\u0022alignX\u0022:1,\u0022alignY\u0022:1,\u0022offsetX\u0022:0,\u0022offsetY\u0022:0}",
+      "defaultValue": "{\"mode\":\"center\",\"alignX\":1,\"alignY\":1,\"offsetX\":0,\"offsetY\":0}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
@@ -881,20 +893,19 @@
     {
       "id": "component.audio.durationLabel.editor",
       "label": "Duration label",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "audio",
-        "durationLabelSlot",
-        "variantReference"
+        "durationLabelSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{\"label\":{\"dimensionMode\":\"content\",\"padding\":\"theme.spacing.none|theme.spacing.none\",\"textColorToken\":\"theme.icons.secondary\",\"textTypography\":{\"fontFamilyId\":\"theme\",\"weight\":\"theme.typography.weight\",\"style\":\"theme.typography.style\",\"sizeToken\":\"theme.typography.sizes.xs\",\"lineHeight\":\"theme.typography.lineHeights.normal\"},\"textAlign\":\"right\",\"surfaceSlot\":{\"variantReference\":\"component_project_foqn_s2_surface::variant::default\",\"overrides\":{\"surface\":{\"backgroundAlpha\":0,\"borderAlpha\":0},\"style\":{\"borderWidth\":0,\"shadowEnabled\":false,\"reliefEnabled\":false}}},\"reserveSubtextSpace\":false,\"subtextVerticalPosition\":\"bottom\",\"subtextHorizontalAlign\":\"center\"}}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "label",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",
@@ -1829,20 +1840,19 @@
     {
       "id": "component.audio.surface.editor",
       "label": "Surface",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "audio",
-        "surfaceSlot",
-        "variantReference"
+        "surfaceSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_surface::variant::default\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "surface",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",

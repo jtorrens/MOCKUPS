@@ -54,6 +54,42 @@ public static class ComponentVariantSlotDocumentContract
         return JsonPath.RequiredObject(slot, "overrides", owner);
     }
 
+    public static bool HasLocalVariantReference(JsonObject slot) =>
+        slot.ContainsKey("variantReference");
+
+    public static JsonObject SparseOverrides(JsonObject slot, string owner)
+    {
+        var keys = slot.Select((entry) => entry.Key)
+            .ToHashSet(StringComparer.Ordinal);
+        if (!keys.SetEquals(["overrides"]))
+        {
+            throw new InvalidOperationException(
+                $"{owner} must use the exact sparse Component Variant Slot Override document containing only 'overrides'.");
+        }
+        return JsonPath.RequiredObject(slot, "overrides", owner);
+    }
+
+    public static JsonObject ResolveEffectiveOverride(
+        JsonObject inheritedSlot,
+        JsonObject localSlot,
+        string owner)
+    {
+        Validate(inheritedSlot, $"{owner} inherited value");
+        if (HasLocalVariantReference(localSlot))
+        {
+            Validate(localSlot, $"{owner} local Override");
+            return localSlot.DeepClone().AsObject();
+        }
+
+        _ = SparseOverrides(localSlot, $"{owner} local Override");
+        var effective = inheritedSlot.DeepClone().AsObject();
+        ComponentConfigOverrideMerger.MergeInto(
+            effective,
+            localSlot);
+        Validate(effective, $"{owner} effective Override");
+        return effective;
+    }
+
     public static JsonObject Create(string variantReference, JsonObject overrides, string owner)
     {
         var slot = new JsonObject

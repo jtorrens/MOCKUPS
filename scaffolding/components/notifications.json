@@ -493,20 +493,19 @@
     {
       "id": "component.notifications.badge.editor",
       "label": "Badge",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "notifications",
-        "badgeSlot",
-        "variantReference"
+        "badgeSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_badge::variant::default\",\"overrides\":{\"badge\":{}}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "badge",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",
@@ -551,20 +550,19 @@
     {
       "id": "component.notifications.collectionStack.editor",
       "label": "Collection Stack",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "notifications",
-        "collectionStackSlot",
-        "variantReference"
+        "collectionStackSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_collectionStack::variant::default\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "collectionStack",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",
@@ -627,7 +625,7 @@
         "notifications",
         "distributionMotion"
       ],
-      "defaultValue": "{\u0022transition\u0022:\u0022slide\u0022,\u0022direction\u0022:\u0022bottom\u0022,\u0022bounds\u0022:\u0022screen\u0022,\u0022fade\u0022:false,\u0022translate\u0022:true,\u0022scale\u0022:false}",
+      "defaultValue": "{\"transition\":\"slide\",\"direction\":\"bottom\",\"bounds\":\"screen\",\"fade\":false,\"translate\":true,\"scale\":false}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
@@ -946,7 +944,7 @@
         "notifications",
         "itemPresenceMotion"
       ],
-      "defaultValue": "{\u0022transition\u0022:\u0022slide\u0022,\u0022direction\u0022:\u0022bottom\u0022,\u0022bounds\u0022:\u0022screen\u0022,\u0022fade\u0022:false,\u0022translate\u0022:true,\u0022scale\u0022:false}",
+      "defaultValue": "{\"transition\":\"slide\",\"direction\":\"bottom\",\"bounds\":\"screen\",\"fade\":false,\"translate\":true,\"scale\":false}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
@@ -1006,20 +1004,19 @@
     {
       "id": "component.notifications.notification.editor",
       "label": "Notification",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "notifications",
-        "notificationSlot",
-        "variantReference"
+        "notificationSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_notification::variant::default\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "notification",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",
@@ -1040,7 +1037,7 @@
         "notifications",
         "notificationInputs"
       ],
-      "defaultValue": "{\u0022maxWidth\u0022:90}",
+      "defaultValue": "{\"maxWidth\":90}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,

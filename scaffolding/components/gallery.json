@@ -597,20 +597,19 @@
     {
       "id": "component.gallery.surface.editor",
       "label": "Surface",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "gallery",
-        "surfaceSlot",
-        "variantReference"
+        "surfaceSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_surface::variant::default\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "surface",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",
@@ -626,20 +625,19 @@
     {
       "id": "component.gallery.media.editor",
       "label": "Media",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "gallery",
-        "mediaSlot",
-        "variantReference"
+        "mediaSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_media::variant::default\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "media",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",

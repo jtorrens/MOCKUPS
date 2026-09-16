@@ -313,7 +313,7 @@
             "countDown"
           ],
           "replacementValue": "00:00",
-          "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
+          "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
           "forwardedTargetOnly": true
         },
         "unit": "",
@@ -416,7 +416,7 @@
             "countDown"
           ],
           "replacementValue": "00:00",
-          "targetValuePattern": "^(?:\\d\u002B:[0-5]\\d(?::[0-5]\\d)?|\\d\u002B)$",
+          "targetValuePattern": "^(?:\\d+:[0-5]\\d(?::[0-5]\\d)?|\\d+)$",
           "forwardedTargetOnly": true
         },
         "unit": "",
@@ -539,7 +539,7 @@
         },
         {
           "value": "content",
-          "label": "Content \u002B padding",
+          "label": "Content + padding",
           "colorHex": null,
           "isNeutral": false,
           "groupValue": "",
@@ -1064,9 +1064,9 @@
       "componentVariantType": "",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
-      "helpText": "Time: MM:SS or HH:MM:SS \u00B7 Number: ###0 optional digits, 0000 zero-padded.",
-      "valuePattern": "^(?:(?:M|MM):SS|(?:H|HH):MM(?::SS)?|#*0\u002B)$",
-      "valuePatternMessage": "must use M:SS, MM:SS, H:MM, HH:MM, H:MM:SS, HH:MM:SS or a #*0\u002B numeric mask.",
+      "helpText": "Time: MM:SS or HH:MM:SS · Number: ###0 optional digits, 0000 zero-padded.",
+      "valuePattern": "^(?:(?:M|MM):SS|(?:H|HH):MM(?::SS)?|#*0+)$",
+      "valuePatternMessage": "must use M:SS, MM:SS, H:MM, HH:MM, H:MM:SS, HH:MM:SS or a #*0+ numeric mask.",
       "embeddedSlot": null
     },
     {
@@ -1128,7 +1128,7 @@
         "label",
         "subtextTypography"
       ],
-      "defaultValue": "{\u0022fontFamilyId\u0022:\u0022theme\u0022,\u0022weight\u0022:\u0022theme.typography.weight\u0022,\u0022style\u0022:\u0022theme.typography.style\u0022,\u0022sizeToken\u0022:\u0022theme.typography.sizes.xs\u0022,\u0022lineHeight\u0022:\u0022theme.typography.lineHeights.normal\u0022}",
+      "defaultValue": "{\"fontFamilyId\":\"theme\",\"weight\":\"theme.typography.weight\",\"style\":\"theme.typography.style\",\"sizeToken\":\"theme.typography.sizes.xs\",\"lineHeight\":\"theme.typography.lineHeights.normal\"}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
@@ -1188,20 +1188,19 @@
     {
       "id": "component.label.surface.editor",
       "label": "Surface",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "label",
-        "surfaceSlot",
-        "variantReference"
+        "surfaceSlot"
       ],
-      "defaultValue": "Label",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_surface::variant::default_copy_2\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "surface",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",
@@ -1631,9 +1630,9 @@
       "componentVariantType": "",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
-      "helpText": "Time: MM:SS or HH:MM:SS \u00B7 Number: ###0 optional digits, 0000 zero-padded.",
-      "valuePattern": "^(?:(?:M|MM):SS|(?:H|HH):MM(?::SS)?|#*0\u002B)$",
-      "valuePatternMessage": "must use M:SS, MM:SS, H:MM, HH:MM, H:MM:SS, HH:MM:SS or a #*0\u002B numeric mask.",
+      "helpText": "Time: MM:SS or HH:MM:SS · Number: ###0 optional digits, 0000 zero-padded.",
+      "valuePattern": "^(?:(?:M|MM):SS|(?:H|HH):MM(?::SS)?|#*0+)$",
+      "valuePatternMessage": "must use M:SS, MM:SS, H:MM, HH:MM, H:MM:SS, HH:MM:SS or a #*0+ numeric mask.",
       "embeddedSlot": null
     },
     {
@@ -1754,7 +1753,7 @@
         "label",
         "textTypography"
       ],
-      "defaultValue": "{\u0022fontFamilyId\u0022:\u0022theme\u0022,\u0022weight\u0022:\u0022theme.typography.weight\u0022,\u0022style\u0022:\u0022theme.typography.style\u0022,\u0022sizeToken\u0022:\u0022theme.typography.sizes.s\u0022,\u0022lineHeight\u0022:\u0022theme.typography.lineHeights.normal\u0022}",
+      "defaultValue": "{\"fontFamilyId\":\"theme\",\"weight\":\"theme.typography.weight\",\"style\":\"theme.typography.style\",\"sizeToken\":\"theme.typography.sizes.s\",\"lineHeight\":\"theme.typography.lineHeights.normal\"}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,

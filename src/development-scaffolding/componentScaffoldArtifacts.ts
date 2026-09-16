@@ -173,9 +173,7 @@ function renderEmbeddedSlots(specs: readonly ComponentScaffoldSpec[]) {
     .sort((left, right) => left.id.localeCompare(right.id))
     .map((field) => {
       const embedded = field.embeddedSlot!;
-      const slotPath = field.valueKind === "ComponentVariant"
-        ? field.jsonPath.slice(0, -1)
-        : field.jsonPath;
+      const slotPath = field.jsonPath;
       return `        new(\n`
         + `            ${csharpString(field.id)},\n`
         + `            ${csharpString(embedded.componentType)},\n`

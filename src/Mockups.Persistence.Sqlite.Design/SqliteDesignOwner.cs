@@ -92,41 +92,13 @@ internal sealed partial class SqliteDesignOwner :
         string value)
     {
         var node = ComponentConfigJsonValue(descriptor, value);
-        if (!TryGetComponentVariantBoundary(descriptor, out var slot))
-        {
-            SetJsonValue(root, descriptor.JsonPath, node);
-            return;
-        }
-
-        var reference = node.GetValue<string>();
-        SetJsonValue(
-            root,
-            slot.SlotPath,
-            ComponentVariantSlotDocumentContract.CreateForVariantChange(
-                reference,
-                $"Component field '{descriptor.Id}' boundary"));
+        SetJsonValue(root, descriptor.JsonPath, node);
     }
 
     private static bool RemoveComponentFieldValue(
         JsonObject root,
         ComponentClassFieldDescriptor descriptor) =>
-        TryGetComponentVariantBoundary(descriptor, out var slot)
-            ? RemoveJsonValue(root, slot.SlotPath)
-            : RemoveJsonValue(root, descriptor.JsonPath);
-
-    private static bool TryGetComponentVariantBoundary(
-        ComponentClassFieldDescriptor descriptor,
-        out EmbeddedComponentSlotDefinition slot)
-    {
-        if (descriptor.ValueKind == ValueKind.ComponentVariant
-            && EmbeddedComponentSlotCatalog.TryGet(descriptor.Id, out slot))
-        {
-            return true;
-        }
-
-        slot = new EmbeddedComponentSlotDefinition("", "", "", "", []);
-        return false;
-    }
+        RemoveJsonValue(root, descriptor.JsonPath);
 
     private static JsonNode NumberNode(string value) =>
         JsonPath.NumberNode(value);

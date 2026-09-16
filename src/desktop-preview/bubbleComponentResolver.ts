@@ -57,6 +57,16 @@ export function resolveBubbleComponent(
   const audioSlot = requiredRecord(bubble, "audioSlot", "component.bubble");
   const actorLabelSlot = requiredRecord(bubble, "actorLabelSlot", "component.bubble");
   const avatarSlot = requiredRecord(bubble, "avatarSlot", "component.bubble");
+  const actorLabelComponentSlot = requiredRecord(
+    actorLabelSlot,
+    "componentSlot",
+    "component.bubble.actorLabelSlot.componentSlot",
+  );
+  const avatarComponentSlot = requiredRecord(
+    avatarSlot,
+    "componentSlot",
+    "component.bubble.avatarSlot.componentSlot",
+  );
   const status = requiredRecord(bubble, "status", "component.bubble");
   const dimensionMode = requiredString(
     bubble,
@@ -195,9 +205,9 @@ export function resolveBubbleComponent(
   const actorLabelConfig = actorLabelVisible
     ? embeddedComponentConfig(
         componentBaseConfigs,
-        actorLabelSlot,
+        actorLabelComponentSlot,
         "label",
-        "component.bubble.actorLabelSlot",
+        "component.bubble.actorLabelSlot.componentSlot",
       )
     : undefined;
   const avatarVisible = actorIdentityVisible
@@ -210,9 +220,9 @@ export function resolveBubbleComponent(
   const avatarConfig = avatarVisible
     ? embeddedComponentConfig(
         componentBaseConfigs,
-        avatarSlot,
+        avatarComponentSlot,
         "avatar",
-        "component.bubble.avatarSlot",
+        "component.bubble.avatarSlot.componentSlot",
       )
     : undefined;
   const resolvedTextBox = resolveTextBoxComponentFromRecords(

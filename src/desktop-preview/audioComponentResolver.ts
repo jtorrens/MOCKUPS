@@ -42,6 +42,16 @@ export function resolveAudioComponentFromRecords(
   const surfaceSlot = requiredRecord(audio, "surfaceSlot", "component.audio.surfaceSlot");
   const avatarSlot = requiredRecord(audio, "avatarSlot", "component.audio.avatarSlot");
   const badgeSlot = requiredRecord(audio, "badgeSlot", "component.audio.badgeSlot");
+  const avatarComponentSlot = requiredRecord(
+    avatarSlot,
+    "componentSlot",
+    "component.audio.avatarSlot.componentSlot",
+  );
+  const badgeComponentSlot = requiredRecord(
+    badgeSlot,
+    "componentSlot",
+    "component.audio.badgeSlot.componentSlot",
+  );
   const durationLabelSlot = requiredRecord(audio, "durationLabelSlot", "component.audio.durationLabelSlot");
   const showAvatar = requiredBoolean(
     avatarSlot,
@@ -53,8 +63,8 @@ export function resolveAudioComponentFromRecords(
     "showBadge",
     "component.audio.input.showBadge",
   );
-  const avatarConfig = embeddedComponentConfig(componentBaseConfigs, avatarSlot, "avatar", "component.audio.avatarSlot");
-  const badgeConfig = embeddedComponentConfig(componentBaseConfigs, badgeSlot, "badge", "component.audio.badgeSlot");
+  const avatarConfig = embeddedComponentConfig(componentBaseConfigs, avatarComponentSlot, "avatar", "component.audio.avatarSlot.componentSlot");
+  const badgeConfig = embeddedComponentConfig(componentBaseConfigs, badgeComponentSlot, "badge", "component.audio.badgeSlot.componentSlot");
   const surfaceConfig = embeddedComponentConfig(componentBaseConfigs, surfaceSlot, "surface", "component.audio.surfaceSlot");
   const durationLabelConfig = embeddedComponentConfig(componentBaseConfigs, durationLabelSlot, "label", "component.audio.durationLabelSlot");
   const durationSeconds = Math.max(

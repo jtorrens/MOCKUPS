@@ -17,10 +17,8 @@ internal sealed partial class SqliteDesignOwner
             : ComponentConfigFieldValue(
                 settings.ConfigJson,
                 descriptor);
-        var isHighlighted = descriptor.ValueKind is
-                ValueKind.EmbeddedComponent
-                or ValueKind.ComponentVariant
-                or ValueKind.ComponentVariantSlot
+        var isHighlighted = descriptor.ValueKind
+                == ValueKind.ComponentVariantSlot
             && EmbeddedComponentSlotCatalog.TryGet(
                 descriptor.Id,
                 out var slot)
@@ -110,8 +108,9 @@ internal sealed partial class SqliteDesignOwner
         var hasOverride =
             JsonPath.Get(overrides, descriptor.JsonPath) is not null;
         var localValue = hasOverride
-            ? ComponentConfigFieldValue(
-                overrides.ToJsonString(),
+            ? EffectiveOverrideFieldValue(
+                inheritedValue,
+                overrides,
                 descriptor)
             : inheritedValue;
         return new FieldValue(
@@ -178,13 +177,13 @@ internal sealed partial class SqliteDesignOwner
                 localOverrides,
                 descriptor.JsonPath) is not null;
         var localValue = hasOverride && localOverrides is not null
-            ? ComponentConfigFieldValue(
-                localOverrides.ToJsonString(),
+            ? EffectiveOverrideFieldValue(
+                inheritedValue,
+                localOverrides,
                 descriptor)
             : inheritedValue;
-        var isHighlighted = descriptor.ValueKind is
-                ValueKind.EmbeddedComponent
-                or ValueKind.ComponentVariant
+        var isHighlighted = descriptor.ValueKind
+                == ValueKind.ComponentVariantSlot
             && EmbeddedComponentSlotCatalog.TryGet(
                 descriptor.Id,
                 out var nestedSlot)
@@ -319,8 +318,9 @@ internal sealed partial class SqliteDesignOwner
                 overrides,
                 descriptor.JsonPath) is not null;
         var localValue = hasOverride && overrides is not null
-            ? ComponentConfigFieldValue(
-                overrides.ToJsonString(),
+            ? EffectiveOverrideFieldValue(
+                inheritedValue,
+                overrides,
                 descriptor)
             : inheritedValue;
 
@@ -384,13 +384,13 @@ internal sealed partial class SqliteDesignOwner
                 overrides,
                 descriptor.JsonPath) is not null;
         var localValue = hasOverride && overrides is not null
-            ? ComponentConfigFieldValue(
-                overrides.ToJsonString(),
+            ? EffectiveOverrideFieldValue(
+                inheritedValue,
+                overrides,
                 descriptor)
             : inheritedValue;
-        var isHighlighted = descriptor.ValueKind is
-                ValueKind.EmbeddedComponent
-                or ValueKind.ComponentVariant
+        var isHighlighted = descriptor.ValueKind
+                == ValueKind.ComponentVariantSlot
             && EmbeddedComponentSlotCatalog.TryGet(
                 descriptor.Id,
                 out var nestedSlot)
@@ -433,6 +433,36 @@ internal sealed partial class SqliteDesignOwner
             createIfMissing: false);
         return overrides is not null
             && OverrideDocumentContract.HasAuthoredValues(overrides);
+    }
+
+    private static string EffectiveOverrideFieldValue(
+        string inheritedValue,
+        JsonObject overrides,
+        ComponentClassFieldDescriptor descriptor)
+    {
+        if (descriptor.ValueKind != ValueKind.ComponentVariantSlot)
+        {
+            return ComponentConfigFieldValue(
+                overrides.ToJsonString(),
+                descriptor);
+        }
+
+        var owner = $"Component field '{descriptor.Id}'";
+        var localSlot = JsonPath.Get(
+                overrides,
+                descriptor.JsonPath)
+            as JsonObject
+            ?? throw new InvalidOperationException(
+                $"{owner} local Override must be an object.");
+        var inheritedSlot = JsonNode.Parse(inheritedValue)
+                as JsonObject
+            ?? throw new InvalidOperationException(
+                $"{owner} inherited value must be an object.");
+        return ComponentVariantSlotDocumentContract.ResolveEffectiveOverride(
+                inheritedSlot,
+                localSlot,
+                owner)
+            .ToJsonString();
     }
 
     private JsonObject EffectiveEmbeddedBaseConfig(

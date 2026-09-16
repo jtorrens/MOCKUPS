@@ -53,19 +53,6 @@
         "showLabel": false,
         "showSubtext": false,
         "position": "right",
-        "overrides": {
-          "label": {
-            "alpha": 0,
-            "textAlign": "left",
-            "textGapToken": "theme.spacing.none",
-            "reserveSubtextSpace": false,
-            "subtextVerticalPosition": "bottom",
-            "subtextHorizontalAlign": "center"
-          },
-          "style": {
-            "reliefEnabled": false
-          }
-        },
         "placement": {
           "mode": "outsideEdge",
           "alignX": 0.5,
@@ -73,17 +60,34 @@
           "offsetX": 0,
           "offsetY": 0
         },
-        "variantReference": "component_project_foqn_s2_label::variant::default"
+        "componentSlot": {
+          "variantReference": "component_project_foqn_s2_label::variant::default",
+          "overrides": {
+            "label": {
+              "alpha": 0,
+              "textAlign": "left",
+              "textGapToken": "theme.spacing.none",
+              "reserveSubtextSpace": false,
+              "subtextVerticalPosition": "bottom",
+              "subtextHorizontalAlign": "center"
+            },
+            "style": {
+              "reliefEnabled": false
+            }
+          }
+        }
       },
       "badgeSlot": {
-        "variantReference": "component_project_foqn_s2_badge::variant::default",
-        "overrides": {},
         "placement": {
           "mode": "center",
           "alignX": 1,
           "alignY": 0,
           "offsetX": 0,
           "offsetY": 0
+        },
+        "componentSlot": {
+          "variantReference": "component_project_foqn_s2_badge::variant::default",
+          "overrides": {}
         }
       }
     }
@@ -114,19 +118,6 @@
           "showLabel": false,
           "showSubtext": false,
           "position": "right",
-          "overrides": {
-            "label": {
-              "alpha": 0,
-              "textAlign": "left",
-              "textGapToken": "theme.spacing.none",
-              "reserveSubtextSpace": false,
-              "subtextVerticalPosition": "bottom",
-              "subtextHorizontalAlign": "center"
-            },
-            "style": {
-              "reliefEnabled": false
-            }
-          },
           "placement": {
             "mode": "outsideEdge",
             "alignX": 0.5,
@@ -134,17 +125,34 @@
             "offsetX": 0,
             "offsetY": 0
           },
-          "variantReference": "component_project_foqn_s2_label::variant::default"
+          "componentSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {
+              "label": {
+                "alpha": 0,
+                "textAlign": "left",
+                "textGapToken": "theme.spacing.none",
+                "reserveSubtextSpace": false,
+                "subtextVerticalPosition": "bottom",
+                "subtextHorizontalAlign": "center"
+              },
+              "style": {
+                "reliefEnabled": false
+              }
+            }
+          }
         },
         "badgeSlot": {
-          "variantReference": "component_project_foqn_s2_badge::variant::default",
-          "overrides": {},
           "placement": {
             "mode": "center",
             "alignX": 1,
             "alignY": 0,
             "offsetX": 0,
             "offsetY": 0
+          },
+          "componentSlot": {
+            "variantReference": "component_project_foqn_s2_badge::variant::default",
+            "overrides": {}
           }
         }
       }
@@ -177,28 +185,6 @@
             "showLabel": true,
             "showSubtext": true,
             "position": "right",
-            "overrides": {
-              "label": {
-                "alpha": 0,
-                "textAlign": "left",
-                "textSizeToken": "theme.typography.sizes.l",
-                "subtextColorToken": "theme.colors.textSecondary",
-                "surfaceSlot": {
-                  "variantReference": "component_project_foqn_s2_surface::variant::default_copy_2"
-                },
-                "textTypography": {
-                  "sizeToken": "theme.typography.sizes.m"
-                },
-                "textGapToken": "theme.spacing.none",
-                "reserveSubtextSpace": false,
-                "subtextVerticalPosition": "bottom",
-                "subtextHorizontalAlign": "center"
-              },
-              "style": {
-                "reliefEnabled": false,
-                "shadowEnabled": false
-              }
-            },
             "placement": {
               "mode": "outsideEdge",
               "alignX": 1,
@@ -206,17 +192,43 @@
               "offsetX": 0,
               "offsetY": 0
             },
-            "variantReference": "component_project_foqn_s2_label::variant::default"
+            "componentSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {
+                "label": {
+                  "alpha": 0,
+                  "textAlign": "left",
+                  "textSizeToken": "theme.typography.sizes.l",
+                  "subtextColorToken": "theme.colors.textSecondary",
+                  "surfaceSlot": {
+                    "variantReference": "component_project_foqn_s2_surface::variant::default_copy_2"
+                  },
+                  "textTypography": {
+                    "sizeToken": "theme.typography.sizes.m"
+                  },
+                  "textGapToken": "theme.spacing.none",
+                  "reserveSubtextSpace": false,
+                  "subtextVerticalPosition": "bottom",
+                  "subtextHorizontalAlign": "center"
+                },
+                "style": {
+                  "reliefEnabled": false,
+                  "shadowEnabled": false
+                }
+              }
+            }
           },
           "badgeSlot": {
-            "variantReference": "component_project_foqn_s2_badge::variant::default",
-            "overrides": {},
             "placement": {
               "mode": "center",
               "alignX": 1,
               "alignY": 0,
               "offsetX": 0,
               "offsetY": 0
+            },
+            "componentSlot": {
+              "variantReference": "component_project_foqn_s2_badge::variant::default",
+              "overrides": {}
             }
           }
         }
@@ -224,7 +236,7 @@
     },
     {
       "id": "default_copy",
-      "name": "Avatar peque\u00F1o",
+      "name": "Avatar pequeño",
       "protected": false,
       "locked": false,
       "config": {
@@ -248,19 +260,6 @@
             "showLabel": false,
             "showSubtext": false,
             "position": "right",
-            "overrides": {
-              "label": {
-                "alpha": 0,
-                "textAlign": "left",
-                "textGapToken": "theme.spacing.none",
-                "reserveSubtextSpace": false,
-                "subtextVerticalPosition": "bottom",
-                "subtextHorizontalAlign": "center"
-              },
-              "style": {
-                "reliefEnabled": false
-              }
-            },
             "placement": {
               "mode": "outsideEdge",
               "alignX": 0.5,
@@ -268,17 +267,34 @@
               "offsetX": 0,
               "offsetY": 0
             },
-            "variantReference": "component_project_foqn_s2_label::variant::default"
+            "componentSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {
+                "label": {
+                  "alpha": 0,
+                  "textAlign": "left",
+                  "textGapToken": "theme.spacing.none",
+                  "reserveSubtextSpace": false,
+                  "subtextVerticalPosition": "bottom",
+                  "subtextHorizontalAlign": "center"
+                },
+                "style": {
+                  "reliefEnabled": false
+                }
+              }
+            }
           },
           "badgeSlot": {
-            "variantReference": "component_project_foqn_s2_badge::variant::default",
-            "overrides": {},
             "placement": {
               "mode": "center",
               "alignX": 1,
               "alignY": 0,
               "offsetX": 0,
               "offsetY": 0
+            },
+            "componentSlot": {
+              "variantReference": "component_project_foqn_s2_badge::variant::default",
+              "overrides": {}
             }
           }
         }
@@ -562,20 +578,20 @@
     {
       "id": "component.avatar.badge.editor",
       "label": "Badge",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "avatar",
         "badgeSlot",
-        "variantReference"
+        "componentSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_badge::variant::default\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "badge",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",
@@ -597,7 +613,7 @@
         "badgeSlot",
         "placement"
       ],
-      "defaultValue": "{\u0022mode\u0022:\u0022center\u0022,\u0022alignX\u0022:1,\u0022alignY\u0022:0,\u0022offsetX\u0022:0,\u0022offsetY\u0022:0}",
+      "defaultValue": "{\"mode\":\"center\",\"alignX\":1,\"alignY\":0,\"offsetX\":0,\"offsetY\":0}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
@@ -734,20 +750,20 @@
     {
       "id": "component.avatar.label.editor",
       "label": "Label",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "avatar",
         "labelSlot",
-        "variantReference"
+        "componentSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{\"label\":{\"alpha\":0,\"textAlign\":\"left\",\"textGapToken\":\"theme.spacing.none\",\"reserveSubtextSpace\":false,\"subtextVerticalPosition\":\"bottom\",\"subtextHorizontalAlign\":\"center\"},\"style\":{\"reliefEnabled\":false}}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "label",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",
@@ -769,7 +785,7 @@
         "labelSlot",
         "placement"
       ],
-      "defaultValue": "{\u0022mode\u0022:\u0022outsideEdge\u0022,\u0022alignX\u0022:1,\u0022alignY\u0022:0.5,\u0022offsetX\u0022:4,\u0022offsetY\u0022:0}",
+      "defaultValue": "{\"mode\":\"outsideEdge\",\"alignX\":1,\"alignY\":0.5,\"offsetX\":4,\"offsetY\":0}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,

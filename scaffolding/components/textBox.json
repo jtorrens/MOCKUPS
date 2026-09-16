@@ -67,11 +67,13 @@
       "overflowMode": "scroll",
       "cursorSlot": {
         "showCursor": true,
-        "variantReference": "component_project_foqn_s2_cursor::variant::default",
-        "overrides": {
-          "cursor": {
-            "minimumFade": 0.15,
-            "colorToken": "theme.icons.accent"
+        "componentSlot": {
+          "variantReference": "component_project_foqn_s2_cursor::variant::default",
+          "overrides": {
+            "cursor": {
+              "minimumFade": 0.15,
+              "colorToken": "theme.icons.accent"
+            }
           }
         }
       },
@@ -134,11 +136,13 @@
         "overflowMode": "scroll",
         "cursorSlot": {
           "showCursor": true,
-          "variantReference": "component_project_foqn_s2_cursor::variant::default",
-          "overrides": {
-            "cursor": {
-              "minimumFade": 0.15,
-              "colorToken": "theme.icons.accent"
+          "componentSlot": {
+            "variantReference": "component_project_foqn_s2_cursor::variant::default",
+            "overrides": {
+              "cursor": {
+                "minimumFade": 0.15,
+                "colorToken": "theme.icons.accent"
+              }
             }
           }
         },
@@ -212,11 +216,13 @@
           "overflowMode": "scroll",
           "cursorSlot": {
             "showCursor": true,
-            "variantReference": "component_project_foqn_s2_cursor::variant::default",
-            "overrides": {
-              "cursor": {
-                "minimumFade": 0.15,
-                "colorToken": "theme.icons.accent"
+            "componentSlot": {
+              "variantReference": "component_project_foqn_s2_cursor::variant::default",
+              "overrides": {
+                "cursor": {
+                  "minimumFade": 0.15,
+                  "colorToken": "theme.icons.accent"
+                }
               }
             }
           },
@@ -390,20 +396,20 @@
     {
       "id": "component.textBox.cursor.editor",
       "label": "Cursor",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "textBox",
         "cursorSlot",
-        "variantReference"
+        "componentSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_cursor::variant::default\",\"overrides\":{\"cursor\":{\"minimumFade\":0.15,\"colorToken\":\"theme.icons.accent\"}}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "cursor",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",
@@ -581,20 +587,19 @@
     {
       "id": "component.textBox.leftIconRow.editor",
       "label": "Left icon row",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "textBox",
-        "leftIconRowSlot",
-        "variantReference"
+        "leftIconRowSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_iconRow::variant::default\",\"overrides\":{\"iconRow\":{\"items\":[]}}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "iconRow",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",
@@ -1142,20 +1147,19 @@
     {
       "id": "component.textBox.rightIconRow.editor",
       "label": "Right icon row",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "textBox",
-        "rightIconRowSlot",
-        "variantReference"
+        "rightIconRowSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_iconRow::variant::default\",\"overrides\":{\"iconRow\":{\"items\":[]}}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "iconRow",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",
@@ -1171,20 +1175,19 @@
     {
       "id": "component.textBox.surface.editor",
       "label": "Surface",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "textBox",
-        "surfaceSlot",
-        "variantReference"
+        "surfaceSlot"
       ],
-      "defaultValue": "InputBox",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_surface::variant::default\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "surface",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",

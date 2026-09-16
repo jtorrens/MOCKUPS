@@ -1084,20 +1084,19 @@
     {
       "id": "component.iconBar.activeCenterIconRow.editor",
       "label": "Active center row",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "iconBar",
-        "activeCenterIconRowSlot",
-        "variantReference"
+        "activeCenterIconRowSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_iconRow::variant::default\",\"overrides\":{\"iconRow\":{\"items\":[{\"id\":\"button_001\",\"buttonVariantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"iconToken\":\"media_pause\",\"text\":\"\",\"buttonOverrides\":{},\"iconSizeToken\":\"theme.iconSizes.m\",\"textSizeToken\":\"theme.typography.sizes.s\"}]}}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "iconRow",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",
@@ -1136,20 +1135,19 @@
     {
       "id": "component.iconBar.activeLeftIconRow.editor",
       "label": "Active left row",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "iconBar",
-        "activeLeftIconRowSlot",
-        "variantReference"
+        "activeLeftIconRowSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_iconRow::variant::default\",\"overrides\":{\"iconRow\":{\"items\":[{\"id\":\"button_001\",\"buttonVariantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"iconToken\":\"media_camera\",\"text\":\"\",\"buttonOverrides\":{},\"iconSizeToken\":\"theme.iconSizes.m\",\"textSizeToken\":\"theme.typography.sizes.s\"}]}}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "iconRow",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",
@@ -1188,20 +1186,19 @@
     {
       "id": "component.iconBar.activeRightIconRow.editor",
       "label": "Active right row",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "iconBar",
-        "activeRightIconRowSlot",
-        "variantReference"
+        "activeRightIconRowSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_iconRow::variant::default\",\"overrides\":{\"iconRow\":{\"items\":[{\"id\":\"button_001\",\"buttonVariantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"iconToken\":\"nav_more_horizontal\",\"text\":\"\",\"buttonOverrides\":{},\"iconSizeToken\":\"theme.iconSizes.m\",\"textSizeToken\":\"theme.typography.sizes.s\"}]}}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "iconRow",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",
@@ -1396,20 +1393,19 @@
     {
       "id": "component.iconBar.idleCenterIconRow.editor",
       "label": "Idle center row",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "iconBar",
-        "idleCenterIconRowSlot",
-        "variantReference"
+        "idleCenterIconRowSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_iconRow::variant::default\",\"overrides\":{\"iconRow\":{\"items\":[{\"id\":\"button_001\",\"buttonVariantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"iconToken\":\"media_play\",\"text\":\"\",\"buttonOverrides\":{},\"iconSizeToken\":\"theme.iconSizes.m\",\"textSizeToken\":\"theme.typography.sizes.s\"}]}}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "iconRow",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",
@@ -1448,20 +1444,19 @@
     {
       "id": "component.iconBar.idleLeftIconRow.editor",
       "label": "Idle left row",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "iconBar",
-        "idleLeftIconRowSlot",
-        "variantReference"
+        "idleLeftIconRowSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_iconRow::variant::default\",\"overrides\":{\"iconRow\":{\"items\":[{\"id\":\"button_001\",\"buttonVariantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"iconToken\":\"media_camera\",\"text\":\"\",\"buttonOverrides\":{},\"iconSizeToken\":\"theme.iconSizes.m\",\"textSizeToken\":\"theme.typography.sizes.s\"}]}}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "iconRow",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",
@@ -1500,20 +1495,19 @@
     {
       "id": "component.iconBar.idleRightIconRow.editor",
       "label": "Idle right row",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "iconBar",
-        "idleRightIconRowSlot",
-        "variantReference"
+        "idleRightIconRowSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_iconRow::variant::default\",\"overrides\":{\"iconRow\":{\"items\":[{\"id\":\"button_001\",\"buttonVariantReference\":\"component_project_foqn_s2_button::variant::icon_only\",\"iconToken\":\"nav_more_horizontal\",\"text\":\"\",\"buttonOverrides\":{},\"iconSizeToken\":\"theme.iconSizes.m\",\"textSizeToken\":\"theme.typography.sizes.s\"}]}}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "iconRow",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",

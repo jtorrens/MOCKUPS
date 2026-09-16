@@ -135,7 +135,7 @@
           "kind": "text",
           "value": "0",
           "text": "0",
-          "subtext": "\u002B",
+          "subtext": "+",
           "disabled": false,
           "iconToken": "app_clock"
         },
@@ -308,7 +308,7 @@
             "kind": "text",
             "value": "0",
             "text": "0",
-            "subtext": "\u002B",
+            "subtext": "+",
             "disabled": false,
             "iconToken": "app_clock"
           },
@@ -1152,20 +1152,19 @@
     {
       "id": "component.keypad.label.editor",
       "label": "Label",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "keypad",
-        "labelSlot",
-        "variantReference"
+        "labelSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{\"label\":{\"dimensionMode\":\"fixed\",\"padding\":\"theme.spacing.none|theme.spacing.none\",\"textColorToken\":\"theme.colors.textPrimary\",\"textAlign\":\"center\",\"reserveSubtextSpace\":true,\"surfaceSlot\":{\"overrides\":{\"style\":{\"cornerRadiusToken\":\"theme.radii.l\"}}},\"subtextVerticalPosition\":\"bottom\",\"subtextHorizontalAlign\":\"center\"}}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "label",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",

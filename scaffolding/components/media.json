@@ -1748,20 +1748,19 @@
     {
       "id": "component.media.fullScreenBottomIconBar.editor",
       "label": "Bottom icon bar",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "media",
-        "fullScreenBottomIconBarSlot",
-        "variantReference"
+        "fullScreenBottomIconBarSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_iconBar::variant::default\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "iconBar",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",
@@ -1777,20 +1776,19 @@
     {
       "id": "component.media.fullScreenCenterIconBar.editor",
       "label": "Center icon bar",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "media",
-        "fullScreenCenterIconBarSlot",
-        "variantReference"
+        "fullScreenCenterIconBarSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_iconBar::variant::default\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "iconBar",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",
@@ -1806,20 +1804,19 @@
     {
       "id": "component.media.fullScreenTopIconBar.editor",
       "label": "Top icon bar",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "media",
-        "fullScreenTopIconBarSlot",
-        "variantReference"
+        "fullScreenTopIconBarSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_iconBar::variant::default\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "iconBar",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",
@@ -2297,21 +2294,20 @@
     {
       "id": "component.media.idleText.label.editor",
       "label": "Label",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "media",
         "idleText",
-        "labelSlot",
-        "variantReference"
+        "labelSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{\"label\":{\"dimensionMode\":\"content\",\"padding\":\"theme.spacing.none|theme.spacing.none\",\"textColorToken\":\"theme.colors.textPrimary\",\"textTypography\":{\"fontFamilyId\":\"theme\",\"weight\":\"theme.typography.weight\",\"style\":\"theme.typography.style\",\"sizeToken\":\"theme.typography.sizes.s\",\"lineHeight\":\"theme.typography.lineHeights.normal\"},\"textAlign\":\"center\",\"surfaceSlot\":{\"variantReference\":\"component_project_foqn_s2_surface::variant::default\",\"overrides\":{\"surface\":{\"backgroundAlpha\":0,\"borderAlpha\":0},\"style\":{\"borderWidth\":0,\"shadowEnabled\":false,\"reliefEnabled\":false}}},\"reserveSubtextSpace\":false,\"subtextVerticalPosition\":\"bottom\",\"subtextHorizontalAlign\":\"center\"}}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "label",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",
@@ -2457,20 +2453,19 @@
     {
       "id": "component.media.inlineBottomIconBar.editor",
       "label": "Bottom icon bar",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "media",
-        "inlineBottomIconBarSlot",
-        "variantReference"
+        "inlineBottomIconBarSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_iconBar::variant::default\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "iconBar",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",
@@ -2486,20 +2481,19 @@
     {
       "id": "component.media.inlineCenterIconBar.editor",
       "label": "Center icon bar",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "media",
-        "inlineCenterIconBarSlot",
-        "variantReference"
+        "inlineCenterIconBarSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_iconBar::variant::default\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "iconBar",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",
@@ -2515,20 +2509,19 @@
     {
       "id": "component.media.inlineTopIconBar.editor",
       "label": "Top icon bar",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "media",
-        "inlineTopIconBarSlot",
-        "variantReference"
+        "inlineTopIconBarSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_iconBar::variant::default\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "iconBar",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",
@@ -2591,21 +2584,20 @@
     {
       "id": "component.media.playText.label.editor",
       "label": "Label",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "media",
         "playText",
-        "labelSlot",
-        "variantReference"
+        "labelSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{\"label\":{\"dimensionMode\":\"content\",\"padding\":\"theme.spacing.none|theme.spacing.none\",\"textColorToken\":\"theme.colors.textPrimary\",\"textTypography\":{\"fontFamilyId\":\"theme\",\"weight\":\"theme.typography.weight\",\"style\":\"theme.typography.style\",\"sizeToken\":\"theme.typography.sizes.s\",\"lineHeight\":\"theme.typography.lineHeights.normal\"},\"textAlign\":\"center\",\"surfaceSlot\":{\"variantReference\":\"component_project_foqn_s2_surface::variant::default\",\"overrides\":{\"surface\":{\"backgroundAlpha\":0,\"borderAlpha\":0},\"style\":{\"borderWidth\":0,\"shadowEnabled\":false,\"reliefEnabled\":false}}},\"reserveSubtextSpace\":false,\"subtextVerticalPosition\":\"bottom\",\"subtextHorizontalAlign\":\"center\"}}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "label",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",
@@ -2751,20 +2743,19 @@
     {
       "id": "component.media.surface.editor",
       "label": "Surface",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "media",
-        "surfaceSlot",
-        "variantReference"
+        "surfaceSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_surface::variant::default\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "surface",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",

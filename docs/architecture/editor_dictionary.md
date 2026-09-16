@@ -111,6 +111,17 @@ local Override document.
 }
 ```
 
+Every declared embedded Component boundary uses this value directly at its
+whole slot path. `EmbeddedComponentSlotCatalog` is derived structural metadata
+for traversal and navigation; it is not a second scalar editing or persistence
+route. Scaffold validation rejects an `embeddedSlot` field declared as
+`ComponentVariant` or pointed only at `variantReference`.
+
+When an owner also stores placement, visibility or other owner-local layout
+beside the child boundary, those properties remain in the surrounding object
+and its `componentSlot` member is the exact `ComponentVariantSlot`. They are
+never added as extra keys to the slot document.
+
 Variant selection, navigation to the class and local Overrides use the shared
 compact actions in one row. Every boundary that exposes Overrides also exposes
 Restore immediately to its right while local Overrides exist. Without local
@@ -127,15 +138,23 @@ Overrides object, so Overrides authored for the previous Variant are removed at
 every nested depth. Restoring an inherited Variant selection removes the local
 boundary selection and exposes the inherited complete slot again. Neither
 operation changes the referenced Variant definition or an unrelated boundary.
+An inherited boundary may carry a sparse local overlay containing only its
+`overrides` member. The generic field projection combines that overlay with the
+inherited slot before strict value validation; dictionary controls and Preview
+still receive one complete effective `ComponentVariantSlot`.
 
-An authored Component boundary inside a Module Variant may promote its local
-Overrides to a new complete Component Variant. The contextual Overrides editor
-requires a named confirmation, clones the currently referenced Variant config,
-applies only that boundary's sparse Overrides, updates the parent boundary to
-the new full Variant reference and replaces that boundary's Overrides with an
-empty object in one persisted mutation. Exact nested `ComponentVariantSlot`
-values remain complete boundaries in the promoted config, so their own local
-Overrides are preserved rather than flattened or promoted recursively.
+An authored Component boundary inside an editable Module Variant or Component
+Variant may promote its local Overrides to a new complete Component Variant.
+The contextual Overrides editor requires a named confirmation, clones the
+currently referenced Variant config, applies only that boundary's sparse
+Overrides, updates the exact parent Variant boundary to the new full Variant
+reference and replaces that boundary's Overrides with an empty object in one
+persisted mutation. Exact nested `ComponentVariantSlot` values remain complete
+boundaries in the promoted config, so their own local Overrides are preserved
+rather than flattened or promoted recursively.
+Direct fields, structured collection items and contextual nested slot paths
+enter the same generic promotion mutation through an explicit target address;
+concrete Components and Modules do not expose parallel promotion entrypoints.
 
 Override state aggregates through every dictionary container. A nested
 `ComponentVariantSlot` marks its structured-collection field, owning card and

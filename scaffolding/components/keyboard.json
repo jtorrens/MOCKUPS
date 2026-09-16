@@ -372,20 +372,19 @@
     {
       "id": "component.keyboard.iconBar.editor",
       "label": "Icon bar",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "keyboard",
-        "iconBarSlot",
-        "variantReference"
+        "iconBarSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_iconBar::variant::default\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "iconBar",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",

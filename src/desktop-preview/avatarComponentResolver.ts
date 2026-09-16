@@ -55,6 +55,16 @@ export function resolveAvatarComponentFromRecords(
   const avatar = requiredRecord(config, "avatar", "component.avatar");
   const labelSlot = requiredRecord(avatar, "labelSlot", "component.avatar.labelSlot");
   const badgeSlot = requiredRecord(avatar, "badgeSlot", "component.avatar.badgeSlot");
+  const labelComponentSlot = requiredRecord(
+    labelSlot,
+    "componentSlot",
+    "component.avatar.labelSlot.componentSlot",
+  );
+  const badgeComponentSlot = requiredRecord(
+    badgeSlot,
+    "componentSlot",
+    "component.avatar.badgeSlot.componentSlot",
+  );
   const style = requiredRecord(config, "style", "component.avatar.style");
   const showLabel = requiredBoolean(
     labelSlot,
@@ -68,9 +78,9 @@ export function resolveAvatarComponentFromRecords(
   );
   const embeddedLabelConfig = embeddedComponentConfig(
     componentBaseConfigs,
-    labelSlot,
+    labelComponentSlot,
     "label",
-    "component.avatar.labelSlot",
+    "component.avatar.labelSlot.componentSlot",
   );
   const actor = resolveActorPreview(preview);
   const showBadge = requiredBoolean(preview, "showBadge", "component.avatar.input.showBadge");
@@ -106,9 +116,9 @@ export function resolveAvatarComponentFromRecords(
       ...resolveBadgeComponentFromRecords(
         embeddedComponentConfig(
           componentBaseConfigs,
-          badgeSlot,
+          badgeComponentSlot,
           "badge",
-          "component.avatar.badgeSlot",
+          "component.avatar.badgeSlot.componentSlot",
         ),
         {
           contentMode: requiredString(preview, "badgeContentMode", "component.avatar.input.badgeContentMode"),

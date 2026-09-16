@@ -454,15 +454,20 @@ window, parallel panel or temporary editor. Modals remain bounded confirmation,
 selection, import or search workflows and never host persistent dictionary
 authoring.
 
-When that context represents authored Component Overrides owned by a Module
-Variant collection boundary, the header exposes `Convert overrides to
-variant…`. Its required confirmation form collects the new Variant name and
-states that the parent reference will change. Accepting creates a complete,
-unlocked, unprotected Component Variant from the currently referenced Variant
-plus this boundary's Overrides, updates the Module Variant to reference it and
-clears only this boundary's Overrides. Nested component boundaries retain their
-own Overrides. Cancellation performs no write, and contexts without authored
-Overrides do not expose the action.
+When that context represents authored Component Overrides owned by an editable
+Module Variant or Component Variant boundary, the header exposes `Convert
+overrides to variant…`. Its required confirmation form collects the new Variant
+name and states that the parent reference will change. Accepting creates a
+complete, unlocked, unprotected Component Variant from the currently referenced
+Variant plus this boundary's Overrides, updates the exact owning Variant to
+reference it and clears only this boundary's Overrides. Nested component
+boundaries retain their own Overrides. Cancellation performs no write, and
+contexts without authored Overrides or with a locked owner do not expose the
+action.
+
+The action is enabled only by a declared `ComponentVariantSlot` boundary.
+Structural slot metadata may locate nested contexts, but never acts as an
+alternate value-kind or persistence route.
 
 Bounded modal dialogs use `ShowDialog` with their exact visible owner and leave
 foreground ordering to the native modal relationship. Before the dialog is

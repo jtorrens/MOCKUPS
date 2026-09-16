@@ -154,15 +154,17 @@ internal sealed class EditorDictionaryFieldServices
                     selected.ConfigJson,
                     overrides,
                     changed,
-                    node.Kind == ProjectTreeNodeKind.ModuleVariant
+                    (node.Kind is ProjectTreeNodeKind.ModuleVariant
+                        or ProjectTreeNodeKind.ComponentVariant)
                         && definition.ValueKind
                             == ValueKind.ComponentVariantSlot
                         ? (name) => _operations.ExecuteAsync(() =>
                             _componentFields
-                                .PromoteModuleFieldOverridesToVariant(
-                                    new ComponentOverrideFieldPromotionRequest(
+                                .PromoteOverridesToVariant(
+                                    new ComponentOverridePromotionRequest(
                                         node,
-                                        definition.Id,
+                                        new ComponentOverrideFieldPromotionTarget(
+                                            definition.Id),
                                         name)))
                         : null)));
         }
@@ -280,15 +282,17 @@ internal sealed class EditorDictionaryFieldServices
                     selected.ConfigJson,
                     overrides,
                     changed,
-                    node.Kind == ProjectTreeNodeKind.ModuleVariant
+                    (node.Kind is ProjectTreeNodeKind.ModuleVariant
+                        or ProjectTreeNodeKind.ComponentVariant)
                         && definition.ValueKind
                             == ValueKind.ComponentVariantSlot
                         ? (name) => _operations.ExecuteAsync(() =>
                             _componentFields
-                                .PromoteModuleFieldOverridesToVariant(
-                                    new ComponentOverrideFieldPromotionRequest(
+                                .PromoteOverridesToVariant(
+                                    new ComponentOverridePromotionRequest(
                                         node,
-                                        definition.Id,
+                                        new ComponentOverrideFieldPromotionTarget(
+                                            definition.Id),
                                         name)))
                         : null)));
             return Task.CompletedTask;

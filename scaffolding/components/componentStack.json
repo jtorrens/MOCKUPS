@@ -689,7 +689,8 @@
             "overrides": {
               "audio": {
                 "surfaceSlot": {
-                  "variantReference": "component_project_foqn_s2_surface::variant::surface_00_copy"
+                  "variantReference": "component_project_foqn_s2_surface::variant::surface_00_copy",
+                  "overrides": {}
                 },
                 "waveformBarCount": 60,
                 "waveformColorToken": "theme.colors.badge"

@@ -7,10 +7,11 @@ internal sealed record EditorPreparedHeader(
     string OwnerId,
     ProductionScreenPresentationSource? Screen,
     string ActiveVariantName,
-    string RootVariantName)
+    string RootVariantName,
+    bool HasAuthoredOverrides)
 {
     public static EditorPreparedHeader Loading(string ownerId) =>
-        new(ownerId, null, "", "");
+        new(ownerId, null, "", "", false);
 }
 
 internal sealed class EditorHeaderPreparationService
@@ -48,7 +49,8 @@ internal sealed class EditorHeaderPreparationService
             node.Id,
             screen,
             "",
-            "");
+            "",
+            false);
     }
 
     public EditorPreparedHeader PrepareEmbedded(
@@ -62,7 +64,8 @@ internal sealed class EditorHeaderPreparationService
                 context.OwnerNode.Id,
                 null,
                 "",
-                "");
+                "",
+                false);
         }
         var activeVariantName =
             _embeddedDocuments.ActiveVariantName(context);
@@ -76,6 +79,8 @@ internal sealed class EditorHeaderPreparationService
             context.OwnerNode.Id,
             null,
             activeVariantName,
-            rootVariantName);
+            rootVariantName,
+            _embeddedDocuments.HasAuthoredOverrides(
+                context));
     }
 }

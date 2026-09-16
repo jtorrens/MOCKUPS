@@ -29,6 +29,24 @@ internal sealed class EmbeddedComponentDocumentStore
                 context.Slots);
     }
 
+    public bool HasAuthoredOverrides(EditorEmbeddedContext context)
+    {
+        if (context.RuntimeSource is null)
+        {
+            return _database.HasEmbeddedComponentOverrides(
+                context.OwnerNode,
+                context.Slots);
+        }
+        var overrides = context.Slots.Count == 0
+            ? context.RuntimeSource.Overrides
+            : RuntimeOverridesAt(
+                context.RuntimeSource.Overrides,
+                context.Slots);
+        return overrides is not null
+            && OverrideDocumentContract.HasAuthoredValues(
+                overrides);
+    }
+
     public FieldValue CreateFieldValue(EditorEmbeddedContext context, string fieldId)
     {
         return context.RuntimeSource is null

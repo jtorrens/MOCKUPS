@@ -573,10 +573,10 @@ internal sealed class ReferenceUsageService :
 
             ReferenceEmbeddedContext? embedded = null;
             if (depth == 0
-                && descriptor.ValueKind == ValueKind.ComponentVariant
+                && descriptor.ValueKind == ValueKind.ComponentVariantSlot
                 && source.ComponentOwner is not null
                 && EmbeddedComponentSlotCatalog.TryGet(descriptor.Id, out var embeddedSlot)
-                && JsonPath.Get(config, embeddedSlot.SlotPath) is JsonObject embeddedNode)
+                && value is JsonObject embeddedNode)
             {
                 embedded = new ReferenceEmbeddedContext(
                     source.ComponentOwner.Id,
@@ -584,7 +584,8 @@ internal sealed class ReferenceUsageService :
                     source.ComponentOwner.ComponentType,
                     embeddedSlot.FieldId,
                     embeddedSlot.Label,
-                    embeddedNode["overrides"] is JsonObject overrides && overrides.Count > 0,
+                    embeddedNode["overrides"] is JsonObject overrides
+                        && OverrideDocumentContract.HasAuthoredValues(overrides),
                     source.NodeId);
             }
 
@@ -599,15 +600,6 @@ internal sealed class ReferenceUsageService :
                 embedded);
         }
 
-        foreach (var slot in EmbeddedComponentSlotCatalog.All())
-        {
-            if (JsonPath.Get(config, slot.SlotPath) is not JsonObject slotNode
-                || slotNode["overrides"] is not JsonObject overrides)
-            {
-                continue;
-            }
-            ScanComponentConfig(overrides, source, targets, usages, componentsByReference, depth + 1);
-        }
     }
 
     private static void AddDescriptorValue(
@@ -631,16 +623,23 @@ internal sealed class ReferenceUsageService :
                 ?? throw new InvalidOperationException(
                     $"Reference field '{fieldLabel}' must be a Component Variant Slot object.");
             var owner = $"Reference field '{fieldLabel}'";
-            AddExact(
-                usages,
-                targets,
-                ProjectTreeNodeKind.ComponentVariant,
-                ComponentVariantSlotDocumentContract.VariantReference(slot, owner),
-                source,
-                fieldLabel,
-                embedded);
+            if (ComponentVariantSlotDocumentContract.HasLocalVariantReference(slot))
+            {
+                AddExact(
+                    usages,
+                    targets,
+                    ProjectTreeNodeKind.ComponentVariant,
+                    ComponentVariantSlotDocumentContract.VariantReference(slot, owner),
+                    source,
+                    fieldLabel,
+                    embedded);
+            }
+            var slotOverrides =
+                ComponentVariantSlotDocumentContract.HasLocalVariantReference(slot)
+                    ? ComponentVariantSlotDocumentContract.Overrides(slot, owner)
+                    : ComponentVariantSlotDocumentContract.SparseOverrides(slot, owner);
             ScanComponentConfig(
-                ComponentVariantSlotDocumentContract.Overrides(slot, owner),
+                slotOverrides,
                 source,
                 targets,
                 usages,

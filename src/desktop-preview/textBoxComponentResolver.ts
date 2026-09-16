@@ -51,6 +51,11 @@ export function resolveTextBoxComponentFromRecords(
   const textBox = requiredRecord(config, "textBox", "component.textBox");
   const surfaceSlot = requiredRecord(textBox, "surfaceSlot", "component.textBox.surfaceSlot");
   const cursorSlot = requiredRecord(textBox, "cursorSlot", "component.textBox.cursorSlot");
+  const cursorComponentSlot = requiredRecord(
+    cursorSlot,
+    "componentSlot",
+    "component.textBox.cursorSlot.componentSlot",
+  );
   const leftIconRowSlot = requiredComponentVariantSlot(
     textBox,
     "leftIconRowSlot",
@@ -112,12 +117,16 @@ export function resolveTextBoxComponentFromRecords(
       componentBaseConfigs,
       "cursor",
       requiredString(
-        cursorSlot,
+        cursorComponentSlot,
         "variantReference",
-        "component.textBox.cursorSlot.variantReference",
+        "component.textBox.cursorSlot.componentSlot.variantReference",
       ),
     ),
-    requiredRecord(cursorSlot, "overrides", "component.textBox.cursorSlot.overrides"),
+    requiredRecord(
+      cursorComponentSlot,
+      "overrides",
+      "component.textBox.cursorSlot.componentSlot.overrides",
+    ),
   );
   const typography = typographyWithInputSizeOverride(
     requiredTypographyStyle(

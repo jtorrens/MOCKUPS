@@ -88,7 +88,6 @@
       },
       "actorLabelSlot": {
         "showLabel": false,
-        "variantReference": "component_project_foqn_s2_label::variant::default",
         "placement": {
           "mode": "outsideEdge",
           "alignX": 0.5,
@@ -96,8 +95,11 @@
           "offsetX": 0,
           "offsetY": 4
         },
-        "overrides": {},
-        "useActorColor": false
+        "useActorColor": false,
+        "componentSlot": {
+          "variantReference": "component_project_foqn_s2_label::variant::default",
+          "overrides": {}
+        }
       },
       "incomingBackground": "gray_020|gray_080",
       "incomingText": "gray_010|gray_100",
@@ -124,8 +126,6 @@
       },
       "mediaPosition": "bottom",
       "avatarSlot": {
-        "variantReference": "component_project_foqn_s2_avatar::variant::default",
-        "overrides": {},
         "showAvatar": false,
         "reserveTextSpace": false,
         "placement": {
@@ -134,6 +134,10 @@
           "alignY": 0.5,
           "offsetX": -8,
           "offsetY": 0
+        },
+        "componentSlot": {
+          "variantReference": "component_project_foqn_s2_avatar::variant::default",
+          "overrides": {}
         }
       },
       "status": {
@@ -214,7 +218,6 @@
         },
         "actorLabelSlot": {
           "showLabel": false,
-          "variantReference": "component_project_foqn_s2_label::variant::default",
           "placement": {
             "mode": "outsideEdge",
             "alignX": 0.5,
@@ -222,8 +225,11 @@
             "offsetX": 0,
             "offsetY": 4
           },
-          "overrides": {},
-          "useActorColor": false
+          "useActorColor": false,
+          "componentSlot": {
+            "variantReference": "component_project_foqn_s2_label::variant::default",
+            "overrides": {}
+          }
         },
         "incomingBackground": "gray_020|gray_080",
         "incomingText": "gray_010|gray_100",
@@ -250,8 +256,6 @@
         },
         "mediaPosition": "bottom",
         "avatarSlot": {
-          "variantReference": "component_project_foqn_s2_avatar::variant::default",
-          "overrides": {},
           "showAvatar": false,
           "reserveTextSpace": false,
           "placement": {
@@ -260,6 +264,10 @@
             "alignY": 0.5,
             "offsetX": -8,
             "offsetY": 0
+          },
+          "componentSlot": {
+            "variantReference": "component_project_foqn_s2_avatar::variant::default",
+            "overrides": {}
           }
         },
         "status": {
@@ -354,7 +362,6 @@
           },
           "actorLabelSlot": {
             "showLabel": true,
-            "variantReference": "component_project_foqn_s2_label::variant::default",
             "placement": {
               "mode": "center",
               "alignX": 0,
@@ -362,27 +369,30 @@
               "offsetX": 31,
               "offsetY": 1
             },
-            "overrides": {
-              "label": {
-                "surfaceSlot": {
-                  "overrides": {
-                    "surface": {
-                      "backgroundAlpha": 1,
-                      "borderAlpha": 1,
-                      "backgroundColorToken": "theme.colors.badge"
-                    },
-                    "style": {
-                      "shadowEnabled": true,
-                      "cornerRadiusToken": "theme.radii.m"
+            "useActorColor": true,
+            "componentSlot": {
+              "variantReference": "component_project_foqn_s2_label::variant::default",
+              "overrides": {
+                "label": {
+                  "surfaceSlot": {
+                    "overrides": {
+                      "surface": {
+                        "backgroundAlpha": 1,
+                        "borderAlpha": 1,
+                        "backgroundColorToken": "theme.colors.badge"
+                      },
+                      "style": {
+                        "shadowEnabled": true,
+                        "cornerRadiusToken": "theme.radii.m"
+                      }
                     }
-                  }
-                },
-                "reserveSubtextSpace": false,
-                "subtextVerticalPosition": "bottom",
-                "subtextHorizontalAlign": "center"
+                  },
+                  "reserveSubtextSpace": false,
+                  "subtextVerticalPosition": "bottom",
+                  "subtextHorizontalAlign": "center"
+                }
               }
-            },
-            "useActorColor": true
+            }
           },
           "incomingBackground": "gray_090|gray_010",
           "incomingText": "gray_010|gray_100",
@@ -409,26 +419,6 @@
           },
           "mediaPosition": "top",
           "avatarSlot": {
-            "variantReference": "component_project_foqn_s2_avatar::variant::default",
-            "overrides": {
-              "avatar": {
-                "labelSlot": {
-                  "showLabel": false,
-                  "showSubtext": false,
-                  "placement": {
-                    "mode": "outsideEdge",
-                    "alignX": 0,
-                    "alignY": 1,
-                    "offsetX": 50,
-                    "offsetY": 0
-                  }
-                },
-                "defaultSize": 30
-              },
-              "style": {
-                "shadowEnabled": true
-              }
-            },
             "showAvatar": true,
             "reserveTextSpace": false,
             "placement": {
@@ -437,6 +427,28 @@
               "alignY": 0,
               "offsetX": -24,
               "offsetY": 30
+            },
+            "componentSlot": {
+              "variantReference": "component_project_foqn_s2_avatar::variant::default",
+              "overrides": {
+                "avatar": {
+                  "labelSlot": {
+                    "showLabel": false,
+                    "showSubtext": false,
+                    "placement": {
+                      "mode": "outsideEdge",
+                      "alignX": 0,
+                      "alignY": 1,
+                      "offsetX": 50,
+                      "offsetY": 0
+                    }
+                  },
+                  "defaultSize": 30
+                },
+                "style": {
+                  "shadowEnabled": true
+                }
+              }
             }
           },
           "status": {
@@ -1928,20 +1940,20 @@
     {
       "id": "component.bubble.actorLabel.editor",
       "label": "Actor label",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "bubble",
         "actorLabelSlot",
-        "variantReference"
+        "componentSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_label::variant::default\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "label",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",
@@ -2029,20 +2041,20 @@
     {
       "id": "component.bubble.avatar.editor",
       "label": "Avatar",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "bubble",
         "avatarSlot",
-        "variantReference"
+        "componentSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_avatar::variant::default\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "avatar",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",
@@ -2449,20 +2461,19 @@
     {
       "id": "component.bubble.media.audio.editor",
       "label": "Audio variant",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "bubble",
-        "audioSlot",
-        "variantReference"
+        "audioSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_audio::variant::default\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "audio",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",
@@ -2478,20 +2489,19 @@
     {
       "id": "component.bubble.media.image.editor",
       "label": "Image variant",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "bubble",
-        "imageMediaSlot",
-        "variantReference"
+        "imageMediaSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_media::variant::default\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "media",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",
@@ -2627,20 +2637,19 @@
     {
       "id": "component.bubble.media.video.editor",
       "label": "Video variant",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "bubble",
-        "videoMediaSlot",
-        "variantReference"
+        "videoMediaSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_media::variant::default\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "media",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",
@@ -4202,20 +4211,19 @@
     {
       "id": "component.bubble.surface.editor",
       "label": "Surface",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "bubble",
-        "surfaceSlot",
-        "variantReference"
+        "surfaceSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_surface::variant::default\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "surface",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",
@@ -4334,20 +4342,19 @@
     {
       "id": "component.bubble.textBox.editor",
       "label": "Text box",
-      "valueKind": "ComponentVariant",
+      "valueKind": "ComponentVariantSlot",
       "jsonPath": [
         "bubble",
-        "textBoxSlot",
-        "variantReference"
+        "textBoxSlot"
       ],
-      "defaultValue": "default",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_textBox::variant::default\",\"overrides\":{\"textBox\":{\"placeholder\":\"\",\"maxLines\":12,\"iconGap\":\"theme.spacing.none\",\"leftIconRowSlot\":{\"variantReference\":\"component_project_foqn_s2_iconRow::variant::default\",\"overrides\":{\"iconRow\":{\"items\":[],\"gap\":\"theme.spacing.none\",\"orientation\":\"horizontal\"}}},\"rightIconRowSlot\":{\"variantReference\":\"component_project_foqn_s2_iconRow::variant::default\",\"overrides\":{\"iconRow\":{\"items\":[],\"gap\":\"theme.spacing.none\",\"orientation\":\"horizontal\"}}}}}}",
       "isEditable": true,
       "options": [],
       "pairLabels": null,
       "number": null,
       "componentInputBindings": null,
       "structuredCollection": null,
-      "componentVariantType": "",
+      "componentVariantType": "textBox",
       "runtimeInputComponentVariantFieldId": "",
       "unit": "",
       "helpText": "",

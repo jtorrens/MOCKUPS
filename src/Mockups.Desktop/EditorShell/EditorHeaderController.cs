@@ -22,6 +22,8 @@ internal sealed class EditorHeaderController
     private readonly EditorEmbeddedUsageNavigator _embeddedUsageNavigator;
     private readonly Action<ProjectTreeNode, bool> _showNode;
     private readonly Func<ProjectTreeNode, Task> _reloadAndSelect;
+    private readonly Func<EditorEmbeddedContext, string, Task<ProjectTreeNode>>
+        _promoteEmbeddedOverridesToVariant;
     private readonly Action<ProjectTreeNode> _returnToEmbeddedOwner;
     private readonly Action<EditorEmbeddedContext> _showEmbeddedContext;
     private readonly Func<ProjectTreeNode, IReadOnlyList<EditorVariantHistorySnapshot>> _variantHistory;
@@ -44,6 +46,8 @@ internal sealed class EditorHeaderController
         EditorEmbeddedUsageNavigator embeddedUsageNavigator,
         Action<ProjectTreeNode, bool> showNode,
         Func<ProjectTreeNode, Task> reloadAndSelect,
+        Func<EditorEmbeddedContext, string, Task<ProjectTreeNode>>
+            promoteEmbeddedOverridesToVariant,
         Action<ProjectTreeNode> returnToEmbeddedOwner,
         Action<EditorEmbeddedContext> showEmbeddedContext,
         Func<ProjectTreeNode, IReadOnlyList<EditorVariantHistorySnapshot>> variantHistory,
@@ -64,6 +68,8 @@ internal sealed class EditorHeaderController
         _embeddedUsageNavigator = embeddedUsageNavigator;
         _showNode = showNode;
         _reloadAndSelect = reloadAndSelect;
+        _promoteEmbeddedOverridesToVariant =
+            promoteEmbeddedOverridesToVariant;
         _returnToEmbeddedOwner = returnToEmbeddedOwner;
         _showEmbeddedContext = showEmbeddedContext;
         _variantHistory = variantHistory;
@@ -227,7 +233,9 @@ internal sealed class EditorHeaderController
                 ? null
                 : EditorStructureButton.Create(async () => await _embeddedUsageNavigator.ShowForEmbedded(context.OwnerNode, context.Slot)));
         SetHeaderActions(
-            CreateEmbeddedHeaderActions(context));
+            CreateEmbeddedHeaderActions(
+                context,
+                prepared));
         SetContextStrip(
             ContextMetadataForEmbedded(
                 context,
@@ -409,15 +417,26 @@ internal sealed class EditorHeaderController
     }
 
     private Control CreateEmbeddedHeaderActions(
-        EditorEmbeddedContext context)
+        EditorEmbeddedContext context,
+        EditorPreparedHeader prepared)
     {
-        if (!context.IsRuntimeRoot
-            || context.RuntimeSource is not
-            {
-                PromoteOverridesToVariant: not null,
-            } source
-            || !OverrideDocumentContract.HasAuthoredValues(
-                source.Overrides))
+        Func<string, Task<ProjectTreeNode>>? promote =
+            context.IsRuntimeRoot
+                ? context.RuntimeSource
+                    ?.PromoteOverridesToVariant
+                : context.RuntimeSource is null
+                    && context.Slots.Count > 0
+                    && (context.OwnerNode.Kind is
+                        ProjectTreeNodeKind.ModuleVariant
+                        or ProjectTreeNodeKind.ComponentVariant)
+                    && !context.OwnerNode.IsLocked
+                    ? (name) =>
+                        _promoteEmbeddedOverridesToVariant(
+                            context,
+                            name)
+                    : null;
+        if (promote is null
+            || !prepared.HasAuthoredOverrides)
         {
             return CreateDesignNavigationButtons();
         }
@@ -427,14 +446,14 @@ internal sealed class EditorHeaderController
             Spacing = 6,
             Children =
             {
-                CreatePromoteOverridesButton(source),
+                CreatePromoteOverridesButton(promote),
                 CreateDesignNavigationButtons(),
             },
         };
     }
 
     private Button CreatePromoteOverridesButton(
-        RuntimeComponentOverrideSource source)
+        Func<string, Task<ProjectTreeNode>> promote)
     {
         var button = new Button
         {
@@ -458,8 +477,7 @@ internal sealed class EditorHeaderController
                 return;
             }
             var name = draft.Values["core.name"];
-            var variant = await source
-                .PromoteOverridesToVariant!(name);
+            var variant = await promote(name);
             await _reloadAndSelect(variant);
         };
         return button;
@@ -471,7 +489,7 @@ internal sealed class EditorHeaderController
             "component.variant.promoteOverrides",
             "component.variant",
             "Convert overrides to variant",
-            "This creates a complete Component Variant, updates the parent Module Variant to use it, and clears only the overrides at this boundary. Embedded overrides remain unchanged.",
+            "This creates a complete Component Variant, updates the parent Variant to use it, and clears only the overrides at this boundary. Embedded overrides remain unchanged.",
             "Convert to variant",
             [
                 new FieldValue(
