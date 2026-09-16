@@ -118,7 +118,9 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                 (field) => DefaultValue(collection, field),
                 (reference) => _services.GetComponentVariantRuntimeValues?.Invoke(reference)
                     ?? throw new InvalidOperationException(
-                        $"Component Variant '{reference}' has no Runtime values provider."));
+                        $"Component Variant '{reference}' has no Runtime values provider."),
+                suggestedOrdinal: StructuredCollectionItemFactory
+                    .NextSuggestedOrdinal(collection, items));
             return _services.PrepareStructuredCollectionItemCreation is null
                 ? prototype
                 : await _services.PrepareStructuredCollectionItemCreation(

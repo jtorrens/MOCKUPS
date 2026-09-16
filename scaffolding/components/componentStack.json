@@ -1470,6 +1470,14 @@
         },
         "fields": [
           {
+            "id": "name",
+            "label": "Name",
+            "jsonKey": "name",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "Slot"
+          },
+          {
             "id": "alternatives",
             "label": "States",
             "jsonKey": "alternatives",

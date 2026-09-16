@@ -1462,7 +1462,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 var prototype = await PrepareCollectionItemCreation(
                     owner,
                     collection,
-                    DefaultCollectionItem(owner, collection));
+                    DefaultCollectionItem(owner, collection, items));
                 if (prototype is null) return;
                 var result = await Mutate(new AddStructuredCollectionItem(
                     address,
@@ -1479,7 +1479,7 @@ internal sealed class RuntimeInputsCollectionEditor
                 var prototype = await PrepareCollectionItemCreation(
                     owner,
                     collection,
-                    DefaultCollectionItem(owner, collection));
+                    DefaultCollectionItem(owner, collection, items));
                 if (prototype is null) return;
                 var result = await Mutate(new AddStructuredCollectionItem(
                     address,
@@ -1905,7 +1905,10 @@ internal sealed class RuntimeInputsCollectionEditor
         input.ShowInEditor
         && (!input.ActionOnly || (owner.IsInstance && input.Animation is not null));
 
-    private JsonObject DefaultCollectionItem(RuntimeInputOwner owner, RuntimeInputCollectionDefinition collection)
+    private JsonObject DefaultCollectionItem(
+        RuntimeInputOwner owner,
+        RuntimeInputCollectionDefinition collection,
+        IReadOnlyList<JsonObject> items)
     {
         return StructuredCollectionItemFactory.Create(
             collection,
@@ -1939,7 +1942,10 @@ internal sealed class RuntimeInputsCollectionEditor
                 item,
                 definition,
                 DesignPreviewTestValues.Parse(owner.ConfigJson),
-                ComponentVariantConfig));
+                ComponentVariantConfig),
+            StructuredCollectionItemFactory.NextSuggestedOrdinal(
+                collection,
+                items));
     }
 
     private async Task<JsonObject?> PrepareCollectionItemCreation(
