@@ -37,6 +37,7 @@ internal sealed class SqliteEditorChildStore
             ["episode"] = (parent, _) => PrepareEpisodeCreation(parent),
             ["shot"] = (parent, _) => PrepareShotCreation(parent),
             ["moduleInstance"] = PrepareModuleInstanceCreation,
+            ["variant"] = (parent, _) => PrepareVariantCreation(parent),
         };
         _creationCommitters = new Dictionary<string, Func<ProjectTreeNode, RecordCreationDraft, ProjectTreeNode>>(StringComparer.Ordinal)
         {
@@ -48,6 +49,7 @@ internal sealed class SqliteEditorChildStore
             ["episode"] = (parent, draft) => CreateEpisode(parent, draft.Values),
             ["shot"] = (parent, draft) => CreateShot(parent, draft.Values),
             ["moduleInstance"] = CreateModuleInstance,
+            ["variant"] = (parent, draft) => CreateVariant(parent, draft.Values),
         };
     }
 
@@ -270,6 +272,39 @@ internal sealed class SqliteEditorChildStore
             selection,
             _resources.GetRequiredActorOptions(shotSettings.ProjectId));
     }
+
+    private static RecordCreationDefinition PrepareVariantCreation(
+        ProjectTreeNode parent)
+    {
+        if (parent.Kind is not ProjectTreeNodeKind.ComponentClass
+            and not ProjectTreeNodeKind.Module)
+        {
+            throw new InvalidOperationException(
+                $"Record creation 'variant' requires a Component Class or Module, not {parent.Kind}.");
+        }
+        return new RecordCreationDefinition(
+            "variant",
+            parent.Kind == ProjectTreeNodeKind.ComponentClass
+                ? "component.variant"
+                : "module.variant",
+            "Add Variant",
+            $"Create a complete Variant from the protected Default Variant of {parent.Name}.",
+            "Add",
+            [
+                Field(
+                    "core.name",
+                    "Name",
+                    ValueKind.StringSingleLine,
+                    "New Variant"),
+            ]);
+    }
+
+    private ProjectTreeNode CreateVariant(
+        ProjectTreeNode parent,
+        IReadOnlyDictionary<string, string> values) =>
+        _design.CreateVariantFromDefault(
+            parent,
+            Required(values, "core.name"));
 
     private ProjectTreeNode CreateModuleInstance(
         ProjectTreeNode shot,

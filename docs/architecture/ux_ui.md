@@ -408,8 +408,11 @@ When an action is valid both in the tree and editor, it uses the same label,
 rules, result and confirmation in both places. Rename is therefore consistent
 between Design and Production surfaces.
 
-App and Module definitions expose Rename only. Module Variants expose Create,
-Duplicate, Rename and conditional Delete. Other records expose only actions
+App and Module definitions expose Rename only. The Module tree row exposes Add
+Variant and creates it from that Module's protected Default Variant. A Variant
+row exposes Duplicate, which clones that exact Variant, plus Rename and
+conditional Delete. Component Class and Component Variant rows follow the same
+creation-versus-duplication distinction. Other records expose only actions
 allowed by their exact owner and Usage state.
 
 Deletion confirmation presents each blocking Usage reference as a navigable

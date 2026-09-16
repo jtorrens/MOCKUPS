@@ -23,7 +23,6 @@ internal sealed class EditorHeaderController
     private readonly Action<ProjectTreeNode, bool> _showNode;
     private readonly Action<ProjectTreeNode> _returnToEmbeddedOwner;
     private readonly Action<EditorEmbeddedContext> _showEmbeddedContext;
-    private readonly Func<ProjectTreeNode, Task> _saveVariant;
     private readonly Func<ProjectTreeNode, IReadOnlyList<EditorVariantHistorySnapshot>> _variantHistory;
     private readonly Func<ProjectTreeNode, EditorVariantHistorySnapshot, Task> _restoreVariantSnapshot;
     private readonly Func<EditorDesignNavigationAvailability>
@@ -43,7 +42,6 @@ internal sealed class EditorHeaderController
         Action<ProjectTreeNode, bool> showNode,
         Action<ProjectTreeNode> returnToEmbeddedOwner,
         Action<EditorEmbeddedContext> showEmbeddedContext,
-        Func<ProjectTreeNode, Task> saveVariant,
         Func<ProjectTreeNode, IReadOnlyList<EditorVariantHistorySnapshot>> variantHistory,
         Func<ProjectTreeNode, EditorVariantHistorySnapshot, Task> restoreVariantSnapshot,
         Func<EditorDesignNavigationAvailability>
@@ -61,7 +59,6 @@ internal sealed class EditorHeaderController
         _showNode = showNode;
         _returnToEmbeddedOwner = returnToEmbeddedOwner;
         _showEmbeddedContext = showEmbeddedContext;
-        _saveVariant = saveVariant;
         _variantHistory = variantHistory;
         _restoreVariantSnapshot = restoreVariantSnapshot;
         _designNavigationAvailability =
@@ -347,7 +344,6 @@ internal sealed class EditorHeaderController
                 Children =
                 {
                     CreateHistoryComboBox(moduleVariant),
-                    CreateNewVariantButton(moduleVariant),
                     CreateDesignNavigationButtons(),
                 },
             };
@@ -374,7 +370,6 @@ internal sealed class EditorHeaderController
             Children =
             {
                 CreateHistoryComboBox(variantSourceNode),
-                CreateNewVariantButton(variantSourceNode),
                 CreateDesignNavigationButtons(),
             },
         };
@@ -480,37 +475,4 @@ internal sealed class EditorHeaderController
         return combo;
     }
 
-    private Button CreateNewVariantButton(ProjectTreeNode node)
-    {
-        var icon = EditorIcons.CreateSemantic("New Variant", EditorIcons.Add, 15);
-        EditorIcons.ApplyBrush(icon, new SolidColorBrush(Color.Parse("#D6A638")));
-        var button = new Button
-        {
-            Content = new StackPanel
-            {
-                Orientation = Orientation.Horizontal,
-                Spacing = 7,
-                Children =
-                {
-                    icon,
-                    new TextBlock
-                    {
-                        Text = "New Variant…",
-                        FontWeight = FontWeight.SemiBold,
-                        VerticalAlignment = VerticalAlignment.Center,
-                    },
-                },
-            },
-            Height = 34,
-            MinWidth = 126,
-            Padding = new Thickness(10, 0),
-            Background = Brushes.Transparent,
-            BorderBrush = new SolidColorBrush(Color.Parse("#80D6A638")),
-            BorderThickness = new Thickness(1),
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        ToolTip.SetTip(button, $"Create a new Variant by cloning {node.Name}.");
-        button.Click += async (_, _) => await _saveVariant(node);
-        return button;
-    }
 }

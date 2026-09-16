@@ -57,37 +57,6 @@ internal sealed class EditorNodeCommandController
         _browsePath = browsePath;
     }
 
-    public async Task SaveCurrentVariant(ProjectTreeNode node)
-    {
-        var variantName = await Dialogs().PromptText(
-            "New Variant",
-            "Variant name",
-            $"{node.Name} copy");
-        if (string.IsNullOrWhiteSpace(variantName))
-        {
-            return;
-        }
-
-        try
-        {
-            var variant = await _operations.ExecuteAsync(
-                () => node.Kind switch
-                {
-                    ProjectTreeNodeKind.ComponentVariant =>
-                        _database.SaveComponentVariant(node, variantName),
-                    ProjectTreeNodeKind.ModuleVariant =>
-                        _database.SaveModuleVariant(node, variantName),
-                    _ => throw new InvalidOperationException(
-                        "Variants can only be saved from a selected variant."),
-                });
-            await _reloadAndSelect(variant);
-        }
-        catch (Exception exception)
-        {
-            _messages.Error($"Create Variant from {node.Name}", exception);
-        }
-    }
-
     public async Task RestoreVariantSnapshot(ProjectTreeNode node, EditorVariantHistorySnapshot snapshot)
     {
         if (node.Kind is not ProjectTreeNodeKind.ComponentVariant and not ProjectTreeNodeKind.ModuleVariant)

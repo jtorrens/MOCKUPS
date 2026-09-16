@@ -84,8 +84,9 @@ componentClassId::variant::variantId
 ```
 
 The parent class owns the schema and Variant list. The selected Variant owns
-its complete authored config. A newly saved Variant clones the complete active
-Variant and receives a new stable id.
+its complete authored config. The parent's Add action creates a new Variant
+from its complete protected Default Variant and assigns a new stable id.
+Duplicating a Variant instead clones that exact selected Variant.
 
 The protected Default Variant is the entry point when a new boundary crosses
 into a Component Class. It may be renamed and cannot be deleted. Other
@@ -121,9 +122,10 @@ duplicating or deleting a definition is a development workflow because the
 operation must also supply or remove its complete manifest, implementation,
 contract, migration and validation surface.
 
-Module Variants are authored data. They can be created by cloning the active
-complete Variant, duplicated, renamed and deleted when unused, unlocked and
-not protected. Production stores an exact Module Variant id.
+Module Variants are authored data. A Module's Add action creates one from its
+complete protected Default Variant. Duplicating a Module Variant clones that
+exact selected Variant. Variants may be renamed and deleted when unused,
+unlocked and not protected. Production stores an exact Module Variant id.
 
 Project context is supplied only by the selected Design-tree projection or by
 the Production Screen's owning Shot. It is never stored on the App, Module or

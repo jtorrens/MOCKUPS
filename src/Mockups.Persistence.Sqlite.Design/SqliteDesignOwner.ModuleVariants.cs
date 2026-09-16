@@ -80,18 +80,14 @@ internal sealed partial class SqliteDesignOwner
                 variant.Name))
             .ToList();
 
-    public ProjectTreeNode SaveModuleVariant(
-        ProjectTreeNode sourceNode,
+    private ProjectTreeNode CreateModuleVariantFromDefault(
+        ProjectTreeNode parent,
         string name)
     {
-        if (sourceNode.Kind != ProjectTreeNodeKind.ModuleVariant
-            || !VariantReferenceId.TryParse(
-                sourceNode.Id,
-                out var moduleId,
-                out _))
+        if (parent.Kind != ProjectTreeNodeKind.Module)
         {
             throw new InvalidOperationException(
-                "Module variants can only be saved from an active selected variant.");
+                "Module Variants can only be created under a Module.");
         }
 
         var variantName = name.Trim();
@@ -104,20 +100,27 @@ internal sealed partial class SqliteDesignOwner
         lock (WriteGate)
         {
             using var connection = OpenConnection();
-            var settings = GetModuleVariantSettings(sourceNode);
+            var moduleId = parent.Id;
             var module = GetModuleSettings(moduleId);
             var metadata = ParseJsonObject(module.MetadataJson);
             var variants = VariantEnvelopeContract.RequiredArray(
                 metadata,
                 "variants",
                 $"Module '{moduleId}'");
+            var defaultConfig = (VariantEnvelopeContract.FindSource(
+                    variants,
+                    VariantEnvelopeContract.DefaultId)?["config"] as JsonObject
+                ?? throw new InvalidOperationException(
+                    $"Module '{moduleId}' has no complete Default Variant config."))
+                .DeepClone()
+                .AsObject();
             var variantId = VariantEnvelopeContract.UniqueId(
                 variants,
                 variantName);
             variants.Add(VariantEnvelopeContract.CreateSource(
                 variantId,
                 variantName,
-                ParseJsonObject(settings.ConfigJson)));
+                defaultConfig));
             _appModuleRepository.UpdateModuleMetadata(
                 connection,
                 moduleId,
@@ -126,6 +129,52 @@ internal sealed partial class SqliteDesignOwner
                 ProjectTreeNodeKind.ModuleVariant,
                 VariantReferenceId.Format(moduleId, variantId),
                 variantName,
+                "Module variant",
+                ProjectTreeNode.DefaultRecordClassId(
+                    ProjectTreeNodeKind.ModuleVariant),
+                parent);
+        }
+    }
+
+    public ProjectTreeNode DuplicateModuleVariant(
+        ProjectTreeNode sourceNode)
+    {
+        if (sourceNode.Kind != ProjectTreeNodeKind.ModuleVariant
+            || !VariantReferenceId.TryParse(
+                sourceNode.Id,
+                out var moduleId,
+                out _))
+        {
+            throw new InvalidOperationException(
+                "Only a Module Variant can be duplicated.");
+        }
+
+        var source = GetModuleVariantSettings(sourceNode);
+        var copyName = $"{sourceNode.Name} copy";
+        lock (WriteGate)
+        {
+            using var connection = OpenConnection();
+            var module = GetModuleSettings(moduleId);
+            var metadata = ParseJsonObject(module.MetadataJson);
+            var variants = VariantEnvelopeContract.RequiredArray(
+                metadata,
+                "variants",
+                $"Module '{moduleId}'");
+            var variantId = VariantEnvelopeContract.UniqueId(
+                variants,
+                copyName);
+            variants.Add(VariantEnvelopeContract.CreateSource(
+                variantId,
+                copyName,
+                ParseJsonObject(source.ConfigJson)));
+            _appModuleRepository.UpdateModuleMetadata(
+                connection,
+                moduleId,
+                metadata.ToJsonString());
+            return new ProjectTreeNode(
+                ProjectTreeNodeKind.ModuleVariant,
+                VariantReferenceId.Format(moduleId, variantId),
+                copyName,
                 "Module variant",
                 ProjectTreeNode.DefaultRecordClassId(
                     ProjectTreeNodeKind.ModuleVariant),

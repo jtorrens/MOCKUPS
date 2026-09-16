@@ -317,9 +317,7 @@ internal sealed class SqliteEditorNodeCommandStore
             case ProjectTreeNodeKind.ComponentVariant:
                 return _design.DuplicateComponentVariant(node);
             case ProjectTreeNodeKind.ModuleVariant:
-                return _design.SaveModuleVariant(
-                    node,
-                    $"{node.Name} copy");
+                return _design.DuplicateModuleVariant(node);
             default:
                 throw new InvalidOperationException(
                     $"Cannot duplicate {node.Kind}.");
@@ -366,16 +364,6 @@ internal sealed class SqliteEditorNodeCommandStore
         ProjectTreeNode node,
         string configJson) =>
         _design.ReplaceModuleVariantConfig(node, configJson);
-
-    internal ProjectTreeNode SaveComponentVariant(
-        ProjectTreeNode sourceNode,
-        string name) =>
-        _design.SaveComponentVariant(sourceNode, name);
-
-    internal ProjectTreeNode SaveModuleVariant(
-        ProjectTreeNode sourceNode,
-        string name) =>
-        _design.SaveModuleVariant(sourceNode, name);
 
     internal ProjectTreeNode ToggleComponentVariantLock(
         ProjectTreeNode node) =>

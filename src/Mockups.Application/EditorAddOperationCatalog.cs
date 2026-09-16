@@ -32,6 +32,8 @@ public static class EditorAddOperationCatalog
             [ProjectTreeNodeKind.EpisodesRoot] = new("episode.create", EditorAddOperationKind.CreateRecord, "Add episode", "episode"),
             [ProjectTreeNodeKind.Episode] = new("shot.create", EditorAddOperationKind.CreateRecord, "Add shot", "shot"),
             [ProjectTreeNodeKind.Shot] = new("module-instance.select", EditorAddOperationKind.SelectModuleInstance, "Add screen"),
+            [ProjectTreeNodeKind.ComponentClass] = new("variant.create", EditorAddOperationKind.CreateRecord, "Add variant", "variant"),
+            [ProjectTreeNodeKind.Module] = new("variant.create", EditorAddOperationKind.CreateRecord, "Add variant", "variant"),
         };
 
     public static bool TryGet(

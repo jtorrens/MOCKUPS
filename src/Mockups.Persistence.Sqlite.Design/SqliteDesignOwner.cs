@@ -32,6 +32,19 @@ internal sealed partial class SqliteDesignOwner :
     internal IComponentClassRepository ComponentClassRepository =>
         _componentClassRepository;
 
+    internal ProjectTreeNode CreateVariantFromDefault(
+        ProjectTreeNode parent,
+        string name) =>
+        parent.Kind switch
+        {
+            ProjectTreeNodeKind.ComponentClass =>
+                CreateComponentVariantFromDefault(parent, name),
+            ProjectTreeNodeKind.Module =>
+                CreateModuleVariantFromDefault(parent, name),
+            _ => throw new InvalidOperationException(
+                $"Variants cannot be created under {parent.Kind}."),
+        };
+
     private SqliteConnection OpenConnection() => _context.OpenConnection();
 
     private static JsonObject ParseJsonObject(string json) =>

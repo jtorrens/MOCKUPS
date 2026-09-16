@@ -363,16 +363,6 @@ internal sealed class SqliteEditorNodeCommandPort(
         string configJson) =>
         target.ReplaceModuleVariantConfig(node, configJson);
 
-    public ProjectTreeNode SaveComponentVariant(
-        ProjectTreeNode sourceNode,
-        string name) =>
-        target.SaveComponentVariant(sourceNode, name);
-
-    public ProjectTreeNode SaveModuleVariant(
-        ProjectTreeNode sourceNode,
-        string name) =>
-        target.SaveModuleVariant(sourceNode, name);
-
     public ProjectTreeNode ToggleComponentVariantLock(
         ProjectTreeNode node) =>
         target.ToggleComponentVariantLock(node);

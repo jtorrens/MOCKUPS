@@ -228,14 +228,14 @@ internal sealed partial class SqliteDesignOwner
         }
     }
 
-    public ProjectTreeNode SaveComponentVariant(
-        ProjectTreeNode sourceNode,
+    private ProjectTreeNode CreateComponentVariantFromDefault(
+        ProjectTreeNode parent,
         string name)
     {
-        if (sourceNode.Kind is not ProjectTreeNodeKind.ComponentVariant)
+        if (parent.Kind is not ProjectTreeNodeKind.ComponentClass)
         {
             throw new InvalidOperationException(
-                "Component variants can only be saved from an active selected variant.");
+                "Component Variants can only be created under a Component Class.");
         }
 
         var variantName = name.Trim();
@@ -248,19 +248,7 @@ internal sealed partial class SqliteDesignOwner
         lock (WriteGate)
         {
             using var connection = OpenConnection();
-            if (!VariantReferenceId.TryParse(
-                    sourceNode.Id,
-                    out var componentClassId,
-                    out _))
-            {
-                throw new InvalidOperationException(
-                    $"Invalid component variant node id '{sourceNode.Id}'.");
-            }
-
-            var sourceConfig = ParseJsonObject(
-                GetComponentVariantSettings(
-                    connection,
-                    sourceNode).ConfigJson);
+            var componentClassId = parent.Id;
             var settings = GetComponentClassSettings(
                 connection,
                 componentClassId);
@@ -269,13 +257,20 @@ internal sealed partial class SqliteDesignOwner
                 metadata,
                 "variants",
                 $"Component class '{componentClassId}'");
+            var defaultConfig = (VariantEnvelopeContract.FindSource(
+                    variants,
+                    VariantEnvelopeContract.DefaultId)?["config"] as JsonObject
+                ?? throw new InvalidOperationException(
+                    $"Component Class '{componentClassId}' has no complete Default Variant config."))
+                .DeepClone()
+                .AsObject();
             var variantId = VariantEnvelopeContract.UniqueId(
                 variants,
                 variantName);
             variants.Add(VariantEnvelopeContract.CreateSource(
                 variantId,
                 variantName,
-                sourceConfig));
+                defaultConfig));
             _componentClassRepository.UpdateMetadata(
                 connection,
                 componentClassId,
@@ -290,7 +285,7 @@ internal sealed partial class SqliteDesignOwner
                 "Component variant",
                 ProjectTreeNode.DefaultRecordClassId(
                     ProjectTreeNodeKind.ComponentVariant),
-                sourceNode.Parent);
+                parent);
         }
     }
 

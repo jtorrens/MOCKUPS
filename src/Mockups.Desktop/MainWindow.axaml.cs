@@ -396,7 +396,6 @@ public partial class MainWindow : SukiWindow
                     "editor-header"),
             ReturnToEmbeddedOwner,
             ShowEmbeddedContext,
-            _nodeCommands.SaveCurrentVariant,
             _variantHistory.Snapshots,
             _nodeCommands.RestoreVariantSnapshot,
             () => _workspaceCoordinator

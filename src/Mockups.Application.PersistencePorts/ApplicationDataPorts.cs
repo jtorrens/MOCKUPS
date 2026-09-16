@@ -315,12 +315,6 @@ public interface IEditorNodeCommandStore
     void ReplaceModuleVariantConfig(
         EditorShell.ProjectTreeNode node,
         string configJson);
-    EditorShell.ProjectTreeNode SaveComponentVariant(
-        EditorShell.ProjectTreeNode sourceNode,
-        string name);
-    EditorShell.ProjectTreeNode SaveModuleVariant(
-        EditorShell.ProjectTreeNode sourceNode,
-        string name);
     EditorShell.ProjectTreeNode ToggleComponentVariantLock(
         EditorShell.ProjectTreeNode node);
     EditorShell.ProjectTreeNode ToggleModuleVariantLock(
