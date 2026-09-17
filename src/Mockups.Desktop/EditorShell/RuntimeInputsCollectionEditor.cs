@@ -260,7 +260,8 @@ internal sealed class RuntimeInputsCollectionEditor
             persistedPreview,
             config,
             transientState,
-            _previewInputData.ComponentVariantConfig);
+            _previewInputData.ComponentVariantConfig,
+            _previewInputData.ComponentVariantRuntimeContract);
         cancellationToken.ThrowIfCancellationRequested();
         var inputs =
             RuntimeInputDefinitionReader.ReadInputs(
@@ -398,7 +399,8 @@ internal sealed class RuntimeInputsCollectionEditor
                 PrepareDefaultPreview(
                     owner.DesignPreviewJson,
                     config,
-                    _previewInputData.ComponentVariantConfig);
+                    _previewInputData.ComponentVariantConfig,
+                    _previewInputData.ComponentVariantRuntimeContract);
             var reset = new Button
             {
                 MinWidth = 150,
@@ -1028,12 +1030,14 @@ internal sealed class RuntimeInputsCollectionEditor
     internal static JsonObject PrepareDefaultPreview(
         string designPreviewJson,
         JsonObject config,
-        Func<string, JsonObject>? componentVariantConfig = null) =>
+        Func<string, JsonObject>? componentVariantConfig = null,
+        Func<string, JsonObject>? componentRuntimeValues = null) =>
         RuntimePreviewDocumentContract.PrepareFixture(
             DesignPreviewTestValues.Parse(
                 designPreviewJson),
             config,
-            componentVariantConfig);
+            componentVariantConfig,
+            componentRuntimeValues);
 
     private Control CreatePromotedRuntimeContractContent(
         RuntimeInputOwner owner,
@@ -2264,7 +2268,8 @@ internal sealed class RuntimeInputsCollectionEditor
                 item[runtimeKey] = RuntimePreviewDocumentContract.PrepareFixture(
                     currentRuntime,
                     effectiveConfig,
-                    ComponentVariantConfig);
+                    ComponentVariantConfig,
+                    _previewInputData.ComponentVariantRuntimeContract);
                 updates[runtimeKey] = item[runtimeKey];
             }
             if (owner.IsInstance)

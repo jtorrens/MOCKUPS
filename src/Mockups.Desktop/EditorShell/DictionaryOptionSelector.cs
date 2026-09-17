@@ -62,7 +62,8 @@ internal static class DictionaryOptionSelector
         var options = FieldOptionContract.RequireOptions(
             definition.Options,
             $"Dictionary field '{definition.Id}'");
-        if (((definition.ValueKind == ValueKind.RecordReference
+        if ((definition.AllowEmpty
+             || (definition.ValueKind == ValueKind.RecordReference
                 && definition.RecordReference?.AllowEmpty == true)
              || allowIncompleteDraft)
             && !options.Any((option) => string.IsNullOrWhiteSpace(option.Value)))

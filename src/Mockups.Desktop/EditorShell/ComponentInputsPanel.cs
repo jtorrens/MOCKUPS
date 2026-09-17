@@ -136,7 +136,8 @@ internal sealed class ComponentPreviewInputSession
             ParseJsonObject(payload.RuntimeContractJson),
             config,
             CaptureTransientState(payload),
-            _previewInputData.ComponentVariantConfig);
+            _previewInputData.ComponentVariantConfig,
+            _previewInputData.ComponentVariantRuntimeContract);
         _runtimePreview = preview;
         var inputs = RuntimeInputDefinitionReader.ReadInputs(preview, config);
         var collections = RuntimeInputDefinitionReader.ReadCollections(preview, config);
@@ -497,7 +498,8 @@ internal sealed class ComponentPreviewInputSession
             preview,
             _config,
             CaptureTransientState(_scopeKey),
-            _previewInputData.ComponentVariantConfig);
+            _previewInputData.ComponentVariantConfig,
+            _previewInputData.ComponentVariantRuntimeContract);
     }
 
     public JsonObject ApplyTransientTestValues(JsonObject preview, DesignPreviewPayload payload)
@@ -506,7 +508,8 @@ internal sealed class ComponentPreviewInputSession
             preview,
             ParseJsonObject(payload.ConfigJson),
             CaptureTransientState(payload),
-            _previewInputData.ComponentVariantConfig);
+            _previewInputData.ComponentVariantConfig,
+            _previewInputData.ComponentVariantRuntimeContract);
     }
 
     public ComponentPreviewTransientState CaptureTransientState(
@@ -579,7 +582,8 @@ internal sealed class ComponentPreviewInputSession
             ParseJsonObject(payload.RuntimeContractJson),
             config,
             CaptureTransientState(payload),
-            _previewInputData.ComponentVariantConfig);
+            _previewInputData.ComponentVariantConfig,
+            _previewInputData.ComponentVariantRuntimeContract);
         _nestedRecordInputResolver.Resolve(
             config,
             themeMode,
@@ -749,7 +753,8 @@ internal sealed class ComponentPreviewInputSession
         ComponentPreviewTransientValues.ReconcileRuntimeStructure(
             preview,
             config,
-            _previewInputData.ComponentVariantConfig);
+            _previewInputData.ComponentVariantConfig,
+            _previewInputData.ComponentVariantRuntimeContract);
     }
 
     private ComponentPreviewTransientState CaptureTransientState(

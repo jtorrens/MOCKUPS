@@ -79,7 +79,8 @@ internal sealed partial class SqliteProductionOwner
             ParseJsonObject(module.DesignPreviewJson),
             config,
             ParseJsonObject(instance.ContentJson),
-            _componentVariantConfigCatalog.GetComponentVariantConfig);
+            _componentVariantConfigCatalog.GetComponentVariantConfig,
+            _componentVariantConfigCatalog.GetComponentVariantRuntimeContract);
 
         preview.Remove("testValues");
         return preview.ToJsonString();
@@ -580,7 +581,8 @@ internal sealed partial class SqliteProductionOwner
             ParseJsonObject(moduleSettings.DesignPreviewJson),
             config,
             content,
-            _componentVariantConfigCatalog.GetComponentVariantConfig);
+            _componentVariantConfigCatalog.GetComponentVariantConfig,
+            _componentVariantConfigCatalog.GetComponentVariantRuntimeContract);
         return ProductionRuntimeCreationContract.Prepare(
             ModuleInstanceCreationDefinitionId(draft),
             content,
@@ -624,7 +626,8 @@ internal sealed partial class SqliteProductionOwner
             ParseJsonObject(moduleSettings.DesignPreviewJson),
             moduleConfig,
             initialContent,
-            _componentVariantConfigCatalog.GetComponentVariantConfig);
+            _componentVariantConfigCatalog.GetComponentVariantConfig,
+            _componentVariantConfigCatalog.GetComponentVariantRuntimeContract);
         var content = ProductionRuntimeCreationContract.Complete(
             ModuleInstanceCreationDefinitionId(draft),
             initialContent,
@@ -649,7 +652,8 @@ internal sealed partial class SqliteProductionOwner
             ParseJsonObject(moduleSettings.DesignPreviewJson),
             moduleConfig,
             content,
-            _componentVariantConfigCatalog.GetComponentVariantConfig);
+            _componentVariantConfigCatalog.GetComponentVariantConfig,
+            _componentVariantConfigCatalog.GetComponentVariantRuntimeContract);
         ProductionRuntimeFixtureIsolationContract.Validate(
             effectiveRuntime,
             moduleConfig,
@@ -805,7 +809,8 @@ internal sealed partial class SqliteProductionOwner
             ParseJsonObject(module.DesignPreviewJson),
             config,
             content,
-            _componentVariantConfigCatalog.GetComponentVariantConfig);
+            _componentVariantConfigCatalog.GetComponentVariantConfig,
+            _componentVariantConfigCatalog.GetComponentVariantRuntimeContract);
         ProductionRuntimeFixtureIsolationContract.Validate(
             effectiveRuntime,
             config,

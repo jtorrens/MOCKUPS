@@ -573,7 +573,8 @@ internal static class DesignPreviewPayloadFactory
         var effectivePreview = EffectiveRuntimeContract(
             DesignPreviewTestValues.Parse(settings.DesignPreviewJson),
             config,
-            ComponentVariantConfigResolver(settings.ComponentBaseConfigsJson));
+            ComponentVariantConfigResolver(settings.ComponentBaseConfigsJson),
+            dataSource.ComponentVariantRuntimeContract);
         var runtimeContractJson = DesignPreviewTestValues.RuntimeJson(effectivePreview.ToJsonString());
         var runtimePreview = DesignPreviewTestValues.Parse(runtimeContractJson);
         var actorId = runtimePreview["actorId"]?.GetValue<string>() ?? "";
@@ -641,7 +642,8 @@ internal static class DesignPreviewPayloadFactory
         var effectivePreview = EffectiveRuntimeContract(
             DesignPreviewTestValues.Parse(settings.DesignPreviewJson),
             DesignPreviewTestValues.Parse(configJson),
-            ComponentVariantConfigResolver(settings.ComponentBaseConfigsJson));
+            ComponentVariantConfigResolver(settings.ComponentBaseConfigsJson),
+            dataSource.ComponentVariantRuntimeContract);
         var runtimeContractJson = ResolveActionDurationsJson(
             configJson,
             theme.TokensJson,
@@ -703,12 +705,14 @@ internal static class DesignPreviewPayloadFactory
     private static JsonObject EffectiveRuntimeContract(
         JsonObject preview,
         JsonObject config,
-        Func<string, JsonObject> componentVariantConfig)
+        Func<string, JsonObject> componentVariantConfig,
+        Func<string, JsonObject> componentRuntimeValues)
     {
         return RuntimePreviewDocumentContract.PrepareFixture(
             preview,
             config,
-            componentVariantConfig);
+            componentVariantConfig,
+            componentRuntimeValues);
     }
 
     private static Func<string, JsonObject> ComponentVariantConfigResolver(

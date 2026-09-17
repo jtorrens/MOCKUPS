@@ -48,9 +48,10 @@ public static class FieldOptionContract
             return;
         }
 
-        if (definition.ValueKind == ValueKind.RecordReference
-            && string.IsNullOrEmpty(value)
-            && definition.RecordReference?.AllowEmpty == true)
+        if (string.IsNullOrEmpty(value)
+            && (definition.AllowEmpty
+                || (definition.ValueKind == ValueKind.RecordReference
+                    && definition.RecordReference?.AllowEmpty == true)))
         {
             return;
         }

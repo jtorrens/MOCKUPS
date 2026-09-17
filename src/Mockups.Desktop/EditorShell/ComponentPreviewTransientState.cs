@@ -84,7 +84,8 @@ internal static class ComponentPreviewTransientValues
         JsonObject preview,
         JsonObject config,
         ComponentPreviewTransientState state,
-        Func<string, JsonObject> componentVariantConfig)
+        Func<string, JsonObject> componentVariantConfig,
+        Func<string, JsonObject> componentRuntimeValues)
     {
         var authoring = preview.DeepClone().AsObject();
         NestedRuntimeRecordReferenceResolver.RemoveDeclaredResolvedValues(
@@ -93,7 +94,8 @@ internal static class ComponentPreviewTransientValues
         var envelope = RuntimePreviewDocumentContract.PrepareFixture(
             authoring,
             config,
-            componentVariantConfig);
+            componentVariantConfig,
+            componentRuntimeValues);
         if (state.HasCollectionTestValues)
         {
             envelope["testValues"] = ParseJsonObject(
@@ -109,7 +111,8 @@ internal static class ComponentPreviewTransientValues
         ReconcileRuntimeStructure(
             effective,
             config,
-            componentVariantConfig);
+            componentVariantConfig,
+            componentRuntimeValues);
         if (string.IsNullOrWhiteSpace(state.ScopeKey))
         {
             return effective;
@@ -137,19 +140,22 @@ internal static class ComponentPreviewTransientValues
         ReconcileRuntimeStructure(
             effective,
             config,
-            componentVariantConfig);
+            componentVariantConfig,
+            componentRuntimeValues);
         return effective;
     }
 
     public static void ReconcileRuntimeStructure(
         JsonObject preview,
         JsonObject config,
-        Func<string, JsonObject> componentVariantConfig)
+        Func<string, JsonObject> componentVariantConfig,
+        Func<string, JsonObject> componentRuntimeValues)
     {
         var prepared = RuntimePreviewDocumentContract.PrepareFixture(
             preview,
             config,
-            componentVariantConfig);
+            componentVariantConfig,
+            componentRuntimeValues);
         preview.Clear();
         foreach (var (key, value) in prepared)
         {

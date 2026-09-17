@@ -579,6 +579,7 @@ internal interface IModuleVariantCatalog
 internal interface IComponentVariantConfigCatalog
 {
     JsonObject GetComponentVariantConfig(string variantReference);
+    JsonObject GetComponentVariantRuntimeContract(string variantReference);
 }
 
 internal interface IComponentFieldDesignOptionSource

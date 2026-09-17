@@ -256,7 +256,8 @@ internal sealed partial class SqliteProductionOwner
         return RuntimePreviewDocumentContract.PrepareFixture(
             ParseJsonObject(module.DesignPreviewJson),
             ParseJsonObject(variant.ConfigJson),
-            _componentVariantConfigCatalog.GetComponentVariantConfig);
+            _componentVariantConfigCatalog.GetComponentVariantConfig,
+            _componentVariantConfigCatalog.GetComponentVariantRuntimeContract);
     }
 
     private static JsonObject ParseJsonObject(string json) =>

@@ -406,6 +406,10 @@ internal sealed class SqlitePreviewInputPort(
         ProjectTreeNode variantNode) =>
         design.GetComponentVariantSettings(variantNode);
 
+    public JsonObject GetComponentVariantRuntimeContract(
+        string variantReference) =>
+        design.GetComponentVariantRuntimeContract(variantReference);
+
     public string GetComponentClassBaseConfigsJson(string projectId) =>
         design.GetComponentClassBaseConfigsJson(projectId);
 

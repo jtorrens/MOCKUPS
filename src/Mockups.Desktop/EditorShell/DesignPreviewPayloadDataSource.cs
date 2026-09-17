@@ -397,6 +397,10 @@ internal sealed class DesignPreviewPayloadDataSource
             allowSystemPreviewFixtures: true);
     }
 
+    public JsonObject ComponentVariantRuntimeContract(
+        string variantReference) =>
+        _database.GetComponentVariantRuntimeContract(variantReference);
+
     private DesignPreviewComponentSource ComponentSource(
         ComponentClassSettings settings,
         string projectId)
