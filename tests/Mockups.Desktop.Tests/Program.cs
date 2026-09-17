@@ -12945,7 +12945,7 @@ static void PreviewVisualContextBoundaryPreservesResolvedResources()
         var database = new SqliteProjectTestContext(temporary);
         var dataSource = new PreviewVisualContextDataSource(database.PreviewInputs, database.Resources);
         var project = CanonicalProject(database);
-        var tree = new[] { project };
+        var tree = database.LoadProjectTree();
         var device = Descendants(tree).First((node) => node.Kind == ProjectTreeNodeKind.Device);
         var snapshot = dataSource.LoadSnapshot(project.Id);
 
@@ -12964,6 +12964,27 @@ static void PreviewVisualContextBoundaryPreservesResolvedResources()
             snapshot.DeviceMetrics(device.Id));
         Throws<InvalidOperationException>(
             () => snapshot.DeviceMetrics("missing_device"));
+        var otherProject = tree.Single((candidate) =>
+            candidate.Id != project.Id);
+        var otherSnapshot = dataSource.LoadSnapshot(
+            otherProject.Id);
+        Equal(otherProject.Id, otherSnapshot.ProjectId);
+        SequenceEqual(
+            database.GetDeviceOptions(otherProject.Id)
+                .Select((option) => option.Value),
+            otherSnapshot.DeviceOptions
+                .Select((option) => option.Value));
+        SequenceEqual(
+            database.GetThemeOptions(otherProject.Id)
+                .Select((option) => option.Value),
+            otherSnapshot.ThemeOptions
+                .Select((option) => option.Value));
+        True(!otherSnapshot.DeviceOptions.Any((option) =>
+            snapshot.DeviceOptions.Any((current) =>
+                current.Value == option.Value)));
+        True(!otherSnapshot.ThemeOptions.Any((option) =>
+            snapshot.ThemeOptions.Any((current) =>
+                current.Value == option.Value)));
 
         True(typeof(EditorPreviewController)
             .GetConstructors(
@@ -12985,6 +13006,13 @@ static void PreviewVisualContextBoundaryPreservesResolvedResources()
                 "Missing prepared Preview visual-context boundary.");
         True(typeof(Task).IsAssignableFrom(
             refreshOptions.ReturnType));
+        SequenceEqual(
+            [
+                typeof(IReadOnlyList<ProjectTreeNode>),
+                typeof(string),
+            ],
+            refreshOptions.GetParameters()
+                .Select((parameter) => parameter.ParameterType));
 
         var after = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, after);

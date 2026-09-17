@@ -677,7 +677,8 @@ public partial class MainWindow : SukiWindow
         try
         {
             return await _previewController.RefreshOptionsAsync(
-                Session.TreeRoots);
+                Session.TreeRoots,
+                Session.ProductionId);
         }
         catch (Exception exception)
         {
@@ -731,7 +732,10 @@ public partial class MainWindow : SukiWindow
         {
             _treeExpansion.ExpandAncestors(selected);
             RebuildNavigationCards();
-            RenderRootSelection(transition, rebuildTree: false);
+            RenderRootSelection(
+                transition,
+                rebuildTree: false,
+                previewOptionsCommitted: true);
         }
         else
         {
@@ -834,7 +838,8 @@ public partial class MainWindow : SukiWindow
         bool rebuildTree,
         EditorShellContextTransaction? transaction = null,
         EditorViewState? restoreState = null,
-        bool preserveCurrentContentWhilePreparing = false)
+        bool preserveCurrentContentWhilePreparing = false,
+        bool previewOptionsCommitted = false)
     {
         var node = transition.Current.SelectedNode
             ?? throw new InvalidOperationException(
@@ -868,9 +873,10 @@ public partial class MainWindow : SukiWindow
                 transition.Current.Revision,
                 restoreState);
         }
-        _ = RefreshPreviewAuthoringSurfaceAsync(
+        RefreshPreviewForSelection(
+            transition,
             node,
-            transition.Current.Revision);
+            previewOptionsCommitted);
         _editorHeader.SetRootTitle(
             editorNode.Name,
             EditorPreparedHeader.Loading(node.Id));
@@ -882,12 +888,56 @@ public partial class MainWindow : SukiWindow
             transaction?.Checkpoint("after-navigation-swap");
         }
         ApplyUiTextScale();
+    }
+
+    private void RefreshPreviewForSelection(
+        EditorSessionTransition transition,
+        ProjectTreeNode node,
+        bool previewOptionsCommitted = false)
+    {
         var revision = transition.Current.Revision;
-        var selectedNodeId = node.Id;
+        if (transition.Effects.HasFlag(
+                EditorSessionEffects.PreviewOptions)
+            && !previewOptionsCommitted)
+        {
+            _ = RefreshPreviewOptionsForSelectionAsync(
+                node,
+                revision);
+            return;
+        }
+
+        _ = RefreshPreviewAuthoringSurfaceAsync(
+            node,
+            revision);
         _previewController.ScheduleSelectionRefresh(() =>
             _workspaceCoordinator.IsCurrent(
                 revision,
-            selectedNodeId));
+                node.Id));
+    }
+
+    private async Task RefreshPreviewOptionsForSelectionAsync(
+        ProjectTreeNode node,
+        long revision)
+    {
+        if (!await RefreshPreviewOptionsAsync()
+            || !_workspaceCoordinator.IsCurrent(
+                revision,
+                node.Id))
+        {
+            return;
+        }
+        await RefreshPreviewAuthoringSurfaceAsync(
+            node,
+            revision);
+        if (_workspaceCoordinator.IsCurrent(
+                revision,
+                node.Id))
+        {
+            _previewController.ScheduleSelectionRefresh(() =>
+                _workspaceCoordinator.IsCurrent(
+                    revision,
+                    node.Id));
+        }
     }
 
     private async Task PrepareRootEditorAsync(
@@ -1630,23 +1680,15 @@ public partial class MainWindow : SukiWindow
         _ = PrepareEmbeddedEditorAsync(
             embedded,
             transition.Current.Revision);
-        _ = RefreshPreviewAuthoringSurfaceAsync(
-            node,
-            transition.Current.Revision);
+        RefreshPreviewForSelection(
+            transition,
+            node);
         _editorHeader.SetEmbeddedTitle(
             embedded,
             EditorPreparedHeader.Loading(
                 embedded.OwnerNode.Id));
         RebuildNavigationCards();
         ApplyUiTextScale();
-        var revision =
-            transition.Current.Revision;
-        _previewController
-            .ScheduleSelectionRefresh(
-                () => _workspaceCoordinator
-                    .IsCurrent(
-                        revision,
-                        node.Id));
     }
 
     private void SetEditorRootTitle(string title)
@@ -1918,7 +1960,8 @@ public partial class MainWindow : SukiWindow
             RenderRootSelection(
                 transition,
                 rebuildTree: false,
-                transaction);
+                transaction,
+                previewOptionsCommitted: true);
         }
         else
         {

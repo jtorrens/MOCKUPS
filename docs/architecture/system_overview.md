@@ -409,12 +409,16 @@ crosses domains.
 ### Editor shell
 
 `EditorWorkspaceCoordinator` is the single owner of the loaded tree, current
-workspace, active Production, selected node, embedded editor context, remembered
+workspace, active Project shared by Design and Production, selected node,
+embedded editor context, remembered
 workspace and Variant selections, session-only Design editor back/forward
 history, Preview transition revision and obsolete tree-load cancellation.
 Design history records exact Component or Module selections and their embedded
 context. It restores through coordinator transitions, skips deleted owners and
 discards its forward branch after a new navigation; it is never persisted.
+A Project selection in either workspace changes that one active Project. A
+workspace switch restores a remembered node only when it belongs to the active
+Project; otherwise it selects the first valid node inside that exact Project.
 A reload first produces an uncommitted tree candidate.
 The Desktop transition owner prepares the matching visual context and complete
 Production Preview catalog against that candidate, then commits both snapshots

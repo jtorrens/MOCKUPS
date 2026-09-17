@@ -54,6 +54,7 @@ internal sealed class EditorTreePreviewTransitionCoordinator
         {
             preview = await _preview.PrepareOptionsAsync(
                 tree.TreeRoots,
+                tree.ProjectId,
                 tree.Token);
             if (preview is null)
             {

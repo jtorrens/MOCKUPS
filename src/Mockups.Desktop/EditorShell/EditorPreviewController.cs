@@ -1211,10 +1211,12 @@ internal sealed class EditorPreviewController : IDisposable
     public string? SelectedDeviceId { get; private set; }
 
     public async Task<bool> RefreshOptionsAsync(
-        IReadOnlyList<ProjectTreeNode> treeRoots)
+        IReadOnlyList<ProjectTreeNode> treeRoots,
+        string projectId)
     {
         var prepared = await PrepareOptionsAsync(
             treeRoots,
+            projectId,
             CancellationToken.None);
         return prepared is not null
             && TryCommitOptions(prepared);
@@ -1223,10 +1225,22 @@ internal sealed class EditorPreviewController : IDisposable
     internal async Task<PreviewOptionsPreparation?>
         PrepareOptionsAsync(
             IReadOnlyList<ProjectTreeNode> treeRoots,
+            string projectId,
         CancellationToken cancellationToken)
     {
-        var project = treeRoots.FirstOrDefault((node) => node.Kind == ProjectTreeNodeKind.Project);
-        if (project is null) return null;
+        if (string.IsNullOrWhiteSpace(projectId))
+        {
+            return null;
+        }
+        if (!treeRoots.Any((node) =>
+                node.Kind == ProjectTreeNodeKind.Project
+                && node.Id.Equals(
+                    projectId,
+                    StringComparison.Ordinal)))
+        {
+            throw new InvalidOperationException(
+                $"Preview Project '{projectId}' is not present in the prepared tree.");
+        }
 
         var preparation = _visualContextPreparation.Begin();
         var linkedOperation =
@@ -1240,7 +1254,7 @@ internal sealed class EditorPreviewController : IDisposable
                 () => (
                     Visual:
                         _visualContextData.LoadSnapshot(
-                            project.Id),
+                            projectId),
                     Production:
                         _productionPreviewData.LoadSnapshot(
                             treeRoots)),

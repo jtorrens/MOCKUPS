@@ -460,10 +460,14 @@ creation contract; media never blocks creation.
 
 Preview Setup resource options follow the same rule. Device options and their
 exact metrics, Theme options and the Project media root are loaded together on
-the session operation worker. The Preview controller retains only that
-immutable Project snapshot. A later Project preparation cancels the previous
-one, and visual refresh, playback preparation and reference browsing consume
-only the latest committed snapshot without direct persistence reads.
+the session operation worker for the coordinator's exact active Project.
+Preview never selects a Project by tree order and never exposes a Device or
+Theme from another Project. When the active Project has no Device or Theme, the
+corresponding selector remains empty and Preview reports the missing resource.
+The Preview controller retains only that immutable Project snapshot. A later
+Project preparation cancels the previous one, and visual refresh, playback
+preparation and reference browsing consume only the latest committed snapshot
+without direct persistence reads.
 
 The same preparation closes the complete current Production timeline catalog:
 each Shot's frame rate, ordered Screen lanes, signed starts, exact effective

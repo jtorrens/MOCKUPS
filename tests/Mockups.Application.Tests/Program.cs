@@ -11,6 +11,7 @@ var tests = new (string Name, Action Run)[]
     ("redirected child-process text round-trips exact UTF-8", RedirectedChildProcessTextRoundTripsExactUtf8),
     ("initial tree load resolves a selectable Design context", InitialTreeLoadSelectsDesignContext),
     ("workspace changes restore each workspace selection", WorkspaceChangesRestoreSelection),
+    ("Design and Production share one exact active Project", WorkspacesShareActiveProject),
     ("tree refresh replaces a deleted selection with a valid fallback", DeletedSelectionFallsBack),
     ("tree refresh replaces a deleted Production", DeletedProductionFallsBack),
     ("Production selection commits its first exact Production node", ProductionSelectionIsExact),
@@ -1621,6 +1622,44 @@ static void WorkspaceChangesRestoreSelection()
     Equal("shot-a", coordinator.State.SelectedNode?.Id);
 }
 
+static void WorkspacesShareActiveProject()
+{
+    var source = new MutableNavigationDataSource(
+        [CreateProject("project-a"), CreateProject("project-b")]);
+    using var coordinator = new EditorWorkspaceCoordinator(source);
+    coordinator.ReloadTree();
+
+    True(coordinator.TrySelectNodeById(
+        "project-b",
+        "design-project",
+        out var designSelection));
+    Equal("project-b", coordinator.State.ProductionId);
+    True(designSelection.Effects.HasFlag(
+        EditorSessionEffects.Production));
+    True(designSelection.Effects.HasFlag(
+        EditorSessionEffects.PreviewOptions));
+
+    coordinator.ReloadTree();
+    Equal("project-b", coordinator.State.ProductionId);
+    Equal("project-b", coordinator.State.SelectedNode?.Id);
+
+    coordinator.SwitchWorkspace(EditorWorkspace.Production);
+    Equal("project-b", coordinator.State.ProductionId);
+    Equal("episode-project-b", coordinator.State.SelectedNode?.Id);
+
+    True(coordinator.TrySelectProduction(
+        "project-a",
+        "production-project",
+        out var productionSelection));
+    True(productionSelection.Effects.HasFlag(
+        EditorSessionEffects.PreviewOptions));
+    coordinator.SwitchWorkspace(EditorWorkspace.Design);
+    Equal("project-a", coordinator.State.ProductionId);
+    Equal(
+        "component-a::variant::default",
+        coordinator.State.SelectedNode?.Id);
+}
+
 static void DeletedSelectionFallsBack()
 {
     var source = new MutableNavigationDataSource(CreateTree());
@@ -2034,6 +2073,7 @@ static void PreparedTreeRemainsInvisibleUntilCommit()
         ?? throw new InvalidOperationException(
             "Expected a prepared tree candidate.");
 
+    Equal("project-a", preparation.ProjectId);
     Equal(previous, coordinator.State);
     True(coordinator.IsCurrentTreeLoad(
         preparation));

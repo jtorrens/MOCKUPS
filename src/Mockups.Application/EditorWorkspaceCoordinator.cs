@@ -46,14 +46,17 @@ public sealed class EditorTreeLoadPreparation
 {
     internal EditorTreeLoadPreparation(
         EditorTreeLoadOperation operation,
-        IReadOnlyList<ProjectTreeNode> treeRoots)
+        IReadOnlyList<ProjectTreeNode> treeRoots,
+        string projectId)
     {
         Operation = operation;
         TreeRoots = treeRoots;
+        ProjectId = projectId;
     }
 
     internal EditorTreeLoadOperation Operation { get; }
     public IReadOnlyList<ProjectTreeNode> TreeRoots { get; }
+    public string ProjectId { get; }
     public CancellationToken Token => Operation.Token;
     public EditorWorkspace Workspace => Operation.Workspace;
     public EditorTreeLoadIntent Intent => Operation.Intent;
@@ -294,7 +297,8 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
             var selected = ResolveTreeSelection(
                 roots,
                 operation.Workspace,
-                previous);
+                previous,
+                productionId);
             if (selected is not null)
             {
                 _nodeSelection.RememberVariantSelection(selected);
@@ -414,11 +418,12 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
             _nodeSelection.RememberVariantSelection(selectable);
             var workspaceSelections = Copy(previous.WorkspaceSelections);
             workspaceSelections[previous.Workspace] = selectable.Id;
+            var productionId = Root(selectable).Id;
             var revision = previous.Revision + 1;
             _state = new EditorSessionState(
                 previous.TreeRoots,
                 previous.Workspace,
-                previous.ProductionId,
+                productionId,
                 selectable,
                 null,
                 workspaceSelections,
@@ -427,13 +432,21 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
                 revision);
             RecordDesignNavigation(
                 _state);
+            var effects = EditorSessionEffects.Navigation
+                | EditorSessionEffects.Editor
+                | EditorSessionEffects.PreviewSelection;
+            if (!productionId.Equals(
+                    previous.ProductionId,
+                    StringComparison.Ordinal))
+            {
+                effects |= EditorSessionEffects.Production
+                    | EditorSessionEffects.PreviewOptions;
+            }
             transition = new EditorSessionTransition(
                 source,
                 previous,
                 _state,
-                EditorSessionEffects.Navigation
-                    | EditorSessionEffects.Editor
-                    | EditorSessionEffects.PreviewSelection);
+                effects);
             return true;
         }
     }
@@ -490,9 +503,7 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
                     previous.SelectedNode.Id;
             }
             workspaceSelections[workspace] = selectable.Id;
-            var productionId = workspace == EditorWorkspace.Production
-                ? Root(selectable).Id
-                : previous.ProductionId;
+            var productionId = Root(selectable).Id;
             var revision = previous.Revision + 1;
             _state = new EditorSessionState(
                 previous.TreeRoots,
@@ -517,7 +528,8 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
                     previous.ProductionId,
                     StringComparison.Ordinal))
             {
-                effects |= EditorSessionEffects.Production;
+                effects |= EditorSessionEffects.Production
+                    | EditorSessionEffects.PreviewOptions;
             }
             transition = new EditorSessionTransition(
                 source,
@@ -572,7 +584,8 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
             var effects = EditorSessionEffects.Production
                 | EditorSessionEffects.Navigation
                 | EditorSessionEffects.Editor
-                | EditorSessionEffects.PreviewSelection;
+                | EditorSessionEffects.PreviewSelection
+                | EditorSessionEffects.PreviewOptions;
             if (previous.Workspace != EditorWorkspace.Production)
             {
                 effects |= EditorSessionEffects.Workspace;
@@ -677,11 +690,12 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
                     Copy(previous.WorkspaceSelections);
                 workspaceSelections[EditorWorkspace.Design] =
                     node.Id;
+                var productionId = Root(node).Id;
                 var revision = previous.Revision + 1;
                 _state = new EditorSessionState(
                     previous.TreeRoots,
                     EditorWorkspace.Design,
-                    previous.ProductionId,
+                    productionId,
                     node,
                     embedded,
                     workspaceSelections,
@@ -704,6 +718,13 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
                 {
                     effects |=
                         EditorSessionEffects.Workspace;
+                }
+                if (!productionId.Equals(
+                        previous.ProductionId,
+                        StringComparison.Ordinal))
+                {
+                    effects |= EditorSessionEffects.Production
+                        | EditorSessionEffects.PreviewOptions;
                 }
                 transition = new EditorSessionTransition(
                     direction < 0
@@ -825,9 +846,13 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
             {
                 return null;
             }
+            var preparedRoots = roots.ToArray();
             return new EditorTreeLoadPreparation(
                 operation,
-                roots.ToArray());
+                preparedRoots,
+                ResolveProductionId(
+                    preparedRoots,
+                    State.ProductionId));
         }
         catch (OperationCanceledException)
             when (operation.Token.IsCancellationRequested)
@@ -856,15 +881,24 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
     private ProjectTreeNode? ResolveTreeSelection(
         IReadOnlyList<ProjectTreeNode> roots,
         EditorWorkspace workspace,
-        EditorSessionState previous)
+        EditorSessionState previous,
+        string projectId)
     {
+        var project = roots.FirstOrDefault((candidate) =>
+            candidate.Id.Equals(projectId, StringComparison.Ordinal));
+        if (project is null)
+        {
+            return null;
+        }
         var selected = previous.SelectedNode is null
             ? null
             : EditorWorkspaceNavigation.FindNode(
                 roots,
                 workspace,
                 previous.SelectedNode.Id);
-        selected = IsValid(selected, workspace) ? selected : null;
+        selected = IsValid(selected, workspace, projectId)
+            ? selected
+            : null;
         if (selected is null
             && previous.WorkspaceSelections.TryGetValue(
                 workspace,
@@ -874,11 +908,14 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
                 roots,
                 workspace,
                 selectionId);
-            selected = IsValid(remembered, workspace) ? remembered : null;
+            selected = IsValid(remembered, workspace, projectId)
+                ? remembered
+                : null;
         }
-        selected ??= EditorWorkspaceNavigation.FirstSelectable(roots, workspace)
-            ?? roots.FirstOrDefault((node) => node.CanOpenEditor)
-            ?? roots.FirstOrDefault();
+        selected ??= EditorWorkspaceNavigation.FirstSelectable(
+                [project],
+                workspace)
+            ?? (project.CanOpenEditor ? project : null);
         return selected is null
             ? null
             : _nodeSelection.ResolveSelectionNode(selected);
@@ -886,10 +923,12 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
 
     private static bool IsValid(
         ProjectTreeNode? node,
-        EditorWorkspace workspace) =>
+        EditorWorkspace workspace,
+        string projectId) =>
         node is not null
         && EditorNodeSelectionState.CanSelectTreeNode(node)
-        && EditorWorkspaceNavigation.Contains(workspace, node);
+        && EditorWorkspaceNavigation.Contains(workspace, node)
+        && Root(node).Id.Equals(projectId, StringComparison.Ordinal);
 
     private static string ResolveProductionId(
         IReadOnlyList<ProjectTreeNode> roots,

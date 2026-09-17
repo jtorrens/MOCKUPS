@@ -15,6 +15,10 @@ Cross-workspace navigation is explicit. Opening a Usage reference or class
 action activates the correct workspace, expands the exact tree branch, selects
 the item and opens its editor.
 
+Design and Production share one active Project. Selecting a Project or any
+Project-owned node in either workspace changes that shared identity. Switching
+workspace never restores a remembered node from another Project.
+
 Both workspaces expose the same permanent **External Media** Project section.
 It opens a read-only central inventory with the sortable columns **System
 item**, **Absolute path** and **File name**. Selecting the system item routes to
@@ -503,11 +507,11 @@ shared Dictionary-backed creation modal collects the Project identity, frame
 rate and manual Production Output fields, then reloads and selects the new root.
 
 The global Design sections—Apps, Component Classes, System Palette and Icon
-Themes—render once using the selected Project as their exact Preview and asset
-context, or the first Project when selection has no Project context. External
-Media is likewise shown once for that active Project. Changing the selected
-Project replaces that contextual section set; global sections are never
-duplicated once per Project. Project Delete always shows its destructive
+Themes—render once using the active Project as their exact Preview and asset
+context. No Project is selected by tree order. External Media is likewise shown
+once for that active Project. Changing the selected Project in Design or
+Production replaces that contextual section set in both workspaces; global
+sections are never duplicated once per Project. Project Delete always shows its destructive
 confirmation; persistence either removes a Project with no Shots or reports
 that its Shots block deletion.
 
