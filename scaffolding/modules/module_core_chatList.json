@@ -22,7 +22,6 @@
     "resolver": "./chatListModuleResolver",
     "renderable": "./chatListModuleRenderable",
     "embeds": [
-      "componentStack",
       "iconBar",
       "list",
       "status_bar",
@@ -40,10 +39,6 @@
     "appearanceMode": "inherit",
     "chatList": {
       "wallpaperEnabled": false,
-      "stackSlot": {
-        "variantReference": "component_project_foqn_s2_componentStack::variant::default",
-        "overrides": {}
-      },
       "topIconBarSlot": {
         "variantReference": "component_project_foqn_s2_iconBar::variant::default",
         "overrides": {}
@@ -95,10 +90,6 @@
       "appearanceMode": "inherit",
       "chatList": {
         "wallpaperEnabled": false,
-        "stackSlot": {
-          "variantReference": "component_project_foqn_s2_componentStack::variant::default",
-          "overrides": {}
-        },
         "topIconBarSlot": {
           "variantReference": "component_project_foqn_s2_iconBar::variant::default",
           "overrides": {}
@@ -174,7 +165,7 @@
         "chatList",
         "bottomIconBarSlot"
       ],
-      "defaultValue": "{\u0022variantReference\u0022:\u0022component_project_foqn_s2_iconBar::variant::default\u0022,\u0022overrides\u0022:{}}",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_iconBar::variant::default\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "optionSource": "None",
@@ -204,7 +195,7 @@
         "chatList",
         "listSlot"
       ],
-      "defaultValue": "{\u0022variantReference\u0022:\u0022component_project_foqn_s2_list::variant::chats\u0022,\u0022overrides\u0022:{}}",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_list::variant::chats\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "optionSource": "None",
@@ -240,7 +231,7 @@
         "chatList",
         "navigationBarSlot"
       ],
-      "defaultValue": "{\u0022variantReference\u0022:\u0022component_project_foqn_s2_navigation_bar::variant::default\u0022,\u0022overrides\u0022:{}}",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_navigation_bar::variant::default\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "optionSource": "None",
@@ -263,36 +254,6 @@
       }
     },
     {
-      "id": "module.core.chatList.stack",
-      "label": "Content Stack",
-      "valueKind": "ComponentVariantSlot",
-      "jsonPath": [
-        "chatList",
-        "stackSlot"
-      ],
-      "defaultValue": "{\u0022variantReference\u0022:\u0022component_project_foqn_s2_componentStack::variant::default\u0022,\u0022overrides\u0022:{}}",
-      "isEditable": true,
-      "options": [],
-      "optionSource": "None",
-      "pairLabels": null,
-      "number": null,
-      "componentVariantType": "componentStack",
-      "synchronizedVariantReferenceJsonPaths": [],
-      "runtimeInputComponentVariantFieldId": "",
-      "runtimeCollectionComponentVariantFieldId": "",
-      "componentInputBindings": null,
-      "structuredCollection": null,
-      "imagePreview": null,
-      "recordReference": null,
-      "motionTiming": null,
-      "unit": "",
-      "embeddedSlot": {
-        "componentType": "componentStack",
-        "label": "Content Stack",
-        "recordClassId": "component.componentStack"
-      }
-    },
-    {
       "id": "module.core.chatList.statusBar",
       "label": "Status Bar",
       "valueKind": "ComponentVariantSlot",
@@ -300,7 +261,7 @@
         "chatList",
         "statusBarSlot"
       ],
-      "defaultValue": "{\u0022variantReference\u0022:\u0022component_project_foqn_s2_status_bar::variant::default\u0022,\u0022overrides\u0022:{}}",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_status_bar::variant::default\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "optionSource": "None",
@@ -330,7 +291,7 @@
         "chatList",
         "topIconBarSlot"
       ],
-      "defaultValue": "{\u0022variantReference\u0022:\u0022component_project_foqn_s2_iconBar::variant::default\u0022,\u0022overrides\u0022:{}}",
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_iconBar::variant::default\",\"overrides\":{}}",
       "isEditable": true,
       "options": [],
       "optionSource": "None",
@@ -458,11 +419,6 @@
             "order": 20,
             "visible": true,
             "fields": [
-              {
-                "id": "module.core.chatList.stack",
-                "order": 10,
-                "visible": true
-              },
               {
                 "id": "module.core.chatList.topIconBar",
                 "order": 20,

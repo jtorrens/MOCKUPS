@@ -534,21 +534,65 @@ internal sealed class ReferenceUsageService :
             }
         }
 
-        var stackReference = "";
-        var stackSlot = JsonPath.Get(config, ["systemComposition", "stackSlot"]) as JsonObject;
-        stackReference = stackSlot is null ? stackReference : JsonPath.String(stackSlot, "variantReference", "");
-        if (componentsByReference.TryGetValue(stackReference, out var stack)
-            && JsonPath.Get(config, ["systemComposition", "stackInputs"]) is JsonObject stackInputs)
+        if (JsonPath.Get(config, ["systemComposition", "stackInputs"]) is JsonObject stackInputs)
         {
-            AddRuntimeDocumentReferences(
-                stack.Owner.DesignPreview,
-                stack.Variant.Config,
+            ScanContentStackRuntime(
                 stackInputs,
                 source,
                 targets,
                 usages,
-                componentsByReference,
-                RuntimeValueSource.ExplicitValues);
+                componentsByReference);
+        }
+    }
+
+    private static void ScanContentStackRuntime(
+        JsonObject runtime,
+        SourceContext source,
+        TargetCatalog targets,
+        ICollection<ReferenceUsageRecord> usages,
+        IReadOnlyDictionary<string, ComponentVariantOwner> componentsByReference)
+    {
+        var items = JsonPath.RequiredArray(runtime, "items", "System Content Stack");
+        foreach (var item in items.OfType<JsonObject>())
+        {
+            var alternatives = JsonPath.RequiredArray(item, "alternatives", "System Content Stack slot");
+            foreach (var alternative in alternatives.OfType<JsonObject>())
+            {
+                var reference = JsonPath.String(alternative, "variantReference", "");
+                if (string.IsNullOrWhiteSpace(reference)) continue;
+                AddExact(
+                    usages,
+                    targets,
+                    ProjectTreeNodeKind.ComponentVariant,
+                    reference,
+                    source,
+                    "Content Stack component");
+                if (!componentsByReference.TryGetValue(reference, out var component)) continue;
+                var effectiveConfig = component.Variant.Config.DeepClone().AsObject();
+                if (alternative["overrides"] is JsonObject overrides)
+                {
+                    ComponentConfigOverrideMerger.MergeInto(effectiveConfig, overrides);
+                    ScanComponentConfig(
+                        overrides,
+                        source,
+                        targets,
+                        usages,
+                        componentsByReference,
+                        depth: 1);
+                }
+                if (alternative["inputs"] is JsonObject inputs)
+                {
+                    AddRuntimeDocumentReferences(
+                        component.Owner.DesignPreview,
+                        effectiveConfig,
+                        inputs,
+                        source,
+                        targets,
+                        usages,
+                        componentsByReference,
+                        RuntimeValueSource.ExplicitValues);
+                }
+            }
         }
     }
 

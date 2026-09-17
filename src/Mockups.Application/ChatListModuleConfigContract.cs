@@ -20,7 +20,6 @@ internal static class ChatListModuleConfigContract
             chatList,
             [
                 "wallpaperEnabled",
-                "stackSlot",
                 "topIconBarSlot",
                 "topIconBarInputs",
                 "listSlot",
@@ -34,7 +33,6 @@ internal static class ChatListModuleConfigContract
         JsonPath.RequiredBoolean(chatList, "wallpaperEnabled", owner);
         foreach (var slotKey in new[]
         {
-            "stackSlot",
             "topIconBarSlot",
             "listSlot",
             "bottomIconBarSlot",

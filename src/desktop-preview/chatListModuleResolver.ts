@@ -22,12 +22,6 @@ export function resolveChatListModule(
   const config = parseObject(payload.configJson);
   const chatList = requiredRecord(config, "chatList", "module.core.chatList");
   const componentBaseConfigs = parseObject(payload.componentBaseConfigsJson);
-  const stackSlot = requiredTypedSlot(
-    chatList,
-    componentBaseConfigs,
-    "stackSlot",
-    "componentStack",
-  );
   const topIconBarSlot = requiredTypedSlot(
     chatList,
     componentBaseConfigs,
@@ -115,7 +109,6 @@ export function resolveChatListModule(
       "wallpaperEnabled",
       "module.core.chatList.wallpaperEnabled",
     ),
-    stackSlot,
     topIconBarSlot,
     bottomIconBarSlot,
     listSlot,

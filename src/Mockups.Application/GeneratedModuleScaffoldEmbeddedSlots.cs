@@ -67,12 +67,6 @@ public static class GeneratedModuleScaffoldEmbeddedSlots
             "component.navigation_bar",
             ["chatList", "navigationBarSlot"]),
         new(
-            "module.core.chatList.stack",
-            "componentStack",
-            "Content Stack",
-            "component.componentStack",
-            ["chatList", "stackSlot"]),
-        new(
             "module.core.chatList.statusBar",
             "status_bar",
             "Status Bar",
@@ -180,12 +174,6 @@ public static class GeneratedModuleScaffoldEmbeddedSlots
             "Navigation bar",
             "component.navigation_bar",
             ["systemComposition", "navigationBarSlot"]),
-        new(
-            "module.system.composition.stackVariant",
-            "componentStack",
-            "Stack",
-            "component.componentStack",
-            ["systemComposition", "stackSlot"]),
         new(
             "module.system.composition.statusBarVariant",
             "status_bar",

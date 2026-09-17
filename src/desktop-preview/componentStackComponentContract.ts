@@ -38,8 +38,8 @@ export interface ComponentStackSlotContract {
   alternatives: ComponentStackAlternativeContract[];
 }
 
-export interface ComponentStackDesignContract {
-  id: "componentStack";
+export interface ComponentStackLayoutContract {
+  id: string;
   sizingMode: ComponentStackSizingMode;
   startGapToken: string;
   endGapToken: string;

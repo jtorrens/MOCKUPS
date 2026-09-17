@@ -42,7 +42,7 @@ export const desktopPreviewComponentCapabilities = {
   textBox: capabilities([], [], ["cursorBlink"]),
   iconRow: capabilities(),
   iconBar: capabilities(),
-  componentStack: capabilities([], [], ["stateMotion"]),
+  surfaceStack: capabilities([], [], ["stateMotion"]),
   collectionStack: capabilities(
     ["changeDistribution"],
     ["items.togglePresent"],

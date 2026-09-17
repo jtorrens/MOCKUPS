@@ -20,25 +20,46 @@ import { rootScreenFrame } from "./previewFrameContext.js";
 import { resolvedRuntimeCollectionItems } from "./runtimeCollectionProjection.js";
 import type {
   ComponentStackAlternativeContract,
-  ComponentStackDesignContract,
   ComponentStackGapMode,
+  ComponentStackLayoutContract,
   ComponentStackSizingMode,
   ComponentStackSlotContract,
 } from "./componentStackComponentContract.js";
 import { optionalComponentBoundaryMotion } from "./componentBoundaryMotion.js";
 
-export function resolveComponentStackComponent(payload: DesignPreviewPayload): ComponentStackDesignContract {
-  const preview = parseObject(payload.designPreviewJson);
-  const sizingMode = requiredString(preview, "sizingMode", "componentStack.runtime.sizingMode");
+export function resolveInternalComponentStackLayout(
+  payload: DesignPreviewPayload,
+  runtime: Record<string, unknown>,
+  id: string,
+): ComponentStackLayoutContract {
+  const sizingMode = requiredString(runtime, "sizingMode", `${id}.sizingMode`);
   if (sizingMode !== "fill" && sizingMode !== "content") {
     throw new Error(`Unsupported component stack sizing mode ${sizingMode}`);
   }
+  return resolveComponentStackLayout(
+    payload,
+    runtime,
+    id,
+    sizingMode,
+    requiredString(runtime, "startGapToken", `${id}.startGapToken`),
+    requiredString(runtime, "endGapToken", `${id}.endGapToken`),
+  );
+}
+
+export function resolveComponentStackLayout(
+  payload: DesignPreviewPayload,
+  runtime: Record<string, unknown>,
+  id: string,
+  sizingMode: ComponentStackSizingMode,
+  startGapToken: string,
+  endGapToken: string,
+): ComponentStackLayoutContract {
   return {
-    id: "componentStack",
-    sizingMode: sizingMode as ComponentStackSizingMode,
-    startGapToken: requiredString(preview, "startGapToken", "componentStack.runtime.startGapToken"),
-    endGapToken: requiredString(preview, "endGapToken", "componentStack.runtime.endGapToken"),
-    slots: resolvedRuntimeCollectionItems(preview, "items", "componentStack")
+    id,
+    sizingMode,
+    startGapToken,
+    endGapToken,
+    slots: resolvedRuntimeCollectionItems(runtime, "items", id)
       .map((slot, index) => resolveSlot(payload, slot, index)),
   };
 }

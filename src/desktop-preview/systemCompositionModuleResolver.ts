@@ -15,7 +15,6 @@ export function resolveSystemCompositionModuleFrame(
   const runtime = parseObject(payload.designPreviewJson);
   const statusBarSlot = requiredRecord(composition, "statusBarSlot", "module.system.composition.statusBarSlot");
   const navigationBarSlot = requiredRecord(composition, "navigationBarSlot", "module.system.composition.navigationBarSlot");
-  const stackSlot = requiredRecord(composition, "stackSlot", "module.system.composition.stackSlot");
   const stackInputs = requiredRecord(composition, "stackInputs", "module.system.composition.stackInputs");
   return {
     id: "systemComposition",
@@ -26,10 +25,6 @@ export function resolveSystemCompositionModuleFrame(
     navigationBarSlot: {
       variantReference: requiredString(navigationBarSlot, "variantReference", "module.system.composition.navigationBarSlot.variantReference"),
       overrides: requiredRecord(navigationBarSlot, "overrides", "module.system.composition.navigationBarSlot.overrides"),
-    },
-    stackSlot: {
-      variantReference: requiredString(stackSlot, "variantReference", "module.system.composition.stackSlot.variantReference"),
-      overrides: requiredRecord(stackSlot, "overrides", "module.system.composition.stackSlot.overrides"),
     },
     stackInputs,
     showStatusBar: requiredBoolean(

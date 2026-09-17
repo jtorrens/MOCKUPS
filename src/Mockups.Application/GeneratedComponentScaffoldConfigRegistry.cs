@@ -29,8 +29,6 @@ internal static class GeneratedComponentScaffoldConfigRegistry
                 return true;
             case "collectionStack":
                 return true;
-            case "componentStack":
-                return true;
             case "contentRow":
                 ContentRowComponentConfigContract.Validate(config, context);
                 return true;
@@ -78,6 +76,9 @@ internal static class GeneratedComponentScaffoldConfigRegistry
                 StatusBarComponentConfigContract.Validate(config, context);
                 return true;
             case "surface":
+                return true;
+            case "surfaceStack":
+                SurfaceStackComponentConfigContract.Validate(config, context);
                 return true;
             case "textBox":
                 return true;

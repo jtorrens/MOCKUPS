@@ -1,0 +1,1026 @@
+{
+  "schemaVersion": 1,
+  "intent": {
+    "responsibility": "Own a reusable surfaced vertical composition with exact Component boundaries and stable slots.",
+    "visualBoundary": "Paint one required Surface and clip every ordered slot to its resolved bounds.",
+    "runtimeBehavior": "Receive one explicit size per embedding Module and retain per-slot Runtime values by stable identity.",
+    "forwarding": "Forward size to the owned Surface and child values only through declared stable source and target identities.",
+    "temporalOwnership": "Keep reusable slot states and motion relative to the Surface Stack owner."
+  },
+  "component": {
+    "componentType": "surfaceStack",
+    "category": "component",
+    "componentClassId": "component_project_foqn_s2_surfaceStack",
+    "recordClassId": "component.surfaceStack",
+    "name": "Surface Stack",
+    "notes": "Reusable surfaced vertical component composition."
+  },
+  "manifest": {
+    "contract": "./surfaceStackComponentContract",
+    "resolver": "./surfaceStackComponentResolver",
+    "renderable": "./surfaceStackComponentRenderable",
+    "embeds": [
+      "label",
+      "surface",
+      "cursor",
+      "textBox",
+      "iconRow",
+      "iconBar",
+      "collectionStack",
+      "badge",
+      "codeIndicator",
+      "avatar",
+      "button",
+      "audio",
+      "notification",
+      "notifications",
+      "listItem",
+      "list",
+      "textInputBar",
+      "keyboard",
+      "keypad",
+      "fingerprint",
+      "faceRecognition",
+      "drawPassword",
+      "password",
+      "media",
+      "bubble",
+      "status_bar",
+      "navigation_bar",
+      "incomingCallNotification",
+      "gallery",
+      "callParticipant",
+      "contentRow"
+    ]
+  },
+  "owners": {
+    "contractExport": "SurfaceStackDesignContract",
+    "resolverExport": "resolveSurfaceStackComponent",
+    "renderableExport": "surfaceStackComponentToRenderable",
+    "registryMode": "children",
+    "focusedTest": "tests/animation/componentStackComponent.test.ts",
+    "configContractExport": "SurfaceStackComponentConfigContract"
+  },
+  "config": {
+    "surfaceStack": {
+      "surfaceSlot": {
+        "variantReference": "component_project_foqn_s2_surface::variant::default",
+        "overrides": {}
+      },
+      "padding": "theme.spacing.none|theme.spacing.none",
+      "startGapToken": "theme.spacing.none",
+      "endGapToken": "theme.spacing.none",
+      "items": []
+    }
+  },
+  "defaultVariant": {
+    "id": "default",
+    "name": "Default",
+    "protected": true,
+    "locked": true,
+    "config": {
+      "surfaceStack": {
+        "surfaceSlot": {
+          "variantReference": "component_project_foqn_s2_surface::variant::default",
+          "overrides": {}
+        },
+        "padding": "theme.spacing.none|theme.spacing.none",
+        "startGapToken": "theme.spacing.none",
+        "endGapToken": "theme.spacing.none",
+        "items": []
+      }
+    }
+  },
+  "additionalVariants": [],
+  "designPreview": {
+    "componentType": "surfaceStack",
+    "sampleText": "Sample",
+    "sampleSubtext": "",
+    "sampleSize": 256,
+    "inputs": [
+      {
+        "id": "size",
+        "label": "Size",
+        "jsonKey": "size",
+        "kind": "integerPair",
+        "valueKind": "IntegerPair",
+        "defaultValue": "320|180",
+        "minimum": 1,
+        "maximum": 9999,
+        "increment": 1,
+        "tableId": "",
+        "resolvedJsonKey": "",
+        "componentType": "",
+        "options": [],
+        "pairFirstLabel": "W",
+        "pairSecondLabel": "H",
+        "visibleWhenPath": "",
+        "visibleWhenValue": "",
+        "source": "runtime",
+        "uiOrigin": "self",
+        "uiGroupId": "",
+        "uiGroupLabel": "",
+        "uiParentGroupId": "",
+        "transition": null,
+        "unit": "",
+        "uiOrder": 10
+      }
+    ],
+    "size": "320|180",
+    "collections": [
+      {
+        "id": "items",
+        "label": "Slots",
+        "jsonKey": "items",
+        "itemLabel": "Slot",
+        "animationTimeline": {
+          "sequenceItems": false
+        },
+        "fields": [
+          {
+            "id": "name",
+            "label": "Name",
+            "jsonKey": "name",
+            "kind": "text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "Slot"
+          },
+          {
+            "id": "sizeMode",
+            "label": "Size",
+            "jsonKey": "sizeMode",
+            "kind": "option",
+            "valueKind": "OptionToken",
+            "defaultValue": "content",
+            "options": [
+              {
+                "value": "content",
+                "label": "Content"
+              },
+              {
+                "value": "fill",
+                "label": "Fill"
+              }
+            ]
+          },
+          {
+            "id": "runtimeStateId",
+            "label": "State",
+            "jsonKey": "runtimeStateId",
+            "kind": "option",
+            "valueKind": "OptionToken",
+            "defaultValue": "",
+            "allowEmpty": true,
+            "animatable": true,
+            "animationInterpolations": [
+              "hold"
+            ],
+            "optionsSourceCollectionJsonKey": "alternatives",
+            "optionsSourceValueJsonKey": "id",
+            "optionsSourceLabelJsonKey": "name",
+            "optionsSourceFirstItemBadge": "Initial"
+          },
+          {
+            "id": "alternatives",
+            "label": "States",
+            "jsonKey": "alternatives",
+            "kind": "collection",
+            "valueKind": "StructuredCollection",
+            "defaultValue": "[{\"id\":\"default\",\"name\":\"State\",\"componentSlot\":null,\"active\":false,\"behavior\":\"replace\",\"placement\":{\"mode\":\"center\",\"alignX\":0.5,\"alignY\":0.5,\"offsetX\":0,\"offsetY\":0},\"enterMotion\":{\"transition\":\"slide\",\"direction\":\"bottom\",\"bounds\":\"parent\",\"fade\":false,\"translate\":true,\"scale\":false},\"exitMotion\":{\"transition\":\"slide\",\"direction\":\"bottom\",\"bounds\":\"parent\",\"fade\":false,\"translate\":true,\"scale\":false}}]",
+            "structuredCollection": {
+              "id": "alternatives",
+              "label": "States",
+              "jsonKey": "alternatives",
+              "itemLabel": "State",
+              "fields": [
+                {
+                  "id": "name",
+                  "label": "Name",
+                  "jsonKey": "name",
+                  "kind": "text",
+                  "valueKind": "StringSingleLine",
+                  "defaultValue": "State"
+                },
+                {
+                  "id": "componentSlot",
+                  "label": "Component",
+                  "jsonKey": "componentSlot",
+                  "kind": "componentVariantSlot",
+                  "valueKind": "ComponentVariantSlot",
+                  "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_surface::variant::default\",\"overrides\":{}}",
+                  "componentType": "*,-surfaceStack",
+                  "allowEmpty": true
+                },
+                {
+                  "id": "active",
+                  "label": "Active",
+                  "jsonKey": "active",
+                  "kind": "boolean",
+                  "defaultValue": "false",
+                  "minimumItemIndex": 1,
+                  "animatable": true,
+                  "animationInterpolations": [
+                    "hold"
+                  ],
+                  "valueKind": "Boolean"
+                },
+                {
+                  "id": "behavior",
+                  "label": "Behavior",
+                  "jsonKey": "behavior",
+                  "kind": "option",
+                  "defaultValue": "replace",
+                  "minimumItemIndex": 1,
+                  "options": [
+                    {
+                      "value": "replace",
+                      "label": "Replace"
+                    },
+                    {
+                      "value": "overlay",
+                      "label": "Overlay"
+                    }
+                  ],
+                  "valueKind": "OptionToken"
+                },
+                {
+                  "id": "placement",
+                  "label": "Placement",
+                  "jsonKey": "placement",
+                  "kind": "text",
+                  "valueKind": "AlignmentPlacement",
+                  "defaultValue": "{\"mode\":\"center\",\"alignX\":0.5,\"alignY\":0.5,\"offsetX\":0,\"offsetY\":0}"
+                },
+                {
+                  "id": "enterMotion",
+                  "label": "Enter transition",
+                  "jsonKey": "enterMotion",
+                  "kind": "text",
+                  "valueKind": "Motion",
+                  "defaultValue": "{\"transition\":\"slide\",\"direction\":\"bottom\",\"bounds\":\"screen\",\"fade\":false,\"translate\":true,\"scale\":false}"
+                },
+                {
+                  "id": "exitMotion",
+                  "label": "Exit transition",
+                  "jsonKey": "exitMotion",
+                  "kind": "text",
+                  "valueKind": "Motion",
+                  "defaultValue": "{\"transition\":\"slide\",\"direction\":\"bottom\",\"bounds\":\"screen\",\"fade\":false,\"translate\":true,\"scale\":false}"
+                }
+              ],
+              "itemPresentation": {
+                "titleFieldId": "name",
+                "firstItemBadge": "Initial",
+                "subtitleFieldIds": [
+                  "componentSlot",
+                  "behavior",
+                  "placement"
+                ],
+                "subtitleMaxCharacters": 72,
+                "fallbackIcon": "component"
+              },
+              "canEditStructure": false,
+              "structureProjection": {
+                "sourceConfigPath": "alternatives",
+                "sourceIdJsonKey": "id",
+                "runtimeIdJsonKey": "id",
+                "fieldBindings": {
+                  "name": "name",
+                  "componentSlot": "componentSlot",
+                  "behavior": "behavior",
+                  "placement": "placement",
+                  "enterMotion": "enterMotion",
+                  "exitMotion": "exitMotion"
+                }
+              },
+              "itemRuntimeVariantSlotJsonKey": "componentSlot",
+              "itemRuntimeContractJsonKey": "inputs"
+            }
+          },
+          {
+            "id": "gapBeforeMode",
+            "label": "Gap before",
+            "jsonKey": "gapBeforeMode",
+            "kind": "option",
+            "defaultValue": "fixed",
+            "minimumItemIndex": 1,
+            "options": [
+              {
+                "value": "fixed",
+                "label": "Fixed"
+              },
+              {
+                "value": "reflow",
+                "label": "Reflow"
+              }
+            ],
+            "valueKind": "OptionToken"
+          },
+          {
+            "id": "gapBeforeToken",
+            "label": "Fixed gap before",
+            "jsonKey": "gapBeforeToken",
+            "kind": "themeToken",
+            "defaultValue": "theme.spacing.m",
+            "minimumItemIndex": 1,
+            "options": [
+              {
+                "value": "theme.spacing.none",
+                "label": "spacing.none"
+              },
+              {
+                "value": "theme.spacing.xs",
+                "label": "spacing.xs"
+              },
+              {
+                "value": "theme.spacing.s",
+                "label": "spacing.s"
+              },
+              {
+                "value": "theme.spacing.m",
+                "label": "spacing.m"
+              },
+              {
+                "value": "theme.spacing.l",
+                "label": "spacing.l"
+              },
+              {
+                "value": "theme.spacing.xl",
+                "label": "spacing.xl"
+              },
+              {
+                "value": "theme.spacing.xxl",
+                "label": "spacing.xxl"
+              }
+            ],
+            "enabledWhenItemJsonKey": "gapBeforeMode",
+            "enabledWhenItemValues": [
+              "fixed"
+            ],
+            "valueKind": "ThemeToken"
+          },
+          {
+            "id": "gapBeforeWeight",
+            "label": "Reflow gap before weight",
+            "jsonKey": "gapBeforeWeight",
+            "kind": "number",
+            "valueKind": "Decimal",
+            "defaultValue": "1",
+            "minimumItemIndex": 1,
+            "minimum": 0.01,
+            "maximum": 100,
+            "increment": 0.1,
+            "enabledWhenItemJsonKey": "gapBeforeMode",
+            "enabledWhenItemValues": [
+              "reflow"
+            ]
+          }
+        ],
+        "itemPresentation": {
+          "titleFieldId": "name",
+          "subtitleFieldIds": [
+            "alternatives"
+          ],
+          "subtitleMaxCharacters": 72,
+          "fallbackIcon": "component"
+        },
+        "itemActions": [],
+        "canEditStructure": false,
+        "structureProjection": {
+          "sourceConfigPath": "surfaceStack.items",
+          "sourceIdJsonKey": "id",
+          "runtimeIdJsonKey": "id",
+          "fieldBindings": {
+            "name": "name",
+            "sizeMode": "sizeMode",
+            "alternatives": "alternatives",
+            "gapBeforeMode": "gapBeforeMode",
+            "gapBeforeToken": "gapBeforeToken",
+            "gapBeforeWeight": "gapBeforeWeight"
+          }
+        }
+      }
+    ],
+    "items": [],
+    "actions": []
+  },
+  "metadata": {
+    "note": "Reusable Surface Stack Component Class."
+  },
+  "dictionaryFields": [
+    {
+      "id": "component.surfaceStack.surface.editor",
+      "label": "Surface",
+      "valueKind": "ComponentVariantSlot",
+      "jsonPath": [
+        "surfaceStack",
+        "surfaceSlot"
+      ],
+      "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_surface::variant::default\",\"overrides\":{}}",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "surface",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": {
+        "componentType": "surface",
+        "label": "Surface",
+        "recordClassId": "component.surface",
+        "allowRuntimeInputForwarding": true
+      }
+    },
+    {
+      "id": "component.surfaceStack.padding",
+      "label": "Padding",
+      "valueKind": "ThemeTokenPair",
+      "jsonPath": [
+        "surfaceStack",
+        "padding"
+      ],
+      "defaultValue": "theme.spacing.m|theme.spacing.s",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xl",
+          "label": "spacing.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xxl",
+          "label": "spacing.xxl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": {
+        "first": "Horizontal",
+        "second": "Vertical"
+      },
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.surfaceStack.startGapToken",
+      "label": "Start gap",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "surfaceStack",
+        "startGapToken"
+      ],
+      "defaultValue": "theme.spacing.none",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xl",
+          "label": "spacing.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xxl",
+          "label": "spacing.xxl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.surfaceStack.endGapToken",
+      "label": "End gap",
+      "valueKind": "ThemeToken",
+      "jsonPath": [
+        "surfaceStack",
+        "endGapToken"
+      ],
+      "defaultValue": "theme.spacing.none",
+      "isEditable": true,
+      "options": [
+        {
+          "value": "theme.spacing.none",
+          "label": "spacing.none",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xs",
+          "label": "spacing.xs",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.s",
+          "label": "spacing.s",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.m",
+          "label": "spacing.m",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.l",
+          "label": "spacing.l",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xl",
+          "label": "spacing.xl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "theme.spacing.xxl",
+          "label": "spacing.xxl",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        }
+      ],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": null,
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    },
+    {
+      "id": "component.surfaceStack.items",
+      "label": "Slots",
+      "valueKind": "StructuredCollection",
+      "jsonPath": [
+        "surfaceStack",
+        "items"
+      ],
+      "defaultValue": "[]",
+      "isEditable": true,
+      "options": [],
+      "pairLabels": null,
+      "number": null,
+      "componentInputBindings": null,
+      "structuredCollection": {
+        "id": "items",
+        "label": "Slots",
+        "jsonKey": "items",
+        "itemLabel": "Slot",
+        "fields": [
+          {
+            "id": "name",
+            "label": "Name",
+            "jsonKey": "name",
+            "kind": "Text",
+            "valueKind": "StringSingleLine",
+            "defaultValue": "Slot"
+          },
+          {
+            "id": "sizeMode",
+            "label": "Size",
+            "jsonKey": "sizeMode",
+            "kind": "Option",
+            "valueKind": "OptionToken",
+            "defaultValue": "content",
+            "options": [
+              {
+                "value": "content",
+                "label": "Content"
+              },
+              {
+                "value": "fill",
+                "label": "Fill"
+              }
+            ]
+          },
+          {
+            "id": "alternatives",
+            "label": "States",
+            "jsonKey": "alternatives",
+            "kind": "Text",
+            "valueKind": "StructuredCollection",
+            "defaultValue": "[{\"id\":\"default\",\"name\":\"State\",\"componentSlot\":null,\"behavior\":\"replace\",\"placement\":{\"mode\":\"center\",\"alignX\":0.5,\"alignY\":0.5,\"offsetX\":0,\"offsetY\":0},\"enterMotion\":{\"transition\":\"slide\",\"direction\":\"bottom\",\"bounds\":\"parent\",\"fade\":false,\"translate\":true,\"scale\":false},\"exitMotion\":{\"transition\":\"slide\",\"direction\":\"bottom\",\"bounds\":\"parent\",\"fade\":false,\"translate\":true,\"scale\":false}}]",
+            "structuredCollection": {
+              "id": "alternatives",
+              "label": "States",
+              "jsonKey": "alternatives",
+              "itemLabel": "State",
+              "fields": [
+                {
+                  "id": "name",
+                  "label": "Name",
+                  "jsonKey": "name",
+                  "kind": "Text",
+                  "valueKind": "StringSingleLine",
+                  "defaultValue": "State"
+                },
+                {
+                  "id": "componentSlot",
+                  "label": "Component",
+                  "jsonKey": "componentSlot",
+                  "kind": "ComponentVariantSlot",
+                  "valueKind": "ComponentVariantSlot",
+                  "defaultValue": "{\"variantReference\":\"component_project_foqn_s2_surface::variant::default\",\"overrides\":{}}",
+                  "componentType": "*,-surfaceStack",
+                  "allowEmpty": true
+                },
+                {
+                  "id": "behavior",
+                  "label": "Behavior",
+                  "jsonKey": "behavior",
+                  "kind": "Option",
+                  "defaultValue": "replace",
+                  "minimumItemIndex": 1,
+                  "options": [
+                    {
+                      "value": "replace",
+                      "label": "Replace"
+                    },
+                    {
+                      "value": "overlay",
+                      "label": "Overlay"
+                    }
+                  ],
+                  "valueKind": "OptionToken"
+                },
+                {
+                  "id": "placement",
+                  "label": "Placement",
+                  "jsonKey": "placement",
+                  "kind": "Text",
+                  "valueKind": "AlignmentPlacement",
+                  "defaultValue": "{\"mode\":\"center\",\"alignX\":0.5,\"alignY\":0.5,\"offsetX\":0,\"offsetY\":0}"
+                },
+                {
+                  "id": "enterMotion",
+                  "label": "Enter transition",
+                  "jsonKey": "enterMotion",
+                  "kind": "Text",
+                  "valueKind": "Motion",
+                  "defaultValue": "{\"transition\":\"slide\",\"direction\":\"bottom\",\"bounds\":\"screen\",\"fade\":false,\"translate\":true,\"scale\":false}"
+                },
+                {
+                  "id": "exitMotion",
+                  "label": "Exit transition",
+                  "jsonKey": "exitMotion",
+                  "kind": "Text",
+                  "valueKind": "Motion",
+                  "defaultValue": "{\"transition\":\"slide\",\"direction\":\"bottom\",\"bounds\":\"screen\",\"fade\":false,\"translate\":true,\"scale\":false}"
+                }
+              ],
+              "itemPresentation": {
+                "titleFieldId": "name",
+                "firstItemBadge": "Initial",
+                "subtitleFieldIds": [
+                  "componentSlot",
+                  "behavior",
+                  "placement"
+                ],
+                "subtitleMaxCharacters": 72,
+                "fallbackIcon": "component"
+              }
+            }
+          },
+          {
+            "id": "gapBeforeMode",
+            "label": "Gap before",
+            "jsonKey": "gapBeforeMode",
+            "kind": "Option",
+            "defaultValue": "fixed",
+            "minimumItemIndex": 1,
+            "options": [
+              {
+                "value": "fixed",
+                "label": "Fixed"
+              },
+              {
+                "value": "reflow",
+                "label": "Reflow"
+              }
+            ],
+            "valueKind": "OptionToken"
+          },
+          {
+            "id": "gapBeforeToken",
+            "label": "Fixed gap before",
+            "jsonKey": "gapBeforeToken",
+            "kind": "ThemeToken",
+            "defaultValue": "theme.spacing.m",
+            "minimumItemIndex": 1,
+            "options": [
+              {
+                "value": "theme.spacing.none",
+                "label": "spacing.none"
+              },
+              {
+                "value": "theme.spacing.xs",
+                "label": "spacing.xs"
+              },
+              {
+                "value": "theme.spacing.s",
+                "label": "spacing.s"
+              },
+              {
+                "value": "theme.spacing.m",
+                "label": "spacing.m"
+              },
+              {
+                "value": "theme.spacing.l",
+                "label": "spacing.l"
+              },
+              {
+                "value": "theme.spacing.xl",
+                "label": "spacing.xl"
+              },
+              {
+                "value": "theme.spacing.xxl",
+                "label": "spacing.xxl"
+              }
+            ],
+            "enabledWhenItemJsonKey": "gapBeforeMode",
+            "enabledWhenItemValues": [
+              "fixed"
+            ],
+            "valueKind": "ThemeToken"
+          },
+          {
+            "id": "gapBeforeWeight",
+            "label": "Reflow gap before weight",
+            "jsonKey": "gapBeforeWeight",
+            "kind": "Number",
+            "valueKind": "Decimal",
+            "defaultValue": "1",
+            "minimumItemIndex": 1,
+            "minimum": 0.01,
+            "maximum": 100,
+            "increment": 0.1,
+            "enabledWhenItemJsonKey": "gapBeforeMode",
+            "enabledWhenItemValues": [
+              "reflow"
+            ]
+          }
+        ],
+        "itemPresentation": {
+          "titleFieldId": "name",
+          "subtitleFieldIds": [
+            "alternatives"
+          ],
+          "subtitleMaxCharacters": 72,
+          "fallbackIcon": "component"
+        }
+      },
+      "componentVariantType": "",
+      "runtimeInputComponentVariantFieldId": "",
+      "unit": "",
+      "helpText": "",
+      "valuePattern": "",
+      "valuePatternMessage": "",
+      "embeddedSlot": null
+    }
+  ],
+  "editorLayout": {
+    "cards": [
+      {
+        "id": "general",
+        "label": "General",
+        "subtitle": "Identity",
+        "icon": "general",
+        "order": 10,
+        "visible": true,
+        "defaultOpen": false,
+        "groups": [
+          {
+            "id": "identity",
+            "label": "Identity",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "core.name",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.type",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "core.notes",
+                "order": 30,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "surfaceStack",
+        "label": "Surface Stack",
+        "subtitle": "Surface and ordered slots",
+        "icon": "layout",
+        "order": 20,
+        "visible": true,
+        "defaultOpen": false,
+        "groupLayout": "separatedSections",
+        "groups": [
+          {
+            "id": "container",
+            "label": "Container",
+            "order": 10,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.surfaceStack.surface.editor",
+                "order": 10,
+                "visible": true
+              },
+              {
+                "id": "component.surfaceStack.padding",
+                "order": 20,
+                "visible": true
+              },
+              {
+                "id": "component.surfaceStack.startGapToken",
+                "order": 30,
+                "visible": true
+              },
+              {
+                "id": "component.surfaceStack.endGapToken",
+                "order": 40,
+                "visible": true
+              }
+            ]
+          },
+          {
+            "id": "slots",
+            "label": "Slots",
+            "order": 20,
+            "visible": true,
+            "fields": [
+              {
+                "id": "component.surfaceStack.items",
+                "order": 10,
+                "visible": true
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "assets": []
+}

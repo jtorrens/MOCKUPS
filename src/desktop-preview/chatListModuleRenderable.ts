@@ -13,6 +13,8 @@ import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import type { ChatListComponentSlot } from "./chatListModuleContract.js";
 import { resolveChatListModule } from "./chatListModuleResolver.js";
 import { wallpaperRenderable } from "./wallpaperRenderable.js";
+import { resolveInternalComponentStackLayout } from "./componentStackComponentResolver.js";
+import { componentStackLayoutToRenderable } from "./componentStackComponentRenderable.js";
 
 const noMotion = {
   transition: "none",
@@ -49,15 +51,10 @@ export function chatListModuleToRenderable(
     width: screen.width,
     height: Math.max(0, contentBottom - contentTop),
   };
-  const stackPayload = previewPayloadInBox(
+  const stackPayload = previewPayloadInBox(payload, contentBox);
+  const stackLayout = resolveInternalComponentStackLayout(
+    stackPayload,
     {
-      ...componentSlotPayload(
-        payload,
-        componentBaseConfigs,
-        "componentStack",
-        contract.stackSlot,
-      ),
-      designPreviewJson: JSON.stringify({
         sizingMode: "fill",
         startGapToken: "theme.spacing.none",
         endGapToken: "theme.spacing.none",
@@ -81,15 +78,19 @@ export function chatListModuleToRenderable(
             contract.bottomIconBarInputs,
           ),
         ],
-      }),
     },
-    contentBox,
+    "module.core.chatList.contentStack",
   );
   const children: RenderableNode[] = [
     contract.wallpaperEnabled
       ? wallpaperRenderable(payload, screen) ?? background(payload)
       : background(payload),
-    componentClassToRenderable(stackPayload),
+    componentStackLayoutToRenderable(
+      stackPayload,
+      stackLayout,
+      componentClassToRenderable,
+      contentBox,
+    ),
     status,
     navigation,
   ];

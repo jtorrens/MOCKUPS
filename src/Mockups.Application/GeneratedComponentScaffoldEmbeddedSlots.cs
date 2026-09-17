@@ -531,6 +531,13 @@ public static class GeneratedComponentScaffoldEmbeddedSlots
             ["password", "keypadSlot"],
             true),
         new(
+            "component.surfaceStack.surface.editor",
+            "surface",
+            "Surface",
+            "component.surface",
+            ["surfaceStack", "surfaceSlot"],
+            true),
+        new(
             "component.textBox.cursor.editor",
             "cursor",
             "Cursor",

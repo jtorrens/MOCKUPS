@@ -385,13 +385,27 @@ scope.
 
 ## Structural stacks
 
-### Component Stack
+### Content Stack
 
-A Component Stack owns ordered stable slots. Each slot references a concrete
-Component Variant and local Overrides. Placement and sizing belong to the slot
-or its declared component boundary, not to its index. A content-sized slot
-retains its intrinsic size inside a fill viewport; the viewport clips overflow
-instead of shrinking the slot to make it fit.
+Content Stack is a Module-owned internal layout contract, not a persisted or
+navigable Component Class. It owns ordered stable slots. Each slot references a
+concrete Component Variant and local Overrides. Placement and sizing belong to
+the slot or its declared component boundary, not to its index. A content-sized
+slot retains its intrinsic size inside a fill viewport; the viewport clips
+overflow instead of shrinking the slot to make it fit.
+
+### Surface Stack
+
+Surface Stack is the reusable Component form of that layout. Its Variant owns
+one required Surface boundary, horizontal/vertical padding, start/end gaps and
+the complete ordered slot structure. Its `size` is a Runtime Input supplied by
+the embedding Module and is forwarded unchanged to the owned Surface. Slots
+lay out inside the resulting size minus padding and are clipped to the Surface
+bounds and corner radius.
+
+Surface Stack may be selected by a Module Content Stack. Component selectors
+exclude Surface Stack, including Surface Stack's own State selectors, so the
+composition graph cannot create a direct or indirect Surface Stack cycle.
 
 ### Collection Stack
 

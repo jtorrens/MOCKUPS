@@ -69,7 +69,8 @@ public static class RuntimePreviewDocumentContract
     public static JsonObject PrepareFixture(
         JsonObject previewFixture,
         JsonObject effectiveConfig,
-        Func<string, JsonObject>? componentVariantConfig = null)
+        Func<string, JsonObject>? componentVariantConfig = null,
+        Func<string, JsonObject>? componentRuntimeValues = null)
     {
         var prepared = RuntimeInputForwardingContract.EffectivePreview(
             previewFixture,
@@ -77,12 +78,14 @@ public static class RuntimePreviewDocumentContract
         StructuredRuntimeCollectionProjection.Apply(
             prepared,
             effectiveConfig,
-            componentVariantConfig);
+            componentVariantConfig,
+            componentRuntimeValues);
         RuntimeTemporalPhaseContract.Hydrate(prepared, effectiveConfig);
         PrepareNestedRuntimeContracts(
             prepared,
             effectiveConfig,
-            componentVariantConfig);
+            componentVariantConfig,
+            componentRuntimeValues);
         return prepared;
     }
 
@@ -90,13 +93,15 @@ public static class RuntimePreviewDocumentContract
         JsonObject inputValues,
         JsonObject runtimeContract,
         JsonObject effectiveConfig,
-        Func<string, JsonObject>? componentVariantConfig = null)
+        Func<string, JsonObject>? componentVariantConfig = null,
+        Func<string, JsonObject>? componentRuntimeValues = null)
     {
         var prepared = PrepareRuntime(
             runtimeContract,
             effectiveConfig,
             inputValues,
-            componentVariantConfig);
+            componentVariantConfig,
+            componentRuntimeValues);
         var result = new JsonObject();
         foreach (var (key, originalValue) in inputValues)
         {
@@ -121,12 +126,14 @@ public static class RuntimePreviewDocumentContract
         JsonObject previewFixture,
         JsonObject effectiveConfig,
         JsonObject runtimeValues,
-        Func<string, JsonObject>? componentVariantConfig = null)
+        Func<string, JsonObject>? componentVariantConfig = null,
+        Func<string, JsonObject>? componentRuntimeValues = null)
     {
         var prepared = PrepareFixture(
             previewFixture,
             effectiveConfig,
-            componentVariantConfig);
+            componentVariantConfig,
+            componentRuntimeValues);
         var current = RuntimeInputDocumentContract.CreateContentForContract(
             runtimeValues,
             prepared);
@@ -140,11 +147,13 @@ public static class RuntimePreviewDocumentContract
         StructuredRuntimeCollectionProjection.Apply(
             prepared,
             effectiveConfig,
-            componentVariantConfig);
+            componentVariantConfig,
+            componentRuntimeValues);
         PrepareNestedRuntimeContracts(
             prepared,
             effectiveConfig,
-            componentVariantConfig);
+            componentVariantConfig,
+            componentRuntimeValues);
         return prepared;
     }
 
@@ -284,7 +293,8 @@ public static class RuntimePreviewDocumentContract
     private static void PrepareNestedRuntimeContracts(
         JsonObject runtimeContract,
         JsonObject effectiveConfig,
-        Func<string, JsonObject>? componentVariantConfig)
+        Func<string, JsonObject>? componentVariantConfig,
+        Func<string, JsonObject>? componentRuntimeValues)
     {
         foreach (var collection in RuntimeInputDefinitionReader.ReadCollections(
                      runtimeContract,
@@ -297,7 +307,8 @@ public static class RuntimePreviewDocumentContract
                     collection),
                 collection,
                 effectiveConfig,
-                componentVariantConfig);
+                componentVariantConfig,
+                componentRuntimeValues);
         }
     }
 
@@ -305,7 +316,8 @@ public static class RuntimePreviewDocumentContract
         IReadOnlyList<JsonObject> items,
         RuntimeInputCollectionDefinition collection,
         JsonObject ownerConfig,
-        Func<string, JsonObject>? componentVariantConfig)
+        Func<string, JsonObject>? componentVariantConfig,
+        Func<string, JsonObject>? componentRuntimeValues)
     {
         foreach (var item in items)
         {
@@ -316,6 +328,11 @@ public static class RuntimePreviewDocumentContract
             if (!string.IsNullOrWhiteSpace(runtimeKey)
                 && item[runtimeKey] is JsonObject childRuntime)
             {
+                if (!string.IsNullOrWhiteSpace(collection.ItemRuntimeVariantSlotJsonKey)
+                    && item[collection.ItemRuntimeVariantSlotJsonKey] is null)
+                {
+                    continue;
+                }
                 var variantConfig = componentVariantConfig
                     ?? throw new InvalidOperationException(
                         $"Runtime collection '{collection.Id}' item contract "
@@ -331,7 +348,8 @@ public static class RuntimePreviewDocumentContract
                     item[runtimeKey] = PrepareFixture(
                         childRuntime,
                         childConfig,
-                        variantConfig);
+                        variantConfig,
+                        componentRuntimeValues);
                 }
             }
 
@@ -350,7 +368,8 @@ public static class RuntimePreviewDocumentContract
                     nestedItems.OfType<JsonObject>().ToList(),
                     field.StructuredCollection,
                     ownerConfig,
-                    componentVariantConfig);
+                    componentVariantConfig,
+                    componentRuntimeValues);
             }
         }
     }

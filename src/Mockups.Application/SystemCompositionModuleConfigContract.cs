@@ -14,7 +14,6 @@ internal static class SystemCompositionModuleConfigContract
         var owner = $"{context}.systemComposition";
         RequireSlot(composition, "statusBarSlot", owner);
         RequireSlot(composition, "navigationBarSlot", owner);
-        RequireSlot(composition, "stackSlot", owner);
         var stackInputs = JsonPath.RequiredObject(composition, "stackInputs", owner);
         JsonPath.RequiredArray(stackInputs, "items", $"{owner}.stackInputs");
     }

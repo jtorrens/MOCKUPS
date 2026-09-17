@@ -11,6 +11,8 @@ import { resolveSystemCompositionModuleFrame } from "./systemCompositionModuleRe
 import { previewPayloadInBox, previewScreenBox } from "./componentRenderableCommon.js";
 import { statusBarComponentToRenderable } from "./statusBarComponentRenderable.js";
 import { resolveStatusBarComponent } from "./statusBarComponentResolver.js";
+import { resolveInternalComponentStackLayout } from "./componentStackComponentResolver.js";
+import { componentStackLayoutToRenderable } from "./componentStackComponentRenderable.js";
 
 export function systemCompositionModuleToRenderable(payload: DesignPreviewPayload): RenderableNode {
   const contract = resolveSystemCompositionModuleFrame(payload);
@@ -43,20 +45,17 @@ export function systemCompositionModuleToRenderable(payload: DesignPreviewPayloa
     width: screen.width,
     height: Math.max(0, contentBottom - contentTop),
   };
-  const stackPayload = previewPayloadInBox(
-    {
-      ...componentPayload(payload, componentBaseConfigs, "componentStack", contract.stackSlot.variantReference),
-      configJson: JSON.stringify(embeddedComponentConfig(
-        componentBaseConfigs,
-        { ...contract.stackSlot },
-        "componentStack",
-        "module.system.composition.stackSlot",
-      )),
-      designPreviewJson: JSON.stringify(contract.stackInputs),
-    },
+  const stackPayload = previewPayloadInBox(payload, contentBox);
+  children.push(componentStackLayoutToRenderable(
+    stackPayload,
+    resolveInternalComponentStackLayout(
+      stackPayload,
+      contract.stackInputs,
+      "module.system.composition.contentStack",
+    ),
+    componentClassToRenderable,
     contentBox,
-  );
-  children.push(componentClassToRenderable(stackPayload));
+  ));
   if (status) children.push(status);
   if (navigation) children.push(navigation);
   return {
@@ -89,7 +88,7 @@ function componentSlotPayload(
 function componentPayload(
   payload: DesignPreviewPayload,
   componentBaseConfigs: Record<string, unknown>,
-  componentType: "status_bar" | "navigation_bar" | "componentStack",
+  componentType: "status_bar" | "navigation_bar",
   variant: string,
 ): DesignPreviewPayload {
   return {

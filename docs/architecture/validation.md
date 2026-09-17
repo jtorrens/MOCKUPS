@@ -515,7 +515,7 @@ For any editor or Preview change, exercise at least:
 3. fixed and polymorphic embedded Component authoring;
 4. Overrides and explicit Forward presentation;
 5. structured collection add, reorder, selection and deletion;
-6. Component Stack and Collection Stack slots and States;
+6. internal Content Stack, Surface Stack and Collection Stack slots and States;
 7. Production Episode → Shot → Screen selection and context;
 8. Screen Payload editing beside Preview;
 9. keyframe selection, Wacom/mouse drag and playback;

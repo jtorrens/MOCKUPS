@@ -12,17 +12,18 @@ import {
 import type {
   ComponentStackAlternativeContract,
   ComponentStackChildRenderer,
-  ComponentStackDesignContract,
+  ComponentStackLayoutContract,
   ComponentStackSlotContract,
 } from "./componentStackComponentContract.js";
 import { renderComponentCollectionFlowResolved } from "./componentCollectionRenderableCommon.js";
 import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { wrapExitMotionFrame, wrapMotionFrame } from "./previewMotionHelpers.js";
 
-export function componentStackComponentToRenderable(
+export function componentStackLayoutToRenderable(
   payload: DesignPreviewPayload,
-  stack: ComponentStackDesignContract,
+  stack: ComponentStackLayoutContract,
   renderChild: ComponentStackChildRenderer,
+  containerBox?: RenderableBox,
 ): RenderableNode {
   const slots = stack.slots.map(slotLayoutItem);
   const byId = new Map(stack.slots.map((slot) => [slot.id, slot]));
@@ -35,6 +36,7 @@ export function componentStackComponentToRenderable(
     sizingMode: stack.sizingMode,
     startGapToken: stack.startGapToken,
     endGapToken: stack.endGapToken,
+    containerBox,
   });
 }
 

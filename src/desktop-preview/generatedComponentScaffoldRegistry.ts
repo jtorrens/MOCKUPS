@@ -16,8 +16,6 @@ import { codeIndicatorComponentToRenderable } from "./codeIndicatorComponentRend
 import { resolveCodeIndicatorComponent } from "./codeIndicatorComponentResolver.js";
 import { collectionStackComponentToRenderable } from "./collectionStackComponentRenderable.js";
 import { resolveCollectionStackComponent } from "./collectionStackComponentResolver.js";
-import { componentStackComponentToRenderable } from "./componentStackComponentRenderable.js";
-import { resolveComponentStackComponent } from "./componentStackComponentResolver.js";
 import { contentRowComponentToRenderable } from "./contentRowComponentRenderable.js";
 import { resolveContentRowComponent } from "./contentRowComponentResolver.js";
 import { cursorComponentToRenderable } from "./cursorComponentRenderable.js";
@@ -60,6 +58,8 @@ import { statusBarComponentToRenderable } from "./statusBarComponentRenderable.j
 import { resolveStatusBarComponent } from "./statusBarComponentResolver.js";
 import { surfaceComponentToRenderable } from "./surfaceComponentRenderable.js";
 import { resolveSurfaceComponent } from "./surfaceComponentResolver.js";
+import { surfaceStackComponentToRenderable } from "./surfaceStackComponentRenderable.js";
+import { resolveSurfaceStackComponent } from "./surfaceStackComponentResolver.js";
 import { textBoxComponentToRenderable } from "./textBoxComponentRenderable.js";
 import { resolveTextBoxComponent } from "./textBoxComponentResolver.js";
 import { textInputBarComponentToRenderable } from "./textInputBarComponentRenderable.js";
@@ -82,8 +82,6 @@ export const generatedComponentScaffoldFactories = {
     codeIndicatorComponentToRenderable(payload, resolveCodeIndicatorComponent(payload)),
   collectionStack: (payload, _assignedBox, renderChild) =>
     collectionStackComponentToRenderable(payload, resolveCollectionStackComponent(payload), renderChild),
-  componentStack: (payload, _assignedBox, renderChild) =>
-    componentStackComponentToRenderable(payload, resolveComponentStackComponent(payload), renderChild),
   contentRow: (payload, assignedBox) =>
     contentRowComponentToRenderable(payload, resolveContentRowComponent(payload), assignedBox),
   cursor: (payload) =>
@@ -126,6 +124,8 @@ export const generatedComponentScaffoldFactories = {
     statusBarComponentToRenderable(payload, resolveStatusBarComponent(payload)),
   surface: (payload) =>
     surfaceComponentToRenderable(payload, resolveSurfaceComponent(payload)),
+  surfaceStack: (payload, _assignedBox, renderChild) =>
+    surfaceStackComponentToRenderable(payload, resolveSurfaceStackComponent(payload), renderChild),
   textBox: (payload) =>
     textBoxComponentToRenderable(payload, resolveTextBoxComponent(payload)),
   textInputBar: (payload) =>

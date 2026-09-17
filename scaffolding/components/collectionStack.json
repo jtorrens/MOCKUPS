@@ -26,7 +26,6 @@
       "textBox",
       "iconRow",
       "iconBar",
-      "componentStack",
       "badge",
       "codeIndicator",
       "avatar",
@@ -491,7 +490,7 @@
             "jsonKey": "variantReference",
             "kind": "componentVariant",
             "defaultValue": "",
-            "componentType": "*,-collectionStack",
+            "componentType": "*,-collectionStack,-surfaceStack",
             "valueKind": "ComponentVariant"
           },
           {
@@ -512,7 +511,7 @@
             "jsonKey": "presenceMotion",
             "kind": "text",
             "valueKind": "Motion",
-            "defaultValue": "{\u0022transition\u0022:\u0022slide\u0022,\u0022direction\u0022:\u0022bottom\u0022,\u0022bounds\u0022:\u0022screen\u0022,\u0022fade\u0022:false,\u0022translate\u0022:true,\u0022scale\u0022:false}"
+            "defaultValue": "{\"transition\":\"slide\",\"direction\":\"bottom\",\"bounds\":\"screen\",\"fade\":false,\"translate\":true,\"scale\":false}"
           },
           {
             "id": "alignment",

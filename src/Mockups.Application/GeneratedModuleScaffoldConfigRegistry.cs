@@ -216,13 +216,6 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ["chatList", "navigationBarSlot"],
             "navigation_bar",
             []),
-        ["module.core.chatList.stack"] = new(
-            "module.core.chatList",
-            "module.core.chatList.stack",
-            ValueKind.ComponentVariantSlot,
-            ["chatList", "stackSlot"],
-            "componentStack",
-            []),
         ["module.core.chatList.statusBar"] = new(
             "module.core.chatList",
             "module.core.chatList.statusBar",
@@ -755,11 +748,11 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ["systemComposition", "navigationBarSlot"],
             "navigation_bar",
             []),
-        ["module.system.composition.stackInputs"] = new(
+        ["module.system.composition.stackEndGap"] = new(
             "module.system.composition",
-            "module.system.composition.stackInputs",
-            ValueKind.ComponentInputBindings,
-            ["systemComposition", "stackInputs"],
+            "module.system.composition.stackEndGap",
+            ValueKind.ThemeToken,
+            ["systemComposition", "stackInputs", "endGapToken"],
             "",
             []),
         ["module.system.composition.stackItems"] = new(
@@ -769,12 +762,19 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ["systemComposition", "stackInputs", "items"],
             "",
             []),
-        ["module.system.composition.stackVariant"] = new(
+        ["module.system.composition.stackSizingMode"] = new(
             "module.system.composition",
-            "module.system.composition.stackVariant",
-            ValueKind.ComponentVariantSlot,
-            ["systemComposition", "stackSlot"],
-            "componentStack",
+            "module.system.composition.stackSizingMode",
+            ValueKind.OptionToken,
+            ["systemComposition", "stackInputs", "sizingMode"],
+            "",
+            []),
+        ["module.system.composition.stackStartGap"] = new(
+            "module.system.composition",
+            "module.system.composition.stackStartGap",
+            ValueKind.ThemeToken,
+            ["systemComposition", "stackInputs", "startGapToken"],
+            "",
             []),
         ["module.system.composition.statusBarVariant"] = new(
             "module.system.composition",

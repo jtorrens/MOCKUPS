@@ -6,7 +6,6 @@ export interface ChatListComponentSlot extends Record<string, unknown> {
 export interface ChatListModuleContract {
   id: "module.core.chatList";
   wallpaperEnabled: boolean;
-  stackSlot: ChatListComponentSlot;
   topIconBarSlot: ChatListComponentSlot;
   bottomIconBarSlot: ChatListComponentSlot;
   listSlot: ChatListComponentSlot;

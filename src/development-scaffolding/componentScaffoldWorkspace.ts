@@ -178,7 +178,7 @@ export function integrateComponentScaffold(
     recordClassId: spec.component.recordClassId,
     ...spec.manifest,
   };
-  addPolymorphicEmbed(components, "componentStack", componentType);
+  addPolymorphicEmbed(components, "surfaceStack", componentType);
   addPolymorphicEmbed(components, "collectionStack", componentType);
   const nextManifest = `${JSON.stringify(manifest, null, 2)}\n`;
 

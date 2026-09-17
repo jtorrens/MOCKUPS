@@ -11,7 +11,8 @@ public static class StructuredRuntimeCollectionProjection
     public static bool Apply(
         JsonObject preview,
         JsonObject config,
-        Func<string, JsonObject>? componentVariantConfig = null)
+        Func<string, JsonObject>? componentVariantConfig = null,
+        Func<string, JsonObject>? componentRuntimeValues = null)
     {
         var changed = false;
         if (preview["inputs"] is { } inputsNode)
@@ -42,7 +43,8 @@ public static class StructuredRuntimeCollectionProjection
                     config,
                     collection,
                     owner,
-                    componentVariantConfig);
+                    componentVariantConfig,
+                    componentRuntimeValues);
             }
         }
 
@@ -68,7 +70,8 @@ public static class StructuredRuntimeCollectionProjection
                     config,
                     collection,
                     owner,
-                    componentVariantConfig);
+                    componentVariantConfig,
+                    componentRuntimeValues);
             }
         }
         return changed;
@@ -79,7 +82,8 @@ public static class StructuredRuntimeCollectionProjection
         JsonObject config,
         JsonObject collection,
         string owner,
-        Func<string, JsonObject>? componentVariantConfig)
+        Func<string, JsonObject>? componentVariantConfig,
+        Func<string, JsonObject>? componentRuntimeValues)
     {
         var jsonKey = JsonPath.RequiredString(collection, "jsonKey", owner);
         var current = preview[jsonKey] as JsonArray
@@ -90,7 +94,8 @@ public static class StructuredRuntimeCollectionProjection
             config,
             collection,
             $"{owner} structured collection",
-            componentVariantConfig);
+            componentVariantConfig,
+            componentRuntimeValues);
         if (JsonNode.DeepEquals(current, next)) return false;
         preview[jsonKey] = next;
         return true;
@@ -101,7 +106,8 @@ public static class StructuredRuntimeCollectionProjection
         JsonObject config,
         JsonObject collection,
         string owner,
-        Func<string, JsonObject>? componentVariantConfig)
+        Func<string, JsonObject>? componentVariantConfig,
+        Func<string, JsonObject>? componentRuntimeValues)
     {
         var projection = JsonPath.RequiredObject(
             collection,
@@ -279,7 +285,8 @@ public static class StructuredRuntimeCollectionProjection
                         sourceItem,
                         nestedCollection,
                         $"{owner} Runtime item '{id}' field '{runtimeKey}'",
-                        componentVariantConfig);
+                        componentVariantConfig,
+                        componentRuntimeValues);
                 }
                 else
                 {
@@ -290,9 +297,64 @@ public static class StructuredRuntimeCollectionProjection
                 }
                 projected[runtimeKey] = value;
             }
+            ProjectRuntimeOwnerDocument(
+                projected,
+                currentItem,
+                collection,
+                owner,
+                componentRuntimeValues);
             result.Add(projected);
         }
         return result;
+    }
+
+    private static void ProjectRuntimeOwnerDocument(
+        JsonObject projected,
+        JsonObject? currentItem,
+        JsonObject collection,
+        string owner,
+        Func<string, JsonObject>? componentRuntimeValues)
+    {
+        var runtimeKey = JsonPath.String(collection, "itemRuntimeContractJsonKey", "");
+        var slotKey = JsonPath.String(collection, "itemRuntimeVariantSlotJsonKey", "");
+        if (runtimeKey.Length == 0 && slotKey.Length == 0) return;
+        if (runtimeKey.Length == 0 || slotKey.Length == 0)
+        {
+            throw new InvalidOperationException(
+                $"{owner} projected Runtime owner requires both itemRuntimeContractJsonKey and itemRuntimeVariantSlotJsonKey.");
+        }
+        if (projected[slotKey] is null)
+        {
+            projected[runtimeKey] = new JsonObject();
+            return;
+        }
+        var slot = projected[slotKey] as JsonObject
+            ?? throw new InvalidOperationException(
+                $"{owner} projected Runtime owner slot '{slotKey}' must be an object when selected.");
+        ComponentVariantSlotDocumentContract.Validate(
+            slot,
+            $"{owner} projected Runtime owner slot '{slotKey}'");
+        var reference = ComponentVariantSlotDocumentContract.VariantReference(
+            slot,
+            $"{owner} projected Runtime owner slot '{slotKey}'");
+        var currentReference = currentItem?[slotKey] is JsonObject currentSlot
+            && ComponentVariantSlotDocumentContract.HasLocalVariantReference(currentSlot)
+                ? ComponentVariantSlotDocumentContract.VariantReference(
+                    currentSlot,
+                    $"{owner} current Runtime owner slot '{slotKey}'")
+                : "";
+        if (currentReference.Equals(reference, StringComparison.Ordinal)
+            && currentItem?[runtimeKey] is JsonObject currentRuntime)
+        {
+            projected[runtimeKey] = currentRuntime.DeepClone();
+            return;
+        }
+        if (componentRuntimeValues is null)
+        {
+            throw new InvalidOperationException(
+                $"{owner} cannot create Runtime values for Component Variant '{reference}'.");
+        }
+        projected[runtimeKey] = componentRuntimeValues(reference).DeepClone();
     }
 
     private static JsonObject ResolveSourceVariantConfig(

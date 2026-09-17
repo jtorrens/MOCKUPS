@@ -142,6 +142,9 @@ For the System App, the declared template is the empty Lock Screen Default
 Variant implemented by `module.system.composition`. A newly authored System
 Module therefore begins with an empty Content Stack rather than inheriting the
 template Module's current authoring state or any non-Default Variant.
+Content Stack is internal Module layout metadata. A surfaced reusable group is
+authored as the separate `Surface Stack` Component; the Module fixes that
+boundary's Runtime `size` while its Variant owns Surface, padding and slots.
 
 Project context is supplied only by the selected Design-tree projection or by
 the Production Screen's owning Shot. It is never stored on the App, Module or

@@ -22,6 +22,7 @@ interface FlowOptions {
   startGapToken: string;
   endGapToken: string;
   itemSizingMode?: "intrinsic" | "largest";
+  containerBox?: RenderableBox;
 }
 
 interface StackedOptions extends FlowOptions {
@@ -80,8 +81,15 @@ function renderMeasuredFlow(
   const naturalHeight = startGap + endGap + measured.reduce((sum, current, index) =>
     sum + current.box.height + (index > 0 ? current.fixedGapBefore : 0), 0);
   const parentBox = options.sizingMode === "fill"
-    ? previewScreenBox(payload)
-    : boundedCenterBox(payload, naturalWidth, naturalHeight);
+    ? options.containerBox ?? previewScreenBox(payload)
+    : options.containerBox
+      ? {
+          x: options.containerBox.x + (options.containerBox.width - naturalWidth) * 0.5,
+          y: options.containerBox.y + (options.containerBox.height - naturalHeight) * 0.5,
+          width: naturalWidth,
+          height: naturalHeight,
+        }
+      : boundedCenterBox(payload, naturalWidth, naturalHeight);
   const fillItems = measured.filter(({ item }) => item.mainSizeMode === "fill");
   const fixedContentHeight = startGap + endGap + measured.reduce((sum, current, index) =>
     sum
