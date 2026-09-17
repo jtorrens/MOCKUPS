@@ -1624,8 +1624,20 @@ static void WorkspaceChangesRestoreSelection()
 
 static void WorkspacesShareActiveProject()
 {
+    var projectA = CreateProject("project-a");
+    var projectB = CreateProject("project-b");
+    AddHistoryComponent(
+        projectA,
+        "component-global",
+        "Global component",
+        "component.label");
+    AddHistoryComponent(
+        projectB,
+        "component-global",
+        "Global component",
+        "component.label");
     var source = new MutableNavigationDataSource(
-        [CreateProject("project-a"), CreateProject("project-b")]);
+        [projectA, projectB]);
     using var coordinator = new EditorWorkspaceCoordinator(source);
     coordinator.ReloadTree();
 
@@ -1639,9 +1651,26 @@ static void WorkspacesShareActiveProject()
     True(designSelection.Effects.HasFlag(
         EditorSessionEffects.PreviewOptions));
 
+    True(coordinator.TrySelectNodeById(
+        "component-global::variant::default",
+        "global-component",
+        out var componentSelection));
+    Equal("project-b", coordinator.State.ProductionId);
+    True(ReferenceEquals(
+        EditorNodeSelectionState.FindNodeById(
+            [projectB],
+            "component-global::variant::default"),
+        coordinator.State.SelectedNode));
+    True(!componentSelection.Effects.HasFlag(
+        EditorSessionEffects.Production));
+    True(!componentSelection.Effects.HasFlag(
+        EditorSessionEffects.PreviewOptions));
+
     coordinator.ReloadTree();
     Equal("project-b", coordinator.State.ProductionId);
-    Equal("project-b", coordinator.State.SelectedNode?.Id);
+    Equal(
+        "component-global::variant::default",
+        coordinator.State.SelectedNode?.Id);
 
     coordinator.SwitchWorkspace(EditorWorkspace.Production);
     Equal("project-b", coordinator.State.ProductionId);

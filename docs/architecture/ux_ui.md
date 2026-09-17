@@ -15,9 +15,10 @@ Cross-workspace navigation is explicit. Opening a Usage reference or class
 action activates the correct workspace, expands the exact tree branch, selects
 the item and opens its editor.
 
-Design and Production share one active Project. Selecting a Project or any
-Project-owned node in either workspace changes that shared identity. Switching
-workspace never restores a remembered node from another Project.
+Design and Production share one active Project. Only selecting a Project in
+Design or through the Production Project selector changes that shared identity.
+Selecting a global definition or another navigation node preserves it, and
+Preview continues to use only that active Project's resources.
 
 Both workspaces expose the same permanent **External Media** Project section.
 It opens a read-only central inventory with the sortable columns **System

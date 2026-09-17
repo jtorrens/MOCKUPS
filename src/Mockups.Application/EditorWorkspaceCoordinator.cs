@@ -391,10 +391,14 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
         lock (_stateGate)
         {
             ThrowIfDisposed();
-            var currentNode = EditorWorkspaceNavigation.FindNode(
-                _state.TreeRoots,
-                _state.Workspace,
-                node.Id);
+            var currentNode = node.Kind == ProjectTreeNodeKind.Project
+                ? _state.TreeRoots.FirstOrDefault((project) =>
+                    project.Id.Equals(node.Id, StringComparison.Ordinal))
+                : FindNodeInProject(
+                    _state.TreeRoots,
+                    _state.ProductionId,
+                    _state.Workspace,
+                    node.Id);
             if (currentNode is null)
             {
                 transition = Unchanged(source);
@@ -418,7 +422,9 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
             _nodeSelection.RememberVariantSelection(selectable);
             var workspaceSelections = Copy(previous.WorkspaceSelections);
             workspaceSelections[previous.Workspace] = selectable.Id;
-            var productionId = Root(selectable).Id;
+            var productionId = selectable.Kind == ProjectTreeNodeKind.Project
+                ? selectable.Id
+                : previous.ProductionId;
             var revision = previous.Revision + 1;
             _state = new EditorSessionState(
                 previous.TreeRoots,
@@ -457,10 +463,13 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
         out EditorSessionTransition transition)
     {
         var state = State;
-        var node = EditorWorkspaceNavigation.FindNode(
-            state.TreeRoots,
-            state.Workspace,
-            nodeId);
+        var node = state.TreeRoots.FirstOrDefault((project) =>
+                project.Id.Equals(nodeId, StringComparison.Ordinal))
+            ?? FindNodeInProject(
+                state.TreeRoots,
+                state.ProductionId,
+                state.Workspace,
+                nodeId);
         if (node is null)
         {
             transition = Unchanged(source);
@@ -478,10 +487,13 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
         lock (_stateGate)
         {
             ThrowIfDisposed();
-            var node = EditorWorkspaceNavigation.FindNode(
-                _state.TreeRoots,
-                workspace,
-                nodeId);
+            var node = _state.TreeRoots.FirstOrDefault((project) =>
+                    project.Id.Equals(nodeId, StringComparison.Ordinal))
+                ?? FindNodeInProject(
+                    _state.TreeRoots,
+                    _state.ProductionId,
+                    workspace,
+                    nodeId);
             if (node is null
                 || !EditorWorkspaceNavigation.Contains(workspace, node))
             {
@@ -503,7 +515,9 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
                     previous.SelectedNode.Id;
             }
             workspaceSelections[workspace] = selectable.Id;
-            var productionId = Root(selectable).Id;
+            var productionId = selectable.Kind == ProjectTreeNodeKind.Project
+                ? selectable.Id
+                : previous.ProductionId;
             var revision = previous.Revision + 1;
             _state = new EditorSessionState(
                 previous.TreeRoots,
@@ -606,8 +620,10 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
         lock (_stateGate)
         {
             ThrowIfDisposed();
-            var owner = EditorNodeSelectionState.FindNodeById(
+            var owner = FindNodeInProject(
                     _state.TreeRoots,
+                    _state.ProductionId,
+                    _state.Workspace,
                     context.OwnerNode.Id)
                 ?? throw new InvalidOperationException(
                     $"Embedded owner '{context.OwnerNode.Id}' is not in the active tree.");
@@ -690,12 +706,11 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
                     Copy(previous.WorkspaceSelections);
                 workspaceSelections[EditorWorkspace.Design] =
                     node.Id;
-                var productionId = Root(node).Id;
                 var revision = previous.Revision + 1;
                 _state = new EditorSessionState(
                     previous.TreeRoots,
                     EditorWorkspace.Design,
-                    productionId,
+                    previous.ProductionId,
                     node,
                     embedded,
                     workspaceSelections,
@@ -718,13 +733,6 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
                 {
                     effects |=
                         EditorSessionEffects.Workspace;
-                }
-                if (!productionId.Equals(
-                        previous.ProductionId,
-                        StringComparison.Ordinal))
-                {
-                    effects |= EditorSessionEffects.Production
-                        | EditorSessionEffects.PreviewOptions;
                 }
                 transition = new EditorSessionTransition(
                     direction < 0
@@ -893,7 +901,7 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
         var selected = previous.SelectedNode is null
             ? null
             : EditorWorkspaceNavigation.FindNode(
-                roots,
+                [project],
                 workspace,
                 previous.SelectedNode.Id);
         selected = IsValid(selected, workspace, projectId)
@@ -905,7 +913,7 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
                 out var selectionId))
         {
             var remembered = EditorWorkspaceNavigation.FindNode(
-                roots,
+                [project],
                 workspace,
                 selectionId);
             selected = IsValid(remembered, workspace, projectId)
@@ -983,6 +991,22 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
     {
         while (node.Parent is not null) node = node.Parent;
         return node;
+    }
+
+    private static ProjectTreeNode? FindNodeInProject(
+        IReadOnlyList<ProjectTreeNode> treeRoots,
+        string projectId,
+        EditorWorkspace workspace,
+        string nodeId)
+    {
+        var project = treeRoots.FirstOrDefault((candidate) =>
+            candidate.Id.Equals(projectId, StringComparison.Ordinal));
+        return project is null
+            ? null
+            : EditorWorkspaceNavigation.FindNode(
+                [project],
+                workspace,
+                nodeId);
     }
 
     private static Dictionary<EditorWorkspace, string> Copy(
@@ -1066,8 +1090,9 @@ public sealed class EditorWorkspaceCoordinator : IDisposable
         out EditorEmbeddedContext? embedded)
     {
         var resolved =
-            EditorWorkspaceNavigation.FindNode(
+            FindNodeInProject(
                 _state.TreeRoots,
+                _state.ProductionId,
                 EditorWorkspace.Design,
                 location.NodeId);
         if (resolved is null
