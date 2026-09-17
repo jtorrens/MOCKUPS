@@ -86,6 +86,28 @@ public static class RuntimePreviewDocumentContract
         return prepared;
     }
 
+    public static JsonObject PrepareInputValues(
+        JsonObject inputValues,
+        JsonObject effectiveConfig,
+        Func<string, JsonObject>? componentVariantConfig = null)
+    {
+        var prepared = PrepareFixture(
+            inputValues,
+            effectiveConfig,
+            componentVariantConfig);
+        var result = new JsonObject();
+        foreach (var (key, _) in inputValues)
+        {
+            if (!prepared.TryGetPropertyValue(key, out var value))
+            {
+                throw new InvalidOperationException(
+                    $"Prepared Runtime Input values are missing '{key}'.");
+            }
+            result[key] = value?.DeepClone();
+        }
+        return result;
+    }
+
     public static JsonObject PrepareRuntime(
         JsonObject previewFixture,
         JsonObject effectiveConfig,

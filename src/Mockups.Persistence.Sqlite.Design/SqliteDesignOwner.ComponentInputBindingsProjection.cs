@@ -51,7 +51,7 @@ internal sealed partial class SqliteDesignOwner
             JsonPath.Set(
                 ownerConfig,
                 definition.InputsPath,
-                RuntimePreviewDocumentContract.PrepareFixture(
+                RuntimePreviewDocumentContract.PrepareInputValues(
                     projected,
                     effective.Config,
                     GetComponentVariantConfig));
