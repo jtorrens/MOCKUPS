@@ -88,12 +88,14 @@ public static class RuntimePreviewDocumentContract
 
     public static JsonObject PrepareInputValues(
         JsonObject inputValues,
+        JsonObject runtimeContract,
         JsonObject effectiveConfig,
         Func<string, JsonObject>? componentVariantConfig = null)
     {
-        var prepared = PrepareFixture(
-            inputValues,
+        var prepared = PrepareRuntime(
+            runtimeContract,
             effectiveConfig,
+            inputValues,
             componentVariantConfig);
         var result = new JsonObject();
         foreach (var (key, _) in inputValues)

@@ -53,6 +53,7 @@ internal sealed partial class SqliteDesignOwner
                 definition.InputsPath,
                 RuntimePreviewDocumentContract.PrepareInputValues(
                     projected,
+                    effective.Contract,
                     effective.Config,
                     GetComponentVariantConfig));
         }
