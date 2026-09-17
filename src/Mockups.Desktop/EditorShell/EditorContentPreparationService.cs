@@ -756,7 +756,8 @@ internal sealed class EditorContentPreparationService : IDisposable
         {
             yield return PreparedCollectionComponentBoundary.Slot(
                 input.Label,
-                input.JsonKey);
+                input.JsonKey,
+                input.AllowEmpty);
         }
     }
 
@@ -792,7 +793,8 @@ internal sealed class EditorContentPreparationService : IDisposable
         string Label,
         string SlotJsonKey,
         string VariantReferenceJsonKey,
-        string OverridesJsonKey)
+        string OverridesJsonKey,
+        bool AllowEmpty)
     {
         public ComponentOverridePromotionBoundary PromotionBoundary =>
             new(
@@ -804,19 +806,18 @@ internal sealed class EditorContentPreparationService : IDisposable
             string label,
             string variantReferenceJsonKey,
             string overridesJsonKey) =>
-            new(label, "", variantReferenceJsonKey, overridesJsonKey);
+            new(label, "", variantReferenceJsonKey, overridesJsonKey, false);
 
         public static PreparedCollectionComponentBoundary Slot(
             string label,
-            string slotJsonKey) =>
-            new(label, slotJsonKey, "", "");
+            string slotJsonKey,
+            bool allowEmpty) =>
+            new(label, slotJsonKey, "", "", allowEmpty);
 
         public string ReadVariantReference(JsonObject item, string owner) =>
             string.IsNullOrWhiteSpace(SlotJsonKey)
                 ? JsonPath.RequiredString(item, VariantReferenceJsonKey, owner, allowEmpty: true)
-                : ComponentVariantSlotDocumentContract.VariantReference(
-                    JsonPath.RequiredObject(item, SlotJsonKey, owner),
-                    $"{owner}.{SlotJsonKey}");
+                : ReadSlotVariantReference(item, owner);
 
         public JsonObject ReadOverrides(JsonObject item, string owner) =>
             string.IsNullOrWhiteSpace(SlotJsonKey)
@@ -838,6 +839,22 @@ internal sealed class EditorContentPreparationService : IDisposable
                 ComponentVariantSlotDocumentContract.VariantReference(slot, owner),
                 overrides,
                 owner);
+        }
+
+        private string ReadSlotVariantReference(JsonObject item, string owner)
+        {
+            if (item[SlotJsonKey] is null)
+            {
+                if (AllowEmpty) return "";
+                throw new InvalidOperationException(
+                    $"{owner} must contain an object '{SlotJsonKey}'.");
+            }
+            var slot = item[SlotJsonKey] as JsonObject
+                ?? throw new InvalidOperationException(
+                    $"{owner}.{SlotJsonKey} must be an object.");
+            return ComponentVariantSlotDocumentContract.VariantReference(
+                slot,
+                $"{owner}.{SlotJsonKey}");
         }
     }
 
