@@ -98,10 +98,17 @@ public static class RuntimePreviewDocumentContract
             inputValues,
             componentVariantConfig);
         var result = new JsonObject();
-        foreach (var (key, _) in inputValues)
+        foreach (var (key, originalValue) in inputValues)
         {
             if (!prepared.TryGetPropertyValue(key, out var value))
             {
+                if (key.Equals(
+                        RuntimeInputForwardingContract.StorageKey,
+                        StringComparison.Ordinal))
+                {
+                    result[key] = originalValue?.DeepClone();
+                    continue;
+                }
                 throw new InvalidOperationException(
                     $"Prepared Runtime Input values are missing '{key}'.");
             }
