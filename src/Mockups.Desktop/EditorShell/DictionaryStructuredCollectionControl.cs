@@ -673,7 +673,8 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
             StructuredCollection: input.StructuredCollection,
             Unit: input.Unit,
             Animation: input.Animation,
-            BehaviorTiming: input.BehaviorTiming);
+            BehaviorTiming: input.BehaviorTiming,
+            AllowEmpty: input.AllowEmpty);
     }
 
     private void RegisterOverrideControl(DictionaryFieldControl control)

@@ -15,7 +15,7 @@ internal sealed class DictionaryComponentVariantSlotControl : StackPanel, IDicti
     private readonly DictionaryComponentVariantControl _variantControl;
     private readonly Func<FieldDefinition, string, JsonObject, Func<JsonObject, Task>, Task>?
         _openRuntimeComponentOverrides;
-    private JsonObject _slot;
+    private JsonObject? _slot;
 
     public DictionaryComponentVariantSlotControl(
         FieldDefinition definition,
@@ -31,12 +31,8 @@ internal sealed class DictionaryComponentVariantSlotControl : StackPanel, IDicti
         MinWidth = 0;
         HorizontalAlignment = HorizontalAlignment.Stretch;
 
-        _slot = ComponentVariantSlotDocumentContract.Parse(
-            value,
-            $"Dictionary field '{definition.Id}'");
-        var reference = ComponentVariantSlotDocumentContract.VariantReference(
-            _slot,
-            $"Dictionary field '{definition.Id}'");
+        _slot = Parse(value);
+        var reference = Reference();
         Func<string, Task>? openOverrides = _openRuntimeComponentOverrides is null
             ? null
             : async (_) => await OpenOverridesAsync();
@@ -51,6 +47,7 @@ internal sealed class DictionaryComponentVariantSlotControl : StackPanel, IDicti
             },
             reference,
             isHighlighted: !isInherited
+                && _slot is not null
                 && OverrideDocumentContract.HasAuthoredValues(
                     ComponentVariantSlotDocumentContract.Overrides(
                         _slot,
@@ -83,37 +80,39 @@ internal sealed class DictionaryComponentVariantSlotControl : StackPanel, IDicti
 
     public void SetValue(string value)
     {
-        _slot = ComponentVariantSlotDocumentContract.Parse(
-            value,
-            $"Dictionary field '{_definition.Id}'");
-        _variantControl.SetValue(ComponentVariantSlotDocumentContract.VariantReference(
-            _slot,
-            $"Dictionary field '{_definition.Id}'"));
+        _slot = Parse(value);
+        _variantControl.SetValue(Reference());
         RefreshOverrideButton();
     }
 
     private void SetReference(string reference)
     {
         var owner = $"Dictionary field '{_definition.Id}'";
-        var current = ComponentVariantSlotDocumentContract.VariantReference(_slot, owner);
+        var current = Reference();
         if (current.Equals(reference, StringComparison.Ordinal)) return;
-        _slot = ComponentVariantSlotDocumentContract.CreateForVariantChange(
-            reference,
-            owner);
+        _slot = string.IsNullOrWhiteSpace(reference)
+            ? null
+            : ComponentVariantSlotDocumentContract.CreateForVariantChange(
+                reference,
+                owner);
         RefreshOverrideButton();
     }
 
     private void RefreshOverrideButton()
     {
-        var overrides = ComponentVariantSlotDocumentContract.Overrides(
-            _slot,
-            $"Dictionary field '{_definition.Id}'");
+        var overrides = _slot is null
+            ? null
+            : ComponentVariantSlotDocumentContract.Overrides(
+                _slot,
+                $"Dictionary field '{_definition.Id}'");
         _variantControl.SetOverrideHighlighted(
-            OverrideDocumentContract.HasAuthoredValues(overrides));
+            overrides is not null
+            && OverrideDocumentContract.HasAuthoredValues(overrides));
     }
 
     private Task RestoreOverrides()
     {
+        if (_slot is null) return Task.CompletedTask;
         _slot["overrides"] = new JsonObject();
         ComponentVariantSlotDocumentContract.Validate(
             _slot,
@@ -128,6 +127,7 @@ internal sealed class DictionaryComponentVariantSlotControl : StackPanel, IDicti
     internal async Task<bool> OpenOverridesAsync()
     {
         if (_openRuntimeComponentOverrides is null) return false;
+        if (_slot is null) return false;
         var owner = $"Dictionary field '{_definition.Id}'";
         var currentReference = ComponentVariantSlotDocumentContract.VariantReference(_slot, owner);
         var currentOverrides = ComponentVariantSlotDocumentContract.Overrides(_slot, owner);
@@ -150,9 +150,29 @@ internal sealed class DictionaryComponentVariantSlotControl : StackPanel, IDicti
 
     private string Serialize()
     {
+        if (_slot is null)
+        {
+            if (_definition.AllowEmpty) return "";
+            throw new InvalidOperationException(
+                $"Dictionary field '{_definition.Id}' cannot be empty.");
+        }
         ComponentVariantSlotDocumentContract.Validate(
             _slot,
             $"Dictionary field '{_definition.Id}'");
         return _slot.ToJsonString();
     }
+
+    private JsonObject? Parse(string value)
+    {
+        if (_definition.AllowEmpty && string.IsNullOrWhiteSpace(value)) return null;
+        return ComponentVariantSlotDocumentContract.Parse(
+            value,
+            $"Dictionary field '{_definition.Id}'");
+    }
+
+    private string Reference() => _slot is null
+        ? ""
+        : ComponentVariantSlotDocumentContract.VariantReference(
+            _slot,
+            $"Dictionary field '{_definition.Id}'");
 }

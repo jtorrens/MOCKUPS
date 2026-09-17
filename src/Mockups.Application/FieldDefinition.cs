@@ -298,7 +298,8 @@ public sealed record FieldDefinition(
     MotionTimingDefinition? MotionTiming = null,
     string HelpText = "",
     string ValuePattern = "",
-    string ValuePatternMessage = "")
+    string ValuePatternMessage = "",
+    bool AllowEmpty = false)
 {
     public string DisplayLabel => string.IsNullOrWhiteSpace(Unit)
         ? Label

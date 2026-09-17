@@ -63,7 +63,8 @@ internal static class RuntimeInputFieldDefinitionFactory
             BehaviorTiming: input.BehaviorTiming,
             HelpText: input.HelpText,
             ValuePattern: input.ValuePattern,
-            ValuePatternMessage: input.ValuePatternMessage);
+            ValuePatternMessage: input.ValuePatternMessage,
+            AllowEmpty: permitsEmpty);
     }
 
     private static ProjectTreeNode ProjectAncestor(ProjectTreeNode node)
