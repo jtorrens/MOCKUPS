@@ -1376,12 +1376,12 @@ static void ComponentInputProjectionOwnershipCoversParents()
     var moduleOwners = ComponentInputBindingsProjectionCatalog.RecordOwners();
     var componentOwners = ComponentInputBindingsProjectionCatalog.ComponentOwners();
 
-    Equal(3, moduleOwners.Count);
+    Equal(2, moduleOwners.Count);
     Equal(7, componentOwners.Count);
     Equal(true, moduleOwners.Any((owner) => owner.Id.Equals(
         "module.core.chat.headerRightIconRow.inputs",
         StringComparison.Ordinal)));
-    Equal(true, moduleOwners.Any((owner) => owner.Id.Equals(
+    Equal(false, moduleOwners.Any((owner) => owner.Id.Equals(
         "module.system.composition.stackInputs",
         StringComparison.Ordinal)));
     Equal(false, moduleOwners.Any((owner) => owner.Id.StartsWith(
@@ -1626,13 +1626,17 @@ static void WorkspacesShareActiveProject()
 {
     var projectA = CreateProject("project-a");
     var projectB = CreateProject("project-b");
+    var appsA = projectA.Children.Single(
+        (node) => node.Kind == ProjectTreeNodeKind.AppsRoot);
+    var appsB = projectB.Children.Single(
+        (node) => node.Kind == ProjectTreeNodeKind.AppsRoot);
     AddHistoryComponent(
-        projectA,
+        appsA,
         "component-global",
         "Global component",
         "component.label");
     AddHistoryComponent(
-        projectB,
+        appsB,
         "component-global",
         "Global component",
         "component.label");
@@ -1685,8 +1689,13 @@ static void WorkspacesShareActiveProject()
     coordinator.SwitchWorkspace(EditorWorkspace.Design);
     Equal("project-a", coordinator.State.ProductionId);
     Equal(
-        "component-a::variant::default",
+        "component-global::variant::default",
         coordinator.State.SelectedNode?.Id);
+    True(ReferenceEquals(
+        EditorNodeSelectionState.FindNodeById(
+            [projectA],
+            "component-global::variant::default"),
+        coordinator.State.SelectedNode));
 }
 
 static void DeletedSelectionFallsBack()

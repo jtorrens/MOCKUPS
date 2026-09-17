@@ -276,7 +276,7 @@ test("Component scaffold integrates complete owners and later verifies only deve
       manifest.components.scaffoldFixture?.embeds.length,
       0,
     );
-    assert.ok(manifest.components.componentStack?.embeds.includes("scaffoldFixture"));
+    assert.ok(manifest.components.surfaceStack?.embeds.includes("scaffoldFixture"));
     assert.ok(manifest.components.collectionStack?.embeds.includes("scaffoldFixture"));
     for (const generatedPath of [
       generatedComponentRegistryPath,
@@ -737,11 +737,12 @@ function prepareIntegrationFixture(
         renderable: "./surfaceComponentRenderable",
         embeds: [],
       },
-      componentStack: {
-        category: "atom",
-        contract: "./componentStackComponentContract",
-        resolver: "./componentStackComponentResolver",
-        renderable: "./componentStackComponentRenderable",
+      surfaceStack: {
+        category: "component",
+        recordClassId: "component.surfaceStack",
+        contract: "./surfaceStackComponentContract",
+        resolver: "./surfaceStackComponentResolver",
+        renderable: "./surfaceStackComponentRenderable",
         embeds: ["label", "surface"],
       },
       collectionStack: {

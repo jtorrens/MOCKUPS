@@ -71,7 +71,7 @@ test("Chat List belongs to the Chat App and exposes the exact List Runtime contr
 test("Chat List composes the exact List boundary at the configured Screen placement", () => {
   const source = fixture();
   const node = chatListModuleToRenderable(source);
-  const stack = findNode(node, "componentStack");
+  const stack = findNode(node, "module.core.chatList.contentStack");
   const top = findNode(node, "top");
   const listSlot = findNode(node, "list");
   const bottom = findNode(node, "bottom");

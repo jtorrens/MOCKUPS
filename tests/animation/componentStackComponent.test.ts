@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { resolveComponentStackComponent } from "../../src/desktop-preview/componentStackComponentResolver.js";
-import { componentStackComponentToRenderable } from "../../src/desktop-preview/componentStackComponentRenderable.js";
+import { resolveInternalComponentStackLayout } from "../../src/desktop-preview/componentStackComponentResolver.js";
+import { componentStackLayoutToRenderable } from "../../src/desktop-preview/componentStackComponentRenderable.js";
 import {
   componentVariantConfig,
   embeddedComponentConfig,
@@ -203,6 +203,14 @@ function payload(alternatives: Record<string, unknown>[], frame = 0): DesignPrev
   };
 }
 
+function resolveComponentStackComponent(source: DesignPreviewPayload) {
+  return resolveInternalComponentStackLayout(
+    source,
+    JSON.parse(source.designPreviewJson) as Record<string, unknown>,
+    "componentStack",
+  );
+}
+
 test("Component Stack resolves ordered Replace and Overlay states deterministically", () => {
   const resolved = resolveComponentStackComponent(payload([
     alternative("clock", "stub::variant::clock", false),
@@ -272,7 +280,7 @@ test("Component Stack publishes each alternative's exact Component Variant owner
   source.authoringRecordClassId = "module.system.composition";
   source.authoringSlotFieldIds = ["module.system.composition.stack.editor"];
 
-  const renderable = componentStackComponentToRenderable(
+  const renderable = componentStackLayoutToRenderable(
     source,
     resolveComponentStackComponent(source),
     (child) => withAuthoringTarget(child, {
@@ -400,7 +408,7 @@ test("Component Stack runtime transition frames use explicit action time when ow
   source.designPreviewJson = JSON.stringify(preview);
 
   const resolved = resolveComponentStackComponent(source);
-  const renderable = componentStackComponentToRenderable(source, resolved, (child) => ({
+  const renderable = componentStackLayoutToRenderable(source, resolved, (child) => ({
     id: JSON.parse(child.designPreviewJson ?? "{}").id ?? "stub",
     type: "group",
     frame: 0,
@@ -480,7 +488,7 @@ test("each Component Stack state resolves its own placement inside the assigned 
   ];
   const source = payload(states);
   const resolved = resolveComponentStackComponent(source);
-  const renderable = componentStackComponentToRenderable(source, resolved, (child) => ({
+  const renderable = componentStackLayoutToRenderable(source, resolved, (child) => ({
     id: child.componentType ?? "stub",
     type: "group",
     frame: 0,
@@ -537,7 +545,7 @@ test("independent content slots retain intrinsic overflow when a later slot chan
   });
 
   const resolved = resolveComponentStackComponent(source);
-  const renderable = componentStackComponentToRenderable(source, resolved, (child, assignedBox) => {
+  const renderable = componentStackLayoutToRenderable(source, resolved, (child, assignedBox) => {
     if (child.designPreviewJson?.includes("password")) {
       return {
         id: "password",
@@ -607,7 +615,7 @@ test("Component Stack fill slots receive the space left between content slots", 
   });
 
   const resolved = resolveComponentStackComponent(source);
-  const renderable = componentStackComponentToRenderable(source, resolved, (child, assignedBox) => ({
+  const renderable = componentStackLayoutToRenderable(source, resolved, (child, assignedBox) => ({
     id: JSON.parse(child.designPreviewJson).id as string,
     type: "group",
     frame: 0,
@@ -630,7 +638,7 @@ test("Component Stack fill viewport clips an intrinsic content slot without shri
   preview.items[0]!.sizeMode = "content";
   source.designPreviewJson = JSON.stringify(preview);
   const resolved = resolveComponentStackComponent(source);
-  const renderable = componentStackComponentToRenderable(
+  const renderable = componentStackLayoutToRenderable(
     source,
     resolved,
     (child, assignedBox) => ({

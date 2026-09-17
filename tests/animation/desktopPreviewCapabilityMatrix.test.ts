@@ -36,7 +36,7 @@ const focusedCharacterizations = {
   label: "tests/animation/calculatedText.test.ts",
   cursor: "tests/animation/cursorFrameResolution.test.ts",
   textBox: "tests/animation/cursorFrameResolution.test.ts",
-  componentStack: "tests/animation/componentStackComponent.test.ts",
+  surfaceStack: "tests/animation/componentStackComponent.test.ts",
   collectionStack: "tests/animation/collectionStackComponent.test.ts",
   notification: "tests/animation/atomicTemporalComponents.test.ts",
   notifications: "tests/animation/notificationsComponent.test.ts",
