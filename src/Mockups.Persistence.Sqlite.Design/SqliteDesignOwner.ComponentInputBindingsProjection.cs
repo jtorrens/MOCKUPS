@@ -37,24 +37,28 @@ internal sealed partial class SqliteDesignOwner
                 ComponentVariantSlotDocumentContract.VariantReference(
                     slot,
                     $"{definition.Id} Component Variant slot");
-            var contract = EffectiveComponentRuntimeContract(
+            var effective = EffectiveComponentRuntimeContract(
                 connection,
                 reference,
                 JsonPath.RequiredObject(
                     slot,
                     "overrides",
                     $"{definition.Id} Component Variant slot"));
+            var projected = RuntimeInputDocumentContract.ProjectInputValuesForContract(
+                inputs,
+                effective.Contract,
+                definition.CalculatedInputIds);
             JsonPath.Set(
                 ownerConfig,
                 definition.InputsPath,
-                RuntimeInputDocumentContract.ProjectInputValuesForContract(
-                    inputs,
-                    contract,
-                    definition.CalculatedInputIds));
+                RuntimePreviewDocumentContract.PrepareFixture(
+                    projected,
+                    effective.Config,
+                    GetComponentVariantConfig));
         }
     }
 
-    private JsonObject EffectiveComponentRuntimeContract(
+    private EffectiveComponentRuntimeProjection EffectiveComponentRuntimeContract(
         SqliteConnection connection,
         string variantReference,
         JsonObject overrides)
@@ -80,6 +84,12 @@ internal sealed partial class SqliteDesignOwner
             ParseJsonObject(row.DesignPreviewJson),
             config,
             GetComponentVariantConfig);
-        return contract;
+        return new EffectiveComponentRuntimeProjection(
+            config,
+            contract);
     }
+
+    private sealed record EffectiveComponentRuntimeProjection(
+        JsonObject Config,
+        JsonObject Contract);
 }

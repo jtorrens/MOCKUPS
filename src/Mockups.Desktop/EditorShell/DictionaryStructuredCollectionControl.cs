@@ -152,22 +152,33 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                 collection,
                 mutation);
         }
-        void ApplyMutationResult(
+        async Task ApplyMutationResultAsync(
             StructuredCollectionMutationResult result,
             bool runtimeContractChanged)
         {
             _items = result.Collection.DeepClone().AsArray();
             if (_services.MutateStructuredCollection is null)
             {
-                Commit(runtimeContractChanged);
-                return;
+                Commit();
             }
-            ValueChanged?.Invoke(this, _items.ToJsonString());
-            Rebuild();
+            else
+            {
+                ValueChanged?.Invoke(this, _items.ToJsonString());
+                Rebuild();
+            }
             if (runtimeContractChanged)
             {
+                if (_services.ResetUsedRuntimePayloads is not null)
+                {
+                    await _services.ResetUsedRuntimePayloads();
+                }
                 RuntimeContractChanged?.Invoke(this, EventArgs.Empty);
             }
+        }
+        async Task<bool> ConfirmRuntimeContractChangeAsync()
+        {
+            return _services.ConfirmUsedRuntimeContractReplacement is null
+                || await _services.ConfirmUsedRuntimeContractReplacement();
         }
         editor = new StructuredCollectionEditor(
             StructuredCollectionEditingContext.VariantAuthoring,
@@ -186,6 +197,7 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
             new StructuredCollectionActions(
                 AddFirst: async () =>
                 {
+                    if (!await ConfirmRuntimeContractChangeAsync()) return;
                     var prototype = await NewItem();
                     if (prototype is null) return;
                     var result = await Mutate(new AddStructuredCollectionItem(
@@ -196,10 +208,11 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                         result.Item ?? throw new InvalidOperationException(
                             "Add structured collection mutation returned no item."),
                         result.Collection.Count);
-                    ApplyMutationResult(result, runtimeContractChanged: true);
+                    await ApplyMutationResultAsync(result, runtimeContractChanged: true);
                 },
                 AddAfter: async (index) =>
                 {
+                    if (!await ConfirmRuntimeContractChangeAsync()) return;
                     var prototype = await NewItem();
                     if (prototype is null) return;
                     var beforeItemId = index + 1 < items.Count
@@ -213,10 +226,11 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                         result.Item ?? throw new InvalidOperationException(
                             "Add structured collection mutation returned no item."),
                         result.Collection.Count);
-                    ApplyMutationResult(result, runtimeContractChanged: true);
+                    await ApplyMutationResultAsync(result, runtimeContractChanged: true);
                 },
                 Duplicate: async (index) =>
                 {
+                    if (!await ConfirmRuntimeContractChangeAsync()) return;
                     var source = items[index];
                     var result = await Mutate(new DuplicateStructuredCollectionItem(
                         address,
@@ -229,7 +243,7 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                         ?? throw new InvalidOperationException(
                             "Duplicate structured collection mutation returned no item."),
                         result.Collection.Count);
-                    ApplyMutationResult(
+                    await ApplyMutationResultAsync(
                         result,
                         runtimeContractChanged: true);
                 },
@@ -246,7 +260,7 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                         address,
                         ItemId(items[index], index),
                         beforeItemId));
-                    ApplyMutationResult(result, runtimeContractChanged: false);
+                    await ApplyMutationResultAsync(result, runtimeContractChanged: false);
                 },
                 Delete: async (index) =>
                 {
@@ -266,10 +280,11 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                         : _services.ConfirmStructuredCollectionItemDelete is null
                           || await _services.ConfirmStructuredCollectionItemDelete(title);
                     if (!confirmed) return;
+                    if (!await ConfirmRuntimeContractChangeAsync()) return;
                     var result = await Mutate(new DeleteStructuredCollectionItem(
                         address,
                         ItemId(items[index], index)));
-                    ApplyMutationResult(
+                    await ApplyMutationResultAsync(
                         result,
                         runtimeContractChanged: true);
                 }),
