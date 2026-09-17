@@ -7,6 +7,68 @@ namespace Mockups.DesktopEditorShell.Data;
 
 internal sealed partial class SqliteProductionOwner
 {
+    internal void ResetModuleVariantRuntimePayloads(
+        SqliteConnection connection,
+        SqliteTransaction transaction,
+        string moduleId,
+        string variantReference,
+        IReadOnlyDictionary<string, IReadOnlySet<string>> projectActorIds)
+    {
+        var affectedShots = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var instance in _moduleInstanceRepository
+                     .QueryAll(connection)
+                     .Where((candidate) =>
+                         candidate.ModuleId.Equals(moduleId, StringComparison.Ordinal)
+                         && JsonPath.String(
+                                ParseJsonObject(candidate.MetadataJson),
+                                "moduleVariantReference",
+                                "")
+                            .Equals(variantReference, StringComparison.Ordinal)))
+        {
+            var contract = ResolveModuleInstanceContract(
+                instance.ModuleId,
+                instance.MetadataJson);
+            var content = RuntimeInputDocumentContract.CreateContentForContract(
+                new JsonObject(),
+                contract);
+            var animation = RuntimeInputDocumentContract
+                .RemoveOrphanedAnimationTracks(
+                    ParseJsonObject(instance.AnimationJson),
+                    contract,
+                    content);
+            var shot = _shotRepository.Get(connection, instance.ShotId);
+            if (!projectActorIds.TryGetValue(
+                    shot.ProjectId,
+                    out var actorIds))
+            {
+                actorIds = new HashSet<string>(StringComparer.Ordinal);
+            }
+            ValidateModuleInstanceRuntimeContent(
+                connection,
+                instance.Id,
+                content,
+                actorIds);
+            ModuleInstanceAnimationDocumentContract.Validate(
+                animation,
+                $"Module Instance '{instance.Id}' animation_json");
+            _moduleInstanceRepository.UpdateContentAndAnimation(
+                connection,
+                instance.Id,
+                content.ToJsonString(),
+                animation.ToJsonString(),
+                transaction);
+            affectedShots.Add(instance.ShotId);
+        }
+
+        foreach (var shotId in affectedShots)
+        {
+            SynchronizeTimelineDurations(
+                connection,
+                shotId,
+                transaction: transaction);
+        }
+    }
+
     public string GetModuleInstanceRuntimePreviewJson(
         string moduleInstanceId)
     {

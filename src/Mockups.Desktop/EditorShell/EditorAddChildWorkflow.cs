@@ -44,7 +44,7 @@ internal sealed class EditorAddChildWorkflow
 
     public async Task<ProjectTreeNode?> TryAdd(ProjectTreeNode parent)
     {
-        if (!EditorAddOperationCatalog.TryGet(parent.Kind, out var operation)) return null;
+        if (!EditorAddOperationCatalog.TryGet(parent, out var operation)) return null;
         return operation.Kind switch
         {
             EditorAddOperationKind.CreateRecord => await CreateRecord(parent, operation.CreationId),

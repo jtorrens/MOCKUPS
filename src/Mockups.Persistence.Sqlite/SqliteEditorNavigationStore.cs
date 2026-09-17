@@ -204,13 +204,21 @@ internal sealed class SqliteEditorNavigationStore
             var appNodes = new Dictionary<string, ProjectTreeNode>(StringComparer.Ordinal);
             foreach (var app in apps.OrderBy((app) => app.SortOrder).ThenBy((app) => app.Name))
             {
+                var creationCapability = AppModuleCreationContract.Read(
+                    JsonPath.ParseRequiredObject(
+                        app.MetadataJson,
+                        $"App '{app.Id}' metadata_json"),
+                    $"App '{app.Id}' metadata_json");
                 var node = new ProjectTreeNode(
                     ProjectTreeNodeKind.App,
                     app.Id,
                     app.Name,
                     app.Notes,
                     app.RecordClassId,
-                    appsRoot);
+                    appsRoot,
+                    declaredAddOperationId: creationCapability is null
+                        ? ""
+                        : AppModuleCreationContract.AddOperationId);
                 appsRoot.AddChild(node);
                 appNodes[node.Id] = node;
             }

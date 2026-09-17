@@ -12,7 +12,7 @@ internal static class SqliteProjectTestContextExtensions
         this SqliteProjectTestContext engine,
         ProjectTreeNode parent)
     {
-        var operation = EditorAddOperationCatalog.Require(parent.Kind);
+        var operation = EditorAddOperationCatalog.Require(parent);
         var creationId = parent.Kind == ProjectTreeNodeKind.DevicesRoot
             ? "device"
             : operation.CreationId;

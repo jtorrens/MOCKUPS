@@ -107,6 +107,18 @@ internal sealed class EditorDomainDialogService
             height: 250);
     }
 
+    public Task<bool> ConfirmUsedRuntimeContractReplacement(
+        string variantName)
+    {
+        return new EditorDialogService(_owner, _isDark()).ConfirmAction(
+            "Replace Screen Runtime payloads",
+            $"Change the component used by \"{variantName}\"?",
+            "This Module Variant is used by one or more Screens. Their previous Runtime payload and animation tracks will be removed and replaced with fresh values for the new contract.",
+            "Replace and reset Screens",
+            width: 560,
+            height: 270);
+    }
+
     public async Task<RecordCreationDraft?> DefineModuleInstanceForShot(string shotId)
     {
         var selection = await new ShotModulePickerDialog(

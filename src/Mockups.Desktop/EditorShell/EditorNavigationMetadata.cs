@@ -102,7 +102,7 @@ internal static class EditorNavigationMetadata
 
     public static string AddChildLabel(ProjectTreeNode node)
     {
-        return EditorAddOperationCatalog.Require(node.Kind).Label;
+        return EditorAddOperationCatalog.Require(node).Label;
     }
 
     public static string HierarchicalIcon(ProjectTreeNode node)

@@ -51,7 +51,8 @@ public sealed class ProjectTreeNode
         string? colorHex = null,
         bool isUsed = false,
         bool isProtected = false,
-        bool isLocked = false)
+        bool isLocked = false,
+        string declaredAddOperationId = "")
     {
         Kind = kind;
         Id = id;
@@ -63,6 +64,7 @@ public sealed class ProjectTreeNode
         IsUsed = isUsed;
         IsProtected = isProtected;
         IsLocked = isLocked;
+        DeclaredAddOperationId = declaredAddOperationId;
     }
 
     public ProjectTreeNodeKind Kind { get; }
@@ -75,11 +77,12 @@ public sealed class ProjectTreeNode
     public bool IsUsed { get; }
     public bool IsProtected { get; }
     public bool IsLocked { get; }
+    public string DeclaredAddOperationId { get; }
     public List<ProjectTreeNode> Children { get; } = [];
 
     public int Level => Parent is null ? 0 : Parent.Level + 1;
     public bool HasAddOperation =>
-        EditorAddOperationCatalog.TryGet(Kind, out _);
+        EditorAddOperationCatalog.TryGet(this, out _);
     public bool CanDuplicate => Kind is ProjectTreeNodeKind.ModuleVariant
         or ProjectTreeNodeKind.ModuleInstance
         or ProjectTreeNodeKind.Episode

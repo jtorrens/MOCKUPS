@@ -158,7 +158,8 @@ internal sealed class SqliteCoreFieldStore
             node.ColorHex,
             node.IsUsed,
             node.IsProtected,
-            node.IsLocked);
+            node.IsLocked,
+            node.DeclaredAddOperationId);
         UpdateNode(renamed);
         return renamed;
     }
@@ -188,7 +189,8 @@ internal sealed class SqliteCoreFieldStore
             node.Parent,
             isUsed: node.IsUsed,
             isProtected: node.IsProtected,
-            isLocked: node.IsLocked);
+            isLocked: node.IsLocked,
+            declaredAddOperationId: node.DeclaredAddOperationId);
     }
 
     private void RenameIconTheme(

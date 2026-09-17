@@ -138,6 +138,10 @@ internal static class SqliteProjectSessionFactory
             new SqliteRuntimeInputInstancePort(
                 runtimeInputInstances),
             new SqliteModuleInstanceAnimationPort(animations),
+            new SqliteRuntimeContractUsageStore(
+                context,
+                production,
+                resources),
             new SqliteReferenceUsagePort(referenceUsages),
             new SqliteExternalMediaUsagePort(externalMediaUsages),
             new SqliteExternalMediaAssetReplacementPort(resources),

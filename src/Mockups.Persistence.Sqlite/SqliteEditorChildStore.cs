@@ -1,4 +1,5 @@
 using Mockups.DesktopEditorShell.EditorShell;
+using Mockups.DesktopEditorShell.Common;
 using System.Globalization;
 using System.Text.Json;
 
@@ -37,6 +38,7 @@ internal sealed class SqliteEditorChildStore
             ["episode"] = (parent, _) => PrepareEpisodeCreation(parent),
             ["shot"] = (parent, _) => PrepareShotCreation(parent),
             ["moduleInstance"] = PrepareModuleInstanceCreation,
+            ["module"] = (parent, _) => PrepareModuleCreation(parent),
             ["variant"] = (parent, _) => PrepareVariantCreation(parent),
         };
         _creationCommitters = new Dictionary<string, Func<ProjectTreeNode, RecordCreationDraft, ProjectTreeNode>>(StringComparer.Ordinal)
@@ -49,6 +51,7 @@ internal sealed class SqliteEditorChildStore
             ["episode"] = (parent, draft) => CreateEpisode(parent, draft.Values),
             ["shot"] = (parent, draft) => CreateShot(parent, draft.Values),
             ["moduleInstance"] = CreateModuleInstance,
+            ["module"] = (parent, draft) => CreateModule(parent, draft.Values),
             ["variant"] = (parent, draft) => CreateVariant(parent, draft.Values),
         };
     }
@@ -298,6 +301,43 @@ internal sealed class SqliteEditorChildStore
                     "New Variant"),
             ]);
     }
+
+    private RecordCreationDefinition PrepareModuleCreation(
+        ProjectTreeNode parent)
+    {
+        RequireCreationContext(parent, ProjectTreeNodeKind.App, "module");
+        using var connection = _context.OpenConnection();
+        var app = _design.AppModuleRepository.GetApp(connection, parent.Id);
+        _ = AppModuleCreationContract.Read(
+                JsonPath.ParseRequiredObject(
+                    app.MetadataJson,
+                    $"App '{app.Id}' metadata_json"),
+                $"App '{app.Id}' metadata_json")
+            ?? throw new InvalidOperationException(
+                $"App '{app.Name}' does not declare Module creation.");
+        var index = _design.AppModuleRepository.QueryModules(connection)
+            .Count((module) => module.AppId == app.Id) + 1;
+        return new RecordCreationDefinition(
+            "module",
+            "module",
+            "Add module",
+            "Create a Module with a protected empty Default Variant.",
+            "Add",
+            [
+                Field(
+                    "core.name",
+                    "Name",
+                    ValueKind.StringSingleLine,
+                    $"Module {index}"),
+            ]);
+    }
+
+    private ProjectTreeNode CreateModule(
+        ProjectTreeNode parent,
+        IReadOnlyDictionary<string, string> values) =>
+        _design.CreateModuleFromDeclaredTemplate(
+            parent,
+            Required(values, "core.name"));
 
     private ProjectTreeNode CreateVariant(
         ProjectTreeNode parent,

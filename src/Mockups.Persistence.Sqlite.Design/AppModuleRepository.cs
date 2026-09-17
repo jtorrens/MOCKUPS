@@ -100,6 +100,44 @@ internal sealed class AppModuleRepository : IAppModuleRepository
         return rows;
     }
 
+    public void CreateModule(
+        SqliteConnection connection,
+        ModuleDefinitionRecord module)
+    {
+        CurrentModuleConfigContract.Validate(
+            module.RecordClassId,
+            JsonPath.ParseRequiredObject(
+                module.ConfigJson,
+                $"Module '{module.Id}' config_json"),
+            $"Module '{module.Id}' config_json");
+        JsonPath.ParseRequiredObject(
+            module.DesignPreviewJson,
+            $"Module '{module.Id}' design_preview_json");
+        ValidateModuleMetadata(
+            module.MetadataJson,
+            module.Id,
+            module.RecordClassId);
+        _context.Execute(
+            connection,
+            """
+            INSERT INTO modules (
+                id, app_id, record_class_id, name, notes, sort_order,
+                config_json, design_preview_json, metadata_json)
+            VALUES (
+                $id, $appId, $recordClassId, $name, $notes, $sortOrder,
+                $configJson, $designPreviewJson, $metadataJson)
+            """,
+            ("$id", module.Id),
+            ("$appId", module.AppId),
+            ("$recordClassId", module.RecordClassId),
+            ("$name", module.Name),
+            ("$notes", module.Notes),
+            ("$sortOrder", module.SortOrder),
+            ("$configJson", module.ConfigJson),
+            ("$designPreviewJson", module.DesignPreviewJson),
+            ("$metadataJson", module.MetadataJson));
+    }
+
     public void UpdateAppDirectField(SqliteConnection connection, string appId, string fieldId, string value)
     {
         var column = fieldId switch

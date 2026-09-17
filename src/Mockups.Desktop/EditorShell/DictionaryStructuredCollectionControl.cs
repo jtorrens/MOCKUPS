@@ -551,11 +551,9 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
         {
             var previous = DesignPreviewTestValues.CollectionValue(item, input);
             var nextReference = next;
-            var componentChanged = selectsComponent
-                && !ComponentCategory(definition.Options ?? [], previous).Equals(
-                    ComponentCategory(definition.Options ?? [], nextReference),
-                    StringComparison.Ordinal);
-            if (componentChanged)
+            var referenceChanged = selectsComponent
+                && !previous.Equals(nextReference, StringComparison.Ordinal);
+            if (referenceChanged)
             {
                 var forwardedLabels = RuntimeInputForwardingContract.Labels(item);
                 var confirmed = forwardedLabels.Count == 0
@@ -568,13 +566,21 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                     control.SetValue(previous);
                     return;
                 }
+                var usedRuntimeConfirmed =
+                    _services.ConfirmUsedRuntimeContractReplacement is null
+                    || await _services.ConfirmUsedRuntimeContractReplacement();
+                if (!usedRuntimeConfirmed)
+                {
+                    control.SetValue(previous);
+                    return;
+                }
             }
             item[input.JsonKey] = DesignPreviewTestValues.ValueNode(input, nextReference);
             var updates = new Dictionary<string, JsonNode?>
             {
                 [input.JsonKey] = item[input.JsonKey],
             };
-            if (componentChanged && componentItems is not null)
+            if (referenceChanged && componentItems is not null)
             {
                 item[componentItems.OverridesJsonKey] = new JsonObject();
                 item[componentItems.InputsJsonKey] = string.IsNullOrWhiteSpace(next)
@@ -586,12 +592,17 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
                 updates[componentItems.InputsJsonKey] = item[componentItems.InputsJsonKey];
             }
             await PublishItemValuesAsync(updates);
+            if (referenceChanged
+                && _services.ResetUsedRuntimePayloads is not null)
+            {
+                await _services.ResetUsedRuntimePayloads();
+            }
             if (collection.Fields.Any((candidate) =>
                     candidate.EnabledWhenItemJsonKey.Equals(input.JsonKey, StringComparison.Ordinal)))
             {
                 Rebuild();
             }
-            if (componentChanged)
+            if (referenceChanged)
             {
                 RuntimeContractChanged?.Invoke(this, EventArgs.Empty);
             }
@@ -748,15 +759,6 @@ internal sealed class DictionaryStructuredCollectionControl : Border, IDictionar
 
     private static string ItemId(JsonObject item, int index) =>
         JsonPath.RequiredString(item, "id", $"Structured collection item at index {index}");
-
-    private static string ComponentCategory(IReadOnlyList<FieldOption> options, string reference)
-    {
-        var group = options.FirstOrDefault((option) => option.Value.Equals(reference, StringComparison.Ordinal))?.GroupValue;
-        if (!string.IsNullOrWhiteSpace(group)) return group;
-        return VariantReferenceId.TryParse(reference, out var componentId, out _)
-            ? componentId
-            : reference;
-    }
 
     private static JsonArray Parse(string value)
     {

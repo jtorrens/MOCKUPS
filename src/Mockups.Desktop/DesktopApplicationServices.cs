@@ -31,6 +31,7 @@ internal sealed record DesktopApplicationDataPorts(
     IRuntimeInputOwnerStore RuntimeInputOwners,
     IRuntimeInputInstanceStore RuntimeInputInstances,
     IModuleInstanceAnimationStore Animation,
+    IRuntimeContractUsageStore RuntimeContractUsages,
     IReferenceUsageQuery ReferenceUsage,
     IExternalMediaUsageQuery ExternalMediaUsage,
     IExternalMediaAssetReplacementStore ExternalMediaAssetReplacement,

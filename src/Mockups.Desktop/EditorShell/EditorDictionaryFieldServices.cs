@@ -17,6 +17,7 @@ internal sealed class EditorDictionaryFieldServices
     private readonly EditorDictionaryContextPreparer _contextPreparer;
     private readonly EditorOperationCoordinator _operations;
     private readonly ComponentClassFieldValueService _componentFields;
+    private readonly IRuntimeContractUsageStore _runtimeContractUsages;
     private readonly Func<string?> _selectedThemeId;
     private readonly Action<string, string> _setRuntimeTestValue;
     private readonly EditorSessionUiState _structuredCollectionUiState = new();
@@ -32,6 +33,7 @@ internal sealed class EditorDictionaryFieldServices
         EditorDomainDialogService domainDialogs,
         EditorOperationCoordinator operations,
         ComponentClassFieldValueService componentFields,
+        IRuntimeContractUsageStore runtimeContractUsages,
         Func<string?> selectedThemeId,
         Action<string, string> setRuntimeTestValue)
     {
@@ -46,6 +48,7 @@ internal sealed class EditorDictionaryFieldServices
         _domainDialogs = domainDialogs;
         _operations = operations;
         _componentFields = componentFields;
+        _runtimeContractUsages = runtimeContractUsages;
         _runtimeInputOptions =
             new RuntimeInputOptionsDataSource(database, actors);
         _contextPreparer = new EditorDictionaryContextPreparer(
@@ -217,6 +220,18 @@ internal sealed class EditorDictionaryFieldServices
                 _domainDialogs.ConfirmRuntimeCollectionItemDelete,
             ConfirmDiscardForwardedRuntimeInputs:
                 _domainDialogs.ConfirmDiscardForwardedRuntimeInputs,
+            ConfirmUsedRuntimeContractReplacement:
+                node.Kind == ProjectTreeNodeKind.ModuleVariant
+                    && node.IsUsed
+                    ? () => _domainDialogs
+                        .ConfirmUsedRuntimeContractReplacement(node.Name)
+                    : null,
+            ResetUsedRuntimePayloads:
+                node.Kind == ProjectTreeNodeKind.ModuleVariant
+                    ? () => _operations.ExecuteAsync(
+                        () => _runtimeContractUsages
+                            .ResetRuntimePayloads(node))
+                    : null,
             SetRuntimeTestValue: _setRuntimeTestValue,
             StructuredCollectionUiState:
                 _structuredCollectionUiState);
@@ -332,6 +347,18 @@ internal sealed class EditorDictionaryFieldServices
                 restoreRecordReferenceOverrides,
             ConfirmStructuredCollectionItemDelete: _domainDialogs.ConfirmRuntimeCollectionItemDelete,
             ConfirmDiscardForwardedRuntimeInputs: _domainDialogs.ConfirmDiscardForwardedRuntimeInputs,
+            ConfirmUsedRuntimeContractReplacement:
+                node.Kind == ProjectTreeNodeKind.ModuleVariant
+                    && node.IsUsed
+                    ? () => _domainDialogs
+                        .ConfirmUsedRuntimeContractReplacement(node.Name)
+                    : null,
+            ResetUsedRuntimePayloads:
+                node.Kind == ProjectTreeNodeKind.ModuleVariant
+                    ? () => _operations.ExecuteAsync(
+                        () => _runtimeContractUsages
+                            .ResetRuntimePayloads(node))
+                    : null,
             SetRuntimeTestValue: _setRuntimeTestValue,
             StructuredCollectionUiState: _structuredCollectionUiState);
     }

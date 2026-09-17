@@ -385,6 +385,14 @@ cross-owner application store. It receives the SQLite context plus Design,
 Production and Resources owners for exact contract and Actor validation; it
 does not expose any of those owners or their unrelated operations to Desktop.
 
+`IRuntimeContractUsageStore` is the focused cross-owner command used after an
+accepted authored Runtime-contract replacement. It targets one exact Module
+Variant reference, recreates the complete payload for each referencing Screen
+from an empty object and the updated effective contract, removes orphaned
+animation tracks and synchronizes affected Shot durations in one transaction.
+It does not reconcile values by name or preserve values from the previous
+contract.
+
 `IRuntimeInputOwnerStore` is Design-only. Module Instance Variant and effective
 Runtime Preview reads remain on the Production timeline and are composed with
 the authored owner store only in the Desktop document adapter.

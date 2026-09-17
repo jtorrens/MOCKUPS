@@ -119,7 +119,7 @@ internal sealed class EditorNodeCommandController
         var child = await workflow.TryAdd(parent);
         if (child is null) return;
 
-        if (EditorAddOperationCatalog.Require(parent.Kind).Kind
+        if (EditorAddOperationCatalog.Require(parent).Kind
             == EditorAddOperationKind.RefreshIconThemes)
         {
             await _loadProjectTree();

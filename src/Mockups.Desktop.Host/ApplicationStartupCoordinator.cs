@@ -189,6 +189,7 @@ public sealed class ApplicationStartupCoordinator
                 project.RuntimeInputOwners,
                 project.RuntimeInputInstances,
                 project.Animation,
+                project.RuntimeContractUsages,
                 project.ReferenceUsage,
                 project.ExternalMediaUsage,
                 project.ExternalMediaAssetReplacement,

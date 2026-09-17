@@ -19,6 +19,9 @@ public sealed record EditorAddOperationDefinition(
 
 public static class EditorAddOperationCatalog
 {
+    private static readonly EditorAddOperationDefinition ModuleCreation =
+        new("module.create", EditorAddOperationKind.CreateRecord, "Add module", "module");
+
     private static readonly IReadOnlyDictionary<ProjectTreeNodeKind, EditorAddOperationDefinition>
         Definitions = new Dictionary<ProjectTreeNodeKind, EditorAddOperationDefinition>
         {
@@ -36,6 +39,26 @@ public static class EditorAddOperationCatalog
             [ProjectTreeNodeKind.Module] = new("variant.create", EditorAddOperationKind.CreateRecord, "Add variant", "variant"),
         };
 
+    private static readonly IReadOnlyDictionary<string, EditorAddOperationDefinition>
+        DeclaredDefinitions = new Dictionary<string, EditorAddOperationDefinition>(StringComparer.Ordinal)
+        {
+            [ModuleCreation.Id] = ModuleCreation,
+        };
+
+    public static bool TryGet(
+        ProjectTreeNode parent,
+        out EditorAddOperationDefinition definition)
+    {
+        if (!string.IsNullOrWhiteSpace(parent.DeclaredAddOperationId))
+        {
+            return DeclaredDefinitions.TryGetValue(
+                parent.DeclaredAddOperationId,
+                out definition!);
+        }
+
+        return TryGet(parent.Kind, out definition);
+    }
+
     public static bool TryGet(
         ProjectTreeNodeKind parentKind,
         out EditorAddOperationDefinition definition) =>
@@ -46,4 +69,10 @@ public static class EditorAddOperationCatalog
             ? definition
             : throw new InvalidOperationException(
                 $"{parentKind} has no declared Add operation.");
+
+    public static EditorAddOperationDefinition Require(ProjectTreeNode parent) =>
+        TryGet(parent, out var definition)
+            ? definition
+            : throw new InvalidOperationException(
+                $"{parent.Kind} '{parent.Id}' has no declared Add operation.");
 }

@@ -408,12 +408,23 @@ When an action is valid both in the tree and editor, it uses the same label,
 rules, result and confirmation in both places. Rename is therefore consistent
 between Design and Production surfaces.
 
-App and Module definitions expose Rename only. The Module tree row exposes Add
-Variant and creates it from that Module's protected Default Variant. A Variant
+App and Module definitions expose Rename by default. An App with the declared
+Module-creation capability also exposes Add Module and opens the shared
+dictionary-backed creation form; Apps without that capability expose no Add
+action. The Module tree row exposes Add Variant and creates it from that
+Module's protected Default Variant. A Variant
 row exposes Duplicate, which clones that exact Variant, plus Rename and
 conditional Delete. Component Class and Component Variant rows follow the same
 creation-versus-duplication distinction. Other records expose only actions
 allowed by their exact owner and Usage state.
+
+Changing a Component or Variant reference in a polymorphic Content Stack slot
+always replaces the slot's local Overrides and Runtime document with fresh
+values from the new exact Variant. Runtime values from the previous reference
+are never retained by matching shape or field name. When the owning Module
+Variant is used by Screens, the editor asks for confirmation first; acceptance
+recreates every affected Screen payload from the updated contract and removes
+orphaned animation tracks.
 
 Deletion confirmation presents each blocking Usage reference as a navigable
 link. Activating it closes the dialog, switches workspace when necessary,

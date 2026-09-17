@@ -537,6 +537,10 @@ internal interface IAppModuleRepository
 
     IReadOnlyList<ModuleDefinitionRecord> QueryModules(SqliteConnection connection);
 
+    void CreateModule(
+        SqliteConnection connection,
+        ModuleDefinitionRecord module);
+
     void UpdateAppDirectField(SqliteConnection connection, string appId, string fieldId, string value);
 
     void UpdateAppConfig(SqliteConnection connection, string appId, string configJson);

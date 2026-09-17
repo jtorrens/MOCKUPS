@@ -234,6 +234,11 @@ Read-only database startup validation is a separate composition-owned
 capability implemented by `SqliteCurrentDatabaseValidator`. It may read through
 the three focused persistence owners to verify cross-owner invariants, but it
 publishes no repository capability and performs no write, repair or migration.
+Design also owns capability-declared Module creation: it clones the exact
+protected Default Variant and complete implementation identity from the App's
+declared template Module. The composition layer separately coordinates an
+accepted Module Variant contract replacement with Production through the
+focused Runtime-contract usage command; Design never writes Screen rows.
 `SqliteProjectSessionFactory` constructs the session graph in local variables,
 invokes that validator and publishes only the named session ports.
 Component configuration-field writes, strict snapshot replacement and exact

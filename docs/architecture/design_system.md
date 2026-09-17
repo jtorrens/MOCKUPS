@@ -117,15 +117,24 @@ all Productions. An App groups Module definitions. A Module owns:
 - Design Preview fixture;
 - editor layout metadata.
 
-App and Module definitions expose Rename as their lifecycle action. Creating,
-duplicating or deleting a definition is a development workflow because the
-operation must also supply or remove its complete manifest, implementation,
-contract, migration and validation surface.
+App and Module definitions expose Rename as their baseline lifecycle action.
+An App may additionally declare `moduleCreation.templateModuleId` in its
+metadata. That capability enables the normal dictionary-backed Add Module
+workflow for that App only. Creation reuses the template Module's complete
+manifest route, resolver, renderable, Preview fixture and contract, while
+cloning only its protected Default Variant into the new Module. Creating a new
+Module class without that declared complete template remains a development
+workflow.
 
 Module Variants are authored data. A Module's Add action creates one from its
 complete protected Default Variant. Duplicating a Module Variant clones that
 exact selected Variant. Variants may be renamed and deleted when unused,
 unlocked and not protected. Production stores an exact Module Variant id.
+
+For the System App, the declared template is the empty Lock Screen Default
+Variant. A newly authored System Module therefore begins with an empty Content
+Stack rather than inheriting the template Module's current authoring state or
+any non-Default Variant.
 
 Project context is supplied only by the selected Design-tree projection or by
 the Production Screen's owning Shot. It is never stored on the App, Module or
