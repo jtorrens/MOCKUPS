@@ -29,6 +29,9 @@ internal static class EditorUiVisuals
     public static IBrush SelectedBackgroundBrush(bool isDark) =>
         Brush(isDark ? "#285F9E" : "#D7E9FF");
 
+    public static IBrush ActiveContextBackgroundBrush(bool isDark) =>
+        Brush(isDark ? "#463711" : "#F2DEAA");
+
     public static IBrush SelectedTextBrush(bool isDark) =>
         Brush(isDark ? "#FFFFFF" : "#172033");
 

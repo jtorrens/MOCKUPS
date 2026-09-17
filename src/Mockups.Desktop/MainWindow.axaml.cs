@@ -25,6 +25,7 @@ public partial class MainWindow : SukiWindow
     private readonly EditorThemeController _themeController;
     private readonly EditorNodeCommandController _nodeCommands;
     private readonly EditorShellStateService _shellState;
+    private readonly EditorActiveProjectStore _activeProjectStore;
     private readonly EditorNavigationPanelController
         _navigationPanel;
     private readonly PreviewControlsDockController
@@ -208,6 +209,9 @@ public partial class MainWindow : SukiWindow
             new EditorShellStateService(
                 this,
                 ShellColumns,
+                shellStatePath);
+        _activeProjectStore =
+            new EditorActiveProjectStore(
                 shellStatePath);
         var pathBrowser = new EditorPathBrowser(
             StorageProvider,
@@ -543,7 +547,7 @@ public partial class MainWindow : SukiWindow
             _shellState.NavigationPanelExpandedPreviewWidth);
         _workspaceCoordinator.Restore(new EditorSessionRestoreState(
             EditorWorkspace.Design,
-            ""));
+            _activeProjectStore.Restore()));
         var initialLoad = _workspaceCoordinator.BeginTreeLoad(
             Session.Workspace);
         if (!_workspaceCoordinator.TryCommitTreeLoad(
@@ -617,6 +621,7 @@ public partial class MainWindow : SukiWindow
         }
         _sessionDisposed = true;
         _shellState.Save(_navigationPanel.Snapshot());
+        _activeProjectStore.Save(Session.ProductionId);
         _productionNavigationActions.Dispose();
         _previewControlsDock.Dispose();
         _screenTimeline.Dispose();

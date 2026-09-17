@@ -19,6 +19,10 @@ Design and Production share one active Project. Only selecting a Project in
 Design or through the Production Project selector changes that shared identity.
 Selecting a global definition or another navigation node preserves it, and
 Preview continues to use only that active Project's resources.
+The selected navigation row uses the standard blue selection background. When
+another row is selected, the active Project row remains visible with an amber
+background. The last active Project is restored on the next application start
+before Design, Production and Preview are prepared.
 
 Both workspaces expose the same permanent **External Media** Project section.
 It opens a read-only central inventory with the sortable columns **System

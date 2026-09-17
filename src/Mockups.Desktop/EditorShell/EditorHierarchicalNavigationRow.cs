@@ -25,6 +25,7 @@ internal sealed record EditorHierarchicalNavigationMetadata(
     bool IsEnabled,
     string DisabledReason,
     bool IsSelected,
+    bool IsActiveProject,
     bool IsPreviewActive,
     bool ShowActions,
     bool HasChildren,
@@ -75,7 +76,9 @@ internal static class EditorHierarchicalNavigationRow
             row,
             metadata.IsSelected
                 ? metadata.IsPreviewActive ? "Selected, active in Preview" : "Selected"
-                : metadata.IsPreviewActive ? "Active in Preview" : metadata.Status);
+                : metadata.IsActiveProject
+                    ? "Active Project"
+                    : metadata.IsPreviewActive ? "Active in Preview" : metadata.Status);
         if (metadata.ShowTopSeparator)
         {
             row.BorderThickness = new Thickness(0, 1, 0, 0);
@@ -104,13 +107,15 @@ internal static class EditorHierarchicalNavigationRow
             ColumnSpacing = 5,
             Margin = new Thickness(metadata.Depth * 18, 0, 0, 0),
         };
-        if (metadata.IsSelected)
+        if (metadata.IsSelected || metadata.IsActiveProject)
         {
             var selection = new Border
             {
                 Margin = new Thickness(-4, 0, -3, 0),
                 CornerRadius = new CornerRadius(5),
-                Background = EditorUiVisuals.SelectedBackgroundBrush(isDark),
+                Background = metadata.IsSelected
+                    ? EditorUiVisuals.SelectedBackgroundBrush(isDark)
+                    : EditorUiVisuals.ActiveContextBackgroundBrush(isDark),
             };
             Grid.SetColumn(selection, 1);
             Grid.SetColumnSpan(selection, 3);
@@ -383,6 +388,7 @@ internal static class EditorHierarchicalNavigationRow
         var details = new[]
             {
                 metadata.Title,
+                metadata.IsActiveProject ? "Active Project" : "",
                 metadata.IsPreviewActive ? "Active in Preview" : "",
                 metadata.Status,
                 metadata.Subtitle,

@@ -551,6 +551,7 @@ and Episode slugs and Episode order never reconstruct that path.
 Render Queue is deliberately outside SQLite. The application-data directory on
 each workstation contains:
 
+- the exact active Project identity restored for the next editor session;
 - the current local queue containing live Shot render plans and their output
   targets, never resolved Shot, Screen, frame or asset snapshots;
 - terminal history, compacted after completion;

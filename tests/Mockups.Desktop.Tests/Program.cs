@@ -137,6 +137,7 @@ var tests = new (string Name, Action Run)[]
     ("Shot Manager output captures exact associations and resolves offline", ShotManagerOutputResolvesExactAssociations),
     ("local workstation documents reject partial and extended contracts", LocalWorkstationDocumentsAreStrict),
     ("shell window state persists only its exact visual contract", ShellWindowStateIsExactAndVisualOnly),
+    ("active Project state persists one exact local identity", ActiveProjectStatePersistsExactIdentity),
     ("Render output naming reserves one version for Light and Dark", RenderOutputNamingReservesOneBatchVersion),
     ("MOV H.264 modes match the Créditos encoding profiles", MovH264ModesMatchCreditosProfiles),
     ("MOV outputs carry exact color metadata and full-scale opaque alpha", MovOutputsCarryExactMetadata),
@@ -16798,6 +16799,45 @@ static void ShellWindowStateIsExactAndVisualOnly()
     }
 }
 
+static void ActiveProjectStatePersistsExactIdentity()
+{
+    var root = Path.Combine(
+        Path.GetTempPath(),
+        $"mockups-active-project-contract-{Guid.NewGuid():N}");
+    Directory.CreateDirectory(root);
+    var shellStatePath = Path.Combine(root, "window-state.json");
+    var statePath = Path.Combine(root, "active-project.json");
+    try
+    {
+        var store = new EditorActiveProjectStore(
+            shellStatePath);
+        Equal("", store.Restore());
+
+        store.Save("project-b");
+        Equal("project-b", store.Restore());
+        var document = JsonNode.Parse(
+                File.ReadAllText(statePath))!
+            .AsObject();
+        Equal(
+            "mockups_active_project",
+            document["Schema"]!.GetValue<string>());
+        Equal(1, document["Version"]!.GetValue<int>());
+        Equal(
+            "project-b",
+            document["ActiveProjectId"]!.GetValue<string>());
+
+        document["Unknown"] = true;
+        File.WriteAllText(
+            statePath,
+            document.ToJsonString());
+        Throws<InvalidDataException>(() => store.Restore());
+    }
+    finally
+    {
+        Directory.Delete(root, recursive: true);
+    }
+}
+
 static void ShotManagerOutputResolvesExactAssociations()
 {
     const string productionId = "11111111-1111-4111-8111-111111111111";
@@ -19939,6 +19979,7 @@ static void SelectedNavigationRowsContainEveryAction()
             "",
             true,
             false,
+            false,
             true,
             true,
             true,
@@ -19994,6 +20035,25 @@ static void SelectedNavigationRowsContainEveryAction()
                 + $"(actions={actions.Bounds.Right:0.##}, "
                 + $"selection={selection.Bounds.Right:0.##}).");
         }
+
+        var activeProjectRow = (Border)EditorHierarchicalNavigationRow.Create(
+            metadata with
+            {
+                IsSelected = false,
+                IsActiveProject = true,
+            },
+            isDark: true,
+            noAction,
+            noAction);
+        var activeProjectBand = Required(activeProjectRow.Child as Grid)
+            .Children
+            .OfType<Border>()
+            .Single((candidate) =>
+                Grid.GetColumn(candidate) == 1
+                && Grid.GetColumnSpan(candidate) == 3);
+        Equal(
+            Color.Parse("#463711"),
+            Required(activeProjectBand.Background as SolidColorBrush).Color);
 
         window.Close();
     }, CancellationToken.None).GetAwaiter().GetResult();

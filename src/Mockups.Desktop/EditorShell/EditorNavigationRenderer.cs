@@ -38,6 +38,7 @@ internal sealed class EditorNavigationRenderer
     private readonly Func<ProjectTreeNode, EditorNavigationRowAction?>
         _persistentAction;
     private string _renderedActivePreviewNodeId = "";
+    private string _renderedActiveProjectId = "";
 
     public EditorNavigationRenderer(
         Func<ProjectTreeNode?> selectedNode,
@@ -121,6 +122,7 @@ internal sealed class EditorNavigationRenderer
     {
         var candidate = new StackPanel();
         _renderedActivePreviewNodeId = _activePreviewNodeId();
+        _renderedActiveProjectId = productionId;
 
         if (workspace == EditorWorkspace.Design)
         {
@@ -301,6 +303,10 @@ internal sealed class EditorNavigationRenderer
             nodeEnabled,
             nodeEnabled ? "" : "Assign an Actor to the Shot to enable this Screen",
             IsSelected(node),
+            node.Kind == ProjectTreeNodeKind.Project
+                && node.Id.Equals(
+                    _renderedActiveProjectId,
+                    StringComparison.Ordinal),
             node.Id.Equals(_renderedActivePreviewNodeId, StringComparison.Ordinal),
             ShowsActions(node, _selectedNode()),
             hasChildren,

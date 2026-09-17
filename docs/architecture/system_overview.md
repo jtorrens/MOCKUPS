@@ -419,6 +419,9 @@ discards its forward branch after a new navigation; it is never persisted.
 A Project selection in either workspace changes that one active Project. A
 workspace switch restores a remembered node only when it belongs to the active
 Project; otherwise it selects the first valid node inside that exact Project.
+The active Project identity is the one persisted coordinator session value and
+is restored before the startup tree and Preview options commit. No selected
+node, editor history or view memory is persisted with it.
 A reload first produces an uncommitted tree candidate.
 The Desktop transition owner prepares the matching visual context and complete
 Production Preview catalog against that candidate, then commits both snapshots
