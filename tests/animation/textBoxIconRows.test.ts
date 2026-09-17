@@ -73,8 +73,10 @@ const config = {
     },
     cursorSlot: {
       showCursor: true,
-      variantReference: cursorVariantReference,
-      overrides: {},
+      componentSlot: {
+        variantReference: cursorVariantReference,
+        overrides: {},
+      },
     },
     textColorToken: "theme.colors.textPrimary",
     placeholderColorToken: "theme.colors.textSecondary",

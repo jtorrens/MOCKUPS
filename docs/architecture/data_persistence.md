@@ -70,6 +70,13 @@ Relative parent traversal is invalid current data.
 Definition references are also restricted: authored Production data must be
 updated explicitly before its referenced definition can be removed.
 
+`modules.id` is the stable identity of one Module definition.
+`modules.record_class_id` identifies its shared editor and Preview contract;
+multiple Modules may use the same class only through the App's declared
+template-creation workflow. The current System composition class is exactly
+`module.system.composition`. Readers route through that current identity and
+accept no retired class alias.
+
 `ProjectReferenceIntegrity` is the single cross-domain data guard for
 relational references. Focused repositories invoke it before writes and startup
 validation invokes the same owner read-only. Actor Device and Theme, Shot Actor

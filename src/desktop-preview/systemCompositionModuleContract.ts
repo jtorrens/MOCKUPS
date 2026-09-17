@@ -1,7 +1,7 @@
-export interface LockScreenModuleContract {
-  id: "lockScreen";
-  statusBarSlot: LockScreenComponentSlot;
-  navigationBarSlot: LockScreenComponentSlot;
+export interface SystemCompositionModuleContract {
+  id: "systemComposition";
+  statusBarSlot: SystemCompositionComponentSlot;
+  navigationBarSlot: SystemCompositionComponentSlot;
   stackSlot: {
     variantReference: string;
     overrides: Record<string, unknown>;
@@ -11,7 +11,7 @@ export interface LockScreenModuleContract {
   showNavigationBar: boolean;
 }
 
-export interface LockScreenComponentSlot {
+export interface SystemCompositionComponentSlot {
   variantReference: string;
   overrides: Record<string, unknown>;
 }

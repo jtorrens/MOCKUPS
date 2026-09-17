@@ -240,6 +240,13 @@ names, notes, sort order, config, Design Preview or complete Variants. Those
 current values are validated strictly by their document contracts and the
 read-only persistence gates, not compared with an historical scaffold snapshot.
 
+The integrated Module row remains the stable scaffold identity. Verification
+also permits additional authored Module rows to share its `recordClassId` when
+they were created through the App's declared template capability; those rows
+reuse the same manifest route, editor layout and owner implementation. A new
+development scaffold still rejects a class collision. No verifier invents a
+per-record route or derives one from the Module name.
+
 ## Persisted changes
 
 Persistence changes use an explicit maintenance workflow. Update schema,

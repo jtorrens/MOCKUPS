@@ -202,11 +202,14 @@ internal static class SqliteProjectTestContextComponentExtensions
             embeddedFieldId,
             value);
 
-    internal static ProjectTreeNode SaveComponentVariant(
+    internal static ProjectTreeNode DuplicateComponentVariant(
         this SqliteProjectTestContext engine,
         ProjectTreeNode sourceNode,
-        string name) =>
-        engine.NodeCommands.SaveComponentVariant(sourceNode, name);
+        string name)
+    {
+        var duplicate = engine.Duplicate(sourceNode);
+        return engine.Design.RenameComponentVariant(duplicate, name);
+    }
 
     internal static ProjectTreeNode RenameComponentVariant(
         this SqliteProjectTestContext engine,

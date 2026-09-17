@@ -269,8 +269,8 @@ test("Component Stack publishes each alternative's exact Component Variant owner
   bases.variantTypes[variantReference] = "label";
   source.componentBaseConfigsJson = JSON.stringify(bases);
   source.authoringOwnerId = "module_lock_screen::variant::default";
-  source.authoringRecordClassId = "module.core.lockScreen";
-  source.authoringSlotFieldIds = ["module.core.lockScreen.stack.editor"];
+  source.authoringRecordClassId = "module.system.composition";
+  source.authoringSlotFieldIds = ["module.system.composition.stack.editor"];
 
   const renderable = componentStackComponentToRenderable(
     source,

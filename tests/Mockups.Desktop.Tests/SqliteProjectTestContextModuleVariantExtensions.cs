@@ -47,11 +47,14 @@ internal static class SqliteProjectTestContextModuleVariantExtensions
             "moduleInstance.variant",
             reference);
 
-    internal static ProjectTreeNode SaveModuleVariant(
+    internal static ProjectTreeNode DuplicateModuleVariant(
         this SqliteProjectTestContext engine,
         ProjectTreeNode sourceNode,
-        string name) =>
-        engine.NodeCommands.SaveModuleVariant(sourceNode, name);
+        string name)
+    {
+        var duplicate = engine.Duplicate(sourceNode);
+        return engine.Design.RenameModuleVariant(duplicate, name);
+    }
 
     internal static ProjectTreeNode RenameModuleVariant(
         this SqliteProjectTestContext engine,

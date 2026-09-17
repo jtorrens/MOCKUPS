@@ -1381,7 +1381,7 @@ static void ComponentInputProjectionOwnershipCoversParents()
         "module.core.chat.headerRightIconRow.inputs",
         StringComparison.Ordinal)));
     Equal(true, moduleOwners.Any((owner) => owner.Id.Equals(
-        "module.core.lockScreen.stackInputs",
+        "module.system.composition.stackInputs",
         StringComparison.Ordinal)));
     Equal(false, moduleOwners.Any((owner) => owner.Id.StartsWith(
         "module.core.socialPost.",

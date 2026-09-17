@@ -535,10 +535,10 @@ internal sealed class ReferenceUsageService :
         }
 
         var stackReference = "";
-        var stackSlot = JsonPath.Get(config, ["lockScreen", "stackSlot"]) as JsonObject;
+        var stackSlot = JsonPath.Get(config, ["systemComposition", "stackSlot"]) as JsonObject;
         stackReference = stackSlot is null ? stackReference : JsonPath.String(stackSlot, "variantReference", "");
         if (componentsByReference.TryGetValue(stackReference, out var stack)
-            && JsonPath.Get(config, ["lockScreen", "stackInputs"]) is JsonObject stackInputs)
+            && JsonPath.Get(config, ["systemComposition", "stackInputs"]) is JsonObject stackInputs)
         {
             AddRuntimeDocumentReferences(
                 stack.Owner.DesignPreview,

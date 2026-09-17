@@ -441,7 +441,9 @@ static void ComponentVariantChangesClearCompleteBoundaryOverrides()
         database.UpdateComponentVariantField(
             mediaVariant,
             "component.media.inlineTopIconBar.editor",
-            emptyIconBarReference);
+            ComponentVariantSlotDocumentContract.CreateForVariantChange(
+                emptyIconBarReference,
+                "Media inline Top Icon Bar slot").ToJsonString());
         AssertEmptyComponentVariantBoundary(
             JsonPath.RequiredObject(
                 JsonPath.ParseRequiredObject(
@@ -461,7 +463,9 @@ static void ComponentVariantChangesClearCompleteBoundaryOverrides()
             bubbleVariant,
             [EmbeddedComponentSlotCatalog.Get("component.bubble.media.image.editor")],
             "component.media.inlineTopIconBar.editor",
-            emptyIconBarReference);
+            ComponentVariantSlotDocumentContract.CreateForVariantChange(
+                emptyIconBarReference,
+                "Bubble nested Media inline Top Icon Bar slot").ToJsonString());
         var bubbleConfig = JsonPath.ParseRequiredObject(
             database.GetComponentVariantSelectionSettings(bubbleVariant.Id).ConfigJson,
             "Bubble config");
@@ -8410,7 +8414,7 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
                 """,
                 false,
                 null,
-                (_, _, _) => Task.CompletedTask);
+                (_, _, _, _) => Task.CompletedTask);
             restorableSlot.ValueCommitted += (_, json) =>
                 restoredSlotJson = json;
             var restoreAll = restorableSlot
@@ -8463,7 +8467,7 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
             var aggregate = new DictionaryFieldControl(
                 new FieldValue(aggregateDefinition, nestedSlotValue),
                 new DictionaryFieldServices(
-                    OpenRuntimeComponentOverrides: (_, _, _) =>
+                    OpenRuntimeComponentOverrides: (_, _, _, _) =>
                         Task.CompletedTask));
             True(aggregate.IsDefault);
             True(aggregate.HasOverrides);
@@ -8483,7 +8487,7 @@ static void ChatListModuleEditorVisualTreeExposesExactListRuntime()
             True(!aggregate.HasOverrides);
             True(aggregateStateChanged);
 
-            var editableVariant = NodeCommands(database).SaveModuleVariant(
+            var editableVariant = database.DuplicateModuleVariant(
                 selected,
                 "Variant selection test");
             database.UpdateModuleVariantField(
@@ -10626,7 +10630,7 @@ static void ModuleConfigsUseOwnerContracts()
         MutateModuleAndDefaultVariant(
             connection,
             "module_project_foqn_s2_lock_screen",
-            (config) => config["lockScreen"]!["stackInputs"]!["items"] = new JsonObject());
+            (config) => config["systemComposition"]!["stackInputs"]!["items"] = new JsonObject());
     });
     AssertRejectedDatabaseIsReadOnly("social-post-module-header-composition", (connection) =>
     {
@@ -10670,7 +10674,7 @@ static void ModuleConfigsUseOwnerContracts()
             "automatic"));
         Throws<InvalidOperationException>(() => database.UpdateModuleField(
             lockScreen.Id,
-            "module.core.lockScreen.stackItems",
+            "module.system.composition.stackItems",
             "{}"));
         SequenceEqual(beforeRejectedWrites, SHA256.HashData(File.ReadAllBytes(temporary)));
 
@@ -10903,7 +10907,7 @@ static void VariantWritesDoNotRepairMissingArrays()
 
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
         Throws<InvalidOperationException>(() =>
-            NodeCommands(database).SaveComponentVariant(
+            database.DuplicateComponentVariant(
                 defaultVariant,
                 "Must fail"));
         var after = SHA256.HashData(File.ReadAllBytes(temporary));
@@ -10931,7 +10935,7 @@ static void VariantWritesDoNotRepairMissingArrays()
 
         var before = SHA256.HashData(File.ReadAllBytes(temporary));
         Throws<InvalidOperationException>(() =>
-            NodeCommands(database).SaveModuleVariant(
+            database.DuplicateModuleVariant(
                 defaultVariant,
                 "Must fail"));
         var after = SHA256.HashData(File.ReadAllBytes(temporary));
@@ -12200,7 +12204,7 @@ static void EmbeddedComponentDocumentStorePreservesOwnership()
         var afterReads = SHA256.HashData(File.ReadAllBytes(temporary));
         SequenceEqual(before, afterReads);
 
-        var editableVariant = NodeCommands(database).SaveComponentVariant(
+        var editableVariant = database.DuplicateComponentVariant(
             audioVariant,
             "Embedded boundary test");
         var editableContext = new EditorEmbeddedContext(editableVariant, [surfaceSlot]);
@@ -12275,7 +12279,7 @@ static void EmbeddedFieldsResolveInheritedNestedOverrides()
         var conversation = CanonicalProjectNodes(database)
             .Single((node) => node.Kind == ProjectTreeNodeKind.ModuleVariant
                 && node.Id == "module_core_chat::variant::foqn_chats_sin_cabecera_copy");
-        conversation = NodeCommands(database).SaveModuleVariant(
+        conversation = database.DuplicateModuleVariant(
             conversation,
             "Nested inherited override test");
         var slots = new[]
@@ -12883,7 +12887,7 @@ static void RuntimeInputInstanceStorePreservesExplicitWrites()
         using var command = connection.CreateCommand();
         command.CommandText = """
             UPDATE module_instances
-            SET content_json = json_set(content_json, '$.forwarded_module_core_lockScreen_stackStates', json('{}'))
+            SET content_json = json_set(content_json, '$.forwarded_module_system_composition_stackStates', json('{}'))
             WHERE module_id = 'module_project_foqn_s2_lock_screen'
             """;
         command.ExecuteNonQuery();
@@ -18456,7 +18460,7 @@ static void PreviewThemeModeHasOneStrictPayloadOwner()
                 theme.Id,
                 themeMode: "dark")).ThemeMode);
 
-        var lightVariant = NodeCommands(database).SaveModuleVariant(
+        var lightVariant = database.DuplicateModuleVariant(
             defaultVariant,
             "Forced Light");
         database.UpdateModuleVariantField(lightVariant, "module.appearanceMode", "light");
@@ -18468,7 +18472,7 @@ static void PreviewThemeModeHasOneStrictPayloadOwner()
                 theme.Id,
                 themeMode: "dark")).ThemeMode);
 
-        var darkVariant = NodeCommands(database).SaveModuleVariant(
+        var darkVariant = database.DuplicateModuleVariant(
             defaultVariant,
             "Forced Dark");
         database.UpdateModuleVariantField(darkVariant, "module.appearanceMode", "dark");
@@ -18784,13 +18788,13 @@ static void ModuleVariantsAreExplicit()
     {
         var database = new SqliteProjectTestContext(temporary);
         var moduleInstances = ModuleInstances(database);
-        var roots = database.LoadProjectTree();
-        var module = Descendants(roots).First((node) => node.Kind == ProjectTreeNodeKind.Module
-            && node.RecordClassId == "module.core.lockScreen");
+        var module = CanonicalProjectNodes(database).Single((node) =>
+            node.Kind == ProjectTreeNodeKind.Module
+            && node.Id == "module_project_foqn_s2_lock_screen");
         var defaultVariant = module.Children.Single((node) => node.Id.EndsWith("::variant::default", StringComparison.Ordinal));
         True(defaultVariant.IsProtected);
 
-        var android = NodeCommands(database).SaveModuleVariant(
+        var android = database.DuplicateModuleVariant(
             defaultVariant,
             "Android");
         database.UpdateModuleVariantField(android, "module.appearanceMode", "dark");
@@ -19193,8 +19197,8 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
         var database = new SqliteProjectTestContext(temporary);
         var moduleVariant = CanonicalProjectNodes(database)
             .Single((node) => node.Kind == ProjectTreeNodeKind.ModuleVariant
-                && node.Parent?.RecordClassId == "module.core.lockScreen"
-                && node.Name == "Default");
+                && node.Parent?.Id == "module_project_foqn_s2_lock_screen"
+                && node.Id.EndsWith("::variant::default_copy", StringComparison.Ordinal));
         var module = moduleVariant.Parent
             ?? throw new InvalidOperationException(
                 "Lock Screen Variant has no parent Module.");
@@ -19217,13 +19221,11 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
             previewInputData.ComponentVariantConfig);
         True(
             moduleEffective[
-                "forwarded_module_core_lockScreen_stackStates__variantSource"]
+                "forwarded_module_system_composition_stackStates__variantSource"]
             is JsonArray);
-        moduleVariant = NodeCommands(database)
-            .ToggleModuleVariantLock(moduleVariant);
         var settings = database.GetModuleVariantSettings(moduleVariant);
         var config = DesignPreviewTestValues.Parse(settings.ConfigJson);
-        var authoredItems = config["lockScreen"]?["stackInputs"]?["items"] as JsonArray
+        var authoredItems = config["systemComposition"]?["stackInputs"]?["items"] as JsonArray
             ?? throw new InvalidOperationException("Missing Lock Screen Stack items.");
         var authoredStates = authoredItems[0]?["alternatives"] as JsonArray
             ?? throw new InvalidOperationException("Missing Lock Screen Stack states.");
@@ -19235,7 +19237,7 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
             added["active"] = false;
             added["behavior"] = "replace";
             authoredStates.Add(added);
-            database.UpdateModuleVariantField(moduleVariant, "module.core.lockScreen.stackItems", authoredItems.ToJsonString());
+            database.UpdateModuleVariantField(moduleVariant, "module.system.composition.stackItems", authoredItems.ToJsonString());
             settings = database.GetModuleVariantSettings(moduleVariant);
             config = DesignPreviewTestValues.Parse(settings.ConfigJson);
         }
@@ -19253,7 +19255,7 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
             previewInputData.ComponentVariantConfig);
         True(
             effective[
-                "forwarded_module_core_lockScreen_stackStates__variantSource"]
+                "forwarded_module_system_composition_stackStates__variantSource"]
             is JsonArray);
         var forwardedInputs = RuntimeInputDefinitionReader.ReadInputs(effective, config);
         Equal(0, forwardedInputs.Count((input) => input.Label is "Hora" or "Subtext" or "Password" or "Attempt"));
@@ -19375,10 +19377,10 @@ static void ForwardedRuntimeCollectionsExposeSlotStateActions()
                 stateAction,
                 payload.ThemeTokensJson));
 
-        var stackItems = config["lockScreen"]?["stackInputs"]?["items"]?.DeepClone() as JsonArray
+        var stackItems = config["systemComposition"]?["stackInputs"]?["items"]?.DeepClone() as JsonArray
             ?? throw new InvalidOperationException("Missing Lock Screen Stack items.");
         (stackItems[0]?["alternatives"] as JsonArray)?.RemoveAt(1);
-        database.UpdateModuleVariantField(moduleVariant, "module.core.lockScreen.stackItems", stackItems.ToJsonString());
+        database.UpdateModuleVariantField(moduleVariant, "module.system.composition.stackItems", stackItems.ToJsonString());
         var updatedPayload = Required(CreatePreviewPayload(database, moduleVariant, theme.Id));
         session.UpdateForPayload(updatedPayload, ProjectId(settings));
         var normalized = session.ApplyInputs(updatedPayload, "light", ProjectId(settings));
@@ -22446,7 +22448,7 @@ static void AppAndModuleDefinitionsExposeRenameOnlyLifecycleActions()
     var appsRoot = new ProjectTreeNode(ProjectTreeNodeKind.AppsRoot, "apps", "Apps", "", "navigation.apps");
     var app = new ProjectTreeNode(ProjectTreeNodeKind.App, "app", "System", "", "app.system", appsRoot);
     var module = new ProjectTreeNode(
-        ProjectTreeNodeKind.Module, "module", "Lock Screen", "", "module.core.lockScreen", app);
+        ProjectTreeNodeKind.Module, "module", "Lock Screen", "", "module.system.composition", app);
     var defaultVariant = new ProjectTreeNode(
         ProjectTreeNodeKind.ModuleVariant, "module::variant::default", "Default", "", "module.variant", module,
         isProtected: true);
@@ -22459,7 +22461,7 @@ static void AppAndModuleDefinitionsExposeRenameOnlyLifecycleActions()
     True(!app.CanDuplicate);
     True(!app.CanDelete);
     True(module.CanRenameDirectly);
-    True(!module.HasAddOperation);
+    True(module.HasAddOperation);
     True(!module.CanDuplicate);
     True(!module.CanDelete);
     True(defaultVariant.CanRenameDirectly);
@@ -22482,7 +22484,9 @@ static void AppAndModuleDefinitionsExposeRenameOnlyLifecycleActions()
         var currentDefaultVariant = currentModule.Children.Single((node) => node.IsProtected);
 
         Throws<InvalidOperationException>(() => database.AddChild(currentAppsRoot));
-        Throws<InvalidOperationException>(() => database.AddChild(currentModule));
+        var createdVariant = database.AddChild(currentModule);
+        Equal(ProjectTreeNodeKind.ModuleVariant, createdVariant.Kind);
+        database.Delete(createdVariant);
         Throws<InvalidOperationException>(() => database.Duplicate(currentApp));
         Throws<InvalidOperationException>(() => database.Duplicate(currentModule));
         Throws<InvalidOperationException>(() => database.Delete(currentApp));
@@ -22519,7 +22523,7 @@ static void ModuleParentsFollowComponentVariantSelection()
 {
     var app = new ProjectTreeNode(ProjectTreeNodeKind.App, "app", "System", "", "app.system");
     var module = new ProjectTreeNode(
-        ProjectTreeNodeKind.Module, "module", "Lock Screen", "", "module.core.lockScreen", app);
+        ProjectTreeNodeKind.Module, "module", "Lock Screen", "", "module.system.composition", app);
     app.AddChild(module);
     var defaultVariant = new ProjectTreeNode(
         ProjectTreeNodeKind.ModuleVariant, "module::variant::default", "Default", "", "module.variant", module,
@@ -23828,8 +23832,10 @@ static void SocialPostScreenCreationIsAtomic()
             "moduleInstance",
             selectionValues);
         True(creation.RequiresConfirmation);
-        True(creation.Fields.Any((field) =>
-            field.Definition.ValueKind == ValueKind.MediaDirectoryPath));
+        True(creation.Fields.All((field) =>
+            field.Definition.ValueKind is not ValueKind.MediaDirectoryPath
+                and not ValueKind.MediaFilePath
+                and not ValueKind.ImageFilePath));
         True(creation.Fields.Count((field) =>
             field.Definition.ValueKind == ValueKind.RecordReference) > 1);
         Throws<InvalidOperationException>(() => children.CreateRecord(
@@ -24091,8 +24097,9 @@ static void LockScreenComposesRuntimeStack()
                 True(!string.IsNullOrWhiteSpace(frameZero?["value"]?.GetValue<string>()));
             }
         }
-        var module = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.Module
-            && database.GetModuleSettings(node.Id).RecordClassId == "module.core.lockScreen");
+        var module = nodes.Single((node) =>
+            node.Kind == ProjectTreeNodeKind.Module
+            && node.Id == "module_project_foqn_s2_lock_screen");
         var systemApp = module.Parent ?? throw new InvalidOperationException("Lock Screen has no System app parent.");
         Equal("app.system", systemApp.RecordClassId);
         var systemConfig = JsonNode.Parse(database.GetAppSettings(systemApp.Id).ConfigJson) as JsonObject
@@ -24106,7 +24113,7 @@ static void LockScreenComposesRuntimeStack()
         var settings = database.GetModuleSettings(module.Id);
         var config = JsonNode.Parse(settings.ConfigJson) as JsonObject
             ?? throw new InvalidOperationException("Missing Lock Screen config.");
-        var lockScreen = config["lockScreen"] as JsonObject
+        var lockScreen = config["systemComposition"] as JsonObject
             ?? throw new InvalidOperationException("Missing Lock Screen contract.");
         var stackSlot = lockScreen["stackSlot"] as JsonObject
             ?? throw new InvalidOperationException("Missing Lock Screen Stack slot.");
@@ -24139,27 +24146,42 @@ static void LockScreenComposesRuntimeStack()
         var stateOwnerOrigin = stackInputs[RuntimeInputForwardingContract.StorageKey]?["items"]?["projection"]?["childCollection"]?["animationTimeline"]?["ownerOrigin"]
             ?? throw new InvalidOperationException("Missing forwarded Lock Screen State owner origin.");
         Equal("firstMatchingValue", stateOwnerOrigin["kind"]?.GetValue<string>() ?? "");
-        Equal("forwarded_module_core_lockScreen_stackStates", stateOwnerOrigin["sourceCollectionJsonKey"]?.GetValue<string>() ?? "");
+        Equal("forwarded_module_system_composition_stackStates", stateOwnerOrigin["sourceCollectionJsonKey"]?.GetValue<string>() ?? "");
         Equal("runtimeStateId", stateOwnerOrigin["sourceFieldId"]?.GetValue<string>() ?? "");
         var defaultVariant = module.Children.Single((child) => child.Kind == ProjectTreeNodeKind.ModuleVariant && child.IsProtected);
         var variantConfig = JsonNode.Parse(database.GetModuleVariantSettings(defaultVariant).ConfigJson) as JsonObject
             ?? throw new InvalidOperationException("Missing Lock Screen Variant config.");
         Equal(false,
-            variantConfig["lockScreen"]?["stackInputs"]?[RuntimeInputForwardingContract.StorageKey]?["items"]?["collection"]?["animationTimeline"]?["sequenceItems"]?.GetValue<bool>()
+            variantConfig["systemComposition"]?["stackInputs"]?[RuntimeInputForwardingContract.StorageKey]?["items"]?["collection"]?["animationTimeline"]?["sequenceItems"]?.GetValue<bool>()
             ?? true);
         Equal("firstMatchingValue",
-            variantConfig["lockScreen"]?["stackInputs"]?[RuntimeInputForwardingContract.StorageKey]?["items"]?["projection"]?["childCollection"]?["animationTimeline"]?["ownerOrigin"]?["kind"]?.GetValue<string>()
+            variantConfig["systemComposition"]?["stackInputs"]?[RuntimeInputForwardingContract.StorageKey]?["items"]?["projection"]?["childCollection"]?["animationTimeline"]?["ownerOrigin"]?["kind"]?.GetValue<string>()
             ?? "");
-        var lockScreenFields = EditorLayouts(database).LoadEditorLayout("module.core.lockScreen").Cards
+        var lockScreenFields = EditorLayouts(database).LoadEditorLayout("module.system.composition").Cards
             .SelectMany((card) => card.VisibleGroups)
             .SelectMany((group) => group.VisibleFields)
             .Select((field) => field.Id)
             .ToHashSet(StringComparer.Ordinal);
-        True(lockScreenFields.Contains("module.core.lockScreen.stackInputs"));
-        True(lockScreenFields.Contains("module.core.lockScreen.stackItems"));
+        True(lockScreenFields.Contains("module.system.composition.stackInputs"));
+        True(lockScreenFields.Contains("module.system.composition.stackItems"));
 
-        var lockScreenInstance = nodes.Single((node) => node.Kind == ProjectTreeNodeKind.ModuleInstance
-            && database.GetModuleInstanceSettings(node.Id).ModuleId == module.Id);
+        var shot = nodes.First((node) => node.Kind == ProjectTreeNodeKind.Shot);
+        var moduleChoice = ModuleInstances(database)
+            .GetAvailableShotModules(shot.Id)
+            .Single((candidate) => candidate.Id == module.Id);
+        var moduleVariant = ModuleInstances(database)
+            .GetModuleVariantOptions(module.Id)
+            .Single((candidate) => candidate.Value.EndsWith(
+                "::variant::default_copy",
+                StringComparison.Ordinal));
+        var lockScreenInstance = AddPreparedModuleInstance(
+            Children(database),
+            shot,
+            new ShotModuleInstanceDraft(
+                moduleChoice,
+                moduleVariant.Value,
+                moduleVariant.Label,
+                $"{moduleChoice.Name} · {moduleVariant.Label}"));
         var values = new RecordClassFieldValueService(
             ProductionRecordFields(database),
             RecordReferenceOverrides(database),
@@ -24261,7 +24283,7 @@ static void LockScreenComposesRuntimeStack()
         var instanceVariantConfig = JsonNode.Parse(
             database.GetModuleInstanceVariantSettings(lockScreenInstance.Id).ConfigJson) as JsonObject
             ?? throw new InvalidOperationException("Missing Lock Screen instance Variant config.");
-        var instanceStackInputs = instanceVariantConfig["lockScreen"]?["stackInputs"] as JsonObject
+        var instanceStackInputs = instanceVariantConfig["systemComposition"]?["stackInputs"] as JsonObject
             ?? throw new InvalidOperationException("Missing Lock Screen instance Stack inputs.");
         var configuredStackSlots = instanceStackInputs["items"] as JsonArray
             ?? throw new InvalidOperationException("Missing configured Lock Screen Stack slots.");
@@ -24388,14 +24410,14 @@ static void LockScreenComposesRuntimeStack()
         {
             [subtitleBinding.JsonKey] = RuntimeInputForwardingContract.Definition(
                 new FieldDefinition(
-                    "module.core.lockScreen.stackItems.lock_screen_label.inputs",
+                    "module.system.composition.stackItems.lock_screen_label.inputs",
                     "Component inputs",
                     ValueKind.ComponentInputBindings),
                 subtitleBinding,
                 "Lock subtitle",
                 "Subtitle"),
         };
-        database.UpdateModuleField(module.Id, "module.core.lockScreen.stackItems", new JsonArray
+        database.UpdateModuleField(module.Id, "module.system.composition.stackItems", new JsonArray
         {
             new JsonObject
             {
@@ -24742,13 +24764,13 @@ static string CreateDesktopTestDatabase(
         var moduleInstances = ModuleInstances(database);
 
         ProjectTreeNode AddScreen(
-            string recordClassId,
+            string moduleId,
             string name)
         {
             var module = moduleInstances
                 .GetAvailableShotModules(createdShot.Id)
                 .Single((candidate) =>
-                    candidate.RecordClassId == recordClassId);
+                    candidate.Id == moduleId);
             var variant = moduleInstances
                 .GetModuleVariantOptions(module.Id)
                 .Single((candidate) =>
@@ -24766,15 +24788,14 @@ static string CreateDesktopTestDatabase(
         }
 
         var lockScreen = AddScreen(
-            "module.core.lockScreen",
+            "module_project_foqn_s2_lock_screen",
             "Lock Screen fixture");
         database.UpdateModuleInstanceRuntimeValue(
             lockScreen.Id,
             "actorId",
             JsonValue.Create("actor_alex"));
         var conversation = AddScreen(
-            ModuleRuntimeDocumentContracts
-                .ConversationRecordClassId,
+            "module_core_chat",
             "Conversation fixture");
         database.UpdateModuleInstanceRuntimeValue(
             conversation.Id,

@@ -1,5 +1,5 @@
 // Generated from scaffolding/modules/*.json. Do not edit manually.
-// Modules: module.core.chat, module.core.chatList, module.core.lockScreen, module.core.socialPost, module.core.videoCall
+// Modules: module.core.chat, module.core.chatList, module.core.socialPost, module.core.videoCall, module.system.composition
 using Mockups.DesktopEditorShell.EditorShell;
 using System;
 using System.Collections.Generic;
@@ -243,41 +243,6 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ValueKind.Boolean,
             ["chatList", "wallpaperEnabled"],
             "",
-            []),
-        ["module.core.lockScreen.navigationBarVariant"] = new(
-            "module.core.lockScreen",
-            "module.core.lockScreen.navigationBarVariant",
-            ValueKind.ComponentVariantSlot,
-            ["lockScreen", "navigationBarSlot"],
-            "navigation_bar",
-            []),
-        ["module.core.lockScreen.stackInputs"] = new(
-            "module.core.lockScreen",
-            "module.core.lockScreen.stackInputs",
-            ValueKind.ComponentInputBindings,
-            ["lockScreen", "stackInputs"],
-            "",
-            []),
-        ["module.core.lockScreen.stackItems"] = new(
-            "module.core.lockScreen",
-            "module.core.lockScreen.stackItems",
-            ValueKind.StructuredCollection,
-            ["lockScreen", "stackInputs", "items"],
-            "",
-            []),
-        ["module.core.lockScreen.stackVariant"] = new(
-            "module.core.lockScreen",
-            "module.core.lockScreen.stackVariant",
-            ValueKind.ComponentVariantSlot,
-            ["lockScreen", "stackSlot"],
-            "componentStack",
-            []),
-        ["module.core.lockScreen.statusBarVariant"] = new(
-            "module.core.lockScreen",
-            "module.core.lockScreen.statusBarVariant",
-            ValueKind.ComponentVariantSlot,
-            ["lockScreen", "statusBarSlot"],
-            "status_bar",
             []),
         ["module.core.socialPost.footerHeight"] = new(
             "module.core.socialPost",
@@ -783,6 +748,41 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             ["videoCall", "useAppWallpaper"],
             "",
             []),
+        ["module.system.composition.navigationBarVariant"] = new(
+            "module.system.composition",
+            "module.system.composition.navigationBarVariant",
+            ValueKind.ComponentVariantSlot,
+            ["systemComposition", "navigationBarSlot"],
+            "navigation_bar",
+            []),
+        ["module.system.composition.stackInputs"] = new(
+            "module.system.composition",
+            "module.system.composition.stackInputs",
+            ValueKind.ComponentInputBindings,
+            ["systemComposition", "stackInputs"],
+            "",
+            []),
+        ["module.system.composition.stackItems"] = new(
+            "module.system.composition",
+            "module.system.composition.stackItems",
+            ValueKind.StructuredCollection,
+            ["systemComposition", "stackInputs", "items"],
+            "",
+            []),
+        ["module.system.composition.stackVariant"] = new(
+            "module.system.composition",
+            "module.system.composition.stackVariant",
+            ValueKind.ComponentVariantSlot,
+            ["systemComposition", "stackSlot"],
+            "componentStack",
+            []),
+        ["module.system.composition.statusBarVariant"] = new(
+            "module.system.composition",
+            "module.system.composition.statusBarVariant",
+            ValueKind.ComponentVariantSlot,
+            ["systemComposition", "statusBarSlot"],
+            "status_bar",
+            []),
     };
 
     public static bool TryValidate(
@@ -798,14 +798,14 @@ internal static class GeneratedModuleScaffoldConfigRegistry
             case "module.core.chatList":
                 ChatListModuleConfigContract.Validate(config, context);
                 return true;
-            case "module.core.lockScreen":
-                LockScreenModuleConfigContract.Validate(config, context);
-                return true;
             case "module.core.socialPost":
                 SocialPostModuleConfigContract.Validate(config, context);
                 return true;
             case "module.core.videoCall":
                 VideoCallModuleConfigContract.Validate(config, context);
+                return true;
+            case "module.system.composition":
+                SystemCompositionModuleConfigContract.Validate(config, context);
                 return true;
             default:
                 return false;

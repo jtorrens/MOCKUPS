@@ -100,7 +100,7 @@ export const desktopPreviewModuleCapabilities = {
     ["messages.playVideo", "messages.playAudio", "messages.fullScreen"],
     ["ownerTimeline", "writeOn", "mediaPlayback", "fullScreenMotion", "stateMotion"],
   ),
-  "module.core.lockScreen": capabilities([], [], ["ownerTimeline", "stateMotion"]),
+  "module.system.composition": capabilities([], [], ["ownerTimeline", "stateMotion"]),
   "module.core.chatList": capabilities(
     [],
     ["items.togglePresent"],

@@ -57,7 +57,7 @@ const focusedCharacterizations = {
   callParticipant: "tests/animation/callParticipantComponent.test.ts",
   contentRow: "tests/animation/contentRowComponent.test.ts",
   "module.core.chat": "tests/animation/conversationModuleResolver.test.ts",
-  "module.core.lockScreen":
+  "module.system.composition":
     "tests/Mockups.Desktop.Tests/Program.cs",
   "module.core.chatList": "tests/animation/chatListModule.test.ts",
   "module.core.socialPost": "tests/animation/socialPostModule.test.ts",

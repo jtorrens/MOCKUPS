@@ -1,5 +1,5 @@
 // Generated from scaffolding/modules/*.json. Do not edit manually.
-// Modules: module.core.chat, module.core.chatList, module.core.lockScreen, module.core.socialPost, module.core.videoCall
+// Modules: module.core.chat, module.core.chatList, module.core.socialPost, module.core.videoCall, module.system.composition
 namespace Mockups.DesktopEditorShell.EditorShell;
 
 public static class GeneratedModuleScaffoldEmbeddedSlots
@@ -84,24 +84,6 @@ public static class GeneratedModuleScaffoldEmbeddedSlots
             "Top Icon Bar",
             "component.iconBar",
             ["chatList", "topIconBarSlot"]),
-        new(
-            "module.core.lockScreen.navigationBarVariant",
-            "navigation_bar",
-            "Navigation bar",
-            "component.navigation_bar",
-            ["lockScreen", "navigationBarSlot"]),
-        new(
-            "module.core.lockScreen.stackVariant",
-            "componentStack",
-            "Stack",
-            "component.componentStack",
-            ["lockScreen", "stackSlot"]),
-        new(
-            "module.core.lockScreen.statusBarVariant",
-            "status_bar",
-            "Status bar",
-            "component.status_bar",
-            ["lockScreen", "statusBarSlot"]),
         new(
             "module.core.socialPost.footerSurface",
             "surface",
@@ -192,5 +174,23 @@ public static class GeneratedModuleScaffoldEmbeddedSlots
             "PIP surface",
             "component.surface",
             ["videoCall", "pipSurfaceSlot"]),
+        new(
+            "module.system.composition.navigationBarVariant",
+            "navigation_bar",
+            "Navigation bar",
+            "component.navigation_bar",
+            ["systemComposition", "navigationBarSlot"]),
+        new(
+            "module.system.composition.stackVariant",
+            "componentStack",
+            "Stack",
+            "component.componentStack",
+            ["systemComposition", "stackSlot"]),
+        new(
+            "module.system.composition.statusBarVariant",
+            "status_bar",
+            "Status bar",
+            "component.status_bar",
+            ["systemComposition", "statusBarSlot"]),
     ];
 }

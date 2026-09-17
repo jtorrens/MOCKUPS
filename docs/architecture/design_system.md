@@ -126,15 +126,22 @@ cloning only its protected Default Variant into the new Module. Creating a new
 Module class without that declared complete template remains a development
 workflow.
 
+Every created Module receives its own stable `modules.id`. Modules created from
+one declared template intentionally share that template's `recordClassId`,
+which identifies their common editor, manifest and Preview implementation
+rather than the individual Module record. The System template uses the exact
+shared class `module.system.composition`; names, sequence numbers and generated
+record-class aliases never participate in routing.
+
 Module Variants are authored data. A Module's Add action creates one from its
 complete protected Default Variant. Duplicating a Module Variant clones that
 exact selected Variant. Variants may be renamed and deleted when unused,
 unlocked and not protected. Production stores an exact Module Variant id.
 
 For the System App, the declared template is the empty Lock Screen Default
-Variant. A newly authored System Module therefore begins with an empty Content
-Stack rather than inheriting the template Module's current authoring state or
-any non-Default Variant.
+Variant implemented by `module.system.composition`. A newly authored System
+Module therefore begins with an empty Content Stack rather than inheriting the
+template Module's current authoring state or any non-Default Variant.
 
 Project context is supplied only by the selected Design-tree projection or by
 the Production Screen's owning Shot. It is never stored on the App, Module or

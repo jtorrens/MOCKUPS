@@ -423,11 +423,11 @@
         "textInputBar"
       ]
     },
-    "module.core.lockScreen": {
-      "label": "Lock Screen",
-      "contract": "./lockScreenModuleContract",
-      "resolver": "./lockScreenModuleResolver",
-      "renderable": "./lockScreenModuleRenderable",
+    "module.system.composition": {
+      "label": "System Composition",
+      "contract": "./systemCompositionModuleContract",
+      "resolver": "./systemCompositionModuleResolver",
+      "renderable": "./systemCompositionModuleRenderable",
       "embeds": [
         "componentStack",
         "navigation_bar",

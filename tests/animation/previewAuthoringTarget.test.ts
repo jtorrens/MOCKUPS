@@ -116,9 +116,9 @@ test("full Component Variant boundaries replace the authoring owner exactly", ()
 test("generic embedded Variant payloads publish the exact child owner", () => {
   const modulePayload = {
     authoringOwnerId: "module_lock_screen::variant::default",
-    authoringRecordClassId: "module.core.lockScreen",
+    authoringRecordClassId: "module.system.composition",
     authoringSlotFieldIds: ["invalid.previous.slot"],
-    authoringFocusFieldId: "module.core.lockScreen.stack",
+    authoringFocusFieldId: "module.system.composition.stack",
   } as DesignPreviewPayload;
   const child = embeddedVariantComponentPayload(
     modulePayload,

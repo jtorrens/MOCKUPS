@@ -6,14 +6,14 @@ import type { DesignPreviewPayload } from "./designPreviewPayload.js";
 import { navigationBarComponentToRenderable } from "./navigationBarComponentRenderable.js";
 import { resolveNavigationBarComponent } from "./navigationBarComponentResolver.js";
 import { parseObject } from "./componentResolverCommon.js";
-import type { LockScreenComponentSlot } from "./lockScreenModuleContract.js";
-import { resolveLockScreenModuleFrame } from "./lockScreenModuleResolver.js";
+import type { SystemCompositionComponentSlot } from "./systemCompositionModuleContract.js";
+import { resolveSystemCompositionModuleFrame } from "./systemCompositionModuleResolver.js";
 import { previewPayloadInBox, previewScreenBox } from "./componentRenderableCommon.js";
 import { statusBarComponentToRenderable } from "./statusBarComponentRenderable.js";
 import { resolveStatusBarComponent } from "./statusBarComponentResolver.js";
 
-export function lockScreenModuleToRenderable(payload: DesignPreviewPayload): RenderableNode {
-  const contract = resolveLockScreenModuleFrame(payload);
+export function systemCompositionModuleToRenderable(payload: DesignPreviewPayload): RenderableNode {
+  const contract = resolveSystemCompositionModuleFrame(payload);
   const screen = previewScreenBox(payload);
   const componentBaseConfigs = parseObject(payload.componentBaseConfigsJson);
   const children: RenderableNode[] = [];
@@ -50,7 +50,7 @@ export function lockScreenModuleToRenderable(payload: DesignPreviewPayload): Ren
         componentBaseConfigs,
         { ...contract.stackSlot },
         "componentStack",
-        "module.core.lockScreen.stackSlot",
+        "module.system.composition.stackSlot",
       )),
       designPreviewJson: JSON.stringify(contract.stackInputs),
     },
@@ -60,7 +60,7 @@ export function lockScreenModuleToRenderable(payload: DesignPreviewPayload): Ren
   if (status) children.push(status);
   if (navigation) children.push(navigation);
   return {
-    id: "module.lockScreen",
+    id: "module.systemComposition",
     type: "group",
     frame: 0,
     box: screen,
@@ -73,7 +73,7 @@ function componentSlotPayload(
   payload: DesignPreviewPayload,
   componentBaseConfigs: Record<string, unknown>,
   componentType: "status_bar" | "navigation_bar",
-  slot: LockScreenComponentSlot,
+  slot: SystemCompositionComponentSlot,
 ): DesignPreviewPayload {
   return {
     ...componentPayload(payload, componentBaseConfigs, componentType, slot.variantReference),
@@ -81,7 +81,7 @@ function componentSlotPayload(
       componentBaseConfigs,
       { ...slot },
       componentType,
-      `module.core.lockScreen.${componentType}`,
+      `module.system.composition.${componentType}`,
     )),
   };
 }

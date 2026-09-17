@@ -214,7 +214,7 @@ export function verifyModuleScaffoldImplementation(
           .filter((value) => value !== spec.module.recordClassId),
       ),
       modules: inventory.modules.filter(
-        (value) => value.id !== spec.module.moduleId,
+        (value) => value.recordClassId !== spec.module.recordClassId,
       ),
     },
     repositoryRoot,
