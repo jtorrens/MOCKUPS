@@ -23,7 +23,17 @@ public static class RuntimeCollectionItemContractOwner
         var effective = componentVariantConfig(reference)
             .DeepClone()
             .AsObject();
-        if (!string.IsNullOrWhiteSpace(
+        if (collection.ComponentItems is { } componentItems)
+        {
+            ComponentConfigOverrideMerger.MergeInto(
+                effective,
+                RuntimeComponentCollectionItemDocumentContract
+                    .RequireOverrides(
+                        item,
+                        componentItems.DocumentKeys,
+                        $"Runtime collection '{collection.Id}' item"));
+        }
+        else if (!string.IsNullOrWhiteSpace(
                 collection.ItemRuntimeVariantSlotJsonKey))
         {
             var slotKey = collection.ItemRuntimeVariantSlotJsonKey;
