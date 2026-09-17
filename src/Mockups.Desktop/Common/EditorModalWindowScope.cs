@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Threading;
 using System;
 using System.Collections.Generic;
 
@@ -42,6 +43,7 @@ internal static class EditorModalWindowScope
         void RestoreAuxiliaryWindows(object? sender, EventArgs args)
         {
             dialog.Opened -= DisplaceAuxiliaryWindows;
+            dialog.Opened -= ActivateDialog;
             dialog.Closed -= RestoreAuxiliaryWindows;
             foreach (var displaced in displacedWindows.Values)
             {
@@ -51,8 +53,22 @@ internal static class EditorModalWindowScope
             displacedWindows.Clear();
         }
 
+        void ActivateDialog(object? sender, EventArgs args)
+        {
+            Dispatcher.UIThread.Post(
+                () =>
+                {
+                    if (dialog.IsVisible)
+                    {
+                        dialog.Activate();
+                    }
+                },
+                DispatcherPriority.Input);
+        }
+
         dialog.ShowActivated = true;
         dialog.Opened += DisplaceAuxiliaryWindows;
+        dialog.Opened += ActivateDialog;
         dialog.Closed += RestoreAuxiliaryWindows;
     }
 
