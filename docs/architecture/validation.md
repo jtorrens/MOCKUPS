@@ -73,9 +73,10 @@ It includes:
   `ComponentVariantSlot` fields inside structured collections, nested
   collection paths, amber propagation through field/card/internal navigation,
   and Restore persistence through the stable item path;
-- shared modal lifetime, including exact native `ShowDialog` ownership,
-  one-time displacement and restoration of auxiliary sibling windows, nested
-  owner preservation and absence of polling or reactive focus recovery;
+- shared modal lifetime, including the single presenter owning the exact native
+  `ShowDialog` call, displacement of auxiliary siblings before that call,
+  one-time restoration after close or presentation failure, nested owner
+  preservation and absence of polling or reactive focus recovery;
 - Production tree Shot ordering by authored name rather than creation or
   persisted sort order;
 - Preview authoring exposes no synchronous Runtime Input visual-construction

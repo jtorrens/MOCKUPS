@@ -489,13 +489,14 @@ The action is enabled only by a declared `ComponentVariantSlot` boundary.
 Structural slot metadata may locate nested contexts, but never acts as an
 alternate value-kind or persistence route.
 
-Bounded modal dialogs use `ShowDialog` with their exact visible owner and leave
-foreground ordering to the native modal relationship. Before the dialog is
-presented, the shared modal lifetime owner lowers and disables each visible
-auxiliary sibling once; nested dialogs leave their exact parent untouched.
-Closing the dialog restores the captured sibling state once. No timer,
-repeated `Topmost` mutation or reactive activation competes with native window
-ordering, and switching to another application never triggers focus recovery.
+Bounded modal dialogs reach native `ShowDialog` only through the shared modal
+lifetime presenter and use their exact visible owner. Immediately before the
+native call, that presenter lowers and disables each visible auxiliary sibling
+once; nested dialogs leave their exact parent untouched. Its `finally` boundary
+restores the captured sibling state once after close or a failed presentation.
+Native modal ownership alone then controls foreground order. No timer, repeated
+`Topmost` mutation or reactive activation competes with native window ordering,
+and switching to another application never triggers focus recovery.
 
 Record creation that needs explicit values uses one shared modal generated
 from `RecordCreationDefinition`. Every scalar is rendered by its registered

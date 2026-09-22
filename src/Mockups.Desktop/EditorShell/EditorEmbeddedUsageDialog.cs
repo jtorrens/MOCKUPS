@@ -93,7 +93,7 @@ internal sealed class EditorEmbeddedUsageDialog
         };
         Grid.SetRow(closeButton, 1);
 
-        await dialog.ShowDialog(_owner);
+        await EditorModalWindowScope.ShowDialog(dialog, _owner);
         return selected;
     }
 

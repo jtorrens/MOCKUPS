@@ -51,7 +51,9 @@ internal sealed class DeviceImportDialog
         _cancelButton.Click += (_, _) => dialog.Close(null);
         _results.SelectionChanged += async (_, _) => await SelectCurrent();
 
-        return await dialog.ShowDialog<DeviceImportDialogResult?>(_owner);
+        return await EditorModalWindowScope.ShowDialog<DeviceImportDialogResult>(
+            dialog,
+            _owner);
     }
 
     private SukiWindow CreateDialog()

@@ -258,7 +258,7 @@ internal sealed class ThemeTokenPickerDialog
         };
 
         RefreshList();
-        await dialog.ShowDialog(_owner);
+        await EditorModalWindowScope.ShowDialog(dialog, _owner);
         return result;
     }
 

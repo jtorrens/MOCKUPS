@@ -7034,10 +7034,18 @@ static void NativeModalsTemporarilyDisplaceAuxiliarySessionWindows()
         EditorSukiWindowTheme.ApplyDialogChrome(
             dialog,
             owner);
-        True(dialog.ShowActivated);
         True(!dialog.Topmost);
         True(owner.IsEnabled);
-        var dialogResult = dialog.ShowDialog<object?>(owner);
+        True(floating.Topmost);
+        True(floating.IsEnabled);
+        True(auxiliary.IsEnabled);
+        var dialogResult = EditorModalWindowScope.ShowDialog<object>(
+            dialog,
+            owner);
+        True(dialog.ShowActivated);
+        True(!floating.Topmost);
+        True(!floating.IsEnabled);
+        True(!auxiliary.IsEnabled);
         Dispatcher.UIThread.RunJobs();
         True(!dialog.Topmost);
         True(dialog.IsActive);
@@ -7053,7 +7061,9 @@ static void NativeModalsTemporarilyDisplaceAuxiliarySessionWindows()
         EditorSukiWindowTheme.ApplyDialogChrome(
             childDialog,
             dialog);
-        var childResult = childDialog.ShowDialog<bool>(dialog);
+        var childResult = EditorModalWindowScope.ShowDialog<bool>(
+            childDialog,
+            dialog);
         Dispatcher.UIThread.RunJobs();
         True(!childDialog.Topmost);
         True(childDialog.IsActive);

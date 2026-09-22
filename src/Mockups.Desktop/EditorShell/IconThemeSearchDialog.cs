@@ -295,7 +295,7 @@ internal sealed class IconThemeSearchDialog
             Child = dialogGrid,
         };
 
-        await dialog.ShowDialog(_owner);
+        await EditorModalWindowScope.ShowDialog(dialog, _owner);
     }
 
     private static Control CandidateColumn(string title, ListBox listBox, int column = 0)

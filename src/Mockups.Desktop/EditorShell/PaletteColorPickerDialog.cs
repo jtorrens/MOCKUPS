@@ -214,7 +214,7 @@ internal static class PaletteColorPickerDialog
         };
 
         RefreshList();
-        await dialog.ShowDialog(owner);
+        await EditorModalWindowScope.ShowDialog(dialog, owner);
         return result;
     }
 

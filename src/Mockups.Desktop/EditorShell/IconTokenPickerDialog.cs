@@ -327,7 +327,7 @@ internal sealed class IconTokenPickerDialog
         };
 
         RefreshList();
-        await dialog.ShowDialog(_owner);
+        await EditorModalWindowScope.ShowDialog(dialog, _owner);
         dialogLifetime.Cancel();
         previewRefresh?.Cancel();
         previewRefresh?.Dispose();

@@ -95,7 +95,9 @@ internal sealed class EditorReferenceUsageDialog
         Grid.SetRow(closeButton, 2);
         dialog.Content = new Border { Padding = new Thickness(22), Child = root };
 
-        return dialog.ShowDialog<ReferenceUsageDetail?>(_owner);
+        return EditorModalWindowScope.ShowDialog<ReferenceUsageDetail>(
+            dialog,
+            _owner);
     }
 
     private void AddGroup(

@@ -113,6 +113,8 @@ internal sealed class RecordCreationDialog
         Grid.SetRow(actions, 1);
         dialog.Content = new Border { Padding = EditorUiDensity.CardThickness(18), Child = root };
         Refresh();
-        return await dialog.ShowDialog<RecordCreationDraft?>(_owner);
+        return await EditorModalWindowScope.ShowDialog<RecordCreationDraft>(
+            dialog,
+            _owner);
     }
 }

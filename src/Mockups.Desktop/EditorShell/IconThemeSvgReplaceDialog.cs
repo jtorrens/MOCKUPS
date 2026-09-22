@@ -469,7 +469,7 @@ internal sealed class IconThemeSvgReplaceDialog
         };
 
         UpdatePreview();
-        await dialog.ShowDialog(_owner);
+        await EditorModalWindowScope.ShowDialog(dialog, _owner);
     }
 
     private sealed record SaveAsChoice(string Token, bool SaveToAllIconSets);
@@ -579,7 +579,9 @@ internal sealed class IconThemeSvgReplaceDialog
             Child = content,
         };
 
-        return await dialog.ShowDialog<SaveAsChoice?>(owner);
+        return await EditorModalWindowScope.ShowDialog<SaveAsChoice>(
+            dialog,
+            owner);
     }
 
     private async Task<bool> ConfirmSaveToAllIconSets(Window owner, string token)
@@ -646,7 +648,7 @@ internal sealed class IconThemeSvgReplaceDialog
             Padding = new Thickness(22),
             Child = content,
         };
-        return await dialog.ShowDialog<bool>(owner);
+        return await EditorModalWindowScope.ShowDialog<bool>(dialog, owner);
     }
 
     private static string SuggestedToken(string token, string mode)

@@ -155,7 +155,7 @@ internal sealed class EditorShellSettingsDialog
         Grid.SetColumn(colorCombo, 1);
         Grid.SetRow(closeButton, 1);
 
-        return dialog.ShowDialog(_owner);
+        return EditorModalWindowScope.ShowDialog(dialog, _owner);
     }
 
     private Control CreateScaleRow(

@@ -51,7 +51,7 @@ internal sealed class EditorDialogService
         };
         Grid.SetRow(okButton, 1);
 
-        await dialog.ShowDialog(_owner);
+        await EditorModalWindowScope.ShowDialog(dialog, _owner);
     }
 
     public Task<bool> ConfirmIconTokenDelete(string token)
@@ -212,7 +212,7 @@ internal sealed class EditorDialogService
             textBox.SelectAll();
         };
 
-        return dialog.ShowDialog<string?>(_owner);
+        return EditorModalWindowScope.ShowDialog<string>(dialog, _owner);
     }
 
     private Task<bool> Confirm(
@@ -293,7 +293,7 @@ internal sealed class EditorDialogService
         ((Grid)root.Child).Children.Add(actions);
         dialog.Content = root;
 
-        return dialog.ShowDialog<bool>(_owner);
+        return EditorModalWindowScope.ShowDialog<bool>(dialog, _owner);
     }
 
     private SukiWindow CreateDialog(string title, double width, double height)

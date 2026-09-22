@@ -492,7 +492,7 @@ internal sealed class RenderQueueDialog
                 isInitializing = false;
             }
         };
-        await dialog.ShowDialog(_owner);
+        await EditorModalWindowScope.ShowDialog(dialog, _owner);
         proposalCancellation?.Dispose();
     }
 

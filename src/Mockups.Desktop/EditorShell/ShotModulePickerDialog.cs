@@ -194,7 +194,9 @@ internal sealed class ShotModulePickerDialog
             RefreshAddButton();
             if (modules.Count == 0) moduleCombo.IsEnabled = false;
         };
-        return await dialog.ShowDialog<ShotModuleInstanceDraft?>(_owner);
+        return await EditorModalWindowScope.ShowDialog<ShotModuleInstanceDraft>(
+            dialog,
+            _owner);
 
         void AddField(string label, Control control, int row)
         {

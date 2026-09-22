@@ -71,10 +71,6 @@ internal static class EditorSukiWindowTheme
     public static void ApplyDialogChrome(SukiWindow dialog, Window? owner = null)
     {
         ApplyWindowChrome(dialog, owner);
-        if (owner is not null)
-        {
-            EditorModalWindowScope.Configure(dialog, owner);
-        }
     }
 
     public static void ApplyUtilityWindowChrome(SukiWindow window, Window? owner = null)
