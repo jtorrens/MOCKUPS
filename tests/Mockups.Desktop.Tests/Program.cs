@@ -7043,11 +7043,12 @@ static void NativeModalsTemporarilyDisplaceAuxiliarySessionWindows()
             dialog,
             owner);
         True(dialog.ShowActivated);
+        True(dialog.Topmost);
         True(!floating.Topmost);
         True(!floating.IsEnabled);
         True(!auxiliary.IsEnabled);
         Dispatcher.UIThread.RunJobs();
-        True(!dialog.Topmost);
+        True(dialog.Topmost);
         True(dialog.IsActive);
         True(!floating.Topmost);
         True(!floating.IsEnabled);
@@ -7064,20 +7065,24 @@ static void NativeModalsTemporarilyDisplaceAuxiliarySessionWindows()
         var childResult = EditorModalWindowScope.ShowDialog<bool>(
             childDialog,
             dialog);
+        True(childDialog.Topmost);
         Dispatcher.UIThread.RunJobs();
-        True(!childDialog.Topmost);
+        True(childDialog.Topmost);
         True(childDialog.IsActive);
-        True(!dialog.Topmost);
+        True(dialog.Topmost);
         True(!floating.Topmost);
         True(!floating.IsEnabled);
         True(!auxiliary.IsEnabled);
         childDialog.Close(false);
         Equal(false, childResult.GetAwaiter().GetResult());
         Dispatcher.UIThread.RunJobs();
+        True(!childDialog.Topmost);
+        True(dialog.Topmost);
 
         dialog.Close();
         Equal(null, dialogResult.GetAwaiter().GetResult());
         Dispatcher.UIThread.RunJobs();
+        True(!dialog.Topmost);
         True(floating.Topmost);
         True(floating.IsEnabled);
         True(auxiliary.IsEnabled);

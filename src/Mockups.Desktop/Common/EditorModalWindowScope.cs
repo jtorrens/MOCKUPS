@@ -9,13 +9,16 @@ internal static class EditorModalWindowScope
     public static async Task ShowDialog(Window dialog, Window owner)
     {
         var displacedWindows = DisplaceAuxiliaryWindows(dialog, owner);
+        var wasTopmost = dialog.Topmost;
         dialog.ShowActivated = true;
+        dialog.Topmost = true;
         try
         {
             await dialog.ShowDialog(owner);
         }
         finally
         {
+            dialog.Topmost = wasTopmost;
             RestoreAuxiliaryWindows(displacedWindows);
         }
     }
@@ -25,13 +28,16 @@ internal static class EditorModalWindowScope
         Window owner)
     {
         var displacedWindows = DisplaceAuxiliaryWindows(dialog, owner);
+        var wasTopmost = dialog.Topmost;
         dialog.ShowActivated = true;
+        dialog.Topmost = true;
         try
         {
             return await dialog.ShowDialog<TResult?>(owner);
         }
         finally
         {
+            dialog.Topmost = wasTopmost;
             RestoreAuxiliaryWindows(displacedWindows);
         }
     }

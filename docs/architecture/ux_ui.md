@@ -491,12 +491,13 @@ alternate value-kind or persistence route.
 
 Bounded modal dialogs reach native `ShowDialog` only through the shared modal
 lifetime presenter and use their exact visible owner. Immediately before the
-native call, that presenter lowers and disables each visible auxiliary sibling
-once; nested dialogs leave their exact parent untouched. Its `finally` boundary
-restores the captured sibling state once after close or a failed presentation.
-Native modal ownership alone then controls foreground order. No timer, repeated
-`Topmost` mutation or reactive activation competes with native window ordering,
-and switching to another application never triggers focus recovery.
+native call, that presenter makes the modal topmost and lowers and disables each
+visible auxiliary sibling once; nested dialogs leave their exact parent
+untouched and become topmost above it. Its `finally` boundary restores the
+captured modal and sibling states once after close or a failed presentation.
+The modal remains above application and external windows for its complete
+lifetime. No timer, repeated activation or reactive focus recovery participates
+in window ordering.
 
 Record creation that needs explicit values uses one shared modal generated
 from `RecordCreationDefinition`. Every scalar is rendered by its registered
