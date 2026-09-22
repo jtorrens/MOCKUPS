@@ -232,6 +232,20 @@ test("Conversation requires its current messages collection", () => {
   );
 });
 
+test("Conversation accepts Sticker as an explicit message media type", () => {
+  const current = payload(0, [], [{
+    id: "sticker-message",
+    direction: "incoming",
+    text: "",
+    mediaType: "sticker",
+    mediaSource: "media/sticker.png",
+  }]);
+  const resolved = resolveConversationModuleFrame(current);
+  const messages = resolved.messages as Array<Record<string, unknown>>;
+  assert.equal(messages[0]?.mediaType, "sticker");
+  assert.equal(messages[0]?.mediaSource, "media/sticker.png");
+});
+
 test("Conversation rejects an unsupported message direction", () => {
   assert.throws(
     () => resolveConversationModuleFrame(payload(0, [], [{

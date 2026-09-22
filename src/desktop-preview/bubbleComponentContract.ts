@@ -12,7 +12,7 @@ import type { TextBoxDesignContract } from "./textBoxComponentContract.js";
 
 export type BubbleState = "incoming" | "system" | "outgoing";
 export type BubbleAlignment = "left" | "center" | "right";
-export type BubbleMediaType = "none" | "image" | "video" | "audio";
+export type BubbleMediaType = "none" | "image" | "sticker" | "video" | "audio";
 export type BubbleMediaPosition = "top" | "bottom" | "left" | "right";
 export type BubbleStatusState = "none" | "sent" | "delivered" | "read";
 

@@ -232,6 +232,13 @@ and cannot remain inline with the text while the row is visible. Bubble receives
 and forwards the complete nested Icon Row Runtime contract; it never copies or
 renames Button Runtime fields.
 
+Bubble treats `sticker` as an explicit Media presentation. It resolves the
+source through the image Media owner and preserves that owner's viewport,
+scale, offset, crop and corner geometry. The Bubble Surface and the embedded
+Media Surface remain the layout and clipping containers, but their background,
+border, relief, shadow and Bubble tail are transparent for that presentation.
+Normal image, video and audio messages retain their authored Surface styling.
+
 The generic structured-collection editor exposes an item's declared nested
 Runtime contract as Runtime-input fields. Nested collection commits persist the
 complete contract at the same stable outer item address, and animation controls

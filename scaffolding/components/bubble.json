@@ -858,6 +858,10 @@
             "label": "Image"
           },
           {
+            "value": "sticker",
+            "label": "Sticker"
+          },
+          {
             "value": "video",
             "label": "Video"
           },
@@ -2597,6 +2601,15 @@
         {
           "value": "image",
           "label": "Image",
+          "colorHex": null,
+          "isNeutral": false,
+          "groupValue": "",
+          "groupLabel": "",
+          "localLabel": ""
+        },
+        {
+          "value": "sticker",
+          "label": "Sticker",
           "colorHex": null,
           "isNeutral": false,
           "groupValue": "",

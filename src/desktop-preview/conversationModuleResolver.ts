@@ -897,7 +897,8 @@ function messageMediaType(
   path: string,
 ): ResolvedConversationMessage["mediaType"] {
   const mediaType = requiredString(message, "mediaType", `${path}.mediaType`);
-  return mediaType === "image" || mediaType === "video" || mediaType === "audio"
+  return mediaType === "image" || mediaType === "sticker"
+    || mediaType === "video" || mediaType === "audio"
     ? mediaType
     : mediaType === "none"
       ? "none"

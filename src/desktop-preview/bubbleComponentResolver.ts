@@ -148,7 +148,7 @@ export function resolveBubbleComponent(
   const mediaType = bubbleMediaType(
     requiredString(preview, "mediaType", "component.bubble.input.mediaType"),
   );
-  const imageMediaConfig = mediaType === "image"
+  const imageMediaConfig = mediaType === "image" || mediaType === "sticker"
     ? embeddedComponentConfig(
         componentBaseConfigs,
         imageMediaSlot,
@@ -263,6 +263,31 @@ export function resolveBubbleComponent(
     "component.bubble.iconRow",
   );
 
+  const surface = bubbleSurfaceForAlignment(
+    resolveSurfaceComponentAtSize(
+      surfaceConfig,
+      dimensionMode === "fixed"
+        ? { width: Math.max(1, fixedSize.first), height: Math.max(1, fixedSize.second) }
+        : { width: maxWidth, height: 1 },
+      "component.bubble.surface",
+    ),
+    alignment,
+  );
+  const resolvedMedia = imageMediaConfig || videoMediaConfig
+    ? resolveMediaComponentFromRecords(
+        payload,
+        imageMediaConfig || videoMediaConfig!,
+        bubbleMediaInputs(
+          preview,
+          mediaType === "video" ? "video" : "image",
+          maxWidth,
+        ),
+        componentBaseConfigs,
+        `component.bubble.${mediaType}`,
+      )
+    : undefined;
+  const sticker = mediaType === "sticker";
+
   return {
     id: "component.bubble",
     dimensionMode,
@@ -274,16 +299,7 @@ export function resolveBubbleComponent(
     alignment,
     maxWidth,
     padding: { xToken: padding.first, yToken: padding.second },
-    surface: bubbleSurfaceForAlignment(
-      resolveSurfaceComponentAtSize(
-        surfaceConfig,
-        dimensionMode === "fixed"
-          ? { width: Math.max(1, fixedSize.first), height: Math.max(1, fixedSize.second) }
-          : { width: maxWidth, height: 1 },
-        "component.bubble.surface",
-      ),
-      alignment,
-    ),
+    surface: sticker ? transparentContainerSurface(surface) : surface,
     textBox: {
       ...resolvedTextBox,
       textAlign: optionalBoolean(preview, "typingIndicator") || state === "system"
@@ -301,18 +317,13 @@ export function resolveBubbleComponent(
       position: bubbleMediaPosition(
         requiredString(bubble, "mediaPosition", "component.bubble.mediaPosition"),
       ),
-      media: imageMediaConfig || videoMediaConfig
-        ? resolveMediaComponentFromRecords(
-            payload,
-            imageMediaConfig || videoMediaConfig!,
-            bubbleMediaInputs(
-              preview,
-              mediaType === "video" ? "video" : "image",
-              maxWidth,
-            ),
-            componentBaseConfigs,
-            `component.bubble.${mediaType}`,
-          )
+      media: resolvedMedia
+        ? {
+            ...resolvedMedia,
+            surface: sticker
+              ? transparentContainerSurface(resolvedMedia.surface)
+              : resolvedMedia.surface,
+          }
         : undefined,
       audio: audioConfig
         ? resolveAudioComponentFromRecords(
@@ -483,10 +494,31 @@ function bubbleState(value: string): BubbleState {
 }
 
 function bubbleMediaType(value: string): BubbleMediaType {
-  if (value === "none" || value === "image" || value === "video" || value === "audio") {
+  if (value === "none" || value === "image" || value === "sticker"
+      || value === "video" || value === "audio") {
     return value;
   }
   throw new Error(`Unsupported bubble media type ${value}`);
+}
+
+function transparentContainerSurface(
+  surface: SurfaceDesignContract,
+): SurfaceDesignContract {
+  return {
+    ...surface,
+    backgroundAlpha: 0,
+    borderAlpha: 0,
+    tail: {
+      ...surface.tail,
+      enabled: false,
+    },
+    surface: {
+      ...surface.surface,
+      borderWidth: 0,
+      reliefEnabled: false,
+      shadowEnabled: false,
+    },
+  };
 }
 
 function bubbleMediaPosition(value: string): BubbleMediaPosition {

@@ -2292,6 +2292,7 @@
           "fallbackIcon": "message",
           "iconValueMap": {
             "image": "image",
+            "sticker": "image",
             "video": "video",
             "audio": "audio"
           }
@@ -2631,6 +2632,10 @@
                 "label": "Image"
               },
               {
+                "value": "sticker",
+                "label": "Sticker"
+              },
+              {
                 "value": "video",
                 "label": "Video"
               },
@@ -2667,6 +2672,7 @@
             "enabledWhenItemJsonKey": "mediaType",
             "enabledWhenItemValues": [
               "image",
+              "sticker",
               "video",
               "audio"
             ],

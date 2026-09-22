@@ -38,7 +38,7 @@ export interface ConversationMessageContract {
   keepCursorAfterWrite: boolean;
   statusVisible: boolean;
   visibleAtFrame: number;
-  mediaType: "none" | "image" | "video" | "audio";
+  mediaType: "none" | "image" | "sticker" | "video" | "audio";
   mediaSource: string;
   viewportSize: string;
   mediaScale: number;

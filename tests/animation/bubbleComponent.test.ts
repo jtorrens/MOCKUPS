@@ -113,6 +113,49 @@ test("Bubble does not recover a missing Runtime media type from Variant config",
   );
 });
 
+test("Bubble resolves Sticker through the image Media viewport with transparent containers", () => {
+  const source = committedComponentFixture("bubble", "default_copy");
+  const preview = JSON.parse(source.designPreviewJson) as Record<string, unknown>;
+  Object.assign(preview, {
+    mediaType: "sticker",
+    mediaSource: "media/sticker.png",
+    viewportSize: "180|120",
+    mediaScale: 1.75,
+    mediaOffset: "12|-8",
+    writeOnTrigger: false,
+    keepCursorAfterWrite: false,
+  });
+  source.designPreviewJson = JSON.stringify(preview);
+
+  const resolved = resolveBubbleComponent(source);
+  assert.equal(resolved.mediaSlot.mediaType, "sticker");
+  assert.equal(resolved.mediaSlot.media?.mediaKind, "image");
+  assert.equal(resolved.mediaSlot.media?.sourceUri, "media/sticker.png");
+  assert.deepEqual(resolved.mediaSlot.media?.viewport, {
+    width: 180,
+    height: 120,
+    scale: 1.75,
+    offsetX: 12,
+    offsetY: -8,
+  });
+  assert.equal(resolved.surface.backgroundAlpha, 0);
+  assert.equal(resolved.surface.borderAlpha, 0);
+  assert.equal(resolved.surface.tail.enabled, false);
+  assert.equal(resolved.surface.surface.borderWidth, 0);
+  assert.equal(resolved.surface.surface.reliefEnabled, false);
+  assert.equal(resolved.surface.surface.shadowEnabled, false);
+  assert.equal(resolved.mediaSlot.media?.surface.backgroundAlpha, 0);
+  assert.equal(resolved.mediaSlot.media?.surface.borderAlpha, 0);
+  assert.equal(resolved.mediaSlot.media?.surface.surface.borderWidth, 0);
+  assert.equal(resolved.mediaSlot.media?.surface.surface.reliefEnabled, false);
+  assert.equal(resolved.mediaSlot.media?.surface.surface.shadowEnabled, false);
+
+  const rendered = bubbleComponentToRenderable(source, resolved);
+  const clip = requiredNode(rendered, "component.bubble.sticker.visualClip");
+  assert.equal(clip.style?.overflow, "hidden");
+  assert.ok((clip.style?.borderRadius as number) > 0);
+});
+
 test("Bubble requires every field in its complete prepared Runtime snapshot", () => {
   const requiredKeys = [
     "state",
