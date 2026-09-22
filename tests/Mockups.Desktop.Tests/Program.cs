@@ -231,7 +231,7 @@ var tests = new (string Name, Action Run)[]
     ("editor view state survives real editor and breadcrumb navigation", EditorViewStateSurvivesRealNavigation),
     ("same-owner editor refresh keeps root and embedded cards mounted", SameOwnerEditorRefreshKeepsCardsMounted),
     ("Preview shell remains usable at 1040 and 1440 widths", PreviewShellLayoutIsResponsive),
-    ("Native modals temporarily displace auxiliary session windows", NativeModalsTemporarilyDisplaceAuxiliarySessionWindows),
+    ("Native modals raise after opening without mutating sibling windows", NativeModalsRaiseAfterOpeningWithoutMutatingSiblingWindows),
     ("presented editor operations own the shared loading scrim", PresentedEditorOperationsOwnSharedLoadingScrim),
     ("navigation panel restores its width and opens for routed selection", NavigationPanelRestoresWidthAndOpensForRoutedSelection),
     ("real Preview shell layout remains usable at 1040 and 1440", PreviewShellVisualTreeIsResponsive),
@@ -6928,7 +6928,7 @@ static void NavigationPanelRestoresWidthAndOpensForRoutedSelection()
     }
 }
 
-static void NativeModalsTemporarilyDisplaceAuxiliarySessionWindows()
+static void NativeModalsRaiseAfterOpeningWithoutMutatingSiblingWindows()
 {
     using var session = HeadlessUnitTestSession.StartNew(
         typeof(HeadlessTestApplication));
@@ -7043,16 +7043,12 @@ static void NativeModalsTemporarilyDisplaceAuxiliarySessionWindows()
             dialog,
             owner);
         True(dialog.ShowActivated);
-        True(dialog.Topmost);
-        True(!floating.Topmost);
-        True(!floating.IsEnabled);
-        True(!auxiliary.IsEnabled);
         Dispatcher.UIThread.RunJobs();
         True(dialog.Topmost);
         True(dialog.IsActive);
-        True(!floating.Topmost);
-        True(!floating.IsEnabled);
-        True(!auxiliary.IsEnabled);
+        True(floating.Topmost);
+        True(floating.IsEnabled);
+        True(auxiliary.IsEnabled);
 
         var childDialog = new SukiWindow
         {
@@ -7070,9 +7066,9 @@ static void NativeModalsTemporarilyDisplaceAuxiliarySessionWindows()
         True(childDialog.Topmost);
         True(childDialog.IsActive);
         True(dialog.Topmost);
-        True(!floating.Topmost);
-        True(!floating.IsEnabled);
-        True(!auxiliary.IsEnabled);
+        True(floating.Topmost);
+        True(floating.IsEnabled);
+        True(auxiliary.IsEnabled);
         childDialog.Close(false);
         Equal(false, childResult.GetAwaiter().GetResult());
         Dispatcher.UIThread.RunJobs();

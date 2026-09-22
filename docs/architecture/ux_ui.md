@@ -142,8 +142,8 @@ receives the released vertical space. Closing the tool window or using its dock
 action returns the surface and its prior dock height.
 
 Application modals always take precedence over that topmost utility window.
-While a modal is open, the detached Preview is lowered and disabled; closing
-the modal restores its prior topmost and interaction state.
+The common modal presenter raises the materialized native modal above Preview;
+Preview keeps its own independent topmost and interaction state unchanged.
 
 Floating position and size are remembered only for repeated detachments in the
 current application session. A new application session always starts docked,
@@ -490,14 +490,14 @@ Structural slot metadata may locate nested contexts, but never acts as an
 alternate value-kind or persistence route.
 
 Bounded modal dialogs reach native `ShowDialog` only through the shared modal
-lifetime presenter and use their exact visible owner. Immediately before the
-native call, that presenter makes the modal topmost and lowers and disables each
-visible auxiliary sibling once; nested dialogs leave their exact parent
-untouched and become topmost above it. Its `finally` boundary restores the
-captured modal and sibling states once after close or a failed presentation.
-The modal remains above application and external windows for its complete
-lifetime. No timer, repeated activation or reactive focus recovery participates
-in window ordering.
+lifetime presenter and use their exact visible owner. The presenter waits for
+the generic `Opened` boundary, when the native window exists, then raises and
+activates the modal once. On macOS it assigns the native modal-panel window
+level through the common platform adapter; every modal therefore stays above
+application and external windows for its complete visible lifetime. Its
+`finally` boundary restores the captured Avalonia state after close or failed
+presentation. No concrete dialog, timer, sibling-window mutation or reactive
+focus recovery participates in window ordering.
 
 Record creation that needs explicit values uses one shared modal generated
 from `RecordCreationDefinition`. Every scalar is rendered by its registered
